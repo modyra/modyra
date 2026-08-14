@@ -1,8 +1,8 @@
 {
   "note": "Public names not yet asserted or not yet shown. The list may only get shorter.",
   "score": {
-    "published": 664,
-    "asserted": 403,
+    "published": 665,
+    "asserted": 405,
     "shown": 69
   },
   "uncovered": [
@@ -2329,6 +2329,12 @@
       "reason": "published and never shown"
     },
     {
+      "name": "assertUsableWidgetId",
+      "asserted": false,
+      "shown": false,
+      "reason": "published, neither asserted nor shown"
+    },
+    {
       "name": "assertWidgetDomContract",
       "asserted": true,
       "shown": false,
@@ -2360,9 +2366,9 @@
     },
     {
       "name": "booleanFieldPartIds",
-      "asserted": false,
+      "asserted": true,
       "shown": false,
-      "reason": "published, neither asserted nor shown"
+      "reason": "published and never shown"
     },
     {
       "name": "booleanFieldRootClasses",
@@ -3074,9 +3080,9 @@
     },
     {
       "name": "optionFieldPartIds",
-      "asserted": false,
+      "asserted": true,
       "shown": false,
-      "reason": "published, neither asserted nor shown"
+      "reason": "published and never shown"
     },
     {
       "name": "optionFieldRootClasses",

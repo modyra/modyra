@@ -11,6 +11,7 @@
  * between two folders is one module with two names.
  */
 import type { MdySelectOption } from "@modyra/core";
+import { defaultOptionKey } from "./options-utils.js";
 
 export interface MdySelectReconciliationState<TValue> {
   readonly value: TValue | null;
@@ -90,11 +91,29 @@ export function reconcileSelectValue<TValue>(
 export function optionsWithUnrecognizedValue<TValue>(
   options: readonly MdySelectOption<TValue>[],
   value: TValue | null,
+  labelFor: (value: TValue) => string = readableLabel,
 ): readonly MdySelectOption<TValue>[] {
   if (value === null || value === undefined || value === "") return options;
   if (options.length === 0) return options;
   if (options.some((option) => sameChoice(value, option.value))) return options;
-  return [{ value, label: String(value) }, ...options];
+  return [{ value, label: labelFor(value) }, ...options];
+}
+
+/**
+ * What an unrecognised value is called when nothing else names it.
+ *
+ * `String(value)` is right for the case this module was written for — a form holds `"fr"`, the list
+ * arrives without it, and `fr` is what the user sees. It is wrong for the case the value contracts
+ * also allow: `String({id: 1, name: "Ada"})` is `[object Object]`, and the rule here is *what it
+ * will not erase, it has to show*. A field reading `[object Object]` is worse than a cleared one —
+ * cleared is visibly empty, while that looks like a value and gives nothing to act on.
+ *
+ * A caller that still holds the option this value came from should pass `labelFor` and name it
+ * properly; this is the answer for a value that arrived from a draft or a patch and was never in any
+ * list.
+ */
+function readableLabel(value: unknown): string {
+  return typeof value === "object" && value !== null ? defaultOptionKey(value) : String(value);
 }
 
 /**
@@ -107,6 +126,7 @@ export function optionsWithUnrecognizedValue<TValue>(
 export function optionsWithUnrecognizedValues<TValue>(
   options: readonly MdySelectOption<TValue>[],
   values: readonly TValue[] | null | undefined,
+  labelFor: (value: TValue) => string = readableLabel,
 ): readonly MdySelectOption<TValue>[] {
   if (!values || values.length === 0 || options.length === 0) return options;
   const unrecognized = values.filter(
@@ -118,7 +138,7 @@ export function optionsWithUnrecognizedValues<TValue>(
   );
   if (unrecognized.length === 0) return options;
   return [
-    ...unrecognized.map((value) => ({ value, label: String(value) })),
+    ...unrecognized.map((value) => ({ value, label: labelFor(value) })),
     ...options,
   ];
 }

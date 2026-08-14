@@ -3,7 +3,7 @@
  */
 
 import { vanillaReactivity } from "@modyra/core";
-import { filterOptionsByQuery } from "../options-utils.js";
+import { filterOptionsByQuery, defaultOptionKey } from "../options-utils.js";
 import type { MdyReactivity, MdySignal } from "@modyra/core";
 
 import type { MdyUiCommand } from "../commands.js";
@@ -49,7 +49,7 @@ export function createSelectController<TValue>(
   const {
     widgetId,
     options: initialOptions,
-    keyFor = (option) => String(option.value),
+    keyFor = (option) => defaultOptionKey(option.value),
     value: initialValue = null,
     disabled: initialDisabled = false,
     readonly: initialReadonly = false,
@@ -72,9 +72,23 @@ export function createSelectController<TValue>(
   const paintedOptions = reactivity.signal<readonly MdySelectOption<TValue>[]>(allOptions);
   const optionByKey = new Map<string, MdySelectOption<TValue>>();
   const valueToKey = new Map<TValue, string>();
+  /**
+   * The label each key was last painted with.
+   *
+   * A value the list stops offering is kept — that is this widget's rule — and it has to be shown as
+   * something a user can read. The list held that option a moment ago, so its own label is the
+   * honest name for it: a refetch that drops Ada leaves "Ada" on screen rather than a stringified
+   * value. A value that was never in any list, from a draft or a patch, falls back to the shared
+   * readable form.
+   */
+  const labelSeen = new Map<string, string>();
 
   function rebuildOptionIndex(selected: TValue | null): void {
-    const painted = optionsWithUnrecognizedValue(allOptions, selected);
+    const painted = optionsWithUnrecognizedValue(
+      allOptions,
+      selected,
+      (value) => labelSeen.get(keyFor({ value, label: "" } as MdySelectOption<TValue>)) ?? readableFallback(value),
+    );
     paintedOptions.set(painted);
     optionByKey.clear();
     valueToKey.clear();
@@ -82,6 +96,7 @@ export function createSelectController<TValue>(
       const key = keyFor(option);
       optionByKey.set(key, option);
       valueToKey.set(option.value, key);
+      labelSeen.set(key, option.label);
     }
   }
   rebuildOptionIndex(initialValue);
@@ -158,7 +173,11 @@ export function createSelectController<TValue>(
     });
 
     const parts: Record<string, ReturnType<typeof a11y.option>> = {};
-    for (const option of allOptions) {
+    // What the state paints, not what the caller declared. `MdySelectState.options` says a renderer
+    // paints *this* rather than the list it was handed — so building parts from the declared list
+    // left the survivor with no part: an element inside a listbox with no id, no `role="option"`
+    // and no `aria-selected`, and the one entry the user needs in order to replace their value.
+    for (const option of paintedOptions()) {
       const key = keyFor(option);
       parts[key] = a11y.option(key);
     }
@@ -374,4 +393,9 @@ export function createSelectController<TValue>(
     setPopupRendered,
     destroy,
   };
+}
+
+/** A value with no option to name it: readable, and never `[object Object]`. */
+function readableFallback(value: unknown): string {
+  return typeof value === "object" && value !== null ? defaultOptionKey(value) : String(value);
 }
