@@ -88,12 +88,17 @@ Two acceptable shapes instead (`packages/angular/src/lib/core/reactivity-angular
 implements both, selectable via an `unsupported: "throw" | "report"` option):
 
 1. **Throw a typed error** (the default) — `MdyUnsupportedCapabilityError`,
-   `MdyCrossRuntimeObservationError`, `MdyDestroyedScopeError`,
-   `MdyAdapterContractError`, `MdyActivationError` (all in
-   `packages/core/src/reactivity-errors.ts`). The form engine checks
+   `MdyDestroyedScopeError`, `MdyAdapterContractError`, `MdyActivationError`
+   (all in `packages/core/src/reactivity-errors.ts`). The form engine checks
    `capabilities.effects` before calling `effect()` for its
    own features (async validators, drafts, history), so this path mostly
    protects against a caller that skipped that check.
+`MdyCrossRuntimeObservationError` sits in the same file and is deliberately not in that list: it
+is **constructed for its message and never thrown**. Observing a handle through a runtime that does
+not own it is a stale read rather than a failure — the read still answers — so `observerFor` reports
+it under `MDY_CROSS_RUNTIME_OBSERVATION` and returns the runtime it was given. Catching the class
+waits for something that does not arrive; match on the diagnostic code instead.
+
 2. **Report through `MdyDiagnostics`** (`packages/core/src/reactivity-diagnostics.ts`)
    — structured, with one of the `MDY_*` codes — and only fall back to a
    disabled ref if the caller explicitly opted into graceful degradation.

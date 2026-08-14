@@ -57,6 +57,12 @@ lists are the size of a dropdown; a comparison stops at the first differing memb
 capped at 8 levels, past which values are reported as different — a structure that deep is not an
 option list, and refusing to recurse further is the safe direction.
 
+The cost of that cap is worth stating in the direction it actually falls: an option nested deeper
+than the cap is **never** recognised, so a form using one refuses the user's own choice — the defect
+this record fixes, returning at a depth no option list reaches. It does not fail the other way: two
+options that differ only below the cap are not called equal, because the cap answers "different"
+rather than "same".
+
 Dirty tracking is unchanged: `getChanges()` still compares leaves with `Object.is`, which the guides
 document, and a field holding a re-picked equal object still reports itself changed. The two
 questions are different — "is this the value it started with" and "is this one of the offered
