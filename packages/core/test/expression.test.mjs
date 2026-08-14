@@ -236,3 +236,44 @@ test("the bottom is far below anything an author writes", () => {
   assert.deepEqual([...expressionPaths(real)].sort(), ["a", "b", "c"]);
   assert.equal(evaluateExpression(real, { a: "", b: "x", c: 3 }), true);
 });
+
+test("a path an expression may not read is refused where the document is read", () => {
+  // An expression arrives through the same doors a field name does, and it was the only one that
+  // did not consult the path guard: a document could ask about `constructor` and be answered from
+  // the prototype behind the form, choosing which branch applies by naming something no field
+  // declares. Nothing is written and nothing is polluted — what moves is which rule fires.
+  for (const path of ["__proto__", "prototype", "constructor"]) {
+    const expr = { op: "isNotEmpty", operand: { path } };
+    assert.equal(validateExpression(expr, "document").length, 1, `${path} was accepted`);
+    assert.equal(evaluateExpression(expr, {}), false, `${path} was answered`);
+    assert.deepEqual(expressionPaths(expr), [], `${path} was offered as a dependency`);
+  }
+
+  // A nested operand is reached the same way, and a document carrying one is refused as a whole.
+  const nested = {
+    op: "and",
+    operands: [
+      { op: "equals", operands: [{ path: "country" }, "IT"] },
+      { op: "isNotEmpty", operands: [{ path: "shipping.constructor" }] },
+    ],
+  };
+  assert.equal(validateExpression(nested, "document").length, 1);
+  assert.deepEqual(expressionPaths(nested), ["country"]);
+});
+
+test("a member the value inherits is not an answer the form gave", () => {
+  // The guard above refuses the spellings the engine knows. This is the layer under it: a value
+  // whose prototype carries a name a field also uses answers from its own data or not at all.
+  const inherited = Object.create({ secret: "from the prototype" });
+  inherited.own = "from the form";
+  assert.equal(evaluateExpression({ op: "equals", operands: [{ path: "own" }, "from the form"] }, inherited), true);
+  assert.equal(evaluateExpression({ op: "isNotEmpty", operand: { path: "secret" } }, inherited), false);
+});
+
+test("the root reference still reads the whole value", () => {
+  // `""` is not a field path and never was: it is the root, which is how a form-level rule asks
+  // about the object itself. The guard must not take it away.
+  assert.deepEqual(validateExpression({ op: "isNotEmpty", operand: { path: "" } }, "t"), []);
+  assert.deepEqual(expressionPaths({ op: "isNotEmpty", operand: { path: "" } }), [""]);
+  assert.equal(evaluateExpression({ op: "isEmpty", operand: { path: "" } }, null), true);
+});
