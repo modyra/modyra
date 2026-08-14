@@ -9,8 +9,11 @@
  *
  * What it deliberately does not model:
  *
- *   - **undo/redo**, whose granularity is a property of when snapshots are taken rather than of what
- *     a collection means. A campaign that needs it drives it separately.
+ *   - **undo/redo** unless asked for. Pass `history: true` and the model keeps its own stack of
+ *     value snapshots. An entry exists because something changed: a write that lands the value a
+ *     cell already held, a removal of a key that is not there and a rename onto itself record
+ *     nothing. Undo and redo restore the value and which rows exist — touched, dirty and bindings
+ *     are not in a snapshot, which is what "only the value is recorded" means.
  *   - **validation**, beyond which cells are required, because a verdict is the validator's word.
  *   - **mounting**, except to record it: what is mounted is exactly what must not matter.
  */
@@ -19,7 +22,7 @@
  * @param spec.cells      The row template, as `{ cellName: initialValue }`.
  * @param spec.initial    Rows the collection starts with.
  */
-export function createReferenceModel({ cells, initial = {} } = {}) {
+export function createReferenceModel({ cells, initial = {}, history = false } = {}) {
   const cellNames = Object.keys(cells);
   const template = () => ({ ...cells });
 
@@ -72,8 +75,32 @@ export function createReferenceModel({ cells, initial = {} } = {}) {
     return built;
   };
 
+  /** Snapshots of what a snapshot holds: which rows there are, in order, and what is in them. */
+  const past = [];
+  const future = [];
+  const takeSnapshot = () => ({ order: [...order], rows: new Map([...rows].map(([key, row]) => [key, { ...row }])) });
+  const putSnapshot = (snapshot) => {
+    // A row the restored past does not contain has ended, and what belonged to it ends with it:
+    // marks, edits and — unless a control still claims the path — what a binder said about a cell.
+    // That is the same rule a removal follows, and it is why a row brought back by a redo comes
+    // back untouched rather than as the consumer last left it.
+    for (const key of [...order]) if (!snapshot.rows.has(key)) forget(key);
+
+    // A key that arrives is declared last — the rule the collection follows everywhere, including a
+    // rename, which ends one key and declares another. A row brought back by an undo arrives, so it
+    // arrives at the end rather than at the position it held. Measured, not promised: nothing states
+    // what an undo does to declaration order.
+    const kept = order.filter((key) => snapshot.rows.has(key));
+    order = [...kept, ...snapshot.order.filter((key) => !kept.includes(key))];
+    rows.clear();
+    for (const key of order) rows.set(key, { ...snapshot.rows.get(key) });
+  };
+
   const model = {
     cellNames,
+
+    canUndo: () => past.length > 0,
+    canRedo: () => future.length > 0,
 
     keys: () => [...order],
     has: (key) => rows.has(key),
@@ -119,8 +146,38 @@ export function createReferenceModel({ cells, initial = {} } = {}) {
      */
     disabledPaths: () => [...disabled].filter((path) => rows.has(path.split(".")[0])).sort(),
 
-    /** Apply one operation. Unknown or inapplicable operations are no-ops, as the contract says. */
+    /**
+     * Apply one operation, recording a history entry when it changed the value.
+     *
+     * Undo and redo are not operations on the collection: they move between snapshots of it, so
+     * they never record one of their own.
+     */
     apply(operation) {
+      if (history && (operation.type === "undo" || operation.type === "redo")) {
+        const from = operation.type === "undo" ? past : future;
+        const to = operation.type === "undo" ? future : past;
+        if (from.length > 0) {
+          to.push(takeSnapshot());
+          putSnapshot(from.pop());
+        }
+        return model;
+      }
+
+      if (!history) return model.applyOperation(operation);
+
+      const before = takeSnapshot();
+      const valueBefore = JSON.stringify(model.value());
+      model.applyOperation(operation);
+      if (JSON.stringify(model.value()) !== valueBefore) {
+        past.push(before);
+        // A step taken after an undo is the branch the redo stack no longer describes.
+        future.length = 0;
+      }
+      return model;
+    },
+
+    /** The operation itself, with no history bookkeeping. */
+    applyOperation(operation) {
       const local = (path) => path.split(".").slice(1).join("."); // "rows.a.code" → "a.code"
       const keyOf = (path) => path.split(".")[1];
 

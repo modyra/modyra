@@ -1,0 +1,177 @@
+/**
+ * The same campaign, with a past.
+ *
+ * The generator has drawn `undo` and `redo` since it was written, behind a `withHistory` flag no
+ * campaign ever passed — so every property so far has attacked a form that could only move forward.
+ * Undo is where a defect hides best: it restores a value while leaving everything else where it is,
+ * so a collection that has lost track of an identity keeps the right cells and attaches them to the
+ * wrong row, and nothing about the value says so.
+ *
+ * The model's rule for what becomes a step was measured against the engine rather than assumed: an
+ * entry exists because the value changed. A write of the value a cell already holds, a removal of a
+ * key that is not there, a rename onto itself and a touch all record nothing, and a form that has
+ * been edited fifty thousand times in one synchronous block offers two undos.
+ *
+ * What is compared is the value, the submission, the interaction state and — the point of this
+ * property — `canUndo` and `canRedo`, which is where the affordance defect was found by hand. A
+ * button that lights up for a step that does not exist, or stays dark over one that does, is a
+ * capability the consumer cannot reach and cannot be told about.
+ *
+ * It is red on its first find: undoing an operation that ended several rows restores them one per
+ * undo instead of restoring the collection, which
+ * `adversarial/persistence/undo-of-a-whole-write.battle.test.mjs` isolates to four operations with
+ * its single-row control beside it. This campaign stays as it is rather than routing around that,
+ * because a model taught to expect the defect would stop being the independent half.
+ */
+
+import { battle } from "../../harness/battle.mjs";
+import { BattleBreak, compareCanonical } from "../../harness/assertions.mjs";
+import { createBattleContext } from "../../harness/context.mjs";
+import { betweenRuns } from "../../harness/campaign.mjs";
+import { createRng, runCount, runSeed } from "../../harness/seed.mjs";
+import { shrink } from "../../harness/shrinking.mjs";
+import { encodeValue } from "../../models/observations.mjs";
+import { createReferenceModel } from "../reference-model.mjs";
+import { generateOperation } from "../generators/operations.mjs";
+
+const CELLS = Object.freeze({ code: "", note: "unset" });
+const CELL_NAMES = Object.keys(CELLS);
+
+const SPEC = Object.freeze({
+  version: 1,
+  fields: Object.freeze({
+    rows: Object.freeze({
+      kind: "record",
+      of: Object.freeze({
+        code: Object.freeze({ kind: "text" }),
+        note: Object.freeze({ kind: "text", initial: "unset" }),
+      }),
+    }),
+  }),
+});
+
+function statePathsUnder(form, prefix, read) {
+  const paths = [];
+  for (const name of form.fieldNames()) {
+    if (!name.startsWith(prefix)) continue;
+    const ref = form.getField(name);
+    if (ref && read(ref())) paths.push(name.slice(prefix.length));
+  }
+  return paths.sort();
+}
+
+function observableOf(form, rowsHandle) {
+  return encodeValue(
+    {
+      keys: [...rowsHandle.keys()],
+      value: form.getValue().rows ?? {},
+      submitted: form.submitValue().rows ?? {},
+      touched: statePathsUnder(form, "rows.", (state) => state.touched()),
+      disabled: statePathsUnder(form, "rows.", (state) => state.disabled()),
+      canUndo: form.canUndo(),
+      canRedo: form.canRedo(),
+    },
+    "observable",
+  );
+}
+
+function expectedOf(model) {
+  return encodeValue(
+    {
+      keys: model.keys(),
+      value: model.value(),
+      submitted: model.submitted(),
+      touched: model.touchedPaths(),
+      disabled: model.disabledPaths(),
+      canUndo: model.canUndo(),
+      canRedo: model.canRedo(),
+    },
+    "observable",
+  );
+}
+
+/**
+ * Draw a sequence against a model that moves as the form does.
+ *
+ * Generated one operation at a time rather than in a batch, because an `undo` changes which keys
+ * exist: a sequence drawn ahead of its own history would aim at rows the undo has taken away, and
+ * the campaign would spend its runs on operations that do nothing.
+ */
+function draw(rng, length) {
+  const scratch = createReferenceModel({ cells: CELLS, history: true });
+  const operations = [];
+  for (let index = 0; index < length; index += 1) {
+    const operation = generateOperation(rng, scratch, {
+      collectionPath: "rows",
+      cells: CELL_NAMES,
+      withHistory: true,
+    });
+    operations.push(operation);
+    scratch.apply(operation);
+  }
+  return operations;
+}
+
+async function runSequence(operations, { log }) {
+  const context = createBattleContext({ spec: SPEC, formOptions: { history: true }, log });
+  const model = createReferenceModel({ cells: CELLS, history: true });
+
+  try {
+    for (const [index, operation] of operations.entries()) {
+      await context.execute(operation);
+      model.apply(operation);
+
+      const actual = observableOf(context.form, context.collections.rows);
+      const expected = expectedOf(model);
+      const divergence = compareCanonical(expected, actual);
+      if (divergence) return { divergence, index, operation, expected, actual };
+    }
+    return { divergence: null };
+  } finally {
+    await context.dispose();
+  }
+}
+
+battle(
+  {
+    claims: ["PER-002", "COL-001", "COL-007", "SUB-001"],
+    title: "a collection with a past means what a much simpler model with a past says it means",
+    environments: ["node"],
+    requires: ["structural", "operations"],
+  },
+  async (ctx) => {
+    ctx.attach("schema", SPEC);
+
+    const runs = runCount(20);
+    const length = 24;
+    ctx.log.note("campaign", { seed: ctx.seed, runs, length });
+    console.log(`  history campaign seed ${ctx.seed}, ${runs} run(s) of ${length} operation(s)`);
+
+    for (let run = 0; run < runs; run += 1) {
+      await betweenRuns(run);
+      const rng = createRng(runSeed(ctx.seed, run));
+      const operations = draw(rng, length);
+
+      const outcome = await runSequence(operations, { log: ctx.log });
+      if (!outcome.divergence) continue;
+
+      const signature = `${outcome.divergence.path}|${outcome.divergence.expected}|${outcome.divergence.actual}`;
+      const stillFails = async (candidate) => {
+        const { divergence } = await runSequence(candidate, { log: ctx.log });
+        return divergence !== null && `${divergence.path}|${divergence.expected}|${divergence.actual}` === signature;
+      };
+      const { minimized, attempts } = await shrink(operations, stillFails);
+      ctx.attach("minimizedOperations", minimized);
+
+      throw new BattleBreak({
+        claimIds: ["PER-002", "COL-001", "COL-007", "SUB-001"],
+        message:
+          `run ${run} (seed ${runSeed(ctx.seed, run)}) diverged at operation ${outcome.index} ` +
+          `(${outcome.operation.type}); minimised to ${minimized.length} operation(s) in ${attempts} attempt(s)`,
+        divergence: outcome.divergence,
+        expectedState: outcome.expected,
+        actualState: outcome.actual,
+      });
+    }
+  },
+);
