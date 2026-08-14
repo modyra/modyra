@@ -13,12 +13,6 @@
 import { JSDOM } from "jsdom";
 
 /**
- * Install a document as globals and hand back the teardown.
- *
- * The globals are restored rather than left in place: two battles in one process would otherwise
- * share a document, and an id that survived the first would read as a collision in the second.
- */
-/**
  * The globals a renderer reaches for without being handed them.
  *
  * A custom-element renderer reads constructors off the global scope at module-evaluation time —
@@ -53,6 +47,12 @@ const RENDERER_GLOBALS = Object.freeze([
   "navigator",
 ]);
 
+/**
+ * Install a document as globals and hand back the teardown.
+ *
+ * The globals are restored rather than left in place: two battles in one process would otherwise
+ * share a document, and an id that survived the first would read as a collision in the second.
+ */
 export function installDocument() {
   const dom = new JSDOM("<!doctype html><html><body></body></html>", { pretendToBeVisual: true });
   const previous = {};
@@ -74,11 +74,15 @@ export function installDocument() {
       return element;
     },
     restore() {
+      // Closing the window empties the document, which runs `disconnectedCallback` on every custom
+      // element still in it — and those read `document` off the global scope. Restoring first takes
+      // the document away mid-teardown and the renderer raises inside its own cleanup, which reads
+      // as a defect in whatever battle happened to run last.
+      dom.window.close();
       for (const [name, value] of Object.entries(previous)) {
         if (value === undefined) delete globalThis[name];
         else Object.defineProperty(globalThis, name, { value, configurable: true, writable: true });
       }
-      dom.window.close();
     },
   };
 }
