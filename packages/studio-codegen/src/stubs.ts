@@ -6,18 +6,13 @@
  * generated business logic).
  */
 import type { MdyStudioProject, StudioDiagnostic, StudioImplementationRef } from "@modyra/studio-model";
-import { isValidIdentifier } from "./ts-print.js";
+import { isValidBindingName, toBindingName } from "./ts-print.js";
 
 export interface StubsResult {
   code: string;
   /** implementationRef id -> the generated function's identifier. */
   nameFor: Map<string, string>;
   diagnostics: StudioDiagnostic[];
-}
-
-function sanitizeToIdentifier(raw: string): string {
-  const cleaned = raw.replace(/[^A-Za-z0-9_$]/g, "_").replace(/^[0-9]/, "_$&");
-  return cleaned || "impl";
 }
 
 function stubBody(role: StudioImplementationRef["role"], name: string): string {
@@ -41,7 +36,7 @@ export function buildStubsModule(project: MdyStudioProject): StubsResult {
   let needsAsyncContextType = false;
 
   for (const impl of impls) {
-    let name = isValidIdentifier(impl.displayName) ? impl.displayName : sanitizeToIdentifier(impl.displayName);
+    let name = isValidBindingName(impl.displayName) ? impl.displayName : toBindingName(impl.displayName);
     if (usedNames.has(name)) {
       const disambiguated = `${name}_${impl.id.slice(-4)}`;
       diagnostics.push({

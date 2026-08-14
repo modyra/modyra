@@ -58,3 +58,32 @@ test("is deterministic: stub order is sorted by implementation id regardless of 
   const a = buildStubsModule(project({ impl_z: { id: "impl_z", role: "submitAction", displayName: "z", mode: "stub" }, impl_a: { id: "impl_a", role: "submitAction", displayName: "a", mode: "stub" } }));
   assert.ok(a.code.indexOf("function a(") < a.code.indexOf("function z("));
 });
+
+test("a stub named after a reserved word is emitted as something the language accepts", () => {
+  // Every reserved word has an identifier's shape, so a check that asks only about shape said
+  // `class` was a name and emitted `export function class(…)`. These are the words a domain uses:
+  // `default` is the fallback rule, `import` the one that runs on an imported row, `new` the one
+  // for a new record — and Studio generates code other people compile.
+  const reserved = ["class", "default", "import", "return", "new", "typeof", "let", "const",
+    "enum", "function", "await", "yield", "static"];
+
+  for (const word of reserved) {
+    const { code } = buildStubsModule(project({
+      [`impl_${word}`]: { id: `impl_${word}`, role: "customValidator", displayName: word, mode: "stub" },
+    }));
+    assert.match(code, new RegExp(`export function _${word}\\(`), `${word} was emitted as written`);
+    assert.doesNotMatch(code, new RegExp(`export function ${word}\\(`));
+  }
+});
+
+test("a name the language accepts is emitted as it was typed", () => {
+  // The boundary: repairing more than necessary renames code that compiles, and the name is what a
+  // person reads in their own module. `type` and `as` are TypeScript's soft keywords and are legal
+  // declaration names.
+  for (const name of ["validateAge", "type", "as", "satisfies", "of", "from", "_private", "$dollar"]) {
+    const { code } = buildStubsModule(project({
+      [`impl_${name}`]: { id: `impl_${name}`, role: "customValidator", displayName: name, mode: "stub" },
+    }));
+    assert.match(code, new RegExp(`export function ${name.replace("$", "\\$")}\\(`), `${name} was renamed`);
+  }
+});
