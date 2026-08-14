@@ -22,6 +22,7 @@ import { MDY_DEV } from "./dev-flags.js";
 import type { MdyCollectionHost } from "./contracts/collection-host.js";
 import { isSafeFieldPath } from "./path-utils.js";
 import {
+  reactivityBatches,
   MdyReactivity,
   MdySignal,
   MdyWritableSignal,
@@ -203,7 +204,13 @@ export class MdyRecordManager implements MdyNestedCollection {
       this._keysSig.update((keys) => [...keys, key]);
     }
     try {
-      this._registerNode(`${this._deps.path}.${key}`, this._deps.item, rowValue, `${this._deps.path}.${key}`, this._deps.sections ?? []);
+      // One row, one change. A row's cells are registered one at a time, and a runtime whose
+      // computations run eagerly would otherwise re-read the form between two of them — seeing a row
+      // that has some of its cells, which is a shape the schema does not describe and a read that
+      // raises. Batching is asked for rather than assumed: a runtime without it runs as before.
+      this._batched(() => {
+        this._registerNode(`${this._deps.path}.${key}`, this._deps.item, rowValue, `${this._deps.path}.${key}`, this._deps.sections ?? []);
+      });
     } catch (error) {
       // Reading the value can raise — a getter over a store that is not loaded, a proxy that
       // refuses — and the caller catching that would reasonably assume the row was not declared.
@@ -387,6 +394,13 @@ export class MdyRecordManager implements MdyNestedCollection {
     this.remove(from);
     this.upsert(to, value);
     this._writeFlags(to, flags);
+  }
+
+  /** Runs `write` as one change where the runtime can, and plainly where it cannot. */
+  private _batched(write: () => void): void {
+    const rx = this._deps.rx;
+    if (reactivityBatches(rx)) rx.batch(write);
+    else write();
   }
 
   /** Every declared row's value, read back from the engine. */

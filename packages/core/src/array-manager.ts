@@ -14,6 +14,7 @@
  */
 import type { MdyCollectionHost } from "./contracts/collection-host.js";
 import {
+  reactivityBatches,
   MdyEffectRef,
   MdyReactivity,
   MdySignal,
@@ -338,7 +339,12 @@ export class MdyArrayManager implements MdyNestedCollection {
     this._rowCountSig.set(values.length);
     if (values.length < prevCount) this._deps.engine.refreshPathGate(this._deps.path);
     try {
-      values.forEach((v, i) => this._registerNode(`${this._deps.path}.${i}`, this._deps.item, v, `${this._deps.path}.${i}`, this._deps.sections ?? []));
+      // One structural change, one change to observe: a runtime whose computations run eagerly would
+      // otherwise re-read the form between two of a row's cells and find a shape the schema does not
+      // describe. A runtime without batching runs exactly as before.
+      this._batched(() => {
+        values.forEach((v, i) => this._registerNode(`${this._deps.path}.${i}`, this._deps.item, v, `${this._deps.path}.${i}`, this._deps.sections ?? []));
+      });
     } catch (error) {
       // Reading a row's value can raise — a getter over a store that is not loaded, a proxy that
       // refuses. The list goes back to the rows it had, because a count that says one thing while
@@ -346,11 +352,20 @@ export class MdyArrayManager implements MdyNestedCollection {
       // engine, so restoring it cannot raise in turn.
       this._rowCountSig.set(before.length);
       this._deps.engine.refreshPathGate(this._deps.path);
-      before.forEach((v, i) => this._registerNode(`${this._deps.path}.${i}`, this._deps.item, v, `${this._deps.path}.${i}`, this._deps.sections ?? []));
+      this._batched(() => {
+        before.forEach((v, i) => this._registerNode(`${this._deps.path}.${i}`, this._deps.item, v, `${this._deps.path}.${i}`, this._deps.sections ?? []));
+      });
       throw error;
     }
     // Update tracking after rebuild (structural ops are always atomic)
     this._lastPresentIndices = new Set(Array.from({length: values.length}, (_, i) => i));
+  }
+
+  /** Runs `write` as one change where the runtime can, and plainly where it cannot. */
+  private _batched(write: () => void): void {
+    const rx = this._deps.rx;
+    if (reactivityBatches(rx)) rx.batch(write);
+    else write();
   }
 
   /** Forgets what the user did to a row that a structural change is rewriting. */
