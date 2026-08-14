@@ -7,9 +7,9 @@
  * it does not hold.
  *
  * The invariants are the ones a caller cannot check for themselves: their object is not mutated and
- * not kept, a trap is not walked into a loop, and — the one that breaks — an accessor that raises
- * does not leave a row half-declared. Whether a property the caller's prototype carries counts as
- * the row's data is measured here and deliberately not asserted; the reason is at the call site.
+ * not kept, a trap is not walked into a loop, an accessor that raises does not leave a row
+ * half-declared, and a row reads the object it was given — prototype chain included, per ADR 0045 —
+ * without letting a name the schema never declared become a cell.
  */
 
 import { array, createForm, field, group, record } from "@modyra/core";
@@ -55,12 +55,13 @@ battle(
     });
     onFrozen.destroy();
 
-    // A property the caller's prototype carries is read as the row's data — measured, and left
-    // unasserted on purpose. A class instance or an ORM entity legitimately keeps its cells on a
-    // prototype, so reading the chain is a defensible contract; an attacker-supplied base makes it
-    // an injection point. Nothing public states which, so a battle that pinned either answer would
-    // be inventing the contract rather than attacking it. What *is* asserted is that the row is
-    // still a row: whatever it read, it read into the shape the template describes.
+    // A row reads the object it was given, prototype chain included — ADR 0045. A class instance or
+    // an ORM entity keeps cells on its prototype, a computed column or a getter over a loaded
+    // association, and a row built from one has to see them. The safety of that rests on where
+    // untrusted shapes actually arrive: documents, drafts and patches are filtered to the paths the
+    // schema declares, and those doors are `hostile-paths`'s subject.
+    //
+    // This was measured and left unasserted until the decision existed. It is asserted now.
     const inherited = Object.create({ note: "from the prototype" });
     inherited.code = "P";
     const onInherited = keyedForm();
@@ -69,11 +70,25 @@ battle(
       read: onInherited.getValue().rows.a.note,
     });
 
-    expectEqual(Object.keys(onInherited.getValue().rows.a).sort(), ["code", "note"], {
-      claimIds: ["COL-001"],
-      what: "the row has the cells the template describes and no others",
+    expectEqual(onInherited.getValue().rows.a, { code: "P", note: "from the prototype" }, {
+      claimIds: ["COL-001", "SEC-001"],
+      what: "a row did not read the cell its object inherits",
+    });
+
+    // And it is still the row the template describes: an inherited name the schema never declared
+    // may not become a cell, which is the half that would make the chain an injection point.
+    const stranger = Object.create({ note: "n", undeclared: "should not be a cell" });
+    stranger.code = "S";
+    const onStranger = keyedForm();
+    onStranger.f.rows.upsert("b", stranger);
+
+    expectEqual(Object.keys(onStranger.getValue().rows.b).sort(), ["code", "note"], {
+      claimIds: ["SEC-001", "COL-001"],
+      what: "a name the prototype carries and the schema does not became a cell",
+      detail: JSON.stringify(onStranger.getValue().rows.b),
     });
     onInherited.destroy();
+    onStranger.destroy();
 
     // A proxy is data with opinions. What matters is that it is read a bounded number of times: a
     // collection that walked it repeatedly would hang on a trap that never returns.
