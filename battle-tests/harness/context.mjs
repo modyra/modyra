@@ -228,7 +228,19 @@ export function collectionAt(context, path) {
     const [key, ...segments] = path.slice(base.length + 1).split(".");
     const parent = context.collections[base];
     let node = typeof parent.row === "function" ? parent.row(key) : parent.at(Number(key));
-    for (const segment of segments) node = node?.[segment];
+
+    // A segment is a property until the node it lands on is a collection, and then it is a row of
+    // it — reached by `row()` or `at()` rather than by lookup. Walking with property access alone
+    // stops at the second positional level: a collection handle has no "0" property, so
+    // `orders.b.lines.0.allocations` resolved to nothing and every operation addressed to it was a
+    // write that reached nothing. The geometry was not unsearched because no campaign pointed at
+    // it; it was unreachable from here.
+    for (const segment of segments) {
+      if (node === undefined || node === null) return null;
+      if (typeof node.row === "function") node = node.row(segment);
+      else if (typeof node.at === "function" && /^\d+$/.test(segment)) node = node.at(Number(segment));
+      else node = node[segment];
+    }
     return node ?? null;
   }
   return null;
