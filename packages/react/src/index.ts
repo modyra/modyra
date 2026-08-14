@@ -8,6 +8,7 @@
 import {
   createForm,
   getFieldHandleOwner,
+  handleFormOf,
   type MdyFieldConstraints,
   MdyBatchingCapability,
   MdyCoreFormOptions,
@@ -96,7 +97,7 @@ export function createStore(
 export function createFieldStore(
   handle: MdyFieldHandle<unknown>,
 ): MdyStore & { destroy(): void } {
-  return createStore(
+  const store = createStore(
     [
       handle.value,
       handle.errors,
@@ -108,6 +109,25 @@ export function createFieldStore(
     ],
     getFieldHandleOwner(handle),
   );
+
+  // The form's teardown reaches this one. A component's cleanup and the form's destroy race on
+  // unmount, and the consumer does not get to order them: a store still notifying after the form
+  // ended re-renders a component against a form that is gone. Tearing down twice is harmless — the
+  // second call finds the effect already destroyed — and `destroy()` stops answering to the form so
+  // a store the consumer ended is not held by it.
+  // `handleFormOf` is deliberately loose about what a form is — the registry predates any one
+  // form type and a hand-built handle answers nothing — so the affordance is asked for rather than
+  // assumed: a form from a version without it simply does not reach this store.
+  const form = handleFormOf(handle) as { onDestroy?: (teardown: () => void) => () => void } | undefined;
+  const release = form?.onDestroy?.(() => store.destroy());
+  if (!release) return store;
+  return {
+    ...store,
+    destroy: () => {
+      release();
+      store.destroy();
+    },
+  };
 }
 
 /**

@@ -488,6 +488,8 @@ export abstract class MdyTypedFormBase<
   protected readonly _leafPaths: readonly string[];
   /** What the form held when it was destroyed — see {@link MdyTypedFormBase.getValue}. */
   private _valueAtDestroy: MdyFormValue<S> | null = null;
+  /** What was made from this form and has to end with it — see {@link MdyTypedFormBase.onDestroy}. */
+  private readonly _teardowns = new Set<() => void>();
   /** The same paths as a set, for the reads that ask about one path at a time. */
   protected readonly _leafPathSet: ReadonlySet<string>;
   /** Group prefixes — used to flatten nested patches. */
@@ -900,6 +902,28 @@ export abstract class MdyTypedFormBase<
    * effects, timers, field records). Idempotent — call it when the owning
    * scope goes away (unmount, dispose, disconnect).
    */
+  /**
+   * Runs `teardown` when this form is destroyed, and hands back a way to stop that.
+   *
+   * A binding made from one of this form's handles — a store a component subscribes to, a watcher an
+   * adapter opens — outlives the form whenever the two teardowns race, and a component does not
+   * always get to run its cleanup first. The consumer cannot order that; the form can, because it
+   * knows what was made from it.
+   *
+   * Registering on a form that is already destroyed runs `teardown` at once: a binding built from a
+   * handle of a dead form is dead too, and making the caller check first is a race of its own.
+   */
+  onDestroy(teardown: () => void): () => void {
+    if (this.destroyed) {
+      teardown();
+      return () => undefined;
+    }
+    this._teardowns.add(teardown);
+    return () => {
+      this._teardowns.delete(teardown);
+    };
+  }
+
   destroy(): void {
     if (this._valueAtDestroy === null) {
       try {
@@ -909,6 +933,17 @@ export abstract class MdyTypedFormBase<
         // read then fails as it did before, which is the honest answer.
       }
     }
+    // What was made from this form goes first: a binding that keeps notifying after the engine has
+    // gone re-renders a consumer against a form that has ended. Each is isolated, so one that throws
+    // does not keep the rest from running or stop the engine being torn down.
+    for (const teardown of [...this._teardowns]) {
+      try {
+        teardown();
+      } catch (error) {
+        this._adapter.warnDev(`a teardown registered with onDestroy threw: ${String(error)}`);
+      }
+    }
+    this._teardowns.clear();
     for (const manager of this._arrays.values()) manager.destroy();
     for (const manager of this._records.values()) manager.destroy();
     this._adapter.destroy();

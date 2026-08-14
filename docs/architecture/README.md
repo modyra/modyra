@@ -60,6 +60,7 @@ absent section reads as an oversight, and "no security impact" is a finding.
 - [ADR 0042: An adversarial suite attacks from outside](0042-an-adversarial-suite-attacks-from-outside.md) — `battle-tests/` consumes published entry points only and exists to falsify public claims: every battle cites a registered claim, proves it attacked, and writes a replayable artefact when it breaks something
 - [ADR 0043: A collection nests without a limit](0043-a-collection-nests-without-a-limit.md) — an array may hold an array, a form may nest as deep as it needs, and a document is bounded by the caller rather than by a number; supersedes ADR 0040's one-positional-level rule
 - [ADR 0044: A binding belongs to the row](0044-a-binding-belongs-to-the-row.md) — what a control said about a cell travels with the row across a rename or a move, as its value and its marks already did
+- [ADR 0045: A declaration is all or nothing](0045-a-declaration-is-all-or-nothing.md) — a row whose value raises while it is read is not declared; a row reads the object it was given, prototype chain included; a schema is read by its own properties
 
 ## Security-relevant records
 
