@@ -5120,3 +5120,35 @@ element carries `aria-invalid="true"`. If the four carry it on their `input`, th
 and there is nothing here. If they carry it on a wrapper or nowhere, four kinds look identical whether
 they are right or wrong, and the table's own docblock has already said why nothing in this repository
 would notice.
+
+## A survey at five times the nightly depth, and what its silence means
+
+```
+MDY_BATTLE_SURVEY=1 MDY_BATTLE_RUNS=2000 npm run battle:generative
+  16 tests, 16 pass, 0 fail
+```
+
+Two thousand runs per property against a nightly four hundred, in the mode built for hunting rather
+than gating. Nothing.
+
+The result is only worth as much as the work behind it, so the work was checked: one property at
+`MDY_BATTLE_RUNS=10` takes 7.9s and at 200 takes 154s — nineteen times the time for twenty times the
+runs — so the count is honoured and the runs are real. Eight property files running concurrently at
+2000 runs each accounts for the half hour the survey took.
+
+Survey mode also turned out to add nothing *here*, and the reason is worth writing down. Its purpose
+is to see past a property's first failure, because a property that fails at run 1 explores one run
+however many were asked for. These properties had no failure to see past, so the mode was inert and
+the depth is the whole of what was new.
+
+**What the silence is evidence of, and what it is not.** It is not evidence that the engine is
+correct. It is evidence about where the generator points: the campaign explores sequences of the
+operations its reference model implements, over the collection geometries its fixtures declare.
+Everything filed in this campaign's recent batches came from outside that: published tables against
+each other, a renderer's DOM, an adapter's hooks, the parser's diagnostics, a schema's own closed
+objects. None of those is a sequence of operations, and none of them is reachable by running more of
+them.
+
+So the reading is that the remaining risk is not where the generator is pointed — which is an argument
+for widening the model, not for running it longer. The dimensions it does not carry are the ones its
+own snapshot does not capture, and that list is in this file's operational note.
