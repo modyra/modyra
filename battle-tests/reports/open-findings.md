@@ -4920,3 +4920,45 @@ thing that stopped at the row.
 
 Classification: Modyra bug, S2 by DYN-001/DYN-003 — S1 in effect for a consumer whose documents come
 from a model or a CMS and who was told strict mode was the gate.
+
+## 102. A refusal that calls a name unknown while the document declares it
+
+`adversarial/dynamic-contract/a-name-the-document-declares.battle.test.mjs` — 1 red.
+
+A rule names a `target` and a `when.field`. The published schema puts no restriction on either —
+`"target": { "type": "string" }`, no description, no `pattern` — and no guide sentence says what a
+rule may point at. The parser is stricter: measured, every reference into or at a collection is
+refused.
+
+```
+target "top"            kept
+target "NOTHERE"        MDY_DYNAMIC_INVALID_RULE
+target "rows"           MDY_DYNAMIC_INVALID_RULE      rows is declared in the same document
+target "rows.c"         MDY_DYNAMIC_INVALID_RULE      c is declared inside rows
+target "rows.NOTHERE"   MDY_DYNAMIC_INVALID_RULE
+```
+
+Refusing may well be right — a rule hiding one row's cell would have to say which row. What is wrong
+is what the author is told. `MDY_DYNAMIC_INVALID_RULE` carries one message for all of them:
+
+```
+rule has an unsupported effect/operator or references an unknown field.
+```
+
+For `target: "rows"` that sentence is false in all three of its branches. The effect is supported.
+The operator is supported. The field is not unknown — it is a collection, which is the one thing the
+sentence does not offer. An author reads it and goes looking for a typo that is not there.
+
+This is finding 26's shape at a different door: there, a v3 construct in a v2 document is refused as
+`MDY_DYNAMIC_UNKNOWN_FIELD_REFERENCE` for names the same document declares. Two diagnostics, one
+habit — when the construct is unsupported, the name gets the blame.
+
+Both controls hold: a rule on an ordinary field is kept, so the parser does accept rules; and a name
+nothing declares really is refused, so the refusal is about names.
+
+The battle accepts either repair — keep the rule, or keep refusing it and say why. It asks only that a
+name the document declares is not reported as one it does not.
+
+Classification: Modyra bug, S2 by DYN-001/DYN-003. Worth pairing with the other half, which is not
+this battle's to assert: nothing published says rules are top-level only, so an author has no way to
+learn the limit except by hitting it.
