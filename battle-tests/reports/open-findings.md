@@ -5713,3 +5713,38 @@ becoming an unusable widget id, and two of three doors do not make it.
 
 Either resolution closes it: move the whitespace rule to wherever the reserved-name check already
 lives, since that one reaches all three doors.
+
+## Resolved, not a finding: what flattening can express about a nested collection
+
+Recorded early in this campaign as "measured, not asserted — the contract is ambiguous":
+`flattenDynamicForm` does not recurse into nested collections. Measured again, precisely:
+
+```
+flattenDynamicForm({ rows: record of { lines: array of { c } } })
+  fields:      []
+  collections: [{ path: "rows", kind: "record" }]
+
+buildFlatFormSchema(fields, collections) → a form whose only name is "rows",
+and a row added to it holds {} — the inner array is not there.
+```
+
+DYN-002 is *"collection kind survives flattening and reconstruction"* and it is S1, so this looked
+like a violation: the outer collection's kind survives and the inner collection does not survive at
+all.
+
+**It is not one, and the reason is already written in the code.** `declaredFieldCount` explains why a
+cell never becomes a flat field: "a document cannot name rows that do not exist yet". The same
+sentence settles the nested case. `MdyDynamicCollection` carries a concrete `path`, there is no
+wildcard spelling anywhere in the dynamic module — the only `*` in it is regex syntax — and a nested
+collection has no concrete path until its parent has rows. `rows.a.lines` is a path; `rows.*.lines`
+is not a thing the contract can say.
+
+So the flat representation cannot express a nested collection, for exactly the reason it cannot
+express a cell, and DYN-002's promise covers what flattening can express. The ambiguity the earlier
+note recorded resolves in favour of the design.
+
+Two instrument errors on the way, both from passing the wrong argument: `flattenDynamicForm(schema)`
+takes the group node and was handed the whole document, which returned a phantom
+`{ path: "", kind: "array" }` for a document whose collection is a record — that alone looked like a
+kind being lost. And a flat `fields` list carrying dotted collection paths is refused outright, which
+is the name rule doing its job rather than the flat form being broken.
