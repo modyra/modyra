@@ -88,12 +88,12 @@ battle(
     claims: ["DYN-003"],
     title: "the published condition answers about dates the way a calendar orders them",
     environments: ["node"],
-    open: "reported, not enforced: finding 160's remainder, open in battle-tests/reports/open-findings.md",
   },
   async (ctx) => {
-    // The parser now refuses a date a rule cannot compare, so a document can no longer carry one.
-    // `evaluateRuleCondition` is published on its own, and a consumer calling it holds whatever their
-    // own model holds — with no parser in between.
+    // The parser refuses a date a rule cannot compare, so a document cannot carry one.
+    // `evaluateRuleCondition` is published on its own as well, and a consumer calling it holds
+    // whatever their own model holds — with no parser in between, which is why it answers about
+    // dates as dates rather than as the text they are written in.
     const wrong = [];
     for (const [left, right, later] of ORDERED) {
       const answered = ask("greaterThan", right, left);
