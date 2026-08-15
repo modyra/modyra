@@ -364,6 +364,17 @@ const CLAIMS = [
     ],
   },
   {
+    id: "SEC-006",
+    title: "A field the form was told to keep out of a draft is not written to storage.",
+    area: "security",
+    severity: "S0",
+    publicEvidence: [
+      "@modyra/core MdyDraftOptions.exclude — never persisted nor restored",
+      "docs/guides/typed-forms.md — always exclude passwords, card numbers, tokens and any other sensitive field",
+      "docs/guides/typed-forms.md — the default storage is plain text, readable by every script on the origin, and survives logout",
+    ],
+  },
+  {
     id: "SSR-001",
     title: "A widget command that needs a DOM is not executed where there is none.",
     area: "lifecycle",
