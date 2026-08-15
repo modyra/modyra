@@ -5200,3 +5200,45 @@ a renderer, which is exactly how checkbox and toggle are painted.
 
 Classification: Modyra bug, S1 by A11Y-004 — a control the form has refused is indistinguishable from
 one it accepts, for everyone who is looking at it.
+
+## 106. A state class that never arrives, on ten kinds
+
+`browser/a-state-class-that-never-arrives.spec.ts` — 1 red (lit), 1 green (plain).
+
+Two published tables say what should be on the page. `MDY_FIELD_STATE_CLASSES` names the carrier and
+its states — `control: "mdy-input-wrapper"`, `controlStates: ["disabled", "error"]`, and
+`label: "mdy-label"`, `labelStates: ["filled", "has-error"]`. `MDY_STATE_EXPRESSION` names which kinds
+use that mechanism: ten by class, seven structurally.
+
+So a refused field of a `"class"` kind should carry `mdy-input-wrapper--error`. Measured, every kind
+mounted `required` and left untouched:
+
+```
+plain   wrapper--error present on   text textarea number select multiselect
+                                    datepicker timepicker colors email password
+                                    daterange segmented radio     (13 kinds)
+lit     wrapper--error present on   nothing                        (0 kinds)
+```
+
+Lit renders `mdy-input-wrapper` on all ten `"class"` kinds and never adds the modifier. The shipped
+stylesheets carry two dozen `.mdy-input-wrapper--error` rules; on a lit page not one of them fires.
+
+The control is inside the same table: lit *does* apply `mdy-label--has-error` — on nine kinds — so it
+is not a renderer that ignores state classes. It applies one of the two states the table declares and
+not the other.
+
+This subsumes finding 105 and explains it. Segmented and multiselect matched no error rule at all in
+lit because neither mechanism reached them: no wrapper modifier, because lit sets none anywhere, and
+no label class, because lit does not set it for those two either. The other kinds in 105 were saved by
+the generic `.mdy-renderer input[aria-invalid=true]` rule, which is a rule about the native control
+and not about the state class at all.
+
+`mdy-label--has-error` is itself uneven and is measured but not asserted here, being a second
+question: plain sets it on 13 refused kinds and lit on 9, with lit missing `textarea`, `checkbox`,
+`segmented`, `multiselect` and `colors`.
+
+The kinds are read from the tables rather than listed in the spec, so a kind that changes mechanism
+moves the spec with it.
+
+Classification: Modyra bug, S1 by A11Y-004. A field the form has refused looks, in lit, exactly like
+one it accepts — for every kind whose state was supposed to arrive this way.
