@@ -197,7 +197,9 @@ test("async pending and submit-time markAllTouched compose with the recipes", as
   const handle = form.f.user;
 
   mdyInputProps(handle).onChange({ target: { value: "taken" } });
-  assert.equal(handle.pending(), true); // show a spinner next to the input
+  // The spinner covers the check, and the check begins when there is one to make. An empty required
+  // field is refused by its own rules, so no server is asked about it and nothing is pending — the
+  // window used to appear to start earlier because a run that should never have happened was open.
   await new Promise((r) => setTimeout(r, 0));
   assert.equal(handle.pending(), false);
   assert.deepEqual(handle.errors().map((e) => e.message), [
