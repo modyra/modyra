@@ -931,7 +931,7 @@
     "accepted: readonly TFile[]",
     "rejected: readonly TFile[]",
     "touched: boolean",
-    "value: TFile | readonly TFile[] | null | undefined"
+    "value: readonly TFile[] | null | undefined"
   ],
   "MdyFlushCapability": [
     "flush: void | Promise<void>"

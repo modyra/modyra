@@ -162,7 +162,10 @@ test("file selection policy shares accept, size, count, single and clear behavio
   assert.deepEqual(multi.rejected, [pdf, jpg]);
   assert.deepEqual(multi.value, [png]);
   const single = fileSelectionTransition([png, jpg], { multiple: false });
-  assert.equal(single.value, png);
+  // A list either way: `MDY_VALUE_CONTRACTS.file` declares `file[]`, so a bare file is a shape the
+  // engine's own check refuses. What `multiple: false` narrows is how many are accepted, not what
+  // the field holds.
+  assert.deepEqual(single.value, [png]);
   assert.deepEqual(single.rejected, [jpg]);
   assert.equal(fileSelectionTransition([pdf], { accept: ".png", multiple: false }).value, undefined);
   assert.equal(clearFileSelection().value, null);
