@@ -2887,3 +2887,42 @@ Two controls, because a green cross-product can mean nothing:
 shares the console capture, so a later runtime's snapshot carries the diagnostics of the ones before
 it — comparing them would report the order they ran in. Found by the first red this file produced,
 which pointed at `diagnostics[16]`.
+
+## 77. A batch that ended at the first await
+
+`adversarial/persistence/a-batch-that-ended-at-the-first-await.battle.test.mjs` — 4 green, 1 red.
+**S1** under PER-002 and API-001.
+
+`mutate` exists for one promise, stated in the feature tour's own comment: `form.mutate(() => { … })`
+gives *one history entry, not three*, so an undo returns to where the batch started.
+
+It keeps that promise under every shape a batch can take, and each is asserted so a repair cannot lose
+one:
+
+```
+three writes in one mutate      1 undo step        the promise
+the same three, unbatched       3 undo steps       the control that makes 1 mean something
+a nested mutate                 1 undo step        the inner collapses into the outer
+a callback that throws          the write before the throw is kept, its batch closed
+a callback that changes nothing 0 steps            no empty entry
+```
+
+The shape it does not keep it under is a callback that **waits**:
+
+```
+mutate(async () => { set a; await …; set b; await …; set c })    3 undo steps, nothing said
+```
+
+`mutate(fn: () => void)` is typed as synchronous and **TypeScript does not stop this**: a function
+returning `Promise<void>` is assignable where `void` is expected — the rule that makes callbacks
+ergonomic, and here a footgun. The batch closes when the synchronous part returns, so every write
+after the first `await` lands outside it, and the caller gets exactly the history `mutate` exists to
+prevent.
+
+The engine can tell the difference: a callback that returns a thenable is one that has not finished.
+Either repair closes it — refuse it where it arrives, or say that the batch ended before the callback
+did. What the battle refuses is neither.
+
+Same family as 60–65 and 73–75: a published call that cannot do what it was asked, not saying so. It
+is the first one where what the caller loses is not a value or a section but **the thing they called
+the method for**.
