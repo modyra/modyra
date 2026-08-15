@@ -2300,7 +2300,8 @@ stay separate whatever the map says.
 
 ## 71. The same form open twice, and the tab that finished first
 
-`adversarial/persistence/a-draft-that-went-backwards.battle.test.mjs` — 2 green, 1 red. **S1.**
+`adversarial/persistence/a-draft-that-went-backwards.battle.test.mjs` — **green, closed**, verified
+here. Was 2 green, 1 red, S1.
 New claim **PER-004**: *a draft is not replaced by one saved before it.*
 
 A draft key identifies the form, not the window it is in — which is what makes a draft survive a
@@ -2392,3 +2393,58 @@ record: disable, remove, re-create
 
 All four hold. The last is the one worth naming: a claim does not attach itself to whatever arrives
 later under the same name.
+
+
+## 72. A Zod schema that describes no form, and the internal that reaches the consumer
+
+`adversarial/schema-adapters/a-schema-that-is-not-an-object.battle.test.mjs` — 2 green, 1 red.
+**S2**, under API-001.
+
+A form has named fields, so a schema that is not an object has no fields to name. `z.array(...)`,
+`z.string()` and `z.tuple([...])` are all legitimate Zod schemas and none of them describes a form.
+Refusing them is right. What arrives instead:
+
+```
+createZodForm(z.array(z.object({v: z.string()})))   TypeError: Cannot convert undefined or null to object
+createZodForm(z.string())                           the same
+createZodForm(z.tuple([z.string()]))                the same
+```
+
+It names no schema, no shape and no call, and the three different mistakes are indistinguishable from
+each other and from a bug in the bridge. Same species as the `select` with no `options` reaching a
+consumer as `Cannot read properties of undefined (reading 'map')`.
+
+**The bridge's fallback is the control, and it is good** — this is not "unusual shapes break it". A
+shape the engine has no structure for becomes one opaque leaf and Zod goes on validating it in full:
+
+```
+a union            {"k":"ok"} and {"j":3} accepted; {"nope":true}, "a string", 42 refused
+a discriminated
+union              {t:"a",x:"ok"} accepted; {t:"a",x:3} → "expected string";
+                   {t:"c"} → "Invalid discriminator value. Expected 'a'…"
+```
+
+Also swept and clean: every Zod message reaches the field readably — an author's own message, Zod's
+default, a refinement with and without a message, a nested path, and an enum's generated sentence.
+
+**How this battle first passed for the wrong reason.** The check looked for the words `schema`,
+`object` or `form` in the error text as evidence of a real refusal — and *"Cannot convert undefined or
+null to object"* contains "object". It now reads the error's **kind**: a raw `TypeError` is not
+something this library throws on purpose. A check for a word is a check a string can satisfy by
+accident.
+
+## Recorded, not filed: a disabled row moves the rows after it
+
+`adversarial/submission/a-row-that-moves-because-another-left.battle.test.mjs` — green, and written to
+record rather than to object.
+
+```
+positional, first row disabled    {"list":[{"tag":"second"},{"tag":"third"}]}   the rest moved up
+keyed, first row disabled         {"rows":{"b":…,"c":…}}                        the rest are where they were
+```
+
+It is the only thing the engine could do — an array cannot carry a hole, and a `null` in the gap would
+put a value in the payload nobody entered. But it is the one interactivity change that alters the
+*meaning of a position* rather than only the set of values, and the keyed collection has no
+equivalent. Written down because it is discovered in production by somebody correlating by index, and
+because a change to it would change what a payload means without any type moving.
