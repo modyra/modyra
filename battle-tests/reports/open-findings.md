@@ -9339,3 +9339,55 @@ this finding got: `multiselect` options list without `aria-labelledby`/`aria-des
 timepicker popup, where **both** renderers assert `role="dialog"` but on different elements —
 `__popup` in plain, `-container` in lit. That last one is A11Y-004's other half, "on the part that
 carries them", and is the most likely of the four to be real.
+
+## 164. A dialog nothing can point at
+
+**S2 · Modyra bug · `@modyra/lit`**
+Claims: A11Y-004, A11Y-001
+Battle: `battle-tests/browser/a-dialog-nothing-can-point-at.spec.ts` — 1 failed, 1 passed
+
+`projectTimepickerFieldA11y` declares the time popup as a dialog and says what that means:
+`id`, `role="dialog"`, `aria-modal="true"`, `aria-labelledby`. Each is a relationship rather than a
+decoration — the id is what the opener points at, `aria-modal` is what tells a reader the page behind
+it is out of play.
+
+Both renderers put `role="dialog"` somewhere. Only one puts it where the opener is pointing:
+
+```
+          dialog role on              id        aria-modal   opener's aria-controls points at
+plain     mdy-timepicker__popup       x__popup  "true"       the element with the dialog role
+lit       mdy-timepicker-container    (none)    (none)       mdy-field-0__popup — a wrapper, not the dialog
+```
+
+In lit the dialog has **no id at all**, so nothing in the document can name it, and the opener's
+`aria-controls` resolves to an element that exists and is not the dialog. Not a dangling reference —
+a reference to the wrong thing, which is harder to notice. And it is not announced as modal.
+
+### Dismissed on the way
+
+**The dialog's name.** The projection declares `aria-labelledby` and lit has none — but it carries
+`aria-label="Meeting time"`, and the computed name is the same string in both renderers. Measured
+rather than assumed: the same check had already dismissed an identical-looking gap on this control's
+trigger, and taking the declaration at face value would have filed two findings where there is one.
+
+## Closed since: 160 and 161
+
+Both closed in `bd05055a`, verified here rather than taken on report.
+
+**161** — a positive rule is now a way in and any one of them suffices; a negative one is a veto and
+holds regardless; the veto beats the way in. The battle is green.
+
+**160** — the parser now checks `value` against the operator that will read it: `in`/`notIn` want a
+list, the four comparisons want a number or a string, and a comparison on a date field wants a
+complete ISO date. Measured: `greaterThan {}`, `greaterThan "2026-1-10"`, `in "not a list"`,
+`notIn 42` are each refused with `MDY_DYNAMIC_INVALID_RULE`; `greaterThan "2026-01-10"` and
+`in ["a","b"]` are accepted. `in` and `notIn` are complements again.
+
+`the-one-part-of-a-rule-nobody-checks` is now two battles: the document path as an enforced
+regression, and **the remainder** as a todo — `evaluateRuleCondition` is published on its own and
+still orders dates as strings, so a consumer calling it with a date from their own model, with no
+parser in between, gets `"2026-02-01" > "2026-1-10"` false.
+
+`an-operator-nothing-can-answer` had a defect of mine: the generator wrote a `value` beside every
+operator including the unary ones, which turned this suite's convenience into a question the contract
+had to answer. It now emits the shape each operator reads, and both battles hold.
