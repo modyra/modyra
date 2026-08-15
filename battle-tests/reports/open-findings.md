@@ -1423,6 +1423,11 @@ belongs to that renderer, and the other usually shows the shape that avoids it.*
 
 Where they agree, the finding moves to `@modyra/widgets`:
 
+- **33** — a required multiselect is announced as required by neither. Plain puts `aria-required` on a
+  bare `<button>`; Lit puts it on a `<div role="group">`. Neither role permits it, so the attribute is
+  discarded in both. Only visible in the state where a field is required, which is why the first Lit
+  audit missed it.
+
 - **34** — a date or time the field cannot read is erased on blur, `aria-invalid` left `false`, nothing
   said. Both.
 - **35** — a control declaring `role="combobox"` with `aria-haspopup` that opens on no key. Both.
@@ -1431,10 +1436,30 @@ Where they agree, the finding moves to `@modyra/widgets`:
 Where they differ, the one that is clean shows the fix:
 
 - **23** — Plain paints a field's error before the person has been there; **Lit waits for the visit**.
-- **32, 33** — Plain's role-less wrappers carrying `aria-label`, and `aria-required` on a bare button;
-  Lit clean.
+- **32** — Plain's role-less wrappers carrying `aria-label`; Lit clean.
 - **48, 49** — Plain's option ids are built from the option's value, so duplicates collide and a space
   breaks an ARIA reference; **Lit renders native `<option>` elements, which need no id at all**.
 - **58** — Lit's daterange inputs carry `aria-expanded` with no role, and its colours button nests an
   interactive control; Plain clean, and Plain's datepicker input carries the `role="combobox"` that
   Lit's is missing.
+
+## A design difference, recorded rather than filed
+
+Two forms over the same field names, on one page:
+
+| | Plain | Lit |
+| --- | --- | --- |
+| ids | derived from the field name | a counter — `mdy-field-0`, `mdy-field-1` |
+| duplicate ids with two forms | **123**, unless `idPrefix` is passed | none |
+| clicking the second form's label | focuses the **first** form's input | focuses its own |
+
+Plain's behaviour is documented and `idPrefix` exists for exactly this, so it is not filed as a defect.
+What the comparison shows is that the burden is a choice: one renderer requires the consumer to know
+about `idPrefix`, and the other cannot collide because its ids do not come from the document at all.
+
+**A measurement error of mine, worth recording because it looked like a finding for ten minutes:** the
+Lit host built its schema from initial values and dropped the document's validators, so nothing carried
+`aria-required` and it read as the renderer losing them. The host now compiles the rules the way a
+consumer's document does. Every earlier Lit measurement that did not involve validators is unaffected;
+the required-state audit is the one that was wrong, and it is the one that found finding 33 in Lit once
+it was right.
