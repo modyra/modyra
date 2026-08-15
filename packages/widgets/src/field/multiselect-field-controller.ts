@@ -99,7 +99,17 @@ export function createMultiselectFieldController<TValue>(
 
   // A field that has never been set holds null, not an empty list — a document-declared control and
   // a registry-backed one both start there. Read once, so nothing below has to remember it.
-  const heldValues = (): ReadonlyArray<TValue> => handle.value() ?? [];
+  //
+  // And a value that is not a list at all is one value. `patchValue` is public and a draft is data,
+  // so a string, a number or an object reaches this control; read as a list it threw from inside the
+  // computed the widget draws from, and an effect that throws stops running — the control kept what
+  // it was showing, reported itself valid, and the page had nothing to correct. Holding it as one
+  // value is what the shape gate then has something to object to.
+  const heldValues = (): ReadonlyArray<TValue> => {
+    const held = handle.value() as unknown;
+    if (held === null || held === undefined) return [];
+    return Array.isArray(held) ? held as ReadonlyArray<TValue> : [held as TValue];
+  };
 
   const state: MdySignal<MdyMultiselectFieldState<TValue>> = reactivity.computed(() => {
     const selectedValues = heldValues();

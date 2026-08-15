@@ -122,14 +122,23 @@ function readableLabel(value: unknown): string {
  * A widget that holds several values has the same duty as one that holds one: what it will not
  * erase, it has to show. Unrecognised values come first, in the order the value holds them, and are
  * named by themselves — supply an option to name one differently.
+ *
+ * A value that is not a list is one value, as its singular sibling has always treated it. The two
+ * ask the same question of the same kind of input, and this one guarded emptiness while the other
+ * guarded shape: given a string, a number or an object — all of which `patchValue` accepts and the
+ * model holds — it threw from inside the effect that draws the widget, and an effect that throws
+ * stops running. The control kept whatever it was showing before the write, reported itself valid,
+ * and there was nothing on the page to read or correct.
  */
 export function optionsWithUnrecognizedValues<TValue>(
   options: readonly MdySelectOption<TValue>[],
-  values: readonly TValue[] | null | undefined,
+  values: readonly TValue[] | TValue | null | undefined,
   labelFor: (value: TValue) => string = readableLabel,
 ): readonly MdySelectOption<TValue>[] {
-  if (!values || values.length === 0 || options.length === 0) return options;
-  const unrecognized = values.filter(
+  if (values === null || values === undefined || options.length === 0) return options;
+  const held: readonly TValue[] = Array.isArray(values) ? values : [values as TValue];
+  if (held.length === 0) return options;
+  const unrecognized = held.filter(
     (value) =>
       value !== null &&
       value !== undefined &&

@@ -2853,7 +2853,7 @@
   ],
   "optionsWithUnrecognizedValues": [
     "(0) options: readonly MdySelectOption<TValue>[]",
-    "(1) values: readonly TValue[] | null | undefined",
+    "(1) values: readonly TValue[] | TValue | null | undefined",
     "(2) labelFor?: (value: TValue) => string",
     "-> returns: readonly MdySelectOption<TValue>[]"
   ],
