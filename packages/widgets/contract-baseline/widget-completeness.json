@@ -383,6 +383,7 @@
         "fileList",
         "fileItem",
         "clear",
+        "rejected",
         "supportingText",
         "errors",
         "errorItem"

@@ -855,6 +855,11 @@ export abstract class MdyTypedFormBase<
     this._adapter.markAllTouched();
   }
 
+  /** Named rather than reached through a handle: a caller holding the form has no handle to use. */
+  reportEntry(name: string, problem: string | null): void {
+    this._adapter.reportEntry(name, problem);
+  }
+
   buildSubmitEvent(
     value: MdySubmittedValue<S>,
   ): MdyFormSubmitEvent<MdyFormValue<S>, MdySubmittedValue<S>> {

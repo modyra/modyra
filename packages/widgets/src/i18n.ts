@@ -54,6 +54,13 @@ export interface MdyI18nMessages {
   readonly fileSelectMultiple: string;
   readonly fileNoneSelected: string;
   readonly fileClearSelection: string;
+  /**
+   * What a file field says about candidates it would not take; receives their names.
+   *
+   * A refused file is something that happened to the person — they chose it — and without a sentence
+   * for it the only record is an array no page ever shows.
+   */
+  readonly fileRejected: (names: readonly string[]) => string;
   readonly overlayOpened: string;
   readonly overlayClosed: string;
   /** Label of the "create new option" row in a searchable select. */
@@ -103,6 +110,7 @@ export const MDY_I18N_MESSAGES_DEFAULT: MdyI18nMessages = {
   fileSelectMultiple: "Select files",
   fileNoneSelected: "No file selected",
   fileClearSelection: "Clear selection",
+  fileRejected: (names: readonly string[]): string => `Not accepted: ${names.join(", ")}`,
   overlayOpened: "Popup opened",
   overlayClosed: "Popup closed",
   selectCreateOption: (query: string): string => `Create "${query}"`,
@@ -157,6 +165,7 @@ export const MDY_I18N_MESSAGES_IT: MdyI18nMessages = {
   fileSelectMultiple: "Seleziona file",
   fileNoneSelected: "Nessun file selezionato",
   fileClearSelection: "Rimuovi selezione",
+  fileRejected: (names: readonly string[]): string => `Non accettati: ${names.join(", ")}`,
   overlayOpened: "Popup aperto",
   overlayClosed: "Popup chiuso",
   selectCreateOption: (query: string): string => `Crea "${query}"`,
@@ -204,6 +213,7 @@ export const MDY_I18N_MESSAGES_DE: MdyI18nMessages = {
   fileSelectMultiple: "Dateien auswählen",
   fileNoneSelected: "Keine Datei ausgewählt",
   fileClearSelection: "Auswahl entfernen",
+  fileRejected: (names: readonly string[]): string => `Nicht akzeptiert: ${names.join(", ")}`,
   overlayOpened: "Popup geöffnet",
   overlayClosed: "Popup geschlossen",
   selectCreateOption: (query: string): string => `"${query}" erstellen`,
@@ -251,6 +261,7 @@ export const MDY_I18N_MESSAGES_FR: MdyI18nMessages = {
   fileSelectMultiple: "Sélectionner des fichiers",
   fileNoneSelected: "Aucun fichier sélectionné",
   fileClearSelection: "Effacer la sélection",
+  fileRejected: (names: readonly string[]): string => `Non acceptés : ${names.join(", ")}`,
   overlayOpened: "Popup ouvert",
   overlayClosed: "Popup fermé",
   selectCreateOption: (query: string): string => `Créer « ${query} »`,
@@ -298,6 +309,7 @@ export const MDY_I18N_MESSAGES_ES: MdyI18nMessages = {
   fileSelectMultiple: "Seleccionar archivos",
   fileNoneSelected: "Ningún archivo seleccionado",
   fileClearSelection: "Borrar selección",
+  fileRejected: (names: readonly string[]): string => `No aceptados: ${names.join(", ")}`,
   overlayOpened: "Ventana emergente abierta",
   overlayClosed: "Ventana emergente cerrada",
   selectCreateOption: (query: string): string => `Crear "${query}"`,

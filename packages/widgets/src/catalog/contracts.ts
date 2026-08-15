@@ -158,9 +158,12 @@ export const MDY_WIDGET_CONTRACTS = Object.freeze({
       // one renderer puts it on the popup, the other on this container — so requiring the `dialog`
       // part would require an element neither of them draws.
       required: ["toggle", "container"] }),
-  file: define("file", ["mdy-renderer", "mdy-renderer--file"], ["root", "label", "requiredMarker", "dropzone", "control", "content", "fileList", "fileItem", "clear", "supportingText", "errors", "errorItem"] as const, false,
-    { classes: { dropzone: ["mdy-file-container"], control: ["mdy-file-input"], content: ["mdy-file-content"], fileList: ["mdy-file-list"], fileItem: ["mdy-file-item"], clear: ["mdy-file-clear"] },
+  file: define("file", ["mdy-renderer", "mdy-renderer--file"], ["root", "label", "requiredMarker", "dropzone", "control", "content", "fileList", "fileItem", "clear", "rejected", "supportingText", "errors", "errorItem"] as const, false,
+    { classes: { dropzone: ["mdy-file-container"], control: ["mdy-file-input"], content: ["mdy-file-content"], fileList: ["mdy-file-list"], fileItem: ["mdy-file-item"], clear: ["mdy-file-clear"], rejected: ["mdy-file-rejected"] },
       states: { dropzone: ["dragover"] } ,
+      // What the field refused announces itself: it answers something the person just did, and a
+      // `<div>` that appears in silence is evidence only for whoever is looking at it.
+      roles: { rejected: "status" } ,
       // The name is what every renderer puts in the item; the meta line beside it — size, type — is
       // optional decoration that some do and some do not.
       presentation: ["mdy-file-icon", "mdy-file-info", "mdy-file-placeholder", "mdy-file-name", "mdy-file-meta"] ,

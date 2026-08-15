@@ -23,6 +23,9 @@ const PART_SEMANTICS: Readonly<Record<string, MdyWidgetSemanticElement>> = Objec
   modeToggle: "button", action: "button", optionStep: "button", chip: "button",
   // Announcements.
   errors: "status", loading: "status", empty: "status", errorItem: "status",
+  // A file the field turned away is not an error of the value — the field holds what it accepted and
+  // is valid — but it is an answer to something the person just did, so it announces itself.
+  rejected: "status",
   // An icon carrying its message as a label, not a live region: the message itself already reaches
   // assistive technology through the control's `aria-describedby`, and announcing it twice is worse
   // than announcing it once.
@@ -80,6 +83,8 @@ export function semanticElement(partName: string): MdyWidgetSemanticElement {
  *   rather than assuming it.
  * - `file.clear` and `file.fileList` are a feature choice: a file field may offer to clear its
  *   selection and to list what was chosen, and one that does neither is still a file field.
+ * - `file.rejected` is on screen only when the field has just turned a candidate away, which is a
+ *   state and not a feature: a field that has refused nothing shows nothing there.
  *
  * One measured difference is *not* covered here and is not a rendering question: the numeric kinds
  * start at `0` in one renderer and `null` in another, so `required` passes on one and fails on the

@@ -1552,6 +1552,14 @@
         font-size: 0.875rem;
     }
 
+
+    /* What the field turned away. Beside the list rather than in it: the list is the value. */
+    .mdy-file-rejected {
+        color: var(--mdy-error);
+        font-size: var(--mdy-body-small-size, 0.75rem);
+        margin-top: 0.25rem;
+    }
+
     .mdy-file-list {
         margin: 0;
         padding: 0;

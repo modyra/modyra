@@ -24,7 +24,7 @@ import { MDY_I18N_MESSAGES } from "../../core/i18n";
       [label]="label()"
       [forId]="fieldId"
       [required]="isRequired()"
-      [filled]="fileNames().length > 0"
+      [filled]="chosen().length > 0"
       [showInlineError]="inlineErrorShown()"
       [errorText]="inlineErrorText()"
     />
@@ -63,11 +63,11 @@ import { MDY_I18N_MESSAGES } from "../../core/i18n";
         </button>
 
         <div class="mdy-file-info">
-          @if (fileNames().length > 0) {
+          @if (chosen().length > 0) {
             <ul class="mdy-file-list">
-              @for (name of fileNames(); track name) {
+              @for (file of chosen(); track file.name) {
                 <li class="mdy-file-item">
-                   <span class="mdy-file-name">{{ name }}</span>
+                   <span class="mdy-file-name">{{ file.name }}</span>
                 </li>
               }
             </ul>
@@ -85,6 +85,9 @@ import { MDY_I18N_MESSAGES } from "../../core/i18n";
           }
         </div>
       </div>
+      @if (rejectedNames().length > 0) {
+        <div [mdyPart]="widgetContract.parts.rejected">{{ i18n.fileRejected(rejectedNames()) }}</div>
+      }
     </div>
 
     @if (supportingText(); as st) {
@@ -97,7 +100,7 @@ import { MDY_I18N_MESSAGES } from "../../core/i18n";
     }
   `,
 })
-export class MdyFileComponent extends MdyBaseControl<File | File[] | null> {
+export class MdyFileComponent extends MdyBaseControl<readonly File[] | null> {
   protected readonly widgetContract = MDY_WIDGET_CONTRACTS.file;
   protected override readonly widgetKind = "file" as const;
   protected readonly widgetHasRootClass = this.widgetContract.rootClasses.includes("mdy-renderer");
@@ -105,22 +108,17 @@ export class MdyFileComponent extends MdyBaseControl<File | File[] | null> {
   readonly multiple = input<boolean>(false);
   readonly maxFileSize = input<number>(0);
   readonly maxFiles = input<number>(0);
-  readonly fileSelected = output<File | File[] | null>();
+  readonly fileSelected = output<readonly File[] | null>();
   readonly filesRejected = output<ReadonlyArray<File>>();
 
-  protected readonly i18n = inject(MDY_I18N_MESSAGES);
+  /** What the field holds, and what its last pick turned away — a list either way. */
+  protected readonly chosen = computed<readonly File[]>(() => this.value() ?? []);
+  protected readonly rejectedNames = signal<readonly string[]>([]);
 
+  protected readonly i18n = inject(MDY_I18N_MESSAGES);
   protected readonly fieldId = `mdy-control-file-${MdyBaseControl.nextId()}`;
   protected readonly dragOver = signal(false);
-
   private readonly fileInput = viewChild<ElementRef<HTMLInputElement>>("fileInput");
-
-  protected readonly fileNames = computed(() => {
-    const val = this.value();
-    if (!val) return [];
-    if (Array.isArray(val)) return val.map(f => f.name);
-    return [val.name];
-  });
 
   protected onFileChange(event: Event): void {
     const input = event.target as HTMLInputElement;
@@ -144,7 +142,8 @@ export class MdyFileComponent extends MdyBaseControl<File | File[] | null> {
   protected clear(): void {
     if (this.isDisabled()) return;
     clearFileSelection<File>();
-    this.dispatchValueIntent<File | File[] | null>("file", { type: "select", value: null });
+    this.rejectedNames.set([]);
+    this.dispatchValueIntent<readonly File[] | null>("file", { type: "select", value: null });
     if (this.fileInput()) this.fileInput()!.nativeElement.value = "";
     this.fileSelected.emit(null);
   }
@@ -156,12 +155,13 @@ export class MdyFileComponent extends MdyBaseControl<File | File[] | null> {
       maxFileSize: this.maxFileSize(),
       maxFiles: this.maxFiles(),
     });
+    // Shown as well as emitted: turning a file away in silence leaves no evidence it happened.
+    this.rejectedNames.set(transition.rejected.map((file) => file.name));
     if (transition.rejected.length > 0) this.filesRejected.emit(transition.rejected);
     if (transition.value === undefined) return;
-    const value: File | File[] = this.multiple()
-      ? [...transition.accepted]
-      : transition.accepted[0]!;
-    this.dispatchValueIntent<File | File[] | null>("file", { type: "select", value });
+    // The transition's answer, not a second one built here: a bare file is a shape the engine refuses.
+    const value = transition.value ?? [];
+    this.dispatchValueIntent<readonly File[] | null>("file", { type: "select", value });
     if (transition.touched) this.dispatchValueBlur("file");
     this.fileSelected.emit(value);
   }

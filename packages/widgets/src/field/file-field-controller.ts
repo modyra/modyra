@@ -87,8 +87,9 @@ export function createFileFieldController<TFile extends MdyFileCandidate>(
         },
         fileList: {
           classes: [...definition.parts.fileList.classes],
-          // Announced as it changes: a file accepted or refused is something that happened, and a
-          // list that updates in silence tells a screen-reader user nothing.
+          // Announced as it changes: a file that was accepted is something that happened, and a list
+          // that updates in silence tells a screen-reader user nothing. What was *refused* never
+          // reaches this list — it is the `rejected` part that carries it.
           attributes: { role: "list", "aria-live": "polite" },
         },
       },

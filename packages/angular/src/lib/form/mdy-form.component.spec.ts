@@ -31,6 +31,7 @@ function makeNonRegistryAdapter(
     errorsFor: (path) => backing.errorsFor(path as string) as Signal<ReadonlyArray<MdyFormError>>,
     submit: (action) => backing.submit(action),
     markAllTouched: () => backing.markAllTouched(),
+    reportEntry: (name, problem) => backing.reportEntry(name, problem),
     buildSubmitEvent: (value) =>
       backing.buildSubmitEvent(value) as MdyFormSubmitEvent<Record<string, unknown>>,
     patchValue: (partial) => backing.patchValue(partial),
