@@ -19,6 +19,10 @@
  * widget's popup contributes nothing to either tree; once opened, it contributes something. A
  * renderer that never built a popup at all would satisfy the first and fail the second.
  *
+ * The second test is the same defect as a person meets it: tab from the field above a closed widget
+ * and count how many presses it takes to reach the field below. Past a closed date range in plain it
+ * is more than sixty, and the field below is never reached.
+ *
  * "Reachable" means what a browser and an assistive technology agree on: not `display:none`, not
  * `visibility:hidden`, not `hidden`, and not underneath an `aria-hidden="true"`. A popup hidden by
  * any of those is out of both trees and is not what this spec is about.
@@ -124,5 +128,78 @@ for (const host of HOSTS) {
     expect(opened, JSON.stringify({ opened, neverOpened })).toBeGreaterThan(0);
 
     expect(leaking, JSON.stringify({ opened, leaking }, null, 1)).toEqual([]);
+  });
+}
+
+/** How many stops a compound widget may reasonably cost: its own inputs and its toggle. */
+const REASONABLE_STOPS = 8;
+
+for (const host of HOSTS) {
+  test(`${host.name}: tabbing past a closed widget reaches the next field`, async ({ page }) => {
+    test.setTimeout(180_000);
+    await page.goto(host.page);
+    await page.waitForFunction((flag) => (window as never as Record<string, boolean>)[flag] === true, host.ready);
+
+    const trapped: Array<Record<string, unknown>> = [];
+    const walked: Array<Record<string, unknown>> = [];
+
+    for (const kind of ["text", ...KINDS]) {
+      // One form holding all three, so the middle field really is between the other two. Mounting
+      // them as three forms left the walk reaching the last in the same four stops whatever was in
+      // the middle — the tell being that an ordinary text field cost exactly as much as a calendar.
+      const id = `walk-${kind}`;
+      await page.evaluate(
+        ({ api, k, mountId, options }) => {
+          const battle = (window as never as Record<string, { mountFields(id: string, f: unknown[]): unknown }>)[api];
+          const middle: Record<string, unknown> = { name: "m", kind: k, label: `L ${k}` };
+          if (/select/.test(k)) middle.options = options;
+          battle.mountFields(mountId, [
+            { name: "before", kind: "text", label: "Before" },
+            middle,
+            { name: "after", kind: "text", label: "After" },
+          ]);
+        },
+        { api: host.api, k: kind, mountId: id, options: OPTIONS },
+      );
+      await page.waitForTimeout(200);
+
+      const start = page.locator(`[data-form="${id}"] input[name="before"], [data-form="${id}"] input`).first();
+      if (await start.count() === 0) continue;
+      await start.focus();
+
+      let stops = 0;
+      let reached = false;
+      for (; stops < 40 && !reached; stops += 1) {
+        await page.keyboard.press("Tab");
+        // "Past it" in document order rather than by name: which attribute carries a field's
+        // identity is a renderer's business, and reading one made this walk report that lit never
+        // reached the next field even with an ordinary text field in the middle.
+        reached = await page.evaluate(({ selector, middleLabel }) => {
+          const root = document.querySelector(`[data-form="${selector}"]`);
+          const active = document.activeElement;
+          if (root === null || active === null) return false;
+          const middle = Array.from(root.querySelectorAll("*"))
+            .find((element) => element.tagName === "LABEL" && element.textContent?.includes(middleLabel))
+            ?.closest("*[class]")?.parentElement ?? null;
+          if (middle === null || middle.contains(active)) return false;
+          return (middle.compareDocumentPosition(active) & Node.DOCUMENT_POSITION_FOLLOWING) !== 0;
+        }, { selector: id, middleLabel: `L ${kind}` });
+      }
+
+      // `text` in the middle is the control: an ordinary field costs a stop or two, so a large count
+      // below is the widget rather than the walk.
+      walked.push({ kind, stops, reached });
+      if (!reached || stops > REASONABLE_STOPS) {
+        trapped.push({ kind, stops, reachedTheNextField: reached });
+      }
+    }
+
+    console.log(`[${host.name}] walk: ${JSON.stringify(walked)}`);
+
+    const control = trapped.find((row) => row.kind === "text");
+    expect(control, "an ordinary text field in the middle already costs too many stops, so this walk measures itself")
+      .toBeUndefined();
+
+    expect(trapped, JSON.stringify(trapped, null, 1)).toEqual([]);
   });
 }

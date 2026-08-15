@@ -4639,7 +4639,7 @@ much a defect as a declared state unchecked.
 
 ## 98. A calendar behind a closed picker, in the tab order
 
-`browser/a-calendar-behind-a-closed-picker.spec.ts` — 1 red (plain), 1 green (lit).
+`browser/a-calendar-behind-a-closed-picker.spec.ts` — 2 red (plain), 2 green (lit).
 
 A popup that is closed is closed for everyone. Painting it off-screen while leaving it in the tab
 order, or in the accessibility tree, closes it only for the person looking at it. Measured with
@@ -4665,10 +4665,38 @@ contributes nothing to either tree, and once opened it contributes something. A 
 no popup at all would satisfy the first and fail the second. Both controls held — plain opened and
 populated four kinds, lit five.
 
-Reported and not asserted: plain's `select` and `multiselect` popups contribute nothing measurable
-even when open, so they are skipped rather than counted either way. Their open popups do not carry
-`role="option"` or a tabbable element that this spec's selectors find, which is worth its own look and
-is not this finding.
+**And the same defect as a person meets it.** A form of three fields — a text field, the widget, a
+text field — and Tab pressed from the first until the third is reached, counting stops:
+
+| plain | stops to the next field |
+| --- | --- |
+| `text` (the control) | 2 |
+| `select` | 2 |
+| `datepicker` | 3 |
+| `multiselect` | 4 |
+| `colors` | 4 |
+| `daterange` | **never, in 40** |
+| `timepicker` | **never, in 40** |
+
+Lit reaches the next field in two to four stops for every one of them.
+
+So there are two defects here, not one, and they do not name the same kinds. Being in the trees while
+closed is `datepicker`, `daterange` and `colors`; being impossible to tab past is `daterange` and
+`timepicker` — and `timepicker` leaks nothing measurable into the trees, so whatever holds the
+keyboard there is something else again. A keyboard user meeting a plain date-range field cannot reach
+the rest of the form.
+
+Reported and not asserted: plain's `select` and `multiselect` popups contribute nothing to this
+spec's scoped count even when open, because plain renders those popups into an overlay appended
+outside the field — `role="listbox"` with two `role="option"` children, ids and all, in a
+`.mdy-overlay`. That is correct and it is why they are skipped rather than counted.
+
+Two instrument errors are recorded because each produced a green that meant nothing. Mounting the
+three fields as three separate forms left the walk reaching the last in four stops whatever was in the
+middle — the tell being that an ordinary text field cost exactly as much as a calendar; they are one
+form now. And identifying "the next field" by an input's `name` reported that lit never reached it
+even with a text field in the middle, because which attribute carries a field's identity is a
+renderer's business; the walk uses document order now.
 
 Classification: Modyra bug, S1 by A11Y-001 — the reachable consequence is a form whose keyboard order
 runs through widgets that are not open.
