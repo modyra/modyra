@@ -5348,7 +5348,7 @@ stylesheets, and absent from five of six kinds in one renderer.
 
 ## Checked and clean: what a layout does at a size nobody named
 
-`adversarial/widgets/the-columns-a-size-was-not-given.battle.test.mjs` — 1 green.
+`adversarial/widgets/the-columns-a-size-was-not-given.battle.test.mjs` — 2 green.
 
 Five published tables govern layout — `MDY_LAYOUT_CLASSES`, `MDY_LAYOUT_BREAKPOINTS`, and the
 count, start and display property families — and **no battle cited any of them**. `layoutNodeAttributes`
@@ -5366,6 +5366,17 @@ The rule, measured across every combination of one to four columns and each shap
 It is coherent and it is now pinned. The second rule is the one worth having written down: a node of
 four columns declaring only `{ base: 2 }` resolves to two columns on a phone and four above it, and
 neither number appears in the document.
+
+The slot half is pinned beside it. `layoutSlotStyle` turns a slot's `at` into the start and display
+properties, and it is coherent too: a slot that says nothing adds nothing, only authored sizes are
+emitted, `hidden: false` is a value rather than an absence — because "shown again at lg" cannot be
+said by leaving something out — and a column is `max(1, trunc(n))`, so `0` and `-3` become track 1
+and `2.7` becomes 2.
+
+One asymmetry is recorded rather than filed: the published schema caps a column at 12 and the parser
+refuses more, while `layoutSlotStyle` passes `99` straight through. The cap lives at the document
+door, which is the right place for it; the battle asserts the current behaviour so that if the cap
+ever moves, it moves visibly.
 
 It also nearly became a finding. Two probes disagreed about what `sm` resolves to for `{ base: 2 }` —
 one said 2 and one said 1 — which read as a cascade that fires only sometimes. What differed between

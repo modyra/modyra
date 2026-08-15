@@ -23,7 +23,14 @@
  * between them was the number of columns, not the `at`.
  */
 
-import { layoutNodeAttributes, MDY_LAYOUT_CLASSES, MDY_LAYOUT_COLUMN_COUNT_PROPERTIES } from "@modyra/widgets";
+import {
+  layoutNodeAttributes,
+  layoutSlotStyle,
+  MDY_LAYOUT_CLASSES,
+  MDY_LAYOUT_COLUMN_COUNT_PROPERTIES,
+  MDY_LAYOUT_COLUMN_DISPLAY_PROPERTIES,
+  MDY_LAYOUT_COLUMN_START_PROPERTIES,
+} from "@modyra/widgets";
 
 import { battle } from "../../harness/battle.mjs";
 import { expectClaim, expectEqual } from "../../harness/assertions.mjs";
@@ -107,6 +114,70 @@ battle(
     expectEqual(layoutNodeAttributes(columnsNode({ base: 2 }, 2)).className, MDY_LAYOUT_CLASSES.columns, {
       claimIds: ["DYN-001"],
       what: "a columns node did not carry the class its own table names",
+    });
+  },
+);
+
+battle(
+  {
+    claims: ["DYN-001", "UI-002"],
+    title: "a slot's placement says only what the document authored",
+    environments: ["node"],
+  },
+  async (ctx) => {
+    const start = MDY_LAYOUT_COLUMN_START_PROPERTIES;
+    const display = MDY_LAYOUT_COLUMN_DISPLAY_PROPERTIES;
+
+    // A slot that says nothing adds nothing, which is what lets a column with no placement be
+    // untouched rather than reset to a default somebody has to know about.
+    expectEqual(layoutSlotStyle(undefined), {}, {
+      claimIds: ["UI-002"],
+      what: "a slot with no placement produced properties anyway",
+    });
+
+    // Only the authored sizes appear. A cascade belongs to the stylesheet, not to this function.
+    expectEqual(layoutSlotStyle({ md: { hidden: true } }), { [display.md]: "none" }, {
+      claimIds: ["UI-002"],
+      what: "a placement authored at one size produced properties at others",
+    });
+
+    // `hidden: false` is a value rather than an absence, because "shown again at lg" cannot be said
+    // by leaving something out.
+    expectEqual(layoutSlotStyle({ base: { hidden: true }, lg: { hidden: false } }), {
+      [display.base]: "none",
+      [display.lg]: "flex",
+    }, {
+      claimIds: ["UI-002"],
+      what: "a slot hidden at base and shown again at lg did not say both",
+    });
+
+    // A column is an integer track number, and the first track is 1.
+    for (const [given, expected] of [[0, "1"], [-3, "1"], [1, "1"], [2.7, "2"], [4, "4"]]) {
+      expectEqual(layoutSlotStyle({ base: { column: given } }), { [start.base]: expected }, {
+        claimIds: ["UI-002"],
+        what: `a column of ${given} did not resolve to track ${expected}`,
+      });
+    }
+
+    // Every size, each carrying its own track.
+    const everySize = layoutSlotStyle({ base: { column: 1 }, sm: { column: 2 }, md: { column: 3 }, lg: { column: 4 } });
+    ctx.log.note("a slot placed at every size", { everySize });
+    expectEqual(everySize, {
+      [start.base]: "1", [start.sm]: "2", [start.md]: "3", [start.lg]: "4",
+    }, {
+      claimIds: ["UI-002"],
+      what: "a slot placed at all four sizes did not carry all four tracks",
+    });
+
+    // The upper bound is the parser's, not this function's: the published schema caps a column at 12
+    // and refuses more, and this function passes a larger one through. Recorded rather than asserted
+    // as a defect, because the document door is where the cap is enforced.
+    ctx.log.note("a column past the schema's cap, through the function alone", {
+      style: layoutSlotStyle({ base: { column: 99 } }),
+    });
+    expectClaim(layoutSlotStyle({ base: { column: 99 } })[start.base] === "99", {
+      claimIds: ["UI-002"],
+      what: "the slot function silently changed a column the schema would have refused, so where the cap lives has moved",
     });
   },
 );
