@@ -8344,3 +8344,30 @@ default the sentence describes is real. It is naming it that fails.
 
 Either the platform's own storage is taken, or it is refused with a message that names the shape
 expected. Which is a decision; neither is what happens.
+
+### Checked and clean: a draft across a reload
+
+`browser/a-draft-across-a-reload.spec.ts` (green).
+
+The engine's draft battles run against a storage this suite owns, in one process. What a draft is
+*for* is the other thing: a person types, the tab closes, and the page they open next is a new
+JavaScript context reading storage that outlived the last one. Nothing here had crossed that boundary.
+
+```
+typed, waited past the debounce   storage holds {"__mdyDraft":1,"savedAt":…,"value":{"who":"lorenzo",…}}
+                                  and does not hold the field named in exclude
+real page reload, form remounted  model {who: "lorenzo", note: "half a sentence", secret: ""}
+                                  the input shows "lorenzo", the textarea shows the sentence
+```
+
+Two promises meet there and both hold. The half-filled form comes back **in the model and in the
+controls** — different things, and only one of them is what the user sees; a model restored behind a
+blank box is a form that looks empty and submits something. And a field named in `exclude` never
+reached storage, which is the documented way to keep a password out of a place
+`docs/guides/security.md` describes as writable by every script on the origin.
+
+The exclusion is the half worth a real reload rather than a second form instance: a value that was
+never written cannot come back, and proving it was never written means reading the storage a browser
+actually kept.
+
+Asked of the renderer that can be given a draft at all — finding 148 is the one that cannot.
