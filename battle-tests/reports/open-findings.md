@@ -7516,3 +7516,37 @@ deliberate — that renderer's input carries `aria-haspopup` and the keyboard op
 there, so a second tab stop would be redundant — but then the third kind is the odd one. Recorded
 rather than filed: the inconsistency is real, the intended answer is not mine to pick, and it is one
 line to check when finding 122's neighbourhood is opened.
+
+## 135. A grid that names a label nobody wrote
+
+**Severity** S1 · **Classification** dangling ARIA reference in a live widget · **Spec**
+`browser/a-grid-that-names-a-label-nobody-wrote.spec.ts` (red for one renderer, green for the other)
+· **Claims** A11Y-001, A11Y-002
+
+`projectCalendarViewA11y` says what a calendar's months and years views must be: `role="grid"` with
+`aria-labelledby` naming the field's label. The days grid carries the same pairing.
+
+A grid is one of the few roles where the name is not a nicety. A screen reader entering one announces
+"grid" and then what it is a grid *of* — and this grid lives inside a popup, opened from a field
+whose own name the reader can no longer hear.
+
+```
+                plain                                   lit
+days grid       role grid, aria-labelledby x__label     role grid, no aria-labelledby at all
+                → resolves to "Appointment"
+years grid      role grid, aria-labelledby x__label     role grid, aria-labelledby mdy-field-0__label
+                → resolves to "Appointment"             → getElementById → MISSING
+```
+
+Two ways to be unnamed, and one renderer has both. The second is the worse one to find: the attribute
+is there in the markup, every review of the element passes, and the id it names is on nothing. The
+label element in that renderer carries **no id at all** — with the calendar open, the only id on the
+page is the grid's own.
+
+The spec does not check that a label carries a particular id. It checks that whatever the grid points
+at exists and has words in it, which is the question a reader is actually asking.
+
+**Why the suite's existing id spec did not catch it.** `every-id-an-attribute-names.spec.ts` walks
+the ids an attribute names — but a calendar's grid exists only while the popup is open, and that spec
+measures a page at rest. A dangling reference inside a widget that has to be opened first is a state
+it never reaches.
