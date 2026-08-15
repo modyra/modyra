@@ -567,7 +567,8 @@ rather than filed twice.
 
 ## 34. A date or a time the field could not read is erased without a word
 
-`browser/a-time-that-vanished.spec.ts` — **runs under `npm run battle:browser`.**
+`browser/a-time-that-vanished.spec.ts` — **green, closed**, verified here. All four assertions pass,
+including the correction guard added while the repair was in flight.
 
 Refusing is right, and the engine does it: `parseLocalizedDate` answers `null` for a day that does not
 exist, and `adversarial/validation/localized-dates.battle.test.mjs` holds that. This is what the
@@ -1354,7 +1355,9 @@ finding wearing two names is harder to close than one.
 
 ## 56. An error the form holds and the page cannot show
 
-`browser/an-error-with-nowhere-to-go.spec.ts` — 2 red, 1 green.
+`browser/an-error-with-nowhere-to-go.spec.ts` — **green, closed**, verified here. Was 2 red, 1 green.
+The contract gained the form's own error region, Plain and Angular render it, and Lit ships an element
+the host places — which is the half this tier had to write itself.
 
 Not every refusal belongs to a field. A failed network call, a service that is down, a cross-field
 rule only the server can check — all arrive with no path, and the engine has a place for them:
@@ -1946,9 +1949,9 @@ was re-checked and passes `{ value, label }`, so nothing in the register rests o
 
 ## 67. A slider at its maximum, and a form holding three times that
 
-`browser/a-slider-that-shows-a-different-number.spec.ts` — **the declared-bound half is closed**;
-what remains is filed separately as 70. 4 green, 2 red. Both renderers. UI-006, read as its mirror.
-**S1.**
+`browser/a-slider-that-shows-a-different-number.spec.ts` — **green, closed**, verified here, both
+halves: the declared-bound one by the rule the bound now compiles, and the rest under finding 70. Was
+4 green, 2 red, both renderers, UI-006 read as its mirror, S1.
 
 **Closed half, verified:** a bound written beside the field now compiles the same rules as the same
 bound written as a rule, so `slider max:50` holding `150` is invalid with "Maximum value is 50" and
@@ -3356,7 +3359,9 @@ one that is never said, above.
 
 ## 83. A name a document may declare and a page cannot draw
 
-`browser/a-name-the-page-cannot-carry.spec.ts` — 2 green, 1 red. **S2.**
+`browser/a-name-the-page-cannot-carry.spec.ts` — **green, closed**, verified here. Was 2 green, 1 red,
+S2. A name carrying whitespace is now refused where the document is read, so the two halves of the
+same sentence are enforced in the same place.
 
 A widget id is built from a field's name, and the renderer states the rule in one sentence:
 
@@ -3847,3 +3852,26 @@ and a `dist` rebuilt mid-run is enough.
 
 Any number here that moved a conclusion was re-measured before being written. A single reading is not
 evidence when somebody else may be building.
+
+## The register, audited against the tiers
+
+A register that says a finding is open when it is closed is worse than no register: it sends whoever
+reads it to look at something that is already fixed, and it hides how much ground has actually moved.
+
+Checked mechanically — every numbered finding that names a battle file, against the current state of
+the tier that runs it. **Eighty-five findings, five stale entries**, all in the same direction: the
+register said open where the tier said green.
+
+```
+34  a date or a time the field could not read      closed by the picker batch
+55  every shape now reaches somebody               already titled Closed; the audit's own pattern missed it
+56  an error the form holds and the page cannot show   closed by the form's error region
+67  a slider at its maximum                        both halves closed
+83  a name a document may declare                  closed within the hour of being filed
+```
+
+Nothing was stale in the other direction: no entry claimed closed while its battle was red.
+
+Worth repeating rather than doing once. Two sessions are writing here, one of them repairing as fast
+as the other files, and a register drifts in exactly one direction — the one where somebody else did
+the work.
