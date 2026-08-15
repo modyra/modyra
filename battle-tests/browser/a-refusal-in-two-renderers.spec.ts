@@ -18,6 +18,10 @@ import { expect, test } from "@playwright/test";
  * Both renderers are driven through their own host page, each built from the published entry points a
  * consumer would import. Nothing is asserted about how they differ in markup — only about whether the
  * sentence arrives.
+ *
+ * The last test asks a second question of the same shape, because it has the same answer in both: a
+ * date or a time the field cannot read is erased on blur with `aria-invalid` left `false` and nothing
+ * said. Where two renderers agree, the thing they agree about is the contract's.
  */
 
 const HOSTS = [
@@ -97,5 +101,55 @@ for (const host of HOSTS) {
     // nobody produced.
     expect(seen.held, "the form did not keep the form-level refusal").toContain("(form)");
     expect(seen.onThePage, "the form holds it and this renderer has nowhere to show it").toContain("SERVICE UNAVAILABLE");
+  });
+}
+
+for (const host of HOSTS) {
+  test(`${host.name}: a value the picker cannot read is either kept or explained`, async ({ page }) => {
+    await page.goto(host.page);
+    await page.waitForFunction((flag) => (window as never as Record<string, boolean>)[flag] === true, host.ready);
+
+    const outcomes = [];
+    for (const [index, [kind, typed, readable]] of ([
+      ["datepicker", "03/04/2026", true],
+      ["datepicker", "not a date", false],
+      ["timepicker", "2:30 PM", true],
+      ["timepicker", "14:30", false],
+    ] as const).entries()) {
+      const id = `v${index}`;
+      await page.evaluate(
+        ({ api, mountId, k }) => {
+          const battle = (window as never as Record<string, Record<string, Function>>)[api];
+          const fields = [{ name: "f", kind: k, label: "F" }];
+          return api === "battle" ? battle.mountFields(mountId, fields) : battle.mountFields(mountId, fields);
+        },
+        { api: host.api, mountId: id, k: kind },
+      );
+      await page.waitForTimeout(180);
+
+      const control = page.locator(`[data-form="${id}"] [aria-haspopup], [data-form="${id}"] input`).first();
+      await control.focus();
+      await page.keyboard.type(typed);
+      await page.keyboard.press("Tab");
+      await page.waitForTimeout(220);
+
+      const seen = await page.evaluate((selector) => {
+        const element = document.querySelector(`${selector} [aria-haspopup], ${selector} input`) as HTMLInputElement;
+        const list = document.querySelector(`${selector} .mdy-control__errors`) as HTMLElement | null;
+        return { shows: element.value, invalid: element.getAttribute("aria-invalid"), errorText: (list?.innerText ?? "").trim() };
+      }, `[data-form="${id}"]`);
+      outcomes.push({ kind, typed, readable, ...seen });
+    }
+
+    // The control: the shape each picker does read is kept, so a failure below is the erasure rather
+    // than a control that takes nothing.
+    const kept = outcomes.filter((each) => each.readable);
+    expect(kept.every((each) => each.shows !== ""), JSON.stringify(kept)).toBe(true);
+
+    // And the ones it cannot read are either kept for correction or explained.
+    const swallowed = outcomes.filter(
+      (each) => !each.readable && each.shows === "" && each.invalid !== "true" && each.errorText === "",
+    );
+    expect(swallowed, JSON.stringify(swallowed, null, 1)).toEqual([]);
   });
 }
