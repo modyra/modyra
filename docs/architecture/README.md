@@ -80,6 +80,7 @@ absent section reads as an oversight, and "no security impact" is a finding.
 - [ADR 0062: The form says what no field can](0062-the-form-says-what-no-field-can.md) — three renderers had nowhere to show a refusal that names no field, which made it a missing part rather than three oversights
 - [ADR 0063: A value a control cannot read stays where it can be corrected](0063-a-value-a-control-cannot-read-stays-where-it-can-be-corrected.md) — `14:30` typed into a 12-hour picker was erased with nothing said; the judgement moves into the controller and the entry is kept and explained
 - [ADR 0064: A typed form refuses a path it does not declare](0064-a-typed-form-refuses-a-path-it-does-not-declare.md) — one transposed letter attached a rule nothing could satisfy and the Submit button stopped working, with nothing said
+- [ADR 0065: What is said about a path is said about what is under it](0065-what-is-said-about-a-path-is-said-about-what-is-under-it.md) — the three interactivity setters reached only leaves, so a section a consumer excluded stayed editable and stayed in the payload
 
 ## Security-relevant records
 
