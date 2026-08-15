@@ -1665,7 +1665,26 @@ broken.
 
 ## 64. A section a caller took out of play, and a form that never heard
 
-`adversarial/validation/a-section-nobody-took-out-of-play.battle.test.mjs` — 1 red. **S1.**
+`adversarial/validation/a-section-nobody-took-out-of-play.battle.test.mjs` — **green, closed.** S1.
+
+**Verified independently after the repair**, with `said=0` throughout, so the battle passes on the
+effect and not on a report:
+
+```
+setDisabled("sect", signal)   inner.disabled=true   payload {"plain":"p"}                    section out
+setInactive("sect", signal)   inner.disabled=true   payload {"plain":"p"}                    section out
+setReadonly("sect", signal)   inner.readonly=true   payload {"plain":"p","sect":{"inner":"i"}}  section stays
+```
+
+The `readonly` row is the one worth naming: it must **not** leave the payload, because a field the
+user may read but not change is still a field they answered. The assertion carries a per-method
+expectation for that reason rather than one rule for all three.
+
+**The assertion had to be rewritten first, and that was this battle's own defect.** It read
+`said.length > 0` — whether the call *reported* something — which was written on the assumption the
+capability would not be built. Once it was, the call went silent because it had nothing to report: it
+had done the thing. A check that reads a report instead of an effect passes and fails for the wrong
+reasons in both directions.
 Filed at S2 under API-001 and corrected: the severity model describes what reaches somebody, not what
 the engine's internal state is, and the person who writes this call has a section in the payload that
 they did the documented thing to exclude. What holds it back from S0 is that no state of the engine
