@@ -7897,3 +7897,41 @@ flip that always favoured one side would fail rather than pass half the table.
 Inputs that are not measurements still answer with a side rather than throwing: a window with no
 width, an anchor off the screen, a desired width of zero or of `NaN`. An overlay has to be anchored
 somewhere even when what it was told makes no sense.
+
+## 142. A control that promises one popup and opens another
+
+**Severity** S2 · **Classification** cross-surface, and in both renderers · **Spec**
+`browser/what-a-control-promises-will-open.spec.ts` (red for both) · **Claims** A11Y-002, UI-005
+
+`aria-haspopup` is a promise made *before* anything opens. A screen reader announces it with the
+control — "combobox, has popup listbox" — so a person decides whether to open the thing based on what
+they were told it is. `listbox` means options to choose between, with a selected state and a
+listbox's keyboard. `grid` means a table to move around with the arrow keys. `dialog` means somewhere
+to go and come back from.
+
+Measured against what actually appears:
+
+```
+                plain                                   lit
+select          listbox → listbox                       native, excluded
+multiselect     listbox → group                ✗        listbox → group              ✗
+datepicker      grid → grid                             dialog → dialog and grid
+daterange       dialog → grid                  ✗        grid → dialog and grid
+timepicker      dialog → dialog                         dialog → dialog
+colors          listbox → listbox                       dialog → listbox             ✗
+```
+
+Three broken promises, and **not all in one renderer** — which is what makes it a defect in the
+contract's weakest-specified corner rather than one renderer's habit:
+
+- **multiselect, both**: promises a listbox and opens a `role="group"` of chip buttons. There is no
+  selected state and no listbox keyboard; the promise describes a widget that is not there.
+- **daterange, plain**: promises a dialog and opens a grid — and its *own* published projection says
+  the toggle should promise `grid` (`daterange-field-a11y.ts`), so this renderer contradicts the
+  projection in the opposite direction from finding 139.
+- **colors, lit**: promises a dialog and opens a listbox of swatches.
+
+The check is the promise against the roles on screen once it has opened, so a renderer that changes
+either side stays honest only by changing both. Openers that promise nothing, or only `true`, are
+skipped — there is nothing to hold to account — and native-drawn fields are excluded, since the
+platform makes both the promise and the popup.
