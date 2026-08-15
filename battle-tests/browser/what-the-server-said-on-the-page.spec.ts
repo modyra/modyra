@@ -3,24 +3,18 @@ import { expect, test } from "@playwright/test";
 /**
  * What a page shows when a server says no, in each of the shapes an application hands back.
  *
- * `onSubmit` returns field errors to reject. Its type says `MdyFormError[] | void`, and its argument
- * is whatever the application produces from a response — so the shapes below are not exotic. They are
- * what `await response.json()` gives you when the endpoint's envelope is not the one the type wanted,
- * and TypeScript does not stop any of them because the value crossing that boundary is `any`.
+ * `onSubmit` returns field errors to reject. Its argument is whatever the application made of a
+ * response, and that value is `any`, so the shapes below are not exotic — they are what
+ * `await response.json()` gives you when the endpoint's envelope is not the one the type wanted.
  *
- * Three of the four wrong shapes end differently, and two of the three end worse than the one already
- * on record:
+ * Every one of them now reaches somebody. A refusal naming a field lands on that field, and one whose
+ * message is not a string lands there too, with a sentence a person can read instead of the name of a
+ * JavaScript type. That is what this file asserts.
  *
- *   [{ path, message: <the response object> }]   "[object Object]" beside the field
- *   ["Already registered"]                        nothing at all
- *   { errors: [...] }                             nothing at all
- *
- * `[object Object]` at least says something is wrong. A bare string and a non-list say nothing: the
- * control goes back to `aria-invalid="false"`, no message appears, and the person who pressed Submit
- * has every reason to believe it worked. The server refused and nobody was told.
- *
- * The correct shape is asserted first, so each failure is about the shape rather than about a page
- * that never renders a server's answer at all.
+ * The shapes that name no field — a bare string, an envelope that is not a list — land at form level,
+ * and `an-error-with-nowhere-to-go.spec.ts` is where that is asked about. They are not asserted here
+ * twice: what happens to them is a rendering gap rather than a routing one, and one finding wearing
+ * two names is harder to close than one.
  */
 
 const settled = async (page: import("@playwright/test").Page) => {
@@ -62,35 +56,14 @@ test("a server's refusal, in the shape the type asks for, reaches the person", a
   expect(shown).toEqual({ errorText: "Already registered", invalid: "true" });
 });
 
-test("a refusal in a shape the type did not ask for still reaches the person", async ({ page }) => {
-  const outcomes = [];
+test("a refusal whose message is not a string is still readable", async ({ page }) => {
+  // The shape an application produces without meaning to: the response object handed back as the
+  // message. It used to reach the field as the name of a JavaScript type.
+  const outcome = await submitAnswering(page, "obj", [{ path: "email", message: { detail: "taken", code: 409 } }]);
 
-  // The response object handed back as the message — the shape already on record.
-  outcomes.push({
-    what: "the response object as the message",
-    ...(await submitAnswering(page, "obj", [{ path: "email", message: { detail: "taken", code: 409 } }])),
-  });
-
-  // A bare string in the list, which is what an endpoint returning `["..."]` produces.
-  outcomes.push({
-    what: "a bare string in the list",
-    ...(await submitAnswering(page, "str", ["Already registered"])),
-  });
-
-  // The whole envelope, unwrapped by nobody.
-  outcomes.push({
-    what: "the whole response, not a list",
-    ...(await submitAnswering(page, "env", { errors: [{ path: "email", message: "taken" }] })),
-  });
-
-  // Every one of them refused the submission. A person who pressed Submit and was told nothing
-  // believes it worked, which is worse than being told something unreadable.
-  const silent = outcomes.filter((outcome) => outcome.errorText === "");
-  expect(silent, JSON.stringify(outcomes, null, 1)).toEqual([]);
-
-  // And what is said is something a person can read.
-  const unreadable = outcomes.filter((outcome) => outcome.errorText.includes("[object"));
-  expect(unreadable, JSON.stringify(outcomes, null, 1)).toEqual([]);
+  expect(outcome.invalid, "the refusal did not reach the field at all").toBe("true");
+  expect(outcome.errorText, "the field shows the name of a type instead of a sentence").not.toContain("[object");
+  expect(outcome.errorText.length, "the field is marked invalid and says nothing").toBeGreaterThan(0);
 });
 
 test("answering with nothing is not a refusal", async ({ page }) => {
