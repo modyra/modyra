@@ -14,7 +14,7 @@ import type { MdyReactivity, MdySelectOption, MdySignal } from "@modyra/core";
 import { observerFor } from "@modyra/core";
 import { filterOptionsByQuery, defaultOptionKey } from "../options-utils.js";
 
-import { overlayLifecycleTransition } from "../behavior.js";
+import { multiselectValueTransition, overlayLifecycleTransition } from "../behavior.js";
 import { optionsWithUnrecognizedValues } from "../options-reconciliation.js";
 import type { MdyUiCommand } from "../commands.js";
 import type { MdyWidgetController, MdyWidgetViewContract } from "../contract.js";
@@ -212,11 +212,18 @@ export function createMultiselectFieldController<TValue>(
 
   function toggle(key: string): readonly MdyUiCommand[] {
     return withOption(key, (option) => {
-      const values = [...heldValues()];
-      const index = values.findIndex((v) => v === option.value);
-      if (index === -1) values.push(option.value);
-      else values.splice(index, 1);
-      handle.set(values);
+      // Through the published transition rather than around it. `option[]` is a multi-set on
+      // purpose — a counter chip raises and lowers a quantity — and the two presses mean different
+      // things: `decrement` removes one occurrence, a toggle removes the option. This spliced one
+      // out, so a chip a person pressed once stayed selected with two of the three still held.
+      //
+      // It also compared by identity while the rest of the widget keys an option by what it holds
+      // (ADR 0051), so an object option could never be switched off.
+      handle.set(multiselectValueTransition(
+        heldValues(),
+        { type: "toggle", value: option.value },
+        (value) => defaultOptionKey(value),
+      ) as TValue[]);
       return [{ type: "mark-dirty" }, { type: "mark-touched" }];
     });
   }
