@@ -995,6 +995,7 @@
     "peekField(0) name: string,-> returns: MdyFieldRef<unknown> | null",
     "protected _rx: MdyReactivity",
     "reactivity: MdyReactivity",
+    "rebaselineToCurrentValue-> returns: void",
     "redo-> returns: void",
     "refreshPathGate(0) prefix: string,-> returns: void",
     "registerPathGate(0) prefix: string,(1) gate: MdyPathGate,-> returns: () => void",

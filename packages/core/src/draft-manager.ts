@@ -86,6 +86,30 @@ function isDraftEnvelope(parsed: unknown): parsed is DraftEnvelope {
 }
 
 /**
+ * How far ahead of this clock a stamp may be and still be believed.
+ *
+ * Two machines rarely agree to the millisecond, and a draft written on one and read on another is
+ * the ordinary case — so a stamp a little in the future is a clock, not a claim. Far in the future is
+ * a claim, and the only thing it can buy is an expiry that never arrives.
+ */
+const MDY_DRAFT_CLOCK_SKEW_MS = 5 * 60_000;
+
+/**
+ * Whether an envelope is young enough to restore.
+ *
+ * `ttlMs` asks *how old is this*, and the answer comes from the envelope, which is written where
+ * anything on the origin can write. A stamp that is missing, is not a number, or sits further ahead
+ * than a clock can explain answers nothing — and a question with no answer is not answered with the
+ * one that opens: an expiry a draft can opt out of by lying is not an expiry.
+ */
+function withinAge(savedAt: unknown, ttlMs: number): boolean {
+  if (typeof savedAt !== "number" || !Number.isFinite(savedAt)) return false;
+  const age = Date.now() - savedAt;
+  if (age < -MDY_DRAFT_CLOCK_SKEW_MS) return false;
+  return age <= ttlMs;
+}
+
+/**
  * The storage this manager will use, whichever of the two shapes it was handed.
  *
  * The guide names `localStorage` as the default, so the object a reader reaches for is the platform's
@@ -339,7 +363,21 @@ export class MdyDraftManager {
     this._debounceMs = options.debounceMs ?? 400;
 
     // Restore an existing draft before recording starts.
-    const stored = this._storage.read(this._key);
+    // A storage that refuses to be read is a draft that is not there. Safari in private browsing
+    // throws on access, an enterprise policy throws, a blocked third-party context throws — and a
+    // draft is an optional convenience, so failing to read one means there is no draft, never that
+    // there is no form. The write side has always been swallowed for the same reason.
+    let stored: string | null = null;
+    try {
+      stored = this._storage.read(this._key);
+    } catch (error) {
+      if (MDY_DEV) {
+        this._warn(
+          `Draft storage could not be read (${error instanceof Error ? error.message : String(error)}). ` +
+          "The form opens without a draft.",
+        );
+      }
+    }
     if (stored !== null) {
       const value = this._parse(stored, options.ttlMs);
       if (value !== null) {
@@ -424,7 +462,19 @@ export class MdyDraftManager {
   /** Removes the stored draft (also called after an error-free submit). */
   clearDraft(): void {
     if (this._key && this._storage) {
-      this._storage.remove(this._key);
+      // Same rule as reading it: a storage that will not remove an entry is not the caller's problem
+      // to catch. What `clearDraft` promises about the *form* — the baseline moves, the draft is no
+      // longer offered — holds whether or not the entry could be deleted.
+      try {
+        this._storage.remove(this._key);
+      } catch (error) {
+        if (MDY_DEV) {
+          this._warn(
+            `Draft storage could not remove "${this._key}" ` +
+            `(${error instanceof Error ? error.message : String(error)}). The form has discarded it either way.`,
+          );
+        }
+      }
     }
     this._hasDraft.set(false);
     this._lastWritten = null;
@@ -458,9 +508,7 @@ export class MdyDraftManager {
       const parsed: unknown = JSON.parse(stored);
       if (isDraftEnvelope(parsed)) {
         if (parsed.__mdyDraft !== this._version) return null;
-        if (ttlMs !== undefined && Date.now() - parsed.savedAt > ttlMs) {
-          return null;
-        }
+        if (ttlMs !== undefined && !withinAge(parsed.savedAt, ttlMs)) return null;
         return parsed.value;
       }
       if (isRecord(parsed)) {
@@ -553,7 +601,12 @@ export class MdyDraftManager {
         "own key if they must not overwrite each other.",
       );
     }
-    const savedAt = stored !== null && stored > now ? stored : now;
+    // Never backwards, and never further ahead than a clock explains. Carrying a stored stamp
+    // forward is what stops a draft being replaced by one saved earlier; carrying an *impossible*
+    // one forward makes it permanent — every later save inherits it, and an expiry the user can
+    // never reach however long they keep typing.
+    const believable = stored !== null && stored <= now + MDY_DRAFT_CLOCK_SKEW_MS;
+    const savedAt = believable && stored > now ? stored : now;
     // Build the envelope around the already-serialized payload so the value
     // is stringified only once per write.
     const envelope = `{"__mdyDraft":${this._version},"savedAt":${savedAt},"value":${serialized}}`;

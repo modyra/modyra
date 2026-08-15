@@ -172,6 +172,29 @@ export class MdyHistoryManager {
   }
 
   /**
+   * Makes the current value the state history starts from.
+   *
+   * A form opens, a stored draft is written into it, and the effect that records changes sees a
+   * change — so the first thing a person is offered to undo is something they did not do, and taking
+   * the offer costs them the draft: the undo writes the empty form back, and the draft follows the
+   * model. The redo that would recover it lives in the tab.
+   *
+   * Restoring a draft is the form arriving at its starting state, not moving away from one. So is
+   * discarding one deliberately. Both say so here rather than each clearing stacks its own way.
+   */
+  rebaseline(): void {
+    if (this._timer !== null) {
+      clearTimeout(this._timer);
+      this._timer = null;
+    }
+    this._undoStack.length = 0;
+    this._redoStack.length = 0;
+    this._lastSnapshot = this._effect ? this._rx.untracked(() => this._getValue()) : null;
+    this._stackedUndo.set(false);
+    this._stackedRedo.set(false);
+  }
+
+  /**
    * Stops the snapshot effect and its pending debounce timer without
    * losing the undo/redo stacks — `resume()` restarts it exactly where it
    * left off. Called by the owning form's `deactivate()`.
