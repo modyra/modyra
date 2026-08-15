@@ -4753,3 +4753,53 @@ a browser probe that read the anchors as *stripped* turned out to be two cases s
 the core measurement above is what settled it.
 
 Classification: Modyra bug, S1 by VAL-004's severity.
+
+## 100. A rule a document declares, and a form that never had it
+
+`adversarial/dynamic-contract/a-rule-that-was-never-there.battle.test.mjs` — 1 red.
+
+`spec/dynamic-form-v3.schema.json` closes the validator set:
+
+```json
+"validators": {
+  "type": "object",
+  "additionalProperties": false,
+  "properties": { "required", "email", "min", "max", "minLength", "maxLength", "pattern" }
+}
+```
+
+`parseDynamicForm` takes anything. Measured, one field each:
+
+```
+{ multipleOf: 3 }   ok: true   accepted: 1   rules built: 0   diagnostics: []
+{ step: 0.5 }       ok: true   accepted: 1   rules built: 0   diagnostics: []
+{ minLenght: 3 }    ok: true   accepted: 1   rules built: 0   diagnostics: []
+{ maximum: 5 }      ok: true   accepted: 1   rules built: 0   diagnostics: []
+{ wormhole: 7 }     ok: true   accepted: 1   rules built: 0   diagnostics: []
+```
+
+A document that the published schema rejects is accepted, the field is counted, nothing is said, and
+the rule the author wrote is **not in the form**. The value they meant to constrain is unconstrained
+and the form reports itself valid.
+
+This is the one place the engine says nothing, which is what makes it a defect rather than a policy.
+An unknown field *kind* is refused by name. A duplicate field name raises
+`MDY_DYNAMIC_DUPLICATE_NAME`. A pattern that will not compile is skipped *with* a diagnostic. A rule
+naming a path the form does not declare is refused where it arrives (finding 89). A validator key
+nobody implements is dropped in silence.
+
+`minLenght` is in the table deliberately. The documents this contract exists for are the ones nobody
+typed by hand — a CMS, a saved project, a model's output, which `docs/guides/ai-generated-forms.md`
+is a whole guide about. A single transposed letter produces a form with a rule missing and nothing
+anywhere that says so.
+
+`multipleOf` and `step` are the two an author would most plausibly reach for: both are ordinary
+constraints, both are what a number field wants, and neither exists.
+
+The allowed set is read from the published schema rather than copied into the battle, so a key added
+to the contract later stops being a finding without anyone editing the file. Its controls check that
+the schema really is closed, and that a key the schema *does* allow is both parsed into a rule and
+enforced by it — so silence is about the unknown key rather than about a parser building nothing.
+
+Classification: Modyra bug, S2 by DYN-001/DYN-003. Either resolution closes it: refuse the document,
+or accept it with a diagnostic naming the key that was dropped.
