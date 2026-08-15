@@ -13,6 +13,12 @@
  * The pairs matter more than the cases. `insert at 1` after marking rows 0 and 2 distinguishes "marks
  * are cleared from the moved index onward" from "marks are cleared entirely" — two rules that agree
  * on every sequence with a single mark in it, which is most of them.
+ *
+ * Two models are audited and not six, because two are exposed. Only `array-operations` and
+ * `operations` draw `field.enable` and `field.disable`, and they are the generators the positional,
+ * keyed and history campaigns use; the nested, sibling and keyed-nested campaigns draw from
+ * `field-values`, which states no bindings at all. A model cannot be wrong about a rule its campaign
+ * never exercises, and when one of them starts drawing bindings this file is where its audit goes.
  */
 
 import { battle } from "../harness/battle.mjs";
