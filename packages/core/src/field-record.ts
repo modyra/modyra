@@ -272,6 +272,27 @@ export function createAsyncRunner(
       });
       return;
     }
+    // A server is asked only about a value the field's own rules accept.
+    //
+    // Typing a tax id one group at a time — `minLength(11)`, a pause between groups — sent four
+    // requests, for `""`, `"I"`, `"IT"` and `"IT1"`. The form already knew all four were too short
+    // to be a tax id, and asked anyway. The debounce is not the answer: it limits how *often* a
+    // settled value is sent, and a settled prefix is still a prefix.
+    //
+    // `when` could suppress them, and doing so means restating in a second predicate what the field
+    // has already declared — two truths that drift in silence the moment `minLength` changes. This
+    // is the rule the field states, applied once.
+    const refusedHere = Array.from(rec.validators().values()).some((list) =>
+      list.some((fn) => readMessages(fn(v), rec.warn).length > 0),
+    );
+    if (refusedHere) {
+      rx.untracked(() => {
+        rec.pending.set(false);
+        // A verdict about a value that is no longer there is not a verdict about this one.
+        rec.asyncErrors.set([]);
+      });
+      return;
+    }
     // Pending covers the whole debounce+run window, so canSubmit stays
     // false while a check is outstanding.
     rx.untracked(() => rec.pending.set(true));
