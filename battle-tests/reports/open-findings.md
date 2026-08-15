@@ -886,3 +886,39 @@ The nine reduce to two families, both now filed with reductions: finding 43 and 
 were not audited at all, which is where this lived. `generative/nested-model-audit.battle.test.mjs`
 now holds the smallest rule that would have caught it — a write reaches the cell it names, at every
 depth the model declares — and is falsified by putting the off-by-one back.
+
+## 45. Closing on Tab puts focus back, and the Tab is undone
+
+`browser/a-combobox-in-a-page.spec.ts:71` — the assertion already exists and passes on the one engine
+the tier runs. It fails on Firefox.
+
+The spec's own comment names the shape: "A control that closed and kept focus is the same trap more
+politely." That is what happens. Tab out of an open combobox in Firefox: the list closes,
+`aria-expanded` goes to `false`, and focus is still on the trigger.
+
+**Not the platform.** macOS restricts Tab between buttons in some engines, which would explain it away,
+so it was measured directly in the same page:
+
+| | Firefox | WebKit |
+| --- | --- | --- |
+| bare `<button>` → bare `<button>` | **moves** | skips to the input |
+| the combobox **closed** → next control | **moves** | moves |
+| the combobox **open** → next control | **stays on the trigger** | moves |
+
+Firefox tabs between bare buttons and tabs out of the closed trigger. It only fails when something
+closed on the way out. WebKit does not tab between bare buttons at all, which is the macOS
+convention — so WebKit passing this is partly its own behaviour rather than the widget's.
+
+The probable mechanism, stated as probable: closing restores focus to the trigger, and nothing
+distinguishes *why* it closed. Restoring is right for Escape — the Escape test asserts it and passes
+on every engine — and wrong for Tab, where the user has already said where they are going. The
+ordering of the restore against the browser's own focus move is what decides whether it is visible,
+which is why one engine sees it and two do not.
+
+**The tier runs one engine.** `battle-tests/playwright.config.ts` declares a single project and says
+why: it "must be free to run alone, on one engine". Running the same twenty-eight specs on WebKit and
+Firefox produced exactly one Modyra-attributable difference — this one. Every other failure is the
+same on all three, and every other pass is too.
+
+Adding a project changes what `npm run battle:browser` does, and CI runs it, so it is reported rather
+than made.
