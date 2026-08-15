@@ -308,3 +308,56 @@ agrees with the engine.
   nothing, so `observerFor` says nothing about a handle from the other copy.
 - `generative/properties/keyed-nested.property.test.mjs` — `record.upsert` on an existing key keeps
   nested rows and nulls their cells, where a remove-then-upsert behaves as documented.
+
+## 25. Three artefacts disagree about which document versions exist
+
+`adversarial/dynamic-contract/the-versions-nobody-published.battle.test.mjs`
+
+The parser accepts envelope versions 1, 2 and 3, plus a bare field array. `spec/` publishes a schema
+for 2 and 3. Neither of the remaining two shapes is described by anything an editor can read.
+
+That would be a documentation gap and not much more, except for which version it is:
+`docs/guides/ai-generated-forms.md` tells a model, in the prompt it publishes for copying, to respond
+with `{ "version": 1, "fields": [ ... ] }`, and names the bare array as accepted. So the recommended
+path is the underlined one. `scripts/audit-contract-schema.mjs` states in its own header why that
+costs more than it looks: the schema is the only diagnostic an author writing JSON gets for free, and
+one that rejects a valid document teaches them to distrust it.
+
+The audit cannot see this. It walks `spec/fixtures/dynamic-form/*` and reports a corpus with no
+schema; there is no `v1/` corpus, so there is nothing for it to walk.
+
+Green when a v1 schema is published, or when the parser stops taking a version nothing describes.
+Both sides are measured in the battle — the versions by probing the parser, the schemas by reading
+the directory — so neither can drift away from it silently.
+
+## 26. A refusal that names a cause the document does not have
+
+`adversarial/dynamic-contract/refused-for-the-wrong-reason.battle.test.mjs`
+
+`spec/fixtures/dynamic-form/v3/placement.json` with its version number moved to 2 is refused, which is
+correct: the v2 schema's own description says a placement slot and a section's per-size placement are
+"both of which the parser refuses below v3". It is refused as `MDY_DYNAMIC_UNKNOWN_FIELD_REFERENCE`,
+twice. All five names the fixture references — `first`, `last`, `street`, `city`, `notes` — are
+declared in the same document. An author reads that and goes looking for a typo that is not there.
+
+`MDY_DYNAMIC_UNSUPPORTED_VERSION` is already in `MDY_DYNAMIC_DIAGNOSTICS` and already fires for a
+version the parser does not know. It is not reached when the version is known and the construct is one
+that version predates, which is the case where the author most needs to be told what is wrong.
+
+The battle asserts the refusal as well as the cause, so accepting the document is not a way to turn it
+green.
+
+## Closed since this file was written
+
+- **A document's pattern could stop the form answering** —
+  `adversarial/security/document-patterns.battle.test.mjs` was red and is now green.
+  `MDY_DYNAMIC_PATTERN_TOO_COSTLY` is published in `MDY_DYNAMIC_DIAGNOSTICS`, ADR 0050 records the
+  decision, and all three catastrophic patterns now answer inside the 1s budget in a clean child
+  process.
+
+## Not a finding, but stale
+
+`scripts/audit-contract-schema.mjs` says in its header that checking whether the schema accepts each
+fixture "needs a JSON Schema validator, which is a dependency this repository does not carry". Line 28
+imports `ajv/dist/2020.js` and line 125 does exactly that check. The comment describes the file before
+`34a87f9e`.
