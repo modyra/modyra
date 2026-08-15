@@ -1,7 +1,7 @@
 import { mdyPart } from "../mdy-part.js";
 import { html, type PropertyDeclarations } from "lit";
 import { type MdyFieldConstraints, type MdyFieldHandle } from "@modyra/core";
-import { MDY_CSS_PROPERTIES, sliderFillRatio, sliderTrack } from "@modyra/widgets";
+import { MDY_CSS_PROPERTIES, blocksValueChange, sliderFillRatio, sliderTrack } from "@modyra/widgets";
 import { MdyFieldElement } from "../base.js";
 
 // ─── Slider ──────────────────────────────────────────────────────────────────
@@ -70,7 +70,17 @@ export class MdySliderFieldElement extends MdyFieldElement<number> {
         ${mdyPart(this.controlPart(handle))}
         .value=${String(value)}
         @input=${(e: Event) => {
-          handle.set((e.target as HTMLInputElement).valueAsNumber);
+          const range = e.target as HTMLInputElement;
+          // A read-only field is fully in play — submitted, validated, reachable — and the one thing
+          // it does not do is change. `<input type="range">` ignores the native `readonly`
+          // attribute, so the refusal has to be made here, and the thumb put back where the value
+          // still is: a rail that slides and then reports the old number shows one thing and holds
+          // another.
+          if (blocksValueChange(handle.interactivity())) {
+            range.value = String(handle.value() ?? min);
+            return;
+          }
+          handle.set(range.valueAsNumber);
           handle.markAsDirty();
         }}
         @change=${() => handle.markAsTouched()}
