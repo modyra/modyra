@@ -26,6 +26,16 @@ function valueAt(value: Record<string, unknown>, path: string): Record<string, u
   return isRecordValue(current) ? current : {};
 }
 
+/** Whether a whole value names a path at all — distinct from naming it and holding null. */
+function namesPath(value: unknown, path: string): boolean {
+  let current: unknown = value;
+  for (const part of path.split(".")) {
+    if (!isRecordValue(current) || !Object.hasOwn(current, part)) return false;
+    current = current[part];
+  }
+  return true;
+}
+
 /** What a handle reports while it has no field: no rule, so no constraint to offer. */
 import {
   collectSchemaPaths,
@@ -807,9 +817,22 @@ export abstract class MdyTypedFormBase<
   }
 
   setValue(value: MdyFormValue<S>): void {
+    // The write with the widest reach in the surface, and the one most likely to be handed a server
+    // response of the wrong shape. A value that is not the whole value is refused here: below, every
+    // declared path reads `undefined` out of it, which the engine would take as "not named" and
+    // answer by emptying the form the caller meant to fill.
+    if (typeof value !== "object" || value === null || Array.isArray(value)) {
+      throw new Error(
+        "[modyra] setValue takes the whole form value as an object, received " +
+        `${value === null ? "null" : Array.isArray(value) ? "an array" : `a ${typeof value}`}.`,
+      );
+    }
     const flat: Record<string, unknown> = {};
     for (const path of this._leafPaths) {
-      flat[path] = this._pathGet(value, path);
+      // `undefined` where the value does not name the path at all, which the engine reads as "not
+      // named" and answers with the field's initial. Reading it out instead would say `null` for a
+      // path that is absent and for one that is present and null alike.
+      flat[path] = namesPath(value, path) ? this._pathGet(value, path) : undefined;
     }
     // Plain fields first — replace semantics null out stale array rows too,
     // which the array setAll below then rebuilds with the new values.
