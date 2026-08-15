@@ -7288,3 +7288,26 @@ could not tell them apart and reported five icons — every chevron, both spinne
 the grid. None of them is. Parsing path data properly is out of proportion to what it would protect,
 so the check is absent and said to be absent rather than left in a weaker form that looks like
 coverage.
+
+### Dismissed: the one published custom property outside the namespace
+
+`MDY_CSS_PROPERTIES` declares fourteen custom properties. Thirteen are `--mdy-*`. One is not:
+`control.dialIndex` is **`--index`** (`packages/widgets/src/css.ts:66`), written by both renderers on
+each number of a timepicker dial and read by every shipped theme
+(`rotate(calc(var(--index)*30deg))`).
+
+Custom properties inherit, so the obvious attack is an application that already uses `--index` — a
+carousel, a grid, anything counting children — wrapping a form. Measured: an ancestor carrying
+`--index: 99` changes nothing. Each dial number sets its own before reading it, so the inherited value
+is shadowed on every element that reads it, and the numbers keep their own 12, 1, 2, 3.
+
+**Dismissed as a defect, kept as a note.** The exposure would need an element that reads `--index`
+without setting it, and there is none. What remains is a naming inconsistency in a published
+contract, worth one line if that file is ever opened for another reason. Recorded so the next hunt
+does not spend the measurement.
+
+The other half of the same sweep is not a finding either: the shipped stylesheets read ~509
+`--mdy-*` properties that `MDY_CSS_PROPERTIES` does not declare — `--mdy-radius`, `--mdy-tp-primary`,
+`--mdy-input-disabled-bg` and so on. Those are read with fallbacks and defined nowhere in the package:
+they are the theming surface a consumer fills in, not properties a renderer must set. The fourteen
+are the ones a *renderer* writes.
