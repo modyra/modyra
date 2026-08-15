@@ -106,8 +106,12 @@ export function createKeyedNestedReferenceModel({ orderCells, lineCells, allocat
         const line = order.lines[Number(index)];
         if (!line) return model;
         if (third === ALLOCATIONS) {
+          // `orders.a.lines.0.allocations.0.bin` — the allocation's index is segment five and the
+          // cell it names is segment six. Reading the index as the cell drops every write at this
+          // depth, silently: the model reports the value the row was declared with for the rest of
+          // the run, and the campaign calls the engine wrong for having taken the write.
           const allocation = line.allocations[Number(fourth)];
-          const cell = String(operation.path).split(".")[5];
+          const cell = String(operation.path).split(".")[6];
           if (allocation && allocationNames.includes(cell)) allocation[cell] = operation.value;
           return model;
         }
