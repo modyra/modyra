@@ -5478,3 +5478,31 @@ belongs to the later kind.
 
 Classification: Modyra bug, S1 by A11Y-004 — a role the package's own table says must be named, in
 three of the twelve widget-and-renderer pairs measured, is not.
+
+## Checked and clean: the last of the published widget tables
+
+Three swept in one pass, and all three hold.
+
+**`MDY_POPUP_OPENERS`** declares, per kind, which part opens the popup, which part it controls, and
+the opener's role. Both renderers honour it: every opener carries the declared role where one is
+declared, `aria-controls` names the declared part — `f__listbox`, `f__grid`, `f__popup` — and every
+reference resolves.
+
+They differ in *when*, for a reason. Plain carries `aria-controls` whether the popup is open or shut;
+lit adds it on opening and its popup does not exist before then, which is the same fact seen twice.
+Lit's `select` never carries one at all, because it is a native `<select>` with no popup element to
+name. None of that is a promise the table makes.
+
+**`MDY_CHIP_CLASSES`** — eleven names, and a multiselect holding two of three options renders
+identically in both: three chips, three `centered`, three `check`, three `label`, three `wrapper`, and
+exactly **two** `selected`, which is the value. The five that do not appear — `counter`, `value`,
+`removable`, `count`, `step` — belong to chip configurations this probe did not create, so their
+absence says nothing.
+
+**`MDY_FORM_SHELL_STRUCTURE`** is pinned rather than merely measured, in finding 56's spec: the
+region a form-level refusal arrives in is a `status`, with one item per error, in both renderers.
+
+With these, every table `@modyra/widgets` publishes has been read against a page or against the
+functions that produce one. What that leaves is the thing worth saying: **the tables are right and the
+renderers disagree about them** — findings 106, 107, 109 and 110 are each a table whose declaration
+one renderer keeps and the other does not, and 109 runs the opposite way from the rest.
