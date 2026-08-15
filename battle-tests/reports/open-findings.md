@@ -9835,3 +9835,30 @@ not the invariant PER-002 is about.
 - **An undo reaches the draft.** After three edits and an undo, the draft holds the undone value — the
   draft follows the model rather than the last edit, which is what makes the loss above possible and
   is also what a consumer would want everywhere else.
+
+## Checked and clean: the live region every adapter announces through
+
+**Battle:** `battle-tests/browser/the-same-thing-said-twice.spec.ts` — 2 tests, both green. No finding.
+`createMdyAnnouncer` was named by two files in this suite and asserted by neither.
+
+- **Lazy, shared, polite.** Nothing exists in the page until somebody announces; the region is
+  `aria-live="polite"`, carries `data-mdy-shared-region`, and two callers with the same id get one
+  element.
+- **Hidden from sight, not from a reader.** `position: absolute`, one pixel square, `overflow: hidden`,
+  `clip: rect(0,0,0,0)` — and crucially **not** `display: none`, **not** `visibility: hidden`, **not**
+  `aria-hidden`. Any of those three would hide it from both, and a region nobody hears is worse than
+  no region because the code around it looks finished.
+- **The same message announced twice is announced twice.** A reader reacts to a live region changing,
+  so writing an identical string is silence. The implementation replaces the text node —
+  `childList` remove then add — rather than assigning the same text, which is the standard fix.
+
+### The instrument is the point of this one
+
+An earlier version of this measurement compared `textContent` across two announcements, found it
+identical, and read that as "the second announcement is silent". It was one step from a filed defect
+that does not exist. What separates the two is watching **mutations** rather than text: the rendered
+text is the same either way, and only what the DOM did between them tells a working announcer from a
+broken one.
+
+The host gained `announce(regionId, message)` so a published widget helper that needs a document can
+be asked something without a form owning it.
