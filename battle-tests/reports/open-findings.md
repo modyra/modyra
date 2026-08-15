@@ -3946,3 +3946,58 @@ page clean — which is how the first version of this battle reported one guide 
 
 81 was this sentence in the refusal message, and was repaired where it was written. These two were
 not, which is the ordinary shape of a decision that lands in code before it lands in prose.
+
+## 88. Three commands the project defines and no workflow runs, one of them red
+
+Finding 36 found one tier nothing runs. This is the same question asked of every script in
+`package.json`, and the answer is larger. Resolving each workflow's `npm run`/`pnpm run` and then
+following the scripts those call, the set no workflow reaches contains three checks:
+
+| Command | What it runs | Measured now |
+| --- | --- | --- |
+| `lint` | `eslint .` | **27 errors, 11 warnings, exit 1** |
+| `test:styles` | `packages/styles/test/*.test.mjs` | 32 tests, 32 pass |
+| `test:guides` | `docs/examples/*/*.test.mjs` | 34 tests, 34 pass |
+
+The two green ones are not optional extras. `npm run test` is defined as seven members, and CI runs
+five of them:
+
+```
+test:core  test:adapters  test:widgets  test:contracts  test:angular   ← run by a job
+test:styles  test:guides                                              ← run by nothing
+```
+
+So the command a person runs before pushing checks strictly more than the pipeline that decides
+whether the push is good. Sixty-six tests are green today with nothing watching them, and
+`@modyra/styles` is a published package.
+
+`lint` is the one that has already gone. Thirteen of its errors were this suite's own and are fixed
+(`bc26de6e`); the twenty-seven left are elsewhere:
+
+- **16 in published package source** — `packages/zod/src/index.ts` (2 unused type parameters),
+  `packages/studio-ui/src/index.ts` (2), `packages/core/src/vanilla-reactivity.ts`,
+  `packages/core/src/dynamic/pattern-cost.ts`, `packages/plain/src/fields/multiselect-field.ts`,
+  `packages/solid/src/reactivity.ts`, `packages/studio-contract/src/compile.ts`,
+  `packages/react/src/dynamic/dynamic-form.ts` (`react-hooks/exhaustive-deps`), plus 5 in
+  `packages/angular/src/lib/core/typed-form.types.spec.ts` and one Angular renderer;
+- **11 in `site/.astro/`**, which is generated and looks like it wants an ignore entry rather than a
+  repair.
+
+Nine of the eleven warnings are the part worth reading twice: `@angular-eslint/template/
+click-events-have-key-events` and `interactive-supports-focus`, on the select, segmented-button,
+overlay-panel, timepicker-clock and devtools components. A11Y-001 is a registered claim; the browser
+tier audits lit and plain with axe and does not cover Angular; and by finding 36 the Angular tier
+runs in no job either. **Angular's accessibility evidence rests on a linter nobody runs and a tier
+nobody runs.**
+
+Also unreached, and named here so the list is complete rather than because each is equally serious:
+`test:conformance-browser`, `contract:diff`, and `test:perf` — which is `jest -c … || true` and so
+reports success whatever it finds, run or not. `test:docs`, which enforces the ADR rule, *is*
+reached, through `test:contracts`.
+
+Classification: not a framework defect. A verification gap, of the same kind as 36 and larger.
+
+The permanent form of this one is a gate rather than a battle: something that fails when a member of
+`npm run test` is not reached by a workflow. That belongs in `scripts/` and in the workflow set, both
+of which are frozen and are not this suite's to change — which is why it is filed here rather than
+built.
