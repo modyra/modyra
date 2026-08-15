@@ -2397,8 +2397,8 @@ later under the same name.
 
 ## 72. A Zod schema that describes no form, and the internal that reaches the consumer
 
-`adversarial/schema-adapters/a-schema-that-is-not-an-object.battle.test.mjs` — 2 green, 1 red.
-**S2**, under API-001.
+`adversarial/schema-adapters/a-schema-that-is-not-an-object.battle.test.mjs` — **green, closed**,
+verified here; closed by 73's repair rather than separately. Was 2 green, 1 red, S2 under API-001.
 
 A form has named fields, so a schema that is not an object has no fields to name. `z.array(...)`,
 `z.string()` and `z.tuple([...])` are all legitimate Zod schemas and none of them describes a form.
@@ -2451,8 +2451,8 @@ because a change to it would change what a payload means without any type moving
 
 ## 73. The first door a consumer touches
 
-`adversarial/validation/the-first-door-a-consumer-touches.battle.test.mjs` — 1 green, 1 red. **S2**,
-and finding 72 is its Zod-shaped instance.
+`adversarial/validation/the-first-door-a-consumer-touches.battle.test.mjs` — **green, closed**,
+verified here. Was 1 green, 1 red, S2; finding 72 is its Zod-shaped instance and closed with it.
 
 ADR 0057 is called *an argument is refused where it arrives*, and it hardened seven entry points for a
 reason it states plainly: a value that cannot be used should be refused at the call rather than left
@@ -2488,9 +2488,18 @@ values that currently build — say why nothing was built.
 
 ## 74. Four ways to turn the sanitiser off by accident
 
-`adversarial/security/four-ways-to-turn-it-off-by-accident.battle.test.mjs` — 2 green, 1 red.
-Filed **S2** under API-001. **The consequence is heavier than the number and the classification is
-worth arguing** — see below.
+`adversarial/security/four-ways-to-turn-it-off-by-accident.battle.test.mjs` — **green, closed**,
+verified here. Was 2 green, 1 red, S2 under API-001, with the security consequence noted below.
+
+```
+createForm({ a: field("") }, { security: "strict" })
+  → [modyra] security takes a policy object, received a string: { sanitize, maxValueLength, onViolation }
+```
+
+**The battle had to be corrected before it could see the repair.** Its helper read only the built
+path, so a refusal at the call — one of the two repairs the battle explicitly admits — arrived as a
+throw that killed it. Reading only the outcome you expected turns a repair into a crash in the test
+that asked for it. Same class as finding 64's assertion reading a report instead of an effect.
 
 The sanitiser is an option, its profile is a closed set — `"off" | "text" | "strict"` or a function —
 and **off is the default**, deliberately: a form library that rewrote values uninvited would be worse

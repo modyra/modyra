@@ -40,19 +40,25 @@ async function writtenUnder(options) {
   console.warn = (...parts) => said.push(parts.join(" "));
   console.error = (...parts) => said.push(parts.join(" "));
 
+  // A refusal at the call is one of the two repairs this battle admits, so it is an outcome to be
+  // read rather than a throw to escape. Reading only the built path would turn the repair into a
+  // crash in the battle that asked for it.
   let held;
+  let refused = null;
   try {
     const form = createForm({ a: field("") }, { devWarnings: true, ...options });
     form.f.a.set(MARKUP);
     await settled();
     held = form.getValue().a;
     form.destroy();
+  } catch (error) {
+    refused = String(error?.message ?? error);
   } finally {
     console.warn = realWarn;
     console.error = realError;
   }
 
-  return { held, said, inert: !/[<>]/.test(String(held)) };
+  return { held, said, refused, inert: refused !== null || !/[<>]/.test(String(held)) };
 }
 
 battle(
@@ -75,7 +81,7 @@ battle(
     // The second control, and a boundary on the repair: no option means no sanitising, on purpose. A
     // fix must not become "sanitise by default", which is a larger change than this asks for.
     const untouched = await writtenUnder({});
-    expectClaim(!untouched.inert && untouched.said.length === 0, {
+    expectClaim(untouched.refused === null && !untouched.inert && untouched.said.length === 0, {
       claimIds: ["API-001"],
       what: "a form with no security option sanitised anyway, or complained about not being asked to",
       detail: JSON.stringify(untouched),
@@ -91,7 +97,11 @@ battle(
     ]) {
       const outcome = await writtenUnder(options);
       ctx.log.note("a sanitiser asked for badly", { what, ...outcome });
-      if (!outcome.inert && outcome.said.length === 0) missed.push({ what, held: String(outcome.held) });
+      // Satisfied by any of the three: refused at the call, reported, or actually sanitising. Missed
+      // is the fourth — markup kept, with nothing said.
+      if (outcome.refused === null && !outcome.inert && outcome.said.length === 0) {
+        missed.push({ what, held: String(outcome.held) });
+      }
     }
 
     // Either repair closes it: refuse the option, or say that nothing was installed. What this
