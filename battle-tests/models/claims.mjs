@@ -195,6 +195,17 @@ const CLAIMS = [
     ],
   },
   {
+    id: "DYN-004",
+    title: "A slot the parser validates and accepts changes the form it describes.",
+    area: "dynamic-contract",
+    severity: "S0",
+    publicEvidence: [
+      "@modyra/core MdyDynamicRule — a rule fires an effect on the field it names",
+      "@modyra/core parseDynamicForm strict mode — a partly valid document is never accepted",
+      "docs/guides/ai-generated-forms.md — the worked example a generated document is written against",
+    ],
+  },
+  {
     id: "REA-001",
     title: "Every handle a form hands out is observed through its owning runtime.",
     area: "reactivity",
