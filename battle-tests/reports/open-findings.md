@@ -4412,3 +4412,52 @@ popup that is not in the document until it is opened. Both of its controls earn 
 first run of the opened pass reported that nothing had opened in lit rather than reporting no
 dangling references, because lit renders `select` as a native control and the click had gone to an
 input.
+
+## 95. A form that validates like the schema and submits something else
+
+`differential/schemas/what-the-schema-says-the-value-is.test.mjs` — 1 red, 1 green.
+
+Zod is its own oracle: the same value goes through `schema.safeParse` and through the form
+`createZodForm` derives from it, and the two answers are compared. On what is *allowed* they agree
+everywhere measured — `min`, `max`, `length`, `regex`, `startsWith`, `endsWith`, `int`, `positive`,
+`multipleOf`, `enum`, `literal`, `email`, `url`, `uuid`, `refine`, `superRefine`, union, optional,
+nullable, and a transform behind a `pipe`. Thirty-eight cases, no disagreement. That is the green
+battle and it is what makes the red one specific.
+
+They do not agree on what the value **is**:
+
+| piece | `safeParse` produces | the form holds and submits |
+| --- | --- | --- |
+| `z.string().trim()` | `"padded"` | `"  padded  "` |
+| `z.string().transform(…)` | `"abc"` | `" a b c "` |
+| `z.number().min(5).catch(99)` | `99` | `1` |
+| `z.coerce.number()` | `42` | `"42"` |
+| `z.coerce.boolean()` | `true` | `"yes"` |
+| `z.string().transform(v => v.length)` | `4` | `"abcd"` |
+| `z.string().transform(v => v.split(","))` | `["a","b"]` | `"a,b"` |
+
+Seven of seven. `.default()` is the one transforming construct that is carried.
+
+A form holding what the person typed would be a defensible choice. What makes it a finding is what
+the package publishes about it. The leaf type is declared twice — in `MdyZodSchemaTree` and in
+`MdyZodItemDescriptor` — as `MdyFieldDescriptor<z.output<Piece> | null>`, and the comment above it
+says so in words: *"every other schema becomes a leaf field typed `z.output<Piece> | null`"*.
+`z.output` is the type **after** the transformations that are not applied. So for the last four rows
+the declared type and the held value are different kinds of thing: `z.coerce.number()` declares
+`number | null` and holds a string. A consumer whose server is typed from `z.infer<typeof schema>`
+receives a string where the contract says number, and nothing on either side reports it.
+
+`docs/guides/schemas.md` is this adapter's guide. In eighty-six lines it does not mention
+transformations, coercion, or any difference between a form's value and a schema's output.
+
+Classification: Modyra bug — not because the value is untransformed, but because the published type
+says it was.
+
+Three repairs, and the battle accepts any: apply the schema's transformations to the value, refuse to
+derive a form from a transforming schema, or declare the leaf as `z.input` so the type describes what
+is really there. It reads the published `.d.ts` — located through `import.meta.resolve("@modyra/zod")`,
+so it asks the package where its own types are — precisely so the third repair turns it green rather
+than leaving it red forever.
+
+Nothing in this suite had used Zod's own verdict as an oracle before: `safeParse` appears in no other
+battle.
