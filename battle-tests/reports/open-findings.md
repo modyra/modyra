@@ -6179,10 +6179,28 @@ value to make itself consistent, and rewriting on mount is what that forbids. Th
 of it: a press is the user asking for a change, and removing one of three is not the change they
 asked for.
 
-**The fork the contract does not resolve.** Either `option[]` is a set — and the whitelist, which
-already walks every entry, is where a repeat is refused — or it is not, and unselecting an option
-removes the option rather than one copy of it. Neither holds today. Whichever is chosen is a decision
-for the owning session; the spec asserts only the user-visible half, which is true under both.
+**The contract already decides it — corrected after filing.** This was first written as a fork the
+contract had not resolved. It had. `multiselectValueTransition(values, intent, keyFor)` is published,
+and its intents are measured rather than read:
+
+```
+["a","a","a"] + {type:"toggle",    value:"a"}  → []                  every occurrence
+["a","a","a"] + {type:"decrement", value:"a"}  → ["a","a"]           one occurrence
+["a","a","a"] + {type:"increment", value:"a"}  → ["a","a","a","a"]   appends, duplicates allowed
+["a"]         + {type:"toggle",    value:"b"}  → ["a","b"]
+```
+
+The default branch — a bare intent with no type — is the toggle, and it removes **all** occurrences.
+So `option[]` is deliberately a multiset (`MDY_CHIP_CLASSES` carries `counter`, `count` and `step` for
+exactly that), and a chip in counter mode steps it by one while a toggle chip clears the option.
+
+The chip measured here carries `mdy-chip mdy-chip--centered mdy-chip--selected` and **not**
+`mdy-chip--counter`. It is a toggle chip, and pressing it removed one occurrence. Both renderers do
+the same, so both send `decrement` where the published transition says a toggle sends the toggle.
+
+That makes this a renderer not using its own published transition rather than a contract with a hole
+in it — a smaller fix and a clearer one. The spec's assertion did not change: pressing a toggle chip
+once leaves it unpressed and the value empty. The test was right and the explanation was wrong.
 
 **How the value gets there.** Not from the control, which cannot produce it: a document's
 `initialValue`, a restored draft, a server round trip, or an application calling `set`.
