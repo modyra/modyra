@@ -903,7 +903,7 @@ export abstract class MdyTypedFormBase<
     if (given.length > 0 && unknown.length === given.length) {
       throw new Error(
         `[modyra] setValue names none of this form's fields: ${unknown.map((key) => `"${key}"`).join(", ")}. ` +
-        "Pass {} to empty the form deliberately.",
+        "Pass {} to return every field to its initial deliberately.",
       );
     }
     // Some named, some not: what matched is written, and the rest is said rather than dropped —

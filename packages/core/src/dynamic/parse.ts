@@ -201,6 +201,16 @@ function hasValidOptions(options: unknown): options is ReadonlyArray<MdySelectOp
     if (typeof option !== "object" || option === null) return false;
     const candidate = option as Partial<MdySelectOption<unknown>>;
     if (!("value" in candidate)) return false;
+    // The shapes the published schema allows: a scalar, or an object keyed by what it holds
+    // (ADR 0051, which is why an object is a legitimate option value and not a mistake).
+    //
+    // `null` is refused because it is the empty value of half the kinds — an option meaning "nothing"
+    // cannot be told apart from no choice at all. An array is refused because the schema an author's
+    // editor checks against does not allow one, and a document the editor underlines while the
+    // runtime accepts is a document whose two readers disagree.
+    const value = candidate.value;
+    if (value === null || Array.isArray(value)) return false;
+    if (!["string", "number", "boolean", "object"].includes(typeof value)) return false;
     if (typeof candidate.label !== "string") return false;
     if (
       candidate.disabled !== undefined &&

@@ -232,9 +232,19 @@ export function buildDynamicFormSchema(schema: MdyDynamicGroupNode): MdyFormSche
   // about converting null, which names neither the argument nor this call.
   if (typeof schema !== "object" || schema === null || Array.isArray(schema)) {
     throw new Error(
-      `[modyra] buildDynamicFormSchema takes a parsed document's root node, received ${
+      `[modyra] buildDynamicFormSchema takes a document's root group node, received ${
         schema === null ? "null" : Array.isArray(schema) ? "an array" : `a ${typeof schema}`
-      }. Parse the document first: parseDynamicForm(document).schema.`,
+      }. It is the document's own \`schema\`: buildDynamicFormSchema(document.schema).`,
+    );
+  }
+  // A group with nothing in it is the shape this refusal exists for — an empty document, or a
+  // section someone left half-written — and it was the one shape that missed it: reading `children`
+  // off an object that has none reached `Object.entries(undefined)` and raised an internal.
+  const children = (schema as { children?: unknown }).children;
+  if (typeof children !== "object" || children === null || Array.isArray(children)) {
+    throw new Error(
+      "[modyra] buildDynamicFormSchema takes a document's root group node, and this one declares no " +
+      "children. It is the document's own `schema`: buildDynamicFormSchema(document.schema).",
     );
   }
   /**
