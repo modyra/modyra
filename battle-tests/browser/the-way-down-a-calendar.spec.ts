@@ -106,6 +106,48 @@ for (const host of HOSTS) {
     await page.waitForTimeout(340);
     expect(await shown(), "choosing a year did not land on that year's months").toBe(calendarViewAfterPick("years"));
 
+    /**
+     * And the year already shown, which is the same move.
+     *
+     * `calendarViewAfterPick` takes the view and nothing else: there is no case for "you picked the
+     * one that was already selected". A calendar that treats it as a cancel sends someone who opened
+     * the years to change the *month* back to the days without ever showing them.
+     *
+     * On its own field, because the walk above left this one on the days.
+     */
+    // The first field goes first: the locators below look across the page, because one renderer
+    // places its overlay outside the field, and two calendars on a page make every one of them
+    // ambiguous.
+    await page.evaluate(({ api }) => {
+      const battle = window as never as Record<string, { dispose(i: string): void; mountFields(i: string, f: unknown[]): unknown }>;
+      battle[api].dispose("cv");
+      battle[api].mountFields("same", [{ name: "x", kind: "datepicker", label: "X", initialValue: "2026-04-03" }]);
+    }, { api: host.api });
+    await page.waitForTimeout(320);
+
+    for (const selector of ['[data-form="same"] [aria-haspopup]', '[data-form="same"] button', '[data-form="same"] input']) {
+      const candidate = page.locator(selector).first();
+      if (await candidate.count() === 0) continue;
+      await candidate.click({ force: true }).catch(() => undefined);
+      await page.waitForTimeout(300);
+      const open = await page.evaluate(() =>
+        document.querySelector('[data-form="same"] [aria-expanded="true"]') !== null);
+      if (open) break;
+    }
+
+    await inCalendar(/\w+\s+\d{4}/).first().click();
+    await page.waitForTimeout(340);
+
+    const current = inCalendar(/^\s*2026\s*$/).first();
+    expect(await current.count(), "the years view does not offer the year the field holds").toBeGreaterThan(0);
+    await current.click();
+    await page.waitForTimeout(340);
+
+    expect(
+      await shown(),
+      "picking the year already selected skipped the months, so a person changing only the month cannot reach them",
+    ).toBe(calendarViewAfterPick("years"));
+
     const month = inCalendar(/^\s*[A-Za-zÀ-ÿ]{3,}\s*$/).first();
     expect(await month.count(), "the months view offered no month to choose").toBeGreaterThan(0);
     await month.click();

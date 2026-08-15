@@ -8063,3 +8063,47 @@ every kind look like a read-only field behaving perfectly.
 did not, for all five kinds. The finding above was measured only after the control passed. The
 controls are now named per kind — `input[type="range"]`, `input[type="checkbox"]`,
 `input[type="radio"]` — rather than found generically.
+
+## 146. The year you already had is not a way out
+
+**Severity** S3 · **Classification** a case the published state machine does not have · **Spec**
+`browser/the-way-down-a-calendar.spec.ts` (red for one renderer, green for the other) · **Claims**
+UI-002
+
+`calendarViewAfterPick(mode)` takes the view and nothing else. There is no parameter for *which*
+year was picked, and so no case for "you picked the one that was already selected": from the years,
+choosing lands on the months, always.
+
+```
+                 picking a different year   picking the year already shown
+plain            → months                   → days                       ✗
+lit              → months                   → months
+```
+
+One renderer treats picking the current year as a cancel and drops back to the days. The person it
+costs is the one who opened the years in order to change the **month**: they choose the year they
+already have, expecting the months, and are returned to the day grid without ever seeing them. Their
+way through is to pick a year they do not want and come back.
+
+Small, and filed as small. It is here because the published machine is unambiguous and one line long,
+and because a shortcut that reads as helpful in the code is the kind of thing nobody re-derives from
+the contract afterwards.
+
+**The spec passed over it until now.** It picked the fifth year in the list — a different one — so the
+case never arose. The check is on its own mount, with the first calendar disposed first: the locators
+look across the page, because one renderer puts its overlay outside the field, and two calendars make
+every one of them ambiguous.
+
+### Checked and clean: which day, month and year a calendar says is chosen
+
+`aria-selected` is declared by `calendar-view-a11y.ts` for exactly this, with a comment saying why a
+class alone will not do. Measured in both renderers, in all three views:
+
+```
+days     42 cells, all carry the attribute, true on the 3rd — and on the 3rd and 9th for a range
+years    207 cells, all carry it, true on 2026
+months   12 cells, all carry it, true on April
+```
+
+Both renderers, every view, the right cells. A selected day marked only by a class would be invisible
+to a screen reader; it is not.
