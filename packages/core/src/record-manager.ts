@@ -406,12 +406,24 @@ export class MdyRecordManager implements MdyNestedCollection {
     this._deps.engine.carryBindings(
       leaves.map((suffix) => [`${this._deps.path}.${from}${suffix}`, `${this._deps.path}.${to}${suffix}`] as const),
     );
+    // Where the row sits among its siblings, before it moves. A rename changes a row's key, not its
+    // place in the list a person is looking at, and `remove` + `upsert` — which is how the move is
+    // carried out below — appends. Renaming the second of five would otherwise send it to the
+    // bottom, which is the one difference from remove-then-upsert nobody asked for.
+    const at = this._keysSig().indexOf(from);
     // The row leaves one key and arrives at another as one change: between the two it exists under
     // neither, and an eager runtime reading there sees a form the schema cannot describe.
     this._batched(() => {
       this.remove(from);
       this.upsert(to, value);
       this._writeFlags(to, flags);
+      this._keysSig.update((keys) => {
+        const others = keys.filter((key) => key !== to);
+        return [...others.slice(0, at), to, ...others.slice(at)];
+      });
+      // And the value reads its rows in the order their fields were registered, which the move has
+      // just changed. Both answer for the same list, so both follow the keys.
+      this._deps.engine.orderRowsUnder(this._deps.path, this.keysNow());
     });
   }
 
@@ -575,7 +587,11 @@ export class MdyRecordManager implements MdyNestedCollection {
 
   /** The declared keys as a plain array, for a sibling manager reading through this one. */
   keysNow(): readonly string[] {
-    return [...this._declared];
+    // The order `keys()` answers, not the order the set happens to hold: `_declared` is membership,
+    // the signal is the list. A rename moves a row within the list without leaving and re-entering
+    // the set, so the two differ exactly where the order is what is being asked about. Untracked
+    // because this is the answer now, for a caller that is not recomputing.
+    return this._deps.rx.untracked(() => this._keysSig());
   }
 
   private _readRow(key: string): unknown {
