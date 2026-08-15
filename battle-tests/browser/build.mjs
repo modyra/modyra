@@ -30,6 +30,36 @@ await build({
   logLevel: "warning",
 });
 
+// A second host, rendered by `@modyra/lit`. Separate page and separate bundle so the Plain host is
+// untouched: a spec that drives one must not be able to disturb the other.
+await build({
+  entryPoints: [join(BATTLE_ROOT, "browser", "host", "lit-entry.mjs")],
+  outfile: join(OUT_DIR, "lit-host.js"),
+  bundle: true,
+  format: "esm",
+  target: "es2022",
+  // `@modyra/lit` is a root dependency, so its published subpaths resolve as a consumer's would —
+  // no alias, which is what keeps this a consumer build.
+  logLevel: "warning",
+});
+
+writeFileSync(
+  join(OUT_DIR, "lit.html"),
+  `<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Modyra battle host (lit)</title>
+  </head>
+  <body>
+    <main id="stage"></main>
+    <script type="module" src="./lit-host.js"></script>
+  </body>
+</html>
+`,
+  "utf8",
+);
+
 writeFileSync(
   join(OUT_DIR, "index.html"),
   `<!doctype html>
