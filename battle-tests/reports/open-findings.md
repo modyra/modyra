@@ -5004,3 +5004,34 @@ unreachable when it fires perfectly well.
 
 Classification: Modyra bug, S2 by DYN-003 — a contract's findings are the parser's wherever they are
 reported, and three of them are reported under codes the contract does not publish.
+
+## 104. One code, two messages, and only one of them keeps the promise
+
+`adversarial/dynamic-contract/one-code-two-messages.battle.test.mjs` — 1 red.
+
+`MDY_DYNAMIC_DIAGNOSTICS` publishes, for each code, the `phrase` its message carries. That pairing is
+the only reason to publish a phrase: a consumer or a tool reacting to a kind of problem matches on it.
+
+Six of the seven keep it. `MDY_DYNAMIC_UNSAFE_NAME` keeps it from one document shape and not the
+other:
+
+```
+flat list   Dropped dynamic field "__proto__": name is reserved or contains forbidden path separators.
+tree        unsafe child name.
+```
+
+One code, two messages. The second carries no phrase, names no field and gives no reason. The `path`
+is populated in both — `/schema/children/__proto__` — so the information exists; what is missing is
+the thing the registry promises.
+
+The same holds for `a.b` and for an empty child name, so it is the shape and not the value. And it is
+the same family as the findings around it: the flat list is the well-served path and the tree is the
+poorer relation. Here it costs a sentence rather than a rule, which is why it is filed on its own
+rather than beside them.
+
+The control is that six other codes do carry their phrase, so this is a message that broke a promise
+rather than a promise nothing keeps.
+
+Classification: Modyra bug, S2 by DYN-003. Either resolution closes it: give the tree path the
+message the flat one has, or change the published phrase to one both carry — though a phrase that
+matched "unsafe child name." would stop describing the flat message.
