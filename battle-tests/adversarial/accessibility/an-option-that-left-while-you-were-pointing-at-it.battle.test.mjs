@@ -1,103 +1,162 @@
 /**
  * The list changed under the reading position.
  *
- * `setOptions` is the published route for changing what a select offers, and it is the same route in
- * all five adapters — none of them syncs a new list any other way. The reason to call it is almost
- * always the same one: the options arrived from somewhere, after the widget was on the page.
+ * Every widget controller is driven by two kinds of call: an intent, dispatched, and a setter, called
+ * directly. `subscribeController` is what every adapter re-renders on, and both kinds are supposed to
+ * reach it — a setter that changes the controller and tells nobody changes nothing a person can see.
  *
- * The controller records the new list. Nobody is told. `subscribeController` is what every adapter
- * re-renders on, and `dispatch` and `setValue` both fire it; `setOptions` alone does not. So the
- * screen keeps the old list until the user does something else, and `view()` keeps describing it.
+ * Swept across the published surface: ten controllers, thirty-one setters. Twenty-eight announce
+ * themselves. Three do not, and all three are on the select — `setOptions`, `setDescribedBy` and
+ * `setPopupRendered`. `setOptions` is the one that matters most, because it is the only published
+ * route for changing what a select offers and the reason to call it is nearly always that the options
+ * have just arrived from somewhere. It is also the one that settles what kind of defect this is:
+ * `createMultiselectFieldController` and `createOptionFieldController` both have `setOptions` and
+ * both announce it. So this is not a design in which lists are set quietly.
  *
- * The accessible consequence is the sharper half of that. Open the list, move to the last option,
- * and let a shorter list arrive: `aria-activedescendant` still names the option that left. A screen
- * reader is being pointed at an element that is not in the document — A11Y-001's case exactly, and
- * it does not resolve on settling, because settling is what never happens.
+ * The accessible consequence is the second battle. Open the list, move to the last option, let a
+ * shorter list arrive: `aria-activedescendant` still names the option that left. A screen reader is
+ * pointed at an element that is not in the document — A11Y-001's case exactly, and it does not
+ * resolve on settling, because settling is what never happens. The next keystroke clears it, which
+ * is to say the person has to act before the pointer stops lying about where they are.
  *
- * Measurement note kept because it changes what the numbers mean: each measurement builds its own
- * controller. Sharing one lets a notification from an earlier `dispatch` land inside a later window
- * and be counted as that call's — which is what a first pass here measured, and it read as
- * `setOptions` notifying sometimes. It never does.
+ * The sweep reads the controller list off the package rather than naming it, so a controller or a
+ * setter added later is measured without this file being touched. A setter this battle has no
+ * argument for is reported as unmeasured rather than passed `undefined`, because a setter that
+ * throws is not evidence of anything.
+ *
+ * Measurement note, because it changes what the numbers mean: each measurement builds its own
+ * controller. Sharing one lets a notification from an earlier call land inside a later window and be
+ * counted as that call's — a first pass here did exactly that and read as `setOptions` notifying
+ * sometimes. Isolated, across three runs, it never does.
  */
 
-import { createSelectController, subscribeController } from "@modyra/widgets";
-import { vanillaReactivity } from "@modyra/core";
+import * as widgets from "@modyra/widgets";
+import { createForm, field, vanillaReactivity } from "@modyra/core";
 
 import { battle } from "../../harness/battle.mjs";
 import { expectClaim, expectEqual } from "../../harness/assertions.mjs";
+
+const { createSelectController, subscribeController } = widgets;
 
 /** A list of `size` options, each naming itself. */
 const list = (size) =>
   Array.from({ length: size }, (_, index) => ({ value: `v${index}`, label: `L${index}` }));
 
-const settled = () => new Promise((resolve) => setTimeout(resolve, 40));
+const settled = () => new Promise((resolve) => setTimeout(resolve, 35));
 
-/**
- * Do one thing to a fresh controller and report what its subscribers heard.
- *
- * Fresh per measurement: a controller carried between them lets an earlier notification arrive
- * inside this window and be read as this call's.
- */
-async function whatSubscribersHeard(act) {
+/** What each setter can be given that differs from what a fresh controller already holds. */
+const ARGUMENT = Object.freeze({
+  setChecked: true,
+  setReadonly: true,
+  setDisabled: true,
+  setInvalid: true,
+  setLoading: true,
+  setOpen: true,
+  setOptions: list(1),
+  setDescribedBy: "some-id",
+  setPopupRendered: true,
+  setBounds: { min: "2026-01-01", max: "2026-12-31" },
+});
+
+/** `setValue` means a different shape for each kind, so it is answered by kind. */
+const VALUE_FOR = Object.freeze({
+  multiselect: ["v1"],
+  datepicker: "2026-04-03",
+  daterange: { start: "2026-04-03", end: "2026-04-05" },
+  timepicker: "10:30",
+  text: "typed",
+  valuewidget: "typed",
+  default: "v1",
+});
+
+const kindOf = (name) => name.replace(/^create/, "").replace(/(Field)?Controller$/, "").toLowerCase();
+
+/** A controller of `name`, built the way its options want. */
+function buildController(name) {
   const reactivity = vanillaReactivity();
-  const controller = createSelectController({ widgetId: "s", options: list(3) }, reactivity);
-  let heard = 0;
-  subscribeController(controller, reactivity, () => { heard += 1; });
-  await settled();
-
-  const before = heard;
-  act(controller);
-  await settled();
+  const kind = kindOf(name);
+  if (kind === "valuewidget") {
+    return { controller: widgets[name]({ kind: "text", value: "" }, reactivity), reactivity };
+  }
+  const initial = kind === "multiselect" ? field([]) : kind === "boolean" ? field(false) : field(null);
+  const form = createForm({ f: initial }, { reactivity, devWarnings: false });
   return {
-    notifications: heard - before,
-    activeDescendant: controller.view().root.attributes["aria-activedescendant"] ?? null,
-    options: controller.state().options?.length ?? null,
+    controller: widgets[name]({ widgetId: "w", options: list(3), handle: form.f.f }, reactivity),
+    reactivity,
   };
 }
 
 battle(
   {
     claims: ["API-001"],
-    title: "changing what a select offers reaches whoever is drawing it",
+    title: "every published setter reaches whoever is drawing the widget",
     environments: ["node"],
   },
   async (ctx) => {
-    // The controls: the two other published mutators do tell their subscribers, so a silent one
-    // below is that call rather than a subscription that was never live.
-    const opened = await whatSubscribersHeard((controller) =>
-      controller.dispatch({ type: "open", source: "keyboard" }));
-    const valued = await whatSubscribersHeard((controller) => controller.setValue("v1"));
-    ctx.log.note("what the other mutators do", { opened, valued });
+    const names = Object.keys(widgets).filter((name) => /^create\w+Controller$/.test(name)).sort();
 
-    expectClaim(opened.notifications > 0, {
+    // The premise: there is a surface here to sweep. A rename upstream that emptied this list would
+    // otherwise leave the battle green with nothing measured.
+    expectClaim(names.length >= 8, {
       claimIds: ["API-001"],
-      what: "opening the list told nobody, so this battle's subscription is not live",
-      detail: JSON.stringify(opened),
+      what: "the package exposes almost no controllers, so this sweep is measuring nothing",
+      detail: JSON.stringify(names),
     });
 
-    expectClaim(valued.notifications > 0, {
-      claimIds: ["API-001"],
-      what: "setting the value told nobody, so this battle's subscription is not live",
-      detail: JSON.stringify(valued),
-    });
+    const heard = [];
+    const unmeasured = [];
+    for (const name of names) {
+      let setters;
+      try {
+        setters = Object.keys(buildController(name).controller)
+          .filter((key) => /^set/.test(key));
+      } catch (error) {
+        unmeasured.push({ name, why: `cannot build: ${String(error.message).slice(0, 60)}` });
+        continue;
+      }
 
-    // And the one that is the only way to change the list at all.
-    for (const size of [1, 0, 5]) {
-      const changed = await whatSubscribersHeard((controller) => controller.setOptions(list(size)));
-      ctx.log.note("a new list of options arrived", { size, ...changed });
+      for (const setter of setters) {
+        const argument = setter === "setValue"
+          ? (VALUE_FOR[kindOf(name)] ?? VALUE_FOR.default)
+          : ARGUMENT[setter];
+        if (argument === undefined) {
+          unmeasured.push({ name, setter, why: "this battle has no argument for it" });
+          continue;
+        }
 
-      // The premise: the controller did take the list. What is at issue is who was told.
-      expectEqual(changed.options, size, {
-        claimIds: ["API-001"],
-        what: `setOptions did not record a list of ${size}, so there was nothing to announce`,
-      });
+        // Fresh per measurement: a controller carried between them lets an earlier notification
+        // arrive inside this window and be read as this call's.
+        const { controller, reactivity } = buildController(name);
+        let count = 0;
+        subscribeController(controller, reactivity, () => { count += 1; });
+        await settled();
 
-      expectClaim(changed.notifications > 0, {
-        claimIds: ["API-001"],
-        what: `a new list of ${size} option(s) reached the controller and no subscriber was told, so nothing redraws`,
-        detail: JSON.stringify(changed),
-      });
+        const before = count;
+        controller[setter](argument);
+        await settled();
+        heard.push({ name, setter, notifications: count - before });
+      }
     }
+
+    const silent = heard.filter((each) => each.notifications === 0);
+    ctx.log.note("what each setter told its subscribers", {
+      measured: heard.length,
+      silent,
+      unmeasured,
+    });
+
+    // The control: most of this surface does announce itself, so a silent one is that setter rather
+    // than a subscription this battle never made live.
+    expectClaim(heard.length - silent.length >= heard.length / 2, {
+      claimIds: ["API-001"],
+      what: "half the setters or more told nobody, which is a broken subscription rather than a finding about any one of them",
+      detail: JSON.stringify({ measured: heard.length, silent: silent.length }),
+    });
+
+    expectEqual(silent, [], {
+      claimIds: ["API-001"],
+      what: "a setter changed a controller and told no subscriber, so nothing redraws until something else happens",
+    });
   },
 );
 
