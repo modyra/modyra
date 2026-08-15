@@ -9693,6 +9693,23 @@ envelope looks like, or one from a version that did not carry the field.
 Both controls are asserted first, because "expired" and "restored nothing" are otherwise the same
 measurement.
 
+### The age is sticky, which is what makes one bad timestamp permanent
+
+The stamp never moves backwards, and that part is deliberate — it is how a draft is not replaced by
+one saved before it. Measured both ways:
+
+```
+seeded savedAt      after a live form saves over it
+an hour ago         moved forward to now
+an hour ahead       kept, unchanged
+```
+
+So `max(now, stored)` is the rule. A draft that once acquired a future stamp — from a device whose
+clock was ahead, or from one script that wrote one — carries it through **every save that follows**,
+and the expiry can never arrive again however long the user keeps editing. That is the difference
+between a bypass and a permanent one, and it is why this is filed against the TTL rather than against
+the guard: the guard is right, and the TTL believing an unbelievable number is not.
+
 ### Checked and clean, in the same run
 
 - **`version` is part of the storage key, not the envelope.** Saved at 1 and opened at 2 restores
