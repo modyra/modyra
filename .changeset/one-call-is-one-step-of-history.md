@@ -29,7 +29,6 @@ A whole-value write now carries the order it holds, through an undo, a redo and 
 
 Undo counts change: a consumer pressing undo three times after a three-row `setAll` now goes three
 steps further back. Nothing published stated the old count, and the intermediate states are no longer
-reachable — which is the point. Anything implementing `MdyCollectionHost` implements one more member;
-the type-surface audit does not see members added to an exported interface, so it is stated here.
+reachable — which is the point.
 
 Recorded as [ADR 0059](../docs/architecture/0059-a-step-of-history-is-a-state-the-form-was-in.md).

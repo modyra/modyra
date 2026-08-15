@@ -49,7 +49,9 @@ nothing else move — which is the point, and is a visible change from what ship
 
 `MdyCollectionHost` gains a method, so anything implementing that interface — a test double, a host
 that is not the engine — implements it too. The interface exists to be substitutable, and this is
-what that costs.
+what that costs. It is not on any entry point's export map, so that cost falls inside this repository
+rather than on a consumer; `MdyFormEngine.orderRowsUnder` is public, and the type-surface audit
+classifies it as minor.
 
 Re-placing fields is O(fields under the collection) per rename, on an operation a user performs one
 row at a time. It does not run for any other collection operation.
