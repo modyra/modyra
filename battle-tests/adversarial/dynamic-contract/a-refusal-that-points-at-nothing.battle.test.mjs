@@ -12,8 +12,12 @@
  * flat document and for a tree one alike. So a caller who does what the message says gets `undefined`
  * and the same refusal again, and the instruction is a circle.
  *
- * What the function does take is the document's own root — `{ children }`, with or without a `node`
- * beside it — which is what the caller already had before parsing anything.
+ * What the function does take is the document's own root — `document.schema`, a `{ children }` node
+ * with or without a `node` beside it — which is what the caller already had before parsing anything.
+ *
+ * The check follows whatever expression the message names rather than a shape it happened to have:
+ * an earlier version matched `parseDynamicForm(document).X`, and when the instruction was corrected
+ * to `document.X` the match stopped firing and the battle stopped describing anything at all.
  *
  * And one shape still arrives as a JavaScript internal rather than as the refusal: an object with no
  * `children` in it. `{}` is the empty document, and `{ node: "group" }` is a section somebody left
@@ -28,11 +32,17 @@ import { buildDynamicFormSchema, parseDynamicForm } from "@modyra/core";
 import { battle } from "../../harness/battle.mjs";
 import { expectClaim, expectEqual } from "../../harness/assertions.mjs";
 
-/** Both shapes a document comes in, so neither half of the answer is about one of them. */
-const FLAT = Object.freeze({ version: 3, fields: [{ name: "a", kind: "text", label: "A" }] });
+/**
+ * A document carrying a tree, which is what this function is for.
+ *
+ * A v2/v3 document has an optional `schema` beside its `fields`: the flat list and the tree are two
+ * slots on one document, and `buildDynamicFormSchema` reads the tree. A document that carries only
+ * `fields` is not a document this function has anything to take from — `buildFlatFormSchema` is its
+ * call — so it is not a case the advice has to answer for.
+ */
 const TREE = Object.freeze({
-  node: "group",
-  children: { a: { node: "field", field: { kind: "text", label: "A" } } },
+  version: 3,
+  schema: { node: "group", children: { a: { node: "field", field: { kind: "text", label: "A" } } } },
 });
 
 /** Call and report what a consumer would see: a build, a named refusal, or an internal. */
@@ -56,7 +66,7 @@ battle(
   },
   async (ctx) => {
     // The first control: the shape it does take builds, so the refusals below are about the argument.
-    const works = ask(() => buildDynamicFormSchema(TREE));
+    const works = ask(() => buildDynamicFormSchema(TREE.schema));
     ctx.log.note("the shape it takes", works);
 
     expectEqual([works.built, works.names], [true, ["a"]], {
@@ -75,30 +85,43 @@ battle(
       detail: JSON.stringify(refused),
     });
 
-    // The instruction inside it. A message that names a property is a promise the property is there.
-    const named = /parseDynamicForm\(document\)\.(\w+)/.exec(refused.message);
+    // The instruction inside it. A message that tells the caller what to write is a promise about
+    // what that expression yields — so the check follows the expression rather than a shape it
+    // happened to have. An earlier version matched `parseDynamicForm(document).X`, which was the
+    // wrong instruction; when it was corrected to `document.X` the match stopped firing and the
+    // battle stopped describing anything. Reading the expression itself survives both.
+    const named = /buildDynamicFormSchema\(([A-Za-z_$][\w$]*(?:\.[\w$]+)+)\)/.exec(refused.message);
     expectClaim(named !== null, {
       claimIds: ["API-001"],
       what: "the refusal stopped naming a way out, so this battle no longer describes it",
       detail: refused.message,
     });
 
-    const property = named?.[1] ?? "schema";
-    const results = { flat: parseDynamicForm(FLAT), tree: parseDynamicForm(TREE) };
-    ctx.log.note("what a parse result actually carries", {
-      property,
-      flat: Object.keys(results.flat),
-      tree: Object.keys(results.tree),
+    /** Walk the expression the message names against a real document, whatever its root is called. */
+    const follow = (expression, document) => {
+      const [root, ...steps] = expression.split(".");
+      let value = root === "document" ? document : parseDynamicForm(document);
+      for (const step of steps) value = value == null ? undefined : value[step];
+      return value;
+    };
+
+    const advice = named?.[1] ?? "document.schema";
+    const followed = { tree: follow(advice, TREE) };
+    ctx.log.note("what the message's own instruction yields", {
+      advice,
+      tree: followed.tree === undefined ? "undefined" : typeof followed.tree,
     });
 
-    const missing = Object.entries(results)
-      .filter(([, result]) => !(property in result))
+    // Following it has to give the function something it accepts. Anything else is a sentence that
+    // sends the caller round again.
+    const unusable = Object.entries(followed)
+      .filter(([, value]) => ask(() => buildDynamicFormSchema(value)).built !== true)
       .map(([shape]) => shape);
 
-    expectEqual(missing, [], {
+    expectEqual(unusable, [], {
       claimIds: ["API-001", "DYN-001"],
-      what: `the refusal tells the caller to write parseDynamicForm(document).${property}, and a parse result has no ${property}`,
-      detail: JSON.stringify({ carries: Object.keys(results.flat) }),
+      what: `the refusal tells the caller to write ${advice}, and doing that does not give this function something it takes`,
+      detail: JSON.stringify({ advice, followed: Object.keys(followed) }),
     });
 
     // And the shapes that still arrive as an internal rather than as that refusal.
