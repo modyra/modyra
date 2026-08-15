@@ -608,3 +608,32 @@ know this control wants `2:30 PM` has no way to find out.
 Also measured, not filed: `daterange` and `colors` have triggers with no `id` at all, carrying
 `aria-controls` pointing at their popups. No reference resolves to them and no check reported a
 problem, so it is recorded rather than raised.
+
+## 36. A tier nothing runs
+
+Not a defect in the framework — a defect in how this suite is watched, which is worse in one way: it
+decays without anyone seeing it.
+
+`.github/workflows/battle-tests.yml` runs `battle:audit`, `battle`, `battle:browser` and
+`battle:campaign`. It does not run `battle:angular`, which is the only thing that executes
+`battle-tests/angular/*.battle.mjs` — those files end in `.battle.mjs`, so the `**/*.test.mjs` glob
+behind `npm run battle` never sees them.
+
+Two of the three battles there are load-bearing for something stated elsewhere.
+`differential/runtimes/every-runtime.test.mjs` explains that Angular is absent from the cross-runtime
+comparison partly because "it would not agree if it were here, and is not supposed to" — the
+documented degradation — and says that degradation is "pinned by
+`angular/degraded-reactivity.battle.mjs`". Nothing pins it on any automated run.
+
+Measured now, in the exact command form:
+
+```
+pnpm run battle:angular
+  3 tests, 3 pass, 0 fail — build 4.0s, tests 9.7s
+```
+
+So it is healthy and unwatched, which is the moment to wire it rather than after it breaks. Adding a
+CI step is a change to frozen configuration, so it is reported rather than made.
+
+Angular is second in adapter priority and has three battles; the cross-runtime differential carries
+six runtimes and cannot carry this one.
