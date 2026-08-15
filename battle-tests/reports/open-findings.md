@@ -7739,8 +7739,30 @@ daterange           —               button                         two input[t
 ```
 
 One renderer follows it everywhere. The other gives a daterange's start and end boxes
-`aria-haspopup="dialog"` and `aria-expanded` without the role that makes either meaningful — and the
-contract does not say the inputs are the opener for that kind at all: it names the `toggle`.
+`aria-haspopup="dialog"` and `aria-expanded` without the role that makes either meaningful.
+
+**The published projection does not merely omit the inputs — it rules them out, in a comment of its
+own.** `packages/widgets/src/field/daterange-field-a11y.ts` puts the semantics on the `toggle`:
+
+```ts
+toggle: {
+  attributes: {
+    // The opener carries the combobox semantics, not the inputs: the overlay is one grid for
+    // both ends, so one thing opens it and one thing says whether it is open.
+    role: "combobox",
+    "aria-haspopup": "grid",
+    ...projectOverlayOpenerA11y("daterange", …)?.attributes,
+```
+
+So the renderer has two elements saying whether it is open, neither of them the one the projection
+names, and it calls the overlay a `dialog` where the projection calls it a `grid`. That is not an
+attribute in the wrong place: it is the opposite of a decision the contract wrote down and explained.
+
+**The same shape as finding 138, and found by looking for it.** After 138 closed on a projection that
+spread `{role, attributes}` and kept only the attributes, the pattern was searched for: five
+projections do it — multiselect (fixed), datepicker, timepicker, select and this one. For three of the
+four remaining the role arrives another way and the DOM carries it, measured. This is the one where it
+does not.
 
 Checked as the rule rather than the construction, over every kind with a popup, so the same mistake
 elsewhere fails the same test. The control is that something carried the attribute at all.
