@@ -16,12 +16,18 @@
  *
  * The fixture is read rather than copied, so a change to what v3 demonstrates changes what is asked
  * here.
+ *
+ * The version is one of two ways in. The second battle here reaches the same answer through the depth
+ * limit: nesting sections one past `MDY_LAYOUT_MAX_DEPTH` reports the same code about the same kind of
+ * correct reference. Two routes to one message is what makes this the walk's answer for stopping at
+ * all rather than a missed case at the version check — whatever ends the walk, the field it never
+ * reached is reported as one the document does not have.
  */
 
 import { readFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 
-import { MDY_DYNAMIC_DIAGNOSTICS, parseDynamicForm } from "@modyra/core";
+import { MDY_DYNAMIC_DIAGNOSTICS, MDY_LAYOUT_MAX_DEPTH, parseDynamicForm } from "@modyra/core";
 
 import { battle } from "../../harness/battle.mjs";
 import { expectClaim, expectEqual } from "../../harness/assertions.mjs";
@@ -91,6 +97,60 @@ battle(
       claimIds: ["DYN-003"],
       what: "a construct refused for its version was reported as an unknown field reference, and every reference in it resolves",
       detail: JSON.stringify({ codes, referenced }),
+    });
+  },
+);
+
+battle(
+  {
+    claims: ["DYN-003", "DYN-001"],
+    title: "a layout refused for its depth does not blame the field at the bottom of it",
+    environments: ["node"],
+  },
+  async (ctx) => {
+    // Sections nested around the published limit, over a document declaring exactly the field they
+    // reference. The reference is correct at every depth; only the nesting changes.
+    const nested = (depth) => {
+      let node = "a";
+      for (let level = 0; level < depth; level += 1) node = { kind: "section", id: `s${level}`, children: [node] };
+      return { version: 3, fields: [{ name: "a", kind: "text" }], layout: [node] };
+    };
+
+    // The control: at the limit it parses cleanly, so what happens one past it is the limit rather
+    // than the shape.
+    const atLimit = parseDynamicForm(nested(MDY_LAYOUT_MAX_DEPTH), { mode: "strict" });
+    expectClaim(atLimit.ok && atLimit.diagnostics.length === 0, {
+      claimIds: ["DYN-001"],
+      what: `a layout nested to the published limit of ${MDY_LAYOUT_MAX_DEPTH} was refused`,
+      detail: JSON.stringify(atLimit.diagnostics),
+    });
+
+    const past = parseDynamicForm(nested(MDY_LAYOUT_MAX_DEPTH + 1), { mode: "strict" });
+    const codes = past.diagnostics.map((each) => each.code);
+    ctx.log.note("one section past the published limit", { limit: MDY_LAYOUT_MAX_DEPTH, ok: past.ok, codes });
+
+    // Refusing is right — the limit is published, and a walk without one is a document that can stop
+    // the parser. This battle does not ask for the layout to be accepted.
+    expectClaim(past.ok === false, {
+      claimIds: ["DYN-003"],
+      what: `a layout nested past ${MDY_LAYOUT_MAX_DEPTH} was accepted, so the published limit is not one`,
+    });
+
+    // And it terminates on a document far past it rather than walking as deep as it is given.
+    const started = Date.now();
+    const absurd = parseDynamicForm(nested(5000), { mode: "lenient" });
+    const elapsed = Date.now() - started;
+    ctx.log.note("five thousand sections", { ms: elapsed, codes: absurd.diagnostics.map((each) => each.code) });
+
+    expectClaim(elapsed < 1000, {
+      claimIds: ["DYN-003"],
+      what: `a layout nested 5000 deep took ${elapsed}ms, which a document can choose`,
+    });
+
+    expectClaim(!codes.includes("MDY_DYNAMIC_UNKNOWN_FIELD_REFERENCE"), {
+      claimIds: ["DYN-003"],
+      what: "a layout refused for its depth was reported as an unknown field reference, and the field it names is declared in the same document",
+      detail: JSON.stringify(codes),
     });
   },
 );
