@@ -9,7 +9,7 @@ A twentieth, `generative/properties/history.property.test.mjs`, is a campaign ra
 draws a fresh seed each run and reaches the whole-write undo defect about four times in five. Its
 green is not evidence; the battle beside it is.
 
-The list is grouped by cause. Fifteen causes, twenty-three battles.
+The list is grouped by cause. Sixteen causes, twenty-four battles.
 
 ---
 
@@ -176,7 +176,21 @@ ten times as much per order.
 Nothing is asserted in milliseconds; every assertion is a ratio, so a slower machine moves the
 numbers together and no ratio moves.
 
-## 15. Reported without a repair path
+## 15. A synchronous validator that throws makes the form unreadable
+
+`adversarial/validation/a-validator-that-breaks.battle.test.mjs`
+
+A validator is application code called on every write, so it can throw. `set()` returns normally and
+the exception comes out of `state.valid()` instead — and out of `errorsFor` and `getValue`, and out
+of every later read while the value stays one the validator chokes on. The form cannot be rendered
+and the stack points at whatever read it last rather than at the write.
+
+The engine answers this on the other side of the same feature: a `serverValidator` check that throws
+becomes an error on the field carrying the message, and the form stays readable. That is the green
+battle beside it. Either repair is admitted — throw at the write, or turn it into a verdict — and not
+a form nobody can read.
+
+## 16. Reported without a repair path
 
 - `adversarial/submission/submit-contract.battle.test.mjs` — an action returning something that is
   not a list of errors puts `errors.filter is not a function` on the form-level error surface, the
