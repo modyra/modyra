@@ -3906,3 +3906,37 @@ three predictions on its own.
 `errorsFor("")`. A *rule* attached to one used to sit invisible — and now cannot exist at all, because
 `addValidators` refuses the name. The two mechanisms answered differently and only one of them was a
 finding; the guide was describing the half that was already right.
+
+## 87. Two published guides that still describe what `setValue` used to do
+
+`adversarial/validation/two-guides-that-say-null.battle.test.mjs` — 3 green, 1 red. **S2.**
+Same species as 81, in the pages rather than in the message.
+
+ADR 0057 changed it and said so in its own consequences: *`setValue({})` no longer empties a field to
+`null` but returns it to its initial.* Two published guides still say the old thing:
+
+```
+docs/guides/troubleshooting.md:72   "fields absent from the passed object are reset to `null`"
+docs/guides/typed-forms.md:61       "schema fields absent from `v` are reset to `null`"
+```
+
+And the behaviour, on a form whose initials are not empty — which is the only kind where the two
+answers differ, and why the sentence survived:
+
+```
+the user filled it in         {"plan":"enterprise","note":"typed","n":99}
+after setValue({note})        {"plan":"pro","note":"kept","n":7}     the initials, not null
+```
+
+The troubleshooting one is the more expensive, because it is filed under *Why did my value reset to
+null after `setValue()`?* — a person reads it while already confused, is told to look for a `null`,
+and finds `"pro"`.
+
+**The check is anchored to the behaviour, not to wording**: it fails only while a guide claims `null`
+*and* the engine returns the initial. Rewriting the sentence satisfies it; so would changing the
+engine, which ADR 0057 decided against. It reads each file whole rather than line by line, because one
+of the two sentences wraps across a newline and a line-at-a-time check finds the other and calls the
+page clean — which is how the first version of this battle reported one guide instead of two.
+
+81 was this sentence in the refusal message, and was repaired where it was written. These two were
+not, which is the ordinary shape of a decision that lands in code before it lands in prose.
