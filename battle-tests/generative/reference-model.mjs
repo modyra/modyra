@@ -100,12 +100,12 @@ export function createReferenceModel({ cells, initial = {}, history = false } = 
     // back untouched rather than as the consumer last left it.
     for (const key of [...order]) if (!snapshot.rows.has(key)) forget(key);
 
-    // A key that arrives is declared last — the rule the collection follows everywhere, including a
-    // rename, which ends one key and declares another. A row brought back by an undo arrives, so it
-    // arrives at the end rather than at the position it held. Measured, not promised: nothing states
-    // what an undo does to declaration order.
-    const kept = order.filter((key) => snapshot.rows.has(key));
-    order = [...kept, ...snapshot.order.filter((key) => !kept.includes(key))];
+    // A snapshot carries an order, and restoring one restores that order. Undo is not a sequence of
+    // declarations replayed onto what is here now — it is a move back to a state the collection was
+    // in, and the order the rows were in is part of that state. Composing the current order with the
+    // snapshot's would put a row brought back by an undo at the end, which is a place it was never
+    // in.
+    order = [...snapshot.order];
     rows.clear();
     for (const key of order) rows.set(key, { ...snapshot.rows.get(key) });
   };
@@ -214,6 +214,11 @@ export function createReferenceModel({ cells, initial = {}, history = false } = 
           // Refused on both sides: a rename onto an occupied key would replace a row nobody removed,
           // and one from a key that does not exist has nothing to move.
           if (!rows.has(from) || rows.has(to)) break;
+          // Where the row sits, kept across the rename. A rename moves a row to a new key and not to
+          // a new place: `remove` followed by `upsert` is the operation that appends, and the record
+          // contract defines rename against exactly that one. Rebuilding the map is how a plain
+          // JavaScript Map expresses "same position, different key".
+          const at = order.indexOf(from);
           const value = { ...rows.get(from) };
           const carriedMarks = [...touched].filter((path) => path.startsWith(`${from}.`));
           const carriedEdits = [...dirty].filter((path) => path.startsWith(`${from}.`));
@@ -225,6 +230,10 @@ export function createReferenceModel({ cells, initial = {}, history = false } = 
           const carriedPermissions = [...enabled].filter((path) => path.startsWith(`${from}.`));
           forget(from);
           declare(to, value);
+          if (at >= 0) {
+            order.splice(order.indexOf(to), 1);
+            order.splice(at, 0, to);
+          }
           for (const path of carriedMarks) touched.add(path.replace(`${from}.`, `${to}.`));
           for (const path of carriedEdits) dirty.add(path.replace(`${from}.`, `${to}.`));
           for (const [carried, set] of [[carriedRefusals, disabled], [carriedPermissions, enabled]]) {
