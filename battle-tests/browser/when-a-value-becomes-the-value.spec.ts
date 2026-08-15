@@ -67,9 +67,10 @@ for (const host of HOSTS) {
 
   test(`a daterange writes through on the interaction, ${host.name}`, async ({ page }) => {
     test.setTimeout(180_000);
-    // The declared answer for this kind, read rather than assumed, so a change to the table is a
-    // change to this test.
-    expect(MDY_VALUE_CONTRACTS.daterange.commit).toBe("live");
+    // The declared answer for this kind, read rather than assumed. `complete` is the word added for
+    // it: the field changes when what the user is building becomes a value — which for a range means
+    // both ends, and is why one end writes nothing.
+    expect(MDY_VALUE_CONTRACTS.daterange.commit).toBe("complete");
 
     await page.goto(host.page);
     await page.waitForFunction((flag) => (window as never as Record<string, boolean>)[flag] === true, host.ready);
@@ -94,12 +95,12 @@ for (const host of HOSTS) {
     const afterBothEnds = await page.evaluate(({ api }) => (window as never as Api)[api].valueOf("r").x, { api: host.api }) as { start: string | null; end: string | null };
     expect(afterBothEnds.start, "picking both ends did not write through either, so this measures the harness").not.toBeNull();
 
-    // `dateRange` is `{start, end}` with either endpoint nullable, and `completeRange` exists to
-    // judge a half-filled one — so a start with no end is a value this form can hold and describe.
+    // `complete` says the value arrives when it becomes one, so a half-picked range holds nothing —
+    // and the assertion is that the two ends together are what completes it.
     expect(
       afterOneEnd,
-      `a daterange declaring "${MDY_VALUE_CONTRACTS.daterange.commit}" held ${JSON.stringify(afterOneEnd)} after the user picked ${JSON.stringify(first)}`,
-    ).toEqual({ start: expect.any(String), end: null });
+      `a daterange declaring "${MDY_VALUE_CONTRACTS.daterange.commit}" held ${JSON.stringify(afterOneEnd)} after only ${JSON.stringify(first)} was picked`,
+    ).toEqual({ start: null, end: null });
   });
 }
 
@@ -149,8 +150,9 @@ test("a timepicker changes only on confirmation, plain", async ({ page }) => {
 
 test("a colour field writes through on the interaction, plain", async ({ page }) => {
   test.setTimeout(180_000);
-  // The declared answer for this kind, read rather than assumed.
-  expect(MDY_VALUE_CONTRACTS.colors.commit).toBe("live");
+  // The declared answer for this kind. `confirm` answers for the control the label names and a
+  // keyboard writes into — the one a person can leave half-finished, where `#11` is not a colour.
+  expect(MDY_VALUE_CONTRACTS.colors.commit).toBe("confirm");
 
   await page.goto("/index.html");
   await page.waitForFunction(() => (window as never as Record<string, boolean>).battleReady === true);
@@ -161,9 +163,9 @@ test("a colour field writes through on the interaction, plain", async ({ page })
 
   const held = () => page.evaluate(() => (window as never as Api).battle.valueOf("c").x);
 
-  // The control, and the reason this kind is worth asking about at all: the native swatch — the
-  // other half of the same field — does write through the moment it fires. So `live` is not
-  // unreachable here; one of the two controls has it.
+  // The other control of the same field, recorded rather than asserted against the word: the native
+  // swatch writes through the moment it fires. A kind carries one word and this field has two
+  // controls, so the word answers for the typed one and this line is what the word does not cover.
   await page.evaluate(() => {
     const swatch = document.querySelector('[data-form="c"] input[type="color"]') as HTMLInputElement;
     swatch.value = "#445566";
@@ -174,6 +176,8 @@ test("a colour field writes through on the interaction, plain", async ({ page })
 
   // And the hex box, typed a character at a time, ending on a complete colour.
   const hex = page.locator('[data-form="c"] .mdy-colors__hex-input').first();
+  // Cleared first: the swatch above put its own colour in this box, and typing into it would append.
+  await hex.fill("");
   await hex.focus();
   for (const character of "#112233") {
     await page.keyboard.type(character);
@@ -181,8 +185,14 @@ test("a colour field writes through on the interaction, plain", async ({ page })
   }
   expect(await hex.inputValue(), "the box does not hold the colour that was typed into it").toBe("#112233");
 
+  // `confirm` means interaction edits a draft: typing a whole colour changes nothing yet.
   expect(
     await held(),
-    `a colour field declaring "${MDY_VALUE_CONTRACTS.colors.commit}" still held ${JSON.stringify(await held())} with a complete colour typed into its box`,
-  ).toBe("#112233");
+    `a colour field declaring "${MDY_VALUE_CONTRACTS.colors.commit}" wrote a typed colour through before it was confirmed`,
+  ).toBe("#445566");
+
+  // And the confirmation lands it.
+  await hex.blur();
+  await page.waitForTimeout(240);
+  expect(await held(), "leaving the box did not commit the colour typed into it").toBe("#112233");
 });
