@@ -225,6 +225,15 @@ battle(
 
       throw new BattleBreak({
         claimIds: ["VAL-003", "COL-001", "COL-007", "COL-008", "SUB-001"],
+        // Which run this was, against how many were asked for. A property stops at its first
+        // divergence, so this is how much of the configured search actually happened.
+        search: {
+          run,
+          runs,
+          operations: operations.length,
+          minimizedTo: minimized.length,
+          shrinkAttempts: attempts,
+        },
         message:
           `a conditional row diverged from the model at ${outcome.divergence.path} — ` +
           `expected ${outcome.divergence.expected}, got ${outcome.divergence.actual} ` +

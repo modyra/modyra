@@ -11,7 +11,7 @@ import { diffCanonical } from "../models/observations.mjs";
 import { claim } from "../models/claims.mjs";
 
 export class BattleBreak extends Error {
-  constructor({ claimIds, message, divergence = null, expected = null, actual = null }) {
+  constructor({ claimIds, message, divergence = null, expected = null, actual = null, search = null }) {
     const worst = claimIds.map((id) => claim(id).severity).sort()[0];
     super(`[${worst}][${claimIds.join(",")}] ${message}`);
     this.name = "BattleBreak";
@@ -20,6 +20,15 @@ export class BattleBreak extends Error {
     this.divergence = divergence;
     this.expectedState = expected;
     this.actualState = actual;
+    /**
+     * How far the search got before it stopped, for a failure a campaign found.
+     *
+     * Which run failed is the number that says how much of the configured search actually happened:
+     * a property stops at its first divergence, so one that fails at run 12 explores twelve runs
+     * whatever `MDY_BATTLE_RUNS` says. Without it a report from a 400-run job and one from a
+     * 200,000-run night are the same document.
+     */
+    this.search = search;
   }
 }
 

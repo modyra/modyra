@@ -234,6 +234,15 @@ battle(
 
       throw new BattleBreak({
         claimIds: CLAIMS,
+        // Which run this was, against how many were asked for. A property stops at its first
+        // divergence, so this is how much of the configured search actually happened.
+        search: {
+          run,
+          runs,
+          operations: operations.length,
+          minimizedTo: minimized.length,
+          shrinkAttempts: attempts,
+        },
         message:
           `run ${run} (seed ${seed}) diverged at operation ${outcome.index} (${outcome.operation.type}); ` +
           `minimized to ${minimized.length} operation(s) in ${attempts} attempt(s)`,
