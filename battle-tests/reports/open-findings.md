@@ -9726,3 +9726,49 @@ That is the **third** time this session a sink passed to `createForm` measured n
 `diagnostics` sink in finding 114, again in 157's first pass, and now `onSubmit`. Finding 166's entry
 has been corrected — it listed "onSubmit never called" as evidence, which was evidence of my own call
 rather than of the engine. The finding itself stood on `submit()` throwing, measured directly.
+
+## Closed since: 167 and 168
+
+Verified independently rather than taken on report.
+
+**167** — a list now grows to receive the next row rather than to reach a number, and flat writes are
+applied in path order (numeric where a segment is a number) so `tags.10` arriving before `tags.2` no
+longer loses the second. The owning session found that one of *their* core tests asserted the
+behaviour this finding condemns — "a value written below the path still grows the list" — written when
+growing-to-reach was the intention.
+
+**168** — all four spellings now keep the card number out, measured here again:
+
+```
+exclude              PAN        who kept   label kept
+["cards"]            kept out   yes        no          ← the ancestor rule, and its documented cost
+["cards.*.pan"]      kept out   yes        yes
+["pan"]              kept out   yes        yes
+["cards.a.pan"]      kept out   yes        yes
+[]  (the control)    PRESENT    yes        yes
+```
+
+The control matters as much as the four: without it, a repair that stopped persisting anything would
+pass. `who` survives in every case, so the rest of the form is not collateral.
+
+## Checked and clean: what a server is asked
+
+**Battle:** `battle-tests/adversarial/validation/what-the-server-is-asked.battle.test.mjs` — 3 battles,
+all green. VAL-005 was the least-cited claim in the registry with one battle; this is the second, and
+it pins five things rather than one.
+
+- **A value a sync rule rejects is not sent.** With `required` and `minLength(3)`, only `"abc"`
+  travelled of `""`, `"ab"`, `"abc"`.
+- **Blank with no `required` *is* sent**, and that is the rule holding rather than leaking: emptiness
+  is `required`'s question and every other validator stays out of it, so a field without `required`
+  accepts blank. Both sides are asserted, because one of them alone reads as an accident.
+- **A run whose value stops being acceptable is abandoned**: pending goes false while the server is
+  still thinking, and when the answer finally arrives it does not land on the field.
+- **A dependency change re-asks**, and the check can read the dependency it was re-run for through
+  `ctx.form.fieldValue(path)` — the context carries a live view, an abort signal and the field's path.
+- **A server slower than its `timeoutMs`** ends the run with "Validation timed out" rather than leaving
+  the field pending, and the late answer never replaces it.
+
+One instrument error on the way: the first dependency probe read `ctx.formValue.country`, which does
+not exist, and reported `null`. The context offers `ctx.form.value()` and `ctx.form.fieldValue(path)`.
+Reading the type rather than guessing is what turned a false finding into a clean one.
