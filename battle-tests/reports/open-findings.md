@@ -2211,8 +2211,15 @@ causes and four singletons**, which is the difference between eleven repairs and
 
 Grouped from the messages themselves, not from the titles:
 
-**A — the tree parser is silent where the flat parser reports.** The same defect written two ways
-gets two different answers, and the tree — the shape a CMS sends — is the quiet one.
+**A — the tree parser is silent where the flat parser reports. CLOSED, verified here** — all four
+gone from the failing list, and the cause was one thing plus one: `parseDynamicFields` reports through
+a diagnostic sink that the flat path installs and the tree walk ran outside of, so a leaf the parse
+refused was dropped with nobody listening. The counter half had a different cause upstream — a schema
+the validator refuses wholesale never reaches the walk, so there was nothing to count — and now
+`accepted + rejected` is what the document *declared* rather than what survived.
+
+The same defect written two ways used to get two different answers, and the tree — the shape a CMS
+sends — was the quiet one:
 
 ```
 a kind nobody declared          reported as a flat field list, silent as a v2 document
