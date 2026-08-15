@@ -11,5 +11,9 @@ seed, the environment and the command that replays it:
 npm run battle:replay -- battle-tests/reports/failures/<failure-id>.json
 ```
 
+`open-findings.md`, beside this file, is the other half and is committed: what is red right now,
+grouped by cause, with the smallest sequence that shows each one and what would turn it green. A
+report is one run; that document is the standing state, and it is where a fixer starts.
+
 Fixtures are synthetic, so nothing written here is application data. Keep it that way: a battle that
 attacks with real data would produce reports nobody can attach to an issue.
