@@ -257,6 +257,37 @@ function isPlainObject(value: object): value is Record<string, unknown> {
  * written and read back as JSON, so an object option arrives as a different object holding the same
  * data, and identity would call a user's own saved choice tampering.
  */
+/**
+ * One option, as it appears in the sentence a person reads.
+ *
+ * `String({ id: 1 })` is `[object Object]`, so a list of object options told the person their choice
+ * was not among two things it did not name. Object options are ordinary — a domain writes
+ * `{ id, label }`, and the value contracts admit them — so the default sentence renders what the
+ * option holds. A caller who has better words passes `message`, which is untouched.
+ */
+function optionText(option: unknown): string {
+  if (option === null || typeof option !== "object") return String(option);
+  try {
+    return JSON.stringify(option) ?? String(option);
+  } catch {
+    // A cycle, or a value JSON refuses. Nothing readable is available, and saying so beats printing
+    // a word the person cannot match against anything on screen.
+    return String(option);
+  }
+}
+
+/**
+ * The whole sentence, including the case where there is no list to name.
+ *
+ * An empty list is legitimate — a select whose choices arrive later declares one — and a value
+ * measured against it is refused, which is right. Naming the list then produced a sentence that
+ * ended at its colon: the person was told their choice was not among a set nobody showed them.
+ */
+function optionsSentence(values: readonly unknown[], subject: string): string {
+  if (values.length === 0) return "There are no choices to pick from.";
+  return `${subject} must be one of: ${values.map(optionText).join(", ")}`;
+}
+
 export const oneOf = (
   values: readonly unknown[],
   message?: string,
@@ -265,7 +296,7 @@ export const oneOf = (
     if (value === null || value === undefined || value === "") return [];
     return values.some((allowed) => sameOption(allowed, value))
       ? []
-      : [message ?? `Value must be one of: ${values.map(String).join(", ")}`];
+      : [message ?? optionsSentence(values, "Value")];
   };
 
 /**
@@ -280,7 +311,7 @@ export const eachOneOf = (
     if (!Array.isArray(value) || value.length === 0) return [];
     return value.every((item) => values.some((allowed) => sameOption(allowed, item)))
       ? []
-      : [message ?? `Every value must be one of: ${values.map(String).join(", ")}`];
+      : [message ?? optionsSentence(values, "Every value")];
   };
 
 /**
