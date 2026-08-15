@@ -8969,3 +8969,65 @@ The other four unemitted codes name conditions this battle did not reach from ou
 `MDY_ADAPTER_CONTRACT_VIOLATION`). Using a handle after `destroy()` reports nothing to a sink, but
 core has no sink to report to there either, so the measurement cannot separate "the condition is not
 detected" from "there is nowhere to say it". Recorded as unmeasured rather than as clean.
+
+## 158. A refusal the document named itself
+
+**S2 · Modyra bug · `@modyra/core` (dynamic parser)**
+Claims: DYN-003
+Battle: `battle-tests/adversarial/security/a-refusal-the-document-named-itself.battle.test.mjs` (red)
+
+The parser publishes a code↔phrase table and states what the two are for: *a consumer keys on the
+code; the message is prose and may be reworded*. That division is deliberate — deriving one from the
+other would let an edit to an English sentence rename a code somebody is matching on.
+
+The derivation runs the other way and is still there. `diagnosticCode(message)` returns whichever
+table phrase the message happens to contain, falling back to `MDY_DYNAMIC_INVALID_FIELD`. Every
+field-level refusal builds its message by quoting the field's name — `Dropped dynamic field
+"${name}": …` — and the name comes from the document.
+
+So a document names a field after the phrase it prefers. **One defect throughout**,
+`validators: "not an object"`, and the code is whatever was asked for:
+
+```
+field name                              reported code
+"ordinary"                              MDY_DYNAMIC_INVALID_FIELD        ← the true one
+"unknown kind"                          MDY_DYNAMIC_UNKNOWN_KIND
+"pattern length"                        MDY_DYNAMIC_PATTERN_TOO_LONG
+"duplicate dynamic field"               MDY_DYNAMIC_DUPLICATE_NAME
+"backtracks exponentially"              MDY_DYNAMIC_PATTERN_TOO_COSTLY
+"requires a valid options"              MDY_DYNAMIC_OPTIONS_REQUIRED
+"Unsupported dynamic form config version"  MDY_DYNAMIC_UNSUPPORTED_VERSION
+```
+
+Six of six published phrases that survive the name check steer the code, each to exactly the one it
+names. The seventh does not reach the quoting refusal.
+
+### Why it matters, and where it stops
+
+A consumer keying on the code — which is the supported thing to do — can be steered by the document
+into the wrong branch: alerting on a costly-pattern refusal that was a malformed `validators` object,
+or treating a version refusal as a document it should re-fetch. The steering only runs upward in
+alarm: the message is still the true one, so a genuinely costly pattern cannot be disguised as
+something benign — its own message carries its own phrase.
+
+### Controls run
+
+- The same field with an ordinary name is refused under
+  `MDY_DYNAMIC_INVALID_FIELD`, which the source itself calls *what a refusal is called when none of
+  the named ones fits*. So this is the name steering the code, not the parser answering at random.
+- Every phrase is measured before anything is asserted, so the failure carries the whole table rather
+  than whichever entry comes first.
+- The premise is asserted separately: if a future table stopped reaching this path, the battle would
+  fail on "nothing was measured" rather than pass for the wrong reason.
+
+### Classification
+
+S2 rather than S0. The claim cited is DYN-003 alone, deliberately: citing SEC-001 would report this
+at S0 through claim severity, and nothing here reaches the payload, loses data or pollutes anything.
+What is wrong is that a published signal a consumer is told to branch on is chosen by the untrusted
+side of the boundary.
+
+Noted in passing, not filed: a field **name** containing spaces survives the name check
+(`"unknown kind"` is refused for its validators, not its name), while a dotted one is refused as
+`MDY_DYNAMIC_UNSAFE_NAME`. Whether a space belongs in a field name is a separate question from this
+one.
