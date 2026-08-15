@@ -6948,3 +6948,64 @@ developer happens to look at.
 `{name: "surname", kind: "text"}` is announced as `surname` in both renderers — carried as
 `aria-label`, which the spec does not pin: what it asserts is that the control is announced as
 something rather than as nothing.
+
+## 126. The token that means any file turns away every file
+
+**Severity** S1 · **Classification** Modyra bug · **Battle**
+`adversarial/widgets/the-files-a-field-agrees-to-take.battle.test.mjs` (red) · **Claims** UI-006,
+VAL-004
+
+`fileSelectionTransition(candidates, options)` decides which picked files a field keeps. Its `accept`
+tokens are the HTML ones, and it handles three shapes: a leading dot matches the file *name*, a
+trailing slash-star matches the *type* prefix, anything else is an exact media type.
+
+The token that means **any file at all** — a star, a slash, a star — takes the wildcard branch, so it
+asks whether the file's type begins with a star and a slash. Nothing does:
+
+```
+accept ""                       photo.png, notes.txt   accepted
+accept "image/*"                photo.png              accepted
+accept ".png"                   photo.png              accepted
+accept "IMAGE/*" / ".PNG"       photo.png              accepted   (case-insensitive both ways)
+accept "application/pdf,image/*" photo.png             accepted
+accept the any-file token       nothing                every file rejected
+accept "*"                      nothing                every file rejected
+```
+
+Measured on the page as well: a `file` field declaring the any-file token, handed a PNG, leaves the
+model `[]` and the page reading "No file selected". The same field with `image/*` or with no accept
+at all takes it. The user picks a file, nothing happens, and nothing says why.
+
+The most permissive value a form can state is the one value that accepts nothing.
+
+## 127. A file field that hands back a shape its own contract refuses
+
+**Severity** S1 · **Classification** Modyra bug — the transition and the value contract disagree ·
+**Battle** `adversarial/widgets/the-files-a-field-agrees-to-take.battle.test.mjs` (red) · **Claims**
+UI-006, VAL-003
+
+`MDY_VALUE_CONTRACTS.file` declares `{shape: "file[]", nullable: false}` — a list, always.
+`fileSelectionTransition` returns `options.multiple ? accepted : accepted[0]`, so for a field that
+takes one file, which is the ordinary case, it hands back a bare file:
+
+```
+multiple: true    value [{name:"a.png",…}]   matchesValueShape("file[]") → true
+multiple: false   value {name:"a.png",…}     matchesValueShape("file[]") → false
+```
+
+`matchesValueShape` is the engine's own checker, not a preference of this battle.
+
+A renderer that writes that value straight into the model puts a value there the field's shape check
+refuses. Measured at page level: in one renderer, picking any file — with any `accept`, including
+none — leaves the field reading **"This field holds file[]"**, so a single-file field is invalid for
+every file a user can pick. The other renderer wraps the value and holds a list.
+
+Two defects meeting, and the second is why the first is quiet: a renderer that already wraps the
+value never sees the shape mismatch, and a renderer that does not is broken for every file rather
+than only for the any-file token.
+
+### Harness defect found and repaired while hunting these
+
+The battle would not load: `SyntaxError: Unexpected token '*'`. Its header comment spelled the
+any-file token literally, and the slash-star inside it ended the block comment three paragraphs early.
+The token is now written only inside string literals, with a line in the header saying why.
