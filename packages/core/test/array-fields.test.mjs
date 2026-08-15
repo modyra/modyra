@@ -492,14 +492,34 @@ test("claiming a row the list does not have declares nothing", async () => {
   assert.equal(form.f.items.at(1).n.value(), "second");
 });
 
-test("a value written below the path still grows the list", () => {
+test("a value written below the path grows the list by the row it names", () => {
   const form = createForm({ items: array(group({ n: field("") })) });
 
-  // What a restored draft does: write flat paths for rows that are not there yet.
-  form.patchValue({ "items.1.n": "restored" });
+  // What a restored draft does: write flat paths for rows that are not there yet. A draft that
+  // carries a list carries every row in it, and a flat write is applied in path order, so each row
+  // is the next one.
+  form.patchValue({ "items.0.n": "first", "items.1.n": "second" });
 
   assert.equal(form.f.items.length(), 2);
-  assert.equal(form.getValue().items[1].n, "restored");
+  assert.equal(form.getValue().items[1].n, "second");
+});
+
+test("a value written past the end names rows nobody wrote, and is ignored", () => {
+  const form = createForm({ items: array(group({ n: field("") })) });
+
+  // `items.5` names row 5 *and every row before it*, none of which the write carries a value for.
+  // The number comes from storage, which anything on the origin can write, and a large enough one
+  // stopped the form opening at all.
+  form.patchValue({ "items.5.n": "invented" });
+
+  assert.equal(form.f.items.length(), 0);
+  assert.deepEqual(form.getValue().items, []);
+
+  // The order the entries happen to be serialised in does not decide what lands: a flat write is
+  // applied in path order, so this is the same list either way round.
+  const shuffled = createForm({ items: array(group({ n: field("") })) });
+  shuffled.patchValue({ "items.2.n": "third", "items.0.n": "first", "items.1.n": "second" });
+  assert.deepEqual(shuffled.getValue().items.map((row) => row.n), ["first", "second", "third"]);
 });
 
 /**
