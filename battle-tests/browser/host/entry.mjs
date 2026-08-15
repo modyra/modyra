@@ -38,6 +38,23 @@ window.battle = {
     return id;
   },
 
+  /**
+   * Mount over a field list the caller chose, so a spec can render names and row keys the
+   * convenience above never produces.
+   */
+  mountFields(id, fields, options = {}) {
+    const host = document.createElement("section");
+    host.dataset.form = id;
+    document.querySelector("#stage").append(host);
+    try {
+      const handle = mountMdyForm(host, fields, options);
+      mounted.set(id, { handle, host });
+      return { mounted: true };
+    } catch (error) {
+      return { mounted: false, message: String(error?.message ?? error) };
+    }
+  },
+
   removeRow(id, key) {
     mounted.get(id).handle.form.f.rows.remove(key);
   },
