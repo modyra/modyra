@@ -5844,7 +5844,7 @@ already holds rather than a document it is reading.
 
 ## Checked and clean: what a page actually sends
 
-`browser/what-a-page-actually-sends.spec.ts` — 7 green.
+`browser/what-a-page-actually-sends.spec.ts` — 8 green.
 
 SUB-001 is *"submission contains no undeclared path introduced by rendering"* and VAL-002 is
 *"disabled values are retained in edit state and excluded from submission"*. Both are asserted at
@@ -5934,6 +5934,18 @@ answer *is* visible when the form is left standing, so the replacement's silence
 than an answer that never showed anywhere. Tearing the form down mid-flight also raises nothing: no
 page error, no console error, and the section leaves the document.
 
-All seven claims hold where they are actually spent. The first test mounts every kind at once
+And the one an impatient person causes without meaning to — editing while it saves:
+
+```
+"at submit time" typed, submit pressed, then "edited during the save" typed over it
+  the input        still enabled: only the button closes
+  what went out    {"a":"at submit time"}
+  the form         {"a":"edited during the save"}, and the same on screen
+```
+
+A submission is a snapshot of the moment it started; the typing that follows belongs to the person and
+is kept. Neither contaminates the other.
+
+All eight claims hold where they are actually spent. The first test mounts every kind at once
 precisely so that a key any renderer adds for any of them has somewhere to show up, and the third
 asserts both rows are in the payload before the removal, so the absence afterwards is the removal.

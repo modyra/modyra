@@ -388,3 +388,38 @@ test("an answer that arrives after its form is gone reaches nothing, including i
   expect(replacement.onThePage, JSON.stringify(replacement)).not.toContain("FROM THE OLD FORM");
   expect(replacement.sent, JSON.stringify(replacement)).toEqual([]);
 });
+
+test("a submission carries what was there when it started, and the typing that follows is kept", async ({ page }) => {
+  const id = "kepttyping";
+  await page.evaluate(
+    (mountId) => (window as never as {
+      battle: { mountSlowSubmit(id: string, f: unknown[], ms: number, e: unknown): { mounted: boolean } };
+    }).battle.mountSlowSubmit(mountId, [{ name: "a", kind: "text", label: "A" }] as never, 700, null),
+    id,
+  );
+  await page.waitForTimeout(220);
+
+  const input = page.locator(`[data-form="${id}"] input`);
+  await input.fill("at submit time");
+  await page.waitForTimeout(160);
+  await page.locator(`[data-form="${id}"] button`).last().click();
+  await page.waitForTimeout(160);
+
+  // The control: the field is still the person's to use. Only the button closes.
+  expect(await input.evaluate((element) => (element as HTMLInputElement).disabled)).toBe(false);
+
+  await input.fill("edited during the save").catch(() => undefined);
+  await page.waitForTimeout(950);
+
+  const seen = await page.evaluate((mountId) => ({
+    value: (window as never as { battle: { valueOf(id: string): unknown } }).battle.valueOf(mountId),
+    sent: (window as never as { battle: { submittedBy(id: string): unknown[] } }).battle.submittedBy(mountId),
+    onScreen: (document.querySelector(`[data-form="${mountId}"] input`) as HTMLInputElement | null)?.value ?? null,
+  }), id);
+
+  // What went out is what was there when it went out.
+  expect(seen.sent, JSON.stringify(seen)).toEqual([{ a: "at submit time" }]);
+  // What is here is what the person has since written, on screen and in the form alike.
+  expect(seen.value, JSON.stringify(seen)).toEqual({ a: "edited during the save" });
+  expect(seen.onScreen, JSON.stringify(seen)).toBe("edited during the save");
+});
