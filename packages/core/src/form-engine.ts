@@ -65,6 +65,72 @@ export type { MdyCollectionHost } from "./contracts/collection-host.js";
 
 let _legacyValidatorKey = 0;
 
+/** Names a wrong-shaped argument in a message, without printing what it holds. */
+function shapeOf(value: unknown): string {
+  if (value === null) return "null";
+  if (Array.isArray(value)) return "an array";
+  return `a ${typeof value}`;
+}
+
+/**
+ * A reactive argument arrives as a zero-argument function, and is refused here when it is not one.
+ *
+ * These setters are the adapter-facing surface: a framework's own reactive value passes through them
+ * on every binding, and a ref or a plain boolean is the ordinary mistake. Nothing calls the argument
+ * until a later read composes it, so a value that cannot be called is stored quietly and every read
+ * that reaches it — `disabled()`, `readonly()`, `state.valid()`, `submitValue()` — fails with a
+ * message naming an engine internal, on a form that still answers `getValue()`.
+ *
+ * A path is checked where it arrives; so is this.
+ */
+function assertReactive(
+  value: unknown,
+  parameter: string,
+  name: string,
+): asserts value is MdySignal<boolean> {
+  if (typeof value === "function") return;
+  throw new Error(
+    `[modyra] ${parameter} for "${name}" must be a zero-argument function, received ${shapeOf(value)}. ` +
+    "A framework's own reactive value is wrapped in one: () => ref.value.",
+  );
+}
+
+/**
+ * An initial is the baseline `reset()` returns to and `dirty` measures against, so it outlives every
+ * value written over it. A field given one it cannot hold can never be clean and can always be reset
+ * into a value its own kind forbids.
+ *
+ * The declared initial is what the engine knows about what a field holds — a schema states no kind —
+ * so a replacement of a different shape is refused and a field that declared nothing is left alone.
+ */
+function assertBaseline(name: string, declared: unknown, value: unknown): void {
+  if (declared === null || declared === undefined) return;
+  if (value !== null && typeof value === typeof declared) return;
+  throw new Error(
+    `[modyra] The initial value for "${name}" must be ${shapeOf(declared)}, received ${shapeOf(value)}.`,
+  );
+}
+
+/** The same door for the write that replaces everything. */
+function assertWholeValue(value: unknown, method: string): asserts value is Record<string, unknown> {
+  if (typeof value === "object" && value !== null && !Array.isArray(value)) return;
+  throw new Error(
+    `[modyra] ${method} takes the whole form value as an object, received ${shapeOf(value)}.`,
+  );
+}
+
+/** The same door for the setters whose reactive argument is a list of functions. */
+function assertValidatorList(
+  value: unknown,
+  parameter: string,
+  name: string,
+): asserts value is ReadonlyArray<unknown> {
+  if (Array.isArray(value) && value.every(entry => typeof entry === "function")) return;
+  throw new Error(
+    `[modyra] ${parameter} for "${name}" must be an array of functions, received ${shapeOf(value)}.`,
+  );
+}
+
 export interface MdyFormEngineOptions {
   /** Emit console warnings for suspicious usage. Default true. */
   readonly devWarnings?: boolean;
@@ -589,6 +655,7 @@ export class MdyFormEngine
   }
 
   setInitialValue(name: string, value: unknown): void {
+    assertBaseline(name, this._initialValues.get(name), value);
     // Sanitized once here so reset()/getChanges() compare against the value
     // the field actually holds; the record write below re-applies the
     // (idempotent) sanitizer harmlessly.
@@ -618,6 +685,7 @@ export class MdyFormEngine
     validators: ReadonlyArray<ValidatorFn<T>>,
     marksRequired = false,
   ): void {
+    assertValidatorList(validators, "validators", name);
     const rec = this._getOrCreate(name);
     // Cast from ValidatorFn<T> to ValidatorFn<unknown> at the storage boundary.
     // Safe: the field value is always of type T at runtime (validator and field
@@ -665,6 +733,7 @@ export class MdyFormEngine
     validators: ReadonlyArray<MdyAsyncValidatorFn<T>>,
     options?: MdyAsyncValidatorOptions,
   ): void {
+    assertValidatorList(validators, "validators", name);
     const rec = this._getOrCreate(name);
     rec.asyncValidators.update(map => {
       const next = new Map(map);
@@ -693,6 +762,7 @@ export class MdyFormEngine
   }
 
   setDisabled(name: string, disabled: MdySignal<boolean>): void {
+    assertReactive(disabled, "disabled", name);
     const rec = this._getOrCreate(name);
     // A binding cannot put back in play what the schema left out, and finding that out by watching a
     // control stay grey is the kind of silence this library owes an explanation for.
@@ -715,10 +785,12 @@ export class MdyFormEngine
    * would let whichever spoke last silently cancel the other.
    */
   setInactive(name: string, inactive: MdySignal<boolean>): void {
+    assertReactive(inactive, "inactive", name);
     this._getOrCreate(name).inactive.set(inactive);
   }
 
   setReadonly(name: string, readonly: MdySignal<boolean>): void {
+    assertReactive(readonly, "readonly", name);
     this._bind(name, { readonly });
     this._getOrCreate(name).readonly.set(readonly);
   }
@@ -864,16 +936,19 @@ export class MdyFormEngine
   }
 
   setValue(value: Record<string, unknown>): void {
-    // Replace semantics: fields absent from the new value are reset to null.
+    assertWholeValue(value, "setValue");
     for (const [key, val] of Object.entries(value)) {
+      if (val === undefined) continue;
       if (!this._offerToGate(key, val)) continue;
       const rec = this._getOrCreate(key);
       rec.state.value.set(val);
     }
+    // Replace semantics: a field the new value does not name returns to its initial, which is the
+    // rule `reset()` follows and a shape the form could have started in. Nulling them instead left a
+    // field holding what `explainValueMismatch` condemns, on a form still reporting itself valid.
     this._fields.forEach((rec, name) => {
-      if (!(name in value)) {
-        rec.state.value.set(null);
-      }
+      if (name in value && value[name] !== undefined) return;
+      rec.state.value.set(this._initialOf(name));
     });
     // Told last, so a row this write declared is already there to be kept.
     this._tellGatesTheWholeValue(value);
@@ -907,10 +982,7 @@ export class MdyFormEngine
     this._fields.forEach((rec, name) => {
       // Only restore explicit initial values; a seed value is a prefill,
       // not a reset target. Fields without an explicit initial go to null.
-      const iv = this._initialValues.has(name)
-        ? this._initialValues.get(name)
-        : null;
-      rec.state.value.set(iv as unknown);
+      rec.state.value.set(this._initialOf(name));
       rec.state.touched.set(false);
       rec.state.dirty.set(false);
     });
@@ -1174,6 +1246,11 @@ export class MdyFormEngine
       );
     }
     return rec;
+  }
+
+  /** What a field holds when nothing has been written to it: its initial, or null if none was declared. */
+  private _initialOf(name: string): unknown {
+    return this._initialValues.has(name) ? this._initialValues.get(name) : null;
   }
 
   private _createFieldRecord(name: string): FieldRecord {
