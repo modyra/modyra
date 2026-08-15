@@ -190,6 +190,7 @@ export type { MdyFieldKind } from "./field-kinds.js";
 export {
   MDY_MAX_EXPRESSION_DEPTH,
   evaluateExpression,
+  evaluateRuleCondition,
   expressionPaths,
   isExpression,
   isPathRef,
@@ -212,6 +213,7 @@ export {
   assertSafeDynamicFieldNames,
   buildDynamicFieldValidators,
   buildDynamicFormSchema,
+  applyDynamicRules,
   buildDynamicValidations,
   buildDynamicValidators,
   flattenDynamicForm,

@@ -279,6 +279,54 @@ function evaluateAt(expr: MdyExpression, value: unknown, depth: number): boolean
  * A cross-field validator has to declare what it depends on, or it will not re-run when the field it
  * asks about changes. Deriving that from the expression removes the chance of the two disagreeing.
  */
+/**
+ * Answers a rule's condition — the flat predicate a document's `rules` slot carries.
+ *
+ * Flat rather than a tree: one field, one operator, one value. `MdyDynamicRule` declares ten
+ * operators and this is where each is answered, in the module that already owns "what a predicate
+ * says about a form's value" — so the tree and the flat form cannot come to disagree about what
+ * `isEmpty` means.
+ *
+ * An operator nobody declared answers `false`, as an expression's does: a question with no answer is
+ * not answered with the one that opens the field.
+ *
+ * Comparisons are between two numbers or two strings. A string comparison is what makes a date rule
+ * work — the contract's dates are ISO, and ISO sorts — and anything else is not ordered, so a
+ * comparison against it is `false` rather than a coercion nobody asked for.
+ */
+export function evaluateRuleCondition(
+  when: { readonly field: string; readonly operator: string; readonly value?: unknown },
+  value: unknown,
+): boolean {
+  const held = memberAccess(value, when.field);
+  const expected = when.value;
+  switch (when.operator) {
+    case "equals": return held === expected;
+    case "notEquals": return held !== expected;
+    case "in": return Array.isArray(expected) && expected.includes(held);
+    case "notIn": return Array.isArray(expected) && !expected.includes(held);
+    case "isEmpty": return isEmptyValue(held);
+    case "isNotEmpty": return !isEmptyValue(held);
+    case "greaterThan": return compareOrdered(held, expected, (order) => order > 0);
+    case "greaterThanOrEqual": return compareOrdered(held, expected, (order) => order >= 0);
+    case "lessThan": return compareOrdered(held, expected, (order) => order < 0);
+    case "lessThanOrEqual": return compareOrdered(held, expected, (order) => order <= 0);
+    default: return false;
+  }
+}
+
+/** Two numbers or two strings, or no order at all. */
+function compareOrdered(held: unknown, expected: unknown, accept: (order: number) => boolean): boolean {
+  if (typeof held === "number" && typeof expected === "number") {
+    if (Number.isNaN(held) || Number.isNaN(expected)) return false;
+    return accept(held < expected ? -1 : held > expected ? 1 : 0);
+  }
+  if (typeof held === "string" && typeof expected === "string") {
+    return accept(held < expected ? -1 : held > expected ? 1 : 0);
+  }
+  return false;
+}
+
 export function expressionPaths(expr: MdyExpression): readonly string[] {
   const paths = new Set<string>();
   const walk = (operand: MdyOperand | undefined, depth: number): void => {

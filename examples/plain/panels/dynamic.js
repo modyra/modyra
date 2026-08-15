@@ -5,7 +5,7 @@
  * and never code, a field name is a path and is checked as one, and everything the parser rejects
  * it says out loud. Paste something broken and read the diagnostics — that is the panel.
  */
-import { MDY_DYNAMIC_DIAGNOSTICS, MDY_DYNAMIC_INVALID_FIELD, parseDynamicForm } from "@modyra/core";
+import { MDY_DYNAMIC_DIAGNOSTICS, MDY_DYNAMIC_INVALID_FIELD, evaluateRuleCondition, parseDynamicForm } from "@modyra/core";
 import { mountMdyForm } from "@modyra/plain";
 import { formErrorsOf, MDY_FORM_SHELL_CLASSES, MDY_FORM_SHELL_STRUCTURE } from "@modyra/widgets";
 import { action, readoutPrinter, toolbar } from "./shell.js";
@@ -19,6 +19,13 @@ const SAMPLE = {
       { value: "free", label: "Free" }, { value: "pro", label: "Pro" },
     ] },
     { name: "starts", kind: "datepicker", label: "Starts" },
+    { name: "seats", kind: "number", label: "Seats" },
+  ],
+  // What the document says the form does, not only what it holds. Change the plan and watch the
+  // seat count leave the page and the payload with it: a rule is a binding on the form, so what it
+  // decides reaches what is sent and not only what is drawn.
+  rules: [
+    { effect: "visible", target: "seats", when: { field: "plan", operator: "equals", value: "pro" } },
   ],
 };
 
@@ -49,6 +56,8 @@ export const dynamicPanel = {
     "MDY_DYNAMIC_INVALID_FIELD",
     "parseDynamicForm",
     "mountMdyForm",
+    "applyDynamicRules",
+    "evaluateRuleCondition",
     "MdyDynamicField",
     "MdyDynamicDiagnostic",
     "MdyDynamicFormParseResult",
@@ -92,11 +101,22 @@ export const dynamicPanel = {
         version: parsed.version,
         fields: parsed.fields.map((f) => `${f.name}: ${f.kind}`),
         diagnostics: parsed.diagnostics.map((d) => `${d.severity} ${d.code} at ${d.path} — ${d.message}`),
+        // Each rule's condition against the form's current value: the same answer the binding uses,
+        // asked directly, so what a rule is doing is readable rather than inferred from what moved.
+        rules: parsed.rules.map((rule) => {
+          const holds = evaluateRuleCondition(rule.when, mounted ? mounted.form.getValue() : {});
+          return `${rule.effect} ${rule.target} when ${rule.when.field} ${rule.when.operator} ${JSON.stringify(rule.when.value)} → ${holds}`;
+        }),
       };
       // A document the parser refused mounts nothing. Rendering "the part that parsed" is how a
       // rejected document becomes a form somebody fills in.
       if (parsed.ok && parsed.fields.length > 0) {
-        mounted = mountMdyForm(formHost, parsed.fields, { idPrefix: "dyn" });
+        mounted = mountMdyForm(formHost, parsed.fields, {
+          idPrefix: "dyn",
+          layout: parsed.layout,
+          // Passed, because a form built without them behaves as though the array were empty.
+          rules: parsed.rules,
+        });
       }
       print();
     };

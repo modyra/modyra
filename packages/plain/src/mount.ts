@@ -7,7 +7,7 @@
  * no framework: pure `document.createElement`/`addEventListener`, wired to
  * @modyra/widgets' headless controllers.
  */
-import { assertSafeDynamicFieldNames, vanillaReactivity, type MdyDynamicCollection, type MdyDynamicField, type MdyDynamicLayoutChild, type MdyDynamicLayoutNode, type MdyDynamicLayoutSlot, type MdyFieldHandle, type MdyFormSchema, type MdyReactivity, type MdySubmittedValue, type MdyTypedForm } from "@modyra/core";
+import { applyDynamicRules, assertSafeDynamicFieldNames, vanillaReactivity, type MdyDynamicCollection, type MdyDynamicField, type MdyDynamicLayoutChild, type MdyDynamicLayoutNode, type MdyDynamicLayoutSlot, type MdyDynamicRule, type MdyFieldHandle, type MdyFormSchema, type MdyReactivity, type MdySubmittedValue, type MdyTypedForm } from "@modyra/core";
 import { buildForm } from "./schema.js";
 import { formErrorsOf, isValidWidgetId, layoutNodeAttributes, layoutSlotStyle, MDY_FORM_SHELL_CLASSES, MDY_ID_DELIMITER, MDY_LAYOUT_CLASSES } from "@modyra/widgets";
 import { renderField } from "./fields/index.js";
@@ -53,6 +53,18 @@ export interface MountMdyFormOptions {
    * Unset is the default and leaves every id exactly as it would be without this option.
    */
   readonly idPrefix?: string;
+  /**
+   * Contract v2 `rules`: what a document says a field's presence or availability depends on.
+   *
+   * The parse returns them beside `fields` and `layout`, and a form built without them behaves as
+   * though the array were empty — a document saying "hide the VAT number unless the customer is a
+   * business" produced a form that showed it always, and one saying "disable the tax id for a
+   * private customer" produced a form that sent it.
+   *
+   * `visible`/`hidden` take the field out of play, so its value is not submitted and not validated;
+   * `enabled`/`disabled` leave it in the form and stop it being answered.
+   */
+  readonly rules?: ReadonlyArray<MdyDynamicRule>;
 }
 
 /**
@@ -129,6 +141,9 @@ export function mountMdyForm(
 
   const reactivity = vanillaReactivity();
   const form = buildForm(fields, reactivity, options.collections);
+  // Applied to the form rather than to the markup: what a rule decides is whether the field is in
+  // play, which is the form's word and reaches the payload as well as the page.
+  if (options.rules && options.rules.length > 0) applyDynamicRules(form, options.rules);
   /**
    * The handle a name points at.
    *
