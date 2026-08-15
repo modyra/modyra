@@ -8394,8 +8394,15 @@ immediately. `projectFieldShellA11y` treats the two as one answer — *the wrapp
 `aria-invalid` and whether the error text renders are four faces of one question, answered once* —
 and this is the case that comment rules out.
 
-What it costs: a control outlined as wrong with no reason beside it and a submit button that will not
-go, over a value the person never entered.
+**What it costs, measured rather than assumed.** The reason is not withheld forever: it appears when
+the field is touched, and also when a submission is attempted — the page reads "Age This field holds
+number" after a submit that went nowhere. So the user can find out; what they cannot do is find out
+*by looking*. Between arriving and acting they see a control marked wrong with nothing next to it, and
+the form-level summary is empty too.
+
+That is why this is S2 and not S1, and why the finding is the disagreement rather than the silence:
+`aria-invalid` is answered on arrival and the message on interaction, from one verdict that the
+projection says is answered once.
 
 The control is the same field after a touch, which shows the message in both, so this is about *when*
 rather than a page that cannot show messages — that is finding 125.
