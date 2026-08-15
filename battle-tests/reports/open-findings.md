@@ -7463,3 +7463,56 @@ evidence was wrong and is now the console, in the battle itself.
 
 Recorded rather than quietly fixed, because a battle that measures its own instrument is the failure
 this suite exists to catch, and it happened here.
+
+## 134. Fifty-six style rules for a button two renderers never build
+
+**Severity** S2 · **Classification** declared part not built · **Spec**
+`browser/the-buttons-at-the-end-of-a-field.spec.ts` (red, both renderers) · **Claims** UI-003,
+STY-001
+
+`trailingAffordances(kind)` names what sits after a field's value, and `kindsWithAffordances()` says
+which kinds have any. Seven do:
+
+```
+number       increment, decrement   role control
+select       arrow                  role indicator — decorative, pointer-events none
+multiselect  searchButton           role control
+datepicker   toggle                 role control
+daterange    toggle                 role control
+timepicker   toggle                 role control
+colors       toggle                 role control
+```
+
+Each is a part of the widget contract with classes of its own, which is what makes it checkable
+without arguing about markup. Measured, by those classes:
+
+```
+                        plain   lit
+number.increment        absent  absent
+number.decrement        absent  absent
+select.arrow            present native <select>, excluded
+multiselect.searchButton present present
+datepicker/daterange/timepicker/colors .toggle   present  present
+```
+
+**Angular builds them** (`packages/angular/src/lib/renderers/number/number-spin-buttons.directive.ts`).
+plain and lit mention `increment`/`decrement` only for the multiselect's counter chips, never for a
+number field.
+
+The shipped stylesheets carry **42 rules** for `.mdy-spin-btn` and seven each for `.mdy-spin-btn-up`
+and `.mdy-spin-btn-down` — 56 rules that never fire on two of the three renderers. A number field
+without steppers of its own falls back to whatever the browser draws: a different size, a different
+weight, absent on touch, and not the thing the stylesheet describes.
+
+The control is that affordances were looked for at all — a run that skipped every kind would report
+nothing missing and mean nothing by it — and native-control kinds are excluded by name, since the
+browser owns that widget's furniture.
+
+### Measured alongside, not filed
+
+In one renderer the toggle of `daterange` and `timepicker` carries `tabindex="-1"` while the same
+part on `datepicker` does not. Three sibling kinds, two out of the tab order and one in it. It may be
+deliberate — that renderer's input carries `aria-haspopup` and the keyboard opens the popup from
+there, so a second tab stop would be redundant — but then the third kind is the odd one. Recorded
+rather than filed: the inconsistency is real, the intended answer is not mine to pick, and it is one
+line to check when finding 122's neighbourhood is opened.
