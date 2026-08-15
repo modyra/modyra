@@ -1,0 +1,125 @@
+/**
+ * The state machine the package publishes, driven in a page.
+ *
+ * `MDY_WIDGET_TRANSITIONS` declares, per kind, the moves a widget makes: `{ from, trigger, to }`,
+ * where a trigger is a pointer on a named part, a key, or a click outside. Six kinds declare one —
+ * select, multiselect, datepicker, daterange, timepicker, colors — and between them twenty-two
+ * transitions.
+ *
+ * One battle reads that table today and it checks the *list*: that both packages declare the same
+ * kinds. Nothing drives it. Individual specs cover a combobox, a popup, a slider; none of them asks
+ * the table what it promises and then does it.
+ *
+ * This does, from the table rather than from a copy of it, so a transition added later is exercised
+ * without this file being edited. A kind a renderer builds out of native controls — lit renders
+ * `select` as a `<select>` — declares no `aria-expanded` to read, and is reported as undriveable
+ * rather than failed: the point is what the table promises about widgets that have these states, not
+ * that every renderer must build every kind the same way.
+ */
+
+import { readFileSync } from "node:fs";
+
+import { expect, test } from "@playwright/test";
+import { MDY_WIDGET_TRANSITIONS } from "@modyra/widgets";
+
+const HOSTS = [
+  { name: "plain", page: "/index.html", ready: "battleReady", api: "battle" },
+  { name: "lit", page: "/lit.html", ready: "battleLitReady", api: "battleLit" },
+];
+
+/** Kinds whose declared machine has at least one move. */
+const WITH_TRANSITIONS = Object.entries(MDY_WIDGET_TRANSITIONS)
+  .filter(([, moves]) => Array.isArray(moves) && moves.length > 0)
+  .map(([kind]) => kind);
+
+const OPTIONS = [{ value: "a", label: "A" }, { value: "b", label: "B" }];
+
+for (const host of HOSTS) {
+  test(`${host.name}: every transition a kind declares is one the page makes`, async ({ page }) => {
+    await page.goto(host.page);
+    await page.waitForFunction((flag) => (window as never as Record<string, boolean>)[flag] === true, host.ready);
+
+    // The premise: the table has something in it. A rename upstream that emptied it would otherwise
+    // leave this green having driven nothing.
+    expect(WITH_TRANSITIONS.length, JSON.stringify(WITH_TRANSITIONS)).toBeGreaterThan(3);
+
+    const wrong: Array<Record<string, unknown>> = [];
+    const undriveable: string[] = [];
+    let driven = 0;
+
+    for (const kind of WITH_TRANSITIONS) {
+      const id = `t-${kind}`;
+      await page.evaluate(
+        ({ api, k, mountId, options }) => {
+          const battle = (window as never as Record<string, { mountFields(id: string, f: unknown[]): unknown }>)[api];
+          const field: Record<string, unknown> = { name: "f", kind: k, label: `L ${k}` };
+          if (/select/.test(k)) field.options = options;
+          battle.mountFields(mountId, [field]);
+        },
+        { api: host.api, k: kind, mountId: id, options: OPTIONS },
+      );
+      await page.waitForTimeout(150);
+
+      const scope = `[data-form="${id}"]`;
+      const expanded = () => page.evaluate(
+        (selector) => document.querySelector(`${selector} [aria-expanded]`)?.getAttribute("aria-expanded") ?? null,
+        scope,
+      );
+
+      if (await expanded() === null) {
+        undriveable.push(`${kind}: nothing on the page reports aria-expanded`);
+        continue;
+      }
+
+      for (const move of MDY_WIDGET_TRANSITIONS[kind] as ReadonlyArray<Record<string, never>>) {
+        const from = move.from as unknown as string;
+        const to = move.to as unknown as string;
+        const trigger = move.trigger as unknown as { type: string; part?: string; key?: string };
+
+        // Put it in `from`. "closed" is where a fresh mount is; "open" takes one click.
+        const toggle = page.locator(`${scope} button`).first();
+        if (await toggle.count() === 0) {
+          undriveable.push(`${kind}: no button to drive it with`);
+          break;
+        }
+        if (await expanded() === "true") await page.keyboard.press("Escape");
+        await page.waitForTimeout(80);
+        if (from === "open") {
+          await toggle.click({ timeout: 2000 }).catch(() => {});
+          await page.waitForTimeout(150);
+        }
+        if (await expanded() !== (from === "open" ? "true" : "false")) {
+          undriveable.push(`${kind}: could not reach "${from}"`);
+          continue;
+        }
+
+        // Apply what the table names.
+        if (trigger.type === "pointer") {
+          await toggle.click({ timeout: 2000 }).catch(() => {});
+        } else if (trigger.type === "key" && typeof trigger.key === "string") {
+          await page.keyboard.press(trigger.key === " " ? "Space" : trigger.key);
+        } else if (trigger.type === "outside") {
+          await page.mouse.click(2, 2);
+        } else {
+          undriveable.push(`${kind}: no way to apply a trigger of type "${trigger.type}"`);
+          continue;
+        }
+        await page.waitForTimeout(200);
+
+        driven += 1;
+        const reached = await expanded() === "true" ? "open" : "closed";
+        if (reached !== to) wrong.push({ kind, from, trigger, declared: to, reached });
+      }
+    }
+
+    // Reported rather than only asserted: a sweep is worth what it reached, and "22 of 22" is the
+    // difference between this passing and this having run.
+    console.log(`[${host.name}] declared ${WITH_TRANSITIONS.reduce((n, k) => n + (MDY_WIDGET_TRANSITIONS[k] as unknown[]).length, 0)}, driven ${driven}, undriveable ${undriveable.length}: ${JSON.stringify(undriveable)}`);
+
+    // The control: the sweep actually drove something. A run in which every kind was undriveable
+    // would report no wrong transitions and mean nothing by it.
+    expect(driven, JSON.stringify({ driven, undriveable })).toBeGreaterThan(3);
+
+    expect(wrong, JSON.stringify({ driven, wrong, undriveable }, null, 1)).toEqual([]);
+  });
+}

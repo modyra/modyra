@@ -4517,3 +4517,29 @@ result the adapter already receives.
 
 Nothing in this suite had used either schema library's own verdict as an oracle before: `safeParse`
 and `~standard.validate` appear in no other battle.
+
+## Checked and clean: the state machine the package publishes
+
+`browser/every-transition-a-kind-declares.spec.ts` — 2 green.
+
+`MDY_WIDGET_TRANSITIONS` declares, per kind, the moves a widget makes — `{ from, trigger, to }`,
+where a trigger is a pointer on a named part, a key, or a click outside. Six kinds declare one and
+between them there are twenty-two transitions. One battle read that table before this and it checked
+the *list*: that both packages declare the same kinds. Nothing drove it, and the specs that touch
+these states cover one widget each.
+
+Driven from the table itself, in a real page, in both renderers:
+
+```
+[plain] declared 22, driven 22, undriveable 0
+[lit]   declared 22, driven 18, undriveable 1  (select: lit renders it as a native <select>,
+                                                so there is no aria-expanded to read)
+```
+
+Every one of them reached the state it declares. The four lit skipped are one kind whose renderer
+builds it out of a native control, which is a difference in how a renderer works rather than a
+transition that fails — it is reported as undriveable rather than counted either way.
+
+Kept because it is table-driven: a transition added to `MDY_WIDGET_TRANSITIONS` later is exercised
+without this file being edited, and the coverage line is printed rather than only asserted, so a
+future run that reaches four of twenty-two cannot read as the same green.
