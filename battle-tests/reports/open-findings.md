@@ -8457,3 +8457,43 @@ three kinds as stale that were not: a password shows `s3cret` and no pattern of 
 custom listbox keeps its choice in the trigger rather than an input, and `file` was handed its own
 empty value. The measure that survives is *did anything visible change*, which needs no table of how
 each kind draws itself.
+
+## 151. A verdict that depends on how the value arrived
+
+**Severity** S1 · **Classification** the same value judged two ways · **Spec**
+`browser/a-verdict-that-depends-on-how-it-arrived.spec.ts` (red, both renderers) · **Claims**
+VAL-003, SUB-002
+
+A date field refuses text it cannot read: the entry is flagged, the model keeps `null`, and the form
+will not send. That path is well made — it is finding 121's repair.
+
+The other way in is not the keyboard. `patchValue` is what an application calls when a fetch answers,
+when a related field changes, when a draft is restored:
+
+```
+typed     "not a date"   model null            aria-invalid true   "That could not be read…"
+given     "not a date"   model "not a date"    aria-invalid false  no message
+```
+
+Identical in both renderers, so this is shared rather than one renderer's. And it reaches the wire:
+submitting a form in that state sends `{"when": "not a date"}`.
+
+`MDY_VALUE_CONTRACTS.datepicker` is `{shape: "string"}`, so a shape check cannot object — every string
+is a string. The readability check that does object lives on the typed path alone.
+
+Whether a value is one this field can hold is a question about the **value**. The answer cannot depend
+on which door it came through, and a form that sends what it would have refused from the keyboard is
+the shape of that inconsistency at the boundary.
+
+### Checked and clean, in the same run
+
+- **UI-006 holds everywhere.** Eight values a control cannot show — a choice never offered, a number
+  below its minimum, a slider past its maximum, a date that is not one, a colour that is not one — and
+  in every case, in both renderers, the **model kept what it was given**. No widget rewrote a value to
+  make itself consistent.
+- **A colour field shows what it holds.** Handed `banana`, the hex box shows `banana`; only the
+  native swatch beside it falls back to `#000000`, which is the one thing it can do with a string that
+  is not a colour. First read as a page-versus-model disagreement, and it is not: the value is on
+  screen, in the control that can show it.
+- **A slider past its maximum** shows the maximum and is marked invalid, in both. The control cannot
+  draw 999 on a track that ends at 10, and it says so rather than pretending.
