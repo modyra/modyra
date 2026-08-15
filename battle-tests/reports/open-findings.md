@@ -9658,3 +9658,39 @@ form is wrong afterwards — that is what makes it quiet.
 - **`exclude` protects both directions.** A draft tampered to carry `secret: "sk-live-INJECTED"` for
   an excluded field does not restore it: the field comes back empty. The guide says "never persisted
   nor restored" and the restore half holds.
+
+## 169. A draft that never gets old
+
+**S2 · Modyra bug · `@modyra/core` (draft `ttlMs`)**
+Claims: PER-001, SEC-006 · severity stated above the claims' own
+Battle: `battle-tests/adversarial/persistence/a-draft-that-never-gets-old.battle.test.mjs` (red, enforced)
+
+`ttlMs` is documented as *discard drafts older than a day*, and the reason it exists is on the same
+page: the default storage is plain text, readable by every script on the origin, and it survives
+logout. An expiry is how a consumer bounds how long a half-filled form sits there.
+
+The age comes from `savedAt` in the envelope and the check believes it. Three envelopes never expire:
+
+```
+envelope                       ttlMs = 1 hour      restored
+honest, just written           within it           yes    ← control
+honest, two hours old          past it             no     ← control
+savedAt set 24 hours ahead     unbounded           yes
+savedAt deleted                unbounded           yes
+savedAt = "soon"               unbounded           yes
+```
+
+The first needs no attacker: a device whose clock was ahead when the draft was written produces it,
+and the draft then outlives every expiry the consumer sets. The second is what a partially written
+envelope looks like, or one from a version that did not carry the field.
+
+Both controls are asserted first, because "expired" and "restored nothing" are otherwise the same
+measurement.
+
+### Checked and clean, in the same run
+
+- **`version` is part of the storage key, not the envelope.** Saved at 1 and opened at 2 restores
+  nothing; saved and opened at 1 restores. Two probes I wrote against a `version` field *in* the
+  envelope measured nothing at all — there is no such field — and the design is sound: a version bump
+  is a different slot rather than a value to compare.
+- **`exclude` protects on restore as well as on write** (recorded under finding 168).
