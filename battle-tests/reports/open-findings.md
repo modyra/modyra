@@ -748,3 +748,43 @@ Search: 1 of 40 run(s), minimized in 27 attempt(s)
 The consequence is a priority rather than a bug: every property with a known red is capped at that
 red's run index. A 200,000-run campaign is only deep on the properties that pass, and closing the
 early-failing reds is what unlocks the search behind them.
+
+## 41. A renamed row moves to the end
+
+`adversarial/collections/a-renamed-row-changes-places.battle.test.mjs` — 2 red, 1 green.
+
+Found by surveying past the first divergence (finding 40's tool). The property this lives in stops at
+run 0 on a known red; this kind first appears around run 35, and reduces to three operations:
+
+```js
+form.f.orders.upsert("b", { ref: "A1" });
+form.f.orders.upsert("c", { ref: "A1" });
+form.f.orders.rename("b", "a");
+// keys(): ["c", "a"] — the renamed row is last
+```
+
+The record contract defines `rename` against the operation it is not:
+
+> Moves a row to a new key, carrying value, validity and `touched`. `remove` followed by `upsert`
+> reaches the same value; what only this can keep is the state the user produced — a field they
+> visited stays visited.
+
+It keeps that, and the green battle asserts it: `touched` survives a rename and does not survive
+remove-then-upsert. The finding is what happens besides.
+
+| three rows, `two` renamed to `zzz` | keys after | touched |
+| --- | --- | --- |
+| `rename("two","zzz")` | `["one","three","zzz"]` | `true` |
+| `remove("two")` + `upsert("zzz")` | `["one","three","zzz"]` | `false` |
+
+Identical order. On the one axis a person looking at a table can see, the two operations are the same
+operation. A user who renames the second row of five watches it jump to the bottom. The same happens
+one level down, which is where a rename is likeliest to be used and least likely to be noticed.
+
+Order is not mentioned in the contract, which is what makes this a finding rather than a preference: a
+consumer reading that sentence has no way to learn it, and the case that would teach them — renaming
+the last row — is the one where nothing appears to happen.
+
+Either resolution closes it: keep the row where it was, or say in the contract that a rename reorders.
+The battle asserts the position, because that is what a rendered list shows; a documented move would
+make this battle wrong on purpose, which is a better outcome than silence.
