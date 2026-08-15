@@ -6010,3 +6010,29 @@ honour it where it is declared.
 
 Classification: Modyra bug, S1 by SEC-001's severity — a value the document ruled out reaches the
 form, and from there the payload.
+
+## Checked and clean: the properties a field declares about itself
+
+`browser/what-a-field-declares-about-itself.spec.ts` — 4 green.
+
+`$defs.field` carries more than a name and a kind: `ariaLabel`, `placeholder`, `min`, `max` and `step`
+are the field's own, separate from `validators`, and none had a page-level check. All five reach the
+control, identically in both renderers:
+
+```
+placeholder "type here"    → placeholder="type here"
+ariaLabel "spoken name"    → aria-label="spoken name"
+number min 3 max 9         → min="3" max="9"
+number step 0.5            → step="0.5"
+slider min 2 max 8 step 2  → min="2" max="8" step="2"
+```
+
+And the pair worth holding: a bound spelled as a field property becomes a native attribute **and** a
+rule the model enforces. Finding 46 was the two disagreeing, and it is closed; measured now in both
+renderers, a value inside the bounds is accepted by both (`aria-invalid="false"`,
+`rangeUnderflow: false`) and a value below the floor is refused by both (`aria-invalid="true"`,
+`rangeUnderflow: true`). One bound, not two.
+
+That is the case finding 99 is about seen from the other side: there an attribute is stricter than the
+rule it came from, here the attribute and the rule are the same rule. Holding this makes the
+difference between them visible if either moves.
