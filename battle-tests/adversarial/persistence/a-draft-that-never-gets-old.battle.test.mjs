@@ -76,6 +76,7 @@ battle(
     severity: "S2",
     title: "a draft with no usable age is treated as expired",
     environments: ["node"],
+    open: "reported, not enforced: finding 169, open in battle-tests/reports/open-findings.md",
   },
   async (ctx) => {
     // The two controls, first: an expiry that expires and one that does not.
