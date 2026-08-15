@@ -851,6 +851,7 @@
     "descriptionVisible?: boolean",
     "errorsVisible?: boolean",
     "kind?: string",
+    "value?: number | null",
     "widgetId: string"
   ],
   "MdyFieldShellFlags": [
@@ -2785,6 +2786,7 @@
   "nativeConstraintAttributes": [
     "(0) kind: MdyWidgetKind | string",
     "(1) constraints: MdyFieldConstraints",
+    "(2) value?: number | null",
     "-> returns: MdyNativeAttributes"
   ],
   "normalizeStateLedger": [
@@ -3090,6 +3092,11 @@
     "(1) min: number",
     "(2) max: number",
     "-> returns: number"
+  ],
+  "sliderTrack": [
+    "(0) constraints: Pick<MdyFieldConstraints, \"min\" | \"max\" | \"step\">",
+    "(1) value: number | null",
+    "-> returns: { readonly min: number; readonly max: number; readonly step: number | null; }"
   ],
   "stabilizeOverlayPlacement": [
     "(0) previous: MdyOverlayDecision | null",

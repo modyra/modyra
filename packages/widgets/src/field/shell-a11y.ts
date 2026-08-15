@@ -65,6 +65,13 @@ export interface MdyFieldShellA11yOptions {
    * projection its renderer happens to use.
    */
   readonly constraints?: MdyFieldConstraints;
+  /**
+   * What the field holds, where the kind draws it on a track.
+   *
+   * A slider's range is the only attribute that depends on the value: it has to span what the field
+   * holds, or the thumb sits somewhere the form does not. See `sliderTrack`.
+   */
+  readonly value?: number | null;
 }
 
 /** The ids a shell's parts carry, so a renderer can put them on its own elements. */
@@ -128,7 +135,11 @@ export function projectFieldShellA11y(
       attributes: {
         // What the field's rules state, in the attributes this kind's control can carry. Absent
         // members are `null`, which is how a part contract says "remove this".
-        ...nativeConstraintAttributes(options.kind ?? "text", options.constraints ?? NO_CONSTRAINTS),
+        ...nativeConstraintAttributes(
+          options.kind ?? "text",
+          options.constraints ?? NO_CONSTRAINTS,
+          options.value ?? null,
+        ),
         "aria-invalid": String(hasErrors),
         "aria-required": String(flags.required),
         // Disabled alone, never folded with read-only: a read-only control is reachable, and

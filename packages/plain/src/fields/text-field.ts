@@ -12,6 +12,7 @@ import {
   MDY_WIDGET_CONTRACTS,
   createTextFieldController,
   narrowConstraints,
+  sliderTrack,
   shownErrorsOf,
   sliderFillRatio,
 } from "@modyra/widgets";
@@ -67,8 +68,13 @@ export function renderTextField(
   // track starts and ends. A slider must span something to be drawn at all, so where neither the
   // config nor the field's rules say, it is what a bare `<input type="range">` assumes.
   const offered = () => narrowConstraints(handle.constraints(), narrowing);
-  const sliderMin = f.kind === "slider" ? offered().min ?? 0 : 0;
-  const sliderMax = f.kind === "slider" ? offered().max ?? 100 : 100;
+  // The track the contract draws, which spans what the field holds where nothing declared a bound —
+  // both renderers used to default to 0–100 here and put the thumb at 100 for a value of 150.
+  const track = () => sliderTrack(offered(), typeof handle.value() === "number" ? handle.value() as number : null);
+  // Read inside the effect, not once here: the track spans what the field holds, so a value
+  // arriving from a draft or a server moves it.
+  const sliderMin = () => (f.kind === "slider" ? track().min : 0);
+  const sliderMax = () => (f.kind === "slider" ? track().max : 100);
   let sliderValue: HTMLSpanElement | null = null;
   if (slider) {
     const track = el("div") as HTMLDivElement;
@@ -101,8 +107,14 @@ export function renderTextField(
       // property, or it freezes at the fallback (modyra.css:266-269).
       input.style.setProperty(
         MDY_CSS_PROPERTIES.control.sliderFill,
-        String(sliderFillRatio(state.value, sliderMin, sliderMax)),
+        String(sliderFillRatio(state.value, sliderMin(), sliderMax())),
       );
+      // The attributes carry the same track, so the drawn fill and what the control accepts agree.
+      input.setAttribute("min", String(sliderMin()));
+      input.setAttribute("max", String(sliderMax()));
+      const step = track().step;
+      if (step === null) input.removeAttribute("step");
+      else input.setAttribute("step", String(step));
     }
     applyPart(shell.description, view.parts.description);
     applyPart(shell.errorList, view.parts.error);

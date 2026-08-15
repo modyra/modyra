@@ -82,6 +82,7 @@ absent section reads as an oversight, and "no security impact" is a finding.
 - [ADR 0064: A typed form refuses a path it does not declare](0064-a-typed-form-refuses-a-path-it-does-not-declare.md) — one transposed letter attached a rule nothing could satisfy and the Submit button stopped working, with nothing said
 - [ADR 0065: What is said about a path is said about what is under it](0065-what-is-said-about-a-path-is-said-about-what-is-under-it.md) — the three interactivity setters reached only leaves, so a section a consumer excluded stayed editable and stayed in the payload
 - [ADR 0066: A bound beside the field is a rule](0066-a-bound-beside-the-field-is-a-rule.md) — two spellings of a limit rendered identically and only one was enforced, so a tampered draft outside the bound was valid and submittable
+- [ADR 0067: A track spans what the field holds](0067-a-track-spans-what-the-field-holds.md) — a slider with no declared bound drew a track ending at 100 and put the thumb there for a value of 150, in both renderers, each having invented the default separately
 
 ## Security-relevant records
 
