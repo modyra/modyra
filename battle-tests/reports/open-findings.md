@@ -6334,3 +6334,66 @@ which is the per-field compiler, not this one.
   all; lenient returns the three that parsed and three diagnostics naming each drop by its path
   (`MDY_DYNAMIC_UNSAFE_NAME`, `MDY_DYNAMIC_DUPLICATE_NAME`, `MDY_DYNAMIC_UNKNOWN_KIND`). The
   duplicate keeps its first occurrence.
+
+## 118. A document the parser let through, and the form it crashes
+
+**Severity** S0 · **Classification** Modyra bug — the trust boundary vets what the next call cannot
+build · **Battle** `adversarial/security/a-document-the-parser-let-through.battle.test.mjs` (red) ·
+**Claims** SEC-004, DYN-001
+
+`docs/guides/usage-modes.md` names the parser as the trust boundary in those words: a document that
+did not come from your code is parsed first, and strict mode "returns nothing at all when any
+diagnostic exists". At `ok === true` an application has been told the data is safe to build from.
+
+A document nesting a collection deeply enough is accepted and then fatal:
+
+```
+depth   parse (strict)          buildDynamicFormSchema   createForm
+1000    ok=true  diags=0        ok                       ok
+5000    ok=true  diags=0        ok                       ok
+6000    ok=true  diags=0        ok                       RangeError: Maximum call stack size exceeded
+20000   ok=true  diags=0        ok                       RangeError
+```
+
+Records crossed it between 5000 and 6000 here; arrays survived past 8000. The threshold is the
+runtime's stack, not a number in the contract, and it moves with the platform — which is why the
+battle asserts the property rather than a depth: at every rung a document is either refused or
+buildable, never accepted and then fatal. On a larger stack the rung passes for the right reason.
+
+**Depth is something this contract knows how to bound.** `MDY_LAYOUT_MAX_DEPTH` is 6 and
+`MDY_MAX_EXPRESSION_DEPTH` is 32 — both published, both enforced, both refusing with a diagnostic
+rather than throwing. The tree of collections has no limit and nothing checks one, so the one shape a
+document can nest without bound is the one that recurses into the form builder.
+
+An application following the published instruction crashes on data the published check called valid,
+at the call immediately after the one that vetted it. `parseDynamicForm` itself never throws, which is
+what makes this reachable: the refusal has to come from the door, and the door says yes.
+
+The battle runs each rung in a child process under a 30s budget. A stack overflow cannot be measured
+from inside the process it overflows.
+
+### Checked and clean: the nested-collection matrix, remeasured
+
+The campaign plan recorded array-in-array as refused by `assertNotNestedCollection`, with the other
+three supported. That is stale — **all four combinations build and work to the leaf**:
+
+```
+array in array    push, push → {"root":[[""]]}
+record in array   push       → {"root":[{}]}
+array in record   upsert     → {"root":{"k":[]}}
+record in record  upsert×2   → {"root":{"k0":{"k1":""}}}
+```
+
+and both kinds nest to at least depth 20 with values held correctly at every level. The v3 schema
+permits it explicitly: `arrayNode.item` and `recordNode.item` each name `arrayNode` and `recordNode`
+among their alternatives.
+
+- **The envelope has two shapes for a form**, and only one carries collections: the flat `fields`
+  array rejects a dotted name outright (`MDY_DYNAMIC_UNSAFE_NAME` on `lines.0.item`, "forbidden path
+  separators"), so a collection is expressed through the `schema` tree, which the parser flattens and
+  reports as `collections`. `collections` is not a top-level key of the document.
+- **The public handle surfaces differ by kind and neither needed a private property**: an array row
+  handle offers `path, length, rows, errors, valid, push, insert, remove, move, setAll, at`; a record
+  offers `path, keys, value, errors, valid, has, row, cell, upsert, remove, setAll, patch, rename,
+  validOf`. Recorded because guessing a record's API as the array's produced a walk that stopped at
+  depth 1 and briefly read as a depth limit. It was not one.
