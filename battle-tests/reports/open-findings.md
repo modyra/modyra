@@ -10033,3 +10033,42 @@ is invisible: it would look like one more finding, and every report would be tru
 Every red currently in the suite is reproducible, which is what makes the count usable as a queue.
 
 The sweep was prompted by finding a self-check that *did* flake about one run in five, recorded above.
+
+## 171. An hour the clock does not have
+
+**S2 · Modyra bug · `@modyra/plain`**
+Claims: UI-006, VAL-004
+Battle: `battle-tests/browser/an-hour-the-clock-does-not-have.spec.ts` (red)
+
+The hour segment of the time popup declares its own range twice — `min="1" max="12"` for the browser
+and `aria-valuemax="12"` for a reader. Typing three digits into it leaves **`129`** on screen, and
+nothing objects while the popup is open: the number is shown, the dial is drawn, and the field looks
+like it holds an hour of one hundred and twenty-nine.
+
+Confirming commits `12`.
+
+```
+typed        129
+box shows    129        while declaring max="12"
+after OK     "12:18 PM"
+marked       aria-invalid on one element, no message
+```
+
+So the value is safe and the screen is not, which is the worse half to get wrong: the user is told
+their input was taken, and something else was. A control that refused the third digit, or clamped
+where the user could see it happen, would be telling the truth at the moment the decision is made.
+
+### Controls run
+
+- **An ordinary hour is shown and committed as itself.** Typing `4` shows `4` and commits `04`, so
+  the box does take hours and the assertion is about the one it cannot hold.
+- Asked of the renderer whose segments accept typing at all. Lit's are `readonly` — a person sets the
+  hour there with the arrows or the dial, so this input never happens, and that difference is finding
+  163's subject rather than this one's.
+
+### Recorded late, and how that was caught
+
+This spec was written and pushed without its register entry. Found by listing the browser tier's
+failing spec files and checking each against this document: **44 files fail and exactly one — this one
+— had nothing written about it.** A red test with no finding is a measurement nobody can act on, and
+the only reason it was visible at all is that the rest of the register is complete.
