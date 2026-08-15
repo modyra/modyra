@@ -7391,3 +7391,29 @@ page is the difference between noticing and not.
 
 Same shape as finding 117: a shared policy computes an answer, the machinery to act on it is wired,
 and the adapters that call the policy drop the field.
+
+### Checked and clean: the keyboard on a clock face
+
+`adversarial/widgets/the-keyboard-on-a-clock-face.battle.test.mjs` (2 green).
+
+`timepickerDialKeyIntent(key, field, format, current)` and `timepickerDialNumbers` were named by
+nothing in this suite. The dial carries three things a circle needs and a list does not:
+
+```
+12h hour   down from 1 → 12    up from 12 → 1     Home 1    End 12
+24h hour   down from 0 → 23    up from 23 → 0     Home 0    End 23
+minute     down from 0 → 59    up from 59 → 0
+step       ArrowLeft/Right are ArrowDown/Up: one axis, however the circle is drawn
+page       PageUp/Down move half a face for hours (3 → 6, 3 → 12) and one dial mark for minutes (30 → 35, 30 → 25)
+faces      hours 12,1..11 starting at the top; minutes "00","05".."55"; a 24h face carries 24
+Enter, Space, Escape, Tab, a letter → no movement, so Enter is free to mean confirm
+```
+
+The draft holds hours as 1–12 whatever the format and the host converts at the boundary, which is the
+same arrangement the typed boxes use. The seam between those two is what this pins: an hour going
+12 → 13 on a twelve-hour face, or 23 → 24 on a twenty-four-hour one, is one keypress away and looks
+like nothing in a screenshot.
+
+**Two probes that measured nothing before they measured this.** `timepickerDialKeyIntent` takes four
+arguments; called with one it answers `{value: null}` for every arrow, which reads exactly like a dial
+that ignores the keyboard. Arity is worth checking before concluding a function does nothing.
