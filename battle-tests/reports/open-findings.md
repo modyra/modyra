@@ -9862,3 +9862,44 @@ broken one.
 
 The host gained `announce(regionId, message)` so a published widget helper that needs a document can
 be asked something without a form owning it.
+
+## Checked and clean: one document, two renderers, one payload
+
+**Battle:** `battle-tests/browser/one-document-two-renderers-one-payload.spec.ts` — green.
+No finding, and the gap it fills is real: what reaches a server is the surface where a difference
+between renderers stops being a rendering question, and nothing was comparing the two there.
+
+`what-a-page-actually-sends` reads one renderer and checks the payload against the document — the
+right check, and it cannot see the other kind of wrong: two renderers that each look defensible and
+send different things.
+
+**All seventeen kinds send byte-identical payloads from plain and lit**, given the same value through
+the same public call and submitted the same way.
+
+### The control found the spec's own mistake
+
+Two renderers that both send `{}` agree perfectly and prove nothing, so each kind is asserted to have
+put its own name in what it sent before the two are compared. That assertion fired on `multiselect`:
+this spec was handing it `[{value: "a", label: "A"}]`, and a multiselect holds the option **values**
+— `["a"]`. With the records it refuses to submit at all (`canSubmit` false), which is correct and is
+why nothing was sent.
+
+Without the control the comparison would have passed on a kind where neither renderer sent anything.
+
+### Measured, not filed: what a large document costs
+
+Sweeping for an unpublished limit found none worth reporting. The parser takes 50,000 fields in 20ms,
+a 100,000-character field name in 1ms, a 50,000-option select in 7ms, a million-character label in
+1ms — accepted, and fast. Building a form is where the cost is, and it is superlinear only past any
+plausible size:
+
+```
+fields    schema   createForm
+200       1ms      4ms
+2000      2ms      33ms
+10000     10ms     200ms
+40000     47ms     2848ms
+```
+
+Recorded rather than filed: nothing here is a denial of service at a size a document would really
+have, and a finding would be manufactured.
