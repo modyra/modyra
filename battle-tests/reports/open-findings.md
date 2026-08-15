@@ -2526,3 +2526,55 @@ on purpose**, so a fix cannot be "sanitise by default" — that is a larger chan
 
 Measured in the same pass and not filed separately: `{ draft: { key: "k" } }` with no `storage` also
 builds and says nothing, and nothing is ever saved. Same shape, smaller consequence.
+
+## 75. An operator nobody declared, and the section it opens
+
+`adversarial/security/an-operator-nobody-declared.battle.test.mjs` — 5 green, 1 red. **S1** under
+DYN-003 and VAL-003.
+
+`MdyExpressionOp` is a closed set of twelve. Two published functions read it, and they do not agree
+about a thirteenth:
+
+```
+validateExpression({ op: "eqals", … }, "when")   →  ["when: unknown operator \"eqals\""]
+evaluateExpression({ op: "eqals", … }, value)    →  true
+```
+
+One refuses it by name. The other answers — and answers **`true`**, which for a visibility condition
+is the most consequential answer available. Measured through a group gated on the condition:
+
+```
+op "equals",  country IT    {"country":"IT"}                              closed, correct
+op "equals",  country FR    {"country":"FR","extra":{"vat":"secret"}}     open, correct
+op "eqals",   country IT    {"country":"IT","extra":{"vat":"secret"}}     OPEN
+op "nonsense" / ""          the same
+```
+
+A section meant to appear only for one country is shown to everybody, and the value inside it is in
+what the form sends. For a *validation* expression the same answer means a rule that always passes.
+
+This is the asymmetry the expression depth limit already has — checked where a document is read,
+unguarded where a value is evaluated — except that here the unguarded side does not merely fail to
+protect: **it decides.**
+
+Both controls are green and both are needed: spelled correctly the condition closes the section when
+it is false and opens it when it is true, so the finding is the misspelling rather than a gate that
+never works or always does.
+
+Either repair closes it: refuse the operator where it is evaluated too, or answer the way a condition
+nobody can read should answer — closed.
+
+## Checked, and one of them widens 74: two more closed vocabularies
+
+Swept after 74, since a closed set falling back to a member is the shape:
+
+```
+MdySanitizeProfile per FIELD   field("", [], { sanitize: "stict" })    falls back to "off", silently
+                               field("", [], { sanitize: 42 })         the same
+MdySubmitMode                  "alwyas" / "nonsense" / 42              falls back to valid-only, silently
+```
+
+The per-field sanitiser is **finding 74 one level down** and the repair should reach both. `submitMode`
+is the same silence with the opposite consequence: the fallback is the *more* careful member — a form
+that will not submit — so a consumer who misspells it sees a Submit that refuses rather than a
+protection that is off. Recorded rather than filed on its own.
