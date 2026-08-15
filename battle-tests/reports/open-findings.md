@@ -8130,3 +8130,29 @@ which a disabled field already implies, so saying both would be two answers to o
 
 Measured for the text family, where read-only reaches the page at all. Twelve other kinds never report
 the state, which is finding 145 and is why this spec does not sweep them.
+
+### Checked and clean: what a locked field still sends
+
+`browser/what-a-locked-field-still-sends.spec.ts` (green, both renderers).
+
+Read-only and disabled look alike on screen and mean opposite things at the boundary:
+
+```
+nothing applied            sent {kept: "K", locked: "L", off: "O"}
+locked read-only, off disabled   sent {kept: "K", locked: "L"}
+```
+
+A read-only field is part of the answer — a reference the server needs, a total the form computed —
+and is sent. A disabled one is out of the question and is not, which the mount options state in those
+words. Getting it backwards is silent in both directions: a read-only field dropped is a value the
+server expected and did not get; a disabled one included is a value the application decided not to ask
+about, sent anyway. Both renderers agree.
+
+The control is the same submit with nothing applied, which must carry all three — otherwise "the
+locked one is there" would be true of a form that sends everything regardless.
+
+**Harness asymmetry closed.** Only one host could be asked what it had sent: the other's submit
+discarded the value it was handed, and had no rendered button either, so half the submission-level
+questions could be put to one renderer and not the other — a difference that would have read as a
+silence. Both now record what they hand over, and both can be submitted programmatically, which keeps
+"what does a form send" separate from "does the page offer to send it".

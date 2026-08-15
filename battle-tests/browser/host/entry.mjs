@@ -143,6 +143,19 @@ window.battle = {
     mounted.get(id).handle.form.setDisabled(path, () => true);
   },
 
+  /**
+   * Submit without pressing anything, so a spec can ask what a page sends without also asking
+   * whether it offered to send it. The button is a separate question and has its own specs.
+   */
+  async submit(id) {
+    const entry = mounted.get(id);
+    await entry.handle.form.submit((value) => {
+      entry.submitted.push(structuredClone(value));
+      return null;
+    });
+    return entry.submitted.length;
+  },
+
   /** Every value this form has handed to its submit action, in order. */
   submittedBy(id) {
     return mounted.get(id)?.submitted ?? [];

@@ -126,7 +126,7 @@ window.battleLit = {
         element.field = form.f[declared.name];
         host.append(element);
       }
-      mounted.set(id, { form, host });
+      mounted.set(id, { form, host, submitted: [] });
       return { mounted: true, tags: fields.map((each) => TAG[each.kind] ?? "mdy-text-field") };
     } catch (error) {
       return { mounted: false, message: String(error?.message ?? error) };
@@ -136,12 +136,34 @@ window.battleLit = {
   /** Submit with an answer, so a spec can ask what a refusal looks like here. */
   async submitAnswering(id, answer) {
     const entry = mounted.get(id);
-    await entry.form.submit(() => {
+    await entry.form.submit((value) => {
+      entry.submitted.push(structuredClone(value));
       if (answer !== null && typeof answer === "object" && answer.__throw !== undefined) {
         throw new Error(String(answer.__throw));
       }
       return answer;
     });
+  },
+
+  /**
+   * Submit the way a page does, and keep what was handed over.
+   *
+   * "What the page sent" is a question about the page rather than about which convenience a spec
+   * mounted through, and it has to be askable of both renderers or a difference between them reads
+   * as a silence.
+   */
+  async submit(id) {
+    const entry = mounted.get(id);
+    await entry.form.submit((value) => {
+      entry.submitted.push(structuredClone(value));
+      return null;
+    });
+    return entry.submitted.length;
+  },
+
+  /** Every value this form has handed to its submit action, in order. */
+  submittedBy(id) {
+    return mounted.get(id)?.submitted ?? [];
   },
 
   lastSubmitErrorsOf(id) {
