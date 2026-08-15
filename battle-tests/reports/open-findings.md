@@ -1075,3 +1075,37 @@ That one is finding 45. Everything else doubles identically.
 - **An empty options list parses and builds.** Defensible — a document may fill options later — so it
   is recorded rather than filed. Malformed entries are refused with `MDY_DYNAMIC_OPTIONS_REQUIRED`: an
   option with no label, one with no value, a null entry, and a non-list all fail.
+
+## 49. A city called New York
+
+`browser/an-option-with-a-space-in-it.spec.ts` — 1 red, 2 green.
+
+Same family as finding 48, sharper consequence. `assertUsableWidgetId` refuses a widget id containing
+whitespace, and its message states the reason:
+
+> Whitespace splits every ARIA reference built from it into several, each resolving to nothing, so the
+> control ends up with no accessible name.
+
+That guard stands over the widget id. An option's id is built from the option's **value**, and nothing
+stands there.
+
+`{ value: "New York" }` — a city, a plan name, a country — produces `id="city__option__New York"`.
+`aria-activedescendant` is a space-separated IDREF list, so pointed at that it reads as two
+references:
+
+```
+city__option__New   → nothing
+York                → nothing
+```
+
+The list opens with its first option active, so a combobox whose first option carries a space is
+pointing at nothing from the moment it opens. A screen reader announces nothing for it. `ArrowDown` to
+`Paris` and everything works — which is what attributes the failure to the value rather than to the
+widget, and is asserted as a green control.
+
+`getElementById` is not the check: it accepts a string containing a space and finds the element, so a
+page that asked it would report everything fine. The split is the check, because the split is what
+assistive technology does. The battle asserts on the split.
+
+Either resolution closes it: refuse an option value that cannot be part of an id, the way a field name
+that cannot be is refused, or build an option id that does not embed the value.
