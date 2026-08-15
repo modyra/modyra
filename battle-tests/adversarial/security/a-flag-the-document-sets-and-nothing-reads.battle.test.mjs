@@ -35,10 +35,27 @@ function memoryStorage() {
   };
 }
 
-/** A sink that keeps what it is told, so a missing diagnostic is a measurement. */
-function recordingDiagnostics() {
-  const reports = [];
-  return { reports, report: (entry) => reports.push(entry) };
+/**
+ * Everything the engine says while `run` is happening.
+ *
+ * A form is not handed a diagnostics sink — `createForm` reads `submitMode`, `reactivity`,
+ * `validators`, `history`, `draft`, `security`, `autoActivate` and `devWarnings`, and nothing else.
+ * What it has to say it says through the console, with `devWarnings` on. Passing a sink it does not
+ * read is how a first version of this battle measured a silence that was its own.
+ */
+async function whatItSaid(run) {
+  const said = [];
+  const realWarn = console.warn;
+  const realError = console.error;
+  console.warn = (...parts) => said.push(parts.join(" "));
+  console.error = (...parts) => said.push(parts.join(" "));
+  try {
+    await run();
+  } finally {
+    console.warn = realWarn;
+    console.error = realError;
+  }
+  return said;
 }
 
 const SECRET = "sk-live-DEADBEEF";
@@ -106,20 +123,22 @@ battle(
   },
   async (ctx) => {
     const storage = memoryStorage();
-    const diagnostics = recordingDiagnostics();
-    const form = createForm(buildDynamicFormSchema(documentWith({ sensitive: true })), {
-      draft: { key: "marked", storage },
-      diagnostics,
-      devWarnings: false,
+    let form = null;
+    const said = await whatItSaid(async () => {
+      form = createForm(buildDynamicFormSchema(documentWith({ sensitive: true })), {
+        draft: { key: "marked", storage },
+        devWarnings: true,
+      });
+
+      form.f.secret.set(SECRET);
+      form.f.plain.set("a name");
+      await saved();
     });
 
-    form.f.secret.set(SECRET);
-    form.f.plain.set("a name");
-    await saved();
     const envelope = storage.written.get("marked") ?? "";
     ctx.log.note("a draft written for a field the document marked sensitive", {
       inClear: envelope.includes(SECRET),
-      diagnostics: diagnostics.reports.map((each) => each.code ?? String(each)),
+      said,
     });
 
     // The control: the draft was written at all, so an absent secret would mean protection rather
@@ -130,15 +149,14 @@ battle(
       detail: envelope.slice(0, 160),
     });
 
-    const spoke = diagnostics.reports.some((each) =>
-      JSON.stringify(each).includes("sensitive") || JSON.stringify(each).includes("secret"));
+    const spoke = said.some((line) => line.includes("sensitive") || line.includes("secret"));
 
     expectEqual({ inClear: envelope.includes(SECRET), spoke }, { inClear: false, spoke: false }, {
       claimIds: ["SEC-005", "PER-001"],
       what: "a field the document marked sensitive was written to storage in clear text and nothing said so",
-      detail: JSON.stringify({ envelope: envelope.slice(0, 160), reports: diagnostics.reports }),
+      detail: JSON.stringify({ envelope: envelope.slice(0, 160), said }),
     });
 
-    form.destroy();
+    form?.destroy();
   },
 );
