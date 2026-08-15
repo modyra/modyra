@@ -9,9 +9,9 @@
  * A consumer reads that column to know whether a value can be watched — an autosave, a dependent
  * field, a preview. Nothing in this suite had ever compared it against a widget.
  *
- * Three kinds answer the question with a popup, which is where the column is load-bearing rather
- * than obvious: a text field writing on keystroke is not in doubt, and a picker that opens something
- * before it decides could reasonably do either.
+ * Four kinds answer the question with something other than a keystroke, which is where the column is
+ * load-bearing rather than obvious: a text field writing on keystroke is not in doubt, and a control
+ * that opens or confirms something before it decides could reasonably do either.
  *
  * Two of the three are the controls for the third. The datepicker declares `live` and is, the
  * timepicker declares `confirm` and is, so a failure on the range is about the range rather than
@@ -144,4 +144,45 @@ test("a timepicker changes only on confirmation, plain", async ({ page }) => {
   await page.locator("button").filter({ hasText: /^OK$/ }).first().click({ timeout: 4000 });
   await page.waitForTimeout(320);
   expect(await held(), "a confirmed time edit did not reach the model").not.toBeNull();
+});
+
+
+test("a colour field writes through on the interaction, plain", async ({ page }) => {
+  test.setTimeout(180_000);
+  // The declared answer for this kind, read rather than assumed.
+  expect(MDY_VALUE_CONTRACTS.colors.commit).toBe("live");
+
+  await page.goto("/index.html");
+  await page.waitForFunction(() => (window as never as Record<string, boolean>).battleReady === true);
+  await page.evaluate(() => {
+    (window as never as Api).battle.mountFields("c", [{ name: "x", kind: "colors", label: "X" }]);
+  });
+  await page.waitForTimeout(260);
+
+  const held = () => page.evaluate(() => (window as never as Api).battle.valueOf("c").x);
+
+  // The control, and the reason this kind is worth asking about at all: the native swatch — the
+  // other half of the same field — does write through the moment it fires. So `live` is not
+  // unreachable here; one of the two controls has it.
+  await page.evaluate(() => {
+    const swatch = document.querySelector('[data-form="c"] input[type="color"]') as HTMLInputElement;
+    swatch.value = "#445566";
+    swatch.dispatchEvent(new Event("input", { bubbles: true }));
+  });
+  await page.waitForTimeout(240);
+  expect(await held(), "the native swatch did not write through either, so this is not about the hex box").toBe("#445566");
+
+  // And the hex box, typed a character at a time, ending on a complete colour.
+  const hex = page.locator('[data-form="c"] .mdy-colors__hex-input').first();
+  await hex.focus();
+  for (const character of "#112233") {
+    await page.keyboard.type(character);
+    await page.waitForTimeout(90);
+  }
+  expect(await hex.inputValue(), "the box does not hold the colour that was typed into it").toBe("#112233");
+
+  expect(
+    await held(),
+    `a colour field declaring "${MDY_VALUE_CONTRACTS.colors.commit}" still held ${JSON.stringify(await held())} with a complete colour typed into its box`,
+  ).toBe("#112233");
 });

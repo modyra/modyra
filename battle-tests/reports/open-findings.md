@@ -8782,6 +8782,26 @@ Both other popup kinds match their declared word exactly, in the same run:
 So this is not a spec that misread a published word, and not a renderer's defect either — the two
 renderers agree with each other exactly and disagree with the table together.
 
+### A second kind, and a sharper statement: the column's granularity
+
+`colors` says `live` too, and it has **two controls that commit differently**:
+
+```
+                                        model after the interaction
+the native swatch, firing `input`       "#445566"      ← live, as declared
+the hex box, typed to a complete value  ""             ← nothing
+the hex box, then blur or Enter         "#112233"
+```
+
+Typed character by character to a full `#112233`, the box holds the colour and the model holds
+nothing until the field is left. That is `confirm` in the contract's own words — *the field only
+changes on an explicit confirmation; interaction edits a draft* — and blur is the confirmation.
+
+So the column is wrong twice, in two different ways. For the daterange there is no word that fits.
+For colours there **is** one and the other is used. And underneath both: `commit` is declared once per
+kind, while a kind can have two controls that answer differently — the swatch really is `live` and the
+box really is not. The granularity is the deeper problem, and a third value alone would not fix it.
+
 ### Classification
 
 Ambiguous contract rather than a Modyra bug. The behaviour is deliberate and already asserted in core:
