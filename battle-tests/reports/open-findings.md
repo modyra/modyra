@@ -1336,3 +1336,32 @@ believe it worked. The server refused and nobody was told.
 Both green controls matter: the correct shape does reach the person, and answering with nothing is not
 a refusal — without the second, the assertion would read as "any answer must produce text", which
 would be wrong.
+
+## 56. An error the form holds and the page cannot show
+
+`browser/an-error-with-nowhere-to-go.spec.ts` — 2 red, 1 green.
+
+Not every refusal belongs to a field. A failed network call, a service that is down, a cross-field
+rule only the server can check — all arrive with no path, and the engine has a place for them:
+
+```js
+form.state.lastSubmitErrors()   // [{ path: null, kind: "unknown", message: "network down" }]
+```
+
+It even turns a submit action that **throws** into one of these rather than letting the failure escape
+— measured at engine level, and right.
+
+The page has no place for them. Not an empty region: there is no form-level error surface in the
+rendered DOM at all, and the message appears nowhere in `document.body.innerText`. A person who
+pressed Submit while the service was down sees the button, their fields as they left them, and nothing
+else.
+
+The green control is a field-level error rendering through the same submit path, so this is about the
+place rather than about errors never appearing.
+
+More complete than finding 55, and the same boundary: that one is a message dropped on the way in,
+this one is a message that arrived intact with nowhere to be rendered.
+
+**Checked and clean on the way here:** two submits racing run the action once; a value changed during
+a submit does not change what the action received; a submit on an invalid form does not run the action
+and marks the field touched; and a throwing action leaves `submitting` false and the form usable.
