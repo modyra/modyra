@@ -668,3 +668,35 @@ framework is about to replace.
 
 Same class as the four unemitted diagnostic codes in finding 27's postscript: published surface a
 consumer is invited to use, that does nothing. Either it gates something, or it is not a capability.
+
+## 38. Two published error classes nothing ever produces
+
+Same class as findings 27's postscript and 37, and the most complete case of it: an entire diagnostic
+pathway on the public surface that cannot fire.
+
+Throw sites across the whole workspace, `dist` included:
+
+| class | thrown | constructed |
+| --- | --- | --- |
+| `MdyDestroyedScopeError` | 12 sites — core, solid, vue | yes |
+| `MdyUnsupportedCapabilityError` | 1 site — angular | yes |
+| `MdyCrossRuntimeObservationError` | never | 1 site, to borrow its message |
+| `MdyActivationError` | **never** | **never** |
+| `MdyAdapterContractError` | **never** | **never** |
+
+`MdyAdapterContractError` is the complete case: the class exists, `MDY_ADAPTER_CONTRACT_VIOLATION`
+exists beside it as a diagnostic code, and neither is ever produced by anything. Its own comment says
+what it is for — "an adapter violated one of the conformance rules (e.g. a fictitious capability, a
+silent no-op)" — which is a real thing an adapter can do, and the conformance runner does check for it.
+It just never reports it this way.
+
+`MdyActivationError` is documented as "a feature requiring an active runtime context — a host
+framework's injector — was used before activation". `autoActivate: false` exists and defers exactly
+those features, so the situation is reachable; nothing raises this when it happens.
+
+**A defect of mine, corrected in the same commit.** The header of
+`adversarial/reactivity/published-diagnostics.battle.test.mjs` stated that these two "are thrown, so
+`catch` plus `instanceof` is the way". They are not, and a reader following that comment would write a
+catch block for something that never arrives. The header now says what is true and explains why the
+battle still pins what the classes say: that part is what a `catch` reads if they ever do start being
+thrown.
