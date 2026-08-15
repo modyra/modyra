@@ -80,9 +80,9 @@ battle(
 
     /** Run one sequence everywhere and report the first runtime that meant something else. */
     const disagreement = async (operations) => {
-      const baseline = await drive(ctx.open(KEYED_ROWS_SPEC), operations);
+      const baseline = await drive(ctx.open(KEYED_ROWS_SPEC, { history: true }), operations);
       for (const [name, reactivity] of loaded) {
-        const seen = await drive(ctx.open(KEYED_ROWS_SPEC, { reactivity }), operations);
+        const seen = await drive(ctx.open(KEYED_ROWS_SPEC, { history: true, reactivity }), operations);
         // What a runtime *says* is excluded here for a reason that is this harness's rather than the
         // product's: every context in one battle shares the console capture, so a later runtime's
         // snapshot carries the diagnostics of the ones before it. Comparing them would report the
@@ -100,11 +100,16 @@ battle(
     for (let run = 0; run < runs; run += 1) {
       await betweenRuns(run);
       const rng = createRng(runSeed(ctx.seed, run));
-      const model = createReferenceModel({ cells: CELLS });
+      const model = createReferenceModel({ cells: CELLS, history: true });
+      // History is on and the generator may draw undo and redo. Restoring a state is where a
+      // reactivity is asked to re-run the most at once, which is where two schedulers are most
+      // likely to differ — and it is the dimension a hand-written sequence is least likely to reach
+      // in the order that matters.
       const operations = generateSequence(rng, model, {
-        length: 10,
+        length: 12,
         cells: CELL_NAMES,
         collectionPath: "rows",
+        withHistory: true,
       });
       longest = Math.max(longest, model.keys().length);
 
