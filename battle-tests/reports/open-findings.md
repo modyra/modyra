@@ -4636,3 +4636,39 @@ were found and read.
 
 Classification: Modyra bug, S1 by A11Y-004, whose evidence says an undeclared state asserted is as
 much a defect as a declared state unchecked.
+
+## 98. A calendar behind a closed picker, in the tab order
+
+`browser/a-calendar-behind-a-closed-picker.spec.ts` — 1 red (plain), 1 green (lit).
+
+A popup that is closed is closed for everyone. Painting it off-screen while leaving it in the tab
+order, or in the accessibility tree, closes it only for the person looking at it. Measured with
+`aria-expanded="false"` — nothing clicked, nothing opened — counting only what is not `display:none`,
+not `visibility:hidden`, not `hidden`, and not underneath an `aria-hidden="true"`:
+
+| plain, closed | tabbable | announced as gridcell/option |
+| --- | --- | --- |
+| `datepicker` | 1 | 42 |
+| `daterange` | **42** | 42 |
+| `colors` | 8 | 8 |
+
+A keyboard user tabbing past a closed date-range field takes forty-two stops through a month nobody
+opened. A screen reader in browse mode walks the same cells. The colours widget puts eight swatches
+in the tab order of a field that is shut.
+
+The same renderer gets `select`, `multiselect` and `timepicker` right, and lit leaks nothing on the
+same sweep — so this is two or three kinds rather than a strategy, and nothing in the contract asks
+for it.
+
+The invariant has two sides so neither way of getting it wrong passes: while closed a popup
+contributes nothing to either tree, and once opened it contributes something. A renderer that built
+no popup at all would satisfy the first and fail the second. Both controls held — plain opened and
+populated four kinds, lit five.
+
+Reported and not asserted: plain's `select` and `multiselect` popups contribute nothing measurable
+even when open, so they are skipped rather than counted either way. Their open popups do not carry
+`role="option"` or a tabbable element that this spec's selectors find, which is worth its own look and
+is not this finding.
+
+Classification: Modyra bug, S1 by A11Y-001 — the reachable consequence is a form whose keyboard order
+runs through widgets that are not open.
