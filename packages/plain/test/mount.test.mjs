@@ -408,8 +408,12 @@ test("a column row stays where its fields are, not hoisted to the top of the for
     layout: [{ kind: "columns", id: "cityZip", columns: [["city"], ["zip"]] }],
   });
 
-  // first, [city | zip], last — the arranged pair must not jump ahead of "first".
-  const order = Array.from(container.children).map((child) =>
+  // first, [city | zip], last — the arranged pair must not jump ahead of "first". The form's own
+  // error region sits before all of them and is not part of what a layout arranges.
+  const arranged = Array.from(container.children).filter(
+    (child) => !child.classList.contains("mdy-form__errors"),
+  );
+  const order = arranged.map((child) =>
     child.classList.contains("mdy-layout-columns") ? "row" : child.querySelector("input")?.id || "field",
   );
   assert.equal(order.length, 3);

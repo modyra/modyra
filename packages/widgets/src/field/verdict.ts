@@ -14,7 +14,7 @@
  * ignoring them, and both come back the moment the field is in play again — the verdict was never
  * wrong, it was being shown to someone who could not act on it.
  */
-import type { MdyFieldError } from "@modyra/core";
+import type { MdyFieldError, MdyFormError } from "@modyra/core";
 
 /** The errors a field may show, given whether the form is asking about it. */
 export function shownErrors(
@@ -56,4 +56,15 @@ export function errorsVisible(
   errors: ReadonlyArray<MdyFieldError>,
 ): boolean {
   return flags.touched && shownErrors(flags, errors).length > 0;
+}
+
+/**
+ * The refusals the form shows for itself: the ones no field will show.
+ *
+ * A submit action returns errors, and one naming a field reaches the person through that field. One
+ * naming no field — `path: null`, which is what a failed call or a service that is down produces —
+ * has no field to reach them through, so the form says it or nobody does.
+ */
+export function formErrorsOf(errors: ReadonlyArray<MdyFormError>): ReadonlyArray<MdyFormError> {
+  return errors.filter((error) => error.path === null);
 }

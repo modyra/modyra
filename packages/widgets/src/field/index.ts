@@ -170,5 +170,5 @@ export type {
 } from "./timepicker-field-types.js";
 
 export { sliderFillRatio } from "./text-field-controller.js";
-export { errorsVisible, shownErrors, shownErrorsOf, showsAsInvalid } from "./verdict.js";
+export { errorsVisible, formErrorsOf, shownErrors, shownErrorsOf, showsAsInvalid } from "./verdict.js";
 export type { MdyFieldVerdictSource } from "./verdict.js";

@@ -146,6 +146,40 @@ export const MDY_FIELD_SHELL_STRUCTURE = Object.freeze({
   ]),
 } satisfies MdyWidgetStructure<MdyFieldShellPart>);
 
+/**
+ * Canonical parts of the form itself, as against a field's shell.
+ *
+ * Not every refusal belongs to a field. A failed network call, a service that is down, a cross-field
+ * rule only a server can check: they arrive with no path, the engine keeps them in
+ * `state.lastSubmitErrors()`, and until this part existed there was nowhere in any renderer's markup
+ * to put them — so a person pressed Send while the server said no and saw their fields exactly as
+ * they had left them.
+ *
+ * The region is a `status`, not a field's error list: it speaks for the form, it appears after an
+ * action the person took, and it is announced when it arrives rather than when it is reached.
+ */
+export type MdyFormShellPart = "formErrors" | "formErrorItem";
+
+/** Canonical class vocabulary for the form's own parts. */
+export const MDY_FORM_SHELL_CLASSES = Object.freeze({
+  formErrors: "mdy-form__errors",
+  formErrorItem: "mdy-form__error",
+} satisfies Record<MdyFormShellPart, string>);
+
+/**
+ * Where the form's own refusals sit: first, before the fields.
+ *
+ * A summary a person has to scroll past their whole form to find is a summary they do not read, and
+ * a refusal about the submission as a whole belongs where the submission was answered.
+ */
+export const MDY_FORM_SHELL_STRUCTURE = Object.freeze({
+  kind: "form-shell",
+  nodes: Object.freeze([
+    { part: "formErrors", element: "status", order: 0, optional: true },
+    { part: "formErrorItem", element: "text", parent: "formErrors", order: 0, optional: true, repeated: true },
+  ]),
+} satisfies MdyWidgetStructure<MdyFormShellPart>);
+
 // `MdyPartMap` lives with `MdyPartContract`, in `contract.ts`. It was the only thing this module took
 // from there, and taking it closed a cycle between the package's two hubs — neither of which could
 // then be read, or extracted, on its own. A map of a thing belongs beside the thing.

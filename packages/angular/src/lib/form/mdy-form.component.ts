@@ -18,6 +18,7 @@ import {
   MdyDeclarativeRegistry,
 } from "../core/declarative-form-adapter";
 import { MDY_DECLARATIVE_REGISTRY, MDY_FORM_ADAPTER } from "../core/tokens";
+import { formErrorsOf, MDY_FORM_SHELL_CLASSES } from "@modyra/widgets";
 import {
   MdyAsyncValidatorFn,
   MdyAsyncValidatorOptions,
@@ -82,6 +83,18 @@ const NO_FIELD_NAMES: Signal<readonly string[]> = signal([]).asReadonly();
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <form (submit)="$event.preventDefault(); handleSubmit()" novalidate>
+      <!--
+        The form's own refusals, first, before the fields. A refusal naming a field reaches the
+        person through that field; one naming no field — a failed call, a service that is down —
+        has no field to reach them through, and without this the engine held it and the page said
+        nothing. Rendered empty rather than not at all, so a region a screen reader is already
+        watching announces what arrives in it.
+      -->
+      <ul [class]="formErrorsClass" role="status" [hidden]="formErrors().length === 0">
+        @for (error of formErrors(); track $index) {
+          <li [class]="formErrorItemClass">{{ error.message }}</li>
+        }
+      </ul>
       <ng-content />
     </form>
   `,
@@ -321,6 +334,15 @@ export class MdyFormComponent<
 
   get state(): MdyFormState {
     return this._active.state;
+  }
+
+  /** Class vocabulary for the form's own parts, from the widget contract rather than spelled here. */
+  protected readonly formErrorsClass = MDY_FORM_SHELL_CLASSES.formErrors;
+  protected readonly formErrorItemClass = MDY_FORM_SHELL_CLASSES.formErrorItem;
+
+  /** What the form has to say about itself: the refusals no field will show. */
+  protected formErrors(): ReadonlyArray<MdyFormError> {
+    return formErrorsOf(this.state.lastSubmitErrors());
   }
 
   /**

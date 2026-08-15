@@ -23,4 +23,5 @@ export * from "./components/daterange-field.js";
 export * from "./components/timepicker-field.js";
 export * from "./components/colors-field.js";
 export * from "./components/file-field.js";
+export * from "./components/form-errors.js";
 export * from "./components/registry.js";
