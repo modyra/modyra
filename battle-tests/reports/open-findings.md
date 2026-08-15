@@ -5506,3 +5506,34 @@ With these, every table `@modyra/widgets` publishes has been read against a page
 functions that produce one. What that leaves is the thing worth saying: **the tables are right and the
 renderers disagree about them** — findings 106, 107, 109 and 110 are each a table whose declaration
 one renderer keeps and the other does not, and 109 runs the opposite way from the rest.
+
+## A harness defect that would have produced a finding
+
+Not Modyra's — this suite's, in `browser/host/lit-entry.mjs`, found by sweeping `MDY_VALUE_CONTRACTS`
+against a page.
+
+The contract declares, per kind, the shape a value has and whether it may be `null`: `number`,
+`select`, `radio`, `segmented`, `datepicker` and `timepicker` are nullable, the rest are not. Measured
+in both renderers, a fresh `number` held `null` in plain and `""` in lit — which reads as one renderer
+starting six kinds outside their own declared shape.
+
+It was this host. The blank was chosen as
+
+```js
+field(each.initialValue ?? BLANK[each.kind] ?? "", …)
+```
+
+and `BLANK` **did** say `number: null`. `??` reads a legitimate `null` as absent, so every nullable
+kind fell through to `""`. Six kinds, every lit battle that ever read a fresh value.
+
+The repair is not a fixed `??`: the host now derives the blank from `MDY_VALUE_CONTRACTS` itself, so
+there is no second list beside the contract to drift from it. Measured after: `text ""`, `number null`,
+`select null`, `datepicker null`, `timepicker null`, `checkbox false`, `multiselect []`, `slider 0`,
+`daterange { start: null, end: null }` — every one as declared.
+
+The browser tier is 71 pass / 28 fail before and after, so nothing that was measured on the old blanks
+depended on them, and the results already recorded stand.
+
+Worth keeping in view: this is the second time a hand-written copy of a published table has been the
+thing at fault rather than the code under test. The rule that follows is the one the repair applies —
+read the table, do not restate it.
