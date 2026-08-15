@@ -9,7 +9,7 @@
  */
 import { assertSafeDynamicFieldNames, vanillaReactivity, type MdyDynamicCollection, type MdyDynamicField, type MdyDynamicLayoutChild, type MdyDynamicLayoutNode, type MdyDynamicLayoutSlot, type MdyFieldHandle, type MdyFormSchema, type MdyReactivity, type MdySubmittedValue, type MdyTypedForm } from "@modyra/core";
 import { buildForm } from "./schema.js";
-import { isValidWidgetId, layoutNodeAttributes, layoutSlotStyle, MDY_ID_DELIMITER, MDY_LAYOUT_CLASSES } from "@modyra/widgets";
+import { formErrorsOf, isValidWidgetId, layoutNodeAttributes, layoutSlotStyle, MDY_FORM_SHELL_CLASSES, MDY_ID_DELIMITER, MDY_LAYOUT_CLASSES } from "@modyra/widgets";
 import { renderField } from "./fields/index.js";
 import { el, setText } from "./dom.js";
 
@@ -117,6 +117,15 @@ export function mountMdyForm(
 
   container.replaceChildren();
   container.classList.add("mdy-dynamic-form", "mdy-plain-form");
+
+  // The form's own refusals, first, before the fields — a summary a person has to scroll past their
+  // whole form to find is one they do not read. A `status` rather than a field's error list: it
+  // speaks for the form, it appears in answer to something the person did, and it is announced when
+  // it arrives. Empty and hidden until there is something to say.
+  const formErrors = el("ul", MDY_FORM_SHELL_CLASSES.formErrors) as HTMLUListElement;
+  formErrors.setAttribute("role", "status");
+  formErrors.hidden = true;
+  container.appendChild(formErrors);
 
   const reactivity = vanillaReactivity();
   const form = buildForm(fields, reactivity, options.collections);
@@ -268,6 +277,20 @@ export function mountMdyForm(
     });
     disposers.push(() => submitEffect.destroy());
   }
+
+  // Field-level refusals reach the person through the field that owns them; these are the ones with
+  // no field to reach them through — a failed call, a service that is down — and without this the
+  // engine held them and the page said nothing.
+  const formErrorsEffect = reactivity.effect(() => {
+    const shown = formErrorsOf(form.state.lastSubmitErrors());
+    formErrors.replaceChildren(...shown.map((error) => {
+      const item = el("li", MDY_FORM_SHELL_CLASSES.formErrorItem);
+      setText(item, error.message);
+      return item;
+    }));
+    formErrors.hidden = shown.length === 0;
+  });
+  disposers.push(() => formErrorsEffect.destroy());
 
   function dispose(): void {
     for (const disposeField of disposers) disposeField();

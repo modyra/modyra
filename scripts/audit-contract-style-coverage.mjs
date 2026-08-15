@@ -44,6 +44,7 @@ import { join, relative, resolve } from "node:path";
 import {
   MDY_CHIP_CLASSES,
   MDY_FIELD_SHELL_CLASSES,
+  MDY_FORM_SHELL_CLASSES,
   MDY_LAYOUT_CLASSES,
   MDY_OVERLAY_PORTAL_CLASS,
   MDY_POPUP_CLASS,
@@ -81,6 +82,9 @@ function contractClasses() {
     MDY_POPUP_CLASS,
     MDY_OVERLAY_PORTAL_CLASS,
     ...Object.values(MDY_FIELD_SHELL_CLASSES),
+    // The form's own parts, which belong to no field and to no kind: a refusal naming no field has
+    // nowhere else to be shown.
+    ...Object.values(MDY_FORM_SHELL_CLASSES),
     ...Object.values(MDY_LAYOUT_CLASSES),
     ...Object.values(MDY_CHIP_CLASSES),
     // The classes that belong to no single kind: the overlay panel and its backdrop, the button, the

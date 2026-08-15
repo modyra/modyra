@@ -7,6 +7,7 @@
  */
 import { MDY_DYNAMIC_DIAGNOSTICS, MDY_DYNAMIC_INVALID_FIELD, parseDynamicForm } from "@modyra/core";
 import { mountMdyForm } from "@modyra/plain";
+import { formErrorsOf, MDY_FORM_SHELL_CLASSES, MDY_FORM_SHELL_STRUCTURE } from "@modyra/widgets";
 import { action, readoutPrinter, toolbar } from "./shell.js";
 
 const SAMPLE = {
@@ -51,6 +52,10 @@ export const dynamicPanel = {
     "MdyDynamicField",
     "MdyDynamicDiagnostic",
     "MdyDynamicFormParseResult",
+    "MDY_FORM_SHELL_CLASSES",
+    "MDY_FORM_SHELL_STRUCTURE",
+    "MdyFormShellPart",
+    "formErrorsOf",
   ],
 
   invariant:
@@ -101,6 +106,13 @@ export const dynamicPanel = {
       action(bar, label, () => { editor.value = JSON.stringify(document_, null, 2); render(); });
     }
     action(bar, "Back to a good one", () => { editor.value = JSON.stringify(SAMPLE, null, 2); render(); });
+    // A refusal that names no field. A failed call, a service that is down, a rule only a server can
+    // check: the engine keeps it, and `mdy-form__errors` is where a person reads it — above the
+    // fields, because a summary below a long form is one nobody scrolls to.
+    action(bar, "The service is down", () => {
+      void mounted?.form.submit(async () => [{ path: null, message: "The service is unavailable. Nothing was saved." }]);
+      print();
+    });
 
     // Every refusal the parser has a name for, listed where a reader can compare it against what
     // the document above actually produced. A code is what a consumer matches on; the sentence
@@ -119,6 +131,17 @@ export const dynamicPanel = {
     const print = readoutPrinter(readout, () => ({
       ...lastResult,
       controlsMounted: formHost.querySelectorAll(".mdy-renderer").length,
+      // What the form has to say about itself, and where it says it. The two are printed together
+      // because a refusal the engine holds and the page does not show is the failure this region
+      // exists for: a person pressed the button, the answer was no, and nothing appeared.
+      formRefusals: mounted
+        ? formErrorsOf(mounted.form.state.lastSubmitErrors()).map((error) => error.message)
+        : [],
+      refusalsOnScreen: formHost.querySelectorAll(`.${MDY_FORM_SHELL_CLASSES.formErrorItem}`).length,
+      // The part name, printed because it is what a renderer outside this repository writes against:
+      // `MdyFormShellPart` is the closed vocabulary, and the class is derived from it rather than
+      // spelled.
+      regionPart: /** @type {import("@modyra/widgets").MdyFormShellPart} */ (MDY_FORM_SHELL_STRUCTURE.nodes[0].part),
     }));
 
     render();

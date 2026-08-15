@@ -3,6 +3,7 @@ import { MdyColorsFieldElement } from "./colors-field.js";
 import { MdyDatepickerFieldElement } from "./datepicker-field.js";
 import { MdyDaterangeFieldElement } from "./daterange-field.js";
 import { MdyFileFieldElement } from "./file-field.js";
+import { MdyFormErrorsElement } from "./form-errors.js";
 import { MdyMultiselectFieldElement } from "./multiselect-field.js";
 import { MdyNumberFieldElement } from "./number-field.js";
 import { MdyRadioGroupFieldElement } from "./radio-group-field.js";
@@ -32,6 +33,8 @@ const CATALOG: ReadonlyArray<readonly [string, CustomElementConstructor]> = [
   ["mdy-timepicker-field", MdyTimepickerFieldElement],
   ["mdy-colors-field", MdyColorsFieldElement],
   ["mdy-file-field", MdyFileFieldElement],
+  // Not a field: it speaks for the form, and a host places it where the form's own refusals belong.
+  ["mdy-form-errors", MdyFormErrorsElement],
 ];
 
 /** Registers the whole control catalog (idempotent). */

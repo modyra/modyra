@@ -2067,6 +2067,31 @@
         line-height: var(--mdy-error-line-height);
     }
 
+    /* ─── The form's own refusals ─────────────────────────────────────────────────
+       A refusal that names no field — a failed call, a service that is down — has no field to be
+       shown beside. It sits above the fields, where the person who pressed the button is looking,
+       and it is bordered rather than bare: a field's error is read next to the field it is about,
+       and this one has to say what it is about by itself. */
+
+    .mdy-form__errors {
+        list-style: none;
+        margin: 0 0 1rem;
+        padding: 0.75rem 1rem;
+        border: 1px solid var(--mdy-error-color);
+        border-radius: var(--mdy-radius, 0.5rem);
+        background: var(--mdy-error-surface, transparent);
+    }
+
+    .mdy-form__errors[hidden] {
+        display: none;
+    }
+
+    .mdy-form__error {
+        color: var(--mdy-error-color);
+        font-size: var(--mdy-error-font-size);
+        line-height: var(--mdy-error-line-height);
+    }
+
     /* ─── Custom Select Dropdown ──────────────────────────────────────────────── */
 
     .mdy-select {

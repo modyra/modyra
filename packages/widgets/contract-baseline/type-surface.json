@@ -1038,6 +1038,10 @@
   "MdyFormSchema": [
     "-> Readonly"
   ],
+  "MdyFormShellPart": [
+    "\"formErrorItem\"",
+    "\"formErrors\""
+  ],
   "MdyFormState": [
     "canSubmit: MdySignal<boolean>",
     "lastSubmitErrors: MdySignal<ReadonlyArray<MdyFormError>>",
@@ -2535,6 +2539,10 @@
   ],
   "focusTrigger": [
     "-> returns: MdyUiCommand"
+  ],
+  "formErrorsOf": [
+    "(0) errors: ReadonlyArray<MdyFormError>",
+    "-> returns: ReadonlyArray<MdyFormError>"
   ],
   "formatIsoDate": [
     "(0) d: CalendarDate",
