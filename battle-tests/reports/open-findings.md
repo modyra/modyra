@@ -5818,3 +5818,26 @@ takes the group node and was handed the whole document, which returned a phantom
 `{ path: "", kind: "array" }` for a document whose collection is a record — that alone looked like a
 kind being lost. And a flat `fields` list carrying dotted collection paths is refused outright, which
 is the name rule doing its job rather than the flat form being broken.
+
+## Checked and clean: where each of the contract's rules lives
+
+Finding 111 is a rule enforced in two of the six places that decide it. The obvious next question is
+whether that is the shape of the contract or the exception, so every rule with more than one enforcer
+was put to each of them.
+
+| rule | the parser | the builder it feeds |
+| --- | --- | --- |
+| reserved names (`__proto__`, `constructor`, `prototype`) | refuses | refuses, at any path depth |
+| a pattern past 256 characters | `MDY_DYNAMIC_PATTERN_TOO_LONG` | `buildDynamicValidators` drops it, saying "pattern length 300 exceeds max 256" |
+| a pattern that backtracks exponentially | `MDY_DYNAMIC_PATTERN_TOO_COSTLY` | `buildDynamicValidators` drops it, saying why |
+| a kind nobody declared | `MDY_DYNAMIC_UNKNOWN_KIND` | `buildFlatFormSchema` throws |
+| **the widget-id rule** (whitespace, `__`) | **flat door only** | **flat builder only** — finding 111 |
+| a select with no options | `MDY_DYNAMIC_OPTIONS_REQUIRED` | `buildFlatFormSchema` builds it |
+
+Five of six are enforced twice, in the two places that matter, and the pattern rules even carry the
+same explanation into the runtime message. So the contract is *not* generally scattered — which is
+what makes finding 111 a specific rule to move rather than a symptom of how the package is built.
+
+The last row is parser-only and is not filed. A select with no options is an empty list, not a broken
+id: it degrades where the widget-id rule breaks, and `buildFlatFormSchema` takes a list a consumer
+already holds rather than a document it is reading.
