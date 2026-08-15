@@ -194,6 +194,17 @@ window.battleLit = {
     mounted.get(id).form.setReadonly(path, () => true);
   },
 
+  /**
+   * End the form and leave the controls in the document.
+   *
+   * The window a framework opens between destroying its model and removing its nodes: an element
+   * still holds a handle to a form that has ended, and whatever the user does in that window reaches
+   * it. Asking one renderer and not the other makes a difference there look like a silence.
+   */
+  destroyFormOnly(id) {
+    mounted.get(id).form.destroy();
+  },
+
   valueOf(id) {
     return mounted.get(id).form.getValue();
   },

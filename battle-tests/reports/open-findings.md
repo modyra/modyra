@@ -8202,3 +8202,38 @@ Only one host could answer a submit with errors; the other had to be mounted for
 spec could not put the same question to both without changing how the form was built. Both now take
 `submitAnswering(id, answer)` and record what they hand over. This finding was not reachable before
 that.
+
+### Checked and clean: typing into a form that ended
+
+`browser/typing-into-a-form-that-ended.spec.ts` (green, both renderers).
+
+A framework destroys a model and removes its nodes as two steps, and they are not the same instant.
+In between, a control is on the page bound to a form that has ended, and a keystroke already in
+flight reaches it.
+
+```
+while alive        typing → the model takes it
+form destroyed     the control stays on the page
+typing after       the box shows the new text; the model still holds what it had; nothing throws
+```
+
+Neither extreme happens in either renderer. A control that threw would take the page down over a form
+nobody is using; one that wrote would put the user's last keystroke into a model that has stopped
+telling anyone about it.
+
+The control is that typing reaches the model *while the form is alive* — otherwise "the model did not
+change" would be true of a page where typing changes nothing.
+
+### The asymmetry that is not a harness gap
+
+Comparing the two hosts' surfaces to find more of these turned up collections: one can mount a keyed
+form and declare rows, the other cannot. That one is **architectural and stays**. `@modyra/lit`
+publishes field elements and re-exports the schema builders; assembling a form — and so laying out a
+collection's rows — is its consumer's job. A collection host there would be *my* mapping of rows to
+elements, and a spec over it would measure the harness rather than the renderer. It is the same trap
+as the kind-to-element map that once rendered a password field as plain text.
+
+What was a gap, and is closed: `disable`, `readonly`, `submit`, `submitAnswering` and now
+`destroyFormOnly`. Each was a question that could be put to one renderer and not the other, which
+makes a missing answer look like a silence rather than a hole in the instrument. Findings 144, 145 and
+147 were unreachable before those were levelled.
