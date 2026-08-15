@@ -9,7 +9,7 @@ A twentieth, `generative/properties/history.property.test.mjs`, is a campaign ra
 draws a fresh seed each run and reaches the whole-write undo defect about four times in five. Its
 green is not evidence; the battle beside it is.
 
-The list is grouped by cause. Sixteen causes, twenty-four battles.
+The list is grouped by cause. Sixteen causes, twenty-seven battles.
 
 ---
 
@@ -189,6 +189,23 @@ The engine answers this on the other side of the same feature: a `serverValidato
 becomes an error on the field carrying the message, and the form stays readable. That is the green
 battle beside it. Either repair is admitted — throw at the write, or turn it into a verdict — and not
 a form nobody can read.
+
+`asyncWhen` is the same mistake one step earlier and with a larger blast radius: the predicate that
+decides whether a server check runs is read while the form is being built, so one that throws makes
+`createForm` throw and nothing exists to render.
+
+## 16. A draft storage that refuses stops the form being built
+
+`adversarial/persistence/storage-that-refuses.battle.test.mjs` — two battles.
+
+Two of the three ways `localStorage` fails are already handled: a `write` that throws is swallowed
+and the form keeps what was typed, and a `read` returning something that is not a draft is ignored. A
+`read` that *throws* takes `createForm` with it — which is Safari in private browsing, a blocked
+third-party context, an enterprise policy. A draft is an optional convenience; failing to read one
+should mean there is no draft, not that there is no form.
+
+`clearDraft` is the smaller version: a `remove` that throws comes out of the call, where the write
+path swallows its own failure.
 
 ## 16. Reported without a repair path
 
