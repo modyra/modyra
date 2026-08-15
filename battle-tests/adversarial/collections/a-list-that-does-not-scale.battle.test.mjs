@@ -145,25 +145,29 @@ battle(
       return { elapsed, orders: Object.keys(held).length, leaves };
     };
 
-    const LINES = 20;
+    // Four times the orders rather than twice: the growth is the same either way, and the wider
+    // step puts three times the threshold between the measurement and the assertion instead of a
+    // sixth of it, which is what keeps this from deciding itself on a loaded machine.
+    const LINES = 10;
     const small = build(25, LINES);
-    const large = build(50, LINES);
+    const large = build(100, LINES);
     ctx.log.note("a batch of orders, twice the size", { small, large });
 
     // The control on the measurement: every order and every line landed, at both sizes.
-    expectClaim(small.orders === 25 && small.leaves === 25 * LINES && large.orders === 50 && large.leaves === 50 * LINES, {
+    expectClaim(small.orders === 25 && small.leaves === 25 * LINES && large.orders === 100 && large.leaves === 100 * LINES, {
       claimIds: ["COL-001"],
       what: "the nested bulk write did not hold every order and line it was given",
       detail: JSON.stringify({ small, large }),
     });
 
-    // Twice the orders, each the same size, should cost about twice as much. It costs about six
-    // times as much, and the same growth carried on: 100 orders of 20 lines takes eight seconds
-    // where reading them back takes seven milliseconds.
+    // Four times the orders, each the same size, should cost about four times as much. Per order it
+    // costs about eight times as much — measured 7.6, 7.8 and 8.0 across three runs — and the same
+    // growth carries on: a hundred orders of twenty lines takes eight seconds where reading them
+    // back takes seven milliseconds.
     const growth = (large.elapsed / large.orders) / (small.elapsed / small.orders);
     expectClaim(growth < 2.5, {
       claimIds: ["COL-005", "COL-001"],
-      what: `doubling a batch of orders cost ${growth.toFixed(1)}× as much per order`,
+      what: `four times the orders cost ${growth.toFixed(1)}× as much per order`,
       detail: JSON.stringify({ small, large }),
     });
   },
