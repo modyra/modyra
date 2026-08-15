@@ -62,8 +62,10 @@ of a bulk write. That is the intent, and it is a capability removed from anyone 
 the accident.
 
 `MdyCollectionHost` gains a member, so anything implementing it implements one more. The interface
-exists to be substitutable and this is what that costs; the type-surface audit does not see members
-added to an exported interface, so this one is recorded here rather than caught there.
+exists to be substitutable and this is what that costs. It reaches no entry point — neither it nor
+the two managers that consume it is exported — so the cost falls inside this repository, and the
+type-surface audit is silent because there is nothing public to classify rather than because it
+cannot see it: a required member added to a *public* interface is reported, and classified major.
 
 Restoring an order means a keyed collection's order is now a property a snapshot carries. A
 positional collection is unaffected: an index is the order.
