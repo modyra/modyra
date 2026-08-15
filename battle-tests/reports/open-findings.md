@@ -2536,6 +2536,17 @@ on purpose**, so a fix cannot be "sanitise by default" — that is a larger chan
 Measured in the same pass and not filed separately: `{ draft: { key: "k" } }` with no `storage` also
 builds and says nothing, and nothing is ever saved. Same shape, smaller consequence.
 
+**The per-field door was checked separately and the repair reached it too**, with a message that names
+the closed set rather than only the mistake:
+
+```
+field("", [], { sanitize: "stict" })   [modyra] There is no sanitizer called "stict". Name one of off, text, …
+field("", [], { sanitize: 42 })        the same
+```
+
+It is now a row of the same battle, so a repair that reached only the form-level option would show as
+red rather than as nothing.
+
 ## 75. An operator nobody declared, and the section it opens
 
 `adversarial/security/an-operator-nobody-declared.battle.test.mjs` — 2 battles, 1 red each.
