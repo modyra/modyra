@@ -3422,3 +3422,39 @@ primitives produces by accident.
 **The battle's structure already guards the vacuous case**: a mutation the kit crashed on rather than
 refused would report zero checks and zero failures, and zero failures is what the assertion collects
 as "declared conformant". Green means each of the ten ran the kit and at least one check failed on it.
+
+## Checked and clean: one error shape from six sources
+
+`adversarial/submission/one-shape-from-six-sources.battle.test.mjs` — green, and new.
+
+`MdyFormError` is `{ path, kind, message, payload? }` and a renderer reads all four: `path` to place
+the message under a field or in the form's own summary, `kind` to tell a rule from a check from
+something the server said, `payload` for anything else. The errors arrive from six places, written by
+different code at different times, and **nothing asserted they agree** — so every renderer is written
+against whichever one its author happened to try.
+
+They agree:
+
+```
+a synchronous rule                     kind "validation"   path "a"
+an asynchronous check that answered    kind "async"        path "a"
+one that rejected                      kind "async"        path "a"
+a server refusal on a field            kind "unknown"      path "a"
+a server refusal on the form           kind "unknown"      path null
+a rule inside a collection row         kind "validation"   path "rows.r1.code"
+```
+
+No source carries a key the shape does not declare, and every one has a non-empty `kind`, a string
+`message` and a `path` that is a string or `null` — which is what lets a renderer place it without
+guarding.
+
+The three normalisations a server refusal goes through are pinned separately, because each is a
+decision rather than a consequence:
+
+```
+no kind given             becomes "unknown"        a value saying the engine does not know,
+                                                   not a missing property to guard
+a kind of its own         survives                 including "validation", colliding with a local rule
+a payload                 survives                 the one slot declared for anything else
+httpStatus: 409           dropped                  outside the shape; `payload` is where it goes
+```
