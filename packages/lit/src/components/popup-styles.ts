@@ -1,11 +1,14 @@
 /** Shared inline styles for popup-style field controls (datepicker, timepicker, colors). */
 
 import { html, nothing } from "lit";
+import { announceLit } from "../widget-runtime/index.js";
 import {
   anchorOverlay,
   popupPlacementClass,
   overlayAnchoringFor,
   setOverlayOpen,
+  MDY_I18N_MESSAGES_DEFAULT,
+  type MdyI18nMessages,
   MDY_CSS_PROPERTIES,
   MDY_POPUP_CLASS,
   type MdyOverlayAlignment,
@@ -175,7 +178,15 @@ export function computeOverlayPanelState(
   };
 }
 
-type OverlayHost = HTMLElement & { requestUpdate: () => void; updateComplete?: Promise<unknown> };
+type OverlayHost = HTMLElement & {
+  requestUpdate: () => void;
+  updateComplete?: Promise<unknown>;
+  /**
+   * The words this element shows. Read structurally rather than required: this controller is given
+   * to anything that owns a popup, and one that carries no table gets the default sentences.
+   */
+  messages?: MdyI18nMessages;
+};
 
 /**
  * What the popup's content wants, whatever the box is currently clamped to — `scrollHeight` and
@@ -276,10 +287,28 @@ export class MdyLitOverlayController {
         reposition: () => this.refresh(false),
         reflow: () => this.refresh(true),
       });
+      this.say(true);
     }
   }
 
+  /**
+   * Said once per opening and once per closing.
+   *
+   * `overlayLifecycleTransition` answers `announce` for exactly these two moments and the words are
+   * published in five languages; what was missing was anything reading either. `aria-expanded`
+   * carries the state for someone who asks the control, and a popup that appears elsewhere on the
+   * page is the case it does not cover: nobody who was not asking is told it is there.
+   */
+  private say(open: boolean): void {
+    // An element being torn down is not a popup anybody closed, and the live region this would
+    // build to say so outlives the element that caused it.
+    if (!this.host.isConnected) return;
+    const messages = this.host.messages ?? MDY_I18N_MESSAGES_DEFAULT;
+    announceLit(open ? messages.overlayOpened : messages.overlayClosed);
+  }
+
   close(): void {
+    if (this.active) this.say(false);
     this.active = false;
     this.clickX = undefined;
     // The next opening measures afresh: the content it holds may be nothing like this one's.

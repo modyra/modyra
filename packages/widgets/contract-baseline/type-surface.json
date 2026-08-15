@@ -3075,7 +3075,7 @@
     "(0) popup: HTMLElement",
     "(1) open: boolean",
     "(2) modal?: boolean",
-    "-> returns: void"
+    "-> returns: boolean"
   ],
   "settleFor": [
     "(0) beat: MdyPaintBeat",

@@ -5,8 +5,10 @@
  * coordinates that follow — is `anchorOverlay` in `@modyra/widgets`. This file measures the anchor
  * and writes the `--mdy-overlay-*` properties it returns, and decides nothing of its own.
  */
-import { applyOverlayProperties, trackAnchoredOverlay, bindLightDismiss, syncOverlayBackdrop } from "@modyra/widgets";
+import { applyOverlayProperties, trackAnchoredOverlay, bindLightDismiss, setOverlayOpen, syncOverlayBackdrop, type MdyI18nMessages } from "@modyra/widgets";
 import { anchorOverlay, createLightDismiss, MDY_WIDGET_CONTRACTS, overlayLifecycleTransition, popupPlacementClass, type MdyOverlayDecision, type MdyPopupWidgetKind } from "@modyra/widgets";
+
+import { announcePlain } from "./command-runtime.js";
 
 export interface OverlayPlacementOptions {
   /** Smallest usable space before the popup flips or overlays. */
@@ -28,6 +30,31 @@ export interface OverlayPlacementOptions {
  * waiting to happen.
  */
 export { setOverlayOpen } from "@modyra/widgets";
+
+/**
+ * Shows or hides a popup, and says which one it just did.
+ *
+ * `overlayLifecycleTransition` answers `announce` for every open and close, and the words are in the
+ * message tables in five languages — what was missing was a renderer reading either. A popup that
+ * appears elsewhere on the page is the case: `aria-expanded` carries the state for anyone who asks
+ * the control, and nothing tells someone who was not asking that something has appeared.
+ *
+ * The edge comes from `setOverlayOpen`, which answers whether this call is the moment it changed:
+ * a field reflects its open state on every render, and announcing from the state rather than from
+ * the change would repeat the sentence on every keystroke while the popup is open.
+ */
+export function reflectOverlayOpen(
+  popup: HTMLElement,
+  open: boolean,
+  messages: MdyI18nMessages,
+  modal = false,
+): void {
+  if (!setOverlayOpen(popup, open, modal)) return;
+  // A popup taken out of the document is not one anybody closed, and the live region this would
+  // build to say so outlives the field that caused it.
+  if (!popup.isConnected) return;
+  announcePlain(open ? messages.overlayOpened : messages.overlayClosed);
+}
 
 /**
  * The placement, written onto the popup as the state the catalog declares for it.
