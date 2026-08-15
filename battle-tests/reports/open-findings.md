@@ -7009,3 +7009,33 @@ than only for the any-file token.
 The battle would not load: `SyntaxError: Unexpected token '*'`. Its header comment spelled the
 any-file token literally, and the slash-star inside it ended the block comment three paragraphs early.
 The token is now written only inside string literals, with a line in the header saying why.
+
+### Checked and clean: the two boxes a time is typed into
+
+`adversarial/widgets/the-hour-a-box-will-take.battle.test.mjs` (green).
+
+`timeFieldBounds`, `stepTimeField` and `acceptTimeField` are published and had been named by nothing.
+Their edges are all off-by-one shaped and none of them is visible: twelve-hour hours run 1..12, so
+every wrap carries an offset.
+
+```
+12h hour   12 +1 → 1     1 -1 → 12    6 +6 → 12    6 -6 → 12    12 +12 → 12
+24h hour   23 +1 → 0     0 -1 → 23
+minute     59 +1 → 0     0 -1 → 59    55 +5 → 0
+from NaN → the range's floor; by NaN or 0.4 → unchanged; from 24 or -1 → back inside
+```
+
+The parser is strict about what a person types, and says which kind of no it is — a distinction that
+matters, because someone who typed 13 should be told the hours run to 12 and someone who typed
+nothing should not:
+
+```
+accepted     "5", " 5 ", "05" → 5     "12", "1"
+out-of-range "0", "13", "99"           with the bounds attached
+not-a-number "", "  ", "abc", "5.7", "5e0", "+5", "-5", "1_2", "12:30", "Infinity", "NaN", "٥"
+```
+
+`Number("")` is `0`, so an empty box read as a number is a request for midnight. Emptiness and shape
+are decided before the value, which is what keeps that from happening. The Arabic-Indic digit is
+refused rather than misread, consistent with `docs/guides/i18n.md` calling non-Latin digit input
+unsupported.
