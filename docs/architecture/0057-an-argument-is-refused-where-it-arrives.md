@@ -48,6 +48,19 @@ list-taking setters refuse anything that is not an array of functions, by the sa
 `undefined` and an array, because none of them is a form value and emptying the form is not what the
 caller meant by any of them.
 
+**Amendment.** An object was the one shape this let through, and the Security section below claimed
+the check removed a way for a wrong-shaped response to silently erase what a user typed. It did not:
+a wrong-shaped response *is* an object. A response whose fields a server renamed, or a transposed
+letter, named nothing the form declares — and the rule that a field the value does not name returns
+to its initial then emptied the form, with `state.valid()` reading true and nothing said on either
+channel.
+
+So a whole value that names **none** of the form's fields is refused too. `setValue({})` remains the
+spelling for emptying a form deliberately, and it is what a caller who means that writes. A value
+naming **some** of them writes those and says which of the rest it ignored, because a server that
+renamed one field is the ordinary way that happens and the field it renamed would otherwise go back
+to its initial without a word.
+
 **A field a whole value does not name returns to its initial**, which is the rule `reset()` already
 follows and a state the form could have started in. It is *named* that decides, not what it holds: a
 path present and holding null is written, a path absent is restored.
@@ -85,6 +98,10 @@ being reactive, which is the failure the reactivity contract exists to make loud
 
 **Warn under `MDY_DEV` and carry on.** Production is where a poisoned form is unrecoverable, and the
 warning is stripped exactly there.
+
+**Refuse an object whose keys are all unknown by leaving the form as it was.** It is the other
+answer this battle admits, and it makes a caller's mistake invisible on the door that is most likely
+to be handed a wrong-shaped response — the same reason the reactive setters throw rather than hold.
 
 **Refuse an initial by validating the value against the field's kind.** A typed schema has no kinds;
 `explainValueMismatch` answers for a *document's* kinds, which a typed form does not carry.

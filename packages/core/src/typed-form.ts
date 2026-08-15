@@ -827,6 +827,35 @@ export abstract class MdyTypedFormBase<
         `${value === null ? "null" : Array.isArray(value) ? "an array" : `a ${typeof value}`}.`,
       );
     }
+    // What the form declares at the top, against what the value names there. A whole-value write
+    // that names *nothing* the form has is not the reset `setValue({})` spells: it is a response
+    // whose fields were renamed, or a transposed letter, and answering it by returning every field
+    // to its initial erases what the person typed while the form goes on reporting itself valid.
+    // That silent erasure is the state this door exists to close, and an object was the one shape
+    // that walked through it.
+    const declared = new Set<string>();
+    for (const path of [
+      ...this._leafPaths,
+      ...this._arrayPaths,
+      ...this._recordPaths,
+      ...this._groupPaths,
+    ]) declared.add(path.split(".")[0]!);
+    const given = Object.keys(value as Record<string, unknown>);
+    const unknown = given.filter((key) => !declared.has(key));
+    if (given.length > 0 && unknown.length === given.length) {
+      throw new Error(
+        `[modyra] setValue names none of this form's fields: ${unknown.map((key) => `"${key}"`).join(", ")}. ` +
+        "Pass {} to empty the form deliberately.",
+      );
+    }
+    // Some named, some not: what matched is written, and the rest is said rather than dropped —
+    // a server that renamed one field is the ordinary way this happens, and the field it renamed
+    // goes back to its initial without a word otherwise.
+    if (unknown.length > 0) {
+      this._adapter.warnDev(
+        `setValue ignored ${unknown.map((key) => `"${key}"`).join(", ")}: this form declares no such field.`,
+      );
+    }
     const flat: Record<string, unknown> = {};
     for (const path of this._leafPaths) {
       // `undefined` where the value does not name the path at all, which the engine reads as "not
