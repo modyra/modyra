@@ -38,6 +38,18 @@ const TAG = {
 };
 
 /**
+ * The control type a text-family kind needs said out loud.
+ *
+ * Three kinds share one element, and the element renders a plain text box unless it is told
+ * otherwise. A consumer who names the element without naming the type gets a password field that
+ * shows what is typed into it, which is why this sits beside the tag rather than in a caller.
+ */
+const CONTROL_TYPE = {
+  email: "email",
+  password: "password",
+};
+
+/**
  * What a kind's value starts as, from the contract rather than from a list kept here.
  *
  * `MDY_VALUE_CONTRACTS` already says what shape a kind holds and whether it may be null, so a second
@@ -99,6 +111,8 @@ window.battleLit = {
         const tag = TAG[declared.kind] ?? "mdy-text-field";
         const element = document.createElement(tag);
         element.setAttribute("label", declared.label ?? declared.name);
+        const controlType = CONTROL_TYPE[declared.kind];
+        if (controlType !== undefined) element.setAttribute("type", controlType);
         if (declared.options !== undefined) element.options = declared.options;
 
         // Everything else a document says about the field is the element's to render — a bound, a
