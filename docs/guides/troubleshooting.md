@@ -66,10 +66,16 @@ In order of likelihood:
   one.
 - **The control is outside the form.** It found no registry to claim a field from; dev mode logs it.
 
-## Why did my value reset to null after `setValue()`?
+## Why did my value change after `setValue()`?
 
-`setValue` has **replace** semantics: fields absent from the passed object
-are reset to `null`. Use `patch()`/`patchValue()` to change a subset.
+`setValue` has **replace** semantics: a field the passed object does not name
+goes back to its **initial** — the same place `reset()` returns it to, which is
+a state the form could have started in. It is not set to `null`, so a field that
+declares `initial: "pro"` reads `"pro"` afterwards, not empty. Use
+`patch()`/`patchValue()` to change a subset.
+
+A whole value that names *none* of the form's fields is refused rather than
+obeyed: one transposed key used to empty the form silently.
 
 ## Why does `getChanges()` report an unchanged object field?
 

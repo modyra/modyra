@@ -58,7 +58,7 @@ component — it says so in its heading.
 | Operation        | Semantics                                                                                                                                  |
 | :--------------- | :----------------------------------------------------------------------------------------------------------------------------------------- |
 | `getValue()`     | Nested typed value of every schema field                                                                                                   |
-| `setValue(v)`    | **Replace**: requires the complete model; schema fields absent from `v` are reset to `null`                                                |
+| `setValue(v)`    | **Replace**: requires the complete model; a schema field `v` does not name goes back to its **initial**, and a value naming no field at all is refused |
 | `patch(p)`       | Deep-partial merge — only the given paths change                                                                                           |
 | `reset()`        | Back to the **schema initial values**; clears touched/dirty and the last submit errors                                                     |
 | `getChanges()`   | Minimal nested patch: only fields whose value differs (`Object.is`) from the schema initials                                               |
