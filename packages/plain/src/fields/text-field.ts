@@ -58,7 +58,7 @@ export function renderTextField(
     reactivity,
   );
 
-  const shell = buildFieldShell(f.label, f.kind, { prefix: f.prefix, suffix: f.suffix }, f.ariaLabel);
+  const shell = buildFieldShell(f.label, f.kind, { prefix: f.prefix, suffix: f.suffix }, f.ariaLabel, f.name);
   const input = (isTextarea ? el("textarea") : el("input")) as HTMLInputElement | HTMLTextAreaElement;
   if (f.placeholder) input.placeholder = f.placeholder;
   // A slider is not a bare input: the contract gives it a container and a displayed value, and

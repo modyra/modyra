@@ -6,7 +6,7 @@
  *
  * Renderers build the control themselves and insert it into the wrapper.
  */
-import { MDY_FIELD_SHELL_CLASSES, MDY_WIDGET_CONTRACTS, type MdyWidgetKind } from "@modyra/widgets";
+import { fieldAccessibleName, MDY_FIELD_SHELL_CLASSES, MDY_WIDGET_CONTRACTS, type MdyWidgetKind } from "@modyra/widgets";
 import { el, setText } from "./dom.js";
 
 export interface FieldShell {
@@ -20,6 +20,8 @@ export interface FieldShell {
   readonly ariaLabel?: string;
   /** The visible label's text, which names the control when no explicit name is given. */
   readonly labelText?: string;
+  /** The field's own name — the last thing left to name a control with. */
+  readonly fieldName?: string;
   /** Reflects state the themes key off: touched on the root, disabled/error on the wrapper. */
   syncState(state: { touched?: boolean; disabled?: boolean; hasError?: boolean; filled?: boolean; required?: boolean }): void;
 }
@@ -34,6 +36,8 @@ export function buildFieldShell(
   kind: MdyWidgetKind,
   affixes: FieldShellAffixes = {},
   ariaLabel?: string,
+  /** The field's own name, which names the control when nothing written for a person does. */
+  fieldName?: string,
 ): FieldShell {
   const root = el("div") as HTMLDivElement;
   root.classList.add(...MDY_WIDGET_CONTRACTS[kind].rootClasses);
@@ -69,6 +73,7 @@ export function buildFieldShell(
   return {
     ariaLabel,
     labelText,
+    fieldName,
     root,
     label,
     wrapper,
@@ -95,8 +100,20 @@ export function buildFieldShell(
  * the control the user is asking for.
  */
 export function insertControl(shell: FieldShell, control: HTMLElement): void {
-  const name = shell.ariaLabel || shell.labelText;
-  if (name) control.setAttribute("aria-label", name);
+  // A control with no accessible name is announced as its role and nothing else. A label is optional
+  // in a document by design, so the field's own name is what is left to say — see
+  // `fieldAccessibleName`, which is where the order lives so both renderers answer the same.
+  const name = fieldAccessibleName({
+    ariaLabel: shell.ariaLabel,
+    label: shell.labelText,
+    name: shell.fieldName,
+  });
+  // On the element a person operates, which is not always the one handed over: a slider arrives
+  // wrapped in its track, and a name on the wrapper is a name the control does not carry.
+  const operated = control.matches("input, select, textarea, [role], button")
+    ? control
+    : control.querySelector<HTMLElement>("input, select, textarea, [role], button") ?? control;
+  if (name) operated.setAttribute("aria-label", name);
   (shell.wrapper.querySelector(`.${MDY_FIELD_SHELL_CLASSES.control}`) ?? shell.wrapper).appendChild(control);
 }
 

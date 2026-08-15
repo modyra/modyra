@@ -46,7 +46,7 @@ export function renderFileField(
   const definition = MDY_WIDGET_CONTRACTS.file;
   const selectionOptions = { accept: f.accept, multiple: Boolean(f.multiple) };
 
-  const shell = buildFieldShell(f.label, "file", {}, f.ariaLabel);
+  const shell = buildFieldShell(f.label, "file", {}, f.ariaLabel, f.name);
   // A file field has no input wrapper in the contract: the drop zone is what holds the control.
   shell.wrapper.remove();
 

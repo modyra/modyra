@@ -68,3 +68,41 @@ export function errorsVisible(
 export function formErrorsOf(errors: ReadonlyArray<MdyFormError>): ReadonlyArray<MdyFormError> {
   return errors.filter((error) => error.path === null);
 }
+
+/**
+ * The name a control carries, given what a document said about the field.
+ *
+ * A label is optional in a document, deliberately: the published corpus declares fields without one,
+ * and refusing them would invalidate the material that documents the contract. But a control with no
+ * accessible name is announced as its role and nothing else — "text box", "grid" — which
+ * `MDY_SEMANTICS_REQUIRING_NAME` already says some roles may not be.
+ *
+ * So the field's own name is the fallback, and it is not a poor one. A document's field name is a
+ * single segment — a dotted path is refused where the document is read — and the corpus shows the
+ * names are the label's own words: `city`, `zip`, `email`, `first`, `last`, beside labels reading
+ * `City`, `ZIP`. Announcing `city` is announcing the word the author would have written.
+ *
+ * Order: what a host wrote for the control, then the visible label, then the field's name. A host
+ * that says nothing and a document that says nothing still leave one thing to say.
+ */
+export function fieldAccessibleName(sources: {
+  readonly ariaLabel?: string | null;
+  readonly label?: string | null;
+  readonly name?: string | null;
+}): string {
+  for (const candidate of [sources.ariaLabel, sources.label, sources.name]) {
+    if (typeof candidate === "string" && candidate.trim().length > 0) return candidate;
+  }
+  return "";
+}
+
+/** Whether the name a control carries came from the field's own name rather than from words for a person. */
+export function nameIsAFallback(sources: {
+  readonly ariaLabel?: string | null;
+  readonly label?: string | null;
+}): boolean {
+  return !(
+    (typeof sources.ariaLabel === "string" && sources.ariaLabel.trim().length > 0) ||
+    (typeof sources.label === "string" && sources.label.trim().length > 0)
+  );
+}

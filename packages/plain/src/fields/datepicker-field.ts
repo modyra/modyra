@@ -61,7 +61,7 @@ export function renderDatepickerField(
     },
   }, reactivity);
 
-  const shell = buildFieldShell(f.label, "datepicker", {}, f.ariaLabel);
+  const shell = buildFieldShell(f.label, "datepicker", {}, f.ariaLabel, f.name);
   // The catalogue's datepicker anatomy: a typeable input plus a toggle button that opens the
   // calendar, rather than one button doing both jobs.
   const control = el("input", "mdy-datepicker__input") as HTMLInputElement;

@@ -33,7 +33,7 @@ export function renderOptionField(
   const parts = f.kind === "segmented"
     ? { group: MDY_WIDGET_CONTRACTS.segmented.parts.group, option: MDY_WIDGET_CONTRACTS.segmented.parts.option, radio: MDY_WIDGET_CONTRACTS.segmented.parts.optionControl, control: MDY_WIDGET_CONTRACTS.segmented.parts.optionCheck, text: MDY_WIDGET_CONTRACTS.segmented.parts.optionText }
     : { group: MDY_WIDGET_CONTRACTS.radio.parts.group, option: MDY_WIDGET_CONTRACTS.radio.parts.option, radio: undefined, control: MDY_WIDGET_CONTRACTS.radio.parts.optionControl, text: MDY_WIDGET_CONTRACTS.radio.parts.optionLabel };
-  const shell = buildFieldShell(f.label, f.kind, {}, f.ariaLabel);
+  const shell = buildFieldShell(f.label, f.kind, {}, f.ariaLabel, f.name);
   const group = el("div") as HTMLDivElement;
   group.className = parts.group.classes.join(" ");
   /**

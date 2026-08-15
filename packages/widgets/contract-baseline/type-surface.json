@@ -2496,6 +2496,10 @@
     "(2) options?: MdyFieldOptions<MdyWiden<TValue>>",
     "-> returns: MdyFieldDescriptor<MdyWiden<TValue>>"
   ],
+  "fieldAccessibleName": [
+    "(0) sources: { readonly ariaLabel?: string | null; readonly label?: string | null; readonly name?: string | null; }",
+    "-> returns: string"
+  ],
   "fieldCommandHandlers": [
     "(0) handle: MdyCommandTarget",
     "-> returns: MdyWidgetCommandHandlers"
@@ -2777,6 +2781,10 @@
     "(1) intent: MdyMultiselectValueIntent<T>",
     "(2) keyFor?: (value: T) => string",
     "-> returns: readonly T[]"
+  ],
+  "nameIsAFallback": [
+    "(0) sources: { readonly ariaLabel?: string | null; readonly label?: string | null; }",
+    "-> returns: boolean"
   ],
   "narrowConstraints": [
     "(0) rules: MdyFieldConstraints",

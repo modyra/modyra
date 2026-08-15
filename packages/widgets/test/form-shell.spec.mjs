@@ -14,7 +14,9 @@ import { test } from "node:test";
 import {
   MDY_FORM_SHELL_CLASSES,
   MDY_FORM_SHELL_STRUCTURE,
+  fieldAccessibleName,
   formErrorsOf,
+  nameIsAFallback,
   sliderTrack,
 } from "../dist/index.js";
 
@@ -90,4 +92,29 @@ test("a step that would move the thumb off the value is dropped", () => {
   // No value to misrepresent, and a step nobody declared.
   assert.equal(sliderTrack({ min: null, max: null, step: 5 }, null).step, 5);
   assert.equal(sliderTrack({ min: null, max: null, step: null }, 7).step, null);
+});
+
+/**
+ * What names a control when the document said nothing.
+ *
+ * A label is optional in a document by design — the published corpus declares fields without one —
+ * and a control with no accessible name is announced as its role and nothing else. The field's own
+ * name is the fallback, and it is not a poor one: a document's field name is a single segment (a
+ * dotted path is refused where the document is read) and in the corpus the names are the label's own
+ * words — `city`, `zip`, `email` beside labels reading `City`, `ZIP`.
+ */
+test("a control is named by what was written for a person, then by the field", () => {
+  assert.equal(fieldAccessibleName({ ariaLabel: "Where", label: "City", name: "city" }), "Where");
+  assert.equal(fieldAccessibleName({ label: "City", name: "city" }), "City");
+  assert.equal(fieldAccessibleName({ name: "city" }), "city");
+  // Whitespace is not a name: a label of spaces reads as an empty one to anybody looking at it.
+  assert.equal(fieldAccessibleName({ label: "   ", name: "city" }), "city");
+  assert.equal(fieldAccessibleName({}), "");
+});
+
+test("a fallback name is recognisable as one", () => {
+  assert.equal(nameIsAFallback({ label: "City" }), false);
+  assert.equal(nameIsAFallback({ ariaLabel: "Where" }), false);
+  assert.equal(nameIsAFallback({ label: "  " }), true);
+  assert.equal(nameIsAFallback({}), true);
 });
