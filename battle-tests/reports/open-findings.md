@@ -5069,6 +5069,11 @@ and leave the per-kind modifier alone:
 So a modifier a theme never targets is a hook published for a consumer's own stylesheet, which is what
 a class table is for. Recorded so the next pass over these tables does not file it.
 
+`MDY_ICONS` reads the same way: fifteen icons declared, fourteen referenced by some renderer, and
+`CLOSE` by none. The table is exported, so an unused icon is one a consumer's own renderer can reach,
+and the popups close on Escape and on a click outside — measured in the transitions sweep — so nothing
+is missing a way out. Noted rather than filed.
+
 Also checked, and a milestone rather than a finding: **every one of the 54 registered claims is now
 cited by at least four battles.** The recon that opened this campaign found 24 claims with four of
 them carrying no battle at all; the registry has since more than doubled and has no uncovered claim
