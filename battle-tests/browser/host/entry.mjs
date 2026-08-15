@@ -210,6 +210,7 @@ window.battle = {
       const submitted = [];
       const handle = mountMdyForm(host, parsed.fields, {
         layout: parsed.layout,
+        rules: parsed.rules,
         onSubmit: recording(submitted),
       });
       mounted.set(id, { handle, host, submitted });
