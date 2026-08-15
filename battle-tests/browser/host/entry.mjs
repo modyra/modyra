@@ -65,7 +65,16 @@ window.battle = {
     host.dataset.form = id;
     document.querySelector("#stage").append(host);
     try {
-      const handle = mountMdyForm(host, fields, { onSubmit: () => errors });
+      // `throw` is a shape too: an action whose network call failed. The engine turns it into a
+      // form-level error, and a spec can then ask whether the page shows one.
+      const handle = mountMdyForm(host, fields, {
+        onSubmit: () => {
+          if (errors !== null && typeof errors === "object" && errors.__throw !== undefined) {
+            throw new Error(String(errors.__throw));
+          }
+          return errors;
+        },
+      });
       mounted.set(id, { handle, host });
       return { mounted: true };
     } catch (error) {
@@ -79,6 +88,14 @@ window.battle = {
 
   declareRow(id, key, value) {
     mounted.get(id).handle.form.f.rows.upsert(key, value);
+  },
+
+  /** What the form says about its last submission — the errors a renderer could show. */
+  lastSubmitErrorsOf(id) {
+    return mounted.get(id).handle.form.state.lastSubmitErrors().map((entry) => ({
+      path: entry.path ?? null,
+      message: typeof entry.message === "string" ? entry.message : String(entry.message),
+    }));
   },
 
   valueOf(id) {
