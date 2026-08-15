@@ -44,7 +44,7 @@ const PACKAGES = Object.freeze([
   "studio-target-angular",
 ]);
 
-function generateInConsumer() {
+function generateInConsumer(scriptName = "hostile-project.consumer.mjs") {
   const work = mkdtempSync(join(tmpdir(), "mdy-targets-"));
   try {
     for (const pkg of PACKAGES) {
@@ -65,13 +65,14 @@ function generateInConsumer() {
       stdio: ["ignore", "ignore", "pipe"],
     });
 
-    writeFileSync(join(consumer, "run.mjs"), readFileSync(join(HERE, "hostile-project.consumer.mjs"), "utf8"), "utf8");
+    writeFileSync(join(consumer, "run.mjs"), readFileSync(join(HERE, scriptName), "utf8"), "utf8");
     const stdout = execFileSync(process.execPath, [join(consumer, "run.mjs")], {
       cwd: consumer,
       encoding: "utf8",
       stdio: ["ignore", "pipe", "pipe"],
     });
-    return { ran: true, ...JSON.parse(stdout.trim()) };
+    const parsed = JSON.parse(stdout.trim());
+    return { ran: true, ...(Array.isArray(parsed) ? { rows: parsed } : parsed) };
   } catch (error) {
     return { ran: false, message: `${error.stderr ?? error.message}`.split("\n").slice(0, 3).join(" ") };
   } finally {
@@ -145,6 +146,60 @@ battle(
     expectClaim(Object.keys(result.declarable ?? {}).length > 0, {
       claimIds: ["STU-001"],
       what: "no target emitted an identifier at all, so the check above examined nothing",
+    });
+  },
+);
+
+battle(
+  {
+    claims: ["STU-003", "STU-004"],
+    title: "every target answers for a project the model calls broken",
+    environments: ["node"],
+  },
+  async (ctx) => {
+    const result = generateInConsumer("broken-project.consumer.mjs");
+    ctx.log.note("every target asked about the same project", { ran: result.ran, rows: result.rows?.length ?? 0 });
+
+    expectClaim(result.ran === true, {
+      claimIds: ["STU-004"],
+      what: "the targets could not be packed, installed and asked",
+      detail: result.message ?? "",
+    });
+
+    const rows = result.rows ?? [];
+    expectClaim(rows.length === 6, {
+      claimIds: ["STU-004"],
+      what: "three targets were not asked about both projects",
+      detail: String(rows.length),
+    });
+
+    // The control: a project with nothing wrong is compatible everywhere and reported clean, so a
+    // "yes" below is not a target that always says yes.
+    const fine = rows.filter((row) => row.broken === false);
+    expectEqual(fine.filter((row) => row.compatible !== true).map((row) => row.target), [], {
+      claimIds: ["STU-003"],
+      what: "a target refused a project with nothing wrong with it",
+    });
+
+    // `studio-model` raises SELECT_WITHOUT_OPTIONS at severity error for this project, so at least
+    // one target proves the finding is reachable — without which "nobody reported it" would only
+    // mean "there is nothing to report".
+    const broken = rows.filter((row) => row.broken === true);
+    expectClaim(broken.some((row) => row.analyzeErrors?.length > 0), {
+      claimIds: ["STU-003"],
+      what: "no target found the error the model raises, so the project may not be broken at all",
+      detail: JSON.stringify(broken),
+    });
+
+    // And the question `analyze` exists to answer. A target that says a broken project is compatible
+    // sends a host on to generate from it — which each then did, emitting both files in silence.
+    const saidYes = broken.filter((row) => row.compatible === true).map((row) => row.target);
+    ctx.log.note("targets that called a broken project compatible", { saidYes, broken });
+
+    expectEqual(saidYes, [], {
+      claimIds: ["STU-003", "STU-004"],
+      what: "a target called a project compatible that the model reports an error for",
+      detail: JSON.stringify(broken),
     });
   },
 );
