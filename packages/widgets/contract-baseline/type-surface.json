@@ -1924,6 +1924,7 @@
     "step?: number"
   ],
   "MdyValueCommit": [
+    "\"complete\"",
     "\"confirm\"",
     "\"live\""
   ],

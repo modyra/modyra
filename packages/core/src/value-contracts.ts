@@ -34,12 +34,29 @@ export type MdyValueShape =
   | "dateRange"
   | "file[]";
 
-/** When the field's value changes as against when the user is merely interacting. */
+/**
+ * When the field's value changes as against when the user is merely interacting.
+ *
+ * The answer is about the control the label names — the one a keyboard reaches and types into. A
+ * kind may draw a second affordance beside it that writes as soon as it is used: a colour swatch
+ * opens the platform's picker and each choice arrives immediately, while the hex box beside it holds
+ * `#11` without writing anything, because `#11` is not a colour. One word per kind cannot say both,
+ * and the word says what the *typed* control does, which is the one a person can leave half-finished.
+ */
 export type MdyValueCommit =
   /** Every interaction writes through: typing, dragging, toggling. */
   | "live"
   /** The field only changes on an explicit confirmation; interaction edits a draft. */
-  | "confirm";
+  | "confirm"
+  /**
+   * The field changes when what the user is building becomes a value at all.
+   *
+   * A range is the case: a start with no end is not a range, so choosing one writes nothing, and the
+   * second choice writes both. There is nothing to confirm — no OK, no Cancel — and nothing is
+   * written live either, so neither of the other two words is true about it. `completeRange()` is
+   * the same statement from the value's side.
+   */
+  | "complete";
 
 export interface MdyValueContract {
   readonly shape: MdyValueShape;
@@ -64,7 +81,11 @@ export const MDY_VALUE_CONTRACTS: Readonly<Record<MdyValueKind, MdyValueContract
   textarea: live("string", false),
   email: live("string", false),
   password: live("string", false),
-  colors: live("string", false),
+  // The hex box is what the label names and what a keyboard types into, and it writes on blur or
+  // Enter rather than per keystroke: `#11` is not a colour, and a field that took it would hold a
+  // value nothing could show. The native swatch beside it writes as soon as it is used — one word
+  // per kind, and it answers for the control a person can leave half-finished.
+  colors: Object.freeze({ shape: "string" as const, nullable: false, commit: "confirm" as const }),
   number: live("number", true),
   // A thumb is always somewhere, so a slider always holds a number.
   slider: live("number", false),
@@ -78,7 +99,9 @@ export const MDY_VALUE_CONTRACTS: Readonly<Record<MdyValueKind, MdyValueContract
   // The picker edits a draft on its dial and writes nothing until the user confirms, so an abandoned
   // picker leaves the field exactly as it found it.
   timepicker: Object.freeze({ shape: "string" as const, nullable: true, commit: "confirm" as const }),
-  daterange: live("dateRange", false),
+  // Neither live nor confirm: the first endpoint writes nothing because a start with no end is not a
+  // range, and the second writes both. There is no OK to press.
+  daterange: Object.freeze({ shape: "dateRange" as const, nullable: false, commit: "complete" as const }),
   file: live("file[]", false),
 });
 
