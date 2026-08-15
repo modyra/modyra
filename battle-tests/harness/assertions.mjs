@@ -52,12 +52,33 @@ export function expectSameObservation(actual, expected, { claimIds, ignore = [],
   });
 }
 
+/**
+ * What a failure is allowed to say beyond naming the claim.
+ *
+ * A detail is read only when the claim has already broken, and a detail that cannot be produced must
+ * not decide whether the break is reported. Passing a **function** is what makes that true: a value
+ * is built at the call site, so `JSON.stringify` of anything holding a form — a form owns its
+ * scheduler, and the structure is circular — throws before the assertion is entered, and an S0 gets
+ * reported as broken on the strength of its own report line. That happened here.
+ */
+function detailOf(detail) {
+  if (detail === null || detail === undefined) return null;
+  if (typeof detail !== "function") return String(detail);
+  try {
+    const produced = detail();
+    return produced === null || produced === undefined ? null : String(produced);
+  } catch (error) {
+    return `detail unavailable: ${error?.constructor?.name ?? typeof error}`;
+  }
+}
+
 export function expectClaim(condition, { claimIds, what, detail = null }) {
   countAssertion();
   if (condition) return;
+  const said = detailOf(detail);
   throw new BattleBreak({
     claimIds,
-    message: detail ? `${what} (${detail})` : what,
+    message: said ? `${what} (${said})` : what,
   });
 }
 
