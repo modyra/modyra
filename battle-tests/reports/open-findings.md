@@ -7241,3 +7241,27 @@ is the refusal rather than a page that never reacts to a pick.
 tables carry `entryUnreadable` for a date that could not be read and nothing for a file that was
 turned away, so a renderer wanting to say it has nothing to say it with. Same shape as finding 113: a
 state the engine models and the vocabulary does not.
+
+### Checked and clean: two fields that would mint one id
+
+`adversarial/security/two-fields-that-would-mint-one-id.battle.test.mjs` (2 green).
+
+Every generated id is a widget id joined to a part by `MDY_ID_DELIMITER` (`__`), and that join is the
+whole scheme — `label[for]`, `aria-describedby`, `aria-errormessage`, the popup a control names, a
+radio group's `name`. So two fields can reach one id by different routes: `a__b` asking for its
+`label` and `a` asking for a part called `b__label` both arrive at `a__b__label`, and neither looks
+wrong alone. What follows is a label pointing at another field's input and an error announced on the
+wrong control.
+
+Both doors are shut, and the ordering is the point:
+
+```
+isValidWidgetId    refuses a__b, a__label, a__b__c, "", " ", "a b", __proto__
+                   accepts a, a_b, a-b, a.b, rows.0.plan, 1
+fieldShellPartIds  throws on a name carrying the delimiter, naming it — enforced, not advisory
+parseDynamicForm   refuses such a name as a *document*, MDY_DYNAMIC_INVALID_FIELD, before it is a field
+```
+
+That is finding 118's shape with the layers the right way round: the document parser refuses it, so
+the widget-layer throw is a backstop rather than the crash a consumer meets. A name one character away
+(`a_b`) passes both, which is the control.
