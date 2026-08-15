@@ -5432,3 +5432,42 @@ list it returned the list, which is truthy. The published signature settled both
 
 Also measured: the snapshot's keys are `valid, pending, submitting, submitCount, fields` — no draft,
 no history — so a value masked in the field list has nowhere else in the snapshot to reappear.
+
+## 110. A grid with no name
+
+`browser/a-grid-with-no-name.spec.ts` — 2 red.
+
+`MDY_SEMANTICS_REQUIRING_NAME` publishes three roles that must carry an accessible name: `listbox`,
+`dialog`, `grid`. One battle cited the table before this and none checked a page against it.
+
+Each openable kind mounted alone, opened, read, disposed of:
+
+```
+plain   select listbox        named
+        datepicker grid ×3    named
+        timepicker dialog     named
+        colors listbox        named
+        daterange grid        UNNAMED
+lit     datepicker dialog     named,  grid  UNNAMED
+        daterange  dialog     named,  grid  UNNAMED
+        timepicker dialog     named
+        colors listbox        named
+```
+
+Plain's datepicker names all three of its grids, which is the control: the mechanism exists in the
+same renderer that misses it one kind over. A calendar grid with no name is announced as "grid" and
+nothing else — for someone reading with a screen reader, the difference between knowing they are in a
+date picker and knowing they are somewhere.
+
+A name here is `aria-label` with something in it, or `aria-labelledby` pointing at an element that has
+text. Pointing at an empty element is not a name, so the target's text is read rather than its
+existence.
+
+Attribution was the work. The popups of some kinds live outside the field they belong to, and plain
+leaves a closed daterange's popup in the document (finding 98), so a first pass counted seven roles by
+the sixth kind and could not say whose they were — the counts grew 1, 1, 4, 5, 6, 7. The spec now
+disposes of each mount before the next and **asserts that the disposal worked**, so a role found later
+belongs to the later kind.
+
+Classification: Modyra bug, S1 by A11Y-004 — a role the package's own table says must be named, in
+three of the twelve widget-and-renderer pairs measured, is not.
