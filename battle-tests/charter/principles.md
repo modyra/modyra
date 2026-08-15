@@ -143,3 +143,23 @@ The same night, from the other direction: a battle compared a partially restored
 A restore that comes back a row at a time keeps every key and empties the cells, so the check was
 looking at the half of the state the defect does not touch. What a form holds and what it enforces
 are two questions, and so are what it lists and what it holds.
+
+## 14. Two campaigns that share a model are one witness
+
+A finding was carried for a long time on the strength of two generated campaigns reaching the same
+divergence from unrelated seeds. That reads like independent confirmation and is not: both campaigns
+compared against reference models that stated the same rule, so what agreed was the rule with itself.
+The engine was consistent throughout and the model was the odd one.
+
+Fingerprint reasoning — the same signature from unrelated seeds means one cause — is still right. What
+it says is *one cause*, not *the engine's cause*. The model is on the other side of every comparison
+a campaign makes, and it is where a single wrong sentence looks like a defect from every seed at once.
+
+The check that broke the deadlock was small and is the one to reach for: **remove exactly one
+operation and see whether the symptom moves the way a defect would.** Taking away the *first* pending
+binding made the second one apply — which a lost binding does not do, and which no amount of re-running
+the campaign would have shown.
+
+So a minimal sequence is not evidence on its own. A minimal sequence *and* a neighbour that differs by
+one operation, behaving as the contrary explanation predicts, is. When a report has the first and not
+the second, treat it as unfinished rather than as a finding.
