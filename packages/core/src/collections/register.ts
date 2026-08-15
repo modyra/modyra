@@ -31,6 +31,34 @@ export type MdyRowDescriptor =
   | MdyAnyArrayDescriptor
   | MdyAnyRecordDescriptor;
 
+/**
+ * Whether the row template declares the cell this path names.
+ *
+ * A draft is written flat and read back flat, so the *path* is the instruction: `lines.a.sku` is a
+ * cell of row `a`, and a row named by a path that does not exist is created to receive it — which is
+ * how a saved order gets its lines back. That makes an extra segment an instruction too. `lines.a.b.sku`
+ * asks for a row `a` holding a `b` holding a `sku`, and nothing in the document ever described a `b`:
+ * built anyway, the collection holds a row of a shape its own template does not have, and the form
+ * calls itself valid because there is no field there to be invalid.
+ *
+ * So the remainder is walked against the template. A nested collection answers for its own subtree —
+ * its rows do not exist yet either, and its own manager applies this same rule when they arrive.
+ */
+export function rowDeclaresCell(
+  item: MdyRowDescriptor,
+  rest: string,
+): boolean {
+  if (rest.length === 0) return true;
+  let node: MdyRowDescriptor | undefined = item;
+  for (const segment of rest.split(".")) {
+    if (node === undefined) return false;
+    if (node.kind === "record" || node.kind === "array") return true;
+    if (node.kind !== "group") return false;
+    node = (node as MdyAnyGroupDescriptor).children[segment] as MdyRowDescriptor | undefined;
+  }
+  return node !== undefined;
+}
+
 export interface MdyRowRegistration {
   readonly engine: MdyCollectionHost;
   readonly rx: MdyReactivity;

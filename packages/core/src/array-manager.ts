@@ -33,7 +33,8 @@ import type {
   MdyCollectionKind,
   MdyNestedCollection,
 } from "./contracts/collection-manager.js";
-import { registerRowNode, type MdyRowRegistration } from "./collections/register.js";
+import { registerRowNode, rowDeclaresCell, type MdyRowRegistration } from "./collections/register.js";
+import { MDY_DEV } from "./dev-flags.js";
 
 /** A row's own schema node. A record may sit inside an array's item; another array may not. */
 type MdyRowNode = MdyAnyFieldDescriptor | MdyAnyGroupDescriptor;
@@ -153,6 +154,19 @@ export class MdyArrayManager implements MdyNestedCollection {
       onRefusedWrite: (name) => {
         const index = this._indexUnder(name);
         if (index === null) return;
+        // The path is the instruction, and an extra segment is one too: `lines.0.b.sku` asks for a
+        // member of a row no template describes. Grown to receive it, the list holds a row whose
+        // shape its own document never declared, and nothing is there to be invalid about it.
+        const rest = name.slice(`${this._deps.path}.${index}`.length + 1);
+        if (!rowDeclaresCell(this._deps.item, rest)) {
+          if (MDY_DEV) {
+            console.warn(
+              `[modyra] Ignored "${name}": a row of "${this._deps.path}" declares no member at ` +
+              `"${rest}", so the path describes a row this collection cannot hold.`,
+            );
+          }
+          return;
+        }
         const count = this._deps.rx.untracked(() => this._rowCountSig());
         if (index < count) return;
         // The count first: the rows are in play before their fields are written, or the gate this
