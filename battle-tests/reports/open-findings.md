@@ -650,6 +650,12 @@ pnpm run battle:angular
   3 tests, 3 pass, 0 fail — build 4.0s, tests 9.7s
 ```
 
+Since measured it has grown to six, and one of them is load-bearing for an open finding rather than
+only for a comment: `angular/a-list-that-grew-by-one.battle.mjs` is the green half of finding 89, the
+evidence that the field list can grow at all. A repair to the React half that made both adapters fail
+would satisfy "they agree", and this tier is the only thing standing between that and a green run —
+on a command nothing executes. Finding 88 measures the same gap across the whole script list.
+
 So it is healthy and unwatched, which is the moment to wire it rather than after it breaks. Adding a
 CI step is a change to frozen configuration, so it is reported rather than made.
 
@@ -4050,9 +4056,24 @@ behaviour a reader would take away. `docs/guides/ai-generated-forms.md:168` is t
 the hook in the published guides and says nothing about it.
 
 Angular reaches the same function the same way — `mdy-dynamic-form.component.ts:342-349` runs
-`applyFlatValidators(form, fields, "mdy-dynamic")` from an `effect` over a `fields` input — so the
-question of what `<mdy-dynamic-form [fields]>` does when its list grows is open and worth the same
-measurement. Not measured here; the Angular tier is a separate run.
+`applyFlatValidators(form, fields, "mdy-dynamic")` from an `effect` over a `fields` input — and does
+not have the defect. Measured, mounting the published `MdyDynamicFormComponent` and growing its
+input (`angular/a-list-that-grew-by-one.battle.mjs`, green):
+
+```
+after one field  : 1 control
+after adding one : 2 controls, no refusal, labels ["EMAIL*","PHONE*"],
+                   both inputs aria-required="true"
+```
+
+Angular's inner form takes its schema from the same input, so the name is declared before the rule
+for it arrives. That makes the divergence S2 on top of the React defect, and it settles the question
+a repair would otherwise have to answer first: **growing the list is something the contract can do**,
+not a limit of the contract that React happens to expose. The added field is wired, not merely drawn
+— its `required` reaches the control as a declared fact.
+
+The Angular half is pinned in the tier that finding 36 says no job runs, which is the second time
+that gap has held load.
 
 Classification: Modyra bug, S2 by API-001's own severity. The engine's guard is not the defect; the
 hook handing it an argument it cannot satisfy, from a place where refusal is fatal, is.
