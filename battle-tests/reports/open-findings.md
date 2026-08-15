@@ -8291,3 +8291,56 @@ reload and retype everything.
 
 The premise asserted first is that the handler ran at all — otherwise every line below would be about
 a submission that never happened.
+
+## 148. A page that keeps nothing
+
+**Severity** S1 · **Classification** a published feature with no route through one adapter · **Spec**
+`browser/a-page-that-keeps-nothing.spec.ts` (red for one renderer, green for the other) · **Claims**
+PER-001, SUB-002
+
+Draft persistence is a headline of this engine — `docs/guides/typed-forms.md` documents debounced
+autosave, restore on load and field exclusion, and four claims cover it. A form takes it as
+`draft: { key, storage }` and writes as the user types.
+
+One renderer's published mount has nowhere to put it. `MountMdyFormOptions` is `collections`,
+`onSubmit`, `submitLabel`, `layout`, `idPrefix`; the mount builds the form itself, and the form it
+builds has no draft. Handing the option in anyway is **accepted without a word**:
+
+```
+plain   mounted, typed, waited past the debounce   nothing in storage, no warning
+lit     the same call                              storage holds {"__mdyDraft":1,…,"who":"typed into a draft"}
+```
+
+The other renderer passes its options straight to the form, which is what makes this a missing slot
+rather than a feature that does not work. Same shape as finding 117, where a document's cross-field
+validations have a compiler no adapter can call — and worse in one respect: there the option does not
+exist, so a consumer discovers it; here it is taken and ignored.
+
+## 149. The storage a browser already has
+
+**Severity** S2 · **Classification** an argument the contract refuses without saying so · **Battle**
+`adversarial/persistence/the-storage-a-browser-already-has.battle.test.mjs` (red) · **Claims**
+PER-001, API-001
+
+`docs/guides/typed-forms.md` says *the default storage is `localStorage`*. A consumer who reads that
+and then names it — for a different key prefix, for `sessionStorage`, for a wrapper that counts
+writes — passes `window.localStorage`, which is the object the sentence names.
+
+The option does not take that shape. `MdyDraftStorage` is `{read, write, remove}`; Web Storage is
+`{getItem, setItem, removeItem}`. Nothing published converts between them, and the mismatch is not
+refused — the first read throws:
+
+```
+this._storage.read is not a function
+```
+
+A message naming a private field, from a stack inside the engine, about an argument the caller
+supplied. Measured through the renderer that passes options along, the whole mount fails and the page
+has no form on it at all.
+
+The control is the same form with a storage of the documented shape, which takes the draft — so this
+is the shape rather than drafts being broken. And `draft: { key }` with no storage named works: the
+default the sentence describes is real. It is naming it that fails.
+
+Either the platform's own storage is taken, or it is refused with a message that names the shape
+expected. Which is a decision; neither is what happens.
