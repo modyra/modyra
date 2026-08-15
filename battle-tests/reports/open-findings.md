@@ -832,3 +832,57 @@ something they had.
 
 Each battle is written so either resolution closes it: one step per call, or a documented cost; a path
 that passes through the state the person was in, or a documented reordering.
+
+## 43. A row that carries a collection survives being told to leave
+
+`regressions/a-row-that-would-not-go.battle.test.mjs` — 2 red. The generative campaign has reported
+this class for a while; what is new is the reduction and the condition.
+
+The record manager states the rule in its own words: re-declaring replaces what is there. An `upsert`
+on a key that already names a row is not a patch — the row it describes is the row there is
+afterwards, including the collections it does or does not carry.
+
+Three operations:
+
+```js
+form.f.orders.upsert("a", { ref: "first",  lines: [] });
+form.f.orders.row("a").lines.push({ sku: "S1", allocations: [] });
+form.f.orders.upsert("a", { ref: "second", lines: [] });
+// lines: [{ allocations: [], sku: null }]
+```
+
+**The condition is the finding**, because without it this reads as "sometimes a row stays":
+
+| a line holding | after re-declaring with `lines: []` |
+| --- | --- |
+| one text cell | `[]` — gone |
+| two text cells | `[]` — gone |
+| a text cell and a nested list | `[{ allocations: [], sku: null }]` — stays |
+| a text cell and a nested map | `[{ allocations: {}, sku: null }]` — stays |
+| nothing but a nested list | `[{ allocations: [] }]` — stays |
+
+What decides is whether the row carries a collection of its own, not how many cells it has.
+
+The surviving row's text cell holds `null`, which is not a value a text field holds anywhere else —
+asserted separately, because it stands whichever way the first half is resolved.
+
+## 44. A reference model that could not write, and the twenty-six findings it invented
+
+Fixed rather than filed — the models are this package's own — and recorded because the shape is worth
+remembering.
+
+The keyed-nested reference model read a path's row index as the cell it names: for
+`orders.a.lines.0.allocations.0.bin` it took segment five (`"0"`) instead of six (`"bin"`), so
+`allocationNames.includes("0")` was false and **every write at that depth was dropped**. Silently: the
+model kept the value the row had been declared with, the engine took the write, and the campaign
+reported the engine as wrong once per run.
+
+Surveying measured the cost. Before the fix the campaign met **35 distinct kinds** over 300 runs;
+after, **9**. Twenty-six of them were this.
+
+The nine reduce to two families, both now filed with reductions: finding 43 and finding 41.
+
+`generative/model-audit.battle.test.mjs` audits the two flat models rule-by-rule. The four nested ones
+were not audited at all, which is where this lived. `generative/nested-model-audit.battle.test.mjs`
+now holds the smallest rule that would have caught it — a write reaches the cell it names, at every
+depth the model declares — and is falsified by putting the off-by-one back.
