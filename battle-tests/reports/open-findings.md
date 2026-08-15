@@ -361,3 +361,85 @@ green.
 fixture "needs a JSON Schema validator, which is a dependency this repository does not carry". Line 28
 imports `ajv/dist/2020.js` and line 125 does exactly that check. The comment describes the file before
 `34a87f9e`.
+
+## 27. A write that arrives after the end gives two answers
+
+`adversarial/lifecycle/a-write-after-the-end.battle.test.mjs`
+
+Three operations: fill a field, destroy the form, write to the field again.
+
+```
+handle.value()        ""                          the write landed
+getValue().name       "typed"                     frozen at the end
+handle.errors()       ["This field is required"]  a validator ran
+handle.valid()        false
+state.valid()         true
+state.canSubmit()     true
+```
+
+That a destroyed form answers is deliberate — a renderer torn down in the other order keeps reading,
+and throwing would turn an ordinary unmount race into a crash. The write is the case underneath it,
+produced by the same race: a control's change handler firing as its host is disposed. A control still
+on screen shows what the user typed and an error explaining why it is wrong, about a form that holds
+neither and will submit neither.
+
+Asserted as the two surfaces agreeing rather than which one wins, so refusing the write and landing it
+everywhere both turn it green.
+
+Bounded by the second battle in the same file, which is green: no async validator runs after destroy.
+The work that reaches outside the process stays stopped.
+
+## 28. A cross-field check that is kept and never runs
+
+`adversarial/dynamic-contract/a-rule-that-never-fires.battle.test.mjs`
+
+`validateExpression` states its own purpose: an expression from a document is checked at parse time
+"rather than surfacing later as a rule that silently never fires". Every malformed path in a
+`validations` condition is refused — `__proto__`, `a..b`, `.a`, `a.` as not being field paths, `ghost`
+and `ghost.deep` as naming nothing the document declares. The empty string is not. It parses, is kept,
+and becomes a dependency on a path no field has, so the check never runs against any value the form
+can hold, including against `undefined`, which is what that path reads.
+
+The same value as a rule's `when.field` is refused with `MDY_DYNAMIC_INVALID_RULE`. The two condition
+surfaces disagree about exactly one input, and it is the one that fails silently.
+
+A document here is written by a model as often as by a person — that is what the guide's published
+prompt is for — and a generated `""` is a check that looks present in the document, parses `ok`, and
+defends nothing.
+
+## 26 has a second witness
+
+Nesting sections one past `MDY_LAYOUT_MAX_DEPTH` reports `MDY_DYNAMIC_UNKNOWN_FIELD_REFERENCE` about a
+field the same document declares — the same code the version boundary reports about five correct
+references. Two routes to one message make it the walk's answer for stopping at all: whatever ends the
+walk, the field it never reached is reported as one the document does not have. Both refusals are
+correct and the battle asserts them; the depth limit itself holds exactly at 6 and terminates on 5000
+sections in under a millisecond.
+
+## 29. The author-time check is silent about a version it does not know
+
+Measured, not battled — pinning it needs `@modyra/eslint-plugin` as a dependency of this package,
+which is a decision rather than a test.
+
+`modyra/valid-dynamic-form` decides a literal is a document by finding "a version the parser knows"
+beside one of the two slots that carry a form. A `{ version: 4, fields: [...] }` literal is therefore
+not a document to it, and it reports nothing — while the parser refuses that document at runtime with
+`MDY_DYNAMIC_UNSUPPORTED_VERSION`. The rule is silent exactly where the parser is most certain, and
+the signal the heuristic reads is the thing that is wrong.
+
+Everything else about the rule holds and was checked: versions 1, 2 and 3 all reported, with and
+without the parse call, duplicate names and unsafe names alike.
+
+## Dismissed with evidence
+
+- **Array inside an array.** The plan recorded it as refused by `assertNotNestedCollection`. The
+  published `v3/positional-nesting.json` fills three positional levels and a list whose rows are
+  lists, with no refusal. ADR 0043 landed; the matrix was stale.
+- **A collection's `errors()` empty while a row is invalid.** It is the right scope: it carries what
+  is attributed to the collection's own path — a form-level validator targeting `orders` does appear
+  there — and `validOf(key)` is the surface that answers for a row.
+- **Async validators after destroy.** They do not run. Measured with a counter, with the control that
+  the validator was reachable while the form was alive.
+- **The lint rule's blindness to assembled documents and to `parseDynamicFields`.** Both are stated
+  limits with reasons: ADR 0024 for the first, and the rule's own comment for the second — a bare
+  array is a valid v1 document, and detecting it would make every array literal a candidate.
