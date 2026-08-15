@@ -76,6 +76,7 @@ absent section reads as an oversight, and "no security impact" is a finding.
 - [ADR 0058: A rename moves a key, not a row](0058-a-rename-moves-a-key-not-a-row.md) — a renamed row was appended, and the value and the handle kept two different orders for one list
 - [ADR 0059: A step of history is a state the form was in](0059-a-step-of-history-is-a-state-the-form-was-in.md) — a bulk write cost one undo per row and a restored row came back last, so the path back passed through states the form was never in
 - [ADR 0060: A refusal reaches somebody](0060-a-refusal-reaches-somebody.md) — three spellings of a server's refusal were dropped by the guard that drops a hostile path, so a person saw nothing and believed it went through
+- [ADR 0061: A rule that says nothing says nothing](0061-a-rule-that-says-nothing-says-nothing.md) — the validator everybody writes has no `else`, returns `undefined`, and made the form unreadable from the first question asked of it
 
 ## Security-relevant records
 

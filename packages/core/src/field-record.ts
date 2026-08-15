@@ -61,6 +61,8 @@ export interface FieldRecord {
   readonly readonly: MdyWritableSignal<MdySignal<boolean>>;
   asyncRunId: number;
   asyncRunner: MdyEffectRef | null;
+  /** Says what a caller could not have worked out from the field alone. Silent in production. */
+  readonly warn: (message: string) => void;
 }
 
 /**
@@ -110,7 +112,7 @@ export function createFieldRecord(
     const v = value();
     const syncErrors = Array.from(validators().values()).flatMap(fns =>
       fns.flatMap(fn =>
-        fn(v).map(
+        readMessages(fn(v), warn).map(
           message => ({ kind: "validation", message }) as MdyFieldError,
         ),
       ),
@@ -183,7 +185,47 @@ export function createFieldRecord(
     readonly: readonlySignal,
     asyncRunId: 0,
     asyncRunner: null,
+    warn,
   };
+}
+
+/**
+ * What a rule answered, read as a list of messages.
+ *
+ * A rule returns the messages it wants shown, and none is an empty list — so the shape a person
+ * writes has no `else`:
+ *
+ * ```js
+ * (value) => { if (value === "taken") return ["Already taken"]; }
+ * ```
+ *
+ * That returns `undefined`, and reading `.map` off it threw from inside the computed every read of
+ * `valid()` goes through: a form that exists and cannot be asked anything, with a stack pointing at
+ * this file and the mistake three files away. Nothing to say is the ordinary case, so it is read as
+ * nothing to say.
+ *
+ * A shape that is neither a list nor nothing cannot be guessed at, and passing the value silently
+ * would let a rule someone wrote stop applying without a word. It becomes one message that says so —
+ * the same trade a refused submit makes: whoever is looking at the form learns something is wrong.
+ */
+function readMessages(returned: unknown, warn: (message: string) => void): ReadonlyArray<string> {
+  if (returned === undefined || returned === null) return [];
+  // A rule with one thing to say, said without the list around it.
+  if (typeof returned === "string") return [returned];
+  if (!Array.isArray(returned)) {
+    warn(`answered a rule with ${typeof returned}, and a rule answers with a list of messages.`);
+    return ["This value could not be checked."];
+  }
+  const messages: string[] = [];
+  for (const message of returned) {
+    if (typeof message === "string") {
+      messages.push(message);
+      continue;
+    }
+    warn(`was given ${message === null ? "null" : typeof message} as a message, which is not one.`);
+    messages.push("This value could not be checked.");
+  }
+  return messages;
 }
 
 /**
@@ -255,7 +297,7 @@ export function createAsyncRunner(
           if (runId !== rec.asyncRunId) return; // stale run: last-wins
           rec.asyncErrors.set(
             results
-              .flat()
+              .flatMap(returned => readMessages(returned, rec.warn))
               .map(message => ({ kind: "async", message }) as MdyFieldError),
           );
           rec.pending.set(false);
