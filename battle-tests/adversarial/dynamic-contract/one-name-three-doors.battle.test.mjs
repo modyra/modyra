@@ -17,7 +17,15 @@
  * check rather than the absence of it.
  */
 
-import { parseDynamicForm } from "@modyra/core";
+import {
+  buildDynamicFormSchema,
+  buildFlatFormSchema,
+  createForm,
+  flattenDynamicForm,
+  isSafeFieldPath,
+  parseDynamicForm,
+  vanillaReactivity,
+} from "@modyra/core";
 
 import { battle } from "../../harness/battle.mjs";
 import { expectClaim, expectEqual } from "../../harness/assertions.mjs";
@@ -102,6 +110,77 @@ battle(
     expectEqual(uneven, [], {
       claimIds: ["SEC-001", "DYN-003"],
       what: "a name one door refuses another takes, so which shape an author wrote decides whether their mistake is caught",
+    });
+  },
+);
+
+/** A record whose initial keys include one made of spaces, which a CMS or a saved project can hold. */
+const withARowKeyOf = (key) => ({
+  node: "group",
+  children: {
+    rows: {
+      node: "record",
+      label: "R",
+      initialValue: { [key]: { c: "x" }, ok: { c: "y" } },
+      item: { node: "group", children: { c: { node: "field", field: { kind: "text", label: "C" } } } },
+    },
+  },
+});
+
+const builds = (make) => {
+  try {
+    const form = createForm(make(), { reactivity: vanillaReactivity(), devWarnings: false });
+    const value = form.getValue();
+    form.destroy();
+    return { built: true, value };
+  } catch (error) {
+    return { built: false, threw: String(error.message).slice(0, 140) };
+  }
+};
+
+battle(
+  {
+    claims: ["SEC-001", "DYN-002"],
+    title: "one document, two build routes, one answer",
+    environments: ["node"],
+  },
+  async (ctx) => {
+    // The control: an ordinary row key builds by both routes and holds the same value, so a
+    // disagreement below is the key rather than the two routes never agreeing.
+    const ordinary = withARowKeyOf("fine");
+    const ordinaryFlat = flattenDynamicForm(ordinary);
+    const byTree = builds(() => buildDynamicFormSchema(ordinary));
+    const byFlat = builds(() => buildFlatFormSchema(ordinaryFlat.fields, ordinaryFlat.collections));
+    expectClaim(byTree.built && byFlat.built, {
+      claimIds: ["DYN-002"],
+      what: "an ordinary row key did not build by both routes",
+      detail: JSON.stringify({ byTree, byFlat }),
+    });
+    expectEqual(byFlat.value, byTree.value, {
+      claimIds: ["DYN-002"],
+      what: "an ordinary row key built two different values",
+    });
+
+    // The same document with a row key made of spaces.
+    const spaced = withARowKeyOf("  ");
+    const spacedFlat = flattenDynamicForm(spaced);
+    const parsed = parseDynamicForm({ version: 3, schema: spaced }, { mode: "strict" });
+    const tree = builds(() => buildDynamicFormSchema(spaced));
+    const flat = builds(() => buildFlatFormSchema(spacedFlat.fields, spacedFlat.collections));
+    ctx.log.note("a row key of spaces, by each route", {
+      flattenedNames: spacedFlat.fields.map((each) => each.name),
+      parse: { ok: parsed.ok, said: (parsed.diagnostics ?? []).map((each) => each.code) },
+      tree,
+      flat,
+      isSafeFieldPath: { "  ": isSafeFieldPath("  "), "a b": isSafeFieldPath("a b") },
+    });
+
+    // Either both routes take it or both refuse it. What must not happen is that the pair of
+    // published functions disagrees about the same document.
+    expectEqual(flat.built, tree.built, {
+      claimIds: ["SEC-001", "DYN-002"],
+      what: "one build route took a document the other refused, so which pair of functions a consumer called decides whether their document works",
+      detail: JSON.stringify({ tree, flat }),
     });
   },
 );

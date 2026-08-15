@@ -5711,8 +5711,32 @@ flat list is read, and the tree reaches the same code for everything else.
 Classification: Modyra bug, S1 by SEC-001's severity — the check is the one that keeps a name from
 becoming an unusable widget id, and two of three doors do not make it.
 
+**A fourth place, and a consequence the three doors did not show.** The rule is missing from
+`isSafeDynamicSegment` too — the check the flatten walk uses on a record's initial keys — and from the
+published `isSafeFieldPath`, which answers `true` for both `"  "` and `"a b"`. So a document whose
+record declares an initial row under a key of spaces flattens to a field named `rows.  .c`, and then:
+
+```
+buildFlatFormSchema(fields, collections)   throws
+  [modyra] Invalid field name "rows.  .c": a widget id is built from this name, and whitespace
+  splits an id reference into several, each resolving to nothing — so the control would have no
+  accessible name.
+
+buildDynamicFormSchema(schema)             builds
+  value: {"rows":{"  ":{"c":"x"},"ok":{"c":"y"}}}
+```
+
+One document, the two published build routes, opposite answers — and the route that refuses explains
+the rule the other one is missing. `assertSafeDynamicFieldNames` is where the whitespace rule actually
+lives; four other places that decide the same question do not have it.
+
+The other hostile keys are refused by the flatten walk as they should be: `__proto__`, `constructor`,
+`a.b` and `""` are all dropped from a record's initial keys, only `ok` survives, and the prototype is
+untouched. Two thousand initial rows flatten in 2ms. The hole is the whitespace rule alone, which is
+what makes it a missing rule rather than a missing check.
+
 Either resolution closes it: move the whitespace rule to wherever the reserved-name check already
-lives, since that one reaches all three doors.
+lives, since that one reaches all three doors and both build routes.
 
 ## Resolved, not a finding: what flattening can express about a nested collection
 
