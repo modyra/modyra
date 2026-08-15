@@ -5345,3 +5345,29 @@ not a class nothing carries.
 
 Classification: Modyra bug, S2 — visual state declared by a published table, used by the shipped
 stylesheets, and absent from five of six kinds in one renderer.
+
+## Checked and clean: what a layout does at a size nobody named
+
+`adversarial/widgets/the-columns-a-size-was-not-given.battle.test.mjs` — 1 green.
+
+Five published tables govern layout — `MDY_LAYOUT_CLASSES`, `MDY_LAYOUT_BREAKPOINTS`, and the
+count, start and display property families — and **no battle cited any of them**. `layoutNodeAttributes`
+is the published function that turns a `columns` node into the custom properties the stylesheets read,
+and a document rarely fills all four breakpoints, so most of what a layout does is what it does at a
+size nobody wrote down.
+
+The rule, measured across every combination of one to four columns and each shape of `at`:
+
+- `base` is `at.base` when the document gives one, and **1** otherwise. The smallest screen stacks.
+- `sm` is `at.sm` when given, and otherwise **the number of columns the node actually has**.
+- `md` and `lg` appear only when the document names them; a size nobody named is absent rather than
+  invented.
+
+It is coherent and it is now pinned. The second rule is the one worth having written down: a node of
+four columns declaring only `{ base: 2 }` resolves to two columns on a phone and four above it, and
+neither number appears in the document.
+
+It also nearly became a finding. Two probes disagreed about what `sm` resolves to for `{ base: 2 }` —
+one said 2 and one said 1 — which read as a cascade that fires only sometimes. What differed between
+them was the number of columns in the node, not the `at`. The rule above explains both, and the battle
+sweeps the column count precisely so that reading cannot come back.
