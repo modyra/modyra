@@ -1,0 +1,121 @@
+/**
+ * A document the parser passes and the engine cannot build.
+ *
+ * `parseDynamicForm` is what an author has before anything is rendered, and `mode: "strict"` is what
+ * `docs/guides/ai-generated-forms.md` names to run "before publishing a stored contract or accepting"
+ * one. Its job is to say what is wrong while there is still somewhere to say it.
+ *
+ * It checks a field's `kind` against the declared vocabulary, and it stops at a collection. A field
+ * inside a `record` or an `array` item may declare any kind at all: the parse is `ok`, the diagnostic
+ * list is empty, in every mode, at every depth. Then `buildDynamicFormSchema` throws
+ * `[modyra] Unknown dynamic field kind`, which is the engine doing its job at the point where a user
+ * is already waiting.
+ *
+ * The control is the same document with the same bad kind at the top level, where it is reported as
+ * `MDY_DYNAMIC_UNKNOWN_KIND`. The check exists; it does not go inside a row.
+ *
+ * The invariant is written as the thing that actually matters rather than as "diagnose this kind": a
+ * document the parser accepts must be one the engine can build. Reporting the kind passes. Refusing
+ * the document passes. Building a form that survives an unknown kind would pass too.
+ */
+
+import { buildDynamicFormSchema, createForm, parseDynamicForm, vanillaReactivity } from "@modyra/core";
+
+import { battle } from "../../harness/battle.mjs";
+import { expectClaim, expectEqual } from "../../harness/assertions.mjs";
+
+const leaf = (kind) => ({ node: "field", field: { kind, label: "L" } });
+
+/** A document whose one interesting field sits `where` — at the top, or inside a row. */
+function documentWith(kind, where) {
+  const cell = { node: "group", children: { cell: leaf(kind) } };
+  if (where === "top") {
+    return { version: 3, schema: { node: "group", children: { top: leaf(kind) } } };
+  }
+  if (where === "record") {
+    return { version: 3, schema: { node: "group", children: { rows: { node: "record", label: "R", item: cell } } } };
+  }
+  if (where === "array") {
+    return { version: 3, schema: { node: "group", children: { rows: { node: "array", label: "A", item: cell } } } };
+  }
+  // Two levels: an array inside a record.
+  return {
+    version: 3,
+    schema: { node: "group", children: {
+      rows: { node: "record", label: "R", item: { node: "group", children: {
+        inner: { node: "array", label: "A", item: cell },
+      } } },
+    } },
+  };
+}
+
+/** Whether the engine can build a running form from this document. */
+function builds(document) {
+  try {
+    const form = createForm(buildDynamicFormSchema(document.schema), {
+      reactivity: vanillaReactivity(),
+      devWarnings: false,
+    });
+    form.destroy();
+    return { built: true, threw: null };
+  } catch (error) {
+    return { built: false, threw: String(error.message).slice(0, 120) };
+  }
+}
+
+const PLACES = Object.freeze(["top", "record", "array", "two levels"]);
+const MODES = Object.freeze([undefined, "strict", "lenient"]);
+
+battle(
+  {
+    claims: ["DYN-001", "DYN-003"],
+    title: "a document the parser accepts is one the engine can build",
+    environments: ["node"],
+  },
+  async (ctx) => {
+    // The control: the same shapes with a kind that exists parse clean and build, so a failure below
+    // is the unknown kind rather than the nesting.
+    for (const where of PLACES) {
+      const good = documentWith("text", where);
+      const parsed = parseDynamicForm(good, { mode: "strict" });
+      const outcome = builds(good);
+      expectClaim(parsed.ok && (parsed.diagnostics ?? []).length === 0 && outcome.built, {
+        claimIds: ["DYN-001"],
+        what: `a well-formed document with its field ${where} did not parse and build, so this battle cannot tell nesting from an unknown kind`,
+        detail: JSON.stringify({ where, ok: parsed.ok, diagnostics: parsed.diagnostics, ...outcome }),
+      });
+    }
+
+    // The other control: at the top level the check is there and names itself.
+    const atTheTop = parseDynamicForm(documentWith("wormhole", "top"));
+    ctx.log.note("an unknown kind at the top level", {
+      diagnostics: (atTheTop.diagnostics ?? []).map((each) => each.code),
+    });
+    expectClaim((atTheTop.diagnostics ?? []).some((each) => each.code === "MDY_DYNAMIC_UNKNOWN_KIND"), {
+      claimIds: ["DYN-003"],
+      what: "an unknown kind is not reported even at the top level, so there is no check for this battle to find the edge of",
+      detail: JSON.stringify(atTheTop.diagnostics),
+    });
+
+    const accepted = [];
+    for (const where of PLACES.filter((each) => each !== "top")) {
+      for (const mode of MODES) {
+        const document = documentWith("wormhole", where);
+        const parsed = parseDynamicForm(document, mode === undefined ? undefined : { mode });
+        const said = (parsed.diagnostics ?? []).map((each) => each.code ?? each.message ?? "?");
+        const outcome = builds(document);
+        ctx.log.note("an unknown kind inside a row", { where, mode: mode ?? "(default)", ok: parsed.ok, said, ...outcome });
+
+        // What must not happen: the parser passes it and the engine cannot build it.
+        if (parsed.ok && said.length === 0 && !outcome.built) {
+          accepted.push({ where, mode: mode ?? "(default)", threw: outcome.threw });
+        }
+      }
+    }
+
+    expectEqual(accepted, [], {
+      claimIds: ["DYN-001", "DYN-003"],
+      what: "the parser accepted a document without a word and the engine then refused to build it",
+    });
+  },
+);

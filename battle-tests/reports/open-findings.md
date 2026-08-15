@@ -4846,3 +4846,49 @@ anyone editing the battle.
 
 Classification: Modyra bug, S2 by DYN-001/DYN-003. Either resolution closes it: refuse the document,
 or accept it with a diagnostic naming the key that was dropped.
+
+## 101. A check that stops at the first row
+
+`adversarial/dynamic-contract/a-check-that-stops-at-the-first-row.battle.test.mjs` — 1 red.
+
+`parseDynamicForm` is what an author has before anything is rendered, and `mode: "strict"` is what
+`docs/guides/ai-generated-forms.md:266` names to run "before publishing a stored contract or
+accepting" one.
+
+It checks a field's `kind` against the declared vocabulary and stops at a collection:
+
+```
+kind "wormhole" at the top level        MDY_DYNAMIC_UNKNOWN_KIND
+kind "wormhole" inside a record item    ok: true, diagnostics: []
+kind "wormhole" inside an array item    ok: true, diagnostics: []
+kind "wormhole" two levels down         ok: true, diagnostics: []
+```
+
+The same at `mode: "strict"` and `mode: "lenient"` — nine parses, nine silences. Then the engine, on
+the document the parser passed:
+
+```
+buildDynamicFormSchema →  [modyra] Unknown dynamic field kind: {"kind":"wormhole","label":"L","name":"cell"}
+```
+
+So the check that exists to tell an author what is wrong before publishing passes a document the
+engine cannot build, and the refusal arrives where a user is already waiting.
+
+Its edge was found by sweeping, not guessed: replacing every enum value in every published fixture
+with one outside its set, 75 of 89 replacements were reported and the ones that were not are all a
+`field.kind` inside a collection item.
+
+Two controls, both green: the same shapes with a kind that exists parse clean and build at every
+depth, so the nesting is not what fails; and an unknown kind at the top level is reported by name, so
+there is a check to find the edge of.
+
+The invariant is written as the thing that matters rather than as "diagnose this kind": a document the
+parser accepts must be one the engine can build. Reporting the kind passes. Refusing the document
+passes. Building a form that survives an unknown kind would pass too.
+
+This is the same shape as `flattenDynamicForm` not recursing into nested array items, recorded earlier
+in this campaign: the contract's walks stop at a collection boundary, and each one that does is a
+place where the depth a document is allowed to have is not the depth the engine looks at.
+
+Classification: Modyra bug, S2 by DYN-001/DYN-003 — S1 in effect for a consumer whose documents come
+from a model or a CMS and who was told strict mode was the gate.
