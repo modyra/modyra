@@ -79,6 +79,7 @@ absent section reads as an oversight, and "no security impact" is a finding.
 - [ADR 0061: A rule that says nothing says nothing](0061-a-rule-that-says-nothing-says-nothing.md) — the validator everybody writes has no `else`, returns `undefined`, and made the form unreadable from the first question asked of it
 - [ADR 0062: The form says what no field can](0062-the-form-says-what-no-field-can.md) — three renderers had nowhere to show a refusal that names no field, which made it a missing part rather than three oversights
 - [ADR 0063: A value a control cannot read stays where it can be corrected](0063-a-value-a-control-cannot-read-stays-where-it-can-be-corrected.md) — `14:30` typed into a 12-hour picker was erased with nothing said; the judgement moves into the controller and the entry is kept and explained
+- [ADR 0064: A typed form refuses a path it does not declare](0064-a-typed-form-refuses-a-path-it-does-not-declare.md) — one transposed letter attached a rule nothing could satisfy and the Submit button stopped working, with nothing said
 
 ## Security-relevant records
 
