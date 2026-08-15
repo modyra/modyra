@@ -91,8 +91,16 @@ battle(
     });
     leaf.destroy();
 
-    // And the three calls that name the section. Each is a call a caller believed took a section out
-    // of play; each leaves it editable and in the payload, without a word.
+    // And the three calls that name the section. Each states something about a node the schema
+    // declares, so each has an effect to look for — and the effect is not the same for all three:
+    // `disabled` and `inactive` take a value out of what would be sent, `readonly` does not, because
+    // a field the user may read but not change is still a field they answered.
+    const EFFECT = {
+      setDisabled: { name: "the section leaves the payload", holds: (form, payload) => payload.sect === undefined },
+      setInactive: { name: "the section leaves the payload", holds: (form, payload) => payload.sect === undefined },
+      setReadonly: { name: "the field inside reports readonly", holds: (form) => form.f.sect.inner.readonly() === true },
+    };
+
     for (const method of ["setDisabled", "setInactive", "setReadonly"]) {
       const said = [];
       const realWarn = console.warn;
@@ -122,10 +130,14 @@ battle(
         said,
       });
 
-      expectClaim(said.length > 0, {
+      // Either the call reached the section, or it said it could not. What this refuses is the third
+      // thing: a call that names a declared node, does nothing to it, and reports nothing.
+      const effect = EFFECT[method];
+      expectClaim(effect.holds(form, payload) || said.length > 0, {
         claimIds: ["API-001"],
         what: `${method}("sect", …) did nothing to the section and said nothing`,
-        detail: `the field inside reports disabled=${form.f.sect.inner.disabled()} and the payload is still ${JSON.stringify(payload)}`,
+        detail: `expected ${effect.name}; the field inside reports disabled=${form.f.sect.inner.disabled()} `
+          + `readonly=${form.f.sect.inner.readonly()} and the payload is ${JSON.stringify(payload)}`,
       });
 
       form.destroy();
