@@ -80,7 +80,10 @@ export function renderDaterangeField(
   setIcon(toggle, "CALENDAR");
   toggle.type = "button";
   toggle.setAttribute("aria-label", messages.daterangeChooseRange);
-  toggle.setAttribute("aria-haspopup", "dialog");
+  // What actually opens, which is what the field's own projection declares: a grid serving both
+  // ends of the range. `dialog` promised a different widget from the one that appears, and the
+  // promise is made before anything opens — a person decides whether to open it from that word.
+  toggle.setAttribute("aria-haspopup", "grid");
 
   const popup = el("div", `${MDY_WIDGET_CONTRACTS.daterange.parts.popup.classes.join(" ")} mdy-overlay`) as HTMLDivElement;
   // The toggle said it had a dialog and whether it was open, and never said which one. Naming it

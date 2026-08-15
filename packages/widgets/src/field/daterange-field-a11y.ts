@@ -67,6 +67,7 @@ export function projectDaterangeFieldA11y(
   // Out of play, no verdict — the wrapper, the label, `aria-invalid` and whether the error text
   // renders are four faces of one question, answered once in verdict.ts.
   const hasErrors = shownErrors(state, errors).length > 0;
+  const opener = projectOverlayOpenerA11y("daterange", { widgetId: options.widgetId, open: state.open });
   const describedBy = hasErrors ? errorId : descriptionId;
   const definition = MDY_WIDGET_CONTRACTS.daterange;
 
@@ -106,13 +107,13 @@ export function projectDaterangeFieldA11y(
     endControl: end(endId, options.endLabel ?? "End date", definition.parts.endControl.classes),
     toggle: {
       classes: [...definition.parts.toggle.classes],
+      // The opener carries the overlay semantics, not the inputs: one grid serves both ends, so one
+      // thing opens it and one thing says whether it is open. A `<button>` already has room for
+      // `aria-expanded`, which is why the opener relation declares no role for this kind — and why
+      // a role written here as well said something the relation had deliberately left unsaid.
       attributes: {
-        // The opener carries the combobox semantics, not the inputs: the overlay is one grid for
-        // both ends, so one thing opens it and one thing says whether it is open.
-        role: "combobox",
         "aria-haspopup": "grid",
-        ...projectOverlayOpenerA11y("daterange", { widgetId: options.widgetId, open: state.open })
-          ?.attributes,
+        ...opener?.attributes,
         "aria-labelledby": labelId,
         "aria-disabled": String(state.disabled),
       },
