@@ -1662,3 +1662,64 @@ included, because it tested for the substring `onerror` rather than for a bracke
 is to make the value unable to form a tag, not to delete the word: `img src=x onerror="alert(1)"` is
 inert text. A control that fails is the signal that the classifier is wrong, not that everything is
 broken.
+
+## 64. A section a caller took out of play, and a form that never heard
+
+`adversarial/validation/a-section-nobody-took-out-of-play.battle.test.mjs` — 1 red. **S2** under
+API-001, with an S0-shaped consequence described below; the classification is worth arguing.
+
+The engine takes a whole section out of play at runtime, reactively, and does it correctly. Fed a
+real signal through `vanillaReactivity()`:
+
+```
+group(children, { when: () => open() })
+  open = true      submitted {"plain":"p","sect":{"inner":"i"}}
+  open.set(false)  submitted {"plain":"p"}                        the section left the payload
+  open.set(true)   submitted {"plain":"p","sect":{"inner":"i"}}   and came back
+```
+
+`setDisabled`, `setInactive` and `setReadonly` are the imperative half of the same idea. They sit on
+three consecutive lines of the same interface, all taking `(name, signal)`. Given the path of a
+**group**, with `devWarnings: true`:
+
+```
+setDisabled("sect", signal)   nothing. inner.disabled()=false, payload unchanged, said nothing
+setInactive("sect", signal)   the same
+setReadonly("sect", signal)   the same
+setDisabled("sect.inner", …)  works: disabled()=true, the field leaves the payload
+```
+
+Both controls are in the battle: the capability exists, and the method works one path segment deeper.
+A repair cannot be aimed at either.
+
+**Why the classification is arguable.** The severity model puts *"the submitted payload differs from
+the declared data semantics"* at S0. A consumer who writes `setDisabled("billing", () => !wantsBilling())`
+ships a section that stays editable and stays in the payload, and the first evidence is on a server —
+which is that sentence from where they are standing. It is not that sentence from where the engine is
+standing: the engine never accepted the declaration, so it is not submitting something it agreed to
+exclude. Filed at API-001's S2 rather than inflating a registered claim, and flagged here because the
+consequence is heavier than the number.
+
+What the consumer reads while writing it is VAL-002 — *disabled values are retained in edit state and
+excluded from submission* — which is true of every field that is disabled, and silent about a call
+that failed to disable one. ADR 0044 calls `setDisabled` "how a control states what a user may do with
+a field".
+
+The same species as 63 and the 60 family: the capability is one call away, and the door that names it
+says nothing. Three doors this time, not one.
+
+## Checked and clean: what reaches submission in each interactivity state
+
+Measured while looking for the above, and recorded because each is a promise nobody had exercised:
+
+```
+a field disabled     excluded from the payload, kept in getValue      VAL-002, as documented
+a field readonly     submitted                                        correct: readonly still submits
+a two-cell row, one cell disabled    {"r1":{"b":"1b"},"r2":{...}}     the row survives, the cell goes
+a one-cell row, its cell disabled    {"r2":{...}}                     the emptied row is pruned
+```
+
+The one-cell case looked like a cascade — a disabled cell taking its row with it — until the two-cell
+case showed it is not: the row survives whenever anything is left in it. What prunes it is being
+empty. Whether a server can tell an emptied row from a removed one is a separate question and is not
+filed, because the row's absence is consistent with the rule rather than an exception to it.
