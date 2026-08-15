@@ -9606,3 +9606,55 @@ The first version of this sweep ran six cases in one process and appeared to han
 had not: the script was in a scratchpad directory where `@modyra/core` does not resolve, and the
 failure was silent because the output was buffered. Every case here runs in its own child process
 under a timeout, which is also the only way the `200000` row above could be measured at all.
+
+## 168. A secret with nowhere to hide
+
+**S0 · Modyra bug · `@modyra/core` (draft `exclude`)**
+Claims: SEC-006 (registered for this, S0), PER-001
+Battle: `battle-tests/adversarial/security/a-secret-with-nowhere-to-hide.battle.test.mjs` (red, enforced)
+
+The draft guide carries this in bold, as an instruction rather than a caveat:
+
+> The default storage is `localStorage`: plain text, readable by every script on the origin, and it
+> survives logout. **Always `exclude` passwords, card numbers, tokens and any other sensitive field.**
+
+`exclude` matches an **exact leaf path** and nothing else. For a field at the top of the form that is
+enough. For a card number it is not: cards come in a list, the row key is data, and a consumer cannot
+name paths that do not exist until a user adds a row.
+
+Every way of writing the same intent, measured against what reached storage:
+
+```
+exclude                   what a developer means            card number in the draft
+["password"]              the flat field beside it          no      ← the control: this works
+["cards"]                 the whole collection              YES
+["cards.*.pan"]           that cell in every row            YES     ← there are no wildcards
+["pan"]                   the cell, by name                 YES
+["cards.a.pan"]           one row, spelled out              no      ← the only spelling that works
+```
+
+The one spelling that works is the one nobody can write in advance: `a` is a row key the user creates
+at runtime. So a sensitive cell inside a collection **cannot be kept out of the draft at all**, and
+the guide's own example — a card number — is the case that cannot be done.
+
+Naming the collection does nothing at all, which is what a developer would try first and would then
+believe.
+
+### Why S0
+
+Sensitive data reaches plain-text storage readable by every script on the origin and surviving logout,
+while the documented mechanism for preventing exactly that is being used correctly. Nothing about the
+form is wrong afterwards — that is what makes it quiet.
+
+### Controls run
+
+- **The flat case works**: a password beside the collection is kept out. So `exclude` is not broken,
+  and this is about where the field lives.
+- **The full path works**: `cards.a.pan` keeps it out, asserted separately so that a repair fixing
+  only the unreachable spelling is visible as a repair that fixed nothing.
+
+### Checked and clean, in the same run
+
+- **`exclude` protects both directions.** A draft tampered to carry `secret: "sk-live-INJECTED"` for
+  an excluded field does not restore it: the field comes back empty. The guide says "never persisted
+  nor restored" and the restore half holds.
