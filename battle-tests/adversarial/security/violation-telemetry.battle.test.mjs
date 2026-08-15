@@ -226,3 +226,57 @@ battle(
     form.destroy();
   },
 );
+
+battle(
+  {
+    claims: ["SEC-001", "SEC-002"],
+    title: "a sanitizer that fails is reported, and says which value it did not clean",
+    environments: ["node"],
+  },
+  async (ctx) => {
+    // A custom sanitizer is the DOMPurify escape hatch, and a library called on every keystroke is a
+    // library that will eventually throw on something. What the engine does then is a decision with
+    // two defensible answers, and it has taken one: the value goes through uncleaned and the failure
+    // is reported. Fail-open with a witness rather than a write that disappears.
+    //
+    // It is pinned because it is the kind of thing a refactor changes by accident, in either
+    // direction: silence here would mean a guard that stopped guarding with nothing to show for it,
+    // and a throw would mean a form a person cannot type into because a sanitizer met one odd input.
+    const { form, seen } = watched({
+      sanitize: () => {
+        throw new Error("the sanitizer is broken");
+      },
+    });
+
+    let raised = null;
+    try {
+      form.f.note.set(OVERRIDE);
+    } catch (error) {
+      raised = error;
+    }
+    const kinds = seen.map((violation) => violation.kind);
+    ctx.log.note("a sanitizer that threw", { raised: raised === null ? null : String(raised.message), kinds, value: form.getValue().note });
+
+    expectEqual(raised, null, {
+      claimIds: ["SEC-002"],
+      what: "a sanitizer that threw broke the write it was cleaning",
+    });
+
+    expectClaim(kinds.includes("sanitizer-error"), {
+      claimIds: ["SEC-001", "SEC-002"],
+      what: "a sanitizer failed and nothing reported it, so a guard stopped guarding in silence",
+      detail: JSON.stringify(kinds),
+    });
+
+    // And the report names where it happened, because a failure a consumer cannot locate is one
+    // they cannot act on.
+    const reported = seen.find((violation) => violation.kind === "sanitizer-error");
+    expectEqual(reported?.path, "note", {
+      claimIds: ["SEC-002"],
+      what: "a sanitizer failure was reported against a path it did not happen at",
+      detail: JSON.stringify(reported ?? null),
+    });
+
+    form.destroy();
+  },
+);
