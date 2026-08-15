@@ -21,9 +21,36 @@ const TAG = {
   text: "mdy-text-field",
   textarea: "mdy-textarea-field",
   email: "mdy-text-field",
+  password: "mdy-text-field",
   number: "mdy-number-field",
+  slider: "mdy-slider-field",
   checkbox: "mdy-checkbox-field",
+  toggle: "mdy-toggle-field",
   select: "mdy-select-field",
+  radio: "mdy-radio-group-field",
+  multiselect: "mdy-multiselect-field",
+  segmented: "mdy-segmented-field",
+  datepicker: "mdy-datepicker-field",
+  daterange: "mdy-daterange-field",
+  timepicker: "mdy-timepicker-field",
+  file: "mdy-file-field",
+  colors: "mdy-colors-field",
+};
+
+/** What a kind's value starts as, so the form holds what the element expects to render. */
+const BLANK = {
+  checkbox: false,
+  toggle: false,
+  multiselect: [],
+  file: [],
+  daterange: { start: null, end: null },
+  number: null,
+  slider: 0,
+  select: null,
+  radio: null,
+  segmented: null,
+  datepicker: null,
+  timepicker: null,
 };
 
 window.battleLit = {
@@ -33,12 +60,15 @@ window.battleLit = {
     host.dataset.form = id;
     document.querySelector("#stage").append(host);
     try {
-      const schema = Object.fromEntries(fields.map((each) => [each.name, field(each.initialValue ?? "")]));
+      const schema = Object.fromEntries(
+        fields.map((each) => [each.name, field(each.initialValue ?? BLANK[each.kind] ?? "")]),
+      );
       const form = createLitForm(schema, options);
       for (const declared of fields) {
         const tag = TAG[declared.kind] ?? "mdy-text-field";
         const element = document.createElement(tag);
         element.setAttribute("label", declared.label ?? declared.name);
+        if (declared.options !== undefined) element.options = declared.options;
         element.field = form.f[declared.name];
         host.append(element);
       }
