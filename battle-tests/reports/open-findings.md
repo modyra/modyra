@@ -3027,6 +3027,21 @@ runtime are **different mechanisms**, and "one answer" is a claim about them tog
 cross-checks finding 64's repair — the imperative refusal composes with the declarative one rather
 than replacing it or being replaced.
 
+**And the whole life of a conditional required field**, added as a second battle in the same file,
+because each step is a different claim and only the first is the one people test:
+
+```
+closed, empty        the form is VALID and sends, without the section        VAL-003 in its own words
+opened, empty        invalid, cannot be sent, the field says it is required
+answered            valid, sends, the section is in what it sends
+closed again        the section is not sent — and the answer inside it is STILL HELD,
+                    so reopening finds what was there
+```
+
+The last row is two claims at once: what a closed section keeps, and what it does not send. Losing
+either would be quiet — a value silently dropped on close, or one silently sent when nobody was asked
+for it.
+
 ## Checked and clean: the arithmetic a calendar runs on
 
 `adversarial/validation/the-arithmetic-a-calendar-runs-on.battle.test.mjs` — green, and new.
