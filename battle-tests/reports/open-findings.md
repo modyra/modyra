@@ -1486,3 +1486,37 @@ their rows.
 
 Omission is the same for both and is asserted first, so this is about naming a collection with an
 empty value rather than about patching.
+
+## 60. A name nobody declared, through six doors
+
+`adversarial/reactivity/a-name-nobody-declared.battle.test.mjs` — 1 red.
+
+`devWarnings` is documented in one sentence: "the calls that could not do anything, and the choices a
+mechanism cannot make for you." It is one switch on purpose.
+
+It works. Renaming a row onto a key another row already has is reported, names both keys and says what
+to do instead:
+
+```
+[modyra] rename on "rows" ignored: "b" already names a row, and moving onto it would replace it.
+```
+
+A name the schema does not have is the same kind of call, and six doors take one without a word — with
+`devWarnings: true`:
+
+```
+patch({ emial: "x" })                 accepted, nothing changed, nothing said
+patchValue({ emial: "x" })            the same
+setValue({ email, emial })            the same
+rows.upsert("a", { coed: "x" })       the row's declared cell reset, the unknown one dropped, nothing said
+rows.patch({ a: { coed: "x" } })      the same
+setDisabled("emial", fn)              the same
+```
+
+A typed consumer has their compiler. The doors this matters at are the ones where the keys come from
+data — a document, a server, a saved project, a form built from a response — and there the difference
+between *applied* and *silently ignored* is the difference between a form that shows what arrived and
+one that does not.
+
+The rename warning is asserted as the control, because it proves the mechanism and the vocabulary
+already exist one call away.
