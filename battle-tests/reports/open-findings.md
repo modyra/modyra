@@ -1312,3 +1312,27 @@ separately and it has already drifted twice.
 **Seven operations the harness can execute and no generator draws**: `async.resolve`, `async.reject`,
 `destroy`, `draft.save`, `draft.restore`, `observe`, `submit`. Depth has stopped paying at this width;
 these are where the next class lives.
+
+## 55. A server said no and the page said nothing
+
+`browser/what-the-server-said-on-the-page.spec.ts` — 1 red, 2 green.
+
+Finding 12 seen from the page, and it is not the worst case. `onSubmit` returns field errors to
+reject; its argument is whatever the application made of a response, and that value is `any`, so
+nothing stops the shapes below.
+
+| what the application returns | what the person sees | `aria-invalid` |
+| --- | --- | --- |
+| `[{ path, message: "Already registered" }]` | the message | `true` |
+| `[{ path, message: <the response object> }]` | `[object Object]` | `true` |
+| `["Already registered"]` | **nothing** | `false` |
+| `{ errors: [...] }` | **nothing** | `false` |
+| `null` / nothing | nothing, correctly | `false` |
+
+`[object Object]` at least says something is wrong. The bare string and the non-list say nothing: the
+control goes back to valid, no message appears, and the person who pressed Submit has every reason to
+believe it worked. The server refused and nobody was told.
+
+Both green controls matter: the correct shape does reach the person, and answering with nothing is not
+a refusal — without the second, the assertion would read as "any answer must produce text", which
+would be wrong.
