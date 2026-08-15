@@ -185,8 +185,13 @@ test("both ends are named, and the opener carries the combobox", async () => {
   assert.notEqual(a11y.startControl.attributes["aria-label"], a11y.endControl.attributes["aria-label"]);
   assert.ok(a11y.startControl.attributes["aria-label"]);
 
-  // The opener owns the combobox, not the inputs: one overlay serves both ends.
-  assert.equal(a11y.toggle.attributes.role, "combobox");
+  // The opener owns the overlay, not the inputs: one grid serves both ends, so one thing opens it
+  // and one thing says whether it is open. The witness is the relation rather than a role — the
+  // opener is a `<button>`, which has room for `aria-expanded` without one, and `MDY_POPUP_OPENERS`
+  // declares a role only for the kinds whose opener is the control the value is typed into.
+  assert.equal(a11y.toggle.attributes["aria-haspopup"], "grid");
+  assert.equal(a11y.toggle.attributes["aria-expanded"], "false");
+  assert.equal(a11y.startControl.attributes["aria-expanded"], undefined);
   assert.equal(a11y.startControl.attributes.role, undefined);
 
   // The label points at the start — the first thing a person fills.

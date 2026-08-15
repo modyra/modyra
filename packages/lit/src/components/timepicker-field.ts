@@ -1,5 +1,5 @@
 import { mdyPart } from "../mdy-part.js";
-import { overlayControlledId, createPointerDrag, dragPointOf } from "@modyra/widgets";
+import { keyBindingFor, overlayControlledId, createPointerDrag, dragPointOf } from "@modyra/widgets";
 import { html, nothing, type PropertyDeclarations } from "lit";
 import { observerFor, type MdyFieldHandle } from "@modyra/core";
 import { angleToHour, angleToMinute, buildTimeString, formatTimeAs, hourToAngle, minuteToAngle, parseAnyTime, parseTime, pointerAngle, to24Hour, type MdyTimeFormat } from "@modyra/core/datetime";
@@ -585,6 +585,14 @@ export class MdyTimepickerFieldElement extends MdyFieldElement<string | null> {
           if (e.key === "Escape" && this._open) {
             e.preventDefault();
             this.closePopup(handle);
+          }
+          // And the way in, from the table the contract already publishes rather than from a key
+          // written here. The control is this kind's declared opener and the toggle beside it is
+          // not a tab stop, so a control that answers no key is a picker no keyboard can open —
+          // the value can still be typed, by someone who knows the format the field wants.
+          if (!this._open && keyBindingFor("timepicker", e.key, false)?.intent === "open") {
+            e.preventDefault();
+            this.openPopup(handle, e);
           }
         }}
       >

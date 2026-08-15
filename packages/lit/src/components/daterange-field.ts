@@ -542,8 +542,6 @@ export class MdyDaterangeFieldElement extends MdyFieldElement<MdyDateRange | nul
               placeholder=${this.startPlaceholder}
               .value=${range.start ?? ""}
               ?disabled=${handle.disabled()}
-              aria-haspopup="dialog"
-              aria-expanded=${this._open ? "true" : "false"}
               ${mdyPart(this.controlPart(handle))}
               aria-label=${`${baseLabel}Start date`}
               autocomplete="off"
@@ -569,8 +567,6 @@ export class MdyDaterangeFieldElement extends MdyFieldElement<MdyDateRange | nul
               placeholder=${this.endPlaceholder}
               .value=${range.end ?? ""}
               ?disabled=${handle.disabled()}
-              aria-haspopup="dialog"
-              aria-expanded=${this._open ? "true" : "false"}
               ${mdyPart(this.controlPart(handle))}
               aria-label=${`${baseLabel}End date`}
               autocomplete="off"
@@ -591,9 +587,9 @@ export class MdyDaterangeFieldElement extends MdyFieldElement<MdyDateRange | nul
               class="mdy-datepicker__toggle"
               ?disabled=${handle.disabled()}
               aria-label=${this.messages.daterangeChooseRange}
+              aria-haspopup="grid"
               aria-expanded=${this._open ? "true" : "false"}
               aria-controls=${this._open ? overlayControlledId("daterange", this.fieldId) ?? nothing : nothing}
-              tabindex="-1"
               @click=${(e: Event) => (this._open ? this.closePopup(handle) : this.openPopup(handle, e))}
             >
               ${mdyIcon("CALENDAR", "mdy-datepicker__icon")}

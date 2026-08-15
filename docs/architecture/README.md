@@ -92,6 +92,7 @@ absent section reads as an oversight, and "no security impact" is a finding.
 - [ADR 0074: A file the field turned away is something the page says](0074-a-file-the-field-turned-away-is-something-the-page-says.md) — the transition reported what it refused, no renderer showed it, and no message table had a word for it
 - [ADR 0075: A popup that opens says so](0075-a-popup-that-opens-says-so.md) — the lifecycle policy answered `announce` for every open and close, and two of the three renderers read neither
 - [ADR 0076: A state belongs to something that can be in it](0076-a-state-belongs-to-something-that-can-be-in-it.md) — the one opener the contract gave no role wore `aria-invalid` and `aria-required` where nothing could read them
+- [ADR 0077: The opener a contract names is the one a keyboard reaches](0077-the-opener-a-contract-names-is-the-one-a-keyboard-reaches.md) — two date inputs claimed the popup's state while the part that opens it was not a tab stop, and lit's pickers had no keyboard door at all
 
 ## Security-relevant records
 
