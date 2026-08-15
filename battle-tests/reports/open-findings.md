@@ -5976,9 +5976,37 @@ Measured alongside, and a smaller separate point: plain refuses the click but re
 real and unannounced. Its multiselect does mark them, with `disabled` and `aria-disabled="true"` on
 the option's button.
 
-One more table to note rather than file: `MDY_WIDGET_CONTRACTS.select.parts.option` declares the
-states `selected`, `active` and `hidden` — not `disabled`. The document schema has the key and the
-widget contract has no state for it, which is the seam this fell through.
+**The other side of the same seam, and it is the same finding.**
+`MDY_WIDGET_CONTRACTS` declares a `disabled` state on an option part for exactly one kind:
+
+```
+radio        option states: ["disabled"]
+segmented    option states: ["selected"]
+select       option states: ["selected","active","hidden"]
+multiselect  option states: ["selected"]
+```
+
+The document schema has the key and three of the four widget contracts have no state for it. Lit falls
+off one side of that — it does not honour the key at all. Plain falls off the other: it *does* honour
+it, by asserting a state its own contract does not declare.
+`browser/a-state-no-contract-declares.spec.ts` — 1 red (plain), 1 green (lit) — sweeps every kind's
+every part in the rendered document and finds exactly two:
+
+```
+multiselect chip    aria-disabled="true"   declared: ["selected","removable"]
+multiselect option  aria-disabled="true"   declared: ["selected"]
+```
+
+A11Y-004's evidence is the standard both halves are held to: *an undeclared state asserted is as much
+a defect as a declared state unchecked*. The existing `undeclared-states` battle asks this of the
+projection and is green; a renderer adds attributes the projection never named, and only the page
+shows that.
+
+Lit reports zero here, which is not a pass so much as the same gap seen from behind: it has nothing
+undeclared to assert because it asserts nothing.
+
+One repair closes both: declare `disabled` on the option parts of the kinds that support it, and
+honour it where it is declared.
 
 Classification: Modyra bug, S1 by SEC-001's severity — a value the document ruled out reaches the
 form, and from there the payload.
