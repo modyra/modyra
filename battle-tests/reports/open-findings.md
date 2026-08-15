@@ -495,3 +495,31 @@ because `for=""` points at no id rather than at a missing one — which is why t
 association rather than the check.
 
 Only what mounting owns is asserted. The container is the caller's.
+
+## 32. `aria-label` on an element that cannot carry it
+
+`browser/every-kind-under-an-auditor.spec.ts` — **runs under `npm run battle:browser`.**
+
+axe-core, WCAG 2.0/2.1 A and AA, over one form of every kind the vocabulary declares, reports one
+violation:
+
+```
+aria-prohibited-attr   serious   .mdy-select
+<div class="mdy-select" aria-label="Label select">
+aria-label attribute cannot be used on a div with no valid role attribute.
+```
+
+`.mdy-multiselect` carries the same shape — a role-less `div` with `aria-label` — and axe reports the
+select alone, which is axe's business rather than the renderer's. Both are the same thing.
+
+The attribute is discarded by the accessible-name computation, so what it says never reaches anyone.
+The practical effect is bounded and worth stating: the trigger inside each wrapper is separately
+labelled, and every kind was measured to have an accessible name, so no control is anonymous. What is
+lost is the intent, and a WCAG-tagged rule this project's own conformance promises are read against.
+
+Fixing it is either dropping the attribute or giving the wrapper a role that permits it.
+
+Green alongside, and the durable half: the auditor is shown catching a bare unlabelled input before
+anything is trusted, the rendered count is held against the kind list so a page that failed to render
+cannot pass clean, and the audit runs twice — settled, then with a value typed and a listbox open.
+The second state adds no violation, which is the part worth knowing.
