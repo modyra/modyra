@@ -103,6 +103,22 @@ export function buildDynamicValidators(config: MdyDynamicValidators): {
  * Thrown rather than dropped, because there is no diagnostic channel on this path: the parser has
  * one and reports there, and this is the door taken by a caller who has no document to report about.
  */
+/**
+ * The sentence a refused choice reads, built from what the options are *called*.
+ *
+ * `oneOf` is handed values, and a value is what a document stores rather than what a person sees —
+ * an id, a code. The label is the half the person can match against the list in front of them, and a
+ * document that declared one has already said which words to use.
+ */
+function optionListMessage(
+  options: ReadonlyArray<{ readonly label?: string; readonly value: unknown }>,
+  subject = "Value",
+): string {
+  if (options.length === 0) return "There are no choices to pick from.";
+  const named = options.map((option) => option.label ?? String(option.value));
+  return `${subject} must be one of: ${named.join(", ")}`;
+}
+
 const KINDS_NEEDING_OPTIONS = new Set(["select", "radio", "multiselect", "segmented"]);
 
 function assertUsableOptions(field: { readonly kind: string; readonly name?: string; readonly options?: unknown }): void {
@@ -138,14 +154,17 @@ export function buildDynamicFieldValidators(field: MdyDynamicField): {
   ) {
     const values = field.options.map((option) => option.value);
     return {
-      validators: [...base.validators, oneOf(values) as ValidatorFn<never>],
+      validators: [...base.validators, oneOf(values, optionListMessage(field.options)) as ValidatorFn<never>],
       marksRequired: base.marksRequired,
     };
   }
   if (field.kind === "multiselect") {
     const values = field.options.map((option) => option.value);
     return {
-      validators: [...base.validators, eachOneOf(values) as ValidatorFn<never>],
+      validators: [
+        ...base.validators,
+        eachOneOf(values, optionListMessage(field.options, "Every value")) as ValidatorFn<never>,
+      ],
       marksRequired: base.marksRequired,
     };
   }
