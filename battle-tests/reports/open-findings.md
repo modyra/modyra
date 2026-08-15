@@ -3491,3 +3491,34 @@ name it.
 
 The second control is the one that makes the silence legible: a genuinely refused node is counted
 **and** carries a diagnostic, so a reason is what separates the two cases rather than the count.
+
+## Checked and clean: two more pairs that must agree
+
+Added to `adversarial/validation/two-lists-that-must-agree.battle.test.mjs`, green.
+
+**The sizes a document may author and the sizes a renderer paints.** The reason is stated where the
+type is declared: *a document declares placements against these names and a renderer paints them, so
+the two sets have to be the same or a document can author a size nothing draws.* It is solved by
+derivation — the widget contract derives its breakpoints from the document's, which makes a fourth
+size a compile error on the side that would otherwise stay silent.
+
+```
+MDY_LAYOUT_BREAKPOINTS   { base: "0", sm: "40rem", md: "64rem", lg: "80rem" }
+```
+
+Derivation protects the **source**. It does not protect a **build**: a package published from a stale
+compile carries whatever it carried, and a consumer installs the two separately. This is the runtime
+half, and it costs nothing.
+
+**A layout that points at a field the parse dropped.** A document has two halves naming the same
+fields — the list and the layout — and the parse may drop from one:
+
+```
+a layout naming two fields that survived   kept, no diagnostic, both modes         the control
+a field the parse dropped                  MDY_DYNAMIC_UNKNOWN_FIELD_REFERENCE, layout dropped
+a field nobody wrote                       the same
+```
+
+Both dangling references are caught, and the layout does not survive the reference it names being
+gone. Worth holding now rather than earlier: until group B was closed, that code was also what a
+version refusal and a depth refusal reported, so it meant three things and asserting it meant little.

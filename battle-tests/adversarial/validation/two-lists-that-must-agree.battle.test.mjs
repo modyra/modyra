@@ -18,7 +18,16 @@
  * browser, so it is asserted to carry exactly what it was given and nothing more.
  */
 
-import { MDY_FIELD_KINDS, MDY_VALUE_CONTRACTS, NO_CONSTRAINTS, factsOf, minLength, withFacts } from "@modyra/core";
+import {
+  MDY_FIELD_KINDS,
+  MDY_VALUE_CONTRACTS,
+  NO_CONSTRAINTS,
+  factsOf,
+  minLength,
+  parseDynamicForm,
+  withFacts,
+} from "@modyra/core";
+import { MDY_LAYOUT_BREAKPOINTS } from "@modyra/widgets";
 
 import { battle } from "../../harness/battle.mjs";
 import { expectClaim, expectEqual } from "../../harness/assertions.mjs";
@@ -97,5 +106,92 @@ battle(
       claimIds: ["VAL-004"],
       what: "withFacts changed what the rule it wrapped decides",
     });
+  },
+);
+
+battle(
+  {
+    claims: ["DYN-001", "UI-002"],
+    title: "the sizes a document may author are the sizes a renderer paints",
+    environments: ["node"],
+  },
+  async (ctx) => {
+    // The reason is stated where the type is declared: *a document declares placements against these
+    // names and a renderer paints them, so the two sets have to be the same or a document can author
+    // a size nothing draws.* It is solved by derivation — the widget contract derives its breakpoints
+    // from the document's — which makes a fourth size a compile error on the side that would
+    // otherwise stay silent.
+    //
+    // Derivation protects the source. It does not protect a build: a package published from a stale
+    // compile carries whatever it carried, and a consumer installs the two separately. This is the
+    // runtime half of that promise, and it costs nothing.
+    const painted = Object.keys(MDY_LAYOUT_BREAKPOINTS);
+    ctx.log.note("the sizes a renderer paints", { painted, sizes: MDY_LAYOUT_BREAKPOINTS });
+
+    expectEqual(painted, ["base", "sm", "md", "lg"], {
+      claimIds: ["DYN-001", "UI-002"],
+      what: "the renderer paints a different set of sizes than a document may author",
+      detail: JSON.stringify(MDY_LAYOUT_BREAKPOINTS),
+    });
+
+    // And each one is a length a stylesheet can use, since a name with nothing behind it is a size
+    // that authors and paints nothing.
+    const empty = Object.entries(MDY_LAYOUT_BREAKPOINTS).filter(([, width]) => String(width ?? "").trim() === "");
+    expectEqual(empty, [], {
+      claimIds: ["UI-002"],
+      what: "a size a document may author has no width behind it",
+      detail: JSON.stringify(MDY_LAYOUT_BREAKPOINTS),
+    });
+  },
+);
+
+battle(
+  {
+    claims: ["DYN-003", "DYN-001"],
+    title: "a layout that points at a field the parse dropped is told about",
+    environments: ["node"],
+  },
+  async (ctx) => {
+    // A document has two halves that name the same fields — the list and the layout — and the parse
+    // may drop from one of them. A layout left pointing at a field nobody kept is a section of a page
+    // with nothing in it, and the author is the only one who can fix it.
+    const section = (refs) => [{ kind: "section", id: "s1", children: refs }];
+    const parse = (fields, refs, mode) =>
+      parseDynamicForm({ version: 3, fields, layout: section(refs) }, { mode });
+
+    const good = [{ name: "a", kind: "text", label: "A" }, { name: "b", kind: "text", label: "B" }];
+
+    // The control: a layout naming fields that survived is kept, and unremarked.
+    for (const mode of ["lenient", "strict"]) {
+      const clean = parse(good, ["a", "b"], mode);
+      ctx.log.note("a layout naming fields that are there", { mode, kept: (clean.layout ?? []).length });
+      expectEqual([clean.ok, (clean.layout ?? []).length, (clean.diagnostics ?? []).length], [true, 1, 0], {
+        claimIds: ["DYN-001"],
+        what: `a layout naming two fields that survived was reported on in ${mode} mode`,
+        detail: JSON.stringify(clean.diagnostics),
+      });
+    }
+
+    // And the two ways a reference can be dangling: a field the parse dropped, and one that was never
+    // written. Both are the same thing to a renderer.
+    for (const [what, fields, refs] of [
+      ["a field the parse dropped", [good[0], { name: "b", kind: "wormhole", label: "B" }], ["a", "b"]],
+      ["a field nobody wrote", [good[0]], ["a", "ghost"]],
+    ]) {
+      const seen = parse(fields, refs, "strict");
+      const codes = (seen.diagnostics ?? []).map((each) => each.code);
+      ctx.log.note("a layout pointing at nothing", { what, codes, layoutKept: (seen.layout ?? []).length });
+
+      expectClaim(codes.includes("MDY_DYNAMIC_UNKNOWN_FIELD_REFERENCE"), {
+        claimIds: ["DYN-003"],
+        what: `${what}: the layout was left pointing at it with nothing said`,
+        detail: JSON.stringify(codes),
+      });
+
+      expectEqual((seen.layout ?? []).length, 0, {
+        claimIds: ["DYN-001"],
+        what: `${what}: the layout survived the reference it names being gone`,
+      });
+    }
   },
 );
