@@ -5844,7 +5844,7 @@ already holds rather than a document it is reading.
 
 ## Checked and clean: what a page actually sends
 
-`browser/what-a-page-actually-sends.spec.ts` — 2 green.
+`browser/what-a-page-actually-sends.spec.ts` — 3 green.
 
 SUB-001 is *"submission contains no undeclared path introduced by rendering"* and VAL-002 is
 *"disabled values are retained in edit state and excluded from submission"*. Both are asserted at
@@ -5868,5 +5868,17 @@ two fields, one taken out of play after typing into both
   the page sends     {"kept":"first"}
 ```
 
-Both claims hold where they are actually spent. The first test mounts every kind at once precisely so
-that a key any renderer adds for any of them has somewhere to show up.
+And a row-shaped form, which is where a payload's shape is easiest to lose:
+
+```
+a record with two rows, one of them declared at runtime
+  sent   {"rows":{"a":{…},"b":{"code":"B","note":"n","plan":null}}}
+         an object keyed by row key — not an array
+
+after removing row "b"
+  sent   {"rows":{"a":{…}}}     the removed key leaves nothing behind
+```
+
+All three claims hold where they are actually spent. The first test mounts every kind at once
+precisely so that a key any renderer adds for any of them has somewhere to show up, and the third
+asserts both rows are in the payload before the removal, so the absence afterwards is the removal.

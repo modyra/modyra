@@ -7,8 +7,8 @@
  * without recording what it was handed, so every spec here could see what a renderer did with the
  * *answer* and none could see what it sent.
  *
- * The host now keeps each value its submit action receives, cloned at the moment it receives it, and
- * these two tests read it. What they check is what a server would get: exactly the names the document
+ * The host now keeps each value its submit action receives, cloned at the moment it receives it, on
+ * every mounting path rather than one, and these tests read it. What they check is what a server would get: exactly the names the document
  * declared, nothing a renderer added — no widget ids, no `__`-prefixed bookkeeping, no key for a
  * control that happens to be on the page — and a field taken out of play kept in the form and left
  * out of the payload.
@@ -110,4 +110,56 @@ test("a field taken out of play is kept in the form and left out of the payload"
   );
   expect(sent.length, JSON.stringify(sent)).toBe(1);
   expect(sent[0], JSON.stringify(sent[0])).toEqual({ kept: "first" });
+});
+
+test("a row-shaped form sends its rows by key, and a removed row leaves nothing behind", async ({ page }) => {
+  const id = "rowform";
+  await page.evaluate(
+    (mountId) => (window as never as { battle: { mount(id: string, o: unknown): unknown } }).battle.mount(mountId, { key: "a" }),
+    id,
+  );
+  await page.waitForTimeout(240);
+
+  await page.evaluate(
+    (mountId) => (window as never as { battle: { declareRow(id: string, k: string, v: unknown): void } })
+      .battle.declareRow(mountId, "b", { code: "B", note: "n" }),
+    id,
+  );
+  await page.waitForTimeout(220);
+
+  // Fill what the form requires, so it will submit at all.
+  const inputs = page.locator(`[data-form="${id}"] input`);
+  const count = await inputs.count();
+  for (let index = 0; index < count; index += 1) await inputs.nth(index).fill("x").catch(() => undefined);
+  await page.waitForTimeout(200);
+
+  await page.locator(`[data-form="${id}"] button`).last().click().catch(() => undefined);
+  await page.waitForTimeout(360);
+
+  const sent = await page.evaluate(
+    (mountId) => (window as never as { battle: { submittedBy(id: string): unknown[] } }).battle.submittedBy(mountId),
+    id,
+  );
+
+  // The control: it submitted, and it submitted both rows — so the absence below is the removal.
+  expect(sent.length, JSON.stringify(sent)).toBeGreaterThan(0);
+  const rows = (sent.at(-1) as { rows: Record<string, unknown> }).rows;
+  expect(Array.isArray(rows), JSON.stringify(rows)).toBe(false);
+  expect(Object.keys(rows).sort(), JSON.stringify(rows)).toEqual(["a", "b"]);
+
+  await page.evaluate(
+    (mountId) => (window as never as { battle: { removeRow(id: string, k: string): void } }).battle.removeRow(mountId, "b"),
+    id,
+  );
+  await page.waitForTimeout(240);
+  await page.locator(`[data-form="${id}"] button`).last().click().catch(() => undefined);
+  await page.waitForTimeout(360);
+
+  const after = await page.evaluate(
+    (mountId) => (window as never as { battle: { submittedBy(id: string): unknown[] } }).battle.submittedBy(mountId),
+    id,
+  );
+  expect(after.length, JSON.stringify(after)).toBeGreaterThan(sent.length - 1);
+  const rowsAfter = (after.at(-1) as { rows: Record<string, unknown> }).rows;
+  expect(Object.keys(rowsAfter), JSON.stringify(rowsAfter)).toEqual(["a"]);
 });
