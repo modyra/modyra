@@ -3080,3 +3080,29 @@ land where the dial shows them.
 rather than refusing a month that does not exist. Nothing reachable from a calendar produces a month
 outside 1–12, and the callers all derive it from a real date — recorded rather than filed for want of
 a path to it.
+
+## Checked and clean: what the rest of the form remembers about a policy's work
+
+`adversarial/security/what-the-rest-of-the-form-remembers.battle.test.mjs` — 2 battles, green, new.
+
+Sanitising and truncating are transformations: the value the user typed is not the value the form
+keeps. **Three things remember values for later** — history, drafts and the change set — and each is a
+separate answer to *which* value it remembers. Getting any of them wrong undoes the policy quietly:
+
+```
+undo after a sanitised write      brings back the sanitised value, not the markup
+undo after a truncated write      brings back ten characters, not forty
+the draft on disk                 carries the sanitised value; reopening restores that
+a write the policy cut back to
+exactly the initial               getChanges() {} and dirty false — no change to report
+a write the policy cut to
+something new                     getChanges() reports it            the control
+```
+
+Each is a composition of two features that are correct on their own, which is where this campaign's
+sharper findings have come from — 61 was `setValue` meeting the return-to-initial rule, 71 was a draft
+key meeting `savedAt`, 77 was `mutate` meeting an async callback. These three are the same shape and
+they hold; holding them is what keeps them true while both halves keep moving.
+
+The change-set edge is the one worth naming: what the user typed is not the question a change set
+answers. A write the policy turns back into the initial is not a change, however much was typed.
