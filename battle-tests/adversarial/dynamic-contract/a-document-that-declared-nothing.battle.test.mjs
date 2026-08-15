@@ -25,7 +25,7 @@
 import { readFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 
-import { parseDynamicForm } from "@modyra/core";
+import { buildDynamicFormSchema, createForm, parseDynamicForm } from "@modyra/core";
 
 import { battle } from "../../harness/battle.mjs";
 import { expectClaim, expectEqual } from "../../harness/assertions.mjs";
@@ -107,5 +107,70 @@ battle(
         }),
       });
     }
+  },
+);
+
+battle(
+  {
+    claims: ["DYN-001", "DYN-002"],
+    title: "every published fixture that carries a tree builds the form it describes",
+    environments: ["node"],
+  },
+  async (ctx) => {
+    // The corpus is the contract's documentation. A fixture that parses and then cannot be built is
+    // documentation that does not work, and nothing checks the second half: `audit-contract-schema`
+    // validates the fixtures against the published JSON schema, which is a different question from
+    // whether the engine can make a form out of them.
+    const built = [];
+    for (const [version, name, expected] of [
+      ["v2", "checkout-recursive", ["items", "country", "coupon"]],
+      ["v3", "keyed-rows", ["lines"]],
+      ["v3", "nested-collections", ["orders", "shipments"]],
+      ["v3", "positional-nesting", ["orders", "matrix"]],
+    ]) {
+      const document = fixture(version, name);
+      let outcome;
+      try {
+        const form = createForm(buildDynamicFormSchema(document.schema), { devWarnings: false });
+        outcome = { name: `${version}/${name}`, value: form.getValue(), names: form.fieldNames().length };
+        form.destroy();
+      } catch (error) {
+        outcome = { name: `${version}/${name}`, threw: String(error?.message ?? error) };
+      }
+      ctx.log.note("a published fixture, built", outcome);
+      built.push([outcome, expected]);
+    }
+
+    const failed = built.filter(([outcome]) => outcome.threw !== undefined).map(([outcome]) => outcome);
+    expectEqual(failed, [], {
+      claimIds: ["DYN-001"],
+      what: "a published fixture parses and cannot be built into a form",
+      detail: JSON.stringify(failed),
+    });
+
+    // And each one holds what its document describes at the top: a collection declared as a record
+    // arrives as an object and one declared as an array arrives as a list, empty in both cases
+    // because a document declares a shape and rows come from data.
+    for (const [outcome, expected] of built) {
+      const held = Object.keys(outcome.value ?? {});
+      expectEqual(expected.filter((key) => !held.includes(key)), [], {
+        claimIds: ["DYN-002"],
+        what: `${outcome.name} did not build what its document names at the top`,
+        detail: JSON.stringify({ held, expected }),
+      });
+    }
+
+    // The shapes, asserted rather than assumed: a record is an object and an array is a list, and a
+    // fixture built entirely of collections has both and neither has rows.
+    const collectionsOnly = built.find(([outcome]) => outcome.name === "v3/nested-collections")?.[0];
+    expectEqual(
+      [Array.isArray(collectionsOnly.value.orders), Array.isArray(collectionsOnly.value.shipments)],
+      [false, true],
+      {
+        claimIds: ["DYN-002"],
+        what: "a record and an array built from one document did not arrive as an object and a list",
+        detail: JSON.stringify(collectionsOnly.value),
+      },
+    );
   },
 );
