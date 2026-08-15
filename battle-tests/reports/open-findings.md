@@ -4821,5 +4821,28 @@ enforced by it — so silence is about the unknown key rather than about a parse
 
 Measured at envelope versions 1, 2 and 3: the same at all three, so this is not a version's gap.
 
+**And `validators` is one of sixteen.** The schema closes sixteen object kinds — the root envelope, a
+field node, a group node, an array node, `validators`, an `option`, a `rule` and its `when`, both
+shapes of layout node, a `slot`, a `placement`. Swept across every published fixture, injecting one
+unknown key at a time at every position a closed definition describes
+(`adversarial/dynamic-contract/every-object-the-schema-closes.battle.test.mjs`):
+
+```
+87 injections at closed positions
+ 3 noticed        all three in $defs.placementAt
+84 silent
+```
+
+Silent, by definition: `fieldNode` 18, `groupNode` 13, `arrayNode` 12, the root envelope 9,
+`validators` 9, `option` 5, each layout shape 5, `placement` 3, `rule` 2, `rule.when` 2, `slot` 1.
+
+The three that are noticed are what make this measurable rather than a guess about intent: the parser
+*does* refuse an unknown key where it has been told to, in exactly one of the sixteen definitions. So
+the silence elsewhere is a gap and not a policy of tolerating extra data.
+
+Both sides of that sweep are the project's own — the closed set is read from the published schema, the
+documents are the published fixtures — so a definition opened or closed later moves the sweep without
+anyone editing the battle.
+
 Classification: Modyra bug, S2 by DYN-001/DYN-003. Either resolution closes it: refuse the document,
 or accept it with a diagnostic naming the key that was dropped.
