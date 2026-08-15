@@ -48,7 +48,6 @@ battle(
     severity: "S2",
     title: "a restored draft is not something the user can undo having done",
     environments: ["node"],
-    open: "reported, not enforced: finding 170, open in battle-tests/reports/open-findings.md",
   },
   async (ctx) => {
     const storage = memoryStorage();

@@ -46,6 +46,17 @@ const attempt = (fn) => {
   }
 };
 
+/**
+ * What an attempt is worth saying in a report.
+ *
+ * Never the value: when the attempt succeeded it is a live form, and a form holds its own scheduler
+ * — `JSON.stringify` of one throws on the circular structure and takes the battle down before the
+ * assertion it was attached to has been checked. A detail that can fail is a detail that decides
+ * whether a claim is reported, which is the wrong way round.
+ */
+const outcomeOf = (attempted) =>
+  JSON.stringify({ answered: attempted.answered, threw: attempted.threw ?? null });
+
 const openWith = (storage) =>
   attempt(() => createForm(buildSchema(SPEC).schema, {
     reactivity: vanillaReactivity(),
@@ -66,7 +77,7 @@ battle(
     expectClaim(control.answered, {
       claimIds: ["PER-001"],
       what: "a form could not be built with a storage that works, so nothing below is about the failures",
-      detail: JSON.stringify(control),
+      detail: outcomeOf(control),
     });
     control.value.f.a.set("typed");
     await settled();
@@ -83,7 +94,7 @@ battle(
     expectClaim(full.answered, {
       claimIds: ["PER-001"],
       what: "a storage whose write throws stopped the form being built",
-      detail: JSON.stringify(full),
+      detail: outcomeOf(full),
     });
     full.value.f.a.set("typed");
     await settled();
@@ -109,7 +120,7 @@ battle(
       expectClaim(built.answered, {
         claimIds: ["PER-001", "LIF-001"],
         what: `a storage where ${what} stopped the form being built at all`,
-        detail: JSON.stringify(built),
+        detail: outcomeOf(built),
       });
 
       if (built.answered) {
@@ -152,7 +163,7 @@ battle(
     expectClaim(cleared.answered, {
       claimIds: ["PER-001"],
       what: "clearDraft threw because the storage would not remove the entry",
-      detail: JSON.stringify(cleared),
+      detail: outcomeOf(cleared),
     });
 
     form.destroy();
