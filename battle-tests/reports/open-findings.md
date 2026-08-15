@@ -7265,3 +7265,26 @@ parseDynamicForm   refuses such a name as a *document*, MDY_DYNAMIC_INVALID_FIEL
 That is finding 118's shape with the layers the right way round: the document parser refuses it, so
 the widget-layer throw is a backstop rather than the crash a consumer meets. A name one character away
 (`a_b`) passes both, which is the control.
+
+### Checked and clean: every icon drawn the same way
+
+`adversarial/widgets/every-icon-drawn-the-same-way.battle.test.mjs` (green).
+
+`MDY_ICONS` publishes fifteen drawings and three constants say how they are drawn: `MDY_ICON_GRID`
+(24), `MDY_ICON_STROKE` (2), `MDY_ICON_SPANS` (`full` 20, `compact` 14, `directional` 12). None had
+been named by this suite.
+
+All fifteen share one `viewBox` of `0 0 24 24`, carry stroke weights of exactly 2 and nothing else,
+and declare a span the contract names. An icon that broke any of the three would not fail — it would
+look slightly wrong beside the others in a way a reviewer sees and cannot put a name to.
+
+The control is that the drawings carry stroke weights at all: an icon set that had stopped declaring
+them would pass a weight check by having nothing to weigh.
+
+**A check that was written and is not there.** The natural fourth invariant is that a drawing stays
+inside its own square and fills roughly its declared span. Path data mixes absolute coordinates with
+relative offsets, so the `-6` in a lowercase command is a step and not a place. The first version
+could not tell them apart and reported five icons — every chevron, both spinners — as drawn outside
+the grid. None of them is. Parsing path data properly is out of proportion to what it would protect,
+so the check is absent and said to be absent rather than left in a weaker form that looks like
+coverage.
