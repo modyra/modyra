@@ -28,7 +28,7 @@ import { execFileSync } from "node:child_process";
 import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 
-import { MDY_LAYOUT_MAX_DEPTH, MDY_MAX_EXPRESSION_DEPTH } from "@modyra/core";
+import { MDY_LAYOUT_MAX_DEPTH, MDY_MAX_EXPRESSION_DEPTH, parseDynamicForm } from "@modyra/core";
 
 import { battle } from "../../harness/battle.mjs";
 import { expectClaim } from "../../harness/assertions.mjs";
@@ -38,6 +38,9 @@ const BATTLE_ROOT = resolve(HERE, "..", "..");
 
 /** Depths a document can nest to, spanning the runtime's stack rather than aiming at it. */
 const LADDER = Object.freeze([3, 1000, 20000, 60000]);
+
+/** A field for a document whose subject is something other than its fields. */
+const FIELD = Object.freeze({ name: "f", kind: "text", label: "F" });
 
 /** How long one document may take before the answer is "it stopped answering". */
 const BUDGET_MS = 30000;
@@ -106,6 +109,51 @@ battle(
       what: "the published depth limits are not numbers, so the comparison this battle draws has no basis",
       detail: JSON.stringify({ MDY_LAYOUT_MAX_DEPTH, MDY_MAX_EXPRESSION_DEPTH }),
     });
+
+    // And they are enforced at exactly the depth they name, by refusing with a diagnostic. This is
+    // the contract bounding a recursive structure, measured rather than asserted — which is what
+    // makes the tree below an omission rather than a shape nobody bounds.
+    for (const { name, limit, document } of [
+      {
+        name: "layout",
+        limit: MDY_LAYOUT_MAX_DEPTH,
+        document: (depth) => {
+          let node = { ref: "f" };
+          for (let i = 0; i < depth; i++) node = { kind: "section", id: `s${i}`, children: [node] };
+          return { version: 3, fields: [FIELD], layout: [node] };
+        },
+      },
+      {
+        name: "expression",
+        limit: MDY_MAX_EXPRESSION_DEPTH,
+        document: (depth) => {
+          let when = { op: "isNotEmpty", operands: [{ path: "f" }] };
+          for (let i = 0; i < depth; i++) when = { op: "not", operands: [when] };
+          return { version: 3, fields: [FIELD], validations: [{ when, message: "no", target: "f" }] };
+        },
+      },
+    ]) {
+      const atLimit = parseDynamicForm(document(limit), { mode: "strict" });
+      const pastIt = parseDynamicForm(document(limit + 1), { mode: "strict" });
+      ctx.log.note("a depth the contract does bound", {
+        name,
+        limit,
+        atLimit: atLimit.ok,
+        pastIt: pastIt.ok,
+        diagnostics: (pastIt.diagnostics ?? []).map((each) => each.code),
+      });
+
+      expectClaim(atLimit.ok === true && pastIt.ok === false, {
+        claimIds: ["DYN-001"],
+        what: `the ${name} depth limit of ${limit} is not enforced where it is declared`,
+        detail: JSON.stringify({ atLimit: atLimit.ok, pastIt: pastIt.ok }),
+      });
+
+      expectClaim((pastIt.diagnostics ?? []).length > 0, {
+        claimIds: ["SEC-004"],
+        what: `a ${name} past its declared depth was refused without saying why`,
+      });
+    }
 
     for (const kind of ["record", "array"]) {
       for (const depth of LADDER) {

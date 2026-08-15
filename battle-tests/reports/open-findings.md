@@ -6360,9 +6360,16 @@ runtime's stack, not a number in the contract, and it moves with the platform �
 battle asserts the property rather than a depth: at every rung a document is either refused or
 buildable, never accepted and then fatal. On a larger stack the rung passes for the right reason.
 
-**Depth is something this contract knows how to bound.** `MDY_LAYOUT_MAX_DEPTH` is 6 and
-`MDY_MAX_EXPRESSION_DEPTH` is 32 — both published, both enforced, both refusing with a diagnostic
-rather than throwing. The tree of collections has no limit and nothing checks one, so the one shape a
+**Depth is something this contract knows how to bound**, and the bounds are exact — measured, now a
+control inside the battle:
+
+```
+layout      depth 6  → ok          depth 7  → refused, MDY_DYNAMIC_INVALID_LAYOUT
+expression  depth 32 → ok          depth 33 → refused, MDY_DYNAMIC_INVALID_VALIDATION
+collections depth 6000 → accepted, then RangeError
+```
+
+Both published limits refuse at exactly the depth they name, with a diagnostic rather than a throw. The tree of collections has no limit and nothing checks one, so the one shape a
 document can nest without bound is the one that recurses into the form builder.
 
 An application following the published instruction crashes on data the published check called valid,
