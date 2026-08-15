@@ -3875,3 +3875,34 @@ Nothing was stale in the other direction: no entry claimed closed while its batt
 Worth repeating rather than doing once. Two sessions are writing here, one of them repairing as fast
 as the other files, and a register drifts in exactly one direction — the one where somebody else did
 the work.
+
+## Checked and clean: everything the troubleshooting guide predicts
+
+`adversarial/submission/what-the-troubleshooting-guide-predicts.battle.test.mjs` — 2 battles, green,
+new.
+
+A troubleshooting guide is a list of falsifiable predictions, none of which was held anywhere, and a
+wrong one is worse than a missing one: somebody reads it while already confused and goes looking in
+the place it names. **None of them is wrong.**
+
+```
+a form-level refusal (path null)         errorsFor("")     the form
+a refusal naming NO registered field     errorsFor("")     "not lost", exactly as the guide says
+a refusal naming a real field            errorsFor("a")    the field, and NOT the form
+a cross-field validator that failed      errorsFor("")     the same place, so it is one answer
+                                                           rather than a bucket for leftovers
+
+canSubmit, on a valid form   valid-only true   always true   manual FALSE
+a run that never resolves,
+under timeoutMs: 120         pending settles false, kind "async-timeout", "Validation timed out"
+```
+
+The routing is asserted as a **partition** rather than three separate checks: each message reaches
+exactly one of the two places — never both, never neither. That is the property a renderer depends on
+when it draws a field's list and the form's summary side by side, and it is stronger than any of the
+three predictions on its own.
+
+**One thing it settles about finding 65.** A *server* refusal on a path nobody declared surfaces on
+`errorsFor("")`. A *rule* attached to one used to sit invisible — and now cannot exist at all, because
+`addValidators` refuses the name. The two mechanisms answered differently and only one of them was a
+finding; the guide was describing the half that was already right.
