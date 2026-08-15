@@ -6597,6 +6597,22 @@ In one renderer a user clicking on the date opens the calendar. In the other, cl
 does nothing and they have to find the small button beside it. Same markup, same aria, a different
 form to fill in — and nothing in a screenshot shows it, which is why the table names the part.
 
+Measured on the precise element, through the attribute the widget itself publishes rather than a
+guess about which node the popup is:
+
+```
+                    control aria-expanded    before → after a pointer on it
+plain  datepicker   false → true
+plain  timepicker   false → true             (and a popup on screen)
+lit    datepicker   false → false
+lit    timepicker   false → false
+```
+
+**The control advertises itself either way.** In both renderers the input carries `aria-expanded`, so
+in one of them an element tells assistive technology it can be expanded and does nothing when
+pointed at. That is worse than not carrying the attribute: a screen-reader user is told there is
+something to open.
+
 The spec derives the parts from the table, so a kind whose declared opener changes is held to the new
 one without editing. Native controls are excluded by name: the browser's dropdown is not in the
 document and no DOM check can see it open, which is an architectural difference rather than a
@@ -6628,9 +6644,25 @@ The spec opens each field by whichever opener works rather than by the declared 
 ### Harness defects found and repaired while hunting this
 
 - Popup openness measured with `offsetParent !== null` reads a `popover` element the browser is
-  painting as closed. Measured by `getClientRects().length` instead.
+  painting as closed. Measured by `getClientRects().length` instead, and finally by the field's own
+  `aria-expanded`, which needs no guess about where a renderer puts its overlay.
 - Clicking `[data-form=…] button` first finds a calendar cell or a nav arrow on an already-open
   picker. Openers are located by `[aria-haspopup]` before falling back.
+
+### A finding that did not survive its own check
+
+A sweep of the remaining transitions reported that lit's `daterange` declares `open → closed` on a
+pointer to its `toggle` and did not close. `every-transition-a-kind-declares.spec.ts` was green over
+the same 22 transitions, and two of my own measurements disagreeing is a harness defect until proven
+otherwise.
+
+It was the sweep. Its opener resolved `[aria-haspopup]` first, which on a daterange is the *input*,
+so the second click landed on the control rather than on the declared toggle — and a control click is
+correctly not a close for that kind. Measured precisely, lit's daterange closes: `aria-expanded` goes
+`true → false` and the calendar leaves the screen together, at every step.
+
+The same generic mapping underpins finding 122, so that was re-measured on the exact control element
+before the finding was kept. It held.
 
 ### Observed, not filed as a finding
 

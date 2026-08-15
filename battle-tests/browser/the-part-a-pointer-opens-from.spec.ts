@@ -64,7 +64,9 @@ for (const host of HOSTS) {
       }, { mountId: id, k: kind, api: host.api });
       await page.waitForTimeout(300);
 
-      const native = await page.evaluate((sel) => document.querySelector(`${sel} select`) !== null, `[data-form="${id}"]`);
+      const native = await page.evaluate((sel) =>
+        document.querySelector(`${sel} select`) !== null ||
+        document.querySelector(`${sel} [aria-expanded]`) === null, `[data-form="${id}"]`);
       if (native) {
         // The browser's own dropdown is not in the document; nothing here can see it open.
         await page.evaluate(({ mountId, api }) =>
@@ -79,14 +81,25 @@ for (const host of HOSTS) {
       // finding from a part that does not open.
       expect(await target.count(), `${kind} rendered no ${part} to point at`).toBeGreaterThan(0);
 
+      /**
+       * What the field says about itself, read from the part that says it.
+       *
+       * `aria-expanded` is the widget's own statement, so it needs no guess about which element the
+       * popup is or where a renderer puts it — and a renderer that moves its overlay out of the
+       * field, or gives it a role this spec did not think of, is still measured correctly.
+       */
+      const expanded = () => page.evaluate((sel) => {
+        const carriers = Array.from(document.querySelectorAll(`${sel} [aria-expanded]`));
+        return carriers.some((each) => each.getAttribute("aria-expanded") === "true");
+      }, `[data-form="${id}"]`);
+
+      // The premise: it starts closed, so opening is a change rather than a state it was already in.
+      expect(await expanded(), `${kind} was already expanded before anything was pointed at`).toBe(false);
+
       await target.click({ force: true });
       await page.waitForTimeout(360);
 
-      const opened = await page.evaluate((sel) =>
-        document.querySelector(`${sel} [aria-expanded="true"]`) !== null ||
-        Array.from(document.querySelectorAll('[role="dialog"], [role="listbox"]'))
-          .some((each) => each.getClientRects().length > 0),
-        `[data-form="${id}"]`);
+      const opened = await expanded();
 
       if (!opened) unopened.push(`${kind} (${part})`);
       else await page.keyboard.press("Escape");
