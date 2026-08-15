@@ -247,3 +247,53 @@ battle(
     }
   },
 );
+
+battle(
+  {
+    claims: ["VAL-002", "COL-001"],
+    title: "what the keyed model says about a binding waiting for its row is what happens",
+    environments: ["node"],
+    requires: ["structural"],
+  },
+  async (ctx) => {
+    const upsert = (key) => ({ type: "record.upsert", path: "rows", key, value: { code: key } });
+
+    // The half a model that tracks only refusals loses. The first of these is the four-operation
+    // sequence the records campaign found at half a million runs, and it is the one that separates
+    // "the waiting refusal wins" from "what the row carries wins".
+    for (const [what, operations] of [
+      ["a row carrying a permission into a waiting refusal", [
+        { type: "field.disable", path: "rows.Z.note" },
+        upsert("a"),
+        { type: "field.enable", path: "rows.a.note" },
+        { type: "record.rename", path: "rows", from: "a", to: "Z" },
+      ]],
+      ["the same row carrying nothing", [
+        { type: "field.disable", path: "rows.Z.note" },
+        upsert("a"),
+        { type: "record.rename", path: "rows", from: "a", to: "Z" },
+      ]],
+      ["a row carrying its own refusal onto a free key", [
+        upsert("a"),
+        { type: "field.disable", path: "rows.a.note" },
+        { type: "record.rename", path: "rows", from: "a", to: "Z" },
+      ]],
+      ["a permission whose row ended before the rename", [
+        upsert("a"),
+        { type: "field.enable", path: "rows.a.note" },
+        { type: "record.remove", path: "rows", key: "a" },
+        { type: "field.disable", path: "rows.Z.note" },
+        upsert("b"),
+        { type: "record.rename", path: "rows", from: "b", to: "Z" },
+      ]],
+    ]) {
+      const seen = await bothKeyed(ctx, operations);
+      ctx.log.note("a keyed binding waiting for its row", { what, ...seen });
+
+      expectEqual(seen.model.disabled, seen.engine.disabled, {
+        claimIds: ["VAL-002", "COL-001"],
+        what: `the model and the engine disagree about ${what}`,
+      });
+    }
+  },
+);
