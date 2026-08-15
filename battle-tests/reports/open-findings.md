@@ -8267,3 +8267,27 @@ test that only counts them.
 instead of `window.battle.submittingOf` — a local named after the host, shadowing nothing and
 resolving to the window. It threw rather than passing quietly, because the first assertion asks for
 the resting state before anything is pressed.
+
+### Checked and clean: a submission that fell over
+
+`browser/a-submission-that-fell-over.spec.ts` (green, both renderers).
+
+A handler that answers with errors is a well-travelled path. A handler that **throws** — the network
+went, a token expired mid-flight — is the one where a page gets stuck, and nothing on either side of
+the form chose it.
+
+```
+handler throws          the submit resolves; the failure does not escape as a rejection
+                        nor as a page error
+the page                says "the network fell over" — it changed, so a broken submission
+                        does not look like one that worked
+the form                not left submitting; submitted again straight away
+the message             gone on the next submission rather than left from the last one
+```
+
+Both renderers, identically. The three that matter are all there, and the third is the one usually
+lost: a form left *submitting* has a button that never comes back, and the user's only move is to
+reload and retype everything.
+
+The premise asserted first is that the handler ran at all — otherwise every line below would be about
+a submission that never happened.
