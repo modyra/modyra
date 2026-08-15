@@ -5949,3 +5949,36 @@ is kept. Neither contaminates the other.
 All eight claims hold where they are actually spent. The first test mounts every kind at once
 precisely so that a key any renderer adds for any of them has somewhere to show up, and the third
 asserts both rows are in the payload before the removal, so the absence afterwards is the removal.
+
+## 112. An option a document closed, chosen anyway
+
+`browser/an-option-a-document-closed.spec.ts` — 1 red (lit), 1 green (plain).
+
+`spec/dynamic-form-v3.schema.json` closes `$defs.option` over exactly three keys — `value`, `label`
+and `disabled` — so a document saying an option cannot be chosen is saying it in the contract's own
+words.
+
+```
+plain   clicking the disabled option   value stays null
+lit     selecting it on the native <select>   value becomes "b", and aria-invalid stays "false"
+```
+
+Lit renders `select` as a native control and does not set `disabled` on the `<option>`: the browser
+lets it be chosen, the value lands in the form, and nothing downstream catches it. The document
+forbade the value, the person picked it, and the form calls itself fine.
+
+The controls hold it up. Choosing the *offered* option works in both renderers, so the assertion is
+not satisfied by a field that never changes; and the same document is refused by plain, so the
+`disabled` key is not one nobody reads.
+
+Measured alongside, and a smaller separate point: plain refuses the click but renders the option as an
+`li` with **no** `aria-disabled`, so a screen reader is not told it is unavailable — the refusal is
+real and unannounced. Its multiselect does mark them, with `disabled` and `aria-disabled="true"` on
+the option's button.
+
+One more table to note rather than file: `MDY_WIDGET_CONTRACTS.select.parts.option` declares the
+states `selected`, `active` and `hidden` — not `disabled`. The document schema has the key and the
+widget contract has no state for it, which is the seam this fell through.
+
+Classification: Modyra bug, S1 by SEC-001's severity — a value the document ruled out reaches the
+form, and from there the payload.
