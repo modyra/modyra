@@ -700,3 +700,51 @@ those features, so the situation is reachable; nothing raises this when it happe
 catch block for something that never arrives. The header now says what is true and explains why the
 battle still pins what the classes say: that part is what a `catch` reads if they ever do start being
 thrown.
+
+## 39. Exported constants are outside the contract classifier
+
+`scripts/audit-type-surface.mjs` snapshots the exported type surface so a change to it is a diff. Its
+extractor handles interfaces, type aliases, classes and functions — `isInterfaceDeclaration`,
+`isTypeAliasDeclaration`, `isClassDeclaration`, `isFunctionDeclaration`. There is no
+`isVariableStatement`, so an exported `const` is not in the snapshot.
+
+Measured: the baseline records 582 shapes and **zero** `MDY_` constants. `@modyra/core` alone exports
+seventeen a consumer can reach.
+
+What that leaves unclassified:
+
+- `MDY_DYNAMIC_FIELD_KINDS` — the vocabulary. Removing a kind breaks every document that uses it.
+- `MDY_VALUE_CONTRACTS` — what each kind holds. A `shape` or `nullable` change is a break for every
+  renderer.
+- `MDY_LAYOUT_MAX_DEPTH` — a published limit, currently 6.
+- `MDY_ID_DELIMITER` — every generated id derives from it.
+- `MDY_DYNAMIC_DIAGNOSTICS` — the codes a consumer switches on.
+
+This is the same shape as the gap that audit's own header calls finding **K** and says has been hit
+four times: a category no differ has ever seen, so a change to it reports `patch` because there was
+nothing to compare.
+
+Not unwatched, and worth saying so: `audit-contract-schema.mjs` compares the kinds against the
+published schema, and battles now pin the layout depth, the value contracts, the diagnostics list and
+the delimiter. What none of those do is *classify* — and `contract:diff` is the authority a release
+proceeds on.
+
+## 40. A property that fails early explores one run
+
+Fixed rather than filed — the harness is this package's own.
+
+A campaign report recorded the seed, the sequence and the divergence, and nothing about which run
+failed. That number is what says how much of the configured search actually happened: a property stops
+at its first divergence, so one that fails at run 1 explores one run whatever `MDY_BATTLE_RUNS` says.
+A report from a 400-run CI job and one from a 200,000-run night were the same document.
+
+`BattleBreak` now carries a `search` field, `buildReport` records it, `formatSummary` prints it:
+
+```
+Search: 9 of 30 run(s), minimized in 48 attempt(s)
+Search: 1 of 40 run(s), minimized in 27 attempt(s)
+```
+
+The consequence is a priority rather than a bug: every property with a known red is capped at that
+red's run index. A 200,000-run campaign is only deep on the properties that pass, and closing the
+early-failing reds is what unlocks the search behind them.
