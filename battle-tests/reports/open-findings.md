@@ -2247,3 +2247,38 @@ rebuilt record that accepted a row and holds `{}`.
 A note on reading this: the grouping is from the break messages, which name what was measured. It is a
 map for sequencing repairs, not a claim that one fix closes each group — a shared symptom can still
 have two sources, and the battles stay separate for that reason.
+
+## Batch map: the browser reds are six groups
+
+Same exercise on the other tier. 48 pass, 17 fail, and the seventeen are six groups — three of which
+already have a finding number and three of which are the same finding seen from both renderers.
+
+**A — what an accessibility auditor still has to say (5).** `every declared kind renders a form the
+auditor has nothing to say about`, its `when it is required` variant, its `opened and filled` variant,
+and the Lit twins. Findings 33 and 58 — the contract-level ones, since both renderers carry them.
+
+**B — a popup only a mouse can open (2).** `every control that declares a popup opens it from the
+keyboard`, in both renderers. Finding 35, and the fact that it is *both* is what places it in the
+contract rather than in either renderer's markup.
+
+**C — an option a person cannot choose (3).** `every option a document declares is one a person can
+choose` in both renderers, plus `an option whose value has a space is pointed at properly too`.
+Findings 48 and 49, whose repair I argued and the peer accepted: not an index — **do not derive the id
+from the value at all**, and where a native element does the job it needs no id.
+
+**D — a range that throws away what is typed into it (3).** Both halves of finding 66 plus the Lit
+one. The peer's picker batch stops short of `daterange` by declaration, and the cause turned out not
+to be the one that batch repaired: a *well-formed* date is discarded too, so the inputs are not wired
+to the value.
+
+**E — a mount that stopped halfway (2).** `a mount that refuses a field leaves nothing of the fields
+it had already painted` and `the control a refused field left behind can still be referenced`. One
+sequence, two consequences: a refused field mid-mount leaves the page holding what it had already
+drawn.
+
+**F — two singletons.** `a required field nobody has reached is not painted as failing` — finding 23,
+the other half of 34's pair, an error where there is none. And `controls left on the page after the
+form ended are not still offering to edit it`.
+
+Both maps are for sequencing. A shared symptom can still have two sources, which is why the battles
+stay separate whatever the map says.
