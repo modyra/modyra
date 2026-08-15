@@ -3909,8 +3909,9 @@ finding; the guide was describing the half that was already right.
 
 ## 87. Two published guides that still describe what `setValue` used to do
 
-`adversarial/validation/two-guides-that-say-null.battle.test.mjs` — 3 green, 1 red. **S2.**
-Same species as 81, in the pages rather than in the message.
+`adversarial/validation/two-guides-that-say-null.battle.test.mjs` — **green, closed**, verified here
+within minutes of being filed. Was 3 green, 1 red, S2. Same species as 81, in the pages rather than in
+the message — and repaired in both.
 
 ADR 0057 changed it and said so in its own consequences: *`setValue({})` no longer empties a field to
 `null` but returns it to its initial.* Two published guides still say the old thing:
