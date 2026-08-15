@@ -6201,3 +6201,85 @@ for the owning session; the spec asserts only the user-visible half, which is tr
   enabled-state are the host's to apply. A page-level battle asserting that a document's
   `rule.effect: hidden` removes a control would be asserting against a documented limit. Recorded so
   the next hunt does not spend the measurement.
+
+## 116. A time that changed when nobody changed it
+
+**Severity** S1 · **Classification** Modyra bug — mount and first write disagree · **Spec**
+`browser/a-time-that-changed-when-nobody-changed-it.spec.ts` (red, both renderers)
+
+A timepicker has two published formats. `docs/guides/i18n.md` states that `format="24h"` stores
+`"HH:mm"` — `"14:30"` is the example it prints — and calls the stored value canonical and
+display-independent *within the chosen format*. The default is 12h, whose canonical form is
+`"hh:mm A"`.
+
+A form arriving as data cannot choose. `format` is an attribute a host sets on a control; `$defs.field`
+declares twelve properties and `format` is not among them, and a document carrying it anyway reaches a
+control that does not read it (measured: the dial stays 12h with the value rewritten exactly as
+without it). So every timepicker a document builds is 12h, and `"14:30"` is a value in the other
+format.
+
+The widget accepts it, displays it and leaves it alone. Then the user opens the picker and presses OK
+**without touching a dial**:
+
+```
+initial "14:30"      mounted "14:30"      after OK "02:30 PM"   rewritten
+initial "02:30 PM"   mounted "02:30 PM"   after OK "02:30 PM"   stable
+initial "2:30 PM"    mounted "2:30 PM"    after OK "02:30 PM"   rewritten
+initial "09:05"      mounted "09:05"      after OK "09:05 AM"   rewritten
+```
+
+Identical in both renderers. A write is normalised to the field's format; a mount is not.
+
+**It crosses the submission boundary.** Measured on what the page actually sends:
+
+```
+untouched              [{"meeting":"14:30"}]
+after a no-op open+OK  [{"meeting":"14:30"},{"meeting":"02:30 PM"}]
+```
+
+The same page, the same form, the same intended time — two different strings, decided by whether
+anybody opened a picker they did not need to open. No information is lost (`to24Hour` converts), but
+a server cannot know which of the two it is receiving without accepting both.
+
+The control is the same interaction on a value already in the field's own format, which is stable in
+both renderers. So this is the mount and the first write disagreeing, not a confirmation that
+rewrites whatever it finds.
+
+Either the initial value is normalised on mount, so the model always holds the field's canonical
+form, or a write preserves the format it was given. Today neither holds.
+
+### Checked and clean: the document route to a page
+
+`battle-tests/browser/host/entry.mjs` gained `mountDocument`, which follows the route
+`docs/guides/usage-modes.md:74` publishes — `parseDynamicForm(envelope, {mode})`, then
+`mountMdyForm(container, result.fields, {layout: result.layout})`, mounting nothing when the parse
+refuses. Until now no browser battle had built a page from a document at all, which is the untrusted
+path.
+
+- **A document's `initialValue` reaches the control, for all seventeen kinds**, through that route.
+  Model and control agree everywhere: `number 42 → number:42`, `slider 6 → range:6`, `checkbox true →
+  checked`, `radio/segmented "a" → the first radio checked`, `multiselect ["a"] → one chip pressed`,
+  `daterange → two text inputs`, `colors "#ff0000" → color+text`, `file [] → an empty file input`.
+  `select` shows `Alpha` in its trigger rather than in an input, which is where a custom listbox keeps
+  it.
+- **The envelope shape is what the parser accepts**, and it is not the tree
+  `buildDynamicFormSchema` takes: a bare field array, or `{version: 1|2|3, fields, layout, rules,
+  validations}`. `rule` is `{effect, target, when:{field, operator, value?}}` with `target` a single
+  string, and `layout` is a `section` or a `columns` node. Recorded because guessing these cost four
+  parse failures.
+- **A field may carry properties the schema does not declare** — `$defs.field` is open, the parser
+  keeps them (`locale`, `wombat`, even `toString`), strict mode accepts them, and none of them break
+  a mount. `locale` is read by the renderer: the buttons come back as `Annulla`, `Abbrechen`,
+  `Annuler`.
+- **Literal "AM"/"PM" in every locale is a documented known gap** (`docs/guides/i18n.md`, § AM/PM
+  abbreviations), which names `format="24h"` as the way out. Not reported as a finding. The dial being
+  12h in six locales of which five are 24h by `Intl` is the same documented default, which is why
+  finding 116 is about the value rather than about the clock.
+
+### Harness defects found and repaired while hunting this
+
+- My locator for the picker's toggle was `button[aria-label="Open time picker"]` — an English string.
+  Under `locale: "it-IT"` it never matched, and the timeout briefly read as "the field did not mount".
+  It had mounted.
+- One renderer places the picker's popup outside the form's own container, so buttons scoped to
+  `[data-form=...]` miss `OK` and `Cancel`. The spec looks for them on the page.
