@@ -9960,3 +9960,39 @@ substance was green all along.
 The general rule, worth more than the fix: **a `detail` is evaluated before the claim is checked, so a
 `detail` that can throw decides whether the claim is reported at all.** Swept the suite for the same
 shape; this was the only one.
+
+## Two defects in the instrument, found by using it
+
+Neither is a Modyra finding. Both are in `battle-tests/` and both had the same consequence: a run
+saying something that was not true about the code.
+
+### A detail that could not be reported
+
+`expectClaim(condition, { …, detail })` built its detail at the call site, so a detail that throws
+took the battle down **before the claim was checked**. `JSON.stringify` of anything holding a form
+throws — a form owns its scheduler and the graph is circular — and that is how an S0 in
+`storage-that-refuses` was reported as broken on the strength of its own report line.
+
+`detail` now also accepts a **function**, read inside the assertion and only when the claim has
+already broken; if it throws, the failure says `detail unavailable: TypeError` and still names the
+claim. A self-check pins it —
+`harness/self-check/unreportable-detail.fixture.mjs` breaks a claim with a circular detail and the
+run must carry *the promise*, not the stringify error.
+
+### A self-check that failed about one run in five
+
+`a build older than its source is refused before anything is measured` sets a "rebuilt" `dist` mtime
+from `Date.now()` and asserts the package reads fresh. `writeFileSync` gives a file a sub-millisecond
+mtime and `utimesSync` stores whole milliseconds:
+
+```
+src  mtimeMs   1786837709908.416
+dist mtimeMs   1786837709908        ← set from Date.now(), a fraction earlier
+dist >= src    false
+```
+
+So a rebuild stamped "now" lands *before* a source written in the same millisecond, and the check
+failed at random. Now stamped a second past the source's own mtime. Six consecutive runs, 15 of 15.
+
+A self-check that fails at random is the same problem as a battle that does, and it costs more,
+because it is what the rest of the suite is trusted on.

@@ -7,7 +7,7 @@
  */
 
 import { execFileSync } from "node:child_process";
-import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, utimesSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, statSync, utimesSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import assert from "node:assert/strict";
@@ -110,6 +110,15 @@ test("a battle citing an S0 or S1 claim may not report instead of failing", () =
   assert.match(run.output, /cannot report without failing/);
 });
 
+test("a detail that cannot be produced does not replace the claim it was attached to", () => {
+  const run = runFixture("unreportable-detail.fixture.mjs");
+  assert.notEqual(run.code, 0, "a broken claim must still fail the run");
+  // What matters is which failure comes out: the promise, not the reporting line.
+  assert.match(run.output, /the promise this battle is about/);
+  assert.match(run.output, /detail unavailable/);
+  assert.doesNotMatch(run.output, /Converting circular structure/);
+});
+
 test("a battle that attacks and asserts nothing fails", () => {
   const run = runFixture("unchecked-battle.fixture.mjs");
   assert.notEqual(run.code, 0, "a battle that concluded nothing must not pass");
@@ -200,7 +209,13 @@ test("a build older than its source is refused before anything is measured", () 
 
     // And the other way round, so the guard is answering about the order rather than refusing any
     // package it is handed.
-    const rebuilt = Date.now();
+    //
+    // A second past the source rather than `Date.now()`: a file written by `writeFileSync` carries a
+    // sub-millisecond mtime and `utimesSync` stores whole milliseconds, so a rebuild stamped "now"
+    // lands a fraction *before* a source written in the same millisecond. That made this check fail
+    // about one run in five — a self-check that fails at random is the same problem as a battle that
+    // does, and it costs more because it is what the rest is trusted on.
+    const rebuilt = statSync(join(pkg, "src", "index.ts")).mtimeMs + 1000;
     utimesSync(join(pkg, "dist", "index.js"), rebuilt / 1000, rebuilt / 1000);
     const fresh = buildFreshness("sample", { root });
     assert.equal(fresh.fresh, true);
