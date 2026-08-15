@@ -9263,7 +9263,7 @@ mis-citation was caught.
   the parser is the door a document comes through, and a consumer calling the function directly has
   the field list in front of it.
 
-## 163. A number you change with arrows, announced as text you cannot edit
+## 163. A number you change with arrows, with no bounds anywhere
 
 **S2 · Modyra bug · `@modyra/lit`**
 Claims: A11Y-004
@@ -9280,25 +9280,30 @@ minuteControl  role="spinbutton"  aria-label="Minute"  aria-valuemin=0  aria-val
 What each renderer draws:
 
 ```
-plain   role="spinbutton"  aria-valuemin/max/now all present   aria-label present   editable
-lit     role=null          none of them                        aria-label present   readonly
+          type      role         aria-valuemin/max   native min/max   readOnly
+plain     number    spinbutton   1–12 / 0–59         1–12 / 0–59      false
+lit       number    (none)       (none)              (none)           true
 ```
 
-Lit keeps the label and drops everything that says what the part **is**. The same shape as findings
-139–143: the projection declares `{role, attributes}` and the renderer takes some of it.
+### Narrowed after a correction
 
-### Why it matters more than a missing attribute usually does
+The first version of this asserted the missing **role** and was over-claiming: `<input type="number">`
+already has an implicit `spinbutton` role, so declaring it again is belt-and-braces and omitting it
+costs nothing. Caught by asking what the platform gives before asking what the renderer gives.
 
-The arrows work — Up on the hour segment moves eleven to twelve in **both** renderers, asserted as a
-control in the same test. So it is a number a user walks up and down. In lit it announces as a
-read-only text box: no role, no range, no position, and `readonly` on top. A reader is told there is
-nothing to do here, and the keys that do work are not discoverable from anything announced.
+What survives is sharper. An hour runs 1 to 12 and a minute 0 to 59, and a segment can say so twice
+over — `aria-valuemin`/`aria-valuemax` for a reader, `min`/`max` for the browser. **Lit has neither.**
+The bounds exist nowhere: not announced, and not enforced by the control. Plain states them both ways.
+
+The arrows work — Up on the hour moves eleven to twelve in **both** renderers, asserted as a control
+in the same test — so this is a number a user walks up and down, and in one renderer nothing says how
+far it goes. It is `readonly` there as well, which announces it as a value there is no point trying to
+change.
 
 ### Controls run
 
 - **The projection is asked what it declares** before the DOM is read, so a future table that stops
-  declaring a spinbutton makes this spec stop asking rather than keep asking for something nobody
-  publishes.
+  declaring bounds makes this spec stop asking rather than keep asking for something nobody publishes.
 - **Plain passes the same test**, so the contract is renderable.
 - **The arrow keys are asserted to move the value**, so the spinbutton vocabulary is the right one for
   this part rather than a label that happens to hold a number.
@@ -9312,3 +9317,25 @@ nothing to do here, and the keys that do work are not discoverable from anything
 carries `aria-label="Meeting time"` instead, and the accessible name computes to the same string in
 both renderers. Measured rather than assumed, because the projection's declaration alone would have
 read as a second gap.
+
+### The sweep that produced it, and what else it turned up
+
+Every kind mounted in both renderers, every element carrying an `mdy-` class, compared by which
+`role` and `aria-*` attributes it wears. Sixteen classes across seven kinds carry fewer in lit than in
+plain. Most are **not** defects and the reason is the same one that narrowed this finding: the
+platform already says it.
+
+```
+checkbox     control            lit lacks role, aria-checked   ← native <input type=checkbox> says both
+colors       hex-input          lit lacks aria-readonly        ← native readonly says it
+daterange    input              lit lacks aria-readonly        ← same
+radio        circle             lit lacks aria-hidden          ← a decorative element lit does not draw
+timepicker   segment-input      lit lacks the bounds           ← finding 163: nothing else provides them
+```
+
+Left as leads rather than filed, because each needs the same "does anything else provide it" check
+this finding got: `multiselect` options list without `aria-labelledby`/`aria-describedby`,
+`multiselect` overlay input without `aria-controls`, `datepicker` input without `aria-label`, and the
+timepicker popup, where **both** renderers assert `role="dialog"` but on different elements —
+`__popup` in plain, `-container` in lit. That last one is A11Y-004's other half, "on the part that
+carries them", and is the most likely of the four to be real.
