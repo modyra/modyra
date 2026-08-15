@@ -115,6 +115,39 @@ battle(
       });
     }
 
+    // A binding waiting where no row is yet, which is the half the model was missing: it tracked
+    // refusals and not permissions, so an `enable` stated for a row that had not arrived was nothing
+    // at all, and a row carrying one into a waiting refusal left the refusal standing.
+    for (const [what, operations] of [
+      ["a refusal waiting at an index two rows arrive at", [
+        { type: "field.disable", path: "items.1.code" }, push("A"), push("B"),
+      ]],
+      ["a refusal waiting where an insertion sends a row", [
+        push("A"), { type: "field.disable", path: "items.1.code" },
+        { type: "array.insert", path: "items", index: 0, value: { code: "X", note: "x" } },
+      ]],
+      ["a row carrying a permission into a waiting refusal", [
+        { type: "field.enable", path: "items.0.code" }, push("A"),
+        { type: "field.disable", path: "items.1.code" },
+        { type: "array.insert", path: "items", index: 0, value: { code: "X", note: "x" } },
+      ]],
+      ["a permission whose row ended before the move", [
+        { type: "array.setAll", path: "items", value: [{ code: "A", note: "" }] },
+        { type: "field.enable", path: "items.0.code" },
+        { type: "array.remove", path: "items", index: 0 },
+        push("B"),
+        { type: "array.insert", path: "items", index: 0, value: { code: "X", note: "x" } },
+      ]],
+    ]) {
+      const seen = await both(ctx, operations);
+      ctx.log.note("a binding waiting for a row", { what, ...seen });
+
+      expectEqual(seen.model.disabled, seen.engine.disabled, {
+        claimIds: ["VAL-002", "COL-001"],
+        what: `the model and the engine disagree about ${what}`,
+      });
+    }
+
     // And the binding, which the record says travels with its row rather than staying at its index.
     for (const [what, operation] of [
       ["an insert before it", { type: "array.insert", path: "items", index: 0, value: { code: "X", note: "x" } }],
