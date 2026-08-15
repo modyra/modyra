@@ -24,6 +24,13 @@ export interface MdyI18nMessages {
   readonly timepickerMinuteLabel: string;
   readonly timepickerSwitchToDial: string;
   readonly timepickerSwitchToInput: string;
+  /**
+   * Shown beside a date or time control when what was typed could not be read.
+   *
+   * Says what happened rather than what the person did wrong: the commonest cause is a control whose
+   * locale writes a time differently from the person reading it, which is not their mistake.
+   */
+  readonly entryUnreadable: string;
   readonly datepickerToggleLabel: string;
   readonly datepickerCancel: string;
   readonly datepickerConfirm: string;
@@ -61,6 +68,7 @@ export interface MdyI18nMessages {
 /** Default English strings. Replace individual keys by spreading over this. */
 export const MDY_I18N_MESSAGES_DEFAULT: MdyI18nMessages = {
   searchPlaceholder: "Search\u2026",
+  entryUnreadable: "That could not be read. Leave it and correct it, or clear the field.",
   noResults: "No results",
   colorPresetsHeader: "Presets",
   selectColorPrefix: "Select color",
@@ -114,6 +122,7 @@ export type MdyBuiltInLocale = "en" | "it" | "de" | "fr" | "es";
 
 export const MDY_I18N_MESSAGES_IT: MdyI18nMessages = {
   searchPlaceholder: "Cerca…",
+  entryUnreadable: "Non è stato possibile leggerlo. Correggilo, oppure svuota il campo.",
   noResults: "Nessun risultato",
   colorPresetsHeader: "Preset",
   selectColorPrefix: "Seleziona colore",
@@ -160,6 +169,7 @@ export const MDY_I18N_MESSAGES_IT: MdyI18nMessages = {
 
 export const MDY_I18N_MESSAGES_DE: MdyI18nMessages = {
   searchPlaceholder: "Suchen…",
+  entryUnreadable: "Das konnte nicht gelesen werden. Korrigieren Sie es, oder leeren Sie das Feld.",
   noResults: "Keine Ergebnisse",
   colorPresetsHeader: "Voreinstellungen",
   selectColorPrefix: "Farbe auswählen",
@@ -206,6 +216,7 @@ export const MDY_I18N_MESSAGES_DE: MdyI18nMessages = {
 
 export const MDY_I18N_MESSAGES_FR: MdyI18nMessages = {
   searchPlaceholder: "Rechercher…",
+  entryUnreadable: "Cette saisie n’a pas pu être lue. Corrigez-la, ou videz le champ.",
   noResults: "Aucun résultat",
   colorPresetsHeader: "Préréglages",
   selectColorPrefix: "Sélectionner la couleur",
@@ -252,6 +263,7 @@ export const MDY_I18N_MESSAGES_FR: MdyI18nMessages = {
 
 export const MDY_I18N_MESSAGES_ES: MdyI18nMessages = {
   searchPlaceholder: "Buscar…",
+  entryUnreadable: "No se ha podido leer. Corríjalo, o vacíe el campo.",
   noResults: "Sin resultados",
   colorPresetsHeader: "Preajustes",
   selectColorPrefix: "Seleccionar color",

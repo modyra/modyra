@@ -26,7 +26,7 @@ import {
   MDY_I18N_MESSAGES_DEFAULT,
   type MdyI18nMessages,
 } from "@modyra/widgets";
-import { hourToAngle, minuteToAngle, parseAnyTime, pointerAngle, type MdyTimeFormat } from "@modyra/core/datetime";
+import { formatTimeAs, hourToAngle, minuteToAngle, parseAnyTime, pointerAngle, type MdyTimeFormat } from "@modyra/core/datetime";
 import { applyPart, el, setErrors, setIcon, setText } from "../dom.js";
 import { buildFieldShell, insertControl } from "../field-shell.js";
 import { runCommands } from "../command-runtime.js";
@@ -49,7 +49,19 @@ export function renderTimepickerField(
   reactivity = observerFor(handle, reactivity);
   // How this popup attaches is the contract's, not this renderer's.
   const anchoring = overlayAnchoringFor("timepicker");
-  const controller = createTimepickerFieldController({ widgetId: widgetId, handle, format }, reactivity);
+  const controller = createTimepickerFieldController({
+    widgetId: widgetId,
+    handle,
+    format,
+    // The reading is this renderer's — it knows the notation on screen; the judgement is the
+    // controller's, so both renderers answer a typed entry the same way.
+    parseEntry: (text) => {
+      const parsed = parseAnyTime(text, format);
+      // In the control's own notation, which is what it commits from the dial: a value written one
+      // way when picked and another when typed is two answers to one question.
+      return parsed ? formatTimeAs(parsed, format) : null;
+    },
+  }, reactivity);
 
   const parts = MDY_WIDGET_CONTRACTS.timepicker.parts;
 
@@ -149,18 +161,12 @@ export function renderTimepickerField(
   control.addEventListener("click", () => { if (!controller.state().open) dispatch({ type: "open" }); });
   control.addEventListener("input", () => { typing = true; });
   control.addEventListener("blur", () => { typing = false; dispatch({ type: "blur" }); });
-  // A typed time goes through the draft the dialog edits, then commits — one path, one policy.
+  // The text goes to the controller as text. Parsing here and dispatching only on success is what
+  // made `14:30` vanish from a 12-hour control: nothing was dispatched, and the sync below rewrote
+  // the input from a value that had not changed.
   control.addEventListener("change", () => {
     typing = false;
-    const parsed = parseAnyTime(control.value, format);
-    if (!parsed) {
-      if (!control.value) dispatch({ type: "clear" });
-      return;
-    }
-    dispatch({ type: "set-hour", hour: parsed.hour });
-    dispatch({ type: "set-minute", minute: parsed.minute });
-    if (parsed.period) dispatch({ type: "set-period", period: parsed.period });
-    dispatch({ type: "confirm" });
+    dispatch({ type: "type", text: control.value });
   });
   /**
    * A typed segment, judged against the range the contract states for it.
@@ -281,14 +287,20 @@ export function renderTimepickerField(
     applyPart(minuteInput, view.parts.minuteControl);
     applyPart(shell.description, view.parts.description);
     applyPart(shell.errorList, view.parts.error);
-    setErrors(shell.errorList, shownErrorsOf(handle).map((e) => e.message));
+    // An entry the field could not read is this control's own verdict: the form holds nothing, so it
+    // has no error to give, and saying nothing leaves the person looking at their own text believing
+    // it was taken.
+    const unreadable = state.entryUnreadable ? [messages.entryUnreadable] : [];
+    setErrors(shell.errorList, [...unreadable, ...shownErrorsOf(handle).map((e) => e.message)]);
+    control.setAttribute("aria-invalid", String(state.entryUnreadable || showsAsInvalid({ valid: handle.valid(), disabled: handle.disabled() })));
     shell.syncState({
       touched: handle.touched(), disabled: handle.disabled(),
-      hasError: showsAsInvalid({ valid: handle.valid(), disabled: handle.disabled() }), filled: (state.value || "") !== "", required: handle.required(),
+      hasError: state.entryUnreadable || showsAsInvalid({ valid: handle.valid(), disabled: handle.disabled() }), filled: (state.value || "") !== "", required: handle.required(),
     });
 
-    // The input mirrors the committed value; while it has focus the user's own text wins.
-    const display = state.value || "";
+    // The input mirrors the committed value, except while the person is typing — and except while it
+    // holds an entry the field could not read, which stays where they can correct it.
+    const display = state.entryText ?? (state.value || "");
     if (!typing && control.value !== display) control.value = display;
     setOverlayOpen(dialog, state.open);
     // Anchored by the contract, like every other overlay: the placement, the size and the

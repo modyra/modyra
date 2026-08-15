@@ -80,6 +80,12 @@ export function createDatepickerFieldController(
   const readonly = reactivity.signal(initialReadonly);
   const open = reactivity.signal(false);
 
+  // What the person typed while it is not a date. Held here rather than in a renderer, because the
+  // failure this closes is that neither renderer held it: an unparseable entry committed nothing, a
+  // sync effect then rewrote the control from the value, and the text went with no one deciding it
+  // should. Two renderers, one absence.
+  const entryText = reactivity.signal<string | null>(null);
+
   const initialFocus = parseIsoDate(handle.value()) ?? today();
   const viewYear = reactivity.signal(initialFocus.year);
   const viewMonth = reactivity.signal(initialFocus.month);
@@ -134,6 +140,11 @@ export function createDatepickerFieldController(
       touched: handle.touched(),
       dirty: handle.dirty(),
       pending: handle.pending(),
+      entryText: entryText(),
+      // The text is only outstanding while it is not a date: every path that produces a value clears
+      // it, so holding one is the same fact as it being unreadable. Stated as its own member because
+      // a control asks the two different questions — what to show, and whether to explain.
+      entryUnreadable: entryText() !== null,
     };
   });
 
@@ -174,9 +185,38 @@ export function createDatepickerFieldController(
     };
   }
 
+  /**
+   * A typed entry, judged.
+   *
+   * Empty clears the field, as leaving a control empty always has. Readable commits through the same
+   * door the calendar uses, so a typed date and a picked one are the same event. Unreadable keeps
+   * the text and empties the value: a field showing `14:30` while holding a date it never took says
+   * "that worked" and is wrong, which is the failure the verdict half exists for.
+   */
+  function takeEntry(text: string): readonly MdyUiCommand[] {
+    const trimmed = text.trim();
+    if (trimmed.length === 0) {
+      entryText.set(null);
+      return clearDate();
+    }
+    const iso = options.parseEntry?.(trimmed) ?? null;
+    if (iso !== null) {
+      entryText.set(null);
+      return commitDate(iso);
+    }
+    entryText.set(text);
+    handle.set(null);
+    handle.markAsDirty();
+    handle.markAsTouched();
+    return [{ type: "mark-dirty" }, { type: "mark-touched" }];
+  }
+
   function commitDate(iso: string): readonly MdyUiCommand[] {
     const parsed = parseIsoDate(iso);
     if (!parsed || !isDateInRange(parsed, minDate(), maxDate())) return [];
+    // A date arriving from anywhere answers the outstanding entry: what was on screen has been
+    // replaced by something the field can hold, so there is nothing left unread.
+    entryText.set(null);
     handle.set(iso);
     handle.markAsDirty();
     handle.markAsTouched();
@@ -248,16 +288,23 @@ export function createDatepickerFieldController(
       }
       case "select-date":
         return commitDate(intent.iso);
-      case "clear": {
-        handle.set(null);
-        handle.markAsDirty();
-        handle.markAsTouched();
-        return [{ type: "mark-dirty" }, { type: "mark-touched" }];
-      }
+      case "type":
+        return takeEntry(intent.text);
+      case "clear":
+        return clearDate();
     }
   }
 
+  function clearDate(): readonly MdyUiCommand[] {
+    entryText.set(null);
+    handle.set(null);
+    handle.markAsDirty();
+    handle.markAsTouched();
+    return [{ type: "mark-dirty" }, { type: "mark-touched" }];
+  }
+
   function setValue(iso: string | null): void {
+    entryText.set(null);
     handle.set(iso);
     moveFocus(parseIsoDate(iso) ?? today());
   }

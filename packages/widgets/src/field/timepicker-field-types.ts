@@ -24,6 +24,13 @@ export interface MdyTimepickerFieldControllerOptions {
   readonly format?: MdyTimeFormat;
   /** Whether the widget is visually/programmatically readonly. */
   readonly readonly?: boolean;
+  /**
+   * Reads typed text as a `HH:mm` time, or answers null when it cannot.
+   *
+   * A dependency because the reading is locale-aware and the locale belongs to the host. Without
+   * one, a typed entry is left alone.
+   */
+  readonly parseEntry?: (text: string) => string | null;
 }
 
 /** The clock face, or the pair of number fields. */
@@ -67,6 +74,17 @@ export interface MdyTimepickerFieldState {
   readonly touched: boolean;
   readonly dirty: boolean;
   readonly pending: boolean;
+  /**
+   * What the person typed, while it is not a time this field can hold.
+   *
+   * A control renders this in place of the formatted value, so an entry that could not be read stays
+   * where it can be corrected. `14:30` is the case this exists for: it is how most of the world
+   * writes a time, a 12-hour control cannot read it, and erasing it left nothing to correct and no
+   * way to learn why.
+   */
+  readonly entryText: string | null;
+  /** Whether the outstanding entry could not be read — the half a control shows a verdict for. */
+  readonly entryUnreadable: boolean;
 }
 
 /** User/host intent for a timepicker field widget. */
@@ -81,6 +99,8 @@ export type MdyTimepickerFieldIntent =
   | { readonly type: "set-from-angle"; readonly field: "hour" | "minute"; readonly angle: number }
   | { readonly type: "focus-field"; readonly field: "hour" | "minute" }
   | { readonly type: "set-view-mode"; readonly mode: MdyTimepickerViewMode }
+  /** The person typed something and left the control; the text is judged rather than parsed here. */
+  | { readonly type: "type"; readonly text: string }
   | { readonly type: "clear" }
   | { readonly type: "focus" }
   | { readonly type: "blur" };

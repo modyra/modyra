@@ -48,6 +48,8 @@ const RESTING: MdyDatepickerFieldState = Object.freeze({
   touched: false,
   dirty: false,
   pending: false,
+  entryText: null,
+  entryUnreadable: false,
 });
 
 export class MdyDatepickerFieldElement extends MdyFieldElement<string | null> {
@@ -106,6 +108,10 @@ export class MdyDatepickerFieldElement extends MdyFieldElement<string | null> {
   /** The host's choice if it made one, the locale's otherwise. */
   private get weekStart(): number {
     return this.firstDayOfWeek ?? buildDateLocale(this.resolvedLocale).firstDayOfWeek;
+  }
+
+  protected override controlErrors(): readonly string[] {
+    return this.view.entryUnreadable ? [this.messages.entryUnreadable] : [];
   }
 
   private parse(raw: string): string | null {
@@ -239,6 +245,9 @@ export class MdyDatepickerFieldElement extends MdyFieldElement<string | null> {
         minDate: this.min ?? null,
         maxDate: this.max ?? null,
         firstDayOfWeek: this.weekStart,
+        // The reading is this element's — it knows the locale on screen; the judgement is the
+        // controller's, which is what stops this renderer and the next answering differently.
+        parseEntry: (text) => this.parse(text),
       });
       // Lit repaints on its own reactive properties, and the controller's state is not one of them.
       // `subscribeController` is the contract's answer to exactly that.
@@ -442,7 +451,7 @@ export class MdyDatepickerFieldElement extends MdyFieldElement<string | null> {
           type="text"
           class="mdy-datepicker__input"
           placeholder=${this.placeholder}
-          .value=${handle.value() ?? ""}
+          .value=${this.view.entryText ?? handle.value() ?? ""}
           ?disabled=${handle.disabled()}
           role="combobox"
           aria-haspopup="dialog"
@@ -450,10 +459,9 @@ export class MdyDatepickerFieldElement extends MdyFieldElement<string | null> {
           aria-controls=${this._open ? overlayControlledId("datepicker", this.fieldId) ?? nothing : nothing}
           ${mdyPart(this.controlPart(handle))}
           @change=${(e: Event) => {
-            const el = e.target as HTMLInputElement;
-            const iso = this.parse(el.value);
-            this.commitDate(iso);
-            el.value = handle.value() ?? "";
+            // The text goes over as text. Parsing here and writing the value back was the erasure:
+            // an entry the field could not read left nothing on screen to correct.
+            this.send({ type: "type", text: (e.target as HTMLInputElement).value });
           }}
           @blur=${() => handle.markAsTouched()}
         />
