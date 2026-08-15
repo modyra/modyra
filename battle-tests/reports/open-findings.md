@@ -1130,3 +1130,19 @@ found and this says what happened next.
   `history` reports 177 distinct kinds and `keyed-nested` 9, and every signature in both is
   `keys[N]`. No value, validity, pending or error signature remains. Those two campaigns were capped
   at the run index of the row-that-would-not-go class until it was fixed — finding 40 in practice.
+
+## A file field through a draft, checked and clean
+
+A `File` JSON-stringifies to `{}`, and a draft is JSON, so this was worth asking about carefully. It
+holds:
+
+- The file field's key is **omitted** from the stored value, not written as `{}` or `null`.
+- Every other field survives. A form holding a name, a textarea of typing and an email keeps all three
+  when a file is attached; the draft simply stops carrying `doc`.
+- Reopening restores the typing and gives the file field its empty value.
+- A **required** file field is invalid again after the round trip, with "This field is required". That
+  is true — the file genuinely cannot be restored and the user does have to re-attach — so it is
+  correct rather than a finding.
+
+The one thing worth carrying elsewhere: that error arrives on an untouched field, which is the shape
+finding 23 is about. Here the error is true, so painting it immediately helps rather than misleads.
