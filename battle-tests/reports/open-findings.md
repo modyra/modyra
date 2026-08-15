@@ -7417,3 +7417,49 @@ like nothing in a screenshot.
 **Two probes that measured nothing before they measured this.** `timepickerDialKeyIntent` takes four
 arguments; called with one it answers `{value: null}` for every arrow, which reads exactly like a dial
 that ignores the keyboard. Arity is worth checking before concluding a function does nothing.
+
+## 133. A sink with nowhere to stand, and three codes nobody says
+
+**Severity** S2 · **Classification** published vocabulary with no route to a consumer · **Battle**
+`adversarial/reactivity/a-sink-with-nowhere-to-stand.battle.test.mjs` (red) · **Claims** REA-002,
+API-001
+
+`createConsoleDiagnostics` and `createSilentDiagnostics` are published, and so are the codes a report
+would carry. A consumer reading that surface builds a sink, names the codes they care about, and
+waits.
+
+**Nothing takes the sink.** `createForm` says so itself when handed one:
+
+```
+[modyra] createForm was given "diagnostics", which it does not read. A form takes submitMode,
+reactivity, validators, history, draft, security, autoActivate, devWarnings.
+```
+
+The only published option that accepts an `MdyDiagnostics` belongs to one adapter's reactivity
+(`packages/angular/src/lib/core/reactivity-angular.ts:35`). Everyone else gets the console, which an
+application cannot route, filter by code, or send anywhere.
+
+**And three of the five published codes are said by nothing at all.** Searched across every package's
+source: `MDY_SCOPE_DESTROYED`, `MDY_UNSUPPORTED_ADAPTER_OPTION` and `MDY_SSR_SNAPSHOT_MISMATCH`
+appear only where they are defined and where the barrel re-exports them. `MDY_EFFECTS_UNAVAILABLE` is
+emitted, by Angular. `MDY_ASYNC_FEATURE_DISABLED` is the fourth of the same shape and is **already
+recorded** in this register — what is new is that it names a pattern rather than an instance.
+
+The battle's control is the part that makes it mean anything: a sink handed to something that ignores
+it is silent for the same reason an engine with nothing to say is silent. So the provocation is one
+the engine *does* speak about, the console is captured, and the sink is asked whether it heard the
+same thing. The console heard it. The sink did not.
+
+### Harness defect: finding 114 was measured through a sink that was never installed
+
+Finding 114 says a document's `sensitive` flag reaches no protection **and nothing says so**. The
+first half was measured from the draft envelope and holds. The second half was measured by passing
+`diagnostics` to `createForm` and reading an empty array — from a sink the form never installed,
+which is the same silence whatever happens.
+
+Re-measured through the mechanism that exists, with `devWarnings: true` and the console captured: the
+secret still goes into the draft in clear text and **nothing is said**. The finding stands; its
+evidence was wrong and is now the console, in the battle itself.
+
+Recorded rather than quietly fixed, because a battle that measures its own instrument is the failure
+this suite exists to catch, and it happened here.
