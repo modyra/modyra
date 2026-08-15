@@ -11,8 +11,10 @@
  * Withholding one and not the other is the case that comment rules out, and it is the case a form
  * reaches by being restored rather than typed into.
  *
- * What it costs: a control outlined as wrong with no reason beside it, and a submit button that will
- * not go, over a value the person never entered.
+ * The reason is not lost — touching the field brings it, and so does attempting a submission. What
+ * is missing is finding out *by looking*: between arriving and acting, the control is marked wrong
+ * with nothing beside it and the form-level summary is empty as well. The mark is answered on
+ * arrival and the message on interaction, from a verdict the projection says is answered once.
  *
  * The control is the same field after a touch, which must show the message in both renderers —
  * otherwise this would be about a page that shows no messages at all, which is finding 125.
