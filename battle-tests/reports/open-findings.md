@@ -8807,3 +8807,84 @@ state. To be re-measured once the tree is clean.
 - **Every kind survives being cleared.** All fourteen kinds set to `null` and to `undefined` through
   `patchValue`, in both renderers: no uncaught error anywhere. `multiselectValueTransition` throws on
   `null` when called directly, and nothing routes a cleared value into it.
+
+## 156. A rule that fires on nothing
+
+**S0 · Modyra bug · `@modyra/core` (Dynamic Form Contract) — the whole `rules` slot**
+Claims: DYN-004 (registered for this, S0), DYN-001
+Battle: `battle-tests/adversarial/dynamic-contract/a-rule-that-fires-on-nothing.battle.test.mjs`
+(premise, 2 green) · `battle-tests/browser/a-rule-that-fires-on-nothing.spec.ts` (2 failed)
+
+The Dynamic Form Contract has a `rules` array, and the type says what one is for: *a rule fires an
+effect on a field it names*. Four effects — `visible`, `hidden`, `enabled`, `disabled` — over ten
+operators. `docs/guides/ai-generated-forms.md` carries one in its worked example, which is the
+document a generated form is written against.
+
+**Nothing in the workspace applies one.** Every reference to a document's `rules` in all of
+`packages/*/src` is inside `packages/core/src/dynamic/parse.ts` — declaring the type and validating
+the array. No adapter reads it. No Studio package reads it. No export names it.
+
+The documented mount path cannot pass it: `mountMdyForm(container, fields, options)` takes fields and
+a layout, and `MountMdyFormOptions` has no `rules`. The guide's own snippet is
+`mountMdyForm(container, result.fields, { layout: result.layout })` — `result.rules` is dropped at the
+call site the guide teaches.
+
+### Measured end to end, through the documented path
+
+```
+                     mountDocument →  {mounted: true, accepted: 2, rejected: 0}   (strict mode)
+rule                     customerType=person        customerType=business
+visible  → vatNumber     shown, enabled             shown, enabled
+hidden   → vatNumber     shown, enabled             shown, enabled
+disabled → vatNumber     shown, enabled             shown, enabled
+```
+
+### The payload, which is why this is S0
+
+`disabled` is one of the four effects, and a disabled field's value is excluded from what a form
+sends. The same field, the same value, the same page — only the path by which it was disabled differs:
+
+```
+disabled through the handle    submitted {"customerType":"person"}
+disabled by the document       submitted {"customerType":"person","taxId":"SSN-123-45-6789"}
+```
+
+The control passes, so the exclusion works. A document saying "disable the tax id for a private
+customer" produces a form that sends the tax id for a private customer. That is the severity model's
+S0 in its own words: the submitted payload differs from the declared data semantics.
+
+### Acceptance is not indifference
+
+A parser that passed rules through as opaque data would be a different finding. This one reads them
+as behaviour and refuses each way of getting one wrong, with `MDY_DYNAMIC_INVALID_RULE`:
+
+```
+an effect nobody declared              ok=false
+an operator nobody declared            ok=false
+a target that is not a field           ok=false
+a condition on a field that is not there  ok=false
+a well-formed rule                     ok=true, kept, zero diagnostics
+```
+
+And it is accepted in **strict** mode, whose documented promise is that *a partly valid document is
+never accepted*. A consumer choosing the strictest setting available gets `ok: true` for a document
+whose behaviour is silently absent.
+
+### The sibling slot is the control
+
+`validations` arrived in the same contract version, is parsed by the same parser, and is described the
+same way — as behaviour. It has `buildDynamicValidations`, a published function that turns it into
+what the engine runs. So the difference between the two slots is not that one is data and the other
+behaviour. Both are declared as behaviour and one of them has a way to become it.
+
+The rule also leaves no mark anywhere else: the parsed `vatNumber` field is
+`{name, kind, label}` exactly, and the layout is unchanged. Whatever would apply it has only the
+array to go on, and nothing takes the array.
+
+### Strongest remaining question
+
+Whether this is "unimplemented" or "the consumer is meant to apply them" is not resolved by the
+repository, and the evidence points away from the second reading: the parser validates the rule
+against the field list rather than handing it back unexamined, the type says the rule *fires*, and no
+guide anywhere tells a consumer they must implement the effects themselves. If it is intended, the
+contract and the guide both say otherwise and the strict-mode acceptance is the part that misleads.
