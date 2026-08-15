@@ -106,24 +106,24 @@ const ARIA_STATE_CARRIERS: { readonly [K in MdyWidgetKind]: Partial<Record<"inva
   password: { invalid: ["control"], disabled: ["control"], readonly: ["control"] },
   textarea: { invalid: ["control"], disabled: ["control"], readonly: ["control"] },
   number: { invalid: ["control"], disabled: ["control"], readonly: ["control"] },
-  slider: { invalid: ["control"], disabled: ["control"] },
-  checkbox: { invalid: ["control"], disabled: ["control"] },
-  toggle: { invalid: ["control"], disabled: ["control"] },
+  slider: { invalid: ["control"], disabled: ["control"], readonly: ["control"] },
+  checkbox: { invalid: ["control"], disabled: ["control"], readonly: ["control"] },
+  toggle: { invalid: ["control"], disabled: ["control"], readonly: ["control"] },
   // A radio group and a segmented control have no single labelable element: the group is what is
   // named, and the group is what is invalid or unavailable.
-  radio: { invalid: ["group"], disabled: ["group"] },
-  segmented: { invalid: ["group"], disabled: ["group"] },
-  select: { invalid: ["trigger"], disabled: ["trigger"] },
-  multiselect: { invalid: ["searchButton"], disabled: ["searchButton"] },
-  datepicker: { invalid: ["control"], disabled: ["control"] },
-  daterange: { invalid: ["startControl", "endControl"], disabled: ["startControl", "endControl"] },
-  timepicker: { invalid: ["control"], disabled: ["control"] },
+  radio: { invalid: ["group"], disabled: ["group"], readonly: ["group"] },
+  segmented: { invalid: ["group"], disabled: ["group"], readonly: ["group"] },
+  select: { invalid: ["trigger"], disabled: ["trigger"], readonly: ["trigger"] },
+  multiselect: { invalid: ["searchButton"], disabled: ["searchButton"], readonly: ["searchButton"] },
+  datepicker: { invalid: ["control"], disabled: ["control"], readonly: ["control"] },
+  daterange: { invalid: ["startControl", "endControl"], disabled: ["startControl", "endControl"], readonly: ["startControl", "endControl"] },
+  timepicker: { invalid: ["control"], disabled: ["control"], readonly: ["control"] },
   file: { invalid: ["control"], disabled: ["control"] },
   // Not `control`: the native colour input is a swatch with no readable text, kept for what a form
   // post and an autofill see. The hex field is what the label names and what a user types into, so
   // it is the element the state is about — a renderer is free to hide the swatch from the
   // accessibility tree entirely, and one does.
-  colors: { invalid: ["hexInput"], disabled: ["hexInput"] },
+  colors: { invalid: ["hexInput"], disabled: ["hexInput"], readonly: ["hexInput"] },
 });
 
 /**
@@ -152,15 +152,21 @@ export function stateCarriers(kind: MdyWidgetKind, state: MdyWidgetState): reado
  * defect as a declared state unchecked. `aria-readonly="false"` turning up on a slider is the
  * signature of a mechanically applied common ARIA shell, and this table is what makes it findable.
  *
- * `readonly` is declared only where the concept means something: a control whose value is typed can
- * be read-but-not-written. A checkbox, a slider or a file input has no read-only rendering — it is
- * either operable or disabled — so `readonly` is *absent* rather than false.
+ * `readonly` is declared where a read-only field refuses the change and stays in play. That is every
+ * kind whose controller consults `blocksValueChange` — which is every kind with a value — so the
+ * earlier reading, that only a typed value can be read-but-not-written, described the renderers
+ * before the controllers held the rule. A read-only checkbox does not toggle and a read-only rail
+ * does not slide; saying nothing about it left a control that refuses with no way to say why.
+ *
+ * `file` is the exception, and not because nothing implements it: the picker is the browser's, its
+ * value is a `FileList` a page cannot write, and the element's role has no `aria-readonly` to carry.
+ * A form that means "this cannot be changed" there says `disabled`.
  *
  * `open` and `loading` belong to the kinds that own an overlay; `selected` to the ones that choose
  * from a set.
  */
 const TEXTUAL = ["pristine", "touched", "empty", "filled", "invalid", "disabled", "readonly", "focused"] as const;
-const CHOOSER = ["pristine", "touched", "empty", "filled", "invalid", "disabled", "focused", "selected"] as const;
+const CHOOSER = ["pristine", "touched", "empty", "filled", "invalid", "disabled", "readonly", "focused", "selected"] as const;
 const OVERLAY_CHOOSER = [...CHOOSER, "open", "loading"] as const;
 
 export const MDY_WIDGET_STATE_SUPPORT: Readonly<Record<MdyWidgetKind, readonly MdyWidgetState[]>> =
@@ -170,13 +176,11 @@ export const MDY_WIDGET_STATE_SUPPORT: Readonly<Record<MdyWidgetKind, readonly M
     password: TEXTUAL,
     textarea: TEXTUAL,
     number: TEXTUAL,
-    // A slider always has a value, so it is never empty and never pristine-without-value; and it
-    // has no read-only rendering — a rail you cannot drag is a disabled rail.
-    slider: ["pristine", "touched", "filled", "invalid", "disabled", "focused"],
-    // A boolean is on or off. "Empty" is not a state it can be in, and read-only would be a
-    // checkbox you can focus but not toggle, which is what disabled already means.
-    checkbox: ["pristine", "touched", "filled", "invalid", "disabled", "focused", "selected"],
-    toggle: ["pristine", "touched", "filled", "invalid", "disabled", "focused", "selected"],
+    // A slider always has a value, so it is never empty and never pristine-without-value.
+    slider: ["pristine", "touched", "filled", "invalid", "disabled", "readonly", "focused"],
+    // A boolean is on or off. "Empty" is not a state it can be in.
+    checkbox: ["pristine", "touched", "filled", "invalid", "disabled", "readonly", "focused", "selected"],
+    toggle: ["pristine", "touched", "filled", "invalid", "disabled", "readonly", "focused", "selected"],
     radio: CHOOSER,
     segmented: CHOOSER,
     select: OVERLAY_CHOOSER,
@@ -184,8 +188,9 @@ export const MDY_WIDGET_STATE_SUPPORT: Readonly<Record<MdyWidgetKind, readonly M
     datepicker: [...CHOOSER, "open"],
     daterange: [...CHOOSER, "open"],
     timepicker: [...CHOOSER, "open"],
-    // A file input's value is a FileList the page cannot write, so read-only has no meaning; and
-    // the browser owns the picker, so there is no `open` the contract can observe.
+    // A file input's value is a FileList the page cannot write, and its element's role has no
+    // `aria-readonly` to carry; and the browser owns the picker, so there is no `open` the contract
+    // can observe.
     file: ["pristine", "touched", "empty", "filled", "invalid", "disabled", "focused"],
     colors: [...CHOOSER, "open"],
   });

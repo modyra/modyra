@@ -126,15 +126,20 @@ test("a widget's full class surface is finite and derivable", () => {
 });
 
 test("a kind projects read-only only when its contract has the state", () => {
-  // The two tables and the projections are three statements of one fact, and they had drifted:
-  // `MDY_WIDGET_STATE_SUPPORT` says a boolean, a chooser and a range have no read-only rendering —
-  // "either operable or disabled" — while the projections announced `aria-readonly="true"` anyway,
-  // and the checkbox bound a native `readonly` that HTML ignores on a checkbox. The user was told
-  // the control could not change, and space changed it.
+  // The two tables and the projections are three statements of one fact. What each says has moved
+  // once, and the reason is what to read: a widget announces read-only where its own controller
+  // refuses the change, and stays silent where nothing refuses it. Every kind with a value refuses
+  // it now — `blocksValueChange` is consulted before any intent is carried out — so the ARIA is
+  // true where it was once a claim the DOM contradicted.
+  //
+  // The half that does not move: the native attribute, on a control HTML ignores it for. A
+  // `readonly` bound to a checkbox binds nothing, and a checkbox that says it cannot change and
+  // then changes is worse than one that says nothing.
   const readonly = { readonly: true, disabled: false, invalid: false, required: false, checked: false, errorIds: [], describedBy: null };
 
   const boolean = projectBooleanFieldA11y({ ...readonly }, [], { widgetId: "w", variant: "checkbox" });
-  assert.equal(boolean.input.attributes["aria-readonly"], undefined);
+  assert.equal(boolean.input.attributes["aria-readonly"], "true");
+  // Never the native half: HTML ignores `readonly` on a checkbox.
   assert.equal(boolean.input.attributes.readonly, undefined);
 
   const option = projectOptionFieldA11y(
@@ -142,19 +147,25 @@ test("a kind projects read-only only when its contract has the state", () => {
     [],
     { widgetId: "w", variant: "radio", optionCount: 0 },
   );
-  assert.equal(option.group.attributes["aria-readonly"], undefined);
+  assert.equal(option.group.attributes["aria-readonly"], "true");
 
   // …and the kinds whose contract does have it keep both halves.
   const text = projectTextFieldA11y({ ...readonly, value: "" }, [], { widgetId: "w", kind: "text" });
   assert.equal(text.input.attributes["aria-readonly"], "true");
   assert.equal(text.input.attributes.readonly, true);
 
-  // One projection draws several kinds, and the state belongs to the kind. A slider is a numeric
-  // field structurally and declares no read-only rendering, so the same function must not announce
-  // one for it — a renderer that draws its sliders through this projection exposes whatever it says.
+  // One projection draws several kinds, and the state belongs to the kind — which is still asked of
+  // the contract rather than assumed from the file the projection lives in. A slider announces it
+  // and does not bind it: `<input type="range">` ignores the attribute, and what refuses the drag is
+  // the renderer asking `blocksValueChange`.
   const slider = projectTextFieldA11y({ ...readonly, value: 0 }, [], { widgetId: "w", kind: "slider" });
-  assert.equal(slider.input.attributes["aria-readonly"], null);
+  assert.equal(slider.input.attributes["aria-readonly"], "true");
   assert.equal(slider.input.attributes.readonly, false);
+
+  // The kind that declares no read-only state at all: a file picker is the browser's, and its
+  // element's role has no attribute to carry this.
+  const file = projectTextFieldA11y({ ...readonly, value: "" }, [], { widgetId: "w", kind: "file" });
+  assert.equal(file.input.attributes["aria-readonly"], null);
 
   // A kind this contract does not know is not this contract's to police.
   const custom = projectTextFieldA11y({ ...readonly, value: "" }, [], { widgetId: "w", kind: "my-own-kind" });

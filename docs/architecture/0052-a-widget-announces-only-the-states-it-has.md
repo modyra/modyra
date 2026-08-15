@@ -1,6 +1,6 @@
 # ADR 0052: A widget announces only the states it has
 
-Status: Accepted
+Status: Superseded by ADR 0078
 
 ## Context
 

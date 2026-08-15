@@ -71,6 +71,7 @@ import { MdySelectOption } from "../../core/types";
             (blur)="markAsTouched()"
             [attr.aria-checked]="value() === opt.value"
             [attr.aria-disabled]="isDisabled()"
+            [attr.aria-readonly]="isReadonly() ? 'true' : null"
             [attr.tabindex]="tabIndexFor(i)"
           />
           <mdy-icon

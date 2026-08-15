@@ -186,6 +186,7 @@ export class MdyColorsFieldElement extends MdyFieldElement<string | null> {
               aria-label=${`${this.label} (hex)`}
               ${mdyPart(this.controlPart(handle))}
               ?disabled=${handle.disabled()}
+              ?readonly=${handle.readonly()}
               @change=${(e: Event) => this.set(handle, (e.target as HTMLInputElement).value)}
               @blur=${() => handle.markAsTouched()}
             />

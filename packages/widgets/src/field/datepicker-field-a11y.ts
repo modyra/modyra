@@ -84,6 +84,15 @@ export function projectDatepickerFieldA11y(
         // screen-reader user they cannot interact with something they can. `aria-readonly`
         // carries read-only, and only on the kinds that declare the state.
         "aria-disabled": String(state.disabled),
+        // A read-only field refuses the change and stays in play: focusable, submitted, validated.
+        // What refuses it is the controller, and this is what says so — the state belongs on the
+        // part the contract names as its carrier, which is the one a person operates.
+        "aria-readonly": state.readonly ? "true" : null,
+        // The native half as well, on a control whose text a person types: the platform stops the
+        // typing and the ARIA says why. On a control HTML ignores `readonly` for, the widget's own
+        // refusal is what holds and this attribute is left off rather than written as a claim
+        // nothing acts on.
+        readonly: state.readonly,
         "aria-describedby": describedBy,
         // The native attribute too, not only the ARIA one. Where this part lands on the typeable
         // input, `aria-disabled` alone would announce a disabled field that still accepts a typed

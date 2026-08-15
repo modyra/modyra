@@ -104,7 +104,10 @@ export function createTimepickerFieldController(
     viewMode: viewMode(),
     invalid: showsAsInvalid({ valid: handle.valid(), disabled: handle.disabled() }),
     disabled: handle.disabled(),
-    readonly: readonly(),
+    // From the handle first, as `disabled` is: these are the two derived halves of one value, and
+    // reading one from the form while the other waited for a host to call `setReadonly` is how a
+    // field that refused every change announced nothing about it.
+    readonly: handle.readonly() || readonly(),
     // `disabled`/`readonly` above are the derived halves of this one value.
     interactivity: handle.interactivity(),
     required: handle.required(),

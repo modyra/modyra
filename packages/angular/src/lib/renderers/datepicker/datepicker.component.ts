@@ -78,6 +78,7 @@ import { MdyCalendarComponent } from "./calendar.component";
           [placeholder]="placeholder()"
           [value]="displayValue()"
           [disabled]="isDisabled()"
+          [readonly]="isReadonly()"
           (change)="onInputChange($event)"
           (blur)="onInputBlur($event)"
           [attr.aria-haspopup]="'dialog'"
@@ -86,6 +87,7 @@ import { MdyCalendarComponent } from "./calendar.component";
           [attr.aria-label]="controlAriaLabel()"
           [attr.aria-required]="ariaRequired() || isRequired()"
           [attr.aria-disabled]="effectiveAriaDisabled()"
+          [attr.aria-readonly]="isReadonly() ? 'true' : null"
           />
         <div class="mdy-input-suffix">
            @if (suffix(); as s) {

@@ -76,6 +76,7 @@ import { MdyTimepickerClockComponent } from "./timepicker-clock.component";
           [mdyPart]="openerPart()"
           [value]="value() || ''"
           [disabled]="isDisabled()"
+          [readonly]="isReadonly()"
           [placeholder]="effectivePlaceholder()"
           (change)="onInputChange($event)"
           (focus)="onInputFocus($event)"
@@ -86,6 +87,7 @@ import { MdyTimepickerClockComponent } from "./timepicker-clock.component";
           [attr.aria-label]="controlAriaLabel()"
           [attr.aria-required]="ariaRequired() || isRequired()"
           [attr.aria-disabled]="effectiveAriaDisabled()"
+          [attr.aria-readonly]="isReadonly() ? 'true' : null"
             [attr.aria-haspopup]="'dialog'"
           autocomplete="off"
         />

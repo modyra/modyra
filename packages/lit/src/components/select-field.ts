@@ -158,7 +158,9 @@ export class MdySelectFieldElement extends MdyDropdownFieldElement<unknown | nul
     const handle = this.field;
     if (!this.selectAdapter || !handle) return;
     this.selectAdapter.setDisabled(handle.disabled());
-    this.selectAdapter.setReadonly(false);
+    // What the form says, not a constant. This controller holds no handle, so `false` here made a
+    // read-only select one that refuses every change and reports itself editable.
+    this.selectAdapter.setReadonly(handle.readonly());
     this.selectAdapter.setInvalid(shownErrorsOf(handle).length > 0);
     this.selectAdapter.setLoading(this.loading);
     // Keep the local open flag in sync with the controller before rendering.
@@ -273,6 +275,7 @@ export class MdySelectFieldElement extends MdyDropdownFieldElement<unknown | nul
       .selectedIndex=${selected}
       ?disabled=${handle.disabled()}
       aria-invalid=${this.showErrors(handle) ? "true" : "false"}
+      aria-readonly=${handle.readonly() ? "true" : nothing}
       @change=${(event: Event) => {
         const index = (event.target as HTMLSelectElement).selectedIndex;
         const option = options[index];
@@ -396,6 +399,7 @@ export class MdySelectFieldElement extends MdyDropdownFieldElement<unknown | nul
             aria-describedby=${trigger.attributes["aria-describedby"] ?? nothing}
             aria-activedescendant=${trigger.attributes["aria-activedescendant"] ?? nothing}
             aria-disabled=${trigger.attributes["aria-disabled"] === "true" ? "true" : nothing}
+            aria-readonly=${handle.readonly() ? "true" : nothing}
             aria-invalid=${shownErrorsOf(handle).length > 0 ? "true" : "false"}
             aria-required=${handle.required() ? "true" : "false"}
             aria-label=${this.label || nothing}

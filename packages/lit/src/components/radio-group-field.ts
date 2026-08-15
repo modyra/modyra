@@ -63,6 +63,7 @@ export class MdyRadioGroupFieldElement extends MdyOptionsFieldElement<unknown | 
         aria-labelledby=${this.label ? this.labelId : nothing}
         aria-describedby=${groupAttrs?.["aria-describedby"] ?? nothing}
         aria-disabled=${groupAttrs?.["aria-disabled"] ?? nothing}
+        aria-readonly=${groupAttrs?.["aria-readonly"] ?? nothing}
         aria-invalid=${groupAttrs?.["aria-invalid"] ?? (shownErrorsOf(handle).length > 0 ? "true" : "false")}
         aria-required=${groupAttrs?.["aria-required"] ?? (handle.required() ? "true" : "false")}
       >

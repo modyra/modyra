@@ -91,6 +91,7 @@ import { MdyDropdownBase } from "../dropdown-base";
             [attr.aria-label]="controlAriaLabel()"
             [attr.aria-required]="ariaRequired() || isRequired()"
             [attr.aria-disabled]="effectiveAriaDisabled()"
+            [attr.aria-readonly]="isReadonly() ? 'true' : null"
                 (click)="toggleOverlay($event)"
             (blur)="onBlur($event)"
           >
@@ -224,6 +225,7 @@ import { MdyDropdownBase } from "../dropdown-base";
             [attr.aria-label]="controlAriaLabel()"
             [attr.aria-required]="ariaRequired() || isRequired()"
             [attr.aria-disabled]="effectiveAriaDisabled()"
+            [attr.aria-readonly]="isReadonly() ? 'true' : null"
                 [style.opacity]="(value() === null || value() === undefined) ? '0.6' : '1'"
           >
             @if (placeholder() || value() === null || value() === undefined) {

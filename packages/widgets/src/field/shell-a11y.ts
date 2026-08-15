@@ -18,11 +18,20 @@ import { defaultWidgetIdFactory as idFactory, assertUsableWidgetId } from "../id
 import type { MdyPartContract } from "../contract.js";
 import { MDY_FIELD_SHELL_CLASSES, MDY_FIELD_STATE_CLASSES } from "../structure.js";
 import { shownErrors } from "./verdict.js";
+import { widgetSupportsState } from "../widget-states.js";
+import { MDY_WIDGET_KINDS, type MdyWidgetKind } from "../catalog/kinds.js";
 
 /** The state a shell reflects: the flags, with no value and no control-specific concerns. */
 export interface MdyFieldShellFlags {
   readonly disabled: boolean;
   readonly required: boolean;
+  /**
+   * Whether the field refuses changes while staying in play.
+   *
+   * Optional because it is the newer half: a caller that omits it says nothing about read-only,
+   * which is what every caller did when only `disabled` reached the shell.
+   */
+  readonly readonly?: boolean;
 }
 
 export interface MdyFieldShellA11yOptions {
@@ -103,6 +112,19 @@ export function fieldShellRootClasses(state: Readonly<Record<string, unknown>>):
   ];
 }
 
+/**
+ * Whether this kind announces read-only at all.
+ *
+ * A kind this contract does not know is not this contract's to police: a consumer rendering their
+ * own kind keeps what they had.
+ */
+function announcesReadonly(kind: string | undefined): boolean {
+  if (kind === undefined) return true;
+  return (MDY_WIDGET_KINDS as readonly string[]).includes(kind)
+    ? widgetSupportsState(kind as MdyWidgetKind, "readonly")
+    : true;
+}
+
 export function projectFieldShellA11y(
   flags: MdyFieldShellFlags,
   errors: ReadonlyArray<MdyFieldError>,
@@ -146,6 +168,11 @@ export function projectFieldShellA11y(
         // announcing it disabled tells a screen-reader user they cannot interact with something
         // they can.
         "aria-disabled": String(flags.disabled),
+        // Read-only in its own word, on the kinds that declare the state. A control that refuses
+        // every change while staying focusable and submitted looks identical to one that does not;
+        // `file` is the kind that declares no read-only — its picker is the browser's and its role
+        // has no attribute to carry this.
+        "aria-readonly": flags.readonly && announcesReadonly(options.kind) ? "true" : null,
         // Names the error list only while it is rendered; otherwise the description, if there is one.
         "aria-describedby": describedBy,
       },

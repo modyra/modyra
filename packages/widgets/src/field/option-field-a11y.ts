@@ -106,11 +106,12 @@ export function projectOptionFieldA11y<TValue>(
         // carries read-only, and only on the kinds that declare the state.
         "aria-disabled": String(state.disabled),
         "aria-describedby": describedBy,
-        // No read-only. A radio group and a segmented control are choosers, and
-        // `MDY_WIDGET_STATE_SUPPORT` does not list the state for either: there is no read-only
-        // rendering of "pick one of these", only an operable one and a disabled one. Announcing
-        // `aria-readonly="true"` on the group made read-only look like a meaningful axis for a
-        // widget where nothing implements it.
+        // On the group, which is what a `radiogroup` names and what the state is about — an
+        // individual radio carries no read-only of its own.
+        // A read-only field refuses the change and stays in play: focusable, submitted, validated.
+        // The controller has held that rule for every kind for as long as `blocksValueChange` has
+        // existed; saying nothing about it left a control that refuses with no way to say why.
+        "aria-readonly": state.readonly ? "true" : null,
       },
       // The segmented theme sizes its tick gutter from the number of segments; the count is the
       // widget's own knowledge, so it travels with the part rather than being restated per adapter.

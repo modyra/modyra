@@ -857,6 +857,7 @@
   ],
   "MdyFieldShellFlags": [
     "disabled: boolean",
+    "readonly?: boolean",
     "required: boolean"
   ],
   "MdyFieldShellPart": [

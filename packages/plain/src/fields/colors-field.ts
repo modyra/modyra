@@ -189,6 +189,9 @@ export function renderColorsField(
     }
     control.disabled = handle.disabled();
     hexInput.disabled = handle.disabled();
+    // The element the state is about: the swatch beside it is a picker with no readable text.
+    hexInput.readOnly = handle.readonly();
+    hexInput.setAttribute("aria-readonly", String(handle.readonly()));
     toggle.disabled = handle.disabled();
     toggle.setAttribute("aria-expanded", String(isOpen));
     reflectOverlayOpen(popup, isOpen, messages);
