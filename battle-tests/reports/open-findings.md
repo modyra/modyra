@@ -4849,7 +4849,7 @@ or accept it with a diagnostic naming the key that was dropped.
 
 ## 101. A check that stops at the first row
 
-`adversarial/dynamic-contract/a-check-that-stops-at-the-first-row.battle.test.mjs` — 1 red.
+`adversarial/dynamic-contract/a-check-that-stops-at-the-first-row.battle.test.mjs` — 2 red.
 
 `parseDynamicForm` is what an author has before anything is rendered, and `mode: "strict"` is what
 `docs/guides/ai-generated-forms.md:266` names to run "before publishing a stored contract or
@@ -4885,6 +4885,22 @@ there is a check to find the edge of.
 The invariant is written as the thing that matters rather than as "diagnose this kind": a document the
 parser accepts must be one the engine can build. Reporting the kind passes. Refusing the document
 passes. Building a form that survives an unknown kind would pass too.
+
+**It is not only the kind check.** Asking every trigger the same question — reported at the top, then
+made inside a row instead — a second one stops at the same boundary:
+
+```
+a kind nobody declared          top: MDY_DYNAMIC_UNKNOWN_KIND    inside a row: []
+a pattern that is not a string  top: MDY_DYNAMIC_INVALID_FIELD   inside a row: []
+```
+
+That second one builds either way — the bad pattern is simply ignored — so only the silence is wrong,
+which is why the parity battle is worth having beside the build one: an author making the same
+mistake one level down is told nothing, whether or not anything later breaks.
+
+Four other triggers were swept and are silent at *both* levels, so they say nothing about the
+boundary and are not counted here: an uncompilable pattern, a select with no options, two options
+sharing a value (finding 48), and an option value carrying the id delimiter.
 
 This is the same shape as `flattenDynamicForm` not recursing into nested array items, recorded earlier
 in this campaign: the contract's walks stop at a collection boundary, and each one that does is a
