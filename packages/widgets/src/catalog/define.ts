@@ -338,7 +338,11 @@ export const MDY_POPUP_OPENERS: Readonly<Partial<Record<MdyWidgetKind, MdyPopupO
   // element carrying the role — a listbox, a grid, a dialog — which for some kinds sits inside the
   // popup rather than being it.
   select: { opener: "trigger", controls: "listbox", role: "combobox" },
-  multiselect: { opener: "searchButton", controls: "popup" },
+  // A combobox like its single-choice sibling: the opener holds the field's value, so it is what
+  // carries `aria-invalid` and `aria-required`, and neither belongs on a role that has no value to
+  // be wrong about. Declared nowhere, the states were being written onto a bare `<button>`, where
+  // they say nothing an assistive technology may read.
+  multiselect: { opener: "searchButton", controls: "popup", role: "combobox" },
   // The pickers follow the combobox pattern: the typeable control is what carries `role=combobox`,
   // `aria-expanded` and `aria-controls`, and the calendar/clock button beside it is a second
   // affordance for the same popup. The opener is therefore the control, not the button — naming the

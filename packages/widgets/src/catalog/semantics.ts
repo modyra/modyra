@@ -19,7 +19,11 @@ const PART_SEMANTICS: Readonly<Record<string, MdyWidgetSemanticElement>> = Objec
   // The trigger is the widget's control surface, not a plain button: it carries `role="combobox"`,
   // and a native `<select>` satisfies it too.
   trigger: "input",
-  toggle: "button", searchButton: "button", clear: "button",
+  toggle: "button", clear: "button",
+  // The multiselect's opener, and the same thing `trigger` is for its single-choice sibling: it
+  // holds the field's value, so it carries `role="combobox"`, `aria-expanded`, `aria-invalid` and
+  // `aria-required`. Declared a plain button, none of those had anywhere legitimate to sit.
+  searchButton: "input",
   modeToggle: "button", action: "button", optionStep: "button", chip: "button",
   // Announcements.
   errors: "status", loading: "status", empty: "status", errorItem: "status",

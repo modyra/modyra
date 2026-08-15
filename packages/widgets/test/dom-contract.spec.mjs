@@ -278,7 +278,9 @@ function buildCompactMultiselect({ chipClasses = "mdy-chip mdy-chip--value" } = 
   const root = el("div", "mdy-renderer mdy-renderer--multiselect");
   const wrapper = el("div", "mdy-multiselect");
   const header = el("div", "mdy-multiselect__header");
-  const searchButton = el("button", "mdy-multiselect__search-btn");
+  // The opener holds the field's value, so the contract gives it the combobox role rather than
+  // leaving `aria-invalid` and `aria-required` on a bare button.
+  const searchButton = el("button", "mdy-multiselect__search-btn", { role: "combobox" });
   header.append(searchButton);
   const chips = el("div", "mdy-multiselect__chips");
   const chip = el("button", chipClasses);

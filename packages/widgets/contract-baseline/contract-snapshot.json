@@ -1931,11 +1931,11 @@
           "states": []
         },
         "searchButton": {
-          "element": "button",
+          "element": "input",
           "parent": "header",
           "optional": false,
           "repeated": false,
-          "role": null,
+          "role": "combobox",
           "classes": [
             "mdy-multiselect__search-btn"
           ],
