@@ -134,3 +134,40 @@ battle(
     }
   },
 );
+
+battle(
+  {
+    claims: ["SEC-002"],
+    title: "a declaration decides what the panel masks, and the guess only fills the silence",
+    environments: ["node"],
+  },
+  async (ctx) => {
+    // The name heuristic is stated as a guess, in its own contract's words: *it is wrong in both
+    // directions — `notes` can hold a recovery phrase and `cardStyle` is masked for containing
+    // "card". So a declaration wins wherever there is one.*
+    //
+    // That sentence is what makes the guess acceptable, and it is the part worth holding: the guess
+    // may be widened or narrowed at any time and nobody would notice, but a declaration that stopped
+    // winning would leave a consumer with no way to correct either kind of error.
+    const cases = [
+      ["a field the guess would not mask, declared sensitive", "notes", true, true],
+      ["the same field declared not sensitive", "notes", false, false],
+      ["the same field with nothing declared", "notes", undefined, false],
+      ["a field the guess masks, declared not sensitive", "password", false, false],
+      ["the same field declared sensitive", "password", true, true],
+      ["the same field with nothing declared", "password", undefined, true],
+      ["the guess's own stated false positive", "cardStyle", undefined, true],
+      ["and that false positive, corrected", "cardStyle", false, false],
+    ];
+
+    for (const [what, path, declared, masked] of cases) {
+      const answer = isSensitivePath(path, declared);
+      ctx.log.note("what the panel would do", { what, path, declared, masked: answer });
+      expectClaim(answer === masked, {
+        claimIds: ["SEC-002"],
+        what: `${what}: the panel would ${answer ? "mask" : "show"} it`,
+        detail: JSON.stringify({ path, declared, expected: masked }),
+      });
+    }
+  },
+);
