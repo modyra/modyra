@@ -24,6 +24,10 @@
  * argument for is reported as unmeasured rather than passed `undefined`, because a setter that
  * throws is not evidence of anything.
  *
+ * The third battle is the same finding seen from where a consumer stands: a React select painting
+ * one row per option the hook reports, and `setOptions` called on it. Its config is memoized, so the
+ * component settles and nothing here is the render loop of a separate finding.
+ *
  * Measurement note, because it changes what the numbers mean: each measurement builds its own
  * controller. Sharing one lets a notification from an earlier call land inside a later window and be
  * counted as that call's — a first pass here did exactly that and read as `setOptions` notifying
@@ -197,5 +201,87 @@ battle(
       what: "the active option is one the list no longer offers, so aria-activedescendant names an element that is not there",
       detail: JSON.stringify({ active: active(), held: held() }),
     });
+  },
+);
+
+battle(
+  {
+    claims: ["API-001"],
+    title: "a select repaints when its options are changed the documented way",
+    environments: ["node"],
+  },
+  async (ctx) => {
+    const { JSDOM } = await import("jsdom");
+    const dom = new JSDOM("<!doctype html><div id=root></div>", { url: "http://localhost/" });
+    globalThis.window = dom.window;
+    globalThis.document = dom.window.document;
+    Object.defineProperty(globalThis, "navigator", { value: dom.window.navigator, configurable: true });
+    globalThis.HTMLElement = dom.window.HTMLElement;
+    globalThis.Node = dom.window.Node;
+    globalThis.requestAnimationFrame = (run) => setTimeout(run, 0);
+    globalThis.IS_REACT_ACT_ENVIRONMENT = false;
+
+    const React = (await import("react")).default;
+    const { createRoot } = await import("react-dom/client");
+    const { flushSync } = await import("react-dom");
+    const { useMdySelect } = await import("@modyra/react");
+
+    const first = list(2);
+    const next = [{ value: "x", label: "Xi" }, { value: "y", label: "Yi" }, { value: "z", label: "Zeta" }];
+    const lookup = () => ({ tagName: "INPUT", focus() {}, scrollIntoView() {}, setAttribute() {}, removeAttribute() {} });
+    const handlers = new Proxy({}, { get: () => () => {}, has: () => true });
+
+    let api = null;
+    const Probe = () => {
+      // Held still on purpose: a config written at the call never settles, which is a different
+      // finding and would hide this one behind its own renders.
+      const config = React.useMemo(() => ({ widgetId: "s", options: first, onChange: () => {} }), []);
+      api = useMdySelect(config, lookup, handlers);
+      return React.createElement(
+        "ul",
+        null,
+        api.state.options.map((option) => React.createElement("li", { key: option.value }, option.label)),
+      );
+    };
+
+    const root = createRoot(document.getElementById("root"));
+    const quietly = (run) => {
+      const real = console.error;
+      console.error = () => {};
+      try { return run(); } finally { console.error = real; }
+    };
+    const painted = () => [...document.querySelectorAll("li")].map((item) => item.textContent).join(",");
+
+    quietly(() => flushSync(() => root.render(React.createElement(Probe))));
+    await settled();
+
+    // The control: the component paints what the hook reports, so a page that does not change below
+    // is the change not arriving rather than a component that paints nothing.
+    expectEqual(painted(), "L0,L1", {
+      claimIds: ["API-001"],
+      what: "the component did not paint the options the hook reported to begin with",
+      detail: painted(),
+    });
+
+    api.setOptions(next);
+    await settled();
+    ctx.log.note("after the options were changed the documented way", {
+      onThePage: painted(),
+      theHookSays: api.state.options.map((option) => option.label).join(","),
+    });
+
+    // The premise: the call did reach the controller. What is at issue is the page.
+    expectEqual(api.state.options.map((option) => option.label).join(","), "Xi,Yi,Zeta", {
+      claimIds: ["API-001"],
+      what: "setOptions did not reach the controller at all, so this battle is measuring the wrong thing",
+    });
+
+    expectEqual(painted(), "Xi,Yi,Zeta", {
+      claimIds: ["API-001"],
+      what: "the only published way to change a select's options left the old ones on the page",
+      detail: JSON.stringify({ onThePage: painted(), theHookSays: api.state.options.map((o) => o.label) }),
+    });
+
+    root.unmount();
   },
 );
