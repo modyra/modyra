@@ -1723,3 +1723,75 @@ The one-cell case looked like a cascade — a disabled cell taking its row with 
 case showed it is not: the row survives whenever anything is left in it. What prunes it is being
 empty. Whether a server can tell an emptied row from a removed one is a separate question and is not
 filed, because the row's absence is consistent with the rule rather than an exception to it.
+
+## 65. One transposed letter, and Submit stops working forever
+
+`adversarial/validation/a-rule-about-a-field-that-is-not-there.battle.test.mjs` — 1 red. **S1**
+under VAL-003. **The heaviest of the API-001 family, and the only one that runs the other way.**
+
+Every other door in findings 60–64 *ignores* a name the schema does not have. This one accepts it:
+
+```
+a form somebody filled in correctly: { email: "someone@example.com" }, valid, submittable
+
+form.addValidators("emial", [required()])      one letter transposed
+
+valid           true  → false
+canSubmit       true  → false
+submit(cb)      the callback never runs
+the error       exists, on path "emial", which no control is bound to
+said            nothing, with devWarnings: true
+fieldNames()    ["email", "emial"]
+```
+
+The rule can never be satisfied, because nothing renders a control for a path the schema never
+declared. `patch({ emial: "filled" })` — the one door that names it — does nothing, which is finding
+60. On the page this is a correctly filled form with a Submit button that does nothing and no message
+anywhere on it.
+
+**There is a way out, and it is the shape of the problem.** Measured, not assumed:
+
+```
+removeField("emial")             valid=true   canSubmit=true    the only one that works
+removeValidators("emial", "")    no effect    addValidators never had a key to remove
+removeValidators("emial", "k")   no effect
+addValidators("emial", [])       no effect    adding an empty list does not replace the list
+reset()                          no effect
+setValue({ email: "y" })         no effect
+```
+
+So the repair requires knowing the ghost path is there, which is the one thing nobody was told.
+
+Two controls in the battle, both green:
+
+- the same call on the field that **does** exist works, and a value satisfies it;
+- the keyed pair `upsertValidators`/`removeValidators` attached to the same ghost path **does** undo
+  itself. So a rule on a ghost is not beyond reach in principle — only beyond the reach of the call
+  that attached it.
+
+VAL-003 is the claim in its own words: *hidden or unmounted controls do not alter validation
+semantics.* A field that is not in the schema at all is the limit of unmounted, and here it decides
+whether the form can be sent.
+
+Either repair closes it: refuse the name at the call, or leave the form sendable. What the battle
+refuses is the third thing — a Submit that stops working with nothing said anywhere.
+
+## Checked and clean: getField invents a field, and it stays out of the value
+
+`getField` is documented as get-or-create — *"the field at `name`, created if this is the first ask"* —
+against `peekField`, *"if it already exists — without creating one, which is the difference."* Both
+are on the collection-host contract; the form publishes only `getField`.
+
+So `getField("nope")` on a form does register a field. What it does not do is put it anywhere a
+consumer would send:
+
+```
+before                     getValue {"leaf":"L"}   fieldNames ["leaf"]
+after getField("nope")     getValue {"leaf":"L"}   fieldNames ["leaf","nope"]
+                           submit   {"leaf":"L"}
+a deep invented path       getValue and submit both unchanged
+```
+
+SUB-001 holds — *submission contains no undeclared path introduced by rendering* — and a renderer
+asking for a field it expects cannot inject one into the payload. `fieldNames()` and `getValue()`
+disagree by design after such a call, which is worth knowing but is not a breach of either contract.
