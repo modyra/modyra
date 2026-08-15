@@ -2674,7 +2674,7 @@ uses: `matches "(a+)+$"` against thirty `a`s answers `false` in 0 ms where it us
 1000, the ordinary pattern still answers, and the author-time check now reports the cost it used to
 accept in silence.
 
-## 75 again: two classes the repair does not reach
+## 75 again: two classes the repair did not reach — **both closed**, verified here
 
 Verified after the repair. The unknown **operator** is closed — `"eqals"` answers `false` and the
 section stays shut — and a plain string as the expression now answers `false` too. Two classes remain,
@@ -2701,6 +2701,20 @@ answers `false` for an unknown operator rather than raising — and these two sh
 
 Both classes are now rows of the battle rather than sentences in a message, so a repair that reaches
 only one of them shows as red rather than as nothing.
+
+**Closed, verified here.** Every shape above now answers `false`, and the four well-formed controls
+still answer `true`. The arity is declared beside each operator rather than inferred, so an expression
+that is too short is unreadable even when the operator is spelled correctly.
+
+**And an existing battle stopped the repair from going too far** — the first time this campaign has
+worked in that direction rather than a repair falsifying an assertion. The same fix uniformly applied
+"unreadable does not open" to the **depth cap** as well, and
+`security/expression-paths.battle.test.mjs` refused it: *the depth limit refuses a document and does
+not decide what a caller may evaluate.* A cap on how deep a **document** may nest is not a statement
+about an expression a caller built in code, which is still readable however deep it is. Restored, and
+the exclusion is now a written clause in the record rather than something the next reader would have
+to rediscover.
+
 
 ## Checked and clean: every door into a value is a door the security policy is told about
 
