@@ -3438,9 +3438,10 @@ one that is never said, above.
 
 ## 83. A name a document may declare and a page cannot draw
 
-`browser/a-name-the-page-cannot-carry.spec.ts` — **green, closed**, verified here. Was 2 green, 1 red,
-S2. A name carrying whitespace is now refused where the document is read, so the two halves of the
-same sentence are enforced in the same place.
+`browser/a-name-the-page-cannot-carry.spec.ts` — **green at this door**, and see finding 111: the
+repair reached the flat `fields` list and not the other two doors a name arrives through. Was 2 green,
+1 red, S2. The sentence below — that the two halves are enforced in the same place — is true of a flat
+document and false of a tree one.
 
 A widget id is built from a field's name, and the renderer states the rule in one sentence:
 
@@ -5632,3 +5633,45 @@ in a failing run are prefixed `[S0][CLAIM-001]`, and a regex taking everything a
 kept the second bracket group as part of the title, so nothing matched and sixty-six findings looked
 green. And "closed" matched inside the title *a calendar behind a closed picker*, which reported an
 open finding as one claiming to be shut. The numbers above are from the corrected pass.
+
+## 111. One name, three doors, and a repair that reached one
+
+`adversarial/dynamic-contract/one-name-three-doors.battle.test.mjs` — 1 red.
+
+A field's name arrives through three doors: a flat `fields` list, a child key in a `schema` tree, and
+a child key inside a collection's item. Three spellings of one thing, so a name the contract refuses
+at one is a name it refuses at all three — otherwise which shape an author chose decides whether their
+mistake is caught.
+
+Finding 83 was recorded closed on the strength of the first: a name carrying whitespace is refused
+"where the document is read, so the two halves of the same sentence are enforced in the same place".
+Measured at all three:
+
+| name | flat list | tree child | cell in a collection |
+| --- | --- | --- | --- |
+| `__proto__` | refused | refused | refused |
+| `constructor` | refused | refused | refused |
+| `a.b` | refused | refused | refused |
+| `""` | refused | refused | refused |
+| `"  "` | **refused** | **taken** | **taken** |
+| `ordinary` | taken | taken | taken |
+
+The reserved names are the control and they hold everywhere, so the tree door does check names; the
+whitespace rule is a hole in that check rather than the absence of one.
+
+What it costs is the arrangement the repair existed to end. A tree document naming a field `"  "`
+parses `ok` with no diagnostic, reports the field, and **builds a form that holds it** — and the
+renderer is then the one to refuse it, with the message finding 83 quotes: *"cannot be a widget id: it
+must be non-empty, and may contain neither whitespace nor `__`"*. The check moved from the renderer to
+the parser for one document shape out of three.
+
+This is the fourth member of a family now large enough to name: the flat list is the well-served path
+and the tree is the poorer relation — finding 101 (the kind and field-shape checks stop at a
+collection), finding 104 (one diagnostic code, a worse message from the tree), the closed finding 7
+(the v2 tree parser dropped field defects), and this.
+
+Classification: Modyra bug, S1 by SEC-001's severity — the check is the one that keeps a name from
+becoming an unusable widget id, and two of three doors do not make it.
+
+Either resolution closes it: move the whitespace rule to wherever the reserved-name check already
+lives, since that one reaches all three doors.
