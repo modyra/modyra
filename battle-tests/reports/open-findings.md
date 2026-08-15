@@ -4081,3 +4081,50 @@ hook handing it an argument it cannot satisfy, from a place where refusal is fat
 The battle accepts any repair: rebuilding the schema, ignoring the unknown name with a diagnostic,
 and refusing the argument at the call all leave it green. Only a render that succeeds followed by a
 page that disappears is red.
+
+## 90. A question the form stopped asking, still being answered
+
+`adversarial/validation/a-question-the-form-stopped-asking.battle.test.mjs` — 1 red, 1 green.
+
+A disabled field is out of the form's reckoning: its value is kept, excluded from submission, and its
+errors stop counting. Measured — an empty, `required`, disabled field leaves the form `valid: true`
+and `canSubmit: true`. That is the contract working and it is the control.
+
+An async run belonging to that field is not taken out with it:
+
+```
+in flight        valid=true canSubmit=false pending=true  signal.aborted=false
+after disable    valid=true canSubmit=false pending=true  signal.aborted=false
+after re-enable  valid=true canSubmit=false pending=true  (no second run started)
+```
+
+Two costs, and they are separate.
+
+**The form withholds submission on an answer that cannot change its verdict.** `valid` is already
+`true` without the field. When the answer finally arrives it lands in the field's *held* errors,
+`errors` stays empty and `valid` never moves — measured through `useMdyField`, whose `errors`/
+`heldErrors` split is exactly this distinction. So `canSubmit` waits for something it will discard.
+
+**The run keeps running.** `ctx.signal` is documented in `docs/guides/typed-forms.md:293-296` as
+aborted "when the run is superseded (last-wins), re-debounced, or the form is destroyed". A field
+leaving play is not on that list, and the measurement agrees: `aborted` stays `false`. The guide's
+whole instruction for that signal is to pass it to `fetch` "to cancel in-flight requests", so a
+consumer who followed it goes on paying for a call about a field the person opted out of.
+
+Not the defect, and worth separating: a hanging call strands the form whether or not anything was
+disabled — `pending` stays on forever with no `timeoutMs`, which is the documented reason to set one.
+With `timeoutMs` the deadline is honoured even for a disabled field. So the exposure is bounded by
+`timeoutMs` where one is set, and the guide's own example sets `5000`: five seconds of dead submit
+button after a person ticks "not applicable".
+
+The instrument was wrong once and the control is what caught it. A first attempt read a module
+variable that each new run overwrote, so the superseded run appeared un-aborted and the guide
+appeared contradicted. Keeping every run's own signal shows supersede aborts correctly. The green
+battle pins that, so the red one cannot be read as "signals never abort".
+
+Classification: Modyra bug — the claims it falsifies (VAL-002, VAL-003) are S0 in the registry, which
+is where the harness takes the label from; the observed impact is a submit button dead for the length
+of the run and a request that outlives the question.
+
+Either repair passes the battle: dropping the run from what `pending` counts, or aborting it when the
+field leaves play.
