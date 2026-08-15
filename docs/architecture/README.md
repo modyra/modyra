@@ -74,6 +74,7 @@ absent section reads as an oversight, and "no security impact" is a finding.
 - [ADR 0056: A project file does not decide what the generated module does](0056-a-project-file-does-not-decide-what-the-generated-module-does.md) — an operand outside the expression vocabulary was printed unquoted into generated source; refused at the compiler and reported where the project is read
 - [ADR 0057: An argument is refused where it arrives](0057-an-argument-is-refused-where-it-arrives.md) — seven public entry points took a value they could not use and left the form to fail later; the reactive setters, the whole-value write and the initial are checked at the call
 - [ADR 0058: A rename moves a key, not a row](0058-a-rename-moves-a-key-not-a-row.md) — a renamed row was appended, and the value and the handle kept two different orders for one list
+- [ADR 0059: A step of history is a state the form was in](0059-a-step-of-history-is-a-state-the-form-was-in.md) — a bulk write cost one undo per row and a restored row came back last, so the path back passed through states the form was never in
 
 ## Security-relevant records
 

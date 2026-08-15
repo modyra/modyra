@@ -47,6 +47,12 @@ export interface MdyCollectionHost<TBooleanSignal = MdySignal<boolean>>
    */
   endField(name: string): void;
   /**
+   * Runs a write that changes several rows as one change — see
+   * {@link import("../form-engine.js").MdyFormEngine.mutate}. What a consumer called once is one
+   * step to undo, and the states in between are not states the form was ever in.
+   */
+  mutate(fn: () => void): void;
+  /**
    * Places the fields under a collection's path in its rows' order — see
    * {@link import("../form-engine.js").MdyFormEngine.orderRowsUnder}. A keyed collection calls it
    * when a row changes identity, so the value and the handle answer the same order for the same

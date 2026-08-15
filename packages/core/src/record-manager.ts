@@ -158,6 +158,8 @@ export class MdyRecordManager implements MdyNestedCollection {
       // A whole-value write says which rows there are, so one it does not mention is one the user
       // removed before it was written — restoring it would undo their deletion.
       onReplace: (paths) => {
+        // Insertion order, because a whole value says which rows there are *and* what order they are
+        // in. The paths arrive in the order the value holds them.
         const present = new Set<string>();
         for (const path of paths) {
           const key = this._keyOf(path);
@@ -165,6 +167,14 @@ export class MdyRecordManager implements MdyNestedCollection {
         }
         for (const key of [...this._declared]) {
           if (!present.has(key)) this.remove(key);
+        }
+        // A row this write brought back was declared again, and a row declared again arrives last.
+        // A snapshot is a state the form was in, order included: undoing a removal has to put the
+        // row back where it was, not at the end of a list the user never saw in that order.
+        const order = [...present].filter((key) => this._declared.has(key));
+        if (order.length === this._declared.size) {
+          this._keysSig.set(order);
+          this._deps.engine.orderRowsUnder(this._deps.path, order);
         }
       },
     });
@@ -339,12 +349,17 @@ export class MdyRecordManager implements MdyNestedCollection {
       return;
     }
     const wanted = values;
-    for (const key of [...this._declared]) {
-      if (!(key in wanted)) this.remove(key);
-    }
-    for (const [key, value] of Object.entries(wanted)) {
-      this.upsert(key, value);
-    }
+    // One call, one change. Row by row, undoing a three-row write took three presses and showed a
+    // table with some rows written and some not at each of them — states the collection was never
+    // in. `patch` on the same handle already answered as one.
+    this._deps.engine.mutate(() => {
+      for (const key of [...this._declared]) {
+        if (!(key in wanted)) this.remove(key);
+      }
+      for (const [key, value] of Object.entries(wanted)) {
+        this.upsert(key, value);
+      }
+    });
   }
 
   /**

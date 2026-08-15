@@ -834,27 +834,36 @@ export abstract class MdyTypedFormBase<
       // path that is absent and for one that is present and null alike.
       flat[path] = namesPath(value, path) ? this._pathGet(value, path) : undefined;
     }
-    // Plain fields first — replace semantics null out stale array rows too,
-    // which the array setAll below then rebuilds with the new values.
-    this._adapter.setValue(flat);
-    for (const [path, manager] of this._arrays) {
-      const arr = this._pathGet(value, path);
-      manager.setAll(Array.isArray(arr) ? arr : []);
-    }
-    for (const [path, manager] of this._records) {
-      const rows = this._pathGet(value, path);
-      manager.setAll(isRecordValue(rows) ? rows : {});
-    }
+    // The widest write there is, and one change: every step between the fields and the last
+    // collection holds part of one value and part of another.
+    this.mutate(() => {
+      // Plain fields first — replace semantics null out stale array rows too,
+      // which the array setAll below then rebuilds with the new values.
+      this._adapter.setValue(flat);
+      for (const [path, manager] of this._arrays) {
+        const arr = this._pathGet(value, path);
+        manager.setAll(Array.isArray(arr) ? arr : []);
+      }
+      for (const [path, manager] of this._records) {
+        const rows = this._pathGet(value, path);
+        manager.setAll(isRecordValue(rows) ? rows : {});
+      }
+    });
   }
 
   reset(): void {
-    this._adapter.reset();
-    for (const manager of this._arrays.values()) {
-      manager.resetToInitial();
-    }
-    for (const manager of this._records.values()) {
-      manager.resetToInitial();
-    }
+    // One call, one change: the fields and every collection go back together. Undoing a reset used
+    // to bring the rows back one press at a time, in the order they were declared reversed, and the
+    // state the person was in was on none of those steps.
+    this.mutate(() => {
+      this._adapter.reset();
+      for (const manager of this._arrays.values()) {
+        manager.resetToInitial();
+      }
+      for (const manager of this._records.values()) {
+        manager.resetToInitial();
+      }
+    });
   }
 
   // ── History and change tracking ─────────────────────────────────────────────
