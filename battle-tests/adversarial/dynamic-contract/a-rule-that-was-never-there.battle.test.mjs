@@ -21,6 +21,11 @@
  *
  * The allowed set is read from the published schema rather than copied into this file, so a key added
  * to the contract later stops being a finding here without anyone editing this battle.
+ *
+ * The second battle is the same disappearance by a different route. `rules` and `validations` arrive
+ * with contract v2 — the guide says so in a heading. A document that declares one and says
+ * `version: 1` keeps neither, and is told nothing. `version: 1` is the envelope
+ * `docs/guides/ai-generated-forms.md` publishes in the prompt it tells readers to give a model.
  */
 
 import { readFileSync } from "node:fs";
@@ -114,6 +119,61 @@ battle(
     expectEqual(silent, [], {
       claimIds: ["DYN-001", "DYN-003"],
       what: "a document declared a rule the published schema forbids, the parser accepted it without a word, and the rule is not in the form",
+    });
+  },
+);
+
+/** A rule and a validation, each well formed, each arriving with contract v2. */
+const RULE = Object.freeze({
+  effect: "hidden",
+  target: "g",
+  when: { field: "f", operator: "equals", value: "x" },
+});
+const VALIDATION = Object.freeze({
+  when: { op: "equals", operands: [{ path: "f" }, "x"] },
+  message: "m",
+});
+const TWO_FIELDS = Object.freeze([
+  { name: "f", kind: "text", label: "L" },
+  { name: "g", kind: "text", label: "G" },
+]);
+
+battle(
+  {
+    claims: ["DYN-001", "DYN-003"],
+    title: "a construct a version predates is one the parser says something about",
+    environments: ["node"],
+  },
+  async (ctx) => {
+    const lost = [];
+    for (const [what, key, value] of [["a rule", "rules", RULE], ["a validation", "validations", VALIDATION]]) {
+      const kept = [];
+      for (const version of [1, 2, 3]) {
+        const parsed = parseDynamicForm({ version, fields: TWO_FIELDS, [key]: [value] });
+        const said = (parsed.diagnostics ?? []).map((each) => `${each.code ?? ""} ${each.message ?? ""}`.trim());
+        kept.push({ version, ok: parsed.ok, kept: (parsed[key] ?? []).length, said });
+      }
+      ctx.log.note(`${what}, at each envelope version`, { kept });
+
+      // The control: the versions that have this construct keep it, so a version that drops it is
+      // the version rather than a parser that never reads them.
+      for (const row of kept.filter((each) => each.version >= 2)) {
+        expectEqual(row.kept, 1, {
+          claimIds: ["DYN-001"],
+          what: `${what} was not kept at version ${row.version}, so this battle cannot tell a version gap from a parser that reads nothing`,
+          detail: JSON.stringify(row),
+        });
+      }
+
+      const first = kept.find((each) => each.version === 1);
+      if (first.kept === 0 && first.ok && first.said.length === 0) {
+        lost.push({ what, ...first });
+      }
+    }
+
+    expectEqual(lost, [], {
+      claimIds: ["DYN-001", "DYN-003"],
+      what: "a document declared a construct its envelope version predates, the parser accepted the document, dropped the construct, and said nothing",
     });
   },
 );

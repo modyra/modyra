@@ -344,6 +344,24 @@ declared in the same document. An author reads that and goes looking for a typo 
 version the parser does not know. It is not reached when the version is known and the construct is one
 that version predates, which is the case where the author most needs to be told what is wrong.
 
+**And one version lower it does not even refuse.** `rules` and `validations` arrive with contract v2 —
+the guide gives them their own heading. A document that declares one and says `version: 1` is
+accepted, keeps neither, and is told nothing
+(`adversarial/dynamic-contract/a-rule-that-was-never-there.battle.test.mjs`, second battle):
+
+```
+version 1 + a rule        ok: true   rules kept: 0        diagnostics: []
+version 2 + a rule        ok: true   rules kept: 1        diagnostics: []
+version 3 + a rule        ok: true   rules kept: 1        diagnostics: []
+version 1 + a validation  ok: true   validations kept: 0  diagnostics: []
+version 2 + a validation  ok: true   validations kept: 1  diagnostics: []
+```
+
+So the same gap produces a misleading refusal at v2→v3 and silence at v1→v2. `version: 1` is the
+envelope `docs/guides/ai-generated-forms.md` publishes in the prompt it tells readers to hand a model,
+which is finding 25's point arriving from the other side: the recommended version is the one that
+quietly discards two of the contract's features.
+
 The battle asserts the refusal as well as the cause, so accepting the document is not a way to turn it
 green.
 
@@ -4756,7 +4774,7 @@ Classification: Modyra bug, S1 by VAL-004's severity.
 
 ## 100. A rule a document declares, and a form that never had it
 
-`adversarial/dynamic-contract/a-rule-that-was-never-there.battle.test.mjs` — 1 red.
+`adversarial/dynamic-contract/a-rule-that-was-never-there.battle.test.mjs` — 2 red.
 
 `spec/dynamic-form-v3.schema.json` closes the validator set:
 
@@ -4800,6 +4818,8 @@ The allowed set is read from the published schema rather than copied into the ba
 to the contract later stops being a finding without anyone editing the file. Its controls check that
 the schema really is closed, and that a key the schema *does* allow is both parsed into a rule and
 enforced by it — so silence is about the unknown key rather than about a parser building nothing.
+
+Measured at envelope versions 1, 2 and 3: the same at all three, so this is not a version's gap.
 
 Classification: Modyra bug, S2 by DYN-001/DYN-003. Either resolution closes it: refuse the document,
 or accept it with a diagnostic naming the key that was dropped.
