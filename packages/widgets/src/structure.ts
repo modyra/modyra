@@ -172,13 +172,19 @@ export const MDY_FORM_SHELL_CLASSES = Object.freeze({
  * A summary a person has to scroll past their whole form to find is a summary they do not read, and
  * a refusal about the submission as a whole belongs where the submission was answered.
  */
-export const MDY_FORM_SHELL_STRUCTURE = Object.freeze({
+/*
+ * Annotated rather than inferred. The two nodes have different shapes — one names a parent, the
+ * other does not — so an inferred type is a union of two object literals with optional members, and
+ * the two TypeScript implementations write that union's members in different orders. The published
+ * type is what this file already means: a structure of this part vocabulary.
+ */
+export const MDY_FORM_SHELL_STRUCTURE: MdyWidgetStructure<MdyFormShellPart> = Object.freeze({
   kind: "form-shell",
-  nodes: Object.freeze([
+  nodes: Object.freeze<readonly MdyWidgetStructureNode<MdyFormShellPart>[]>([
     { part: "formErrors", element: "status", order: 0, optional: true },
     { part: "formErrorItem", element: "text", parent: "formErrors", order: 0, optional: true, repeated: true },
   ]),
-} satisfies MdyWidgetStructure<MdyFormShellPart>);
+});
 
 // `MdyPartMap` lives with `MdyPartContract`, in `contract.ts`. It was the only thing this module took
 // from there, and taking it closed a cycle between the package's two hubs — neither of which could
