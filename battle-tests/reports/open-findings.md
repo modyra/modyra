@@ -3803,3 +3803,47 @@ readonly alone          interactivity "readonly"   disabled false   readonly tru
 Two flags would answer "both"; one value has to choose, and it chooses the stricter. That is what
 makes `disabled && readonly` unrepresentable rather than merely unlikely — including when a consumer
 asks for it.
+
+## Checked and clean: what the six shipped adapters actually publish
+
+The multi-framework guide's package policy says each of `@modyra/vue`, `react`, `solid`, `preact`,
+`svelte` and `lit` ships *a reactivity adapter + typed form factory (+ hooks/controller/composable)*.
+Measured, and it holds — with three different shapes that match what each section describes:
+
+```
+vue solid svelte    a named reactivity + createVueForm / createSolidForm / createSvelteForm
+react preact        a named reactivity + core's createForm, which is what "the engine runs on
+                    vanillaReactivity()" means for them
+lit                 a named reactivity + MdyFormController, the "controller" in that sentence
+```
+
+Every one exports a reactivity whose `kind` matches its name, and Solid's fallback announces itself in
+as many words when the server build is what resolved — the thing that once made it look conformant
+for the wrong reason now says so out loud.
+
+**One non-obvious fact worth writing down**: `createForm` exported from all six is **literally core's
+function** — `m.createForm === coreCreateForm` for every package. So importing it from `@modyra/vue`
+builds a form on the framework-agnostic graph, not on Vue's.
+
+That reads like a hazard and is not one, because the project answers it a layer up: a handle belongs
+to the runtime its form was built with, `observerFor` reads that owner from the registry, and
+observing from a foreign runtime is reported rather than silently stale —
+`adversarial/reactivity/cross-runtime-observation.battle.test.mjs` holds it. The framework hooks go
+through that path; the bare re-export is the lower-level door.
+
+**An attempt to measure it directly failed and is recorded as a failure**: driving Vue's `computed`
+and then its `effect` from a bare Node script reported *all three* forms as unobserved — including
+`createVueForm`, which is the control. Three identical answers including the control is an instrument
+that is wrong, not a product that is broken, and the right tool for that question is the differential
+tier, which drives all six runtimes properly.
+
+## An operational note on every number in this register
+
+Twice during this campaign a single suite measurement disagreed with the four around it — once
+`374/333/41` against a stable `374/335/39`, once `417/382/35` against `417/383/34`. Both times three
+consecutive re-runs afterwards produced **identical failure sets, title by title**, so the suite is
+stable and the reading came from outside it: this repository is a working tree two sessions write to,
+and a `dist` rebuilt mid-run is enough.
+
+Any number here that moved a conclusion was re-measured before being written. A single reading is not
+evidence when somebody else may be building.
