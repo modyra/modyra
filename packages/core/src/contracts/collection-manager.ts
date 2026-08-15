@@ -58,6 +58,15 @@ export interface MdyNestedCollection {
   getValues(): unknown;
   /** Replaces the rows wholesale; a value of the wrong shape says nothing and changes nothing. */
   setAllFrom(value: unknown): void;
+  /**
+   * The path of every collection declared below this one, its own excluded.
+   *
+   * A collection registers a field at its own path so that errors attributed to the collection have
+   * somewhere to surface. That field is not a leaf, so a caller tearing this subtree down by its
+   * leaves alone leaves it behind — and a field under a row keeps the row alive for the
+   * reconciliation, which reads it back as a row holding nothing.
+   */
+  collectionPathsNow(): string[];
   /** The manager for a collection declared below this one, wherever it sits. */
   nested(path: string): MdyNestedCollection | undefined;
   destroy(): void;
