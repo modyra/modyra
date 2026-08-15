@@ -288,6 +288,9 @@ export abstract class MdyFieldElement<T> extends LitElement {
         // The field's rules, narrowed by whatever this element asks for. One place composes them,
         // and the part carries the result — so no element names an attribute.
         constraints: narrowConstraints(handle.constraints(), this.narrowedConstraints()),
+        // A slider's track has to span what the field holds — the one attribute that depends on the
+        // value rather than on the rules.
+        value: typeof handle.value() === "number" ? (handle.value() as number) : null,
         errorsVisible: this.showErrors(handle),
         descriptionVisible: true,
       },

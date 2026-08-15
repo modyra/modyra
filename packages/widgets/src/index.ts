@@ -99,7 +99,7 @@ export type {
 } from "./command-runtime.js";
 
 export * from "./select/index.js";
-export { narrowConstraints, nativeConstraintAttributes } from "./native-constraints.js";
+export { narrowConstraints, nativeConstraintAttributes, sliderTrack } from "./native-constraints.js";
 export type { MdyNativeAttributes } from "./native-constraints.js";
 export * from "./field/index.js";
 

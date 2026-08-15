@@ -9,6 +9,7 @@
 import { createForm, field as mdyField, group as mdyGroup, required as mdyRequired } from "@modyra/core";
 import { renderField } from "@modyra/plain";
 import { KINDS } from "./kinds.js";
+import { sliderTrack } from "@modyra/widgets";
 import { grid, paintedAsFailing, readoutPrinter, toggle, toolbar } from "./shell.js";
 
 export const statesPanel = {
@@ -34,6 +35,7 @@ export const statesPanel = {
     "observerFor",
     "shownErrors",
     "showsAsInvalid",
+    "sliderTrack",
     "errorsVisible",
     "shownErrorsOf",
     // The calendar's three views: a date picker that only pages a month at a time puts a birth date
@@ -98,6 +100,12 @@ export const statesPanel = {
       // they are not being shown to someone who cannot act on them.
       errorsHeld: KINDS.reduce((n, [kind]) => n + form.f.all[kind].errors().length, 0),
       partsPaintedAsFailing: paintedAsFailing(area),
+      // The track a slider is drawn on, printed beside what the form holds. A slider spans something
+      // whether or not a document declares a range, and the default is not a licence to
+      // misrepresent: a value past it widens the track rather than moving the thumb somewhere the
+      // form is not. The two numbers here have to agree.
+      sliderHolds: form.f.all.slider.value(),
+      sliderTrack: sliderTrack(form.f.all.slider.constraints(), form.f.all.slider.value()),
     }));
 
     const effect = form.reactivity.effect(() => {

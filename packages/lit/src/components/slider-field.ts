@@ -1,7 +1,7 @@
 import { mdyPart } from "../mdy-part.js";
 import { html, type PropertyDeclarations } from "lit";
 import { type MdyFieldConstraints, type MdyFieldHandle } from "@modyra/core";
-import { MDY_CSS_PROPERTIES, sliderFillRatio } from "@modyra/widgets";
+import { MDY_CSS_PROPERTIES, sliderFillRatio, sliderTrack } from "@modyra/widgets";
 import { MdyFieldElement } from "../base.js";
 
 // ─── Slider ──────────────────────────────────────────────────────────────────
@@ -21,8 +21,18 @@ export class MdySliderFieldElement extends MdyFieldElement<number> {
   declare step: number;
   protected override readonly widgetKind = "slider" as const;
 
+  /**
+   * The track, offered as this control's own narrowing.
+   *
+   * One source for the drawn fill and for the attributes the base projects: a track that spanned the
+   * value while `max` still said 100 would draw the thumb in one place and refuse it in another.
+   */
   protected override narrowedConstraints(): Partial<MdyFieldConstraints> {
-    return { min: this.min ?? null, max: this.max ?? null, step: this.step ?? null };
+    const held = this.field?.value();
+    return sliderTrack(
+      { min: this.min ?? null, max: this.max ?? null, step: this.step ?? null },
+      typeof held === "number" ? held : null,
+    );
   }
 
   constructor() {
@@ -30,10 +40,24 @@ export class MdySliderFieldElement extends MdyFieldElement<number> {
     this.step = 1;
   }
 
+  /**
+   * The value is assigned *after* the part applies `min`/`max`.
+   *
+   * A range input clamps its value to the bounds it carries at the moment of assignment, so a value
+   * of 150 written while the track still said 100 stayed 100 even once the track widened. Template
+   * order is the fix, and it is load-bearing rather than cosmetic.
+   */
   protected override renderControl(handle: MdyFieldHandle<number>): unknown {
     const constraints = handle.constraints();
-    const min = this.min ?? constraints.min ?? 0;
-    const max = this.max ?? constraints.max ?? 100;
+    // The track the contract draws: it spans what the field holds where nothing declared a bound,
+    // and drops a step that would move the thumb off the value. Both renderers used to default to
+    // 0–100 here, separately, and put the thumb at 100 for a value of 150.
+    const track = sliderTrack(
+      { min: this.min ?? constraints.min, max: this.max ?? constraints.max, step: constraints.step },
+      typeof handle.value() === "number" ? handle.value() : null,
+    );
+    const min = track.min;
+    const max = track.max;
     const value = handle.value() ?? min;
     const fill = sliderFillRatio(value, min, max);
     return html`<div class="${this.partClass("track")}">
@@ -42,9 +66,9 @@ export class MdySliderFieldElement extends MdyFieldElement<number> {
         type="range"
         class="${this.partClass("control")}"
         style="${MDY_CSS_PROPERTIES.control.sliderFill}: ${fill}"
-        .value=${String(value)}
         ?disabled=${handle.disabled()}
         ${mdyPart(this.controlPart(handle))}
+        .value=${String(value)}
         @input=${(e: Event) => {
           handle.set((e.target as HTMLInputElement).valueAsNumber);
           handle.markAsDirty();

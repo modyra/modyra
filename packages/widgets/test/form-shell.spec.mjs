@@ -15,6 +15,7 @@ import {
   MDY_FORM_SHELL_CLASSES,
   MDY_FORM_SHELL_STRUCTURE,
   formErrorsOf,
+  sliderTrack,
 } from "../dist/index.js";
 
 test("the form's region is a status, and its items live inside it", () => {
@@ -59,4 +60,34 @@ test("the form shows what no field will show, and nothing else", () => {
   );
   assert.deepEqual(formErrorsOf([]), []);
   assert.deepEqual(formErrorsOf(errors.filter((error) => error.path !== null)), []);
+});
+
+/**
+ * The track a slider is drawn on.
+ *
+ * A slider spans something whether or not a document declares a range, and a default is not a licence
+ * to misrepresent: a form holding 150 with no bound declared drew a track ending at 100 and put the
+ * thumb there, so the page showed a number the form did not hold. Both renderers had invented the
+ * same `?? 100` separately.
+ */
+test("a track spans what the field holds where nothing declared a bound", () => {
+  assert.deepEqual(sliderTrack({ min: null, max: null, step: null }, 150), { min: 0, max: 150, step: null });
+  assert.deepEqual(sliderTrack({ min: null, max: null, step: null }, -20), { min: -20, max: 100, step: null });
+  // Nothing held: the bare range an `<input type="range">` assumes.
+  assert.deepEqual(sliderTrack({ min: null, max: null, step: null }, null), { min: 0, max: 100, step: null });
+});
+
+test("a declared bound is kept, because a rule explains the difference", () => {
+  // The attribute is the native guard and must not promise less than the rules it came from, and a
+  // value past a declared bound is refused with a message — so the page explains rather than hides.
+  assert.deepEqual(sliderTrack({ min: null, max: 50, step: null }, 150), { min: 0, max: 50, step: null });
+  assert.deepEqual(sliderTrack({ min: 10, max: null, step: null }, 2), { min: 10, max: 100, step: null });
+});
+
+test("a step that would move the thumb off the value is dropped", () => {
+  assert.deepEqual(sliderTrack({ min: null, max: null, step: 5 }, 7).step, null);
+  assert.equal(sliderTrack({ min: null, max: null, step: 5 }, 10).step, 5);
+  // No value to misrepresent, and a step nobody declared.
+  assert.equal(sliderTrack({ min: null, max: null, step: 5 }, null).step, 5);
+  assert.equal(sliderTrack({ min: null, max: null, step: null }, 7).step, null);
 });
