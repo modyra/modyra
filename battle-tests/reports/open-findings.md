@@ -3217,3 +3217,43 @@ refusal is new, and its instruction has never worked.
 
 The battle reads the property name **out of the message** rather than hard-coding `schema`, so a
 repair that renames it is followed rather than broken.
+
+## 81. "Pass {} to empty the form", and {} does not empty it
+
+`adversarial/validation/a-whole-value-that-names-nothing.battle.test.mjs` — the battle that held
+finding 61 is red again, on a new assertion. **S2.** Sibling of 80: a repair's message held to what
+the call does.
+
+The refusal `setValue` now gives for a whole value that names nothing:
+
+```
+[modyra] setValue names none of this form's fields: "nope". Pass {} to empty the form deliberately.
+```
+
+And what `{}` does, on a form somebody filled in:
+
+```
+the user filled it in     {"plan":"enterprise","note":"typed"}
+after setValue({})        {"plan":"pro","note":""}          ← the initials, not empty
+```
+
+`plan` goes back to `"pro"`. ADR 0057 says so in its own consequence paragraph — *`setValue({})` no
+longer empties a field to `null` but returns it to its initial* — so the message and the record
+contradict each other about the same call, and the message is the one a caller reads at the moment
+they are deciding what to do.
+
+A consumer following it to clear a form gets a form full of default values and believes it is empty.
+Where an initial is `""` the two coincide, which is why it reads as correct in most tests.
+
+**Either repair closes it and they are not the same size:** change the sentence to name what `{}`
+does, or make `{}` mean what the sentence says — the second is a contract change and ADR 0057 decided
+against it deliberately, so the first is almost certainly right.
+
+The assertion reads the advice **out of the message** (`Pass (\S+) to (\w+)`) and only fires when the
+verb is "empty", so rewording the sentence satisfies it rather than breaking it.
+
+**Found by sweeping every named refusal for whether its instruction can be followed**, which is what
+80 suggested doing. Ten refusals, all added or hardened tonight; eight instruct correctly —
+`setValue` on a non-object, the security policy naming its three keys, the sanitiser naming its closed
+set, the initial-value type, `buildFlatFormSchema`, `createForm`, the reactive-argument message, and
+the two path refusals which explain rather than instruct. Two do not: this and 80.

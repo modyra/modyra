@@ -110,6 +110,31 @@ battle(
     });
     typo.destroy();
 
+    // The refusal's own words, held to what the call does. A message that tells the caller to write
+    // something is a promise about what that something does — and the record's consequence paragraph
+    // says the opposite in as many words: `setValue({})` no longer empties a field to null but
+    // returns it to its initial.
+    const advised = createForm({ plan: field("pro"), note: field("") }, { devWarnings: true });
+    advised.f.plan.set("enterprise");
+    advised.f.note.set("typed");
+    const refusal = whileWriting(() => advised.setValue({ nope: "x" })).join(" ");
+    const suggested = /Pass (\S+) to (\w+)/.exec(refusal);
+    ctx.log.note("what the refusal tells the caller to write", { refusal, suggested: suggested?.[0] ?? null });
+
+    if (suggested !== null && suggested[2] === "empty") {
+      advised.setValue({});
+      const after = advised.getValue();
+      const isEmpty = Object.values(after).every((each) => each === "" || each === null || each === undefined);
+      ctx.log.note("what that advice does", { after, isEmpty });
+
+      expectClaim(isEmpty, {
+        claimIds: ["SUB-001"],
+        what: "the refusal says to pass {} to empty the form, and {} returns every field to its initial instead",
+        detail: `a form the user filled in became ${JSON.stringify(after)}`,
+      });
+    }
+    advised.destroy();
+
     // And the partial case, which is the one a renamed server field produces: the keys that match
     // land, the key that does not is dropped, and the caller cannot tell the difference between a
     // field they meant to omit and one they misspelled.
