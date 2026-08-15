@@ -5841,3 +5841,32 @@ what makes finding 111 a specific rule to move rather than a symptom of how the 
 The last row is parser-only and is not filed. A select with no options is an empty list, not a broken
 id: it degrades where the widget-id rule breaks, and `buildFlatFormSchema` takes a list a consumer
 already holds rather than a document it is reading.
+
+## Checked and clean: what a page actually sends
+
+`browser/what-a-page-actually-sends.spec.ts` — 2 green.
+
+SUB-001 is *"submission contains no undeclared path introduced by rendering"* and VAL-002 is
+*"disabled values are retained in edit state and excluded from submission"*. Both are asserted at
+engine level, and neither had ever been read from a page — the browser host answered submissions
+without recording what it was handed, so every spec here could see what a renderer did with the
+*answer* and none could see what it sent.
+
+The host now keeps each value its submit action receives, cloned at the moment it receives it, and
+exposes it as `submittedBy(id)`. It also gained `disable(id, path)`, which is the one operation a
+binding performs that a spec had no way to reach.
+
+Read from a page, through the plain renderer:
+
+```
+all seventeen kinds mounted, one submit
+  keys sent   exactly the seventeen names the document declared
+  extra       none — no widget id, no "__" bookkeeping, no key for a control that is merely present
+
+two fields, one taken out of play after typing into both
+  the form holds     {"kept":"first","gone":"second"}
+  the page sends     {"kept":"first"}
+```
+
+Both claims hold where they are actually spent. The first test mounts every kind at once precisely so
+that a key any renderer adds for any of them has somewhere to show up.

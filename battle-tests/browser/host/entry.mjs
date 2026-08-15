@@ -67,15 +67,19 @@ window.battle = {
     try {
       // `throw` is a shape too: an action whose network call failed. The engine turns it into a
       // form-level error, and a spec can then ask whether the page shows one.
+      const submitted = [];
       const handle = mountMdyForm(host, fields, {
-        onSubmit: () => {
+        onSubmit: (value) => {
+          // Kept so a spec can read what the renderer actually sent, not only what it did with the
+          // answer. `structuredClone` because the form goes on owning the value it handed over.
+          submitted.push(structuredClone(value));
           if (errors !== null && typeof errors === "object" && errors.__throw !== undefined) {
             throw new Error(String(errors.__throw));
           }
           return errors;
         },
       });
-      mounted.set(id, { handle, host });
+      mounted.set(id, { handle, host, submitted });
       return { mounted: true };
     } catch (error) {
       return { mounted: false, message: String(error?.message ?? error) };
@@ -88,6 +92,16 @@ window.battle = {
 
   declareRow(id, key, value) {
     mounted.get(id).handle.form.f.rows.upsert(key, value);
+  },
+
+  /** Take a field out of play, the way a binding does, so a spec can see what submission does with it. */
+  disable(id, path) {
+    mounted.get(id).handle.form.setDisabled(path, () => true);
+  },
+
+  /** Every value this form has handed to its submit action, in order. */
+  submittedBy(id) {
+    return mounted.get(id)?.submitted ?? [];
   },
 
   /** What the form says about its last submission — the errors a renderer could show. */
