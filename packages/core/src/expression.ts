@@ -16,6 +16,7 @@
  * rather than about a field, and every answer it gets is one the form's data did not give.
  */
 import { isSafeFieldPath } from "./path-utils.js";
+import { dynamicPatternRefusal } from "./dynamic/pattern-cost.js";
 
 /**
  * True for a path an expression may read: a field path, or `""` for the root value itself.
@@ -143,6 +144,14 @@ function isEmptyValue(value: unknown): boolean {
  */
 export const MDY_MAX_EXPRESSION_DEPTH = 32;
 
+/**
+ * How long a pattern inside a condition may be.
+ *
+ * The same cap a document's `validators.pattern` carries. A condition is read every time the form is
+ * read, so length matters here for the same reason cost does.
+ */
+export const MDY_MAX_EXPRESSION_PATTERN_LENGTH = 256;
+
 function resolveOperand(operand: MdyOperand | undefined, value: unknown, depth: number): unknown {
   if (operand === undefined || operand === null) return null;
   if (isExpression(operand)) return evaluateAt(operand, value, depth + 1);
@@ -153,11 +162,13 @@ function resolveOperand(operand: MdyOperand | undefined, value: unknown, depth: 
 /**
  * Evaluates `expr` against `value`, the whole form value.
  *
- * An unknown operator evaluates to `true`. That is the safe direction for the two things expressions
- * drive: a visibility rule keeps the field visible, and a validation whose condition cannot be read
- * does not fire — an unreadable rule never hides a field or invents an error. Malformed expressions
- * are reported by {@link validateExpression} when the config is parsed, so this is the last resort
- * rather than the only defence.
+ * An operator nobody declared evaluates to `false`, and so does a pattern too costly to run. A
+ * question with no answer is not answered with the one that opens: a section governed by a
+ * misspelled operator was shown to everyone, and the values inside it went into the payload.
+ *
+ * Malformed expressions are reported by {@link validateExpression} when a document is parsed, so
+ * this is the last resort rather than the only defence — but the two halves have to agree, and the
+ * half that *decides* is this one.
  */
 export function evaluateExpression(expr: MdyExpression, value: unknown): boolean {
   return evaluateAt(expr, value, 0);
@@ -198,6 +209,13 @@ function evaluateAt(expr: MdyExpression, value: unknown, depth: number): boolean
       // The pattern must be a literal. Allowing a field's value here would let a form's *data*
       // choose the regular expression, which is how a catastrophically backtracking pattern gets in.
       const source = typeof b === "string" ? b : "";
+      // And the same cost gate a document's `validators.pattern` passes (ADR 0050). A condition is
+      // the other door a pattern arrives through, and it is read every time the form is read — so a
+      // shape that backtracks exponentially does not make a slow form, it makes one that stops
+      // answering between two keystrokes. A pattern that cannot be afforded decides nothing.
+      if (source.length > MDY_MAX_EXPRESSION_PATTERN_LENGTH || dynamicPatternRefusal(source) !== null) {
+        return false;
+      }
       return new RegExp(source).test(String(av() ?? ""));
     }
     case "and":
@@ -207,7 +225,11 @@ function evaluateAt(expr: MdyExpression, value: unknown, depth: number): boolean
     case "not":
       return !av();
     default:
-      return true;
+      // An operator nobody declared is a question with no answer, and the answer to a question with
+      // no answer is not the one that opens: a section governed by a misspelled operator was shown
+      // to everyone and its values went into the payload. `validateExpression` refuses the same
+      // spelling by name — this is the half that decides while the other half reports.
+      return false;
   }
 }
 
@@ -262,12 +284,21 @@ function validateAt(expr: unknown, where: string, depth: number): readonly strin
     const [, pattern] = operands;
     if (typeof pattern !== "string") {
       problems.push(`${where}: "matches" needs a literal string pattern`);
+    } else if (pattern.length > MDY_MAX_EXPRESSION_PATTERN_LENGTH) {
+      problems.push(
+        `${where}: "matches" pattern is longer than ${MDY_MAX_EXPRESSION_PATTERN_LENGTH} characters`,
+      );
     } else {
       try {
         new RegExp(pattern);
       } catch {
         problems.push(`${where}: "matches" pattern is not a valid regular expression`);
       }
+      // The cost gate a document's `validators.pattern` passes (ADR 0050), on the other door a
+      // pattern arrives through. A condition is read every time the form is read, so a shape that
+      // backtracks exponentially stops the form answering rather than merely slowing it.
+      const refusal = dynamicPatternRefusal(pattern);
+      if (refusal !== null) problems.push(`${where}: "matches" pattern ${refusal}`);
     }
   }
 
