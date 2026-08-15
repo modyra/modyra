@@ -2485,3 +2485,44 @@ the argument rather than the doors being shut.
 
 Either repair closes it, and the two halves may want different ones: refuse by name, or — for the
 values that currently build — say why nothing was built.
+
+## 74. Four ways to turn the sanitiser off by accident
+
+`adversarial/security/four-ways-to-turn-it-off-by-accident.battle.test.mjs` — 2 green, 1 red.
+Filed **S2** under API-001. **The consequence is heavier than the number and the classification is
+worth arguing** — see below.
+
+The sanitiser is an option, its profile is a closed set — `"off" | "text" | "strict"` or a function —
+and **off is the default**, deliberately: a form library that rewrote values uninvited would be worse
+than one that does not. That default is what makes every way of getting the option wrong
+indistinguishable from asking for nothing.
+
+Four spellings a consumer plausibly writes, all with `devWarnings: true`:
+
+```
+{ security: { sanitize: "strict" } }   correct — the value is sanitised          the control
+{ security: "strict" }                 markup kept, nothing said
+{ sanitize: "strict" }                 markup kept, nothing said
+{ security: { sanitise: "strict" } }   markup kept, nothing said       the en-GB spelling
+{ security: { sanitize: "stict" } }    markup kept, nothing said       a typo in the value
+no options at all                      markup kept, nothing said       correct: off is the default
+```
+
+**The last is the sharpest.** The key was read. Its value is outside a **closed vocabulary**. And the
+answer is the least protective member of that vocabulary rather than "there is no sanitiser by that
+name". An unknown key can be argued about; an unknown member of a closed set falling back to `off`
+cannot.
+
+**On the classification.** The battle first came out S0 by citing SEC-003 — *a sanitized value cannot
+form markup, wherever it entered the form* — and that is not what happened: the value was never
+sanitised, because the option never took. The engine did exactly what it was configured to do. The
+defect is that it did not say the configuration was wrong, which is API-001. Filed there rather than
+inflating a security claim the engine did not break. What a reader should weigh is that this is the
+one member of the API-001 family whose silence has a security consequence: a consumer who wrote any of
+the four believes their form sanitises.
+
+Both controls are green, and the second is a boundary on the repair: **no option means no sanitising,
+on purpose**, so a fix cannot be "sanitise by default" — that is a larger change than this asks for.
+
+Measured in the same pass and not filed separately: `{ draft: { key: "k" } }` with no `storage` also
+builds and says nothing, and nothing is ever saved. Same shape, smaller consequence.
