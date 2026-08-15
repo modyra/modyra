@@ -4252,3 +4252,26 @@ Classification: intentional limit or dead code, undeclared either way. S3.
 
 Either resolution closes it: stop exporting it from `widgets/index.ts` and drop the module, or give
 the package a `./widgets` entry point so the name it publishes there is reachable.
+
+## Checked and clean: what a server pass starts
+
+`adversarial/lifecycle/a-server-pass-that-starts-nothing.battle.test.mjs` — 1 green.
+
+`useMdyForm`'s comment makes a promise about a process rather than a component: the server-rendered
+pass "never runs `useEffect` at all, so nothing client-only ever starts". No battle tested it, and
+React SSR appeared nowhere in this suite.
+
+Measured in a process with no browser globals at all — no `window`, `document`, `localStorage`,
+`requestAnimationFrame`. Importing `@modyra/react` works, and every published door renders:
+`useMdyForm` with a draft and an async rule, `useMdyDynamicForm`, `useMdySelect`,
+`useMdyOptionField`. Storage was never touched and no async run started.
+
+The case worth naming is the last one. `useMdyForm` builds its options as `{ …options, autoActivate:
+false }`, so a consumer who explicitly asks for `autoActivate: true` is overridden and the server
+pass still starts nothing. Written the other way round — `{ autoActivate: false, …options }` — that
+consumer's request would reach the server, and the first symptom would be a draft read against
+storage that is not there. The battle asks for that case by name, so the ordering is now held rather
+than merely correct.
+
+Its premise is asserted first: a leaked browser global from a neighbouring battle would make the
+whole measurement vacuous, so the absence of all six is checked before anything is rendered.
