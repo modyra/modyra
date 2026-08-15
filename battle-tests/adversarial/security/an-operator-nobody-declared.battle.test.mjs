@@ -97,3 +97,79 @@ battle(
     });
   },
 );
+
+battle(
+  {
+    claims: ["DYN-003", "SEC-004"],
+    title: "a condition that cannot be read does not take the submit with it",
+    environments: ["node"],
+  },
+  async (ctx) => {
+    // The other half of the same disagreement. Where the operator is unknown the evaluator answers
+    // `true`; where the expression cannot be read at all it raises, and a `when` is read during a
+    // submit — so the raw error comes out of the button the person pressed.
+    const attempts = [
+      { what: "matches with a pattern that does not compile", rule: { op: "matches", operands: [{ path: "a" }, "[" ] } },
+      { what: "an expression that is null", rule: null },
+    ];
+
+    // The control first: a condition that reads cleanly submits cleanly.
+    const good = createForm(
+      {
+        a: field("x"),
+        extra: group({ v: field("secret") }, {
+          when: () => evaluateExpression({ op: "equals", operands: [{ path: "a" }, "x"] }, { a: "x" }),
+        }),
+      },
+      { devWarnings: false },
+    );
+    await settled();
+    let sent = null;
+    await good.submit((value) => {
+      sent = value;
+    });
+    good.destroy();
+    ctx.log.note("a condition that reads", { sent });
+
+    expectEqual(sent, { a: "x", extra: { v: "secret" } }, {
+      claimIds: ["DYN-003"],
+      what: "a well-formed condition did not let the form submit, so nothing below is about a broken one",
+    });
+
+    const raised = [];
+    for (const attempt of attempts) {
+      // The author-time half: each of these is refused where a document is read.
+      expectClaim(validateExpression(attempt.rule, "when").length > 0, {
+        claimIds: ["DYN-003"],
+        what: `validateExpression accepted ${attempt.what}, so there is nothing for the runtime to disagree with`,
+      });
+
+      const form = createForm(
+        {
+          a: field("x"),
+          extra: group({ v: field("secret") }, { when: () => evaluateExpression(attempt.rule, { a: "x" }) }),
+        },
+        { devWarnings: false },
+      );
+      await settled();
+
+      let outcome = "submitted";
+      try {
+        await form.submit(() => undefined);
+      } catch (error) {
+        outcome = `threw: ${String(error?.message ?? error)}`;
+      }
+      form.destroy();
+      ctx.log.note("a condition that cannot be read, at submit time", { ...attempt, outcome });
+      if (outcome.startsWith("threw")) raised.push({ what: attempt.what, outcome });
+    }
+
+    // Either repair closes it: refuse the expression where it is evaluated, or answer closed. What
+    // this refuses is a raw JavaScript error leaving the library through the button a person pressed.
+    expectEqual(raised, [], {
+      claimIds: ["SEC-004", "DYN-003"],
+      what: "a condition that could not be read raised out of submit()",
+      detail: JSON.stringify(raised),
+    });
+  },
+);

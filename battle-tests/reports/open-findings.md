@@ -2529,8 +2529,8 @@ builds and says nothing, and nothing is ever saved. Same shape, smaller conseque
 
 ## 75. An operator nobody declared, and the section it opens
 
-`adversarial/security/an-operator-nobody-declared.battle.test.mjs` — 5 green, 1 red. **S1** under
-DYN-003 and VAL-003.
+`adversarial/security/an-operator-nobody-declared.battle.test.mjs` — 2 battles, 1 red each.
+**S1** under DYN-003/VAL-003 for the first, **S0** under DYN-003/SEC-004 for the second.
 
 `MdyExpressionOp` is a closed set of twelve. Two published functions read it, and they do not agree
 about a thirteenth:
@@ -2563,6 +2563,34 @@ never works or always does.
 
 Either repair closes it: refuse the operator where it is evaluated too, or answer the way a condition
 nobody can read should answer — closed.
+
+**The second half is worse: a condition that cannot be read at all takes the submit with it.**
+
+```
+matches with a pattern that does not compile   submit() throws  Invalid regular expression: /[/
+an expression that is null                     submit() throws  Cannot read properties of null
+a well-formed condition                        submits          the control, green
+```
+
+The form builds, holds its value, and then the button the person pressed raises a raw JavaScript error
+out of the library. Both are refused by `validateExpression` where a document is read, and both escape
+where the value is evaluated — which for a `when` is during a submit.
+
+**The whole pattern, swept.** Every malformation `validateExpression` refuses, `evaluateExpression`
+either answers `true` or throws. Not one of them produces the careful answer:
+
+```
+equals with no operands / operands missing   refused    →  true
+and with no operands                         refused    →  true
+not with no operand                          refused    →  true
+a plain string as the expression             refused    →  true
+matches with an uncompilable pattern         refused    →  throws
+a null expression                            refused    →  throws
+```
+
+Correct and left alone, measured in the same pass: `equals` with one operand answers `false`,
+`greaterThan` between text and a number answers `false`, `or` with no operands answers `false`,
+`isEmpty` on a path nobody declared answers `true` because an absent path is empty.
 
 ## Checked, and one of them widens 74: two more closed vocabularies
 
