@@ -1413,6 +1413,11 @@ this one is a message that arrived intact with nowhere to be rendered.
 a submit does not change what the action received; a submit on an invalid form does not run the action
 and marks the field touched; and a throwing action leaves `submitting` false and the form usable.
 
+## 57. Not a finding — a number that was skipped
+
+No finding was ever written under this number: `git log -S"## 57."` on this file returns nothing, so
+it was never filed and never withdrawn. Recorded so the next reader stops looking.
+
 ## 58. Two renderers, two different accessibility defects, one contract checking neither
 
 `browser/every-kind-in-lit-under-an-auditor.spec.ts` — 1 red, 1 green, beside the Plain audit that has
