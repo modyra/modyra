@@ -2156,3 +2156,33 @@ one this campaign keeps refusing: neither enforced nor explained.
 
 The battle's controls stay green under any repair: a value inside the range is the number shown, and
 a `number` field with the same bound holds, shows and explains it.
+
+## The Angular tier, widened — still the tier no CI job runs (finding 36)
+
+`pnpm battle:angular` was three battles. It is now five, and the two new ones cost nothing: the
+packed-consumer runner is memoised, so one `npm pack` + `npm install` answers every question the tier
+asks instead of one install per battle.
+
+What the two new ones ask, inside a **consumer installed from tarballs** rather than the workspace:
+
+```
+upsertValidators on a declared path            applied                    the control
+upsertValidators on a name the schema lacks    refused, by name
+addValidators on a name the schema lacks       refused, by name
+setInitialValue on a name the schema lacks     refused, by name
+canSubmit afterwards                           true                       no ghost blocked the form
+
+setDisabled("sect") on the adapter's own group descriptor
+  the field inside reports disabled            true
+  what a submit would carry                    {"plain":"p"}              the section left it
+```
+
+Both are green. They are worth having anyway, and for a reason this campaign keeps meeting: the
+Angular guide names `upsertValidators` as **how a component registers what it enforces**, and the name
+it passes is a string somebody wrote. Findings 63–65 were about exactly that string reaching an
+engine that used to swallow it. The engine refuses it now; nothing until here checked that an
+*installed* Angular consumer meets the same refusal, and an adapter is the surface where a refusal can
+be lost without anybody noticing.
+
+The tier still runs in no CI job. Five green battles nobody runs are five green battles nobody runs —
+finding 36 stands, and it is worth more now than when it was filed.
