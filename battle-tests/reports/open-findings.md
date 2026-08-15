@@ -1562,3 +1562,41 @@ Two tiers, either of which closes it, and they are asserted separately:
 
 The battle also asserts, as its second control, that the five shapes ADR 0057 does refuse still throw
 and leave the form untouched — so the finding is the admitted shape rather than a check that is gone.
+
+## 62. Every prefix of a tax id, sent to a server that is told it is too short
+
+`adversarial/validation/a-value-the-form-already-refused.battle.test.mjs` — 1 red. **S2.**
+New claim **VAL-005**: *a server is asked only about a value the field's own rules accept.*
+
+A `minLength(11)` tax id, `debounceMs: 120`, typed by a person who pauses between the groups they are
+reading off a card:
+
+```
+IT12 typed with a pause per character    4 request(s)  ["", "I", "IT", "IT1"]
+```
+
+Every one is a value the field's own `minLength(11)` refuses. The form knows they are too short to be
+a tax id, and sends them anyway.
+
+Two things this is not, both asserted as controls in the battle so a repair cannot be aimed at them:
+
+- **the debounce works.** The same field typed at speed — nine characters, 40ms apart, `debounceMs:
+  400` — collapses to 2 requests. What the debounce bounds is the *rate*, not the validity; a pause
+  settles, and a settled prefix is sent.
+- **`when` stops all of them**, creation-time call included. The gate exists and is reachable.
+
+The comparison is what makes it a divergence rather than a preference.
+`docs/guides/comparison-reactive-forms.md` sets `serverValidator()` beside Angular's
+`AsyncValidatorFn` in a side-by-side table, and the table lists what this one adds — debounce,
+cancellation, last-wins, timeout, cross-field. The one thing `AbstractControl` does and this does not
+is absent from it: **Angular runs an async validator only once the synchronous ones pass.** `mdyCva`
+is a documented migration path, so a consumer arrives carrying that assumption and their service
+starts being called with `""`, `"I"`, `"IT"`.
+
+`when` is documented as the way to "skip the call for obviously invalid input" — which asks a
+consumer to restate in a second predicate what the field already declares. The two drift silently the
+moment either changes: a `minLength` raised from 3 to 5 leaves a `when` guarding the old bound.
+
+Either repair closes it: gate the run on the field's own sync verdict, or say in the async section
+that it is not gated and that `when` is how you gate it. The second is a documentation fix with a
+consequence on a bill, which is still a finding.
