@@ -8607,3 +8607,58 @@ angular). Checked before reporting:
   zero times.
 
 So the finding is about HEAD, not about work in progress.
+
+## 153. A choice shown that was never made
+
+**S2 · Modyra bug · `@modyra/lit`**
+Claims: UI-004 (registered already; this is the first battle to disprove it)
+Battle: `battle-tests/browser/a-choice-shown-that-was-never-made.spec.ts` — 1 failed, 5 passed
+
+UI-004 is the promise, and `optionsWithUnrecognizedValue` is where it is kept: *what it will not
+erase, it has to show*. The case is ordinary rather than exotic — an option's value is whatever the
+option list holds, so a list that changed between a draft and a reload, or a value an application
+fetched, is a value with no option behind it.
+
+A native `<select>` cannot hold one. Assigned a value matching no `<option>`, the element stays on
+index 0 and the page presents the **first offered choice** as the current one:
+
+```
+                model    what the control presents   marked   message after a submit attempt
+plain select    "zzz"    "zzz"                        yes     Value must be one of: Alpha, Beta
+lit   select    "zzz"    Alpha  (native value "a", selectedIndex 0)
+                                                       no →   Value must be one of: Alpha, Beta
+lit   radio     "zzz"    nothing chosen               yes     Value must be one of: Alpha, Beta
+lit   segmented "zzz"    nothing chosen               yes     Value must be one of: Alpha, Beta
+```
+
+Showing nothing and showing *something else* are not the same failure. Both the model's value and the
+control's are plausible answers, and nothing on screen says which is real.
+
+The message makes it worse rather than better. The exact failure:
+
+```
+the control presents "a" as the current choice while the form holds "zzz",
+and the message beside it reads "Value must be one of: Alpha, Beta"
+```
+
+An instruction the user has, from where they are standing, already followed. There is no edit that
+satisfies it, because the thing to fix is not visible.
+
+### Controls run
+
+- **The same select holding an offered value shows it**, in both renderers — so this is about the
+  unoffered value, not about a control that presents nothing.
+- **`radio` and `segmented` in lit choose nothing**, matching plain exactly. So it is this control's
+  answer rather than the renderer's, and lit is not structurally unable to represent the state.
+- **The model kept `"zzz"`** in every case. UI-006 holds; this is its other half — what the page says
+  about a value the model is holding correctly.
+- **Not finding 150.** The measurement is taken after a submit attempt, so the message is present in
+  both renderers. Lit's select is unmarked *before* the attempt too, but the mark arrives on submit
+  while the wrong choice stays shown, before and after.
+
+### Why S2 rather than S1
+
+The submitted payload is not affected — the model holds `"zzz"`, `canSubmit` is false, and nothing
+reaches the wire. What differs is what two renderers show for one state, which is S2's own wording.
+The aggravating factor, recorded rather than used to escalate: the divergence is not "less
+informative", it is an assertion of something untrue, next to a message that contradicts it.
