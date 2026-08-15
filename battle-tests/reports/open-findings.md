@@ -2808,6 +2808,23 @@ falling back key by key would leave one English word in the middle of a sentence
 Three strings are identical to English across locales and were checked rather than counted as
 untranslated: `"OK"` is `"OK"` in all five, and `"Minute"` is the German and French word.
 
+**`nativeConstraintAttributes`**, added to the same file. It decides what a rule may say to the
+browser, per kind, and its contract states the reason: *a `maxlength` on a number input is ignored by
+the platform, and offering it would be a promise the widget does not keep.* Seventeen kinds, one
+answer each, and nothing asserted any of them:
+
+```
+text / email / password   minlength maxlength pattern inputmode
+textarea                  minlength maxlength inputmode          — no pattern: <textarea> has none
+number / slider           min max step                           — not minlength/maxlength/pattern
+the other eleven kinds    nothing                                — their value is not what a native input holds
+a kind nobody declared    nothing                                — no attribute invented for an unknown control
+```
+
+The `textarea` row is the contract's own example, and it holds. Checked in both renderers as well:
+the function returns `pattern: null` there rather than omitting the key, and neither renderer writes
+`pattern="null"` into the markup.
+
 **One measurement recorded without filing.** `listboxNextIndex(key, activeIndex, optionCount)` clamps
 correctly at both ends and answers `null` for keys it does not handle and for an empty list. Given an
 active index *past* the end — `listboxNextIndex("ArrowUp", 9, 3)` — it answers `8`, still out of

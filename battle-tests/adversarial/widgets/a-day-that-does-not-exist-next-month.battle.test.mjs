@@ -14,7 +14,12 @@
  * regression in either cheap to introduce and invisible without a check like this one.
  */
 
-import { MDY_I18N_MESSAGES_DEFAULT, calendarKeyboardTarget, messagesForLocale } from "@modyra/widgets";
+import {
+  MDY_I18N_MESSAGES_DEFAULT,
+  calendarKeyboardTarget,
+  messagesForLocale,
+  nativeConstraintAttributes,
+} from "@modyra/widgets";
 
 import { battle } from "../../harness/battle.mjs";
 import { expectEqual } from "../../harness/assertions.mjs";
@@ -97,5 +102,82 @@ battle(
       claimIds: ["LOC-002"],
       what: "a locale nobody ships answered with an incomplete table instead of a complete fallback",
     });
+  },
+);
+
+battle(
+  {
+    claims: ["VAL-004", "UI-002"],
+    title: "a control carries only the constraints its own kind understands",
+    environments: ["node"],
+  },
+  async (ctx) => {
+    // `nativeConstraintAttributes` decides what a rule may say to the browser, per kind, and its
+    // contract states the reason: "a maxlength on a number input is ignored by the platform, and
+    // offering it would be a promise the widget does not keep". Seventeen kinds, one answer each,
+    // and nothing else asserts any of them.
+    const everything = {
+      min: 1,
+      max: 9,
+      step: 2,
+      minLength: 3,
+      maxLength: 7,
+      pattern: "^a+$",
+      inputMode: "numeric",
+    };
+
+    const carried = (kind) =>
+      Object.entries(nativeConstraintAttributes(kind, everything))
+        .filter(([, value]) => value !== null && value !== undefined)
+        .map(([name]) => name)
+        .sort();
+
+    const expected = [
+      ["text", ["inputmode", "maxlength", "minlength", "pattern"]],
+      ["email", ["inputmode", "maxlength", "minlength", "pattern"]],
+      ["password", ["inputmode", "maxlength", "minlength", "pattern"]],
+      // A textarea has no `pattern`: the platform ignores it there, so offering it would be a
+      // promise the control cannot keep — which is this function's stated reason for existing.
+      ["textarea", ["inputmode", "maxlength", "minlength"]],
+      // A number input ignores minlength/maxlength/pattern, and honours the numeric three.
+      ["number", ["max", "min", "step"]],
+      ["slider", ["max", "min", "step"]],
+      // Everything else carries none of them natively: its value is not what a native input holds.
+      ["checkbox", []],
+      ["toggle", []],
+      ["radio", []],
+      ["segmented", []],
+      ["select", []],
+      ["multiselect", []],
+      ["datepicker", []],
+      ["daterange", []],
+      ["timepicker", []],
+      ["file", []],
+      ["colors", []],
+    ];
+
+    // The control: the same call does carry something for some kind, so an empty answer elsewhere is
+    // the kind rather than the function returning nothing for everyone.
+    expectEqual(carried("text").length > 0, true, {
+      claimIds: ["VAL-004"],
+      what: "no kind carries any native constraint, so this battle is not exercising the projection",
+    });
+
+    for (const [kind, names] of expected) {
+      ctx.log.note("what a kind may say to the browser", { kind, carried: carried(kind) });
+      expectEqual(carried(kind), names, {
+        claimIds: ["VAL-004", "UI-002"],
+        what: `${kind} carries a different set of native constraints than the platform honours for it`,
+      });
+    }
+
+    // And a kind nobody declared says nothing rather than guessing — an attribute invented for an
+    // unknown control is a promise with no one behind it.
+    for (const unknown of ["wormhole", "", "text ", 42, null]) {
+      expectEqual(carried(unknown), [], {
+        claimIds: ["UI-002"],
+        what: `a kind nobody declared (${JSON.stringify(unknown)}) was given native constraints`,
+      });
+    }
   },
 );
