@@ -1835,3 +1835,46 @@ keyboard, so this is not a control that a mouse alone can fill.
 
 Three assertions, in the order they cost the person typing: the calendar works (green), a readable
 range typed in is kept (red), an unreadable one is kept or explained (red).
+
+## Checked and clean: which kinds discard what is typed into them, and the colour swatches
+
+Finding 66 was found by accident on one kind, so every kind was swept the same way — type something
+plausible into the first typeable input, tab away, and see whether the value moved:
+
+```
+text email password textarea number    reached the value
+datepicker  "03/04/2026"               reached the value, shown back as 2026-03-04
+timepicker  "2:30 PM"                  reached the value, shown back as 02:30 PM
+daterange   "03/04/2026"               DISCARDED — finding 66
+slider      a range input              typing is not its interaction; ArrowRight moves it 0 → 2
+colors      a native colour input      typing is not its interaction; choosing sets the value
+select multiselect radio segmented checkbox toggle file    no typeable input
+```
+
+So `daterange` is the only kind that takes characters and throws them away. `slider` and `colors`
+were checked rather than assumed: both are native widgets where typing is not the interaction, and
+both respond correctly to the one they do have.
+
+**The colour swatches, nearly filed wrong.** An untouched `colors` control shows `#000000` while the
+form holds `""` — a native colour input cannot render "unset" — and the swatch group carries
+`role="listbox"`. A first probe read `aria-pressed` and `aria-checked` on the swatches, found neither,
+and concluded the selection was expressed only as a CSS class. Reading the actual markup instead:
+
+```html
+<div class="mdy-colors__presets" role="listbox" aria-label="Presets">
+  <button type="button" class="mdy-color-swatch" role="option" aria-label="#7067ff" aria-selected="false" …>
+```
+
+`role="option"` and `aria-selected`, which are the states a listbox's children carry — the two the
+probe did not read. And the behaviour holds on the part that is usually wrong:
+
+```
+untouched                              nothing selected
+choosing a swatch                      that swatch aria-selected="true"
+setting the same colour through the
+native picker instead                  the matching preset becomes aria-selected="true"
+```
+
+The two doors into one value agree. Recorded because checking the wrong attribute is how an
+accessibility finding gets invented, and because axe reports nothing here — a purpose-built check was
+the only way to know either way.
