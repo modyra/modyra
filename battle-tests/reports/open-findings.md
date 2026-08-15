@@ -8156,3 +8156,49 @@ discarded the value it was handed, and had no rendered button either, so half th
 questions could be put to one renderer and not the other — a difference that would have read as a
 silence. Both now record what they hand over, and both can be submitted programmatically, which keeps
 "what does a form send" separate from "does the page offer to send it".
+
+## 147. A refusal the page keeps to itself
+
+**Severity** S1 · **Classification** a channel the engine carries and a renderer drops · **Spec**
+`browser/a-refusal-the-page-keeps-to-itself.spec.ts` (red for one renderer, green for the other) ·
+**Claims** SUB-002, A11Y-002
+
+A submit handler may answer with errors, each carrying a path: a field's name, or `null` for the whole
+form. That is the one channel a server has to explain a refusal — *that name is already taken*, *this
+card was declined* — and the only one that can point at the field to fix.
+
+```
+                                plain                       lit
+error naming a real field       shown on the field          not shown anywhere
+                                aria-invalid true           aria-invalid true
+form-level error (path null)    shown                       shown
+error naming a field that
+  does not exist                not shown (both)            not shown
+all three recorded by the engine  yes                       yes
+```
+
+With a refusal that names **only** a field — which is what a server returns when one value is the
+problem — one renderer's page does not change at all:
+
+```
+before  "Who"
+after   "Who"          the control is aria-invalid, and the reason is nowhere
+```
+
+The user pressed submit, the server refused, and the page shows a field outlined as wrong with no
+explanation. If they cannot see the outline, it shows nothing.
+
+**The control is what makes this its own finding.** The same field made wrong by a *validator* shows
+its message in that renderer — `Minimum length is 5` appears. So the page can show errors; what it
+does not do is show these. That also separates it from finding 125, which is about kinds that show no
+validator message either.
+
+The engine's side is asserted as a premise: `lastSubmitErrorsOf` holds the refusal in both, so the
+silence is the renderer rather than a submit that never happened.
+
+### Harness asymmetry closed, again
+
+Only one host could answer a submit with errors; the other had to be mounted for it in advance, so a
+spec could not put the same question to both without changing how the form was built. Both now take
+`submitAnswering(id, answer)` and record what they hand over. This finding was not reachable before
+that.
