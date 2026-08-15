@@ -8662,3 +8662,77 @@ The submitted payload is not affected — the model holds `"zzz"`, `canSubmit` i
 reaches the wire. What differs is what two renderers show for one state, which is S2's own wording.
 The aggravating factor, recorded rather than used to escalate: the divergence is not "less
 informative", it is an assertion of something untrue, next to a message that contradicts it.
+
+## 154. A list emptied by one of its own choices
+
+**S1 · Modyra bug · `@modyra/plain`**
+Claims: SEC-001, UI-003
+Battle: `battle-tests/adversarial/security/a-choice-named-like-a-prototype.battle.test.mjs` (premise,
+green) · `battle-tests/browser/a-list-emptied-by-one-of-its-own-choices.spec.ts` (2 failed, 2 passed)
+
+An option's value is whatever the option list holds — the value contracts say so and the select
+controller's type parameter is unconstrained for the same reason. Option lists come from documents: a
+CMS, a model, a saved project, a POST.
+
+A list carrying the word `__proto__` empties a plain select and stops its effect:
+
+```
+                        given   plain shows            plain console
+only  {__proto__}         1     []                     Uncaught error in effect: TypeError:
+                                                       Cannot read properties of undefined
+                                                       (reading 'filter') at applyPart
+{__proto__} + {a}         2     []                     same
+{a} + {__proto__}         2     ["A"]                  same
+{constructor} + {a}       2     ["C","A"]              —
+{prototype} + {a}         2     ["Y","A"]              —
+{toString} + {a}          2     ["T","A"]              —
+control {a} + {b}         2     ["A","B"]              —
+```
+
+`multiselect` throws on the same input; `radio` and `segmented` are fine. **Lit draws all of them
+correctly**, so this is one renderer's answer.
+
+The effect dying is the same failure mode as finding 152: the control keeps whatever it was showing
+and stops answering. What the user gets is a select with nothing to choose and no reason given — no
+message, no diagnostic, no thrown error reaching the application.
+
+### Reduced to one word
+
+`constructor`, `prototype`, `toString` and `valueOf` are all fine. It is the one word that means
+something to an object used as a lookup, and the spec asserts the other four **before** it reaches
+`__proto__`, so the reduction is part of the test rather than a claim beside it.
+
+Pointer, offered as **probable** rather than confirmed:
+`packages/plain/src/fields/select-field.ts:307` reads `view.parts[key]`, and
+`defaultOptionKey("__proto__")` returns `"__proto__"` verbatim. What does not fit that story is
+`constructor` — a plain-object lookup would return `Object` for it and fail the same way, and it does
+not. The mechanism is worth one measurement rather than an assumption.
+
+### The premise is asserted separately
+
+The node battle establishes that such a form can be built, and where the parser's strictness stops:
+
+- a **well-formed** list is kept whatever its values say — `__proto__`, `constructor`, `prototype`,
+  `toString`, `valueOf` all survive with both options intact, and `defaultOptionKey` returns each word
+  unchanged;
+- a **malformed** list — `"not a list"`, `42`, `{}`, `null`, `[{label}]`, `[{value}, "loose"]` — drops
+  the whole field with a named diagnostic.
+
+That division is right: the value is data, not a path. It is also what makes such a field one a
+renderer will be asked to draw.
+
+### Why S1 and not S0
+
+Nothing is polluted: `Object.getPrototypeOf({})` is intact after every case, in both renderers, and no
+key appears on the prototype. No payload is affected. What is lost is the control — the field renders
+no choices — which is semantic correctness.
+
+### Corrected on the way
+
+Two of my own measurements were wrong before this landed, and both were caught by a control:
+
+- **plain portals its listbox outside `[data-form]`.** A scoped read reported every plain select as
+  empty, including a perfectly ordinary one. The control list showing `[]` too is what exposed it.
+- **Remounting on one id leaves the previous form's options in the document.** Lists read as
+  `["First","Alpha","First","Alpha"]` and both renderers looked broken. Each case now starts from a
+  fresh page.
