@@ -3121,3 +3121,44 @@ they hold; holding them is what keeps them true while both halves keep moving.
 
 The change-set edge is the one worth naming: what the user typed is not the question a change set
 answers. A write the policy turns back into the initial is not a change, however much was typed.
+
+## 79. A field a document declared without a label, and the control nobody can name
+
+`browser/a-control-nobody-named.spec.ts` — 2 green, 1 red. **S1**, accessibility.
+
+**A label is optional in the contract**, measured rather than assumed: `parseDynamicForm` accepts a
+field with no `label` key, with an empty one and with a whitespace one, in **both lenient and strict
+mode**, for every kind — including `daterange` and `select`. Only `label: null` is refused, and for
+its type rather than its absence.
+
+The widgets contract says something else about the result. `MDY_SEMANTICS_REQUIRING_NAME` is a
+published list of the roles that must carry an accessible name — `listbox`, `dialog`, `grid`. A
+`daterange` with no label renders `role="grid"` with neither `aria-label` nor `aria-labelledby`. A
+text field renders an input with no `aria-label`, no `aria-labelledby`, and a `<label for>` element
+that is **empty**.
+
+So the two halves of the contract disagree about the same field, and the renderer resolves it by
+producing a control a screen reader announces as its role and nothing else.
+
+**And an auditor does not see all of it**, which is why the check is written by hand and asserted as
+its own test:
+
+```
+text with no label        axe: label(critical)         caught
+select with no label      axe: button-name(critical)   caught
+checkbox with no label    axe: label(critical)         caught
+daterange with no label   axe: nothing                 role="grid" with no name
+```
+
+A role with no name is not a rule axe runs here, and it is the one the widgets contract names
+explicitly. The third test asserts both halves of that, so "axe is green" can never be read as "every
+control has a name" — and so it fails if axe ever starts catching it.
+
+Either repair closes it: require a label where a document is read, or give a control the field's own
+name when nobody wrote one.
+
+**A probe artefact worth recording**, because it nearly reversed the finding. A first measurement had
+axe silent about the labelless text field too. It was mounting a *labelled* text field first: both
+inputs took `id="f"`, so the association resolved to the earlier, labelled one and the second looked
+named. Two forms on one page with the same field name collide by id — an artefact of the probe, and
+worth knowing when reading any per-field measurement on a shared stage.
