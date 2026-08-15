@@ -5844,7 +5844,7 @@ already holds rather than a document it is reading.
 
 ## Checked and clean: what a page actually sends
 
-`browser/what-a-page-actually-sends.spec.ts` — 6 green.
+`browser/what-a-page-actually-sends.spec.ts` — 7 green.
 
 SUB-001 is *"submission contains no undeclared path introduced by rendering"* and VAL-002 is
 *"disabled values are retained in edit state and excluded from submission"*. Both are asserted at
@@ -5920,6 +5920,20 @@ A synchronous action was measured first and sent five payloads for five clicks, 
 deliberate submissions are five submissions. The question only exists for an action that is still
 running, which is why the host gained a submit that takes its time.
 
-All six claims hold where they are actually spent. The first test mounts every kind at once
+And the one a route change causes:
+
+```
+a submit in the air, its form torn down and replaced over the same names
+  left standing (the control)   errors [{path:"a",message:"FROM THE OLD FORM"}], and on the page
+  the replacement               value {"a":"new"}, errors [], nothing on the page, never submitted
+```
+
+An answer belonging to a form that is gone reaches nothing — not the page, not the form that took its
+place, not that form's own record of what it sent. The control is the whole weight of it: the same
+answer *is* visible when the form is left standing, so the replacement's silence is isolation rather
+than an answer that never showed anywhere. Tearing the form down mid-flight also raises nothing: no
+page error, no console error, and the section leaves the document.
+
+All seven claims hold where they are actually spent. The first test mounts every kind at once
 precisely so that a key any renderer adds for any of them has somewhere to show up, and the third
 asserts both rows are in the payload before the removal, so the absence afterwards is the removal.
