@@ -1801,7 +1801,7 @@ disagree by design after such a call, which is worth knowing but is not a breach
 
 ## 66. A range with two text inputs that take what you type and throw it away
 
-`browser/a-range-that-throws-away-what-you-type.spec.ts` — 1 green, 2 red. Plain renderer.
+`browser/a-range-that-throws-away-what-you-type.spec.ts` — 1 green, 3 red. **Both renderers.**
 Filed where the peer's picker batch stops: `daterange` was declared out of that batch.
 
 Measured, with the same string and the same locale that a single `datepicker` reads and keeps:
@@ -1833,8 +1833,18 @@ the calendar was the only door — and nothing on the page says so.
 Finding 35 does *not* compound here, checked rather than assumed: the daterange popup opens from the
 keyboard, so this is not a control that a mouse alone can fill.
 
-Three assertions, in the order they cost the person typing: the calendar works (green), a readable
-range typed in is kept (red), an unreadable one is kept or explained (red).
+Four assertions, in the order they cost the person typing: the calendar works (green), a readable
+range typed in is kept (red), an unreadable one is kept or explained (red), and Lit does the same
+(red).
+
+**Lit discards it identically** — keystrokes accepted, `inputValue()` shows them, erased on blur, the
+value never moves. By the attribution rule that has held all campaign, a defect both renderers have is
+the contract's: the repair belongs in the shared controller in `@modyra/widgets`, not twice in markup.
+That is the same conclusion the datepicker and timepicker batch reached, and for the same reason —
+each renderer doing its own parsing is what lets them differ.
+
+One incidental difference, not filed: the second input's placeholder is `"End date"` in Plain and
+`"End"` in Lit.
 
 ## Checked and clean: which kinds discard what is typed into them, and the colour swatches
 
