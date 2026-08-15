@@ -443,3 +443,34 @@ without the parse call, duplicate names and unsafe names alike.
 - **The lint rule's blindness to assembled documents and to `parseDynamicFields`.** Both are stated
   limits with reasons: ADR 0024 for the first, and the rule's own comment for the second — a bare
   array is a valid v1 document, and detecting it would make every array literal a candidate.
+
+## 30. Controls that outlive the form they render keep offering to edit it
+
+`browser/a-form-that-ended-under-the-controls.spec.ts` — **runs under `npm run battle:browser`.**
+
+Finding 27 seen from the page. Both teardowns are published and are not the same operation:
+`MdyPlainForm.dispose()` "unmounts every field, destroys their controllers/effects, and deactivates
+the form", while `form` is exposed beside it as "the real, running @modyra/core form backing every
+rendered field". Ending that one is what a host does when the model's owner goes first — an
+`ngOnDestroy` runs and the nodes stay until an animation or the scheduler takes them.
+
+In that window the controls are enabled, take typing and paint it, because a text input holds its own
+value. The form keeps the one it had. Nothing on the page distinguishes a control whose edits land
+from one whose edits reach a form that has ended.
+
+The second test in the file is green and bounds it: no message is painted after the end, because the
+renderer's effects are gone. The divergence is the value alone.
+
+Asserted as the two disagreeing, so disabling the controls when the form they render ends and taking
+the write both close it.
+
+## Also stale, alongside the ajv comment
+
+`packages/core/src/flat-schema.ts` says validators "come from {@link applyFieldValidators}". The
+exported name is `applyFlatValidators`. A consumer who reads that comment — and they will, because
+`buildFlatFormSchema` is documented as validator-free and builds a form that accepts everything on its
+own — is sent to a function that does not exist under that name.
+
+Both routes agree once the real call is made: required mark, verdicts and projected constraints are
+identical to the tree route's. Measured, and now held by
+`adversarial/accessibility/the-signal-behind-aria-required.battle.test.mjs`.
