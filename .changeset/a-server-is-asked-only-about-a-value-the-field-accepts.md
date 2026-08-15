@@ -19,3 +19,8 @@ consumer arriving from there brings the assumption with them.
 A field whose value its own rules refuse reports nothing pending and holds no stale async verdict —
 an answer about a value that is no longer there is not an answer about this one. A visible
 consequence: an empty required field shows no spinner, because no check is running.
+
+Recorded as [ADR 0070](../docs/architecture/0070-a-server-is-asked-about-a-value-the-field-accepts.md),
+which keeps the alternative that loses: `when` is documented for exactly this and it asks a consumer
+to restate in a second predicate what the field already declared, so the two drift the moment the
+bound changes.
