@@ -4309,24 +4309,30 @@ whole measurement vacuous, so the absence of all six is checked before anything 
 
 `adversarial/accessibility/an-option-that-left-while-you-were-pointing-at-it.battle.test.mjs` — 2 red.
 
-`setOptions` is the published route for changing what a select offers, and the only one: none of the
-five adapters syncs a new list any other way. The reason to call it is nearly always that the options
-arrived from somewhere, after the widget was on the page.
-
-The controller records the list and tells nobody. `subscribeController` is what every adapter
-re-renders on:
+Swept across the published surface — ten controllers, thirty-one setters, each measured on its own
+fresh controller. **Twenty-eight announce themselves to `subscribeController`, which is what every
+adapter re-renders on. Three do not, and all three are on the select:**
 
 ```
-dispatch open        notifications +1   state options 3
-setValue             notifications +1   state options 3
-setOptions(one)      notifications +0   state options 1
-setOptions(empty)    notifications +0   state options 0
-setOptions(five)     notifications +0   state options 5
+createSelectController   setOptions        +0
+createSelectController   setDescribedBy    +0
+createSelectController   setPopupRendered  +0
 ```
 
-`dispatch` and `setValue` both fire it. `setOptions` alone does not, at every size, deterministically
-across runs. So the screen keeps the old list until the user does something else, and `view()` keeps
-describing it.
+Everything else fires: `setValue`, `setReadonly`, `setDisabled`, `setInvalid`, `setLoading`,
+`setOpen`, `setChecked`, `setBounds`, and — this is what settles the question —
+`createMultiselectFieldController.setOptions` and `createOptionFieldController.setOptions`, both
+`+1`. So this is not a design in which option lists are set quietly. It is the select alone.
+
+`setOptions` is the one that matters most. It is the published route for changing what a select
+offers, and the only one — none of the five adapters syncs a new list any other way — and the reason
+to call it is nearly always that the options have just arrived from somewhere. The controller records
+them at every size, deterministically across runs, and tells nobody, so the screen keeps the old list
+until the user does something else and `view()` keeps describing it.
+
+`setDescribedBy` and `setPopupRendered` are the same defect on smaller ground: the first carries an
+`aria-describedby` relationship that never reaches the element, the second tells the controller its
+popup is in the document.
 
 The accessible half is sharper. Open the list, move to the last option, let a shorter list arrive:
 
@@ -4350,6 +4356,10 @@ Measurement note, because it changes what the numbers mean: each measurement bui
 controller. Sharing one lets a notification from an earlier `dispatch` land inside a later window and
 be counted as that call's — a first pass here did exactly that and read as `setOptions` notifying
 sometimes. Three runs of the isolated form agree: never.
+
+The battle sweeps rather than names: it reads the controller list off the package, so a controller or
+setter added later is measured without the file being touched, and a setter it has no argument for is
+reported as unmeasured rather than passed `undefined`.
 
 Classification: Modyra bug. S1 by A11Y-001, and the reachable consequence is a widget that does not
 repaint when its content changes.
