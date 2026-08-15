@@ -8371,3 +8371,52 @@ never written cannot come back, and proving it was never written means reading t
 actually kept.
 
 Asked of the renderer that can be given a draft at all — finding 148 is the one that cannot.
+
+## 150. Wrong before anybody touched it
+
+**Severity** S2 · **Classification** one verdict, shown in halves · **Spec**
+`browser/wrong-before-anybody-touched-it.spec.ts` (red for one renderer, green for the other) ·
+**Claims** A11Y-002, VAL-003
+
+Most wrong fields are wrong because somebody typed something. Some are wrong on arrival: an initial
+value the shape refuses, a draft restored from an older schema, a value a server sent back. Nobody
+touched them, and nobody may ever touch them — a person has no reason to visit a field they did not
+fill in.
+
+```
+                   on arrival                              after a touch
+plain              aria-invalid true, "This field holds number"   unchanged
+lit                aria-invalid true, no message                  message appears
+```
+
+One renderer withholds the message until the field is touched while marking the control wrong
+immediately. `projectFieldShellA11y` treats the two as one answer — *the wrapper, the label,
+`aria-invalid` and whether the error text renders are four faces of one question, answered once* —
+and this is the case that comment rules out.
+
+What it costs: a control outlined as wrong with no reason beside it and a submit button that will not
+go, over a value the person never entered.
+
+The control is the same field after a touch, which shows the message in both, so this is about *when*
+rather than a page that cannot show messages — that is finding 125.
+
+### Checked and clean: a hostile draft in the storage a browser keeps
+
+`security.md` describes `localStorage` as writable by every script on the origin, so a draft is
+untrusted input. Written by hand into storage and then mounted over:
+
+```
+a value of the wrong shape     who: 42 refused, the field kept its blank
+a field nobody declared        dropped; the declared one restored
+a prototype-shaped key         no pollution; the declared field restored
+not an envelope at all         ignored
+broken JSON                    ignored, nothing thrown
+```
+
+The one value that reached the model — a string in a `number`, where the shape gate has a null initial
+to compare against and so accepts anything — is refused by the layer below: the control is marked
+wrong and **nothing is sent**. That is the layering `draft-shape-gate.battle.test.mjs` describes,
+holding on a page.
+
+What the page-level run added is finding 150 above: the second layer refuses it and, in one renderer,
+does not say why.
