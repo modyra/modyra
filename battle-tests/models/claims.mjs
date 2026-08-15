@@ -146,6 +146,17 @@ const CLAIMS = [
     ],
   },
   {
+    id: "VAL-005",
+    title: "A server is asked only about a value the field's own rules accept.",
+    area: "validation",
+    severity: "S2",
+    publicEvidence: [
+      "@modyra/core serverValidator — `when`, documented as skipping the call for invalid input",
+      "docs/guides/comparison-reactive-forms.md — serverValidator set beside Angular AsyncValidatorFn",
+      "docs/guides/typed-forms.md — the debounce, cancellation and last-wins that bound a run",
+    ],
+  },
+  {
     id: "DYN-001",
     title: "Typed and dynamic forms agree for the supported common subset.",
     area: "dynamic-contract",
