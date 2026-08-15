@@ -24,7 +24,7 @@ import { applyPart, el, setErrors, setText, setIcon } from "../dom.js";
 import { buildFieldShell, insertControl } from "../field-shell.js";
 import { withControls, type MdyMountedField } from "../field-controls.js";
 import { runCommands } from "../command-runtime.js";
-import { dismissOnOutsidePointer, positionOverlay, releaseOverlayPlacement, setOverlayOpen, trackOverlay } from "../overlay.js";
+import { dismissOnOutsidePointer, positionOverlay, releaseOverlayPlacement, reflectOverlayOpen, trackOverlay } from "../overlay.js";
 
 export function renderMultiselectField(
   container: HTMLElement,
@@ -260,9 +260,9 @@ export function renderMultiselectField(
       required: state.required,
     });
 
-    // `hidden` on the popup part is the contract's; this re-states it through `setOverlayOpen` so
+    // `hidden` on the popup part is the contract's; this re-states it through `reflectOverlayOpen` so
     // the popover state and the attribute cannot disagree. Positioning only runs while it is showing.
-    setOverlayOpen(popup, state.open);
+    reflectOverlayOpen(popup, state.open, messages);
     if (state.open) {
       positionOverlay(popup, shell.wrapper, anchoring);
       // Focus goes where the user is about to type, exactly as the select does. A search box that

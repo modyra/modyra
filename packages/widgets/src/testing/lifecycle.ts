@@ -19,6 +19,8 @@
  * through its consequence instead of its registration.
  */
 
+import { MDY_SHARED_REGION_ATTRIBUTE } from "../command-runtime.js";
+
 /**
  * The transitions a form goes through, named so a renderer's coverage can be compared against the
  * list rather than against whatever its own suite happened to exercise.
@@ -110,7 +112,11 @@ export function inspectUnmount(observation: MdyUnmountObservation): readonly Mdy
   const { document, idsWhileMounted, elementsBeforeMount, pokeAfterDispose } = observation;
   const issues: MdyLifecycleIssue[] = [];
 
-  const left = document.body.querySelectorAll("*").length - elementsBeforeMount;
+  // The shared live region is the renderer's, not the instance's: it serves every widget on the
+  // page and must outlive all of them, so counting it as a survivor asks a teardown to remove the
+  // thing that makes the next announcement audible.
+  const shared = document.body.querySelectorAll(`[${MDY_SHARED_REGION_ATTRIBUTE}]`).length;
+  const left = document.body.querySelectorAll("*").length - elementsBeforeMount - shared;
   if (left > 0) {
     issues.push({
       code: MDY_LIFECYCLE_ISSUE.domSurvived,
@@ -118,7 +124,10 @@ export function inspectUnmount(observation: MdyUnmountObservation): readonly Mdy
     });
   }
 
-  const survivors = [...idsWhileMounted].filter((id) => document.getElementById(id) !== null);
+  const survivors = [...idsWhileMounted].filter((id) => {
+    const el = document.getElementById(id);
+    return el !== null && !el.hasAttribute(MDY_SHARED_REGION_ATTRIBUTE);
+  });
   if (survivors.length > 0) {
     issues.push({
       code: MDY_LIFECYCLE_ISSUE.idSurvived,

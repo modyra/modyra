@@ -30,7 +30,7 @@ import { formatTimeAs, hourToAngle, minuteToAngle, parseAnyTime, pointerAngle, t
 import { applyPart, el, setErrors, setIcon, setText } from "../dom.js";
 import { buildFieldShell, insertControl } from "../field-shell.js";
 import { runCommands } from "../command-runtime.js";
-import { dismissOnOutsidePointer, positionOverlay, releaseOverlayPlacement, setOverlayOpen, trackOverlay } from "../overlay.js";
+import { dismissOnOutsidePointer, positionOverlay, releaseOverlayPlacement, reflectOverlayOpen, trackOverlay } from "../overlay.js";
 
 export function renderTimepickerField(
   container: HTMLElement,
@@ -309,7 +309,7 @@ export function renderTimepickerField(
     // holds an entry the field could not read, which stays where they can correct it.
     const display = state.entryText ?? (state.value || "");
     if (!typing && control.value !== display) control.value = display;
-    setOverlayOpen(dialog, state.open);
+    reflectOverlayOpen(dialog, state.open, messages);
     // Anchored by the contract, like every other overlay: the placement, the size and the
     // coordinates are `anchorOverlay`'s, and this only measures and applies them.
     if (state.open) positionOverlay(dialog, shell.wrapper, anchoring);

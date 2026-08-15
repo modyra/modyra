@@ -90,6 +90,7 @@ absent section reads as an oversight, and "no security impact" is a finding.
 - [ADR 0072: A positional change set carries its whole list](0072-a-positional-change-set-carries-its-whole-list.md) — a compacted list of changed rows said nothing about where they were, so a server applying it by position wrote the wrong row
 - [ADR 0073: A verdict a person can see is one the form counts](0073-a-verdict-a-person-can-see-is-one-the-form-counts.md) — a picker showed an unreadable entry as an error and the form called itself submittable, sending the field empty
 - [ADR 0074: A file the field turned away is something the page says](0074-a-file-the-field-turned-away-is-something-the-page-says.md) — the transition reported what it refused, no renderer showed it, and no message table had a word for it
+- [ADR 0075: A popup that opens says so](0075-a-popup-that-opens-says-so.md) — the lifecycle policy answered `announce` for every open and close, and two of the three renderers read neither
 
 ## Security-relevant records
 

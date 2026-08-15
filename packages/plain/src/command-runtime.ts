@@ -7,6 +7,7 @@
  */
 import {
   createCommandRuntime,
+  createMdyAnnouncer,
   type MdyElementLookup,
   type MdyUiCommand,
   type MdyWidgetCommandHandlers,
@@ -16,6 +17,11 @@ const runtime = createCommandRuntime({
   announcerId: "mdy-plain-announcer",
   defer: (run) => { run(); },
 });
+
+/** This renderer's live region, so anything that has to be said reaches the same place. */
+export function announcePlain(message: string): void {
+  createMdyAnnouncer("mdy-plain-announcer").announce(message);
+}
 
 export function runCommands(
   commands: readonly MdyUiCommand[],

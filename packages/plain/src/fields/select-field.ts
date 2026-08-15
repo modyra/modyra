@@ -26,7 +26,7 @@ import {
 import { applyPart, el, setErrors, setText, setIcon } from "../dom.js";
 import { buildFieldShell, insertControl } from "../field-shell.js";
 import { runCommands } from "../command-runtime.js";
-import { dismissOnOutsidePointer, positionOverlay, releaseOverlayPlacement, setOverlayOpen, trackOverlay } from "../overlay.js";
+import { dismissOnOutsidePointer, positionOverlay, releaseOverlayPlacement, reflectOverlayOpen, trackOverlay } from "../overlay.js";
 
 export function renderSelectField(
   container: HTMLElement,
@@ -275,7 +275,7 @@ export function renderSelectField(
     setErrors(shell.errorList, shownErrorsOf(handle).map((e) => e.message));
     syncOptions(state.options);
 
-    setOverlayOpen(popup, state.open);
+    reflectOverlayOpen(popup, state.open, messages);
     // The chevron points down when closed and up when open — the stylesheet has always carried the
     // rotation, and the select was the one overlay kind that never asked for it.
     arrow.classList.toggle("mdy-select__arrow--open", state.open);

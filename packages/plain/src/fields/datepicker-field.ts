@@ -27,7 +27,7 @@ import { buildFieldShell, insertControl } from "../field-shell.js";
 import { withControls, type MdyMountedField } from "../field-controls.js";
 import { buildCalendarGrid, fillCalendar } from "./calendar.js";
 import { runCommands } from "../command-runtime.js";
-import { dismissOnOutsidePointer, positionOverlay, releaseOverlayPlacement, setOverlayOpen, trackOverlay } from "../overlay.js";
+import { dismissOnOutsidePointer, positionOverlay, releaseOverlayPlacement, reflectOverlayOpen, trackOverlay } from "../overlay.js";
 
 export function renderDatepickerField(
   container: HTMLElement,
@@ -251,7 +251,7 @@ export function renderDatepickerField(
     // holds an entry the field could not read, which stays where they can correct it.
     const display = state.entryText ?? (state.selectedDate || "");
     if (!typing && control.value !== display) control.value = display;
-    setOverlayOpen(popup, state.open);
+    reflectOverlayOpen(popup, state.open, messages);
     // Anchored by the contract, like every other overlay: the placement, the size and the
     // coordinates are `anchorOverlay`'s, and this only measures and applies them.
     if (state.open) positionOverlay(popup, shell.wrapper, anchoring);

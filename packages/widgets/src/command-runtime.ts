@@ -128,6 +128,9 @@ export interface MdyAnnouncer {
  * Creates a lazy-initialized live region with the given element id.
  * Multiple callers with the same id share the same DOM element.
  */
+/** What marks a live region as shared by the whole renderer rather than owned by one widget. */
+export const MDY_SHARED_REGION_ATTRIBUTE = "data-mdy-shared-region";
+
 export function createMdyAnnouncer(elementId: string): MdyAnnouncer {
   return {
     announce(message: string): void {
@@ -142,6 +145,11 @@ export function createMdyAnnouncer(elementId: string): MdyAnnouncer {
         );
         el.setAttribute("aria-live", "polite");
         el.setAttribute("aria-atomic", "true");
+        // Marked as the renderer's own. One live region serves every widget on the page and has to
+        // outlive each of them — a region created and removed around a message is a region the
+        // screen reader was not watching when the text arrived — so a teardown check has to be able
+        // to tell it apart from an element an instance left behind.
+        el.setAttribute(MDY_SHARED_REGION_ATTRIBUTE, "");
         document.body.appendChild(el);
       }
       el.textContent = "";

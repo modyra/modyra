@@ -37,8 +37,17 @@
  * Here rather than in each renderer, because "a modal dims what is behind it" is not a rendering
  * decision any of them gets to make differently.
  */
-export function setOverlayOpen(popup: HTMLElement, open: boolean, modal = false): void {
-  if (popup.getAttribute("popover") !== "manual") popup.setAttribute("popover", "manual");
+export function setOverlayOpen(popup: HTMLElement, open: boolean, modal = false): boolean {
+  // The first call is this popup's initialisation, not a transition: a freshly built element is not
+  // hidden yet and is not open either, so a renderer reflecting its resting state would otherwise
+  // be told the popup had just closed. The attribute is what marks a popup this function has
+  // already taken charge of.
+  const first = popup.getAttribute("popover") !== "manual";
+  if (first) popup.setAttribute("popover", "manual");
+  // Whether this call is the moment the popup opened or closed. A renderer reflects the state on
+  // every render, so without this the only way to say "it just opened" is a flag kept beside the
+  // popup — and a flag kept per renderer is a flag one of them forgets to clear.
+  const changed = !first && popup.hidden === open;
   popup.hidden = !open;
   // `showPopover` throws when the element is already showing, is disconnected, or the browser has no
   // popover support. None of those should take the field down: `hidden` alone still shows and hides
@@ -50,6 +59,7 @@ export function setOverlayOpen(popup: HTMLElement, open: boolean, modal = false)
     // Nothing to do: the attribute and `hidden` already carry the state.
   }
   syncOverlayBackdrop(popup, open && modal);
+  return changed;
 }
 
 /** Marks the backdrop this module owns, so it is never confused with one a renderer drew itself. */

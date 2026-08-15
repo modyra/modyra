@@ -71,8 +71,12 @@ export abstract class MdyFieldElement<T> extends LitElement {
    *
    * From the widget contract's tables, never spelled here: the same button was written three ways
    * across three renderers while each of them owned its own English.
+   *
+   * Public, because things that speak *for* the element read it — an overlay controller saying that
+   * a popup has opened is the element's sentence, in the element's language, and a second copy
+   * resolved elsewhere is how two parts of one control come to speak different languages.
    */
-  protected get messages(): MdyI18nMessages {
+  get messages(): MdyI18nMessages {
     return messagesForLocale(this.resolvedLocale);
   }
 

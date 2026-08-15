@@ -24,7 +24,7 @@ import {
 import { applyPart, el, setErrors, setText, setIcon } from "../dom.js";
 import { buildFieldShell, insertControl } from "../field-shell.js";
 import { withControls, type MdyMountedField } from "../field-controls.js";
-import { dismissOnOutsidePointer, positionOverlay, releaseOverlayPlacement, setOverlayOpen, trackOverlay } from "../overlay.js";
+import { dismissOnOutsidePointer, positionOverlay, releaseOverlayPlacement, reflectOverlayOpen, trackOverlay } from "../overlay.js";
 import { buildCalendarGrid, fillCalendar } from "./calendar.js";
 
 export function renderDaterangeField(
@@ -203,7 +203,7 @@ export function renderDaterangeField(
     }
     toggle.disabled = handle.disabled();
     toggle.setAttribute("aria-expanded", String(state.open));
-    setOverlayOpen(popup, state.open);
+    reflectOverlayOpen(popup, state.open, messages);
     // Anchored by the contract, like every other overlay: the placement, the size and the
     // coordinates are `anchorOverlay`'s, and this only measures and applies them.
     if (state.open) positionOverlay(popup, shell.wrapper, anchoring);
