@@ -1019,3 +1019,59 @@ correctly — which makes this a missing connection rather than a missing capabi
 is no `step`. So a document can say "steps of two" only in the field-level spelling, which is the one
 finding 46 shows does not enforce — meaning `step` cannot be expressed as a rule at all, in either
 place. Recorded rather than filed: it is a gap in the vocabulary, not a behaviour that contradicts one.
+
+## 48. Three options declared, two rendered
+
+`adversarial/dynamic-contract/two-options-one-value.battle.test.mjs` — 2 red.
+`browser/an-option-that-never-appears.spec.ts` — 1 red, 1 green.
+
+Two fields sharing a name are refused with `MDY_DYNAMIC_DUPLICATE_NAME`, because a name builds an id
+and two ids that collide stop being addressable. An option's value builds an id the same way —
+`s__option__pro` — and nothing checks it.
+
+```js
+options: [
+  { value: "pro",  label: "Pro monthly" },
+  { value: "pro",  label: "Pro yearly"  },
+  { value: "lite", label: "Lite"        },
+]
+```
+
+The parser answers `ok` with no diagnostic and keeps three. The page renders two: **"Pro yearly,
+Lite"**. The option that disappears is the first one the author wrote. Nobody filling the form sees it
+and nobody can choose it.
+
+The value is damaged with no renderer involved: `oneOf` accepts `"pro"`, and `"pro"` names two
+different things, so neither the control nor whatever receives the submission can say which was
+chosen.
+
+Controls on both halves: a duplicate field name really is refused, and three options with distinct
+values really do render as three.
+
+Either resolution closes it: refuse the duplicate the way a duplicate name is refused, or build an
+option id that does not depend on the value being unique.
+
+## The cost of a second engine, measured
+
+For finding 45, since the decision needs a number:
+
+```
+plain-chromium only        32 tests, 22 pass, 10 fail    8s wall
+plain-chromium + firefox   64 tests, 43 pass, 21 fail   24s wall
+```
+
+Firefox costs **+16 seconds** and adds **exactly one** failure beyond doubling — 21 rather than 20.
+That one is finding 45. Everything else doubles identically.
+
+## Also checked and clean
+
+- **Every field property a document can declare reaches the control.** `label`, `ariaLabel`,
+  `placeholder`, `initialValue`, `prefix`, `suffix` all render as declared; `sensitive` correctly has
+  no visible effect.
+- **An `ariaLabel` unrelated to the visible label is honoured as written** — the accessible name
+  becomes the `ariaLabel` and the `<label for>` association stays. axe does not flag it (its
+  label-in-name rule is for elements with text content), and the author asked for it, so it is
+  recorded rather than filed. Worth knowing that the visible label becomes decorative.
+- **An empty options list parses and builds.** Defensible — a document may fill options later — so it
+  is recorded rather than filed. Malformed entries are refused with `MDY_DYNAMIC_OPTIONS_REQUIRED`: an
+  option with no label, one with no value, a null entry, and a non-list all fail.
