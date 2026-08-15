@@ -9,7 +9,7 @@ A twentieth, `generative/properties/history.property.test.mjs`, is a campaign ra
 draws a fresh seed each run and reaches the whole-write undo defect about four times in five. Its
 green is not evidence; the battle beside it is.
 
-The list is grouped by cause. Thirteen causes, twenty battles.
+The list is grouped by cause. Fourteen causes, twenty-one battles.
 
 ---
 
@@ -144,7 +144,20 @@ and gives nothing to act on* — and the rule has not reached here.
 The four real endings all hold and are green beside it: nothing said, something said, a check that
 threw, and a check that never answered.
 
-## 13. Reported without a repair path
+## 13. Two Studio targets call a broken project compatible
+
+`adversarial/studio/every-target.battle.test.mjs`
+
+`studio-model` raises `SELECT_WITHOUT_OPTIONS` at severity error for a select declaring no options.
+The json target reports it, answers `compatible: false` and emits no contract. React and Angular
+answer `compatible: true`, report nothing and emit both files — so an author generates a form and is
+told nothing, which is the half of STU-003 that fails: the field neither reaches usable output nor is
+reported as dropped. The emitted document then holds a select `buildDynamicFormSchema` cannot build.
+
+The json target is the control that the finding is reachable, and a project with nothing wrong is
+compatible on all three.
+
+## 14. Reported without a repair path
 
 - `adversarial/submission/submit-contract.battle.test.mjs` — an action returning something that is
   not a list of errors puts `errors.filter is not a function` on the form-level error surface, the
