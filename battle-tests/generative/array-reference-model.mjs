@@ -35,6 +35,16 @@ export function createArrayReferenceModel({ cells, initial = [] } = {}) {
   const mounted = new Map();
   const isMounted = (path) => (mounted.get(path) ?? 0) > 0;
   const disabled = new Set();
+  /**
+   * Paths a binder has stated are *editable*.
+   *
+   * A binding is a statement either way, and both are made for rows that do not exist yet — a
+   * renderer binds a cell of the row it is about to render. Tracking only the refusals loses the
+   * other half: a row that carries an `enable` into an index where a `disable` waits leaves the
+   * cell editable, and a model that forgot the enable reports the refusal instead. Measured; ADR
+   * 0044 says what releases a binding and not which of two competing ones wins.
+   */
+  const enabled = new Set();
   const touched = new Set();
 
   /** A row's contents from a partial value: what is given wins, what is not takes the template's. */
@@ -72,11 +82,16 @@ export function createArrayReferenceModel({ cells, initial = [] } = {}) {
    * the row that arrives there, exactly as a binding made before a keyed row is declared does.
    */
   const dropBindingsBeyond = (length, previousLength) => {
-    for (const path of [...disabled]) {
-      const index = Number(path.split(".")[0]);
-      // A control still bound to the path is the binder still saying it, so the binding waits for
-      // the next row to arrive there — the same rule a keyed collection follows.
-      if (index >= length && index < previousLength && !isMounted(path)) disabled.delete(path);
+    // Both halves of a binding end with the row that held them. Dropping only the refusals leaves an
+    // `enable` behind for a row that is gone, and the next structural change carries it onto a row
+    // that never had it.
+    for (const set of [disabled, enabled]) {
+      for (const path of [...set]) {
+        const index = Number(path.split(".")[0]);
+        // A control still bound to the path is the binder still saying it, so the binding waits for
+        // the next row to arrive there — the same rule a keyed collection follows.
+        if (index >= length && index < previousLength && !isMounted(path)) set.delete(path);
+      }
     }
   };
 
@@ -91,13 +106,24 @@ export function createArrayReferenceModel({ cells, initial = [] } = {}) {
     const carried = [];
     for (const [newIndex, oldIndex] of order.entries()) {
       if (oldIndex === null || oldIndex === newIndex) continue;
-      for (const path of disabled) {
-        const [index, ...rest] = path.split(".");
-        if (Number(index) === oldIndex) carried.push([path, [newIndex, ...rest].join(".")]);
+      for (const [set, refuses] of [[disabled, true], [enabled, false]]) {
+        for (const path of set) {
+          const [index, ...rest] = path.split(".");
+          if (Number(index) === oldIndex) carried.push([path, [newIndex, ...rest].join("."), refuses]);
+        }
       }
     }
-    for (const [from] of carried) disabled.delete(from);
-    for (const [, to] of carried) disabled.add(to);
+    for (const [from] of carried) {
+      disabled.delete(from);
+      enabled.delete(from);
+    }
+    // What the row carries replaces whatever was waiting where it lands, either way round. A binding
+    // stated for a position is about whichever row arrives; one the row brings is about that row.
+    for (const [, to] of carried) {
+      disabled.delete(to);
+      enabled.delete(to);
+    }
+    for (const [, to, refuses] of carried) (refuses ? disabled : enabled).add(to);
   };
 
   /** `[0, 1, … length - 1]` — the order before a change rearranged it. */
@@ -212,9 +238,11 @@ export function createArrayReferenceModel({ cells, initial = [] } = {}) {
         }
         case "field.disable":
           disabled.add(localOf(operation.path));
+          enabled.delete(localOf(operation.path));
           break;
         case "field.enable":
           disabled.delete(localOf(operation.path));
+          enabled.add(localOf(operation.path));
           break;
         case "mount":
           for (const path of operation.paths) {
