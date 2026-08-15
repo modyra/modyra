@@ -151,6 +151,16 @@ window.battleLit = {
     }));
   },
 
+  /**
+   * Turn a field off, the way an application turns one off.
+   *
+   * A disabled widget is a state the contract makes promises about, and asking one renderer without
+   * being able to ask the other makes a silence look like an answer.
+   */
+  disable(id, path) {
+    mounted.get(id).form.setDisabled(path, () => true);
+  },
+
   valueOf(id) {
     return mounted.get(id).form.getValue();
   },
