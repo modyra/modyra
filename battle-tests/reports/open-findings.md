@@ -7778,3 +7778,39 @@ their popup is not in the document.
 
 **This is what findings 122 and 134 add up to.** Each was reported as a difference worth knowing;
 together they close the only two doors a keyboard has.
+
+## 141. A dialog the page can be walked out of
+
+**Severity** S2 · **Classification** published projection not matched · **Spec**
+`browser/a-dialog-the-page-can-be-walked-out-of.spec.ts` (red for one renderer, green for the other)
+· **Claims** A11Y-002, UI-005
+
+`packages/widgets/src/field/timepicker-field-a11y.ts:100` publishes the dialog a time picker opens
+and names three attributes on it: `role="dialog"`, `aria-labelledby`, and **`aria-modal="true"`**.
+
+```
+plain   .mdy-timepicker__popup      role=dialog   aria-modal="true"
+lit     .mdy-timepicker-container   role=dialog   aria-modal absent
+```
+
+The third attribute is the one with consequences. `role="dialog"` says *this is a dialog*;
+`aria-modal` says *and everything behind it is not there*. Without it a screen reader's virtual cursor
+walks out of the open picker into the form underneath, reading fields the user cannot reach while it
+is open, with nothing to say the picker is still there or that Escape closes it. The pointer is fenced
+— the overlay light-dismisses — and the reading cursor is not.
+
+The renderer that misses it also puts the role on a different element: the projection's `dialog` part
+carries `mdy-timepicker__dialog`, which that renderer builds nothing with, so the role landed on the
+container instead.
+
+### Measured alongside, not asserted
+
+The same renderer opens `role="dialog"` calendars for `datepicker` and `daterange`, also without
+`aria-modal`. Those are **not** asserted on, because no projection declares a dialog for either kind
+and the other renderer builds their calendar as a `role="grid"` — a different and defensible reading
+of the same widget. If the calendars are meant to be dialogs, they are meant to be modal ones; that is
+a decision rather than a deviation.
+
+`mdy-timepicker__dialog` carries **zero** CSS rules in the shipped stylesheets, so the missing class
+is not dead styling — unlike finding 134's `.mdy-spin-btn`, which has 56. Recorded because the two
+look alike and only one of them wastes a stylesheet.
