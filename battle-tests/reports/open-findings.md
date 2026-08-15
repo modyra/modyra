@@ -8107,3 +8107,26 @@ months   12 cells, all carry it, true on April
 
 Both renderers, every view, the right cells. A selected day marked only by a class would be invisible
 to a screen reader; it is not.
+
+### Checked and clean: three states on one field
+
+`browser/three-states-on-one-field.spec.ts` (green, both renderers).
+
+Each of wrong, unreachable and unchangeable has a published rule; nothing in this suite drove them
+*together*, and together they are three subtleties a refactor flattens:
+
+```
+wrong                        aria-invalid true,  message shown
+wrong + read-only            aria-invalid true,  message shown, readOnly true
+wrong + disabled             aria-invalid false, message gone,  disabled true
+wrong + read-only + disabled aria-invalid false, message gone,  readOnly dropped
+```
+
+Both renderers agree on all four, including the two that are easy to get backwards. **Read-only and
+wrong stays wrong** — the user cannot fix it here, but the form still counts it, still submits it, and
+the reason is still worth reading, which is what the boolean projection's comment says in its own
+words. **Disabled and read-only is disabled** — read-only says *you may read this but not change it*,
+which a disabled field already implies, so saying both would be two answers to one question.
+
+Measured for the text family, where read-only reaches the page at all. Twelve other kinds never report
+the state, which is finding 145 and is why this spec does not sweep them.
