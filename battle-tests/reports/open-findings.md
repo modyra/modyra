@@ -2760,3 +2760,45 @@ the browser.
   `validators: { minLength: "three" }` and `{ pattern: "[" }` produce no attribute at all;
   `{ minLength: -5 }` renders `minlength="-5"`, which browsers ignore. So the door that takes data
   from outside is the one that checks, which is the right way round.
+
+## Checked and clean: the widgets contract's untouched half
+
+`@modyra/widgets` exports 181 names and **124 appear in no battle by name**. Most are reached through
+the renderers — a class helper or an ARIA projection is exercised whenever a control is rendered — but
+the pure decision functions are not: they have no state to set up, which is exactly what makes a
+regression in one cheap to introduce and invisible.
+
+Two are now held in `adversarial/widgets/a-day-that-does-not-exist-next-month.battle.test.mjs`, green,
+and both get the hard case right:
+
+**`calendarKeyboardTarget`.** Its contract states *month/year jumps clamp the day (Jan 31 → Feb 28)*,
+and the interesting half is what it does not do:
+
+```
+Jan 31 2026 → PageDown       Feb 28 2026     the documented clamp
+Jan 31 2024 → PageDown       Feb 29 2024     NOT over-clamped in a leap year
+Feb 29 2024 → PageDown+shift Feb 28 2025     a leap day jumped a year lands where there is room
+Feb 29 2024 → PageUp+shift   Feb 28 2023     and backwards too
+May 31 → PageDown            Jun 30
+Dec 31 → ArrowRight          Jan 1 next year
+Jan 1 → ArrowUp (a week)     Dec 25 previous year
+Home / End                   the first / last of the month
+Tab                          null — a key it does not use moves nothing
+```
+
+**`messagesForLocale`.** Five locales ship. What matters is not a wrong translation but a **missing
+key**: a table is read by key and a missing one renders as nothing. All five carry all 42, none blank,
+and an unsupported locale answers with the **complete** English table rather than a partial one —
+falling back key by key would leave one English word in the middle of a sentence.
+
+Three strings are identical to English across locales and were checked rather than counted as
+untranslated: `"OK"` is `"OK"` in all five, and `"Minute"` is the German and French word.
+
+**One measurement recorded without filing.** `listboxNextIndex(key, activeIndex, optionCount)` clamps
+correctly at both ends and answers `null` for keys it does not handle and for an empty list. Given an
+active index *past* the end — `listboxNextIndex("ArrowUp", 9, 3)` — it answers `8`, still out of
+range, where `ArrowDown` from the same state clamps to `2`. Whether a controller can hold an active
+index that outlived its option list was not established: two attempts to reach it through the
+multiselect failed on this tier's own selectors, since that listbox renders into an overlay portal
+outside the field's host. Recorded so the next reader of that function has the measurement, not filed
+as a finding without a path to it.
