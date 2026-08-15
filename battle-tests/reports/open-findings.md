@@ -7597,3 +7597,32 @@ in both renderers — while finding 135 had already measured a dangling referenc
 own measurements disagreeing is a harness defect until shown otherwise, and it was: the sweep stayed
 in the days view and 135's reference lives in the years. The lesson finding 135 recorded about the
 suite's id spec applied one level down to the spec written because of it.
+
+### Checked and clean: two forms that would share a page
+
+`browser/two-forms-that-would-share-a-page.spec.ts` (green, both renderers).
+
+A widget id is the field name, and every generated id derives from it. Two forms built from the same
+names mint the same ids, which the `idPrefix` option exists to prevent and describes in its own
+words: *neither form examined alone looks wrong, which is why only a page holding both can detect
+it*.
+
+Measured on that page, two date fields both called `when`:
+
+```
+plain, no idPrefix    49 duplicated ids — when__label, when__trigger, when__grid,
+                      every when__day__…, when__months, when__years, when__description, when__errors
+plain, no idPrefix    clicking the SECOND form's label puts the cursor in the FIRST form's input
+plain, with idPrefix  no duplicates; the label focuses its own field
+lit, either way       no duplicates — it mints an id per widget instance rather than from the name
+```
+
+The remedy works and the damage it prevents is real rather than theoretical. Both renderers are held
+to the clean state; only the one that derives ids from names is asked what happens without it, since
+the other never has the hazard.
+
+**Observed, not filed.** Nothing warns. A page with forty-nine colliding ids and a label that focuses
+another form's input is silent, while `devWarnings` on the same form does warn about an option it
+does not read — a much smaller problem. Detecting it would mean a form scanning the document for its
+own ids at mount, which is a design decision rather than a broken promise, so it is recorded here
+rather than filed as a finding.
