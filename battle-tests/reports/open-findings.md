@@ -2926,3 +2926,34 @@ did. What the battle refuses is neither.
 Same family as 60–65 and 73–75: a published call that cannot do what it was asked, not saying so. It
 is the first one where what the caller loses is not a value or a section but **the thing they called
 the method for**.
+
+## 78. The same mistake, through two doors to one check
+
+`adversarial/validation/two-doors-to-one-check.battle.test.mjs` — 2 green, 1 red.
+Tagged **API-001 + VAL-001**, which makes the battle read S0; the honest severity is **S1** — the
+consequence is a page that does not render, not a payload that is wrong.
+
+A field can be given an asynchronous check two ways, and they reach the same runner:
+`serverValidator()`, which the guides lead with, and `asyncValidators` on `field()`'s options, offered
+in those words — *still available if you'd rather write the validator function directly*.
+
+The documented failure is handled on both: *a rejected promise becomes an `"async"` error with the
+rejection message*. What is not documented, and not the same, is a check that throws **synchronously**
+— a property read on something undefined before the first `await`, which is the ordinary shape of a
+bug in a consumer's own service call:
+
+```
+asyncValidators, a promise that rejects    the field carries "service is down"          as documented
+serverValidator, a SYNCHRONOUS throw       the field carries the message                the working door
+asyncValidators, a SYNCHRONOUS throw       createForm THROWS — the form never exists
+```
+
+So one field's buggy check stops the page rendering, and the same bug one call away is a message under
+the field.
+
+**The working door is the control and the shape to copy**: the mechanism already does the right thing
+with this, which is what makes it a gap rather than a decision.
+
+Measured alongside, all through `asyncValidators`, and all coherent — so the finding is the throw and
+not the door being fragile: a promise resolving to a list of errors is carried; a check returning a
+bare string is read as one message; a check returning nothing leaves the field valid.
