@@ -285,7 +285,7 @@ export abstract class MdyFieldElement<T> extends LitElement {
    */
   protected controlPart(handle: MdyFieldHandle<T>): MdyPartContract {
     return projectFieldShellA11y(
-      { disabled: handle.disabled(), required: handle.required() },
+      { disabled: handle.disabled(), required: handle.required(), readonly: handle.readonly() },
       shownErrorsOf(handle),
       {
         widgetId: this.fieldId,

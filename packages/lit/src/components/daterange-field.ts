@@ -542,6 +542,7 @@ export class MdyDaterangeFieldElement extends MdyFieldElement<MdyDateRange | nul
               placeholder=${this.startPlaceholder}
               .value=${range.start ?? ""}
               ?disabled=${handle.disabled()}
+              ?readonly=${handle.readonly()}
               ${mdyPart(this.controlPart(handle))}
               aria-label=${`${baseLabel}Start date`}
               autocomplete="off"
@@ -567,6 +568,7 @@ export class MdyDaterangeFieldElement extends MdyFieldElement<MdyDateRange | nul
               placeholder=${this.endPlaceholder}
               .value=${range.end ?? ""}
               ?disabled=${handle.disabled()}
+              ?readonly=${handle.readonly()}
               ${mdyPart(this.controlPart(handle))}
               aria-label=${`${baseLabel}End date`}
               autocomplete="off"

@@ -72,6 +72,9 @@ export function projectSelectA11y(
       "aria-describedby": describedBy,
       // Disabled alone: a read-only control still takes focus and can be copied from.
       "aria-disabled": String(disabled),
+      // And read-only said in its own word. The controller refuses the change either way; without
+      // this a trigger that will not open its list looks identical to one that will.
+      "aria-readonly": readonly ? "true" : null,
       // The native attribute, not only the ARIA. A trigger that says `aria-disabled="true"` and
       // stays clickable is disabled in appearance only — the multiselect trigger has carried this
       // all along, and the two were inconsistent for no reason.

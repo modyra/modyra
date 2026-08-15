@@ -454,6 +454,7 @@ export class MdyDatepickerFieldElement extends MdyFieldElement<string | null> {
           placeholder=${this.placeholder}
           .value=${this.view.entryText ?? handle.value() ?? ""}
           ?disabled=${handle.disabled()}
+          ?readonly=${handle.readonly()}
           role="combobox"
           aria-haspopup="dialog"
           aria-expanded=${this._open ? "true" : "false"}

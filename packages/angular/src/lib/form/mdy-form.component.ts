@@ -386,6 +386,11 @@ export class MdyFormComponent<
     this._active.markAllTouched();
   }
 
+  /** Forwarded like every other adapter member: the form the component wraps is the one that counts it. */
+  reportEntry(name: string, problem: string | null): void {
+    this._active.reportEntry(name, problem);
+  }
+
   buildSubmitEvent(value: TSubmit): MdyFormSubmitEvent<T, TSubmit> {
     return this._active.buildSubmitEvent(value);
   }

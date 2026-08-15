@@ -87,10 +87,12 @@ export function projectDaterangeFieldA11y(
       // The native attribute too: `aria-disabled` alone would announce a disabled field that still
       // accepts a typed date.
       disabled: state.disabled,
-      // No `readonly`: a range is a chooser in `MDY_WIDGET_STATE_SUPPORT`, and the state was
-      // reaching the DOM on a kind that declares no carrier for it — a control the user could not
-      // type into, with nothing in the accessibility tree saying so and nothing stopping the
-      // calendar from setting the same value.
+      // Both halves, on both ends. A read-only range refuses the typed date and the calendar's
+      // choice alike — the controller declines either — so the native attribute stops the typing
+      // and the ARIA says why. Either one alone is the pair that was wrong before: a control a
+      // person cannot type into with nothing saying so, or a claim with nothing behind it.
+      readonly: state.readonly,
+      "aria-readonly": state.readonly ? "true" : null,
     },
   });
 

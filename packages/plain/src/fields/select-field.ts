@@ -251,6 +251,10 @@ export function renderSelectField(
   const effectRef = reactivity.effect(() => {
     controller.setValue(handle.value());
     controller.setDisabled(handle.disabled());
+    // The other half of the same value. This controller is host-driven — it holds no handle — so a
+    // renderer that told it only about `disabled` left a read-only select refusing every change and
+    // saying nothing about it.
+    controller.setReadonly(handle.readonly());
     controller.setInvalid(showsAsInvalid({ valid: handle.valid(), disabled: handle.disabled() }));
     // The trigger describes itself by whichever of the two is on screen, and this renderer is what
     // decides that: the error list appears once the field is touched and has something to say.

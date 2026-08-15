@@ -73,7 +73,7 @@ export class MdyFileFieldElement extends MdyFieldElement<readonly File[] | null>
           class="mdy-file-input"
           ?multiple=${this.multiple}
           accept=${this.accept || nothing}
-          ?disabled=${handle.disabled()}
+          ?disabled=${handle.disabled() || handle.readonly()}
           ${mdyPart(this.controlPart(handle))}
           @change=${(e: Event) => pick(Array.from((e.target as HTMLInputElement).files ?? []))}
           @blur=${() => handle.markAsTouched()}
@@ -82,7 +82,7 @@ export class MdyFileFieldElement extends MdyFieldElement<readonly File[] | null>
           <button
             type="button"
             class="mdy-button"
-            ?disabled=${handle.disabled()}
+            ?disabled=${handle.disabled() || handle.readonly()}
             @click=${() => this.querySelector<HTMLInputElement>("input[type=file]")?.click()}
           >
             ${mdyIcon("PLUS", "mdy-file-icon")}

@@ -143,9 +143,14 @@ export function renderFileField(
       ...definition.parts.control,
       attributes: { ...definition.parts.control.attributes, ...a11y.control.attributes },
     });
-    control.disabled = handle.disabled();
-    browse.disabled = handle.disabled();
-    clear.disabled = handle.disabled() || files.length === 0;
+    // A read-only file field has no word of its own: `MDY_WIDGET_STATE_SUPPORT` declares no
+    // read-only state for this kind, because the picker is the browser's and the element's role has
+    // no `aria-readonly` to carry. What is true and expressible is that the affordance is not
+    // operable — the field itself stays in play, submitted and validated.
+    const cannotPick = handle.disabled() || handle.readonly();
+    control.disabled = cannotPick;
+    browse.disabled = cannotPick;
+    clear.disabled = cannotPick || files.length === 0;
     clear.hidden = files.length === 0;
     placeholder.hidden = files.length > 0;
     setText(rejected, refused.length === 0 ? "" : messages.fileRejected(refused.map((file) => file.name)));

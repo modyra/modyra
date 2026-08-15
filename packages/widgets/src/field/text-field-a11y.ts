@@ -81,6 +81,11 @@ export function projectTextFieldA11y<TValue>(
   const announcesReadonly = kind === undefined
     || !(MDY_WIDGET_KINDS as readonly string[]).includes(kind)
     || widgetSupportsState(kind as MdyWidgetKind, "readonly");
+  // And whether the platform acts on the attribute, which is a different question. HTML honours
+  // `readonly` on a text-entry control and ignores it on a range — so a slider announces read-only
+  // and does not bind it: an attribute the browser drops is the appearance of a guarantee with
+  // nothing behind it, and what refuses the drag is the renderer asking `blocksValueChange`.
+  const bindsNativeReadonly = announcesReadonly && kind !== "slider";
 
   return {
     root: {
@@ -124,7 +129,7 @@ export function projectTextFieldA11y<TValue>(
         "aria-readonly": announcesReadonly && state.readonly ? "true" : null,
         inputmode: options.inputMode ?? options.constraints?.inputMode ?? null,
         disabled: state.disabled,
-        readonly: announcesReadonly && state.readonly,
+        readonly: bindsNativeReadonly && state.readonly,
       },
     },
     description: {

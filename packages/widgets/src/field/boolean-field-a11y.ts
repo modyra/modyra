@@ -110,13 +110,12 @@ export function projectBooleanFieldA11y(
         // carries read-only, and only on the kinds that declare the state.
         "aria-disabled": String(state.disabled),
         "aria-describedby": describedBy,
-        // No read-only, in either half. `MDY_WIDGET_STATE_SUPPORT` does not list the state for a
-        // boolean — "read-only would be a checkbox you can focus but not toggle, which is what
-        // disabled already means" — and the two halves were failing in opposite directions: HTML
-        // ignores `readonly` on a checkbox, so a renderer binding it bound nothing and the box
-        // still toggled, while `aria-readonly="true"` told a screen-reader user it could not. An
-        // omission is better than that pair. A form that means "this cannot be changed" says
-        // `disabled`, which both halves implement.
+        // ARIA only, never the native attribute: HTML ignores `readonly` on a checkbox, so binding
+        // it binds nothing. What refuses the toggle is the controller, and this is what says so.
+        // A read-only field refuses the change and stays in play: focusable, submitted, validated.
+        // The controller has held that rule for every kind for as long as `blocksValueChange` has
+        // existed; saying nothing about it left a control that refuses with no way to say why.
+        "aria-readonly": state.readonly ? "true" : null,
         disabled: state.disabled,
       },
     },

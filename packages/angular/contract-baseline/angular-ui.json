@@ -533,6 +533,7 @@
         "aria-hidden",
         "aria-invalid",
         "aria-label",
+        "aria-readonly",
         "aria-required",
         "aria-selected"
       ],
@@ -647,6 +648,7 @@
         "aria-haspopup",
         "aria-invalid",
         "aria-label",
+        "aria-readonly",
         "aria-required"
       ],
       "selectors": [
@@ -692,6 +694,7 @@
         "aria-hidden",
         "aria-invalid",
         "aria-label",
+        "aria-readonly",
         "aria-required"
       ],
       "selectors": [
@@ -833,7 +836,8 @@
         "aria-disabled",
         "aria-invalid",
         "aria-label",
-        "aria-pressed"
+        "aria-pressed",
+        "aria-readonly"
       ],
       "selectors": [
         "mdy-control-multiselect"
@@ -928,7 +932,8 @@
         "aria-checked",
         "aria-disabled",
         "aria-hidden",
-        "aria-labelledby"
+        "aria-labelledby",
+        "aria-readonly"
       ],
       "selectors": [
         "mdy-control-segmented"
@@ -982,6 +987,7 @@
         "aria-invalid",
         "aria-label",
         "aria-labelledby",
+        "aria-readonly",
         "aria-required",
         "aria-selected"
       ],
@@ -1157,6 +1163,7 @@
         "aria-haspopup",
         "aria-invalid",
         "aria-label",
+        "aria-readonly",
         "aria-required"
       ],
       "selectors": [

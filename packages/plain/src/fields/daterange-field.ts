@@ -203,6 +203,10 @@ export function renderDaterangeField(
       // than one that says nothing at all.
       applyPart(input, { ...part, attributes: { ...part.attributes, ...a11y.control.attributes } });
       input.disabled = handle.disabled();
+      // A read-only range refuses the typed date and the calendar's choice alike; the native
+      // attribute stops the typing and the ARIA says why.
+      input.readOnly = handle.readonly();
+      input.setAttribute("aria-readonly", String(handle.readonly()));
     }
     toggle.disabled = handle.disabled();
     toggle.setAttribute("aria-expanded", String(state.open));

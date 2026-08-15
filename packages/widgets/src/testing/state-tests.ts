@@ -43,8 +43,24 @@ export interface MdyStateInspectOptions {
 
 /** Native elements that can genuinely carry `disabled` / `readonly`. */
 const NATIVE_CONTROLS = new Set(["input", "select", "textarea", "button"]);
-/** `readonly` is only a real attribute on these; a select or a checkbox has no such thing. */
-const READONLY_CAPABLE = new Set(["input", "textarea"]);
+/**
+ * Where the native `readonly` attribute does something.
+ *
+ * HTML honours it for text-like inputs and a textarea, and ignores it everywhere else: a range, a
+ * checkbox, a colour, a file input and a `<select>` all take the attribute and stay operable. On
+ * those the refusal belongs to the widget — the controller declines the change — and `aria-readonly`
+ * is what says so. Asking for an attribute the platform ignores would demand markup that lies.
+ */
+const READONLY_HONOURING_TYPES = new Set([
+  "text", "search", "url", "tel", "email", "password",
+  "date", "month", "week", "time", "datetime-local", "number",
+]);
+function honoursNativeReadonly(element: Element): boolean {
+  const tag = element.tagName.toLowerCase();
+  if (tag === "textarea") return true;
+  if (tag !== "input") return false;
+  return READONLY_HONOURING_TYPES.has((element.getAttribute("type") ?? "text").toLowerCase());
+}
 
 function partElements(parts: MdyDomPartMap | undefined, part: string): readonly Element[] {
   const value = parts?.[part];
@@ -131,9 +147,10 @@ export function inspectWidgetState(
       if (seen.has(element)) continue;
       seen.add(element);
       const tag = element.tagName.toLowerCase();
-      // A button has no read-only rendering, so `readonly` is only asked of what can carry it.
+      // Only where the platform acts on it. Elsewhere the widget refuses the change itself and
+      // announces it in ARIA, which the check above is what verifies.
       const applicable = contract.nativeAttribute === "readonly"
-        ? READONLY_CAPABLE.has(tag)
+        ? honoursNativeReadonly(element)
         : NATIVE_CONTROLS.has(tag);
       if (!applicable) continue;
       if (!element.hasAttribute(contract.nativeAttribute)) {

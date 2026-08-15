@@ -114,6 +114,9 @@ export function projectMultiselectFieldA11y<TValue>(
         "aria-invalid": String(hasErrors),
         "aria-required": String(state.required),
         "aria-disabled": String(state.disabled),
+        // A read-only field refuses the change and stays in play: focusable, submitted, validated.
+        // What refuses it is the controller, and this is what says so.
+        "aria-readonly": state.readonly ? "true" : null,
         "aria-describedby": describedBy,
         disabled: state.disabled,
       },

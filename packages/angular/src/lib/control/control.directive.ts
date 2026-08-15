@@ -448,6 +448,7 @@ export abstract class MdyBaseControl<TValue = unknown> implements OnInit {
       {
         disabled: this.ariaDisabled() ?? this.isDisabled(),
         required: this.ariaRequired() || this.isRequired(),
+        readonly: this.isReadonly(),
       },
       this.errors(),
       {
