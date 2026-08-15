@@ -3764,3 +3764,42 @@ qualification the security guide's table carries. A reader of the recipes believ
 character is stripped; two of them are not. The behaviour is correct and the precise guide is correct;
 the sentence that gives the advice is the one that overstates. Not asserted as a battle: a check
 demanding more than the contract states would be inventing a requirement.
+
+## Checked and clean: three sentences from the mental model
+
+`adversarial/reactivity/three-things-the-model-says-it-is.battle.test.mjs` — 3 battles, green, new.
+The guide states the engine's shape in prose, and nothing held any of it.
+
+**`undo()` restores recorded values only, never touched, dirty or errors.**
+
+```
+before undo   value "one"     touched true   dirty true
+after undo    value "start"   touched TRUE   dirty TRUE
+```
+
+A step of history is a value the form held, not a session it was in — undoing a write does not
+un-visit the field, and a person who has been somewhere has still been there.
+
+**The engine never deep-compares and never uses `JSON.stringify` to decide equality.**
+
+```
+set({x:1}) over an initial {x:1}    getChanges() {"a":{"x":1}}   a new object is a new value
+                                    an effect watching it re-runs
+set(theSameReference)               getChanges() {}              the control: the rule is identity
+```
+
+Identity is the rule, which is the only honest one for a value the engine cannot look inside — and a
+cost a consumer needs to know: a mapper that rebuilds an object on every render writes on every
+render. A deep comparison introduced as an optimisation would make that quiet.
+
+**`disabled` and `readonly` are one value, so they cannot disagree.**
+
+```
+asked to be BOTH        interactivity "disabled"   disabled true    readonly FALSE
+disabled alone          interactivity "disabled"   disabled true    readonly false
+readonly alone          interactivity "readonly"   disabled false   readonly true
+```
+
+Two flags would answer "both"; one value has to choose, and it chooses the stricter. That is what
+makes `disabled && readonly` unrepresentable rather than merely unlikely — including when a consumer
+asks for it.
