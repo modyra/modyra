@@ -6141,6 +6141,10 @@ one where the missing behaviour is a protection.
 
 ## 115. One selection to look at, three presses to undo
 
+**Closed — verified green.** Repaired in `61e814cd`, both renderers, after the framing was corrected
+below.
+
+
 **Severity** S1 · **Classification** ambiguous contract, with a user-visible consequence · **Spec**
 `browser/a-choice-that-takes-three-presses-to-undo.spec.ts` (red, both renderers)
 
@@ -6551,6 +6555,12 @@ English view name.
 `pt-BR` → en, and `""`, `null` and `undefined` → en rather than to nothing.
 
 ## 121. A field that says it cannot read what it holds, on a form that offers to send it
+
+**Closed — verified green.** Repaired in `7cbcd34e`. Falsified as well as confirmed: cleared, the
+field is offered again; made unreadable again, it is refused again; **disabled**, the form is offered
+and submits without that field rather than being held hostage by one nobody can fix. What that
+falsification turned up is finding 128 below.
+
 
 **Severity** S1 · **Classification** Modyra bug — an error the verdict cannot see · **Spec**
 `browser/a-field-that-says-it-cannot-read-what-it-holds.spec.ts` (red)
@@ -7039,3 +7049,35 @@ not-a-number "", "  ", "abc", "5.7", "5e0", "+5", "-5", "1_2", "12:30", "Infinit
 are decided before the value, which is what keeps that from happening. The Arabic-Indic digit is
 refused rather than misread, consistent with `docs/guides/i18n.md` calling non-Latin digit input
 unsupported.
+
+## 128. An entry error that is not an error like any other
+
+**Severity** S2 · **Classification** the shell rule bypassed on one path · **Spec**
+`browser/an-entry-error-is-an-error-like-any-other.spec.ts` (red, both renderers, on opposite halves)
+· **Claims** A11Y-002, UI-006 · **Found by falsifying the repair for finding 121**
+
+`showsAsInvalid(flags)` is `!flags.valid && !flags.disabled`, and it does not care where an error came
+from. A date field holding text it cannot read raises one the *widget* owns rather than one a
+validator returned, and that path does not go through the rule:
+
+```
+                          while live                    after being disabled
+required, plain           aria-invalid true, message    false, message gone      correct
+required, lit             aria-invalid true, message    false, message gone      correct
+unreadable, plain         aria-invalid true, message    true, message stays      announces a control nobody can touch
+unreadable, lit           aria-invalid false, message   false, message stays     never announces it at all
+```
+
+Two opposite halves of one gap. One renderer keeps telling a screen-reader user that something is
+wrong with a control they are not allowed to change, and keeps the message on screen. The other never
+marks the control at all while showing the message — visible to someone who can see it, absent to
+someone who cannot, which is finding 124's shape in a different place.
+
+The control is the same field made wrong the ordinary way, in the same renderer and the same run:
+both obey the rule there, so what the entry error does differently is the entry error and not the
+shell.
+
+**How it was found.** Finding 121's repair was not taken on trust. Confirming it was cheap — the spec
+went green — so it was pushed instead: cleared and it is offered again, unreadable again and refused
+again, disabled and the form submits without it rather than being held hostage. That last path is the
+one that answered with something new.
