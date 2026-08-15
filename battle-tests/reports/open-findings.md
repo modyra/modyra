@@ -1969,3 +1969,34 @@ Plain honoured it. That was this tier's Lit host, which forwarded only `label` a
 element. Fixed — it now forwards every property a document declares — and with it fixed the two
 renderers agree exactly, on the bound and on the divergence. A renderer that looks like it ignores a
 declared property is worth suspecting the harness for first.
+
+## 68. A refusal that names a list and shows none
+
+`adversarial/validation/a-sentence-with-nothing-after-it.battle.test.mjs` — 2 green, 1 red.
+Filed under **UI-004**, whose S2 is the nearest registered severity. By the model this is **S3** — a
+misleading diagnostic — and no registered claim sits there; the number is the claim's, not the
+finding's.
+
+An empty option list is legitimate and both halves of that are asserted green:
+
+```
+a select declared before its choices arrive, untouched   valid, submittable, nothing said
+a select with options, holding a value not among them    "Value must be one of: A, B"
+```
+
+The case between them is a restored draft — a choice was saved, the form reopens, the options are
+still in flight, and the value is measured against a list with nothing in it:
+
+```
+options: [], value "a"    invalid, correctly.   The message is:
+
+    Value must be one of:
+```
+
+A sentence that ends at its colon. The person is told their choice is not on a list and shown no
+list, and nothing on the page can tell them what would have been accepted.
+
+Both controls are there because the two obvious repairs each break one of them: making an empty list
+accept any value breaks the guard, and refusing an empty list at declaration breaks the select whose
+choices arrive later. What is left is the sentence — name the list, or say instead that there is
+nothing to choose from yet.
