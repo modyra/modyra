@@ -788,3 +788,47 @@ the last row — is the one where nothing appears to happen.
 Either resolution closes it: keep the row where it was, or say in the contract that a rename reorders.
 The battle asserts the position, because that is what a rendered list shows; a documented move would
 make this battle wrong on purpose, which is a better outcome than silence.
+
+## 42. A bulk write costs one undo per row, and comes back backwards
+
+`adversarial/collections/one-edit-one-undo.battle.test.mjs` — 3 red.
+
+Found by surveying past the first divergence. This class first appears around run 60 of the history
+campaign, which stops at run 9 on a different one.
+
+Measured, one call affecting three rows, counting presses to return to the value before it:
+
+| call | undos to return |
+| --- | --- |
+| `array.setAll` (3 rows) | **1** |
+| `record.patch` (3 rows) | **1** |
+| `form.patch` | **1** |
+| one cell write | 1 |
+| `record.setAll` (3 rows) | **3** |
+| `record.setAll({})` — clearing | 6, and never returns |
+| `form.setValue` | 9, and never returns |
+
+The list is the precedent and it is right. `record.patch` is right. `record.setAll` on the same handle
+is not — so this is two methods on one handle disagreeing, not "bulk writes are hard".
+
+**Each press in between shows a table that never existed.** Undoing a three-row write leaves some rows
+updated and some not.
+
+**"Never returns" is about order, not values.** Clearing three rows and undoing brings them all back,
+one at a time, in the order they were removed:
+
+```
+undo #1  {"c":…}
+undo #2  {"c":…,"b":…}
+undo #3  {"c":…,"b":…,"a":…}    every row and value back, reversed
+```
+
+The state the person was in is not on the path. Same cause as finding 41 — a row re-declared is a row
+appended.
+
+**`form.setValue` also passes through a state the form cannot produce**: its undo path holds
+`{"c":{"code":null}}`, and a text cell holds `""` everywhere else. That is shown to a person as
+something they had.
+
+Each battle is written so either resolution closes it: one step per call, or a documented cost; a path
+that passes through the state the person was in, or a documented reordering.
