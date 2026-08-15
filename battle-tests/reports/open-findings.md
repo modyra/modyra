@@ -3314,3 +3314,40 @@ MDY_DYNAMIC_UNSUPPORTED_VERSION  /fields     Unsupported dynamic form config ver
 
 An author reading any of them knows which field and why. The gap is not in what they say — it is the
 one that is never said, above.
+
+## 83. A name a document may declare and a page cannot draw
+
+`browser/a-name-the-page-cannot-carry.spec.ts` — 2 green, 1 red. **S2.**
+
+A widget id is built from a field's name, and the renderer states the rule in one sentence:
+
+```
+[modyra] "a b" cannot be a widget id: it must be non-empty, and may contain neither
+whitespace nor "__". Whitespace splits an attribute list…
+```
+
+Both halves have the same reason — `aria-describedby` is a space-separated list of ids — and **the
+parser enforces one of them**:
+
+```
+"a__b" / "__b" / "a__"    strict.ok=false, MDY_DYNAMIC_INVALID_FIELD    refused where the document is read
+"a b" / "a\tb" / "a\nb"   strict.ok=true, kept, no diagnostic           and the page will not draw them
+```
+
+So an author runs the gate, is told the document is fine, saves it, and the field never appears. The
+half that *is* enforced proves the parser knows about widget ids; the half that is not is in the same
+sentence of the same message.
+
+The renderer's refusal is good — it names the field, the rule and the reason — and the battle does not
+ask for the name to be accepted. It asks for the author to be told at the gate they ran first. The
+third test asserts the enforced half, so if `__` ever stops being refused the finding above is a
+different one and says so.
+
+**Also measured, the same disagreement the other way and not filed**: the parser refuses `a.b` as
+`MDY_DYNAMIC_UNSAFE_NAME` and the renderer mounts it. A renderer more permissive than the contract
+costs nobody a document that passed.
+
+**And clean, swept alongside**: every other name that mounts associates correctly — `a"b`, `a'b`,
+`a#b`, `a[0]`, `a:b`, `à-ünï` and an eighty-character name all get `label[for]` matching the input id
+and an `aria-describedby` that resolves. The engine builds ids and `for` attributes rather than CSS
+selectors, which is what makes characters that break a selector harmless here.
