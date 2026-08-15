@@ -149,3 +149,34 @@ test("what the range could not read is kept or explained", async ({ page }) => {
   // Either repair closes this: keep the text so it can be corrected, or clear it and say why.
   expect(swallowed, JSON.stringify(swallowed, null, 1)).toEqual([]);
 });
+
+test("lit discards it too, so the defect belongs to the contract", async ({ page }) => {
+  // The same question asked of the other renderer. A defect both have is the contract's; one only one
+  // has belongs to that renderer, and the other usually shows the shape that avoids it. Here they
+  // agree, which places the repair in the shared controller rather than twice in markup.
+  await page.goto("/lit.html");
+  await page.waitForFunction(() => (window as never as { battleLitReady?: boolean }).battleLitReady === true);
+  await page.evaluate(
+    () => window.battleLit.mountFields("lit-range", [{ name: "f", kind: "daterange", label: "F" }] as never),
+  );
+  await page.waitForTimeout(250);
+
+  const start = page.locator('[data-form="lit-range"] .mdy-daterange__input').first();
+  await start.focus();
+  await page.keyboard.type("03/04/2026");
+  const whileTyping = await start.inputValue();
+  await page.keyboard.press("Tab");
+  await page.waitForTimeout(250);
+
+  // The premise, as on the plain side: the input did take the keystrokes.
+  expect(whileTyping, "the lit start input did not accept the keystrokes at all").toBe("03/04/2026");
+
+  const seen = await page.evaluate(() => {
+    const element = document.querySelector('[data-form="lit-range"]') as HTMLElement;
+    const inputs = [...element.querySelectorAll<HTMLInputElement>(".mdy-daterange__input")];
+    return { shows: inputs.map((each) => each.value), value: (window.battleLit.valueOf("lit-range") as Record<string, unknown>).f };
+  });
+
+  expect(seen.value, `lit discarded a well-formed range too: ${JSON.stringify(seen)}`)
+    .toEqual({ start: "2026-03-04", end: null });
+});
