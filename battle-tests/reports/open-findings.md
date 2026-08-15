@@ -4971,20 +4971,29 @@ learn the limit except by hitting it.
 seven entries, each a `code` and the `phrase` its message carries. A consumer reacting to a parse
 switches on it.
 
-Driving the parser with one document per ordinary mistake, plus every published fixture, three codes
+Driving the parser with one document per ordinary mistake, plus every published fixture, four codes
 come back that the list does not have:
 
 | code | reached by |
 | --- | --- |
-| `MDY_DYNAMIC_INVALID_FIELD` | a validator of the wrong type — `validators: { pattern: 7 }` |
+| `MDY_DYNAMIC_INVALID_FIELD` | a validator of the wrong type — `validators: { min: "five" }` |
 | `MDY_DYNAMIC_INVALID_RULE` | a rule pointing where it may not (finding 102) |
 | `MDY_DYNAMIC_UNKNOWN_FIELD_REFERENCE` | a layout naming a field that is not there |
+| `MDY_DYNAMIC_INVALID_LAYOUT` | a column count outside the schema's own `1..12` |
 
-None of the three is exotic. A consumer handling the seven and falling through on anything else meets
+So the published list of seven describes a little over half of what a parse can say. None of the four
+is exotic. A consumer handling the seven and falling through on anything else meets
 a diagnostic they were never told about, on documents they will certainly receive.
 
 The control is the other direction: the same corpus reaches six of the seven declared codes, so an
 undeclared one is the list being short rather than the corpus wandering somewhere unusual.
+
+Checked alongside and clean: the parser does enforce the schema's own types and ranges. Thirteen of
+fourteen violations are reported — a missing `kind` or `name`, a name, kind or label that is not a
+string, a `min` that is not a number, a `required` that is not a boolean, an option missing its value
+or label, `fields` that is not a list, a version that is not a number, a column outside `1..12`. The
+fourteenth is `minLength: -5`, which the schema permits (`{"type": "number"}`, no minimum) and which
+no string can fail, so accepting it is right.
 
 Two measurements taken alongside and not asserted, because each is a separate question:
 `MDY_DYNAMIC_OPTIONS_REQUIRED` fires for a select with no `options` key and for options that are not
