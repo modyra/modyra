@@ -2668,3 +2668,26 @@ terminate cannot be timed from inside the process it is hanging.
 
 Sibling of 75: the same two functions, the same closed vocabulary, and the same shape of gap — what
 the author-time check knows is not what the evaluator enforces.
+
+## Checked and clean: every door into a value is a door the security policy is told about
+
+`adversarial/security/every-door-the-policy-stands-at.battle.test.mjs` — green, and kept.
+
+`onViolation` is the only channel a security policy has: a consumer wiring it to their telemetry
+learns that a value arrived over the limit and was cut. What that channel is worth depends entirely on
+how many doors it stands at — a policy that hears about a `set` and not about a restored draft reports
+a clean origin while the hostile one goes past it.
+
+Eight doors, `maxValueLength: 10`, a fifty-character value:
+
+```
+field.set · patch · setValue · a cell of a row · upsert a new row · patch a row ·
+setInitialValue then reset                        one violation each, value cut to 10
+a draft somebody rewrote in storage               one violation, value cut to 10
+a value within the limit                          no violation, value untouched
+```
+
+Complete, including the door the security guide names as the threat model in those words. Written as a
+battle rather than a note because a ninth door added later would pass every other test in this suite
+while being invisible to the policy, and because nothing else asserts that the channel is **complete**
+rather than merely present.
