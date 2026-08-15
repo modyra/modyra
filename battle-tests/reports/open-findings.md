@@ -4371,9 +4371,36 @@ controller. Sharing one lets a notification from an earlier `dispatch` land insi
 be counted as that call's — a first pass here did exactly that and read as `setOptions` notifying
 sometimes. Three runs of the isolated form agree: never.
 
+**Where the defect is.** Not in `subscribeController`: two independent observation mechanisms miss the
+same change. A plain `reactivity.effect(() => controller.state())` does not re-run after `setOptions`
+either — `+0` runs, exactly like the subscription — while `setValue` on the same controller fires
+both. So the options change is not a reactive write at all; it mutates state outside the graph, and
+everything that observes is blind to it whatever it observes with.
+
+**Why it is easy to miss.** `controller.state()` returns *the same object every call* — identity is
+stable, and its `options` is live:
+
+```
+held = controller.state()          held.options.length -> 3
+controller.setOptions(list(1))
+                                   held.options.length -> 1     (the captured object changed)
+held === controller.state()        true
+```
+
+So any check that *reads* sees the truth, and only a check that *observes* sees the defect. A first
+pass here read a fresh `state()` after the call, found the new list, and concluded the adapter was
+fine.
+
 The battle sweeps rather than names: it reads the controller list off the package, so a controller or
 setter added later is measured without the file being touched, and a setter it has no argument for is
 reported as unmeasured rather than passed `undefined`.
+
+**Not measured: the non-hook adapters.** Vue, solid and svelte wrap the controller in their own
+reactive effect rather than in `subscribeController`, so whether their components repaint is a
+separate question. Driving Vue's reactivity from a bare Node process fails its own control here — a
+`dispatch`, which does notify, produces no re-run either — so nothing is claimed about them. Given
+that a plain effect over `state()` also misses the change, the expectation is that they are affected;
+it is an expectation, not a measurement.
 
 Classification: Modyra bug. S1 by A11Y-001, and the reachable consequence is a widget that does not
 repaint when its content changes.
