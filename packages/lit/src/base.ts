@@ -184,7 +184,19 @@ export abstract class MdyFieldElement<T> extends LitElement {
     return ID.part(this.fieldId, "errors");
   }
 
+  /**
+   * What this control has to say that the form does not hold.
+   *
+   * A date or time entry the control could not read is the case: the form holds nothing, so it has
+   * no error to give, and a control keeping the text without saying anything leaves the person
+   * looking at their own writing believing it was taken.
+   */
+  protected controlErrors(): readonly string[] {
+    return [];
+  }
+
   protected showErrors(handle: MdyFieldHandle<T>): boolean {
+    if (this.controlErrors().length > 0) return true;
     return handle.touched() && shownErrorsOf(handle).length > 0;
   }
 
@@ -196,8 +208,7 @@ export abstract class MdyFieldElement<T> extends LitElement {
 
   /** Error text joined for inline display. */
   protected inlineErrorText(handle: MdyFieldHandle<T>): string {
-    return shownErrorsOf(handle)
-      .map((e) => e.message)
+    return [...this.controlErrors(), ...shownErrorsOf(handle).map((e) => e.message)]
       .filter((msg) => !!msg && msg.trim() !== "")
       .join(", ");
   }
@@ -330,8 +341,8 @@ export abstract class MdyFieldElement<T> extends LitElement {
       id=${this.errorsId}
       aria-live="polite"
     >
-      ${shownErrorsOf(handle).map(
-        (er) => html`<li class="${SHELL.errorItem}">${er.message}</li>`,
+      ${[...this.controlErrors(), ...shownErrorsOf(handle).map((er) => er.message)].map(
+        (message) => html`<li class="${SHELL.errorItem}">${message}</li>`,
       )}
     </ul>`;
   }

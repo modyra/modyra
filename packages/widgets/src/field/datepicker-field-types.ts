@@ -26,6 +26,14 @@ export interface MdyDatepickerFieldControllerOptions {
   readonly firstDayOfWeek?: number;
   /** Whether the widget is visually/programmatically readonly. */
   readonly readonly?: boolean;
+  /**
+   * Reads typed text as an ISO date, or answers null when it cannot.
+   *
+   * A dependency because the reading is locale-aware and the locale belongs to the host: a control
+   * knows what `14/03` means where it is rendered, and this package does not. Without one, a typed
+   * entry is left alone.
+   */
+  readonly parseEntry?: (text: string) => string | null;
 }
 
 /** One rendered calendar cell — same shape `buildMonthGrid` already produces, so the controller can hand it straight to the host. */
@@ -60,6 +68,22 @@ export interface MdyDatepickerFieldState {
   readonly touched: boolean;
   readonly dirty: boolean;
   readonly pending: boolean;
+  /**
+   * What the person typed, while it is not a date this field can hold.
+   *
+   * A control renders this in place of the formatted value, so an entry that could not be read stays
+   * on screen and can be corrected. Null while there is nothing outstanding — which is every state
+   * except the one immediately after an unreadable entry.
+   */
+  readonly entryText: string | null;
+  /**
+   * Whether the outstanding entry could not be read.
+   *
+   * Separate from `entryText` being present because it is the half a control shows a *verdict* for:
+   * keeping the text without saying anything leaves a field that looks accepted holding a value it
+   * never took, which is what `acceptTimeField` refuses one level down.
+   */
+  readonly entryUnreadable: boolean;
 }
 
 /** User/host intent for a datepicker field widget. */
@@ -74,6 +98,13 @@ export type MdyDatepickerFieldIntent =
   | { readonly type: "select-year"; readonly year: number }
   | { readonly type: "keydown"; readonly key: string; readonly shiftKey?: boolean }
   | { readonly type: "select-date"; readonly iso: string }
+  /**
+   * The person typed something and left the control.
+   *
+   * The control hands over the text rather than parsing it, so both renderers answer a typed entry
+   * the same way — parsing in each of them is why they could differ at all.
+   */
+  | { readonly type: "type"; readonly text: string }
   | { readonly type: "clear" }
   | { readonly type: "focus" }
   | { readonly type: "blur" };

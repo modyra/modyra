@@ -90,6 +90,10 @@ export function createTimepickerFieldController(
   // dial is what makes "pick a time" mean the same gesture in every renderer.
   const viewMode = reactivity.signal<MdyTimepickerViewMode>("dial");
   const draft = reactivity.signal<ParsedTime>(draftFor(handle.value(), format));
+  // What the person typed while it is not a time. Held here for the same reason the datepicker holds
+  // it: neither renderer held it, so an entry the control could not read was rewritten away by the
+  // next sync and nobody had decided that it should be.
+  const entryText = reactivity.signal<string | null>(null);
 
   const state: MdySignal<MdyTimepickerFieldState> = reactivity.computed(() => ({
     value: handle.value(),
@@ -107,6 +111,8 @@ export function createTimepickerFieldController(
     touched: handle.touched(),
     dirty: handle.dirty(),
     pending: handle.pending(),
+    entryText: entryText(),
+    entryUnreadable: entryText() !== null,
   }));
 
   const view: MdySignal<MdyWidgetViewContract> = reactivity.computed(() => {
@@ -145,7 +151,45 @@ export function createTimepickerFieldController(
       : [{ type: "close-overlay" }];
   }
 
+  /**
+   * A typed entry, judged.
+   *
+   * Empty clears, as leaving a control empty always has. Readable commits. Unreadable keeps the text
+   * and empties the value — a control showing `14:30` while holding a time it never took says "that
+   * worked", and `acceptTimeField` one level down refuses exactly that for a single segment.
+   */
+  function takeEntry(text: string): readonly MdyUiCommand[] {
+    const trimmed = text.trim();
+    if (trimmed.length === 0) {
+      entryText.set(null);
+      return clearTime();
+    }
+    const value = options.parseEntry?.(trimmed) ?? null;
+    if (value !== null) {
+      entryText.set(null);
+      setValue(value);
+      handle.markAsDirty();
+      handle.markAsTouched();
+      return [{ type: "mark-dirty" }, { type: "mark-touched" }];
+    }
+    entryText.set(text);
+    handle.set(null);
+    handle.markAsDirty();
+    handle.markAsTouched();
+    return [{ type: "mark-dirty" }, { type: "mark-touched" }];
+  }
+
+  function clearTime(): readonly MdyUiCommand[] {
+    entryText.set(null);
+    handle.set(null);
+    handle.markAsDirty();
+    handle.markAsTouched();
+    return [{ type: "mark-dirty" }, { type: "mark-touched" }];
+  }
+
   function confirm(): readonly MdyUiCommand[] {
+    // A time arriving from the dial answers the outstanding entry.
+    entryText.set(null);
     handle.set(formatTimeAs(draft(), format));
     handle.markAsDirty();
     handle.markAsTouched();
@@ -200,16 +244,15 @@ export function createTimepickerFieldController(
       case "set-view-mode":
         viewMode.set(intent.mode);
         return [];
-      case "clear": {
-        handle.set(null);
-        handle.markAsDirty();
-        handle.markAsTouched();
-        return [{ type: "mark-dirty" }, { type: "mark-touched" }];
-      }
+      case "type":
+        return takeEntry(intent.text);
+      case "clear":
+        return clearTime();
     }
   }
 
   function setValue(value: string | null): void {
+    entryText.set(null);
     handle.set(value);
     draft.set(draftFor(value, format));
   }

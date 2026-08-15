@@ -46,9 +46,20 @@ export function renderDatepickerField(
   reactivity = observerFor(handle, reactivity);
   // How this popup attaches is the contract's, not this renderer's.
   const anchoring = overlayAnchoringFor("datepicker");
-  const controller = createDatepickerFieldController({ widgetId: widgetId, handle, ...options }, reactivity);
   // Month and weekday names, and the first day of the week, come from Intl via `buildDateLocale`.
+  // Read before the controller is built, because the controller reads a typed entry through it.
   const dateLocale = buildDateLocale(options.locale ?? (typeof navigator === "undefined" ? "en-US" : navigator.language), options.firstDayOfWeek);
+  const controller = createDatepickerFieldController({
+    widgetId: widgetId,
+    handle,
+    ...options,
+    // The reading is locale-aware, so it belongs to the renderer; the *judgement* — commit, clear or
+    // keep — belongs to the controller, which is what stops two renderers answering differently.
+    parseEntry: (text) => {
+      const parsed = parseLocalizedDate(text, dateLocale.locale);
+      return parsed ? formatIsoDate(parsed) : null;
+    },
+  }, reactivity);
 
   const shell = buildFieldShell(f.label, "datepicker", {}, f.ariaLabel);
   // The catalogue's datepicker anatomy: a typeable input plus a toggle button that opens the
@@ -163,13 +174,12 @@ export function renderDatepickerField(
   control.addEventListener("click", () => { if (!controller.state().open) dispatch({ type: "open" }); });
   control.addEventListener("input", () => { typing = true; });
   control.addEventListener("blur", () => { typing = false; dispatch({ type: "blur" }); });
-  // A typed date commits through the same select-date intent the calendar uses, so parsing is the
-  // only thing this renderer adds; an unparseable entry falls back to the current value.
+  // The text goes to the controller as text. Parsing here and dispatching only on success is what
+  // made an unreadable entry vanish: nothing was dispatched, and the sync below then rewrote the
+  // input from a value that had not changed.
   control.addEventListener("change", () => {
     typing = false;
-    const parsed = parseLocalizedDate(control.value, dateLocale.locale);
-    if (parsed) dispatch({ type: "select-date", iso: formatIsoDate(parsed) });
-    else if (!control.value) dispatch({ type: "clear" });
+    dispatch({ type: "type", text: control.value });
   });
   prevButton.addEventListener("click", () => dispatch({ type: "navigate-month", delta: -1 }));
   nextButton.addEventListener("click", () => dispatch({ type: "navigate-month", delta: 1 }));
@@ -219,14 +229,20 @@ export function renderDatepickerField(
     applyPart(grid, view.parts.grid);
     applyPart(shell.description, view.parts.description);
     applyPart(shell.errorList, view.parts.error);
-    setErrors(shell.errorList, shownErrorsOf(handle).map((e) => e.message));
+    // An entry the field could not read is a verdict of this control's own: the form holds nothing,
+    // so it has no error to give, and saying nothing would leave the person looking at their own
+    // text believing it was taken.
+    const unreadable = state.entryUnreadable ? [messages.entryUnreadable] : [];
+    setErrors(shell.errorList, [...unreadable, ...shownErrorsOf(handle).map((e) => e.message)]);
+    control.setAttribute("aria-invalid", String(state.entryUnreadable || showsAsInvalid({ valid: handle.valid(), disabled: handle.disabled() })));
     shell.syncState({
       touched: handle.touched(), disabled: handle.disabled(),
-      hasError: showsAsInvalid({ valid: handle.valid(), disabled: handle.disabled() }), filled: state.selectedDate !== "", required: handle.required(),
+      hasError: state.entryUnreadable || showsAsInvalid({ valid: handle.valid(), disabled: handle.disabled() }), filled: state.selectedDate !== "", required: handle.required(),
     });
 
-    // The input mirrors the committed value; while it has focus the user's own text wins.
-    const display = state.selectedDate || "";
+    // The input mirrors the committed value, except while the person is typing — and except while it
+    // holds an entry the field could not read, which stays where they can correct it.
+    const display = state.entryText ?? (state.selectedDate || "");
     if (!typing && control.value !== display) control.value = display;
     setOverlayOpen(popup, state.open);
     // Anchored by the contract, like every other overlay: the placement, the size and the

@@ -48,6 +48,8 @@ const RESTING: MdyTimepickerFieldState = Object.freeze({
   touched: false,
   dirty: false,
   pending: false,
+  entryText: null,
+  entryUnreadable: false,
 });
 
 export class MdyTimepickerFieldElement extends MdyFieldElement<string | null> {
@@ -74,6 +76,10 @@ export class MdyTimepickerFieldElement extends MdyFieldElement<string | null> {
   private unsubscribe?: () => void;
 
   /** What the controller is holding, or the resting shape before a handle exists. */
+  protected override controlErrors(): readonly string[] {
+    return this.view.entryUnreadable ? [this.messages.entryUnreadable] : [];
+  }
+
   private get view(): MdyTimepickerFieldState {
     return this.fieldController?.state() ?? RESTING;
   }
@@ -119,6 +125,12 @@ export class MdyTimepickerFieldElement extends MdyFieldElement<string | null> {
         widgetId: this.fieldId,
         handle,
         format: this.format,
+        // The reading is this element's; the judgement is the controller's, so a typed entry means
+        // the same thing here as in every other renderer.
+        parseEntry: (text) => {
+          const parsed = parseAnyTime(text.trim().toUpperCase(), this.format);
+          return parsed ? formatTimeAs(parsed, this.format) : null;
+        },
       });
       this.unsubscribe = subscribeController(
         this.fieldController as never,
@@ -581,7 +593,7 @@ export class MdyTimepickerFieldElement extends MdyFieldElement<string | null> {
             type="text"
             class="mdy-timepicker__input"
             placeholder=${this.effectivePlaceholder}
-            .value=${handle.value() ?? ""}
+            .value=${this.view.entryText ?? handle.value() ?? ""}
             ?disabled=${handle.disabled()}
             role="combobox"
             aria-haspopup="dialog"
@@ -590,22 +602,9 @@ export class MdyTimepickerFieldElement extends MdyFieldElement<string | null> {
             ${mdyPart(this.controlPart(handle))}
             autocomplete="off"
             @change=${(e: Event) => {
-              const input = e.target as HTMLInputElement;
-              const raw = input.value.trim().toUpperCase();
-              if (!raw) {
-                handle.set(null);
-                handle.markAsDirty();
-                return;
-              }
-              const parsed = parseAnyTime(raw, this.format);
-              if (parsed) {
-                const formatted = formatTimeAs(parsed, this.format);
-                if (handle.value() !== formatted) {
-                  handle.set(formatted);
-                  handle.markAsDirty();
-                }
-              }
-              input.value = handle.value() ?? "";
+              // The text goes over as text. Parsing here and writing the value back was the erasure:
+              // `14:30` in a 12-hour control left nothing on screen to correct.
+              this.send({ type: "type", text: (e.target as HTMLInputElement).value });
             }}
             @blur=${() => handle.markAsTouched()}
           />

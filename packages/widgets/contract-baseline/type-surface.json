@@ -400,6 +400,7 @@
     "handle: MdyFieldHandle<string | null>",
     "maxDate?: string | null",
     "minDate?: string | null",
+    "parseEntry?: (text: string) => string | null",
     "readonly?: boolean",
     "widgetId: string"
   ],
@@ -410,6 +411,8 @@
     "cells: ReadonlyArray<MdyDatepickerFieldCell>",
     "dirty: boolean",
     "disabled: boolean",
+    "entryText: string | null",
+    "entryUnreadable: boolean",
     "focusedDate: string",
     "interactivity: MdyInteractivity",
     "invalid: boolean",
@@ -1087,6 +1090,7 @@
     "daterangeSelectFallback: string",
     "daterangeStartLabel: string",
     "decrease: string",
+    "entryUnreadable: string",
     "fileClearSelection: string",
     "fileNoneSelected: string",
     "fileSelect: string",
@@ -1755,6 +1759,7 @@
   "MdyTimepickerFieldControllerOptions": [
     "format?: MdyTimeFormat",
     "handle: MdyFieldHandle<string | null>",
+    "parseEntry?: (text: string) => string | null",
     "readonly?: boolean",
     "widgetId: string"
   ],
@@ -1765,6 +1770,8 @@
     "dirty: boolean",
     "disabled: boolean",
     "draft: ParsedTime",
+    "entryText: string | null",
+    "entryUnreadable: boolean",
     "focusedField: \"hour\" | \"minute\"",
     "format: MdyTimeFormat",
     "interactivity: MdyInteractivity",
