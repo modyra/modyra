@@ -953,3 +953,38 @@ Recorded because a negative result costs the same to produce and saves the next 
   the last write. Inherent to a shared key rather than a defect, and recorded so it is not re-derived.
 - **An empty collection round-trips through a draft.** The flat encoding stores `rows: null` as the
   marker that a path is a collection; an empty map comes back `{}` and an empty list `[]`.
+
+## 46. Two spellings of a bound, one control, one rule
+
+`adversarial/dynamic-contract/two-ways-to-say-a-bound.battle.test.mjs` — 2 red, 1 green.
+
+`spec/dynamic-form-v3.schema.json` lets a document say a number's limits in two places, and both are
+declared: `min`/`max`/`step` beside the field, and `min`/`max` inside its `validators`.
+
+They render the same control. Measured in the browser: both produce `min="0" max="10"` on the input,
+so the browser refuses what a person types either way.
+
+Only one is a rule.
+
+| `{ kind: "number", min: 0, max: 10 }` | `{ kind: "number", validators: { min: 0, max: 10 } }` |
+| --- | --- |
+| `set(-999)` → **valid** | `set(-999)` → invalid |
+| `setValue({n:-999})` → **valid** | invalid |
+| `patch({n:-999})` → **valid** | invalid |
+| a draft carrying `-999` → **valid, submittable** | invalid, not submittable |
+| `constraints()` → `min: null, max: null` | `constraints()` → `min: 0, max: 10` |
+
+The draft row is the one that matters. The security module states the threat model in its own words —
+values are attacker-controlled more often than not, and a draft is writable by any script on the
+origin. Under the field-level spelling a tampered draft restores into a form that reports itself
+submittable.
+
+An author who writes the field-level spelling watches the browser refuse `-1` and reasonably concludes
+the form enforces it.
+
+Bounded by the green battle in the same file: `constraints()` does tell the two apart, and it is the
+only surface that does — the rendered control does not.
+
+Either resolution closes it: the field-level spelling holds the value to the bound too, or the
+contract says plainly that it is a control hint and not a rule. What cannot stand is two spellings of
+one sentence that render identically and mean different things.
