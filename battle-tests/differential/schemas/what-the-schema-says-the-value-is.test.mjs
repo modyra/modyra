@@ -28,6 +28,12 @@
  * `z.input` so the published type describes what is really there. The last is why the battle reads
  * the published type rather than only the values — a repair that retyped the leaves would otherwise
  * leave it red forever.
+ *
+ * The other bridge says the same thing by a different route and behaves the same way.
+ * `MdyStandardSchemaTree` maps over `MdyStandardOutput<TSchema>`, and `docs/guides/schemas.md:39`
+ * puts it in prose beside the example a reader copies: "Leaves are `Output | null`". The third
+ * battle holds that one, through Zod acting as a Standard Schema vendor, because the spec's
+ * `~standard.validate` returns the output value and so is an oracle of the same kind.
  */
 
 import { readFileSync } from "node:fs";
@@ -183,5 +189,58 @@ battle(
       what: "the form holds and submits a value its schema would have transformed, while the published leaf type is z.output — the type after the transformation that was not applied",
       detail: JSON.stringify(divergent),
     });
+  },
+);
+
+battle(
+  {
+    claims: ["DYN-001", "SUB-001"],
+    title: "the other bridge's value is the one its schema describes too",
+    environments: ["node"],
+  },
+  async (ctx) => {
+    const { createStandardForm } = await import("@modyra/standard-schema");
+    const { field } = await import("@modyra/core");
+
+    // Zod implements the Standard Schema interface, so it can be the vendor here. What is being
+    // measured is this adapter, not Zod: `~standard.validate` returns the output value, which is the
+    // oracle.
+    const schema = z.object({ f: z.coerce.number() });
+    expectClaim(typeof schema["~standard"]?.validate === "function", {
+      claimIds: ["DYN-001"],
+      what: "the vendor does not implement the Standard Schema interface, so nothing here is measured through it",
+    });
+
+    const produced = schema["~standard"].validate({ f: "42" });
+    ctx.log.note("what the standard interface produces", { produced });
+
+    // The premise: this schema really does transform. A vendor that returned the input unchanged
+    // would make the comparison below empty.
+    expectEqual(produced.value?.f, 42, {
+      claimIds: ["DYN-001"],
+      what: "the schema did not coerce, so there is no transformation to lose",
+    });
+
+    const form = createStandardForm(schema, { f: field(null) }, { devWarnings: false });
+    form.f.f.set("42");
+    await new Promise((resolve) => setTimeout(resolve, 60));
+    const held = form.getValue().f;
+    ctx.log.note("what the derived form holds", { held, type: typeof held, errors: form.errorsFor("f")().length });
+
+    // The control: the form accepts the value, so a divergence below is about what it kept rather
+    // than about a value it refused.
+    expectEqual(form.errorsFor("f")().length, 0, {
+      claimIds: ["DYN-001"],
+      what: "the form refused a value its own schema accepts",
+      detail: JSON.stringify(form.errorsFor("f")().map((each) => each.message)),
+    });
+
+    expectEqual(held, produced.value.f, {
+      claimIds: ["DYN-001", "SUB-001"],
+      what: "the form holds the input where its schema tree is typed from the output — `MdyStandardSchemaTree` maps over `MdyStandardOutput`, and the guide says \"Leaves are `Output | null`\"",
+      detail: JSON.stringify({ held, heldType: typeof held, schemaProduces: produced.value.f }),
+    });
+
+    form.destroy();
   },
 );
