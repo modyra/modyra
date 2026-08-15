@@ -280,9 +280,50 @@ battle(
       claimIds: ["LIF-001"],
       what: "activating a form lost what was put into it before",
     });
+
+    // Starting draft persistence on a form that already holds something has one obvious meaning, and
+    // the resume path takes it: a form that was active, paused, written to and resumed writes its
+    // draft on resuming. A form that was built unstarted and then activated does not — it waits for
+    // an unrelated edit. React and Preact construct with `autoActivate: false`, so a form hydrated
+    // from a payload in the tick it was built keeps nothing until the user types.
     expectEqual(storage.written.has("d"), true, {
       claimIds: ["PER-001"],
-      what: "a form that was activated did not start writing its draft",
+      what: "activating a form that was never started did not persist what it already holds, where resuming a paused one does",
+    });
+  },
+);
+
+battle(
+  {
+    claims: ["PER-001", "LIF-001"],
+    title: "resuming a paused form persists what it holds",
+    environments: ["node"],
+    requires: ["structural"],
+  },
+  async (ctx) => {
+    // The control for the battle above, and the reason it is a difference rather than a rule: the
+    // same state reached the other way round writes its draft the moment it resumes.
+    const storage = memoryStorage();
+    const context = ctx.open(SPEC, { draft: { key: "d", storage, debounceMs: 15 }, history: true });
+    await settled();
+    context.form.deactivate();
+
+    await context.execute({ type: "record.upsert", path: "rows", key: "a", value: { code: "A" } });
+    await settled();
+    const whilePaused = storage.written.has("d");
+
+    context.form.activate();
+    await settled();
+    ctx.log.note("a paused form, written to, then resumed", { whilePaused, afterResume: storage.written.has("d") });
+
+    expectEqual(whilePaused, false, {
+      claimIds: ["PER-001"],
+      what: "a paused form wrote a draft, so the resume below proves nothing",
+    });
+
+    expectEqual(storage.written.has("d"), true, {
+      claimIds: ["PER-001"],
+      what: "resuming a paused form did not persist what it holds",
     });
   },
 );
