@@ -1665,8 +1665,11 @@ broken.
 
 ## 64. A section a caller took out of play, and a form that never heard
 
-`adversarial/validation/a-section-nobody-took-out-of-play.battle.test.mjs` — 1 red. **S2** under
-API-001, with an S0-shaped consequence described below; the classification is worth arguing.
+`adversarial/validation/a-section-nobody-took-out-of-play.battle.test.mjs` — 1 red. **S1.**
+Filed at S2 under API-001 and corrected: the severity model describes what reaches somebody, not what
+the engine's internal state is, and the person who writes this call has a section in the payload that
+they did the documented thing to exclude. What holds it back from S0 is that no state of the engine
+ever claimed the section was excluded — it is a missing capability, not a contradiction.
 
 The engine takes a whole section out of play at runtime, reactively, and does it correctly. Fed a
 real signal through `vanillaReactivity()`:
@@ -1692,13 +1695,13 @@ setDisabled("sect.inner", …)  works: disabled()=true, the field leaves the pay
 Both controls are in the battle: the capability exists, and the method works one path segment deeper.
 A repair cannot be aimed at either.
 
-**Why the classification is arguable.** The severity model puts *"the submitted payload differs from
-the declared data semantics"* at S0. A consumer who writes `setDisabled("billing", () => !wantsBilling())`
-ships a section that stays editable and stays in the payload, and the first evidence is on a server —
-which is that sentence from where they are standing. It is not that sentence from where the engine is
-standing: the engine never accepted the declaration, so it is not submitting something it agreed to
-exclude. Filed at API-001's S2 rather than inflating a registered claim, and flagged here because the
-consequence is heavier than the number.
+**On the classification.** The severity model puts *"the submitted payload differs from the declared
+data semantics"* at S0. A consumer who writes `setDisabled("billing", () => !wantsBilling())` ships a
+section that stays editable and stays in the payload, and the first evidence is on a server — which is
+that sentence from where they are standing. The first filing weighed it from where the *engine*
+stands, where nothing was ever accepted and so nothing is contradicted, and landed on S2. That was the
+wrong vantage point: the model describes what reaches somebody. S1 is where it belongs — a consequence
+on a server, with no contradictory internal state to make it S0.
 
 What the consumer reads while writing it is VAL-002 — *disabled values are retained in edit state and
 excluded from submission* — which is true of every field that is disabled, and silent about a call
