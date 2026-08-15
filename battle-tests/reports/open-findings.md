@@ -6283,3 +6283,54 @@ path.
   It had mounted.
 - One renderer places the picker's popup outside the form's own container, so buttons scoped to
   `[data-form=...]` miss `OK` and `Cancel`. The spec looks for them on the page.
+
+## 117. A rule the preview enforces and the page does not
+
+**Severity** S1 · **Classification** contract carried, no consumer applies it · **Spec**
+`browser/a-rule-the-preview-enforces.spec.ts` (red)
+
+`validations` is a top-level key of the Dynamic Form Contract: `{when, message, target?}`, where
+`when` is an expression tree. It is how a document states what a single field cannot — an end after a
+start, a confirmation matching what it confirms, a total that adds up.
+
+The whole chain works except its last link:
+
+```
+parseDynamicForm(envelope, {mode:"strict"})   → ok, validations reported verbatim
+buildDynamicValidations(parsed.validations)   → 1 form-level validator
+createForm(schema, { validators })            → invalid, errorsFor("end") = ["Start and end must differ"]
+createForm(schema)  ← what a renderer builds  → valid: true, canSubmit: true
+```
+
+**No shipped adapter applies them.** Searched across all eight — angular, lit, react, vue, svelte,
+solid, preact, plain: zero references to `buildDynamicValidations` or to a parse result's
+`validations`. The published mount options carry `collections`, `layout`, `onSubmit`, `submitLabel`
+and `idPrefix`; the builder beneath takes fields, reactivity and collections. There is nowhere to put
+them.
+
+**The one consumer that does apply them is Studio's live preview**
+(`packages/studio-preview/src/live-form-builder.ts:188`, `validators: buildDynamicValidations(parsed.validations)`).
+That is the sharp end of this: an author writes a cross-field rule, watches it fire in the editor's
+preview, ships the document, and the constraint is gone. Nothing on either side says so.
+
+Measured on the page through the published route: the same document's **per-field** rule is applied —
+`minLength: 2` becomes a native `minlength` and produces "Minimum length is 2" when broken — while
+its cross-field rule produces nothing with `start` and `end` both holding `"same"`. Document
+validation is wired; the cross-field kind is dropped.
+
+This is not the documented `rules` limit. `docs/guides/ai-generated-forms.md` states that no renderer
+applies `rules` — visibility and enabled-state — and says nothing about `validations`. The same page
+promises that every binding "wires the same validators through `buildDynamicFieldValidators()`",
+which is the per-field compiler, not this one.
+
+### Checked and clean
+
+- **A document's `required` is applied**, through `aria-required="true"` and a visible required
+  marker rather than the native `required` attribute — which keeps the browser's own bubble out of a
+  form that reports errors itself. Measured, not assumed: the parser keeps `{required: true}` and the
+  control carries it.
+- **Both parse modes behave as documented at the trust boundary.** A document mixing a safe field, a
+  `__proto__` name, a duplicate name and an unknown kind: strict returns `ok: false` with no fields at
+  all; lenient returns the three that parsed and three diagnostics naming each drop by its path
+  (`MDY_DYNAMIC_UNSAFE_NAME`, `MDY_DYNAMIC_DUPLICATE_NAME`, `MDY_DYNAMIC_UNKNOWN_KIND`). The
+  duplicate keeps its first occurrence.
