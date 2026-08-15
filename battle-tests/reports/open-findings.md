@@ -9,7 +9,7 @@ A twentieth, `generative/properties/history.property.test.mjs`, is a campaign ra
 draws a fresh seed each run and reaches the whole-write undo defect about four times in five. Its
 green is not evidence; the battle beside it is.
 
-The list is grouped by cause. Fourteen causes, twenty-one battles.
+The list is grouped by cause. Fifteen causes, twenty-two battles.
 
 ---
 
@@ -157,7 +157,21 @@ reported as dropped. The emitted document then holds a select `buildDynamicFormS
 The json target is the control that the finding is reachable, and a project with nothing wrong is
 compatible on all three.
 
-## 14. Reported without a repair path
+## 14. The keyed bulk write does not scale
+
+`adversarial/collections/a-list-that-does-not-scale.battle.test.mjs`
+
+Same three cells, same async validator, same row count, doubling each time: `items.setAll` costs
+9 → 21 → 40 → 84 ms and `rows.setAll` costs 35 → 100 → 345 → 1289 ms. The positional bulk write is
+linear and the keyed one is not. Declaring one at a time is worse again — `items.push` in a loop is
+25 seconds for two thousand rows — but a loop has a bulk alternative to point at, and `rows.setAll`
+is the alternative. Reads are fine: `getValue`, `submitValue`, a cell write, `keys()` and a single
+`remove` all scale.
+
+Nothing is asserted in milliseconds; both assertions are ratios, so a slower machine moves the
+numbers together and neither ratio moves.
+
+## 15. Reported without a repair path
 
 - `adversarial/submission/submit-contract.battle.test.mjs` — an action returning something that is
   not a list of errors puts `errors.filter is not a function` on the form-level error surface, the
