@@ -2724,3 +2724,39 @@ Complete, including the door the security guide names as the threat model in tho
 battle rather than a note because a ninth door added later would pass every other test in this suite
 while being invisible to the policy, and because nothing else asserts that the channel is **complete**
 rather than merely present.
+
+## Checked and clean: the exports nothing had ever imported
+
+Applying the rule that has produced most of this register — *measure what is not in the list* — to the
+export surface itself. Seven names in `@modyra/core` appeared in no battle:
+
+```
+MDY_FIELD_KINDS  MdyFormEngine  MdyTypedFormBase  MdyUnsupportedCapabilityError
+NO_CONSTRAINTS   registerHandleForm  withFacts
+```
+
+Most are low-level seams reached through something else. Two are now held directly, in
+`adversarial/validation/two-lists-that-must-agree.battle.test.mjs`, green:
+
+**Two lists of seventeen that must be the same seventeen.** `MDY_FIELD_KINDS` says what a field may
+be; `MDY_VALUE_CONTRACTS` says what a value of each kind may hold. Every part of the engine assumes
+they agree — a kind with no value contract has no shape to check against, a value contract naming no
+kind is a rule nothing can reach — and **nothing checked it**. They are a `const` array and an object
+literal, not two views of one source, so a kind added to one and not the other is a defect the type
+system does not see. Measured: 17 and 17, no orphan either way.
+
+**`withFacts` carries what it was given and does not change what the rule decides.** It is the only
+way a hand-written rule reaches a native constraint, so what it declares is what a control promises
+the browser.
+
+**Two measurements taken alongside and deliberately not filed:**
+
+- `withFacts(() => [], { minLength: 99, required: true })` produces a field that is valid while empty
+  and projects `minlength="99"` and `required` to the browser. A validator declaring what it does not
+  enforce is a consumer stating something untrue about their own function, and the engine cannot check
+  a function's behaviour. VAL-004 guards the other direction — a constraint promising *less* than the
+  rule — and this promises more.
+- Through the **document** path the parser filters the same nonsense before it renders:
+  `validators: { minLength: "three" }` and `{ pattern: "[" }` produce no attribute at all;
+  `{ minLength: -5 }` renders `minlength="-5"`, which browsers ignore. So the door that takes data
+  from outside is the one that checks, which is the right way round.
