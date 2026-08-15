@@ -18,6 +18,11 @@ import { expect, test } from "@playwright/test";
  * A violation is reported with the element and axe's own explanation, because "17 kinds have an
  * accessibility problem" is not something anybody can act on.
  *
+ * Three states, because a widget's markup is not one thing: settled and untouched, opened and typed
+ * into, and every field declared required. The third is not decoration — the attributes a required
+ * control carries are only present when it is required, so a page audited without one never reaches
+ * that markup at all.
+ *
  * Claims under attack: A11Y-001, A11Y-002, A11Y-003, A11Y-004.
  */
 
@@ -37,9 +42,10 @@ const settled = async (page: import("@playwright/test").Page) => {
   );
 };
 
-async function mountEveryKind(page: import("@playwright/test").Page) {
+async function mountEveryKind(page: import("@playwright/test").Page, { required = false } = {}) {
   for (const kind of KINDS) {
     const field: Record<string, unknown> = { name: kind, kind, label: `Label ${kind}` };
+    if (required) field.validators = { required: true };
     if (needsOptions(kind)) field.options = [{ value: "a", label: "A" }, { value: "b", label: "B" }];
     const mounted = await page.evaluate(
       ({ id, declared }) => window.battle.mountFields(id, [declared] as never),
@@ -111,6 +117,19 @@ test("a form the user has opened and filled is still one the auditor has nothing
   await page.locator('[data-form="k-text"] input').fill("typed");
   await page.locator('[data-form="k-select"] [role="combobox"]').click();
   await settled(page);
+
+  const violations = await auditStage(page);
+  expect(violations, JSON.stringify(violations, null, 1)).toEqual([]);
+});
+
+test("every declared kind is one the auditor has nothing to say about when it is required", async ({ page }) => {
+  // The attributes a required control carries exist only when it is required, so the two states above
+  // never reach that markup. `aria-required` in particular is permitted on some roles and not others,
+  // which makes this the state where a widget's role and its attributes have to agree.
+  await mountEveryKind(page, { required: true });
+
+  const marked = await page.evaluate(() => document.querySelectorAll('#stage [aria-required="true"]').length);
+  expect(marked, "no control was marked required, so this state is the same as the first").toBeGreaterThan(0);
 
   const violations = await auditStage(page);
   expect(violations, JSON.stringify(violations, null, 1)).toEqual([]);
