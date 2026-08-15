@@ -19,9 +19,14 @@
  * untrusted value arrives: a document's `initialValue`, a restored draft, a server round trip, an
  * application calling `set`.
  *
- * The contract has a fork here and holds neither side. Either `option[]` is a set, and the whitelist
- * that already inspects every entry is where a repeat is refused; or it is not, and unselecting an
- * option removes the option rather than one copy of it.
+ * The contract is not silent about which of those should happen. `multiselectValueTransition` is
+ * published, and its default intent — the toggle — returns the values with *every* occurrence of the
+ * option removed. `decrement` is the one that takes a single occurrence away, and it exists because
+ * `option[]` is deliberately a multiset: the chip classes carry `counter`, `count` and `step` for a
+ * chip that steps a quantity.
+ *
+ * The chip here is not that chip. It carries `mdy-chip--selected` without `mdy-chip--counter`, so it
+ * is a toggle, and a toggle is published as clearing the option. What the page does is `decrement`.
  */
 
 import { expect, test } from "@playwright/test";
