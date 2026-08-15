@@ -5073,3 +5073,45 @@ Also checked, and a milestone rather than a finding: **every one of the 54 regis
 cited by at least four battles.** The recon that opened this campaign found 24 claims with four of
 them carrying no battle at all; the registry has since more than doubled and has no uncovered claim
 left. "A claim with no battle" is no longer a place to hunt.
+
+## Open question, not a finding: can four kinds show that they are wrong
+
+`MDY_STATE_EXPRESSION` is published, has no battle citing it, and says something precise. Ten kinds
+express `disabled` and `error` as a modifier on `mdy-input-wrapper`; seven express them
+*structurally*, because their wrapper is their own and the native control below already carries the
+truth. Its own docblock names the risk: "an audit that cannot see a mechanism cannot tell a kind that
+*shows* it is disabled from one that merely claims to".
+
+Counting selectors that name a kind, in the ten shipped stylesheets:
+
+| kind | error selectors naming it | disabled selectors naming it |
+| --- | --- | --- |
+| `checkbox` | 0 | 14 |
+| `toggle` | 0 | 14 |
+| `segmented` | 0 | 23 |
+| `slider` | 0 | 7 |
+| `multiselect` | 7 | 16 |
+| `radio` | 7 | 8 |
+| `file` | 7 | 7 |
+
+Four of the seven have no error rule that names them, and by the table's own account they get no
+wrapper class either. That reads like four kinds that cannot show they are wrong.
+
+**It is not filed, because the obvious falsification survives.** There are twenty error selectors
+that name no kind at all, and two of them are
+
+```
+.mdy-renderer input[aria-invalid=true], .mdy-renderer select[aria-invalid=true], …
+.mdy-renderer--touched input[aria-invalid=true], …
+```
+
+A checkbox, a toggle, a radio and a slider are all `input` elements inside `.mdy-renderer`, so a
+generic rule reaches them — *if* their control carries `aria-invalid="true"` when the form refuses
+it. That is a question about the document, not about the stylesheet, and the probe that would settle
+it timed out against a long generative survey running beside it rather than returning a wrong answer.
+
+What would close it: mount each of the seven with a `required` rule, submit empty, and record which
+element carries `aria-invalid="true"`. If the four carry it on their `input`, the generic rule applies
+and there is nothing here. If they carry it on a wrapper or nowhere, four kinds look identical whether
+they are right or wrong, and the table's own docblock has already said why nothing in this repository
+would notice.
