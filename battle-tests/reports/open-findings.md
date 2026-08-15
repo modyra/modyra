@@ -1565,7 +1565,8 @@ and leave the form untouched — so the finding is the admitted shape rather tha
 
 ## 62. Every prefix of a tax id, sent to a server that is told it is too short
 
-`adversarial/validation/a-value-the-form-already-refused.battle.test.mjs` — 1 red. **S2.**
+`adversarial/validation/a-value-the-form-already-refused.battle.test.mjs` — **green, closed**,
+verified here. Was 1 red, S2.
 New claim **VAL-005**: *a server is asked only about a value the field's own rules accept.*
 
 A `minLength(11)` tax id, `debounceMs: 120`, typed by a person who pauses between the groups they are
