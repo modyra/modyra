@@ -35,6 +35,7 @@ function memoryStorage() {
 
 const saved = () => new Promise((resolve) => setTimeout(resolve, 700));
 const restored = () => new Promise((resolve) => setTimeout(resolve, 140));
+const settled = (ms = 140) => new Promise((resolve) => setTimeout(resolve, ms));
 
 const document = {
   node: "group",
@@ -109,6 +110,34 @@ battle(
     expectEqual(survived, [], {
       claimIds: ["PER-001", "SEC-006"],
       what: `${survived.length} of ${unbelievable.length} drafts outlived an expiry because their age could not be believed: ${JSON.stringify(survived)}`,
+    });
+
+    // And the age is sticky, which is what turns one bad timestamp into a permanent one. The stamp
+    // never moves backwards — deliberately, so a draft is not replaced by one saved before it — so an
+    // age already in the future survives every save that follows.
+    const storage = memoryStorage();
+    const ahead = Date.now() + 24 * HOUR;
+    storage.written.set("k", JSON.stringify({ __mdyDraft: 1, savedAt: ahead, value: { who: "seeded" } }));
+
+    const live = createForm(buildDynamicFormSchema(document), {
+      draft: { key: "k", storage, ttlMs: HOUR },
+      devWarnings: false,
+    });
+    await settled(180);
+    live.f.who.set("written since");
+    await saved();
+    const afterWriting = JSON.parse(storage.written.get("k"));
+    ctx.log.note("what a live form wrote over an age in the future", {
+      seeded: ahead,
+      after: afterWriting.savedAt,
+      value: afterWriting.value,
+    });
+    live.destroy();
+
+    expectEqual(afterWriting.savedAt === ahead, false, {
+      claimIds: ["PER-001"],
+      what: "a save left the draft claiming an age in the future, so every save after it inherits an expiry that cannot arrive",
+      detail: JSON.stringify({ seeded: ahead, after: afterWriting.savedAt, now: Date.now() }),
     });
   },
 );
