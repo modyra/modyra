@@ -53,6 +53,12 @@ jobs:
           MDY_BATTLE_RUNS: "25"
         run: pnpm run battle
 
+      # The main glob is `battle-tests/**/*.test.mjs` and the Angular battles are `*.battle.mjs`,
+      # built by `build:angular`, which `build:packages` does not run. Without this step they are
+      # a tier nothing executes.
+      - name: Angular battles
+        run: pnpm run battle:angular
+
       - name: Failure reports
         if: failure()
         uses: actions/upload-artifact@v4
