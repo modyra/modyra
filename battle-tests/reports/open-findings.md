@@ -2448,3 +2448,40 @@ put a value in the payload nobody entered. But it is the one interactivity chang
 *meaning of a position* rather than only the set of values, and the keyed collection has no
 equivalent. Written down because it is discovered in production by somebody correlating by index, and
 because a change to it would change what a payload means without any type moving.
+
+## 73. The first door a consumer touches
+
+`adversarial/validation/the-first-door-a-consumer-touches.battle.test.mjs` — 1 green, 1 red. **S2**,
+and finding 72 is its Zod-shaped instance.
+
+ADR 0057 is called *an argument is refused where it arrives*, and it hardened seven entry points for a
+reason it states plainly: a value that cannot be used should be refused at the call rather than left
+to damage the form and fail later. **Every one of those seven is a setter.** The doors that take a
+schema were not among them, and they are the first door a consumer touches.
+
+Three doors × six things that are not a schema — **sixteen internals, two silent builds, zero named
+refusals**:
+
+```
+createForm             array / string / null / undefined   TypeError: Cannot convert undefined or null to object
+                       42 / true                           BUILT — a form with no fields, canSubmit true
+buildFlatFormSchema    array / string                      TypeError: Cannot read properties of undefined (reading 'length')
+                       42 / null / undefined / true        TypeError: fields is not iterable
+buildDynamicFormSchema  array / string / 42 / true          TypeError: Cannot convert undefined or null to object
+                       null / undefined                    TypeError: Cannot read properties of … (reading 'children')
+```
+
+**The two silent builds are the worse half**, and they are the case ADR 0057's own reasoning is
+about: `createForm(42)` returns a form with no fields that reports itself valid and submittable. A
+form that cannot be read is worse in production than a thrown error the caller can see — those are
+the record's words about a different door.
+
+The internals are the same species as 72 and as the `select` with no `options`: three different
+mistakes answered by one sentence that names no argument, so a consumer cannot tell them apart, or
+tell any of them from a bug in the library.
+
+The control is green: a real schema builds a real form through the same door, so what is asserted is
+the argument rather than the doors being shut.
+
+Either repair closes it, and the two halves may want different ones: refuse by name, or — for the
+values that currently build — say why nothing was built.
