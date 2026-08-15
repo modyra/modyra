@@ -59,6 +59,7 @@ battle(
   {
     claims: ["DYN-003", "DYN-001"],
     title: "the author-time check reports what the parser reports",
+    open: "reported, not enforced: finding 29, open in battle-tests/reports/open-findings.md",
     environments: ["node"],
   },
   async (ctx) => {

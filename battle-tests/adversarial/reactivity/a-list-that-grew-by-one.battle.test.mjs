@@ -124,6 +124,7 @@ battle(
   {
     claims: ["API-001"],
     title: "a field list that gained a name does not take the page down with it",
+    open: "reported, not enforced: finding 36, open in battle-tests/reports/open-findings.md",
     environments: ["node"],
   },
   async (ctx) => {

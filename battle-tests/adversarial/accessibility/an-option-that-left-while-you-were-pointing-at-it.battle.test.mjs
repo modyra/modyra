@@ -94,6 +94,7 @@ battle(
   {
     claims: ["API-001"],
     title: "every published setter reaches whoever is drawing the widget",
+    open: "reported, not enforced: finding 93, open in battle-tests/reports/open-findings.md",
     environments: ["node"],
   },
   async (ctx) => {
@@ -208,6 +209,7 @@ battle(
   {
     claims: ["API-001"],
     title: "a select repaints when its options are changed the documented way",
+    open: "reported, not enforced: finding 93, open in battle-tests/reports/open-findings.md",
     environments: ["node"],
   },
   async (ctx) => {

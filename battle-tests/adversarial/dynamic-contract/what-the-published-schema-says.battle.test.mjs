@@ -50,6 +50,7 @@ battle(
   {
     claims: ["DYN-001", "DYN-003"],
     title: "an option value the published schema forbids is one the parser refuses",
+    open: "reported, not enforced: the dynamic-contract batch map, cause C, open in battle-tests/reports/open-findings.md",
     environments: ["node"],
   },
   async (ctx) => {

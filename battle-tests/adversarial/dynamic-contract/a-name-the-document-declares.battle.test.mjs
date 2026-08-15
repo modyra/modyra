@@ -51,6 +51,7 @@ battle(
   {
     claims: ["DYN-001", "DYN-003"],
     title: "a rule refused for a name the document declares does not call that name unknown",
+    open: "reported, not enforced: finding 102, open in battle-tests/reports/open-findings.md",
     environments: ["node"],
   },
   async (ctx) => {

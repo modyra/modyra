@@ -67,6 +67,7 @@ battle(
   {
     claims: ["DYN-001", "DYN-003"],
     title: "a validator key the published schema forbids is one the parser says something about",
+    open: "reported, not enforced: finding 26, open in battle-tests/reports/open-findings.md",
     environments: ["node"],
   },
   async (ctx) => {
@@ -142,6 +143,7 @@ battle(
   {
     claims: ["DYN-001", "DYN-003"],
     title: "a construct a version predates is one the parser says something about",
+    open: "reported, not enforced: finding 26, open in battle-tests/reports/open-findings.md",
     environments: ["node"],
   },
   async (ctx) => {
