@@ -322,11 +322,12 @@ function declaredFieldCount(schema: unknown): number {
       else count += 1;
       continue;
     }
-    // A collection is *understood*, not lost: it is reported by path and kind in `collections`, and
-    // its cells are not flat fields because a document cannot name rows that do not exist yet. So it
-    // counts as neither — descending into its item counted cells the flattener rightly never emits,
-    // and a correct document reported that something had been rejected with nothing to look at.
-    if (kind === "array" || kind === "record") continue;
+    // A collection is *understood*, not lost — it is reported by path and kind in `collections` — and
+    // what is inside it is not nothing: a cell is declared, and it legitimately never becomes a flat
+    // field because a document cannot name rows that do not exist yet. The pair is the one place
+    // that says it was declared at all, so the walk descends and the collection itself counts as
+    // neither.
+    if (kind === "array" || kind === "record") { stack.push(node["item"]); continue; }
     // Something was declared here and it is not a node this reader knows.
     count += 1;
   }
@@ -919,6 +920,14 @@ export function parseDynamicForm(
   let collections: MdyDynamicCollection[] = [];
   /** How many fields a tree document declared, kept or not — `undefined` until a tree is walked. */
   let declaredLeaves: number | undefined;
+  /**
+   * How many of those the parser turned down.
+   *
+   * Counted from what was *reported*, not from the difference between declared and kept: a
+   * collection's cells are declared and never become flat fields, so the difference would call every
+   * one of them a rejection and a correct document would read as having lost everything.
+   */
+  let treeRejected = 0;
   let fields: MdyDynamicField[] = collectingDiagnostics(
     // `/fields` only when the reporter did not say which entry: an envelope-level refusal is about
     // the list, and a field's own is about the field.
@@ -946,6 +955,8 @@ export function parseDynamicForm(
     // children reported none accepted and none rejected — three entered and nothing came out, with
     // the counts saying nothing happened.
     declaredLeaves = declaredFieldCount(envelope.schema);
+    // A schema refused whole never reaches the walk, so everything it declared was turned down.
+    treeRejected = schemaDiagnostics.length > 0 ? declaredLeaves : 0;
     if (schemaDiagnostics.length === 0) {
       // The walk reports the way the flat list does. Without this it ran outside the collector, so a
       // leaf `parseDynamicFields` refused was dropped and nothing said it — the same defect written
@@ -961,7 +972,8 @@ export function parseDynamicForm(
       );
       fields = walked.fields;
       collections = walked.collections;
-      declaredLeaves = Math.max(declaredLeaves ?? 0, walked.fields.length + (diagnostics.length - before));
+      treeRejected = diagnostics.length - before;
+      declaredLeaves = Math.max(declaredLeaves ?? 0, walked.fields.length + treeRejected);
     }
   }
   const names = new Set(fields.map((field) => field.name));
@@ -1049,7 +1061,10 @@ export function parseDynamicForm(
     : Array.isArray(envelope?.fields)
       ? envelope.fields.length
       : declaredLeaves ?? fields.length;
-  const rejectedCount = Math.max(0, sourceCount - fields.length) + diagnostics.filter((d) => d.path.startsWith("/layout/") || d.path.startsWith("/rules/") || d.path.startsWith("/validations/")).length;
+  const elsewhere = diagnostics.filter((d) => d.path.startsWith("/layout/") || d.path.startsWith("/rules/") || d.path.startsWith("/validations/")).length;
+  const rejectedCount = (declaredLeaves === undefined
+    ? Math.max(0, sourceCount - fields.length)
+    : treeRejected) + elsewhere;
   const strict = options.mode === "strict";
   return {
     ok: version !== null && (!strict || diagnostics.length === 0),
@@ -1058,7 +1073,15 @@ export function parseDynamicForm(
     layout: strict && diagnostics.length > 0 ? [] : layout,
     rules: strict && diagnostics.length > 0 ? [] : rules,
     validations: strict && diagnostics.length > 0 ? [] : validations,
-    collections, diagnostics, acceptedCount: fields.length, rejectedCount,
+    collections,
+    diagnostics,
+    // What the document declared and the parser understood. For a tree that is every field node it
+    // declares, collections included, minus what was refused — `fields` cannot answer it, because a
+    // collection's cells are not flat fields until rows exist.
+    acceptedCount: declaredLeaves === undefined
+      ? fields.length
+      : Math.max(0, declaredLeaves - rejectedCount),
+    rejectedCount,
   };
 }
 
