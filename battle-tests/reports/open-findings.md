@@ -5844,7 +5844,7 @@ already holds rather than a document it is reading.
 
 ## Checked and clean: what a page actually sends
 
-`browser/what-a-page-actually-sends.spec.ts` — 4 green.
+`browser/what-a-page-actually-sends.spec.ts` — 5 green.
 
 SUB-001 is *"submission contains no undeclared path introduced by rendering"* and VAL-002 is
 *"disabled values are retained in edit state and excluded from submission"*. Both are asserted at
@@ -5890,6 +5890,18 @@ after removing the middle row
          no hole, no null, and no index left pointing at a row that is not there
 ```
 
-All four claims hold where they are actually spent. The first test mounts every kind at once
+And the one that decides whether two forms can share a page:
+
+```
+bare      widget ids ["email","note"]          sent {"email":"a@b.c","note":"hello"}
+prefixed  widget ids ["one-email","one-note"]  sent {"email":"a@b.c","note":"hello"}
+```
+
+`idPrefix` scopes the identity in the document and leaves the data path alone. A server receiving
+`one-email` instead of `email` is the failure that guards against, and the test asserts the prefix
+*did* move the ids before asserting it did not move the payload — otherwise agreement would say
+nothing.
+
+All five claims hold where they are actually spent. The first test mounts every kind at once
 precisely so that a key any renderer adds for any of them has somewhere to show up, and the third
 asserts both rows are in the payload before the removal, so the absence afterwards is the removal.
