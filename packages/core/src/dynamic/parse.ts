@@ -289,6 +289,36 @@ function hasValidValidatorConfig(
  * what lets a consumer rebuild the shape the document declared instead of guessing it — and
  * guessing is the one thing that cannot be made safe, because both readings are legitimate.
  */
+/**
+ * How many fields a schema says it has, counted without trusting it.
+ *
+ * Read off the raw object over an explicit stack, because this runs on a document the validator may
+ * have already refused: it must not recurse on a shape it was handed, and it must not assume any
+ * node is well formed. A node that is neither a field nor a container it can descend counts as one
+ * declaration — something was written there, and it did not become a field.
+ */
+function declaredFieldCount(schema: unknown): number {
+  let count = 0;
+  const stack: unknown[] = [schema];
+  // A bound, because the count is taken before the depth and size checks have run.
+  for (let steps = 0; stack.length > 0 && steps < 10_000; steps += 1) {
+    const node = stack.pop();
+    if (!isRecordValue(node)) continue;
+    const kind = node["node"];
+    if (kind === "field") { count += 1; continue; }
+    if (kind === "group") {
+      const children = node["children"];
+      if (isRecordValue(children)) stack.push(...Object.values(children));
+      else count += 1;
+      continue;
+    }
+    if (kind === "array" || kind === "record") { stack.push(node["item"]); continue; }
+    // Something was declared here and it is not a node this reader knows.
+    count += 1;
+  }
+  return count;
+}
+
 export function flattenDynamicForm(schema: MdyDynamicGroupNode): {
   readonly fields: MdyDynamicField[];
   readonly collections: MdyDynamicCollection[];
@@ -805,6 +835,8 @@ export function parseDynamicForm(
     ? input as { version?: unknown; schema?: unknown }
     : undefined;
   let collections: MdyDynamicCollection[] = [];
+  /** How many fields a tree document declared, kept or not — `undefined` until a tree is walked. */
+  let declaredLeaves: number | undefined;
   let fields: MdyDynamicField[] = collectingDiagnostics(
     // `/fields` only when the reporter did not say which entry: an envelope-level refusal is about
     // the list, and a field's own is about the field.
@@ -827,10 +859,27 @@ export function parseDynamicForm(
   if (structured && envelope?.schema !== undefined) {
     const schemaDiagnostics = validateDynamicSchema(envelope.schema);
     diagnostics.push(...schemaDiagnostics);
+    // What the document said it had, counted before anything is refused. A schema the validator
+    // turns down wholesale never reaches the walk, so without this a document declaring three
+    // children reported none accepted and none rejected — three entered and nothing came out, with
+    // the counts saying nothing happened.
+    declaredLeaves = declaredFieldCount(envelope.schema);
     if (schemaDiagnostics.length === 0) {
-      const walked = flattenDynamicForm(envelope.schema as MdyDynamicGroupNode);
+      // The walk reports the way the flat list does. Without this it ran outside the collector, so a
+      // leaf `parseDynamicFields` refused was dropped and nothing said it — the same defect written
+      // as a tree instead of a list received silence where the list received a diagnostic, and a
+      // tree is the shape a CMS sends. `declaredLeaves` is what a document said it had, so the
+      // counts a consumer reports with are about the document and not about what survived it.
+      const before = diagnostics.length;
+      const walked = collectingDiagnostics(
+        (message, path) => diagnostics.push({
+          code: diagnosticCode(message), severity: "error", path: path ?? "/schema", message,
+        }),
+        () => flattenDynamicForm(envelope.schema as MdyDynamicGroupNode),
+      );
       fields = walked.fields;
       collections = walked.collections;
+      declaredLeaves = Math.max(declaredLeaves ?? 0, walked.fields.length + (diagnostics.length - before));
     }
   }
   const names = new Set(fields.map((field) => field.name));
@@ -912,7 +961,11 @@ export function parseDynamicForm(
     }
   }
 
-  const sourceCount = Array.isArray(input) ? input.length : Array.isArray(envelope?.fields) ? envelope.fields.length : fields.length;
+  const sourceCount = Array.isArray(input)
+    ? input.length
+    : Array.isArray(envelope?.fields)
+      ? envelope.fields.length
+      : declaredLeaves ?? fields.length;
   const rejectedCount = Math.max(0, sourceCount - fields.length) + diagnostics.filter((d) => d.path.startsWith("/layout/") || d.path.startsWith("/rules/") || d.path.startsWith("/validations/")).length;
   const strict = options.mode === "strict";
   return {
