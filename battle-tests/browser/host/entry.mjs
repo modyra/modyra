@@ -6,6 +6,7 @@
  * form over the same names, tear one down. Nothing here asserts — the assertions live in the spec,
  * which reads the real DOM the browser built.
  */
+import { parseDynamicForm } from "@modyra/core";
 import { mountMdyForm } from "@modyra/plain";
 
 const mounted = new Map();
@@ -153,6 +154,41 @@ window.battle = {
       path: entry.path ?? null,
       message: typeof entry.message === "string" ? entry.message : String(entry.message),
     }));
+  },
+
+  /**
+   * Mount a form the way an application mounts one that arrived as data.
+   *
+   * A document is parsed before it is drawn, and what the parser returns is what the page is built
+   * from — the fields it accepted and the layout it validated. Mounting the envelope's own arrays
+   * instead would draw a form no check has passed, which is the mistake this route exists to stop.
+   *
+   * A refusal is an outcome the caller can read, not an exception: a document that does not parse
+   * leaves nothing on the page, and the diagnostics say why.
+   */
+  mountDocument(id, envelope, options = {}) {
+    const parsed = parseDynamicForm(envelope, { mode: options.mode ?? "strict" });
+    if (!parsed.ok) {
+      return {
+        mounted: false,
+        diagnostics: parsed.diagnostics.map((each) => ({ code: each.code, path: each.path, message: each.message })),
+      };
+    }
+
+    const host = document.createElement("section");
+    host.dataset.form = id;
+    document.querySelector("#stage").append(host);
+    try {
+      const submitted = [];
+      const handle = mountMdyForm(host, parsed.fields, {
+        layout: parsed.layout,
+        onSubmit: recording(submitted),
+      });
+      mounted.set(id, { handle, host, submitted });
+      return { mounted: true, accepted: parsed.acceptedCount, rejected: parsed.rejectedCount };
+    } catch (error) {
+      return { mounted: false, message: String(error?.message ?? error) };
+    }
   },
 
   valueOf(id) {
