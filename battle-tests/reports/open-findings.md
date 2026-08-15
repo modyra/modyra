@@ -14,7 +14,7 @@ those words.
 One cause below is **withdrawn**: it was the reference model rather than the engine, and it is left
 in place rather than deleted so that anyone who read it finds out.
 
-The list is grouped by cause. Twenty-three causes, one of them withdrawn.
+The list is grouped by cause. Twenty-four causes, one of them withdrawn. All but the last run under `npm run battle`; the last needs `npm run battle:browser`.
 
 ---
 
@@ -284,7 +284,21 @@ whole form* — is dropped entirely, not even into `lastSubmitErrors`. Omitting 
 `{ message }` from a server response looks like, produces a form-level error reading `Cannot read
 properties of undefined (reading 'length')` on the surface an application shows a person.
 
-## 23. Reported without a repair path
+## 23. The Plain renderer paints a verdict nobody has earned
+
+`browser/an-error-before-anyone-typed.spec.ts` — **runs under `npm run battle:browser`, not
+`npm run battle`.**
+
+`errorsVisible` is `touched && shownErrors(...)`, and its comment says why the second half is there.
+Angular calls it, Lit calls it in five places, and Plain never does — its fields render
+`shownErrorsOf`, which knows `disabled` and not `touched`. A freshly mounted Plain form paints "This
+field is required" in a visible block eighteen pixels tall and marks the control `aria-invalid`, so a
+screen reader announces every required field as invalid before the user has reached any of them.
+
+Only a real DOM shows it: the handle is failing either way, and every check that reads the engine
+agrees with the engine.
+
+## 24. Reported without a repair path
 
 - `adversarial/submission/submit-contract.battle.test.mjs` — an action returning something that is
   not a list of errors puts `errors.filter is not a function` on the form-level error surface, the
