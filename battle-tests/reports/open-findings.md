@@ -1323,29 +1323,29 @@ separately and it has already drifted twice.
 `destroy`, `draft.save`, `draft.restore`, `observe`, `submit`. Depth has stopped paying at this width;
 these are where the next class lives.
 
-## 55. A server said no and the page said nothing
+## 55. Closed — every shape now reaches somebody
 
-`browser/what-the-server-said-on-the-page.spec.ts` — 1 red, 2 green.
+The cause was not the one the shapes suggested. All three silent forms were being discarded by the
+guard that drops a hostile path: `isSafeFieldPath("")` is false and `isSafeFieldPath(undefined)` is
+false, so a refusal was thrown away *as if it were an attack*.
 
-Finding 12 seen from the page, and it is not the worst case. `onSubmit` returns field errors to
-reject; its argument is whatever the application made of a response, and that value is `any`, so
-nothing stops the shapes below.
+Measured after the fix, at engine level:
 
-| what the application returns | what the person sees | `aria-invalid` |
-| --- | --- | --- |
-| `[{ path, message: "Already registered" }]` | the message | `true` |
-| `[{ path, message: <the response object> }]` | `[object Object]` | `true` |
-| `["Already registered"]` | **nothing** | `false` |
-| `{ errors: [...] }` | **nothing** | `false` |
-| `null` / nothing | nothing, correctly | `false` |
+| what the application returns | where it lands |
+| --- | --- |
+| `[{ path: "email", message }]` | the field |
+| `[{ message }]` — no path | **form level** (was nothing) |
+| `[{ path: "", message }]` | **form level** (was nothing) |
+| `["Already registered"]` | **form level** (was nothing) |
+| `{ errors: [...] }` — not a list | **form level**, with a readable sentence (was `errors.filter is not a function`) |
+| `[{ path, message: {...} }]` | the field, with a readable sentence (was `[object Object]`) |
 
-`[object Object]` at least says something is wrong. The bare string and the non-list say nothing: the
-control goes back to valid, no message appears, and the person who pressed Submit has every reason to
-believe it worked. The server refused and nobody was told.
+And on the page: the field-level ones render, and the one whose message was an object now says "The
+submitted answer could not be read." where it said `[object Object]`.
 
-Both green controls matter: the correct shape does reach the person, and answering with nothing is not
-a refusal — without the second, the assertion would read as "any answer must produce text", which
-would be wrong.
+`browser/what-the-server-said-on-the-page.spec.ts` is now three green, narrowed to the field-level
+half. The shapes that land at form level are finding 56 and are not asserted here as well — one
+finding wearing two names is harder to close than one.
 
 ## 56. An error the form holds and the page cannot show
 
