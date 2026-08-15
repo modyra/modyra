@@ -1375,3 +1375,29 @@ this one is a message that arrived intact with nowhere to be rendered.
 **Checked and clean on the way here:** two submits racing run the action once; a value changed during
 a submit does not change what the action received; a submit on an invalid form does not run the action
 and marks the field touched; and a throwing action leaves `submitting` false and the form usable.
+
+## 58. Two renderers, two different accessibility defects, one contract checking neither
+
+`browser/every-kind-in-lit-under-an-auditor.spec.ts` — 1 red, 1 green, beside the Plain audit that has
+been there since finding 32.
+
+`@modyra/lit` now has a host page in the browser tier, so the same rule set can be run against both
+renderers. They do not fail the same way:
+
+| | Plain | Lit |
+| --- | --- | --- |
+| `aria-prohibited-attr` — `aria-label` on a role-less wrapper | **6 elements** | clean |
+| `aria-allowed-attr` — `aria-required` on a bare button (multiselect) | **critical** | clean |
+| `aria-allowed-attr` — `aria-expanded` on a bare textbox (daterange) | clean | **critical, both inputs** |
+| `nested-interactive` — the colours button | clean | **serious** |
+
+Each renderer is clean where the other is not. `aria-expanded` needs a role that permits it, and
+Plain's datepicker input carries `role="combobox"` where Lit's daterange inputs carry none — so the
+fix has a shape to copy in the repository rather than one to invent.
+
+That they fail differently is the finding underneath the four: `@modyra/widgets` describes the parts
+and the relations, and none of these is checked anywhere the renderers share.
+
+**Also measured, and it settles finding 23:** Lit holds a field's errors until the person has been
+there. Plain does not. Finding 23 is no longer "Plain paints a verdict early" against a principle —
+it is against a sibling renderer in the same repository doing the opposite.
