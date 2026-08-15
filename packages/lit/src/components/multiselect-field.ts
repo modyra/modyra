@@ -1,5 +1,5 @@
-import { mdyPart } from "../mdy-part.js";
 import {
+  MDY_POPUP_OPENERS,
   overlayControlledId,
   shownErrorsOf,
 } from "@modyra/widgets";
@@ -266,7 +266,7 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
           }}
           role="group"
           aria-label=${this.label || nothing}
-          ${mdyPart(this.controlPart(handle))}
+          aria-describedby=${this.showErrors(handle) && !this.inlineErrors ? this.errorsId : this.descriptionId}
         >
           ${(handle.value() ?? []).length === 0
             ? html`<span class="${this.partClass("placeholder")}">${this.label ? `Select ${this.label.toLowerCase()}…` : "Select…"}</span>`
@@ -282,8 +282,10 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
                 this.toggleOpen(handle);
               }}
               aria-label=${this.messages.searchOptionsLabel}
+              role=${MDY_POPUP_OPENERS.multiselect?.role ?? nothing}
               aria-haspopup="listbox"
               aria-expanded=${this._open ? "true" : "false"}
+              aria-required=${String(handle.required())}
               aria-controls=${this._open ? overlayControlledId("multiselect", this.fieldId) ?? nothing : nothing}
               aria-describedby=${this.showErrors(handle) && !this.inlineErrors ? this.errorsId : this.descriptionId}
               aria-invalid=${String(shownErrorsOf(handle).length > 0)}

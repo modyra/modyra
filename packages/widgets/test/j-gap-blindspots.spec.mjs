@@ -214,7 +214,8 @@ function multiselectWithChip(chip, variant) {
   const wrapper = el("div", "mdy-multiselect");
   const header = el("div", "mdy-multiselect__header");
   const searchButton = el("button", "mdy-multiselect__search-btn", {
-    id: "multiselect-control", type: "button", "aria-describedby": "multiselect-errors",
+    id: "multiselect-control", type: "button", role: "combobox",
+    "aria-describedby": "multiselect-errors",
   });
   header.append(searchButton);
   wrapper.append(header);

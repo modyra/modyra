@@ -55,10 +55,14 @@ export function trailingAffordances(kind: MdyWidgetKind): readonly MdyAffordance
       found.push({ part: node.part, role: "indicator" });
       continue;
     }
-    if (node.element !== "button") continue;
     // An opener that is a button is an ornament beside the field; an opener that is the field's own
     // control is the field.
     const isOpener = node.part === opener;
+    // …with one shape in between: an opener drawn inside the field's header is pressed like an
+    // ornament while holding the field's value like a control, so it carries `role="combobox"` and
+    // still needs a target a finger can hit. Keying on the element alone lost it the moment the
+    // role made it honest.
+    if (node.element !== "button" && !(isOpener && node.parent === "header")) continue;
     const isStepper = node.parent === "inputWrapper";
     if (isOpener || isStepper) found.push({ part: node.part, role: "control" });
   }

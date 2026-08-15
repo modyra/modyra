@@ -81,6 +81,7 @@ export function projectMultiselectFieldA11y<TValue>(
   // Out of play, no verdict — the wrapper, the label, `aria-invalid` and whether the error
   // text renders are four faces of one question, answered once in verdict.ts.
   const hasErrors = shownErrors(state, errors).length > 0;
+  const opener = projectOverlayOpenerA11y("multiselect", { widgetId: options.widgetId, open: state.open });
   const describedBy = hasErrors ? errorId : descriptionId;
 
   return {
@@ -101,10 +102,14 @@ export function projectMultiselectFieldA11y<TValue>(
     trigger: {
       id: triggerId,
       classes: ["mdy-multiselect"],
+      // The role as well as the attributes. Spreading only the attributes left the opener with
+      // `aria-expanded`, `aria-invalid` and `aria-required` on a bare `<button>` — a role with no
+      // value to be wrong about and nothing to expand, so every one of them named a state the
+      // element cannot be in.
+      ...(opener?.role ? { role: opener.role } : {}),
       attributes: {
         "aria-haspopup": "listbox",
-        ...projectOverlayOpenerA11y("multiselect", { widgetId: options.widgetId, open: state.open })
-          ?.attributes,
+        ...opener?.attributes,
         "aria-labelledby": labelId,
         "aria-invalid": String(hasErrors),
         "aria-required": String(state.required),
