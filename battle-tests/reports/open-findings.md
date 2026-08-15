@@ -4209,9 +4209,21 @@ pattern that works here.
 Classification: Modyra bug. S1 by the claims it falsifies — the component never reaches a resting
 state, so the widget is unusable and the tab is pegged.
 
-Every plausible repair leaves the battle green: memoizing on the config's contents rather than its
-identity, holding the controller in a ref, or subscribing without setting state on subscribe. The
-bound is 25 renders against a settled 2, so a repair that costs a few extra renders still passes.
+The dependency is not carrying anything, which is what makes the repair cheap. Every adapter — all
+five — publishes `setOptions` on the widget API, and **none of them syncs an options change into the
+controller automatically**: `vue`, `solid` and `svelte` call `create…Controller(…)` directly at setup
+and expose `setOptions` for the change, and React and preact expose the same `setOptions` and have no
+effect that would use a new options object either. So `[options]` is the only thing that reacts to a
+new list, and it reacts by discarding the controller — losing open state, active option and typeahead
+buffer along the way — and looping. Removing it loses nothing a consumer has any other way of
+reaching.
+
+Scope, read rather than assumed: `vue`, `solid` and `svelte` construct the controller once in a setup
+that runs once, so the defect is structurally impossible there. It is the two hook-shaped adapters.
+
+Every plausible repair leaves the battle green: keying the memo on something stable, holding the
+controller in a ref, or subscribing without setting state on subscribe. The bound is 25 renders
+against a settled 2, so a repair that costs a few extra renders still passes.
 
 ## Checked and clean: one name, two packages, and what each refuses
 
