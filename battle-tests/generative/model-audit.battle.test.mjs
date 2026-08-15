@@ -18,7 +18,8 @@
 import { battle } from "../harness/battle.mjs";
 import { expectEqual } from "../harness/assertions.mjs";
 import { createArrayReferenceModel } from "./array-reference-model.mjs";
-import { POSITIONAL_ROWS_SPEC } from "../models/schemas.mjs";
+import { createReferenceModel } from "./reference-model.mjs";
+import { KEYED_ROWS_SPEC, POSITIONAL_ROWS_SPEC } from "../models/schemas.mjs";
 
 const CELLS = Object.freeze({ code: "", note: "" });
 
@@ -131,6 +132,84 @@ battle(
       expectEqual(seen.model.disabled, seen.engine.disabled, {
         claimIds: ["VAL-002", "COL-001"],
         what: `the model and the engine disagree about where a binding is after ${what}`,
+      });
+    }
+  },
+);
+
+/** The cells `KEYED_ROWS_SPEC` declares, which is what the model has to be built from. */
+const KEYED_CELLS = Object.freeze({ code: "", note: "", tax: "" });
+
+/** Run one sequence through the keyed pair and hand back what each says. */
+async function bothKeyed(ctx, operations) {
+  const context = ctx.open(KEYED_ROWS_SPEC);
+  const model = createReferenceModel({ cells: KEYED_CELLS });
+  for (const operation of operations) {
+    await context.execute(operation);
+    model.apply(operation);
+  }
+  const rows = context.collections.rows;
+  const submitted = context.form.submitValue().rows ?? {};
+  return {
+    engine: {
+      keys: [...rows.keys()],
+      value: context.form.getValue().rows ?? {},
+      touched: [...rows.keys()]
+        .flatMap((key) => Object.keys(KEYED_CELLS).filter((cell) => rows.cell(key, cell)?.touched()).map((cell) => `${key}.${cell}`))
+        .sort(),
+      disabled: [...rows.keys()]
+        .flatMap((key) => Object.keys(KEYED_CELLS).filter((cell) => !(cell in (submitted[key] ?? {}))).map((cell) => `${key}.${cell}`))
+        .sort(),
+    },
+    model: { keys: model.keys(), value: model.value(), touched: model.touchedPaths(), disabled: model.disabledPaths() },
+  };
+}
+
+battle(
+  {
+    claims: ["COL-001", "COL-002", "VAL-002"],
+    title: "what the keyed model says an operation does is what the engine does",
+    environments: ["node"],
+    requires: ["structural"],
+  },
+  async (ctx) => {
+    const upsert = (key, value) => ({ type: "record.upsert", path: "rows", key, value: value ?? { code: key } });
+
+    // Each of these is a sentence in the model's own header, turned into an operation with an
+    // answer. The model is the other side of every comparison a campaign makes, so a wrong sentence
+    // here is a defect the campaign reports from every seed at once.
+    for (const [what, operations] of [
+      ["upsert replaces the row it names", [upsert("a", { code: "1", note: "x" }), upsert("a", { code: "2" })]],
+      ["upsert with no value at all", [upsert("a", { code: "1" }), { type: "record.upsert", path: "rows", key: "a" }]],
+      ["a rename onto a free key", [upsert("a"), { type: "record.rename", path: "rows", from: "a", to: "z" }]],
+      ["a rename onto an occupied key", [upsert("a"), upsert("b"), { type: "record.rename", path: "rows", from: "a", to: "b" }]],
+      ["a rename of a key that does not exist", [upsert("a"), { type: "record.rename", path: "rows", from: "q", to: "z" }]],
+      ["a rename carries the row's marks", [upsert("a"), { type: "field.touch", path: "rows.a.note" }, { type: "record.rename", path: "rows", from: "a", to: "z" }]],
+      ["a rename carries the row's bindings", [upsert("a"), { type: "field.disable", path: "rows.a.note" }, { type: "record.rename", path: "rows", from: "a", to: "z" }]],
+      ["a removed row's marks do not come back with the key", [upsert("a"), { type: "field.touch", path: "rows.a.note" }, { type: "record.remove", path: "rows", key: "a" }, upsert("a")]],
+      ["a removed row's bindings do not either", [upsert("a"), { type: "field.disable", path: "rows.a.note" }, { type: "record.remove", path: "rows", key: "a" }, upsert("a")]],
+      ["a whole-value write states which rows there are", [upsert("a"), upsert("b"), { type: "record.setAll", path: "rows", value: { c: { code: "3" } } }]],
+      ["a partial write prunes nothing", [upsert("a"), upsert("b"), { type: "record.patch", path: "rows", value: { a: { note: "N" } } }]],
+      ["declaration order after a key is written again", [upsert("a"), upsert("b"), upsert("a", { code: "9" })]],
+    ]) {
+      const seen = await bothKeyed(ctx, operations);
+      ctx.log.note("one rule of the keyed model", { what, ...seen });
+
+      expectEqual(seen.model.keys, seen.engine.keys, {
+        claimIds: ["COL-002"],
+        what: `the model and the engine disagree about which keys exist after ${what}`,
+      });
+      expectEqual(seen.model.value, seen.engine.value, {
+        claimIds: ["COL-001"],
+        what: `the model and the engine disagree about the value after ${what}`,
+      });
+      expectEqual(seen.model.touched, seen.engine.touched, {
+        claimIds: ["COL-001"],
+        what: `the model and the engine disagree about marks after ${what}`,
+      });
+      expectEqual(seen.model.disabled, seen.engine.disabled, {
+        claimIds: ["VAL-002"],
+        what: `the model and the engine disagree about bindings after ${what}`,
       });
     }
   },
