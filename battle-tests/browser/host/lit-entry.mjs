@@ -93,6 +93,15 @@ window.battleLit = {
         const element = document.createElement(tag);
         element.setAttribute("label", declared.label ?? declared.name);
         if (declared.options !== undefined) element.options = declared.options;
+
+        // Everything else a document says about the field is the element's to render — a bound, a
+        // step, a placeholder. Forwarding only what this host happens to name makes a renderer look
+        // like it ignores a property the document declared.
+        for (const [name, value] of Object.entries(declared)) {
+          if (["name", "kind", "label", "options", "initialValue", "validators"].includes(name)) continue;
+          if (value === undefined || value === null) continue;
+          element[name] = value;
+        }
         element.field = form.f[declared.name];
         host.append(element);
       }

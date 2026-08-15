@@ -1923,3 +1923,49 @@ parseDynamicFields([{ kind: "select", options: ["One","Two"] }])
 Refused at the door, named, with the reason. What produced `Value must be one of: undefined, undefined`
 on screen was the probe mounting past the parser, not the parser. Every committed spec in this tier
 was re-checked and passes `{ value, label }`, so nothing in the register rests on it.
+
+## 67. A slider at its maximum, and a form holding three times that
+
+`browser/a-slider-that-shows-a-different-number.spec.ts` — 4 green, 2 red. **Both renderers.**
+UI-006, read as its mirror. **S1.**
+
+UI-006 says a widget does not replace a value the model holds in order to make itself consistent, and
+a slider does not — `getValue()` still answers `150`. What it does instead is **show a different
+number**, because a native range input cannot render a position outside its bounds or off its step:
+
+```
+                                    the form holds   the page shows   aria-invalid   error
+slider, initialValue 150, max 50         150              50            "false"      none
+slider, initialValue 150, no bounds      150             100            "false"      none
+slider, initialValue 7, step 5             7               5            "false"      none
+```
+
+A person sees a slider pushed to its maximum and submits three times that. Nothing on the page says
+the two disagree.
+
+**The number field is the shape that avoids it**, in the same renderer, from the same document — the
+same bound carried as a rule instead of as a range:
+
+```
+number, initialValue 150, validators { max: 50 }   holds 150, SHOWS 150, aria-invalid="true",
+                                                   "Maximum value is 50"
+```
+
+So the engine explains a bound where it has one. On a slider the bound moves the rendered range
+instead, and the explanation never appears.
+
+Both renderers do it identically, so the repair belongs to the shared controller. Either closes it:
+show the number the form holds, or say that the two differ.
+
+Reachable from a server prefill, a restored draft, or a schema whose `max` was lowered after values
+were stored.
+
+**On the claim.** UI-006's wording covers *replacing* the value; this keeps it and displays another.
+The purpose — the screen and the payload agree, or somebody is told — is what fails, and the battle
+says so in its header so the reading can be argued rather than assumed.
+
+**A false S2 that was nearly filed.** Lit first appeared to ignore `max` as a field property while
+Plain honoured it. That was this tier's Lit host, which forwarded only `label` and `options` to the
+element. Fixed — it now forwards every property a document declares — and with it fixed the two
+renderers agree exactly, on the bound and on the divergence. A renderer that looks like it ignores a
+declared property is worth suspecting the harness for first.
