@@ -4962,3 +4962,36 @@ name the document declares is not reported as one it does not.
 Classification: Modyra bug, S2 by DYN-001/DYN-003. Worth pairing with the other half, which is not
 this battle's to assert: nothing published says rules are top-level only, so an author has no way to
 learn the limit except by hitting it.
+
+## 103. Three codes a parse reports and the published list does not have
+
+`adversarial/dynamic-contract/a-code-the-registry-does-not-have.battle.test.mjs` — 1 red.
+
+`MDY_DYNAMIC_DIAGNOSTICS` is exported and is the only published account of what a parse can say:
+seven entries, each a `code` and the `phrase` its message carries. A consumer reacting to a parse
+switches on it.
+
+Driving the parser with one document per ordinary mistake, plus every published fixture, three codes
+come back that the list does not have:
+
+| code | reached by |
+| --- | --- |
+| `MDY_DYNAMIC_INVALID_FIELD` | a validator of the wrong type — `validators: { pattern: 7 }` |
+| `MDY_DYNAMIC_INVALID_RULE` | a rule pointing where it may not (finding 102) |
+| `MDY_DYNAMIC_UNKNOWN_FIELD_REFERENCE` | a layout naming a field that is not there |
+
+None of the three is exotic. A consumer handling the seven and falling through on anything else meets
+a diagnostic they were never told about, on documents they will certainly receive.
+
+The control is the other direction: the same corpus reaches six of the seven declared codes, so an
+undeclared one is the list being short rather than the corpus wandering somewhere unusual.
+
+Two measurements taken alongside and not asserted, because each is a separate question:
+`MDY_DYNAMIC_OPTIONS_REQUIRED` fires for a select with no `options` key and for options that are not
+a list, and **not** for `options: []` — an empty list is the same mistake with a different shape. And
+the corpus had to spell `__proto__` as a computed key: written as a literal in an object it sets the
+prototype and creates no property, which made an earlier pass read the unsafe-name code as
+unreachable when it fires perfectly well.
+
+Classification: Modyra bug, S2 by DYN-003 — a contract's findings are the parser's wherever they are
+reported, and three of them are reported under codes the contract does not publish.
