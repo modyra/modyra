@@ -5273,3 +5273,35 @@ and a plain checkbox carries no label class either. The kind most likely to be a
 a real form is the one with the least to show for being wrong.
 
 Classification: Modyra bug, S1 by A11Y-004.
+
+## 108. A label lifted off an empty field
+
+`browser/a-state-class-that-never-arrives.spec.ts`, third test — 1 red (plain), 1 green (lit).
+
+`mdy-label--filled` is the other state `MDY_FIELD_STATE_CLASSES` declares on the label, and it is what
+lifts a floating label clear of the text under it. A field with nothing in it wearing it has its label
+in the "there is content here" position with nothing beneath, and reads as one somebody already
+answered.
+
+Three fresh, untouched fields wear it. Two have earned it:
+
+```
+lit  daterange   value ""   placeholder "Start"    a placeholder needs the label lifted
+lit  slider      value "0"  input type=range       a range is never empty
+plain datepicker value ""   placeholder null       nothing under it, and nothing showing
+```
+
+Only plain's datepicker survives: an empty text input with no placeholder, label lifted. Lit's
+datepicker does not do it, which is what rules out "pickers always float".
+
+The finding is small; the two exclusions are the work. A first pass counted all three and would have
+filed two behaviours that are correct — the spec now excuses a control with a placeholder and a
+control that always holds a number, and both excusals are read from the DOM rather than from a list of
+kinds.
+
+`DESIGN.md` does not settle when a label lifts, so this is reported as a difference between two
+renderers of one contract rather than decided here: the same kind, the same empty state, one label up
+and one down.
+
+Classification: S3, and cross-surface. Either resolution closes it — lift plain's datepicker label only
+when it has something to clear, or give it the placeholder that would justify the lift.

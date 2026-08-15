@@ -21,6 +21,13 @@
  * mechanism a renderer either implements or does not, and the label is a class somebody remembered for
  * some kinds.
  *
+ * The third asks about the other label state. `filled` is what lifts a floating label clear of the
+ * text under it, so a field with nothing in it should not be wearing it — the label sits in the
+ * "there is content here" position with nothing beneath it, and the field reads as one somebody has
+ * already answered. Two justifications are real and are allowed for: a control showing a placeholder
+ * needs the label lifted whatever its value, and a control that always holds a number (a range) is
+ * never empty.
+ *
  * The kinds are read from the tables rather than listed here, so a kind that changes mechanism moves
  * this spec with it.
  */
@@ -157,5 +164,56 @@ for (const host of HOSTS) {
     expect(spoke, JSON.stringify({ spoke, silent })).toBeGreaterThan(2);
 
     expect(silent, JSON.stringify(silent, null, 1)).toEqual([]);
+  });
+}
+
+for (const host of HOSTS) {
+  test(`${host.name}: an empty field's label is not lifted`, async ({ page }) => {
+    test.setTimeout(150_000);
+    await page.goto(host.page);
+    await page.waitForFunction((flag) => (window as never as Record<string, boolean>)[flag] === true, host.ready);
+
+    expect(MDY_FIELD_STATE_CLASSES.labelStates, JSON.stringify(MDY_FIELD_STATE_CLASSES)).toContain("filled");
+
+    const lifted: Array<Record<string, unknown>> = [];
+    let settled = 0;
+
+    for (const kind of EVERY_KIND) {
+      const id = `fl-${kind}`;
+      await page.evaluate(
+        ({ mountId, k, api, options }) => {
+          const field: Record<string, unknown> = { name: "f", kind: k, label: "L" };
+          if (/select|radio|segmented/.test(k)) field.options = options;
+          (window as never as Record<string, { mountFields(id: string, f: unknown[]): unknown }>)[api]
+            .mountFields(mountId, [field]);
+        },
+        { mountId: id, k: kind, api: host.api, options: OPTIONS },
+      );
+      await page.waitForTimeout(140);
+
+      const seen = await page.evaluate(({ sel, label }) => {
+        const root = document.querySelector(sel);
+        if (root === null) return null;
+        const control = root.querySelector("input, textarea, select") as HTMLInputElement | null;
+        return {
+          hasLabel: root.querySelector(`.${label}`) !== null,
+          filled: root.querySelector(`.${label}--filled`) !== null,
+          value: control === null ? null : control.value,
+          placeholder: control?.getAttribute("placeholder") ?? null,
+          type: control?.getAttribute("type") ?? null,
+        };
+      }, { sel: `[data-form="${id}"]`, label: LABEL });
+
+      if (seen === null || !seen.hasLabel) continue;
+      if (!seen.filled) { settled += 1; continue; }
+      // A placeholder under the label, or a control that is never empty, both earn the lift.
+      if (seen.placeholder !== null || seen.type === "range" || (seen.value !== null && seen.value !== "")) continue;
+      lifted.push({ kind, ...seen });
+    }
+
+    // The control: most fields do sit with their label down, so one that does not is that kind.
+    expect(settled, JSON.stringify({ settled, lifted })).toBeGreaterThan(5);
+
+    expect(lifted, JSON.stringify(lifted, null, 1)).toEqual([]);
   });
 }
