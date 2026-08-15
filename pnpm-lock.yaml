@@ -58,6 +58,9 @@ importers:
       '@modyra/core':
         specifier: workspace:*
         version: link:packages/core
+      '@modyra/eslint-plugin':
+        specifier: workspace:*
+        version: link:packages/eslint-plugin
       '@modyra/lit':
         specifier: workspace:*
         version: link:packages/lit
