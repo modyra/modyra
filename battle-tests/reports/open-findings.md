@@ -3177,3 +3177,43 @@ axe silent about the labelless text field too. It was mounting a *labelled* text
 inputs took `id="f"`, so the association resolved to the earlier, labelled one and the second looked
 named. Two forms on one page with the same field name collide by id — an artefact of the probe, and
 worth knowing when reading any per-field measurement on a shared stage.
+
+## 80. A refusal that says how to fix it, and names something the caller cannot reach
+
+`adversarial/dynamic-contract/a-refusal-that-points-at-nothing.battle.test.mjs` — 3 green, 1 red.
+**S2**, under API-001 and DYN-001. Finding 73's repair, held to its own message.
+
+`buildDynamicFormSchema` refuses what it cannot use, by name and in production — that is 73 closed.
+Its message goes further than most and tells the caller how to fix it:
+
+```
+[modyra] buildDynamicFormSchema takes a parsed document's root node, received a undefined.
+Parse the document first: parseDynamicForm(document).schema.
+```
+
+**`parseDynamicForm` returns no `schema`.** Its result carries `ok`, `version`, `fields`, `layout`,
+`rules`, `validations`, `collections`, `diagnostics`, `acceptedCount`, `rejectedCount` — for a flat
+document and a tree one alike. A caller who does what the message says gets `undefined`, which
+produces the same refusal again. **The instruction is a circle.**
+
+What the function does take is the document's own root — `{ children }`, with or without a `node`
+beside it — which is what the caller already had before parsing anything.
+
+And two shapes still arrive as a JavaScript internal rather than as that refusal:
+
+```
+buildDynamicFormSchema({})                  TypeError: Cannot convert undefined or null to object
+buildDynamicFormSchema({ node: "group" })   the same
+buildDynamicFormSchema(undefined/null/[]/42/"nope")   the named refusal        the control
+```
+
+`{}` is the empty document and `{ node: "group" }` is a section somebody left unfinished. Both are
+exactly the shape the refusal exists for, and both miss it — an object with no `children` is the one
+case the check does not reach.
+
+**A message that names a property is a promise the property is there.** Same species as 68 and 69: a
+sentence that cannot be acted on. This one is sharper because it was added *by* the repair — the
+refusal is new, and its instruction has never worked.
+
+The battle reads the property name **out of the message** rather than hard-coding `schema`, so a
+repair that renames it is followed rather than broken.
