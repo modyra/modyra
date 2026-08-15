@@ -8,6 +8,7 @@
 
 import { createBlankProject } from "@modyra/studio-model";
 import { createAngularTarget } from "@modyra/studio-target-angular";
+import { createCoreTarget } from "@modyra/studio-target-core";
 import { createJsonTarget } from "@modyra/studio-target-json";
 import { createReactTarget } from "@modyra/studio-target-react";
 
@@ -32,7 +33,7 @@ function projectWith(broken) {
 const rows = [];
 for (const broken of [false, true]) {
   const project = projectWith(broken);
-  for (const target of [createJsonTarget(), createReactTarget(), createAngularTarget()]) {
+  for (const target of [createJsonTarget(), createReactTarget(), createAngularTarget(), createCoreTarget()]) {
     const analysis = await target.analyze(project);
     let files = null;
     let threw = null;

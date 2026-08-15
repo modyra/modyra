@@ -8,8 +8,9 @@
  *
  * The targets are packed with `pnpm pack` and installed into a temporary consumer, so what is
  * measured is the published tarball rather than the workspace: `studio-target-json`,
- * `studio-target-react` and `studio-target-angular` all depend on siblings as `workspace:*`, and
- * only pnpm rewrites that to a version an install accepts.
+ * `studio-target-react`, `studio-target-angular` and `studio-target-core` all depend on siblings as
+ * `workspace:*`, and only pnpm rewrites that to a version an install accepts. All four, because a
+ * property held by three of them is not a property Studio has.
  *
  * The payloads and the oracles live in `hostile-project.consumer.mjs`, which runs inside the
  * consumer. It is a file rather than a string here because the payloads are made of quotes,
@@ -167,9 +168,9 @@ battle(
     });
 
     const rows = result.rows ?? [];
-    expectClaim(rows.length === 6, {
+    expectClaim(rows.length === 8, {
       claimIds: ["STU-004"],
-      what: "three targets were not asked about both projects",
+      what: "the four shipped targets were not asked about both projects",
       detail: String(rows.length),
     });
 

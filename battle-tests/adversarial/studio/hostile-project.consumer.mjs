@@ -31,6 +31,7 @@ import { join } from "node:path";
 
 import { createBlankProject } from "@modyra/studio-model";
 import { createAngularTarget } from "@modyra/studio-target-angular";
+import { createCoreTarget } from "@modyra/studio-target-core";
 import { createJsonTarget } from "@modyra/studio-target-json";
 import { createReactTarget } from "@modyra/studio-target-react";
 
@@ -112,7 +113,7 @@ let index = 0;
 // shape. If this is ever false the comparison below is measuring the generator's ids, not its
 // escaping, and every row it produces is noise.
 const selfCheck = [];
-for (const target of [createJsonTarget(), createReactTarget(), createAngularTarget()]) {
+for (const target of [createJsonTarget(), createReactTarget(), createAngularTarget(), createCoreTarget()]) {
   const left = await target.generate(projectWith("harmless"));
   const right = await target.generate(projectWith("harmless"));
   for (const [at, file] of (left.files ?? []).entries()) {
@@ -121,7 +122,7 @@ for (const target of [createJsonTarget(), createReactTarget(), createAngularTarg
 }
 
 for (const [name, payload] of Object.entries(PAYLOADS)) {
-  for (const target of [createJsonTarget(), createReactTarget(), createAngularTarget()]) {
+  for (const target of [createJsonTarget(), createReactTarget(), createAngularTarget(), createCoreTarget()]) {
     // The same target with a harmless project, so a file that never parsed is not read as a break.
     const benign = await target.generate(projectWith("harmless"));
     const hostile = await target.generate(projectWith(payload));
