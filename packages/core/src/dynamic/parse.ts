@@ -322,7 +322,11 @@ function declaredFieldCount(schema: unknown): number {
       else count += 1;
       continue;
     }
-    if (kind === "array" || kind === "record") { stack.push(node["item"]); continue; }
+    // A collection is *understood*, not lost: it is reported by path and kind in `collections`, and
+    // its cells are not flat fields because a document cannot name rows that do not exist yet. So it
+    // counts as neither — descending into its item counted cells the flattener rightly never emits,
+    // and a correct document reported that something had been rejected with nothing to look at.
+    if (kind === "array" || kind === "record") continue;
     // Something was declared here and it is not a node this reader knows.
     count += 1;
   }
