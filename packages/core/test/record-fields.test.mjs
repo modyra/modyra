@@ -240,7 +240,7 @@ test("a draft restores the rows it was holding", async () => {
   const storage = {
     read: (key) => (store.has(key) ? store.get(key) : null),
     write: (key, value) => store.set(key, value),
-    clear: (key) => store.delete(key),
+    remove: (key) => store.delete(key),
   };
   const schema = () => ({ rows: record(group({ nome: field(""), qta: field(0) })) });
 
@@ -715,7 +715,7 @@ test("a draft restores the rows that were there, and not the one the user remove
   const storage = {
     read: (key) => (store.has(key) ? store.get(key) : null),
     write: (key, value) => store.set(key, value),
-    clear: (key) => store.delete(key),
+    remove: (key) => store.delete(key),
   };
   const schema = () => ({
     rows: record(group({ n: field("") }), { initial: { seed: { n: "s" } } }),
@@ -1106,7 +1106,7 @@ test("a draft carries five hundred rows there and back", async () => {
   const storage = {
     read: (key) => (store.has(key) ? store.get(key) : null),
     write: (key, value) => store.set(key, value),
-    clear: (key) => store.delete(key),
+    remove: (key) => store.delete(key),
   };
   const schema = () => ({ rows: record(rowSchema()) });
   const rows = Object.fromEntries(

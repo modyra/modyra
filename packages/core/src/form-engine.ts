@@ -57,7 +57,7 @@ export type {
   MdySecurityViolationKind,
 } from "./security.js";
 
-export type { MdyDraftOptions, MdyDraftStorage } from "./draft-manager.js";
+export type { MdyDraftOptions, MdyDraftStorage, MdyWebStorageLike } from "./draft-manager.js";
 export type { MdyFormRegistry, MdyPathGate } from "./contracts/form-registry.js";
 export type { MdyCollectionHost } from "./contracts/collection-host.js";
 

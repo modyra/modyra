@@ -24,11 +24,31 @@ export interface MdyDraftStorage {
   remove(key: string): void;
 }
 
+/**
+ * The storage a browser already has.
+ *
+ * `localStorage` and `sessionStorage` speak `getItem`/`setItem`/`removeItem`, and the draft guide
+ * names `localStorage` as the default — so a consumer wanting a different key prefix, a session
+ * instead of a local, or a wrapper that counts writes reaches for exactly this object. Declared here
+ * so the option can take it rather than failing on the first read with the name of a private field.
+ */
+export interface MdyWebStorageLike {
+  getItem(key: string): string | null;
+  setItem(key: string, value: string): void;
+  removeItem(key: string): void;
+}
+
 export interface MdyDraftOptions {
   /** Storage key the draft is persisted under. */
   readonly key: string;
-  /** Defaults to `localStorage` (inert when unavailable: SSR, Node). */
-  readonly storage?: MdyDraftStorage;
+  /**
+   * Defaults to `localStorage` (inert when unavailable: SSR, Node).
+   *
+   * Either shape: this package's `{read, write, remove}`, or the platform's own
+   * `{getItem, setItem, removeItem}` — `window.localStorage` and `window.sessionStorage` are taken
+   * as they are.
+   */
+  readonly storage?: MdyDraftStorage | MdyWebStorageLike;
   /** Milliseconds of inactivity before the draft is written. Default 400. */
   readonly debounceMs?: number;
   /**
@@ -63,6 +83,45 @@ function isDraftEnvelope(parsed: unknown): parsed is DraftEnvelope {
   const draft = parsed["__mdyDraft"];
   const value = parsed["value"];
   return typeof draft === "number" && isRecord(value);
+}
+
+/**
+ * The storage this manager will use, whichever of the two shapes it was handed.
+ *
+ * The guide names `localStorage` as the default, so the object a reader reaches for is the platform's
+ * own — and the option took a different shape without saying so: the first read threw
+ * `this._storage.read is not a function`, which names a private field, from a stack inside the
+ * engine, about an argument the caller passed. A shape this package can adapt is adapted; a shape it
+ * cannot is refused where it arrives, naming what was expected.
+ */
+function asDraftStorage(given: MdyDraftStorage | MdyWebStorageLike): MdyDraftStorage {
+  const candidate = given as Partial<MdyDraftStorage> & Partial<MdyWebStorageLike>;
+  if (
+    typeof candidate.read === "function"
+    && typeof candidate.write === "function"
+    && typeof candidate.remove === "function"
+  ) {
+    return given as MdyDraftStorage;
+  }
+  if (
+    typeof candidate.getItem === "function"
+    && typeof candidate.setItem === "function"
+    && typeof candidate.removeItem === "function"
+  ) {
+    const web = given as MdyWebStorageLike;
+    return {
+      // Bound to the object they came from: a Web Storage method called detached throws
+      // `Illegal invocation`, which is the same failure one layer further in.
+      read: (key) => web.getItem(key),
+      write: (key, value) => web.setItem(key, value),
+      remove: (key) => web.removeItem(key),
+    };
+  }
+  throw new Error(
+    "[modyra] draft.storage must be { read, write, remove } — or a Web Storage such as "
+    + "`localStorage`, which is taken as it is. Received an object with: "
+    + `${Object.keys(candidate).length > 0 ? Object.keys(candidate).join(", ") : "no usable members"}.`,
+  );
 }
 
 /**
@@ -272,7 +331,9 @@ export class MdyDraftManager {
 
   private _start(options: MdyDraftOptions): void {
     this._key = options.key;
-    this._storage = options.storage ?? localStorageDraftStorage();
+    this._storage = options.storage === undefined
+      ? localStorageDraftStorage()
+      : asDraftStorage(options.storage);
     this._exclude = new Set(options.exclude ?? []);
     this._version = options.version ?? 1;
     this._debounceMs = options.debounceMs ?? 400;

@@ -555,7 +555,7 @@
     "debounceMs?: number",
     "exclude?: readonly string[]",
     "key: string",
-    "storage?: MdyDraftStorage",
+    "storage?: MdyDraftStorage | MdyWebStorageLike",
     "ttlMs?: number",
     "version?: number"
   ],
@@ -1975,6 +1975,11 @@
   "MdyViewportSize": [
     "height: number",
     "width: number"
+  ],
+  "MdyWebStorageLike": [
+    "getItem: string | null",
+    "removeItem: void",
+    "setItem: void"
   ],
   "MdyWiden": [
     "(opaque)"

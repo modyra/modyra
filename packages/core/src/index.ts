@@ -132,6 +132,7 @@ export { MdyFormEngine } from "./form-engine.js";
 export type {
   MdyDraftOptions,
   MdyDraftStorage,
+  MdyWebStorageLike,
   MdyFormEngineOptions,
   MdyFormRegistry,
   MdyPathGate

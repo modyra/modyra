@@ -43,3 +43,36 @@ test("a secret inside a collection can be kept out of a draft", async () => {
   assert.ok(narrow.includes("personal"), "excluding the secret took the rest of the row with it");
   assert.ok(narrow.includes("Ada"), "excluding a cell name emptied the whole draft");
 });
+
+test("the storage a browser already has is taken as it is", async () => {
+  // The guide names `localStorage` as the default, so a consumer wanting a different key prefix or a
+  // session instead of a local reaches for the platform's own object. It speaks
+  // getItem/setItem/removeItem; this package speaks read/write/remove, and the mismatch used to
+  // surface as `this._storage.read is not a function` — a private field, from inside the engine,
+  // about an argument the caller passed.
+  const held = new Map();
+  const web = {
+    getItem: (key) => (held.has(key) ? held.get(key) : null),
+    setItem: (key, value) => held.set(key, String(value)),
+    removeItem: (key) => held.delete(key),
+  };
+
+  const form = createForm({ who: field("") }, { draft: { key: "k", storage: web, debounceMs: 5 }, devWarnings: false });
+  form.f.who.set("typed");
+  await new Promise((resolve) => setTimeout(resolve, 80));
+  form.destroy();
+  assert.ok(String(held.get("k")).includes("typed"), "a Web Storage did not receive the draft");
+
+  // And it is read back through the same door.
+  const restored = createForm({ who: field("") }, { draft: { key: "k", storage: web, debounceMs: 5 }, devWarnings: false });
+  await new Promise((resolve) => setTimeout(resolve, 40));
+  assert.equal(restored.f.who.value(), "typed");
+  restored.destroy();
+
+  // A shape neither this package nor the platform uses is refused where it arrives, naming what was
+  // expected — rather than throwing later about a member the caller never wrote.
+  assert.throws(
+    () => createForm({ who: field("") }, { draft: { key: "k", storage: { save() {} } }, devWarnings: false }),
+    /draft\.storage must be \{ read, write, remove \}/,
+  );
+});

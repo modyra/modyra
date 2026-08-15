@@ -606,6 +606,12 @@ const form = createForm(schema, {
 > numbers, tokens and any other sensitive field.** For anything stricter,
 > provide your own `MdyDraftStorage` (encrypted, server-side, session-scoped…).
 
+`storage` takes either shape: this package's `{ read, write, remove }`, or the
+platform's own `{ getItem, setItem, removeItem }` — so `window.localStorage` and
+`window.sessionStorage` can be handed over as they are, which is what naming a
+different key prefix or a session store usually means. An object that is neither
+is refused where it is passed, naming the shape expected.
+
 An entry in `exclude` is matched four ways, because a secret is usually not a
 field at the top of a form:
 
