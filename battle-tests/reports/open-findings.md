@@ -8902,3 +8902,70 @@ repository, and the evidence points away from the second reading: the parser val
 against the field list rather than handing it back unexamined, the type says the rule *fires*, and no
 guide anywhere tells a consumer they must implement the effects themselves. If it is intended, the
 contract and the guide both say otherwise and the strict-mode acceptance is the part that misleads.
+
+## 157. A word for it, and no way to hear it
+
+**S3 · Modyra bug (contract carried, partly unimplemented) · `@modyra/core`**
+Claims: REA-003 (registered for this), REA-002
+Battle: `battle-tests/adversarial/reactivity/a-word-for-it-and-no-way-to-hear-it.battle.test.mjs`
+— 1 failed, 1 passed
+
+`packages/core/src/reactivity-diagnostics.ts` states its own purpose: structured diagnostics that
+*replace ad-hoc `console.warn()` calls so a consumer can route adapter-degradation events (missing
+Injector, unsupported option, disabled async feature) to their own logging/telemetry*. It publishes
+seven codes, described as *emitted by core and the reference adapters*.
+
+Five of the seven are constructed nowhere in the workspace — as the constant and as a string literal
+alike:
+
+```
+MDY_EFFECTS_UNAVAILABLE          emitted   packages/angular/.../reactivity-angular.ts:142
+MDY_CROSS_RUNTIME_OBSERVATION    emitted   packages/core/src/reactive-owner.ts:86
+MDY_SCOPE_DESTROYED              never
+MDY_UNSUPPORTED_ADAPTER_OPTION   never
+MDY_ASYNC_FEATURE_DISABLED       never
+MDY_SSR_SNAPSHOT_MISMATCH        never
+MDY_ADAPTER_CONTRACT_VIOLATION   never
+```
+
+**Two of the three conditions the header names as its reason for existing have codes nothing emits**,
+and one of those two is detected and reported the old way. An option `createForm` does not read is
+noticed — `typed-form.ts:522` `reportUnknownOptions` — and said with a bare `console.warn`, no code,
+no severity, nowhere else to send it. `MDY_UNSUPPORTED_ADAPTER_OPTION` is the word for exactly that,
+published, unused.
+
+### The pattern exists, in the same module
+
+`observerFor` is the control, and it passes:
+
+```
+observerFor(handle, other, sink)   sink receives MDY_CROSS_RUNTIME_OBSERVATION, severity "error", a message
+observerFor(handle, other)         falls back to one console.warn
+```
+
+Angular's adapter does the same for `MDY_EFFECTS_UNAVAILABLE`, with `severity`, `feature` and
+`adapter` filled in. So the machinery works and is used correctly where it is used at all.
+
+### There is nowhere to install a sink on a form
+
+`observerFor(handle, requested, diagnostics)` is the only function in core that accepts one, as its
+third argument. A form takes no `diagnostics` option — passing one makes `reportUnknownOptions` name
+*it* as an option the form does not read, which is the shape of the gap rather than a workaround used
+wrongly. `createSilentDiagnostics` exists so a consumer can stop a library talking to their console,
+and cannot silence this.
+
+### Corrected on the way
+
+The first measurement of this was wrong in the same way finding 114's was: a sink passed as
+`createForm(schema, { diagnostics })` and conclusions drawn from its silence. The warning text itself
+gave it away by listing `"diagnostics"` among the options the form does not read. The finding
+survived the correction and its evidence changed completely — what looked like "a sink that receives
+nothing" is "a condition with no route to any sink".
+
+### Not filed
+
+The other four unemitted codes name conditions this battle did not reach from outside
+(`MDY_SCOPE_DESTROYED`, `MDY_ASYNC_FEATURE_DISABLED`, `MDY_SSR_SNAPSHOT_MISMATCH`,
+`MDY_ADAPTER_CONTRACT_VIOLATION`). Using a handle after `destroy()` reports nothing to a sink, but
+core has no sink to report to there either, so the measurement cannot separate "the condition is not
+detected" from "there is nowhere to say it". Recorded as unmeasured rather than as clean.
