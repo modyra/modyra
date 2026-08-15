@@ -14,7 +14,7 @@ those words.
 One cause below is **withdrawn**: it was the reference model rather than the engine, and it is left
 in place rather than deleted so that anyone who read it finds out.
 
-The list is grouped by cause. Twenty-two causes, one of them withdrawn.
+The list is grouped by cause. Twenty-three causes, one of them withdrawn.
 
 ---
 
@@ -274,7 +274,17 @@ the form cannot be rendered. `asyncWhen` that throws makes `createForm` throw. T
 the same failure into a verdict on the field and keeps the form readable, which is the repair
 pattern for both and the green battle beside them.
 
-## 22. Reported without a repair path
+## 22. A refusal the server sent that reaches nobody
+
+`adversarial/security/what-the-server-refused.battle.test.mjs`
+
+`path: null` lands form-level, a path naming a field lands on it, and a path the form does not have
+is surfaced form-level as the guide says. `path: ""` — the explicit way to say *this is about the
+whole form* — is dropped entirely, not even into `lastSubmitErrors`. Omitting `path`, which is what
+`{ message }` from a server response looks like, produces a form-level error reading `Cannot read
+properties of undefined (reading 'length')` on the surface an application shows a person.
+
+## 23. Reported without a repair path
 
 - `adversarial/submission/submit-contract.battle.test.mjs` — an action returning something that is
   not a list of errors puts `errors.filter is not a function` on the form-level error surface, the
