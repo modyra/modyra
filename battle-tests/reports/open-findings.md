@@ -418,8 +418,9 @@ sections in under a millisecond.
 
 ## 29. The author-time check is silent about a version it does not know
 
-Measured, not battled — pinning it needs `@modyra/eslint-plugin` as a dependency of this package,
-which is a decision rather than a test.
+**Now pinned**: `adversarial/dynamic-contract/the-rule-and-the-parser.battle.test.mjs`, 1 red, since
+`@modyra/eslint-plugin` reached the root manifest. Seven documents through both the rule and the
+parser; they agree on six and disagree on one.
 
 `modyra/valid-dynamic-form` decides a literal is a document by finding "a version the parser knows"
 beside one of the two slots that carry a form. A `{ version: 4, fields: [...] }` literal is therefore
@@ -1264,3 +1265,50 @@ already refuses one shape of it. The two that build broken forms go through with
 Asking the compiler rather than the parser is the point. The parser sees a document somebody already
 wrote; Studio is where it is still an editing session and a diagnostic is a sentence rather than a bug
 report.
+
+## 54. A claim that outlived one reset and not the other
+
+`regressions/a-claim-that-outlived-one-reset.battle.test.mjs` — 1 red, 1 green.
+
+Found at **run 4,973 of 25,000**. Three thousand runs per property were not enough; the `search` field
+added in finding 40 is what says so.
+
+A consumer may disable a path before any row occupies it. The engine holds the claim, applies it when
+a row arrives, and ADR 0044 makes it belong to that row so it travels when the row does — all asserted
+as the green control.
+
+What a `reset` does to it depends on something the consumer cannot see:
+
+```
+setDisabled("items.0.note"), reset(), insert(0)              → the row arrives disabled
+setDisabled("items.0.note"), setAll([…]), reset(), insert(0) → the row arrives enabled
+```
+
+The only difference is whether a row existed in between long enough for the claim to land on one. A
+claim never applied survives the reset; one applied once and then reset away is discarded. The
+consumer said the same sentence both times.
+
+The pair is what makes it a finding rather than a preference: neither behaviour is wrong on its own,
+and they cannot both be right for one sentence.
+
+## The generative tier, at depth
+
+All seven properties green at **3,000 runs each** (seed 7) — twenty-one thousand sequences of
+twenty-four operations. At **25,000 runs** one property found finding 54, at run 4,973.
+
+Getting there took correcting three stale rules in my own models, all encoding what the engine did
+before a fix:
+
+| model | rule | found by |
+| --- | --- | --- |
+| `reference-model.mjs` | `record.rename` appended | the fixer, from their side |
+| `reference-model.mjs` | `putSnapshot` composed orders instead of restoring the snapshot's | me, after correcting the first |
+| `conditional-reference-model.mjs` | `record.rename` appended | me, surveying at 3,000 |
+
+Each was invisible while the engine made the same mistake. `generative/nested-model-audit.battle.test.mjs`
+now asserts that every keyed model keeps a renamed row in place, because three models encode that rule
+separately and it has already drifted twice.
+
+**Seven operations the harness can execute and no generator draws**: `async.resolve`, `async.reject`,
+`destroy`, `draft.save`, `draft.restore`, `observe`, `submit`. Depth has stopped paying at this width;
+these are where the next class lives.
