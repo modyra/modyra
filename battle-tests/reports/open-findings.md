@@ -9518,8 +9518,14 @@ canSubmit           true                                     false
 errors on `lines`   none                                     the schema's
 submitValue()       THROWS "[modyra] Flat patch does not match schema shape"
 submit()            THROWS TypeError: Cannot read properties of undefined (reading 'slice')
-onSubmit            never called
 ```
+
+**Corrected:** the first version of this entry listed "onSubmit never called" as evidence. It was not
+evidence of anything — `createForm` takes no `onSubmit`, so the sink was never installed. The option
+list is `submitMode, reactivity, validators, history, draft, security, autoActivate, devWarnings`, and
+the handler belongs to `submit(handler)`. The same mistake as finding 157's first measurement, and it
+is the third time this session that a sink I passed to `createForm` measured nothing. The finding
+stands on `submit()` throwing, which was measured directly.
 
 ### Two promises break, and they are different promises
 
@@ -9694,3 +9700,29 @@ measurement.
   envelope measured nothing at all — there is no such field — and the design is sound: a version bump
   is a different slot rather than a value to compare.
 - **`exclude` protects on restore as well as on write** (recorded under finding 168).
+
+## Checked and clean: a rule, a draft, and a submission in flight
+
+**Battle:** `battle-tests/adversarial/submission/what-a-submission-froze.battle.test.mjs` — green.
+No finding. Recorded because both combinations are new since rules started deciding what is sent, and
+because one of the three answers is only obviously right once it is written down.
+
+- **A field a rule switched off keeps its value in the draft**, and switching the rule back on returns
+  it. The value is retained in edit state and excluded from submission — the same rule `disable`
+  follows — so a user who watches a section disappear and reappear has not lost what they typed.
+- **A submission is of the state it was asked about.** With the condition settled, and with the change
+  and the ask in the same tick, the switched-off field is out of what is sent. With the change made
+  *after* the ask, the payload is the one from before it: a submission that followed the model would
+  mean a server received something the user never saw, and a retry would send something else again.
+
+### An instrument error worth recording
+
+The first version of this measurement passed `onSubmit` to `createForm` and read three empty payloads
+from a handler that was never installed. `createForm` takes `submitMode, reactivity, validators,
+history, draft, security, autoActivate, devWarnings` — the handler belongs to `submit(handler)`, and
+the form says so with a named warning when `devWarnings` is on.
+
+That is the **third** time this session a sink passed to `createForm` measured nothing: a
+`diagnostics` sink in finding 114, again in 157's first pass, and now `onSubmit`. Finding 166's entry
+has been corrected — it listed "onSubmit never called" as evidence, which was evidence of my own call
+rather than of the engine. The finding itself stood on `submit()` throwing, measured directly.

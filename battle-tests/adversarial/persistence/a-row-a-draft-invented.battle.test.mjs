@@ -66,7 +66,6 @@ battle(
     const open = () => createForm(buildDynamicFormSchema(document), {
       draft: { key: "k", storage },
       devWarnings: false,
-      onSubmit: (value) => { sent.push(value); },
     });
 
     // An honest draft first, written by the engine itself, so what follows is the engine's own
@@ -108,7 +107,9 @@ battle(
     }
     let sendFailed = null;
     try {
-      await form.submit();
+      // The handler belongs to `submit`, not to `createForm` — a form takes no `onSubmit`, and
+      // passing one there is an option it does not read.
+      await form.submit((value) => { sent.push(value); });
     } catch (error) {
       sendFailed = `${error.constructor.name}: ${error.message}`;
     }
