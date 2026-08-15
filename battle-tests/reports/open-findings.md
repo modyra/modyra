@@ -9481,3 +9481,10 @@ where a finding lands are decisions each route takes separately.
   document never declared, so the schema-built form is invalid for a row the document-built one
   accepts. Asserting it keeps a future "make the routes agree" from deleting the bridge's whole point
   as a side effect.
+- **A key a record cannot have is refused identically by both routes.** Row keys are the part of a
+  collection that comes from outside — an id from a fetch, a filename, whatever the domain calls a
+  row — so a consumer choosing a schema over a document must not be choosing a security posture.
+  `__proto__`, `constructor`, `prototype`, `""` and `a.b` are **ignored with a named diagnostic**
+  rather than thrown, so one hostile key does not take a batch down with it; `"0"` and `"toString"`
+  are kept and hold what they were given; the prototype is intact; and both routes end with the same
+  key list.

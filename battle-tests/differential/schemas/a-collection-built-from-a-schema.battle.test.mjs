@@ -186,3 +186,58 @@ battle(
     documentForm.destroy();
   },
 );
+
+battle(
+  {
+    claims: ["SEC-001", "COL-002", "DYN-001"],
+    title: "a key a record cannot have is refused the same way whichever route built it",
+    environments: ["node"],
+  },
+  async (ctx) => {
+    // Row keys are the one part of a collection that comes from outside — an id from a fetch, a
+    // filename, whatever the domain calls a row. Both routes have to answer the same way, because a
+    // consumer choosing a schema over a document is not choosing a security posture.
+    const schemaForm = fromSchema();
+    const documentForm = fromDocument();
+
+    const refused = ["__proto__", "constructor", "prototype", "", "a.b"];
+    const accepted = ["0", "toString"];
+
+    for (const key of [...refused, ...accepted]) {
+      // Ignored rather than thrown: a hostile key in a batch must not take the batch down with it.
+      schemaForm.f.lines.upsert(key, { sku: "S" });
+      documentForm.f.lines.upsert(key, { sku: "S" });
+    }
+    await settled();
+
+    const fromOne = [...schemaForm.f.lines.keys()].sort();
+    const fromOther = [...documentForm.f.lines.keys()].sort();
+    ctx.log.note("what survived a hostile batch of keys", { fromOne, fromOther });
+
+    expectEqual(fromOne, accepted.slice().sort(), {
+      claimIds: ["SEC-001", "COL-002"],
+      what: "a schema-built record kept a key it cannot have, or lost one it can",
+    });
+
+    expectEqual(fromOne, fromOther, {
+      claimIds: ["DYN-001"],
+      what: "the two routes disagree about which keys a record may have",
+    });
+
+    expectClaim(Object.getPrototypeOf({}) === Object.prototype, {
+      claimIds: ["SEC-001"],
+      what: "the prototype was touched by a key naming it",
+    });
+
+    // The control: the keys that were accepted really are usable rows rather than names in a list.
+    for (const key of accepted) {
+      expectEqual(schemaForm.f.lines.cell(key, "sku").value(), "S", {
+        claimIds: ["COL-002"],
+        what: `the row under ${JSON.stringify(key)} does not hold what it was given`,
+      });
+    }
+
+    schemaForm.destroy?.();
+    documentForm.destroy();
+  },
+);
