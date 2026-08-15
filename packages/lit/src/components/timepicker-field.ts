@@ -76,10 +76,6 @@ export class MdyTimepickerFieldElement extends MdyFieldElement<string | null> {
   private unsubscribe?: () => void;
 
   /** What the controller is holding, or the resting shape before a handle exists. */
-  protected override controlErrors(): readonly string[] {
-    return this.view.entryUnreadable ? [this.messages.entryUnreadable] : [];
-  }
-
   private get view(): MdyTimepickerFieldState {
     return this.fieldController?.state() ?? RESTING;
   }
@@ -94,6 +90,11 @@ export class MdyTimepickerFieldElement extends MdyFieldElement<string | null> {
       disabled: handle.disabled(),
       control: ".mdy-timepicker__input",
     });
+    // Said to the form rather than kept here: an entry this control could not read leaves the form
+    // holding nothing while the person looks at text they believe was taken, and a message the
+    // element painted on its own escaped every rule the form applies to its errors — it was still
+    // announced after the field went out of play, and never marked the control as invalid.
+    handle.reportEntry(this.view.entryUnreadable ? this.messages.entryUnreadable : null);
   }
 
   private dragField: TimeField = "hour";
