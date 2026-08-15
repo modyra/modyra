@@ -7844,3 +7844,25 @@ unnamed by this suite: the four that remained are `MdyFormEngine`, `MdyTypedForm
 reachable except through one adapter's reactivity — the same shape as finding 133, and recorded there
 rather than filed again. The ~80 exports still unnamed are all `@modyra/widgets`, which is where the
 last dozen findings came from.
+
+### Checked and clean: which way a popup leans
+
+`adversarial/widgets/which-way-a-popup-leans.battle.test.mjs` (2 green).
+
+`decideOverlayAlignment` answers three questions in order, and none of it had been named by this
+suite:
+
+```
+nothing stated        anchor 100..200 → left    anchor 800..900 → right    the side with more viewport
+pointer given         pointer 100 → left        150 (the middle) → right   200 → right
+preference stated     anchor 800..900, prefers left → left                 beats both
+desiredWidth given    room 188: width 188 → stays, width 200 → flips       and mirrored
+```
+
+The last row is the one that keeps a popup on screen, and its boundary is an off-by-one waiting to
+happen: with 188 pixels of room, 188 stays and the next size goes. Both directions are asserted, so a
+flip that always favoured one side would fail rather than pass half the table.
+
+Inputs that are not measurements still answer with a side rather than throwing: a window with no
+width, an anchor off the screen, a desired width of zero or of `NaN`. An overlay has to be anchored
+somewhere even when what it was told makes no sense.
