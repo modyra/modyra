@@ -1,5 +1,6 @@
 import { readFileSync } from "node:fs";
 import { expect, test } from "@playwright/test";
+import { MDY_WIDGET_KINDS } from "@modyra/widgets";
 
 /**
  * A field a document declared without a label, and the control nobody can name.
@@ -28,12 +29,12 @@ import { expect, test } from "@playwright/test";
 
 const AXE = readFileSync("node_modules/axe-core/axe.min.js", "utf8");
 
-/** Every kind, with the option list the ones that need it require and no label anywhere. */
-const KINDS = [
-  "text", "email", "password", "textarea", "number", "slider", "checkbox", "toggle",
-  "select", "multiselect", "radio", "segmented", "datepicker", "daterange", "timepicker",
-  "file", "colors",
-] as const;
+/**
+ * Every kind, read from the package rather than written out here. A list copied into a spec named
+ * "every kind" covers every kind only until there is a new one, and then says nothing about it while
+ * keeping its name.
+ */
+const KINDS = [...MDY_WIDGET_KINDS];
 
 test.beforeEach(async ({ page }) => {
   await page.goto("/index.html");

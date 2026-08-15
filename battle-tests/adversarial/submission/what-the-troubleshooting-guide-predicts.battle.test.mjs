@@ -123,7 +123,7 @@ battle(
     // And the hanging run. Without the timeout this field waits forever; with it the guide promises a
     // settled `pending` and a named error rather than a spinner nobody can stop.
     const hanging = createForm(
-      { a: field("", [], serverValidator(() => new Promise(() => {}), { debounceMs: 0, timeoutMs: 120 })) },
+      { a: field("", [], serverValidator(() => new Promise(() => undefined), { debounceMs: 0, timeoutMs: 120 })) },
       { devWarnings: false },
     );
     hanging.f.a.set("x");

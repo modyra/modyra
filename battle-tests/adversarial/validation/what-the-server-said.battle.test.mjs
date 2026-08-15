@@ -101,7 +101,7 @@ battle(
 
     // And a server that never answers: pending, and not submittable, rather than a form deciding
     // for itself that silence means yes.
-    const hanging = asking(() => new Promise(() => {}));
+    const hanging = asking(() => new Promise(() => undefined));
     hanging.f.name.set("ada");
     await settled();
     ctx.log.note("a check that never answered", {

@@ -1,6 +1,7 @@
 import { readFileSync } from "node:fs";
 
 import { expect, test } from "@playwright/test";
+import { MDY_WIDGET_KINDS } from "@modyra/widgets";
 
 /**
  * Every widget kind the vocabulary declares, rendered and handed to an auditor that is not this suite.
@@ -29,10 +30,12 @@ import { expect, test } from "@playwright/test";
 const AXE = readFileSync("node_modules/axe-core/axe.min.js", "utf8");
 
 /** Every kind `MDY_DYNAMIC_FIELD_KINDS` declares. */
-const KINDS = [
-  "text", "textarea", "email", "password", "number", "slider", "checkbox", "toggle", "select",
-  "radio", "multiselect", "segmented", "datepicker", "daterange", "timepicker", "file", "colors",
-];
+/**
+ * Read from the package rather than written out here. A list of kinds copied into a spec named "every
+ * kind" covers every kind only until there is a new one, and then says nothing about it while keeping
+ * its name.
+ */
+const KINDS = [...MDY_WIDGET_KINDS];
 
 const needsOptions = (kind: string) => /select|radio|segmented/.test(kind);
 

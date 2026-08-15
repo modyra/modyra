@@ -91,8 +91,8 @@ for (const host of HOSTS) {
       // Give it a turn, the way a person does, so a renderer that waits for that has had it.
       const first = page.locator(`[data-form="${id}"] input, [data-form="${id}"] select, [data-form="${id}"] button`).first();
       if (await first.count() > 0) {
-        await first.focus().catch(() => {});
-        await first.blur().catch(() => {});
+        await first.focus().catch(() => undefined);
+        await first.blur().catch(() => undefined);
       }
       await page.waitForTimeout(200);
 

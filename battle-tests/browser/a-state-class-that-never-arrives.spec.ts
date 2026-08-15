@@ -82,8 +82,8 @@ for (const host of HOSTS) {
 
       const first = page.locator(`[data-form="${id}"] input, [data-form="${id}"] select, [data-form="${id}"] button`).first();
       if (await first.count() > 0) {
-        await first.focus().catch(() => {});
-        await first.blur().catch(() => {});
+        await first.focus().catch(() => undefined);
+        await first.blur().catch(() => undefined);
       }
       await page.waitForTimeout(190);
 
@@ -142,8 +142,8 @@ for (const host of HOSTS) {
 
       const first = page.locator(`[data-form="${id}"] input, [data-form="${id}"] select, [data-form="${id}"] button`).first();
       if (await first.count() > 0) {
-        await first.focus().catch(() => {});
-        await first.blur().catch(() => {});
+        await first.focus().catch(() => undefined);
+        await first.blur().catch(() => undefined);
       }
       await page.waitForTimeout(190);
 
@@ -254,7 +254,7 @@ for (const host of HOSTS) {
       await page.waitForTimeout(140);
 
       const toggle = page.locator(`[data-form="${id}"] button`).first();
-      if (await toggle.count() > 0) await toggle.click({ timeout: 2000 }).catch(() => {});
+      if (await toggle.count() > 0) await toggle.click({ timeout: 2000 }).catch(() => undefined);
       await page.waitForTimeout(240);
 
       const seen = await page.evaluate(({ sel, cls }) => {
