@@ -474,3 +474,24 @@ own — is sent to a function that does not exist under that name.
 Both routes agree once the real call is made: required mark, verdicts and projected constraints are
 identical to the tree route's. Measured, and now held by
 `adversarial/accessibility/the-signal-behind-aria-required.battle.test.mjs`.
+
+## 31. A mount that refuses a field keeps what it had already painted
+
+`browser/a-mount-that-stopped-halfway.spec.ts` — **runs under `npm run battle:browser`.**
+
+`assertUsableWidgetId` is deliberately loud rather than repairing — "an id is consumer-visible, so
+rewriting one silently would change what a host's tests and stylesheets look for" — and the refusal is
+right. The battle asserts the refusal and its message; that is not what is under attack.
+
+Mounting paints as it goes. A four-field list whose last field cannot have a usable id leaves three
+controls in the container: the two before it, and the beginnings of the one refused. The throw takes
+the return value with it, so the caller never receives the handle whose `dispose()` is the only
+published way to unmount what was painted.
+
+The stray control is narrower than "an inaccessible control appeared": it carries `aria-label`, so it
+has an accessible name. It has no id, so its `<label>` carries `for=""` and associates with nothing,
+and no ARIA reference can ever point at it. The page's own dangling-reference check cannot see this,
+because `for=""` points at no id rather than at a missing one — which is why the battle reads the
+association rather than the check.
+
+Only what mounting owns is asserted. The container is the caller's.
