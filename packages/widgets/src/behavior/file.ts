@@ -13,7 +13,8 @@ export interface MdyFileSelectionOptions {
 }
 
 export interface MdyFileSelectionTransition<TFile extends MdyFileCandidate> {
-  readonly value: TFile | readonly TFile[] | null | undefined;
+  /** What the field holds: always a list, as `MDY_VALUE_CONTRACTS.file` declares. */
+  readonly value: readonly TFile[] | null | undefined;
   readonly accepted: readonly TFile[];
   readonly rejected: readonly TFile[];
   readonly touched: boolean;
@@ -33,6 +34,10 @@ export function fileSelectionTransition<TFile extends MdyFileCandidate>(
     .filter(Boolean);
   const matchesAccept = (file: TFile): boolean => tokens.length === 0 || tokens.some((token) => {
     if (token.startsWith(".")) return file.name.toLowerCase().endsWith(token);
+    // The token that means *any file* is a bare star, and a star over a star. Both took the wildcard
+    // branch below and asked whether a file's type began with a star — which nothing does, so the
+    // most permissive value a form can declare was the only one that accepted nothing.
+    if (token === "*" || token === "*/*") return true;
     if (token.endsWith("/*")) return file.type.toLowerCase().startsWith(token.slice(0, -1));
     return file.type.toLowerCase() === token;
   });
@@ -49,7 +54,12 @@ export function fileSelectionTransition<TFile extends MdyFileCandidate>(
     accepted = accepted.slice(0, 1);
   }
   return {
-    value: accepted.length === 0 ? undefined : options.multiple ? accepted : accepted[0]!,
+    // Always a list, whatever `multiple` says. `MDY_VALUE_CONTRACTS.file` declares `file[]` and is
+    // not nullable, so a bare file is a shape the engine's own `matchesValueShape` refuses — and a
+    // single-file field was invalid for every file a person could choose, in any renderer that did
+    // not wrap the value on its way past. Whether one file or several may be chosen is what
+    // `accepted` was already narrowed by; it is not a second answer about what the field holds.
+    value: accepted.length === 0 ? undefined : accepted,
     accepted,
     rejected,
     touched: accepted.length > 0,
