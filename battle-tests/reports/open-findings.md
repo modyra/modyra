@@ -6961,6 +6961,10 @@ something rather than as nothing.
 
 ## 126. The token that means any file turns away every file
 
+**Closed — verified green** in `ee8040c3`, and falsified: the star tokens now accept everything while
+`/*`, `image/` and `*.png` still accept nothing, so the repair did not widen the parser to get there.
+
+
 **Severity** S1 · **Classification** Modyra bug · **Battle**
 `adversarial/widgets/the-files-a-field-agrees-to-take.battle.test.mjs` (red) · **Claims** UI-006,
 VAL-004
@@ -6989,6 +6993,24 @@ at all takes it. The user picks a file, nothing happens, and nothing says why.
 The most permissive value a form can state is the one value that accepts nothing.
 
 ## 127. A file field that hands back a shape its own contract refuses
+
+**Half closed, half open.** `fileSelectionTransition` was repaired in `ee8040c3` and its battle is
+green: the value is a list whatever `multiple` says. Verified, and falsified at the new edges — a
+single field handed two files keeps one **as a list** and turns the other away, a malformed accept
+(`/*`, `image/`, `*.png`) widens nothing, and `IMAGE/*` still matches by type.
+
+The renderer half is still open. Measured after the repair, picking one file:
+
+```
+lit, multiple: true    model is a list of 1, no error
+lit, single (default)  model is not a list, "This field holds file[]"
+plain, single          model is a list
+```
+
+So one renderer does not go through the repaired transition for the single case — it writes the file
+it was handed. `browser/a-file-picked-and-nothing-said.spec.ts` holds that at page level, where a
+consumer meets it.
+
 
 **Severity** S1 · **Classification** Modyra bug — the transition and the value contract disagree ·
 **Battle** `adversarial/widgets/the-files-a-field-agrees-to-take.battle.test.mjs` (red) · **Claims**
@@ -7193,3 +7215,29 @@ with nowhere to be.
 a minimum equal to its maximum, a maximum below its minimum, a non-number, an infinity — rather than
 dividing by zero. `dragPointOf` reads a mouse and a finger alike, and answers `null` for a touch event
 carrying no touches, which is the end of a gesture rather than a drag to the origin.
+
+## 130. A file picked, and nothing said
+
+**Severity** S2 · **Classification** half an answer used · **Spec**
+`browser/a-file-picked-and-nothing-said.spec.ts` (red for one renderer) · **Claims** UI-006, A11Y-002
+· **Found by falsifying the repair for 126/127**
+
+`fileSelectionTransition` hands back three things: the value, the files it kept, and the files it
+turned away. Writing the value is the obvious half. The other is that a file the field refused is
+something that happened to the user — they chose it — and the only evidence is a `rejected` array
+nobody on the page ever sees.
+
+Measured on an `image/*` field handed a `.txt`:
+
+```
+plain   nothing changes at all — same text, no message, no live region, still "No file selected"
+lit     the file name appears, so the refusal is at least visible as a change
+```
+
+Then the same field handed a `.png` changes the page in both, which is the control: "nothing changed"
+is the refusal rather than a page that never reacts to a pick.
+
+**The contract has no word for it, and that is part of the finding.** The five published message
+tables carry `entryUnreadable` for a date that could not be read and nothing for a file that was
+turned away, so a renderer wanting to say it has nothing to say it with. Same shape as finding 113: a
+state the engine models and the vocabulary does not.
