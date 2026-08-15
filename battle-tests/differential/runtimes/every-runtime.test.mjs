@@ -1,5 +1,5 @@
 /**
- * One operation log, five published reactivity implementations, compared against vanilla.
+ * One operation log, six published reactivity implementations, compared against vanilla.
  *
  * `vanilla-vs-vue` established that a second runtime can be compared at all. This is the general
  * case, and it is the suite's largest gap closed: every collection, validation and submission claim
@@ -11,9 +11,17 @@
  * differ in what the form holds, what it will submit, which rows it has, what is invalid, or which
  * cells carry a mark.
  *
- * Angular is absent for a build reason rather than a semantic one: its reactivity is produced by
- * `build:angular`, and `npm run battle` runs `build:packages`. Adding it would make the suite's own
- * build a different one.
+ * Angular is absent for two reasons, and only the first is about tooling. Its reactivity is produced
+ * by `build:angular` while `npm run battle` runs `build:packages`, so adding it would make the
+ * suite's own build a different one.
+ *
+ * The second is that it would not agree if it were here, and is not supposed to. `angularReactivity`
+ * built outside an injection context reports `effects: false`, and an async validator is skipped
+ * rather than half-started: the same log that leaves one run in flight on vanilla leaves none on
+ * Angular. That is the documented degradation, pinned by
+ * `angular/degraded-reactivity.battle.mjs`, and comparing it here would report a difference that is
+ * the contract rather than a break. A reader who solves the build and expects Angular to slot in
+ * would find that out the hard way otherwise.
  */
 
 import { battle } from "../../harness/battle.mjs";
