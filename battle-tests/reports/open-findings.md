@@ -6994,6 +6994,12 @@ The most permissive value a form can state is the one value that accepts nothing
 
 ## 127. A file field that hands back a shape its own contract refuses
 
+**Closed — verified green** (`f00ead67`). The renderer half went further than the report: one
+element never went through the transition at all, so `accept`, `maxFileSize` and `maxFiles` meant
+nothing there either, and the same face was found in a third renderer nobody had looked at.
+Falsified: a good file picked, then a refused one — the good file is still held, no error, and the
+value stays a list. `transition.value` being absent is read as "no change" rather than written.
+
 **Half closed, half open.** `fileSelectionTransition` was repaired in `ee8040c3` and its battle is
 green: the value is a list whatever `multiple` says. Verified, and falsified at the new edges — a
 single field handed two files keeps one **as a list** and turns the other away, a malformed accept
@@ -7217,6 +7223,12 @@ dividing by zero. `dragPointOf` reads a mouse and a finger alike, and answers `n
 carrying no touches, which is the end of a gesture rather than a drag to the origin.
 
 ## 130. A file picked, and nothing said
+
+**Closed — verified green** (`f00ead67`). The word came before the line, as the finding argued it had
+to: `fileRejected(names)` is now in all five message tables and takes the *list* rather than a joined
+string, so the punctuation stays a decision of the language. Measured in both renderers: a `.txt`
+handed to an `image/*` field produces `Not accepted: notes.txt` in a `role="status"` region, and the
+field stays valid holding what it accepted.
 
 **Severity** S2 · **Classification** half an answer used · **Spec**
 `browser/a-file-picked-and-nothing-said.spec.ts` (red for one renderer) · **Claims** UI-006, A11Y-002
@@ -7550,3 +7562,38 @@ at exists and has words in it, which is the question a reader is actually asking
 the ids an attribute names — but a calendar's grid exists only while the popup is open, and that spec
 measures a page at rest. A dangling reference inside a widget that has to be opened first is a state
 it never reaches.
+
+## 136. A reference that points at the view it has left
+
+**Severity** S1 · **Classification** stale ARIA reference · **Spec**
+`browser/no-reference-that-points-at-nothing.spec.ts` (red for one renderer, green for the other) ·
+**Claims** A11Y-001 · **Generalises finding 135**
+
+Finding 135 was one dangling reference. Walking every id-naming attribute in the states a widget only
+reaches when it is *used* finds three, and the second is a different defect:
+
+```
+datepicker, years view   div[aria-labelledby=mdy-field-2__label]   the label has no id      ← 135
+datepicker, years view   input[aria-controls=mdy-field-2__grid]    the grid is gone         ← new
+daterange,  years view   div[aria-labelledby=mdy-field-3__label]   the label has no id      ← 135
+```
+
+The opener's `aria-controls` names the days grid. Changing the view replaces that grid with the
+years, and the attribute is not updated — so while the popup is open, the control that opened it
+points at something no longer on the page.
+
+Staleness is the worst shape of this defect. A missing attribute is visible. An attribute naming an
+id that *used to* exist reads correctly in the markup, survives every review of the element, and
+resolves to nothing only in the state a user reaches by pressing something.
+
+**Nothing is dangling with the popups merely open** — in either renderer, across all six kinds. The
+three appear only one view deeper, which is why the spec drills and why it asserts that it drilled:
+a run that opened nothing and changed no view would report nothing dangling and mean nothing by it.
+
+### Harness defect: a sweep that stopped at the first door
+
+The first version of this sweep opened each popup and walked the references there. It reported zero,
+in both renderers — while finding 135 had already measured a dangling reference by hand. Two of my
+own measurements disagreeing is a harness defect until shown otherwise, and it was: the sweep stayed
+in the days view and 135's reference lives in the years. The lesson finding 135 recorded about the
+suite's id spec applied one level down to the spec written because of it.
