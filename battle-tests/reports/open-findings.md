@@ -1406,3 +1406,35 @@ and the relations, and none of these is checked anywhere the renderers share.
 **Also measured, and it settles finding 23:** Lit holds a field's errors until the person has been
 there. Plain does not. Finding 23 is no longer "Plain paints a verdict early" against a principle —
 it is against a sibling renderer in the same repository doing the opposite.
+
+## Whose defect is it: the two-renderer table
+
+`browser/a-refusal-in-two-renderers.spec.ts` asks the same four questions of `@modyra/plain` and
+`@modyra/lit`, each through its own host page built from published entry points. The pattern is worth
+more than any single answer: **a defect both renderers have is the contract's; one only one has
+belongs to that renderer, and the other usually shows the shape that avoids it.**
+
+| question | Plain | Lit |
+| --- | --- | --- |
+| a refusal naming a field reaches the person | green | green |
+| a refusal naming no field reaches the person | **green, newly** | red |
+| a value the picker cannot read is kept or explained | red | red |
+| every declared option is one a person can choose | red | **green** |
+
+Where they agree, the finding moves to `@modyra/widgets`:
+
+- **34** — a date or time the field cannot read is erased on blur, `aria-invalid` left `false`, nothing
+  said. Both.
+- **35** — a control declaring `role="combobox"` with `aria-haspopup` that opens on no key. Both.
+- **56** — a form-level error with nowhere to be rendered. Both, and Plain's half is now closed.
+
+Where they differ, the one that is clean shows the fix:
+
+- **23** — Plain paints a field's error before the person has been there; **Lit waits for the visit**.
+- **32, 33** — Plain's role-less wrappers carrying `aria-label`, and `aria-required` on a bare button;
+  Lit clean.
+- **48, 49** — Plain's option ids are built from the option's value, so duplicates collide and a space
+  breaks an ARIA reference; **Lit renders native `<option>` elements, which need no id at all**.
+- **58** — Lit's daterange inputs carry `aria-expanded` with no role, and its colours button nests an
+  interactive control; Plain clean, and Plain's datepicker input carries the `role="combobox"` that
+  Lit's is missing.
