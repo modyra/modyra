@@ -6906,3 +6906,27 @@ it was attacked at page level: a multiselect does not use `aria-activedescendant
 chips), and a select's active option stayed resolvable through every attempt to filter the list under
 it. **Possible, not Observed** — recorded rather than filed, and worth one line of a stated
 precondition either way.
+
+### Checked and clean: a field nobody can fix, and a field nobody labelled
+
+`browser/a-field-nobody-can-fix-is-not-wrong.spec.ts` (4 green, both renderers).
+
+`showsAsInvalid(flags)` is published as `!flags.valid && !flags.disabled` — one line deciding
+something a person hears. Both renderers implement it:
+
+```
+required and empty, touched   aria-invalid "true"    "This field is required"
+then switched off             aria-invalid "false"   message gone, control disabled
+```
+
+A disabled field that still announced itself invalid would tell a screen-reader user something is
+wrong with a control they are not allowed to change, and offer them nothing to do about it. The rule
+is easy to lose — `aria-invalid` follows validity, disabling is a separate switch, and anything that
+caches the first while flipping the second leaves the attribute behind, correct in every state a
+developer happens to look at.
+
+`fieldAccessibleName(sources)` takes the first non-blank of `ariaLabel`, `label`, `name`, and
+`nameIsAFallback` is true when it came down to the name. A field declared with nothing but
+`{name: "surname", kind: "text"}` is announced as `surname` in both renderers — carried as
+`aria-label`, which the spec does not pin: what it asserts is that the control is announced as
+something rather than as nothing.
