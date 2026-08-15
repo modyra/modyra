@@ -158,7 +158,8 @@
           "type": [
             "string",
             "number",
-            "boolean"
+            "boolean",
+            "object"
           ]
         },
         "label": {
