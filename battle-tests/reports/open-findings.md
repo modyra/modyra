@@ -9162,3 +9162,54 @@ surface saying so.
 
 The unifying statement is worth more than either half: **the parser validates everything about a rule
 except the part the operator reads.**
+
+## 161. Two rules that mean "or", composed as "and"
+
+**S1 · Modyra bug · `@modyra/core` (`applyDynamicRules`, landed in `afb6d578`)**
+Claims: DYN-001, DYN-003 · severity stated explicitly, above the claims' own
+Battle: `battle-tests/adversarial/dynamic-contract/two-rules-that-mean-or.battle.test.mjs` (red,
+enforced)
+
+Two rules on one field compose rather than replace, and that is the right decision — a binding that
+replaced would let whichever was written last win in silence. Composition is over *switched off*: the
+field is out of play if any rule says so.
+
+For the negative effects that is exactly what an author means. For the positive ones it inverts them.
+`visible when C` is *off unless C*, so two of them compose to "off unless C₁, **or** off unless C₂" —
+in play only when **both** conditions hold:
+
+```
+rules                                        a=x    a=y    a=z
+one visible rule (control)                   ON     off    off    ← correct
+hidden when a=x, and also when a=y           off    off    ON     ← correct
+show when a=x, and also when a=y             off    off    off    ← never shown to anybody
+```
+
+An author writing "show this for a business, and also for a charity" gets a field no value of `a` will
+ever reveal. Nothing says so: the document parses in strict mode, the form builds, the control renders
+disabled forever, and the field is never submitted — so data the form exists to collect is silently
+never collected.
+
+### Controls run
+
+- **One positive rule on its own is correct**, so the effect is not what fails.
+- **The same intent written negatively composes correctly**, so composition itself is not what fails.
+  What fails is the composition of two positive rules.
+- Measured through `applyDynamicRules` directly and confirmed through the documented mount path.
+
+### Why S1 and not S2, and why it is enforced
+
+The composed meaning is the **inverse** of the declared one, not a divergence between two surfaces:
+the author wrote an "or" and the form implements an "and". A field that can never be filled is a form
+that cannot do its job. It is stated at S1 above the claims' own severity, which means it cannot be
+marked `open` and will fail the run until it is fixed — deliberately, and reported to the owning
+session immediately rather than parked.
+
+### Checked and clean, in the same run
+
+- `hidden` + `disabled` on one field, different conditions: off for both, on otherwise. Correct.
+- `visible` + `enabled` on one field, same condition: correct.
+- **A rule reading a field another rule switched off** still sees that field's retained value, and
+  answers consistently. Worth knowing rather than filing: the decision is then made by a value the
+  server never receives, since a switched-off field is excluded from the payload — so an author
+  debugging why a field is missing cannot see the cause in what was sent.
