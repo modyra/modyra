@@ -2053,3 +2053,43 @@ an accepted submit  handler runs, NOTHING is touched, submitCount becomes 1
 
 The first is why a refused submit explains itself instead of the button appearing to do nothing; the
 second is why a successful one leaves the page alone. Neither was held anywhere.
+
+## 69. A list of choices, printed the way JavaScript prints an object
+
+`adversarial/validation/a-list-a-person-cannot-read.battle.test.mjs` — 3 green, 1 red. **S2.**
+Sibling of 68: same sentence, the other way of failing it.
+
+`oneOf` names the offered list in its refusal, which is right — somebody told their answer is not on a
+list needs to see the list. An option is not always a string: a domain writes `{ id, label }`, the
+value contracts allow it, and `oneOf` is named there as what decides membership. So:
+
+```
+oneOf(["one", "two"])              refusing "three"      "Value must be one of: one, two"
+oneOf([{id:1,…}, {id:2,…}])        refusing {id:3,…}     "Value must be one of: [object Object], [object Object]"
+```
+
+The primitive list is the control: the sentence works, and what fails is the option that is not a
+string.
+
+**Bounded rather than excused, and asserted:** `oneOf(options, message)` takes the sentence a
+consumer wants, and it is used — green in the battle, so a repair cannot remove it. What is filed is
+the default, which is what ships and what somebody gets before they know there is a second argument.
+
+The repair has a place to read from that the project already declares: `MdyControlOption` carries
+`label` beside `value`, which is exactly the readable name this message wants.
+
+Reached through the same door as the option-identity finding — a domain whose options are objects is
+the ordinary case, not an exotic one.
+
+**Also swept, and clean.** Every built-in validator's message under edge parameters:
+
+```
+required, minLength(0 / 1e6), maxLength(0), min/max(-0, ±Infinity, 1e21), integer, email, pattern
+                                                    all produce whole, readable sentences
+min(NaN), max(NaN), min/max(undefined)              never fire — a NaN bound cannot be exceeded
+```
+
+One near-miss recorded: calling `min("5")` directly returns `[null]`, which looked like a malformed
+error entry. In a form it is `{ kind: "validation", message: "Minimum value is 5", path: "n" }` —
+the bare call returns a pre-normalisation shape, and reading it as the public one is the probe's
+error, not the engine's.
