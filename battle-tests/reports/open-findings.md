@@ -9437,7 +9437,23 @@ decorative element lit does not draw needs no `aria-hidden`. The three above are
 **nothing else provides what was dropped**, which is the only test that separates a finding from a
 redundant attribute.
 
-Two of the sixteen are still leads rather than findings: the multiselect options group, where lit
-renders `role="group"` and drops `aria-labelledby`/`aria-describedby`/`aria-disabled`, and the
-datepicker input's `aria-label`. Both need the same "does anything else provide it" check before they
-are worth anyone's time.
+### The last two leads, checked and dismissed
+
+Both were measured with the full name computation rather than by attribute name, and neither is a
+divergence:
+
+```
+                            plain                          lit
+multiselect options group   role="group", no name          identical
+datepicker input            name "Tags", describedby set   identical
+```
+
+The raw sweep had them as gaps because it compared **which attributes are present**, not whether the
+thing they provide arrives. Plain names the datepicker input with `aria-label` and lit by another
+route, and both compute to "Tags". The sweep is a finder, not a verdict; every one of its rows needs
+the "does anything else provide it" check before it means anything, and three of sixteen survived it.
+
+One residue, recorded rather than filed: the projection declares `aria-labelledby` on the multiselect
+options group and **neither** renderer renders it, so the group has no name in either. A shared gap
+rather than a divergence, and a `role="group"` without a name is a much smaller thing than the three
+above — but it is the only row where both renderers dropped the same declared relationship.
