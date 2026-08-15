@@ -162,6 +162,27 @@ battle(
         const base = vanillaReactivity();
         return { ...base, capabilities: { ...base.capabilities, batching: true }, batch: (fn) => fn() };
       },
+      // Three an adapter could plausibly ship, subtler than the six above: none of them is a piece
+      // that is missing, each is a piece that does slightly too much.
+      "a signal that notifies on a write of the same value": () => {
+        const base = vanillaReactivity();
+        return { ...base, signal: (value, options) => base.signal(value, { ...options, equal: () => false }) };
+      },
+      "a scope that destroys only its first effect": () => {
+        const base = vanillaReactivity();
+        return {
+          ...base,
+          createScope: (options) => {
+            const scope = base.createScope(options);
+            let destroyed = 0;
+            return { ...scope, destroy: () => { if (destroyed++ === 0) scope.destroy(); } };
+          },
+        };
+      },
+      "an effect that subscribes twice": () => {
+        const base = vanillaReactivity();
+        return { ...base, effect: (fn, options) => { base.effect(fn, options); return base.effect(fn, options); } };
+      },
       "one that claims signalEquality and ignores the comparator": () => {
         const base = vanillaReactivity();
         return { ...base, capabilities: { ...base.capabilities, signalEquality: true }, signal: (value, options) => base.signal(value, { ...options, equal: undefined }) };
