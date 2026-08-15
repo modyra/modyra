@@ -214,3 +214,54 @@ test("an array-shaped form sends a list, and removing from the middle closes the
   // index left pointing at a row that is not there.
   expect(after.at(-1), JSON.stringify(after.at(-1))).toEqual({ rows: [{ code: "v0" }, { code: "v2" }] });
 });
+
+test("an id prefix scopes the page and not the payload", async ({ page }) => {
+  // Two forms over the same names is what `idPrefix` exists for. What it must not do is reach the
+  // data: a server receiving "one-email" instead of "email" is the failure this guards against.
+  const seen: Array<{ label: string; ids: string[]; sent: unknown }> = [];
+
+  for (const [label, options] of [["bare", {}], ["prefixed", { idPrefix: "one" }]] as Array<[string, Record<string, unknown>]>) {
+    const id = `prefix-${label}`;
+    await page.evaluate(
+      ({ mountId, given }) => {
+        (window as never as {
+          battle: { mountFields(id: string, f: unknown[], o: unknown): { mounted: boolean } };
+        }).battle.mountFields(mountId, [
+          { name: "email", kind: "text", label: "Email" },
+          { name: "note", kind: "text", label: "Note" },
+        ] as never, given);
+      },
+      { mountId: id, given: options },
+    );
+    await page.waitForTimeout(200);
+
+    const inputs = page.locator(`[data-form="${id}"] input`);
+    await inputs.nth(0).fill("a@b.c");
+    await inputs.nth(1).fill("hello");
+    await page.waitForTimeout(170);
+
+    const ids = await page.evaluate(
+      (selector) => Array.from(document.querySelectorAll(`${selector} input`)).map((element) => element.id),
+      `[data-form="${id}"]`,
+    );
+    await page.locator(`[data-form="${id}"] button`).last().click().catch(() => undefined);
+    await page.waitForTimeout(330);
+    const sent = await page.evaluate(
+      (mountId) => (window as never as { battle: { submittedBy(id: string): unknown[] } }).battle.submittedBy(mountId),
+      id,
+    );
+    seen.push({ label, ids, sent: sent.at(-1) });
+  }
+
+  const bare = seen[0];
+  const prefixed = seen[1];
+
+  // The control: the prefix did something. If the ids were the same in both, the payload agreeing
+  // would say nothing about scoping.
+  expect(bare.ids, JSON.stringify(seen)).toEqual(["email", "note"]);
+  expect(prefixed.ids, JSON.stringify(seen)).toEqual(["one-email", "one-note"]);
+
+  // And the thing that must not move.
+  expect(bare.sent, JSON.stringify(seen)).toEqual({ email: "a@b.c", note: "hello" });
+  expect(prefixed.sent, JSON.stringify(seen)).toEqual({ email: "a@b.c", note: "hello" });
+});
