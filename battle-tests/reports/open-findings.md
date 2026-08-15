@@ -6521,3 +6521,55 @@ English view name.
 
 `messagesForLocale` falls back by language and then to the default: `de-AT` → de, `fr-CA` → fr,
 `pt-BR` → en, and `""`, `null` and `undefined` → en rather than to nothing.
+
+## 121. A field that says it cannot read what it holds, on a form that offers to send it
+
+**Severity** S1 · **Classification** Modyra bug — an error the verdict cannot see · **Spec**
+`browser/a-field-that-says-it-cannot-read-what-it-holds.spec.ts` (red)
+
+A date field accepts typing as well as picking, so it has a state no other kind has: text the user
+meant as a date and the field cannot parse. The widgets carry a message for exactly this, in all five
+languages, and the handling around it is careful:
+
+```
+typed "not a date"   model null   shown "not a date"   aria-invalid "true"
+                     errors ["That could not be read. Leave it and correct it, or clear the field."]
+cleared to ""        model null   shown ""             aria-invalid "false"   errors []
+```
+
+The typed text stays on screen — what the message promises and what UI-006 requires, since erasing it
+would destroy the only thing that lets the user fix it. Identical for `timepicker`.
+
+**The form's verdict does not include it.** The model holds `null`, no rule objects to a `null`, and
+the page leaves its Submit button enabled. Pressing it sends `{"when": null}` while the field on
+screen reads `not a date` and carries an error telling the user to correct it.
+
+What the server receives is a field the user left empty, indistinguishable from one they actually
+left empty — and the one party who could tell them apart was displaying the difference at the moment
+it sent.
+
+**The submit path does respect the form's errors**, which is what makes this an error the verdict
+cannot see rather than a page that submits through anything. The same field marked required stacks
+"This field is required" under the unreadable message and **disables** Submit:
+
+```
+                        Submit disabled
+valid date                    false
+unreadable + required          true
+unreadable, not required       false   ← offers to send
+```
+
+So the only thing that catches an unreadable entry today is an unrelated `required` rule, and only
+because `null` happens to be empty. A date field the document did not mark required has no protection
+at all.
+
+### Harness defects found and repaired while hunting this
+
+- The generated submit button carries `type="button"`, not `type="submit"` — a form that reports its
+  own errors keeps the browser's submit behaviour out of it. A spec selecting `button[type="submit"]`
+  finds nothing and reads it as a form that sends nothing, which failed the *control* rather than the
+  finding.
+- Clicking a disabled button with Playwright waits for it to become enabled and times out at the
+  suite's limit. A page declining to send is an answer to read, not a state to wait for: the spec
+  reads `disabled` and clicks only when it is offered. An earlier probe hid the same thing behind a
+  `.catch`, which turned a refusal into a missing line of output.
