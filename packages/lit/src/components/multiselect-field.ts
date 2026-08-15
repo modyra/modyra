@@ -71,13 +71,27 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
     return true;
   }
 
+  /**
+   * What the field holds, as a list.
+   *
+   * A value that is not one is one value. `patchValue` is public and a draft is data, so a string, a
+   * number or an object reaches this element; read with `.map` it threw from inside the render, and
+   * an element whose render throws keeps what it was showing with nothing on the page to correct.
+   * Held as one value, the form's own shape gate is what objects to it — visibly.
+   */
+  private held(handle: MdyFieldHandle<readonly unknown[]>): readonly unknown[] {
+    const value = handle.value() as unknown;
+    if (value === null || value === undefined) return [];
+    return Array.isArray(value) ? value : [value];
+  }
+
   private selectedSet(handle: MdyFieldHandle<readonly unknown[]>): Set<string> {
-    return new Set((handle.value() ?? []).map((v) => String(v)));
+    return new Set(this.held(handle).map((v) => String(v)));
   }
 
   private counts(handle: MdyFieldHandle<readonly unknown[]>): Map<string, number> {
     const map = new Map<string, number>();
-    for (const v of handle.value() ?? []) {
+    for (const v of this.held(handle)) {
       const key = String(v);
       map.set(key, (map.get(key) ?? 0) + 1);
     }
@@ -147,7 +161,7 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
   }
 
   protected override triggerText(handle: MdyFieldHandle<readonly unknown[]>): string {
-    return (handle.value() ?? []).map((v) => this.labelFor(v)).join(", ");
+    return this.held(handle).map((v) => this.labelFor(v)).join(", ");
   }
 
   protected override toggleOpen(handle: MdyFieldHandle<readonly unknown[]>): void {
@@ -268,7 +282,7 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
           aria-label=${this.label || nothing}
           aria-describedby=${this.showErrors(handle) && !this.inlineErrors ? this.errorsId : this.descriptionId}
         >
-          ${(handle.value() ?? []).length === 0
+          ${this.held(handle).length === 0
             ? html`<span class="${this.partClass("placeholder")}">${this.label ? `Select ${this.label.toLowerCase()}…` : "Select…"}</span>`
             : nothing}
           <div class="mdy-multiselect__header">

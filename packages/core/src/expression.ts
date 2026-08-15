@@ -361,9 +361,28 @@ function compareOrdered(held: unknown, expected: unknown, accept: (order: number
     return accept(held < expected ? -1 : held > expected ? 1 : 0);
   }
   if (typeof held === "string" && typeof expected === "string") {
+    // Two calendar dates are compared as dates. Text order agrees with calendar order only while
+    // every part is zero-padded, and that is a property of the *spelling*: `"2026-2-01"` sorts
+    // before `"2026-1-10"` because `"2"` sorts after `"1"` and the padding is what hides it. A
+    // document cannot reach this — the parser refuses an unpadded date on a date field — but this
+    // function is published on its own, and a caller comparing a date out of their own model has no
+    // parser in between.
+    const left = calendarDate(held);
+    const right = calendarDate(expected);
+    if (left !== null && right !== null) return accept(left < right ? -1 : left > right ? 1 : 0);
     return accept(held < expected ? -1 : held > expected ? 1 : 0);
   }
   return false;
+}
+
+/** A `yyyy-M-d` date as a sortable number, or `null` when the string is not a date at all. */
+function calendarDate(value: string): number | null {
+  const match = /^(\d{4})-(\d{1,2})-(\d{1,2})$/.exec(value);
+  if (!match) return null;
+  const [, year, month, day] = match;
+  const numbers = [Number(year), Number(month), Number(day)] as const;
+  if (numbers[1] < 1 || numbers[1] > 12 || numbers[2] < 1 || numbers[2] > 31) return null;
+  return numbers[0] * 10_000 + numbers[1] * 100 + numbers[2];
 }
 
 export function expressionPaths(expr: MdyExpression): readonly string[] {

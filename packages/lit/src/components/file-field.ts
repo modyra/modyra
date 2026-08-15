@@ -31,8 +31,12 @@ export class MdyFileFieldElement extends MdyFieldElement<readonly File[] | null>
   }
 
   protected override renderControl(handle: MdyFieldHandle<readonly File[] | null>): unknown {
-    const current = handle.value();
-    const files: readonly File[] = current ?? [];
+    // A value the model was allowed to hold, not only the one this element writes. `patchValue` is
+    // public and a draft is data: a bare file, a string or a number reaches here, and `map` on it
+    // threw from inside the render — an effect that throws stops running, so the control kept what
+    // it was showing and the page had nothing to read.
+    const held = handle.value() as unknown;
+    const files: readonly File[] = Array.isArray(held) ? held as readonly File[] : held ? [held as File] : [];
     // The same policy the other renderers apply, from the one place that holds it: which candidates
     // the accept tokens take, how many, and what the field ends up holding. Choosing here instead
     // meant an element that ignored `accept` on a drop and wrote a bare `File`, which is not the
