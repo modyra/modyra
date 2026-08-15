@@ -3458,3 +3458,36 @@ a kind of its own         survives                 including "validation", colli
 a payload                 survives                 the one slot declared for anything else
 httpStatus: 409           dropped                  outside the shape; `payload` is where it goes
 ```
+
+## 84. A correct document that reports something was lost
+
+`adversarial/dynamic-contract/a-rejection-with-no-reason.battle.test.mjs` — 3 green, 1 red. **S2.**
+In the counter added for group A, hours old.
+
+`acceptedCount + rejectedCount` is what a document *declared*, which is what makes the pair worth
+reading. The counter is deliberately the least informed reader of the shape — *it counts, it does not
+interpret* — and a node that is neither a field nor a container it knows how to walk counts as a
+declaration that did not become a field.
+
+**A collection is one of those, and it is not a loss.** It is understood: it is reported in
+`collections`, by path and by kind. Its cells are not flat fields because a document cannot name rows
+that do not exist yet. So:
+
+```
+two leaves                       ok=true   accepted=2  rejected=0  diagnostics=[]                    the control
+a leaf and a broken field        ok=false  accepted=1  rejected=1  diagnostics=[UNKNOWN_KIND]        a real rejection
+a leaf and a RECORD              ok=true   accepted=1  rejected=1  diagnostics=[]  collections=[rows]
+a leaf and an ARRAY              ok=true   accepted=1  rejected=1  diagnostics=[]  collections=[list]
+```
+
+**A rejection with no reason is the tell.** Everything else that raises the count says why. An author
+reading "1 rejected" on a document with nothing wrong with it is told something was lost and given
+nothing to look at — and the same author was given a `collections` list containing exactly the thing
+the count is about.
+
+Either repair closes it: count a collection as accepted, since it is understood and reported, or give
+every rejection a reason. What the battle refuses is a number that says a thing was lost and cannot
+name it.
+
+The second control is the one that makes the silence legible: a genuinely refused node is counted
+**and** carries a diagnostic, so a reason is what separates the two cases rather than the count.
