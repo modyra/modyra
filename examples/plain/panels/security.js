@@ -43,6 +43,8 @@ export const securityPanel = {
     "MdySecurityViolation",
     "MdySanitizeProfile",
     "applyValueSecurity",
+    "MdyWebStorageLike",
+    "MdyDraftStorage",
     "MDY_I18N_PRESETS",
     "MDY_I18N_DEFAULT_TAGS",
     "MDY_I18N_MESSAGES_DEFAULT",
@@ -66,6 +68,13 @@ export const securityPanel = {
           maxValueLength: 24,
           onViolation: (violation) => { violations.push(violation); print(); },
         },
+        // The platform's own storage, handed over as it is: the guide names `localStorage` as the
+        // default, so this is the object a reader reaches for when they want their own key. It
+        // speaks `getItem`/`setItem`/`removeItem` — `MdyWebStorageLike` — and the draft option takes
+        // either that or this package's `{read, write, remove}`.
+        ...(typeof localStorage !== "undefined"
+          ? { draft: { key: "modyra-lab-draft", storage: localStorage, exclude: ["bio"] } }
+          : {}),
       },
     );
 

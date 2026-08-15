@@ -17,7 +17,7 @@ declare const ngDevMode: boolean | undefined;
 
 // The draft persistence contract lives in the framework-agnostic engine —
 // re-exported here so existing import sites keep working.
-export type { MdyDraftOptions, MdyDraftStorage } from "@modyra/core";
+export type { MdyDraftOptions, MdyDraftStorage, MdyWebStorageLike } from "@modyra/core";
 
 // ─── Registry interface ───────────────────────────────────────────────────────
 
