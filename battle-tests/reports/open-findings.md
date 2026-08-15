@@ -9391,3 +9391,53 @@ parser in between, gets `"2026-02-01" > "2026-1-10"` false.
 `an-operator-nothing-can-answer` had a defect of mine: the generator wrote a `value` beside every
 operator including the unary ones, which turned this suite's convenience into a question the contract
 had to answer. It now emits the shape each operator reads, and both battles hold.
+
+## 165. A box that does not say what it filters
+
+**S2 · Modyra bug · `@modyra/lit`**
+Claims: A11Y-004
+Battle: `battle-tests/browser/a-box-that-does-not-say-what-it-filters.spec.ts` — 1 failed, 1 passed
+
+`projectMultiselectFieldA11y` declares three things about the box inside the option popup:
+
+```
+search   id="w__search"   aria-label="Filter options"   aria-controls="w__group"
+```
+
+```
+          name                       aria-controls   placeholder
+plain     "Filter options"           x__group        "Search…"
+lit       (none)                     (none)          "Search…"
+```
+
+Lit's box is named only by its placeholder, which is the last resort of the accessible-name
+computation: it names the box until somebody types into it, and then the name is gone. It also says
+nothing about what it filters, so a reader landing on it has no way to know the list behind it is
+what changes.
+
+Every route to a name is checked, not just the declared one — `aria-label`, `aria-labelledby`, an
+associated `<label>`, `title`. A renderer naming it another way passes.
+
+## The pattern behind 163, 164 and 165
+
+Three findings, one shape, and it is worth stating once: **a published projection declares a part's
+attributes and `@modyra/lit` renders a subset.**
+
+```
+163   timepicker segment   declared bounds       neither aria-valuemin/max nor native min/max
+164   timepicker dialog    declared id + modal   no id, so aria-controls names a wrapper; not modal
+165   multiselect search   declared name+target  named only by a placeholder; no aria-controls
+```
+
+The sweep that found them ran every kind in both renderers and compared which `role` and `aria-*`
+attributes each `mdy-`classed element wears: **16 classes across 7 kinds** carry fewer in lit. Most of
+those 16 are not defects, and the reason is always the same — the platform already says it. A native
+`<input type="checkbox">` carries role and checked state; a native `readonly` carries read-only; a
+decorative element lit does not draw needs no `aria-hidden`. The three above are the ones where
+**nothing else provides what was dropped**, which is the only test that separates a finding from a
+redundant attribute.
+
+Two of the sixteen are still leads rather than findings: the multiselect options group, where lit
+renders `role="group"` and drops `aria-labelledby`/`aria-describedby`/`aria-disabled`, and the
+datepicker input's `aria-label`. Both need the same "does anything else provide it" check before they
+are worth anyone's time.
