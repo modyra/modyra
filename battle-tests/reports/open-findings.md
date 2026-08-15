@@ -9262,3 +9262,53 @@ mis-citation was caught.
   silently by `applyDynamicRules` where the parser refuses them by name. Recorded rather than filed:
   the parser is the door a document comes through, and a consumer calling the function directly has
   the field list in front of it.
+
+## 163. A number you change with arrows, announced as text you cannot edit
+
+**S2 · Modyra bug · `@modyra/lit`**
+Claims: A11Y-004
+Battle: `battle-tests/browser/a-number-you-change-with-arrows.spec.ts` — 1 failed, 1 passed
+
+`projectTimepickerFieldA11y` declares what the hour and minute segments carry, and the projection is
+the published answer rather than this spec's opinion:
+
+```
+hourControl    role="spinbutton"  aria-label="Hour"    aria-valuemin=1  aria-valuemax=12  aria-valuenow
+minuteControl  role="spinbutton"  aria-label="Minute"  aria-valuemin=0  aria-valuemax=59  aria-valuenow
+```
+
+What each renderer draws:
+
+```
+plain   role="spinbutton"  aria-valuemin/max/now all present   aria-label present   editable
+lit     role=null          none of them                        aria-label present   readonly
+```
+
+Lit keeps the label and drops everything that says what the part **is**. The same shape as findings
+139–143: the projection declares `{role, attributes}` and the renderer takes some of it.
+
+### Why it matters more than a missing attribute usually does
+
+The arrows work — Up on the hour segment moves eleven to twelve in **both** renderers, asserted as a
+control in the same test. So it is a number a user walks up and down. In lit it announces as a
+read-only text box: no role, no range, no position, and `readonly` on top. A reader is told there is
+nothing to do here, and the keys that do work are not discoverable from anything announced.
+
+### Controls run
+
+- **The projection is asked what it declares** before the DOM is read, so a future table that stops
+  declaring a spinbutton makes this spec stop asking rather than keep asking for something nobody
+  publishes.
+- **Plain passes the same test**, so the contract is renderable.
+- **The arrow keys are asserted to move the value**, so the spinbutton vocabulary is the right one for
+  this part rather than a label that happens to hold a number.
+- Only the attributes that do not depend on the clock are compared; `aria-valuenow` is checked for
+  presence. An earlier version compared against a synthetic state and produced three false
+  differences from the live form's own time and ids.
+
+### Dismissed on the way
+
+**Lit's trigger has no `aria-labelledby` while the projection declares one** — not a defect. It
+carries `aria-label="Meeting time"` instead, and the accessible name computes to the same string in
+both renderers. Measured rather than assumed, because the projection's declaration alone would have
+read as a second gap.
