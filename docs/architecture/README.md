@@ -96,6 +96,7 @@ absent section reads as an oversight, and "no security impact" is a finding.
 - [ADR 0078: A widget announces the refusal it makes](0078-a-widget-announces-the-refusal-it-makes.md) — twelve kinds refused every change while read-only and said nothing, because the rule that made silence right had since been implemented
 - [ADR 0079: A rule a document writes is a rule the form keeps](0079-a-rule-a-document-writes-is-a-rule-the-form-keeps.md) — the parser guarded `rules` as behaviour and nothing applied one, so a document saying to disable a field produced a form that sent it
 - [ADR 0080: A path is an instruction a row's shape can refuse](0080-a-path-is-an-instruction-a-row-shape-can-refuse.md) — one extra segment in a draft key built a row and a member no document declared, and the form called itself ready
+- [ADR 0081: A secret is excluded by the name a person writes](0081-a-secret-is-excluded-by-the-name-a-person-writes.md) — `exclude` matched one exact path, so the guide's own example — a card number in a list — was the case it could not answer
 
 ## Security-relevant records
 

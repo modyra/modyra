@@ -168,6 +168,44 @@ interface DraftManagerDeps {
 /**
  * Manages draft persistence for a single form instance.
  */
+/**
+ * Whether a draft entry is one the form said never to persist.
+ *
+ * `exclude` began as a set of exact leaf paths, which answers for a field at the top of a form and
+ * for nothing else. The guide's own example is a card number, card numbers live in a list, and a row
+ * key is data — so the only spelling that worked, `cards.a.pan`, is the one nobody can write before
+ * the user has added the row. A consumer following the instruction correctly still persisted the
+ * secret, and everything about the form afterwards looked right.
+ *
+ * Four spellings answer now, and the reason they all do is that this is a promise about a secret:
+ * an entry excluded by mistake is a convenience lost, and an entry persisted by mistake is a card
+ * number in plain text that survives a logout. The direction to be generous in is not in question.
+ *
+ * - the exact path, as before
+ * - an ancestor: `cards` excludes everything under `cards.`
+ * - a pattern: `*` stands for exactly one segment, so `cards.*.pan` is that cell in every row
+ * - a bare name: `pan` — no dot — excludes any cell called `pan`, wherever it is
+ */
+function draftPathExcluded(path: string, patterns: ReadonlySet<string>): boolean {
+  if (patterns.size === 0) return false;
+  const segments = path.split(".");
+  for (const pattern of patterns) {
+    if (pattern === path) return true;
+    if (path.startsWith(`${pattern}.`)) return true;
+    if (!pattern.includes(".")) {
+      if (segments[segments.length - 1] === pattern) return true;
+      continue;
+    }
+    if (!pattern.includes("*")) continue;
+    const wanted = pattern.split(".");
+    // A pattern may name a subtree as well as a leaf: `cards.*` covers `cards.a.pan`.
+    if (wanted.length > segments.length) continue;
+    if (wanted.every((segment, index) => segment === "*" || segment === segments[index])) return true;
+  }
+  return false;
+}
+
+
 export class MdyDraftManager {
   private readonly _rx: MdyReactivity;
   private readonly _getValue: () => Record<string, unknown>;
@@ -252,7 +290,7 @@ export class MdyDraftManager {
           Object.fromEntries(
             Object.entries(value).filter(
               ([k, v]) =>
-                !this._exclude.has(k) &&
+                !draftPathExcluded(k, this._exclude) &&
                 isSafeFieldPath(k) &&
                 (this._filterRestoredEntry?.(k, v) ?? true),
             ),
@@ -376,7 +414,7 @@ export class MdyDraftManager {
   private _serialize(value: Record<string, unknown>): string | null {
     const serializable = Object.fromEntries(
       Object.entries(value).filter(
-        ([k, v]) => !this._exclude.has(k) && !containsFile(v),
+        ([k, v]) => !draftPathExcluded(k, this._exclude) && !containsFile(v),
       ),
     );
     const seen = new WeakSet<object>();
