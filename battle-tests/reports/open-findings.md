@@ -2957,3 +2957,32 @@ with this, which is what makes it a gap rather than a decision.
 Measured alongside, all through `asyncValidators`, and all coherent — so the finding is the throw and
 not the door being fragile: a promise resolving to a list of errors is carried; a check returning a
 bare string is read as one message; a check returning nothing leaves the field valid.
+
+## Checked and clean: the draft storage a phone has
+
+`adversarial/persistence/a-store-that-cannot-answer-at-once.battle.test.mjs` — 3 battles, green, and
+new. `@modyra/core/async-draft-storage` had **no battle at all**, and it is the path an application on
+a phone takes: `MdyDraftStorage` is synchronous by design and React Native's storage is
+Promise-based, so the two meet through this cache.
+
+Its record states two things the shape does not make obvious, and both hold:
+
+```
+a read before hydration finishes        null — "no draft", never something a form would restore
+                                        as the user's; after `ready`, the stored draft is there
+a key outside the hydration list        null — a key/value store cannot be enumerated portably,
+                                        so hydration reads what it is told to
+
+a store that cannot be READ             `ready` does not reject, the cache is empty,
+                                        onError is told
+a store that cannot be WRITTEN          `write` does not throw, the value stays readable in the
+                                        cache, onError is told, nothing reached the backend
+the same with no onError                silent, and the draft still survives
+a form, end to end                      writes through the cache, and gets its draft back
+                                        through a second one after `ready`
+```
+
+The unwritable case is the one worth naming: the user keeps typing and their draft survives in memory
+even though the device's storage refused it, and the form never learns. That is the documented
+bargain — *the same one the default `localStorage` storage already makes with quota errors* — and it
+is now held rather than assumed.
