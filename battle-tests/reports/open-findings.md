@@ -4543,3 +4543,58 @@ transition that fails — it is reported as undriveable rather than counted eith
 Kept because it is table-driven: a transition added to `MDY_WIDGET_TRANSITIONS` later is exercised
 without this file being edited, and the coverage line is printed rather than only asserted, so a
 future run that reaches four of twenty-two cannot read as the same green.
+
+## 96. Four keys the table declares and neither renderer answers
+
+`browser/every-key-a-kind-declares.spec.ts` — 2 red.
+
+`MDY_WIDGET_KEYBOARD` declares seventy-two bindings across twelve kinds — `{ key, when, intent }`.
+One battle read that table before this and checked it against the kinds' declared capabilities;
+nothing pressed the keys, and the specs that press one press it at one widget.
+
+Swept in a page, in both renderers. A closed widget is offered the key at **every part that can take
+focus**, and the binding counts as answered if any part answers, so "the spec focused the wrong
+element" is not available as an explanation:
+
+```
+[plain] declared 72, pressed 71, unreached 1
+[plain] unanswered: 5 closed-state, 18 open-state
+[lit]   declared 72, pressed 61, unreached 11
+[lit]   unanswered: 6 closed-state, 17 open-state
+```
+
+**Four are the same in both**, which is what makes them the finding rather than a renderer's gap:
+
+| kind | key | declared intent | what happens |
+| --- | --- | --- | --- |
+| `radio` | `Home` | `move` | nothing, at any part |
+| `radio` | `End` | `move` | nothing |
+| `segmented` | `Home` | `move` | nothing |
+| `segmented` | `End` | `move` | nothing |
+
+The reading position is primed off the first option before a move is judged, and the option list is
+three long, so `Home` has somewhere to go back to and `End` somewhere to go on to. Focus is part of
+what is observed, because in a group of radios a `move` changes nothing else. `packages/widgets/src/
+keyboard.ts:36,69` and `behavior/keys.ts:78` all handle `Home`/`End`, so the controller layer knows
+them; nothing between there and the page does.
+
+One more per renderer, reported and not shared: plain does not open a `colors` widget on `Space`; lit
+does not open a `multiselect` on `Enter` or `ArrowUp`.
+
+**What this spec does not claim.** Seventeen or eighteen open-state bindings per renderer went
+unanswered too, and they are printed as measurements rather than asserted. Once a widget is open the
+reading position is somewhere of its own choosing — inside a grid, on a dialog — and a spec that moved
+focus in order to judge a key would be judging its own choice of element.
+
+That distinction was earned rather than assumed. A first pass focused the first focusable part and
+read `Enter` as failing to open the datepicker, daterange, timepicker and colors — four findings that
+evaporated when every part was offered the key, because `Enter` opens them from the toggle button.
+Two further passes were also instrument: `ArrowUp`/`Home` at the first option are no-ops that mean the
+binding works, and an explicit `focus()` after opening was taking the reading position back off the
+popup the widget had just put it on.
+
+Classification: Modyra bug — a published table declares four bindings that no renderer implements. S1
+by A11Y-001's severity for a keyboard-only user of a radio group, who is told `Home` and `End` work.
+
+Either resolution closes it: implement the two keys in the renderers, or stop declaring them for these
+two kinds.
