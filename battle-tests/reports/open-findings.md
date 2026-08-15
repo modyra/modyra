@@ -9,7 +9,7 @@ A twentieth, `generative/properties/history.property.test.mjs`, is a campaign ra
 draws a fresh seed each run and reaches the whole-write undo defect about four times in five. Its
 green is not evidence; the battle beside it is.
 
-The list is grouped by cause. Sixteen causes, twenty-seven battles.
+The list is grouped by cause. Seventeen causes, twenty-eight battles.
 
 ---
 
@@ -60,14 +60,29 @@ are counted correctly and a claim made after the row survives `setAll`; one made
 was empty does not. The count is then one short, the next `removeField` releases a claim a mounted
 control still holds, and a cell the consumer excluded is submitted.
 
-## 5. An exclusion made before its row never applies
+The pair that locates it, same claim count and same whole-value write on both sides:
 
-`regressions/disabled-across-insertion.battle.test.mjs`
+    mount (no row yet), push, mount, setAll [], unmount, push   → the claim is gone
+    push, mount, mount, setAll [], unmount, push                → one claim is left, as it should be
 
-`field.disable` on `items.1.code` while the collection is empty, then a push and an insert that
-renumbers a row into index 1: no row submits without that cell. The exclusion never takes effect
-anywhere. ADR 0044 does not say what happens when an existing row is renumbered into an index a
-pending binding names, so the repair probably needs a line in the record as well as in the code.
+Re-derived after cause 5 above turned out to be the model rather than the engine. This one is not:
+the pair differs in nothing a claim count can see.
+
+## 5. Withdrawn — it was the reference model
+
+`regressions/disabled-across-insertion.battle.test.mjs` is **green** and no longer claims a defect.
+
+It asserted that a binding waiting at an index wins over one a row carries into it. The engine's rule
+is the opposite and it is consistent: without a carried binding the waiting one applies, and the same
+holds in a keyed collection through a rename. Removing the *first* pending binding makes the second
+apply — which a lost binding does not do.
+
+Two campaigns had "confirmed" it, and both read the rule from the same reference model. Two campaigns
+finding one divergence are not two pieces of evidence when they share a model.
+
+What is open is the record rather than the code: ADR 0044 says what releases a binding and not which
+of two competing ones wins. The file now asserts what holds either way — the two collection kinds
+agree, and a binding is never simply lost.
 
 ## 6. A rebuilt collection holds nothing
 
@@ -207,7 +222,18 @@ should mean there is no draft, not that there is no form.
 `clearDraft` is the smaller version: a `remove` that throws comes out of the call, where the write
 path swallows its own failure.
 
-## 16. Reported without a repair path
+## 16. A skipped server check is silent where it matters
+
+`adversarial/reactivity/a-check-nobody-runs.battle.test.mjs`
+
+Async validation needs an effect-capable reactivity, and skipping the check rather than half-starting
+it is the documented answer. What a consumer is told is not: in development a console line names the
+field, and in production, with `devWarnings` off, there is nothing at all — no console, and nothing
+in the `diagnostics` sink in either mode. The form reports `valid` and `canSubmit` for a value the
+server never saw, and `MDY_ASYNC_FEATURE_DISABLED` is exported for this situation and never reaches
+the sink.
+
+## 17. Reported without a repair path
 
 - `adversarial/submission/submit-contract.battle.test.mjs` — an action returning something that is
   not a list of errors puts `errors.filter is not a function` on the form-level error surface, the
