@@ -1600,3 +1600,65 @@ moment either changes: a `minLength` raised from 3 to 5 leaves a `when` guarding
 Either repair closes it: gate the run on the field's own sync verdict, or say in the async section
 that it is not gated and that `when` is how you gate it. The second is a documentation fix with a
 consequence on a bill, which is still a finding.
+
+## 63. The seventh door, and the only one with the refusal built into the same call
+
+`adversarial/validation/one-call-two-arguments.battle.test.mjs` — 1 red. **S2.**
+New claim **API-001**: *a published call that cannot do what it was asked says so.*
+(The battle's header reads S0 because it also guards prototype pollution through this door, which
+passes. The finding is the S2.)
+
+`setInitialValue(name, value)` takes two arguments. ADR 0057 hardened one of them:
+
+```
+setInitialValue("a", "new")     applies; reset() now returns to "new"        said nothing
+setInitialValue("a", 42)        THREW: The initial value for "a" must ...    the right refusal
+setInitialValue({a:"new"}, …)   nothing happened                             said nothing
+setInitialValue("emial", …)     nothing happened                             said nothing
+setInitialValue("__proto__", …) nothing happened                             said nothing
+setInitialValue(null, …)        nothing happened                             said nothing
+setInitialValue(42, …)          nothing happened                             said nothing
+setInitialValue("", …)          nothing happened                             said nothing
+```
+
+The value argument is refused loudly, in production, by name. The argument next to it — the one that
+says *which field* — takes anything and reports nothing, with `devWarnings: true`.
+
+This is the seventh door of finding 60, and the sharpest, because on the other six the refusal
+vocabulary is somewhere else in the engine. Here **it is in this call, on the adjacent argument.**
+The battle asserts both halves as controls for that reason: a repair cannot be aimed at a method that
+checks nothing, because this one already checks something.
+
+ADR 0057's own words are the standard it is being held to — *"It matches the path check, which has
+always thrown."* `setInitialValue(null, "x")` does not throw.
+
+The consequence is not at the call. It is at the `reset()` afterwards, which silently returns to the
+old initial instead of the new one — so the misspelling surfaces as a form that resets to the wrong
+baseline, arbitrarily far from the line that caused it.
+
+No pollution reached a prototype through any of these, asserted alongside and green.
+
+## Checked and clean: SEC-003 at the doors the sanitizer battle does not stand at
+
+Applying finding 61's lesson — *when a check refuses a list, measure what is not in the list* — to
+`SEC-003` ("a sanitized value cannot form markup, wherever it entered the form"). The existing battle
+enters through `upsert`, a nested `set` and `patch`. Five doors it does not:
+
+```
+entering <img src=x onerror="alert(1)"> with security: { sanitize: "strict" }
+
+set() — the control                       inert
+setValue({a})                             inert
+a schema that declares it as the initial  inert
+a document's initialValue                 inert
+a draft somebody rewrote in storage       inert
+```
+
+All five strip the angle brackets, which is what "cannot form markup" means. The draft one is the
+threat model the persistence guide names in those words, and it holds.
+
+**A note on how this was nearly filed wrong.** The first pass classified all six as breaches, control
+included, because it tested for the substring `onerror` rather than for a bracket. The sanitizer's job
+is to make the value unable to form a tag, not to delete the word: `img src=x onerror="alert(1)"` is
+inert text. A control that fails is the signal that the classifier is wrong, not that everything is
+broken.

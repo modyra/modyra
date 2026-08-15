@@ -146,6 +146,17 @@ const CLAIMS = [
     ],
   },
   {
+    id: "API-001",
+    title: "A published call that cannot do what it was asked says so.",
+    area: "validation",
+    severity: "S2",
+    publicEvidence: [
+      "@modyra/core MdyFormOptions.devWarnings — \"the calls that could not do anything\"",
+      "@modyra/core MdyTypedForm.rename — the diagnostic that names both keys and says what to do",
+      "docs/architecture/0057 — an argument refused where it arrives, by name, in production",
+    ],
+  },
+  {
     id: "VAL-005",
     title: "A server is asked only about a value the field's own rules accept.",
     area: "validation",
