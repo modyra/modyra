@@ -45,6 +45,18 @@ rule that survived the control being re-rendered would be a rule nobody could wi
 entry as unreadable; saying it to the form is the same decision, in the same place, so the two cannot
 drift.
 
+**Amendment.** Reporting it was not enough while the paint still came from the control's own state.
+A renderer that asked `entryUnreadable` directly for the invalid flag and the message list answered
+outside every rule the form applies to its errors — so the message stayed on the page and
+`aria-invalid` stayed true after the field was disabled, announcing a control nobody could touch;
+and a renderer that painted the message without reporting at all never marked the control invalid,
+which is a message for whoever can see and nothing for whoever cannot.
+
+The report is therefore the **only** path: a renderer says it to the form, and then reads the
+verdict and the message list back the same way it reads every other error. `showsAsInvalid` and
+`shownErrorsOf` are where "a field out of play has no verdict" is written down, and an entry error
+is subject to it like the rest.
+
 ## Consequences
 
 **`MdyFieldHandle` gains a required member.** Anything implementing that interface — a test double, an

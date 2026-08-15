@@ -290,16 +290,19 @@ export function renderTimepickerField(
     // An entry the field could not read is this control's own verdict: the form holds nothing, so it
     // has no error to give, and saying nothing leaves the person looking at their own text believing
     // it was taken.
-    const unreadable = state.entryUnreadable ? [messages.entryUnreadable] : [];
+
     // Said to the form as well as to the page: the field holds a value its own rules accept — `null`,
     // which nothing objects to — while the person is looking at text this control could not read, so
     // without this the submit went out holding nothing where they had typed something.
+    // Reported to the form first, so the entry is one of the field's errors like any other — and read
+    // back through `shownErrorsOf`, which is where "out of play, no verdict" lives. Painting from
+    // `entryUnreadable` directly kept announcing a control nobody could touch.
     handle.reportEntry(state.entryUnreadable ? messages.entryUnreadable : null);
-    setErrors(shell.errorList, [...unreadable, ...shownErrorsOf(handle).map((e) => e.message)]);
-    control.setAttribute("aria-invalid", String(state.entryUnreadable || showsAsInvalid({ valid: handle.valid(), disabled: handle.disabled() })));
+    setErrors(shell.errorList, shownErrorsOf(handle).map((e) => e.message));
+    control.setAttribute("aria-invalid", String(showsAsInvalid({ valid: handle.valid(), disabled: handle.disabled() })));
     shell.syncState({
       touched: handle.touched(), disabled: handle.disabled(),
-      hasError: state.entryUnreadable || showsAsInvalid({ valid: handle.valid(), disabled: handle.disabled() }), filled: (state.value || "") !== "", required: handle.required(),
+      hasError: showsAsInvalid({ valid: handle.valid(), disabled: handle.disabled() }), filled: (state.value || "") !== "", required: handle.required(),
     });
 
     // The input mirrors the committed value, except while the person is typing — and except while it
