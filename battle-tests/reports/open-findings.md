@@ -2123,9 +2123,24 @@ error, not the engine's.
 
 ## 70. Two renderers inventing the same default, and a step with no rule to generate
 
-`browser/a-slider-that-shows-a-different-number.spec.ts` — the two rows of finding 67 that its repair
-does not reach. Same symptom, two different causes, neither of them the one that was fixed. **S1**,
-both renderers.
+`browser/a-slider-that-shows-a-different-number.spec.ts` — **green, closed.** All six rows pass in
+both renderers, verified here after the repair. Was: the two rows of finding 67 that its repair did
+not reach, S1, both renderers.
+
+**Verified after the fix:**
+
+```
+plain: a value inside the slider's range is the number it shows          ✓
+plain: a number field holds and shows the same value, and explains it    ✓
+plain: a slider showing a number the form does not hold says so          ✓
+lit:   the same three                                                    ✓
+```
+
+The repair puts the range decision in one shared place and lets the track widen where nobody declared
+a bound — and keeps the declared-bound row narrow, because there a rule now explains the difference
+and widening the track would make the `max` attribute promise less than the rule, which is the drift
+VAL-004 exists to prevent. The step gives way to the value: an increment is a convenience, showing the
+number the form holds is not.
 
 ```
 slider, initialValue 150, NO bound declared    holds 150   shows 100   nothing said
