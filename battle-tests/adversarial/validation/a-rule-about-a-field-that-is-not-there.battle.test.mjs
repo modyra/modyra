@@ -12,8 +12,12 @@
  *
  * There is a way out, and it is the shape of the problem: `removeField("emial")` restores the form.
  * `removeValidators` cannot, because it takes a key and `addValidators` never had one — the keyed
- * pair `upsertValidators`/`removeValidators` does undo itself, and is asserted here as the control.
- * So the repair requires knowing the ghost path is there, which is the one thing nobody was told.
+ * pair `upsertValidators`/`removeValidators` does undo itself, and is asserted here as the control,
+ * on a path the schema declares. So the repair requires knowing the ghost path is there, which is the
+ * one thing nobody was told.
+ *
+ * Either repair closes this: refuse the name where it arrives, or leave the form able to be sent. The
+ * control sits on a declared path so that it keeps holding under either one.
  *
  * VAL-003 is the claim: hidden or unmounted controls do not alter validation semantics. A field that
  * is not in the schema at all is the limit of unmounted, and it decides whether the form can be sent.
@@ -70,22 +74,23 @@ battle(
     });
     real.destroy();
 
-    // The second control: the keyed pair undoes itself, so a rule attached to a ghost path is not
-    // beyond reach in principle — only beyond the reach of the call that attached it.
-    const keyed = createForm({ email: field("x") }, { devWarnings: false });
-    keyed.upsertValidators("emial", "mine", [required()]);
+    // The second control: the keyed pair undoes itself, which is what `addValidators` cannot do. It is
+    // asserted on a *declared* path, because whether either call reaches an undeclared one is the
+    // question this battle asks rather than something it may lean on.
+    const keyed = createForm({ email: field("") }, { devWarnings: false });
+    keyed.upsertValidators("email", "mine", [required()]);
     await settled();
     const brokenByKeyed = keyed.state.valid();
-    keyed.removeValidators("emial", "mine");
+    keyed.removeValidators("email", "mine");
     await settled();
-    ctx.log.note("the keyed pair, attached to the same ghost and taken off again", {
+    ctx.log.note("the keyed pair, put on a declared field and taken off again", {
       afterUpsert: brokenByKeyed,
       afterRemove: keyed.state.valid(),
     });
 
     expectEqual([brokenByKeyed, keyed.state.valid()], [false, true], {
       claimIds: ["API-001"],
-      what: "the keyed pair did not undo itself, so there is no working comparison for the one below",
+      what: "the keyed pair did not undo itself on a declared path, so there is no working comparison for the one below",
     });
     keyed.destroy();
 
