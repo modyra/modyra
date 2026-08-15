@@ -4700,3 +4700,56 @@ renderer's business; the walk uses document order now.
 
 Classification: Modyra bug, S1 by A11Y-001 — the reachable consequence is a form whose keyboard order
 runs through widgets that are not open.
+
+## 99. One pattern in a document, two rules by the time it reaches a person
+
+`adversarial/validation/a-pattern-that-means-two-things.battle.test.mjs` — 1 red.
+
+A document's `validators.pattern` is a string. The engine compiles it and runs `RegExp.test`, which
+matches *anywhere* in the value. It also projects it as the control's `pattern` attribute, and HTML
+anchors that implicitly — the attribute matches only if the *whole* value does. One string, two rules.
+
+Measured at the core, no renderer involved. The source is projected verbatim; nothing is anchored or
+unanchored on the way:
+
+| declared | form accepts | the attribute accepts |
+| --- | --- | --- |
+| `^a+$` | `aaa` | `aaa` |
+| `^[0-9]{3}$` | `123` | `123` |
+| `a+` | `xax`, `aaa`, `ab123cd` | `aaa` only |
+| `[0-9]{3}` | `ab123cd`, `123` | `123` only |
+| `\d{3}` | `ab123cd`, `123` | `123` only |
+
+Anchored sources agree everywhere. Unanchored ones — `[0-9]{3}`, meaning "has three digits in it" to
+anyone who has written a regular expression — do not.
+
+In a page, both renderers, one field with `pattern: "[0-9]{3}"` holding `ab123cd`:
+
+```
+input.validity.valid      false
+input.validationMessage   "Please match the requested format."
+el.matches(":invalid")    true
+aria-invalid              "false"        and the form shows no error
+```
+
+So the control is painted invalid by any stylesheet using `:invalid`, carries a message Modyra never
+wrote and cannot localise, and tells assistive technology the opposite. Put it inside a `<form>` — the
+ordinary thing to do to get a submit button — and native validation refuses a submission the library
+considers ready. Neither host renders a native `<form>`, so that last consequence is reasoned from
+`validity.valid`, not observed here.
+
+The typed-forms guide's line is "an attribute constrains typing, never the model". Here it constrains
+beyond the model.
+
+The invariant is one-directional on purpose: whatever the attribute is, it must not refuse a value the
+form accepts. Projecting nothing for an unanchored source passes. Projecting a form that means the
+same thing under HTML's anchoring passes. Only an attribute stricter than the rule it came from is
+red.
+
+The control earned its place twice. It caught this battle's own model of the attribute missing HTML's
+rule that a `pattern` is not evaluated on an empty value — the same boundary the engine draws, since
+emptiness is `required`'s question — which would otherwise have been reported as an engine defect. And
+a browser probe that read the anchors as *stripped* turned out to be two cases sharing a mount id;
+the core measurement above is what settled it.
+
+Classification: Modyra bug, S1 by VAL-004's severity.
