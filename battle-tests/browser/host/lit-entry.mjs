@@ -205,6 +205,22 @@ window.battleLit = {
     mounted.get(id).form.destroy();
   },
 
+  /**
+   * Change the value from outside, the way an application does.
+   *
+   * Everything else this host offers drives the page and reads the model. This is the other
+   * direction — a value arriving from a fetch, a reset, a patch — and a control that does not follow
+   * it shows the user something the form no longer holds.
+   */
+  setValue(id, patch) {
+    mounted.get(id).form.patchValue(patch);
+  },
+
+  /** Put the form back where it started. */
+  reset(id) {
+    mounted.get(id).form.reset();
+  },
+
   valueOf(id) {
     return mounted.get(id).form.getValue();
   },
