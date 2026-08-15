@@ -4363,3 +4363,52 @@ reported as unmeasured rather than passed `undefined`.
 
 Classification: Modyra bug. S1 by A11Y-001, and the reachable consequence is a widget that does not
 repaint when its content changes.
+
+## 94. Two published tables that describe different markup
+
+`browser/every-id-an-attribute-names.spec.ts` — 4 green, and the reason it is green is the finding.
+
+`@modyra/widgets` publishes two descriptions of the same relationship.
+
+`MDY_WIDGET_RELATIONS` declares, identically for every kind measured — text, select, multiselect,
+datepicker, daterange, timepicker:
+
+```
+control --aria-describedby--> errors + supportingText
+```
+
+Every controller's `view()` emits something else:
+
+```
+aria-describedby = "<widgetId>__description"
+```
+
+And `MDY_WIDGET_CONTRACTS[kind].parts` declares no `description` part for any of them. It declares
+`errors` and `supportingText`, which is what the relations table names and what the view does not.
+
+For the shipped renderers this costs nothing, because each one bridges the gap itself: lit builds the
+id in `base.ts:338`, and `packages/plain/src/fields/select-field.ts:149` carries a comment saying the
+controller's view has no `description` part. Measured in a real DOM — every `aria-controls`,
+`aria-describedby`, `aria-labelledby`, `aria-activedescendant`, `aria-owns` and `for` on the page,
+across all seventeen kinds, in both renderers, closed and then opened — **not one token names an
+element that is not there.** A11Y-001 holds where it is claimed.
+
+The exposure is the case the headless controllers exist for. A consumer writing their own renderer
+reads `MDY_WIDGET_CONTRACTS` for the parts to render and applies the attributes `view()` gives them.
+They render `errors` and `supportingText`, because those are the declared parts; they apply
+`aria-describedby="<id>__description"`, because that is what the view says; and the reference dangles,
+so the error text and the supporting text are not announced. Nothing in either table tells them to
+invent a `description` element, and both shipped renderers had to.
+
+Classification: ambiguous contract. S2 — no shipped surface is broken, and the documented way to build
+an unshipped one is.
+
+Either resolution closes it: emit `aria-describedby` naming the parts the relations table declares, or
+declare a `description` part in the contracts and say in the relations table that it is the target.
+
+The spec is kept whichever way it goes. Nothing before it checked every pointer attribute on every
+kind, and the opened pass is the one A11Y-001 is actually about — a trigger's `aria-controls` names a
+popup that is not in the document until it is opened. Both of its controls earn their place: the
+first run of the opened pass reported that nothing had opened in lit rather than reporting no
+dangling references, because lit renders `select` as a native control and the click had gone to an
+input.
