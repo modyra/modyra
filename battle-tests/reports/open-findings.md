@@ -1,13 +1,18 @@
 # What is red, and why
 
-Nineteen battles fail on purpose. Each one is a claim the suite makes about published behaviour that
-the engine does not currently keep, reduced to the smallest sequence that shows it, and each names
-what would turn it green — usually two answers, because most of these have more than one defensible
-repair and the battle asserts the property rather than the fix.
+Thirty battles fail on purpose, out of a suite of three hundred and three. Each is a claim the suite
+makes about published behaviour that the engine does not currently keep, reduced to the smallest
+sequence that shows it, and each names what would turn it green — usually two answers, because most
+have more than one defensible repair and the battle asserts the property rather than the fix.
 
-A twentieth, `generative/properties/history.property.test.mjs`, is a campaign rather than a pin: it
-draws a fresh seed each run and reaches the whole-write undo defect about four times in five. Its
-green is not evidence; the battle beside it is.
+Two of the thirty are not pins. `generative/properties/history.property.test.mjs` and the positional
+campaign beside it draw a fresh seed each run and reach their defect most times but not every time;
+their green is not evidence, and the battles beside them are. `adversarial/studio/every-target` packs
+seven packages and can fail on a loaded machine for that reason, which its first assertion says in
+those words.
+
+One cause below is **withdrawn**: it was the reference model rather than the engine, and it is left
+in place rather than deleted so that anyone who read it finds out.
 
 The list is grouped by cause. Twenty-two causes, one of them withdrawn.
 
