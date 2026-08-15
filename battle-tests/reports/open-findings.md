@@ -7626,3 +7626,56 @@ another form's input is silent, while `devWarnings` on the same form does warn a
 does not read — a much smaller problem. Detecting it would mean a form scanning the document for its
 own ids at mount, which is a design decision rather than a broken promise, so it is recorded here
 rather than filed as a finding.
+
+## 137. A control inside another control
+
+**Severity** S1 · **Classification** nested interactive · **Spec**
+`browser/a-control-inside-another-control.spec.ts` (red for one renderer, green for the other) ·
+**Claims** A11Y-002, A11Y-004
+
+One renderer's colour field builds a native colour input **inside** a button:
+
+```
+colors: button.mdy-colors__primary-picker > input[color].mdy-colors__native-hidden
+```
+
+axe calls it `nested-interactive` and rates it critical. What it means for a person: the outer element
+takes the click, so the inner one is reachable only by accident; a screen reader in browse mode
+announces the button and never offers the input; the outer's accessible name swallows whatever the
+inner would have said; and which of the two is focusable is left to the browser.
+
+A colour field is exactly where it matters. The native input is what opens the platform's own colour
+picker — the one route to a colour that is not one of the presets.
+
+Swept over all seventeen kinds in both renderers rather than aimed at this one construction: it is the
+rule that is worth keeping, and the same mistake elsewhere should fail the same test. The other
+renderer has no nesting on any kind, and the control is that controls were found at all.
+
+**Why it has its own spec when the auditor already fails.** `every-kind-under-an-auditor.spec.ts`
+catches it inside a blob of JSON with everything else axe found; a failure that names the pair is one
+somebody can act on without reading a report.
+
+## 138. A button wearing a combobox's attributes
+
+**Severity** S2 · **Classification** ARIA not allowed on the role · **Spec**
+`browser/every-kind-under-an-auditor.spec.ts` (red — axe `aria-allowed-attr`, critical) · **Claims**
+A11Y-002
+
+The multiselect's opener is a plain `<button>` carrying attributes that belong to a widget role:
+
+```
+button.mdy-multiselect__search-btn  aria-haspopup=listbox  aria-expanded=false
+                                    aria-controls=x__popup aria-labelledby=x__label
+                                    aria-invalid=false     ← not allowed on role=button
+                                    aria-required=false    ← not allowed on role=button
+                                    aria-label=X           ← redundant beside aria-labelledby
+```
+
+`MDY_POPUP_OPENERS` explains where it comes from: `select`, `datepicker` and `timepicker` declare
+`role: "combobox"` for their opener and `multiselect` declares **no role**. A combobox may carry
+`aria-invalid` and `aria-required`; a button may not, and axe rates the mismatch critical.
+
+Related to finding 32 and not the same: that one is `aria-prohibited-attr` on role-less wrapper
+`div`s, this is `aria-allowed-attr` on a button that has a role and the wrong attributes for it.
+Finding 32 recorded "one violation" from that auditor; the current run reports several, so its entry
+is a snapshot of a smaller set rather than the whole.
