@@ -55,6 +55,24 @@ window.battle = {
     }
   },
 
+  /**
+   * Mount with a submit handler that answers with `errors`, so a spec can see what a page does with
+   * what a server said. `errors` is passed through untouched — the point is what an application
+   * hands back, including shapes a signature does not stop.
+   */
+  mountWithSubmit(id, fields, errors) {
+    const host = document.createElement("section");
+    host.dataset.form = id;
+    document.querySelector("#stage").append(host);
+    try {
+      const handle = mountMdyForm(host, fields, { onSubmit: () => errors });
+      mounted.set(id, { handle, host });
+      return { mounted: true };
+    } catch (error) {
+      return { mounted: false, message: String(error?.message ?? error) };
+    }
+  },
+
   removeRow(id, key) {
     mounted.get(id).handle.form.f.rows.remove(key);
   },
