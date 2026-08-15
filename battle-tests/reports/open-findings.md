@@ -7120,3 +7120,23 @@ battle says so rather than quietly comparing against nothing.
 
 Whether the answer is "refuse to project when they differ", as the sibling does, or "keep the rules'
 own", is the owning session's call. What holds today is neither.
+
+### Checked and clean: a popup with nowhere below to go
+
+`browser/a-popup-with-nowhere-below-to-go.spec.ts` (green, both renderers).
+
+`MDY_OVERLAY_VIEWPORT_MARGIN` (12) and `popupPlacementClass` were named by nothing in this suite, and
+the failure they guard against is one nobody reports: a calendar opening below a field near the bottom
+of a short window is simply half off the screen, and the half that is missing is the half with the
+days in it.
+
+```
+900×600 window, field at the top      popup below, no --above modifier, inside the window
+900×600 window, field at 546px        popup above the anchor, mdy-datepicker__popup--above,
+                                      inside the window on both edges
+```
+
+Both renderers flip, both wear the modifier the shipped stylesheets key on to move the shadow and the
+pointer, and both keep the declared margin at the edge. The control is the same field near the top,
+which must open below and wear nothing — so the flip is the lack of room rather than an overlay that
+always goes up.
