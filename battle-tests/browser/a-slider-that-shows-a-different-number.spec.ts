@@ -1,3 +1,4 @@
+import type { EitherHost } from "./host-api";
 import { expect, test } from "@playwright/test";
 
 /**
@@ -34,7 +35,7 @@ const RENDERERS = [
 async function mountAndRead(page: Page, api: string, id: string, field: Record<string, unknown>) {
   await page.evaluate(
     ({ hostApi, mountId, declared }) => {
-      const host = (window as never as Record<string, Record<string, Function>>)[hostApi];
+      const host = (window as never as Record<string, EitherHost>)[hostApi];
       host.mountFields(mountId, [{ name: "f", label: "F", ...declared }]);
     },
     { hostApi: api, mountId: id, declared: field },
@@ -43,7 +44,7 @@ async function mountAndRead(page: Page, api: string, id: string, field: Record<s
 
   return page.evaluate(
     ({ hostApi, mountId }) => {
-      const host = (window as never as Record<string, Record<string, Function>>)[hostApi];
+      const host = (window as never as Record<string, EitherHost>)[hostApi];
       const element = document.querySelector(`[data-form="${mountId}"]`) as HTMLElement;
       const input = element.querySelector("input") as HTMLInputElement | null;
       const errors = element.querySelector(".mdy-control__errors") as HTMLElement | null;
