@@ -9101,3 +9101,64 @@ was heard.
 - **The documented mount path carries rules** once the host passes them. My own host was passing
   `fields` and `layout` only, which is the guide's snippet exactly, and that is why the first
   re-measurement after the repair still showed nothing happening.
+
+## 160. The one part of a rule nobody checks
+
+**S2 · Modyra bug · `@modyra/core` (`evaluateRuleCondition`, dynamic parser)**
+Claims: DYN-003, DYN-001
+Battle: `battle-tests/adversarial/dynamic-contract/the-one-part-of-a-rule-nobody-checks.battle.test.mjs`
+— reported as a todo, not enforced
+
+A rule is `{effect, target, when: {field, operator, value}}`. The parser is careful about four of
+those five and refuses each way of getting them wrong by name. **`value` — the one the operator
+actually reads — is never checked.** All of these parse in **strict** mode with zero diagnostics:
+
+```
+greaterThan  value {}              accepted
+greaterThan  value "2026-1-10"     accepted
+in           value "not a list"    accepted
+notIn        value 42              accepted
+```
+
+### Comparing dates is comparing strings
+
+Zero-padded ISO sorts correctly, which is why this looks right until a document writes a date the way
+a person writes one. Three of four comparisons answer the opposite of the order the dates are in:
+
+```
+left          right         answered   the order they are in
+2026-01-02    2026-01-10    false      false    ← the only one that agrees
+2026-1-2      2026-01-10    true       false
+2026-02-01    2026-1-10     false      true     ← February is not before January
+2026-12-01    2026-2-01     false      true     ← December is not before February
+```
+
+A wrong answer rather than a missing one, and it decides whether a field is on the screen and whether
+its value is submitted. `MDY_VALUE_CONTRACTS.datepicker` is `{shape: "string"}`, so nothing upstream
+requires the padded form either.
+
+### `in` and `notIn` are not a pair
+
+```
+value                     in       notIn
+["a","b"], held "a"       true     false
+["a","b"], held "z"       false    true
+"a"        (not a list)   false    false    ← both
+null                      false    false    ← both
+[]                        false    true
+```
+
+An author writing the negative form to be safe gets the same answer as the positive one, and the rule
+they wrote to hide something never fires. Either answer would be defensible on its own — nothing is
+in a non-list, so `notIn` true; or the value is unusable, so refuse it at parse time — but they cannot
+both be false.
+
+### Why it is reported rather than enforced
+
+Wrong visibility, not wrong data: whatever the rule decides, the payload follows the decision
+consistently, and finding 156's repair means a field switched off is genuinely out of play. What is
+wrong is that the decision itself can be the opposite of what the document says, with nothing on any
+surface saying so.
+
+The unifying statement is worth more than either half: **the parser validates everything about a rule
+except the part the operator reads.**
