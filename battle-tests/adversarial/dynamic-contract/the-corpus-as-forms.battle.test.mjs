@@ -100,6 +100,27 @@ function fillAndInspect(node, handle, path, found) {
   }
 }
 
+/** Storage a battle owns, so nothing depends on the environment having one. */
+function memoryStorage() {
+  const written = new Map();
+  return {
+    written,
+    read: (key) => written.get(key) ?? null,
+    write: (key, value) => written.set(key, value),
+    remove: (key) => written.delete(key),
+  };
+}
+
+/** Every tree fixture, filled in, with what it held before and after. */
+function filled(document, options) {
+  const form = createForm(buildDynamicFormSchema(document.schema), { devWarnings: false, ...options });
+  const initial = JSON.stringify(form.getValue());
+  fillAndInspect(document.schema, form.f, "", []);
+  return { form, initial, filled: JSON.stringify(form.getValue()) };
+}
+
+const settled = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
 battle(
   {
     claims: ["COL-002", "COL-003", "DYN-001"],
@@ -199,6 +220,99 @@ battle(
         });
       } finally {
         form.destroy();
+      }
+    }
+  },
+);
+
+battle(
+  {
+    claims: ["PER-002", "COL-003"],
+    title: "undoing back through a published geometry returns exactly where it started",
+    environments: ["node"],
+  },
+  async (ctx) => {
+    // History is where a nested geometry is most likely to disagree with itself: undoing a row that
+    // holds a collection has to take the collection with it, and redoing has to bring back the same
+    // one rather than a fresh empty. These are the deepest shapes anything in the project publishes.
+    for (const { where, document } of corpus().filter(({ document }) => document.schema !== undefined)) {
+      const { form, initial, filled: full } = filled(document, { history: true });
+      try {
+        expectClaim(full !== initial, {
+          claimIds: ["COL-003"],
+          what: `filling ${where} changed nothing, so the round trip below is vacuous`,
+        });
+
+        let undone = 0;
+        while (form.canUndo() && undone < 40) {
+          form.undo();
+          undone += 1;
+        }
+        ctx.log.note("a published geometry, undone to the start", { where, steps: undone });
+
+        expectClaim(undone > 0, {
+          claimIds: ["PER-002"],
+          what: `${where} recorded no undoable step for a fill that changed its value`,
+        });
+
+        expectEqual(JSON.stringify(form.getValue()), initial, {
+          claimIds: ["PER-002"],
+          what: `undoing everything done to ${where} did not return the value it started with`,
+        });
+
+        let redone = 0;
+        while (form.canRedo() && redone < 40) {
+          form.redo();
+          redone += 1;
+        }
+
+        expectEqual(JSON.stringify(form.getValue()), full, {
+          claimIds: ["PER-002"],
+          what: `redoing everything undone in ${where} did not return the value it had`,
+        });
+      } finally {
+        form.destroy();
+      }
+    }
+  },
+);
+
+battle(
+  {
+    claims: ["PER-001", "COL-003"],
+    title: "a published geometry survives being written down and reopened",
+    environments: ["node"],
+  },
+  async (ctx) => {
+    // A draft is JSON, and these shapes are the ones with the most to lose in the trip: a keyed map
+    // inside a keyed map inside a list, and a list whose rows are themselves lists. What comes back
+    // has to be what was there, at every depth, or a user who closed the tab loses the part of the
+    // form they went deepest into.
+    for (const { where, document } of corpus().filter(({ document }) => document.schema !== undefined)) {
+      const storage = memoryStorage();
+      const draft = { key: "corpus", storage };
+
+      const first = filled(document, { draft });
+      await settled(700);
+      const envelope = storage.written.get("corpus");
+      first.form.destroy();
+
+      ctx.log.note("a published geometry, written down", { where, bytes: envelope?.length ?? 0 });
+
+      expectClaim(typeof envelope === "string" && envelope.length > 0, {
+        claimIds: ["PER-001"],
+        what: `${where} was filled in and nothing was written to the draft`,
+      });
+
+      const second = createForm(buildDynamicFormSchema(document.schema), { devWarnings: false, draft });
+      await settled(80);
+      try {
+        expectEqual(JSON.stringify(second.getValue()), first.filled, {
+          claimIds: ["PER-001", "COL-003"],
+          what: `${where} did not come back from its draft as the document that was saved`,
+        });
+      } finally {
+        second.destroy();
       }
     }
   },
