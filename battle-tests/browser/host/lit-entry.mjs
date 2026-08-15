@@ -80,6 +80,14 @@ window.battleLit = {
         }),
       );
       const form = createLitForm(schema, options);
+
+      // Lit publishes no form component: a Lit form is whatever the host writes, so the summary
+      // region is an element the host places. It goes first, because a summary found by scrolling
+      // past the fields is one nobody reads.
+      const summary = document.createElement("mdy-form-errors");
+      summary.form = form;
+      host.append(summary);
+
       for (const declared of fields) {
         const tag = TAG[declared.kind] ?? "mdy-text-field";
         const element = document.createElement(tag);
