@@ -2344,3 +2344,51 @@ two forms over a record whose row initial is the SAME object
 ```
 
 The engine copies. Neither form can reach the other's value, and neither mutates what it was handed.
+
+## Checked and clean: a server's refusal when the form changes underneath it
+
+A surface nobody had walked, and one that looks broken until the pieces are read together. A server
+refuses `rows.a.code` with "already taken", and then the form changes:
+
+```
+right after the refusal        shown on the field, held in lastSubmitErrors, form invalid
+rename a -> z                  shown on NEITHER z.code NOR a.code — the message does not migrate
+                               onto a new identity and does not stick to a path that left
+remove the row                 form valid and submittable again
+remove, then a new row
+with the same key              the new row does not inherit the refusal
+the user edits the cell        the message stops being shown
+```
+
+Every visible behaviour is right, including the two this campaign has repeatedly found wrong
+elsewhere: a message migrating onto a new identity, and one surviving on a path nobody renders.
+
+**An asymmetry that turned out not to be one.** `lastSubmitErrors` is cleared by a later successful
+submit when the entry is form-level (`path: null`) and not when it is field-level — which read like
+one list with two rules. It is not: a field-level refusal makes the field invalid, so the second
+submit is **refused locally** and never reaches the handler (`submitCount` stays 1). The form-level
+one attaches to no field, leaves the form submittable, and a real second submit clears it. Two
+different outcomes because two different things happened.
+
+**One edge worth knowing, not filed.** `lastSubmitErrors` keeps a field-bound entry after the user
+edits the field, and after the row it names has been removed — it is a record of the last submit, and
+the name says so. A consumer rendering the whole list would show a message for a row that is gone on a
+form that is fine. ADR 0062 already states which of them a form-level region renders — the ones with
+`path: null` — so the engine's own answer is there; anything wider is a consumer's choice.
+
+## Checked and clean: a binding still belongs to its row after the read-time verdict
+
+The repair for finding 64 composes interactivity at read time rather than pushing it down at the call,
+which touches every field of every form. ADR 0044 — *a binding belongs to the row* — is the property
+most at risk from that, so it was re-measured across every identity change:
+
+```
+record: disable a.code, rename a -> z   z.code disabled, its value out of the payload   the binding followed
+array:  disable [1], move 1 -> 2        the same row stays out, the others stay in
+array:  disable [1], remove [0]         the disabled row is still the disabled one
+record: disable, remove, re-create
+        a row with the same key         the new row is NOT disabled — a reused key is a new row
+```
+
+All four hold. The last is the one worth naming: a claim does not attach itself to whatever arrives
+later under the same name.
