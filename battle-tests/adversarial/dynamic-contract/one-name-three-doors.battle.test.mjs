@@ -51,6 +51,9 @@ const NAMES = Object.freeze([
   ["a.b", true],
   ["", true],
   ["  ", true],
+  ["a b", true],
+  ["a__b", true],
+  ["__b", true],
   ["ordinary", false],
 ]);
 
@@ -161,26 +164,31 @@ battle(
       what: "an ordinary row key built two different values",
     });
 
-    // The same document with a row key made of spaces.
-    const spaced = withARowKeyOf("  ");
-    const spacedFlat = flattenDynamicForm(spaced);
-    const parsed = parseDynamicForm({ version: 3, schema: spaced }, { mode: "strict" });
-    const tree = builds(() => buildDynamicFormSchema(spaced));
-    const flat = builds(() => buildFlatFormSchema(spacedFlat.fields, spacedFlat.collections));
-    ctx.log.note("a row key of spaces, by each route", {
-      flattenedNames: spacedFlat.fields.map((each) => each.name),
-      parse: { ok: parsed.ok, said: (parsed.diagnostics ?? []).map((each) => each.code) },
-      tree,
-      flat,
-      isSafeFieldPath: { "  ": isSafeFieldPath("  "), "a b": isSafeFieldPath("a b") },
-    });
+    // The same document with a row key the widget-id rule forbids. Both halves of that rule are
+    // tried, because the renderer states them in one sentence: neither whitespace nor "__".
+    const disagreed = [];
+    for (const key of ["  ", "a b", "a__b", "__b"]) {
+      const document = withARowKeyOf(key);
+      const flattened = flattenDynamicForm(document);
+      const parsed = parseDynamicForm({ version: 3, schema: document }, { mode: "strict" });
+      const tree = builds(() => buildDynamicFormSchema(document));
+      const flat = builds(() => buildFlatFormSchema(flattened.fields, flattened.collections));
+      ctx.log.note("a row key the widget-id rule forbids, by each route", {
+        key,
+        flattenedNames: flattened.fields.map((each) => each.name),
+        parse: { ok: parsed.ok, said: (parsed.diagnostics ?? []).map((each) => each.code) },
+        tree,
+        flat,
+        isSafeFieldPath: isSafeFieldPath(key),
+      });
+      if (flat.built !== tree.built) disagreed.push({ key, treeBuilt: tree.built, flatBuilt: flat.built });
+    }
 
     // Either both routes take it or both refuse it. What must not happen is that the pair of
     // published functions disagrees about the same document.
-    expectEqual(flat.built, tree.built, {
+    expectEqual(disagreed, [], {
       claimIds: ["SEC-001", "DYN-002"],
       what: "one build route took a document the other refused, so which pair of functions a consumer called decides whether their document works",
-      detail: JSON.stringify({ tree, flat }),
     });
   },
 );

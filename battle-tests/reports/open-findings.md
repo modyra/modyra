@@ -5652,7 +5652,7 @@ kept the second bracket group as part of the title, so nothing matched and sixty
 green. And "closed" matched inside the title *a calendar behind a closed picker*, which reported an
 open finding as one claiming to be shut. The numbers above are from the corrected pass.
 
-## 111. One name, three doors, and a repair that reached one
+## 111. The widget-id rule, in two places out of six
 
 `adversarial/dynamic-contract/one-name-three-doors.battle.test.mjs` — 1 red.
 
@@ -5729,6 +5729,21 @@ buildDynamicFormSchema(schema)             builds
 One document, the two published build routes, opposite answers — and the route that refuses explains
 the rule the other one is missing. `assertSafeDynamicFieldNames` is where the whitespace rule actually
 lives; four other places that decide the same question do not have it.
+
+**Both halves of the rule, and the same two places.** The renderer states it in one sentence — a
+widget id "may contain neither whitespace nor `__`" — and the second half behaves exactly like the
+first:
+
+| name | flat list | tree child | cell in a collection | a record's initial key | `isSafeFieldPath` | `buildFlatFormSchema` |
+| --- | --- | --- | --- | --- | --- | --- |
+| `"a b"` | refused | taken | taken | taken | `true` | throws |
+| `"a__b"` | refused | taken | taken | taken | `true` | throws |
+| `"__b"` | refused | taken | taken | taken | `true` | throws |
+| `"a__"` | refused | taken | taken | taken | `true` | throws |
+
+So this is not one rule forgotten in five places. It is **the whole widget-id rule — both halves —
+living at the flat door and the flat builder, and nowhere else**, while four other places decide the
+same question and one of them is a predicate the package publishes for exactly this purpose.
 
 **And the published predicate is the odd one out, on exactly this rule.** `isSafeFieldPath` is
 exported, and it is thorough about everything else: `__proto__`, `constructor` and `prototype` are
