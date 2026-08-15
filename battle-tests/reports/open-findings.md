@@ -3180,8 +3180,19 @@ worth knowing when reading any per-field measurement on a shared stage.
 
 ## 80. A refusal that says how to fix it, and names something the caller cannot reach
 
-`adversarial/dynamic-contract/a-refusal-that-points-at-nothing.battle.test.mjs` — 3 green, 1 red.
-**S2**, under API-001 and DYN-001. Finding 73's repair, held to its own message.
+`adversarial/dynamic-contract/a-refusal-that-points-at-nothing.battle.test.mjs` — **green, closed**,
+verified here. Was 3 green, 1 red, S2. Finding 73's repair, held to its own message.
+
+The message now names what the function takes — `buildDynamicFormSchema(document.schema)` — and a v3
+document does carry an optional `schema` beside its `fields`, so following it works. `{}` and
+`{ node: "group" }` are refused by name too.
+
+**The battle needed correcting twice**, and both were mine. Its extractor matched
+`parseDynamicForm(document).X`, which was the *wrong* instruction — so when the instruction was
+corrected the match stopped firing and the battle stopped describing anything; it now follows whatever
+expression the message names and evaluates it. And its assertion demanded the advice work for a
+document carrying only `fields`, which has no tree for this function to take at all: too strong, and
+`buildFlatFormSchema` is that document's call.
 
 `buildDynamicFormSchema` refuses what it cannot use, by name and in production — that is 73 closed.
 Its message goes further than most and tells the caller how to fix it:
@@ -3220,9 +3231,12 @@ repair that renames it is followed rather than broken.
 
 ## 81. "Pass {} to empty the form", and {} does not empty it
 
-`adversarial/validation/a-whole-value-that-names-nothing.battle.test.mjs` — the battle that held
-finding 61 is red again, on a new assertion. **S2.** Sibling of 80: a repair's message held to what
-the call does.
+`adversarial/validation/a-whole-value-that-names-nothing.battle.test.mjs` — **green, closed**,
+verified here. Was red on a new assertion in the battle that held finding 61. **S2.** Sibling of 80.
+
+Reworded to *"Pass {} to return every field to its initial deliberately."* — the assertion fired only
+while the verb was `empty`, so rewording satisfied it rather than breaking it, which is what it was
+written for.
 
 The refusal `setValue` now gives for a whole value that names nothing:
 
