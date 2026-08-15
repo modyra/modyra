@@ -1233,3 +1233,25 @@ The second battle measures the cost. On an adapter whose effects run once, a for
 validity flows through computeds, so nothing about the form looks wrong — and **the draft is never
 written**. Nothing throws, nothing warns. A host ships it and hears about it from a user who lost an
 hour of typing.
+
+## 53. Studio compiles the option lists that build broken forms
+
+`adversarial/studio/option-lists.battle.test.mjs` — 1 red. Packed consumer, ~2s.
+
+Findings 48 and 49 seen from upstream. Studio is where a person assembles a form, so it is where being
+told costs least — and its compiler already inspects an option list:
+
+| the list | what Studio says | what it compiles |
+| --- | --- | --- |
+| three distinct values | nothing | all three |
+| **no options** | `SELECT_WITHOUT_OPTIONS`, `UNCOMPILABLE_FIELD` | the field is dropped |
+| **two sharing a value** | nothing | all three, and the page renders two |
+| **a value with a space** | nothing | both, and one is unreachable to a screen reader |
+| a value containing `__` | nothing | both |
+
+The empty-list row is the precedent and is asserted: the same pass already looks at this list and
+already refuses one shape of it. The two that build broken forms go through without a word.
+
+Asking the compiler rather than the parser is the point. The parser sees a document somebody already
+wrote; Studio is where it is still an editing session and a diagnostic is a sentence rather than a bug
+report.
