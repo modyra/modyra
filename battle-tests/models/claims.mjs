@@ -227,6 +227,17 @@ const CLAIMS = [
     ],
   },
   {
+    id: "REA-003",
+    title: "A condition the published diagnostic vocabulary names is reported with its code.",
+    area: "reactivity",
+    severity: "S3",
+    publicEvidence: [
+      "@modyra/core reactivity-diagnostics — structured diagnostics replace ad-hoc console.warn so a consumer can route them",
+      "@modyra/core MdyDiagnostics — a sink a consumer installs, taking a code and a severity",
+      "@modyra/core observerFor — reports through the sink when it has one and to the console when it does not",
+    ],
+  },
+  {
     id: "SUB-001",
     title: "Submission contains no undeclared path introduced by rendering.",
     area: "submission",
