@@ -3059,6 +3059,23 @@ unless divisible by four hundred:
 The last two are what tells a complete implementation from one that stops at the first clause, and
 both are right.
 
+**The clock dial**, added to the same file. A dial is a circular mapping and the wrap is the trap:
+the top of a twelve-hour dial is **twelve, not zero**, and an implementation that divides an angle by
+thirty gets zero there and is right everywhere else — so a round trip through the middle of the dial
+proves nothing.
+
+```
+hour 12 ↔ 0°   1 ↔ 30°   3 ↔ 90°   6 ↔ 180°   9 ↔ 270°   11 ↔ 330°
+minute 0 ↔ 0°  15 ↔ 90°  30 ↔ 180°  45 ↔ 270°  59 ↔ 354°
+
+what a finger produces, none of it an error to report:
+  0° → 12    360° → 12    359° → 12    1° → 12    −30° → 11    720° → 12
+  0° → 0m    360° → 0m    −6° → 59m    720° → 0m
+```
+
+A drag does not stop at the top: it goes past it, round more than once, and backwards. All of them
+land where the dial shows them.
+
 **One lax answer, not filed.** `daysInMonth(2026, 0)` and `daysInMonth(2026, 13)` both answer `31`
 rather than refusing a month that does not exist. Nothing reachable from a calendar produces a month
 outside 1–12, and the callers all derive it from a real date — recorded rather than filed for want of

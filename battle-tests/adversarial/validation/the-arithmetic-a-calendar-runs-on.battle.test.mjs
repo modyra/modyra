@@ -18,7 +18,16 @@
  * Green. These are the cases that break when somebody simplifies date maths back to the platform's.
  */
 
-import { addDays, addMonths, addYears, daysInMonth } from "@modyra/core/datetime";
+import {
+  addDays,
+  addMonths,
+  addYears,
+  angleToHour,
+  angleToMinute,
+  daysInMonth,
+  hourToAngle,
+  minuteToAngle,
+} from "@modyra/core/datetime";
 
 import { battle } from "../../harness/battle.mjs";
 import { expectEqual } from "../../harness/assertions.mjs";
@@ -71,6 +80,64 @@ battle(
       expectEqual(daysInMonth(year, month), days, {
         claimIds: ["LOC-001", "UI-002"],
         what: `${year}-${month} was given ${daysInMonth(year, month)} days`,
+      });
+    }
+  },
+);
+
+battle(
+  {
+    claims: ["UI-002", "LOC-001"],
+    title: "the top of a clock dial is twelve, and a drag past it comes back round",
+    environments: ["node"],
+  },
+  async (ctx) => {
+    // A dial is a circular mapping and the wrap is the trap. The top of a twelve-hour dial is
+    // **twelve**, not zero — an implementation that divides an angle by thirty gets zero there and is
+    // right everywhere else, which is why a round trip through the middle of the dial proves nothing.
+    for (const [hour, angle] of [[12, 0], [1, 30], [3, 90], [6, 180], [9, 270], [11, 330]]) {
+      expectEqual(hourToAngle(hour), angle, {
+        claimIds: ["UI-002"],
+        what: `hour ${hour} is not at ${angle} degrees on the dial`,
+      });
+      expectEqual(angleToHour(angle), hour, {
+        claimIds: ["UI-002"],
+        what: `${angle} degrees on the dial is not hour ${hour}`,
+      });
+    }
+
+    for (const [minute, angle] of [[0, 0], [15, 90], [30, 180], [45, 270], [59, 354]]) {
+      expectEqual(minuteToAngle(minute), angle, {
+        claimIds: ["UI-002"],
+        what: `minute ${minute} is not at ${angle} degrees on the dial`,
+      });
+      expectEqual(angleToMinute(angle), minute, {
+        claimIds: ["UI-002"],
+        what: `${angle} degrees on the dial is not minute ${minute}`,
+      });
+    }
+
+    // What a finger produces. A drag does not stop at the top: it goes past it, and it goes round
+    // more than once, and it goes backwards. None of those is an error to report — they are the
+    // interaction — so each has to land on the value the dial shows there.
+    const wrapped = [
+      ["the very top", angleToHour, 0, 12],
+      ["a whole turn", angleToHour, 360, 12],
+      ["just short of the top", angleToHour, 359, 12],
+      ["just past the top", angleToHour, 1, 12],
+      ["dragged backwards", angleToHour, -30, 11],
+      ["two whole turns", angleToHour, 720, 12],
+      ["the top, minutes", angleToMinute, 0, 0],
+      ["a whole turn, minutes", angleToMinute, 360, 0],
+      ["backwards, minutes", angleToMinute, -6, 59],
+      ["two turns, minutes", angleToMinute, 720, 0],
+    ];
+
+    for (const [what, read, angle, expected] of wrapped) {
+      ctx.log.note("a drag on the dial", { what, angle, landed: read(angle) });
+      expectEqual(read(angle), expected, {
+        claimIds: ["UI-002"],
+        what: `${what} (${angle} degrees) did not land on ${expected}`,
       });
     }
   },
