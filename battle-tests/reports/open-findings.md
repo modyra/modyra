@@ -5378,6 +5378,28 @@ refuses more, while `layoutSlotStyle` passes `99` straight through. The cap live
 door, which is the right place for it; the battle asserts the current behaviour so that if the cap
 ever moves, it moves visibly.
 
+**And the chain reaches the page.** `browser/a-layout-that-reaches-the-page.spec.ts` — 1 green — takes
+the last two links, which the node-level battles cannot see: a document declaring a section, a
+two-column node at `{ base: 2, md: 4 }` and a slot placed at column 2 and hidden at base, mounted in
+plain with the shipped stylesheets added to the page.
+
+```
+classes        1 section, 1 legend, 1 columns node, 2 column elements
+properties     --mdy-layout-column-count "2"   -md "4"   -start "2"   -display "none"
+computed       column 1: display none, grid-column-start 2
+               column 2: display flex, grid-column-start auto
+```
+
+Five links, all of them: document → parser → the two layout functions → the renderer's elements → the
+stylesheet reading the properties. A property set on an element nothing styles looks exactly like a
+working layout in the DOM, which is why the last one is checked as a computed style.
+
+Neither host had ever mounted a document carrying a layout, and it turned out neither needed a new
+door: `mountFields(id, fields, options)` already passes its options to the renderer, and `layout` is
+one of them. Only plain is asked — lit publishes field elements and an adapter, so assembling a form
+and laying it out is its consumer's job, and there is no lit door for a document with a layout to go
+through.
+
 It also nearly became a finding. Two probes disagreed about what `sm` resolves to for `{ base: 2 }` —
 one said 2 and one said 1 — which read as a cascade that fires only sometimes. What differed between
 them was the number of columns in the node, not the `at`. The rule above explains both, and the battle
