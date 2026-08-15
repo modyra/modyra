@@ -1,3 +1,4 @@
+import type { EitherHost } from "./host-api";
 import { expect, test } from "@playwright/test";
 
 /**
@@ -36,7 +37,7 @@ async function refuse(page: import("@playwright/test").Page, host, id, answer) {
 
   await page.evaluate(
     ({ api, mountId }) => {
-      const battle = (window as never as Record<string, Record<string, Function>>)[api];
+      const battle = (window as never as Record<string, EitherHost>)[api];
       const fields = [{ name: "email", kind: "text", label: "Email" }];
       if (api === "battle") return battle.mountWithSubmit(mountId, fields, null);
       return battle.mountFields(mountId, fields);
@@ -55,7 +56,7 @@ async function refuse(page: import("@playwright/test").Page, host, id, answer) {
 
   await page.evaluate(
     async ({ api, mountId, given }) => {
-      const battle = (window as never as Record<string, Record<string, Function>>)[api];
+      const battle = (window as never as Record<string, EitherHost>)[api];
       if (api === "battleLit") return battle.submitAnswering(mountId, given);
       // The plain host takes the answer at mount time, so it is remounted with it.
       battle.dispose(mountId);
@@ -75,9 +76,9 @@ async function refuse(page: import("@playwright/test").Page, host, id, answer) {
 
   return page.evaluate(
     ({ api, mountId }) => {
-      const battle = (window as never as Record<string, Record<string, Function>>)[api];
+      const battle = (window as never as Record<string, EitherHost>)[api];
       return {
-        held: battle.lastSubmitErrorsOf(mountId).map((entry: Record<string, string>) => `${entry.path ?? "(form)"}`),
+        held: battle.lastSubmitErrorsOf(mountId).map((entry) => `${entry.path ?? "(form)"}`),
         onThePage: document.body.innerText.replace(/\s+/g, " ").trim(),
       };
     },
@@ -119,7 +120,7 @@ for (const host of HOSTS) {
       const id = `v${index}`;
       await page.evaluate(
         ({ api, mountId, k }) => {
-          const battle = (window as never as Record<string, Record<string, Function>>)[api];
+          const battle = (window as never as Record<string, EitherHost>)[api];
           const fields = [{ name: "f", kind: k, label: "F" }];
           return api === "battle" ? battle.mountFields(mountId, fields) : battle.mountFields(mountId, fields);
         },
@@ -169,7 +170,7 @@ for (const host of HOSTS) {
     ];
     await page.evaluate(
       ({ api, given }) => {
-        const battle = (window as never as Record<string, Record<string, Function>>)[api];
+        const battle = (window as never as Record<string, EitherHost>)[api];
         return battle.mountFields("opts", [{ name: "s", kind: "select", label: "Plan", options: given }]);
       },
       { api: host.api, given: options },

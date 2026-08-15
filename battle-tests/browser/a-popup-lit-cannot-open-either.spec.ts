@@ -1,3 +1,4 @@
+import type { LitHost } from "./host-api";
 import { expect, test } from "@playwright/test";
 
 /**
@@ -34,7 +35,7 @@ test("a pointer opens both pickers, which is what makes the keyboard the questio
     const id = `mouse-${kind}`;
     await page.evaluate(
       ({ k, mountId }) =>
-        (window as never as { battleLit: Record<string, Function> }).battleLit.mountFields(mountId, [
+        (window as never as { battleLit: LitHost }).battleLit.mountFields(mountId, [
           { name: "f", kind: k, label: "L" },
         ]),
       { k: kind, mountId: id },
@@ -60,7 +61,7 @@ test("every lit control that declares a popup opens it from the keyboard", async
       const id = `kb-${kind}-${index}`;
       await page.evaluate(
         ({ k, mountId }) =>
-          (window as never as { battleLit: Record<string, Function> }).battleLit.mountFields(mountId, [
+          (window as never as { battleLit: LitHost }).battleLit.mountFields(mountId, [
             { name: "f", kind: k, label: "L" },
           ]),
         { k: kind, mountId: id },

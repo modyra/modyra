@@ -77,7 +77,7 @@ test("a name the page refuses is one the document was told about", async ({ page
   expect(passed, JSON.stringify(passed, null, 1)).toEqual([]);
 });
 
-test("the half of the same rule the parser does enforce", async ({ page }) => {
+test("the half of the same rule the parser does enforce", async () => {
   // `__` is in the same sentence of the renderer's message, and the parser refuses it — which is what
   // makes the whitespace half a gap rather than a decision. If this ever stops being true, the
   // finding above is a different one.

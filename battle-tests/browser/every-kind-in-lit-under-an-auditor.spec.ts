@@ -1,3 +1,4 @@
+import type { LitHost } from "./host-api";
 import { readFileSync } from "node:fs";
 
 import { expect, test } from "@playwright/test";
@@ -34,8 +35,6 @@ const KINDS = [
   "text", "textarea", "email", "password", "number", "slider", "checkbox", "toggle", "select",
   "radio", "multiselect", "segmented", "datepicker", "daterange", "timepicker", "file", "colors",
 ];
-
-const needsOptions = (kind) => /select|radio|segmented/.test(kind);
 
 async function auditStage(page) {
   await page.addScriptTag({ content: AXE });
@@ -81,7 +80,7 @@ test("every declared kind renders a lit form the auditor has nothing to say abou
         if (/select|radio|segmented/.test(kind)) {
           field.options = [{ value: "a", label: "A" }, { value: "b", label: "B" }];
         }
-        const outcome = (window as never as { battleLit: Record<string, Function> }).battleLit
+        const outcome = (window as never as { battleLit: LitHost }).battleLit
           .mountFields(`k-${kind}`, [field]);
         return { kind, ok: outcome.mounted, message: outcome.message ?? null };
       }),
@@ -106,7 +105,7 @@ test("every declared kind is one the auditor has nothing to say about when it is
       kinds.map((kind: string) => {
         const field: Record<string, unknown> = { name: kind, kind, label: `L ${kind}`, validators: { required: true } };
         if (/select|radio|segmented/.test(kind)) field.options = [{ value: "a", label: "A" }];
-        const outcome = (window as never as { battleLit: Record<string, Function> }).battleLit
+        const outcome = (window as never as { battleLit: LitHost }).battleLit
           .mountFields(`r-${kind}`, [field]);
         return { kind, ok: outcome.mounted };
       }),
