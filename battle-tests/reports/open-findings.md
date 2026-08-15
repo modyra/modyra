@@ -1146,3 +1146,90 @@ holds:
 
 The one thing worth carrying elsewhere: that error arrives on an untouched field, which is the shape
 finding 23 is about. Here the error is true, so painting it immediately helps rather than misleads.
+
+## 50. Undo puts the row back last
+
+`regressions/undo-puts-the-row-back-last.battle.test.mjs` — 2 red.
+
+Three operations, and no rename is needed:
+
+```js
+upsert("a"); upsert("b"); upsert("c");
+remove("a");
+undo();
+// keys(): ["b","c","a"]   — expected ["a","b","c"]
+```
+
+All three restore paths do it:
+
+| | after | expected |
+| --- | --- | --- |
+| `remove("a")` + `undo` | `["b","c","a"]` | `["a","b","c"]` |
+| `rename("a","z")` + `undo` | `["b","a"]` | `["a","b"]` |
+| `rename` + `undo` + `redo` | `["b","z"]` | `["z","b"]` |
+
+Handle and value agree with each other — the rename fix holds. It is the restoring of a past state
+that puts the row at the end, not the reading of it.
+
+This is finding 42's second battle reduced from a bulk write to one removal, and finding 41's shape in
+the history path rather than the rename path.
+
+## 51. My own model was hiding it, twice
+
+Fixed, and recorded because the shape is the one the charter's thirteenth principle is about: two
+things that make the same mistake agree perfectly.
+
+`generative/reference-model.mjs` encoded the pre-fix engine in two places:
+
+1. **`record.rename` appended.** It did `forget(from)` then `declare(to)`, and `declare` pushes. The
+   peer found this one from their side: their campaign reported the model expecting the renamed row
+   last while the fixed engine kept it in place.
+2. **`putSnapshot` composed orders.** It kept the current order for surviving keys and appended what
+   the snapshot brought back:
+   ```js
+   const kept = order.filter((key) => snapshot.rows.has(key));
+   order = [...kept, ...snapshot.order.filter((key) => !kept.includes(key))];
+   ```
+   With a comment saying "a row brought back by an undo arrives at the end rather than at the position
+   it held. **Measured, not promised**."
+
+It *was* measured — against an engine that appended. Once the engine stopped, the comment became a
+photograph of a defect rather than a description of one. Correcting it is what made finding 50
+visible: while both appended, model and engine agreed and the campaign was green on it.
+
+After both corrections, with fixed seeds at 300 runs: `records` green, `keyed-nested` green, `history`
+red on every seed tried, on finding 50 and nothing else.
+
+**A measurement error of my own, worth writing down:** without `MDY_BATTLE_SEED` the seed is drawn
+from the clock, so two campaign runs are not comparable. I compared them anyway, twice, and once
+concluded a property was clean when its seed had simply been lucky. Fixed seeds for any comparison.
+
+## 52. What the conformance kit lets through
+
+`adversarial/reactivity/what-conformance-lets-through.battle.test.mjs` — 2 red.
+
+`runReactivityContractTests` is the published gate: core, Vue, Solid, Preact, Svelte, React and Lit
+each run it against their own reactivity and are conformant if it is quiet. Fed six reactivities each
+broken one way, it catches four:
+
+| broken how | checks failed |
+| --- | --- |
+| a signal that never notifies | 4 |
+| a computed that never recomputes | 3 |
+| a scope whose `destroy` does nothing | 2 |
+| an `untracked` that tracks anyway | 1 |
+| **one claiming capabilities it lacks** | **0** |
+| **an effect that runs once and never again** | **0** |
+
+The last is not hypothetical. `differential/runtimes/every-runtime.test.mjs` records it happening:
+without the `browser` export condition Solid resolved to a build "whose computations never re-run, and
+a form on it froze at creation". The kit does not ask whether an effect re-runs, so the build that did
+that would pass it.
+
+The capability one has a name already: `MDY_ADAPTER_CONTRACT_VIOLATION` exists for "a fictitious
+capability" in as many words — and per finding 38 nothing ever emits it.
+
+The second battle measures the cost. On an adapter whose effects run once, a form still validates —
+validity flows through computeds, so nothing about the form looks wrong — and **the draft is never
+written**. Nothing throws, nothing warns. A host ships it and hears about it from a user who lost an
+hour of typing.
