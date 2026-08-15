@@ -1204,13 +1204,15 @@ red on every seed tried, on finding 50 and nothing else.
 from the clock, so two campaign runs are not comparable. I compared them anyway, twice, and once
 concluded a property was clean when its seed had simply been lucky. Fixed seeds for any comparison.
 
-## 52. What the conformance kit lets through
+## 52. Withdrawn — the kit catches all of it, and I was not awaiting
 
-`adversarial/reactivity/what-conformance-lets-through.battle.test.mjs` — 2 red.
+Filed as "the conformance kit lets a broken adapter through", reported to the fixer, and wrong.
 
-`runReactivityContractTests` is the published gate: core, Vue, Solid, Preact, Svelte, React and Lit
-each run it against their own reactivity and are conformant if it is quiet. Fed six reactivities each
-broken one way, it catches four:
+`runReactivityContractTests` has **fourteen** checks and **five of them are asynchronous**. The
+harness in the battle called them and read its results without awaiting, so it saw seven checks and no
+failures and concluded the kit was full of holes. The results had not arrived.
+
+Awaited, the kit catches everything it was fed:
 
 | broken how | checks failed |
 | --- | --- |
@@ -1218,21 +1220,28 @@ broken one way, it catches four:
 | a computed that never recomputes | 3 |
 | a scope whose `destroy` does nothing | 2 |
 | an `untracked` that tracks anyway | 1 |
-| **one claiming capabilities it lacks** | **0** |
-| **an effect that runs once and never again** | **0** |
+| **an effect that runs once and never again** | **3**, one saying "effect should re-run when dependency changes" |
+| one claiming `batching` whose `batch()` does not batch | 1 |
+| one claiming `signalEquality` that ignores the comparator | 1 |
 
-The last is not hypothetical. `differential/runtimes/every-runtime.test.mjs` records it happening:
-without the `browser` export condition Solid resolved to a build "whose computations never re-run, and
-a form on it froze at creation". The kit does not ask whether an effect re-runs, so the build that did
-that would pass it.
+The claim that mattered most — that the kit would have passed the Solid build whose computations never
+re-ran — is the one most clearly false. It fails three of its checks.
 
-The capability one has a name already: `MDY_ADAPTER_CONTRACT_VIOLATION` exists for "a fictitious
-capability" in as many words — and per finding 38 nothing ever emits it.
+The one thing that survives is not a defect either: a reactivity claiming `deterministicFlush` whose
+`flush()` does nothing passes, because with synchronous effects there is nothing pending and a no-op
+flush is indistinguishable from a working one.
 
-The second battle measures the cost. On an adapter whose effects run once, a form still validates —
-validity flows through computeds, so nothing about the form looks wrong — and **the draft is never
-written**. Nothing throws, nothing warns. A host ships it and hears about it from a user who lost an
-hour of typing.
+What the file holds now is the opposite claim, green:
+`adversarial/reactivity/what-conformance-catches.battle.test.mjs` feeds the kit six broken
+reactivities and asserts each is caught, and asserts the check count first — because a subset counted
+as the whole is exactly how this went wrong. An adapter author wiring the kit into a runner that does
+not await gets the same empty green.
+
+**How it got past me.** Every other false finding tonight was caught by a control that would have
+failed if the subject did nothing. This one had one — the real reactivity passed — and it did not
+help, because the same harness under-counted both. A control only separates the subject from the
+measurement when it can fail for a reason the measurement cannot cause. Asserting the *count* is that
+control, and it was missing.
 
 ## 53. Studio compiles the option lists that build broken forms
 
