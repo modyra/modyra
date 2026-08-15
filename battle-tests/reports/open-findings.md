@@ -509,8 +509,19 @@ aria-prohibited-attr   serious   .mdy-select
 aria-label attribute cannot be used on a div with no valid role attribute.
 ```
 
-`.mdy-multiselect` carries the same shape — a role-less `div` with `aria-label` — and axe reports the
-select alone, which is axe's business rather than the renderer's. Both are the same thing.
+It is six elements, not one. axe reports `.mdy-select` as a violation and five more as *incomplete*,
+which the battle prints rather than fails on:
+
+```
+.mdy-slider-container    aria-label="Label slider"
+.mdy-multiselect         aria-label="Label multiselect"
+.mdy-plain-datepicker    aria-label="Label datepicker"
+.mdy-plain-daterange     aria-label="Label daterange"
+.mdy-timepicker          aria-label="Label timepicker"
+```
+
+Every composite widget wraps itself in a role-less `div` and labels the wrapper. Which one axe calls a
+violation and which five it leaves undecided is axe's business; they are the same construction.
 
 The attribute is discarded by the accessible-name computation, so what it says never reaches anyone.
 The practical effect is bounded and worth stating: the trigger inside each wrapper is separately
@@ -922,3 +933,23 @@ same on all three, and every other pass is too.
 
 Adding a project changes what `npm run battle:browser` does, and CI runs it, so it is reported rather
 than made.
+
+## Checked and clean, this pass
+
+Recorded because a negative result costs the same to produce and saves the next person the trip.
+
+- **A closed popup is out of the tab order.** All six popup widgets keep their popup off-screen with
+  no offset parent, and twenty-four consecutive `Tab` presses across five of them never land inside
+  one — including the datepicker's forty-two calendar buttons and the daterange's forty-four.
+- **`aria-controls` resolves in every case.** All six triggers point at an element that exists. Only
+  the select additionally marks it `aria-hidden`; the rest rely on being `display:none`, which removes
+  them from the accessibility tree as well.
+- **High contrast, dark mode and reduced motion add no violations.** The same audit under
+  `forcedColors: active`, `colorScheme: dark` and `reducedMotion: reduce` reports exactly the same
+  ones as the default.
+- **A draft preserves key order**, for maps and lists, and after a rename. Findings 41 and 42 are the
+  in-memory path, not serialisation.
+- **Two forms on one storage key** overwrite each other last-writer-wins and the reopened form gets
+  the last write. Inherent to a shared key rather than a defect, and recorded so it is not re-derived.
+- **An empty collection round-trips through a draft.** The flat encoding stores `rows: null` as the
+  marker that a path is a collection; an empty map comes back `{}` and an empty list `[]`.
