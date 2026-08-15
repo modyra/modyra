@@ -550,6 +550,19 @@ export function parseDynamicFields(input: unknown): MdyDynamicField[] {
       );
       return false;
     }
+    // The other half of the sentence the renderer refuses on, and it was the half nobody applied. A
+    // widget id is built from this name and reaches `aria-describedby`, which is a space-separated
+    // list of ids — whitespace there becomes several references, each resolving to nothing. An
+    // author ran the gate, was told the document was fine, saved it, and the field never appeared.
+    if (/\s/.test(f.name)) {
+      warnDev(
+        `Dropped dynamic field "${f.name}": a widget id is built from this name, and whitespace ` +
+          `splits an id reference into several, each resolving to nothing — so the control would ` +
+          `have no accessible name.`,
+      at,
+      );
+      return false;
+    }
     if (seenNames.has(f.name)) {
       warnDev(`Dropped duplicate dynamic field name "${f.name}".`, at);
       return false;
