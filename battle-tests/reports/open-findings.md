@@ -7679,3 +7679,39 @@ Related to finding 32 and not the same: that one is `aria-prohibited-attr` on ro
 `div`s, this is `aria-allowed-attr` on a button that has a role and the wrong attributes for it.
 Finding 32 recorded "one violation" from that auditor; the current run reports several, so its entry
 is a snapshot of a smaller set rather than the whole.
+
+## 139. Two date boxes that say they are expanded
+
+**Severity** S2 · **Classification** ARIA state on a role that has no such state · **Spec**
+`browser/an-attribute-the-element-may-not-wear.spec.ts` (red for one renderer, green for the other) ·
+**Claims** A11Y-002
+
+`aria-expanded` belongs to elements that can be expanded: a `button`, or a role that permits it —
+`combobox` and a short list besides. A plain `<input type="text">` is a `textbox`, and a textbox has
+nothing to expand. Saying so anyway is what axe calls `aria-allowed-attr` and rates **critical**.
+
+`MDY_POPUP_OPENERS` holds the intended answer. It names the part that opens each popup and the role
+that part takes: `combobox` for the three kinds whose opener is the control the value is typed into,
+nothing for the three whose opener is a button, because a button needs no help.
+
+```
+                    declared role   plain                          lit
+select              combobox        button[role=combobox]          native <select>
+multiselect         —               button                         button
+datepicker          combobox        input[role=combobox]           input[role=combobox] + button
+timepicker          combobox        input[role=combobox]           input[role=combobox] + button
+colors              —               button                         two buttons
+daterange           —               button                         two input[text], no role   ← wrong
+```
+
+One renderer follows it everywhere. The other gives a daterange's start and end boxes
+`aria-haspopup="dialog"` and `aria-expanded` without the role that makes either meaningful — and the
+contract does not say the inputs are the opener for that kind at all: it names the `toggle`.
+
+Checked as the rule rather than the construction, over every kind with a popup, so the same mistake
+elsewhere fails the same test. The control is that something carried the attribute at all.
+
+**Measured alongside, not a violation.** In that renderer the datepicker and timepicker each have
+*two* elements carrying `aria-expanded` — the combobox input and the toggle button — where the other
+renderer has one. Both are allowed to say it; two elements announcing the same state is redundant
+rather than wrong.
