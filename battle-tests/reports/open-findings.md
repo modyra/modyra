@@ -7169,3 +7169,27 @@ reads an open calendar as an empty one. It cost a timeout here, the `OK` button 
 false "does not close" reading in finding 122's neighbourhood. Locators for anything inside an
 overlay are page-wide. A second trap sits beside it: Playwright's `hasText` regex runs against text
 that carries whitespace, so `/^April 2026$/` matches nothing while `/\w+\s+\d{4}/` matches.
+
+### Checked and clean: the track a slider draws
+
+`adversarial/widgets/the-track-a-slider-draws.battle.test.mjs` (3 green).
+
+`sliderTrack`, `sliderFillRatio` and `dragPointOf` were named by nothing in this suite.
+
+```
+no bounds, value 50     track 0..100      the usual track
+no bounds, value 150    track 0..150      the undeclared side stretches
+no bounds, value -20    track -20..100
+min 10 max 20, value 5 / 15 / 25          track 10..20 in every case
+min null max 20, value -5                 track -5..20     one side gives, the other holds
+min 10 max null, value 200                track 10..200
+```
+
+The rule is worth having written down: a bound the field declared is the field's even when the value
+sits outside it, and a bound nobody declared stretches to hold the value. The alternative is a thumb
+with nowhere to be.
+
+`sliderFillRatio` clamps outside values to the ends and answers `0` for every range that is not one —
+a minimum equal to its maximum, a maximum below its minimum, a non-number, an infinity — rather than
+dividing by zero. `dragPointOf` reads a mouse and a finger alike, and answers `null` for a touch event
+carrying no touches, which is the end of a gesture rather than a drag to the origin.
