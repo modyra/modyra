@@ -6458,3 +6458,66 @@ published.
   rule's `when` is `{field, operator, value}`, a validation's `when` is an expression tree
   `{op, operands}`. Sweeping one with the other's shape is what made `in` and `notIn` both answer
   false in a first pass. They are not complements; they are unknown.
+
+## 120. Two documented overrides, neither reachable outside one adapter
+
+**Severity** S3 · **Classification** documentation names an unreachable surface · **Spec** none —
+recorded rather than pinned, because the capability it describes works (see below)
+
+`docs/guides/i18n.md`'s locale coverage matrix names how each concern is overridden:
+
+```
+Month/day names      any Intl locale   →  MDY_DATE_LOCALE
+First day of week    from preset/locale →  buildDateLocale(locale, firstDay)
+```
+
+`MDY_DATE_LOCALE` is an Angular `InjectionToken`, exported from `@modyra/angular` alone.
+`buildDateLocale` is defined in `packages/core/src/date-locale.ts:53` and **exported from nothing** —
+absent from `@modyra/core`, `@modyra/widgets` and `@modyra/lit` at runtime, and `packages/core/src/index.ts`
+does not mention the module.
+
+So a consumer on any renderer other than Angular reads a matrix naming two mechanisms and can import
+neither. The concrete thing they cannot do is the second row's own example: force a Monday-first week
+in a locale whose platform says Sunday.
+
+Minor because the capability underneath is complete and correct — see below. What is missing is the
+override, and the sentence that says it is available.
+
+### Checked and clean: the calendar is localized, and correctly
+
+`browser/a-week-that-starts-where-the-reader-starts.spec.ts` (green) mounts a datepicker from a
+document in six locales and compares the drawn week against the platform's own answer
+(`Intl.Locale#getWeekInfo().firstDay`) rather than against a table of days kept in the battle — which
+would be a second opinion about the calendars of the world.
+
+```
+en-US  S M T W T F S   Intl firstDay 7   April 2026
+it-IT  L M M G V S D   Intl firstDay 1   aprile 2026
+de-DE  M D M D F S S   Intl firstDay 1   April 2026
+fr-FR  L M M J V S D   Intl firstDay 1   avril 2026
+ar-EG  س ح ن ث ر خ ج   Intl firstDay 6   أبريل 2026
+ja-JP  日 月 火 水 木 金 土  Intl firstDay 7   4月 2026
+```
+
+Two scripts, two writing directions, three different week starts, month names localized throughout.
+The month is asserted separately from the week start: a grid can begin on the right day and be
+labelled in the wrong language, and the two come from different places.
+
+### Checked and clean: the message tables
+
+`adversarial/accessibility/a-word-one-language-never-got.battle.test.mjs` (green). All five declared
+languages hold all 42 keys — none missing, none blank. Three of the messages are functions rather
+than strings (`datepickerChangeView`, `selectCreateOption`, `wizardStepStatus`) and each renders a
+translated sentence in every language, so the battle renders a message rather than reading it. A
+first pass that only read them reported the English table as holding blanks; the data was right and
+the check was wrong.
+
+Values identical to English were examined rather than assumed to be untranslated: `OK` in all five,
+and `Minute`, which is the German and French word as well. No forgotten translations.
+
+`datepickerChangeView` composes an announcement around a parameter, and the callers pass an
+already-localized month label — so the sentence is localized end to end rather than embedding an
+English view name.
+
+`messagesForLocale` falls back by language and then to the default: `de-AT` → de, `fr-CA` → fr,
+`pt-BR` → en, and `""`, `null` and `undefined` → en rather than to nothing.
