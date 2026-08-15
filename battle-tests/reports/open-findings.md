@@ -7364,6 +7364,19 @@ neither; an unreadable preset does nothing.
 
 ## 132. A popup that opens without a word
 
+**Closed — verified green** (`0a6d2960`). What was missing was not a renderer reading `announce` but
+an *edge* to read it on: both reflected the open state on every render, so reading the policy would
+have repeated the sentence on every keypress. Falsified along exactly that seam, in both renderers:
+
+```
+at rest              nothing            no phantom "Popup closed" at construction
+opened               "Popup opened"     once
+four keys pressed    "Popup opened"     still once — edges, not renders
+Escape               + "Popup closed"   once
+disposed             unchanged          a teardown is not a closure
+```
+
+
 **Severity** S2 · **Classification** a field of the shared policy honoured by one adapter of three ·
 **Spec** `browser/a-popup-that-opens-without-a-word.spec.ts` (red, both renderers) · **Claims**
 A11Y-002, UI-005
@@ -7657,9 +7670,21 @@ somebody can act on without reading a report.
 
 ## 138. A button wearing a combobox's attributes
 
-**Severity** S2 · **Classification** ARIA not allowed on the role · **Spec**
-`browser/every-kind-under-an-auditor.spec.ts` (red — axe `aria-allowed-attr`, critical) · **Claims**
-A11Y-002
+**Severity** S2 · **Classification** contract omission with a symptom in every renderer · **Spec**
+`browser/a-state-only-a-widget-may-report.spec.ts` (red, both renderers) · **Claims** A11Y-002
+
+**Measured as a rule over all seventeen kinds, in both renderers, after the first report.** Exactly
+one kind carries `aria-invalid` or `aria-required` on something not entitled to them:
+
+```
+plain   multiselect: button.mdy-multiselect__search-btn
+lit     multiselect: div[role=group].mdy-multiselect, button.mdy-multiselect__search-btn
+```
+
+Every other kind is clean in both. That is what makes this a missing role rather than a habit: where
+the contract names one, the state has somewhere to live. The repair belongs in
+`MDY_WIDGET_CONTRACTS`/`MDY_POPUP_OPENERS` rather than in a renderer — a button carrying those two
+states is illegitimate until it is a combobox.
 
 The multiselect's opener is a plain `<button>` carrying attributes that belong to a widget role:
 
