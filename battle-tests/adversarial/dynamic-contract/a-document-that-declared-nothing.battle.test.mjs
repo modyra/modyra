@@ -29,14 +29,17 @@ import { buildDynamicFormSchema, createForm, parseDynamicForm } from "@modyra/co
 
 import { battle } from "../../harness/battle.mjs";
 import { expectClaim, expectEqual } from "../../harness/assertions.mjs";
+import { MDY_WIDGET_KINDS } from "@modyra/widgets";
 
 const HERE = dirname(new URL(import.meta.url).pathname);
 const FIXTURES = resolve(HERE, "..", "..", "..", "spec", "fixtures", "dynamic-form");
 
-const KINDS = new Set([
-  "text", "textarea", "email", "password", "number", "slider", "checkbox", "toggle", "select",
-  "radio", "multiselect", "segmented", "datepicker", "daterange", "timepicker", "file", "colors",
-]);
+/**
+ * Read from the package rather than written out here. A list of kinds copied into a spec named "every
+ * kind" covers every kind only until there is a new one, and then says nothing about it while keeping
+ * its name.
+ */
+const KINDS = new Set(MDY_WIDGET_KINDS);
 
 /** Every field node a document declares, wherever it lives — the number the pair claims to report. */
 function declaredFields(node) {

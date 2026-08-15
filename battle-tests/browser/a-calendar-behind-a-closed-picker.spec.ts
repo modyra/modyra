@@ -109,7 +109,7 @@ for (const host of HOSTS) {
       // renderer that builds no popup at all.
       const toggle = page.locator(`${scope} button`).first();
       if (await toggle.count() === 0) { neverOpened.push(`${kind}: no control opens it`); continue; }
-      await toggle.click({ timeout: 2000 }).catch(() => {});
+      await toggle.click({ timeout: 2000 }).catch(() => undefined);
       await page.waitForTimeout(220);
       const open = await contribution(page, scope);
       if (open === null || open.expanded !== "true") { neverOpened.push(`${kind}: did not open`); continue; }

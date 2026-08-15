@@ -43,7 +43,7 @@ function formWithAHangingCheck(signals) {
         asyncValidators: [
           async (value, ctx) => {
             signals.push(ctx.signal);
-            await new Promise(() => {});
+            await new Promise(() => undefined);
             return [];
           },
         ],

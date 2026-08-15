@@ -17,8 +17,6 @@
  * that every renderer must build every kind the same way.
  */
 
-import { readFileSync } from "node:fs";
-
 import { expect, test } from "@playwright/test";
 import { MDY_WIDGET_TRANSITIONS } from "@modyra/widgets";
 
@@ -85,7 +83,7 @@ for (const host of HOSTS) {
         if (await expanded() === "true") await page.keyboard.press("Escape");
         await page.waitForTimeout(80);
         if (from === "open") {
-          await toggle.click({ timeout: 2000 }).catch(() => {});
+          await toggle.click({ timeout: 2000 }).catch(() => undefined);
           await page.waitForTimeout(150);
         }
         if (await expanded() !== (from === "open" ? "true" : "false")) {
@@ -95,7 +93,7 @@ for (const host of HOSTS) {
 
         // Apply what the table names.
         if (trigger.type === "pointer") {
-          await toggle.click({ timeout: 2000 }).catch(() => {});
+          await toggle.click({ timeout: 2000 }).catch(() => undefined);
         } else if (trigger.type === "key" && typeof trigger.key === "string") {
           await page.keyboard.press(trigger.key === " " ? "Space" : trigger.key);
         } else if (trigger.type === "outside") {

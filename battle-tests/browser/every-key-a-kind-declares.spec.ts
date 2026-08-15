@@ -111,7 +111,7 @@ for (const host of HOSTS) {
         if (binding.when === "open") {
           const toggle = page.locator(`${scope} button`).first();
           if (await toggle.count() === 0) { unreached.push(`${kind} ${binding.key}: no control opens it`); continue; }
-          await toggle.click({ timeout: 2000 }).catch(() => {});
+          await toggle.click({ timeout: 2000 }).catch(() => undefined);
           await page.waitForTimeout(120);
           if ((await observe(scope))?.expanded !== "true") {
             unreached.push(`${kind} ${binding.key}: could not open it`);
@@ -142,7 +142,7 @@ for (const host of HOSTS) {
               await page.keyboard.press("Escape");
               await page.waitForTimeout(60);
             }
-            await part.focus().catch(() => {});
+            await part.focus().catch(() => undefined);
           }
 
           // A move needs somewhere to move from: at the first option, `ArrowUp` and `Home` are

@@ -247,7 +247,7 @@ battle(
     const root = createRoot(document.getElementById("root"));
     const quietly = (run) => {
       const real = console.error;
-      console.error = () => {};
+      console.error = () => undefined;
       try { return run(); } finally { console.error = real; }
     };
     const painted = () => [...document.querySelectorAll("li")].map((item) => item.textContent).join(",");

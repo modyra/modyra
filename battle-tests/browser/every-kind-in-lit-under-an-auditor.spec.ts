@@ -2,6 +2,7 @@ import type { LitHost } from "./host-api";
 import { readFileSync } from "node:fs";
 
 import { expect, test } from "@playwright/test";
+import { MDY_WIDGET_KINDS } from "@modyra/widgets";
 
 /**
  * Every widget kind, rendered by `@modyra/lit`, handed to the same auditor Plain gets.
@@ -31,10 +32,12 @@ import { expect, test } from "@playwright/test";
 
 const AXE = readFileSync("node_modules/axe-core/axe.min.js", "utf8");
 
-const KINDS = [
-  "text", "textarea", "email", "password", "number", "slider", "checkbox", "toggle", "select",
-  "radio", "multiselect", "segmented", "datepicker", "daterange", "timepicker", "file", "colors",
-];
+/**
+ * Read from the package rather than written out here. A list of kinds copied into a spec named "every
+ * kind" covers every kind only until there is a new one, and then says nothing about it while keeping
+ * its name.
+ */
+const KINDS = [...MDY_WIDGET_KINDS];
 
 async function auditStage(page) {
   await page.addScriptTag({ content: AXE });

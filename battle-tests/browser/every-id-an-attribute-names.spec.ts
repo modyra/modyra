@@ -17,6 +17,7 @@
  */
 
 import { expect, test } from "@playwright/test";
+import { MDY_WIDGET_KINDS } from "@modyra/widgets";
 
 const HOSTS = [
   { name: "plain", page: "/index.html", ready: "battleReady", api: "battle" },
@@ -24,10 +25,12 @@ const HOSTS = [
 ];
 
 /** Every kind a document may declare. */
-const KINDS = [
-  "text", "textarea", "email", "password", "number", "slider", "checkbox", "toggle", "select",
-  "radio", "multiselect", "segmented", "datepicker", "daterange", "timepicker", "file", "colors",
-];
+/**
+ * Read from the package rather than written out here. A list of kinds copied into a spec named "every
+ * kind" covers every kind only until there is a new one, and then says nothing about it while keeping
+ * its name.
+ */
+const KINDS = [...MDY_WIDGET_KINDS];
 
 /** The attributes whose value is one or more ids of other elements. */
 const POINTERS = [
@@ -123,7 +126,7 @@ for (const host of HOSTS) {
         ? button
         : page.locator(`[data-form="o-${kind}"] [role="combobox"]`).first();
       if (await trigger.count() === 0) continue;
-      await trigger.click({ timeout: 2000 }).catch(() => {});
+      await trigger.click({ timeout: 2000 }).catch(() => undefined);
       await page.waitForTimeout(250);
     }
 

@@ -5537,3 +5537,33 @@ depended on them, and the results already recorded stand.
 Worth keeping in view: this is the second time a hand-written copy of a published table has been the
 thing at fault rather than the code under test. The rule that follows is the one the repair applies —
 read the table, do not restate it.
+
+## The same defect, swept: eight copies of a published list
+
+The lit host's blanks were a hand-written copy of a published table that had drifted from it. Applying
+that finding to this suite rather than to Modyra: **eight files restated the seventeen field kinds,
+five of them in full, and not one imported the table.**
+
+```
+adversarial/dynamic-contract/a-document-that-declared-nothing.battle.test.mjs   17
+browser/a-control-nobody-named.spec.ts                                          17
+browser/every-id-an-attribute-names.spec.ts                                     17
+browser/every-kind-in-lit-under-an-auditor.spec.ts                              17
+browser/every-kind-under-an-auditor.spec.ts                                     17
+browser/a-field-that-cannot-look-wrong.spec.ts                                   9   (a subset, by intent)
+browser/a-star-on-a-field-nobody-must-fill.spec.ts                               8   (a subset, by intent)
+adversarial/lifecycle/server-capabilities.battle.test.mjs                        8   (a subset, by intent)
+```
+
+Three of those specs are named "every kind" or "every declared kind". A copied list covers every kind
+only until there is a new one, and then goes on saying so while covering all but it. The five full
+copies now read `MDY_WIDGET_KINDS`; the three subsets are deliberate filters and are left alone.
+
+Both tiers are unchanged by the rewiring — node 447/396/51, browser 71/28 — so nothing depended on the
+copies, and `npx eslint battle-tests` is back to exit 0 after thirteen `.catch(() => {})` handlers were
+given a body and one unused import was dropped.
+
+One of the five rewrites broke its file, and the lint caught it in the same pass. The array ended
+`] as const;` and a regex looking for `];` swallowed the opening of the next test — restored from git
+and redone by hand. Which is the third instance of this batch's rule, applied to the tool doing the
+applying: a pattern that matches most of the cases is not the same as reading what is there.

@@ -54,7 +54,7 @@ for (const host of HOSTS) {
       await page.waitForTimeout(140);
 
       const toggle = page.locator(`[data-form="${id}"] button`).first();
-      if (await toggle.count() > 0) await toggle.click({ timeout: 2000 }).catch(() => {});
+      if (await toggle.count() > 0) await toggle.click({ timeout: 2000 }).catch(() => undefined);
       await page.waitForTimeout(250);
 
       const found = await page.evaluate((roles) => {

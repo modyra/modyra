@@ -112,7 +112,7 @@ battle(
     nested.destroy();
 
     const empty = openForm();
-    empty.mutate(() => {});
+    empty.mutate(() => undefined);
     await settled();
     expectEqual(await undoSteps(empty), 0, {
       claimIds: ["PER-002"],
