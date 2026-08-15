@@ -23,6 +23,14 @@ one that stops answering between two keystrokes. `evaluateExpression` now applie
 refusal and the same length cap, and `validateExpression` reports both the way it already reports an
 unknown operator.
 
+An operator among the twelve with nothing to compare — `equals` with no operands, `and` with none to
+join, `not` with nothing to negate — is unreadable too and answers the same way. So is an expression
+that is not one at all: `null` and a bare string used to raise from inside whatever read the form
+last, the submit button included, and a `matches` pattern that does not compile did the same.
+
+An expression nested past the depth cap is **not** covered: that cap limits what a document may
+carry, not what a caller may evaluate.
+
 This reverses a documented default: an unreadable condition used to keep a section visible. A
 validation whose condition cannot be read still never fires; a section whose condition cannot be read
 now never shows. Recorded as
