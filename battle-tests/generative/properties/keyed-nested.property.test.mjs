@@ -412,12 +412,12 @@ battle(
       deepest = Math.max(deepest, outcome.rows);
       if (!outcome.divergence) continue;
 
-      const reduced = await shrink(operations, async (candidate) => {
+      const { minimized, attempts } = await shrink(operations, async (candidate) => {
         const attempt = await roundTrip(candidate);
         return attempt.refused === false && attempt.divergence !== null;
       });
 
-      const final = await roundTrip(reduced.operations);
+      const final = await roundTrip(minimized);
       throw new BattleBreak({
         claimIds: ["PER-001"],
         severity: "S0",
@@ -426,9 +426,9 @@ battle(
         search: {
           run,
           runs,
-          operations: reduced.operations,
-          minimizedTo: reduced.operations.length,
-          shrinkAttempts: reduced.attempts,
+          operations: minimized,
+          minimizedTo: minimized.length,
+          shrinkAttempts: attempts,
         },
       });
     }
