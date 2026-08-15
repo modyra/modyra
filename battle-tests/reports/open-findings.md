@@ -9,7 +9,7 @@ A twentieth, `generative/properties/history.property.test.mjs`, is a campaign ra
 draws a fresh seed each run and reaches the whole-write undo defect about four times in five. Its
 green is not evidence; the battle beside it is.
 
-The list is grouped by cause. Fifteen causes, twenty-two battles.
+The list is grouped by cause. Fifteen causes, twenty-three battles.
 
 ---
 
@@ -168,8 +168,13 @@ linear and the keyed one is not. Declaring one at a time is worse again — `ite
 is the alternative. Reads are fine: `getValue`, `submitValue`, a cell write, `keys()` and a single
 `remove` all scale.
 
-Nothing is asserted in milliseconds; both assertions are ratios, so a slower machine moves the
-numbers together and neither ratio moves.
+Nesting compounds it. Orders each holding lines, both levels written in bulk: 10×20 costs 25ms,
+25×20 costs 185ms, 50×20 costs 1151ms and 100×20 costs 8044ms — a hundred orders of twenty lines is
+eight seconds where reading them back is seven milliseconds, and four times the orders costs about
+ten times as much per order.
+
+Nothing is asserted in milliseconds; every assertion is a ratio, so a slower machine moves the
+numbers together and no ratio moves.
 
 ## 15. Reported without a repair path
 
