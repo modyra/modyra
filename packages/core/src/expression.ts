@@ -37,7 +37,11 @@ export type MdyExpressionOp =
   | "lengthAtLeast"
   | "lengthAtMost"
   | "greaterThan"
+  | "greaterThanOrEqual"
   | "lessThan"
+  | "lessThanOrEqual"
+  | "in"
+  | "notIn"
   | "matches"
   | "and"
   | "or"
@@ -75,7 +79,11 @@ const OPS: ReadonlySet<string> = new Set<MdyExpressionOp>([
   "lengthAtLeast",
   "lengthAtMost",
   "greaterThan",
+  "greaterThanOrEqual",
   "lessThan",
+  "lessThanOrEqual",
+  "in",
+  "notIn",
   "matches",
   "and",
   "or",
@@ -167,7 +175,11 @@ const ARITY_OF: Readonly<Record<MdyExpressionOp, number>> = Object.freeze({
   lengthAtLeast: 2,
   lengthAtMost: 2,
   greaterThan: 2,
+  greaterThanOrEqual: 2,
   lessThan: 2,
+  lessThanOrEqual: 2,
+  in: 2,
+  notIn: 2,
   matches: 2,
   and: 1,
   or: 1,
@@ -235,10 +247,23 @@ function evaluateAt(expr: MdyExpression, value: unknown, depth: number): boolean
       const target = av() as { length?: number } | null | undefined;
       return (target?.length ?? 0) <= (bv() as number);
     }
+    // The four comparisons and the two membership tests answer here exactly as they answer for a
+    // rule: one vocabulary, so a document writing `in` means the same thing whichever of the two
+    // shapes it writes it in. They arrived in the flat rule predicate first and the tree did not
+    // know them, which left four operators a document could write and nothing published could
+    // check.
     case "greaterThan":
-      return (av() as number) > (bv() as number);
+      return orderedComparison(av(), bv(), (order) => order > 0);
+    case "greaterThanOrEqual":
+      return orderedComparison(av(), bv(), (order) => order >= 0);
     case "lessThan":
-      return (av() as number) < (bv() as number);
+      return orderedComparison(av(), bv(), (order) => order < 0);
+    case "lessThanOrEqual":
+      return orderedComparison(av(), bv(), (order) => order <= 0);
+    case "in":
+      return membership(av(), bv());
+    case "notIn":
+      return !membership(av(), bv());
     case "matches": {
       // A pattern that does not compile raised from here, through whatever read the form last — the
       // submit button included. It decides nothing instead.
@@ -303,8 +328,12 @@ export function evaluateRuleCondition(
   switch (when.operator) {
     case "equals": return held === expected;
     case "notEquals": return held !== expected;
+    // A pair, and complements: `notIn` is exactly `in` negated. Answering `false` to both when the
+    // list is not one made the careful spelling — the negative, written to be safe — give the same
+    // answer as the positive. A document cannot reach this: the parser refuses a membership test
+    // whose value is not a list.
     case "in": return Array.isArray(expected) && expected.includes(held);
-    case "notIn": return Array.isArray(expected) && !expected.includes(held);
+    case "notIn": return !(Array.isArray(expected) && expected.includes(held));
     case "isEmpty": return isEmptyValue(held);
     case "isNotEmpty": return !isEmptyValue(held);
     case "greaterThan": return compareOrdered(held, expected, (order) => order > 0);
@@ -313,6 +342,16 @@ export function evaluateRuleCondition(
     case "lessThanOrEqual": return compareOrdered(held, expected, (order) => order <= 0);
     default: return false;
   }
+}
+
+/** Membership of a list, and nothing else: a test against something that is not one has no members. */
+function membership(held: unknown, expected: unknown): boolean {
+  return Array.isArray(expected) && expected.includes(held);
+}
+
+/** Two numbers or two strings, or no order at all. */
+function orderedComparison(held: unknown, expected: unknown, accept: (order: number) => boolean): boolean {
+  return compareOrdered(held, expected, accept);
 }
 
 /** Two numbers or two strings, or no order at all. */

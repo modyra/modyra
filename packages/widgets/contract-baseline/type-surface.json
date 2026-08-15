@@ -774,14 +774,18 @@
     "\"and\"",
     "\"equals\"",
     "\"greaterThan\"",
+    "\"greaterThanOrEqual\"",
+    "\"in\"",
     "\"isEmpty\"",
     "\"isNotEmpty\"",
     "\"lengthAtLeast\"",
     "\"lengthAtMost\"",
     "\"lessThan\"",
+    "\"lessThanOrEqual\"",
     "\"matches\"",
     "\"not\"",
     "\"notEquals\"",
+    "\"notIn\"",
     "\"or\""
   ],
   "MdyFieldConstraints": [

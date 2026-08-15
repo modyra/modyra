@@ -372,25 +372,32 @@ export function applyDynamicRules(
     else into.set(rule.target, [rule]);
   }
 
-  // `visible` and `enabled` say what must hold for the field to be there; `hidden` and `disabled`
-  // say what must hold for it to go. Read as one question — "is this field out?" — they are the same
-  // predicate and its negation, which is why they compose without a precedence rule between them.
-  const isOut = (rule: MdyDynamicRule, value: Record<string, unknown>): boolean => {
-    const holds = evaluateRuleCondition(rule.when, value);
-    return rule.effect === "visible" || rule.effect === "enabled" ? !holds : holds;
+  /**
+   * Whether the rules that name one field, taken together, leave it out.
+   *
+   * The two effects are not each other's negation once there is more than one rule. A positive rule
+   * is a **way in**: "show this for a business" and "show this for a charity" are alternatives, so
+   * any one of them holding is enough. A negative rule is a **veto**: "hide it while the account is
+   * closed" holds whatever else is true.
+   *
+   * Composing both sides as "off if any says off" reads the positives as conditions that must all
+   * hold — the opposite of what two of them mean — and a field with two `visible` rules is then
+   * shown to nobody. So the positives are `some` over *in*, the negatives are `some` over *out*, and
+   * a veto beats a way in.
+   */
+  const isOut = (own: readonly MdyDynamicRule[], value: Record<string, unknown>): boolean => {
+    const vetoed = own.some((rule) =>
+      (rule.effect === "hidden" || rule.effect === "disabled") && evaluateRuleCondition(rule.when, value));
+    if (vetoed) return true;
+    const ways = own.filter((rule) => rule.effect === "visible" || rule.effect === "enabled");
+    return ways.length > 0 && !ways.some((rule) => evaluateRuleCondition(rule.when, value));
   };
 
   for (const [target, own] of inactive) {
-    form.setInactive(target, form.reactivity.computed(() => {
-      const value = form.value();
-      return own.some((rule) => isOut(rule, value));
-    }));
+    form.setInactive(target, form.reactivity.computed(() => isOut(own, form.value())));
   }
   for (const [target, own] of disabled) {
-    form.setDisabled(target, form.reactivity.computed(() => {
-      const value = form.value();
-      return own.some((rule) => isOut(rule, value));
-    }));
+    form.setDisabled(target, form.reactivity.computed(() => isOut(own, form.value())));
   }
 }
 

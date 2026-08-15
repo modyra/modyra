@@ -675,6 +675,49 @@ function diagnosticCode(message: string): string {
     ?? MDY_DYNAMIC_INVALID_FIELD;
 }
 
+/**
+ * Why an operator cannot read the value it was given, or nothing.
+ *
+ * A rule's `value` is the one member the operator consults at runtime, and a mismatch there does not
+ * throw and does not warn: the condition simply answers the same thing forever. `in` against a
+ * string is a membership test with no members, and a field whose rule can never fire is
+ * indistinguishable from a field with no rule — except that the author believes they wrote one.
+ *
+ * The field's own kind is what makes the date check possible. Comparing dates is comparing strings,
+ * and that is only sound while every string is the same shape: `"2026-2-01"` sorts before
+ * `"2026-1-10"` because `"2"` sorts after `"1"` and the padding is what hides it.
+ */
+function ruleValueRefusal(operator: string, value: unknown, kind: string | undefined): string | null {
+  // A unary operator reads no value, so one written beside it is ignored rather than wrong — and a
+  // generator that emits the same shape for every operator writes one. Refused, it would make a
+  // document invalid for a member nothing consults.
+  if (operator === "isEmpty" || operator === "isNotEmpty") return null;
+  if (operator === "in" || operator === "notIn") {
+    return Array.isArray(value) ? null : `${operator} tests membership of a list, and "value" is ${describeRuleValue(value)}.`;
+  }
+  const compares = operator === "greaterThan" || operator === "greaterThanOrEqual"
+    || operator === "lessThan" || operator === "lessThanOrEqual";
+  if (compares) {
+    if (typeof value !== "number" && typeof value !== "string") {
+      return `${operator} orders two numbers or two strings, and "value" is ${describeRuleValue(value)}.`;
+    }
+    if (typeof value === "string" && DATE_KINDS.has(kind ?? "") && !isIsoDate(value)) {
+      return `${operator} on a ${kind} compares dates as text, so "value" must be a full ISO date (yyyy-MM-dd); "${value}" would order wrongly.`;
+    }
+  }
+  return null;
+}
+
+/** The kinds whose value is an ISO date, so a comparison against them is a date comparison. */
+const DATE_KINDS: ReadonlySet<string> = new Set(["datepicker", "daterange"]);
+
+function describeRuleValue(value: unknown): string {
+  if (value === undefined) return "missing";
+  if (value === null) return "null";
+  if (Array.isArray(value)) return "an array";
+  return `a ${typeof value}`;
+}
+
 function validFieldReference(name: unknown, names: ReadonlySet<string>): name is string {
   return typeof name === "string" && names.has(name);
 }
@@ -977,6 +1020,8 @@ export function parseDynamicForm(
     }
   }
   const names = new Set(fields.map((field) => field.name));
+  /** What each declared field holds, so a rule's value can be judged against the field it reads. */
+  const kindOf = new Map(fields.map((field) => [field.name, field.kind]));
   const layout: MdyDynamicLayoutNode[] = [];
   const rules: MdyDynamicRule[] = [];
   const validations: MdyDynamicValidation[] = [];
@@ -1017,6 +1062,14 @@ export function parseDynamicForm(
       const operators = ["equals", "notEquals", "in", "notIn", "isEmpty", "isNotEmpty", "greaterThan", "greaterThanOrEqual", "lessThan", "lessThanOrEqual"];
       if (!effects.includes(rule.effect ?? "") || !validFieldReference(rule.target, names) || !rule.when || !validFieldReference(rule.when.field, names) || !operators.includes(rule.when.operator)) {
         diagnostics.push({ code: "MDY_DYNAMIC_INVALID_RULE", severity: "error", path: `/rules/${index}`, message: "rule has an unsupported effect/operator or references an unknown field." });
+        continue;
+      }
+      // The part the operator actually reads. Four of a rule's five members were guarded and this
+      // one was not, so `greaterThan` against an object and `in` against a string parsed clean in
+      // strict mode and then answered `false` forever — a rule that cannot fire, reported as a rule.
+      const valueRefusal = ruleValueRefusal(rule.when.operator, rule.when.value, kindOf.get(rule.when.field));
+      if (valueRefusal) {
+        diagnostics.push({ code: "MDY_DYNAMIC_INVALID_RULE", severity: "error", path: `/rules/${index}/when/value`, message: valueRefusal });
         continue;
       }
       rules.push(raw as MdyDynamicRule);
