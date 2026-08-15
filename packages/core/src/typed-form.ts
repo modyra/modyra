@@ -480,7 +480,22 @@ export function createForm<S extends MdyFormSchema>(
   schema: S,
   options?: MdyCoreFormOptions<MdyFormValue<S>>,
 ): MdyTypedForm<S> {
+  // A schema names the fields a form has, so something with no names is not one. Left unchecked, a
+  // string or an array reached `Object.entries` and threw a `TypeError` naming neither the argument
+  // nor this call — and a number or a boolean built a form with no fields at all, which reported
+  // itself valid and submittable. The second is the worse half: nothing to catch, nothing to read.
+  assertFormSchema(schema, "createForm");
   return new MdyTypedForm(schema, options);
+}
+
+/** Refuses anything that cannot name fields, where a schema arrives. */
+export function assertFormSchema(schema: unknown, method: string): asserts schema is MdyFormSchema {
+  if (typeof schema === "object" && schema !== null && !Array.isArray(schema)) return;
+  throw new Error(
+    `[modyra] ${method} takes a schema naming the form's fields, received ${
+      schema === null ? "null" : Array.isArray(schema) ? "an array" : `a ${typeof schema}`
+    }. A schema is an object: { email: field(""), … }.`,
+  );
 }
 
 // ─── Typed form ───────────────────────────────────────────────────────────────

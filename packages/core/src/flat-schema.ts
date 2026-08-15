@@ -42,6 +42,16 @@ export function buildFlatFormSchema(
   fields: ReadonlyArray<MdyDynamicField>,
   collections: ReadonlyArray<MdyDynamicCollection> = [],
 ): MdyFormSchema {
+  // A list of fields, or nothing this can read. Without the check a string reached `.length` and a
+  // number was iterated, each producing a `TypeError` naming an internal — three different mistakes
+  // answered by one sentence a consumer cannot tell from a defect in this library.
+  if (!Array.isArray(fields)) {
+    throw new Error(
+      `[modyra] buildFlatFormSchema takes a list of fields, received ${
+        fields === null ? "null" : `a ${typeof fields}`
+      }.`,
+    );
+  }
   // Every name here becomes part of a schema, so the rules a name has to satisfy are checked where
   // it is read — not left to surface as a mismatched shape on the first read.
   assertSafeDynamicFieldNames(fields);
