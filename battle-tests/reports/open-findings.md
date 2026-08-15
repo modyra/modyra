@@ -2000,3 +2000,56 @@ Both controls are there because the two obvious repairs each break one of them: 
 accept any value breaks the guard, and refusing an empty list at declaration breaks the select whose
 choices arrive later. What is left is the sentence — name the list, or say instead that there is
 nothing to choose from yet.
+
+## Harness debt: what the generative campaigns can never generate
+
+Not a finding about Modyra. A finding about **this suite's strongest evidence**, and it belongs in the
+register because it changes what that evidence means.
+
+Seven campaigns run green at **2000 runs across three fixed seeds — 42,000 runs**, every one
+comparing the engine against an independently written reference model. What that sentence hides:
+
+```
+records campaign, 3000 sequences, 36,000 operations generated
+
+record.upsert 27.4%   field.set 13.9%   mount 11.1%   record.remove 9.4%   unmount 8.2%
+record.rename 6.3%    record.patch 6.1%  field.dirty 3.6%  field.disable 3.5%
+field.touch 3.4%      record.setAll 2.8% reset 2.6%   field.enable 1.7%
+
+never generated: submit  draft.save  draft.restore  destroy  async.resolve  async.reject
+                 observe  flush  undo  redo  array.*
+```
+
+`generateOperation`'s menu has twenty entries and **no entry at all** for `submit`, `draft.save`,
+`draft.restore`, `destroy`, `async.*`, `observe` or `flush`. No seed and no run count can produce
+them. `undo`/`redo` appear only where a campaign passes `withHistory`, and `array.*` only in the
+positional campaigns.
+
+**What the 42,000 runs do cover, corrected after measuring rather than assumed.** The first reading of
+this was that submission is untested by the campaigns, and that was wrong: the reference model
+computes `submitted()` and every campaign compares it **after every operation** — roughly half a
+million comparisons of what a submit would send. What is missing is the `submit()` *call* as a state
+transition, and the draft, destroy and async transitions.
+
+**Why it was not simply closed.** `draft.restore` is the one worth having — a restore rebuilds
+structure, which is where several findings in this register live — and the interpreter refuses it by
+design: `throw new Error("draft.restore requires a draft-aware context")`. Making a campaign
+draft-aware means rebuilding the form from storage mid-sequence, which changes the shape of a run.
+That is a real piece of work, not a menu entry, and doing it badly would produce green runs that mean
+even less than these.
+
+Adding `submit` to the menu was measured and rejected as near-worthless *here*: the records spec
+declares no rules, so the form is always valid, and an accepted submit changes no state the campaign
+compares. It would be worth having on a campaign whose spec has rules.
+
+**What came out of measuring it** is `adversarial/submission/what-a-refused-submit-reveals.battle.test.mjs`
+— green, holding behaviour nothing else asserted:
+
+```
+a refused submit    handler does not run, EVERY field becomes touched at every depth
+                    including a collection cell, submitCount stays 0
+an accepted submit  handler runs, NOTHING is touched, submitCount becomes 1
+```
+
+The first is why a refused submit explains itself instead of the button appearing to do nothing; the
+second is why a successful one leaves the page alone. Neither was held anywhere.
