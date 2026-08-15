@@ -978,6 +978,7 @@
     "hasDraft: MdySignal<boolean>",
     "markAllTouched-> returns: void",
     "mutate(0) fn: () => void,-> returns: void",
+    "orderRowsUnder(0) prefix: string,(1) order: ReadonlyArray<string>,-> returns: void",
     "ownField(0) name: string,-> returns: void",
     "patchValue(0) partial: Partial<Record<string, unknown>>,-> returns: void",
     "peekField(0) name: string,-> returns: MdyFieldRef<unknown> | null",

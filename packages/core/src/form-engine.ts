@@ -829,6 +829,40 @@ export class MdyFormEngine
     }
   }
 
+  /**
+   * Re-places the fields under `prefix` so that the row segment of each follows `order`.
+   *
+   * A row's fields are registered when the row is declared, so the flat value reads them in the
+   * order the rows arrived. A row that leaves one key and arrives at another is registered again and
+   * would land last — the handle would say it is where it was and the value would say it is at the
+   * bottom, about the same row at the same moment. Fields outside the prefix do not move, and the
+   * slots the collection already occupies are the slots it keeps.
+   */
+  orderRowsUnder(prefix: string, order: ReadonlyArray<string>): void {
+    const rank = new Map(order.map((key, index) => [key, index]));
+    const rowOf = (name: string): number =>
+      rank.get(name.slice(prefix.length + 1).split(".")[0] ?? "") ?? Number.MAX_SAFE_INTEGER;
+    const under = [...this._fields.keys()].filter(name => name.startsWith(`${prefix}.`));
+    if (under.length < 2) return;
+    // Stable, so what a row holds keeps the order it was registered in.
+    const sorted = [...under].sort((a, b) => rowOf(a) - rowOf(b));
+    if (sorted.every((name, index) => name === under[index])) return;
+
+    const queue = sorted[Symbol.iterator]();
+    const placed = new Map<string, FieldRecord>();
+    for (const [name, rec] of this._fields) {
+      if (!name.startsWith(`${prefix}.`)) {
+        placed.set(name, rec);
+        continue;
+      }
+      const next = queue.next().value as string;
+      placed.set(next, this._fields.get(next)!);
+    }
+    this._fields.clear();
+    for (const [name, rec] of placed) this._fields.set(name, rec);
+    this._rx.untracked(() => this._fieldNames.set([...placed.keys()]));
+  }
+
   /** Releases a path's binding and, where the field is there, what it was saying. */
   clearBindings(name: string): void {
     this._bindings.delete(name);

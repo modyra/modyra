@@ -73,6 +73,7 @@ absent section reads as an oversight, and "no security impact" is a finding.
 - [ADR 0055: A runtime that cannot recompute is not the one to run on](0055-a-runtime-that-cannot-recompute-is-not-the-one-to-run-on.md) — Solid's server build freezes every derived value and reported an invalid form as valid; the adapter probes the graph and falls back to one that answers
 - [ADR 0056: A project file does not decide what the generated module does](0056-a-project-file-does-not-decide-what-the-generated-module-does.md) — an operand outside the expression vocabulary was printed unquoted into generated source; refused at the compiler and reported where the project is read
 - [ADR 0057: An argument is refused where it arrives](0057-an-argument-is-refused-where-it-arrives.md) — seven public entry points took a value they could not use and left the form to fail later; the reactive setters, the whole-value write and the initial are checked at the call
+- [ADR 0058: A rename moves a key, not a row](0058-a-rename-moves-a-key-not-a-row.md) — a renamed row was appended, and the value and the handle kept two different orders for one list
 
 ## Security-relevant records
 

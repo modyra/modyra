@@ -46,6 +46,13 @@ export interface MdyCollectionHost<TBooleanSignal = MdySignal<boolean>>
    * {@link import("../form-engine.js").MdyFormEngine.endField}.
    */
   endField(name: string): void;
+  /**
+   * Places the fields under a collection's path in its rows' order — see
+   * {@link import("../form-engine.js").MdyFormEngine.orderRowsUnder}. A keyed collection calls it
+   * when a row changes identity, so the value and the handle answer the same order for the same
+   * list.
+   */
+  orderRowsUnder(prefix: string, order: ReadonlyArray<string>): void;
   /** Releases a path's binding: the row that held it has ended. */
   clearBindings(name: string): void;
   /** The errors attributed to a path, including the form-level ones that name it. */

@@ -79,6 +79,20 @@ function hostDouble(rx) {
       for (const [to, binding] of carried) bindings.set(to, binding);
     },
     clearBindings: (name) => { note("clearBindings", name); bindings.delete(name); },
+    // The host holds the fields in an order, and a keyed collection is what decides the order of the
+    // ones under its path — see MdyCollectionHost. The double keeps a Map for the same reason the
+    // engine does: a value read out of it reads the rows in this order.
+    orderRowsUnder: (prefix, order) => {
+      note("orderRowsUnder", prefix);
+      const rank = new Map(order.map((key, index) => [key, index]));
+      const under = [...fields.keys()].filter((name) => name.startsWith(`${prefix}.`));
+      const sorted = [...under].sort((a, b) =>
+        (rank.get(a.slice(prefix.length + 1).split(".")[0]) ?? Infinity) -
+        (rank.get(b.slice(prefix.length + 1).split(".")[0]) ?? Infinity));
+      const held = new Map(sorted.map((name) => [name, fields.get(name)]));
+      for (const name of sorted) fields.delete(name);
+      for (const [name, ref] of held) fields.set(name, ref);
+    },
 
     peekField: (name) => fields.get(name) ?? null,
     getField: (name) => refFor(name),
