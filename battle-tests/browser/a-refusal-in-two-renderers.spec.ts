@@ -153,3 +153,40 @@ for (const host of HOSTS) {
     expect(swallowed, JSON.stringify(swallowed, null, 1)).toEqual([]);
   });
 }
+
+for (const host of HOSTS) {
+  test(`${host.name}: every option a document declares is one a person can choose`, async ({ page }) => {
+    // Where the two renderers differ, and the difference is the fix. Lit renders native <option>
+    // elements, which need no id; Plain builds a listbox whose option ids come from the option's
+    // value, so two options sharing one value collide and one is never rendered.
+    await page.goto(host.page);
+    await page.waitForFunction((flag) => (window as never as Record<string, boolean>)[flag] === true, host.ready);
+
+    const options = [
+      { value: "pro", label: "Pro monthly" },
+      { value: "pro", label: "Pro yearly" },
+      { value: "lite", label: "Lite" },
+    ];
+    await page.evaluate(
+      ({ api, given }) => {
+        const battle = (window as never as Record<string, Record<string, Function>>)[api];
+        return battle.mountFields("opts", [{ name: "s", kind: "select", label: "Plan", options: given }]);
+      },
+      { api: host.api, given: options },
+    );
+    await page.waitForTimeout(250);
+
+    // Open it if it needs opening — a native select lists its options without being asked.
+    const trigger = page.locator('[data-form="opts"] [role="combobox"]');
+    if ((await trigger.count()) > 0) {
+      await trigger.first().click();
+      await page.waitForTimeout(220);
+    }
+
+    const rendered = await page.evaluate(() =>
+      [...document.querySelectorAll('[role="option"], [data-form="opts"] option')].map((each) => each.textContent?.trim()),
+    );
+
+    expect(rendered, JSON.stringify(rendered)).toEqual(["Pro monthly", "Pro yearly", "Lite"]);
+  });
+}
