@@ -230,6 +230,22 @@ window.battle = {
     mounted.get(id).handle.form.setReadonly(path, () => true);
   },
 
+  /**
+   * Change the value from outside, the way an application does.
+   *
+   * Everything else this host offers drives the page and reads the model. This is the other
+   * direction — a value arriving from a fetch, a reset, a patch — and a control that does not follow
+   * it shows the user something the form no longer holds.
+   */
+  setValue(id, patch) {
+    mounted.get(id).handle.form.patchValue(patch);
+  },
+
+  /** Put the form back where it started. */
+  reset(id) {
+    mounted.get(id).handle.form.reset();
+  },
+
   valueOf(id) {
     return mounted.get(id).handle.form.getValue();
   },

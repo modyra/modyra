@@ -8427,3 +8427,33 @@ holding on a page.
 
 What the page-level run added is finding 150 above: the second layer refuses it and, in one renderer,
 does not say why.
+
+### Checked and clean: the model changing under the page
+
+`browser/the-model-changing-under-the-page.spec.ts` (4 green, both renderers).
+
+Almost every browser battle in this suite drives the page and reads the model. The other direction is
+the one an application uses most — a fetch answers, a related field is chosen, a reset is pressed, a
+draft is restored — and it was barely tested at all.
+
+```
+sixteen kinds, each given a value it does not start with
+   the model takes it, and something a person could see changes    both renderers, all sixteen
+reset after a patch
+   text, checkbox and datepicker all go back to where they started  both renderers
+```
+
+A control that does not follow is the worst kind of stale: the page and the form disagree about one
+field and only the page is visible, so the user reads one value and submits another.
+
+The check is loose about *how* a kind shows its value — a chip, a checked box, a swatch — and strict
+about two things: the model takes what it was given, and something visible changed. Pinning the exact
+rendering would pin an implementation; pinning "nothing changed" catches the defect.
+
+`file` is not swept: a File cannot be constructed from a value in the page.
+
+**Two heuristics of mine that had to go first.** Matching the shown text against the value set reported
+three kinds as stale that were not: a password shows `s3cret` and no pattern of mine matched it, a
+custom listbox keeps its choice in the trigger rather than an input, and `file` was handed its own
+empty value. The measure that survives is *did anything visible change*, which needs no table of how
+each kind draws itself.
