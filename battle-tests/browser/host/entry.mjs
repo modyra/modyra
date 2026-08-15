@@ -116,14 +116,14 @@ window.battle = {
    * exactly when somebody presses again — so the question "does this submit twice" can only be asked
    * of an action that is still running.
    */
-  mountSlowSubmit(id, fields, ms) {
+  mountSlowSubmit(id, fields, ms, errors = null) {
     const host = document.createElement("section");
     host.dataset.form = id;
     document.querySelector("#stage").append(host);
     const submitted = [];
     try {
       const handle = mountMdyForm(host, fields, {
-        onSubmit: recording(submitted, () => new Promise((resolve) => setTimeout(() => resolve(null), ms))),
+        onSubmit: recording(submitted, () => new Promise((resolve) => setTimeout(() => resolve(errors), ms))),
       });
       mounted.set(id, { handle, host, submitted });
       return { mounted: true };

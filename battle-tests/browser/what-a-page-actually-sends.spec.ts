@@ -319,3 +319,72 @@ test("a form in the middle of submitting does not send again, and does once it i
   );
   expect(deliberate.length, JSON.stringify(deliberate)).toBe(2);
 });
+
+test("an answer that arrives after its form is gone reaches nothing, including its replacement", async ({ page }) => {
+  const FIELDS = [{ name: "a", kind: "text", label: "A" }];
+  const ANSWER = [{ path: "a", message: "FROM THE OLD FORM" }];
+
+  // The control first: left standing, this answer is visible. Without it, a clean replacement below
+  // would only mean the answer never showed anywhere.
+  await page.evaluate(
+    ({ mountId, fields, answer }) => (window as never as {
+      battle: { mountSlowSubmit(id: string, f: unknown[], ms: number, e: unknown): { mounted: boolean } };
+    }).battle.mountSlowSubmit(mountId, fields as never, 400, answer),
+    { mountId: "standing", fields: FIELDS, answer: ANSWER },
+  );
+  await page.waitForTimeout(220);
+  await page.locator('[data-form="standing"] input').fill("old");
+  await page.waitForTimeout(150);
+  await page.locator('[data-form="standing"] button').last().click();
+  await page.waitForTimeout(900);
+
+  const standing = await page.evaluate(() => ({
+    errors: (window as never as { battle: { lastSubmitErrorsOf(id: string): unknown[] } }).battle.lastSubmitErrorsOf("standing"),
+    onThePage: (document.querySelector('[data-form="standing"]')?.textContent ?? "").replace(/\s+/g, " "),
+  }));
+  expect(standing.errors, JSON.stringify(standing)).toEqual(ANSWER);
+  expect(standing.onThePage, JSON.stringify(standing)).toContain("FROM THE OLD FORM");
+
+  // Now the same thing, with the form torn down and replaced before the answer lands — a route change
+  // while a submission is in the air.
+  const id = "replaced";
+  await page.evaluate(
+    ({ mountId, fields, answer }) => (window as never as {
+      battle: { mountSlowSubmit(id: string, f: unknown[], ms: number, e: unknown): { mounted: boolean } };
+    }).battle.mountSlowSubmit(mountId, fields as never, 700, answer),
+    { mountId: id, fields: FIELDS, answer: ANSWER },
+  );
+  await page.waitForTimeout(220);
+  await page.locator(`[data-form="${id}"] input`).fill("old");
+  await page.waitForTimeout(150);
+  await page.locator(`[data-form="${id}"] button`).last().click();
+  await page.waitForTimeout(170);
+
+  await page.evaluate(
+    (mountId) => (window as never as { battle: { dispose(id: string): void } }).battle.dispose(mountId),
+    id,
+  );
+  await page.evaluate(
+    ({ mountId, fields }) => (window as never as {
+      battle: { mountFields(id: string, f: unknown[], o: unknown): { mounted: boolean } };
+    }).battle.mountFields(mountId, fields as never, {}),
+    { mountId: id, fields: FIELDS },
+  );
+  await page.waitForTimeout(220);
+  await page.locator(`[data-form="${id}"] input`).fill("new");
+
+  // The old answer lands in here.
+  await page.waitForTimeout(950);
+
+  const replacement = await page.evaluate((mountId) => ({
+    value: (window as never as { battle: { valueOf(id: string): unknown } }).battle.valueOf(mountId),
+    errors: (window as never as { battle: { lastSubmitErrorsOf(id: string): unknown[] } }).battle.lastSubmitErrorsOf(mountId),
+    onThePage: (document.querySelector(`[data-form="${mountId}"]`)?.textContent ?? "").replace(/\s+/g, " "),
+    sent: (window as never as { battle: { submittedBy(id: string): unknown[] } }).battle.submittedBy(mountId),
+  }), id);
+
+  expect(replacement.value, JSON.stringify(replacement)).toEqual({ a: "new" });
+  expect(replacement.errors, JSON.stringify(replacement)).toEqual([]);
+  expect(replacement.onThePage, JSON.stringify(replacement)).not.toContain("FROM THE OLD FORM");
+  expect(replacement.sent, JSON.stringify(replacement)).toEqual([]);
+});
