@@ -5739,9 +5739,23 @@ wildcard spelling anywhere in the dynamic module — the only `*` in it is regex
 collection has no concrete path until its parent has rows. `rows.a.lines` is a path; `rows.*.lines`
 is not a thing the contract can say.
 
-So the flat representation cannot express a nested collection, for exactly the reason it cannot
-express a cell, and DYN-002's promise covers what flattening can express. The ambiguity the earlier
-note recorded resolves in favour of the design.
+So the flat representation names a collection where it has a path, for exactly the reason it does not
+name a cell that has no row. And the rule is not a limitation — **give the parent rows and the whole
+thing appears**:
+
+```
+no initial rows      collections: rows
+two initial rows     collections: rows, rows.0.lines, rows.1.lines
+a row with a row     fields: rows.0.c, rows.0.lines.0.c
+                     collections: rows, rows.0.lines
+```
+
+The round trip is exact where it can be taken. `differential/schemas/two-ways-to-build-one-shape.test.mjs`
+— 1 green — builds five documents twice, from the tree and from the flat pair the tree flattens to,
+and compares the values: a flat group, a nested group, an array with rows, a record with keys, and an
+array inside an array's row. All five agree, the deepest one down to
+`{"rows":[{"c":"a","lines":[{"c":"x"}]}]}`. DYN-002 holds at depth, and the ambiguity the earlier note
+recorded resolves in favour of the design.
 
 Two instrument errors on the way, both from passing the wrong argument: `flattenDynamicForm(schema)`
 takes the group node and was handed the whole document, which returned a phantom
