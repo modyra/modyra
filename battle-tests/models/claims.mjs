@@ -481,6 +481,17 @@ const CLAIMS = [
     ],
   },
   {
+    id: "UI-008",
+    title: "A widget answers for any value the model may legitimately hold, including one already judged invalid.",
+    area: "widgets",
+    severity: "S1",
+    publicEvidence: [
+      "@modyra/core MdyTypedForm.patchValue — a public path that admits a value of another shape",
+      "@modyra/core MDY_VALUE_CONTRACTS — a wrong shape is a verdict the form reports, not a write it refuses",
+      "@modyra/widgets optionsWithUnrecognizedValue — a value the option list does not know is shown, not thrown on",
+    ],
+  },
+  {
     id: "STU-001",
     title: "Generated code compiles.",
     area: "studio",

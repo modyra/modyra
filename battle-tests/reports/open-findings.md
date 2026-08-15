@@ -8497,3 +8497,113 @@ the shape of that inconsistency at the boundary.
   screen, in the control that can show it.
 - **A slider past its maximum** shows the maximum and is marked invalid, in both. The control cannot
   draw 999 on a track that ends at 10, and it says so rather than pretending.
+
+## 152. A control that stops at a value it was given
+
+**S1 · Modyra bug · `@modyra/widgets` (shared) and `@modyra/lit` (one kind more)**
+Claims: UI-008 (registered for this), VAL-003
+Battle: `battle-tests/adversarial/widgets/a-value-the-model-was-allowed-to-hold.battle.test.mjs` (node,
+reduced) · `battle-tests/browser/a-control-that-stops-at-a-value-it-was-given.spec.ts` (consequence)
+
+A wrong shape is a **verdict** here, not a refused write. `patchValue` is public and takes whatever an
+application's backend hands it; `MDY_VALUE_CONTRACTS` is enforced by validating the value, so a field
+holding the wrong shape is in the model, invalid, with `canSubmit` false. That layering is deliberate
+and something already leans on it: `adversarial/persistence/draft-shape-gate.battle.test.mjs` asserts
+the draft gate accepts anything JSON against a null initial *because* the verdict below refuses it —
+"not the gate, the verdict".
+
+The verdict only reaches anyone while the control is still drawing. Two of them throw on the way:
+
+```
+plain  multiselect  "not a list" | 42 | {}   [modyra] Uncaught error in effect:
+                                             TypeError: values.filter is not a function
+                                               at optionsWithUnrecognizedValues
+                                               at VanillaComputed._fn → VanillaEffect._run
+lit    multiselect  "not a list" | 42 | {}   pageerror: values.filter is not a function
+lit    file         "a name"     | 42 | {}   pageerror: files.map is not a function
+```
+
+The throw is inside a reactive effect, so the effect dies and the page keeps the state from **before**
+the write. What the user is left looking at:
+
+```
+plain multiselect   engine: "This field holds option[]", canSubmit false
+                    page:   ul#x__errors present and EMPTY, button aria-invalid="false"
+lit   multiselect   engine: same                page: no error region, aria-invalid="false"
+lit   file          engine: "This field holds file[]"    page: no error region, aria-invalid="false"
+```
+
+A form that will not send, a field that says nothing is wrong, and nothing to read or fix.
+
+### Blast radius: exactly the two collection-valued kinds
+
+Seventeen kinds swept with three wrong shapes each, both renderers. Everything else is clean —
+`number`, `text`, `textarea`, `email`, `password`, `slider`, `checkbox`, `toggle`, `select`, `radio`,
+`segmented`, `datepicker`, `daterange`, `timepicker`, `colors` all draw and report. Only `option[]`
+and `file[]` throw.
+
+### The contrast is the argument
+
+`optionsWithUnrecognizedValues` (multiselect) and `optionsWithUnrecognizedValue` (select) are
+neighbouring published functions answering the same question — what to show when the value is not
+among the options — for two kinds:
+
+```
+                                  "not a list"   42       {}       true     null    undefined
+optionsWithUnrecognizedValue      answers        answers  answers  answers  answers answers
+optionsWithUnrecognizedValues     THROWS         THROWS   THROWS   THROWS   answers answers
+```
+
+The behaviour asserted is not invented for the occasion: it is what the singular one already does. The
+plural already handles `null` and `undefined`, so it is not a function that demands an array — it is
+one hardened against emptiness and not against shape.
+
+`file` has its control in the other renderer: **plain's file field survives the same value**, renders,
+and shows `This field holds file[]`. Lit's throws. That test is the one green of four.
+
+### Controls run
+
+- The same field, `required` and empty, submitted: marks itself and names the problem — in **all four**
+  cases. So "says nothing" is a silence, not an inability.
+- The premise asserted separately: the model holds the value and `canSubmit` is false. Without that
+  there would be no verdict for the page to fail to show.
+
+### Checked and clean, in the same run
+
+- **The draft door does not reach this.** A legitimate draft written by the engine, tampered in
+  `localStorage` to `"not a list"`, through a real browser reload: the value was **refused** and the
+  model came back `[]`. A multiselect's initial is an array, so `draftShapeMatches` has a shape to
+  compare against and the gate holds. The reachable door is the application's own `patchValue`.
+- **Neither kind is structurally silent.** Both render an error region and carry `aria-invalid` when
+  a rule they do enforce fires, in both renderers.
+- **Lit withholding the message until a submit attempt** is finding 150, not this. After a submit
+  attempt lit's `number` and `text` show their shape message; `multiselect` and `file` still do not,
+  because the control is no longer drawing.
+
+### One shape of mistake, in two places
+
+Both throw sites guard **emptiness** and nothing guards **shape**:
+
+```
+@modyra/widgets  options-reconciliation   answers for null and undefined, throws on any other non-array
+@modyra/lit      file-field               const files: readonly File[] = current ?? []   → files.map(…)
+```
+
+`?? []` covers exactly the two values the plural projection already covers, and misses exactly the
+ones it misses. The code that gets it right goes through something that normalises instead: plain's
+file field reads `selected()` rather than the raw value, and the singular option projection answers
+for every shape it is handed.
+
+### Verified against the in-flight tree
+
+These measurements were taken with 43 files modified in the shared working tree (widgets, plain, lit,
+angular). Checked before reporting:
+
+- `packages/widgets/src/options-reconciliation.ts` and `field/multiselect-field-controller.ts` — the
+  node reduction's whole path — are **not** modified.
+- The three files that are modified and that this finding measures — lit's `file-field.ts` and
+  `multiselect-field.ts`, plain's `file-field.ts` — are modified **only** for read-only affordance
+  (findings 144/145's repair). `git diff -U0` on lit's `file-field.ts` touches the `files.map` line
+  zero times.
+
+So the finding is about HEAD, not about work in progress.

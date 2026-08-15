@@ -221,6 +221,20 @@ window.battleLit = {
     mounted.get(id).form.reset();
   },
 
+  /**
+   * What the engine says is wrong with one field, and whether the form may be sent.
+   *
+   * The page is a projection of this. Asking both in the same breath is what makes a verdict the
+   * model holds but the page never shows into a measurable difference rather than an impression.
+   */
+  errorsOf(id, path) {
+    return mounted.get(id).form.errorsFor(path)();
+  },
+
+  canSubmitOf(id) {
+    return mounted.get(id).form.state.canSubmit();
+  },
+
   valueOf(id) {
     return mounted.get(id).form.getValue();
   },
