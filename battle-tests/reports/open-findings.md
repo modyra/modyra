@@ -9789,3 +9789,49 @@ it pins five things rather than one.
 One instrument error on the way: the first dependency probe read `ctx.formValue.country`, which does
 not exist, and reported `null`. The context offers `ctx.form.value()` and `ctx.form.fieldValue(path)`.
 Reading the type rather than guessing is what turned a false finding into a clean one.
+
+## 170. An undo of something nobody did
+
+**S2 · Modyra bug · `@modyra/core`** (severity stated below the claims' own, see below)
+Claims: PER-002, PER-001
+Battle: `battle-tests/adversarial/persistence/an-undo-of-something-nobody-did.battle.test.mjs`
+— reported as a todo, not enforced
+
+Two behaviours meet, and each is right on its own. A draft follows the model, so whatever the form
+holds is what is saved. History starts at the value the form was built with, so the first undo returns
+there.
+
+Together they make the **restore itself undoable**:
+
+```
+session one    types "a long answer the user typed", draft saved
+session two    opens                  value restored, canUndo = true   ← before the user did anything
+               one undo               value ""      and the draft is rewritten to ""
+               redo                    value back    — in memory only
+```
+
+`redo` is the whole of the recovery and it lives in the tab. Close it after the undo and the draft is
+what the undo left.
+
+### The control
+
+A form with **no** draft reports `canUndo` false when it opens. So this is the restore being recorded
+as an edit, not history being wrong about a fresh form.
+
+### Severity, stated deliberately below the claim's
+
+PER-002 is registered S1 and this is filed at S2. The structural semantics of undo and redo are not
+broken — every step does exactly what it says, and the value is recoverable for as long as the tab is
+open. What is wrong is that the first thing offered for undo is something the user never did, and
+taking that offer costs them a draft. It is a real loss reachable by one ordinary keystroke, and it is
+not the invariant PER-002 is about.
+
+### Checked and clean, in the same run
+
+- **Undo and redo across a live rule.** With a rule switching a field off, undo restores the value and
+  the rule re-evaluates from it: the field comes back into play and back into the payload; a second
+  undo clears the cell; redo puts it back. The rule is a computation over whatever the history
+  restored, which is what it should be.
+- **An undo reaches the draft.** After three edits and an undo, the draft holds the undone value — the
+  draft follows the model rather than the last edit, which is what makes the loss above possible and
+  is also what a consumer would want everywhere else.
