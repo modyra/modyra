@@ -1463,3 +1463,26 @@ Lit host built its schema from initial values and dropped the document's validat
 consumer's document does. Every earlier Lit measurement that did not involve validators is unaffected;
 the required-state audit is the one that was wrong, and it is the one that found finding 33 in Lit once
 it was right.
+
+## 59. One sentence, two collection kinds
+
+`adversarial/collections/one-sentence-two-collections.battle.test.mjs` — 1 red, 1 green.
+
+`patch` is documented as "a deeply-typed variant of `patchValue` for nested groups" and says nothing
+about what it does to a collection.
+
+| written | keyed map | positional list |
+| --- | --- | --- |
+| collection omitted | unchanged | unchanged |
+| `{ a: { code } }` / `[{ sku }]` | merges into row `a` | **replaces the whole list** |
+| `{}` / `[]` | **nothing changes** | **emptied** |
+
+Both readings are defensible for their own kind: a map has keys to merge by, a list has only the
+positions it describes. That is not the finding. The finding is that `{}` and `[]` are the same
+sentence — *this collection, holding nothing* — and mean opposite things, with the contract silent.
+
+A consumer who learns the behaviour from a keyed map and writes the same shape for a list deletes
+their rows.
+
+Omission is the same for both and is asserted first, so this is about naming a collection with an
+empty value rather than about patching.
