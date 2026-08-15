@@ -17,11 +17,18 @@
  * button that lights up for a step that does not exist, or stays dark over one that does, is a
  * capability the consumer cannot reach and cannot be told about.
  *
- * It is red on its first find: undoing an operation that ended several rows restores them one per
- * undo instead of restoring the collection, which
- * `adversarial/persistence/undo-of-a-whole-write.battle.test.mjs` isolates to four operations with
- * its single-row control beside it. This campaign stays as it is rather than routing around that,
- * because a model taught to expect the defect would stop being the independent half.
+ * What it found first — undoing an operation that ended several rows restores them one per undo
+ * instead of restoring the collection — is isolated to four operations, with its single-row control
+ * beside it, in `adversarial/persistence/undo-of-a-whole-write.battle.test.mjs`. That is where the
+ * defect is pinned; this is where it was found, and the two jobs are not the same one.
+ *
+ * At the default run count and an undrawn seed this campaign finds it about four times in five:
+ * a campaign is a search, so whether a particular run reaches a particular sequence is a matter of
+ * what it drew. Reading its green as "the defect is gone" is the mistake that shape invites — the
+ * battle beside it is the one that answers that question every time.
+ *
+ * It stays as it is rather than routing around the defect, because a model taught to expect it would
+ * stop being the independent half.
  */
 
 import { battle } from "../../harness/battle.mjs";
