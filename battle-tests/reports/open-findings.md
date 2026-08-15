@@ -4199,3 +4199,56 @@ state, so the widget is unusable and the tab is pegged.
 Every plausible repair leaves the battle green: memoizing on the config's contents rather than its
 identity, holding the controller in a ref, or subscribing without setting state on subscribe. The
 bound is 25 renders against a settled 2, so a repair that costs a few extra renders still passes.
+
+## Checked and clean: one name, two packages, and what each refuses
+
+`@modyra/react` promises its consumer core's whole surface — `export * from "@modyra/core"` — and one
+name in it means something else. `buildDynamicFormSchema` from `@modyra/core` takes a document's root
+group node and rebuilds collections; from `@modyra/react` it is `buildFlatFormSchema` re-exported
+under that name, taking a flat field list, and by its own comment it "never could" rebuild
+collections. The alias is deliberate — "re-exported under the names this package has always
+published, so a consumer's import keeps working".
+
+The failure mode is what matters, and it is the good one. Both refuse the other's argument by name,
+where it arrives, with the shape they want:
+
+```
+core,  given a flat list  → [modyra] buildDynamicFormSchema takes a document's root group node,
+                            received an array.
+react, given a document   → [modyra] buildFlatFormSchema takes a list of fields, received a object.
+```
+
+No silent damage: a React consumer who follows a core-based guide is told, not given a form with its
+collections missing. The one blemish is that react's message names `buildFlatFormSchema`, which the
+consumer never imported — the same shape as finding 89's refusal, but here the actionable half
+("takes a list of fields") is in the sentence, so it costs a reader nothing.
+
+Also checked, and clean: every one of `@modyra/core`'s 83 exports reaches `@modyra/react`, so the two
+`export *` sources drop nothing between them. `buildDynamicFormSchema` is the only name of the 83
+that arrives as a different binding, and it is the deliberate one above.
+
+## 92. A hook two packages export and neither can hand over
+
+`packages/react/src/widgets/index.ts:13` exports `useMdyField` — the text-field controller hook — and
+`packages/react/src/index.ts:170` declares a local `useMdyField`, the field-state hook. The package
+has one entry point, `.`, and `export *` yields to a local declaration silently, so the local one is
+what a consumer gets:
+
+```
+@modyra/react   useMdyField arity: 1 → function useMdyField(handle) { const store = useMemo(() => createFieldStore(handle) …
+@modyra/preact  useMdyField arity: 1 → the same
+```
+
+The widget hook takes two arguments and cannot be reached from either package. Its module still
+compiles, still ships, and its types still publish through `dist/widgets/field.d.ts`, so a reader of
+the published types finds `MdyReactFieldApi` and `UseMdyFieldOptions` describing a function the
+package will not give them.
+
+`@modyra/preact` is arranged identically and behaves identically, so this is not a divergence between
+adapters — it is the same decision made twice, and no build step reports it, because an `export *`
+that loses to a local declaration is not an error.
+
+Classification: intentional limit or dead code, undeclared either way. S3.
+
+Either resolution closes it: stop exporting it from `widgets/index.ts` and drop the module, or give
+the package a `./widgets` entry point so the name it publishes there is reachable.
