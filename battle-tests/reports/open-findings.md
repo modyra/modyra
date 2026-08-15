@@ -6337,8 +6337,18 @@ which is the per-field compiler, not this one.
 
 ## 118. A document the parser let through, and the form it crashes
 
+**Closed — verified green.** Repaired in `f22d828a` by making the row-shape check iterative rather
+than by adding a depth cap: ADR 0043 had already decided against a cap and already made the document
+walk iterative, and the check that runs when a collection is built had stayed recursive — the promise
+held on the way in and broke on the way out.
+
+Verified on this tree after `npm run build:core`: both battles green, including the 60000 rung, well
+past the 8000 the repair was measured at. Challenged further with an **alternating** tree — record
+inside array inside record, so it crosses both managers rather than the one that was changed — which
+holds to 60000 as well.
+
 **Severity** S0 · **Classification** Modyra bug — the trust boundary vets what the next call cannot
-build · **Battle** `adversarial/security/a-document-the-parser-let-through.battle.test.mjs` (red) ·
+build · **Battle** `adversarial/security/a-document-the-parser-let-through.battle.test.mjs` (green) ·
 **Claims** SEC-004, DYN-001
 
 `docs/guides/usage-modes.md` names the parser as the trust boundary in those words: a document that
@@ -6809,3 +6819,55 @@ A multiselect that closed on Enter would be wrong — the user is picking severa
 halves. A dial has a confirm button. Reading `commit` as "closes" is the reading that fails, not the
 renderers, so no finding is filed: the table names one intent for six behaviours, and only the kinds
 themselves say what it means. Recorded so the next hunt does not re-derive it.
+
+## 125. A field marked wrong with nothing to read
+
+**Severity** S1 · **Classification** one verdict, two answers · **Spec**
+`browser/a-field-marked-wrong-with-nothing-to-read.spec.ts` (red for one renderer, green for the
+other) · **Claim** A11Y-002
+
+`projectFieldShellA11y` computes the shell's accessibility from a single verdict, and its own comment
+says why: *the wrapper, the label, `aria-invalid` and whether the error text renders are four faces of
+one question, answered once*. A control marked `aria-invalid="true"` is a control whose errors are
+shown — by construction, not by convention.
+
+Seventeen kinds, each mounted `required`, focused and left empty:
+
+```
+                       plain                          lit
+text family (6)        message shown and referenced   message shown and referenced
+checkbox, toggle       shown and referenced           shown and referenced
+datepicker, daterange  shown and referenced           shown and referenced
+timepicker, file       shown and referenced           shown and referenced
+select                 shown and referenced           shown, aria-describedby empty
+radio, segmented       shown and referenced           invalid, no message anywhere
+multiselect, colors    shown and referenced           invalid, no message anywhere
+slider                 never invalid (holds 0)        never invalid
+```
+
+Two shapes of the same break:
+
+- **silent** — `radio`, `segmented`, `multiselect`, `colors`: the control reports `aria-invalid="true"`
+  and the message is nowhere on the page. Searched the whole document, not just the field, since a
+  renderer may place an overlay elsewhere. There is no `__errors` element at all, hidden or otherwise.
+  The user sees a field outlined as wrong with no explanation and no way to find out what is wanted.
+- **unreferenced** — `select`: the message is rendered in `mdy-field-N__errors` and the native
+  `<select>` carries `aria-invalid="true"` with an empty `aria-describedby`. It is on screen for
+  someone who can see it, and absent for someone who cannot.
+
+Nothing here asserts which element holds the message or what id it carries — one renderer names it
+`x__errors` and another `mdy-field-7__errors`, and both are right. What cannot vary is that a person
+is told what to fix.
+
+The control is that fields did reach the invalid state — more than ten of seventeen — so a run where
+none did would report nothing silent and nothing unreferenced and mean nothing by either. `slider` is
+skipped rather than failed: a `required` slider holds `0`, which is not empty, so it is never in this
+state and has nothing to say. Both renderers agree on that.
+
+### A first reading that was wrong
+
+An earlier sweep read the *closed* state and reported that one renderer had no `__label` and no
+`__errors` ids for any kind, which looked like a missing shell. It builds them when they have
+something to hold: with an error present, twelve of seventeen kinds carry `__errors` and point at it.
+The finding above is what survived measuring the state that matters instead of the state that was
+convenient.
