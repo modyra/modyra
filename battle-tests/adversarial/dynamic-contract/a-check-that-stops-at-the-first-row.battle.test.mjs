@@ -17,6 +17,12 @@
  * The invariant is written as the thing that actually matters rather than as "diagnose this kind": a
  * document the parser accepts must be one the engine can build. Reporting the kind passes. Refusing
  * the document passes. Building a form that survives an unknown kind would pass too.
+ *
+ * The second battle asks the same question of every check rather than of one: a mistake the parser
+ * reports at the top of a document, made instead inside a row, must still be reported. It is the
+ * wider statement, and it catches a case the first does not — a field whose `validators.pattern` is a
+ * number is `MDY_DYNAMIC_INVALID_FIELD` at the top and nothing inside a row, and the form builds
+ * either way, so only the silence is wrong.
  */
 
 import { buildDynamicFormSchema, createForm, parseDynamicForm, vanillaReactivity } from "@modyra/core";
@@ -116,6 +122,57 @@ battle(
     expectEqual(accepted, [], {
       claimIds: ["DYN-001", "DYN-003"],
       what: "the parser accepted a document without a word and the engine then refused to build it",
+    });
+  },
+);
+
+/** Mistakes that are worth a diagnostic, each as one leaf node. */
+const MISTAKES = Object.freeze({
+  "a kind nobody declared": { node: "field", field: { kind: "wormhole", label: "L" } },
+  "a pattern that is not a string": {
+    node: "field",
+    field: { kind: "text", label: "L", validators: { pattern: 7 } },
+  },
+});
+
+/** The same leaf, at the top of a document and inside a row of one. */
+const atTheTop = (leaf) => ({ version: 3, schema: { node: "group", children: { f: leaf } } });
+const insideARow = (leaf) => ({
+  version: 3,
+  schema: { node: "group", children: {
+    rows: { node: "record", label: "R", item: { node: "group", children: { f: leaf } } },
+  } },
+});
+
+battle(
+  {
+    claims: ["DYN-003", "COL-001"],
+    title: "a mistake the parser reports at the top it reports inside a row",
+    environments: ["node"],
+  },
+  async (ctx) => {
+    const codesOf = (parsed) => (parsed.diagnostics ?? []).map((each) => each.code ?? "?");
+    const unreported = [];
+
+    for (const [what, leaf] of Object.entries(MISTAKES)) {
+      const top = codesOf(parseDynamicForm(atTheTop(leaf), { mode: "strict" }));
+      const inside = codesOf(parseDynamicForm(insideARow(leaf), { mode: "strict" }));
+      ctx.log.note("the same mistake in two places", { what, top, inside });
+
+      // The control: it really is a mistake the parser has something to say about. A trigger that is
+      // silent at the top too is not evidence about rows.
+      expectClaim(top.length > 0, {
+        claimIds: ["DYN-003"],
+        what: `${what} is not reported even at the top of a document, so it says nothing about what happens inside a row`,
+        detail: JSON.stringify({ top }),
+      });
+
+      if (inside.length === 0) unreported.push({ what, top, inside });
+    }
+
+    expectEqual(unreported, [], {
+      claimIds: ["DYN-003", "COL-001"],
+      what: "a mistake the parser names at the top of a document is passed over in silence one row down",
     });
   },
 );
