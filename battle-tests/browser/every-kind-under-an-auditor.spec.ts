@@ -58,6 +58,20 @@ async function mountEveryKind(page: import("@playwright/test").Page, { required 
 
 async function auditStage(page: import("@playwright/test").Page) {
   await page.addScriptTag({ content: AXE });
+
+  // What the auditor could not decide, printed beside what it did. A run that showed only violations
+  // would pass while critical items waited for a person, and nobody would know they were waiting.
+  const undecided = await page.evaluate(async () => {
+    const axe = (window as never as {
+      axe: { run: (context: unknown, options: unknown) => Promise<{ incomplete: Array<Record<string, unknown>> }> };
+    }).axe;
+    const result = await axe.run("#stage", {
+      runOnly: { type: "tag", values: ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"] },
+    });
+    return (result.incomplete ?? []).map((item) => `${item.id as string} ×${((item.nodes as unknown[]) ?? []).length}`);
+  });
+  if (undecided.length > 0) console.log(`    axe could not decide: ${undecided.join(", ")}`);
+
   return page.evaluate(async () => {
     const axe = (window as never as {
       axe: { run: (context: unknown, options: unknown) => Promise<{ violations: Array<Record<string, unknown>> }> };
