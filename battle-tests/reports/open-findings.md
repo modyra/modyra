@@ -5152,3 +5152,51 @@ them.
 So the reading is that the remaining risk is not where the generator is pointed — which is an argument
 for widening the model, not for running it longer. The dimensions it does not carry are the ones its
 own snapshot does not capture, and that list is in this file's operational note.
+
+## 105. Two kinds that cannot look wrong
+
+`browser/a-field-that-cannot-look-wrong.spec.ts` — 1 red (lit), 1 green (plain).
+
+`MDY_STATE_EXPRESSION` publishes how each kind shows that it is unusable or wrong, and its docblock
+names the risk it carries: seven kinds express it structurally rather than through a wrapper class, so
+"an audit that cannot see a mechanism cannot tell a kind that *shows* it is disabled from one that
+merely claims to". Nothing in this suite cited that table.
+
+Asked of the page rather than of the table. Every kind mounted with a `required` rule and left
+untouched, so the form refuses it; the ten shipped stylesheets added to the page; every rule the
+browser then parsed whose selector reaches an error state kept; each field asked whether any of them
+matches something inside it:
+
+| kind | plain | lit |
+| --- | --- | --- |
+| `text`, `number`, `select`, `file` | 5–6 rules match | 5–6 |
+| `checkbox`, `toggle` | 3 | 3 |
+| `radio` | 3 | 2 |
+| `segmented` | 3 | **0** |
+| `multiselect` | 3 | **0** |
+
+In lit, a segmented control and a multiselect that the form has refused match **no error rule in any
+of the ten shipped stylesheets**. They look exactly as they do when they are right. Plain paints both.
+
+Why they fall through is visible in the DOM: both mark `aria-invalid="true"` on a `div`
+(`div.mdy-segmented`, `div.mdy-multiselect`) rather than on a native control, and the generic rules
+that carry the error state are `.mdy-renderer input[aria-invalid=true]` and
+`.mdy-input-wrapper:has([aria-invalid=true])`. A `div` is neither, and by the table's own account
+these kinds get no wrapper modifier — that is what "structural" means. Plain reaches them through the
+label instead (`.mdy-label--has-error`), which lit does not set for these two.
+
+Three controls hold it up. The field really is refused (`aria-invalid="true"` present, checked per
+kind, and a kind that is not refused is skipped rather than counted). Some kinds in the same renderer
+really are painted, so a bare zero is that kind and not a page with no error styling. And the page
+really was given the stylesheets — the host is a harness and carries none of its own, so they are
+added and then read back out of `document.styleSheets`, which is what makes the matched rules ones a
+browser parsed rather than text a file contained.
+
+Two wrong turns are recorded because each would have been a finding. A slider looked like a third case
+until the premise was checked: a `required` slider holds `0`, `required` is satisfied, and it is never
+invalid at all. And counting error selectors that *name a kind* in the stylesheet source made four
+kinds look unpaintable; twenty error selectors name no kind, and two of them reach any `input` inside
+a renderer, which is exactly how checkbox and toggle are painted.
+
+Classification: Modyra bug, S1 by A11Y-004 — a control the form has refused is indistinguishable from
+one it accepts, for everyone who is looking at it.
