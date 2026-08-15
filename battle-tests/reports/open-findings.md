@@ -988,3 +988,34 @@ only surface that does — the rendered control does not.
 Either resolution closes it: the field-level spelling holds the value to the bound too, or the
 contract says plainly that it is a control hint and not a rule. What cannot stand is two spellings of
 one sentence that render identically and mean different things.
+
+## 47. A field a document called sensitive is printed in the panel
+
+`adversarial/security/a-field-that-said-it-was-sensitive.battle.test.mjs` — 1 red, 1 green.
+
+The masking rule states why the declaration exists, in its own words: the name heuristic "is wrong in
+both directions — `notes` can hold a recovery phrase and `cardStyle` is masked for containing 'card'.
+So a declaration wins wherever there is one, and the guess only fills the silence."
+
+Every part works except the wire between them:
+
+- `sensitive` is a published field property in `spec/dynamic-form-v3.schema.json`;
+- `parseDynamicFields` keeps it;
+- `packages/studio-contract` writes it into compiled documents;
+- `isSensitivePath("notes", true)` returns `true`.
+
+Nothing turns a document's `sensitive: true` into that second argument. `mdyFormSnapshot(form)` — the
+documented call — falls back to the guess, and a field named `notes` carrying a recovery phrase is
+printed in full.
+
+The mounted panel is the sharper half. `mountMdyDevtools(form, host, intervalMs)` takes no
+`MdySnapshotOptions`, so a consumer who knows about the flag and derives the callback themselves has
+nowhere to hand it. Only `mdyFormSnapshot` accepts one, and the battle shows that path masking
+correctly — which makes this a missing connection rather than a missing capability.
+
+## Also noted while measuring bounds
+
+`validators` declares `required`, `email`, `min`, `max`, `minLength`, `maxLength` and `pattern`. There
+is no `step`. So a document can say "steps of two" only in the field-level spelling, which is the one
+finding 46 shows does not enforce — meaning `step` cannot be expressed as a rule at all, in either
+place. Recorded rather than filed: it is a gap in the vocabulary, not a behaviour that contradicts one.
