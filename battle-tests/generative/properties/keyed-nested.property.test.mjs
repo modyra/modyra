@@ -20,6 +20,7 @@ import { BattleBreak, compareCanonical } from "../../harness/assertions.mjs";
 import { createBattleContext } from "../../harness/context.mjs";
 import { betweenRuns } from "../../harness/campaign.mjs";
 import { createRng, runCount, runSeed } from "../../harness/seed.mjs";
+import { createSurvey, signatureOf, surveying } from "../../harness/survey.mjs";
 import { shrink } from "../../harness/shrinking.mjs";
 import { encodeValue } from "../../models/observations.mjs";
 import { NESTED_ORDERS_SPEC } from "../../models/schemas.mjs";
@@ -196,6 +197,10 @@ battle(
     const runs = runCount(20);
     const length = 24;
     const histogram = new Map();
+    // Survey mode keeps going past a divergence and reports every distinct kind at the end. Off by
+    // default: a gate wants one counterexample, and a run continued after a divergence builds its
+    // later state on one, so a kind seen only here is a lead rather than a finding.
+    const survey = surveying() ? createSurvey() : null;
     console.log(`  keyed-nested campaign seed ${ctx.seed}, ${runs} run(s) of ${length} operation(s)`);
 
     for (let run = 0; run < runs; run += 1) {
@@ -223,6 +228,11 @@ battle(
       const outcome = await runSequence(operations, { log: ctx.log });
       if (!outcome.divergence) continue;
 
+      if (survey !== null) {
+        survey.record({ divergence: outcome.divergence, run, seed, operations });
+        continue;
+      }
+
       const signature = `${outcome.divergence.path}|${outcome.divergence.expected}|${outcome.divergence.actual}`;
       const stillFails = async (candidate) => {
         const { divergence } = await runSequence(candidate, { log: ctx.log });
@@ -249,6 +259,37 @@ battle(
         divergence: minimalOutcome.divergence ?? outcome.divergence,
         expected: minimalOutcome.expected ?? outcome.expected,
         actual: minimalOutcome.actual ?? outcome.actual,
+      });
+    }
+
+    if (survey !== null && survey.size > 0) {
+      // Each kind is reduced before it is reported. A survey that printed twenty-four operations per
+      // kind would be a catalogue; reduced, every line is a sequence somebody can run.
+      const reduced = [];
+      for (const kind of survey.kinds()) {
+        const stillFails = async (candidate) => {
+          const { divergence } = await runSequence(candidate, { log: ctx.log });
+          return divergence !== null && signatureOf(divergence) === kind.signature;
+        };
+        const { minimized } = await shrink(kind.operations, stillFails);
+        reduced.push({ ...kind, minimized });
+      }
+
+      throw new BattleBreak({
+        claimIds: CLAIMS,
+        message:
+          `survey of ${runs} run(s) met ${survey.size} distinct kind(s) of divergence, ` +
+          `each reduced:\n` +
+          reduced
+            .map(
+              (kind) =>
+                `  ×${String(kind.count).padStart(5)}  run ${kind.firstRun} (seed ${kind.seed}), ` +
+                `${kind.operations.length} → ${kind.minimized.length} operation(s)\n` +
+                `           ${kind.signature}\n` +
+                kind.minimized.map((operation) => `             ${JSON.stringify(operation)}`).join("\n"),
+            )
+            .join("\n"),
+        search: { run: runs - 1, runs, operations: length, minimizedTo: 0, shrinkAttempts: 0 },
       });
     }
 
