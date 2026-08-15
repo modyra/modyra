@@ -3629,3 +3629,35 @@ is among them: `a, rows, b` gives `rows, a, b`, and `a, sect, b, list` gives `li
 collections first, groups last. Nothing documents the value object's key order, and JSON object order
 is not semantically meaningful, so this is a surprise rather than a breach. It is worth knowing for
 anyone diffing a payload against the document it came from.
+
+## Checked and clean: four sentences of contract about writing to a collection
+
+`adversarial/collections/rewriting-merging-and-saying-so.battle.test.mjs` — 2 battles, green, new.
+
+The guide states the whole of it in a paragraph, and nothing held any of it:
+
+```
+upsert("r1", { a: "new" })    a="new"     b back to its schema's initial "ib"    rewrites
+patch({ r1: { a: "merged" } }) a="merged"  b left exactly alone "vb"              merges
+touched and dirty              survive BOTH                                       as documented
+```
+
+Everything else about collections is built on this: a renderer reading `dirty` to decide whether to
+warn before leaving, a form writing a server's response back with `patch` and expecting the user's
+half-finished edits to stay.
+
+**And the dev warnings, which are the counterpoint to this campaign's largest family.** All four fire,
+each naming the collection, the call and what it could not do — and a call that works says nothing:
+
+```
+cell("r1.nope")             [modyra] cell("r1.nope", undefined) on "rows" addresses nothing…
+rename onto a taken key     [modyra] rename on "rows" ignored: "r2" already names a row…
+patch with a string row     [modyra] patch on "rows.r1" ignored a string: this row is a group…
+setAll with a string        [modyra] setAll on "rows" ignored a string: it takes an object keyed by…
+a patch that works          nothing
+```
+
+Findings 60 to 65 were about doors that could not do what they were asked and said nothing. **The
+vocabulary those findings asked for already existed one call away, and this is where** — the
+collection, which is where the habit was designed in. Holding it matters because it is the reference
+the rest of the engine was measured against.
