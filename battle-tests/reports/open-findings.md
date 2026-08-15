@@ -6573,3 +6573,70 @@ at all.
   suite's limit. A page declining to send is an answer to read, not a state to wait for: the spec
   reads `disabled` and clicks only when it is offered. An earlier probe hid the same thing behind a
   `.catch`, which turned a refusal into a missing line of output.
+
+## 122. The part the table says opens the popup, in one renderer only
+
+**Severity** S2 · **Classification** cross-surface divergence against a published table · **Spec**
+`browser/the-part-a-pointer-opens-from.spec.ts` (red for one renderer, green for the other)
+
+`MDY_WIDGET_TRANSITIONS` does not only say that a popup opens. Each transition out of `closed` names
+the part the pointer lands on, and for two kinds that part is the `control` — the text box the value
+is typed into:
+
+```
+kind          declared part    plain            lit
+datepicker    control          input opens      input does nothing
+timepicker    control          input opens      input does nothing
+select        trigger          button opens     native <select>, browser-owned
+multiselect   searchButton     button opens     button opens
+daterange     toggle           button opens     button opens
+colors        toggle           button opens     button opens
+```
+
+In one renderer a user clicking on the date opens the calendar. In the other, clicking on the date
+does nothing and they have to find the small button beside it. Same markup, same aria, a different
+form to fill in — and nothing in a screenshot shows it, which is why the table names the part.
+
+The spec derives the parts from the table, so a kind whose declared opener changes is held to the new
+one without editing. Native controls are excluded by name: the browser's dropdown is not in the
+document and no DOM check can see it open, which is an architectural difference rather than a
+renderer failing the table.
+
+### Checked and clean: where focus goes when a popup closes
+
+`browser/where-focus-goes-when-a-popup-closes.spec.ts` (green, both renderers).
+
+`restoresFocus: true` is declared on the Escape transition of six kinds and was asserted **nowhere**
+in this suite — the only behavioural promise in that table beyond which state follows which, and the
+one that matters most to someone who cannot see the popup close. Focus while an overlay is open lives
+inside it; if closing does not bring it back, the next Tab starts from the top of the document.
+
+Measured for all six in both renderers: Escape closes the popup and leaves focus inside the field, on
+something visible, never on `body`. Where exactly differs and is not pinned — a trigger button in
+one, the text input in another, the native `<select>` in a third — because pinning one element would
+pin an implementation.
+
+```
+plain  select→trigger button   multiselect→search button   datepicker→input
+       daterange→input         timepicker→input            colors→toggle
+lit    five kinds alike; select keeps focus on the native control
+```
+
+The spec opens each field by whichever opener works rather than by the declared part, so that finding
+122's divergence does not fail a spec about something else.
+
+### Harness defects found and repaired while hunting this
+
+- Popup openness measured with `offsetParent !== null` reads a `popover` element the browser is
+  painting as closed. Measured by `getClientRects().length` instead.
+- Clicking `[data-form=…] button` first finds a calendar cell or a nav arrow on an already-open
+  picker. Openers are located by `[aria-haspopup]` before falling back.
+
+### Observed, not filed as a finding
+
+`@modyra/widgets` publishes four `wizard*` messages — `wizardNext`, `wizardPrevious`, `wizardFinish`,
+`wizardStepStatus` — for a component only `@modyra/angular` has (`MdyFormWizardComponent`,
+`MdyWizardStepComponent`). No wizard exists in widgets, core or lit, and `MDY_WIDGET_KINDS` has no
+such kind, so there is no contract saying what a wizard's classes, states or keyboard behaviour must
+be. Not a defect today: the strings are shared vocabulary, not an import. Worth knowing before a
+second renderer grows one, because there is nothing for it to conform to.

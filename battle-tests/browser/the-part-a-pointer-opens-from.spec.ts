@@ -1,0 +1,103 @@
+/**
+ * The part the table says opens the popup.
+ *
+ * `MDY_WIDGET_TRANSITIONS` does not only say that a popup opens. Each transition from `closed` names
+ * the part the pointer lands on: a `trigger`, a `toggle`, a `searchButton` — and for `datepicker` and
+ * `timepicker`, the `control` itself, which is the text box the value is typed into.
+ *
+ * That distinction is the whole of it. A date field whose text box opens the calendar and one whose
+ * text box does nothing are the same markup with the same aria and a different form to fill in: the
+ * user clicks where the date is, nothing happens, and they have to find the small button beside it.
+ * Nobody files that as a bug, and a renderer that gets it wrong looks correct in every screenshot.
+ *
+ * So the parts are taken from the table rather than from a list here, and each renderer is asked the
+ * same question: does a pointer on the declared part open it.
+ *
+ * A field rendering a native control is excluded, with the kind named: the browser owns that popup,
+ * it is not in the document, and no DOM check can see it open. That is an architectural difference
+ * rather than a renderer failing the table.
+ */
+
+import { expect, test } from "@playwright/test";
+import { MDY_WIDGET_TRANSITIONS } from "@modyra/widgets";
+
+const HOSTS = [
+  { name: "plain", page: "/index.html", ready: "battleReady", api: "battle" },
+  { name: "lit", page: "/lit.html", ready: "battleLitReady", api: "battleLit" },
+];
+
+/** Each kind whose popup a pointer opens, with the part the table names. */
+const OPENERS = Object.entries(MDY_WIDGET_TRANSITIONS)
+  .map(([kind, transitions]) => ({
+    kind,
+    part: transitions.find((each) => each.from === "closed" && each.trigger?.type === "pointer")?.trigger?.part,
+  }))
+  .filter((each) => each.part !== undefined);
+
+/**
+ * Where a part lives in a rendered field.
+ *
+ * `control` is the element the value is entered into; the other three name the button beside it.
+ * The contract's own part table carries no classes for either, so this is the mapping every renderer
+ * shares rather than one renderer's markup.
+ */
+const selectorFor = (id: string, part: string) =>
+  part === "control"
+    ? `[data-form="${id}"] input, [data-form="${id}"] textarea`
+    : `[data-form="${id}"] button`;
+
+for (const host of HOSTS) {
+  test(`a pointer on the declared part opens the popup, ${host.name}`, async ({ page }) => {
+    test.setTimeout(240_000);
+    await page.goto(host.page);
+    await page.waitForFunction((flag) => (window as never as Record<string, boolean>)[flag] === true, host.ready);
+
+    expect(OPENERS.length, "no kind declares a pointer transition out of closed").toBeGreaterThan(0);
+
+    const unopened: string[] = [];
+
+    for (const { kind, part } of OPENERS) {
+      const id = `t-${kind}`;
+      await page.evaluate(({ mountId, k, api }) => {
+        (window as never as Record<string, { mountFields(i: string, f: unknown[]): unknown }>)[api]
+          .mountFields(mountId, [{ name: "x", kind: k, label: "X", options: [{ value: "a", label: "A" }] }]);
+      }, { mountId: id, k: kind, api: host.api });
+      await page.waitForTimeout(300);
+
+      const native = await page.evaluate((sel) => document.querySelector(`${sel} select`) !== null, `[data-form="${id}"]`);
+      if (native) {
+        // The browser's own dropdown is not in the document; nothing here can see it open.
+        await page.evaluate(({ mountId, api }) =>
+          (window as never as Record<string, { dispose(i: string): void }>)[api].dispose(mountId),
+          { mountId: id, api: host.api });
+        continue;
+      }
+
+      const target = page.locator(selectorFor(id, part!)).first();
+
+      // The premise: the field rendered the part the table names. A missing one is a different
+      // finding from a part that does not open.
+      expect(await target.count(), `${kind} rendered no ${part} to point at`).toBeGreaterThan(0);
+
+      await target.click({ force: true });
+      await page.waitForTimeout(360);
+
+      const opened = await page.evaluate((sel) =>
+        document.querySelector(`${sel} [aria-expanded="true"]`) !== null ||
+        Array.from(document.querySelectorAll('[role="dialog"], [role="listbox"]'))
+          .some((each) => each.getClientRects().length > 0),
+        `[data-form="${id}"]`);
+
+      if (!opened) unopened.push(`${kind} (${part})`);
+      else await page.keyboard.press("Escape");
+
+      await page.waitForTimeout(200);
+      await page.evaluate(({ mountId, api }) =>
+        (window as never as Record<string, { dispose(i: string): void }>)[api].dispose(mountId),
+        { mountId: id, api: host.api });
+      await page.waitForTimeout(80);
+    }
+
+    expect(unopened, "a pointer on the part the table names did not open the popup").toEqual([]);
+  });
+}
