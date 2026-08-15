@@ -225,6 +225,11 @@ export class MdyHistoryManager {
    */
   recordNow(): void {
     if (!this._effect) return;
+    // Putting a snapshot back is not a change. A restore writes through the same doors a consumer
+    // uses, and one that groups its writes asks for a snapshot when it returns — taken here, it
+    // would record the state being restored *to* and empty the redo stack, so a redo after an undo
+    // had nothing left to apply. The snapshot effect has always skipped for this reason.
+    if (this._restoring) return;
     if (this._timer !== null) {
       clearTimeout(this._timer);
       this._timer = null;

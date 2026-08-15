@@ -996,8 +996,13 @@ export class MdyFormEngine
    * snapshot was written stays removed instead of coming back.
    */
   restoreValue(value: Record<string, unknown>): void {
-    this.patchValue(value);
-    this._tellGatesTheWholeValue(value);
+    // One snapshot arriving is one change. Restoring row by row put a step of history between every
+    // pair of rows, so undoing a restored draft walked back through partial tables the user never
+    // saw — and the state they were in before it arrived was on none of them.
+    this.mutate(() => {
+      this.patchValue(value);
+      this._tellGatesTheWholeValue(value);
+    });
   }
 
   /** Hands each collection the paths a whole-value write carried below it. */

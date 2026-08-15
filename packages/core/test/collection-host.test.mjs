@@ -79,6 +79,9 @@ function hostDouble(rx) {
       for (const [to, binding] of carried) bindings.set(to, binding);
     },
     clearBindings: (name) => { note("clearBindings", name); bindings.delete(name); },
+    // A bulk write is one change, and the host is what knows what a change is — see
+    // MdyCollectionHost. The double has no history, so running the callback is the whole contract.
+    mutate: (fn) => { note("mutate"); fn(); },
     // The host holds the fields in an order, and a keyed collection is what decides the order of the
     // ones under its path — see MdyCollectionHost. The double keeps a Map for the same reason the
     // engine does: a value read out of it reads the rows in this order.
