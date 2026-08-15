@@ -2833,3 +2833,42 @@ index that outlived its option list was not established: two attempts to reach i
 multiselect failed on this tier's own selectors, since that listbox renders into an overlay portal
 outside the field's host. Recorded so the next reader of that function has the measurement, not filed
 as a finding without a path to it.
+
+## A gap in the instruments, closed: generated sequences across every runtime
+
+`differential/runtimes/generated-on-every-runtime.test.mjs` — green, and new.
+
+The two strongest tools in this suite had never been crossed:
+
+```
+the generative campaigns   thousands of sequences   against an independent model   on ONE runtime
+every-runtime              six published adapters   against each other             on ONE sequence
+```
+
+That sequence is twelve operations written by hand. A divergence belonging to a *runtime* that those
+twelve do not reach had never been looked for — and a reactivity is a scheduling decision as much as
+a data structure: when a computation re-runs, what it re-reads, whether a batch collapses two writes.
+
+This drives **generated** sequences across all six. The property is narrower than the campaigns' and
+different: not "the engine is right", which is their job against a model, but **whatever the engine
+means, every runtime means the same thing**, for a sequence nobody chose. Vanilla is the baseline
+because the campaigns already hold it against a model, so a difference reported here belongs to a
+runtime rather than to the engine.
+
+```
+240 generated sequences × 6 runtimes across three fixed seeds — 1,440 drives, no divergence
+```
+
+Two controls, because a green cross-product can mean nothing:
+
+- **every adapter is the one it claims to be** (`reactivity.kind === name`). A runtime that quietly
+  resolved to the framework-agnostic fallback would agree with vanilla for a reason that is not
+  agreement — which is exactly what happened to Solid once and is written into `every-runtime`'s
+  header;
+- **the sequences built something**: six runtimes agreeing about an empty collection is six runtimes
+  agreeing about nothing.
+
+**One exclusion, and it is this harness's rather than the product's.** Every context in one battle
+shares the console capture, so a later runtime's snapshot carries the diagnostics of the ones before
+it — comparing them would report the order they ran in. Found by the first red this file produced,
+which pointed at `diagnostics[16]`.
