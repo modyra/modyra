@@ -593,7 +593,7 @@ Pairs with finding 23 from the other side. Plain paints "This field is required"
 typed, and says nothing when someone types something it cannot use — an error where there is none, and
 none where there is.
 
-## 35. A popup only a mouse can open
+## 35. A popup only a mouse can open — in both renderers
 
 `browser/a-popup-only-a-mouse-can-open.spec.ts` — **runs under `npm run battle:browser`.**
 
@@ -608,6 +608,11 @@ a popup and the keyboard opens it. That is what makes a screen reader announce i
 | timepicker | input | combobox | yes | **none of six** |
 
 Keys tried: both arrows, `Alt+ArrowDown`, `Enter`, `Space`, `F4`.
+
+**Lit does the same.** `browser/a-popup-lit-cannot-open-either.spec.ts` asks the same question of
+`@modyra/lit`: its datepicker and timepicker declare `role="combobox"` with `aria-haspopup` and open
+on none of six keys, against controls a pointer opens. Two renderers built from one contract failing
+the same way is what makes this the contract's rather than one renderer's.
 
 Bounded, and the bound is green in the same file: a value can still be typed into both — `03/04/2026`
 and `2:30 PM` are taken — so neither control is unusable from a keyboard. What is unreachable is the
