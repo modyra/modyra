@@ -3676,3 +3676,44 @@ Findings 60 to 65 were about doors that could not do what they were asked and sa
 vocabulary those findings asked for already existed one call away, and this is where** — the
 collection, which is where the habit was designed in. Holding it matters because it is the reference
 the rest of the engine was measured against.
+
+## 86. A change set ready for a PATCH request, that cannot say which row it patches
+
+`adversarial/submission/a-patch-that-cannot-say-which-row.battle.test.mjs` — 2 green, 1 red. **S1.**
+
+`getChanges()` is documented in those words: *minimal nested patch — only the fields whose value
+differs from the schema's initial values, **ready for an API PATCH request***. The collections guide
+adds the rule that makes it minimal: *changed values, not structure*, so a removal, a move and an
+insertion leave it empty. All of that holds, and is now held.
+
+For a **keyed** collection it composes into something a server can act on:
+
+```
+edit row "c"        getChanges()  {"rows":{"c":{"t":"EDITED"}}}      says which row
+```
+
+For a **positional** one it does not. The change set is a compacted list of the rows that changed,
+with nothing saying where they were:
+
+```
+edit index 0        {"list":[{"t":"EDITED"}]}
+edit index 1        {"list":[{"t":"EDITED"}]}      the same body
+edit index 2        {"list":[{"t":"EDITED"}]}      the same body
+edit 0 and 2        {"list":[{"t":"A"},{"t":"C"}]} reads as indices 0 and 1
+```
+
+A server applying that positionally writes to index 0 — **the wrong row in two cases out of three**.
+
+The keyed collection is the control and the shape that avoids it: the engine already answers this
+question wherever the collection can be addressed. The second control is that an array edit *does*
+produce a change, so the finding is which row rather than arrays being left out.
+
+Either repair closes it: carry the index, or say in the contract that a positional collection's change
+set is not addressable and the whole list must be sent. The second is a documentation fix with a
+consequence on a wire.
+
+Everything else in that paragraph was measured and holds, and is recorded rather than filed: removing
+a seeded row, adding one, renaming one and moving one all leave the change set empty; removing item 0
+then editing the new item 0 reports the edit and not the removal — so a row is compared against **its
+own** initial rather than against whatever now sits at its index, which is what a naive positional
+diff would get wrong.
