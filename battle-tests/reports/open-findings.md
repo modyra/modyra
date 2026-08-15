@@ -7740,3 +7740,41 @@ elsewhere fails the same test. The control is that something carried the attribu
 *two* elements carrying `aria-expanded` — the combobox input and the toggle button — where the other
 renderer has one. Both are allowed to say it; two elements announcing the same state is redundant
 rather than wrong.
+
+## 140. A picker no keyboard can open
+
+**Severity** S1 · **Classification** two defensible choices that are not defensible together · **Spec**
+`browser/a-picker-no-keyboard-can-open.spec.ts` (red for one renderer, green for the other) ·
+**Claims** A11Y-002, UI-002
+
+`MDY_WIDGET_KEYBOARD` declares the keys that open each popup while closed. The suite's keyboard sweep
+asks whether those bindings do *something*. It does not ask whether the person pressing them could
+have got there.
+
+```
+                plain                              lit
+select          opens on Enter/Arrows/Space        native <select>, browser-owned
+multiselect     opens on Enter/Arrows/Space        opens on Enter/ArrowDown/Space
+datepicker      opens on Enter                     opens on Enter
+colors          opens on Enter/Space               opens on Enter/Space
+daterange       opens on Enter/Space               nothing opens it        ← 2 reachable parts
+timepicker      opens on Enter                     nothing opens it        ← 1 reachable part
+```
+
+Two halves that only fail together. A toggle taken out of the tab order is fine while the control
+beside it opens the popup — one tab stop instead of two, which is the better design. A control that
+does not open the popup is fine while the toggle is reachable. One renderer does both for two kinds:
+the toggle carries `tabindex="-1"` (finding 134's measured aside) and the control does not answer the
+key (finding 122's shape).
+
+The consequence is not a rough edge. Someone using a keyboard can still type a date into the box if
+they know the format the field wants; they cannot open the calendar, and there is nothing on the page
+telling them the format.
+
+The check is deliberately generous: every part a keyboard can actually reach — `tabindex="-1"`
+excluded, since that is what "cannot reach" means — is focused in turn and offered every key the
+contract names, and the kind passes if any of them opens it. Native-drawn fields are excluded, since
+their popup is not in the document.
+
+**This is what findings 122 and 134 add up to.** Each was reported as a difference worth knowing;
+together they close the only two doors a keyboard has.
