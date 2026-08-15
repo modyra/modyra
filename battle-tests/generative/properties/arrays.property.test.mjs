@@ -15,6 +15,7 @@ import { BattleBreak, compareCanonical } from "../../harness/assertions.mjs";
 import { createBattleContext } from "../../harness/context.mjs";
 import { betweenRuns } from "../../harness/campaign.mjs";
 import { createRng, runCount, runSeed } from "../../harness/seed.mjs";
+import { createSurvey, signatureOf, surveying } from "../../harness/survey.mjs";
 import { shrink } from "../../harness/shrinking.mjs";
 import { encodeValue } from "../../models/observations.mjs";
 import { createArrayReferenceModel } from "../array-reference-model.mjs";
@@ -118,6 +119,13 @@ battle(
 
     console.log(`  array campaign seed ${ctx.seed}, ${runs} run(s) of ${length} operation(s)`);
 
+    // Survey mode keeps going past a divergence and reports every distinct kind, each reduced.
+
+    // Every run builds a fresh form and model, so each kind is an independent first divergence.
+
+    const survey = surveying() ? createSurvey() : null;
+
+
     for (let run = 0; run < runs; run += 1) {
       await betweenRuns(run);
       const seed = runSeed(ctx.seed, run);
@@ -134,6 +142,11 @@ battle(
 
       const outcome = await runSequence(operations, { log: ctx.log });
       if (!outcome.divergence) continue;
+
+      if (survey !== null) {
+        survey.record({ divergence: outcome.divergence, run, seed: runSeed(ctx.seed, run), operations });
+        continue;
+      }
 
       // The same divergence, not merely some divergence: a shorter sequence can reach a *different*
       // finding, and a shrinker that accepts one minimises the report into a break nobody was
@@ -171,5 +184,32 @@ battle(
     const generated = [...histogram.entries()].sort((a, b) => b[1] - a[1]);
     console.log(`  generated: ${generated.map(([type, count]) => `${type}×${count}`).join(", ")}`);
     ctx.log.note("array campaign histogram", Object.fromEntries(generated));
+    if (survey !== null && survey.size > 0) {
+      const reduced = [];
+      for (const kind of survey.kinds()) {
+        const stillFails = async (candidate) => {
+          const { divergence } = await runSequence(candidate, { log: ctx.log });
+          return divergence !== null && signatureOf(divergence) === kind.signature;
+        };
+        const { minimized } = await shrink(kind.operations, stillFails);
+        reduced.push({ ...kind, minimized });
+      }
+
+      throw new BattleBreak({
+        claimIds: CLAIMS,
+        message:
+          `survey of ${runs} run(s) met ${survey.size} distinct kind(s) of divergence, each reduced:\n` +
+          reduced
+            .map(
+              (kind) =>
+                `  ×${String(kind.count).padStart(5)}  run ${kind.firstRun} (seed ${kind.seed}), ` +
+                `${kind.operations.length} → ${kind.minimized.length} operation(s)\n` +
+                `           ${kind.signature}\n` +
+                kind.minimized.map((operation) => `             ${JSON.stringify(operation)}`).join("\n"),
+            )
+            .join("\n"),
+      });
+    }
+
   },
 );
