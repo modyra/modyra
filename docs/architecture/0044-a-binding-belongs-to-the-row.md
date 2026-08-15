@@ -36,6 +36,23 @@ the snapshot.
 A binding is released when the row that held it ends and nothing is bound there — a claim, or a claim
 waiting for its row, keeps it alive for the row that arrives next.
 
+**Amendment.** A binding made before its row exists is *taken by the first row that arrives*, and
+belongs to that row from then on. It is a statement about a row that has not arrived yet, not a
+standing rule about an index or a key, so the row that takes it carries it and ends it. That makes
+one sentence answer differently depending on what happened in between, which reads as an
+inconsistency and is not one:
+
+```js
+setDisabled("items.0.note"); reset(); insert(0, …)                  // the row arrives disabled
+setDisabled("items.0.note"); setAll([…]); reset(); insert(0, …)     // the row arrives enabled
+```
+
+In the second, `setAll` declared a row that took the binding; the reset ended that row and the
+binding with it, and the row inserted afterwards is a different row about which nothing was said. The
+first never had a row to take it. Measured rather than reasoned: the binding a `setAll` row takes
+follows that row through a later `insert`, which is what says it was taken rather than merely
+matched by path.
+
 ## Consequences
 
 A structural change now moves state the engine did not previously track as row state, so a collection
