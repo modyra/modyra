@@ -58,20 +58,28 @@ type MdyRowNode = MdyAnyRowDescriptor;
  * not a form at all fails at construction rather than at the first row.
  */
 function assertRowShape(node: MdyRowNode | { readonly kind: "array" | "record" }): void {
-  if (node.kind === "array" || node.kind === "record") {
-    assertRowShape((node as MdyAnyRecordDescriptor).item as MdyRowNode);
-    return;
-  }
-  if (node.kind === "group") {
-    for (const child of Object.values(node.children)) {
-      assertRowShape(child as MdyRowNode);
+  // Walked over an explicit stack, for the reason the document parser is
+  // ([ADR 0043](../../../docs/architecture/0043-a-collection-nests-without-a-limit.md)): nesting has
+  // no cap, so a recursive walk lets the shape decide how much stack to use. A tree of five thousand
+  // collections — which the parser accepts, because it was built not to overflow — reached here and
+  // raised `RangeError: Maximum call stack size exceeded`, which carries no path, cannot be caught by
+  // name, and looks exactly like a defect in the caller's own code.
+  const stack: Array<MdyRowNode | { readonly kind: "array" | "record" }> = [node];
+  while (stack.length > 0) {
+    const current = stack.pop()!;
+    if (current.kind === "array" || current.kind === "record") {
+      stack.push((current as MdyAnyRecordDescriptor).item as MdyRowNode);
+      continue;
     }
-    return;
-  }
-  if (node.kind !== "field") {
-    throw new Error(
-      `[modyra] A row may hold a field, a group or a collection — not ${String((node as { kind: string }).kind)}`,
-    );
+    if (current.kind === "group") {
+      for (const child of Object.values(current.children)) stack.push(child as MdyRowNode);
+      continue;
+    }
+    if (current.kind !== "field") {
+      throw new Error(
+        `[modyra] A row may hold a field, a group or a collection — not ${String((current as { kind: string }).kind)}`,
+      );
+    }
   }
 }
 
