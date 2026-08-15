@@ -7980,3 +7980,61 @@ Sweeping the roles the projections declare — `radiogroup`, `grid`, `gridcell`,
 `group`, `combobox` — against the DOM of the kind that declares them: all present in both renderers,
 in the closed and opened states, except `spinbutton` above and the `listbox`/`option` of a select the
 browser draws, which is the native case and excluded by name.
+
+## 144. A read-only field that can be edited
+
+**Severity** S1 · **Classification** a decision the application made, overruled · **Spec**
+`browser/a-field-that-cannot-be-edited.spec.ts` (red for one renderer, green for the other) ·
+**Claims** UI-006, VAL-003
+
+Read-only is not disabled. A disabled field is out of play — not submitted, not announced as wrong,
+skipped by the keyboard. A read-only one is fully in play: submitted, counted towards validity,
+reachable and readable. The single thing it must not do is change.
+
+```
+                        click        ArrowRight
+plain, editable         0 → 50       50 → 51
+plain, read-only        0 → 0        0 → 0        held
+lit,   editable         0 → 50       50 → 51
+lit,   read-only        0 → 50       50 → 51      changed, by both
+```
+
+A slider marked read-only takes the pointer *and* the keyboard in one renderer. The other holds
+against both. Checkbox, toggle, radio and segmented hold in both — it is the slider alone, which is
+why the sweep is per kind rather than a spot check.
+
+The control is the same click on the same kind left editable, which must change it: without it a
+control nothing can move would look like a read-only field behaving perfectly. That control caught a
+real mistake in this spec's first draft — see below.
+
+## 145. A read-only field that says nothing
+
+**Severity** S2 · **Classification** a state the model holds and the page does not show · **Spec**
+`browser/a-field-that-cannot-be-edited.spec.ts` (red, both renderers) · **Claims** A11Y-002
+
+`text-field-a11y.ts` declares `aria-readonly` and the native text controls carry `readOnly`, so the
+vocabulary exists. Twelve of the seventeen kinds use neither, identically in both renderers:
+
+```
+say it       text, email, password, textarea, number      native readOnly
+say nothing  slider, checkbox, toggle, radio, segmented, select, multiselect,
+             datepicker, daterange, timepicker, file, colors
+```
+
+The model is unambiguous: `readonly()` is `true` and `interactivity()` is `"readonly"` — verified
+before measuring the page, so the silence is the page rather than a state that never arrived. The
+value is still submitted, which is correct and is what separates this from disabled.
+
+A field that holds its value while looking editable invites the user to try, and tells someone using
+a screen reader nothing at all. Where the value is *not* held either, the two findings compound.
+
+### Harness defect: a control that clicked the wrong thing
+
+The first draft clicked "the last input or button in the field". The host puts a submit button inside
+that container, so for one renderer every click landed on Submit — which changes nothing, and made
+every kind look like a read-only field behaving perfectly.
+
+**The spec's own control caught it**: the same click on an editable field has to change it, and it
+did not, for all five kinds. The finding above was measured only after the control passed. The
+controls are now named per kind — `input[type="range"]`, `input[type="checkbox"]`,
+`input[type="radio"]` — rather than found generically.
