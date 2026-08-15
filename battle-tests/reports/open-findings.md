@@ -1052,6 +1052,11 @@ The value is damaged with no renderer involved: `oneOf` accepts `"pro"`, and `"p
 different things, so neither the control nor whatever receives the submission can say which was
 chosen.
 
+The two renderers do not agree about it. `a-refusal-in-two-renderers.spec.ts:158` runs the same
+document through both: **lit renders all three, plain renders two.** So the rendering half is a plain
+defect rather than a property of the contract, and a fix that only repairs plain leaves the other
+half — the value `"pro"` naming two different options — standing in every renderer.
+
 Controls on both halves: a duplicate field name really is refused, and three options with distinct
 values really do render as three.
 
