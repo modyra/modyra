@@ -1795,3 +1795,40 @@ a deep invented path       getValue and submit both unchanged
 SUB-001 holds — *submission contains no undeclared path introduced by rendering* — and a renderer
 asking for a field it expects cannot inject one into the payload. `fieldNames()` and `getValue()`
 disagree by design after such a call, which is worth knowing but is not a breach of either contract.
+
+## 66. A range with two text inputs that take what you type and throw it away
+
+`browser/a-range-that-throws-away-what-you-type.spec.ts` — 1 green, 2 red. Plain renderer.
+Filed where the peer's picker batch stops: `daterange` was declared out of that batch.
+
+Measured, with the same string and the same locale that a single `datepicker` reads and keeps:
+
+```
+type "03/04/2026" into the start input
+  inputValue() right after typing     "03/04/2026"     the input took the keystrokes
+  after Tab, the input shows          ""               erased
+  the form value                      {"start":null,"end":null}
+  aria-invalid                        "false","false"
+  error list / supporting text        empty
+
+fill() + Enter                        the same
+"not a date", "31/02/2026"            the same
+```
+
+This is **not** finding 34's shape. There the control could not read what was typed. Here a
+well-formed date in the control's own locale is discarded too, so there is nothing being read
+wrongly: **the text inputs are not wired to the value at all.**
+
+The calendar is the control, and it is green: opening the popup and choosing two days gives
+`{ start: "2026-08-05", end: "2026-08-09" }`. The popup is reachable from the keyboard. So the
+control is usable, and this is not "the daterange is broken".
+
+It is that its two text inputs **invite an interaction they discard**, which is worse than not
+offering one. A person who types a range, tabs away and sees two empty boxes has no way to learn that
+the calendar was the only door — and nothing on the page says so.
+
+Finding 35 does *not* compound here, checked rather than assumed: the daterange popup opens from the
+keyboard, so this is not a control that a mouse alone can fill.
+
+Three assertions, in the order they cost the person typing: the calendar works (green), a readable
+range typed in is kept (red), an unreadable one is kept or explained (red).
