@@ -7349,3 +7349,45 @@ trims whitespace — `"fff"`, `" #fff "` and `"#FFFFFF"` all land. Two, four and
 letters and an empty box leave the value alone rather than writing a broken one: the outcome carries
 no `value` at all rather than an unusable string. Choosing a preset commits *and* closes; typing does
 neither; an unreadable preset does nothing.
+
+## 132. A popup that opens without a word
+
+**Severity** S2 · **Classification** a field of the shared policy honoured by one adapter of three ·
+**Spec** `browser/a-popup-that-opens-without-a-word.spec.ts` (red, both renderers) · **Claims**
+A11Y-002, UI-005
+
+`overlayLifecycleTransition` is the one policy every adapter opens and closes by — lit's own overlay
+host says so in those words, and plain and Angular call it too. Its answer carries three things: the
+new state, the effect to run, and `announce`.
+
+```
+closed + toggle              open,   setup,    announce "opened"
+open   + toggle              closed, teardown, announce "closed"
+open   + escape              closed, teardown, restoreFocus true, announce "closed"
+open   + outside(true)       closed, teardown, announce "closed"
+open   + outside(false)      unchanged, none,  announce null
+open   + destroy             closed, teardown, announce null      — nobody is there to hear it
+closed + toggle disabled     unchanged, none,  announce null
+```
+
+The vocabulary exists in all five languages: `overlayOpened` is "Popup opened", `overlayClosed` is
+"Popup closed". Both renderers ship an announcer — `mdy-plain-announcer`, `mdy-lit-announcer`. Neither
+reads the field:
+
+```
+angular   3 references to the transition's .announce
+lit       0 — it has an announcer and calls it for other things
+plain     0
+```
+
+Measured on the page: a datepicker opens, `aria-expanded` becomes `"true"`, and **no live region
+receives anything** in either renderer. The only live region present is the error list, empty.
+
+**Belt-and-braces rather than a blackout, and the spec says so.** The control asserts that the state
+did change and the opener reports it, so a screen reader that inspects the control learns where
+things stand. What is missing is being *told* — the difference between information available on
+request and information delivered when it changes, which for a popup that appears elsewhere on the
+page is the difference between noticing and not.
+
+Same shape as finding 117: a shared policy computes an answer, the machinery to act on it is wired,
+and the adapters that call the policy drop the field.
