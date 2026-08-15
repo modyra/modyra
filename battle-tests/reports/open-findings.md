@@ -4598,3 +4598,41 @@ by A11Y-001's severity for a keyboard-only user of a radio group, who is told `H
 
 Either resolution closes it: implement the two keys in the renderers, or stop declaring them for these
 two kinds.
+
+## 97. A star on every field, including the ones nobody must fill
+
+`browser/a-star-on-a-field-nobody-must-fill.spec.ts` — 1 red (plain), 1 green (lit).
+
+The asterisk beside a label is the only thing most people read to decide whether they have to fill
+something in. `aria-required` is what everyone else reads. They are two renderings of one fact, and
+in the plain renderer they disagree:
+
+```
+plain, a text field with no rules at all
+  label:        "L text*"
+  marker class: mdy-label__required  present
+  aria-required: "false"
+```
+
+Every kind measured, and every one of them: 14 fields read, **14 carried the marker, 0 did not** —
+seven of those declared no `required` rule at all. A form built with plain shows an asterisk against
+every field on the page, so the mark that means "you must fill this in" means nothing, and a person
+using a screen reader is told the opposite of what a sighted person is shown.
+
+Lit is green on the same sweep, which is what rules out the contract asking for it:
+`MDY_WIDGET_CONTRACTS` declares `requiredMarker` as a part with a `filled` state, not as a part that
+is always drawn.
+
+The invariant is written as an agreement — the marker is present exactly when `aria-required` is
+`"true"` — so any repair passes: drawing the marker only where something is required, or, if the mark
+were ever meant to say something else, saying that to everyone.
+
+An earlier version of the spec had a control asserting that the renderer both drew markers and left
+them off, so that agreement could not be satisfied by a renderer that never drew one. The renderer
+that marks *every* field tripped that control instead of the invariant, which turned the defect into
+a reason not to measure. The invariant already has two sides — a renderer drawing none fails on every
+required field, one drawing all fails on every optional one — so the control is now only that fields
+were found and read.
+
+Classification: Modyra bug, S1 by A11Y-004, whose evidence says an undeclared state asserted is as
+much a defect as a declared state unchecked.
