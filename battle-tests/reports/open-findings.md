@@ -6744,3 +6744,68 @@ convention against the published one, not a renderer ignoring the contract.
 Space is a typeahead character, and the keyboard table declares Space only `when: "closed"` (intent
 `open`). The two are complementary rather than contradictory: Space opens a closed widget and types
 into an open one. Enter is what commits.
+
+## 124. An opener that does not name what it opens
+
+**Severity** S1 · **Classification** published projection not matched by a renderer · **Spec**
+`browser/an-opener-that-names-what-it-opens.spec.ts` (red for one renderer, green for the other) ·
+**Claim** A11Y-001
+
+`@modyra/widgets` does not only describe the ARIA a popup opener carries — it **computes** it.
+`projectOverlayOpenerA11y(kind, options)` returns the role and attributes, derived from
+`MDY_POPUP_OPENERS`, and its own comment states why `aria-controls` is included in both states: *an
+opener that drops it while closed reads as a control with no overlay at all.*
+
+That projection is the closest thing the contract has to a reference implementation of a widget's
+accessibility, and it was named by nothing in this suite.
+
+```
+                          plain                              lit
+select        combobox → x__listbox, resolves      native <select>, browser-owned
+multiselect   x__popup, resolves                   no aria-controls closed; appears open
+datepicker    combobox → x__grid, resolves         no aria-controls closed; appears open
+daterange     x__popup, resolves                   no aria-controls, closed or open
+timepicker    combobox → x__popup, resolves        no aria-controls closed; appears open
+colors        x__popup, resolves                   no aria-controls, closed or open
+```
+
+Reported as one assertion so the shape is visible rather than the first failure:
+
+```
+wrongRole:          []                    roles match the projection everywhere
+dangling:           []                    no id names something that is not there
+missingWhileOpen:   [daterange, colors]   the overlay is on screen and unnamed
+missingWhileClosed: [multiselect, datepicker, daterange, timepicker, colors]
+```
+
+So the defect is precisely the attribute, not the role and not a broken reference. Two tiers: five
+openers drop `aria-controls` while closed — the case the projection's comment calls out by name — and
+two never carry it at all, including while their overlay is open and focusable.
+
+`aria-controls` is how a screen reader offers to move from the control to the thing it opened.
+Without it the calendar, the option list and the dial are reachable only by guessing they exist.
+
+Ids are not compared across renderers — they are generated, and one renderer's `x__grid` is another's
+`mdy-field-2__grid`. What is compared is the suffix the projection derives from
+`MDY_POPUP_OPENERS[kind].controls`, and whether the id resolves to an element on the page.
+
+### Measured and left alone: what `intent: "commit"` means
+
+`MDY_WIDGET_KEYBOARD` declares `{key: "Enter", when: "open", intent: "commit"}` identically for all
+six popup kinds, and driving it mechanically does not work, because committing means something
+different in each:
+
+```
+                  plain                      lit
+select            closes, value "b"          native
+multiselect       stays open, [] → []        closes, [] → []
+datepicker        closes, "2026-08-22"       closes, "2026-08-22"
+daterange         stays open (start picked)  stays open
+timepicker        stays open (needs OK)      closes
+colors            closes                     closes
+```
+
+A multiselect that closed on Enter would be wrong — the user is picking several. A daterange has two
+halves. A dial has a confirm button. Reading `commit` as "closes" is the reading that fails, not the
+renderers, so no finding is filed: the table names one intent for six behaviours, and only the kinds
+themselves say what it means. Recorded so the next hunt does not re-derive it.
