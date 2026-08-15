@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { MDY_FORM_SHELL_CLASSES, MDY_FORM_SHELL_STRUCTURE } from "@modyra/widgets";
 
 /**
  * An error the form holds and the page has nowhere to put.
@@ -19,6 +20,12 @@ import { expect, test } from "@playwright/test";
  *
  * Both halves are asserted. The engine holding it is what makes the page's silence a rendering gap
  * rather than a value that was never produced.
+ *
+ * The last test pins what the region *is* rather than that it holds the message.
+ * `MDY_FORM_SHELL_STRUCTURE` declares it as a `status` — a live region, which is the difference
+ * between a refusal being visible and a refusal being announced — with one `formErrorItem` per
+ * error. Nothing asserted that before: a renderer could swap the role for a plain `div` and every
+ * other test here would stay green while a screen reader stopped saying anything.
  */
 
 const settled = async (page: import("@playwright/test").Page) => {
@@ -78,4 +85,36 @@ test("a submit action that throws is shown too", async ({ page }) => {
 
   expect(outcome.held.map((entry) => entry.message), "the form did not keep the thrown failure").toContain("NETWORK DOWN");
   expect(outcome.onThePage, "a failed submission left the page exactly as it was").toContain("NETWORK DOWN");
+});
+
+test("the region a refusal arrives in is the one the contract declares", async ({ page }) => {
+  const outcome = await submitAnswering(page, "shell", [{ path: null, message: "SERVICE UNAVAILABLE" }]);
+
+  // The control: the engine holds it, so what follows is about the region rather than a message that
+  // never arrived.
+  expect(outcome.held).toEqual([{ path: null, message: "SERVICE UNAVAILABLE" }]);
+
+  const declared = MDY_FORM_SHELL_STRUCTURE.nodes.find((node) => node.part === "formErrors");
+  expect(declared, JSON.stringify(MDY_FORM_SHELL_STRUCTURE)).toMatchObject({ element: "status" });
+
+  const seen = await page.evaluate(({ region, item }) => {
+    const root = document.querySelector('[data-form="shell"]');
+    if (root === null) return null;
+    const found = root.querySelector(`.${region}`);
+    return {
+      present: found !== null,
+      role: found?.getAttribute("role") ?? null,
+      hidden: found === null ? null : (found as HTMLElement).hidden,
+      items: root.querySelectorAll(`.${item}`).length,
+      text: (found?.textContent ?? "").replace(/\s+/g, " ").trim(),
+    };
+  }, { region: MDY_FORM_SHELL_CLASSES.formErrors, item: MDY_FORM_SHELL_CLASSES.formErrorItem });
+
+  expect(seen, JSON.stringify(seen)).toMatchObject({
+    present: true,
+    role: "status",
+    hidden: false,
+    items: 1,
+  });
+  expect(seen?.text).toContain("SERVICE UNAVAILABLE");
 });

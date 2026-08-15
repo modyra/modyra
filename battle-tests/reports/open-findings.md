@@ -1385,6 +1385,13 @@ finding wearing two names is harder to close than one.
 ## 56. An error the form holds and the page cannot show
 
 `browser/an-error-with-nowhere-to-go.spec.ts` — **green, closed**, verified here. Was 2 red, 1 green.
+Now 4 green: a fourth test pins what the region *is*, not only that it holds the message.
+`MDY_FORM_SHELL_STRUCTURE` declares it a `status` — a live region, which is the difference between a
+refusal being visible and a refusal being announced — with one `formErrorItem` per error. Nothing
+asserted that: a renderer could swap the role for a plain `div` and every other test in the file would
+stay green while a screen reader stopped saying anything. Measured in both renderers before pinning —
+`role="status"`, one item, the message as its text, not hidden — and the assertion reads the role and
+the classes from the published tables rather than from a copy.
 The contract gained the form's own error region, Plain and Angular render it, and Lit ships an element
 the host places — which is the half this tier had to write itself.
 
