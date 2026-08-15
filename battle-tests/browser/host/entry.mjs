@@ -144,6 +144,21 @@ window.battle = {
   },
 
   /**
+   * Submit and answer with `errors`, so a spec can ask what a page does with what a server said
+   * without mounting a second form to say it. `errors` is passed through untouched.
+   */
+  async submitAnswering(id, answer) {
+    const entry = mounted.get(id);
+    await entry.handle.form.submit((value) => {
+      entry.submitted.push(structuredClone(value));
+      if (answer !== null && typeof answer === "object" && answer.__throw !== undefined) {
+        throw new Error(String(answer.__throw));
+      }
+      return answer;
+    });
+  },
+
+  /**
    * Submit without pressing anything, so a spec can ask what a page sends without also asking
    * whether it offered to send it. The button is a separate question and has its own specs.
    */
