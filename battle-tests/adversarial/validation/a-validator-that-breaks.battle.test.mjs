@@ -17,6 +17,10 @@
  *
  * Either answer is defensible: throw where the write happens, or turn it into a verdict the way the
  * async path does. What a form may not do is become unreadable.
+ *
+ * The third battle is the same mistake one step earlier. `asyncWhen` is the predicate that decides
+ * whether a server check runs at all, and it is read while the form is being built — so a predicate
+ * that throws does not make a field invalid, it makes `createForm` throw. Nothing exists to render.
  */
 
 import { createForm, field, serverValidator, vanillaReactivity } from "@modyra/core";
@@ -121,5 +125,55 @@ battle(
     });
 
     form.destroy();
+  },
+);
+
+battle(
+  {
+    claims: ["VAL-001", "LIF-001"],
+    title: "a predicate that decides whether to ask the server does not decide whether the form exists",
+    environments: ["node"],
+  },
+  async (ctx) => {
+    const build = (when) =>
+      attempt(() => createForm(
+        { a: field("", [], serverValidator(async () => ["taken"], { when })) },
+        { reactivity: vanillaReactivity(), devWarnings: false },
+      ));
+
+    // The controls: the predicate decides what it is for, in both directions, and the form is built
+    // either way.
+    const asking = build(() => true);
+    const notAsking = build(() => false);
+    expectClaim(asking.answered && notAsking.answered, {
+      claimIds: ["VAL-001"],
+      what: "a form could not be built with a predicate that works",
+      detail: JSON.stringify({ asking, notAsking }),
+    });
+
+    asking.value.f.a.set("x");
+    notAsking.value.f.a.set("x");
+    await settled();
+    expectEqual([asking.value.state.valid(), notAsking.value.state.valid()], [false, true], {
+      claimIds: ["VAL-001"],
+      what: "the predicate did not decide whether the check ran",
+    });
+    asking.value.destroy();
+    notAsking.value.destroy();
+
+    // And the one that is read while the form is being built. A predicate is application code like
+    // any other and can throw; what it must not take with it is the form.
+    const broken = build(() => {
+      throw new Error("the predicate is broken");
+    });
+    ctx.log.note("a predicate that threw", { broken });
+
+    expectClaim(broken.answered, {
+      claimIds: ["VAL-001", "LIF-001"],
+      what: "a predicate that threw stopped the form being built, so there is nothing to render",
+      detail: JSON.stringify(broken),
+    });
+
+    if (broken.answered) broken.value.destroy();
   },
 );
