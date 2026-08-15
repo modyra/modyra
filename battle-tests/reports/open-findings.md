@@ -2231,8 +2231,14 @@ strict mode                     approved a select document and kept none of its 
 The last is the sharpest: `ok: true`, `fields: []`, `diagnostics: []`. Strict mode approving a
 document it emptied is the same silence one level up.
 
-**B — a refusal blames a name that is correct.** Two constructs refused for the right reason report
-the wrong code:
+**B — a refusal blames a name that is correct. CLOSED, verified here** — two symptoms, one line:
+`validLayoutNode` answered a bare `false` for every reason and the caller reported them all as
+`MDY_DYNAMIC_UNKNOWN_FIELD_REFERENCE`. The documents refused are the same ones; what changed is what
+they are told. `MDY_DYNAMIC_UNSUPPORTED_VERSION` was already in the published table and already fired
+for an unknown version — it just never reached the case where the version is known and the construct
+predates it, which is where an author needs it most.
+
+Two constructs refused for the right reason used to report the wrong code:
 
 ```
 a construct refused for its VERSION   reported as MDY_DYNAMIC_UNKNOWN_FIELD_REFERENCE,
@@ -2897,8 +2903,11 @@ which pointed at `diagnostics[16]`.
 
 ## 77. A batch that ended at the first await
 
-`adversarial/persistence/a-batch-that-ended-at-the-first-await.battle.test.mjs` — 4 green, 1 red.
-**S1** under PER-002 and API-001.
+`adversarial/persistence/a-batch-that-ended-at-the-first-await.battle.test.mjs` — **green, closed**,
+verified here. Was 4 green, 1 red, S1. The check sits after the callback returns rather than in a
+`catch`, which is the shape the finding needed: an async function that throws after an `await` does
+not throw toward its caller at all — it returns a rejected promise — so a `catch` would never see it,
+and that is the same reason the defect is invisible to whoever writes it.
 
 `mutate` exists for one promise, stated in the feature tour's own comment: `form.mutate(() => { … })`
 gives *one history entry, not three*, so an undo returns to where the batch started.
