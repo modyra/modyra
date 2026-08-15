@@ -523,3 +523,32 @@ Green alongside, and the durable half: the auditor is shown catching a bare unla
 anything is trusted, the rendered count is held against the kind list so a page that failed to render
 cannot pass clean, and the audit runs twice — settled, then with a value typed and a listbox open.
 The second state adds no violation, which is the part worth knowing.
+
+## 33. A required multiselect carries an attribute its role does not permit
+
+`browser/every-kind-under-an-auditor.spec.ts` — **runs under `npm run battle:browser`.**
+
+Only reachable in the state where a control is required, which is why the settled and opened audits do
+not see it: the attributes exist only when the field is.
+
+```
+aria-allowed-attr   critical   #ms__trigger
+ARIA attribute is not allowed: aria-required="true"
+<button class="mdy-multiselect__search-btn" type="button" aria-label="Search options"
+        aria-haspopup="listbox" aria-expanded="false" aria-controls="ms__popup"
+        aria-labelledby="ms__label" aria-invalid="true" aria-required="true" ...>
+```
+
+A plain `button` does not permit `aria-required`, so a required multiselect is not announced as
+required. The precedent is the widget next to it: the select's trigger declares `role="combobox"`,
+where `aria-required` and `aria-expanded` are both legitimate. The multiselect carries
+`aria-haspopup="listbox"`, `aria-expanded` and `aria-controls` on a bare button — the combobox
+markup without the combobox role.
+
+`aria-invalid` is not part of this: it is global and permitted anywhere.
+
+Measured alongside, and not yet a finding on its own: with every kind required and untouched, 17
+controls report `aria-invalid="true"`, 16 carry an error list and 15 of those hold text. Two controls
+say a value is wrong without saying why, and one list is empty. That page state is the one finding 23
+already covers — Plain paints a verdict before anyone has typed — so the counts are recorded here
+rather than filed twice.
