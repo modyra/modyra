@@ -28,12 +28,17 @@
  * needs the label lifted whatever its value, and a control that always holds a number (a range) is
  * never empty.
  *
+ * The fourth is the last thing the table declares: `rendererOpen: "mdy-renderer--open"`, the class a
+ * field wears while its popup is up. Here the divergence runs the other way — lit puts it on every
+ * kind it opens and plain on one of six — which is worth saying plainly: neither renderer is simply
+ * the careless one. Each implements a different part of the same table.
+ *
  * The kinds are read from the tables rather than listed here, so a kind that changes mechanism moves
  * this spec with it.
  */
 
 import { expect, test } from "@playwright/test";
-import { MDY_FIELD_STATE_CLASSES, MDY_STATE_EXPRESSION } from "@modyra/widgets";
+import { MDY_FIELD_STATE_CLASSES, MDY_STATE_EXPRESSION, MDY_WIDGET_TRANSITIONS } from "@modyra/widgets";
 
 const HOSTS = [
   { name: "plain", page: "/index.html", ready: "battleReady", api: "battle" },
@@ -215,5 +220,63 @@ for (const host of HOSTS) {
     expect(settled, JSON.stringify({ settled, lifted })).toBeGreaterThan(5);
 
     expect(lifted, JSON.stringify(lifted, null, 1)).toEqual([]);
+  });
+}
+
+/** The kinds that declare a popup to open, read from the transition table. */
+const OPENABLE = Object.entries(MDY_WIDGET_TRANSITIONS)
+  .filter(([, moves]) => Array.isArray(moves) && moves.length > 0)
+  .map(([kind]) => kind);
+
+for (const host of HOSTS) {
+  test(`${host.name}: an open field says it is open`, async ({ page }) => {
+    test.setTimeout(150_000);
+    await page.goto(host.page);
+    await page.waitForFunction((flag) => (window as never as Record<string, boolean>)[flag] === true, host.ready);
+
+    const OPEN = MDY_FIELD_STATE_CLASSES.rendererOpen;
+    expect(typeof OPEN, JSON.stringify(MDY_FIELD_STATE_CLASSES)).toBe("string");
+
+    const bare: Array<Record<string, unknown>> = [];
+    let wearing = 0;
+
+    for (const kind of OPENABLE) {
+      const id = `op-${kind}`;
+      await page.evaluate(
+        ({ mountId, k, api, options }) => {
+          const field: Record<string, unknown> = { name: "f", kind: k, label: "L" };
+          if (/select|radio|segmented/.test(k)) field.options = options;
+          (window as never as Record<string, { mountFields(id: string, f: unknown[]): unknown }>)[api]
+            .mountFields(mountId, [field]);
+        },
+        { mountId: id, k: kind, api: host.api, options: OPTIONS },
+      );
+      await page.waitForTimeout(140);
+
+      const toggle = page.locator(`[data-form="${id}"] button`).first();
+      if (await toggle.count() > 0) await toggle.click({ timeout: 2000 }).catch(() => {});
+      await page.waitForTimeout(240);
+
+      const seen = await page.evaluate(({ sel, cls }) => {
+        const root = document.querySelector(sel);
+        if (root === null) return null;
+        const open = root.querySelector('[aria-expanded="true"]') !== null;
+        const wears = Array.from(root.querySelectorAll("*"))
+          .some((element) => typeof element.className === "string" && element.className.split(" ").includes(cls));
+        return { open, wears };
+      }, { sel: `[data-form="${id}"]`, cls: OPEN });
+
+      if (seen === null) continue;
+      // A kind that did not open is not evidence: a renderer may build it from a native control.
+      if (!seen.open) continue;
+      if (seen.wears) wearing += 1;
+      else bare.push({ kind, ...seen });
+    }
+
+    // The control: this renderer does put the class on something it opened, so a kind without it is
+    // that kind rather than a class nothing carries.
+    expect(wearing, JSON.stringify({ wearing, bare })).toBeGreaterThan(0);
+
+    expect(bare, JSON.stringify(bare, null, 1)).toEqual([]);
   });
 }

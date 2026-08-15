@@ -5305,3 +5305,43 @@ and one down.
 
 Classification: S3, and cross-surface. Either resolution closes it — lift plain's datepicker label only
 when it has something to clear, or give it the placeholder that would justify the lift.
+
+## 109. An open field that does not say it is open
+
+`browser/a-state-class-that-never-arrives.spec.ts`, fourth test — 1 red (plain), 1 green (lit).
+
+`MDY_FIELD_STATE_CLASSES` declares `rendererOpen: "mdy-renderer--open"`, the class a field wears while
+its popup is up. Measured, opening each kind that declares a popup:
+
+```
+plain   opened 6, wearing the class: multiselect                              (1 of 6)
+lit     opened 5, wearing the class: multiselect datepicker daterange
+                                     timepicker colors                        (5 of 5)
+```
+
+Lit's `select` is a native `<select>` with no `aria-expanded`, so it never counts as open and is
+skipped rather than failed.
+
+**The divergence runs the other way from findings 106 and 107**, and that is worth saying plainly:
+neither renderer is simply the careless one. Lit never applies `mdy-input-wrapper--error` and plain
+applies it everywhere; plain applies `mdy-renderer--open` to one kind and lit to all of them. Each
+implements a different part of one table.
+
+It costs something. The class is used fourteen times in the shipped stylesheets:
+
+```
+11 ×  .mdy-renderer--open .mdy-label
+ 1 ×  .mdy-renderer--open .mdy-input-wrapper
+ 1 ×  .mdy-renderer--open .mdy-datepicker__popup:not(.mdy-datepicker__popup--overlay)
+ 1 ×  .mdy-renderer--open .mdy-timepicker__popup:not(.mdy-timepicker__popup--overlay)
+```
+
+So in plain, an open select, datepicker, daterange, timepicker or colours field gets none of the
+eleven label rules and none of the wrapper rule, and the inline (non-overlay) datepicker and
+timepicker popups get none of their own positioning.
+
+The control holds: plain does wear the class on `multiselect`, so a kind without it is that kind and
+not a class nothing carries.
+
+Classification: Modyra bug, S2 — visual state declared by a published table, used by the shipped
+stylesheets, and absent from five of six kinds in one renderer.
