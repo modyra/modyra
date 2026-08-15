@@ -606,6 +606,20 @@ const form = createForm(schema, {
 > numbers, tokens and any other sensitive field.** For anything stricter,
 > provide your own `MdyDraftStorage` (encrypted, server-side, session-scoped…).
 
+An entry in `exclude` is matched four ways, because a secret is usually not a
+field at the top of a form:
+
+| written | excludes |
+| --- | --- |
+| `"password"` | that path, and — having no dot — any cell called `password`, wherever it is |
+| `"cards"` | everything under `cards.`, the whole subtree |
+| `"cards.*.pan"` | `pan` in every row: `*` stands for exactly one segment |
+| `"cards.a.pan"` | that one cell |
+
+The matching is deliberately generous: an entry excluded by mistake costs a
+convenience, and one persisted by mistake is a card number in plain text that
+survives a logout. Write a full path when you need precision.
+
 Behavior:
 
 - The value is persisted (debounced) on every change and restored on
