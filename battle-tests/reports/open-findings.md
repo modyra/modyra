@@ -1520,3 +1520,45 @@ one that does not.
 
 The rename warning is asserted as the control, because it proves the mechanism and the vocabulary
 already exist one call away.
+
+## 61. The one door in 60 where being ignored costs everything
+
+`adversarial/validation/a-whole-value-that-names-nothing.battle.test.mjs` — 1 red. **S0.**
+
+Finding 60 lists six doors that take a name the schema does not have without a word. On five of them
+the cost is that nothing happens. On `setValue` the cost is the whole form, because the rule that runs
+after is *a field the whole value does not name returns to its initial*:
+
+```
+a form the user filled in: email="the user typed this", note="and this"
+
+setValue({ email: "x", note: "y" })    {"email":"x","note":"y"}                    said nothing
+setValue({ email: "x" })               {"email":"x","note":"initial-n"}            said nothing
+setValue({ emial: "x" })   ONE TYPO    {"email":"initial-e","note":"initial-n"}    said nothing
+setValue({})                           {"email":"initial-e","note":"initial-n"}    said nothing
+```
+
+One letter transposed, and every field the user filled in is back to its initial. `state.valid()` is
+`true`. Nothing was reported through either console channel with `devWarnings: true`.
+
+This is not "setValue resets", which is decided: ADR 0057 states the rule and its consequence, and
+`setValue({})` is the spelling that means it. It is that **ADR 0057's own Security section states the
+purpose of the check it added**:
+
+> removes a way for a wrong-shaped or hostile response to silently erase what a user typed while the
+> form goes on reporting itself valid and submittable
+
+An object is the one shape that check admits. A wrong-shaped response — a server that renamed a
+field, an object built by another layer, a key off by a letter — is an object, and it silently erases
+what the user typed while the form goes on reporting itself valid. The stated goal is unmet at the
+one shape that gets through, and the erasure is total rather than partial.
+
+Two tiers, either of which closes it, and they are asserted separately:
+
+- a **non-empty** whole value none of whose keys the form declares is not a reset anybody wrote —
+  `{}` stays the deliberate spelling and is asserted as the control;
+- a whole value where *some* keys match reports the ones that did not, which is the case a renamed
+  server field produces and the one 60 already covers.
+
+The battle also asserts, as its second control, that the five shapes ADR 0057 does refuse still throw
+and leave the form untouched — so the finding is the admitted shape rather than a check that is gone.
