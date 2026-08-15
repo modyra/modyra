@@ -5665,10 +5665,30 @@ renderer is then the one to refuse it, with the message finding 83 quotes: *"can
 must be non-empty, and may contain neither whitespace nor `__`"*. The check moved from the renderer to
 the parser for one document shape out of three.
 
-This is the fourth member of a family now large enough to name: the flat list is the well-served path
-and the tree is the poorer relation — finding 101 (the kind and field-shape checks stop at a
-collection), finding 104 (one diagnostic code, a worse message from the tree), the closed finding 7
-(the v2 tree parser dropped field defects), and this.
+**The family this looked like turned out to be narrower, and the sweep that narrowed it is worth more
+than the guess.** "The flat list is the well-served path and the tree is the poorer relation" was the
+reading; putting twelve mistakes through both doors refutes the general form of it:
+
+```
+a kind nobody declared · a label that is not a string · a pattern that is not a string
+a min that is not a number · a required that is not a boolean · a pattern past the length limit
+a pattern that backtracks · a select with no options · options that are not a list
+an option with no label · two options sharing a value · an unknown validator key
+
+                                    12 of 12 identical at both doors
+```
+
+Field *content* is at parity — the tree door checks exactly what the flat one checks, including the
+two that are silent at both (findings 48 and 100). What is not at parity is narrower and more
+specific:
+
+- **names**: reserved ones are refused at all three doors, whitespace at one (this finding);
+- **depth**: the kind and field-shape checks do not go inside a collection item (finding 101);
+- **wording**: one code, a message from the tree that carries neither the field nor the reason
+  (finding 104).
+
+So it is not that the tree is unchecked. It is that three particular checks were written where the
+flat list is read, and the tree reaches the same code for everything else.
 
 Classification: Modyra bug, S1 by SEC-001's severity — the check is the one that keeps a name from
 becoming an unusable widget id, and two of three doors do not make it.
