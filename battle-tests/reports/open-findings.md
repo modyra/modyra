@@ -3365,3 +3365,32 @@ costs nobody a document that passed.
 `a#b`, `a[0]`, `a:b`, `à-ünï` and an eighty-character name all get `label[for]` matching the input id
 and an `aria-describedby` that resolves. The engine builds ids and `for` attributes rather than CSS
 selectors, which is what makes characters that break a selector harmless here.
+
+## Checked and clean: what the devtools panel masks, and why the guess is acceptable
+
+Added to `adversarial/security/devtools-masking.battle.test.mjs`, green.
+
+`isSensitivePath` decides whether a value is masked in the panel, and its contract is unusually honest
+about its own limits: *the name heuristic is a guess, and it is wrong in both directions — `notes` can
+hold a recovery phrase and `cardStyle` is masked for containing "card". So a declaration wins wherever
+there is one, and the guess only fills the silence.*
+
+Measured, and the guess is indeed partial: `password`, `secret`, `token`, `ssn`, `creditCard`,
+`cardNumber`, `cvv` are masked; `pwd`, `pass`, `apiKey`, `api_key`, `pin`, `otp`, `passphrase`,
+`bearer`, `private_key`, `sessionId` are not. **That is inside the declared limitation, not a
+finding** — the sentence above says so before anybody measures it.
+
+What is worth holding is the sentence that makes the guess acceptable, and it holds in both
+directions:
+
+```
+notes      declared sensitive        masked        the guess said no
+notes      declared not sensitive    shown
+password   declared not sensitive    shown         the guess said yes
+password   nothing declared          masked
+cardStyle  nothing declared          masked        the guess's own stated false positive
+cardStyle  declared not sensitive    shown         and the way to correct it
+```
+
+The guess may be widened or narrowed at any time and nobody would notice. A declaration that stopped
+winning would leave a consumer with no way to correct either kind of error, and nothing asserted it.
