@@ -320,6 +320,17 @@ const CLAIMS = [
     ],
   },
   {
+    id: "SEC-005",
+    title: "A kind whose meaning is how the control behaves says so where an adapter reads it.",
+    area: "security",
+    severity: "S1",
+    publicEvidence: [
+      "@modyra/core MDY_FIELD_KINDS — password is a kind of its own, distinct from text",
+      "spec/dynamic-form-v3.schema.json — a document names a kind, and arrives from outside the application",
+      "@modyra/widgets MDY_WIDGET_CONTRACTS — the framework-agnostic UI contract every adapter implements",
+    ],
+  },
+  {
     id: "SEC-002",
     title: "A value the panel masks is not readable elsewhere in the same panel.",
     area: "security",

@@ -6036,3 +6036,105 @@ renderers, a value inside the bounds is accepted by both (`aria-invalid="false"`
 That is the case finding 99 is about seen from the other side: there an attribute is stricter than the
 rule it came from, here the attribute and the rule are the same rule. Holding this makes the
 difference between them visible if either moves.
+
+## 113. The kind whose whole meaning is the control, described nowhere a control is described
+
+**Severity** S1 · **Classification** incomplete contract · **Battle**
+`adversarial/security/a-kind-that-differs-only-by-name.battle.test.mjs` (red) · **Claim** SEC-005
+
+`password` is a kind of its own in `MDY_FIELD_KINDS`, `MDY_DYNAMIC_FIELD_KINDS` and
+`MDY_WIDGET_KINDS`, and `spec/dynamic-form-v3.schema.json` lets a document name it — so it arrives
+from outside the application. The one thing that makes it a password is that the control does not
+show what is typed into it. There is no other difference: no separate value shape, no rule only it
+carries.
+
+Take the kind's own name out of every published table that holds a fact for both kinds, and the six
+that hold one describe `password` and `text` identically:
+
+```
+MDY_VALUE_CONTRACTS      {"shape":"string","nullable":false,"commit":"live"}   — identical
+MDY_WIDGET_CONTRACTS     rootClasses ["mdy-renderer","mdy-renderer--text"]     — identical
+MDY_WIDGET_KEYBOARD                                                            — identical
+MDY_WIDGET_RELATIONS                                                           — identical
+MDY_WIDGET_TRANSITIONS                                                         — identical
+MDY_STATE_EXPRESSION                                                           — identical
+```
+
+`control.attributes` is `{}` or absent for all seventeen kinds, and no table anywhere states an input
+type. Where a native type appears at all it is `MdyTextFieldControllerOptions.inputType` — an
+optional string a caller supplies, with `kind` documented as defaulting *from* it rather than the
+other way round. Nothing derives one from the other.
+
+The tables can hold a per-kind fact: `select` differs from `text` under exactly the comparison above.
+For this kind they hold none.
+
+**Why this is worth a finding rather than an observation.** The consequence does not need a bug to
+reach a user, and it is not hypothetical — this hunt produced it. Building a second renderer host, I
+read the published surface, wrote a kind-to-element map from it, and mounted a password field that
+rendered `<input type="text">` and showed `s3cret` as it was typed. The renderer was not at fault:
+its element publishes `type` and honours it, defaulted to `text`. I had no published statement
+telling me to say so. That is the position every adapter author is in.
+
+Measured after repairing the host: seventeen kinds, both renderers, control types agree exactly —
+including `toggle`→checkbox, `segmented`→radio, `datepicker`→text and `colors`→color+text. That
+agreement is two implementations independently holding the same private knowledge, not a contract
+being met.
+
+Two divergences in that sweep were examined and are not defects: `select` renders a native `<select>`
+in one renderer and a custom listbox in the other (markup is not what the contract fixes), and
+`timepicker` appeared to differ until the popup was opened — one renderer builds the popup contents
+while closed and hidden, the other on open. Opened, both are `text + number + number`.
+
+Goes green when the published surface distinguishes the two: a declared control type, a `secret`
+flag on the contract, any statement an adapter can read.
+
+## 114. A flag the document sets, the parser checks, and no protection reads
+
+**Severity** S1 · **Classification** declared-but-inert property · **Battle**
+`adversarial/security/a-flag-the-document-sets-and-nothing-reads.battle.test.mjs` (red) · **Claims**
+SEC-005, PER-001
+
+`sensitive` is a boolean on a dynamic field. The contract declares it (`dynamic/schema.ts:51`), the
+parser type-checks it and drops the whole field when it is not a boolean (`dynamic/parse.ts:584`),
+the project compiler carries it, and the editor offers it as something an author toggles. Everything
+about it says it is read.
+
+Nothing that protects the value reads it:
+
+- **a draft** keeps out what `exclude` names, and `exclude` is a list of paths the application passes
+  when it creates the form — it does not consult the document;
+- **the devtools panel** masks on what a path *looks* like plus a caller-supplied predicate
+  (`devtools.ts:41`, `docs/guides/devtools.md:53`), never the flag;
+- **a renderer** is handed the field and has no statement to act on — measured: `sensitive: true`
+  changes no attribute in either renderer (`type`, `autocomplete`, `spellcheck`, `data-*` all
+  unchanged against the same field without it).
+
+Measured end to end: a document marks `secret` sensitive, the user types `sk-live-DEADBEEF`, and the
+draft envelope holds `{"secret":"sk-live-DEADBEEF",...}` in clear text with no diagnostic. The same
+form with `exclude: ["secret"]` writes the draft without it. The mechanism exists; the flag does not
+reach it.
+
+The reading that makes this worth a battle is the author's: the flag is the only thing in the
+document that names secrecy, so setting it looks like the protection, and the value it covers is
+exactly the value worth covering.
+
+The battle asserts a disjunction rather than a design — marking a field sensitive either keeps it out
+of storage or says once that it did not. Current state: `{inClear: true, spoke: false}`.
+
+Composes with finding 112: document-declared properties for which no behaviour exists. This is the
+one where the missing behaviour is a protection.
+
+### Harness defects found and repaired while hunting these
+
+- `browser/host/lit-entry.mjs` mapped `password` and `email` to the shared text element without
+  naming the control type, so both rendered as plain text. The element publishes `type` and honours
+  it. Repaired; the parity sweep above is the measurement after the repair. Recorded because it is
+  the existence proof finding 113 rests on.
+- My first pass at finding 113 normalised the kind's name by string replacement, which also rewrote
+  `"element":"text"` — a part whose element is a *text node*, carried by both kinds — and made
+  `MDY_WIDGET_CONTRACTS` look as though it distinguished them. Caught by a contradiction between two
+  of my own measurements. The comparison is now structural: only a value held under a `kind` key is
+  removed.
+- Probes run with `npx playwright test` directly measure `battle-tests/.tmp-browser`, which
+  `battle:browser` rebuilds first. A host edit is invisible until `node battle-tests/browser/build.mjs`
+  runs. Two measurements were taken against a stale bundle before this was noticed.
