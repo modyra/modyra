@@ -2186,3 +2186,64 @@ be lost without anybody noticing.
 
 The tier still runs in no CI job. Five green battles nobody runs are five green battles nobody runs —
 finding 36 stands, and it is worth more now than when it was filed.
+
+## Batch map: the eleven dynamic-contract reds are four causes
+
+The node tier has 38 reds and eleven of them are `DYN-001`/`DYN-003`. Read as eleven findings they
+look like a parser that is broken in eleven places. Read by their break messages they are **four
+causes and four singletons**, which is the difference between eleven repairs and four.
+
+Grouped from the messages themselves, not from the titles:
+
+**A — the tree parser is silent where the flat parser reports.** The same defect written two ways
+gets two different answers, and the tree — the shape a CMS sends — is the quiet one.
+
+```
+a kind nobody declared          reported as a flat field list, silent as a v2 document
+a select with no options        dropped from a v2 document with nothing said; reported when flat
+a node kind nobody declared     three children parsed, 0 came back, 0 reported as rejected
+strict mode                     approved a select document and kept none of its fields
+```
+
+The last is the sharpest: `ok: true`, `fields: []`, `diagnostics: []`. Strict mode approving a
+document it emptied is the same silence one level up.
+
+**B — a refusal blames a name that is correct.** Two constructs refused for the right reason report
+the wrong code:
+
+```
+a construct refused for its VERSION   reported as MDY_DYNAMIC_UNKNOWN_FIELD_REFERENCE,
+                                      and every reference in it resolves
+a layout refused for its DEPTH        the same code, and the field it names is declared
+                                      in the same document
+```
+
+An author reading either goes looking for a misspelled field that is not misspelled.
+
+**C — the parser is more permissive than the published schemas.** Three ways round, one direction:
+
+```
+an option whose value is an object    outside the published types; taken without a word
+the envelope the prompt asks for      parses, and every published schema underlines it as wrong
+an envelope version                   accepted by the parser, described by no published schema
+```
+
+The consequence is the same each time: an author's editor and their form disagree about the same
+file, and the editor is the one that is right on paper.
+
+**D — one value under two labels.** Two breaks, one cause:
+
+```
+a document offering one value twice   parses clean; the page shows one of the two
+a value the form holds                names more than one option, so neither the control nor
+                                      the submission can say which was chosen
+```
+
+**The four singletons**, which do not join a group and are listed so nobody assumes they are covered:
+a validation reading `""` kept with no diagnostic and unable to fire; a path that is a condition in
+one half of the format and not in the other; the author-time check disagreeing with the parser; a
+rebuilt record that accepted a row and holds `{}`.
+
+A note on reading this: the grouping is from the break messages, which name what was measured. It is a
+map for sequencing repairs, not a claim that one fix closes each group — a shared symptom can still
+have two sources, and the battles stay separate for that reason.
