@@ -70,8 +70,10 @@ battle(
     environments: ["node"],
   },
   async (ctx) => {
+    // A second field nobody touches, which is what makes "it did not answer with everything" a
+    // measurement rather than a guess about the list's internal shape.
     const form = createForm(
-      { items: array(group({ sku: field(""), note: field("unset") })) },
+      { items: array(group({ sku: field(""), note: field("unset") })), untouched: field("still here") },
       { devWarnings: false },
     );
 
@@ -97,9 +99,19 @@ battle(
         detail: moved,
       });
 
-      expectClaim(!moved.includes(`"B"`), {
+      // What this guards is stated in the comment above: an answer that carries the whole *form*
+      // satisfies "it did not throw" and tells a consumer nothing.
+      //
+      // It used to guard that by looking for a value from a row nobody edited, which was a proxy —
+      // and the wrong one, because whether a positional collection's change set carries its
+      // untouched rows is the collection's own shape to decide, not this battle's. `MdyFormPatch`
+      // declares an array as whole-item, so carrying them is one of the shapes the type allows.
+      //
+      // What is measured instead is the thing the comment names: a field of the form that nobody
+      // touched is not in the answer.
+      expectClaim(!Object.hasOwn(changes.value ?? {}, "untouched"), {
         claimIds: ["SUB-001"],
-        what: "a row nobody edited is not reported as a change",
+        what: "a field nobody edited is not reported as a change",
         detail: moved,
       });
     } finally {
