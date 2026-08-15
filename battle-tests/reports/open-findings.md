@@ -9996,3 +9996,40 @@ failed at random. Now stamped a second past the source's own mtime. Six consecut
 
 A self-check that fails at random is the same problem as a battle that does, and it costs more,
 because it is what the rest of the suite is trusted on.
+
+## Closed: 155, and what the spec's own shape decided
+
+`MdyValueCommit` gained **`complete`** — the field changes when what the user is building becomes a
+value — and `colors` became **`confirm`** without changing behaviour. Verified here:
+
+```
+datepicker   live       picking a day writes through
+daterange    complete   one end holds nothing, both ends write
+timepicker   confirm    typing edits a draft, OK commits, Cancel discards
+colors       confirm    typing a whole colour writes nothing, blur commits
+text         live
+```
+
+The spec passes 6 of 6 and its assertions moved without being rewritten around the answer: it reads
+`MDY_VALUE_CONTRACTS[kind].commit` and asserts the behaviour that word describes, so a change to the
+table is a change to what it demands. That shape is what made the finding a decision rather than a
+discussion — the question "what changes if the word changes" had a two-line answer.
+
+Two things stayed as they are and are worth naming. The **swatch** is recorded rather than asserted
+against the word: a kind carries one word, this field has two controls, and the word answers for the
+typed one. And the choice not to make `commit` per-part is the honest granularity rejected for a good
+reason — a second vocabulary in the catalog to describe one kind in seventeen.
+
+My own test defect on the way: after the swatch wrote `#445566`, typing into the hex box appended to
+it (`#445566#112233`). The box is cleared first now.
+
+## Checked and clean: the suite does not flake
+
+Three consecutive full runs at one seed: **43 unique failing battles each time, and the sets are
+identical** — no battle failed in one run and passed in another.
+
+Worth measuring rather than assuming, because a flake inside a suite that carries dozens of real reds
+is invisible: it would look like one more finding, and every report would be trusted a little less.
+Every red currently in the suite is reproducible, which is what makes the count usable as a queue.
+
+The sweep was prompted by finding a self-check that *did* flake about one run in five, recorded above.
