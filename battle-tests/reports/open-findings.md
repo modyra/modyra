@@ -5730,6 +5730,23 @@ One document, the two published build routes, opposite answers — and the route
 the rule the other one is missing. `assertSafeDynamicFieldNames` is where the whitespace rule actually
 lives; four other places that decide the same question do not have it.
 
+**And the published predicate is the odd one out, on exactly this rule.** `isSafeFieldPath` is
+exported, and it is thorough about everything else: `__proto__`, `constructor` and `prototype` are
+refused at any depth (`a.__proto__.b`, `rows.0.__proto__`), and so are `""`, `"."`, `"a."`, `".a"` and
+`"a..b"`. It accepts every form of whitespace, anywhere:
+
+```
+name        flat parser   buildFlatFormSchema   isSafeFieldPath
+"a b"       refused       throws                true
+"a\tb"      refused       throws                true
+"a\nb"      refused       throws                true
+"  "        refused       throws                true
+```
+
+Two enforcers agree with each other and a published predicate disagrees with both, on one rule and no
+other. A consumer who gates a name with the predicate the package gives them is told a name is fine
+that the builder will throw on.
+
 The other hostile keys are refused by the flatten walk as they should be: `__proto__`, `constructor`,
 `a.b` and `""` are all dropped from a record's initial keys, only `ok` survives, and the prototype is
 untouched. Two thousand initial rows flatten in 2ms. The hole is the whitespace rule alone, which is
