@@ -9557,3 +9557,52 @@ consequence.
 `"2026-02-01" > "2026-1-10"` is true, `"2026-12-01" > "2026-2-01"` is true, `"2026-01-02" >
 "2026-01-10"` stays false, and `"beta" > "alpha"` stays a text comparison. The battle is promoted from
 a todo to an enforced regression.
+
+## 167. An array a draft grew
+
+**S1 · Modyra bug · `@modyra/core`**
+Claims: PER-001, COL-001 · severity stated above the claims' own
+Battle: `battle-tests/adversarial/persistence/an-array-a-draft-grew.battle.test.mjs` (red, enforced)
+
+Finding 166's repair checks a restored path against what a row declares, so `lines.a.b.sku` no longer
+invents a record row. **A positional collection has nothing to check**: index 5 of a list of strings
+names a cell the row template really does declare — the row is simply not there yet, and the list
+grows until it is.
+
+```
+draft written by the engine        tags.0 = "t"
+one entry added                    tags.5 = "X"
+restored                           ["t", "", "", "", "", "X"]
+```
+
+Five entries nobody typed, and the number came from storage the security guide describes as writable
+by every script on the origin.
+
+### The cost is not linear
+
+Measured in a child process, restoring one tampered entry:
+
+```
+tags.5          list of 6         153ms
+tags.5000       list of 5001      243ms
+tags.50000      list of 50001    5119ms
+tags.200000     the process died, over 30s
+```
+
+So the door that adds five empty strings adds four billion if the number says so, and the form never
+opens. Re-measured after 166's repair landed: **identical numbers**, which is what makes this a
+separate finding rather than a leftover of that one.
+
+### Checked and clean, in the same run
+
+Four other tampered paths are ignored and the value comes back exactly as saved: a field nobody
+declared (`notAField`), a leaf made into a group (`plain.deeper`), a non-numeric index (`tags.abc`),
+and a negative one (`tags.-1`). So the array case is not "any strange path gets in" — it is the one
+shape the positional manager has no way to bound.
+
+### On my own instrument
+
+The first version of this sweep ran six cases in one process and appeared to hang for five minutes. It
+had not: the script was in a scratchpad directory where `@modyra/core` does not resolve, and the
+failure was silent because the output was buffered. Every case here runs in its own child process
+under a timeout, which is also the only way the `200000` row above could be measured at all.
