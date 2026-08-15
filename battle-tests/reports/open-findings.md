@@ -6138,3 +6138,66 @@ one where the missing behaviour is a protection.
 - Probes run with `npx playwright test` directly measure `battle-tests/.tmp-browser`, which
   `battle:browser` rebuilds first. A host edit is invisible until `node battle-tests/browser/build.mjs`
   runs. Two measurements were taken against a stale bundle before this was noticed.
+
+## 115. One selection to look at, three presses to undo
+
+**Severity** S1 · **Classification** ambiguous contract, with a user-visible consequence · **Spec**
+`browser/a-choice-that-takes-three-presses-to-undo.spec.ts` (red, both renderers)
+
+A multiselect holds `option[]`, and nothing published says that array is a set. The automatic
+anti-tampering whitelist inspects every entry and asks only whether it is an offered option, so
+`["a","a","a"]` passes it. Measured through `buildDynamicFieldValidators` on a document's field:
+
+```
+[]            ACCEPTED      ["a","c"]   refused — Every value must be one of: A, B
+["a"]         ACCEPTED      ["a",null]  refused
+["a","b"]     ACCEPTED      ["a",{}]    refused
+["a","a"]     ACCEPTED      "a"         refused — This field holds option[]
+```
+
+A form built from a document with `initialValue: ["a","a","a"]` is valid and submittable holding
+three copies of one choice.
+
+The page shows it once, correctly — one chip, `aria-pressed="true"`, because one chip is all there is
+to show. Then, identically in both renderers:
+
+```
+mounted    model ["a","a","a"]   chips A=true  B=false
+pressed A  model ["a","a"]       chips A=true  B=false
+pressed A  model ["a"]           chips A=true  B=false
+```
+
+Each press removes one occurrence. The chip stays pressed, the form still holds the option, and
+nothing on the page indicates that the press was received. Undoing what looks like a single selection
+takes three presses, the first two of which appear to do nothing.
+
+The single-occurrence control passes in both renderers — mounted with `["a"]`, one press empties the
+value and releases the chip — so this is the repeat, not a toggle that never works.
+
+**Not a widget failing to reconcile.** UI-006 is the rule that a widget does not rewrite the model's
+value to make itself consistent, and rewriting on mount is what that forbids. This is the other side
+of it: a press is the user asking for a change, and removing one of three is not the change they
+asked for.
+
+**The fork the contract does not resolve.** Either `option[]` is a set — and the whitelist, which
+already walks every entry, is where a repeat is refused — or it is not, and unselecting an option
+removes the option rather than one copy of it. Neither holds today. Whichever is chosen is a decision
+for the owning session; the spec asserts only the user-visible half, which is true under both.
+
+**How the value gets there.** Not from the control, which cannot produce it: a document's
+`initialValue`, a restored draft, a server round trip, or an application calling `set`.
+
+### Checked and clean while hunting this
+
+- **The automatic option whitelist is real and complete.** Built from a document field, `select`,
+  `radio`, `multiselect` and `segmented` each receive two validators — the value shape and the
+  whitelist — and every one refuses a value that was never offered. The thirteen other kinds receive
+  the shape validator alone. The promise that value, validation and error semantics do not vary by
+  binding holds at the point the validators are built.
+- **`eachOneOf` covers the mixed array**, which is the case a per-entry check is easiest to get
+  wrong: `["a","c"]` is refused, not accepted for its valid half.
+- **Rules are not a renderer gap.** `docs/guides/ai-generated-forms.md:171` states that no renderer
+  applies `rules` — the parser validates them, the contract carries them, and visibility and
+  enabled-state are the host's to apply. A page-level battle asserting that a document's
+  `rule.effect: hidden` removes a control would be asserting against a documented limit. Recorded so
+  the next hunt does not spend the measurement.
