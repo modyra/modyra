@@ -53,6 +53,10 @@ const MISTAKES = Object.freeze([
     rules: [{ effect: "hidden", target: "NOPE", when: { field: "f", operator: "equals", value: "x" } }] }],
   ["a layout naming nothing", { version: 3, fields: [{ name: "f", kind: "text", label: "L" }],
     layout: [{ kind: "section", id: "s", children: ["NOPE"] }] }],
+  ["a column count outside 1..12", { version: 3, fields: [{ name: "f", kind: "text", label: "L" }],
+    layout: [{ kind: "columns", id: "c", at: { base: 99 }, columns: [[{ ref: "f" }]] }] }],
+  ["a validator of the wrong type", { version: 3, fields: [
+    { name: "f", kind: "number", label: "L", validators: { min: "five" } }] }],
 ]);
 
 battle(
