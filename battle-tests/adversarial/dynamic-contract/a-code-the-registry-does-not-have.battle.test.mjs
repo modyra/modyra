@@ -57,6 +57,12 @@ const MISTAKES = Object.freeze([
     layout: [{ kind: "columns", id: "c", at: { base: 99 }, columns: [[{ ref: "f" }]] }] }],
   ["a validator of the wrong type", { version: 3, fields: [
     { name: "f", kind: "number", label: "L", validators: { min: "five" } }] }],
+  ["a node kind nobody declared", { version: 3, schema: { node: "group", children: {
+    rows: { node: "wormhole", label: "R", item: { node: "group", children: {} } } } } }],
+  ["a record with no item", { version: 3, schema: { node: "group", children: {
+    rows: { node: "record", label: "R" } } } }],
+  ["an array initial value that is not a list", { version: 3, schema: { node: "group", children: {
+    rows: { node: "array", label: "A", item: { node: "group", children: {} }, initialValue: "x" } } } }],
 ]);
 
 battle(
