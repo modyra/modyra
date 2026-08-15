@@ -4148,7 +4148,7 @@ leaves play.
 
 ## 91. Six hooks that never stop rendering, given the argument their shape invites
 
-`adversarial/reactivity/a-config-written-where-it-is-used.battle.test.mjs` — 1 red.
+`adversarial/reactivity/a-config-written-where-it-is-used.battle.test.mjs` — 2 red.
 
 Every published React widget hook takes a config object — `useMdySelect(config, lookup, handlers)`,
 `useMdyOptionField(handle, config)`, and four more — and memoizes its controller on that object's
@@ -4188,10 +4188,23 @@ rule a consumer must follow is "never pass a literal to any of these six", which
 options or use a stable key". The guides do not mention it. A consumer's evidence is a hook that
 takes an object, and React's own convention for such arguments is to write them inline.
 
-This is the same shape as finding 89: a React wrapper that requires referential stability the
-signature does not express, failing catastrophically rather than saying so. The other adapters do not
-have it — the field hooks' *other* memo, `observerFor(handle)`, keys on the form's own handle, which
-is stable by construction, and that is the pattern that works here.
+**`@modyra/preact` has it too, silently.** Same construction, same result, and no warning at all —
+"Maximum update depth exceeded" is React's guard, not preact's. Its rate is steady rather than
+explosive, so it shows as growth against how long the component is left mounted:
+
+```
+window   200ms   600ms   1800ms
+memoized     2       2        2
+inline      66     224      687
+```
+
+About 380 renders a second, for as long as the component is on the page, with nothing said.
+
+This is the same shape as finding 89: a hook-shaped wrapper that requires referential stability the
+signature does not express, failing catastrophically rather than saying so. The adapters that are not
+hook-shaped do not have it, and neither does the *other* memo inside these same files —
+`observerFor(handle)` keys on the form's own handle, which is stable by construction, and that is the
+pattern that works here.
 
 Classification: Modyra bug. S1 by the claims it falsifies — the component never reaches a resting
 state, so the widget is unusable and the tab is pegged.
