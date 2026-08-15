@@ -580,3 +580,31 @@ Either repair closes it: keep the text so it can be corrected, or clear it and s
 Pairs with finding 23 from the other side. Plain paints "This field is required" before anyone has
 typed, and says nothing when someone types something it cannot use — an error where there is none, and
 none where there is.
+
+## 35. A popup only a mouse can open
+
+`browser/a-popup-only-a-mouse-can-open.spec.ts` — **runs under `npm run battle:browser`.**
+
+`role="combobox"` with `aria-haspopup` and `aria-controls` tells assistive technology the control owns
+a popup and the keyboard opens it. That is what makes a screen reader announce it as collapsed.
+
+| kind | trigger | role | opens on a click | opens on a key |
+| --- | --- | --- | --- | --- |
+| select | button | combobox | yes | ArrowDown |
+| multiselect | button | *none* | yes | four of six |
+| datepicker | input | combobox | yes | **none of six** |
+| timepicker | input | combobox | yes | **none of six** |
+
+Keys tried: both arrows, `Alt+ArrowDown`, `Enter`, `Space`, `F4`.
+
+Bounded, and the bound is green in the same file: a value can still be typed into both — `03/04/2026`
+and `2:30 PM` are taken — so neither control is unusable from a keyboard. What is unreachable is the
+popup itself, the calendar a person browses when they do not already know the date.
+
+The two findings compound. The popup is the discoverable path and it is mouse-only; the typed path
+works and, per finding 34, says nothing when the format is wrong. A keyboard user who does not already
+know this control wants `2:30 PM` has no way to find out.
+
+Also measured, not filed: `daterange` and `colors` have triggers with no `id` at all, carrying
+`aria-controls` pointing at their popups. No reference resolves to them and no check reported a
+problem, so it is recorded rather than raised.
