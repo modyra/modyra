@@ -7935,3 +7935,48 @@ The check is the promise against the roles on screen once it has opened, so a re
 either side stays honest only by changing both. Openers that promise nothing, or only `true`, are
 skipped — there is nothing to hold to account — and native-drawn fields are excluded, since the
 platform makes both the promise and the popup.
+
+## 143. A number nobody can hear
+
+**Severity** S1 · **Classification** published projection not matched · **Spec**
+`browser/a-number-nobody-can-hear.spec.ts` (red for one renderer, green for the other) · **Claims**
+A11Y-002
+
+`timepicker-field-a11y.ts` declares the hour and minute controls as spinbuttons, and says why in a
+comment beside them: *the value, the name and the spinbutton semantics belong to the control inside it
+— a segment that took them would announce a number nobody can reach.* The declaration is four things
+together:
+
+```ts
+hourControl: { attributes: {
+  role: "spinbutton", "aria-label": "Hour",
+  "aria-valuemin": 1, "aria-valuemax": 12, "aria-valuenow": state.draft.hour,
+} }
+```
+
+```
+        plain                                          lit
+Hour    role=spinbutton now=2  min=1 max=12            role=none now=none min=none max=none
+Minute  role=spinbutton now=30 min=0 max=59            role=none now=none min=none max=none
+        native min/max present too                     no native min/max either
+```
+
+Both renderers name the controls "Hour" and "Minute". One carries the role and the values; the other
+carries nothing but the name. `role="spinbutton"` is what makes the rest mean anything — it tells a
+reader this is a number with a range and a current value and that the arrows move it. Without the
+role, a reader announces an edit box; without `aria-valuenow`, one with nothing in it. **A person
+using a screen reader cannot hear what hour the clock is set to.**
+
+The spec checks the set rather than the role alone, because any of them alone is the same silence.
+
+**Measured alongside.** In the renderer that follows the projection, the native `min`/`max` are there
+too, so typing `99` into the hour raises `rangeOverflow` and the model keeps `14:30` — the guard
+works. The other renderer has no native bounds either, so the browser will not object; whether the
+widget refuses the value is a separate question this spec does not ask.
+
+### Checked and clean: every other declared role reaches the page
+
+Sweeping the roles the projections declare — `radiogroup`, `grid`, `gridcell`, `listbox`, `option`,
+`group`, `combobox` — against the DOM of the kind that declares them: all present in both renderers,
+in the closed and opened states, except `spinbutton` above and the `listbox`/`option` of a select the
+browser draws, which is the native case and excluded by name.
