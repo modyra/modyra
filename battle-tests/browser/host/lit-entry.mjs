@@ -9,7 +9,7 @@
  * It exposes the same shape of operations as the Plain host where they mean the same thing, so a spec
  * can ask both renderers the same question.
  */
-import { buildDynamicFieldValidators, createLitForm, field, parseDynamicFields } from "@modyra/lit/adapter";
+import { buildDynamicFieldValidators, createLitForm, field, MDY_VALUE_CONTRACTS, parseDynamicFields } from "@modyra/lit/adapter";
 import { defineMdyElements } from "@modyra/lit/ui";
 
 defineMdyElements();
@@ -37,20 +37,27 @@ const TAG = {
   colors: "mdy-colors-field",
 };
 
-/** What a kind's value starts as, so the form holds what the element expects to render. */
-const BLANK = {
-  checkbox: false,
-  toggle: false,
-  multiselect: [],
-  file: [],
-  daterange: { start: null, end: null },
-  number: null,
-  slider: 0,
-  select: null,
-  radio: null,
-  segmented: null,
-  datepicker: null,
-  timepicker: null,
+/**
+ * What a kind's value starts as, from the contract rather than from a list kept here.
+ *
+ * `MDY_VALUE_CONTRACTS` already says what shape a kind holds and whether it may be null, so a second
+ * list beside it can only drift. It drifted once: the blank was chosen with `??`, which reads a
+ * legitimate `null` as absent and fell through to `""` — so every nullable kind in this host started
+ * as an empty string, and a battle reading a fresh number saw `""` where the contract says `null`.
+ */
+const blankFor = (kind) => {
+  const contract = MDY_VALUE_CONTRACTS[kind];
+  if (contract === undefined) return "";
+  if (contract.nullable) return null;
+  switch (contract.shape) {
+    case "boolean": return false;
+    case "number": return 0;
+    case "option": return null;
+    case "option[]":
+    case "file[]": return [];
+    case "dateRange": return { start: null, end: null };
+    default: return "";
+  }
 };
 
 window.battleLit = {
@@ -73,7 +80,7 @@ window.battleLit = {
           const built = rulesFor(each.name);
           return [
             each.name,
-            field(each.initialValue ?? BLANK[each.kind] ?? "", built.validators ?? [], {
+            field(each.initialValue === undefined ? blankFor(each.kind) : each.initialValue, built.validators ?? [], {
               marksRequired: built.marksRequired,
             }),
           ];
