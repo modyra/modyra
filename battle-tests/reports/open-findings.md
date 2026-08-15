@@ -8237,3 +8237,33 @@ What was a gap, and is closed: `disable`, `readonly`, `submit`, `submitAnswering
 `destroyFormOnly`. Each was a question that could be put to one renderer and not the other, which
 makes a missing answer look like a silence rather than a hole in the instrument. Findings 144, 145 and
 147 were unreachable before those were levelled.
+
+### Checked and clean: a form sent twice at once
+
+`browser/a-form-sent-twice-at-once.spec.ts` (3 green: both renderers, plus the button).
+
+Pressing send again because the page has not visibly changed is the ordinary way a slow submission is
+met, and where a submission books a seat or charges a card, running the handler twice is the most
+expensive defect a form can have. It is invisible to every test that submits once and waits.
+
+```
+two submissions fired without waiting     the handler ran once, in both renderers
+a third, after the first answered         ran — the guard lets go
+button, while a submission is in flight   out of action, submitting true, one sent
+pressed again, and asked programmatically still one sent
+after the answer                          back to rest, offered again
+```
+
+Two guards and both are there. The **button** goes out of action, so the ordinary second press cannot
+happen. The **engine** refuses a second submission however it was asked for — the programmatic one was
+refused too — which is what protects a page that drives the form itself, with a keyboard shortcut, a
+retry, or no button of its own. That the engine holds it is why the renderer without a button is
+covered by the same guarantee.
+
+The control is that the guard lets go: a form refusing every submission after the first would pass a
+test that only counts them.
+
+**A defect in the spec, caught by its own premise.** The button test read `window.submittingOf`
+instead of `window.battle.submittingOf` — a local named after the host, shadowing nothing and
+resolving to the window. It threw rather than passing quietly, because the first assertion asks for
+the resting state before anything is pressed.
