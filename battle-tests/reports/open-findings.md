@@ -7140,3 +7140,32 @@ Both renderers flip, both wear the modifier the shipped stylesheets key on to mo
 pointer, and both keep the declared margin at the edge. The control is the same field near the top,
 which must open below and wear nothing — so the flip is the lack of room rather than an overlay that
 always goes up.
+
+### Checked and clean: the way down a calendar
+
+`browser/the-way-down-a-calendar.spec.ts` (3 green: the published moves, then both renderers).
+
+`MDY_CALENDAR_VIEW_MODES` publishes `days`, `months`, `years`, and two functions decide the moves.
+Neither was named by anything in this suite:
+
+```
+calendarViewOnToggle    days → years    months → days    years → days     unknown → days
+calendarViewAfterPick   years → months  months → days    days → days      unknown → days
+```
+
+The path is a drill-down, not a cycle, and pressing the header from the days goes straight to the
+**years** — not to the months, which is what a reader expects if they assume each press climbs one
+step. Worth pinning precisely because it is not the obvious shape: a renderer that "fixed" the header
+to step days → months → years would be self-consistent, would look right in a screenshot, and would
+leave anyone reaching for a year in 1997 pressing the header twice forever.
+
+Driven on the page in both renderers: opens on the days, header lands on the years, a year lands on
+that year's months, a month lands on its days. The view is read from which of the `__grid`,
+`__months` and `__years` regions is on screen rather than guessed from what the cells say.
+
+**Standing harness fact, now bitten three times.** One renderer places its overlay *outside* the
+form's container, so any locator scoped to `[data-form=…]` finds none of the popup's own buttons and
+reads an open calendar as an empty one. It cost a timeout here, the `OK` button in finding 116, and a
+false "does not close" reading in finding 122's neighbourhood. Locators for anything inside an
+overlay are page-wide. A second trap sits beside it: Playwright's `hasText` regex runs against text
+that carries whitespace, so `/^April 2026$/` matches nothing while `/\w+\s+\d{4}/` matches.
