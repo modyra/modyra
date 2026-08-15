@@ -163,3 +163,54 @@ test("a row-shaped form sends its rows by key, and a removed row leaves nothing 
   const rowsAfter = (after.at(-1) as { rows: Record<string, unknown> }).rows;
   expect(Object.keys(rowsAfter), JSON.stringify(rowsAfter)).toEqual(["a"]);
 });
+
+test("an array-shaped form sends a list, and removing from the middle closes the gap", async ({ page }) => {
+  const id = "arrayform";
+  const mounted = await page.evaluate(
+    (mountId) => {
+      const fields = [0, 1, 2].map((index) => ({ name: `rows.${index}.code`, kind: "text", label: `Code ${index}` }));
+      return (window as never as {
+        battle: { mountFields(id: string, f: unknown[], o: unknown): { mounted: boolean; message?: string } };
+      }).battle.mountFields(mountId, fields, { collections: [{ path: "rows", kind: "array" }] });
+    },
+    id,
+  );
+  expect(mounted, JSON.stringify(mounted)).toMatchObject({ mounted: true });
+  await page.waitForTimeout(240);
+
+  const inputs = page.locator(`[data-form="${id}"] input`);
+  const count = await inputs.count();
+  for (let index = 0; index < count; index += 1) await inputs.nth(index).fill(`v${index}`).catch(() => undefined);
+  await page.waitForTimeout(200);
+
+  await page.locator(`[data-form="${id}"] button`).last().click().catch(() => undefined);
+  await page.waitForTimeout(360);
+
+  const sent = await page.evaluate(
+    (mountId) => (window as never as { battle: { submittedBy(id: string): unknown[] } }).battle.submittedBy(mountId),
+    id,
+  );
+
+  // The control: three rows went out, as a list. A form that sent two from the start would make the
+  // check below meaningless.
+  expect(sent.length, JSON.stringify(sent)).toBeGreaterThan(0);
+  expect(sent.at(-1), JSON.stringify(sent.at(-1))).toEqual({
+    rows: [{ code: "v0" }, { code: "v1" }, { code: "v2" }],
+  });
+
+  await page.evaluate(
+    (mountId) => (window as never as { battle: { removeRow(id: string, k: string): void } }).battle.removeRow(mountId, "1"),
+    id,
+  );
+  await page.waitForTimeout(260);
+  await page.locator(`[data-form="${id}"] button`).last().click().catch(() => undefined);
+  await page.waitForTimeout(360);
+
+  const after = await page.evaluate(
+    (mountId) => (window as never as { battle: { submittedBy(id: string): unknown[] } }).battle.submittedBy(mountId),
+    id,
+  );
+  // The row that was second is gone and the third has closed up behind it: no hole, no null, and no
+  // index left pointing at a row that is not there.
+  expect(after.at(-1), JSON.stringify(after.at(-1))).toEqual({ rows: [{ code: "v0" }, { code: "v2" }] });
+});

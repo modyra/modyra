@@ -5844,7 +5844,7 @@ already holds rather than a document it is reading.
 
 ## Checked and clean: what a page actually sends
 
-`browser/what-a-page-actually-sends.spec.ts` — 3 green.
+`browser/what-a-page-actually-sends.spec.ts` — 4 green.
 
 SUB-001 is *"submission contains no undeclared path introduced by rendering"* and VAL-002 is
 *"disabled values are retained in edit state and excluded from submission"*. Both are asserted at
@@ -5879,6 +5879,17 @@ after removing row "b"
   sent   {"rows":{"a":{…}}}     the removed key leaves nothing behind
 ```
 
-All three claims hold where they are actually spent. The first test mounts every kind at once
+And the other collection kind, where positions are the thing that can be lost:
+
+```
+an array of three rows
+  sent   {"rows":[{"code":"v0"},{"code":"v1"},{"code":"v2"}]}     a list, in order
+
+after removing the middle row
+  sent   {"rows":[{"code":"v0"},{"code":"v2"}]}
+         no hole, no null, and no index left pointing at a row that is not there
+```
+
+All four claims hold where they are actually spent. The first test mounts every kind at once
 precisely so that a key any renderer adds for any of them has somewhere to show up, and the third
 asserts both rows are in the payload before the removal, so the absence afterwards is the removal.
