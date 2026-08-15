@@ -6404,3 +6404,57 @@ among their alternatives.
   offers `path, keys, value, errors, valid, has, row, cell, upsert, remove, setAll, patch, rename,
   validOf`. Recorded because guessing a record's API as the array's produced a walk that stopped at
   depth 1 and briefly read as a depth limit. It was not one.
+
+## 119. Ten operators a document may write, six the only evaluator knows
+
+**Severity** S2 · **Classification** contract declares what nothing defines · **Battle**
+`adversarial/dynamic-contract/an-operator-nothing-can-answer.battle.test.mjs` (red) · **Claims**
+DYN-001, DYN-002
+
+`spec/dynamic-form-v3.schema.json` closes `rule.when.operator` over ten names. The parser enforces
+that enum exactly — all ten accepted, `approximately` refused — so a document carrying a rule parses
+clean and an author has every reason to believe it works.
+
+Applying it is the host's part: no renderer applies `rules`, which the guides state. A host reaches
+for the published evaluator, `evaluateExpression` and its checker `validateExpression`. Those speak a
+different vocabulary — `equals`, `notEquals`, `isEmpty`, `isNotEmpty`, `greaterThan`, `lessThan`,
+`not`, `and`, `or`, `matches` — and reject four of the enum's ten **by name**:
+
+```
+in                   unknown operator "in"
+notIn                unknown operator "notIn"
+greaterThanOrEqual   unknown operator "greaterThanOrEqual"
+lessThanOrEqual      unknown operator "lessThanOrEqual"
+```
+
+Nothing else answers them. `greaterThanOrEqual` and `notIn` appear in exactly one file in the
+workspace — the parser — and **no package reads a parse result's `rules` at all**: not one of the
+eight adapters, not Studio.
+
+A host can implement them (`in` is a disjunction of equalities, `greaterThanOrEqual` the negation of
+`lessThan`) but must decide those semantics itself, for operators the contract declares and nothing
+defines — including the edges that matter: what `greaterThanOrEqual` does across types, what `in`
+does against a non-array, what either does with `null`. Two hosts will not decide alike, and the
+contract has no position from which to say which is right.
+
+Goes green when every operator the contract offers a document can be answered by something the
+contract publishes — the evaluator learning them, the enum dropping them, or a rule evaluator being
+published.
+
+**Related but distinct from 117.** There, cross-field validations have a compiler
+(`buildDynamicValidations`) that no adapter calls. Here there is no compiler to call.
+
+### Checked and clean
+
+- **Both published depth limits are enforced at exactly their declared value**, refusing with a
+  diagnostic: layout accepts 6 and refuses 7 (`MDY_DYNAMIC_INVALID_LAYOUT`); an expression accepts 32
+  and refuses 33 (`MDY_DYNAMIC_INVALID_VALIDATION`). Now a control inside the battle for finding 118.
+- **A very wide document answers.** 50 000 fields parse in 13ms and build in 4.4s;
+  `createForm` scales roughly quadratically (5 000 → 74ms, 20 000 → 702ms, 50 000 → 4 367ms) while
+  parsing stays linear. Recorded as a measured characteristic, not a finding: it answers, and no
+  plausible document is that wide. The asymmetry — a 3MB payload costing seconds of CPU — is worth
+  knowing if a document is ever parsed and built server-side.
+- **The rule vocabulary and the expression vocabulary are two separate languages**, legitimately: a
+  rule's `when` is `{field, operator, value}`, a validation's `when` is an expression tree
+  `{op, operands}`. Sweeping one with the other's shape is what made `in` and `notIn` both answer
+  false in a first pass. They are not complements; they are unknown.
