@@ -20,6 +20,8 @@ The list is grouped by cause. Twenty-four causes, one of them withdrawn. All but
 
 ## 1. Five setters keep an argument they cannot use
 
+**Closed — verified green.** Every battle this finding names now passes (2 tests, 0 failures), run on its own. What is verified is the battle's verdict, not a reading of the repair: the check that was red is the check that is green.
+
 `adversarial/reactivity/signal-shaped-arguments.battle.test.mjs`
 
 `setDisabled`, `setReadonly`, `setInactive`, `addValidators` and `upsertValidators` accept a value
@@ -34,6 +36,8 @@ internal the caller never wrote. `getValue()` keeps answering, so the form looks
 
 ## 2. A whole-value write that is not one empties the form
 
+**Closed — verified green.** Every battle this finding names now passes (2 tests, 0 failures), run on its own. What is verified is the battle's verdict, not a reading of the repair: the check that was red is the check that is green.
+
 `adversarial/validation/a-whole-value-that-is-not-one.battle.test.mjs` — two battles.
 
 `setValue` given a string, a number, `null`, nothing, an array or an object whose keys the schema
@@ -46,6 +50,8 @@ does not know leaves every field `null` and every collection empty. The engine's
 nothing.
 
 ## 3. Undoing a write that ended several rows returns a state that never existed
+
+**Closed — verified green.** Every battle this finding names now passes (4 tests, 0 failures), run on its own. What is verified is the battle's verdict, not a reading of the repair: the check that was red is the check that is green.
 
 `adversarial/persistence/undo-of-a-whole-write.battle.test.mjs` — two battles.
 
@@ -103,6 +109,8 @@ under any reading.
 
 ## 7. The v2 tree parser drops field defects in silence
 
+**Closed — verified green.** Every battle this finding names now passes (6 tests, 0 failures), run on its own. What is verified is the battle's verdict, not a reading of the repair: the check that was red is the check that is green.
+
 `adversarial/dynamic-contract/what-the-parser-says-it-did.battle.test.mjs` — three battles.
 
 A kind nobody declared, a field with no kind, a select with no options, a select whose options are
@@ -152,6 +160,8 @@ two sharing a key, one labelled with its own JSON. `optionsWithUnrecognizedValue
 so one repair covers both.
 
 ## 12. A server's answer rendered as `[object Object]`
+
+**Closed — verified green.** Every battle this finding names now passes (2 tests, 0 failures), run on its own. What is verified is the battle's verdict, not a reading of the repair: the check that was red is the check that is green.
 
 `adversarial/validation/what-the-server-said.battle.test.mjs`
 
@@ -275,6 +285,8 @@ the same failure into a verdict on the field and keeps the form readable, which 
 pattern for both and the green battle beside them.
 
 ## 22. A refusal the server sent that reaches nobody
+
+**Closed — verified green.** Every battle this finding names now passes (1 test, 0 failures), run on its own. What is verified is the battle's verdict, not a reading of the repair: the check that was red is the check that is green.
 
 `adversarial/security/what-the-server-refused.battle.test.mjs`
 
@@ -713,6 +725,8 @@ consumer is invited to use, that does nothing. Either it gates something, or it 
 
 ## 38. Two published error classes nothing ever produces
 
+**Closed — verified green.** Every battle this finding names now passes (2 tests, 0 failures), run on its own. What is verified is the battle's verdict, not a reading of the repair: the check that was red is the check that is green.
+
 Same class as findings 27's postscript and 37, and the most complete case of it: an entire diagnostic
 pathway on the public surface that cannot fire.
 
@@ -793,6 +807,8 @@ early-failing reds is what unlocks the search behind them.
 
 ## 41. A renamed row moves to the end
 
+**Closed — verified green.** Every battle this finding names now passes (3 tests, 0 failures), run on its own. What is verified is the battle's verdict, not a reading of the repair: the check that was red is the check that is green.
+
 `adversarial/collections/a-renamed-row-changes-places.battle.test.mjs` — 2 red, 1 green.
 
 Found by surveying past the first divergence (finding 40's tool). The property this lives in stops at
@@ -832,6 +848,8 @@ The battle asserts the position, because that is what a rendered list shows; a d
 make this battle wrong on purpose, which is a better outcome than silence.
 
 ## 42. A bulk write costs one undo per row, and comes back backwards
+
+**Closed — verified green.** Every battle this finding names now passes (3 tests, 0 failures), run on its own. What is verified is the battle's verdict, not a reading of the repair: the check that was red is the check that is green.
 
 `adversarial/collections/one-edit-one-undo.battle.test.mjs` — 3 red.
 
@@ -876,6 +894,8 @@ Each battle is written so either resolution closes it: one step per call, or a d
 that passes through the state the person was in, or a documented reordering.
 
 ## 43. A row that carries a collection survives being told to leave
+
+**Closed — verified green.** Every battle this finding names now passes (2 tests, 0 failures), run on its own. What is verified is the battle's verdict, not a reading of the repair: the check that was red is the check that is green.
 
 `regressions/a-row-that-would-not-go.battle.test.mjs` — 2 red. The generative campaign has reported
 this class for a while; what is new is the reduction and the condition.
@@ -986,6 +1006,8 @@ Recorded because a negative result costs the same to produce and saves the next 
   marker that a path is a collection; an empty map comes back `{}` and an empty list `[]`.
 
 ## 46. Two spellings of a bound, one control, one rule
+
+**Closed — verified green.** Every battle this finding names now passes (3 tests, 0 failures), run on its own. What is verified is the battle's verdict, not a reading of the repair: the check that was red is the check that is green.
 
 `adversarial/dynamic-contract/two-ways-to-say-a-bound.battle.test.mjs` — 2 red, 1 green.
 
@@ -1184,6 +1206,8 @@ The one thing worth carrying elsewhere: that error arrives on an untouched field
 finding 23 is about. Here the error is true, so painting it immediately helps rather than misleads.
 
 ## 50. Undo puts the row back last
+
+**Closed — verified green.** Every battle this finding names now passes (2 tests, 0 failures), run on its own. What is verified is the battle's verdict, not a reading of the repair: the check that was red is the check that is green.
 
 `regressions/undo-puts-the-row-back-last.battle.test.mjs` — 2 red.
 
@@ -1567,6 +1591,8 @@ already exist one call away.
 
 ## 61. The one door in 60 where being ignored costs everything
 
+**Closed — verified green.** Every battle this finding names now passes (1 test, 0 failures), run on its own. What is verified is the battle's verdict, not a reading of the repair: the check that was red is the check that is green.
+
 `adversarial/validation/a-whole-value-that-names-nothing.battle.test.mjs` — 1 red. **S0.**
 
 Finding 60 lists six doors that take a name the schema does not have without a word. On five of them
@@ -1647,6 +1673,8 @@ that it is not gated and that `when` is how you gate it. The second is a documen
 consequence on a bill, which is still a finding.
 
 ## 63. The seventh door, and the only one with the refusal built into the same call
+
+**Closed — verified green.** Every battle this finding names now passes (1 test, 0 failures), run on its own. What is verified is the battle's verdict, not a reading of the repair: the check that was red is the check that is green.
 
 `adversarial/validation/one-call-two-arguments.battle.test.mjs` — 1 red. **S2.**
 New claim **API-001**: *a published call that cannot do what it was asked says so.*
@@ -1792,6 +1820,8 @@ empty. Whether a server can tell an emptied row from a removed one is a separate
 filed, because the row's absence is consistent with the rule rather than an exception to it.
 
 ## 65. One transposed letter, and Submit stops working forever
+
+**Closed — verified green.** Every battle this finding names now passes (1 test, 0 failures), run on its own. What is verified is the battle's verdict, not a reading of the repair: the check that was red is the check that is green.
 
 `adversarial/validation/a-rule-about-a-field-that-is-not-there.battle.test.mjs` — 1 red. **S1**
 under VAL-003. **The heaviest of the API-001 family, and the only one that runs the other way.**
@@ -2043,6 +2073,8 @@ declared property is worth suspecting the harness for first.
 
 ## 68. A refusal that names a list and shows none
 
+**Closed — verified green.** Every battle this finding names now passes (1 test, 0 failures), run on its own. What is verified is the battle's verdict, not a reading of the repair: the check that was red is the check that is green.
+
 `adversarial/validation/a-sentence-with-nothing-after-it.battle.test.mjs` — 2 green, 1 red.
 Filed under **UI-004**, whose S2 is the nearest registered severity. By the model this is **S3** — a
 misleading diagnostic — and no registered claim sits there; the number is the claim's, not the
@@ -2126,6 +2158,8 @@ The first is why a refused submit explains itself instead of the button appearin
 second is why a successful one leaves the page alone. Neither was held anywhere.
 
 ## 69. A list of choices, printed the way JavaScript prints an object
+
+**Closed — verified green.** Every battle this finding names now passes (1 test, 0 failures), run on its own. What is verified is the battle's verdict, not a reading of the repair: the check that was red is the check that is green.
 
 `adversarial/validation/a-list-a-person-cannot-read.battle.test.mjs` — 3 green, 1 red. **S2.**
 Sibling of 68: same sentence, the other way of failing it.
@@ -2607,6 +2641,8 @@ red rather than as nothing.
 
 ## 75. An operator nobody declared, and the section it opens
 
+**Closed — verified green.** Every battle this finding names now passes (2 tests, 0 failures), run on its own. What is verified is the battle's verdict, not a reading of the repair: the check that was red is the check that is green.
+
 `adversarial/security/an-operator-nobody-declared.battle.test.mjs` — 2 battles, 1 red each.
 **S1** under DYN-003/VAL-003 for the first, **S0** under DYN-003/SEC-004 for the second.
 
@@ -2686,6 +2722,8 @@ that will not submit — so a consumer who misspells it sees a Submit that refus
 protection that is off. Recorded rather than filed on its own.
 
 ## 76. The other door a pattern comes through
+
+**Closed — verified green.** Every battle this finding names now passes (1 test, 0 failures), run on its own. What is verified is the battle's verdict, not a reading of the repair: the check that was red is the check that is green.
 
 `adversarial/security/the-other-door-a-pattern-comes-through.battle.test.mjs` — 4 green, 1 red.
 **S0** under SEC-004: *a document cannot make the form stop answering.*
@@ -5567,3 +5605,30 @@ One of the five rewrites broke its file, and the lint caught it in the same pass
 `] as const;` and a regex looking for `];` swallowed the opening of the next test — restored from git
 and redone by hand. Which is the third instance of this batch's rule, applied to the tool doing the
 applying: a pattern that matches most of the cases is not the same as reading what is there.
+
+## The register audited against the suite
+
+Every finding that names a battle file, checked against what those files do today: the node tier run
+once and its fifty-one failing titles collected, the browser tier run once and its eighteen failing
+specs collected, and each finding matched against both.
+
+```
+findings naming a battle file   103
+currently red                    58
+say open, battles now green      19   ← marked closed above
+say closed, battles still red     0
+```
+
+**Nineteen entries had drifted.** Findings 1, 2, 3, 7, 12, 22, 38, 41, 42, 43, 46, 50, 61, 63, 65, 68,
+69, 75 and 76 all read as open while every battle they name passes. Each was re-run on its own to
+confirm it before the entry was changed — a title that no longer appears in a failing run is not the
+same as a file that passes.
+
+The drift runs in one direction only, and it is the direction it always runs: somebody else did the
+work. Nothing was marked closed that is still red.
+
+Two instrument errors on the way, both of which produced a wrong list before they were caught. Titles
+in a failing run are prefixed `[S0][CLAIM-001]`, and a regex taking everything after the first `]`
+kept the second bracket group as part of the title, so nothing matched and sixty-six findings looked
+green. And "closed" matched inside the title *a calendar behind a closed picker*, which reported an
+open finding as one claiming to be shut. The numbers above are from the corrected pass.
