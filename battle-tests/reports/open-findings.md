@@ -4307,7 +4307,7 @@ whole measurement vacuous, so the absence of all six is checked before anything 
 
 ## 93. A new list of options that nobody is told about
 
-`adversarial/accessibility/an-option-that-left-while-you-were-pointing-at-it.battle.test.mjs` — 2 red.
+`adversarial/accessibility/an-option-that-left-while-you-were-pointing-at-it.battle.test.mjs` — 3 red.
 
 Swept across the published surface — ten controllers, thirty-one setters, each measured on its own
 fresh controller. **Twenty-eight announce themselves to `subscribeController`, which is what every
@@ -4333,6 +4333,20 @@ until the user does something else and `view()` keeps describing it.
 `setDescribedBy` and `setPopupRendered` are the same defect on smaller ground: the first carries an
 `aria-describedby` relationship that never reaches the element, the second tells the controller its
 popup is in the document.
+
+**What it costs, from where a consumer stands.** A React select painting one row per option the hook
+reports, with a memoized config so the component settles and finding 91 is not in the way:
+
+```
+after mount        renders: 2       on the page: Alpha,Beta
+after setOptions   renders: 2 (+0)  on the page: Alpha,Beta
+                                    the hook's state says: Xi,Yi,Zeta
+after an unrelated re-render        on the page: Xi,Yi,Zeta
+```
+
+The call reaches the controller — its state is already the new list — and the page keeps the old one
+until something else happens to render the component. The hook's own state and the document it
+produced disagree, and nothing reports it.
 
 The accessible half is sharper. Open the list, move to the last option, let a shorter list arrive:
 
