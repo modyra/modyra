@@ -1888,3 +1888,38 @@ native picker instead                  the matching preset becomes aria-selected
 The two doors into one value agree. Recorded because checking the wrong attribute is how an
 accessibility finding gets invented, and because axe reports nothing here — a purpose-built check was
 the only way to know either way.
+
+## Checked and clean: a value the form was given is a value the control shows
+
+The reverse of finding 66's question, per kind: mount each kind with an `initialValue` — which is the
+server-prefill and draft-restore direction — and see whether the control shows it.
+
+```
+text email textarea number slider     shown in the input
+colors "#22c55e"                      shown, and the matching preset is aria-selected
+datepicker "2026-03-04"               shown
+daterange {start, end}                BOTH ends shown
+timepicker "02:30 PM"                 shown
+select "one"                          the trigger reads "One"
+radio / segmented "one"               the matching input is checked
+multiselect ["one"]                   the matching option is aria-selected
+checkbox / toggle true                checked
+```
+
+Every kind holds. **The daterange showing a prefilled range is worth naming**: it confirms finding 66
+is about *typing* specifically, not about the control being unwired from the value — the display
+direction works there.
+
+**A first pass reported `select`, `radio` and `segmented` as NOT SHOWN, and that was wrong.** The
+probe passed `options: ["One","Two"]` — plain strings — where the contract declares
+`MdyControlOption { value, label }`. The engine's own behaviour under that input is exactly what this
+campaign asks for, checked directly:
+
+```
+parseDynamicFields([{ kind: "select", options: ["One","Two"] }])
+  → []   and   [modyra] Dropped dynamic field "f": kind "select" requires a valid options array.
+```
+
+Refused at the door, named, with the reason. What produced `Value must be one of: undefined, undefined`
+on screen was the probe mounting past the parser, not the parser. Every committed spec in this tier
+was re-checked and passes `{ value, label }`, so nothing in the register rests on it.
