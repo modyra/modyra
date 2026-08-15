@@ -104,6 +104,43 @@ battle(
       }
     }
 
+    // The same vocabulary one level down: a field may name its own sanitiser, and an unknown name
+    // there has the same consequence with a smaller blast radius. A repair that reached only the
+    // form-level option would leave a consumer who misspells it on a field uncovered, and nothing
+    // would say so.
+    const perField = [];
+    for (const profile of ["stict", 42, ""]) {
+      const said = [];
+      const realWarn = console.warn;
+      const realError = console.error;
+      console.warn = (...parts) => said.push(parts.join(" "));
+      console.error = (...parts) => said.push(parts.join(" "));
+      let held;
+      let refused = null;
+      try {
+        const form = createForm({ a: field("", [], { sanitize: profile }) }, { devWarnings: true });
+        form.f.a.set(MARKUP);
+        await settled();
+        held = form.getValue().a;
+        form.destroy();
+      } catch (error) {
+        refused = String(error?.message ?? error);
+      } finally {
+        console.warn = realWarn;
+        console.error = realError;
+      }
+      ctx.log.note("a field naming its own sanitiser badly", { profile, held, refused, said });
+      if (refused === null && said.length === 0 && /[<>]/.test(String(held))) {
+        perField.push({ profile, held: String(held) });
+      }
+    }
+
+    expectEqual(perField, [], {
+      claimIds: ["API-001"],
+      what: "a field naming a sanitiser that does not exist was given the one that does nothing, silently",
+      detail: JSON.stringify(perField),
+    });
+
     // Either repair closes it: refuse the option, or say that nothing was installed. What this
     // refuses is the third thing — a request for a sanitiser answered by the profile named "off",
     // with nothing to tell the consumer apart from somebody who asked for nothing.
