@@ -2606,3 +2606,45 @@ The per-field sanitiser is **finding 74 one level down** and the repair should r
 is the same silence with the opposite consequence: the fallback is the *more* careful member — a form
 that will not submit — so a consumer who misspells it sees a Submit that refuses rather than a
 protection that is off. Recorded rather than filed on its own.
+
+## 76. The other door a pattern comes through
+
+`adversarial/security/the-other-door-a-pattern-comes-through.battle.test.mjs` — 4 green, 1 red.
+**S0** under SEC-004: *a document cannot make the form stop answering.*
+
+ADR 0050 put a cost check on patterns arriving in a document's `validators.pattern`, and it works. A
+pattern arrives through a **second** door: `matches` is one of the twelve expression operators and its
+right-hand operand is a pattern string, so every `when` on a section and every condition on a field
+can carry one. That door has no cost check.
+
+Measured side by side, same pattern, same input — thirty `a`s and a `!`, which is something a person
+could type:
+
+```
+buildDynamicValidators({ pattern: "(a+)+$" })   answered in 13 ms      ADR 0050's guard
+evaluateExpression matches "^a+$"               answered in 0 ms       the door works
+evaluateExpression matches "(a+)+$"             KILLED at 1000 ms      still running
+                        "^(a|a)*$", "^(a*)*$"   the same
+```
+
+And the author-time half says nothing:
+
+```
+validateExpression({ op: "matches", operands: [{ path: "v" }, "(a+)+$"] }, "when")   →  []
+```
+
+Accepted, with no diagnostic, by the same function that refuses a misspelled operator by name.
+
+**A `when` is read whenever the form is read.** So a document carrying one condition of this shape
+does not make a slow form — it makes a form that stops answering between one keystroke and the next.
+
+Both doors are in the battle rather than one, because the finding *is* the difference between them:
+the guarded door answering in milliseconds is what makes the other one a gap rather than an absence.
+The ordinary pattern through the same expression door is the second control, so what is asserted is
+the cost and not `matches` being unusable.
+
+Measured in a child process under a budget, as `document-patterns` does — a pattern that does not
+terminate cannot be timed from inside the process it is hanging.
+
+Sibling of 75: the same two functions, the same closed vocabulary, and the same shape of gap — what
+the author-time check knows is not what the evaluator enforces.
