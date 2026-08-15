@@ -7311,3 +7311,41 @@ The other half of the same sweep is not a finding either: the shipped stylesheet
 `--mdy-input-disabled-bg` and so on. Those are read with fallbacks and defined nowhere in the package:
 they are the theming surface a consumer fills in, not properties a renderer must set. The fourteen
 are the ones a *renderer* writes.
+
+## 131. A comparison that guards one of its two arguments
+
+**Severity** S3 · **Classification** published function throws where its own guard shows it should
+answer · **Battle** `adversarial/widgets/one-side-of-a-comparison.battle.test.mjs` (red) · **Claims**
+API-001, UI-006
+
+`colorValueEquals(left, right)` decides whether a colour field has changed — whether the swatch
+redraws, whether the field is dirty, whether a draft is written. It reads:
+
+```js
+(left ?? "").toLowerCase() === right.toLowerCase()
+```
+
+The `?? ""` on the left says plainly that being handed nothing was expected. The right has no guard:
+
+```
+colorValueEquals(null,  "#fff")   false           the guarded side answers
+colorValueEquals("#fff", null)    TypeError
+colorValueEquals("#fff", undefined) TypeError
+colorValueEquals(null,  null)     TypeError       neither is set, and the answer is obvious
+```
+
+The last line is the one worth the report: comparing two absent values is the easiest form of the
+question and the only one that crashes.
+
+Small, and honestly so: `MDY_VALUE_CONTRACTS.colors` is `{shape: "string", nullable: false}`, so a
+renderer following the contract holds strings on both sides and never reaches it. It is worth a line
+because the function is published, a consumer may hold a colour that is not set yet, and the guard on
+the left is the evidence that they were expected to.
+
+### Checked and clean: the hex a colour box will take
+
+Same battle, green. `colorValueTransition` reads three digits or six, with or without the hash, and
+trims whitespace — `"fff"`, `" #fff "` and `"#FFFFFF"` all land. Two, four and eight digits, non-hex
+letters and an empty box leave the value alone rather than writing a broken one: the outcome carries
+no `value` at all rather than an unusable string. Choosing a preset commits *and* closes; typing does
+neither; an unreadable preset does nothing.
