@@ -9488,3 +9488,72 @@ where a finding lands are decisions each route takes separately.
   rather than thrown, so one hostile key does not take a batch down with it; `"0"` and `"toString"`
   are kept and hold what they were given; the prototype is intact; and both routes end with the same
   key list.
+
+## 166. A row a draft invented
+
+**S1 · Modyra bug · `@modyra/core`**
+Claims: PER-001, COL-002 · severity stated above the claims' own
+Battle: `battle-tests/adversarial/persistence/a-row-a-draft-invented.battle.test.mjs` (red, enforced)
+
+A draft is written flat, one entry per leaf path, and read back the same way: `lines.x.sku` is a cell
+of row `x`, and the row is **recreated from the path**. That is what lets a draft restore a collection
+at all.
+
+It also makes the path the instruction. `draftShapeMatches` guards the *value* against the field's
+initial, and the security guide is explicit that a draft lives where every script on the origin can
+write it. One extra segment in a key is the whole attack:
+
+```
+lines.a.b.sku = "OWNED"
+```
+
+There is no row `a`, and no `b` inside a row. Both are made:
+
+```
+                    core (document route)                    zod bridge
+keys                ["x", "a"]                               ["x", "a"]
+row a               {sku: "", b: {sku: "OWNED"}}             {sku: null, b: {sku: "OWNED"}}
+valid               true                                     false
+canSubmit           true                                     false
+errors on `lines`   none                                     the schema's
+submitValue()       THROWS "[modyra] Flat patch does not match schema shape"
+submit()            THROWS TypeError: Cannot read properties of undefined (reading 'slice')
+onSubmit            never called
+```
+
+### Two promises break, and they are different promises
+
+The layering meant to catch this is recorded in `adversarial/persistence/draft-shape-gate.battle.test.mjs`:
+the gate is permissive *on purpose* because the shape alone invalidates, so `canSubmit` is false and
+a consumer following the contract cannot send it. **On the core route that does not happen.** The form
+reports itself valid, submittable, and free of errors.
+
+And then neither way of sending it works. A form that cannot be submitted has to say so before it is
+asked; a published read has to answer for any state the engine let itself reach. `submitValue()`
+refuses by name, which is at least legible. `submit()` fails with a raw `TypeError` from inside, which
+is not.
+
+The zod bridge catches the *shape* — its schema has an opinion about what a row holds — so
+`canSubmit` is false there. It does not stop the row being created, and `submitValue()` throws just
+the same.
+
+### Why S1 and not S2
+
+Nothing wrong is sent, because nothing can be sent at all. What is reachable from a documented door is
+a form that says it is ready and is not: a denial of the form, plus a collection holding a row its
+document never described. Stated above the claims' own severity, so it cannot be marked `open`.
+
+## Closed since: 152, and the date half of 160
+
+Verified here rather than taken on report.
+
+**152** — `a-value-the-model-was-allowed-to-hold` 2/2 green, `a-control-that-stops-at-a-value-it-was-given`
+4/4 green. The repair went further than my pointer did: the third site was
+`multiselect-field-controller.ts`'s `heldValues()`, inside the computed the widget draws from, which
+is why plain stayed red after the first two were fixed. My own log had named it and I had read it as a
+consequence.
+
+**160's remainder** — `evaluateRuleCondition` now compares two calendar dates as dates:
+`"2026-02-01" > "2026-1-10"` is true, `"2026-12-01" > "2026-2-01"` is true, `"2026-01-02" >
+"2026-01-10"` stays false, and `"beta" > "alpha"` stays a text comparison. The battle is promoted from
+a todo to an enforced regression.
