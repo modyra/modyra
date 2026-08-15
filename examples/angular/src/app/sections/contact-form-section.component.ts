@@ -338,8 +338,8 @@ export class ContactFormSectionComponent {
     console.log("Form submitted with value:", event.value);
   }
 
-  onFileSelected(file: File | File[] | null): void {
-    console.log("File selected before submit:", file);
+  onFileSelected(files: readonly File[] | null): void {
+    console.log("File selected before submit:", files);
   }
 
   patchContactForm(form: MdyFormComponent<Record<string, unknown>>): void {
