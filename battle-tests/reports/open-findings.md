@@ -3394,3 +3394,31 @@ cardStyle  declared not sensitive    shown         and the way to correct it
 
 The guess may be widened or narrowed at any time and nobody would notice. A declaration that stopped
 winning would leave a consumer with no way to correct either kind of error, and nothing asserted it.
+
+## Checked and clean: the conformance kit refuses three subtler adapters too
+
+`adversarial/reactivity/what-conformance-catches.battle.test.mjs` — the mutation list grows from seven
+to **ten**, still green.
+
+The kit is what a third-party adapter author runs to certify their reactivity, so what it refuses is
+what "conformant" means for every adapter nobody here wrote. The seven already fed to it are pieces
+that are **missing** — a signal that never notifies, a computed that never recomputes, an effect that
+runs once, a scope whose destroy does nothing, an untracked that tracks, a claimed capability that is
+not implemented.
+
+Three added, all pieces that do **slightly too much**, which is the shape a working-but-wrong adapter
+actually has:
+
+```
+a signal that notifies on a write of the same value    refused
+a scope that destroys only its first effect            refused
+an effect that subscribes twice                        refused
+```
+
+The second is the realistic teardown bug — a partial destroy, which is what leaves work alive after a
+form is gone — and the third is a double subscription, which a wrapper around a framework's own
+primitives produces by accident.
+
+**The battle's structure already guards the vacuous case**: a mutation the kit crashed on rather than
+refused would report zero checks and zero failures, and zero failures is what the assertion collects
+as "declared conformant". Green means each of the ten ran the kit and at least one check failed on it.
