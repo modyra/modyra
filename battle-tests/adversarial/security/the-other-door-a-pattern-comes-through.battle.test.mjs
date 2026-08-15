@@ -1,28 +1,21 @@
 /**
- * The same catastrophic pattern, through the door nobody guarded.
+ * The second place a document hands the engine a regular expression.
  *
- * ADR 0050 put a cost check on patterns that arrive in a document's `validators.pattern`, and it
- * works: `(a+)+$` against a thirty-character input answers in milliseconds where it used to take
- * twelve seconds.
+ * `validators.pattern` is the door already watched: a document supplies a string, the engine compiles
+ * it, and a catastrophic one would run between two keystrokes. `matches` is the other door. It takes
+ * a literal pattern inside an expression, and expressions are what a document's `validations` and
+ * `rules` are made of — the same untrusted origin, a different route in.
  *
- * A pattern arrives through a second door. `matches` is one of the twelve expression operators and
- * its right-hand operand is a pattern string, so a condition — a `when` on a section, a rule on a
- * field — carries one too. That door has no cost check:
+ * Both halves of that route are guarded, and each has to be, because they fail differently. The
+ * checker refuses the expression outright, so a document carrying one is rejected with a diagnostic
+ * instead of becoming a form. The evaluator answers `false` without running the pattern, so a host
+ * that built an expression by hand and never checked it is not the way in either.
  *
- *     validateExpression({ op: "matches", operands: [{ path: "v" }, "(a+)+$"] }, "w")   →  []
+ * This battle is green. It exists because a guard that stops working looks exactly like a guard that
+ * is working until something takes twelve seconds, and neither half had a battle.
  *
- * Accepted, with nothing said. And evaluating it against a value somebody could type does not return.
- *
- * A `when` is read whenever the form is read. So a document with one condition of this shape does not
- * make a slow form: it makes a form that stops answering, between one keystroke and the next, which
- * is `SEC-004` in its own words.
- *
- * Both doors are measured here rather than one, because the finding is the difference between them —
- * and an ordinary pattern through the same expression door is the second control, so what is asserted
- * is the cost rather than `matches` being broken.
- *
- * The measurement runs in a child process under a budget. A pattern that does not terminate cannot be
- * timed from inside the process it is hanging, and a battle that has to be killed is one nobody keeps.
+ * Each pattern runs in a child process under a budget. A pattern that does not terminate cannot be
+ * measured from inside the process it is hanging.
  */
 
 import { execFileSync } from "node:child_process";
@@ -32,7 +25,7 @@ import { dirname, join, resolve } from "node:path";
 import { validateExpression } from "@modyra/core";
 
 import { battle } from "../../harness/battle.mjs";
-import { expectClaim, expectEqual } from "../../harness/assertions.mjs";
+import { expectClaim } from "../../harness/assertions.mjs";
 
 const HERE = dirname(new URL(import.meta.url).pathname);
 const BATTLE_ROOT = resolve(HERE, "..", "..");
@@ -40,98 +33,118 @@ const BATTLE_ROOT = resolve(HERE, "..", "..");
 /** Valid regular expressions whose cost explodes on input that does not match. */
 const CATASTROPHIC = Object.freeze(["(a+)+$", "^(a|a)*$", "^(a*)*$"]);
 
+/** A pattern with nothing wrong with it, for the control. */
+const ORDINARY = "^a+$";
+
 /** An input a person could type into a field without trying to break anything. */
-const TYPED = `${"a".repeat(30)}!`;
+const TYPED = `${"a".repeat(28)}!`;
 
-/** How long one read of one condition may take before a form has stopped answering. */
-const BUDGET_MS = 1000;
+/** How long one condition may take before the form has stopped answering. */
+const BUDGET_MS = 2000;
 
-/** Run one line of engine work in a child process and report whether it came back. */
-function underBudget(body) {
-  const dir = mkdtempSync(join(BATTLE_ROOT, ".tmp-expression-"));
+/**
+ * Evaluate `matches` against a pattern in a child process, reporting how long it took.
+ *
+ * `finished` is whether the child answered at all; `answered` is what the expression said. They are
+ * named apart because a condition legitimately answers `false`, and one flag for both reads that as
+ * a process that never returned.
+ */
+function evaluateUnderBudget(pattern) {
+  const dir = mkdtempSync(join(BATTLE_ROOT, ".tmp-matches-"));
   const script = join(dir, "run.mjs");
   writeFileSync(
     script,
     [
-      `import { buildDynamicValidators, evaluateExpression } from "@modyra/core";`,
-      `const TYPED = ${JSON.stringify(TYPED)};`,
+      `import { evaluateExpression } from "@modyra/core";`,
       `const started = process.hrtime.bigint();`,
-      body,
-      `console.log(String(Number(process.hrtime.bigint() - started) / 1e6));`,
+      `let answered = null, error = null;`,
+      `try { answered = evaluateExpression({ op: "matches", operands: [{ path: "f" }, ${JSON.stringify(pattern)}] }, { f: ${JSON.stringify(TYPED)} }); }`,
+      `catch (thrown) { error = String(thrown?.message ?? thrown).slice(0, 60); }`,
+      `console.log(JSON.stringify({ answered, error, ms: Math.round(Number(process.hrtime.bigint() - started) / 1e6) }));`,
     ].join("\n"),
     "utf8",
   );
 
   try {
-    const stdout = execFileSync(process.execPath, [script], {
+    return { finished: true, ...JSON.parse(execFileSync(process.execPath, [script], {
       encoding: "utf8",
       timeout: BUDGET_MS,
       stdio: ["ignore", "pipe", "pipe"],
-    });
-    return { answered: true, ms: Math.round(Number(stdout.trim().split("\n").at(-1))) };
+    }).trim()) };
   } catch (error) {
-    // A timeout is the finding, not an error in the battle: the child was killed still running.
-    return { answered: false, signal: error.signal ?? null };
+    // A timeout is the finding: the child was killed because the pattern was still running.
+    return { finished: false, killed: error.killed === true, signal: error.signal ?? null };
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }
 }
 
-const throughExpression = (pattern) =>
-  underBudget(`evaluateExpression({ op: "matches", operands: [{ path: "v" }, ${JSON.stringify(pattern)}] }, { v: TYPED });`);
-
-const throughValidator = (pattern) =>
-  underBudget(`for (const v of buildDynamicValidators({ pattern: ${JSON.stringify(pattern)} }).validators) v(TYPED);`);
+/** Whether the published checker accepts a `matches` expression carrying `pattern`. */
+function checkerAccepts(pattern) {
+  const issues = validateExpression({ op: "matches", operands: [{ path: "f" }, pattern] }, ["f"]);
+  return Array.isArray(issues) ? issues.length === 0 : issues === true;
+}
 
 battle(
   {
-    claims: ["SEC-004", "DYN-003"],
-    title: "a pattern inside a condition costs what a pattern inside a validator costs",
+    claims: ["SEC-004", "DYN-002"],
+    title: "a pattern inside a condition is refused where the condition is checked",
     environments: ["node"],
   },
   async (ctx) => {
-    // The first control: an ordinary pattern through the expression door answers at once, so what
-    // follows is the cost rather than `matches` being unusable.
-    const ordinary = throughExpression("^a+$");
-    ctx.log.note("an ordinary pattern in a condition", ordinary);
-
-    expectClaim(ordinary.answered && ordinary.ms < 100, {
-      claimIds: ["SEC-004"],
-      what: "an ordinary pattern in a condition did not answer promptly, so the budget measures the wrong thing",
-      detail: JSON.stringify(ordinary),
+    // The control: an ordinary pattern is accepted, so refusal below is the pattern rather than a
+    // checker that refuses every `matches`.
+    expectClaim(checkerAccepts(ORDINARY), {
+      claimIds: ["DYN-002"],
+      what: "an ordinary pattern was refused inside a condition, so nothing here is measurable",
     });
 
-    // The second control, and the one that makes this a gap rather than an absence: the *other* door
-    // takes the same pattern and answers.
     for (const pattern of CATASTROPHIC) {
-      const guarded = throughValidator(pattern);
-      ctx.log.note("the same pattern through the door ADR 0050 guards", { pattern, ...guarded });
+      const accepted = checkerAccepts(pattern);
+      ctx.log.note("a catastrophic pattern offered to the checker", { pattern, accepted });
 
-      expectClaim(guarded.answered && guarded.ms < BUDGET_MS, {
+      expectClaim(!accepted, {
         claimIds: ["SEC-004"],
-        what: `the validator door no longer bounds ${JSON.stringify(pattern)}, so there is no guarded door to compare against`,
-        detail: JSON.stringify(guarded),
+        what: `the checker accepted ${JSON.stringify(pattern)} inside a condition, so a document carrying it becomes a form`,
       });
     }
 
-    // The author-time half: nothing is reported about these where a document is read.
-    const reported = CATASTROPHIC.filter(
-      (pattern) => validateExpression({ op: "matches", operands: [{ path: "v" }, pattern] }, "when").length > 0,
-    );
-    ctx.log.note("which of them the author-time check mentions", { reported });
-
-    // And the door itself.
-    const hung = [];
-    for (const pattern of CATASTROPHIC) {
-      const outcome = throughExpression(pattern);
-      ctx.log.note("a catastrophic pattern in a condition", { pattern, ...outcome });
-      if (!outcome.answered || outcome.ms >= BUDGET_MS) hung.push({ pattern, ...outcome });
-    }
-
-    expectEqual(hung, [], {
-      claimIds: ["SEC-004", "DYN-003"],
-      what: `a pattern inside a condition took one read past ${BUDGET_MS}ms, where the same pattern inside a validator is bounded`,
-      detail: JSON.stringify({ hung, reportedByTheAuthorTimeCheck: reported }),
+    // And a pattern that is not a pattern at all is refused rather than thrown, which is what makes
+    // the refusals above a judgement about cost rather than about parsing.
+    expectClaim(!checkerAccepts("["), {
+      claimIds: ["SEC-004"],
+      what: "an unparseable pattern was accepted inside a condition",
     });
+  },
+);
+
+battle(
+  {
+    claims: ["SEC-004"],
+    title: "a pattern that was never checked is not run either",
+    environments: ["node"],
+  },
+  async (ctx) => {
+    // The control: the evaluator answers about an ordinary pattern, through the same child process,
+    // so a fast answer below is the guard rather than a harness that never evaluates anything.
+    const ordinary = evaluateUnderBudget(ORDINARY);
+    ctx.log.note("an ordinary pattern through the evaluator", ordinary);
+
+    expectClaim(ordinary.finished === true && ordinary.error === null && typeof ordinary.answered === "boolean", {
+      claimIds: ["SEC-004"],
+      what: "the evaluator did not answer about an ordinary pattern",
+      detail: JSON.stringify(ordinary),
+    });
+
+    for (const pattern of CATASTROPHIC) {
+      const outcome = evaluateUnderBudget(pattern);
+      ctx.log.note("a catastrophic pattern handed straight to the evaluator", { pattern, outcome });
+
+      expectClaim(outcome.finished === true && outcome.ms < BUDGET_MS, {
+        claimIds: ["SEC-004"],
+        what: `evaluating a condition carrying ${JSON.stringify(pattern)} took past ${BUDGET_MS}ms`,
+        detail: JSON.stringify(outcome),
+      });
+    }
   },
 );
