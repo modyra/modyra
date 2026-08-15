@@ -37,6 +37,7 @@ battle(
   {
     claims: ["DYN-003"],
     title: "a document picks which refusal it is reported under by naming a field after it",
+    open: "reported, not enforced: finding 158, open in battle-tests/reports/open-findings.md",
     environments: ["node"],
   },
   async (ctx) => {

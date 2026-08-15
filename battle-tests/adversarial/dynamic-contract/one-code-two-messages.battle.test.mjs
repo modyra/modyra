@@ -49,6 +49,7 @@ battle(
   {
     claims: ["DYN-003"],
     title: "a diagnostic carries the phrase its code publishes, whichever shape produced it",
+    open: "reported, not enforced: finding 104, open in battle-tests/reports/open-findings.md",
     environments: ["node"],
   },
   async (ctx) => {

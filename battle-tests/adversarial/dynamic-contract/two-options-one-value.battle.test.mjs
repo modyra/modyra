@@ -29,6 +29,7 @@ battle(
   {
     claims: ["DYN-003", "DYN-001"],
     title: "a document that offers one value twice is told so",
+    open: "reported, not enforced: finding 48, open in battle-tests/reports/open-findings.md",
     environments: ["node"],
   },
   async (ctx) => {

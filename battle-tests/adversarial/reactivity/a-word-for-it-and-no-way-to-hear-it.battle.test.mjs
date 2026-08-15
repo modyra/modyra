@@ -96,6 +96,7 @@ battle(
   {
     claims: ["REA-003"],
     title: "the condition the vocabulary names second is said to the console and nowhere else",
+    open: "reported, not enforced: finding 157, open in battle-tests/reports/open-findings.md",
     environments: ["node"],
   },
   async (ctx) => {

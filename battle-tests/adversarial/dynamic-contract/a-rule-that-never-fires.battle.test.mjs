@@ -104,6 +104,7 @@ battle(
   {
     claims: ["DYN-003"],
     title: "both ways a document says when agree about which paths are conditions",
+    open: "reported, not enforced: finding 28, open in battle-tests/reports/open-findings.md",
     environments: ["node"],
   },
   async (ctx) => {

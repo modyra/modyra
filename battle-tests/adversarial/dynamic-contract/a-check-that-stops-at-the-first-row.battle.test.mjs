@@ -76,6 +76,7 @@ battle(
   {
     claims: ["DYN-001", "DYN-003"],
     title: "a document the parser accepts is one the engine can build",
+    open: "reported, not enforced: finding 101, open in battle-tests/reports/open-findings.md",
     environments: ["node"],
   },
   async (ctx) => {

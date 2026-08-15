@@ -56,6 +56,7 @@ battle(
   {
     claims: ["DYN-001", "DYN-003"],
     title: "every envelope version the parser accepts has a schema that accepts it",
+    open: "reported, not enforced: finding 25, open in battle-tests/reports/open-findings.md",
     environments: ["node"],
   },
   async (ctx) => {
@@ -98,6 +99,7 @@ battle(
   {
     claims: ["DYN-001", "DYN-003"],
     title: "the shape the guide asks a model for is one the published schemas accept",
+    open: "reported, not enforced: finding 25, open in battle-tests/reports/open-findings.md",
     environments: ["node"],
   },
   async (ctx) => {

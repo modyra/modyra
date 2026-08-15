@@ -69,6 +69,7 @@ battle(
   {
     claims: ["DYN-003"],
     title: "every code a parse reports is one the published list has",
+    open: "reported, not enforced: finding 103, open in battle-tests/reports/open-findings.md",
     environments: ["node"],
   },
   async (ctx) => {

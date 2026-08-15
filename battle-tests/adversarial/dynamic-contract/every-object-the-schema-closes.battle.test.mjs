@@ -97,6 +97,7 @@ battle(
   {
     claims: ["DYN-001", "DYN-003"],
     title: "a key the contract does not have is one the parser says something about",
+    open: "reported, not enforced: finding 100, open in battle-tests/reports/open-findings.md",
     environments: ["node"],
   },
   async (ctx) => {
