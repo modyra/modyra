@@ -33,7 +33,7 @@ import { createForm, vanillaReactivity } from "@modyra/core";
 
 import { battle } from "../../harness/battle.mjs";
 import { expectClaim } from "../../harness/assertions.mjs";
-import { KEYED_ROWS_SPEC, POSITIONAL_ROWS_SPEC, buildSchema } from "../../models/schemas.mjs";
+import { KEYED_ROWS_SPEC, NESTED_ORDERS_SPEC, POSITIONAL_ROWS_SPEC, buildSchema } from "../../models/schemas.mjs";
 
 const open = (spec) => createForm(buildSchema(spec).schema, { reactivity: vanillaReactivity(), devWarnings: false });
 
@@ -107,6 +107,64 @@ battle(
       claimIds: ["COL-001", "COL-005"],
       what: `writing ${LARGE} keyed rows costs ${ratio.toFixed(1)}× what writing ${LARGE} positional rows costs`,
       detail: JSON.stringify(measured),
+    });
+  },
+);
+
+battle(
+  {
+    claims: ["COL-001", "COL-005"],
+    title: "a batch of orders costs what its orders cost, not more",
+    environments: ["node"],
+  },
+  async (ctx) => {
+    // The shape a form actually has: orders, each holding lines. Both levels are written with the
+    // collection's own bulk write, once, which is the fastest route the API offers.
+    const build = (orders, lines) => {
+      const form = createForm(buildSchema(NESTED_ORDERS_SPEC).schema, {
+        reactivity: vanillaReactivity(),
+        devWarnings: false,
+      });
+      const value = Object.fromEntries(
+        Array.from({ length: orders }, (_, order) => [
+          `o${order}`,
+          {
+            ref: `R${order}`,
+            lines: Array.from({ length: lines }, (_, line) => ({ sku: `s${line}`, allocations: [] })),
+          },
+        ]),
+      );
+
+      const started = process.hrtime.bigint();
+      form.f.orders.setAll(value);
+      const elapsed = Number(process.hrtime.bigint() - started) / 1e6;
+
+      const held = form.getValue().orders ?? {};
+      const leaves = Object.values(held).reduce((count, order) => count + (order.lines?.length ?? 0), 0);
+      form.destroy();
+      return { elapsed, orders: Object.keys(held).length, leaves };
+    };
+
+    const LINES = 20;
+    const small = build(25, LINES);
+    const large = build(50, LINES);
+    ctx.log.note("a batch of orders, twice the size", { small, large });
+
+    // The control on the measurement: every order and every line landed, at both sizes.
+    expectClaim(small.orders === 25 && small.leaves === 25 * LINES && large.orders === 50 && large.leaves === 50 * LINES, {
+      claimIds: ["COL-001"],
+      what: "the nested bulk write did not hold every order and line it was given",
+      detail: JSON.stringify({ small, large }),
+    });
+
+    // Twice the orders, each the same size, should cost about twice as much. It costs about six
+    // times as much, and the same growth carried on: 100 orders of 20 lines takes eight seconds
+    // where reading them back takes seven milliseconds.
+    const growth = (large.elapsed / large.orders) / (small.elapsed / small.orders);
+    expectClaim(growth < 2.5, {
+      claimIds: ["COL-005", "COL-001"],
+      what: `doubling a batch of orders cost ${growth.toFixed(1)}× as much per order`,
+      detail: JSON.stringify({ small, large }),
     });
   },
 );
