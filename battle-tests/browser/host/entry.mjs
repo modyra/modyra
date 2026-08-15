@@ -10,6 +10,18 @@ import { mountMdyForm } from "@modyra/plain";
 
 const mounted = new Map();
 
+/**
+ * Wrap a submit action so the host keeps what it was handed.
+ *
+ * Every mount goes through this, because "what the page sent" is a question about the page and not
+ * about which convenience a spec happened to mount through. The value is cloned on the way past: the
+ * form goes on owning the one it handed over.
+ */
+const recording = (submitted, action) => (value, ...rest) => {
+  submitted.push(structuredClone(value));
+  return action === undefined ? null : action(value, ...rest);
+};
+
 const fieldsFor = (key) => [
   { name: `rows.${key}.code`, kind: "text", label: "Code", validators: { required: true } },
   { name: `rows.${key}.note`, kind: "text", label: "Note" },
@@ -30,11 +42,13 @@ window.battle = {
     const host = document.createElement("section");
     host.dataset.form = id;
     document.querySelector("#stage").append(host);
+    const submitted = [];
     const handle = mountMdyForm(host, fieldsFor(key), {
       collections: [{ path: "rows", kind: "record" }],
+      onSubmit: recording(submitted),
       ...(idPrefix === undefined ? {} : { idPrefix }),
     });
-    mounted.set(id, { handle, host });
+    mounted.set(id, { handle, host, submitted });
     return id;
   },
 
@@ -47,8 +61,12 @@ window.battle = {
     host.dataset.form = id;
     document.querySelector("#stage").append(host);
     try {
-      const handle = mountMdyForm(host, fields, options);
-      mounted.set(id, { handle, host });
+      const submitted = [];
+      const handle = mountMdyForm(host, fields, {
+        ...options,
+        onSubmit: recording(submitted, options.onSubmit),
+      });
+      mounted.set(id, { handle, host, submitted });
       return { mounted: true };
     } catch (error) {
       return { mounted: false, message: String(error?.message ?? error) };
@@ -69,15 +87,12 @@ window.battle = {
       // form-level error, and a spec can then ask whether the page shows one.
       const submitted = [];
       const handle = mountMdyForm(host, fields, {
-        onSubmit: (value) => {
-          // Kept so a spec can read what the renderer actually sent, not only what it did with the
-          // answer. `structuredClone` because the form goes on owning the value it handed over.
-          submitted.push(structuredClone(value));
+        onSubmit: recording(submitted, () => {
           if (errors !== null && typeof errors === "object" && errors.__throw !== undefined) {
             throw new Error(String(errors.__throw));
           }
           return errors;
-        },
+        }),
       });
       mounted.set(id, { handle, host, submitted });
       return { mounted: true };
