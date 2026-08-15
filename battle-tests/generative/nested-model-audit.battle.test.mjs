@@ -21,7 +21,9 @@
 
 import { battle } from "../harness/battle.mjs";
 import { expectEqual } from "../harness/assertions.mjs";
+import { createConditionalModel } from "./conditional-reference-model.mjs";
 import { createKeyedNestedReferenceModel } from "./keyed-nested-reference-model.mjs";
+import { createReferenceModel } from "./reference-model.mjs";
 import { createNestedReferenceModel } from "./nested-reference-model.mjs";
 import { createSiblingCollectionsReferenceModel } from "./sibling-collections-reference-model.mjs";
 
@@ -128,6 +130,56 @@ battle(
     expectEqual(typeof built, "object", {
       claimIds: ["COL-002"],
       what: "the sibling model does not answer with a value, so nothing below can be read from it",
+    });
+  },
+);
+
+battle(
+  {
+    claims: ["COL-004", "COL-002"],
+    title: "every keyed model keeps a renamed row where it was",
+    environments: ["node"],
+  },
+  async (ctx) => {
+    // A rule three models each encode separately, so it drifts one model at a time. It drifted twice:
+    // `records` and `conditional` both appended a renamed row, which is what the engine did before a
+    // rename kept the row's place. While a model and the engine make the same mistake they agree, and
+    // a campaign reports nothing.
+    const models = [
+      ["records", () => createReferenceModel({ cells: { code: "" } }), "rows"],
+      [
+        "conditional",
+        () => createConditionalModel({ cells: { code: "" }, branch: { prefix: "br", when: () => false, cells: { x: "" } } }),
+        "rows",
+      ],
+      [
+        "keyed-nested",
+        () => createKeyedNestedReferenceModel({ orderCells: { ref: "" }, lineCells: { sku: "" }, allocationCells: { bin: "" } }),
+        "orders",
+      ],
+    ];
+
+    const appended = [];
+    for (const [name, build, root] of models) {
+      const model = build();
+      for (const key of ["a", "b", "c"]) model.apply({ type: "record.upsert", path: root, key }, { rootPath: root });
+      const before = Object.keys(model.value() ?? {});
+
+      // The premise: the model built the rows the rename is about.
+      expectEqual(before, ["a", "b", "c"], {
+        claimIds: ["COL-002"],
+        what: `the ${name} model did not declare three rows, so the rename below is not the audit`,
+      });
+
+      model.apply({ type: "record.rename", path: root, from: "a", to: "z" }, { rootPath: root });
+      const after = Object.keys(model.value() ?? {});
+      if (JSON.stringify(after) !== JSON.stringify(["z", "b", "c"])) appended.push({ name, after });
+    }
+    ctx.log.note("keyed models after renaming their first row", { appended });
+
+    expectEqual(appended, [], {
+      claimIds: ["COL-004"],
+      what: "a keyed reference model moved a renamed row to the end, so a campaign using it reports the engine as wrong for keeping it in place",
     });
   },
 );

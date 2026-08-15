@@ -127,6 +127,10 @@ export function createConditionalModel({ cells, branch } = {}) {
         case "record.rename": {
           const { from, to } = operation;
           if (!rows.has(from) || rows.has(to)) break;
+          // Where the row sits, kept across the rename. A rename moves a row to a new key and not to
+          // a new place; `remove` followed by `upsert` is the operation that appends, and the record
+          // contract defines rename against that one.
+          const at = order.indexOf(from);
           const value = { ...rows.get(from) };
           // A rename moves the row, and what belongs to the row moves with it — the marks a user
           // made and the exclusions its consumer set alike. ADR 0044 decided that; before it, only
@@ -135,6 +139,10 @@ export function createConditionalModel({ cells, branch } = {}) {
           const exclusions = [...disabled].filter((path) => path.startsWith(`${from}.`));
           forget(from);
           declare(to, value);
+          if (at >= 0) {
+            order.splice(order.indexOf(to), 1);
+            order.splice(at, 0, to);
+          }
           for (const path of marks) touched.add(path.replace(`${from}.`, `${to}.`));
           for (const path of exclusions) disabled.add(path.replace(`${from}.`, `${to}.`));
           break;
