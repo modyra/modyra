@@ -16,6 +16,17 @@ export function generateTextValue(rng) {
     ["  padded  ", 1],
     ["x".repeat(64), 1],
     ["ünïcøde", 1],
+    // Values a form actually receives and a generator would not think of. A cell holds text, so none
+    // of these should mean anything to the engine — which is what makes a divergence on one a finding
+    // rather than a shape the campaign was never meant to cover. `__proto__` and `constructor` are
+    // guarded as row keys and are ordinary here; `a.b` is a path only when something reads it as one;
+    // `two words` and `a__b` are the shapes that break a generated id when a value builds one.
+    ["__proto__", 1],
+    ["constructor", 1],
+    ["a.b", 1],
+    ["two words", 1],
+    ["a__b", 1],
+    ["line\nbreak", 1],
   ]);
 }
 
