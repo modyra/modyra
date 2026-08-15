@@ -2,9 +2,12 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 
 import {
+  applyDynamicRules,
   buildDynamicValidations,
+  buildFlatFormSchema,
   createForm,
   evaluateExpression,
+  evaluateRuleCondition,
   expressionPaths,
   field,
   parseDynamicForm,
@@ -278,4 +281,102 @@ test("the root reference still reads the whole value", () => {
   assert.deepEqual(validateExpression({ op: "isNotEmpty", operand: { path: "" } }, "t"), []);
   assert.deepEqual(expressionPaths({ op: "isNotEmpty", operand: { path: "" } }), [""]);
   assert.equal(evaluateExpression({ op: "isEmpty", operand: { path: "" } }, null), true);
+});
+
+test("a rule's condition is answered for every operator the contract declares", () => {
+  // The rule slot's predicate is flat — one field, one operator, one value — and its vocabulary is
+  // wider than the tree's: `in`, `notIn` and the two "or equal" comparisons exist only here. A kind
+  // of question the tree cannot ask is still a question the document is allowed to write.
+  const held = { plan: "pro", seats: 12, name: "", when: "2026-08-15", tags: ["a"] };
+  const answers = (operator, field, value) => evaluateRuleCondition({ field, operator, value }, held);
+
+  assert.equal(answers("equals", "plan", "pro"), true);
+  assert.equal(answers("notEquals", "plan", "pro"), false);
+  assert.equal(answers("in", "plan", ["free", "pro"]), true);
+  assert.equal(answers("in", "plan", ["free"]), false);
+  assert.equal(answers("notIn", "plan", ["free"]), true);
+  // A membership test against something that is not a list is not "everything matches": it is a
+  // question with no answer, which is `false` for the same reason an unknown operator is.
+  assert.equal(answers("in", "plan", "pro"), false);
+  assert.equal(answers("isEmpty", "name"), true);
+  assert.equal(answers("isNotEmpty", "name"), false);
+  assert.equal(answers("isEmpty", "tags"), false);
+  assert.equal(answers("greaterThan", "seats", 10), true);
+  assert.equal(answers("greaterThanOrEqual", "seats", 12), true);
+  assert.equal(answers("greaterThan", "seats", 12), false);
+  assert.equal(answers("lessThan", "seats", 12), false);
+  assert.equal(answers("lessThanOrEqual", "seats", 12), true);
+  // ISO dates sort as strings, which is what makes a date rule work without a date type.
+  assert.equal(answers("greaterThan", "when", "2026-01-01"), true);
+  // Two things with no order between them are not ordered by coercing one of them.
+  assert.equal(answers("greaterThan", "seats", "10"), false);
+  // An operator nobody declared answers false, as an expression's does.
+  assert.equal(answers("startsWith", "plan", "p"), false);
+  // A field the value does not have reads as absent, and `equals` is strict — so a rule naming no
+  // value at all is true about a field that is not there. The parser is what stops a document
+  // getting here: a condition on a field the document did not declare is refused with
+  // `MDY_DYNAMIC_INVALID_RULE`, and in strict mode the document goes with it.
+  assert.equal(answers("equals", "nothing", undefined), true);
+  assert.equal(answers("equals", "nothing", "something"), false);
+  assert.equal(answers("isEmpty", "nothing"), true);
+});
+
+test("a document's rules reach the form, and both effects mean what they say", async () => {
+  const envelope = {
+    version: 2,
+    id: "invoice",
+    fields: [
+      { name: "customerType", kind: "select", label: "Type", options: [{ value: "person", label: "P" }, { value: "business", label: "B" }] },
+      { name: "vatNumber", kind: "text", label: "VAT" },
+      { name: "taxId", kind: "text", label: "Tax id" },
+    ],
+    rules: [
+      { effect: "visible", target: "vatNumber", when: { field: "customerType", operator: "equals", value: "business" } },
+      { effect: "disabled", target: "taxId", when: { field: "customerType", operator: "equals", value: "person" } },
+    ],
+  };
+  const parsed = parseDynamicForm(envelope, { mode: "strict" });
+  assert.equal(parsed.ok, true);
+
+  const form = createForm(buildFlatFormSchema(parsed.fields), { devWarnings: false });
+  applyDynamicRules(form, parsed.rules);
+  form.patchValue({ customerType: "person", vatNumber: "IT123", taxId: "SSN-1" });
+
+  // Out of play and disabled are different promises, and both keep the value out of the payload —
+  // which is the half that matters: a rule saying "disable the tax id for a private customer" is
+  // the difference between a value being sent and not.
+  assert.deepEqual(form.submitValue(), { customerType: "person" });
+
+  form.patchValue({ customerType: "business" });
+  assert.deepEqual(form.submitValue(), { customerType: "business", vatNumber: "IT123", taxId: "SSN-1" });
+
+  // The control: without the rules the same document sends everything, so the exclusion above is
+  // the rule rather than a field that was never there.
+  const bare = createForm(buildFlatFormSchema(parsed.fields), { devWarnings: false });
+  bare.patchValue({ customerType: "person", vatNumber: "IT123", taxId: "SSN-1" });
+  assert.deepEqual(bare.submitValue(), { customerType: "person", vatNumber: "IT123", taxId: "SSN-1" });
+
+  form.destroy();
+  bare.destroy();
+});
+
+test("several rules over one field compose rather than replace each other", () => {
+  // The engine's binding replaces: two rules on one field, applied one after the other, would leave
+  // only the last. They are composed into one signal per field per effect, so a field is out while
+  // *any* of the rules that name it says it is.
+  const form = createForm(
+    { plan: field("free"), seats: field(1), addon: field("x") },
+    { devWarnings: false },
+  );
+  applyDynamicRules(form, [
+    { effect: "visible", target: "addon", when: { field: "plan", operator: "equals", value: "pro" } },
+    { effect: "hidden", target: "addon", when: { field: "seats", operator: "lessThan", value: 5 } },
+  ]);
+
+  assert.deepEqual(form.submitValue(), { plan: "free", seats: 1 });
+  form.f.plan.set("pro");
+  assert.deepEqual(form.submitValue(), { plan: "pro", seats: 1 }, "the second rule still holds it out");
+  form.f.seats.set(10);
+  assert.deepEqual(form.submitValue(), { plan: "pro", seats: 10, addon: "x" });
+  form.destroy();
 });

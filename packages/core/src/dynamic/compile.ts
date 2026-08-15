@@ -7,7 +7,7 @@
 
 import { array, field, group, record, type MdyFormSchema } from "../typed-form.js";
 import type { MdyFormValidatorFn, ValidatorFn } from "../types.js";
-import { evaluateExpression, expressionPaths } from "../expression.js";
+import { evaluateExpression, evaluateRuleCondition, expressionPaths } from "../expression.js";
 import {
   eachOneOf,
   email,
@@ -32,7 +32,8 @@ import {
   type MdyDynamicNode,
   type MdyDynamicValidators,
 } from "./schema.js";
-import type { MdyDynamicValidation } from "./parse.js";
+import type { MdyDynamicRule, MdyDynamicValidation } from "./parse.js";
+import type { MdyReactivity, MdySignal } from "../reactivity-contract.js";
 
 /**
  * Maps the serializable validator set to validator functions.
@@ -327,6 +328,72 @@ export function buildDynamicFormSchema(schema: MdyDynamicGroupNode): MdyFormSche
  * A `target` narrows where the error lands. Without one the error is form-level, which `crossField`
  * already expresses as an empty path list.
  */
+/**
+ * What a rule needs of the form it applies to.
+ *
+ * Structural rather than the concrete class: `MdyTypedForm` and the engine both satisfy it, and an
+ * adapter's own form does too as long as it speaks the registry's language.
+ */
+export interface MdyDynamicRuleHost {
+  /** The runtime the form's own signals are built with, so a condition is tracked by it. */
+  readonly reactivity: MdyReactivity;
+  readonly value: MdySignal<Record<string, unknown>>;
+  setInactive(name: string, inactive: MdySignal<boolean>): void;
+  setDisabled(name: string, disabled: MdySignal<boolean>): void;
+}
+
+/**
+ * Turns a document's `rules` into the bindings the engine already has for them.
+ *
+ * The sibling of {@link buildDynamicValidations}: the parser reads both slots as behaviour — it
+ * refuses an undeclared effect, an undeclared operator and a target that is not a field — and one of
+ * them had no way to become behaviour. A document that said "hide the VAT number unless the customer
+ * is a business" parsed, was accepted in strict mode, and produced a form that showed it always.
+ *
+ * Applied rather than returned, because a rule is a binding on a named field and not a value a
+ * caller could hold: `visible`/`hidden` take a field out of play, which is what `setInactive` means,
+ * and `enabled`/`disabled` reach `setDisabled`. Out of play and disabled are different promises —
+ * a field out of play is not asked for at all, a disabled one is asked for and not answered — and
+ * the four effects are two pairs over exactly that difference.
+ *
+ * One signal per field per effect, however many rules name it: the engine's binding replaces rather
+ * than accumulates, so composing here is what stops the last rule silently winning.
+ */
+export function applyDynamicRules(
+  form: MdyDynamicRuleHost,
+  rules: ReadonlyArray<MdyDynamicRule>,
+): void {
+  const inactive = new Map<string, MdyDynamicRule[]>();
+  const disabled = new Map<string, MdyDynamicRule[]>();
+  for (const rule of rules) {
+    const into = rule.effect === "visible" || rule.effect === "hidden" ? inactive : disabled;
+    const held = into.get(rule.target);
+    if (held) held.push(rule);
+    else into.set(rule.target, [rule]);
+  }
+
+  // `visible` and `enabled` say what must hold for the field to be there; `hidden` and `disabled`
+  // say what must hold for it to go. Read as one question — "is this field out?" — they are the same
+  // predicate and its negation, which is why they compose without a precedence rule between them.
+  const isOut = (rule: MdyDynamicRule, value: Record<string, unknown>): boolean => {
+    const holds = evaluateRuleCondition(rule.when, value);
+    return rule.effect === "visible" || rule.effect === "enabled" ? !holds : holds;
+  };
+
+  for (const [target, own] of inactive) {
+    form.setInactive(target, form.reactivity.computed(() => {
+      const value = form.value();
+      return own.some((rule) => isOut(rule, value));
+    }));
+  }
+  for (const [target, own] of disabled) {
+    form.setDisabled(target, form.reactivity.computed(() => {
+      const value = form.value();
+      return own.some((rule) => isOut(rule, value));
+    }));
+  }
+}
+
 export function buildDynamicValidations(
   validations: ReadonlyArray<MdyDynamicValidation>,
 ): ReadonlyArray<MdyFormValidatorFn<Record<string, unknown>>> {

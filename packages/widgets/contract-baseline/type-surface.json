@@ -2142,6 +2142,11 @@
     "(0) angle: number",
     "-> returns: number"
   ],
+  "applyDynamicRules": [
+    "(0) form: MdyDynamicRuleHost",
+    "(1) rules: ReadonlyArray<MdyDynamicRule>",
+    "-> returns: void"
+  ],
   "applyFlatValidators": [
     "(0) form: Pick<MdyFormRegistry, \"upsertValidators\">",
     "(1) fields: ReadonlyArray<MdyDynamicField>",
@@ -2472,6 +2477,11 @@
   ],
   "evaluateExpression": [
     "(0) expr: MdyExpression",
+    "(1) value: unknown",
+    "-> returns: boolean"
+  ],
+  "evaluateRuleCondition": [
+    "(0) when: { readonly field: string; readonly operator: string; readonly value?: unknown; }",
     "(1) value: unknown",
     "-> returns: boolean"
   ],

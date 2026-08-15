@@ -71,7 +71,7 @@ import { parseDynamicForm } from "@modyra/core";
 const result = parseDynamicForm(await response.json(), { mode: "strict" });
 if (!result.ok) return report(result.diagnostics);
 
-mountMdyForm(container, result.fields, { layout: result.layout });
+mountMdyForm(container, result.fields, { layout: result.layout, rules: result.rules });
 ```
 
 Strict mode returns nothing at all when any diagnostic exists — a partly valid document is never

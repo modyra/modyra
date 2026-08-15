@@ -168,10 +168,14 @@ onSubmitted(event: { value: Record<string, unknown> }): void {
   handles and let you render your own controls (`useMdyDynamicForm` in React
   and Preact, paired with `useMdyField` and its siblings). Mapping each
   `MdyDynamicField.kind` to your own controls is always available.
-- **`layout` is applied by `@modyra/plain` and `@modyra/angular`.** No
-  renderer applies `rules` yet: the parser validates them and the contract
-  carries them, but visibility and enabled-state are still the host's to
-  apply.
+- **`layout` is applied by `@modyra/plain` and `@modyra/angular`.** `rules`
+  are applied by `applyDynamicRules(form, rules)` in `@modyra/core`, which
+  `mountMdyForm` calls for you when you pass them:
+  `mountMdyForm(container, result.fields, { layout: result.layout, rules: result.rules })`.
+  A host rendering its own controls calls it directly on the form it built.
+  Pass them: a form built without them behaves as though the array were empty,
+  and a rule saying `disabled` is the difference between a value being sent and
+  not.
 - CMS/storage use case: same contract, same parser — see
   [the UI toolkit](ui-toolkit.md#rendering-from-a-contract) for the versioning notes.
 - Keep the schema of *your* domain out of the prompt when possible: a

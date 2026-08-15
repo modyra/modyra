@@ -94,6 +94,7 @@ absent section reads as an oversight, and "no security impact" is a finding.
 - [ADR 0076: A state belongs to something that can be in it](0076-a-state-belongs-to-something-that-can-be-in-it.md) — the one opener the contract gave no role wore `aria-invalid` and `aria-required` where nothing could read them
 - [ADR 0077: The opener a contract names is the one a keyboard reaches](0077-the-opener-a-contract-names-is-the-one-a-keyboard-reaches.md) — two date inputs claimed the popup's state while the part that opens it was not a tab stop, and lit's pickers had no keyboard door at all
 - [ADR 0078: A widget announces the refusal it makes](0078-a-widget-announces-the-refusal-it-makes.md) — twelve kinds refused every change while read-only and said nothing, because the rule that made silence right had since been implemented
+- [ADR 0079: A rule a document writes is a rule the form keeps](0079-a-rule-a-document-writes-is-a-rule-the-form-keeps.md) — the parser guarded `rules` as behaviour and nothing applied one, so a document saying to disable a field produced a form that sent it
 
 ## Security-relevant records
 
