@@ -4415,7 +4415,7 @@ input.
 
 ## 95. A form that validates like the schema and submits something else
 
-`differential/schemas/what-the-schema-says-the-value-is.test.mjs` — 1 red, 1 green.
+`differential/schemas/what-the-schema-says-the-value-is.test.mjs` — 2 red, 1 green.
 
 Zod is its own oracle: the same value goes through `schema.safeParse` and through the form
 `createZodForm` derives from it, and the two answers are compared. On what is *allowed* they agree
@@ -4459,5 +4459,20 @@ is really there. It reads the published `.d.ts` — located through `import.meta
 so it asks the package where its own types are — precisely so the third repair turns it green rather
 than leaving it red forever.
 
-Nothing in this suite had used Zod's own verdict as an oracle before: `safeParse` appears in no other
-battle.
+**The other bridge does the same thing, and there the guide says it in prose.**
+`@modyra/standard-schema` types its tree by mapping over `MdyStandardOutput<TSchema>`, and
+`docs/guides/schemas.md:39` puts it beside the example a reader copies: *"Leaves are `Output | null`
+(null = not filled in)"*. Measured through Zod acting as a Standard Schema vendor, so the spec's own
+`~standard.validate` is the oracle:
+
+```
+~standard.validate({ f: "42" })  ->  { value: { f: 42 } }     number
+form.getValue().f                ->  "42"                     string, no errors
+```
+
+That guide's own table describes the Standard Schema spec as standardizing "validation only" — which
+is true of the spec and is not what the leaf type says. The output value is right there in the
+result the adapter already receives.
+
+Nothing in this suite had used either schema library's own verdict as an oracle before: `safeParse`
+and `~standard.validate` appear in no other battle.
