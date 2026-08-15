@@ -9,7 +9,7 @@ A twentieth, `generative/properties/history.property.test.mjs`, is a campaign ra
 draws a fresh seed each run and reaches the whole-write undo defect about four times in five. Its
 green is not evidence; the battle beside it is.
 
-The list is grouped by cause. Twelve causes, nineteen battles.
+The list is grouped by cause. Thirteen causes, twenty battles.
 
 ---
 
@@ -131,7 +131,20 @@ reference. So a draft restore, a refetch or an import turns two options into thr
 two sharing a key, one labelled with its own JSON. `optionsWithUnrecognizedValues` shares the cause,
 so one repair covers both.
 
-## 12. Reported without a repair path
+## 12. A server's answer rendered as `[object Object]`
+
+`adversarial/validation/what-the-server-said.battle.test.mjs`
+
+A `serverValidator` check that hands back the response instead of a message puts `[object Object]`
+next to the field. `async (value) => (await response.json())` is the ordinary shape of this code and
+its type is `any`, so the signature does not stop it. The package has already written down why that
+is the worst answer, about option labels — *cleared is visibly empty, while that looks like a value
+and gives nothing to act on* — and the rule has not reached here.
+
+The four real endings all hold and are green beside it: nothing said, something said, a check that
+threw, and a check that never answered.
+
+## 13. Reported without a repair path
 
 - `adversarial/submission/submit-contract.battle.test.mjs` — an action returning something that is
   not a list of errors puts `errors.filter is not a function` on the form-level error surface, the
