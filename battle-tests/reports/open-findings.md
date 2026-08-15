@@ -1109,3 +1109,24 @@ assistive technology does. The battle asserts on the split.
 
 Either resolution closes it: refuse an option value that cannot be part of an id, the way a field name
 that cannot be is refused, or build an option id that does not embed the value.
+
+## Status, mid-session
+
+Findings 41 and 43 moved while this file was being written, on a fix that is in the working tree and
+not yet committed. Recorded here rather than rewritten above, so the entries keep saying what was
+found and this says what happened next.
+
+- **43 is closed.** `regressions/a-row-that-would-not-go.battle.test.mjs` is green, both battles,
+  including the `sku: null` half. The cause was not the one either of us guessed: a collection
+  registers a field at its own path so its errors have somewhere to surface, that field is not a leaf,
+  and the teardown of a replaced subtree walked leaves. A row carrying a collection therefore left one
+  behind, and reconciliation re-declared it empty. The condition this file recorded — whether the row
+  carries a collection of its own — is what made the cause findable.
+- **41 is half closed, and the other half is new.** `rename` now keeps the row's position in
+  `keys()`, and the nested battle is green. `getValue()` and `submitValue()` still put the renamed row
+  last, so the handle and the value now disagree. Measured across five operations: only `rename`
+  disagrees; `upsert` on an existing key, `remove`, and doing nothing all keep both orders together.
+- **Both generative campaigns now diverge on key order alone.** 600 runs each in survey mode:
+  `history` reports 177 distinct kinds and `keyed-nested` 9, and every signature in both is
+  `keys[N]`. No value, validity, pending or error signature remains. Those two campaigns were capped
+  at the run index of the row-that-would-not-go class until it was fixed — finding 40 in practice.
