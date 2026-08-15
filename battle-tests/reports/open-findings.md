@@ -6672,3 +6672,75 @@ before the finding was kept. It held.
 such kind, so there is no contract saying what a wizard's classes, states or keyboard behaviour must
 be. Not a defect today: the strings are shared vocabulary, not an import. Worth knowing before a
 second renderer grows one, because there is nothing for it to conform to.
+
+## 123. Tab out of an open popup, which the table says closes it
+
+**Severity** S1 · **Classification** declared keyboard binding not honoured · **Spec**
+`browser/the-key-that-leaves-a-popup-behind.spec.ts` (red for one renderer, green for the other)
+
+`MDY_WIDGET_KEYBOARD` declares, for all six kinds with a popup,
+`{ key: "Tab", when: "open", intent: "cancel", restoresFocus: false }`. It sits beside Escape, which
+cancels *and* restores focus, and the difference is the point: Escape puts the user back where they
+were, Tab lets them carry on forward. Both close.
+
+```
+kind          plain            lit
+select        closes           native <select>, browser-owned
+multiselect   closes           stays open
+datepicker    closes           stays open
+daterange     closes           stays open
+timepicker    closes           stays open
+colors        closes           stays open
+```
+
+In one renderer the popup stays open and the keys still go to it, so Tab walks the overlay's own
+internals — a calendar cell, then the next calendar cell. A keyboard user who meant to leave the
+field is still inside it, with nothing indicating that the way out is a different key. Measured:
+after Tab on an open datepicker, focus is on another `mdy-datepicker__cell` and `aria-expanded` is
+still `true`.
+
+**Why it had never been caught.** The suite's keyboard sweep asserts only the bindings a *closed*
+widget declares, and says so in its own header: the open ones are judged against focus, and a spec
+that moved focus to judge a key would be judging its own choice. So the six open-state Tab bindings
+had never been driven by anything.
+
+The spec's control is that every kind reached the open state first — a kind that never opened would
+report nothing left open and mean nothing by it — and native controls are excluded by name, since the
+browser owns that popup and answers Tab itself.
+
+### Checked and clean: a disabled widget makes none of its moves
+
+`browser/a-picker-that-is-switched-off.spec.ts` (green, both renderers).
+
+`MDY_DISABLED_BLOCKS_TRANSITIONS` is published as `true` and was named nowhere in this suite. All six
+kinds were disabled and then pointed at everywhere they could be opened from — the part the table
+names, the toggle, the control. None opened, in either renderer, and each carries `aria-disabled` or a
+native `disabled` while off.
+
+The control is the same field left alone, which must open: without it a renderer that had stopped
+opening anything would pass as a disabled field behaving perfectly. That control is what caught the
+first run being meaningless — the lit host had no way to disable a field at all, so nothing was
+disabled and every "refusal" was a field that had simply not been switched off. `disable` was added to
+that host before the measurement counted.
+
+### Checked and clean: the typeahead the widgets publish
+
+`createTypeahead`, `isTypeaheadCharacter`, `typeaheadMatch` and `MDY_TYPEAHEAD_IDLE_MS` (1000ms) are
+published and were never named in this suite. Measured directly:
+
+```
+typeaheadMatch    "b"/"B"/"be"/"BE" → Beta      case-insensitive
+                  "é" → Ébène, "e" → null       accent-sensitive
+                  "  s" → "  spaced"            leading space is part of the query
+                  "" / "z" / "Alpha " → null    empty, unmatched, trailing space
+isTypeaheadCharacter   a A 1 space é → true     Enter, ArrowDown → false
+                       ctrl/meta/alt → false    shift → true
+```
+
+`typeaheadMatch` takes the **first** match rather than cycling, which is why a repeated `b` stays on
+Beta in the custom listbox while a native `<select>` walks Beta → Bdelta. That is the platform's
+convention against the published one, not a renderer ignoring the contract.
+
+Space is a typeahead character, and the keyboard table declares Space only `when: "closed"` (intent
+`open`). The two are complementary rather than contradictory: Space opens a closed widget and types
+into an open one. Enter is what commits.
