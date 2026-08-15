@@ -1,25 +1,25 @@
 /**
- * The half of a condition the parser never looks at.
+ * The half of a condition the parser now looks at.
  *
  * A rule is `{effect, target, when: {field, operator, value}}`, and the parser is careful about four
  * of those five: an effect nobody declared, an operator nobody declared, a target that is not a
  * field, a condition on a field that is not there — each refused by name, and in strict mode the
  * whole document with it.
  *
- * `value` is the one the operator actually reads, and nothing checks it. `in` takes whatever is
- * written, `greaterThan` takes an object, a date takes a shape that is not a date. Each is accepted
- * in the strictest mode there is, with no diagnostic.
+ * `value` was the fifth, and for a while nothing checked it: `in` took whatever was written,
+ * `greaterThan` took an object, a date took a shape that is not a date, and each was accepted in the
+ * strictest mode there is with no diagnostic. That was finding 160.
  *
- * Two consequences, and they are different in kind.
+ * This is its regression. The value is checked against the operator that will read it, and the two
+ * consequences it had are the two things asserted here.
  *
- * `greaterThan` on dates is string ordering. Zero-padded ISO happens to sort correctly, which is why
- * this looks fine until a document writes a date the way a person writes one — and `"2026-02-01" >
- * "2026-1-10"` is false, so a rule about a date in February does not fire for a date in January.
- * A wrong answer, not a missing one, and it decides whether a field is on the screen.
+ * `greaterThan` on dates was string ordering, and zero-padded ISO sorts correctly by accident — which
+ * is why it looked fine until a document wrote a date the way a person writes one. `"2026-02-01" >
+ * "2026-1-10"` was false, so a rule about a date in February did not fire for a date in January: a
+ * wrong answer rather than a missing one, deciding whether a field is on the screen.
  *
- * `in` and `notIn` both answer false when the value is not a list. An author writing the negative
- * form to be safe gets the same answer as the positive one, and the rule they wrote to hide
- * something never fires.
+ * `in` and `notIn` both answered false when the value was not a list, so an author writing the
+ * negative form to be safe got the same answer as the positive one.
  */
 
 import { evaluateRuleCondition, parseDynamicForm } from "@modyra/core";
@@ -41,9 +41,8 @@ const ORDERED = Object.freeze([
 battle(
   {
     claims: ["DYN-003", "DYN-001"],
-    title: "a rule's value is checked by whoever wrote the document",
+    title: "a rule's value is checked against the operator that will read it",
     environments: ["node"],
-    open: "reported, not enforced: finding 160, open in battle-tests/reports/open-findings.md",
   },
   async (ctx) => {
     // The premise: every one of these reaches a form. The parser is strict about the rest of the
@@ -58,18 +57,43 @@ battle(
       rules: [{ effect: "hidden", target: "extra", when: { field: "when", operator, value } }],
     });
 
+    // A value the operator could not use is refused where the rest of the rule is refused.
     for (const [operator, value] of [["greaterThan", {}], ["in", "not a list"], ["notIn", 42], ["greaterThan", "2026-1-10"]]) {
       const parsed = parseDynamicForm(document(value, operator), { mode: "strict" });
-      ctx.log.note("a value the parser was given", { operator, value, ok: parsed.ok });
+      ctx.log.note("a value the operator could not use", { operator, value, ok: parsed.ok });
 
-      expectClaim(parsed.ok === true, {
+      expectClaim(parsed.ok === false && parsed.diagnostics.some((each) => each.code === "MDY_DYNAMIC_INVALID_RULE"), {
         claimIds: ["DYN-001"],
-        what: `the parser refused ${operator} with ${JSON.stringify(value)}, so the answers below are not reachable from a document`,
+        what: `${operator} with ${JSON.stringify(value)} was accepted, and the operator cannot answer for it`,
         detail: JSON.stringify(parsed.diagnostics),
       });
     }
 
-    // A comparison a calendar would make, made by whatever the operator does instead.
+    // The control: a value each operator can use is accepted, so the refusals above are about the
+    // value rather than about a parser that stopped taking rules.
+    for (const [operator, value] of [["greaterThan", "2026-01-10"], ["in", ["a", "b"]], ["notIn", ["a"]], ["equals", "x"]]) {
+      const parsed = parseDynamicForm(document(value, operator), { mode: "strict" });
+      expectClaim(parsed.ok === true && parsed.rules.length === 1, {
+        claimIds: ["DYN-001"],
+        what: `${operator} with ${JSON.stringify(value)} was refused, and it is a value that operator can use`,
+        detail: JSON.stringify(parsed.diagnostics),
+      });
+    }
+
+  },
+);
+
+battle(
+  {
+    claims: ["DYN-003"],
+    title: "the published condition answers about dates the way a calendar orders them",
+    environments: ["node"],
+    open: "reported, not enforced: finding 160's remainder, open in battle-tests/reports/open-findings.md",
+  },
+  async (ctx) => {
+    // The parser now refuses a date a rule cannot compare, so a document can no longer carry one.
+    // `evaluateRuleCondition` is published on its own, and a consumer calling it holds whatever their
+    // own model holds — with no parser in between.
     const wrong = [];
     for (const [left, right, later] of ORDERED) {
       const answered = ask("greaterThan", right, left);
@@ -77,13 +101,20 @@ battle(
       if (answered !== later) wrong.push({ left, right, answered, later });
     }
 
+    // The control: the shape the parser does accept is ordered correctly, so what fails below is the
+    // shape rather than the comparison.
+    expectClaim(ask("greaterThan", "2026-01-02", "2026-01-10") === true, {
+      claimIds: ["DYN-003"],
+      what: "two padded ISO dates were not ordered correctly, so this battle is not about the padding",
+    });
+
     expectEqual(wrong, [], {
       claimIds: ["DYN-003"],
       what: `${wrong.length} of ${ORDERED.length} date comparisons answered the opposite of the order the dates are in`,
       detail: JSON.stringify(wrong),
     });
 
-    // And the pair that has to be a pair: whatever `in` says, `notIn` says the other thing.
+    // And the pair that has to be a pair, which the repair made complementary.
     const disagreements = [];
     for (const [label, value, held] of [
       ["a member", ["a", "b"], "a"],

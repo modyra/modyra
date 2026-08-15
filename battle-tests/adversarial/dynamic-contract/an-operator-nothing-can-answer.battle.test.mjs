@@ -40,15 +40,25 @@ function declaredOperators() {
   return schema.$defs.rule.properties.when.properties.operator.enum;
 }
 
+/**
+ * The value an operator can actually use, or none where it reads none.
+ *
+ * A unary operator asks about the field alone, so writing a value beside it says something the
+ * operator will not read. Emitting one anyway would make this battle's convenience into a question
+ * the contract has to answer — whether a member nobody reads is refused — which is not this battle's
+ * subject and not a test's decision to force.
+ */
+function conditionFor(operator) {
+  if (["isEmpty", "isNotEmpty"].includes(operator)) return { field: "a", operator };
+  if (["in", "notIn"].includes(operator)) return { field: "a", operator, value: ["x"] };
+  return { field: "a", operator, value: "x" };
+}
+
 /** A rule using `operator`, in a document that is otherwise beyond reproach. */
 const documentUsing = (operator) => ({
   version: 3,
   fields: [{ name: "a", kind: "text", label: "A" }, { name: "b", kind: "text", label: "B" }],
-  rules: [{
-    effect: "hidden",
-    target: "b",
-    when: { field: "a", operator, value: ["in", "notIn"].includes(operator) ? ["x"] : "x" },
-  }],
+  rules: [{ effect: "hidden", target: "b", when: conditionFor(operator) }],
 });
 
 /** Whether the published checker accepts an expression built around `operator`. */
