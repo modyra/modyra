@@ -1053,18 +1053,7 @@ export class MdyFormEngine
     // Disabled fields are not sent. See `submitValue`.
     const value = this.submitValue();
     try {
-      const errors = (await action(value)) ?? [];
-      // Server-returned errors are untrusted: an unsafe path (__proto__
-      // and friends) is dropped instead of being stored and surfaced.
-      const checked = errors.filter((e) => {
-        if (e.path === null || isSafeFieldPath(e.path)) return true;
-        this._report({
-          kind: "error-path",
-          path: e.path,
-          detail: `Server error with unsafe path "${e.path}" dropped.`,
-        });
-        return false;
-      });
+      const checked = this._readRefusal((await action(value)) ?? []);
       this._lastSubmitErrors.set(checked);
       this._submitSnapshot.set(checked.length > 0 ? value : null);
       if (checked.length === 0) this.clearDraft(); // successful submit: draft done
@@ -1078,6 +1067,74 @@ export class MdyFormEngine
     } finally {
       this._submitting.set(false);
     }
+  }
+
+  /**
+   * What a submit action returned, read as a refusal a person can be shown.
+   *
+   * The argument is whatever an application derived from a server's answer, so every shape a
+   * response takes arrives here. The rule is that a refusal reaches somebody: an answer this cannot
+   * read becomes a form-level error rather than nothing, because the failure it replaces is a person
+   * who pressed Send, saw no message, and believed it went through.
+   *
+   * A path is still untrusted. An unsafe one is dropped and reported, which is the one case where
+   * losing the message is the lesser harm.
+   */
+  private _readRefusal(returned: unknown): ReadonlyArray<MdyFormError> {
+    if (!Array.isArray(returned)) {
+      this._warn(
+        "A submit action returns a list of errors or nothing; this one returned " +
+        `${shapeOf(returned)}, so its answer could not be read.`,
+      );
+      return [{
+        path: null,
+        kind: "unknown",
+        message: "The submitted answer could not be read.",
+      }];
+    }
+    const read: MdyFormError[] = [];
+    for (const entry of returned) {
+      // A bare message is what a server that says "no" without naming a field looks like once an
+      // application has pulled the strings out of its response.
+      if (typeof entry === "string") {
+        read.push({ path: null, kind: "unknown", message: entry });
+        continue;
+      }
+      if (entry === null || typeof entry !== "object") {
+        this._warn(`A submit action returned ${shapeOf(entry)} among its errors, which names nothing.`);
+        continue;
+      }
+      const raw = entry as { path?: unknown; kind?: unknown; message?: unknown; payload?: unknown };
+      // Absent, null and empty all mean the same thing — the refusal is about the form. A server
+      // writes `{ message }` far more often than it writes `{ path: null, message }`.
+      const named = raw.path === undefined || raw.path === null || raw.path === "" ? null : raw.path;
+      if (named !== null && (typeof named !== "string" || !isSafeFieldPath(named))) {
+        this._report({
+          kind: "error-path",
+          path: String(named),
+          detail: `Server error with unsafe path "${String(named)}" dropped.`,
+        });
+        continue;
+      }
+      // A message that is not a string reached a person as `[object Object]`. What it holds is kept
+      // on `payload`, where an application can read it, and what is shown says what happened.
+      const message = typeof raw.message === "string"
+        ? raw.message
+        : "The submitted answer could not be read.";
+      if (typeof raw.message !== "string") {
+        this._warn(
+          `A submit error for ${named === null ? "the form" : `"${named}"`} carried ` +
+          `${shapeOf(raw.message)} as its message, which is not something to show anyone.`,
+        );
+      }
+      read.push({
+        path: named,
+        kind: typeof raw.kind === "string" ? raw.kind : "unknown",
+        message,
+        ...(raw.payload === undefined && typeof raw.message === "string" ? {} : { payload: raw.payload ?? raw.message }),
+      });
+    }
+    return read;
   }
 
   // ── Draft persistence ────────────────────────────────────────────────────────
