@@ -184,8 +184,25 @@ export function field<TValue>(
     asyncTimeoutMs: options?.asyncTimeoutMs ?? 0,
     asyncWhen: (options?.asyncWhen as MdyFieldDescriptor<MdyWiden<TValue>>["asyncWhen"]) ?? null,
     when: (options?.when as MdyFieldDescriptor<MdyWiden<TValue>>["when"]) ?? null,
-    sanitize: options?.sanitize ?? null,
+    sanitize: assertSanitizer(options?.sanitize),
   };
+}
+
+/**
+ * The sanitizer profiles a field may name. The same closed set the form-level policy has, checked
+ * here too: a repair that reached only the form leaves `field("", [], { sanitize: "stict" })`
+ * falling back to the profile that does nothing, which is the defect one level down.
+ */
+const FIELD_SANITIZE_PROFILES: ReadonlySet<string> = new Set(["off", "text", "strict"]);
+
+function assertSanitizer(sanitize: unknown): MdySanitizer | null {
+  if (sanitize === undefined || sanitize === null) return null;
+  if (typeof sanitize === "function") return sanitize as MdySanitizer;
+  if (typeof sanitize === "string" && FIELD_SANITIZE_PROFILES.has(sanitize)) return sanitize as MdySanitizer;
+  throw new Error(
+    `[modyra] There is no sanitizer called ${JSON.stringify(sanitize)}. ` +
+    `Name one of ${[...FIELD_SANITIZE_PROFILES].join(", ")}, or pass a function.`,
+  );
 }
 
 /** Declares a nested group of fields (`address.city` paths on the engine). */
@@ -485,7 +502,33 @@ export function createForm<S extends MdyFormSchema>(
   // nor this call — and a number or a boolean built a form with no fields at all, which reported
   // itself valid and submittable. The second is the worse half: nothing to catch, nothing to read.
   assertFormSchema(schema, "createForm");
+  reportUnknownOptions(options);
   return new MdyTypedForm(schema, options);
+}
+
+/** What a form may be given. Grows with the library, which is why an unknown key is said rather than refused. */
+const FORM_OPTIONS: ReadonlySet<string> = new Set([
+  "submitMode", "reactivity", "validators", "history", "draft", "security", "autoActivate", "devWarnings",
+]);
+
+/**
+ * An option nobody has is reported, because a misplaced one is indistinguishable from silence.
+ *
+ * `{ sanitize: "strict" }` at the top level is the case: the key belongs one level down, inside
+ * `security`, and written here it does nothing — which looks exactly like not having asked. Said
+ * rather than refused, because this bag grows with the library and a consumer passing an option a
+ * newer version understands should not be stopped by an older one.
+ */
+function reportUnknownOptions(options: unknown): void {
+  if (!MDY_DEV || typeof options !== "object" || options === null) return;
+  const unknown = Object.keys(options).filter((key) => !FORM_OPTIONS.has(key));
+  if (unknown.length === 0) return;
+  console.warn(
+    `[modyra] createForm was given ${unknown.map((key) => `"${key}"`).join(", ")}, which it does not ` +
+    `read. A form takes ${[...FORM_OPTIONS].join(", ")}${
+      unknown.includes("sanitize") ? '; a sanitizer is asked for as security: { sanitize }' : ""
+    }.`,
+  );
 }
 
 /** Refuses anything that cannot name fields, where a schema arrives. */
