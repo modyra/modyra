@@ -17,8 +17,18 @@
  * sent — the integrity failure ADR 0044 exists to prevent, reached by a different route than the
  * renames and moves it closes.
  *
+ * The pair that locates it, with the same claim count and the same whole-value write on both sides:
+ *
+ *     mount (no row yet), push, mount, setAll [], unmount, push   → the claim is gone
+ *     push, mount, mount, setAll [], unmount, push                → one claim is left, as it should be
+ *
+ * Two claims and one release, either way. The only difference is whether the *first* mount happened
+ * before the row existed, and that is the one a whole-value write releases.
+ *
  * Found by the positional campaign at 250,000 runs, seed 808017, run 8363, minimised from 24
- * operations to 9.
+ * operations to 9, and re-derived from the pair above after a neighbouring finding in this area
+ * turned out to be the reference model rather than the engine. This one is not: the pair differs in
+ * nothing a claim count can see.
  */
 
 import { battle } from "../../harness/battle.mjs";
