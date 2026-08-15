@@ -91,10 +91,39 @@ export function buildDynamicValidators(config: MdyDynamicValidators): {
  * `eachOneOf`. Prefer this over {@link buildDynamicValidators} whenever
  * the whole field config is available.
  */
+
+/**
+ * An option list a control cannot show is refused where the rules are compiled.
+ *
+ * `parseDynamicForm` already refuses a malformed list with `MDY_DYNAMIC_OPTIONS_REQUIRED`, and a
+ * host assembling its own fields reaches this without passing through it. Left alone, a list of bare
+ * strings compiled a rule that rejects every value — the option's `value` is `undefined`, so nothing
+ * matches — and the sentence a person read was `Value must be one of: undefined, undefined`.
+ *
+ * Thrown rather than dropped, because there is no diagnostic channel on this path: the parser has
+ * one and reports there, and this is the door taken by a caller who has no document to report about.
+ */
+const KINDS_NEEDING_OPTIONS = new Set(["select", "radio", "multiselect", "segmented"]);
+
+function assertUsableOptions(field: { readonly kind: string; readonly name?: string; readonly options?: unknown }): void {
+  if (!KINDS_NEEDING_OPTIONS.has(field.kind)) return;
+  // The list is missing entirely, which reached the compiler as `undefined.map` — an engine internal
+  // on a caller's mistake, and the same absence the parser reports as `MDY_DYNAMIC_OPTIONS_REQUIRED`.
+  if (
+    Array.isArray(field.options) &&
+    field.options.every((option) => typeof option === "object" && option !== null && "value" in option)
+  ) return;
+  throw new Error(
+    `[modyra] The options for "${field.name ?? field.kind}" must each name a value: { value, label }. ` +
+    "A list the contract cannot read compiles a rule no value satisfies.",
+  );
+}
+
 export function buildDynamicFieldValidators(field: MdyDynamicField): {
   readonly validators: ReadonlyArray<ValidatorFn<never>>;
   readonly marksRequired: boolean;
 } {
+  assertUsableOptions(field);
   const declared = buildDynamicValidators(field.validators ?? {});
   // Every kind guards its own shape, the same doorway `oneOf` guards for the kinds that have an
   // option list: a value from a restored draft or a scripted write is not the widget's own.
