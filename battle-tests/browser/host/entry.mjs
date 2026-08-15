@@ -7,6 +7,7 @@
  * which reads the real DOM the browser built.
  */
 import { parseDynamicForm } from "@modyra/core";
+import { createMdyAnnouncer } from "@modyra/widgets";
 import { mountMdyForm } from "@modyra/plain";
 
 const mounted = new Map();
@@ -259,6 +260,16 @@ window.battle = {
 
   canSubmitOf(id) {
     return mounted.get(id).handle.form.state.canSubmit();
+  },
+
+  /**
+   * A published widget helper that needs a document to be asked anything.
+   *
+   * Exposed rather than reached for through a mounted form, because it is shared by id across every
+   * caller in a page — which is the thing worth asking about, and a form does not own it.
+   */
+  announce(regionId, message) {
+    createMdyAnnouncer(regionId).announce(message);
   },
 
   valueOf(id) {
