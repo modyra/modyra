@@ -2766,8 +2766,18 @@ NO_CONSTRAINTS   registerHandleForm  withFacts
 Most are low-level seams reached through something else. Two are now held directly, in
 `adversarial/validation/two-lists-that-must-agree.battle.test.mjs`, green:
 
-**Two lists of seventeen that must be the same seventeen.** `MDY_FIELD_KINDS` says what a field may
-be; `MDY_VALUE_CONTRACTS` says what a value of each kind may hold. Every part of the engine assumes
+**Five lists of seventeen that must be the same seventeen, across two packages.** `MDY_FIELD_KINDS`
+says what a field may be; `MDY_VALUE_CONTRACTS` says what a value of each kind may hold; and in
+`@modyra/widgets`, `MDY_WIDGET_KINDS` plus three per-kind tables — `MDY_WIDGET_KEYBOARD`,
+`MDY_WIDGET_RELATIONS`, `MDY_WIDGET_TRANSITIONS` — each answer for one kind at a time. All five carry
+the same seventeen, with no orphan in either direction.
+
+A kind added to core and not to the widget tables ships a control whose keyboard, whose relations and
+whose transitions **nobody declared** — and a conformance suite cannot check what is not declared. The
+guard crosses the package boundary on purpose: both lists are published, and the point is that a
+reader on either side cannot see the other one drift.
+
+The original pair, still the sharpest of the five: Every part of the engine assumes
 they agree — a kind with no value contract has no shape to check against, a value contract naming no
 kind is a rule nothing can reach — and **nothing checked it**. They are a `const` array and an object
 literal, not two views of one source, so a kind added to one and not the other is a defect the type

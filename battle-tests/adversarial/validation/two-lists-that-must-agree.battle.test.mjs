@@ -27,7 +27,13 @@ import {
   parseDynamicForm,
   withFacts,
 } from "@modyra/core";
-import { MDY_LAYOUT_BREAKPOINTS } from "@modyra/widgets";
+import {
+  MDY_LAYOUT_BREAKPOINTS,
+  MDY_WIDGET_KEYBOARD,
+  MDY_WIDGET_KINDS,
+  MDY_WIDGET_RELATIONS,
+  MDY_WIDGET_TRANSITIONS,
+} from "@modyra/widgets";
 
 import { battle } from "../../harness/battle.mjs";
 import { expectClaim, expectEqual } from "../../harness/assertions.mjs";
@@ -68,6 +74,44 @@ battle(
       what: "the empty constraint set is not empty",
       detail: JSON.stringify(NO_CONSTRAINTS),
     });
+
+    // The same seventeen again, in the other package, and in three tables that answer per kind. A
+    // kind added to core and not to these ships a control whose keyboard, whose relations and whose
+    // transitions nobody declared — and a conformance suite cannot check what is not declared.
+    //
+    // This crosses a package boundary on purpose: both lists are published, and the whole point is
+    // that a reader on either side cannot see the other one drift.
+    const widgetKinds = [...MDY_WIDGET_KINDS];
+    ctx.log.note("the same kinds, in the other package", { core: kinds.length, widgets: widgetKinds.length });
+
+    expectEqual(
+      [kinds.filter((kind) => !widgetKinds.includes(kind)), widgetKinds.filter((kind) => !kinds.includes(kind))],
+      [[], []],
+      {
+        claimIds: ["DYN-001", "UI-002"],
+        what: "the kinds a field may be and the kinds a widget may be are not the same list",
+        detail: JSON.stringify({ core: kinds, widgets: widgetKinds }),
+      },
+    );
+
+    for (const [name, table] of [
+      ["the keyboard each kind declares", MDY_WIDGET_KEYBOARD],
+      ["the relations each kind declares", MDY_WIDGET_RELATIONS],
+      ["the transitions each kind declares", MDY_WIDGET_TRANSITIONS],
+    ]) {
+      const answered = Object.keys(table);
+      ctx.log.note("a per-kind table", { name, entries: answered.length });
+
+      expectEqual(
+        [widgetKinds.filter((kind) => !answered.includes(kind)), answered.filter((kind) => !widgetKinds.includes(kind))],
+        [[], []],
+        {
+          claimIds: ["UI-002"],
+          what: `${name} does not answer for exactly the kinds there are`,
+          detail: JSON.stringify({ missing: widgetKinds.filter((kind) => !answered.includes(kind)), orphans: answered.filter((kind) => !widgetKinds.includes(kind)) }),
+        },
+      );
+    }
   },
 );
 
