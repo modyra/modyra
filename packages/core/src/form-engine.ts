@@ -112,6 +112,50 @@ function assertBaseline(name: string, declared: unknown, value: unknown): void {
   );
 }
 
+/** The sanitizer profiles a policy may name. A closed set, which is what makes a typo detectable. */
+const SANITIZE_PROFILES: ReadonlySet<string> = new Set(["off", "text", "strict"]);
+
+/** What a security policy may say. Closed too, so a misspelled key is a key nobody wrote. */
+const SECURITY_KEYS: ReadonlySet<string> = new Set(["sanitize", "maxValueLength", "onViolation"]);
+
+/**
+ * A policy that was asked for badly is not silently the one that does nothing.
+ *
+ * `sanitize` defaults to `"off"`, deliberately — and that default is what makes every way of getting
+ * the option wrong indistinguishable from not having asked for it. A profile outside the closed set
+ * fell back to the *least* protective member of that set: `sanitise` is the ordinary British spelling
+ * and turned an XSS defence off without a word, and `"stict"` was read, found to be nothing, and
+ * answered with `off`.
+ *
+ * Not sanitizing by default is unchanged and correct — a consumer who asks for nothing gets nothing.
+ * What is refused is asking for something that does not exist.
+ */
+function assertSecurityPolicy(policy: unknown): MdySecurityPolicy {
+  if (policy === undefined) return {};
+  if (typeof policy !== "object" || policy === null || Array.isArray(policy)) {
+    throw new Error(
+      `[modyra] security takes a policy object, received ${
+        policy === null ? "null" : Array.isArray(policy) ? "an array" : `a ${typeof policy}`
+      }: { sanitize, maxValueLength, onViolation }.`,
+    );
+  }
+  const unknown = Object.keys(policy).filter((key) => !SECURITY_KEYS.has(key));
+  if (unknown.length > 0) {
+    throw new Error(
+      `[modyra] security does not have ${unknown.map((key) => `"${key}"`).join(", ")}. ` +
+      `It has ${[...SECURITY_KEYS].join(", ")}.`,
+    );
+  }
+  const { sanitize } = policy as MdySecurityPolicy;
+  if (sanitize !== undefined && typeof sanitize !== "function" && !SANITIZE_PROFILES.has(sanitize)) {
+    throw new Error(
+      `[modyra] There is no sanitizer called ${JSON.stringify(sanitize)}. ` +
+      `Name one of ${[...SANITIZE_PROFILES].join(", ")}, or pass a function.`,
+    );
+  }
+  return policy as MdySecurityPolicy;
+}
+
 /** The same door for the write that replaces everything. */
 function assertWholeValue(value: unknown, method: string): asserts value is Record<string, unknown> {
   if (typeof value === "object" && value !== null && !Array.isArray(value)) return;
@@ -329,7 +373,7 @@ export class MdyFormEngine
     options?: MdyFormEngineOptions,
   ) {
     this._devWarnings = options?.devWarnings ?? true;
-    this._security = options?.security ?? {};
+    this._security = assertSecurityPolicy(options?.security);
     this._deactivated = options?.autoActivate === false;
     this._scope = _rx.createScope?.({ debugName: "modyra:form" });
     const hasDraft = _rx.signal(false);
