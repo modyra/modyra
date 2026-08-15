@@ -6871,3 +6871,38 @@ An earlier sweep read the *closed* state and reported that one renderer had no `
 something to hold: with an error present, twelve of seventeen kinds carry `__errors` and point at it.
 The finding above is what survived measuring the state that matters instead of the state that was
 convenient.
+
+### Checked and clean: two published ways to move through a list
+
+`adversarial/accessibility/two-ways-to-move-through-a-list.battle.test.mjs` (green).
+
+`MDY_WIDGET_KEYBOARD` says the same thing for both families — ArrowUp, ArrowDown, Home, End `move` —
+and the widgets publish two functions rather than one, because moving is not the same thing:
+
+```
+listboxNextIndex      ArrowDown [0,1,2] → [1,2,2]   stops at the end
+                      ArrowUp   [0,1,2] → [0,0,1]   stops at the start
+                      ArrowUp with nothing active → last
+optionNavigationIndex ArrowDown [0,1,2] → [1,2,0]   comes round
+                      ArrowUp   [0,1,2] → [2,0,1]   comes round
+                      ArrowLeft/Right identical to Up/Down
+```
+
+That is the ARIA distinction, not a preference: a radio group wraps, a listbox does not. Getting it
+backwards passes every screenshot — a radio group that stops makes its last option unreachable
+without walking back, and a listbox that wraps takes the user somewhere they did not ask to go on a
+key they pressed to go the other way. Neither function was named by anything in this suite, and the
+keyboard table cannot state the difference because it has one intent for both.
+
+Also pinned: a key that is not a movement (`Enter`, Space, `PageDown`, `Escape`, a letter) answers
+`null` in both families rather than moving the active option, an empty list answers `null` — the state
+a filtered listbox reaches when nothing matches — and a list of one keeps every movement on it.
+
+**Observed, reachability unproven.** The two functions disagree about an active index that is not one:
+`optionNavigationIndex` clamps its input first, so it cannot answer with a non-option;
+`listboxNextIndex` does not, and answers `ArrowDown(-7, 3) → -6` and `ArrowUp(5, 3) → 4` — indices
+that are not options. The scenario that would reach it is a list shrinking under an active index, so
+it was attacked at page level: a multiselect does not use `aria-activedescendant` at all (it renders
+chips), and a select's active option stayed resolvable through every attempt to filter the list under
+it. **Possible, not Observed** — recorded rather than filed, and worth one line of a stated
+precondition either way.
