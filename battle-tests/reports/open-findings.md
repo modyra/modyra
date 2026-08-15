@@ -3561,6 +3561,25 @@ The fixtures are read from disk rather than written into the battle: a synthetic
 parser does it, and the corpus proves the contract's own documentation is one of the documents it
 happens to.
 
+## Checked and clean: every published fixture builds the form it describes
+
+Added as a second battle in the same file, green. The corpus is the contract's documentation, and a
+fixture that parses and then cannot be **built** is documentation that does not work.
+`audit-contract-schema` validates the fixtures against the published JSON schema, which is a different
+question from whether the engine can make a form out of them:
+
+```
+v2/checkout-recursive   {"items":[{"sku":"TSHIRT-BLK-M","qty":2}],"country":"IT","coupon":"","ship…}   7 names
+v3/keyed-rows           {"lines":{"12":{…},"tmp:1":{…}}}                                              6 names
+v3/nested-collections   {"orders":{},"shipments":[]}                                                  2 names
+v3/positional-nesting   {"orders":[],"matrix":[]}                                                     2 names
+```
+
+The last two are the shape assertion worth naming: a **record** declared in a document arrives as an
+object and an **array** as a list, both empty — because a document declares a shape and rows come from
+data. It is also what makes finding 85 legible: five fields are declared inside a row template, and
+two names exist at the top, because a cell only exists once a row does.
+
 ## Checked and clean: every published fixture parses the way its name says
 
 Swept while finding the above. The corpus encodes its expectations in its filenames, and the parser
