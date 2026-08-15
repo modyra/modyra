@@ -637,3 +637,34 @@ CI step is a change to frozen configuration, so it is reported rather than made.
 
 Angular is second in adapter priority and has three battles; the cross-runtime differential carries
 six runtimes and cannot carry this one.
+
+## 37. A capability a renderer is invited to report, and nothing reads
+
+Measured, not battled — a battle would have to encode a guess about what the capability should change,
+and that guess is the decision.
+
+`MdyWidgetRuntimeCapabilities.hydrated` is declared, set to `false` in `ssrRuntimeCapabilities`,
+computed by `browserRuntimeCapabilities({ hydrated })`, and documented at length:
+
+> `hydrated` is the one dimension no global can answer — a browser that has parsed server markup but
+> not yet attached to it is indistinguishable from one that has. It follows `dom` by default, which is
+> right once the client owns the page, and a renderer that knows it is still hydrating says so.
+
+Saying so changes nothing. Every reference to `hydrated` in `packages/*/src` is inside `runtime.ts`
+itself — the type, the SSR constant, the comment, the option and the assignment. No consumer reads it.
+
+Measured through `processWidgetCommands`, which is the surface that consults the report:
+
+| capabilities | what ran |
+| --- | --- |
+| none given | open, close, touched, dirty, change, focus, scroll, announce |
+| `dom: true, hydrated: true` | the same eight |
+| `dom: true, hydrated: false` | **the same eight** |
+| `dom: false` (either `hydrated`) | the five that do not need a DOM |
+
+`dom` is consulted exactly as documented — that half is right and is what SSR-001's battles hold. A
+renderer that correctly reports it is mid-hydration gets focus and scroll executed against markup the
+framework is about to replace.
+
+Same class as the four unemitted diagnostic codes in finding 27's postscript: published surface a
+consumer is invited to use, that does nothing. Either it gates something, or it is not a capability.
