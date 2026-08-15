@@ -3026,3 +3026,40 @@ The last row is the one worth naming: a `when` written in the schema and a `setI
 runtime are **different mechanisms**, and "one answer" is a claim about them together. It also
 cross-checks finding 64's repair — the imperative refusal composes with the declarative one rather
 than replacing it or being replaced.
+
+## Checked and clean: the arithmetic a calendar runs on
+
+`adversarial/validation/the-arithmetic-a-calendar-runs-on.battle.test.mjs` — green, and new.
+`@modyra/core/datetime` publishes **35 functions and two battles imported from it**.
+
+Two traps, both avoided:
+
+**The platform's.** `new Date(2026, 1, 31)` is the 3rd of March — JavaScript rolls an impossible day
+forward instead of refusing it — so a naive `addMonths` turns "the 31st of January, a month later"
+into March. No test of a single month catches it:
+
+```
+Jan 31 + 1 month          Feb 28 2026          not Mar 3
+the same in a leap year   Feb 29 2024          not over-clamped either
+Jan 31 + 13 months        Feb 28 2027          multi-month, still clamped
+Feb 29 + 1 year           Feb 28 2025
+Feb 29 + 4 years          Feb 29 2028          lands on another leap year
+Mar 1 − 1 day, leap       Feb 29 2024
+Mar 1 − 1 day, ordinary   Feb 28 2026
+Jan 1 − 1 day             Dec 31 2025
+```
+
+**The Gregorian rule in full.** A year divisible by four is a leap year unless divisible by a hundred,
+unless divisible by four hundred:
+
+```
+2026-02   28      2024-02   29      2000-02   29      1900-02   28
+```
+
+The last two are what tells a complete implementation from one that stops at the first clause, and
+both are right.
+
+**One lax answer, not filed.** `daysInMonth(2026, 0)` and `daysInMonth(2026, 13)` both answer `31`
+rather than refusing a month that does not exist. Nothing reachable from a calendar produces a month
+outside 1–12, and the callers all derive it from a real date — recorded rather than filed for want of
+a path to it.

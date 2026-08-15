@@ -1,0 +1,77 @@
+/**
+ * The date arithmetic under every picker, and the traps it does not fall into.
+ *
+ * `@modyra/core/datetime` publishes thirty-five functions and two battles in this suite import from
+ * it. The arithmetic is the part worth holding directly, because it is where a calendar is usually
+ * wrong and the wrongness is quiet: a month added to the 31st, a year added to a leap day, a day
+ * taken off the 1st of March.
+ *
+ * The classic failure is the one the platform hands you. `new Date(2026, 1, 31)` is the 3rd of March,
+ * because JavaScript rolls an impossible day forward instead of refusing it — so a naive
+ * `addMonths` turns "the 31st of January, a month later" into March. Every implementation that has
+ * not been told about this gets it wrong, and no test of a *single* month catches it.
+ *
+ * The other is the Gregorian rule. A year divisible by four is a leap year unless it is divisible by
+ * a hundred, unless it is divisible by four hundred — so 2000 has a 29th of February and 1900 does
+ * not, and an implementation that stops at the first clause is right until it meets one of them.
+ *
+ * Green. These are the cases that break when somebody simplifies date maths back to the platform's.
+ */
+
+import { addDays, addMonths, addYears, daysInMonth } from "@modyra/core/datetime";
+
+import { battle } from "../../harness/battle.mjs";
+import { expectEqual } from "../../harness/assertions.mjs";
+
+const on = (year, month, day) => ({ year, month, day });
+
+battle(
+  {
+    claims: ["LOC-001", "UI-002"],
+    title: "a month added to the last day of one lands on a day the next one has",
+    environments: ["node"],
+  },
+  async (ctx) => {
+    const cases = [
+      ["a month onto the 31st of January", addMonths, on(2026, 1, 31), 1, on(2026, 2, 28)],
+      ["the same in a leap year", addMonths, on(2024, 1, 31), 1, on(2024, 2, 29)],
+      ["a month off the 31st of March", addMonths, on(2026, 3, 31), -1, on(2026, 2, 28)],
+      ["a month onto the 31st of May", addMonths, on(2026, 5, 31), 1, on(2026, 6, 30)],
+      ["a month onto the 31st of December", addMonths, on(2026, 12, 31), 1, on(2027, 1, 31)],
+      ["thirteen months onto the 31st of January", addMonths, on(2026, 1, 31), 13, on(2027, 2, 28)],
+      ["a year onto the leap day", addYears, on(2024, 2, 29), 1, on(2025, 2, 28)],
+      ["a year off the leap day", addYears, on(2024, 2, 29), -1, on(2023, 2, 28)],
+      ["four years onto the leap day", addYears, on(2024, 2, 29), 4, on(2028, 2, 29)],
+      ["a day onto the last of the year", addDays, on(2026, 12, 31), 1, on(2027, 1, 1)],
+      ["a day off the 1st of March, leap", addDays, on(2024, 3, 1), -1, on(2024, 2, 29)],
+      ["a day off the 1st of March, ordinary", addDays, on(2026, 3, 1), -1, on(2026, 2, 28)],
+      ["a day off the 1st of January", addDays, on(2026, 1, 1), -1, on(2025, 12, 31)],
+    ];
+
+    for (const [what, add, from, by, expected] of cases) {
+      const landed = add(from, by);
+      ctx.log.note("date arithmetic", { what, landed });
+      expectEqual(landed, expected, {
+        claimIds: ["LOC-001"],
+        what: `${what} did not land on a day that exists`,
+      });
+    }
+
+    // The Gregorian rule in full. The first two rows are what every implementation gets right; the
+    // second two are what tells a complete one from a first-clause one.
+    for (const [year, month, days] of [
+      [2026, 2, 28],
+      [2024, 2, 29],
+      [2000, 2, 29],
+      [1900, 2, 28],
+      [2026, 1, 31],
+      [2026, 4, 30],
+      [2026, 12, 31],
+    ]) {
+      expectEqual(daysInMonth(year, month), days, {
+        claimIds: ["LOC-001", "UI-002"],
+        what: `${year}-${month} was given ${daysInMonth(year, month)} days`,
+      });
+    }
+  },
+);
