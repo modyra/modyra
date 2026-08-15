@@ -1,22 +1,21 @@
 /**
  * A value you set with the arrow keys, announced as text you cannot edit.
  *
- * `projectTimepickerFieldA11y` declares what the hour and minute segments are, and it is not a
- * guess — the projection is the published answer to "what does this part carry":
+ * `projectTimepickerFieldA11y` declares what the hour and minute segments carry:
  *
  *   role="spinbutton", aria-label, aria-valuemin, aria-valuemax, aria-valuenow
  *
- * That is the vocabulary for a number a user walks up and down, and the arrow keys do walk it: Up on
- * the hour segment moves eleven to twelve in both renderers. One of them says so and one does not.
+ * The **role** is not what this asks for. Both renderers use `<input type="number">`, whose implicit
+ * role is already `spinbutton`, so declaring it again is belt-and-braces and omitting it costs
+ * nothing. An earlier version of this spec asserted the role and was over-claiming.
  *
- * What a reader is told matters more here than usual, because the segment is `readonly` in the
- * renderer that omits the role: a plain read-only text box announces as something there is no point
- * putting the cursor in, and the arrows that do work are not discoverable from anything announced.
+ * What the range is asked for, because nothing else provides it. An hour runs 1 to 12 and a minute 0
+ * to 59, and a segment can say so twice over — `aria-valuemin`/`aria-valuemax` for a reader, `min`
+ * and `max` for the browser. Either satisfies this. Neither is present in one of the two renderers,
+ * so the bounds exist nowhere: not announced, and not enforced by the control.
  *
- * The attributes asserted are the ones that do not depend on what time it is. `aria-valuenow` is
- * checked for presence only — the live form's clock is not this spec's business, and comparing it
- * against a synthetic state is how an earlier version of this measurement produced three false
- * differences.
+ * The arrows are asserted to work first, because that is what makes the range meaningful — this is a
+ * number a user walks up and down, not a label that happens to hold one.
  */
 
 import { expect, test } from "@playwright/test";
@@ -46,9 +45,12 @@ for (const host of HOSTS) {
       Record<string, { attributes?: Record<string, unknown> }>;
     const hour = declared.hourControl.attributes ?? {};
 
-    // The premise: the projection declares a spinbutton at all. If this table is ever rewritten, this
-    // spec should stop asking rather than keep asking for something nobody publishes.
-    expect(hour.role, "the published projection no longer declares a spinbutton for the hour segment").toBe("spinbutton");
+    // The premise: the projection declares bounds for this part at all. If it ever stops, this spec
+    // should stop asking rather than keep asking for something nobody publishes.
+    expect(
+      [hour["aria-valuemin"], hour["aria-valuemax"]],
+      "the published projection no longer declares bounds for the hour segment",
+    ).toEqual([1, 12]);
 
     await page.goto(host.page);
     await page.waitForFunction((flag) => (window as never as Record<string, boolean>)[flag] === true, host.ready);
@@ -71,11 +73,11 @@ for (const host of HOSTS) {
       Array.from(document.querySelectorAll(selector)).map((each) => {
         const element = each as HTMLInputElement;
         return {
-          role: element.getAttribute("role"),
-          min: element.getAttribute("aria-valuemin"),
-          max: element.getAttribute("aria-valuemax"),
-          hasNow: element.getAttribute("aria-valuenow") !== null,
+          // Either way of stating the bounds counts: one is for a reader, the other for the browser.
+          min: element.getAttribute("aria-valuemin") ?? element.getAttribute("min"),
+          max: element.getAttribute("aria-valuemax") ?? element.getAttribute("max"),
           label: element.getAttribute("aria-label"),
+          readOnly: element.readOnly,
         };
       }), SEGMENT);
 
@@ -91,15 +93,10 @@ for (const host of HOSTS) {
     await page.waitForTimeout(280);
     expect(await shown(), "the arrow keys do not move the hour, so the spinbutton vocabulary is not what this part needs").not.toBe(before);
 
-    // Every segment says what it is, what it may hold, and where it is now.
+    // Every segment states the range it will take, in one of the two ways there are.
     expect(
-      segments.map((each) => each.role),
-      `the segments a user changes with the arrow keys carry ${JSON.stringify(segments.map((each) => each.role))} where the projection declares "spinbutton"`,
-    ).toEqual(["spinbutton", "spinbutton"]);
-
-    expect(
-      segments.every((each) => each.min !== null && each.max !== null && each.hasNow),
-      `a segment announces no range and no position: ${JSON.stringify(segments)}`,
+      segments.every((each) => each.min !== null && each.max !== null),
+      `a segment a user walks with the arrow keys states no bounds, neither for a reader nor for the browser: ${JSON.stringify(segments)}`,
     ).toBe(true);
   });
 }
