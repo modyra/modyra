@@ -7081,3 +7081,42 @@ shell.
 went green — so it was pushed instead: cleared and it is offered again, unreadable again and refused
 again, disabled and the form submits without it rather than being held hostage. That last path is the
 one that answered with something new.
+
+## 129. The one thing a control may ask for more of
+
+**Severity** S2 · **Classification** one constraint outside the rule the others follow · **Battle**
+`adversarial/validation/what-a-control-may-ask-for.battle.test.mjs` (red) · **Claims** VAL-004,
+UI-006
+
+`narrowConstraints(rules, narrowing)` is where a control's own limits meet the field's, and the rule
+is stated in the option that feeds it: a control may ask for **less** than the field accepts — a
+slider bounded tighter than its rule, a number input capped by a caller — and *it cannot ask for
+more: the rules are the authority, and what is offered is their intersection with this*.
+
+Every numeric bound keeps it. Measured against rules of
+`{min:5, max:50, step:1, minLength:4, maxLength:20}`:
+
+```
+control asks for   {min:10, max:20, step:5, minLength:8, maxLength:12}   → given, all five
+control asks for   {min:1,  max:99, step:0, minLength:1, maxLength:99}   → refused, all five
+```
+
+`pattern` is not an intersection: `narrowing.pattern ?? rules.pattern`. The control's replaces the
+field's outright, wider or not.
+
+```
+rules   ^[a-z]{4,}$   control offers ^[a-z]{8,}$   → ^[a-z]{8,}$   asking for less, fine
+rules   ^[a-z]{4,}$   control offers ^.*$          → ^.*$          asking for more, given
+```
+
+A pattern is the constraint the browser enforces before any JavaScript runs, so a control offering one
+that matches anything hands the user a box that invites exactly what the form will refuse — the
+mismatch ADR 0030 exists to prevent.
+
+**The same package already answers this meeting, the other way.** `factsOfAll` given two patterns
+projects **no** pattern and reports `conflictingPatterns: true`, because no single attribute means
+"matches both". That is asserted here as the premise, so if the sibling ever stops doing it this
+battle says so rather than quietly comparing against nothing.
+
+Whether the answer is "refuse to project when they differ", as the sibling does, or "keep the rules'
+own", is the owning session's call. What holds today is neither.
