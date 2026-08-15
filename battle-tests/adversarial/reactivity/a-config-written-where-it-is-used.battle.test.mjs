@@ -17,10 +17,15 @@
  * just the same, because what is compared is the object rather than anything in it. A consumer
  * cannot pass any literal to any of these hooks.
  *
+ * `@modyra/preact` is built the same way and does the same thing, with one difference worth knowing:
+ * React reports "Maximum update depth exceeded" and preact reports nothing, so there the loop is
+ * silent. Its rate is steady rather than explosive — renders grow linearly with how long the
+ * component is left mounted — which is why that half is measured over two windows instead of one.
+ *
  * The battle counts renders. A hook that settles renders a handful; one that does not renders
- * thousands, so the bound below does not need to be delicate, and a repair that costs a few extra
- * renders still passes. Every plausible repair leaves it green: memoizing on the config's contents,
- * holding the controller in a ref, or subscribing without setting state on subscribe.
+ * hundreds or thousands, so the bound below does not need to be delicate, and a repair that costs a
+ * few extra renders still passes. Every plausible repair leaves it green: memoizing on the config's
+ * contents, holding the controller in a ref, or subscribing without setting state on subscribe.
  */
 
 import { JSDOM } from "jsdom";
@@ -135,5 +140,58 @@ battle(
         detail: JSON.stringify({ renders: inline, maximumUpdateDepthReports: exceeded }),
       });
     }
+  },
+);
+
+battle(
+  {
+    claims: ["API-001", "REA-001"],
+    title: "the same config, in the other hook-shaped adapter, settles too",
+    environments: ["node"],
+  },
+  async (ctx) => {
+    browser();
+    globalThis.cancelAnimationFrame = (id) => clearTimeout(id);
+    const { h, render } = await import("preact");
+    const { useMemo } = await import("preact/hooks");
+    const m = await import("@modyra/preact");
+
+    const host = document.getElementById("root");
+    const makeConfig = () => ({ widgetId: "w", options: OPTIONS, onChange: () => {} });
+
+    /** Mount for a while and report how many times the component ran. */
+    const mount = async (stable, ms) => {
+      let renders = 0;
+      const Probe = () => {
+        renders += 1;
+        const config = stable ? useMemo(makeConfig, []) : makeConfig();
+        m.useMdySelect(config, LOOKUP, HANDLERS);
+        return null;
+      };
+      render(h(Probe), host);
+      await new Promise((resolve) => setTimeout(resolve, ms));
+      render(null, host);
+      await new Promise((resolve) => setTimeout(resolve, 20));
+      return renders;
+    };
+
+    // Two windows, because a loop that runs at a steady rate is only visible as one when the time it
+    // is given changes. A settled hook answers the same number for both.
+    const held = { short: await mount(true, 200), long: await mount(true, 600) };
+    const written = { short: await mount(false, 200), long: await mount(false, 600) };
+    ctx.log.note("renders over two windows", { held, written });
+
+    // The control: held still, the count does not depend on how long it is left alone.
+    expectClaim(held.short <= SETTLED && held.long <= SETTLED && held.short === held.long, {
+      claimIds: ["REA-001"],
+      what: "the hook did not settle even with its config held still, so nothing here measures identity",
+      detail: JSON.stringify(held),
+    });
+
+    expectClaim(written.short <= SETTLED && written.long <= SETTLED, {
+      claimIds: ["API-001", "REA-001"],
+      what: "the hook kept rendering for as long as it was mounted when its config was written at the call",
+      detail: JSON.stringify({ ...written, note: "preact reports nothing while it does this" }),
+    });
   },
 );
