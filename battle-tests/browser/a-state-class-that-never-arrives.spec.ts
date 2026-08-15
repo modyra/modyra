@@ -15,6 +15,12 @@
  * which is also why the shipped stylesheets' two dozen `.mdy-input-wrapper--error` rules never fire
  * for a lit page.
  *
+ * The second test asks the other half of the same table. `mdy-label` is shared shell — every kind that
+ * has a label has the same one — and `labelStates` declares `has-error` on it. That one is uneven in
+ * both renderers rather than absent in one, which is why it is a test of its own: the wrapper is a
+ * mechanism a renderer either implements or does not, and the label is a class somebody remembered for
+ * some kinds.
+ *
  * The kinds are read from the tables rather than listed here, so a kind that changes mechanism moves
  * this spec with it.
  */
@@ -92,5 +98,64 @@ for (const host of HOSTS) {
     expect(labelledSomewhere, JSON.stringify({ labelledSomewhere, bare })).toBeGreaterThan(0);
 
     expect(bare, JSON.stringify(bare, null, 1)).toEqual([]);
+  });
+}
+
+/** Every kind, because a label is shared shell and does not depend on the state mechanism. */
+const EVERY_KIND = Object.keys(MDY_STATE_EXPRESSION);
+
+for (const host of HOSTS) {
+  test(`${host.name}: a refused field's label says so`, async ({ page }) => {
+    test.setTimeout(150_000);
+    await page.goto(host.page);
+    await page.waitForFunction((flag) => (window as never as Record<string, boolean>)[flag] === true, host.ready);
+
+    expect(MDY_FIELD_STATE_CLASSES.labelStates, JSON.stringify(MDY_FIELD_STATE_CLASSES)).toContain("has-error");
+
+    const silent: Array<Record<string, unknown>> = [];
+    let spoke = 0;
+
+    for (const kind of EVERY_KIND) {
+      const id = `lb-${kind}`;
+      await page.evaluate(
+        ({ mountId, k, api, options }) => {
+          const field: Record<string, unknown> = { name: "f", kind: k, label: "L", validators: { required: true } };
+          if (/select|radio|segmented/.test(k)) field.options = options;
+          (window as never as Record<string, { mountFields(id: string, f: unknown[]): unknown }>)[api]
+            .mountFields(mountId, [field]);
+        },
+        { mountId: id, k: kind, api: host.api, options: OPTIONS },
+      );
+      await page.waitForTimeout(130);
+
+      const first = page.locator(`[data-form="${id}"] input, [data-form="${id}"] select, [data-form="${id}"] button`).first();
+      if (await first.count() > 0) {
+        await first.focus().catch(() => {});
+        await first.blur().catch(() => {});
+      }
+      await page.waitForTimeout(190);
+
+      const seen = await page.evaluate(({ sel, label }) => {
+        const root = document.querySelector(sel);
+        if (root === null) return null;
+        return {
+          refused: root.querySelectorAll('[aria-invalid="true"]').length > 0,
+          hasLabel: root.querySelector(`.${label}`) !== null,
+          labelError: root.querySelector(`.${label}--has-error`) !== null,
+        };
+      }, { sel: `[data-form="${id}"]`, label: LABEL });
+
+      if (seen === null) continue;
+      // A kind the form did not refuse, or that renders no label, is not evidence either way.
+      if (!seen.refused || !seen.hasLabel) continue;
+      if (seen.labelError) spoke += 1;
+      else silent.push({ kind, ...seen });
+    }
+
+    // The control: this renderer does put the class on some labels, so a label without it is that
+    // kind rather than a class nothing ever carries.
+    expect(spoke, JSON.stringify({ spoke, silent })).toBeGreaterThan(2);
+
+    expect(silent, JSON.stringify(silent, null, 1)).toEqual([]);
   });
 }

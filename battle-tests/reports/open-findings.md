@@ -5242,3 +5242,34 @@ moves the spec with it.
 
 Classification: Modyra bug, S1 by A11Y-004. A field the form has refused looks, in lit, exactly like
 one it accepts — for every kind whose state was supposed to arrive this way.
+
+## 107. A label that does not say the field was refused
+
+`browser/a-state-class-that-never-arrives.spec.ts`, second test — 2 red (both renderers).
+
+`MDY_FIELD_STATE_CLASSES` declares `label: "mdy-label"` with `labelStates: ["filled", "has-error"]`.
+A label is shared shell: every kind that has one has the same one, so the class does not depend on
+the state mechanism a kind uses. Measured, every kind mounted `required` and left untouched, counting
+only kinds the form actually refused and that render a label:
+
+```
+plain   silent on   checkbox
+lit     silent on   textarea, colors, checkbox, segmented, multiselect
+```
+
+`checkbox` is silent in both, which makes that one a gap in the contract's implementation rather than
+one renderer's. The other four are lit's.
+
+This is a different carrier from finding 106 and therefore a different question, which is why it is
+its own test: the wrapper modifier is a mechanism lit does not implement at all, and the label class
+is one that somebody remembered for some kinds. A repair to either leaves the other standing.
+
+Both controls hold: each renderer does put the class on most labels — plain on thirteen kinds, lit on
+nine — so a label without it is that kind rather than a class nothing carries.
+
+Read together with 106, a lit checkbox that the form has refused carries no wrapper modifier (lit sets
+none anywhere), no label class, and no error rule reaching its native input beyond the generic one —
+and a plain checkbox carries no label class either. The kind most likely to be a mandatory tick-box on
+a real form is the one with the least to show for being wrong.
+
+Classification: Modyra bug, S1 by A11Y-004.
