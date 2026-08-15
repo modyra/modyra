@@ -2282,3 +2282,50 @@ form ended are not still offering to edit it`.
 
 Both maps are for sequencing. A shared symptom can still have two sources, which is why the battles
 stay separate whatever the map says.
+
+## 71. The same form open twice, and the tab that finished first
+
+`adversarial/persistence/a-draft-that-went-backwards.battle.test.mjs` — 2 green, 1 red. **S1.**
+New claim **PER-004**: *a draft is not replaced by one saved before it.*
+
+A draft key identifies the form, not the window it is in — which is what makes a draft survive a
+reload. So **two tabs of one form share a key by design**, and that is the ordinary arrangement rather
+than a misuse.
+
+```
+tab A saves            {"savedAt": …957878, "value":{"note":"A is writing something long"}}
+another view saves     {"savedAt": …018229, "value":{"note":"B finished first"}}     newer
+tab A saves again      {"savedAt": …958629, "value":{"note":"A is writing something long and…"}}
+
+did A read before writing?   []      it did not
+```
+
+B's work is gone. What makes it more than last-write-wins is the third line: the stored stamp has gone
+**backwards by 59 seconds**. The draft now in storage claims to be older than the one it replaced, so
+the one field that could tell a later reader something is wrong tells them the opposite.
+
+The engine owns this protocol — it defined the envelope, it writes `savedAt` on every save, and it is
+the only thing that reads one. **A field written and never read promises a freshness it does not
+check.** The security guide already states the threat model in these words: *a draft lives where every
+script on the origin can write it.*
+
+Either repair closes it: read before writing and refuse or report a stamp newer than the last one this
+form wrote, or say in the draft contract that a key must be unique per view. What the battle refuses
+is the third thing — a silent replacement that also falsifies the record of when it happened.
+
+Two controls, green: the draft protocol saves what was typed, and the envelope carries a numeric
+stamp — so there is something to compare against and the finding is the comparison never happening.
+
+## Checked and clean: two forms sharing one initial-value object
+
+Measured alongside, because aliasing between forms would be worse than either of the above:
+
+```
+two forms over a record whose row initial is the SAME object
+  one.rows.r1.code.set("changed by one")
+  one   {"rows":{"r1":{"code":"changed by one"}}}
+  two   {"rows":{"r1":{"code":"start"}}}          untouched
+  the shared object itself   {"code":"start"}     untouched
+```
+
+The engine copies. Neither form can reach the other's value, and neither mutates what it was handed.

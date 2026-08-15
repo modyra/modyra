@@ -265,6 +265,17 @@ const CLAIMS = [
     ],
   },
   {
+    id: "PER-004",
+    title: "A draft is not replaced by one saved before it.",
+    area: "persistence",
+    severity: "S1",
+    publicEvidence: [
+      "@modyra/core MdyDraftOptions — a key identifies the form, so two views of one form share it",
+      "@modyra/core the draft envelope's `savedAt`, written on every save",
+      "docs security guide — a draft lives where every script on the origin can write it",
+    ],
+  },
+  {
     id: "SCH-001",
     title: "Any Standard Schema v1 library's findings reach the fields they name.",
     area: "schema-adapters",
