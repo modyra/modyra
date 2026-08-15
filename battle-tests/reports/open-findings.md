@@ -4084,7 +4084,7 @@ page that disappears is red.
 
 ## 90. A question the form stopped asking, still being answered
 
-`adversarial/validation/a-question-the-form-stopped-asking.battle.test.mjs` — 1 red, 1 green.
+`adversarial/validation/a-question-the-form-stopped-asking.battle.test.mjs` — 1 red, 2 green.
 
 A disabled field is out of the form's reckoning: its value is kept, excluded from submission, and its
 errors stop counting. Measured — an empty, `required`, disabled field leaves the form `valid: true`
@@ -4126,5 +4126,22 @@ Classification: Modyra bug — the claims it falsifies (VAL-002, VAL-003) are S0
 is where the harness takes the label from; the observed impact is a submit button dead for the length
 of the run and a request that outlives the question.
 
-Either repair passes the battle: dropping the run from what `pending` counts, or aborting it when the
-field leaves play.
+There are two ways out of play and both do it. `setInactive` — what a closed conditional section does
+to the fields inside it — measures identically to `setDisabled`:
+
+```
+setInactive: nothing in flight     valid=true  canSubmit=true  pending=false
+setInactive: in flight             valid=true  canSubmit=false pending=true  aborted=false
+setInactive: after leaving play    valid=true  canSubmit=false pending=true  aborted=false
+```
+
+The battle covers both, and its loop stops at the first, so `setInactive`'s line above is the probe's
+measurement and will be re-measured by the battle itself once `setDisabled` is repaired.
+
+`setReadonly` is the contrast, and it is green: a readonly field is *still being asked about* — empty
+and `required`, it leaves the form `valid: false` — so its check has every reason to still be
+running, and it is. Leaving play is the condition at issue, not any change of state. That battle is
+kept so a repair cannot be "cancel the runs of whatever field just changed".
+
+Either repair passes: dropping the run from what `pending` counts, or aborting it when the field
+leaves play.
