@@ -233,6 +233,10 @@ export function renderDatepickerField(
     // so it has no error to give, and saying nothing would leave the person looking at their own
     // text believing it was taken.
     const unreadable = state.entryUnreadable ? [messages.entryUnreadable] : [];
+    // Said to the form as well as to the page: the field holds a value its own rules accept — `null`,
+    // which nothing objects to — while the person is looking at text this control could not read, so
+    // without this the submit went out holding nothing where they had typed something.
+    handle.reportEntry(state.entryUnreadable ? messages.entryUnreadable : null);
     setErrors(shell.errorList, [...unreadable, ...shownErrorsOf(handle).map((e) => e.message)]);
     control.setAttribute("aria-invalid", String(state.entryUnreadable || showsAsInvalid({ valid: handle.valid(), disabled: handle.disabled() })));
     shell.syncState({

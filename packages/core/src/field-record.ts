@@ -52,6 +52,8 @@ export interface FieldRecord {
     ReadonlyMap<string, AsyncValidatorEntry>
   >;
   readonly asyncErrors: MdyWritableSignal<ReadonlyArray<MdyFieldError>>;
+  /** What a control says about the entry it holds — see the signal's own note. */
+  readonly entryProblem: MdyWritableSignal<string | null>;
   readonly pending: MdyWritableSignal<boolean>;
   /** Keys whose validator sets mark the field as required. */
   readonly requiredKeys: MdyWritableSignal<ReadonlySet<string>>;
@@ -114,6 +116,16 @@ export function createFieldRecord(
     new Map(),
   );
   const asyncErrors = rx.signal<ReadonlyArray<MdyFieldError>>([]);
+  /**
+   * What the control says about the entry it is holding, when the two disagree.
+   *
+   * A date picker given text it cannot read keeps the text on screen and holds `null`
+   * ([ADR 0063](../../../docs/architecture/0063-a-value-a-control-cannot-read-stays-where-it-can-be-corrected.md)),
+   * and `null` is a value no rule objects to — so the page said the entry was wrong, the form said it
+   * was fine, and the submit went out holding nothing where a person had typed something. A verdict
+   * shown to somebody has to be a verdict the form counts.
+   */
+  const entryProblem = rx.signal<string | null>(null);
   const pending = rx.signal(false);
 
   const errors = rx.computed<ReadonlyArray<MdyFieldError>>(() => {
@@ -125,10 +137,12 @@ export function createFieldRecord(
         ),
       ),
     );
+    const entry = entryProblem();
     return [
       ...syncErrors,
       ...asyncErrors(),
       ...extraErrors(v),
+      ...(entry === null ? [] : [{ kind: "entry", message: entry } as MdyFieldError]),
     ];
   });
 
@@ -194,6 +208,7 @@ export function createFieldRecord(
     readonly: readonlySignal,
     asyncRunId: 0,
     asyncRunner: null,
+    entryProblem,
     warn,
   };
 }

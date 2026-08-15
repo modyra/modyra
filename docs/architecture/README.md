@@ -88,6 +88,7 @@ absent section reads as an oversight, and "no security impact" is a finding.
 - [ADR 0070: A server is asked about a value the field accepts](0070-a-server-is-asked-about-a-value-the-field-accepts.md) — a tax id typed group by group sent four requests for values `minLength(11)` already rejects, and `when` loses because it restates a bound the field declared
 - [ADR 0071: A document is answered the same in both its shapes](0071-a-document-is-answered-the-same-in-both-its-shapes.md) — the tree parser dropped fields in silence where the flat list reported them, and `strict` approved a document whose only field it had discarded
 - [ADR 0072: A positional change set carries its whole list](0072-a-positional-change-set-carries-its-whole-list.md) — a compacted list of changed rows said nothing about where they were, so a server applying it by position wrote the wrong row
+- [ADR 0073: A verdict a person can see is one the form counts](0073-a-verdict-a-person-can-see-is-one-the-form-counts.md) — a picker showed an unreadable entry as an error and the form called itself submittable, sending the field empty
 
 ## Security-relevant records
 
