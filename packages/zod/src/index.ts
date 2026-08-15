@@ -94,6 +94,7 @@ export function createZodForm<T extends z.ZodObject>(
   schema: T,
   options?: MdyZodFormOptions<MdyFormValue<MdyZodSchemaTree<T["shape"]>>>,
 ): MdyTypedForm<MdyZodSchemaTree<T["shape"]>> {
+  assertObjectSchema(schema, "createZodForm");
   const tree = buildZodTree(schema) as MdyZodSchemaTree<T["shape"]>;
   const refinementValidator = buildZodRefinementValidator<
     MdyFormValue<MdyZodSchemaTree<T["shape"]>>
@@ -106,8 +107,28 @@ export function createZodForm<T extends z.ZodObject>(
 
 // ─── Runtime tree construction ───────────────────────────────────────────────
 
+/**
+ * A schema that is not an object has no names to give a form.
+ *
+ * `z.array(...)`, `z.string()` and `z.tuple([...])` are legitimate Zod schemas and none of them
+ * describes a form: a form has fields, and a field has a name. Refusing them is right — what arrived
+ * instead was `TypeError: Cannot convert undefined or null to object`, from reading `.shape` off
+ * something that has none. It named neither the schema nor the call, and three different mistakes
+ * produced one message indistinguishable from a defect in this bridge.
+ */
+function assertObjectSchema(schema: z.ZodType, method: string): asserts schema is z.ZodObject {
+  const shape = (schema as Partial<z.ZodObject>).shape;
+  if (shape !== null && typeof shape === "object") return;
+  const named = (schema as { readonly _def?: { readonly typeName?: unknown } })._def?.typeName;
+  throw new Error(
+    `[modyra] ${method} takes a Zod object schema${typeof named === "string" ? `, received ${named}` : ""}. ` +
+    "A form has named fields, so the schema it is built from has to name them: wrap the shape in z.object({ … }).",
+  );
+}
+
 /** Zod object → Modyra schema tree (fields with Zod-backed validators). */
 export function buildZodTree(objectSchema: z.ZodObject): MdyFormSchema {
+  assertObjectSchema(objectSchema, "buildZodTree");
   const out: Record<
     string,
     | MdyAnyFieldDescriptor

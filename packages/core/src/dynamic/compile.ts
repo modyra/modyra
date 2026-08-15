@@ -227,6 +227,16 @@ export function buildDynamicFieldValidators(field: MdyDynamicField): {
  * contract's runtime support, not a preference about how to build forms.
  */
 export function buildDynamicFormSchema(schema: MdyDynamicGroupNode): MdyFormSchema {
+  // The root of a parsed document, or nothing this can walk. `parseDynamicForm` is the door that
+  // produces one; a caller arriving here with something else got a `TypeError` about `children` or
+  // about converting null, which names neither the argument nor this call.
+  if (typeof schema !== "object" || schema === null || Array.isArray(schema)) {
+    throw new Error(
+      `[modyra] buildDynamicFormSchema takes a parsed document's root node, received ${
+        schema === null ? "null" : Array.isArray(schema) ? "an array" : `a ${typeof schema}`
+      }. Parse the document first: parseDynamicForm(document).schema.`,
+    );
+  }
   /**
    * Built bottom-up over an explicit stack, for the reason `validateDynamicSchema` is: a document is
    * untrusted, its nesting has no cap, and a recursive walk lets the document decide how much stack

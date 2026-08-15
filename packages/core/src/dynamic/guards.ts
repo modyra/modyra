@@ -61,7 +61,25 @@ export function assertSafeDynamicFieldNames(
   fields: ReadonlyArray<{ readonly name: string }>,
 ): void {
   const seen = new Set<string>();
-  for (const { name } of fields) {
+  for (const declared of fields) {
+    // An entry that is not a field has no name to check, and destructuring one produced
+    // `Cannot read properties of undefined (reading 'length')` from inside the path check — an
+    // internal, on a list a caller assembled, naming neither the entry nor the door.
+    if (typeof declared !== "object" || declared === null) {
+      throw new Error(
+        `[modyra] A field list holds fields, and one entry is ${
+          declared === null ? "null" : `a ${typeof declared}`
+        }. Each entry names a field: { name, kind, label }.`,
+      );
+    }
+    const { name } = declared;
+    if (typeof name !== "string") {
+      throw new Error(
+        `[modyra] A field must be named, and one entry names ${
+          name === undefined ? "nothing" : `a ${typeof name}`
+        }.`,
+      );
+    }
     if (!isSafeFieldPath(name)) {
       throw new Error(
         `[modyra] Invalid field name "${name}": every segment of a path must be present and must ` +
