@@ -234,3 +234,55 @@ battle(
     });
   },
 );
+
+battle(
+  {
+    claims: ["LIF-001", "PER-001"],
+    title: "a form built without being activated is a paused form, and says so",
+    environments: ["node"],
+    requires: ["structural"],
+  },
+  async (ctx) => {
+    // `autoActivate: false` is how the React and Preact bindings construct — the form is built in
+    // one place and activated where the component's lifetime begins. A form left in that state is a
+    // paused one, and the only thing standing between "not started yet" and "quietly doing nothing"
+    // is that it reports itself paused.
+    const storage = memoryStorage();
+    const context = ctx.open(SPEC, {
+      draft: { key: "d", storage, debounceMs: 15 },
+      history: true,
+      autoActivate: false,
+    });
+
+    await context.execute({ type: "record.upsert", path: "rows", key: "a", value: { code: "A" } });
+    await settled();
+    ctx.log.note("a form built without being activated", {
+      deactivated: context.form.deactivated,
+      stored: storage.written.has("d"),
+      canUndo: context.form.canUndo(),
+      value: context.form.getValue().rows,
+    });
+
+    expectEqual(context.form.deactivated, true, {
+      claimIds: ["LIF-001"],
+      what: "a form built with autoActivate false does not report itself paused, so nothing distinguishes it from one that is running and doing nothing",
+    });
+
+    expectEqual(storage.written.has("d"), false, {
+      claimIds: ["PER-001"],
+      what: "a form that was never activated wrote a draft",
+    });
+
+    // And what was written into it is still there when it starts.
+    context.form.activate();
+    await settled();
+    expectEqual(context.form.getValue().rows.a.code, "A", {
+      claimIds: ["LIF-001"],
+      what: "activating a form lost what was put into it before",
+    });
+    expectEqual(storage.written.has("d"), true, {
+      claimIds: ["PER-001"],
+      what: "a form that was activated did not start writing its draft",
+    });
+  },
+);
