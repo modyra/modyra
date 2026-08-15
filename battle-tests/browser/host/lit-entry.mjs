@@ -9,7 +9,7 @@
  * It exposes the same shape of operations as the Plain host where they mean the same thing, so a spec
  * can ask both renderers the same question.
  */
-import { createLitForm, field } from "@modyra/lit/adapter";
+import { buildDynamicFieldValidators, createLitForm, field, parseDynamicFields } from "@modyra/lit/adapter";
 import { defineMdyElements } from "@modyra/lit/ui";
 
 defineMdyElements();
@@ -60,8 +60,24 @@ window.battleLit = {
     host.dataset.form = id;
     document.querySelector("#stage").append(host);
     try {
+      // A field's rules come from the document the same way a consumer's would: the contract parser
+      // reads them and the validator builder compiles them. Building the schema without that step
+      // makes every field unconstrained, which looks like the renderer losing them.
+      const parsed = parseDynamicFields(fields.map((each) => ({ ...each, name: each.name })));
+      const rulesFor = (name) => {
+        const declared = parsed.find((each) => each.name === name);
+        return declared === undefined ? { validators: [] } : buildDynamicFieldValidators(declared);
+      };
       const schema = Object.fromEntries(
-        fields.map((each) => [each.name, field(each.initialValue ?? BLANK[each.kind] ?? "")]),
+        fields.map((each) => {
+          const built = rulesFor(each.name);
+          return [
+            each.name,
+            field(each.initialValue ?? BLANK[each.kind] ?? "", built.validators ?? [], {
+              marksRequired: built.marksRequired,
+            }),
+          ];
+        }),
       );
       const form = createLitForm(schema, options);
       for (const declared of fields) {

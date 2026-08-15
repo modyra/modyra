@@ -9,8 +9,8 @@ import { expect, test } from "@playwright/test";
  * turns "this renderer has an accessibility defect" into something a reader can act on: a defect one
  * renderer has and the other does not is that renderer's, and one they share is the contract's.
  *
- * They do not share these. Lit is clean where Plain is not — no role-less wrapper carrying
- * `aria-label` — and reports two of its own:
+ * They share one and not the others. Lit is clean where Plain has role-less wrappers carrying
+ * `aria-label`, and reports two of its own:
  *
  *   aria-allowed-attr   critical   both daterange inputs carry `aria-expanded` on a bare textbox
  *   nested-interactive  serious    the colours button contains something interactive
@@ -21,6 +21,11 @@ import { expect, test } from "@playwright/test";
  *
  * That the two renderers fail differently is the finding underneath both: `@modyra/widgets` describes
  * the parts and the relations, and neither of these is checked anywhere the renderers share.
+ *
+ * The state where a field is **required** is asked about separately, because the attributes a
+ * required control carries exist only then — and it is the state where the two renderers stop
+ * differing. Plain puts `aria-required` on a bare `<button>`; Lit puts it on a `<div role="group">`.
+ * Neither role permits it, so a required multiselect is announced as required by neither.
  */
 
 const AXE = readFileSync("node_modules/axe-core/axe.min.js", "utf8");
@@ -89,6 +94,31 @@ test("every declared kind renders a lit form the auditor has nothing to say abou
   expect(await page.evaluate(() => document.querySelectorAll("#stage [data-form]").length)).toBe(KINDS.length);
 
   await page.waitForTimeout(400);
+  const violations = await auditStage(page);
+  expect(violations, JSON.stringify(violations, null, 1)).toEqual([]);
+});
+
+test("every declared kind is one the auditor has nothing to say about when it is required", async ({ page }) => {
+  // The attributes a required control carries exist only when it is required, so the audit above
+  // never reaches this markup.
+  const mounted = await page.evaluate(
+    ({ kinds }) =>
+      kinds.map((kind: string) => {
+        const field: Record<string, unknown> = { name: kind, kind, label: `L ${kind}`, validators: { required: true } };
+        if (/select|radio|segmented/.test(kind)) field.options = [{ value: "a", label: "A" }];
+        const outcome = (window as never as { battleLit: Record<string, Function> }).battleLit
+          .mountFields(`r-${kind}`, [field]);
+        return { kind, ok: outcome.mounted };
+      }),
+    { kinds: KINDS },
+  );
+  expect(mounted.filter((each) => !each.ok), JSON.stringify(mounted)).toEqual([]);
+  await page.waitForTimeout(400);
+
+  // The premise: something is actually marked required, or this is the first audit again.
+  const marked = await page.evaluate(() => document.querySelectorAll('#stage [aria-required="true"]').length);
+  expect(marked, "no control was marked required, so the document's rules did not reach them").toBeGreaterThan(0);
+
   const violations = await auditStage(page);
   expect(violations, JSON.stringify(violations, null, 1)).toEqual([]);
 });
