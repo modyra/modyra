@@ -9923,3 +9923,40 @@ fields    schema   createForm
 
 Recorded rather than filed: nothing here is a denial of service at a size a document would really
 have, and a finding would be manufactured.
+
+## Closed since: 169 and 170, and a defect of mine that hid two of them
+
+Both verified independently and promoted from todos to enforced regressions.
+
+**169** — a stamp that is absent, not a number, or further ahead than a clock explains is no longer
+an age. Five minutes of tolerance on the future, because two machines do not agree to the millisecond
+and a draft written on one and read on another is the ordinary case. Measured here:
+
+```
+seeded stamp        restored?   stamp after a save
+an hour ahead       no          moved to now      ← no longer carried forward
+two minutes ahead   yes         kept              ← inside the skew tolerance
+an hour ago         no          moved to now
+```
+
+The second column is the repair; the third is the half I added later, and it is the one that made the
+finding permanent rather than one-off.
+
+**170** — history now starts at the restored state. The owning session moved **only the history**, not
+the initial values, so restored edits stay changes against what the form was built with and
+`getChanges()` still reports them. That reading is right: a draft *contains* the previous session's
+changes rather than undoing them.
+
+### A battle of mine was failing for the wrong reason
+
+`storage-that-refuses` was red with `Converting circular structure to JSON` at its own `detail:
+JSON.stringify(control)` — `control` carries a live form, and a form holds its scheduler. It died
+before the assertion it was attached to was ever checked, so an S0 claim was reported as broken on the
+strength of my own report line.
+
+Fixed at all four sites with an `outcomeOf()` that carries `{answered, threw}` and nothing else. The
+substance was green all along.
+
+The general rule, worth more than the fix: **a `detail` is evaluated before the claim is checked, so a
+`detail` that can throw decides whether the claim is reported at all.** Swept the suite for the same
+shape; this was the only one.
