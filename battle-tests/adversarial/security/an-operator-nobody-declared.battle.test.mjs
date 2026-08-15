@@ -78,8 +78,43 @@ battle(
       });
     }
 
+    // The same disagreement one level in. An operator can be one of the twelve and the expression
+    // still be unreadable: `equals` needs two operands, `not` needs one. The author-time check counts
+    // them; the evaluator answers anyway, and answers the way that opens.
+    const malformed = [
+      ["equals with no operands", { op: "equals", operands: [] }],
+      ["equals with its operands missing", { op: "equals" }],
+      ["and with no operands", { op: "and", operands: [] }],
+      ["not with no operand", { op: "not" }],
+    ];
+    for (const [what, rule] of malformed) {
+      expectClaim(validateExpression(rule, "when").length > 0, {
+        claimIds: ["DYN-003"],
+        what: `validateExpression accepted ${what}, so there is nothing for the runtime to disagree with`,
+      });
+    }
+
     // And the runtime half, on the same rules the check just refused.
     const opened = [];
+    for (const [what, rule] of malformed) {
+      const answered = evaluateExpression(rule, { country: "IT" });
+      const form = createForm(
+        {
+          country: field("IT"),
+          extra: group({ vat: field("secret") }, { when: () => evaluateExpression(rule, { country: "IT" }) }),
+        },
+        { devWarnings: false },
+      );
+      await settled();
+      let payload = null;
+      await form.submit((value) => {
+        payload = value;
+      });
+      form.destroy();
+      ctx.log.note("a condition whose shape is not one", { what, answered, payload });
+      if (payload.extra !== undefined) opened.push({ what, answered });
+    }
+
     for (const op of ["eqals", "nonsense", ""]) {
       const answered = evaluateExpression(ruleFor(op), { country: "IT" });
       const payload = await sentUnder(ruleFor(op), "IT");

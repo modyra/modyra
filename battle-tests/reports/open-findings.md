@@ -2669,6 +2669,39 @@ terminate cannot be timed from inside the process it is hanging.
 Sibling of 75: the same two functions, the same closed vocabulary, and the same shape of gap — what
 the author-time check knows is not what the evaluator enforces.
 
+**Closed, verified here.** `evaluateExpression` now passes through the same gate `validateExpression`
+uses: `matches "(a+)+$"` against thirty `a`s answers `false` in 0 ms where it used to be killed at
+1000, the ordinary pattern still answers, and the author-time check now reports the cost it used to
+accept in silence.
+
+## 75 again: two classes the repair does not reach
+
+Verified after the repair. The unknown **operator** is closed — `"eqals"` answers `false` and the
+section stays shut — and a plain string as the expression now answers `false` too. Two classes remain,
+and both are the same principle unapplied:
+
+**Arity.** An operator can be one of the twelve and the expression still be unreadable:
+
+```
+equals with no operands / operands missing   validateExpression refuses  →  evaluate answers TRUE, section opens
+and with no operands                         the same
+not with no operand                          the same
+```
+
+**Expressions that cannot be read at all still throw, and the throw comes out of `submit()`:**
+
+```
+matches with a pattern that does not compile   submit() throws  Invalid regular expression: /[/
+an expression that is null                     submit() throws  Cannot read properties of null
+```
+
+The second is the one the repair's own reasoning argues against: *a condition is evaluated on every
+read, so throwing turns a document defect into a form that does not render.* That is why the repair
+answers `false` for an unknown operator rather than raising — and these two shapes still raise.
+
+Both classes are now rows of the battle rather than sentences in a message, so a repair that reaches
+only one of them shows as red rather than as nothing.
+
 ## Checked and clean: every door into a value is a door the security policy is told about
 
 `adversarial/security/every-door-the-policy-stands-at.battle.test.mjs` — green, and kept.
