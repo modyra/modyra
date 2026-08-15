@@ -214,6 +214,8 @@ test("a cyclic expression meets the bottom instead of spinning", () => {
 
   assert.ok(validateExpression(cyclic, "t").length > 0, "a cycle was accepted");
   assert.deepEqual(expressionPaths(cyclic), ["a"], "reading a cycle's paths did not terminate");
+  // The depth cap is a limit on what a *document* may carry, not on what a caller may evaluate, so
+  // meeting the bottom is not the unreadability ADR 0069 answers with `false`.
   assert.equal(evaluateExpression(cyclic, { a: "x" }), true, "an unreadable rule must not fire");
 });
 

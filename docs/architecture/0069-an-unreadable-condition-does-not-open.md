@@ -48,6 +48,11 @@ the cap and one `dynamicPatternRefusal` names, and a pattern that cannot be affo
 or over-long pattern the way it already names an unknown operator, so a document carrying one is
 refused where documents are refused rather than only being inert at runtime.
 
+**The depth cap is not part of this.** An expression nested past `MDY_MAX_EXPRESSION_DEPTH` still
+evaluates to `true` at the cut: that cap limits what a *document* may carry, and an expression built
+in code and nested deeper is still readable. Answering `false` there would make this function refuse
+work nobody asked it to police — which a battle already pins in those words.
+
 ## Consequences
 
 This reverses a documented default. The old comment argued `true` was the safe direction — *"a

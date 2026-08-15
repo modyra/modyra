@@ -152,6 +152,28 @@ export const MDY_MAX_EXPRESSION_DEPTH = 32;
  */
 export const MDY_MAX_EXPRESSION_PATTERN_LENGTH = 256;
 
+/**
+ * How many operands each operator needs to mean anything.
+ *
+ * Declared beside the operators rather than inferred: `isEmpty` reads one, `equals` compares two,
+ * and `and` joins as many as it is given but not none. An expression short of them is unreadable
+ * even though its operator is spelled correctly.
+ */
+const ARITY_OF: Readonly<Record<MdyExpressionOp, number>> = Object.freeze({
+  equals: 2,
+  notEquals: 2,
+  isEmpty: 1,
+  isNotEmpty: 1,
+  lengthAtLeast: 2,
+  lengthAtMost: 2,
+  greaterThan: 2,
+  lessThan: 2,
+  matches: 2,
+  and: 1,
+  or: 1,
+  not: 1,
+});
+
 function resolveOperand(operand: MdyOperand | undefined, value: unknown, depth: number): unknown {
   if (operand === undefined || operand === null) return null;
   if (isExpression(operand)) return evaluateAt(operand, value, depth + 1);
@@ -175,11 +197,23 @@ export function evaluateExpression(expr: MdyExpression, value: unknown): boolean
 }
 
 function evaluateAt(expr: MdyExpression, value: unknown, depth: number): boolean {
-  // Past the bottom the expression is unreadable, which is the case the default already answers:
-  // a rule that cannot be read keeps the field visible and invents no error.
+  // Not an expression at all — `null`, a bare string, an object with no `op`. Reading an operand off
+  // one raised from inside the submit a person had just pressed, which is the failure answering
+  // `false` to an unknown operator exists to avoid: a document defect must not become a form that
+  // cannot be rendered or a button that throws.
+  if (!isExpression(expr)) return false;
+  // Past the bottom, and deliberately *not* the same answer an unknown operator gets. The depth cap
+  // is a limit on what a document may carry, not on what a caller may evaluate: an expression built
+  // in code and nested deeper than a document may be is still readable, and cutting it to `false`
+  // would make this function refuse work nobody asked it to police.
   if (depth > MDY_MAX_EXPRESSION_DEPTH) return true;
 
   const operands = operandsOf(expr);
+  // An operator can be one of the twelve and the expression still be unreadable: `equals` with
+  // nothing to compare, `and` with nothing to join, `not` with nothing to negate.
+  // `validateExpression` counts them; the evaluator answered anyway, and answered in the direction
+  // that opens.
+  if (operands.length < ARITY_OF[expr.op as MdyExpressionOp]) return false;
   const [a, b] = operands;
   const av = (): unknown => resolveOperand(a, value, depth);
   const bv = (): unknown => resolveOperand(b, value, depth);
@@ -206,6 +240,8 @@ function evaluateAt(expr: MdyExpression, value: unknown, depth: number): boolean
     case "lessThan":
       return (av() as number) < (bv() as number);
     case "matches": {
+      // A pattern that does not compile raised from here, through whatever read the form last — the
+      // submit button included. It decides nothing instead.
       // The pattern must be a literal. Allowing a field's value here would let a form's *data*
       // choose the regular expression, which is how a catastrophically backtracking pattern gets in.
       const source = typeof b === "string" ? b : "";
@@ -216,7 +252,11 @@ function evaluateAt(expr: MdyExpression, value: unknown, depth: number): boolean
       if (source.length > MDY_MAX_EXPRESSION_PATTERN_LENGTH || dynamicPatternRefusal(source) !== null) {
         return false;
       }
-      return new RegExp(source).test(String(av() ?? ""));
+      try {
+        return new RegExp(source).test(String(av() ?? ""));
+      } catch {
+        return false;
+      }
     }
     case "and":
       return operands.every((operand) => Boolean(resolveOperand(operand, value, depth)));
