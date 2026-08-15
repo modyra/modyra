@@ -2993,3 +2993,36 @@ The unwritable case is the one worth naming: the user keeps typing and their dra
 even though the device's storage refused it, and the form never learns. That is the documented
 bargain — *the same one the default `localStorage` storage already makes with quota errors* — and it
 is now held rather than assumed.
+
+## Checked and clean: the truth table for whether a field is in play
+
+`adversarial/validation/one-answer-however-many-are-asking.battle.test.mjs` — green, and new.
+
+The conditions subsystem states its rule in a sentence: *the signal a field's interactivity reads is
+true while **any** condition refuses it — one signal per field however many conditions there are, so a
+field's activity is one question with one answer, not a stack of overrides where the last writer
+wins.*
+
+That is a truth table, and almost every test in this suite exercises **one row of it**: a single
+condition, on one node. A refactor turning "any refuses" into "the innermost decides" or "the last one
+set wins" would pass all of them, because with one condition every rule agrees.
+
+The rows that tell them apart:
+
+```
+section  field    kept
+true     true     yes
+true     false    no
+false    true     no        ← the row "the innermost decides" would get wrong
+false    false    no
+
+three levels, any one of the three saying no        the leaf is out
+three levels, all three saying yes                  the leaf is in     the control
+
+a schema `when` allowing + a runtime setInactive refusing     the section is out
+```
+
+The last row is the one worth naming: a `when` written in the schema and a `setInactive` called at
+runtime are **different mechanisms**, and "one answer" is a claim about them together. It also
+cross-checks finding 64's repair — the imperative refusal composes with the declarative one rather
+than replacing it or being replaced.
