@@ -11,7 +11,11 @@
  * differ in what the form holds, what it will submit, which rows it has, what is invalid, or which
  * cells carry a mark.
  *
- * Angular is absent for two reasons, and only the first is about tooling. Its reactivity is produced
+ * Six of the eight adapters are here. `@modyra/plain` is the seventh and is not missing: it mounts on
+ * `vanillaReactivity()` from the core, so it is the baseline every row is compared against rather
+ * than a row of its own.
+ *
+ * Angular, the eighth, is absent for two reasons, and only the first is about tooling. Its reactivity is produced
  * by `build:angular` while `npm run battle` runs `build:packages`, so adding it would make the
  * suite's own build a different one.
  *
