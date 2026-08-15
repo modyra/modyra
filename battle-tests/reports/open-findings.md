@@ -4937,21 +4937,35 @@ The invariant is written as the thing that matters rather than as "diagnose this
 parser accepts must be one the engine can build. Reporting the kind passes. Refusing the document
 passes. Building a form that survives an unknown kind would pass too.
 
-**It is not only the kind check.** Asking every trigger the same question — reported at the top, then
-made inside a row instead — a second one stops at the same boundary:
+**It is not the kind check. It is every check.** Putting each field-level mistake the parser reports
+through both positions — at the top of a document, then inside a row:
 
 ```
-a kind nobody declared          top: MDY_DYNAMIC_UNKNOWN_KIND    inside a row: []
-a pattern that is not a string  top: MDY_DYNAMIC_INVALID_FIELD   inside a row: []
+a kind nobody declared             top: MDY_DYNAMIC_UNKNOWN_KIND        inside a row: []
+a label that is not a string       top: MDY_DYNAMIC_INVALID_FIELD       inside a row: []
+a pattern that is not a string     top: MDY_DYNAMIC_INVALID_FIELD       inside a row: []
+a min that is not a number         top: MDY_DYNAMIC_INVALID_FIELD       inside a row: []
+a required that is not a boolean   top: MDY_DYNAMIC_INVALID_FIELD       inside a row: []
+a pattern past the length limit    top: MDY_DYNAMIC_PATTERN_TOO_LONG    inside a row: []
+a pattern that backtracks          top: MDY_DYNAMIC_PATTERN_TOO_COSTLY  inside a row: []
+a select with no options           top: MDY_DYNAMIC_OPTIONS_REQUIRED    inside a row: []
+options that are not a list        top: MDY_DYNAMIC_OPTIONS_REQUIRED    inside a row: []
+an option with no label            top: MDY_DYNAMIC_OPTIONS_REQUIRED    inside a row: []
+
+                                                        10 of 10 lost inside a row
 ```
 
-That second one builds either way — the bad pattern is simply ignored — so only the silence is wrong,
-which is why the parity battle is worth having beside the build one: an author making the same
-mistake one level down is told nothing, whether or not anything later breaks.
+**What it does not cost is worth stating as precisely as what it does.** The row with
+`MDY_DYNAMIC_PATTERN_TOO_COSTLY` in it is the one that looked like a security hole, and it is not:
+measured, a catastrophic pattern declared inside a collection row is refused at *runtime* —
+`buildDynamicValidators` returns zero validators and says "skipped dynamic pattern validator … which
+backtracks exponentially" — and the row's cell validates a thirty-character value in 23ms with no
+error. The guard holds wherever the pattern is declared. Only the author's diagnostic is lost.
 
-Four other triggers were swept and are silent at *both* levels, so they say nothing about the
-boundary and are not counted here: an uncompilable pattern, a select with no options, two options
-sharing a value (finding 48), and an option value carrying the id delimiter.
+That is the same shape as the rest of this finding, and the reason it is filed as reporting rather
+than as behaviour: the engine keeps protecting itself, and stops explaining. The one exception is the
+unknown kind, where nothing downstream absorbs it and `buildDynamicFormSchema` throws — which is why
+the build invariant is asserted beside the parity one.
 
 This is the same shape as `flattenDynamicForm` not recursing into nested array items, recorded earlier
 in this campaign — but the family is narrower than "the contract's walks stop at a collection

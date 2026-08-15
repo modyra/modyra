@@ -126,21 +126,31 @@ battle(
   },
 );
 
-/** Mistakes that are worth a diagnostic, each as one leaf node. */
+/**
+ * Every mistake the parser has something to say about, each as one leaf node.
+ *
+ * Not a chosen pair: this is the whole set of field-level mistakes that produce a diagnostic at the
+ * top of a document, and the point of the battle is that the same set produces none inside a row.
+ */
 const MISTAKES = Object.freeze({
-  "a kind nobody declared": { node: "field", field: { kind: "wormhole", label: "L" } },
-  "a pattern that is not a string": {
-    node: "field",
-    field: { kind: "text", label: "L", validators: { pattern: 7 } },
-  },
+  "a kind nobody declared": { kind: "wormhole", label: "L" },
+  "a label that is not a string": { kind: "text", label: 7 },
+  "a pattern that is not a string": { kind: "text", label: "L", validators: { pattern: 7 } },
+  "a min that is not a number": { kind: "number", label: "L", validators: { min: "five" } },
+  "a required that is not a boolean": { kind: "text", label: "L", validators: { required: "yes" } },
+  "a pattern past the length limit": { kind: "text", label: "L", validators: { pattern: "a".repeat(300) } },
+  "a pattern that backtracks": { kind: "text", label: "L", validators: { pattern: "(a+)+$" } },
+  "a select with no options": { kind: "select", label: "L" },
+  "options that are not a list": { kind: "select", label: "L", options: "x" },
+  "an option with no label": { kind: "select", label: "L", options: [{ value: "a" }] },
 });
 
 /** The same leaf, at the top of a document and inside a row of one. */
-const atTheTop = (leaf) => ({ version: 3, schema: { node: "group", children: { f: leaf } } });
-const insideARow = (leaf) => ({
+const atTheTop = (field) => ({ version: 3, schema: { node: "group", children: { f: { node: "field", field } } } });
+const insideARow = (field) => ({
   version: 3,
   schema: { node: "group", children: {
-    rows: { node: "record", label: "R", item: { node: "group", children: { f: leaf } } },
+    rows: { node: "record", label: "R", item: { node: "group", children: { f: { node: "field", field } } } },
   } },
 });
 
