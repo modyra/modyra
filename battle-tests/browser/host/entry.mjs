@@ -50,6 +50,17 @@ window.battle = {
     return mounted.get(id).handle.form.getValue();
   },
 
+  /**
+   * End the form and leave the controls in the document.
+   *
+   * The window a framework opens between destroying its model and removing its nodes: an
+   * `ngOnDestroy` runs, and the elements stay until an animation or the host's own scheduler takes
+   * them. Anything the user does in that window reaches a form that has ended.
+   */
+  destroyFormOnly(id) {
+    mounted.get(id).handle.form.destroy();
+  },
+
   dispose(id) {
     const entry = mounted.get(id);
     entry.handle.dispose();
