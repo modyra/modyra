@@ -298,3 +298,160 @@ battle(
     ctx.log.note("keyed-nested campaign histogram", Object.fromEntries(generated));
   },
 );
+
+/**
+ * The same generated sequences, written to a draft and read back.
+ *
+ * The campaign above compares the engine to the model after every operation, which is the strongest
+ * check this suite has — and it never crosses a restore. `draft.restore` is refused by the operation
+ * interpreter by design: rebuilding a form from storage is not a step inside a run but a new run over
+ * the same state, so no seed reaches it.
+ *
+ * A restore is exactly where nesting is at risk. It reconstructs a tree from a flat encoding, at
+ * three levels, and has to put back the orders, their lines and their allocations without inventing a
+ * level or losing one. `PER-001` promises the declared structure comes back and removed rows do not.
+ *
+ * The property is narrower than the campaign's on purpose: a draft carries a value, not a session.
+ * What somebody had mounted, touched or dirtied is not promised across a reopen and is not asserted.
+ */
+battle(
+  {
+    claims: ["PER-001", "COL-001", "COL-005"],
+    title: "three levels written to a draft come back as the three levels they were",
+    environments: ["node"],
+  },
+  async (ctx) => {
+    const runs = runCount(10);
+    const length = 12;
+
+    /** Storage the campaign owns, so a run depends on no environment. */
+    const memoryStorage = () => {
+      const written = new Map();
+      return {
+        written,
+        read: (key) => written.get(key) ?? null,
+        write: (key, value) => written.set(key, value),
+        remove: (key) => written.delete(key),
+      };
+    };
+
+    /** The draft manager saves on a debounce this harness drives no clock for. */
+    const saved = () => new Promise((resolve) => setTimeout(resolve, 700));
+    const restored = () => new Promise((resolve) => setTimeout(resolve, 60));
+
+    const roundTrip = async (operations) => {
+      const storage = memoryStorage();
+      const model = createKeyedNestedReferenceModel({
+        orderCells: ORDER_CELLS,
+        lineCells: LINE_CELLS,
+        allocationCells: ALLOCATION_CELLS,
+      });
+      const before = createBattleContext({
+        spec: NESTED_ORDERS_SPEC,
+        log: ctx.log,
+        formOptions: { draft: { key: "nested-campaign", storage }, devWarnings: false },
+      });
+
+      try {
+        for (const operation of operations) {
+          try {
+            await before.execute(operation);
+          } catch {
+            // A refusal mid-sequence leaves the model and the form describing different things, so
+            // this candidate says nothing about a round trip. The campaign above is where a refusal
+            // is evidence; here it is noise.
+            return { divergence: null, refused: true, rows: 0 };
+          }
+          model.apply(operation, { rootPath: "orders" });
+        }
+        await saved();
+      } finally {
+        before.form.destroy();
+      }
+
+      const after = createBattleContext({
+        spec: NESTED_ORDERS_SPEC,
+        log: ctx.log,
+        formOptions: { draft: { key: "nested-campaign", storage }, devWarnings: false },
+      });
+      try {
+        await restored();
+        const actual = encodeValue(after.form.getValue().orders ?? {}, "orders");
+        const expected = encodeValue(model.value(), "orders");
+        return {
+          divergence: compareCanonical(expected, actual),
+          refused: false,
+          rows: model.keys().length,
+        };
+      } finally {
+        after.form.destroy();
+      }
+    };
+
+    let deepest = 0;
+    let compared = 0;
+
+    for (let run = 0; run < runs; run += 1) {
+      await betweenRuns(run);
+      const rng = createRng(runSeed(ctx.seed, run));
+      const model = createKeyedNestedReferenceModel({
+        orderCells: ORDER_CELLS,
+        lineCells: LINE_CELLS,
+        allocationCells: ALLOCATION_CELLS,
+      });
+      const operations = [];
+      for (let index = 0; index < length; index += 1) {
+        const operation = generateKeyedNestedOperation(rng, model);
+        operations.push(operation);
+        model.apply(operation, { rootPath: "orders" });
+      }
+
+      const outcome = await roundTrip(operations);
+      if (outcome.refused) continue;
+      compared += 1;
+      deepest = Math.max(deepest, outcome.rows);
+      if (!outcome.divergence) continue;
+
+      const reduced = await shrink(operations, async (candidate) => {
+        const attempt = await roundTrip(candidate);
+        return attempt.refused === false && attempt.divergence !== null;
+      });
+
+      const final = await roundTrip(reduced.operations);
+      throw new BattleBreak({
+        claimIds: ["PER-001"],
+        severity: "S0",
+        what: "a draft did not bring back the tree the sequence had built",
+        divergence: final.divergence ?? outcome.divergence,
+        search: {
+          run,
+          runs,
+          operations: reduced.operations,
+          minimizedTo: reduced.operations.length,
+          shrinkAttempts: reduced.attempts,
+        },
+      });
+    }
+
+    // The controls. A campaign whose every run was refused, or whose every restore came back empty,
+    // is a comparison of nothing against nothing and has to say so rather than pass.
+    if (compared === 0) {
+      throw new BattleBreak({
+        claimIds: ["PER-001"],
+        severity: "S0",
+        what: "every generated sequence was refused, so no round trip was compared",
+      });
+    }
+
+    if (deepest === 0) {
+      throw new BattleBreak({
+        claimIds: ["PER-001"],
+        severity: "S0",
+        what: "no run restored an order, so every comparison was of two empty trees",
+        detail: `${compared} run(s) compared`,
+      });
+    }
+
+    ctx.log.note("what the nested round trip carried", { runs, compared, deepestRestore: deepest });
+  },
+);
