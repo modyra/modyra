@@ -3159,8 +3159,23 @@ that is **empty**.
 So the two halves of the contract disagree about the same field, and the renderer resolves it by
 producing a control a screen reader announces as its role and nothing else.
 
-**Fifteen of the seventeen kinds** have at least one part with no accessible name when the label is
-omitted: text, email, password, textarea, number, slider, checkbox, toggle, select, radio, segmented,
+**Nine of the fifteen are closed**, verified here: text, email, password, textarea, number, slider,
+checkbox, toggle, select. `fieldAccessibleName({ariaLabel, label, name})` puts the order in one place
+so the renderers do not each invent it — which is the cause 34 and 56 both had.
+
+**Six remain, and all six are composite controls**: `radio`, `segmented`, `datepicker`, `daterange`,
+`timepicker`, `file`. The reason is the same for each — the name belongs on the element a person
+operates, and there it is not the one the shared insert receives: a radiogroup has a container with a
+role, a daterange has *two* inputs, a file has a button beside a hidden input. Which part carries the
+name is a per-kind decision, and belongs in the contract rather than in a shared line.
+
+**And the auditor now catches one of the six.** axe reports `label` on `file` and says nothing about
+the other five, whose unnamed part is a **role** rather than an input. The third test was rewritten
+for that and is written to expire: when the last composite kind is named it fails, and the right
+response then is to delete it rather than repair it.
+
+Originally, **fifteen of the seventeen kinds** had at least one part with no accessible name when the
+label was omitted: text, email, password, textarea, number, slider, checkbox, toggle, select, radio, segmented,
 datepicker, daterange, timepicker, file. The two that hold are `multiselect` and `colors` — and
 `colors` only because its swatch listbox carries a static `"Presets"` that has nothing to do with the
 field.

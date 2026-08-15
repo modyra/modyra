@@ -109,22 +109,33 @@ test("every control has a name even when the document declared none", async ({ p
   expect(unnamed, JSON.stringify(unnamed, null, 1)).toEqual([]);
 });
 
-test("the auditor does not see all of it, which is why this check is written by hand", async ({ page }) => {
+test("what the auditor still cannot see", async ({ page }) => {
   // Not an assertion about Modyra: an assertion about the tool, so that "axe is green" is never read
-  // as "every control has a name". If axe ever does catch these, this test says so by failing.
+  // as "every control has a name".
+  //
+  // Its first form asked axe to catch three of four labelless fields and it did. Those three now
+  // carry a name, so it caught none and the assertion lost its premise — a check written about the
+  // world of a defect, which is the failure this campaign has met on both sides of the fence.
+  //
+  // What replaces it is the half axe never caught: a **composite** control, whose unnamed part is a
+  // role rather than an input. A `radiogroup`, a `grid`, a `dialog` with no accessible name is not a
+  // rule axe runs here, and those are the kinds still open.
+  //
+  // This test is written to expire. When the last composite kind is named it will fail, and the right
+  // response then is to delete it rather than repair it: there will be nothing left for a hand-written
+  // check to see that the auditor does not.
   await page.addScriptTag({ content: AXE });
-  const seen: Record<string, string[]> = {};
+  const seen: Array<Record<string, unknown>> = [];
 
-  for (const [what, field] of [
-    ["text", { name: "f", kind: "text" }],
-    ["daterange", { name: "f", kind: "daterange" }],
-    ["select", { name: "f", kind: "select", options: [{ value: "a", label: "A" }] }],
-    ["checkbox", { name: "f", kind: "checkbox" }],
-  ] as Array<[string, Record<string, unknown>]>) {
-    const id = `axe-${what}`;
-    await page.evaluate(({ mountId, f }) => window.battle.mountFields(mountId, [f] as never), { mountId: id, f: field });
+  for (const kind of ["radio", "segmented", "datepicker", "daterange", "timepicker", "file"]) {
+    const id = `axe-${kind}`;
+    await page.evaluate(
+      ({ mountId, k }) => window.battle.mountFields(mountId, [{ name: "f", kind: k, options: [{ value: "a", label: "A" }] }] as never),
+      { mountId: id, k: kind },
+    );
     await page.waitForTimeout(150);
-    seen[what] = await page.evaluate(async (mountId) => {
+
+    const auditor = await page.evaluate(async (mountId) => {
       const axe = (window as never as {
         axe: { run: (context: unknown, options: unknown) => Promise<{ violations: Array<Record<string, unknown>> }> };
       }).axe;
@@ -133,14 +144,27 @@ test("the auditor does not see all of it, which is why this check is written by 
       });
       return result.violations.map((violation) => String(violation.id));
     }, id);
+
+    const structural = await page.evaluate((mountId) => {
+      const host = document.querySelector(`[data-form="${mountId}"]`) as HTMLElement;
+      const named = (element: Element) => {
+        const aria = element.getAttribute("aria-label");
+        if (aria !== null && aria.trim() !== "") return true;
+        const by = element.getAttribute("aria-labelledby");
+        return by !== null && by.split(/\s+/).some((ref) => (document.getElementById(ref)?.innerText ?? "").trim() !== "");
+      };
+      return [...host.querySelectorAll('[role="radiogroup"],[role="grid"],[role="dialog"],[role="listbox"]')]
+        .filter((part) => !named(part))
+        .map((part) => part.getAttribute("role"));
+    }, id);
+
+    seen.push({ kind, auditor, unnamedRoles: structural });
   }
 
-  // What it does catch, so this test fails if axe stops working rather than silently proving nothing.
-  expect(seen.text.length + seen.select.length + seen.checkbox.length, JSON.stringify(seen))
-    .toBeGreaterThan(2);
-
-  // And what it does not. `role="grid"` with no accessible name is the case the widgets contract
-  // names explicitly and the auditor is silent about — so "axe is green" must never be read as
-  // "every control has a name".
-  expect(seen.daterange, JSON.stringify(seen)).toEqual([]);
+  // The finding this file makes is that a hand-written check sees something the auditor does not. It
+  // is true while at least one kind carries an unnamed role that axe says nothing about.
+  const invisible = seen.filter(
+    (each) => (each.unnamedRoles as string[]).length > 0 && (each.auditor as string[]).length === 0,
+  );
+  expect(invisible.length, JSON.stringify(seen, null, 1)).toBeGreaterThan(0);
 });
