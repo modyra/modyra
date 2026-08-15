@@ -657,6 +657,59 @@ function validFieldReference(name: unknown, names: ReadonlySet<string>): name is
  * twice and bind the same value to both, which is never what the author meant.
  * Returns false and leaves `seen` untouched-in-spirit when the subtree is unusable.
  */
+/**
+ * Why a layout node was refused, so the diagnostic blames the right thing.
+ *
+ * Every refusal used to leave here as a bare `false` and arrive at the reader as
+ * `MDY_DYNAMIC_UNKNOWN_FIELD_REFERENCE` — which sent an author looking for a misspelled field when
+ * the document's fields were all fine and the real cause was the version it declared, or how deep it
+ * nested. A refusal that names a cause the document does not have is worse than a vague one: it
+ * spends the reader's time on the wrong file.
+ */
+type LayoutRefusal = "version" | "depth" | "shape" | "reference";
+
+/** The reason the last refusal carried, read by the caller straight after the call. */
+let layoutRefusal: LayoutRefusal = "reference";
+
+/** Records why, and answers `false` so every existing refusal path keeps its shape. */
+function refuse(reason: LayoutRefusal): false {
+  layoutRefusal = reason;
+  return false;
+}
+
+/** The diagnostic a refusal earns: the code names what was wrong, not what was written correctly. */
+function layoutRefusalDiagnostic(
+  reason: LayoutRefusal,
+  path: string,
+  version: 1 | 2 | 3 | null,
+): MdyDynamicDiagnostic {
+  if (reason === "version") {
+    return {
+      code: "MDY_DYNAMIC_UNSUPPORTED_VERSION",
+      severity: "error",
+      path,
+      message: `layout uses a placement this document's version (${String(version)}) precedes; it needs version 3.`,
+    };
+  }
+  if (reason === "depth") {
+    return {
+      code: "MDY_DYNAMIC_INVALID_LAYOUT",
+      severity: "error",
+      path,
+      message: `layout nests deeper than ${MDY_LAYOUT_MAX_DEPTH} levels.`,
+    };
+  }
+  if (reason === "shape") {
+    return { code: "MDY_DYNAMIC_INVALID_LAYOUT", severity: "error", path, message: "layout node has an invalid shape." };
+  }
+  return {
+    code: "MDY_DYNAMIC_UNKNOWN_FIELD_REFERENCE",
+    severity: "error",
+    path,
+    message: "layout references an unknown or already-placed field.",
+  };
+}
+
 function validLayoutNode(
   raw: unknown,
   names: ReadonlySet<string>,
@@ -664,9 +717,10 @@ function validLayoutNode(
   depth: number,
   allowSlots: boolean,
 ): boolean {
-  if (depth > MDY_LAYOUT_MAX_DEPTH || !isRecordValue(raw)) return false;
+  if (depth > MDY_LAYOUT_MAX_DEPTH) return refuse("depth");
+  if (!isRecordValue(raw)) return refuse("shape");
   const node = raw as Partial<MdyDynamicLayoutNode>;
-  if (typeof node.id !== "string") return false;
+  if (typeof node.id !== "string") return refuse("shape");
 
   const slots: ReadonlyArray<ReadonlyArray<unknown>> =
     node.kind === "section"
@@ -674,16 +728,16 @@ function validLayoutNode(
       : node.kind === "columns"
         ? Array.isArray(node.columns) && node.columns.every(Array.isArray) ? (node.columns as unknown[][]) : []
         : [];
-  if (!slots.length && node.kind !== "section" && node.kind !== "columns") return false;
-  if (node.kind === "section" && !Array.isArray(node.children)) return false;
-  if (node.kind === "columns" && (!Array.isArray(node.columns) || !node.columns.every(Array.isArray))) return false;
+  if (!slots.length && node.kind !== "section" && node.kind !== "columns") return refuse("shape");
+  if (node.kind === "section" && !Array.isArray(node.children)) return refuse("shape");
+  if (node.kind === "columns" && (!Array.isArray(node.columns) || !node.columns.every(Array.isArray))) return refuse("shape");
   // `at` is untrusted like everything else here: a track count that is not a small positive integer
   // would reach the renderer as a custom property and produce a grid nobody asked for.
   if (node.kind === "columns" && node.at !== undefined) {
-    if (!isRecordValue(node.at)) return false;
+    if (!isRecordValue(node.at)) return refuse("shape");
     for (const [size, count] of Object.entries(node.at)) {
-      if (!isBreakpoint(size)) return false;
-      if (typeof count !== "number" || !Number.isInteger(count) || count < 1 || count > MDY_MAX_LAYOUT_COLUMNS) return false;
+      if (!isBreakpoint(size)) return refuse("shape");
+      if (typeof count !== "number" || !Number.isInteger(count) || count < 1 || count > MDY_MAX_LAYOUT_COLUMNS) return refuse("shape");
     }
   }
 
@@ -701,12 +755,12 @@ function validLayoutNode(
   for (const slot of slots) {
     for (const child of slot) {
       if (typeof child === "string") {
-        if (!validFieldReference(child, names) || seen.has(child)) return false;
+        if (!validFieldReference(child, names) || seen.has(child)) return refuse("reference");
         seen.add(child);
       } else if (isRecordValue(child) && "ref" in child) {
         // A v3 slot. Refused outright below v3: accepting it would make this parser disagree with
         // every other reader of the same document about what the contract says.
-        if (!allowSlots) return false;
+        if (!allowSlots) return refuse("version");
         if (!validSlot(child, names, seen, trackCount)) return false;
       } else {
         if (!validLayoutNode(child, names, seen, depth + 1, allowSlots)) return false;
@@ -716,7 +770,8 @@ function validLayoutNode(
         // exist, exactly as for a slot.
         const nested = child as Partial<MdyDynamicSection>;
         if (nested.kind === "section" && nested.at !== undefined) {
-          if (!allowSlots || !validPlacement(nested.at, trackCount)) return false;
+          if (!allowSlots) return refuse("version");
+          if (!validPlacement(nested.at, trackCount)) return refuse("shape");
         }
       }
     }
@@ -904,8 +959,9 @@ export function parseDynamicForm(
         diagnostics.push({ code: "MDY_DYNAMIC_INVALID_LAYOUT", severity: "error", path: `/layout/${index}`, message: "a section at the top of the layout occupies no column and cannot be placed." });
         continue;
       }
+      layoutRefusal = "reference";
       if (!validLayoutNode(raw, names, placed, 1, version === 3)) {
-        diagnostics.push({ code: "MDY_DYNAMIC_UNKNOWN_FIELD_REFERENCE", severity: "error", path: `/layout/${index}`, message: "layout references an unknown or already-placed field, or has an invalid shape." });
+        diagnostics.push(layoutRefusalDiagnostic(layoutRefusal, `/layout/${index}`, version));
         continue;
       }
       layout.push(raw as MdyDynamicLayoutNode);

@@ -499,7 +499,10 @@ test("Contract v2 layout rejects nesting past the depth cap", async () => {
   );
 
   assert.equal(tooDeep.ok, false);
-  assert.equal(tooDeep.diagnostics[0].code, "MDY_DYNAMIC_UNKNOWN_FIELD_REFERENCE");
+  // The code names the depth, not a field. It used to say UNKNOWN_FIELD_REFERENCE, which sent an
+  // author looking for a misspelled name while every name in the document was correct.
+  assert.equal(tooDeep.diagnostics[0].code, "MDY_DYNAMIC_INVALID_LAYOUT");
+  assert.match(tooDeep.diagnostics[0].message, /nests deeper/);
 });
 
 test("Contract v2 recursively flattens group and array nodes", async () => {
