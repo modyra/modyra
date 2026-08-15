@@ -174,6 +174,8 @@ export class MdyDraftManager {
   private readonly _patchValue: (value: Record<string, unknown>) => void;
   private readonly _hasDraft: MdyWritableSignal<boolean>;
   private readonly _warn: (message: string) => void;
+  /** The stamp this form last wrote, so a stamp it did not write is recognisable as another writer's. */
+  private _lastStamp: number | null = null;
   private readonly _filterRestoredEntry:
     | ((key: string, value: unknown) => boolean)
     | undefined;
@@ -402,6 +404,33 @@ export class MdyDraftManager {
     }
   }
 
+  /**
+   * What is in storage now, read back before a write replaces it.
+   *
+   * A draft key identifies the *form*, not the window — that is what makes a draft survive a reload —
+   * so two tabs of one form share it by design. The engine defined the envelope, stamps `savedAt` on
+   * every save and is the only thing that reads one, and it was writing that stamp without ever
+   * comparing it: a tab that had been open a while replaced a draft another view had saved a minute
+   * later, and stamped the replacement with the earlier time. The one field a later reader could use
+   * to notice said the opposite.
+   *
+   * Returns the stamp of whatever is there, or null when there is nothing readable — an absent key,
+   * a storage that raises, a payload from another writer. None of those is a conflict.
+   */
+  private _storedStamp(): number | null {
+    if (!this._key || !this._storage) return null;
+    try {
+      const raw = this._storage.read(this._key);
+      if (typeof raw !== "string" || raw.length === 0) return null;
+      const parsed = JSON.parse(raw) as { savedAt?: unknown };
+      return typeof parsed.savedAt === "number" && Number.isFinite(parsed.savedAt)
+        ? parsed.savedAt
+        : null;
+    } catch {
+      return null;
+    }
+  }
+
   private _write(value: Record<string, unknown>): void {
     if (!this._key || !this._storage) return;
     const serialized = this._serialize(value);
@@ -411,12 +440,28 @@ export class MdyDraftManager {
     if (this._lastWritten === null && serialized === this._baseline) {
       return;
     }
+    const now = Date.now();
+    const stored = this._storedStamp();
+    // Someone else wrote since this form last did. The typing in front of the person wins — a draft
+    // is a convenience and throwing away what they are writing to keep what they are not is the
+    // worse answer — but it is said out loud, and the stamp never goes backwards: the record of when
+    // the stored draft was written is the only thing a later reader has.
+    const replacing = stored !== null && this._lastStamp !== null && stored > this._lastStamp;
+    if (replacing && MDY_DEV) {
+      this._warn(
+        `A draft under "${this._key}" was saved more recently by something else and has been ` +
+        "replaced. A draft key names the form, so two views of it share one — give each view its " +
+        "own key if they must not overwrite each other.",
+      );
+    }
+    const savedAt = stored !== null && stored > now ? stored : now;
     // Build the envelope around the already-serialized payload so the value
     // is stringified only once per write.
-    const envelope = `{"__mdyDraft":${this._version},"savedAt":${Date.now()},"value":${serialized}}`;
+    const envelope = `{"__mdyDraft":${this._version},"savedAt":${savedAt},"value":${serialized}}`;
     try {
       this._storage.write(this._key, envelope);
       this._lastWritten = serialized;
+      this._lastStamp = savedAt;
     } catch {
       // Quota errors and private-mode restrictions must not break the form.
     }
