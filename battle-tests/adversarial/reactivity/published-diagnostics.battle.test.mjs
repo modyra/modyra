@@ -2,16 +2,24 @@
  * The last of the published names no battle had ever imported.
  *
  * Three of them are error classes, and the interesting thing about them is how a consumer is
- * supposed to meet one. `MdyActivationError` and `MdyAdapterContractError` are thrown, so `catch`
- * plus `instanceof` is the way. `MdyCrossRuntimeObservationError` is not: the engine constructs it
- * to borrow its message and reports that message under `MDY_CROSS_RUNTIME_OBSERVATION`, so a
- * consumer branching on `instanceof` waits forever for something that never arrives.
+ * supposed to meet one.
+
+ * `MdyCrossRuntimeObservationError` is constructed and not thrown: the engine builds one to borrow
+ * its message and reports that message under `MDY_CROSS_RUNTIME_OBSERVATION`, so a consumer
+ * branching on `instanceof` waits forever for something that never arrives. That is not a defect —
+ * a stale read is not an exception, and turning it into one would break the form of every consumer
+ * who has ever built a fresh `vanillaReactivity()` by accident. It means the *diagnostic code* is
+ * the contract for this one, and the class is contract only for what it says.
  *
- * That is not a defect — a stale read is not an exception, and turning it into one would break the
- * form of every consumer who has ever built a fresh `vanillaReactivity()` by accident. But it means
- * the *diagnostic code* is the contract for this one, and the class is contract only for what it
- * says. Both halves are pinned here, because a change to either — starting to throw, or reporting
- * under a different code — changes what a consumer has to write.
+ * `MdyActivationError` and `MdyAdapterContractError` are neither thrown nor constructed anywhere in
+ * the workspace, which is recorded as a finding rather than pinned here — what a class means when
+ * nothing produces it is a decision, not a behaviour. What is pinned is what they say when a
+ * consumer builds one, because that is the part a `catch` block reads and the part that has to keep
+ * naming both parties if they ever start being thrown.
+ *
+ * All three halves are held here, because a change to any of them — starting to throw, reporting
+ * under a different code, or dropping a field from a message — changes what a consumer has to
+ * write.
  *
  * The rest are the small answers the layers above assemble from: whether a runtime runs effects at
  * all, what a document's validator block declares about being required, and what a schema flattens
