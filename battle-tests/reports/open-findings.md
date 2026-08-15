@@ -4903,8 +4903,20 @@ boundary and are not counted here: an uncompilable pattern, a select with no opt
 sharing a value (finding 48), and an option value carrying the id delimiter.
 
 This is the same shape as `flattenDynamicForm` not recursing into nested array items, recorded earlier
-in this campaign: the contract's walks stop at a collection boundary, and each one that does is a
-place where the depth a document is allowed to have is not the depth the engine looks at.
+in this campaign — but the family is narrower than "the contract's walks stop at a collection
+boundary", and the narrowing is the point. Measured at both levels:
+
+| walk | inside a row |
+| --- | --- |
+| the `kind` check | **stops** |
+| the field-shape check (`MDY_DYNAMIC_INVALID_FIELD`) | **stops** |
+| the name-safety check (`MDY_DYNAMIC_UNSAFE_NAME`) | recurses — `__proto__`, `prototype`, `constructor`, `a.b`, `""` all refused, `ok: false`, at both levels |
+| validator enforcement | recurses — `required` on an empty row cell errors and the form is invalid; `minLength` errors on a short one and stays quiet on an empty one, exactly as at the top |
+
+So what stops is the walk that *reports*, not the walks that *behave*. That is what makes it
+dangerous rather than merely incomplete: a nested document does everything it should, right up until
+a kind nobody declared reaches the builder, and the one thing whose job was to warn about it is the
+thing that stopped at the row.
 
 Classification: Modyra bug, S2 by DYN-001/DYN-003 — S1 in effect for a consumer whose documents come
 from a model or a CMS and who was told strict mode was the gate.
