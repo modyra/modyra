@@ -68,6 +68,34 @@ async function typeAndLeave(page: import("@playwright/test").Page, kind: string,
   );
 }
 
+/** Type into a picker that is already mounted, leave it, and read the same surfaces back. */
+async function retypeAndLeave(page: import("@playwright/test").Page, id: string, text: string) {
+  const host = `[data-form="${id}"]`;
+  const control = page.locator(`${host} [aria-haspopup]`).first();
+  await control.focus();
+  await page.keyboard.press("ControlOrMeta+a");
+  await page.keyboard.type(text);
+  await page.keyboard.press("Tab");
+  await page.waitForTimeout(160);
+
+  return page.evaluate(
+    ({ selector, mountId }) => {
+      const host = document.querySelector(selector) as HTMLElement;
+      const element = host.querySelector("[aria-haspopup]") as HTMLInputElement;
+      const errors = host.querySelector(".mdy-control__errors") as HTMLElement | null;
+      const supporting = host.querySelector(".mdy-supporting-text") as HTMLElement | null;
+      return {
+        shows: element.value,
+        value: (window.battle.valueOf(mountId) as Record<string, unknown>).f,
+        invalid: element.getAttribute("aria-invalid"),
+        errorText: (errors?.innerText ?? "").trim(),
+        supportingText: (supporting?.innerText ?? "").trim(),
+      };
+    },
+    { selector: host, mountId: id },
+  );
+}
+
 test.beforeEach(async ({ page }) => {
   await page.goto("/index.html");
   await page.waitForFunction(() => (window as never as { battleReady?: boolean }).battleReady === true);
@@ -106,4 +134,43 @@ test("what a picker cannot read is either kept or explained", async ({ page }) =
 
   // Either repair closes this: keep the text so it can be corrected, or clear it and say why.
   expect(swallowed, JSON.stringify(swallowed, null, 1)).toEqual([]);
+});
+
+test("a picker that was corrected is holding the correction and nothing of the attempt", async ({ page }) => {
+  // The other side of the finding above, and the one a repair can fail while satisfying it.
+  //
+  // Either repair — keeping the text, or clearing it with a reason — gives the control something to
+  // carry between the typing and the verdict. Whatever that is has to end when the person types
+  // something the picker reads: a control still showing the text it could not read, or still
+  // explaining an error about it, has turned a correction into a field that argues with its own
+  // value.
+  const attempts = [
+    { kind: "timepicker", bad: "14:30", good: "2:30 PM", holds: "02:30 PM" },
+    { kind: "datepicker", bad: "31/02/2026", good: "03/04/2026", holds: "2026-03-04" },
+  ];
+
+  const arguing: Array<Record<string, unknown>> = [];
+  for (const [index, attempt] of attempts.entries()) {
+    const id = `corrected-${index}`;
+
+    // The premise: the bad value really did go in, so what follows is about the correction rather
+    // than about a control that refused the keystrokes.
+    const rejected = await typeAndLeave(page, attempt.kind, attempt.bad, id);
+    expect(rejected.value, `${attempt.kind} took ${attempt.bad} as a value`).toBeNull();
+
+    const corrected = await retypeAndLeave(page, id, attempt.good);
+
+    // The value is the correction.
+    expect(corrected.value, `${attempt.kind} did not take ${attempt.good} after ${attempt.bad}`)
+      .toBe(attempt.holds);
+
+    // And nothing of the attempt survived it: not the text, not the error, not aria-invalid.
+    const stillShowsTheAttempt = corrected.shows === attempt.bad;
+    const stillExplaining = corrected.invalid === "true"
+      || corrected.errorText !== ""
+      || corrected.supportingText !== "";
+    if (stillShowsTheAttempt || stillExplaining) arguing.push({ ...attempt, ...corrected });
+  }
+
+  expect(arguing, JSON.stringify(arguing, null, 1)).toEqual([]);
 });
