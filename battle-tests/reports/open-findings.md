@@ -5404,3 +5404,31 @@ It also nearly became a finding. Two probes disagreed about what `sm` resolves t
 one said 2 and one said 1 — which read as a cascade that fires only sometimes. What differed between
 them was the number of columns in the node, not the `at`. The rule above explains both, and the battle
 sweeps the column count precisely so that reading cannot come back.
+
+## Checked and clean: what the devtools guess covers
+
+`adversarial/security/what-the-guess-covers.battle.test.mjs` — 1 green.
+
+`isSensitivePath(path, declared)` answers with a document's declaration when there is one and guesses
+from the name when there is not. `devtools-masking` already pins the first half — a declaration wins
+in both directions — and says of the second, in its own words, that it "may be widened or narrowed at
+any time and nobody would notice".
+
+That is now pinned. The guess is `/password|passwd|secret|token|card|cvv|ssn|iban/i`, and the battle
+records both sides of it: the names it catches, including its own stated false positives (`cardStyle`,
+`discardNote` — a style and a note, not secrets), and fifteen it does not — `pw`, `pwd`, `pin`,
+`apiKey`, `authorization`, `sessionId`, `passport`, `accountNumber`, `sortCode`, `routingNumber`,
+`securityCode`, `taxId` among them.
+
+**The unmatched list is not a finding.** The guess is a fallback and its docblock says so; the
+mechanism a consumer is meant to use is the declaration, and that is what the other battle holds. The
+list is recorded as deliberately as the matched one because that is where the cost of a silent
+narrowing would land: a name nobody thought to declare, that used to be caught.
+
+A wrong turn worth recording. A first probe read `mdyFormSnapshot` as leaking a password in the clear,
+and it was two mistakes at once: the field was named `pw`, which the guess does not match, and
+`isSensitivePath(path, declared)` takes a *boolean* override as its second argument — handed the field
+list it returned the list, which is truthy. The published signature settled both.
+
+Also measured: the snapshot's keys are `valid, pending, submitting, submitCount, fields` — no draft,
+no history — so a value masked in the field list has nowhere else in the snapshot to reappear.
