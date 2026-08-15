@@ -7716,6 +7716,14 @@ is a snapshot of a smaller set rather than the whole.
 
 ## 139. Two date boxes that say they are expanded
 
+**Closed — verified green** (`009d7ad7`), together with 140. And a third thing came out of it that
+went past the report: `role: "combobox"` in the daterange projection **was consumed by nobody** —
+one renderer writes its toggle by hand and never applies that part, the other reaches it through a
+projection that returns no role for this kind. A line contradicting the openers table with no symptom,
+because nothing read it. Removed: a button whose value lives in the two inputs beside it is not a
+combobox, and would be claiming a value that is not its own.
+
+
 **Severity** S2 · **Classification** ARIA state on a role that has no such state · **Spec**
 `browser/an-attribute-the-element-may-not-wear.spec.ts` (red for one renderer, green for the other) ·
 **Claims** A11Y-002
@@ -7773,6 +7781,18 @@ renderer has one. Both are allowed to say it; two elements announcing the same s
 rather than wrong.
 
 ## 140. A picker no keyboard can open
+
+**Closed — verified green** (`009d7ad7`). Repaired as one thing, as the finding argued: the part the
+contract names as opener is the part that carries the state *and* the part a keyboard reaches.
+Falsified on the seam the repair itself created — a date box whose opener declares `Space`, where a
+space is a space:
+
+```
+typed "a", Space, "b"   → "a b" in both renderers, and no popup opened
+lit toggle tabindex     → auto (was -1), a tab stop again
+Escape                  → closes and returns focus to the field, both
+```
+
 
 **Severity** S1 · **Classification** two defensible choices that are not defensible together · **Spec**
 `browser/a-picker-no-keyboard-can-open.spec.ts` (red for one renderer, green for the other) ·
@@ -7916,10 +7936,15 @@ Measured against what actually appears:
 select          listbox → listbox                       native, excluded
 multiselect     listbox → group                ✗        listbox → group              ✗
 datepicker      grid → grid                             dialog → dialog and grid
-daterange       dialog → grid                  ✗        grid → dialog and grid
+daterange       dialog → grid  — repaired in 009d7ad7   grid → dialog and grid
 timepicker      dialog → dialog                         dialog → dialog
 colors          listbox → listbox                       dialog → listbox             ✗
 ```
+
+**Partly closed.** The daterange half was one line and went with the 139/140 repair; it is gone from
+both renderers' lists. What remains is the multiselect in both and the colours field in one, and
+neither is a line: deciding whether the promise is wrong or the popup is, is a contract question of
+the same shape as finding 138.
 
 Three broken promises, and **not all in one renderer** — which is what makes it a defect in the
 contract's weakest-specified corner rather than one renderer's habit:
