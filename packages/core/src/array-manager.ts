@@ -429,8 +429,13 @@ export class MdyArrayManager implements MdyNestedCollection {
     const replaced = this._nested.get(path);
     if (replaced) {
       const leaves = replaced.leafPathsNow();
+      const collections = replaced.collectionPathsNow();
       replaced.destroy();
       for (const leaf of leaves) this._deps.engine.endField(leaf);
+      // And the field each collection below registered under its own path. It is not a leaf, so the
+      // line above does not reach it, and one left behind is a row the reconciliation declares
+      // again — the row comes back empty under the list that replaced it.
+      for (const nested of collections) this._deps.engine.endField(nested);
     }
     this._nested.set(path, this._deps.createCollection(
       node.kind,
@@ -455,6 +460,11 @@ export class MdyArrayManager implements MdyNestedCollection {
       },
       value,
     ));
+  }
+
+  /** Every collection path below this one — see {@link MdyNestedCollection.collectionPathsNow}. */
+  collectionPathsNow(): string[] {
+    return [...this._nested].flatMap(([path, manager]) => [path, ...manager.collectionPathsNow()]);
   }
 
   /** Everything a row owned, the collections it declared included. */
