@@ -282,3 +282,49 @@ test("the replay command answers about the report it was given, separator or not
     rmSync(dir, { recursive: true, force: true });
   }
 });
+
+test("a differential that compares two inert things is not a comparison", () => {
+  // The way a differential passes while proving nothing, twice over in one night: two construction
+  // routes were compared on a field declared `required` in a spelling the contract does not have,
+  // through a route that needed a second call to compile any rule at all. Neither form enforced
+  // anything, the two agreed perfectly, and the check was green.
+  //
+  // The guard is not a comparison at all — it is the demand that each side *bite* before the two are
+  // put side by side. This is that demand written down: a rule that refuses nothing cannot be the
+  // subject of a differential, however well the two sides agree about it.
+  const inert = () => [];
+  const enforcing = (value) => (value === "" ? [{ path: "a", message: "required" }] : []);
+
+  const compare = (left, right, value) => JSON.stringify(left(value)) === JSON.stringify(right(value));
+
+  // Two inert rules agree about everything, which is what makes agreement alone worthless.
+  assert.equal(compare(inert, inert, ""), true, "two rules that do nothing agree");
+  assert.equal(compare(inert, inert, "filled"), true);
+
+  // The check a differential owes: at least one side must refuse the value being compared.
+  const bites = (rule, value) => rule(value).length > 0;
+  assert.equal(bites(inert, ""), false, "an inert rule refuses nothing, whatever it is given");
+  assert.equal(bites(enforcing, ""), true, "an enforcing rule refuses the value it exists to refuse");
+
+  // And the pair that is worth comparing: both bite, and they agree.
+  assert.equal(bites(enforcing, "") && compare(enforcing, enforcing, ""), true);
+
+  // The failure the guard catches: one side enforces and the other does not. Without the bite check
+  // this is the only case a differential notices, and it is the *less* likely of the two.
+  assert.equal(compare(inert, enforcing, ""), false, "an inert side and an enforcing side disagree");
+});
+
+test("a comparison of what a form holds is not a comparison of what it enforces", async () => {
+  // The second shape of the same mistake, from the same night: a draft restored a row at a time was
+  // compared by its keys, which a partial restore keeps intact while emptying the cells. The check
+  // was green because it was looking at the half of the state the defect does not touch.
+  const before = { rows: { a: { code: "A" }, b: { code: "B" } } };
+  const partiallyRestored = { rows: { a: { code: "A" }, b: { code: "" } } };
+
+  const byKeys = (left, right) =>
+    JSON.stringify(Object.keys(left.rows)) === JSON.stringify(Object.keys(right.rows));
+  const byValue = (left, right) => JSON.stringify(left) === JSON.stringify(right);
+
+  assert.equal(byKeys(before, partiallyRestored), true, "the keys survive a partial restore");
+  assert.equal(byValue(before, partiallyRestored), false, "the value does not");
+});
