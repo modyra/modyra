@@ -8895,13 +8895,37 @@ A document behaves as written inside Studio's preview and as though both slots w
 else. That makes 117 and this one one defect with two halves, and it is why the preview is not
 evidence that a document works.
 
-### Strongest remaining question
+### Corrected: the gap was declared, and I missed the line that declared it
 
-Whether this is "unimplemented" or "the consumer is meant to apply them" is not resolved by the
-repository, and the evidence points away from the second reading: the parser validates the rule
-against the field list rather than handing it back unexamined, the type says the rule *fires*, and no
-guide anywhere tells a consumer they must implement the effects themselves. If it is intended, the
-contract and the guide both say otherwise and the strict-mode acceptance is the part that misleads.
+I wrote that no guide tells a consumer they must implement the effects themselves. **That was wrong.**
+`docs/guides/ai-generated-forms.md:173`, at the time this was filed, read:
+
+> No renderer applies `rules` yet: the parser validates them and the contract carries them, but
+> visibility and enabled-state are still the host's to apply.
+
+I had searched the guides for `"rules"` and for the effect literals and found the worked example, and
+did not read the prose around it. Verified after the fact with `git show 4832eac8:docs/guides/ai-generated-forms.md`.
+
+It changes the classification and not the severity: a **declared gap**, not a promise broken in
+silence. The payload still left with `taxId` in it for anyone who did not read that line, and strict
+mode still accepted the document without a word. It is also the strongest argument that the gap should
+not have stayed: a host reading that sentence has to reimplement ten operators against a predicate it
+cannot see.
+
+### Closed and verified
+
+`applyDynamicRules(form, rules)` landed in `afb6d578`; `mountMdyForm` takes `rules` and applies them.
+My own host was passing `fields` and `layout` only — the guide's snippet — so the first re-measurement
+still showed nothing happening. With `rules: parsed.rules` added, through the documented path:
+
+```
+rule                     who = no                          who = yes
+disabled → taxId         sent {"who":"no","taxId":"SSN"}    sent {"who":"yes"}
+visible  → vatNumber     sent {"who":"no"}                  sent {"who":"yes","vatNumber":""}
+```
+
+and the control carries `disabled` and `aria-disabled="true"` in the DOM when the rule switches it
+off. The S0 is closed. What survived the repair is finding 159.
 
 ## 157. A word for it, and no way to hear it
 
@@ -9031,3 +9055,49 @@ Noted in passing, not filed: a field **name** containing spaces survives the nam
 (`"unknown kind"` is refused for its validators, not its name), while a dotted one is refused as
 `MDY_DYNAMIC_UNSAFE_NAME`. Whether a space belongs in a field name is a separate question from this
 one.
+
+## 159. Four words for what a rule does, and two things that happen
+
+**S2 · Modyra bug · `@modyra/core` — survived the repair of 156**
+Claims: DYN-003, DYN-001
+Battle: `battle-tests/adversarial/dynamic-contract/four-effects-two-answers.battle.test.mjs`
+— reported as a todo, not enforced
+
+The contract declares four effects and the parser polices them one at a time: an effect nobody
+declared is refused by name. A form keeps all four and answers with two.
+
+Measured on every axis a consumer has — reported validity, whether the form may be sent, what it
+sends, what the control wears — through `applyDynamicRules` and again through the documented mount:
+
+```
+effect      condition false                            condition true
+visible     disabled, aria-disabled=true, not sent     enabled, sent
+enabled     disabled, aria-disabled=true, not sent     enabled, sent      ← identical to visible
+hidden      enabled, sent                              disabled, not sent
+disabled    enabled, sent                              disabled, not sent ← identical to hidden
+```
+
+`visible` ≡ `enabled` and `hidden` ≡ `disabled`, byte for byte, in both states. And **nothing is ever
+hidden**: `drawn=true shown=true` in all sixteen cells. A document author writing "show the VAT number
+only for a business" gets a VAT number on the screen for everybody, greyed out for the rest.
+
+Underneath, `setInactive` and `setDisabled` are also indistinguishable from outside — same `valid`,
+same `canSubmit`, same `errorsFor`, same `submitValue`, same DOM. So the pairing is not lost in the
+renderer; there are two behaviours in the engine and four words above them.
+
+### Why it is reported rather than enforced
+
+Nothing leaves that should not, and the behaviour that exists is the safe one of the two — a field a
+rule switches off is out of the payload either way. What is wrong is that the vocabulary the parser
+guards is wider than the vocabulary the form has, and the author is not told which of their two words
+was heard.
+
+### Checked and clean, in the same run
+
+- **The page does not show an error for a field a rule switched off.** With `required` on the target
+  and the rule active: no message, `aria-invalid="false"`, `canSubmit` true. The engine's
+  `errorsFor("extra")` still answers with one, so a consumer reading that API sees an error the form
+  does not count — visible in the API, not on the page. Recorded, not filed.
+- **The documented mount path carries rules** once the host passes them. My own host was passing
+  `fields` and `layout` only, which is the guide's snippet exactly, and that is why the first
+  re-measurement after the repair still showed nothing happening.

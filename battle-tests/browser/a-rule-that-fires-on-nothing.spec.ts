@@ -1,13 +1,16 @@
 /**
- * A form doing none of what its document said it would.
+ * A form doing what its document said it would.
  *
  * `adversarial/dynamic-contract/a-rule-that-fires-on-nothing.battle.test.mjs` is the premise: the
  * parser reads a rule as behaviour — refusing an undeclared effect, an undeclared operator, a target
  * that is not a field, a condition on a field that is not there — and accepts a well-formed one in
  * strict mode, whose promise is that a partly valid document is never accepted.
  *
- * This is what the accepted document then does. The form is built the way the guide says to build
- * one: parse, then mount what the parse returned.
+ * This is what the accepted document then does, and it is a regression test rather than an attack:
+ * finding 156 was that nothing applied a rule at all, and `applyDynamicRules` closed it. The form is
+ * built the way the guide says to build one — parse, then mount what the parse returned — and the
+ * mount is handed `rules` along with `fields` and `layout`, which is the line the guide's own snippet
+ * did not have and this host did not have either.
  *
  * The second test is where it stops being a rendering question. `disabled` is one of the four
  * effects, and a disabled field's value is excluded from what a form sends — that is a promise of
@@ -38,7 +41,7 @@ const FIELDS = [
   { name: "vatNumber", kind: "text", label: "VAT number" },
 ];
 
-test("a field a document says to show only sometimes", async ({ page }) => {
+test("a field a document says to show only sometimes is out of play when it should be", async ({ page }) => {
   test.setTimeout(180_000);
   await page.goto("/index.html");
   await page.waitForFunction(() => (window as never as Record<string, boolean>).battleReady === true);
@@ -77,10 +80,20 @@ test("a field a document says to show only sometimes", async ({ page }) => {
   await page.evaluate(() => (window as never as Api).battle.setValue("g", { customerType: "person" }));
   await page.waitForTimeout(320);
 
+  // What the rule does is take the field out of play rather than off the screen — finding 159 is that
+  // `visible` and `hidden` are indistinguishable from `enabled` and `disabled`. What this test holds
+  // is the part with consequences: on the side of the condition the rule excludes, the field is not
+  // operable and does not go to the server.
+  const off = await page.evaluate(() => {
+    const found = Array.from(document.querySelectorAll('[data-form="g"] input'))
+      .find((each) => (each.id ?? "").includes("vatNumber")) as HTMLInputElement | undefined;
+    return found === undefined ? null : { disabled: found.disabled, aria: found.getAttribute("aria-disabled") };
+  });
+
   expect(
-    await vatShows(),
-    "a document said to show this field only for a business, the parser accepted that in strict mode, and it is shown for a private customer",
-  ).toBe(false);
+    off,
+    "a document said to show this field only for a business and it is fully in play for a private customer",
+  ).toEqual({ disabled: true, aria: "true" });
 });
 
 test("what a field a document disabled still sends", async ({ page }) => {
