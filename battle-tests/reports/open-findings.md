@@ -3717,3 +3717,30 @@ a seeded row, adding one, renaming one and moving one all leave the change set e
 then editing the new item 0 reports the edit and not the removal — so a row is compared against **its
 own** initial rather than against whatever now sits at its index, which is what a naive positional
 diff would get wrong.
+
+## Checked and clean: the characters the sanitiser's contract names
+
+`adversarial/security/the-characters-the-profile-names.battle.test.mjs` — green, and new.
+
+The security guide is precise about `"text"`, in a table: it strips control characters (except tab and
+newline), DEL/C1, **zero-width characters (`U+200B–200D`, `U+FEFF`)**, **bidi overrides/isolates
+(`U+202A–202E`, `U+2066–2069`)** and line/paragraph separators, while *all legitimate text — accents,
+emoji, CJK, newlines — is preserved*.
+
+Measured, one representative per range: **all thirteen are removed**, under both `text` and `strict`,
+including `U+202E` — the character the guide itself uses to explain why the profile exists
+(`"admin‮"` looks like `admin` and is not). And legitimate text survives whole:
+`Café — 日本語 — 🎉` with a newline and a tab comes back unchanged.
+
+**Four invisible characters survive, and the contract does not name any of them**: `U+200E` and
+`U+200F` (the bidi *marks*, which are neither overrides nor isolates), `U+00AD` and `U+2060`. Held as
+they are, both halves, so a future widening is a decision somebody takes rather than a drift — and a
+narrowing shows up as the attack coming back.
+
+**One guide says it less precisely, and that is the only thing wrong here.** `headless-recipes.md`,
+under *Notes and combos → Security*, advises pairing headless fields with
+`security: { sanitize: "text" }` because *pasted bidi/zero-width characters are* removed — without the
+qualification the security guide's table carries. A reader of the recipes believes every bidi
+character is stripped; two of them are not. The behaviour is correct and the precise guide is correct;
+the sentence that gives the advice is the one that overstates. Not asserted as a battle: a check
+demanding more than the contract states would be inventing a requirement.
