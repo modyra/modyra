@@ -4215,8 +4215,12 @@ controller automatically**: `vue`, `solid` and `svelte` call `create…Controlle
 and expose `setOptions` for the change, and React and preact expose the same `setOptions` and have no
 effect that would use a new options object either. So `[options]` is the only thing that reacts to a
 new list, and it reacts by discarding the controller — losing open state, active option and typeahead
-buffer along the way — and looping. Removing it loses nothing a consumer has any other way of
-reaching.
+buffer along the way — and looping.
+
+**Corrected by finding 93, and the order matters.** `setOptions` notifies no subscriber, so today
+this dependency is the only thing that makes a new list appear in React and preact at all. Removing
+it on its own would trade a render loop for a select whose options never change. The two are one
+repair: make `setOptions` notify first.
 
 Scope, read rather than assumed: `vue`, `solid` and `svelte` construct the controller once in a setup
 that runs once, so the defect is structurally impossible there. It is the two hook-shaped adapters.
@@ -4300,3 +4304,52 @@ than merely correct.
 
 Its premise is asserted first: a leaked browser global from a neighbouring battle would make the
 whole measurement vacuous, so the absence of all six is checked before anything is rendered.
+
+## 93. A new list of options that nobody is told about
+
+`adversarial/accessibility/an-option-that-left-while-you-were-pointing-at-it.battle.test.mjs` — 2 red.
+
+`setOptions` is the published route for changing what a select offers, and the only one: none of the
+five adapters syncs a new list any other way. The reason to call it is nearly always that the options
+arrived from somewhere, after the widget was on the page.
+
+The controller records the list and tells nobody. `subscribeController` is what every adapter
+re-renders on:
+
+```
+dispatch open        notifications +1   state options 3
+setValue             notifications +1   state options 3
+setOptions(one)      notifications +0   state options 1
+setOptions(empty)    notifications +0   state options 0
+setOptions(five)     notifications +0   state options 5
+```
+
+`dispatch` and `setValue` both fire it. `setOptions` alone does not, at every size, deterministically
+across runs. So the screen keeps the old list until the user does something else, and `view()` keeps
+describing it.
+
+The accessible half is sharper. Open the list, move to the last option, let a shorter list arrive:
+
+```
+active: s__option__v2   |   held: ["s__option__v0"]
+```
+
+`aria-activedescendant` names an option that is not in the document. A11Y-001 is *"partial and late
+rendering never produces dangling ID references after settling"* — and this one does not resolve on
+settling, because settling is what never happens. The next keystroke clears it, which is to say the
+user has to act before the pointer stops lying about where they are.
+
+**This corrects finding 91.** That entry said removing React's `[options]` memo dependency "loses
+nothing a consumer has any other way of reaching". Not true while this stands: with `setOptions`
+silent, throwing away and rebuilding the controller is the *only* thing that makes a new list appear
+in React and preact. The two are one repair — make `setOptions` notify, and 91's dependency can go
+without leaving a consumer stranded. Removing it first would trade a render loop for a select whose
+options never change.
+
+Measurement note, because it changes what the numbers mean: each measurement builds its own
+controller. Sharing one lets a notification from an earlier `dispatch` land inside a later window and
+be counted as that call's — a first pass here did exactly that and read as `setOptions` notifying
+sometimes. Three runs of the isolated form agree: never.
+
+Classification: Modyra bug. S1 by A11Y-001, and the reachable consequence is a widget that does not
+repaint when its content changes.
