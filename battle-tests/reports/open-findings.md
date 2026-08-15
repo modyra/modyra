@@ -4001,3 +4001,62 @@ The permanent form of this one is a gate rather than a battle: something that fa
 `npm run test` is not reached by a workflow. That belongs in `scripts/` and in the workflow set, both
 of which are frozen and are not this suite's to change — which is why it is filed here rather than
 built.
+
+## 89. A field list that grew by one, and a page that went blank
+
+`adversarial/reactivity/a-list-that-grew-by-one.battle.test.mjs` — 1 red, 1 green.
+
+`useMdyDynamicForm(fields)` is React's door onto the Dynamic Form Contract: it takes the flat
+`MdyDynamicField[]` a parsed document produces and returns a running form. `fields` is a prop, so it
+is re-read on every render, and a config-driven application changes it — that is what the hook is
+named for.
+
+Two kinds of change are handled, and they are the green half. A rule that is edited replaces the old
+one; a rule the config drops stops being enforced. Both without remounting, so the user keeps what
+they typed. Measured, on a form declaring `email` and `phone`:
+
+```
+first list   email ["validation"]  phone ["validation"]   (both required)
+rule changed email []              → and "abc" → ["validation"]  (minLength 5 took over)
+rule dropped phone []                                     (required is gone, not stacked)
+```
+
+The third kind takes the page down. The schema is built once — `useMemo(…, [])`, matching
+`useMdyForm`'s construct-once contract — so a list that gained a name carries a rule for a field the
+form does not declare, and that reaches `upsertValidators`:
+
+```
+Error: [modyra] upsertValidators names "phone", which this form does not declare. A rule on a path
+no control renders can never be satisfied, and the form could not be submitted.
+```
+
+The refusal is right. Where it happens is what it costs. `applyDynamicValidators` runs from a
+`useEffect`, after the render returned, so React has no call left to fail and unwinds the tree
+instead. Measured with a component that renders a paragraph:
+
+```
+after first render : <p id="alive">showing 1 field(s)</p>
+after adding one   : (empty)
+```
+
+API-001's public evidence is ADR 0057, *an argument refused where it arrives, by name, in
+production*. This argument arrives at `useMdyDynamicForm`. It is refused three frames later, inside
+an effect, naming a function the consumer never called — and the caller's page is what pays.
+
+Nothing published states the limit. The only place the field list is described as frozen is the
+source comment on the hook, and the same sentence says "validators re-apply whenever `fields`
+changes (config-driven apps commonly swap validator rules without remounting)", which is the
+behaviour a reader would take away. `docs/guides/ai-generated-forms.md:168` is the single mention of
+the hook in the published guides and says nothing about it.
+
+Angular reaches the same function the same way — `mdy-dynamic-form.component.ts:342-349` runs
+`applyFlatValidators(form, fields, "mdy-dynamic")` from an `effect` over a `fields` input — so the
+question of what `<mdy-dynamic-form [fields]>` does when its list grows is open and worth the same
+measurement. Not measured here; the Angular tier is a separate run.
+
+Classification: Modyra bug, S2 by API-001's own severity. The engine's guard is not the defect; the
+hook handing it an argument it cannot satisfy, from a place where refusal is fatal, is.
+
+The battle accepts any repair: rebuilding the schema, ignoring the unknown name with a diagnostic,
+and refusing the argument at the call all leave it green. Only a render that succeeds followed by a
+page that disappears is red.
