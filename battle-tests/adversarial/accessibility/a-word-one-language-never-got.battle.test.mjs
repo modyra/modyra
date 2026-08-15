@@ -43,21 +43,37 @@ const TABLES = Object.freeze({
 });
 
 /**
- * What a message shows, or `null` when it shows nothing.
+ * Argument shapes a parameterised message might take.
  *
- * A message is a string or a function of one or two parts. The parts a caller supplies are already
- * in the reader's language — a month name, a word they typed — so any placeholder does here; what is
- * being asked is whether a language holds the sentence around it.
+ * The parts a caller supplies are already in the reader's language — a month name, a word they typed,
+ * the files a field turned away — so any placeholder does. What varies is the *shape*: one string,
+ * two, a list of them. Rather than keep a table of which key takes which, the shapes are tried in
+ * order and the first that renders is the one every language is then held to.
+ *
+ * That is the stronger property. A table would have to be edited each time a message gains an
+ * argument, and the edit is exactly what nobody does — this battle went red when `fileRejected`
+ * arrived taking a list, because it assumed one string forever.
  */
-function rendered(message) {
+const ARGUMENT_SHAPES = Object.freeze([["one"], ["one", "two"], [["one"]], [["one", "two"]], [1], [1, 2]]);
+
+/**
+ * What a message shows for a given argument shape, or `null` when it shows nothing.
+ */
+function renderedWith(message, argument) {
   if (typeof message === "string") return message.trim() === "" ? null : message;
   if (typeof message !== "function") return null;
   try {
-    const shown = message("one", "two");
+    const shown = message(...argument);
     return typeof shown === "string" && shown.trim() !== "" ? shown : null;
   } catch {
     return null;
   }
+}
+
+/** The first shape that makes `message` say something, or `null` when none does. */
+function shapeThatWorks(message) {
+  if (typeof message === "string") return message.trim() === "" ? null : [];
+  return ARGUMENT_SHAPES.find((shape) => renderedWith(message, shape) !== null) ?? null;
 }
 
 battle(
@@ -90,16 +106,19 @@ battle(
         what: `the ${tag} table does not hold the same keys as the default, so a control shows nothing where it holds nothing`,
       });
 
-      // A key present and empty is the same silence with a different shape. Some messages take a
-      // parameter — a month already in the reader's language, a typed word to create — so those are
-      // rendered rather than read, and what has to be non-empty is what they return.
+      // A key present and empty is the same silence with a different shape. Some messages take
+      // parameters — a month already in the reader's language, a typed word, the files a field turned
+      // away — so those are rendered rather than read, with the shape the default table established.
       const blank = Object.entries(table)
-        .filter(([, message]) => rendered(message) === null)
+        .filter(([key, message]) => {
+          const shape = shapeThatWorks(TABLES.en[key]);
+          return shape === null || renderedWith(message, shape) === null;
+        })
         .map(([key]) => key);
 
       expectEqual(blank, [], {
         claimIds: ["A11Y-002"],
-        what: `the ${tag} table holds a message that renders to nothing, so a control built from it is unlabelled`,
+        what: `the ${tag} table holds a message that renders to nothing for the arguments its own default takes, so a control built from it is unlabelled`,
       });
     }
   },
