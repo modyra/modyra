@@ -9457,3 +9457,27 @@ One residue, recorded rather than filed: the projection declares `aria-labelledb
 options group and **neither** renderer renders it, so the group has no name in either. A shared gap
 rather than a divergence, and a `role="group"` without a name is a much smaller thing than the three
 above — but it is the only row where both renderers dropped the same declared relationship.
+
+## Checked and clean: collections through a schema bridge
+
+**Battle:** `battle-tests/differential/schemas/a-collection-built-from-a-schema.battle.test.mjs`
+— 2 battles, both green. No finding; the gap was in the suite, not the code.
+
+Every schema-bridge battle in this suite judged flat fields, which is the case where two build routes
+cannot differ much. A keyed record and a positional array are where they can: identity, ordering and
+where a finding lands are decisions each route takes separately.
+
+- **A schema's `z.record` becomes a real collection**, not a leaf holding an object. Its handle offers
+  `keys`, `row`, `cell`, `upsert`, `remove`, `rename`, `setAll`, `patch`, `has`, `validOf` — the same
+  set, name for name, as the one a document builds. Same for `z.array` and the array handle.
+- **Eight operations, compared after each one** rather than at the end so a divergence would be
+  attributable: `upsert` ×2, `rename`, `push` ×2, `move`, `remove`, `setAll`. Value, submitted value,
+  declared keys and array length agree at every step.
+- **A rule the schema writes on a row's cell lands on that row's cell.** `z.string().min(2)` inside
+  the row attaches to `lines.a.sku` — not to the collection, not to the form — fires while the row
+  breaks it, and lifts when the row satisfies it. That is SCH-001 asked where the path has to be
+  *built* rather than read.
+- **The difference the two routes are allowed to have is pinned**: a schema carries constraints a
+  document never declared, so the schema-built form is invalid for a row the document-built one
+  accepts. Asserting it keeps a future "make the routes agree" from deleting the bridge's whole point
+  as a side effect.
