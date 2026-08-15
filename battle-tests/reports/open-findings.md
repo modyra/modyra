@@ -3532,3 +3532,44 @@ a field nobody wrote                       the same
 Both dangling references are caught, and the layout does not survive the reference it names being
 gone. Worth holding now rather than earlier: until group B was closed, that code was also what a
 version refusal and a depth refusal reported, so it meant three things and asserting it meant little.
+
+## 85. A document that declared five fields, and a parse that says none
+
+`adversarial/dynamic-contract/a-document-that-declared-nothing.battle.test.mjs` — 5 green, 1 red.
+**S2.** The same number as finding 84, from the other side.
+
+`acceptedCount + rejectedCount` is what a document *declared* — the sentence that makes the pair worth
+reading. 84 was a collection counted as a **loss**; its repair made a collection count as nothing, and
+a document whose fields all live inside one now reports declaring nothing at all.
+
+Measured on the project's **own published fixtures**, not on a document written for the occasion:
+
+```
+v3/keyed-rows.json            accepted 5   rejected 0     a field outside the collection    the control
+v3/nested-collections.json    accepted 0   rejected 0     declares 5 fields
+v3/positional-nesting.json    accepted 0   rejected 0     declares 4 fields
+```
+
+Both parse cleanly with their collections found and reported by path and kind. A field inside a
+collection is declared and is legitimately not a flat field — a document cannot name rows that do not
+exist yet — but it *was* declared, and the pair is the one place that says so.
+
+Between 84 and this is the sentence the pair is supposed to satisfy: a collection is not a loss, and
+what is inside it is not nothing.
+
+The fixtures are read from disk rather than written into the battle: a synthetic document proves the
+parser does it, and the corpus proves the contract's own documentation is one of the documents it
+happens to.
+
+## Checked and clean: every published fixture parses the way its name says
+
+Swept while finding the above. The corpus encodes its expectations in its filenames, and the parser
+agrees with all nine:
+
+```
+v2/valid · v2/nested-layout · v2/checkout-recursive     strict.ok=true, no diagnostics
+v2/invalid-reference                                    strict.ok=false, UNKNOWN_FIELD_REFERENCE + INVALID…
+v2/duplicate-layout-reference                           strict.ok=false, UNKNOWN_FIELD_REFERENCE
+v3/keyed-rows · v3/placement                            strict.ok=true
+v3/nested-collections · v3/positional-nesting           strict.ok=true — and the counts above
+```
