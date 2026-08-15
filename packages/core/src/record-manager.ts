@@ -38,7 +38,7 @@ import type {
   MdyCollectionKind,
   MdyNestedCollection,
 } from "./contracts/collection-manager.js";
-import { registerRowNode, type MdyRowRegistration } from "./collections/register.js";
+import { registerRowNode, rowDeclaresCell, type MdyRowRegistration } from "./collections/register.js";
 
 /**
  * A row's own schema node.
@@ -161,7 +161,22 @@ export class MdyRecordManager implements MdyNestedCollection {
       // what keeps a restore from quietly losing it; a control mounting still declares nothing.
       onRefusedWrite: (name) => {
         const key = this._keyOf(name);
-        if (key.length > 0) this.upsert(key);
+        if (key.length === 0) return;
+        // The path is the instruction, so an extra segment is one too: a draft is written flat and
+        // read back flat, and `lines.a.b.sku` asks for a member of a row that no template describes.
+        // Built anyway, the collection holds a row whose shape its own document never declared and
+        // the form calls itself valid, because there is no field there to be invalid.
+        const rest = name.slice(`${deps.path}.${key}`.length + 1);
+        if (!rowDeclaresCell(deps.item, rest)) {
+          if (MDY_DEV) {
+            console.warn(
+              `[modyra] Ignored "${name}": a row of "${deps.path}" declares no member at ` +
+              `"${rest}", so the path describes a row this collection cannot hold.`,
+            );
+          }
+          return;
+        }
+        this.upsert(key);
       },
       // A whole-value write says which rows there are, so one it does not mention is one the user
       // removed before it was written — restoring it would undo their deletion.
