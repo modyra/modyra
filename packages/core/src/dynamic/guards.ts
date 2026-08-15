@@ -92,6 +92,18 @@ export function assertSafeDynamicFieldNames(
           `generated id, so this name would collide with another field's parts.`,
       );
     }
+    // The other half of the same sentence the renderer refuses on. A widget id is built from this
+    // name and reaches `aria-describedby`, which is a space-separated list of ids — so whitespace
+    // here becomes several references, each resolving to nothing. Refusing only the delimiter meant
+    // an author ran the gate, was told the document was fine, saved it, and the field never
+    // appeared: the renderer refused what the parser had approved.
+    if (/\s/.test(name)) {
+      throw new Error(
+        `[modyra] Invalid field name "${name}": a widget id is built from this name, and ` +
+          "whitespace splits an id reference into several, each resolving to nothing — so the " +
+          "control would have no accessible name.",
+      );
+    }
     if (seen.has(name)) {
       throw new Error(`[modyra] Duplicate field name "${name}": every field needs its own identity.`);
     }
