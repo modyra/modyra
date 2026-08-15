@@ -380,3 +380,41 @@ test("several rules over one field compose rather than replace each other", () =
   assert.deepEqual(form.submitValue(), { plan: "pro", seats: 10, addon: "x" });
   form.destroy();
 });
+
+test("a rule's value is checked against the operator that will read it", () => {
+  // Four of a rule's five members were guarded and this one was not, so a rule that could never fire
+  // parsed clean in the strictest mode there is. A field with a rule that cannot fire looks exactly
+  // like a field with no rule, except that its author believes they wrote one.
+  const document = (operator, value) => ({
+    version: 2,
+    id: "f",
+    fields: [
+      { name: "when", kind: "datepicker", label: "W" },
+      { name: "seats", kind: "number", label: "S" },
+      { name: "extra", kind: "text", label: "E" },
+    ],
+    rules: [{ effect: "hidden", target: "extra", when: { field: operator === "greaterThanOrEqual" ? "seats" : "when", operator, value } }],
+  });
+  const refused = (operator, value) => {
+    const parsed = parseDynamicForm(document(operator, value), { mode: "strict" });
+    return parsed.ok === false && parsed.diagnostics.some((each) => each.code === "MDY_DYNAMIC_INVALID_RULE");
+  };
+
+  assert.equal(refused("greaterThan", {}), true, "an object has no order");
+  assert.equal(refused("in", "not a list"), true, "membership of a string is not membership");
+  assert.equal(refused("notIn", 42), true);
+  // A unary operator reads no value, so one written beside it is noise rather than a rule that
+  // cannot fire — and a generator emitting one shape for every operator writes one.
+  assert.equal(refused("isEmpty", "something"), false, "a value nothing reads is not a refusal");
+  // Comparing dates is comparing strings, and that holds only while every string is the same shape:
+  // "2026-2-01" sorts before "2026-1-10" because "2" sorts after "1" and the padding is what hides it.
+  assert.equal(refused("greaterThan", "2026-1-10"), true);
+  assert.equal(refused("greaterThan", "2026-01-10"), false, "a full ISO date is what the check asks for");
+  assert.equal(refused("greaterThanOrEqual", 10), false, "a number against a number field is fine");
+
+  // And the pair that was not one: `notIn` is `in` negated, so the careful spelling does not answer
+  // the same as the one it was written to be safer than.
+  const held = { plan: "pro" };
+  assert.equal(evaluateRuleCondition({ field: "plan", operator: "in", value: "pro" }, held), false);
+  assert.equal(evaluateRuleCondition({ field: "plan", operator: "notIn", value: "pro" }, held), true);
+});

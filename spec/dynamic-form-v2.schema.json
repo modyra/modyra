@@ -344,7 +344,64 @@
               ]
             },
             "value": {}
-          }
+          },
+          "allOf": [
+            {
+              "if": {
+                "properties": {
+                  "operator": {
+                    "enum": [
+                      "in",
+                      "notIn"
+                    ]
+                  }
+                },
+                "required": [
+                  "operator"
+                ]
+              },
+              "then": {
+                "required": [
+                  "value"
+                ],
+                "properties": {
+                  "value": {
+                    "type": "array"
+                  }
+                }
+              }
+            },
+            {
+              "if": {
+                "properties": {
+                  "operator": {
+                    "enum": [
+                      "greaterThan",
+                      "greaterThanOrEqual",
+                      "lessThan",
+                      "lessThanOrEqual"
+                    ]
+                  }
+                },
+                "required": [
+                  "operator"
+                ]
+              },
+              "then": {
+                "required": [
+                  "value"
+                ],
+                "properties": {
+                  "value": {
+                    "type": [
+                      "number",
+                      "string"
+                    ]
+                  }
+                }
+              }
+            }
+          ]
         }
       }
     },
