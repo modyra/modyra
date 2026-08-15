@@ -42,6 +42,16 @@ export interface MdyFieldHandle<TValue> {
   set(value: TValue): void;
   markAsTouched(): void;
   markAsDirty(): void;
+  /**
+   * What this control holds does not represent what the person entered, in words they can read —
+   * or `null` once it does again.
+   *
+   * A picker given text it cannot read keeps the text on screen and holds `null`, and `null` is a
+   * value no rule objects to: the page said the entry was wrong and the form said it was fine, so a
+   * submit went out holding nothing where somebody had typed something. A verdict shown to a person
+   * has to be one the form counts, and this is how a control says so.
+   */
+  reportEntry(problem: string | null): void;
 }
 
 /** Typed handle for a repeatable array item, exposed on `form.f` (`form.f.items`). */

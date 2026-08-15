@@ -1638,6 +1638,7 @@ export abstract class MdyTypedFormBase<
       set: (value: unknown) => state()?.value.set(value),
       markAsTouched: () => state()?.touched.set(true),
       markAsDirty: () => state()?.dirty.set(true),
+      reportEntry: (problem: string | null) => this._adapter.reportEntry(path, problem),
     };
     registerHandleOwner(handle, rx);
     registerHandleForm(handle, this);
@@ -1915,6 +1916,7 @@ export class MdyTypedForm<S extends MdyFormSchema>
       set: (v: unknown): void => state.value.set(v),
       markAsTouched: (): void => state.touched.set(true),
       markAsDirty: (): void => state.dirty.set(true),
+      reportEntry: (problem: string | null): void => this._adapter.reportEntry(path, problem),
     };
     registerHandleOwner(handle, this._adapter.reactivity);
     registerHandleForm(handle, this);

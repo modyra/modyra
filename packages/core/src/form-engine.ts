@@ -731,6 +731,19 @@ export class MdyFormEngine
     }
   }
 
+  /**
+   * What a control says about the entry it is holding, when the two disagree.
+   *
+   * The control is the only thing that knows: the form holds a value its own rules accept — often
+   * `null`, which nothing objects to — while the person is looking at text the control could not
+   * read. Reported here, the form counts it, so a verdict a person can see is one the submit can.
+   */
+  reportEntry(name: string, problem: string | null): void {
+    const rec = this._fields.get(name) ?? this._detachedFields.get(name);
+    if (!rec) return;
+    if (rec.entryProblem() !== problem) rec.entryProblem.set(problem);
+  }
+
   setSanitizer(name: string, sanitizer: MdySanitizer): void {
     this._fieldSanitizers.set(name, sanitizer);
   }
