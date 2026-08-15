@@ -9213,3 +9213,52 @@ session immediately rather than parked.
   answers consistently. Worth knowing rather than filing: the decision is then made by a value the
   server never receives, since a switched-off field is excluded from the payload — so an author
   debugging why a field is missing cannot see the cause in what was sent.
+
+## 162. Half a list of rules
+
+**S2 · Modyra bug · `@modyra/core` (`applyDynamicRules`)**
+Claims: DYN-001
+Battle: `battle-tests/adversarial/dynamic-contract/half-a-list-of-rules.battle.test.mjs`
+— reported as a todo, not enforced
+
+The parser's promise for a document is all-or-nothing and it is stated: strict mode *returns nothing
+at all when any diagnostic exists — a partly valid document is never accepted*.
+
+`applyDynamicRules` is the engine-side half of the same journey and does not carry that property. It
+walks the list in order and throws at the first rule it cannot apply:
+
+```
+list                          threw   the form then sends
+hidden b, hidden c            no      {a}                 ← both applied
+hidden b, hidden __proto__,   yes     {a, c}              ← b off, c never reached
+  hidden c
+hidden __proto__, hidden b,   yes     {a, b, c}           ← nothing applied
+  hidden c
+```
+
+A caller that handled the error holds a form that is neither ruled nor unruled, and there is nothing
+to ask about which rules took. Where a document is refused whole, its rules are applied in pieces.
+
+### The refusal itself is right
+
+`__proto__` as a target is refused **by name** — `[modyra] Invalid field path "__proto__": reserved` —
+and `Object.getPrototypeOf({})` is untouched after every case. What is missing is the undo, not the
+guard. Those two checks are controls in the battle rather than the claim it cites: citing SEC-001
+would report a kept promise at S0, and the harness refuses `open` at that severity, which is how the
+mis-citation was caught.
+
+### Checked and clean, in the same run
+
+- **An effect nobody declared does nothing.** `sparkle`, `visable`, `""`, `null`, `undefined`, `42`:
+  the field stays in play on both sides of the condition. The safe default, and the opposite of what
+  I first recorded — my first probe read a switched-off field from a neighbouring case and I had it
+  as a finding until a single-rule probe contradicted it.
+- **A failed call leaves nothing behind for the next form.** An unrecognised effect behaves the same
+  whether or not an earlier call in the same process threw.
+- **A rule targeting a path inside a collection is refused** by the parser, `MDY_DYNAMIC_INVALID_RULE`
+  at `/rules/0`. A document cannot say "hide the note column when the mode is short" — an
+  expressiveness limit, but a loud one.
+- **A target that is not a field, and a condition on a field that is not there**, are both ignored
+  silently by `applyDynamicRules` where the parser refuses them by name. Recorded rather than filed:
+  the parser is the door a document comes through, and a consumer calling the function directly has
+  the field list in front of it.
