@@ -8881,6 +8881,20 @@ The rule also leaves no mark anywhere else: the parsed `vatNumber` field is
 `{name, kind, label}` exactly, and the layout is unchanged. Whatever would apply it has only the
 array to go on, and nothing takes the array.
 
+**Correction to that control, and the pattern it belongs to.** `validations` having a compiler does
+not mean it reaches a form. `buildDynamicValidations` is called from exactly one place in the
+workspace — `packages/studio-preview/src/live-form-builder.ts:188` — which is finding 117 from the
+other side. So the contract has two behavioural slots and neither reaches a consumer's form:
+
+```
+rules         no compiler at all             nothing reads the array
+validations   buildDynamicValidations        called only by studio-preview
+```
+
+A document behaves as written inside Studio's preview and as though both slots were empty everywhere
+else. That makes 117 and this one one defect with two halves, and it is why the preview is not
+evidence that a document works.
+
 ### Strongest remaining question
 
 Whether this is "unimplemented" or "the consumer is meant to apply them" is not resolved by the
