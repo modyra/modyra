@@ -9,7 +9,7 @@
 import { createForm, field as mdyField, group as mdyGroup, required as mdyRequired } from "@modyra/core";
 import { renderField } from "@modyra/plain";
 import { KINDS } from "./kinds.js";
-import { sliderTrack } from "@modyra/widgets";
+import { fieldAccessibleName, nameIsAFallback, sliderTrack } from "@modyra/widgets";
 import { grid, paintedAsFailing, readoutPrinter, toggle, toolbar } from "./shell.js";
 
 export const statesPanel = {
@@ -36,6 +36,8 @@ export const statesPanel = {
     "shownErrors",
     "showsAsInvalid",
     "sliderTrack",
+    "nameIsAFallback",
+    "fieldAccessibleName",
     "errorsVisible",
     "shownErrorsOf",
     // The calendar's three views: a date picker that only pages a month at a time puts a birth date
@@ -106,6 +108,15 @@ export const statesPanel = {
       // form is not. The two numbers here have to agree.
       sliderHolds: form.f.all.slider.value(),
       sliderTrack: sliderTrack(form.f.all.slider.constraints(), form.f.all.slider.value()),
+      // What names each control, and whether the name is one somebody wrote or the field's own. A
+      // document may leave a label out, and a control with no name is announced as its role alone.
+      namedByTheField: KINDS
+        .filter(([, , extra]) => nameIsAFallback({ label: extra?.label }))
+        .map(([kind]) => kind),
+      // And the name each control ends up carrying — what a screen reader announces.
+      controlNames: Object.fromEntries(
+        KINDS.map(([kind, , extra]) => [kind, fieldAccessibleName({ label: extra?.label, name: kind })]),
+      ),
     }));
 
     const effect = form.reactivity.effect(() => {

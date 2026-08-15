@@ -9,6 +9,7 @@
 import { observerFor, type MdyFieldHandle, type MdyReactivity } from "@modyra/core";
 import type { MdyDynamicBooleanField } from "@modyra/core";
 import {
+  fieldAccessibleName,
   MDY_WIDGET_CONTRACTS,
   createBooleanFieldController,
   shownErrorsOf,
@@ -42,6 +43,12 @@ export function renderBooleanField(
   setText(requiredMark, "*");
   requiredMark.hidden = true;
   labelText.appendChild(requiredMark);
+
+  // A boolean's visible words sit beside the box rather than in a `<label for>`, so the control is
+  // named here. A label is optional in a document by design, and the field's own name is what is
+  // left to say — `fieldAccessibleName` holds the order, so every renderer answers the same.
+  const accessibleName = fieldAccessibleName({ ariaLabel: f.ariaLabel, label: f.label, name: f.name });
+  if (accessibleName) input.setAttribute("aria-label", accessibleName);
 
   wrapper.append(input);
   if (isToggle) {

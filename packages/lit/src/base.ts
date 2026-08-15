@@ -9,6 +9,7 @@ import {
   popupAlignmentClass,
   popupPlacementClass,
   projectFieldShellA11y,
+  fieldAccessibleName,
   shownErrorsOf,
   type MdyOverlayAlignment,
   type MdyOverlayPlacement,
@@ -317,7 +318,14 @@ export abstract class MdyFieldElement<T> extends LitElement {
       "input, select, textarea, [role='combobox'], [role='listbox']",
     );
     if (!control) return;
-    const name = this._pendingName || this.label;
+    // A label is optional in a document by design, and a control with no accessible name is
+    // announced as its role and nothing else. `fieldAccessibleName` holds the order so this renderer
+    // and the next answer the same; the field's own name is the last thing left to say.
+    const name = fieldAccessibleName({
+      ariaLabel: this._pendingName,
+      label: this.label,
+      name: this.field?.path,
+    });
     if (name) control.setAttribute("aria-label", name);
     else control.removeAttribute("aria-label");
   }

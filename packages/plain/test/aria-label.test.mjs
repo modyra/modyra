@@ -60,11 +60,14 @@ test("a labelled control is named by its label, without the required marker", ()
   assert.match(container.querySelector("label").textContent, /\*/, "which the label still shows");
 });
 
-test("no name at all leaves the control as it was", () => {
+test("a field nobody named is named by the field", () => {
   const form = createForm({ n: field("") });
   const container = host();
 
   renderField(container, { name: "n", kind: "text" }, form.f.n);
 
-  assert.equal(container.querySelector("input").getAttribute("aria-label"), null);
+  // A label is optional in a document by design, and a control with no accessible name is announced
+  // as its role and nothing else. The field's own name is what is left to say — and in a document a
+  // name is a single segment, in practice the label's own word.
+  assert.equal(container.querySelector("input").getAttribute("aria-label"), "n");
 });

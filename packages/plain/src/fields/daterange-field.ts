@@ -61,7 +61,7 @@ export function renderDaterangeField(
     reactivity,
   );
 
-  const shell = buildFieldShell(f.label, "daterange", {}, f.ariaLabel);
+  const shell = buildFieldShell(f.label, "daterange", {}, f.ariaLabel, f.name);
   const wrapper = el("div", "mdy-datepicker mdy-plain-daterange");
   const startInput = el("input", "mdy-datepicker__input mdy-daterange__input") as HTMLInputElement;
   startInput.type = "text";
