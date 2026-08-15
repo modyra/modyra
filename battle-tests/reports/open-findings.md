@@ -8736,3 +8736,74 @@ Two of my own measurements were wrong before this landed, and both were caught b
 - **Remounting on one id leaves the previous form's options in the document.** Lists read as
   `["First","Alpha","First","Alpha"]` and both renderers looked broken. Each case now starts from a
   fresh page.
+
+## 155. A third way for a value to arrive, with no word for it
+
+**S3 · Ambiguous contract · `@modyra/core` (`MDY_VALUE_CONTRACTS`)**
+Claims: UI-006, VAL-003
+Battle: `battle-tests/browser/when-a-value-becomes-the-value.spec.ts` — 2 failed, 3 passed
+
+`MDY_VALUE_CONTRACTS` carries a `commit` column, exported with its meaning written beside it:
+
+```
+live      "Every interaction writes through: typing, dragging, toggling."
+confirm   "The field only changes on an explicit confirmation; interaction edits a draft."
+```
+
+Sixteen kinds say `live`, one says `confirm`, and nothing in this suite had ever compared the column
+against a widget. A consumer reads it to know whether a value can be watched — an autosave, a
+dependent field, a live preview.
+
+The daterange says `live` and is neither:
+
+```
+                  declared   picked one end            picked both ends
+plain daterange   live       {start: null, end: null}  {start: "2026-08-03", end: "2026-08-07"}
+lit   daterange   live       {start: null, end: null}  {start: "2026-08-03", end: "2026-08-07"}
+```
+
+It is not `live` — the first pick writes nothing. It is not `confirm` — there is no confirmation to
+give; no OK, no Cancel. It commits when the range *completes*, which is a third rule the vocabulary
+has no word for.
+
+`dateRange` is documented as `{start, end}` with **either endpoint nullable**, and `completeRange()`
+exists precisely to judge `{start: "a", end: null}` as incomplete. So a half-filled range is a value
+the contract can represent and the validators are built to describe — and the one thing that never
+produces it is a user picking a start.
+
+### The controls are the argument
+
+Both other popup kinds match their declared word exactly, in the same run:
+
+- **datepicker**, declared `live`: picking a day writes through with no confirmation. Both renderers.
+- **timepicker**, declared `confirm`: typing an hour writes nothing; **Cancel** discards it; **OK**
+  commits it. Measured on plain.
+
+So this is not a spec that misread a published word, and not a renderer's defect either — the two
+renderers agree with each other exactly and disagree with the table together.
+
+### Classification
+
+Ambiguous contract rather than a Modyra bug. The behaviour is deliberate and already asserted in core:
+`adversarial/lifecycle/half-a-range-is-not-a-range.battle.test.mjs` measures the range transition
+returning `commit: undefined` until both ends are chosen. The table's word is the outlier, and the
+honest repair is a third value rather than changing either the widget or the label — `confirm` would
+be as untrue as `live` is.
+
+S3 because nothing is lost or corrupted: what is wrong is a published fact a consumer would act on.
+
+### Held, not filed: lit's timepicker
+
+The same measurement on lit could not be taken — `fill` on `.mdy-timepicker-segment-input` times out,
+the element is not editable. That is not reported as a finding because
+`packages/lit/src/components/timepicker-field.ts` and
+`packages/widgets/src/field/timepicker-field-controller.ts` are **being edited in the shared tree
+right now**, both on read-only handling (`?readonly=${handle.readonly()}`,
+`readonly: handle.readonly() || readonly()`). The bundle under test was built from that half-applied
+state. To be re-measured once the tree is clean.
+
+### Checked and clean, in the same run
+
+- **Every kind survives being cleared.** All fourteen kinds set to `null` and to `undefined` through
+  `patchValue`, in both renderers: no uncaught error anywhere. `multiselectValueTransition` throws on
+  `null` when called directly, and nothing routes a cleared value into it.
