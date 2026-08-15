@@ -7814,3 +7814,33 @@ a decision rather than a deviation.
 `mdy-timepicker__dialog` carries **zero** CSS rules in the shipped stylesheets, so the missing class
 is not dead styling — unlike finding 134's `.mdy-spin-btn`, which has 56. Recorded because the two
 look alike and only one of them wastes a stylesheet.
+
+### Checked and clean: the form a handle came from — and core is now fully named
+
+`adversarial/reactivity/the-form-a-handle-came-from.battle.test.mjs` (2 green).
+
+`registerHandleForm` and `handleFormOf` are a registry a form fills in as it builds its handles, so
+anything holding one can find its way back without being passed the form too. Measured:
+
+```
+a handle its form built          → that form
+two forms, one field name        → each leads to its own
+a handle nobody registered       → undefined, not a throw
+a handle a caller registered     → the form it was registered against
+after the form has been destroyed → still that form, which reports {a: "A"} and submits {}
+```
+
+The `undefined` is the documented shape and the comment says why in those words: a caller should fall
+back to the form it already has *rather than treat that as an error*. A registry that threw would make
+every hand-built handle a crash.
+
+The route surviving `destroy()` is deliberate rather than accidental — a destroyed form still answers
+for what it held, so the way back to it has to last as long, or a widget torn down after its form
+loses the ability to read the last value it was showing.
+
+**Coverage note.** With this, of the 82 exports that belong to `@modyra/core` alone, **none** is
+unnamed by this suite: the four that remained are `MdyFormEngine`, `MdyTypedFormBase`,
+`MdyUnsupportedCapabilityError` and `MDY_ADAPTER_CONTRACT_VIOLATION`, all examined here and none
+reachable except through one adapter's reactivity — the same shape as finding 133, and recorded there
+rather than filed again. The ~80 exports still unnamed are all `@modyra/widgets`, which is where the
+last dozen findings came from.
