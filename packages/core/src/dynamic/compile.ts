@@ -119,6 +119,40 @@ function optionListMessage(
   return `${subject} must be one of: ${named.join(", ")}`;
 }
 
+/**
+ * A bound written beside the field is a rule as well as a range.
+ *
+ * A number's limits can be said twice — `{ kind: "number", min: 0, max: 10 }` and
+ * `{ validators: { min: 0, max: 10 } }` — and both render the same attributes on the control, so a
+ * browser refuses what a person types either way. Only the second was a rule: a value that did not
+ * come from the keyboard — a prefill, a restored draft, a scripted write — passed the first
+ * untouched, and the form called itself valid holding it.
+ *
+ * The slider is where it shows: a value of 150 against `max: 50` left the form holding 150 and the
+ * page showing the thumb at 50, with `aria-invalid="false"` and nothing said. The two spellings
+ * render identically; only one of them meant anything.
+ *
+ * Read from the *field's* bound rather than from the control's drawn range. The range is already
+ * derived from the rules (`VAL-004`: a native constraint never promises less than the validators it
+ * came from), so deriving a rule from the range would close a loop — a rule from a range from a
+ * rule — and the day the projection changes, the loop changes meaning with nothing to say so.
+ *
+ * The explicit `validators` entry wins where both are written: it is the narrower statement of
+ * intent, and `mergeFacts` already takes whichever promises less when the two disagree.
+ *
+ * `step` has no rule to generate — the validator vocabulary has no `step` — so it stays what it
+ * always was: an affordance at the keyboard, and nothing the form asserts.
+ */
+function withFieldBounds(field: MdyDynamicField): MdyDynamicValidators {
+  const declared = field.validators ?? {};
+  if (field.kind !== "number" && field.kind !== "slider") return declared;
+  return {
+    ...declared,
+    min: declared.min ?? field.min,
+    max: declared.max ?? field.max,
+  };
+}
+
 const KINDS_NEEDING_OPTIONS = new Set(["select", "radio", "multiselect", "segmented"]);
 
 function assertUsableOptions(field: { readonly kind: string; readonly name?: string; readonly options?: unknown }): void {
@@ -140,7 +174,7 @@ export function buildDynamicFieldValidators(field: MdyDynamicField): {
   readonly marksRequired: boolean;
 } {
   assertUsableOptions(field);
-  const declared = buildDynamicValidators(field.validators ?? {});
+  const declared = buildDynamicValidators(withFieldBounds(field));
   // Every kind guards its own shape, the same doorway `oneOf` guards for the kinds that have an
   // option list: a value from a restored draft or a scripted write is not the widget's own.
   const base = {
