@@ -124,3 +124,22 @@ written — so making the walk iterative would not have moved the number by one.
 And when two things give way at the same number, that is one cause rather than two. A layout and a
 schema both failing at 1515 levels is not a coincidence to note; it is a fingerprint that says the
 same frame is under both, and it turns a second investigation into one line of reasoning.
+
+## 13. Two things that do nothing agree perfectly
+
+A differential passes when its two sides answer alike, and the cheapest way to answer alike is for
+neither to answer at all.
+
+Two construction routes were compared on a field declared `required` in a spelling the contract does
+not carry — `required` lives inside `validators` — through a route that needs a second call before it
+compiles any rule. Neither form enforced anything. The two agreed on every value they were given, and
+the check was green while proving that two empty forms are empty in the same way.
+
+So a comparison owes a prior question: **does either side bite?** Show the rule refusing a value
+before asking whether the other side refuses it too. A differential whose subject enforces nothing is
+not a weak test, it is a test of nothing, and it reads exactly like a strong one.
+
+The same night, from the other direction: a battle compared a partially restored form by its *keys*.
+A restore that comes back a row at a time keeps every key and empties the cells, so the check was
+looking at the half of the state the defect does not touch. What a form holds and what it enforces
+are two questions, and so are what it lists and what it holds.
