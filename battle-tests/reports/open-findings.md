@@ -3140,6 +3140,12 @@ that is **empty**.
 So the two halves of the contract disagree about the same field, and the renderer resolves it by
 producing a control a screen reader announces as its role and nothing else.
 
+**Fifteen of the seventeen kinds** have at least one part with no accessible name when the label is
+omitted: text, email, password, textarea, number, slider, checkbox, toggle, select, radio, segmented,
+datepicker, daterange, timepicker, file. The two that hold are `multiselect` and `colors` — and
+`colors` only because its swatch listbox carries a static `"Presets"` that has nothing to do with the
+field.
+
 **And an auditor does not see all of it**, which is why the check is written by hand and asserted as
 its own test:
 
