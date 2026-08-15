@@ -1041,11 +1041,35 @@ export abstract class MdyTypedFormBase<
 
   // ── MdyFormRegistry (bindings speaking the flat path protocol) ──────────────
 
+  /**
+   * Refuses a path this schema does not describe.
+   *
+   * A typed form knows what it declares, and a rule attached to a name it does not — one transposed
+   * letter — registers a field nothing renders a control for. The rule can then never be satisfied:
+   * `valid()` goes false, `canSubmit()` goes false, `submit()` never calls its action, and the error
+   * sits on a path nothing is bound to. A filled-in form with a Submit that does nothing and no
+   * message anywhere.
+   *
+   * Refused rather than ignored, because the way out is `removeField` on the ghost path — which
+   * requires knowing the ghost is there, and being told is the one thing that did not happen.
+   *
+   * This is the typed form's check and not the engine's: the engine has no schema, and a field
+   * coming into being because something asked for it is how a declarative adapter builds a form.
+   */
+  private _assertDeclares(name: string, method: string): void {
+    if (this._describes(name)) return;
+    throw new Error(
+      `[modyra] ${method} names "${name}", which this form does not declare. ` +
+      "A rule on a path no control renders can never be satisfied, and the form could not be submitted.",
+    );
+  }
+
   addValidators<T>(
     name: string,
     validators: ReadonlyArray<ValidatorFn<T>>,
     isRequired?: boolean,
   ): void {
+    this._assertDeclares(name, "addValidators");
     this._adapter.addValidators(name, validators, isRequired);
   }
 
@@ -1055,6 +1079,7 @@ export abstract class MdyTypedFormBase<
     validators: ReadonlyArray<ValidatorFn<T>>,
     marksRequired?: boolean,
   ): void {
+    this._assertDeclares(name, "upsertValidators");
     this._adapter.upsertValidators(name, key, validators, marksRequired);
   }
 
@@ -1068,10 +1093,15 @@ export abstract class MdyTypedFormBase<
     validators: ReadonlyArray<MdyAsyncValidatorFn<T>>,
     options?: MdyAsyncValidatorOptions,
   ): void {
+    this._assertDeclares(name, "upsertAsyncValidators");
     this._adapter.upsertAsyncValidators(name, key, validators, options);
   }
 
   setInitialValue(name: string, value: unknown): void {
+    // The same door, and the consequence arrives even later: an initial planted on a path the schema
+    // does not have is a baseline `reset()` never returns to, discovered as a form that resets to
+    // the wrong thing, arbitrarily far from the line that caused it.
+    this._assertDeclares(name, "setInitialValue");
     this._adapter.setInitialValue(name, value);
   }
 
