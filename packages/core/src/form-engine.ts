@@ -1282,11 +1282,43 @@ export class MdyFormEngine
    */
   enableDraft(options: MdyDraftOptions): void {
     this._draftManager.enableDraft(options);
+    // A restored draft is the state the form opens in, not a step away from one. Recorded as a step,
+    // the first thing a person is offered to undo is something they did not do — and taking the
+    // offer writes the empty form back over the draft, because the draft follows the model. What
+    // would recover it is a redo, which lives in the tab.
+    //
+    // History only: the restored edits are still changes against the values the form was built with,
+    // so `getChanges()` and a PATCH built from it keep reporting them. What moves is where undo ends.
+    if (this._rx.untracked(() => this.hasDraft())) this._historyManager.rebaseline();
   }
 
-  /** Removes the stored draft (also called after an error-free submit). */
+  /**
+   * Removes the stored draft (also called after an error-free submit).
+   *
+   * And moves the baseline, which is the half the guide documents and the half a caller reaches for
+   * it for: a consumer who has just saved, or has decided the draft is stale, wants the form to stop
+   * calling the current values changes. Without it `getChanges()` still reported every edited field,
+   * so a `PATCH` built from it sent exactly what the caller had decided to discard.
+   */
   clearDraft(): void {
     this._draftManager.clearDraft();
+    this.rebaselineToCurrentValue();
+  }
+
+  /**
+   * Makes the value the form holds now the one it started from.
+   *
+   * Two deliberate acts arrive at the same state: a draft written into a fresh form, and a draft
+   * discarded on purpose. Neither is a change a person made, so neither belongs in what `getChanges()`
+   * reports or in what an undo would take back.
+   */
+  rebaselineToCurrentValue(): void {
+    this._rx.untracked(() => {
+      for (const [name, rec] of this._fields) {
+        this.setInitialValue(name, rec.state.value());
+      }
+    });
+    this._historyManager.rebaseline();
   }
 
   // ── History (undo/redo) and change tracking ─────────────────────────────────
