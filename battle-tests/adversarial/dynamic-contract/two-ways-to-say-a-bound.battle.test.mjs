@@ -103,12 +103,21 @@ battle(
 battle(
   {
     claims: ["DYN-001", "VAL-004"],
-    title: "the constraint a field reports is what tells the two spellings apart",
+    title: "the two spellings of a bound report the same constraint because both enforce it",
     environments: ["node"],
   },
   async (ctx) => {
-    // Green, and the reason the finding above is bounded: something does tell them apart. The
-    // rendered control does not — both put `min="0" max="10"` on the input — but this does.
+    // This assertion is the inverse of the one it replaces, and the inversion is the point.
+    //
+    // While one spelling moved the rendered control without binding the value, `constraints()` was
+    // the only surface that told them apart — it reported the bound for the spelling that enforced
+    // and nothing for the one that did not, which is how a consumer could tell which document they
+    // had been handed before a value proved it the hard way.
+    //
+    // Both spellings now compile the same rules, so there is nothing left for that surface to
+    // separate, and asserting a difference would hold the engine to the shape of the defect. What is
+    // worth holding is the equality: a bound written beside the field reports exactly what the same
+    // bound written as a rule reports, so a consumer reading this surface reads one answer.
     const beside = formFor(BESIDE);
     const inside = formFor(INSIDE);
     try {
@@ -118,18 +127,17 @@ battle(
       };
       ctx.log.note("what each spelling reports as its constraint", projected);
 
-      // The spelling that enforces says so.
+      // The spelling written as a rule says what it enforces.
       expectEqual([projected.inside.min, projected.inside.max], [0, 10], {
         claimIds: ["DYN-001"],
-        what: "the spelling that does enforce does not report the bound it enforces",
+        what: "the spelling written as a rule does not report the bound it enforces",
         detail: JSON.stringify(projected),
       });
 
-      // And the one that does not, does not — so a consumer reading this surface can tell which
-      // document they were handed, before a value ever arrives to prove it the hard way.
-      expectEqual([projected.beside.min, projected.beside.max], [null, null], {
-        claimIds: ["DYN-001"],
-        what: "the two spellings report the same constraint, so nothing in the engine distinguishes a bound that holds from one that does not",
+      // And the one written beside the field reports the same thing, because it is the same bound.
+      expectEqual([projected.beside.min, projected.beside.max], [0, 10], {
+        claimIds: ["DYN-001", "VAL-004"],
+        what: "the two spellings of one bound report different constraints, so a consumer reading this surface gets a different answer depending on how the document was written",
         detail: JSON.stringify(projected),
       });
     } finally {

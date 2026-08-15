@@ -1945,8 +1945,15 @@ was re-checked and passes `{ value, label }`, so nothing in the register rests o
 
 ## 67. A slider at its maximum, and a form holding three times that
 
-`browser/a-slider-that-shows-a-different-number.spec.ts` — 4 green, 2 red. **Both renderers.**
-UI-006, read as its mirror. **S1.**
+`browser/a-slider-that-shows-a-different-number.spec.ts` — **the declared-bound half is closed**;
+what remains is filed separately as 70. 4 green, 2 red. Both renderers. UI-006, read as its mirror.
+**S1.**
+
+**Closed half, verified:** a bound written beside the field now compiles the same rules as the same
+bound written as a rule, so `slider max:50` holding `150` is invalid with "Maximum value is 50" and
+the page no longer disagrees in silence. The green beside it holds too — a value *inside* the range
+is still valid, checked at the boundary — which was the assertion a too-wide generated rule would
+have broken.
 
 UI-006 says a widget does not replace a value the model holds in order to make itself consistent, and
 a slider does not — `getValue()` still answers `150`. What it does instead is **show a different
@@ -2112,3 +2119,40 @@ One near-miss recorded: calling `min("5")` directly returns `[null]`, which look
 error entry. In a form it is `{ kind: "validation", message: "Minimum value is 5", path: "n" }` —
 the bare call returns a pre-normalisation shape, and reading it as the public one is the probe's
 error, not the engine's.
+
+
+## 70. Two renderers inventing the same default, and a step with no rule to generate
+
+`browser/a-slider-that-shows-a-different-number.spec.ts` — the two rows of finding 67 that its repair
+does not reach. Same symptom, two different causes, neither of them the one that was fixed. **S1**,
+both renderers.
+
+```
+slider, initialValue 150, NO bound declared    holds 150   shows 100   nothing said
+slider, initialValue 7,   step 5               holds   7   shows   5   nothing said
+```
+
+**The first cause is a default nobody declared.** Measured in both renderers, each arriving at it
+alone:
+
+```
+packages/plain/src/fields/text-field.ts        offered().max ?? 100
+packages/lit/src/components/slider-field.ts    this.max ?? constraints.max ?? 100
+```
+
+Nothing can be generated here: the document declared no limit, so refusing `150` would assert a bound
+nobody wrote. The contract does not say what range a slider without limits has, and two renderers
+each answered `100` on their own. It is the shape of findings 34 and 56 — neither renderer is wrong
+by itself, and the result is a drawn track showing a number the form does not hold.
+
+The repair is a decision about defaults in the contract: either a default range accommodates the value
+it is given — a slider cannot show a value outside its own track — or it says so.
+
+**The second cause is that `step` has no rule to compile.** `min` and `max` beside a field now generate
+validators; `step` does not, so a value off the step is valid, the track snaps to the nearest
+multiple, and the two disagree with nothing said. Whether a step *should* constrain a value is a
+contract question — a number off the step may be perfectly legitimate — but the current answer is the
+one this campaign keeps refusing: neither enforced nor explained.
+
+The battle's controls stay green under any repair: a value inside the range is the number shown, and
+a `number` field with the same bound holds, shows and explains it.
