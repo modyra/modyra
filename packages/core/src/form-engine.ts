@@ -156,6 +156,23 @@ function assertSecurityPolicy(policy: unknown): MdySecurityPolicy {
   return policy as MdySecurityPolicy;
 }
 
+/**
+ * A callback that has not finished cannot be one change.
+ *
+ * `mutate(fn: () => void)` is typed synchronous and TypeScript does not stop this: a function
+ * returning `Promise<void>` is assignable where `void` is expected, which is the rule that makes
+ * callbacks ergonomic and here is a foot-gun.
+ */
+function assertFinished(returned: unknown): void {
+  if (returned === null || typeof returned !== "object" && typeof returned !== "function") return;
+  if (typeof (returned as { then?: unknown }).then !== "function") return;
+  throw new Error(
+    "[modyra] mutate takes a callback that finishes: it groups the writes it makes into one change, " +
+    "and a callback that waits has already ended its batch by the time it resumes. Await first, then " +
+    "call mutate with what to write.",
+  );
+}
+
 /** The same door for the write that replaces everything. */
 function assertWholeValue(value: unknown, method: string): asserts value is Record<string, unknown> {
   if (typeof value === "object" && value !== null && !Array.isArray(value)) return;
@@ -1270,20 +1287,24 @@ export class MdyFormEngine
   mutate(fn: () => void): void {
     if (this._mutating) {
       // Nested call: the outermost mutate() owns the single coalesced entry.
-      fn();
+      assertFinished(fn());
       return;
     }
     this._mutating = true;
+    let returned: unknown;
     try {
-      if (hasBatchingCapability(this._rx)) {
-        this._rx.batch(fn);
-      } else {
-        fn();
-      }
+      returned = hasBatchingCapability(this._rx) ? this._rx.batch(fn) : fn();
     } finally {
       this._mutating = false;
       this._historyManager.recordNow();
     }
+    // Read after the callback returns, not inside a `catch`: a callback that waits does not throw,
+    // it *returns* a promise — and an async function that fails after an `await` returns a rejected
+    // one rather than raising here. The batch closes when the synchronous part ends, so every write
+    // after the first `await` lands outside it and the caller gets exactly the history `mutate`
+    // exists to prevent. Nothing on the calling side can see that: `mutate` returns `void`, so
+    // awaiting it waits for nothing, and the only symptom is counting undo steps.
+    assertFinished(returned);
   }
 
   /**
