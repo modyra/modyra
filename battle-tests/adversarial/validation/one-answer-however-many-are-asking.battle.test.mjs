@@ -18,7 +18,7 @@
  * Green. It exists because the rule is invisible until something contradicts it.
  */
 
-import { createForm, field, group, vanillaReactivity } from "@modyra/core";
+import { createForm, field, group, required, vanillaReactivity } from "@modyra/core";
 
 import { battle } from "../../harness/battle.mjs";
 import { expectEqual } from "../../harness/assertions.mjs";
@@ -134,5 +134,90 @@ battle(
       claimIds: ["VAL-003"],
       what: "a runtime refusal did not overrule a schema condition that was allowing the section",
     });
+  },
+);
+
+battle(
+  {
+    claims: ["VAL-003", "SUB-001"],
+    title: "a rule inside a closed section is a rule the form is not asking about",
+    environments: ["node"],
+  },
+  async (ctx) => {
+    // VAL-003 in its own words: hidden or unmounted controls do not alter validation semantics. The
+    // whole life of a conditional required field, in order, because each step is a different claim
+    // and only the first is the one people test.
+    const reactivity = vanillaReactivity();
+    const open = reactivity.signal(false);
+    const form = createForm(
+      {
+        keep: field("k"),
+        sect: group({ vat: field("", [required()]) }, { when: () => open() }),
+      },
+      { devWarnings: false },
+    );
+
+    const attempt = async () => {
+      let payload = null;
+      let ran = false;
+      await form.submit((value) => {
+        ran = true;
+        payload = value;
+      });
+      return { valid: form.state.valid(), canSubmit: form.state.canSubmit(), ran, payload };
+    };
+
+    await settled();
+    const closed = await attempt();
+    ctx.log.note("a required field in a closed section", closed);
+
+    // Closed: the rule is not the form's question, so the form is sendable and the section is not in
+    // what it sends.
+    expectEqual([closed.valid, closed.ran, closed.payload], [true, true, { keep: "k" }], {
+      claimIds: ["VAL-003", "SUB-001"],
+      what: "a required field nobody is being asked for kept the form from being sent, or was sent anyway",
+    });
+
+    // Opened: now it is the question, and an empty answer is refused.
+    open.set(true);
+    await settled();
+    const opened = await attempt();
+    ctx.log.note("the same field once the section opened", {
+      ...opened,
+      errors: form.errorsFor("sect.vat")().map((each) => each.message),
+    });
+
+    expectEqual([opened.valid, opened.canSubmit, opened.ran], [false, false, false], {
+      claimIds: ["VAL-003"],
+      what: "a required field in an open section did not keep the form from being sent",
+    });
+
+    // Answered: sendable again, and the section is in what is sent.
+    form.f.sect.vat.set("IT123");
+    await settled();
+    const filled = await attempt();
+    expectEqual([filled.valid, filled.payload], [true, { keep: "k", sect: { vat: "IT123" } }], {
+      claimIds: ["VAL-003", "SUB-001"],
+      what: "an answered required field did not let the form be sent, or was not in what it sent",
+    });
+
+    // And closed again with an answer in it: the value is kept — a section that reopens finds what
+    // was there — and it is not sent, because the form is no longer asking.
+    open.set(false);
+    await settled();
+    const closedAgain = await attempt();
+    ctx.log.note("closed again, with a value in it", { ...closedAgain, held: form.getValue() });
+
+    expectEqual(closedAgain.payload, { keep: "k" }, {
+      claimIds: ["SUB-001"],
+      what: "a section the form stopped asking about was still in what it sent",
+    });
+
+    expectEqual(form.getValue().sect?.vat, "IT123", {
+      claimIds: ["VAL-003"],
+      what: "closing a section lost the answer inside it, so reopening would not find it",
+    });
+
+    form.destroy();
   },
 );
