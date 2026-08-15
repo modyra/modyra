@@ -9,7 +9,7 @@ A twentieth, `generative/properties/history.property.test.mjs`, is a campaign ra
 draws a fresh seed each run and reaches the whole-write undo defect about four times in five. Its
 green is not evidence; the battle beside it is.
 
-The list is grouped by cause. Seventeen causes, twenty-eight battles.
+The list is grouped by cause. Twenty-two causes, one of them withdrawn.
 
 ---
 
@@ -222,7 +222,7 @@ should mean there is no draft, not that there is no form.
 `clearDraft` is the smaller version: a `remove` that throws comes out of the call, where the write
 path swallows its own failure.
 
-## 16. A skipped server check is silent where it matters
+## 17. A skipped server check is silent where it matters
 
 `adversarial/reactivity/a-check-nobody-runs.battle.test.mjs`
 
@@ -233,7 +233,43 @@ in the `diagnostics` sink in either mode. The form reports `valid` and `canSubmi
 server never saw, and `MDY_ASYNC_FEATURE_DISABLED` is exported for this situation and never reaches
 the sink.
 
-## 17. Reported without a repair path
+## 18. A document nested past what the walk can carry
+
+`adversarial/security/a-document-too-deep.battle.test.mjs`
+
+A schema nested fifty thousand levels throws a `RangeError` out of `parseDynamicForm` in both modes,
+and out of `buildDynamicFormSchema`. The layout half of the same document at the same depth comes
+back as `MDY_DYNAMIC_INVALID_LAYOUT` with no exception, because `MDY_LAYOUT_MAX_DEPTH` is tested
+before the walk goes further. The depth at which it gives way moves with whatever else is on the
+stack; that there is one at all is what is asserted.
+
+## 19. Activate persists only when it is a resume
+
+`adversarial/lifecycle/paused-without-losing-anything.battle.test.mjs`
+
+A form that was active, paused, written to and resumed writes its draft on resuming. One built with
+`autoActivate: false` and then activated does not — it waits for an unrelated edit. React and Preact
+construct that way, so a form hydrated from a payload in the tick it was built keeps nothing until
+the user types.
+
+## 20. getChanges never reports a row the user added
+
+`adversarial/submission/a-row-nobody-sends.battle.test.mjs`
+
+`reset()` throws a declared row away, so the baseline has no such row; `getChanges()` reports
+nothing, so there is nothing new. Only what was written to a row *after* it was declared is
+reported, so a form where a user added three lines and typed in none produces an empty patch.
+
+## 21. A validator or a predicate that throws takes more than itself
+
+`adversarial/validation/a-validator-that-breaks.battle.test.mjs` — two battles.
+
+A synchronous validator that throws makes `state.valid()` throw, and every later read with it, so
+the form cannot be rendered. `asyncWhen` that throws makes `createForm` throw. The async path turns
+the same failure into a verdict on the field and keeps the form readable, which is the repair
+pattern for both and the green battle beside them.
+
+## 22. Reported without a repair path
 
 - `adversarial/submission/submit-contract.battle.test.mjs` — an action returning something that is
   not a list of errors puts `errors.filter is not a function` on the form-level error surface, the
