@@ -3712,6 +3712,26 @@ Either repair closes it: carry the index, or say in the contract that a position
 set is not addressable and the whole list must be sent. The second is a documentation fix with a
 consequence on a wire.
 
+**Two questions that look like one**, added as a second battle in the same file, green. The guide
+states the first in a line — *`dirty` is set by user interaction in renderers (and `markAsDirty()`)* —
+and `getChanges()` answers the other:
+
+```
+                                dirty    changed
+nothing happened                false    false
+a value written in code         FALSE    true
+the same value written again    false    false
+a person interacting            TRUE     false
+a patch from a response         false    true
+a whole value written           false    true
+written and put back            false    false
+```
+
+A consumer asking `dirty` to mean "are there unsaved changes" misses every write that did not come
+from a person — a restored draft, a server prefill, a `patch` from a response. That is right, and it
+is only right because the other question has its own answer. The two rows in capitals are where they
+disagree, and they are the ones worth holding.
+
 Everything else in that paragraph was measured and holds, and is recorded rather than filed: removing
 a seeded row, adding one, renaming one and moving one all leave the change set empty; removing item 0
 then editing the new item 0 reports the edit and not the removal — so a row is compared against **its

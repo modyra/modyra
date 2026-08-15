@@ -95,3 +95,46 @@ battle(
     });
   },
 );
+
+battle(
+  {
+    claims: ["SUB-001", "PER-002"],
+    title: "dirty is what a person did, and the change set is what the value is",
+    environments: ["node"],
+  },
+  async (ctx) => {
+    // Two questions that look like one and are not. The guide states the first in a line: *`dirty` is
+    // set by user interaction in renderers (and `markAsDirty()`)*. The second is what `getChanges()`
+    // answers: only the fields whose value differs from the schema's initial.
+    //
+    // A consumer that asks `dirty` to mean "are there unsaved changes" misses every write that did
+    // not come from a person — a restored draft, a server prefill, a `patch` from a response — which
+    // is right, and is only right because the other question has its own answer.
+    const cases = [
+      ["nothing happened", () => {}, { dirty: false, changed: false }],
+      ["a value written in code", (form) => form.f.a.set("typed"), { dirty: false, changed: true }],
+      ["the same value written again", (form) => form.f.a.set("start"), { dirty: false, changed: false }],
+      ["a person interacting", (form) => form.f.a.markAsDirty(), { dirty: true, changed: false }],
+      ["a patch from a response", (form) => form.patch({ a: "patched" }), { dirty: false, changed: true }],
+      ["a whole value written", (form) => form.setValue({ a: "whole" }), { dirty: false, changed: true }],
+      ["written and put back", (form) => {
+        form.f.a.set("typed");
+        form.f.a.set("start");
+      }, { dirty: false, changed: false }],
+    ];
+
+    for (const [what, act, expected] of cases) {
+      const form = createForm({ a: field("start") }, { devWarnings: false });
+      act(form);
+      await settled();
+      const seen = { dirty: form.f.a.dirty(), changed: Object.keys(form.getChanges()).length > 0 };
+      form.destroy();
+      ctx.log.note("the two questions", { what, ...seen });
+
+      expectEqual(seen, expected, {
+        claimIds: ["SUB-001", "PER-002"],
+        what: `${what}: dirty and the change set did not answer the two questions they answer`,
+      });
+    }
+  },
+);
