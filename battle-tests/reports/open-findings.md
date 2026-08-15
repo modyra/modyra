@@ -4145,3 +4145,57 @@ kept so a repair cannot be "cancel the runs of whatever field just changed".
 
 Either repair passes: dropping the run from what `pending` counts, or aborting it when the field
 leaves play.
+
+## 91. Six hooks that never stop rendering, given the argument their shape invites
+
+`adversarial/reactivity/a-config-written-where-it-is-used.battle.test.mjs` — 1 red.
+
+Every published React widget hook takes a config object — `useMdySelect(config, lookup, handlers)`,
+`useMdyOptionField(handle, config)`, and four more — and memoizes its controller on that object's
+*identity*:
+
+```ts
+const controller = useMemo(
+  () => createOptionFieldController({ ...options, handle }, reactivity),
+  [options, handle, reactivity],
+);
+```
+
+The controller is then subscribed to, and the subscription sets state. A consumer who writes the
+config at the call — which is what an argument that is an object literal invites — gets a new object
+each render, so a new controller, so a resubscribe, so a state change, so a render. It does not
+settle. Measured, mounting each hook once and counting renders in 220ms:
+
+| hook | config held still | config written at the call | "Maximum update depth" |
+| --- | --- | --- | --- |
+| `useMdySelect` | 2 | 3686 | 70 |
+| `useMdyOptionField` | 2 | 4332 | 83 |
+| `useMdyMultiselectField` | 2 | 4505 | 86 |
+| `useMdyBooleanField` | 2 | 4622 | 88 |
+| `useMdyDatepickerField` | 2 | 2805 | 53 |
+| `useMdyTimepickerField` | 2 | 4197 | 80 |
+
+All six. The battle stops at the first, so a failing run reports `useMdySelect` alone; the table is
+the probe's, and the battle re-measures every row once the first is repaired.
+
+Two things make it worse than a memoization footgun.
+
+**It is not about options.** `useMdyBooleanField`'s config carries no option list at all, only a
+`widgetId`, and it loops identically — what is compared is the object, not anything in it. So the
+rule a consumer must follow is "never pass a literal to any of these six", which no type expresses.
+
+**Nothing published says so.** One of the six carries a source comment — "callers should memoize
+options or use a stable key". The guides do not mention it. A consumer's evidence is a hook that
+takes an object, and React's own convention for such arguments is to write them inline.
+
+This is the same shape as finding 89: a React wrapper that requires referential stability the
+signature does not express, failing catastrophically rather than saying so. The other adapters do not
+have it — the field hooks' *other* memo, `observerFor(handle)`, keys on the form's own handle, which
+is stable by construction, and that is the pattern that works here.
+
+Classification: Modyra bug. S1 by the claims it falsifies — the component never reaches a resting
+state, so the widget is unusable and the tab is pegged.
+
+Every plausible repair leaves the battle green: memoizing on the config's contents rather than its
+identity, holding the controller in a ref, or subscribing without setting state on subscribe. The
+bound is 25 renders against a settled 2, so a repair that costs a few extra renders still passes.
