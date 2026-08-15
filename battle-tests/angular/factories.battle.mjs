@@ -83,11 +83,56 @@ try {
   driven = { raised: String(error.message).slice(0, 120) };
 }
 
-console.log(JSON.stringify({ built, driven, exports: Object.keys(ng).length }));
+// What an adapter carries of the engine's refusals. A component registers its rules through
+// \`upsertValidators\` — the guide says so in those words — and the name it passes is a string it
+// wrote. The engine refuses a name its schema does not declare; an adapter that reaches the same
+// engine has to be seen doing it rather than assumed to.
+const doors = {};
+try {
+  const form = core.createForm({ email: ng.field("someone@example.com") }, { devWarnings: false });
+  const attemptDoor = (name, run) => {
+    try { run(); doors[name] = "applied"; }
+    catch (error) { doors[name] = "refused: " + String(error.message).slice(0, 70); }
+  };
+
+  attemptDoor("upsertValidators on a declared path", () => form.upsertValidators("email", "cmp", [core.required()]));
+  attemptDoor("upsertValidators on a name the schema lacks", () => form.upsertValidators("emial", "cmp", [core.required()]));
+  attemptDoor("addValidators on a name the schema lacks", () => form.addValidators("emial", [core.required()]));
+  attemptDoor("setInitialValue on a name the schema lacks", () => form.setInitialValue("emial", "x"));
+  doors.canSubmitAfter = form.state.canSubmit();
+  form.destroy();
+} catch (error) {
+  doors.raised = String(error.message).slice(0, 120);
+}
+
+// And the interactivity setters against a group the schema declares, which is the half a leaf-only
+// implementation misses.
+const section = {};
+try {
+  const form = core.createForm(
+    { sect: ng.group({ inner: ng.field("i") }), plain: ng.field("p") },
+    { devWarnings: false },
+  );
+  form.setDisabled("sect", () => true);
+  await new Promise((resolve) => setTimeout(resolve, 60));
+  let payload = null;
+  await form.submit((value) => { payload = value; });
+  section.innerDisabled = form.f.sect.inner.disabled();
+  section.payload = payload;
+  form.destroy();
+} catch (error) {
+  section.raised = String(error.message).slice(0, 120);
+}
+
+console.log(JSON.stringify({ built, driven, doors, section, exports: Object.keys(ng).length }));
 `;
+
+/** One install answers every question this tier asks; a second would double the tier's cost. */
+let memoised = null;
 
 /** Pack the adapter and its engine, install with Angular's peers, and run the scenario inside. */
 function runInConsumer() {
+  if (memoised !== null) return memoised;
   const work = mkdtempSync(join(tmpdir(), "mdy-angular-"));
   try {
     for (const dir of [ANGULAR_DIST, join(REPO, "packages", "core"), join(REPO, "packages", "widgets")]) {
@@ -117,7 +162,8 @@ function runInConsumer() {
       encoding: "utf8",
       stdio: ["ignore", "pipe", "pipe"],
     });
-    return JSON.parse(stdout.trim());
+    memoised = JSON.parse(stdout.trim());
+    return memoised;
   } finally {
     rmSync(work, { recursive: true, force: true });
   }
@@ -165,6 +211,88 @@ battle(
     expectEqual(result.driven, { outer: [{ inner: [] }, { inner: [{ v: "1" }, { v: "2" }] }] }, {
       claimIds: ["COL-001", "DYN-002"],
       what: "a form built from the adapter's descriptors did not hold what it was driven to hold",
+    });
+  },
+);
+
+battle(
+  {
+    claims: ["VAL-003", "API-001"],
+    title: "an installed Angular consumer meets the same refusals the engine makes",
+    environments: ["angular"],
+  },
+  async (ctx) => {
+    expectClaim(existsSync(ANGULAR_DIST), {
+      claimIds: ["VAL-003"],
+      what: "the Angular build output is not there — run `npm run build:angular` before this tier",
+      detail: ANGULAR_DIST,
+    });
+
+    const result = runInConsumer();
+    ctx.log.note("what the doors did inside an installed consumer", result.doors);
+
+    // The control: the same call on a declared path works, so what follows is the name rather than
+    // the door being shut to everything.
+    expectEqual(result.doors["upsertValidators on a declared path"], "applied", {
+      claimIds: ["API-001"],
+      what: "a component could not register its rules on a field the schema declares",
+      detail: JSON.stringify(result.doors),
+    });
+
+    // A name the schema does not have. The guide names `upsertValidators` as how an Angular component
+    // registers what it enforces, and the name it passes is a string somebody wrote — so a
+    // misspelling reaches the engine through this door and no other.
+    for (const door of [
+      "upsertValidators on a name the schema lacks",
+      "addValidators on a name the schema lacks",
+      "setInitialValue on a name the schema lacks",
+    ]) {
+      expectClaim(String(result.doors[door]).startsWith("refused"), {
+        claimIds: ["VAL-003", "API-001"],
+        what: `${door} was accepted inside an installed consumer`,
+        detail: JSON.stringify(result.doors),
+      });
+    }
+
+    // And the consequence the refusals exist to prevent: a form that cannot be sent, for a field
+    // nothing renders. If any door had let the name through, this is what a page would show.
+    expectEqual(result.doors.canSubmitAfter, true, {
+      claimIds: ["VAL-003"],
+      what: "a form in an installed consumer became unsendable after a misspelled registration",
+      detail: JSON.stringify(result.doors),
+    });
+  },
+);
+
+battle(
+  {
+    claims: ["VAL-002", "API-001"],
+    title: "a section an Angular consumer disables leaves what it would send",
+    environments: ["angular"],
+  },
+  async (ctx) => {
+    expectClaim(existsSync(ANGULAR_DIST), {
+      claimIds: ["VAL-002"],
+      what: "the Angular build output is not there — run `npm run build:angular` before this tier",
+      detail: ANGULAR_DIST,
+    });
+
+    const result = runInConsumer();
+    ctx.log.note("a group disabled inside an installed consumer", result.section);
+
+    // The adapter's own `group` descriptor, disabled by the path the schema declares for it. A
+    // leaf-only implementation reaches the field and not the section, and the difference is only
+    // visible in what a submit would carry.
+    expectEqual(result.section.innerDisabled, true, {
+      claimIds: ["API-001"],
+      what: "disabling a section built from the Angular adapter's descriptors did not reach the field inside it",
+      detail: JSON.stringify(result.section),
+    });
+
+    expectEqual(result.section.payload, { plain: "p" }, {
+      claimIds: ["VAL-002"],
+      what: "a section a consumer disabled was still in what the form would send",
+      detail: JSON.stringify(result.section),
     });
   },
 );
