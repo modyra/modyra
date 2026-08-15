@@ -137,6 +137,7 @@ export function battle(meta, attack) {
       consoleOutput,
       message: failure.message,
       counts: log.counts(),
+      search: failure.search ?? attachments.search ?? null,
     });
     const file = writeReport(report);
 

@@ -54,6 +54,7 @@ export function buildReport({
   consoleOutput = [],
   message,
   counts = null,
+  search = null,
 }) {
   const id = failureId({ claimIds, message, seed, environment: environment.name });
   const file = join(FAILURES_DIR, `${id}.json`);
@@ -73,6 +74,7 @@ export function buildReport({
     expected,
     actual,
     counts,
+    search,
     diagnostics,
     console: consoleOutput,
     replayCommand: isReplayable({ schema, operations, minimizedOperations })
@@ -111,6 +113,14 @@ export function formatSummary(report) {
   ];
   if (report.divergence) {
     lines.push(`First divergence: ${report.divergence.path}`);
+  }
+  if (report.search) {
+    const { run, runs, shrinkAttempts } = report.search;
+    const reached = run === undefined || runs === undefined ? null : `${run + 1} of ${runs} run(s)`;
+    lines.push(
+      `Search: ${reached ?? "run index not recorded"}` +
+        (shrinkAttempts === undefined ? "" : `, minimized in ${shrinkAttempts} attempt(s)`),
+    );
   }
   const firstOperations = report.operations.slice(0, 8);
   if (firstOperations.length > 0) {

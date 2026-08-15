@@ -151,6 +151,15 @@ battle(
       const minimalOutcome = await runSequence(minimized, { log: ctx.log });
       throw new BattleBreak({
         claimIds: ["COL-001", "COL-002", "COL-004", "COL-007", "COL-008", "SUB-001", "SUB-002"],
+        // Which run this was, against how many were asked for. A property stops at its first
+        // divergence, so this is how much of the configured search actually happened.
+        search: {
+          run,
+          runs,
+          operations: operations.length,
+          minimizedTo: minimized.length,
+          shrinkAttempts: attempts,
+        },
         message:
           `run ${run} (seed ${seed}) diverged from the reference model at operation ${outcome.index} ` +
           `(${outcome.operation.type}); minimized to ${minimized.length} operation(s) in ${attempts} attempt(s)`,
