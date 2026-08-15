@@ -35,7 +35,7 @@ import { expectClaim, expectEqual } from "../../harness/assertions.mjs";
 const HERE = dirname(new URL(import.meta.url).pathname);
 const GUIDES = resolve(HERE, "..", "..", "..", "docs", "guides");
 
-const settled = () => new Promise((resolve) => setTimeout(resolve, 50));
+const settled = () => new Promise((resolve) => setTimeout(resolve, 70));
 
 /** A sentence claiming absent fields go to null, in whatever wording. */
 const CLAIMS_NULL = /absent[^.]{0,80}reset to `null`/i;
@@ -99,6 +99,77 @@ battle(
     expectClaim(CLAIMS_NULL.test("fields absent from the passed object are reset to `null`."), {
       claimIds: ["DYN-001"],
       what: "the pattern this battle searches for no longer matches the sentence it was written for",
+    });
+  },
+);
+
+battle(
+  {
+    claims: ["PER-002", "SUB-001"],
+    title: "reset puts back the initials and takes away everything a submit left",
+    environments: ["node"],
+  },
+  async (ctx) => {
+    // The same table's `reset()` row, which makes three promises in one line: *back to the schema
+    // initial values; clears touched/dirty and the last submit errors*. The third is the one nothing
+    // held — a server's refusal surviving a reset would leave a form that looks answered-for and
+    // is not.
+    const form = createForm({ a: field("start"), b: field("other") }, { devWarnings: false });
+    form.f.a.set("typed");
+    form.f.a.markAsTouched();
+    form.f.a.markAsDirty();
+    await settled();
+    await form.submit(() => [
+      { path: "a", message: "the server said no" },
+      { path: null, message: "and this too" },
+    ]);
+    await settled();
+
+    const before = {
+      value: form.getValue(),
+      touched: form.f.a.touched(),
+      dirty: form.f.a.dirty(),
+      onField: form.errorsFor("a")().map((each) => each.message),
+      onForm: form.errorsFor("")().map((each) => each.message),
+      lastSubmit: form.state.lastSubmitErrors().length,
+    };
+    ctx.log.note("before the reset", before);
+
+    // The control: all three things the row promises to clear are present, so clearing them means
+    // something.
+    expectEqual(
+      [before.touched, before.dirty, before.onField.length + before.onForm.length, before.lastSubmit],
+      [true, true, 2, 2],
+      {
+        claimIds: ["SUB-001"],
+        what: "the form did not carry what this battle needs it to carry before the reset",
+        detail: JSON.stringify(before),
+      },
+    );
+
+    form.reset();
+    await settled();
+    const after = {
+      value: form.getValue(),
+      touched: form.f.a.touched(),
+      dirty: form.f.a.dirty(),
+      onField: form.errorsFor("a")().map((each) => each.message),
+      onForm: form.errorsFor("")().map((each) => each.message),
+      lastSubmit: form.state.lastSubmitErrors().length,
+    };
+    form.destroy();
+    ctx.log.note("after the reset", after);
+
+    expectEqual(after, {
+      value: { a: "start", b: "other" },
+      touched: false,
+      dirty: false,
+      onField: [],
+      onForm: [],
+      lastSubmit: 0,
+    }, {
+      claimIds: ["PER-002", "SUB-001"],
+      what: "reset left behind a value, a flag, or an error a submit had put there",
     });
   },
 );
