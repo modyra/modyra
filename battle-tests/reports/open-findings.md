@@ -552,3 +552,31 @@ controls report `aria-invalid="true"`, 16 carry an error list and 15 of those ho
 say a value is wrong without saying why, and one list is empty. That page state is the one finding 23
 already covers — Plain paints a verdict before anyone has typed — so the counts are recorded here
 rather than filed twice.
+
+## 34. A date or a time the field could not read is erased without a word
+
+`browser/a-time-that-vanished.spec.ts` — **runs under `npm run battle:browser`.**
+
+Refusing is right, and the engine does it: `parseLocalizedDate` answers `null` for a day that does not
+exist, and `adversarial/validation/localized-dates.battle.test.mjs` holds that. This is what the
+person who typed it is told.
+
+Nothing. On blur the text is erased, the value becomes `null`, `aria-invalid` stays `"false"`, and no
+message appears in the control's error list or its supporting text.
+
+| typed | into | outcome |
+| --- | --- | --- |
+| `14:30` | timepicker | erased, value `null`, nothing said |
+| `banana` | timepicker | erased, value `null`, nothing said |
+| `not a date` | datepicker | erased, value `null`, nothing said |
+| `31/02/2026` | datepicker | erased, value `null`, nothing said |
+
+`14:30` is the one that matters most: it is how most of the world writes a time, the control's default
+locale is 12-hour, and the only way to discover that is to guess. `2:30 PM` and `2:30pm` both work and
+are asserted alongside, so this is about the erasure rather than about a control that takes nothing.
+
+Either repair closes it: keep the text so it can be corrected, or clear it and say why.
+
+Pairs with finding 23 from the other side. Plain paints "This field is required" before anyone has
+typed, and says nothing when someone types something it cannot use — an error where there is none, and
+none where there is.
