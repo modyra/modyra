@@ -3592,3 +3592,40 @@ v2/duplicate-layout-reference                           strict.ok=false, UNKNOWN
 v3/keyed-rows · v3/placement                            strict.ok=true
 v3/nested-collections · v3/positional-nesting           strict.ok=true — and the counts above
 ```
+
+## Checked and recorded: the order only `keys()` can keep
+
+`adversarial/collections/the-order-only-keys-can-keep.battle.test.mjs` — green, and new.
+
+The feature tour promises it in four words: `form.f.lines.keys()` gives *declared keys, in declaration
+order*. It is kept, including for the case that breaks it everywhere else:
+
+```
+rows declared "10", "2", "1"
+  keys()                          ["10","2","1"]     the documented order
+  Object.keys(getValue().rows)    ["1","2","10"]     JavaScript's, for integer-like keys
+```
+
+**Not a defect.** A record's value is a plain object and JavaScript orders integer-like keys ascending
+whatever the insertion order was; `COL-004` promises numeric keys stay *keys* rather than becoming
+positions, and they do. It is a **trap**: both answers are correct and only one is the documented one,
+so a consumer who iterates the value instead of `keys()` gets a different order and nothing says so —
+including the server, which receives the JSON.
+
+Held so the promise stays where it is: if `keys()` ever started agreeing with the object, the
+documented order would be the one that was lost.
+
+Three order decisions measured alongside, none of them stated anywhere else:
+
+```
+removing a row          the others keep their order
+declaring it again      it arrives at the END — a key that comes back is a new declaration
+renaming a row          it keeps its place — a rename changes a name, not a position
+```
+
+**And one measured without a promise behind it, so not filed.** `getValue()`'s own key order follows
+the schema for leaves (`z, y, x` declared gives `z, y, x`) and does not when a group or a collection
+is among them: `a, rows, b` gives `rows, a, b`, and `a, sect, b, list` gives `list, a, b, sect` —
+collections first, groups last. Nothing documents the value object's key order, and JSON object order
+is not semantically meaningful, so this is a surprise rather than a breach. It is worth knowing for
+anyone diffing a payload against the document it came from.
