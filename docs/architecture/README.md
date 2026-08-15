@@ -86,6 +86,7 @@ absent section reads as an oversight, and "no security impact" is a finding.
 - [ADR 0068: A draft does not go backwards](0068-a-draft-does-not-go-backwards.md) — a tab that had been open a while replaced a newer draft and stamped it with an earlier time, so the one field a later reader could use said the opposite
 - [ADR 0069: An unreadable condition does not open](0069-an-unreadable-condition-does-not-open.md) — a misspelled operator evaluated to `true` and showed a section to everyone, and a condition's pattern carried no cost gate
 - [ADR 0070: A server is asked about a value the field accepts](0070-a-server-is-asked-about-a-value-the-field-accepts.md) — a tax id typed group by group sent four requests for values `minLength(11)` already rejects, and `when` loses because it restates a bound the field declared
+- [ADR 0071: A document is answered the same in both its shapes](0071-a-document-is-answered-the-same-in-both-its-shapes.md) — the tree parser dropped fields in silence where the flat list reported them, and `strict` approved a document whose only field it had discarded
 
 ## Security-relevant records
 
