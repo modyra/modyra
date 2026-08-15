@@ -71,21 +71,27 @@ export function renderFileField(
   applyPart(fileList, definition.parts.fileList);
   const placeholder = el("span", "mdy-file-placeholder");
   setText(placeholder, messages.fileNoneSelected);
+  const rejected = el("div") as HTMLDivElement;
+  applyPart(rejected, definition.parts.rejected);
   const clear = el("button", "mdy-file-clear") as HTMLButtonElement;
   clear.type = "button";
   setText(clear, messages.fileClearSelection);
   const info = el("div", "mdy-file-info") as HTMLDivElement;
-  info.append(fileList, placeholder, clear);
+  info.append(fileList, placeholder, clear, rejected);
   content.append(browse, info);
   dropzone.append(control, content);
   shell.root.insertBefore(dropzone, shell.description);
 
   const selected = reactivity.signal<readonly File[]>([]);
+  // What the last pick turned away. Held separately from the value because it is not part of it:
+  // the field is valid holding what it accepted, and this is the answer to what the person just did.
+  const turnedAway = reactivity.signal<readonly File[]>([]);
 
   function commit(candidates: readonly File[]): void {
     const transition = fileSelectionTransition(candidates, selectionOptions);
+    turnedAway.set(transition.rejected);
     if (transition.value === undefined) return;
-    const next = transition.value === null ? [] : (Array.isArray(transition.value) ? transition.value : [transition.value]);
+    const next = transition.value ?? [];
     selected.set(next);
     handle.set(next);
     handle.markAsDirty();
@@ -98,6 +104,7 @@ export function renderFileField(
   clear.addEventListener("click", () => {
     const transition = clearFileSelection<File>();
     selected.set([]);
+    turnedAway.set([]);
     control.value = "";
     handle.set(transition.value ?? []);
     handle.markAsDirty();
@@ -119,6 +126,7 @@ export function renderFileField(
 
   const effectRef = reactivity.effect(() => {
     const files = selected();
+    const refused = turnedAway();
     // The state-driven half of the contract. `definition.parts` is static — classes and shape — so
     // on its own it never said the field was invalid, required, disabled or described by its
     // errors. Merged into the static part rather than applied after it, because a second
@@ -140,6 +148,8 @@ export function renderFileField(
     clear.disabled = handle.disabled() || files.length === 0;
     clear.hidden = files.length === 0;
     placeholder.hidden = files.length > 0;
+    setText(rejected, refused.length === 0 ? "" : messages.fileRejected(refused.map((file) => file.name)));
+    rejected.hidden = refused.length === 0;
     fileList.replaceChildren();
     for (const file of files) {
       const item = el("li") as HTMLLIElement;

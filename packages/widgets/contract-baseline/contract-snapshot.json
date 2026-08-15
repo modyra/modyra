@@ -3361,6 +3361,17 @@
           ],
           "states": []
         },
+        "rejected": {
+          "element": "status",
+          "parent": "dropzone",
+          "optional": true,
+          "repeated": false,
+          "role": "status",
+          "classes": [
+            "mdy-file-rejected"
+          ],
+          "states": []
+        },
         "supportingText": {
           "element": "text",
           "parent": "root",

@@ -1,9 +1,10 @@
 import { mdyPart } from "../mdy-part.js";
 import { html, nothing, type PropertyDeclarations } from "lit";
 import { type MdyFieldHandle } from "@modyra/core";
+import { MDY_WIDGET_CONTRACTS, clearFileSelection, fileSelectionTransition } from "@modyra/widgets";
 import { MdyFieldElement, mdyIcon } from "../base.js";
 
-export class MdyFileFieldElement extends MdyFieldElement<File | File[] | null> {
+export class MdyFileFieldElement extends MdyFieldElement<readonly File[] | null> {
   static override properties: PropertyDeclarations = {
     multiple: { type: Boolean },
     accept: { type: String },
@@ -22,18 +23,31 @@ export class MdyFileFieldElement extends MdyFieldElement<File | File[] | null> {
   }
 
   private _dragOver = false;
+  /** What the last pick turned away — not part of the value, and the only record that it happened. */
+  private _rejected: readonly File[] = [];
 
   protected override get useWrapper(): boolean {
     return false;
   }
 
-  protected override renderControl(handle: MdyFieldHandle<File | File[] | null>): unknown {
+  protected override renderControl(handle: MdyFieldHandle<readonly File[] | null>): unknown {
     const current = handle.value();
-    const files = current === null ? [] : Array.isArray(current) ? current : [current];
-    const pick = (picked: File[]): void => {
-      handle.set(this.multiple ? picked : (picked[0] ?? null));
+    const files: readonly File[] = current ?? [];
+    // The same policy the other renderers apply, from the one place that holds it: which candidates
+    // the accept tokens take, how many, and what the field ends up holding. Choosing here instead
+    // meant an element that ignored `accept` on a drop and wrote a bare `File`, which is not the
+    // shape `MDY_VALUE_CONTRACTS.file` declares.
+    const pick = (picked: readonly File[]): void => {
+      const transition = fileSelectionTransition(picked, {
+        accept: this.accept,
+        multiple: this.multiple,
+      });
+      this._rejected = transition.rejected;
+      this.requestUpdate();
+      if (transition.value === undefined) return;
+      handle.set(transition.value);
       handle.markAsDirty();
-      handle.markAsTouched();
+      if (transition.touched) handle.markAsTouched();
     };
     return html`
       <div
@@ -88,7 +102,8 @@ export class MdyFileFieldElement extends MdyFieldElement<File | File[] | null> {
                         @click=${(e: Event) => {
                           e.preventDefault();
                           const rest = files.filter((_, j) => j !== i);
-                          handle.set(this.multiple ? rest : null);
+                          this._rejected = [];
+                          handle.set(rest.length === 0 ? (clearFileSelection<File>().value ?? []) : rest);
                           handle.markAsDirty();
                         }}
                       >
@@ -98,6 +113,11 @@ export class MdyFileFieldElement extends MdyFieldElement<File | File[] | null> {
                   )}
                 </ul>`}
           </div>
+          ${this._rejected.length === 0
+            ? nothing
+            : html`<div ${mdyPart(MDY_WIDGET_CONTRACTS.file.parts.rejected)}>
+                ${this.messages.fileRejected(this._rejected.map((file) => file.name))}
+              </div>`}
         </div>
       </div>
     `;

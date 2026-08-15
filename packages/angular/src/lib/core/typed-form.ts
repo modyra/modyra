@@ -379,6 +379,10 @@ export class MdyTypedForm<S extends MdyFormSchema>
       set: (v: unknown): void => state.value.set(v),
       markAsTouched: (): void => state.touched.set(true),
       markAsDirty: (): void => state.dirty.set(true),
+      // Forwarded to the engine rather than kept beside it: an entry the control could not read is
+      // folded into the field's errors, and a copy held here would be a verdict the form does not
+      // count.
+      reportEntry: (problem: string | null): void => this._adapter.reportEntry(path, problem),
     };
     registerHandleForm(handle, this);
     return handle;

@@ -584,7 +584,7 @@ export const MDY_CANONICAL_AT_REST: Readonly<Partial<Record<MdyWidgetKind, MdyCa
     }),
     file: Object.freeze({
       parts: Object.freeze(["root", "label", "dropzone", "control", "content"]),
-      optional: Object.freeze(["supportingText", "requiredMarker", "fileList", "fileItem", "clear", "errors", "errorItem"]),
+      optional: Object.freeze(["supportingText", "requiredMarker", "fileList", "fileItem", "clear", "rejected", "errors", "errorItem"]),
       relationships: Object.freeze([
         { from: "label", attribute: "for", to: "control" },
       ] as readonly MdyCanonicalRelationship[]),

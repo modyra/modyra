@@ -87,6 +87,9 @@ export const PARENT_CANDIDATES: Readonly<Record<string, readonly string[]>> = Ob
   // Clearing empties the whole field rather than one row, so the button sits beside the list, not
   // inside an item. Containment is transitive, so a renderer may nest it further.
   clear: ["dropzone"],
+  // What was refused belongs beside what was kept, not inside the list of it: the list holds the
+  // field's value, and a refused file is precisely what did not become part of that value.
+  rejected: ["dropzone"],
   errorItem: ["errors"],
 });
 /** Parts an adapter must always render — the control, and whatever physically holds it. */

@@ -193,6 +193,15 @@ export interface MdyFormAdapter<T extends object, TSubmit = Partial<T>> {
     ) => Promise<MdyFormError[] | void> | MdyFormError[] | void,
   ): Promise<void>;
   markAllTouched(): void;
+  /**
+   * What a control could not read out of its own text, said to the form.
+   *
+   * A field handle carries this, and a handle is built over an adapter — so an adapter that cannot
+   * receive the report leaves the renderer holding a verdict the form does not count. It replaces
+   * the previous report for that field and is cleared with `null`; it is not a validator and no key
+   * can withdraw it.
+   */
+  reportEntry(name: string, problem: string | null): void;
   buildSubmitEvent(value: TSubmit): MdyFormSubmitEvent<T, TSubmit>;
   patchValue(partial: Partial<T>): void;
   setValue(value: T): void;

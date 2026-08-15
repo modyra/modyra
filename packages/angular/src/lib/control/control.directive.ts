@@ -606,6 +606,7 @@ export abstract class MdyBaseControl<TValue = unknown> implements OnInit {
         set: (value) => this.setValue(value as TValue),
         markAsTouched: () => this.markAsTouched(),
         markAsDirty: () => this.markAsDirty(),
+        reportEntry: (problem: string | null) => this.reportEntry(problem),
       };
       // The *owner* registry, not the form one: `observerFor` reads this to decide which runtime a
       // controller should observe the handle through. Registered in the wrong one, the controller
@@ -638,6 +639,20 @@ export abstract class MdyBaseControl<TValue = unknown> implements OnInit {
 
   protected markAsDirty(): void {
     this.fieldState().dirty.set(true);
+  }
+
+  /**
+   * An entry the control could not read, said to the form.
+   *
+   * Resolved against the same form the state came from — a path means nothing without its form —
+   * and silently ignored when the control is not bound, which is the state a detached control is in
+   * before its name resolves.
+   */
+  protected reportEntry(problem: string | null): void {
+    const name = this.effectiveName();
+    if (!name) return;
+    const source = this._formOfHandle() ?? this.adapter;
+    source.reportEntry(name, problem);
   }
 
   /** Generate a unique ID for template label/input association. */

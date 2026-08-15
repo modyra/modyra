@@ -47,6 +47,11 @@ describe("provideModyraLocale", () => {
     expect(dateLocale.locale).toBe("fr-CA");
   });
 
+  /** What a message that does not take a bare string is called with. */
+  const SAMPLE_ARGUMENTS: Readonly<Record<string, readonly unknown[]>> = {
+    fileRejected: [["x"]],
+  };
+
   it("every preset covers the full message interface", () => {
     const presets: ReadonlyArray<MdyI18nMessages> = [
       MDY_I18N_MESSAGES_IT,
@@ -57,7 +62,10 @@ describe("provideModyraLocale", () => {
     for (const preset of presets) {
       for (const [key, value] of Object.entries(preset)) {
         if (typeof value === "function") {
-          expect(value("x")).toContain("x");
+          // Most of these take a string. The ones that do not still have to use what they are
+          // given, which is what this checks — so the argument comes from the key rather than from
+          // the assumption that every message interpolates a single word.
+          expect(value(...(SAMPLE_ARGUMENTS[key] ?? ["x"]))).toContain("x");
         } else {
           expect(typeof value).toBe("string");
           expect((value as string).length).toBeGreaterThan(0);
