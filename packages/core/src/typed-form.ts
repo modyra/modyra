@@ -1017,7 +1017,57 @@ export abstract class MdyTypedFormBase<
    * schema's initial values — ready for an API PATCH request.
    */
   getChanges(): MdyFormPatch<S> {
-    return this._flatToPatch(this._adapter.getChanges());
+    return this._flatToPatch(this._wholeArraysIn(this._adapter.getChanges()));
+  }
+
+  /**
+   * A positional collection that changed is carried whole.
+   *
+   * A change set is documented as ready for a PATCH, and for a keyed collection it composes into
+   * something a server can act on: `{ rows: { c: … } }` names the row. A positional one was a
+   * *compacted* list of the rows that changed, with nothing saying where they were — editing index
+   * 0, 1 or 2 produced the same body, and editing 0 and 2 read as 0 and 1. A server applying it by
+   * position wrote the wrong row in two cases out of three.
+   *
+   * An index *is* the identity of a positional row, so a partial list is not a partial PATCH — it is
+   * an ambiguous one. The whole list is the only answer that means something, and it is the shape
+   * `MdyFormPatch` already declares for an array: whole-item, where a record's branch is
+   * deep-partial.
+   *
+   * The comparison is untouched and stays right: a row is compared against its own initial, not
+   * against whatever now sits at its index, so removing a row does not report every row after it as
+   * changed. What is added here is the rows that did *not* change, which is what makes the position
+   * of the ones that did readable.
+   */
+  private _wholeArraysIn(changed: Record<string, unknown>): Record<string, unknown> {
+    const keys = Object.keys(changed);
+    if (keys.length === 0) return changed;
+    const carried = new Set<string>();
+    for (const key of keys) {
+      // The pattern is built alongside the concrete path: a collection's *next* segment is a row
+      // key, whatever it spells, so it becomes `*`. Reading it off the segment would miss
+      // `orders.a.lines` — `a` is a key that does not look like one — and would misread a group
+      // whose name happens to be a number.
+      let pattern = "";
+      let concrete = "";
+      for (const segment of key.split(".")) {
+        const rowKey = this._arrayPaths.has(pattern) || this._recordPaths.has(pattern);
+        pattern = pattern === "" ? segment : `${pattern}.${rowKey ? "*" : segment}`;
+        concrete = concrete === "" ? segment : `${concrete}.${segment}`;
+        if (this._arrayPaths.has(pattern)) carried.add(concrete);
+      }
+    }
+    if (carried.size === 0) return changed;
+    const whole: Record<string, unknown> = { ...changed };
+    for (const [path, held] of Object.entries(this._adapter.getValue())) {
+      // Under the collection, never the collection itself: a collection registers a field at its own
+      // path so its errors have somewhere to surface, and that field holds `null`. Carrying it would
+      // put a scalar where the rows go.
+      for (const prefix of carried) {
+        if (path.startsWith(`${prefix}.`)) whole[path] = held;
+      }
+    }
+    return whole;
   }
 
   /** Reactive flat field paths (dotted for groups) — devtools/inspection. */
