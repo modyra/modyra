@@ -3257,3 +3257,60 @@ verb is "empty", so rewording the sentence satisfies it rather than breaking it.
 `setValue` on a non-object, the security policy naming its three keys, the sanitiser naming its closed
 set, the initial-value type, `buildFlatFormSchema`, `createForm`, the reactive-argument message, and
 the two path refusals which explain rather than instruct. Two do not: this and 80.
+
+## 82. A rule that cannot be compiled, and a strict parser that approves it
+
+`adversarial/dynamic-contract/a-rule-that-cannot-be-compiled.battle.test.mjs` — 3 green, 1 red.
+**S1** under DYN-003 and VAL-004.
+
+`validators.pattern` is a string in a document, and a string is not always a regular expression. The
+engine knows — the layer that compiles it skips an unparseable source and says so:
+
+```
+buildDynamicValidators({ pattern: "[" })       0 validators
+                                               [modyra] Skipped dynamic pattern validator: invalid RegExp source "["
+buildDynamicValidators({ pattern: "^a+$" })    1 validator, nothing said            the control
+```
+
+The parser above it does not:
+
+```
+parseDynamicForm({ …, validators: { pattern: "[" } })
+  diagnostics   []
+  strict.ok     true
+  kept          { "pattern": "[" }        the rule survives into the output
+```
+
+So a document whose pattern cannot be compiled **passes the gate an author runs before saving**, and
+produces a field with no pattern rule on it. What the author is told at the moment they could still
+fix it is nothing; what they are told later is a `console.warn` in development, which production
+removes — and a rule they believe protects their data is not there.
+
+Both doors are in the battle because the finding is the difference between them: the lower one knows,
+so the parser could.
+
+Sibling of finding 76 — the same operand, the other way of being unusable. That one was a pattern that
+runs forever; this one is a pattern that never runs.
+
+**Two more lax answers measured alongside and not filed**, because neither loses a rule the author
+wrote: `validators: { minLength: -5 }` is kept and compiled (a bound nothing can fail), and
+`validators: { nonsense: 1 }` is kept in the output and compiles to nothing. The second is finding
+60's family on a smaller surface — an unknown key ignored — and is worth folding into any repair that
+reaches here.
+
+## Checked and clean: every parser diagnostic says where, not only what
+
+Swept while looking for the above. Each carries the field's name, a JSON pointer, and the specific
+problem:
+
+```
+MDY_DYNAMIC_UNKNOWN_KIND         /fields/1   Dropped dynamic field "bad" with unknown kind "wormhole".
+MDY_DYNAMIC_DUPLICATE_NAME       /fields/1   Dropped duplicate dynamic field name "dup".
+MDY_DYNAMIC_UNSAFE_NAME          /fields/0   Dropped dynamic field "__proto__": name is reserved…
+MDY_DYNAMIC_OPTIONS_REQUIRED     /fields/0   Dropped dynamic field "sel": kind "select" requires…
+MDY_DYNAMIC_INVALID_FIELD        /fields/0   Dropped dynamic field without a name: {…}
+MDY_DYNAMIC_UNSUPPORTED_VERSION  /fields     Unsupported dynamic form config version 99 — expected 1, 2 or 3.
+```
+
+An author reading any of them knows which field and why. The gap is not in what they say — it is the
+one that is never said, above.
