@@ -2860,6 +2860,20 @@ runtime rather than to the engine.
 240 generated sequences × 6 runtimes across three fixed seeds — 1,440 drives, no divergence
 ```
 
+**Widened to history**, which is where a reactivity is asked to re-run the most at once and where two
+schedulers are most likely to differ. The generator's own histogram over 120 sequences confirms the
+widening is real rather than nominal:
+
+```
+record.upsert 25.3%  field.set 13.9%  mount 10.9%  unmount 8.8%  record.remove 8.5%
+record.patch 5.5%  record.rename 5.4%  UNDO 4.6%  record.setAll 3.1%  field.touch 2.8%
+reset 2.5%  field.disable 2.5%  field.dirty 2.2%  REDO 2.2%  field.enable 1.8%
+```
+
+Green there too. Checking the histogram rather than trusting the flag is the same discipline the draft
+campaigns needed: a `withHistory` that drew no undo would have widened nothing while reading as if it
+had.
+
 Two controls, because a green cross-product can mean nothing:
 
 - **every adapter is the one it claims to be** (`reactivity.kind === name`). A runtime that quietly
