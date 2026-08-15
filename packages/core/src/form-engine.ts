@@ -67,6 +67,35 @@ export type { MdyCollectionHost } from "./contracts/collection-host.js";
 let _legacyValidatorKey = 0;
 
 /** Names a wrong-shaped argument in a message, without printing what it holds. */
+/**
+ * A flat write's entries, in the order their paths are numbered.
+ *
+ * A positional collection grows one row at a time, so the order its cells arrive in decides whether
+ * they land. Object key order is the order a JSON document happened to be written in, and a draft
+ * rewritten by anything else can hand `tags.10` before `tags.2` — after which the list has a row for
+ * the first and none for the second. Sorting by segment, numerically where a segment is a number,
+ * makes a write's effect the same whatever order it was serialised in.
+ */
+function inPathOrder(
+  value: Partial<Record<string, unknown>>,
+): Array<[string, unknown]> {
+  return Object.entries(value).sort(([left], [right]) => {
+    const a = left.split(".");
+    const b = right.split(".");
+    for (let i = 0; i < Math.max(a.length, b.length); i += 1) {
+      const one = a[i];
+      const two = b[i];
+      if (one === undefined) return -1;
+      if (two === undefined) return 1;
+      if (one === two) continue;
+      const asNumbers = Number(one) - Number(two);
+      if (Number.isFinite(asNumbers) && asNumbers !== 0) return asNumbers;
+      return one < two ? -1 : 1;
+    }
+    return 0;
+  });
+}
+
 function shapeOf(value: unknown): string {
   if (value === null) return "null";
   if (Array.isArray(value)) return "an array";
@@ -1068,7 +1097,7 @@ export class MdyFormEngine
   }
 
   patchValue(partial: Partial<Record<string, unknown>>): void {
-    for (const [key, val] of Object.entries(partial)) {
+    for (const [key, val] of inPathOrder(partial)) {
       if (!this._offerToGate(key, val)) continue;
       const rec = this._getOrCreate(key);
       rec.state.value.set(val);
@@ -1077,7 +1106,7 @@ export class MdyFormEngine
 
   setValue(value: Record<string, unknown>): void {
     assertWholeValue(value, "setValue");
-    for (const [key, val] of Object.entries(value)) {
+    for (const [key, val] of inPathOrder(value)) {
       if (val === undefined) continue;
       if (!this._offerToGate(key, val)) continue;
       const rec = this._getOrCreate(key);

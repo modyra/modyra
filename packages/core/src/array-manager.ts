@@ -169,12 +169,27 @@ export class MdyArrayManager implements MdyNestedCollection {
         }
         const count = this._deps.rx.untracked(() => this._rowCountSig());
         if (index < count) return;
+        // One row at a time, and only the next one. An index past the end names a row *and every row
+        // between*, none of which the write carries a value for: `tags.5` on a list of one made five
+        // entries nobody typed, and the number came from storage, which anything on the origin can
+        // write. A large enough number stopped the form opening at all.
+        //
+        // A write that legitimately carries a list carries every index in it, and `patchValue`
+        // applies a flat write in path order — so the rows arrive one after another and each is the
+        // next.
+        if (index > count) {
+          if (MDY_DEV) {
+            console.warn(
+              `[modyra] Ignored "${name}": "${this._deps.path}" has ${count} row(s), and this path ` +
+              `names row ${index} — a list grows to receive the next row, not to reach a number.`,
+            );
+          }
+          return;
+        }
         // The count first: the rows are in play before their fields are written, or the gate this
         // very callback exists to open would refuse the registration it is making.
         this._rowCountSig.set(index + 1);
-        for (let i = count; i <= index; i += 1) {
-          this._registerNode(`${this._deps.path}.${i}`, this._deps.item, undefined, `${this._deps.path}.${i}`, this._deps.sections ?? []);
-        }
+        this._registerNode(`${this._deps.path}.${index}`, this._deps.item, undefined, `${this._deps.path}.${index}`, this._deps.sections ?? []);
       },
       // A whole-value write is a statement of which rows there are. Read as such it is the only
       // thing that can say a row *ceased* to exist: the engine writes flat paths and sets an absent
