@@ -1266,30 +1266,40 @@ Asking the compiler rather than the parser is the point. The parser sees a docum
 wrote; Studio is where it is still an editing session and a diagnostic is a sentence rather than a bug
 report.
 
-## 54. A claim that outlived one reset and not the other
+## 54. Withdrawn — one rule, and the sentence ADR 0044 was missing
 
-`regressions/a-claim-that-outlived-one-reset.battle.test.mjs` — 1 red, 1 green.
+Filed as "the same claim answers differently depending on whether a row happened to exist in
+between". The measurement was right and the reading was wrong: the engine has one rule, and the two
+sequences differ because their histories differ.
 
-Found at **run 4,973 of 25,000**. Three thousand runs per property were not enough; the `search` field
-added in finding 40 is what says so.
+The rule, measured across six sequences and now pinned in
+`regressions/a-claim-and-the-row-that-takes-it.battle.test.mjs` (3 green):
 
-A consumer may disable a path before any row occupies it. The engine holds the claim, applies it when
-a row arrives, and ADR 0044 makes it belong to that row so it travels when the row does — all asserted
-as the green control.
+> A waiting claim is **taken by the first row that arrives** at the path. From then on it belongs to
+> that row: it travels when the row moves, and it ends when the row ends.
 
-What a `reset` does to it depends on something the consumer cannot see:
+| | disabled after |
+| --- | --- |
+| `setAll` one row | that row |
+| `setAll` one, then one again | still that row — the row survived |
+| `setAll` one, then two | still row 0 |
+| `setAll` one, then empty | nothing — the row ended, and so did the claim |
+| `setAll` one, empty, one again | nothing — a new row does not inherit it |
+| `setAll` one, `remove`, `push` | nothing |
+| claim taken by row 0, then `insert(0)` | **row 1** — it moved with its row |
 
-```
-setDisabled("items.0.note"), reset(), insert(0)              → the row arrives disabled
-setDisabled("items.0.note"), setAll([…]), reset(), insert(0) → the row arrives enabled
-```
+`reset` was never the discriminator; a `setAll` that empties the collection does the same thing.
 
-The only difference is whether a row existed in between long enough for the claim to land on one. A
-claim never applied survives the reset; one applied once and then reset away is discarded. The
-consumer said the same sentence both times.
+The last row of that table is what makes the rule falsifiable rather than descriptive, and it is why
+the assertion now is stronger than the one it replaces: it fails if a waiting claim stops being taken,
+if it stops travelling, or if it stops ending.
 
-The pair is what makes it a finding rather than a preference: neither behaviour is wrong on its own,
-and they cannot both be right for one sentence.
+**Found by the fixer, from their side, after I had reported it.** The sentence about being *taken* is
+the half ADR 0044 did not say, and it is now an amendment there.
+
+**A consequence for depth:** this was the only class capping the `arrays` campaign at run ~4,973.
+Since it is not a defect, the cap lifts by fixing the assertion rather than the engine — which is now
+done.
 
 ## The generative tier, at depth
 
