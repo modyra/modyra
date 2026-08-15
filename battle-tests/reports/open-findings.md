@@ -5844,7 +5844,7 @@ already holds rather than a document it is reading.
 
 ## Checked and clean: what a page actually sends
 
-`browser/what-a-page-actually-sends.spec.ts` — 5 green.
+`browser/what-a-page-actually-sends.spec.ts` — 6 green.
 
 SUB-001 is *"submission contains no undeclared path introduced by rendering"* and VAL-002 is
 *"disabled values are retained in edit state and excluded from submission"*. Both are asserted at
@@ -5902,6 +5902,24 @@ prefixed  widget ids ["one-email","one-note"]  sent {"email":"a@b.c","note":"hel
 *did* move the ids before asserting it did not move the payload — otherwise agreement would say
 nothing.
 
-All five claims hold where they are actually spent. The first test mounts every kind at once
+And the one a user causes by being impatient:
+
+```
+a submit action that takes 600ms
+  mid-flight   submitting true, the button disabled
+  two more presses during it   still one payload
+  once it finishes             submitting false, the button enabled
+  a deliberate second submit   two payloads
+```
+
+The window closes while the action runs and reopens when it ends. The last two lines are the control
+that matters: a form that disabled its button and never re-enabled it would pass everything above
+them.
+
+A synchronous action was measured first and sent five payloads for five clicks, which is right — five
+deliberate submissions are five submissions. The question only exists for an action that is still
+running, which is why the host gained a submit that takes its time.
+
+All six claims hold where they are actually spent. The first test mounts every kind at once
 precisely so that a key any renderer adds for any of them has somewhere to show up, and the third
 asserts both rows are in the payload before the removal, so the absence afterwards is the removal.

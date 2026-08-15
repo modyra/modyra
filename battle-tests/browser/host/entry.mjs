@@ -109,6 +109,34 @@ window.battle = {
     mounted.get(id).handle.form.f.rows.upsert(key, value);
   },
 
+  /**
+   * Mount with a submit action that takes `ms` to answer.
+   *
+   * A synchronous action never leaves a window for a second press to arrive in, and a slow network is
+   * exactly when somebody presses again — so the question "does this submit twice" can only be asked
+   * of an action that is still running.
+   */
+  mountSlowSubmit(id, fields, ms) {
+    const host = document.createElement("section");
+    host.dataset.form = id;
+    document.querySelector("#stage").append(host);
+    const submitted = [];
+    try {
+      const handle = mountMdyForm(host, fields, {
+        onSubmit: recording(submitted, () => new Promise((resolve) => setTimeout(() => resolve(null), ms))),
+      });
+      mounted.set(id, { handle, host, submitted });
+      return { mounted: true };
+    } catch (error) {
+      return { mounted: false, message: String(error?.message ?? error) };
+    }
+  },
+
+  /** Whether the form is in the middle of a submission. */
+  submittingOf(id) {
+    return mounted.get(id).handle.form.state.submitting();
+  },
+
   /** Take a field out of play, the way a binding does, so a spec can see what submission does with it. */
   disable(id, path) {
     mounted.get(id).handle.form.setDisabled(path, () => true);

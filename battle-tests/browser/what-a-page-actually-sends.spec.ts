@@ -265,3 +265,57 @@ test("an id prefix scopes the page and not the payload", async ({ page }) => {
   expect(bare.sent, JSON.stringify(seen)).toEqual({ email: "a@b.c", note: "hello" });
   expect(prefixed.sent, JSON.stringify(seen)).toEqual({ email: "a@b.c", note: "hello" });
 });
+
+test("a form in the middle of submitting does not send again, and does once it is done", async ({ page }) => {
+  // A synchronous action leaves no window for a second press to land in, so the question can only be
+  // asked of one that is still running — and a slow network is exactly when somebody presses again.
+  const id = "slowsubmit";
+  const mounted = await page.evaluate(
+    (mountId) => (window as never as {
+      battle: { mountSlowSubmit(id: string, f: unknown[], ms: number): { mounted: boolean } };
+    }).battle.mountSlowSubmit(mountId, [{ name: "a", kind: "text", label: "A" }] as never, 600),
+    id,
+  );
+  expect(mounted, JSON.stringify(mounted)).toMatchObject({ mounted: true });
+  await page.waitForTimeout(220);
+
+  await page.locator(`[data-form="${id}"] input`).fill("x");
+  await page.waitForTimeout(150);
+  const button = page.locator(`[data-form="${id}"] button`).last();
+
+  await button.click();
+  await page.waitForTimeout(130);
+
+  // The window is open: the form says so and the control says so.
+  const midFlight = await page.evaluate((mountId) => ({
+    submitting: (window as never as { battle: { submittingOf(id: string): boolean } }).battle.submittingOf(mountId),
+    disabled: (document.querySelector(`[data-form="${mountId}"] button:last-of-type`) as HTMLButtonElement | null)?.disabled ?? null,
+  }), id);
+  expect(midFlight, JSON.stringify(midFlight)).toEqual({ submitting: true, disabled: true });
+
+  // Press again, twice, while it is still running.
+  await button.click({ force: true }).catch(() => undefined);
+  await button.click({ force: true }).catch(() => undefined);
+  await page.waitForTimeout(950);
+
+  const during = await page.evaluate(
+    (mountId) => (window as never as { battle: { submittedBy(id: string): unknown[] } }).battle.submittedBy(mountId),
+    id,
+  );
+  expect(during.length, JSON.stringify(during)).toBe(1);
+
+  // The control, and the half that a permanently disabled button would fail: the window closes.
+  const afterwards = await page.evaluate((mountId) => ({
+    submitting: (window as never as { battle: { submittingOf(id: string): boolean } }).battle.submittingOf(mountId),
+    disabled: (document.querySelector(`[data-form="${mountId}"] button:last-of-type`) as HTMLButtonElement | null)?.disabled ?? null,
+  }), id);
+  expect(afterwards, JSON.stringify(afterwards)).toEqual({ submitting: false, disabled: false });
+
+  await button.click().catch(() => undefined);
+  await page.waitForTimeout(950);
+  const deliberate = await page.evaluate(
+    (mountId) => (window as never as { battle: { submittedBy(id: string): unknown[] } }).battle.submittedBy(mountId),
+    id,
+  );
+  expect(deliberate.length, JSON.stringify(deliberate)).toBe(2);
+});
