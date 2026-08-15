@@ -7670,6 +7670,15 @@ somebody can act on without reading a report.
 
 ## 138. A button wearing a combobox's attributes
 
+**Closed — verified green** (`70220fce`). The contract was wrong twice: `MDY_POPUP_OPENERS` declared
+no role for this kind, and the projection that would have applied one spread **only its attributes**
+— `{role, attributes}` with the role dropped on the way — so a correct declaration would still have
+produced the wrong markup. Falsified where a combobox is more fragile than a button: both renderers
+give the opener `role="combobox"` with the accessible name `Toppings`, keep it in the tab order, still
+open it on Enter, and the two states are now legitimate on it. `aria-controls` resolves in the
+renderer that sets it; the other's absence is finding 124, unchanged.
+
+
 **Severity** S2 · **Classification** contract omission with a symptom in every renderer · **Spec**
 `browser/a-state-only-a-widget-may-report.spec.ts` (red, both renderers) · **Claims** A11Y-002
 
