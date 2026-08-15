@@ -161,6 +161,17 @@ window.battleLit = {
     mounted.get(id).form.setDisabled(path, () => true);
   },
 
+  /**
+   * Put a field out of play without hiding it, the way an application makes one read-only.
+   *
+   * Readonly and disabled are different states with different promises — a read-only field is still
+   * submitted — and asking one renderer without being able to ask the other makes a silence look
+   * like an answer.
+   */
+  readonly(id, path) {
+    mounted.get(id).form.setReadonly(path, () => true);
+  },
+
   valueOf(id) {
     return mounted.get(id).form.getValue();
   },
