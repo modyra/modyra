@@ -81,6 +81,14 @@ export function createFieldRecord(
   beforeWrite?: (value: unknown) => unknown,
   /** Says what a caller could not have worked out from the field alone. Silent in production. */
   warn: (message: string) => void = () => undefined,
+  /**
+   * What something above this field says about it.
+   *
+   * A group, a collection or a row put out of play takes what it contains with it — the rule
+   * `group(children, { when })` already follows from a schema. A field composes it rather than being
+   * told, so a row declared after the sentence was spoken is covered by it too.
+   */
+  outerVerdict: MdySignal<MdyInteractivity> = () => "enabled",
 ): FieldRecord {
   const rawValue = rx.signal<unknown>(initialValue);
   const value: MdyWritableSignal<unknown> = beforeWrite
@@ -128,13 +136,14 @@ export function createFieldRecord(
   // a field the form is not asking about cannot also be a field it is asserting an answer for. A
   // field out of play is disabled for the same reason — the form is not asking it either — which is
   // what keeps a conditional branch from being a fourth kind of state.
-  const interactivity = rx.computed<MdyInteractivity>(() =>
-    disabledSignal()() || inactiveSignal()()
+  const interactivity = rx.computed<MdyInteractivity>(() => {
+    const outer = outerVerdict();
+    return disabledSignal()() || inactiveSignal()() || outer === "disabled"
       ? "disabled"
-      : readonlySignal()()
+      : readonlySignal()() || outer === "readonly"
         ? "readonly"
-        : "enabled",
-  );
+        : "enabled";
+  });
 
   /**
    * What this field's own rules state that a control can act on.

@@ -38,6 +38,7 @@ import {
 import { MdyHistoryManager } from "./history-manager.js";
 import { isSafeFieldPath } from "./path-utils.js";
 import type { MdyCollectionHost } from "./contracts/collection-host.js";
+import type { MdyInteractivity } from "./types.js";
 import type { MdyPathGate } from "./contracts/form-registry.js";
 import { MDY_DEV } from "./dev-flags.js";
 import {
@@ -180,6 +181,8 @@ export interface MdyFormEngineOptions {
 interface MdyPathBinding {
   readonly disabled?: MdySignal<boolean>;
   readonly readonly?: MdySignal<boolean>;
+  /** A schema's own condition, which the binder cannot override — see {@link MdyFormEngine.setInactive}. */
+  readonly inactive?: MdySignal<boolean>;
 }
 
 export class MdyFormEngine
@@ -786,6 +789,10 @@ export class MdyFormEngine
    */
   setInactive(name: string, inactive: MdySignal<boolean>): void {
     assertReactive(inactive, "inactive", name);
+    // Held against the path as well as on the record, because the path may name something that has
+    // no value of its own — a group, a collection, a row — and what is said about it is answered by
+    // the fields inside it.
+    this._bind(name, { inactive });
     this._getOrCreate(name).inactive.set(inactive);
   }
 
@@ -874,6 +881,31 @@ export class MdyFormEngine
 
   private _bind(name: string, binding: MdyPathBinding): void {
     this._bindings.set(name, { ...this._bindings.get(name), ...binding });
+  }
+
+  /**
+   * What the paths above `name` say about it.
+   *
+   * `setDisabled("billing")` names a group, a collection or a row — something the schema declares and
+   * no value belongs to — and it used to reach nothing: only a leaf was ever honoured, so a consumer
+   * excluding a whole section watched it stay editable and stay in the payload, with nothing said.
+   *
+   * The semantics are not new. `group(children, { when })` already takes a section out of play with
+   * everything inside it; this gives the imperative door the answer the declarative one has. Composed
+   * on read rather than pushed down, so a row declared after the sentence was spoken is covered by it
+   * — which is the half a one-time walk over today's fields would miss.
+   */
+  private _outerVerdict(name: string): MdyInteractivity {
+    let readonly = false;
+    let cut = name.lastIndexOf(".");
+    while (cut > 0) {
+      const ancestor = name.slice(0, cut);
+      const binding = this._bindings.get(ancestor);
+      if (binding?.disabled?.() || binding?.inactive?.()) return "disabled";
+      if (binding?.readonly?.()) readonly = true;
+      cut = ancestor.lastIndexOf(".");
+    }
+    return readonly ? "readonly" : "enabled";
   }
 
   // ── MdyFormAdapter ──────────────────────────────────────────────────────────
@@ -1363,6 +1395,7 @@ export class MdyFormEngine
       (v) => [...this._crossErrorsFor(name), ...this._serverErrorsFor(name, v)],
       (v) => this._applySecurity(name, v),
       (message) => this._warn(`"${name}" ${message}`),
+      this._rx.computed(() => this._outerVerdict(name)),
     );
 
     // A record built for a path a binding already spoke about answers to that binding from the
