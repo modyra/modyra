@@ -40,6 +40,15 @@ export function createReferenceModel({ cells, initial = {}, history = false } = 
   const mounted = new Map();
   const isMounted = (path) => (mounted.get(path) ?? 0) > 0;
   const disabled = new Set();
+  /**
+   * Paths a binder has stated are *editable*.
+   *
+   * The other half of a binding, and the half a model that tracks only refusals loses: a row that
+   * carries a permission onto a key where a refusal waits leaves the cell editable, and a model
+   * without this reports the refusal instead. Measured; ADR 0044 says what releases a binding and
+   * not which of two competing ones wins.
+   */
+  const enabled = new Set();
   const touched = new Set();
   const dirty = new Set();
 
@@ -61,8 +70,13 @@ export function createReferenceModel({ cells, initial = {}, history = false } = 
     rows.delete(key);
     for (const path of [...touched]) if (path.startsWith(`${key}.`)) touched.delete(path);
     for (const path of [...dirty]) if (path.startsWith(`${key}.`)) dirty.delete(path);
-    for (const path of [...disabled]) {
-      if (path.startsWith(`${key}.`) && !isMounted(path)) disabled.delete(path);
+    // Both halves of a binding end with the row, unless a control still claims the path. Dropping
+    // only the refusals leaves a permission behind for a row that is gone, and the next rename
+    // carries it onto a row that never had it.
+    for (const set of [disabled, enabled]) {
+      for (const path of [...set]) {
+        if (path.startsWith(`${key}.`) && !isMounted(path)) set.delete(path);
+      }
     }
   };
 
@@ -205,14 +219,23 @@ export function createReferenceModel({ cells, initial = {}, history = false } = 
           const carriedEdits = [...dirty].filter((path) => path.startsWith(`${from}.`));
           // What a binder said about a cell is the row's, like its value and its marks: a rename
           // moves the row, so the exclusion moves with it rather than staying on a key nobody holds.
-          const carriedBindings = [...disabled].filter((path) => path.startsWith(`${from}.`));
+          // A binding is a statement either way: a permission travels exactly as a refusal does, and
+          // what the row carries replaces whatever was waiting at the key it lands on.
+          const carriedRefusals = [...disabled].filter((path) => path.startsWith(`${from}.`));
+          const carriedPermissions = [...enabled].filter((path) => path.startsWith(`${from}.`));
           forget(from);
           declare(to, value);
           for (const path of carriedMarks) touched.add(path.replace(`${from}.`, `${to}.`));
           for (const path of carriedEdits) dirty.add(path.replace(`${from}.`, `${to}.`));
-          for (const path of carriedBindings) {
-            disabled.delete(path);
-            disabled.add(path.replace(`${from}.`, `${to}.`));
+          for (const [carried, set] of [[carriedRefusals, disabled], [carriedPermissions, enabled]]) {
+            for (const path of carried) {
+              const moved = path.replace(`${from}.`, `${to}.`);
+              disabled.delete(path);
+              enabled.delete(path);
+              disabled.delete(moved);
+              enabled.delete(moved);
+              set.add(moved);
+            }
           }
           break;
         }
@@ -245,9 +268,11 @@ export function createReferenceModel({ cells, initial = {}, history = false } = 
           break;
         case "field.disable":
           disabled.add(local(operation.path));
+          enabled.delete(local(operation.path));
           break;
         case "field.enable":
           disabled.delete(local(operation.path));
+          enabled.add(local(operation.path));
           break;
         case "mount":
           for (const path of operation.paths) {
