@@ -5040,3 +5040,36 @@ rather than a promise nothing keeps.
 Classification: Modyra bug, S2 by DYN-003. Either resolution closes it: give the tree path the
 message the flat one has, or change the published phrase to one both carry — though a phrase that
 matched "unsafe child name." would stop describing the flat message.
+
+## Checked and clean: the classes the tables publish and the stylesheets that do not use them
+
+`@modyra/widgets` publishes five class tables plus a `classes` list on every part of every widget
+contract — 140 class names in all. `@modyra/styles` ships ten stylesheets, 800KB. Fifteen of the 140
+appear as a selector in none of them:
+
+```
+mdy-chip-wrapper  mdy-renderer--number  mdy-renderer--toggle  mdy-toggle__control
+mdy-toggle__label  mdy-renderer--select  mdy-select__empty  mdy-renderer--datepicker
+mdy-renderer--daterange  mdy-datepicker__popup--range  mdy-renderer--timepicker
+mdy-timepicker__dialog  mdy-timepicker-segment--hour  mdy-timepicker-segment--minute
+mdy-renderer--file
+```
+
+That is not a gap, and the reason is measurable rather than assumed. The themes style the base class
+and leave the per-kind modifier alone:
+
+```
+.mdy-renderer            601 selector occurrences
+.mdy-renderer--text        0
+.mdy-renderer--checkbox    1
+.mdy-toggle              161
+.mdy-timepicker          110
+```
+
+So a modifier a theme never targets is a hook published for a consumer's own stylesheet, which is what
+a class table is for. Recorded so the next pass over these tables does not file it.
+
+Also checked, and a milestone rather than a finding: **every one of the 54 registered claims is now
+cited by at least four battles.** The recon that opened this campaign found 24 claims with four of
+them carrying no battle at all; the registry has since more than doubled and has no uncovered claim
+left. "A claim with no battle" is no longer a place to hunt.
