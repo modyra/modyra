@@ -1,3 +1,4 @@
+import type { MdyDiagnostics } from "./reactivity-diagnostics.js";
 import {
   MdyDraftOptions,
   MdyFormEngine,
@@ -476,6 +477,14 @@ export interface MdyCoreFormOptions<
    * part they had.
    */
   readonly devWarnings?: boolean;
+  /**
+   * Where the form reports what it could not do, as codes rather than console lines.
+   *
+   * `createConsoleDiagnostics()` and `createSilentDiagnostics()` build one, and the codes are
+   * published beside them. A degradation — an async check a reactivity cannot run, a draft that
+   * could not start — is otherwise invisible on every surface an application reads.
+   */
+  readonly diagnostics?: MdyDiagnostics;
 }
 
 /**
@@ -509,6 +518,7 @@ export function createForm<S extends MdyFormSchema>(
 /** What a form may be given. Grows with the library, which is why an unknown key is said rather than refused. */
 const FORM_OPTIONS: ReadonlySet<string> = new Set([
   "submitMode", "reactivity", "validators", "history", "draft", "security", "autoActivate", "devWarnings",
+  "diagnostics",
 ]);
 
 /**
@@ -1218,6 +1228,22 @@ export abstract class MdyTypedFormBase<
     this._adapter.setInitialValue(name, value);
   }
 
+  /**
+   * Makes the value the form holds now the one it started from.
+   *
+   * `setInitialValue` names one leaf, which answers for a form whose paths were all known when the
+   * code was written. A collection's keys are data: a row the user added has a path nobody could
+   * have written down, so its cells never stopped being reported as changes however deliberately the
+   * consumer had saved them.
+   *
+   * This is the same act `clearDraft()` performs, on the surface a consumer actually holds — a
+   * consumer who saves by another route wants it too, which is what the release note claimed and the
+   * engine's own method could not deliver: the engine behind a form is not theirs to reach.
+   */
+  rebaselineToCurrentValue(): void {
+    this._adapter.rebaselineToCurrentValue();
+  }
+
   setSanitizer(name: string, sanitizer: MdySanitizer): void {
     this._adapter.setSanitizer(name, sanitizer);
   }
@@ -1904,6 +1930,7 @@ export class MdyTypedForm<S extends MdyFormSchema>
         security: options?.security,
         autoActivate: options?.autoActivate,
         devWarnings: options?.devWarnings,
+        diagnostics: options?.diagnostics,
       },
     );
     super(schema, engine, options);

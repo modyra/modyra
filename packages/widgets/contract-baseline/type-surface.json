@@ -322,6 +322,7 @@
   "MdyCoreFormOptions": [
     "autoActivate?: boolean",
     "devWarnings?: boolean",
+    "diagnostics?: MdyDiagnostics",
     "draft?: string | MdyDraftOptions",
     "history?: boolean | { readonly maxEntries?: number; readonly debounceMs?: number; }",
     "reactivity?: MdyReactivity",
@@ -1024,6 +1025,7 @@
   "MdyFormEngineOptions": [
     "autoActivate?: boolean",
     "devWarnings?: boolean",
+    "diagnostics?: MdyDiagnostics",
     "security?: MdySecurityPolicy"
   ],
   "MdyFormError": [
@@ -1869,6 +1871,7 @@
     "protected _schema: S",
     "protected cellHandle(0) path: string,-> returns: MdyFieldHandle<unknown>",
     "reactivity: MdyReactivity",
+    "rebaselineToCurrentValue-> returns: void",
     "redo-> returns: void",
     "removeField(0) name: string,-> returns: void",
     "removeValidators(0) name: string,(1) key: string,-> returns: void",

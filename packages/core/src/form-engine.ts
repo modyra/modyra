@@ -36,6 +36,11 @@ import {
   type FieldRecord,
 } from "./field-record.js";
 import { MdyHistoryManager } from "./history-manager.js";
+import {
+  MDY_ADAPTER_CONTRACT_VIOLATION,
+  MDY_ASYNC_FEATURE_DISABLED,
+  type MdyDiagnostics,
+} from "./reactivity-diagnostics.js";
 import { isSafeFieldPath } from "./path-utils.js";
 import type { MdyCollectionHost } from "./contracts/collection-host.js";
 import type { MdyInteractivity } from "./types.js";
@@ -226,6 +231,20 @@ export interface MdyFormEngineOptions {
   /** Emit console warnings for suspicious usage. Default true. */
   readonly devWarnings?: boolean;
   /**
+   * Where the form reports what it could not do.
+   *
+   * The codes and the sinks were published — `createConsoleDiagnostics`, `createSilentDiagnostics`,
+   * `MDY_ASYNC_FEATURE_DISABLED` and its siblings — and nothing took one: the only option accepting
+   * an `MdyDiagnostics` lived in one adapter's reactivity. A consumer who read that surface built a
+   * sink, named the codes they cared about, and waited for something that could never arrive.
+   *
+   * A form degrades rather than failing — an async check a reactivity cannot run is skipped, a draft
+   * without effects is not started — and each of those is invisible on every surface an application
+   * reads. With a sink they are events with codes, routable and filterable; without one they are a
+   * console line in development and nothing in production.
+   */
+  readonly diagnostics?: MdyDiagnostics;
+  /**
    * Injection-prevention policy for field values (sanitization, length
    * caps, violation telemetry). Structural checks (draft shape, server
    * error paths) are always on regardless. See security.ts.
@@ -348,6 +367,7 @@ export class MdyFormEngine
   > | null>;
 
   private readonly _devWarnings: boolean;
+  private readonly _diagnostics: MdyDiagnostics | undefined;
   private readonly _security: MdySecurityPolicy;
   /** Per-field sanitizer overrides (schema-level), keyed by dotted path. */
   private readonly _fieldSanitizers = new Map<string, MdySanitizer>();
@@ -419,6 +439,7 @@ export class MdyFormEngine
     options?: MdyFormEngineOptions,
   ) {
     this._devWarnings = options?.devWarnings ?? true;
+    this._diagnostics = options?.diagnostics;
     this._security = assertSecurityPolicy(options?.security);
     this._deactivated = options?.autoActivate === false;
     this._scope = _rx.createScope?.({ debugName: "modyra:form" });
@@ -519,7 +540,18 @@ export class MdyFormEngine
     };
   }
 
-  private _warn(message: string): void {
+  /**
+   * What the form could not do, said once to whoever is listening.
+   *
+   * The sink first and the console second: a consumer who supplied one asked for these as events,
+   * and printing them as well duplicates every degradation into a channel they did not ask for. With
+   * no sink the console is the only way it reaches anyone, which is why it stays the fallback.
+   */
+  private _warn(message: string, code = MDY_ADAPTER_CONTRACT_VIOLATION): void {
+    if (this._diagnostics) {
+      this._diagnostics.report({ code, severity: "warning", message });
+      return;
+    }
     if (this._devWarnings) {
       console.warn(`[modyra] ${message}`);
     }
@@ -748,6 +780,22 @@ export class MdyFormEngine
   }
 
   setInitialValue(name: string, value: unknown): void {
+    // A path may name an ancestor. A collection's keys are data — a row the user added has a path
+    // nobody could have written down — so a caller who can only name leaves can never move the
+    // baseline of what a user built. Naming the collection moves every cell under it, reading each
+    // one's own current value, which is what "this is where we start from now" means for a subtree.
+    //
+    // The same question `exclude` answers for drafts, and the same answer: a name that is an
+    // ancestor is about everything beneath it.
+    if (!this._fields.has(name)) {
+      const under = [...this._fields.keys()].filter((path) => path.startsWith(`${name}.`));
+      if (under.length > 0) {
+        for (const path of under) {
+          this.setInitialValue(path, this._rx.untracked(() => this._fields.get(path)!.state.value()));
+        }
+        return;
+      }
+    }
     assertBaseline(name, this._initialValues.get(name), value);
     // Sanitized once here so reset()/getChanges() compare against the value
     // the field actually holds; the record write below re-applies the
@@ -1651,9 +1699,12 @@ export class MdyFormEngine
   private _ensureAsyncRunner(name: string, rec: FieldRecord): void {
     if (this._destroyed || this._deactivated || rec.asyncRunner) return;
     if (!reactivityRunsEffects(this._rx)) {
-      if (MDY_DEV) this._warn(
+      // Reported whether or not this is a development build: a check that is not running is not a
+      // development-time nicety, and a consumer holding a sink asked to be told in production too.
+      this._warn(
         `Async validators for "${name}" need an effect-capable reactivity ` +
         "— see your reactivity adapter for how to provide one.",
+        MDY_ASYNC_FEATURE_DISABLED,
       );
       return;
     }
