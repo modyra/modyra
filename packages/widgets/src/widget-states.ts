@@ -207,6 +207,10 @@ export const MDY_WIDGET_STATE_SUPPORT: Readonly<Record<MdyWidgetKind, readonly M
  * any of them, so a renderer that later mounts its overlay lazily is not breaking the contract, and
  * one that mounts eagerly is not breaking it either. What both must do is render them when open.
  *
+ * Read together with a node's `optional`, which is a statement about a part's place rather than about
+ * the widget's whole lifetime: six kinds declare a required part inside an optional `popup`, and the
+ * two are consistent only under that reading — required *while its parent is on the page*.
+ *
  * The same question as {@link dynamicParts}, and now the same answer. This walked the anatomy itself,
  * rooting on the part *named* `popup` where the other roots on the part whose *element is* `popup`;
  * the two agreed on all seventeen kinds only because every popup-element part happens to sit inside

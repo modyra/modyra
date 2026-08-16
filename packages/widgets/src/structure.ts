@@ -15,6 +15,22 @@ export interface MdyWidgetStructureNode<TPart extends string = string> {
   readonly element: MdyWidgetSemanticElement;
   readonly parent?: TPart;
   readonly order: number;
+  /**
+   * Whether a renderer may leave this part out **while its parent is on the page**.
+   *
+   * Required is a statement about the part's place, not about the whole widget's lifetime: six kinds
+   * declare a required part inside an optional `popup` — `select.listbox`, `datepicker.calendar`,
+   * `colors.presets` and their siblings — and read as "always present" that is a contradiction with
+   * `overlayOnlyParts`, which names those same parts as ones a closed widget has no reason to build.
+   *
+   * Both are true under this reading and neither is under the other: a closed select need not build
+   * its listbox because the popup that would hold it is absent, and a select whose popup *is* on the
+   * page must have one. So a renderer that builds an overlay's contents only when it opens is
+   * conformant, and so is one that builds them eagerly — the difference between them is a rendering
+   * choice, which is what `overlayOnlyParts` exists to say — in its own words, *"a closed widget is
+   * not required to render any of them … what both must do is render them when open"*. This is the
+   * same sentence from the part's side, where a reader deciding what to build actually looks.
+   */
   readonly optional?: boolean;
   readonly repeated?: boolean;
 }
