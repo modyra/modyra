@@ -98,6 +98,7 @@ absent section reads as an oversight, and "no security impact" is a finding.
 - [ADR 0080: A path is an instruction a row's shape can refuse](0080-a-path-is-an-instruction-a-row-shape-can-refuse.md) — one extra segment in a draft key built a row and a member no document declared, and the form called itself ready
 - [ADR 0081: A secret is excluded by the name a person writes](0081-a-secret-is-excluded-by-the-name-a-person-writes.md) — `exclude` matched one exact path, so the guide's own example — a card number in a list — was the case it could not answer
 - [ADR 0082: A commit word answers for the control a person types in](0082-a-commit-word-answers-for-the-control-a-person-types-in.md) — a range is neither `live` nor `confirm`, and a colours field has two controls that commit differently
+- [ADR 0083: A form reports what it could not do](0083-a-form-reports-what-it-could-not-do.md) — the diagnostics vocabulary was published and nothing took a sink, so a check that stopped running was invisible on every surface
 
 ## Security-relevant records
 

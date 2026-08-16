@@ -8,7 +8,7 @@
  */
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { createForm, field, group, pattern, required } from "../dist/index.js";
+import { MDY_ASYNC_FEATURE_DISABLED, createForm, field, group, pattern, required, vanillaReactivity } from "../dist/index.js";
 
 /** Runs `body` with console.warn captured. */
 function warnings(body) {
@@ -106,4 +106,65 @@ test("silence is available: devWarnings turns the whole set off", () => {
   });
 
   assert.deepEqual(said, []);
+});
+
+test("a form reports what it could not do to the sink it was given", async () => {
+  // The codes and the sinks were published and nothing took one: the only option accepting an
+  // `MdyDiagnostics` lived in one adapter's reactivity, so a consumer who read that surface built a
+  // sink, named the codes they cared about, and waited for something that could never arrive.
+  const rx = vanillaReactivity();
+  const withoutEffects = {
+    signal: rx.signal.bind(rx),
+    computed: rx.computed.bind(rx),
+    untracked: rx.untracked.bind(rx),
+  };
+  const reports = [];
+
+  const form = createForm(
+    { a: field("", [], { asyncValidators: [async () => []] }) },
+    {
+      reactivity: withoutEffects,
+      diagnostics: { report: (entry) => reports.push(entry) },
+      devWarnings: false,
+    },
+  );
+  form.f.a.set("x");
+  await new Promise((resolve) => setTimeout(resolve, 40));
+
+  // A check that cannot run is skipped — documented and right — and every surface an application
+  // reads says the same thing either way: valid, submittable, no errors. The code is what tells the
+  // two apart, and `devWarnings: false` proves it is not the console channel answering.
+  assert.deepEqual(reports.map((entry) => entry.code), [MDY_ASYNC_FEATURE_DISABLED]);
+  assert.match(reports[0].message, /effect-capable reactivity/);
+  assert.equal(form.state.valid(), true, "the skipped check leaves the form looking exactly as it did");
+  form.destroy();
+});
+
+test("a sink takes the place of the console rather than doubling it", async () => {
+  const said = [];
+  const realWarn = console.warn;
+  console.warn = (...parts) => said.push(parts.join(" "));
+  try {
+    const rx = vanillaReactivity();
+    const withoutEffects = {
+      signal: rx.signal.bind(rx),
+      computed: rx.computed.bind(rx),
+      untracked: rx.untracked.bind(rx),
+    };
+    const reports = [];
+    const form = createForm(
+      { a: field("", [], { asyncValidators: [async () => []] }) },
+      { reactivity: withoutEffects, diagnostics: { report: (e) => reports.push(e) }, devWarnings: true },
+    );
+    form.f.a.set("x");
+    await new Promise((resolve) => setTimeout(resolve, 40));
+    form.destroy();
+
+    // A consumer holding a sink asked for these as events. Printing them as well duplicates every
+    // degradation into a channel they did not ask for.
+    assert.equal(reports.length, 1);
+    assert.deepEqual(said.filter((line) => line.includes("effect-capable")), []);
+  } finally {
+    console.warn = realWarn;
+  }
 });
