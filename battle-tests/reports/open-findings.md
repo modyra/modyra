@@ -11901,6 +11901,21 @@ or identifiers reaches it by writing the value it already uses.
 state its author did not expect is exactly when the panel is worth having, and this is a state where
 it dies instead of describing what it found.
 
+**The same package already handles it, one door away.** The draft writer meets the same value and
+survives it: the envelope omits the field it cannot carry and keeps everything else, and a reopened
+form restores the rest and falls back to the field's declared initial.
+
+```
+n.set(10n), s.set("typed")
+draft written      {"__mdyDraft":1,"savedAt":…,"value":{"s":"typed"}}     n omitted, s kept
+reopened           {"n":1,"s":"typed"}                                    n back to its initial
+later edits        still saved
+```
+
+So the answer is not "JSON cannot, therefore nothing can". One reader of an unserialisable value drops
+it and carries on; the other stops. **The panel is the one that stops**, and it is the one a developer
+opens when something is already wrong.
+
 **The controls, first and in this order.** The serializer still describes a `File` and a cycle — so a
 red here is one value and not the serializer. And the same form with an ordinary number snapshots
 cleanly — so the red is the value and not the panel.
