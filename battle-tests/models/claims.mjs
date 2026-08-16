@@ -558,6 +558,17 @@ const CLAIMS = [
     ],
   },
   {
+    id: "UI-010",
+    title: "A capability the widget contract declares reaches the thing it describes.",
+    area: "widgets",
+    severity: "S3",
+    publicEvidence: [
+      "@modyra/widgets MDY_WIDGET_CONTRACTS capabilities.anchoring — minWidth, minSpace, matchAnchorWidth, alignment, declared per kind",
+      "@modyra/widgets decideOverlayPlacement/overlayStyleProperties — the published path from a decision to the element",
+      "@modyra/widgets MDY_CSS_PROPERTIES.overlay — the custom properties an overlay is positioned with",
+    ],
+  },
+  {
     id: "STU-001",
     title: "Generated code compiles.",
     area: "studio",
