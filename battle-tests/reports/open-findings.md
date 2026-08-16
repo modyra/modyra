@@ -10939,10 +10939,24 @@ popup, listbox, option    portalled dropdown             absent
 
 plain builds the contract's combobox; lit renders a native `<select>` with `<option>` children.
 
-The assertion is narrow on purpose. Not `popup` — `overlayOnlyParts` names it conditional and a
-closed control has every reason not to have built one. `trigger`, which the half of the contract
-whose job is to say so marks `optional: false`. `root` and `label` are asserted first as controls,
-green in both, so the red is the part and not the mount.
+**Swept across everything the contract requires**, so the size of it is measured rather than assumed.
+For each of the 17 kinds, in both renderers, every part marked `optional: false` and *not* named by
+`overlayOnlyParts` — the parts a renderer owes whether or not anything is open:
+
+```
+plain   17 kinds, every owed part built
+lit     16 kinds clean; select missing trigger, placeholder, arrow
+```
+
+**One gap in 34 kind-and-renderer pairs.** That bounds this finding: it is an isolated divergence in
+one control, not the visible edge of widespread drift between the renderers and the contract. It also
+widens it — three parts, not one, all of them the anatomy of the closed control.
+
+The assertion excludes what the contract itself calls conditional. Not `popup` — `overlayOnlyParts`
+names it, and a closed control has every reason not to have built one. Per kind, the root is asserted
+first as a control, so a kind that failed to render at all reads as a mount failure rather than a list
+of missing parts, and the sweep asserts it is owed more than fifty parts in total so a contract that
+stopped requiring things could not leave it green while measuring nothing.
 
 **Not finding 113 again.** That one archived the same divergence with "markup is not what the
 contract fixes". The contract fixes markup part by part, with class names and ARIA roles, and 31 of
