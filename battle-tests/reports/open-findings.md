@@ -11280,3 +11280,57 @@ Two things were repaired beyond what was filed:
   `packages/styles/test/*.test.mjs`, and `color-utils.test.mjs` is there.
 
 The decision itself is untouched, which is right — nothing measured here challenged it.
+
+## 190. An AA gate that walks a page wearing a colour the theme does not ship
+
+**Severity** S2 · **Classification** gate asserts more than it measures · **Battle** none — measured
+against the page the gate itself walks · **Claims** A11Y-003
+
+`e2e/palette.spec.ts:295` is the project's accessibility floor for colour: *"every rendered text
+colour clears AA against the surface behind it"*, over four themes, in light and dark, with named
+per-theme exceptions. It is green — 18 passed, measured, not inferred.
+
+It is green while the shipped default theme carries a pair at **4.09:1** with no allowance (finding
+188). Two measurements explain how both are true.
+
+**The page is wearing a different primary.** The walk swaps the theme stylesheet between iterations
+and never resets the demo's own colour, and the demo starts amber:
+
+```
+examples/angular/src/app/sections/design-system-section.component.ts:126   primaryColor: "#f0b511"
+measured on that page, every .mdy-button including "Select file":
+    background rgb(240,181,17)   colour near-black   14px, weight 500
+measured in the catalog with the shipped stylesheet:
+    background #7067ff           colour #fcfeff      14px   →  4.09 : 1
+```
+
+Every surface painted from `--mdy-primary` / `--mdy-on-primary` — which is where the failing pair
+lives — is measured in amber. **The theme's own accent colour is never the one under test.**
+
+**And most of the palette is not on the page.** Counting the parts that carry a declared
+background-and-text pair in `modyra-default.css`, against what that page actually renders:
+
+```
+parts carrying a declared pair    42
+visible on the gate's page        15
+never measured                    27
+```
+
+The 27 include every `--selected` calendar surface — `mdy-datepicker__cell--selected`,
+`--range-start`, `--range-end`, `--month-cell--selected`, `--year-cell--selected` — which are exactly
+where the same failing pair is declared. A gate that walks one page in one state cannot reach a
+selected date, and nothing in the suite opens a calendar in front of it.
+
+**This is not the spec being careless.** Its `:263` comment is careful in the other direction: an
+allowance for a part the walk never reached is not treated as expired. That is right for allowances
+and says nothing about coverage. What is missing is the opposite guard — the assertion's sentence is
+*every rendered text colour*, and nothing holds the set of rendered colours to the set the theme
+declares.
+
+Goes green when the walk states its own coverage: reset the page to the theme's primary before
+measuring it, and assert how many of the declared pairs were reached, so a pair that stops being
+rendered fails rather than disappears. The suite already owns both halves — `PRIMARIES` sets colours
+elsewhere in the same file, and the walk already collects `reached`.
+
+**Not claimed.** That the other three themes fail anything: they were measured under amber too, so
+this finding is about what the gate can see, not about what the themes do.
