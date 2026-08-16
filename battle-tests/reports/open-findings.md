@@ -12730,7 +12730,31 @@ a duplicate field name    schema TRUE   parser false   disagree
 > cross-reference, so a layout slot naming a field that does not exist, a duplicate field name, or a
 > validation reading an undeclared path all pass here and fail there."*
 
-So the limit is stated where a consumer reading the schema meets it, and the measurement lands on two
-of the three cases it lists. Nothing to file — and worth recording because a published schema that
+The third case it names — *a validation reading an undeclared path* — lands too, once the validation
+is written in the shape the schema declares (`{ when, message }`, where `when` is an expression tree
+the schema deliberately does not describe: *"a schema that described it would be a second definition
+of the expression language"*):
+
+```
+a validation reading a declared path     schema true · parser clean
+a validation reading an undeclared path  schema TRUE · MDY_DYNAMIC_UNKNOWN_FIELD_REFERENCE
+```
+
+**Three of three.** The first attempt at this row was measured with a `{ field, rule }` validation the
+schema has never had, and it failed for shape — identically for a real field and a ghost one, which is
+what showed the instrument rather than the subject. Ninth instrument error of the night, caught by
+the control.
+
+So the limit is stated where a consumer reading the schema meets it, and the measurement lands on all
+three of the cases it lists. Nothing to file — and worth recording because a published schema that
 says *"my green is not the parser's green"*, in its own description, is the rare version of a limit
 that a reader cannot miss.
+
+**A neighbouring list is a subset on purpose, and says so.** `MDY_DYNAMIC_UNKNOWN_FIELD_REFERENCE`
+does not appear in `MDY_DYNAMIC_DIAGNOSTICS`, which publishes 7 of the 16 `MDY_DYNAMIC_*` codes core's
+sources raise. That is not a gap: the table's own comment says what it is — the code-to-phrase
+coupling for the sites that derive a code from a message, *"made visible rather than removed"*, with
+`dynamic-diagnostics.test.mjs` failing when a phrase stops appearing. Naming a code at each of the
+*"thirty sites that refuse something"* is called out as the right shape and **a different change**.
+Read as "every code a consumer may see", it would be a finding; read as what it says it is, it is
+complete.
