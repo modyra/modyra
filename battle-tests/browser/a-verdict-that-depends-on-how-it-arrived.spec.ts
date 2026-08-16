@@ -16,6 +16,8 @@
  *
  * What must not vary is the verdict. Whether a value is one this field can hold is a question about
  * the value, and the answer cannot depend on which door it came through.
+ *
+ * Claims under attack: VAL-004, UI-006.
  */
 
 import { expect, test } from "@playwright/test";

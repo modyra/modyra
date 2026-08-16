@@ -18,6 +18,8 @@
  * document saying "disable the tax id for a private customer" produces a form that sends the tax id
  * for a private customer, and the difference between the two paths is which one the document was
  * allowed to ask for.
+ *
+ * Claims under attack: DYN-004, DYN-001.
  */
 
 import { expect, test } from "@playwright/test";

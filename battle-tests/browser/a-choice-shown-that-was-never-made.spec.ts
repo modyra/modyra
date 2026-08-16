@@ -19,6 +19,8 @@
  * Each assertion carries its controls: the same field holding an offered value shows it, so the
  * measurement is about the unoffered one; and the two kinds beside it in the same renderer select
  * nothing at all, so this is one control's answer rather than the renderer's.
+ *
+ * Claims under attack: UI-004.
  */
 
 import { expect, test } from "@playwright/test";

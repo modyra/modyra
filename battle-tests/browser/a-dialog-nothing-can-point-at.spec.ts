@@ -18,6 +18,8 @@
  * one renderer uses `aria-label` instead; the computed name is "Meeting time" either way, so the
  * declaration is met by another route. Measured rather than assumed — the same check dismissed a
  * second finding on this control's trigger.
+ *
+ * Claims under attack: A11Y-004, A11Y-001.
  */
 
 import { expect, test } from "@playwright/test";

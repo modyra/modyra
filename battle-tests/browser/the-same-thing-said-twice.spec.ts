@@ -18,6 +18,8 @@
  * That is why this spec watches mutations rather than text. An earlier version compared `textContent`
  * across two announcements, found it unchanged, and was one step from filing a defect that does not
  * exist.
+ *
+ * Claims under attack: A11Y-002.
  */
 
 import { expect, test } from "@playwright/test";

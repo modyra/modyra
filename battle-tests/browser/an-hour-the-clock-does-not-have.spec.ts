@@ -17,6 +17,8 @@
  * Asked of the renderer whose segments accept typing at all — lit's are `readonly`, so its hour is
  * set with the arrows or the dial and this input never happens there. That difference is recorded in
  * the register rather than asserted here.
+ *
+ * Claims under attack: UI-006, VAL-004.
  */
 
 import { expect, test } from "@playwright/test";

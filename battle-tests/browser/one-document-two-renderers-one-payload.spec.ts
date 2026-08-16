@@ -13,6 +13,8 @@
  * The control is that the payload carries the value at all. Two renderers that both send `{}` agree
  * perfectly and prove nothing, so each kind is asserted to have put its own name in what it sent
  * before the two are compared.
+ *
+ * Claims under attack: SUB-001.
  */
 
 import { expect, test } from "@playwright/test";

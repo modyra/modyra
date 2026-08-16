@@ -16,6 +16,8 @@
  * Two of the three are the controls for the third. The datepicker declares `live` and is, the
  * timepicker declares `confirm` and is, so a failure on the range is about the range rather than
  * about this spec having misread a published word.
+ *
+ * Claims under attack: UI-006, VAL-003.
  */
 
 import { expect, test } from "@playwright/test";

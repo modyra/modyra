@@ -15,6 +15,8 @@
  *
  * `@modyra/widgets` publishes `createFocusCustodian`, `focusTrigger` and `restoreFocusTrigger`, so
  * deciding where focus should go is something this package already does elsewhere.
+ *
+ * Claims under attack: A11Y-005, A11Y-002.
  */
 
 import { expect, test } from "@playwright/test";

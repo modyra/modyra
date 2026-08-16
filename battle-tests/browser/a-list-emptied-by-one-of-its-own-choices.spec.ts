@@ -17,6 +17,8 @@
  *
  * Every case carries the same list with an ordinary value in place of the word, because a probe that
  * cannot open a popup and a renderer that draws nothing look identical from outside.
+ *
+ * Claims under attack: SEC-001, UI-003.
  */
 
 import { expect, test } from "@playwright/test";
