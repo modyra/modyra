@@ -6463,10 +6463,10 @@ among their alternatives.
   validOf`. Recorded because guessing a record's API as the array's produced a walk that stopped at
   depth 1 and briefly read as a depth limit. It was not one.
 
-## 119. Ten operators a document may write, six the only evaluator knows
+## 119. Ten operators a document may write, six the only evaluator knows — CLOSED
 
 **Severity** S2 · **Classification** contract declares what nothing defines · **Battle**
-`adversarial/dynamic-contract/an-operator-nothing-can-answer.battle.test.mjs` (red) · **Claims**
+`adversarial/dynamic-contract/an-operator-nothing-can-answer.battle.test.mjs` (green) · **Claims**
 DYN-001, DYN-002
 
 `spec/dynamic-form-v3.schema.json` closes `rule.when.operator` over ten names. The parser enforces
@@ -6985,7 +6985,7 @@ developer happens to look at.
 `aria-label`, which the spec does not pin: what it asserts is that the control is announced as
 something rather than as nothing.
 
-## 126. The token that means any file turns away every file
+## 126. The token that means any file turns away every file — CLOSED
 
 **Closed — verified green** in `ee8040c3`, and falsified: the star tokens now accept everything while
 `/*`, `image/` and `*.png` still accept nothing, so the repair did not widen the parser to get there.
@@ -8342,10 +8342,10 @@ rather than a feature that does not work. Same shape as finding 117, where a doc
 validations have a compiler no adapter can call — and worse in one respect: there the option does not
 exist, so a consumer discovers it; here it is taken and ignored.
 
-## 149. The storage a browser already has
+## 149. The storage a browser already has — CLOSED
 
 **Severity** S2 · **Classification** an argument the contract refuses without saying so · **Battle**
-`adversarial/persistence/the-storage-a-browser-already-has.battle.test.mjs` (red) · **Claims**
+`adversarial/persistence/the-storage-a-browser-already-has.battle.test.mjs` (green) · **Claims**
 PER-001, API-001
 
 `docs/guides/typed-forms.md` says *the default storage is `localStorage`*. A consumer who reads that
@@ -11767,3 +11767,23 @@ row look like a leak.
 
 `setDisabled`, `setInactive` and `setReadonly` take a **zero-argument function**, not a boolean, and
 say so by name when handed one: *"a framework's own reactive value is wrapped in one: `() => ref.value`"*.
+
+## Three entries that said red and were green — swept, not stumbled on
+
+A register whose reds are stale misleads the person who picks it up, in the same way a waiver
+outliving its reason does. Every entry naming a battle and calling it red was re-run against the
+current tree:
+
+```
+119  an-operator-nothing-can-answer     green — all ten rule operators answered by something published
+126  the-files-a-field-agrees-to-take   green — 2 battles, the accept token and the shape handed back
+149  the-storage-a-browser-already-has  green — storage taken, or refused for a reason
+```
+
+All three are marked CLOSED above with their battles now reading green. **They were found by a sweep
+rather than by noticing**: finding 119 surfaced because a differential measured the same operators and
+disagreed with what the entry said, and the other two came from cross-referencing every claimed red
+against the failures in a full run.
+
+Worth repeating whenever the register is handed on: a claimed red that passes is a repair nobody
+recorded, and it costs the next reader the same hour it would have cost to check.
