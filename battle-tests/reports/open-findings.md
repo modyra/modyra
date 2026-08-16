@@ -11442,55 +11442,51 @@ as a compatibility number again.
 `searchButton` becoming an `input` with `role=combobox` is a control gaining the semantics it needed.
 The finding is the number that did not move with them.
 
-## 192. A rule the parser drops without a word
+## 192. RETRACTED — a rule the parser drops, measured at a version that has no rules
 
-**Severity** S2 · **Classification** silent loss of declared behaviour · **Battle**
-`adversarial/dynamic-contract/a-rule-the-parser-drops-without-a-word.battle.test.mjs` (red) ·
-**Claims** DYN-003
+**Severity** — · **Classification** wrong reference model (mine) · **Battle** deleted · **Claims**
+DYN-003
 
-The Dynamic Form Contract arrives from somewhere that is not the application, so the parser decides
-what it can accept and says what it could not. It does that for fields. It does not do it for rules.
+Filed as: the parser discards an unusable rule — an effect outside the four, an operator outside the
+ten, a target naming no field — without a diagnostic, without incrementing `rejectedCount`, and with
+`ok: true`, while doing all three for a bad field in the same call. `@modyra/eslint-plugin`'s only
+rule was silent on all four, which made the silence look like it ran the whole way to the author.
 
-One document, both faults, one call:
+**Every document in that measurement carried `version: 1`.**
 
 ```
-fields: [{ name: "x", kind: "text" }, { name: "y", kind: "wormhole" }]
-rules:  [{ effect: "explode", target: "x", when: { field: "x", operator: "equals", value: 1 } }]
-
-fields kept      x                 → y dropped
-rules kept       0                 → the rule dropped
-rejectedCount    1                 → counts the field, not the rule
-diagnostics      [MDY_DYNAMIC_UNKNOWN_KIND]   → names the field, not the rule
-ok               true
+parse.ts:1029   const version = Array.isArray(input) || envelope?.version === 1 ? 1 : … 2 … 3 … null
+parse.ts:1032   const structured = version === 2 || version === 3;
 ```
 
-Each way a rule can be unusable behaves the same — an effect outside the four, an operator outside the
-ten, a target naming no field, a condition reading no field. Discarded, uncounted, unreported,
-`ok: true`.
+**Version 1 is the bare field list** — the same shape as passing an array of fields directly. `layout`,
+`rules` and `validations` are not members of its vocabulary, so a v1 envelope carrying them loses them
+because they were never part of what it declared. Nothing was discarded; nothing was there.
 
-**What reaches the author.** Nothing, at any of the three moments they could learn:
+Re-measured at the version that has rules:
 
-- **Lint time.** `@modyra/eslint-plugin`'s only rule, `valid-dynamic-form`, describes itself as
-  *"report the Modyra Dynamic Form Contract's diagnostics for a form document written as a literal"*.
-  Driven over these documents it reports every field fault — unknown kind, missing name, duplicate
-  name, `__proto__` — and is **silent on all four rule faults**. It is not at fault: it reports the
-  diagnostics it is given, and there are none. Driven over twelve inputs a real author writes — a
-  spread into `fields`, a computed key, a variable field list, a getter, a template-literal name, a
-  40-deep nesting, a self-reference, a 5000-character name, a function value — it neither crashes nor
-  invents: it reports what it can evaluate statically and stays silent on the rest, which is what a
-  lint rule should do.
-- **Parse time.** `diagnostics` is empty and `rejectedCount` does not move.
-- **Runtime.** The rule is gone, so there is nothing left to misbehave.
+```
+version 2   invalid rule        → MDY_DYNAMIC_INVALID_RULE,       rejectedCount 1
+            invalid validation  → MDY_DYNAMIC_INVALID_VALIDATION, rejectedCount 1
+version 3   the same, and layout kept
+version "2", null, undefined, 2.5   → MDY_DYNAMIC_UNSUPPORTED_VERSION, ok false, nothing kept
+```
 
-A `show` that never shows, and every instrument the project ships says the document is fine.
+The parser does exactly what it was accused of not doing, at every version where the accusation
+applies, and refuses a version it does not know rather than degrading quietly.
 
-**The control that makes this the rules and not the parser.** The bad field in the same call is
-dropped, counted and named. The reporting machinery works; it does not cover this half.
+**The same error as finding 187, made twice in one night.** There: `decideOverlayPlacement` called
+with a nested object where it takes a flat geometry, answering `width: null`, read as "the number has
+nowhere to go". Here: `parseDynamicForm` called at a version with no rules, answering `rules: []`,
+read as "the rule was dropped in silence". Both times **an empty answer from a wrongly shaped call was
+read as a finding**, and both times the shape was recoverable in one measurement — feed the API a
+valid input and see whether it survives.
 
-**Severity, stated rather than borrowed.** Filed under DYN-003 alone — *"a contract's findings are the
-parser's, wherever they are reported"*. DYN-004 is registered S0 and would have carried this battle to
-S0 with it, but that claim is about a slot the parser **accepts** and nothing reads; this is one it
-**rejects** without saying so. Same family, one band down.
+That control was written into the battle and it did not catch it: the premise asserted
+`parsed.rules.length === 0`, which is true for a valid rule at v1 as well. **A control that passes for
+both the sound and the broken case is not a control**, which is the same lesson as reading a custom
+property instead of the effect it should cause (187) and auditing a popup with no swatches in it
+(188). Three shapes of the same mistake, and this is the one that got furthest — it was filed, and the
+owning session was told it was safe to repair.
 
-Goes green when a discarded rule produces a diagnostic, the way a discarded field does. The codes and
-the counter already exist.
+Nothing was reported to anyone as fixed, and no production code was changed on the strength of it.
