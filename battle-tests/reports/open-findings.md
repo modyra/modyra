@@ -11787,3 +11787,44 @@ against the failures in a full run.
 
 Worth repeating whenever the register is handed on: a claimed red that passes is a repair nobody
 recorded, and it costs the next reader the same hour it would have cost to check.
+
+## The register's own reds, swept: 58 open entries whose battles now pass
+
+An entry that says a thing is broken, when it is not, costs the next reader the hour it would have
+cost to check — and it is the same defect as a waiver outliving its reason, written the other way
+round.
+
+**Method, reproducible in two commands.** Take the failing battle files from a full run, take every
+battle a register entry names, and list the entries that are not marked CLOSED or RETRACTED and whose
+battles do not appear among the failures:
+
+```sh
+pnpm battle 2>&1 | grep -oE "battle-tests/[a-z0-9/-]+\.battle\.test\.mjs" | sort -u > /tmp/red.txt
+# then: for each numbered entry, its named battles ∩ /tmp/red.txt = ∅  →  suspect
+```
+
+**58 entries** come out of that. Three were verified by hand and read as repairs nobody recorded —
+their battles now assert the *positive* property and pass:
+
+```
+1    Five setters keep an argument they cannot use
+     → "a setter given something it cannot call says so, instead of leaving the form to fail later"
+10   clearDraft removes but does not re-baseline
+     → "moving the baseline empties the change set"
+12   A server's answer rendered as [object Object]
+     → "what a failed check puts in front of a person is something a person can read"
+```
+
+Three more were closed outright above (119, 126, 149) after the same check.
+
+**Not swept into a mass edit, deliberately.** Some of the 58 are not stale reds at all: 44 is a
+retrospective about a reference model, 52 is marked withdrawn in its own body, and others name a
+battle that was green from the start because the entry records a measurement rather than a defect.
+Marking 58 headers CLOSED at one stroke would put the register's accuracy exactly where this sweep
+found it — asserted rather than checked.
+
+**The entry numbers**, so the next pass starts from a list rather than from a full run:
+
+1, 2, 3, 7, 10, 12, 16, 17, 22, 34, 38, 41, 42, 44, 46, 52, 59, 61, 62, 63, 64, 65, 68, 69, 71, 72, 73, 74, 75, 76, 77, 80, 81, 84, 85, 86, 87, 90, 118, 120, 125, 127, 130, 132, 141, 152, 154, 155, 156, 160, 161, 166, 167, 168, 169, 170, 174, 177, 181
+
+Each needs one run of its battle and one read of its body before its header changes.
