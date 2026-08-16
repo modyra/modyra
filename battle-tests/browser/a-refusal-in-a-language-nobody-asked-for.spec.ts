@@ -1,22 +1,26 @@
 /**
- * A form that says `Cerca…` and then `This field is required`.
+ * One form, one locale, two refusals, two languages.
  *
- * A field that declares a locale speaks it — that is the rule in the renderer's own words, and it
- * holds: the search box inside an Italian multiselect reads `Cerca…`, and the same field under
- * `en-GB` reads `Search…`. Forty keys of chrome follow the tag.
+ * A field that declares a locale speaks it, and it does — including in a refusal the **widget** makes.
+ * An Italian date box handed prose says `Non è stato possibile leggerlo. Correggilo, oppure svuota il
+ * campo.` That message is one of forty keys in `messagesForLocale`, and it follows the tag.
  *
- * None of them is a refusal. `messagesForLocale` has placeholders, button labels and announcements
- * and no validation wording at all, and a document cannot supply its own: `$defs.validators` declares
- * `required, email, min, max, minLength, maxLength, pattern` and no message. So a form generated for
- * an Italian user asks in Italian and refuses in English, and nothing the author writes changes it.
+ * A refusal a **validator** makes does not. `required` carries `'This field is required'` as a default
+ * in `@modyra/core`, there is no validation wording in any locale table, and a document cannot supply
+ * its own — `$defs.validators` declares `required, email, min, max, minLength, maxLength, pattern`
+ * and no message.
+ *
+ * So the same form, asked for one language, shows both:
+ *
+ *     Non è stato possibile leggerlo. Correggilo, oppure svuota il campo.
+ *     This field is required
  *
  * The contrast is inside the same contract. `MdyDynamicValidation` — the cross-field slot — makes
- * `message` **required**, with the reason stated: *a validation nobody can read is a field that will
- * not submit for no stated reason*. The same sentence applies to the per-field rules, which have no
- * message to require.
+ * `message` **required**, and says why: *a validation nobody can read is a field that will not submit
+ * for no stated reason*. The per-field rules have no message to require.
  *
- * The chrome is asserted first, in both locales. Without it, a page where the locale never arrived
- * would produce the same English refusal and look like this finding.
+ * The English run is the control: there both refusals are English, so what fails is the mixing rather
+ * than one of the two being untranslated.
  *
  * Claims under attack: LOC-003, DYN-001.
  */
@@ -26,36 +30,38 @@ import { expect, test } from "@playwright/test";
 type Api = Record<string, {
   mountFields(id: string, fields: unknown[]): unknown;
   submit(id: string): unknown;
+  errorsOf(id: string, path: string): Array<{ message?: string }>;
   dispose(id: string): void;
 }>;
 
-/** What a form shows for one locale: a chrome string that follows it, and a refusal. */
-async function speaking(page: import("@playwright/test").Page, locale: string) {
+/** Both kinds of refusal from one form, in one language. */
+async function refusalsIn(page: import("@playwright/test").Page, locale: string, unreadable: string) {
   await page.evaluate((tag) => {
-    (window as never as Api).battle.mountFields("i", [
-      { name: "who", kind: "text", label: "Nome", locale: tag, validators: { required: true } },
-      { name: "tags", kind: "multiselect", label: "Etichette", locale: tag, options: [{ value: "a", label: "A" }] },
+    (window as never as Api).battle.mountFields("t", [
+      { name: "quando", kind: "datepicker", label: "Quando", locale: tag },
+      { name: "nome", kind: "text", label: "Nome", locale: tag, validators: { required: true } },
     ]);
   }, locale);
   await page.waitForTimeout(320);
 
-  const openers = page.locator('[data-form="i"] button, [data-form="i"] [role="combobox"]');
-  for (let index = 0; index < Math.min(await openers.count(), 3); index += 1) {
-    await openers.nth(index).click({ timeout: 2200 }).catch(() => {});
-    await page.waitForTimeout(200);
-    if (await page.locator(".mdy-multiselect-overlay__input").count() > 0) break;
-  }
-  const chrome = await page.evaluate(() =>
-    (document.querySelector(".mdy-multiselect-overlay__input") as HTMLInputElement | null)?.placeholder ?? null);
+  const dateBox = page.locator('[data-form="t"] input[type="text"]').first();
+  await dateBox.fill(unreadable);
+  await dateBox.blur();
+  await page.waitForTimeout(240);
 
-  await page.evaluate(() => (window as never as Api).battle.submit("i"));
-  await page.waitForTimeout(340);
-  const refusal = await page.evaluate(() =>
-    (document.querySelector('[data-form="i"] [id$="__errors"]')?.textContent ?? "").trim() || null);
+  await page.evaluate(() => (window as never as Api).battle.submit("t"));
+  await page.waitForTimeout(360);
 
-  await page.evaluate(() => (window as never as Api).battle.dispose("i"));
+  const seen = await page.evaluate(() => {
+    const battle = (window as never as Api).battle;
+    return {
+      fromTheWidget: battle.errorsOf("t", "quando").map((each) => each.message ?? ""),
+      fromTheValidator: battle.errorsOf("t", "nome").map((each) => each.message ?? ""),
+    };
+  });
+  await page.evaluate(() => (window as never as Api).battle.dispose("t"));
   await page.waitForTimeout(60);
-  return { chrome, refusal };
+  return seen;
 }
 
 test("a refusal in a language nobody asked for", async ({ page }) => {
@@ -63,18 +69,25 @@ test("a refusal in a language nobody asked for", async ({ page }) => {
   await page.goto("/index.html");
   await page.waitForFunction(() => (window as never as Record<string, boolean>).battleReady === true);
 
-  const italian = await speaking(page, "it-IT");
-  const english = await speaking(page, "en-GB");
+  const english = await refusalsIn(page, "en-GB", "4 March 2026");
+  const italian = await refusalsIn(page, "it-IT", "4 marzo 2026");
 
-  // The control: the locale reaches the page and changes what it says.
-  expect(italian.chrome, "the Italian form's search box does not speak Italian, so the locale never arrived").toBe("Cerca…");
-  expect(english.chrome, "the English form's search box does not speak English").toBe("Search…");
+  // The premise: both forms produced both kinds of refusal, so there are two to compare.
+  for (const [where, seen] of [["English", english], ["Italian", italian]] as const) {
+    expect(seen.fromTheWidget.length, `the ${where} form's date box did not refuse, so there is nothing to compare`).toBeGreaterThan(0);
+    expect(seen.fromTheValidator.length, `the ${where} form's required rule did not fire`).toBeGreaterThan(0);
+  }
 
-  // The premise: both forms refused, so there is a refusal to read.
-  expect(italian.refusal, "the Italian form did not refuse, so there is nothing to read it in").not.toBeNull();
+  // The control: asked for English, both refusals are the English ones. So what fails below is the
+  // mixing rather than one of the two never being translated at all.
+  expect(english.fromTheWidget.join(" "), "the English widget refusal is not the English one").toContain("could not be read");
+  expect(english.fromTheValidator.join(" "), "the English validator refusal is not the English one").toContain("required");
+
+  // And the same form asked for Italian: the widget speaks it, so the validator must too.
+  expect(italian.fromTheWidget.join(" "), "the Italian widget refusal did not follow the locale, so this is a different finding").not.toContain("could not be read");
 
   expect(
-    italian.refusal,
-    `the same form says ${JSON.stringify(italian.chrome)} in its controls and ${JSON.stringify(italian.refusal)} in its refusal, and a document has no message to give it`,
-  ).not.toBe(english.refusal);
+    italian.fromTheValidator.join(" "),
+    `one form asked for Italian shows ${JSON.stringify(italian.fromTheWidget[0])} and ${JSON.stringify(italian.fromTheValidator[0])}, and a document has no message to give it`,
+  ).not.toBe(english.fromTheValidator.join(" "));
 });
