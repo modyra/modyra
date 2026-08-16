@@ -6266,6 +6266,17 @@ control that does not read it (measured: the dial stays 12h with the value rewri
 without it). So every timepicker a document builds is 12h, and `"14:30"` is a value in the other
 format.
 
+**Re-measured from the document side, three spellings.** A field descriptor carrying `format: "24h"`,
+`hour12: false` or `timeFormat: "24h"` mounts without complaint and changes nothing: `"22:30"` typed
+into any of them is still refused, in `en-US`, `it-IT` and `de-DE` alike. The capability is not merely
+unread by the control — **there is no spelling a document can use to ask for it.**
+
+The locale does reach the widget, which is what makes the gap specific rather than general: in
+`it-IT` the toggle says *"Apri selettore orario"* and the popup's button says *"Annulla"*, around a
+dial that counts 12 and a field that accepts only `10:30 PM`. And `parseAnyTime("22:30", "24h")`
+returns `{hour: 10, minute: 30, period: "PM"}` in `@modyra/core/datetime` — the parser has always been
+able to read it.
+
 The widget accepts it, displays it and leaves it alone. Then the user opens the picker and presses OK
 **without touching a dial**:
 
@@ -12209,14 +12220,15 @@ the four are also wrong follows from that sentence rather than preceding it.
 ## State of the three tiers, measured
 
 ```
-node      pnpm battle            528 tests   464 pass   43 fail   21 todo
+node      pnpm battle            532 tests   466 pass   45 fail   21 todo
 browser   pnpm battle:browser    253 tests   180 pass   73 fail
 angular   pnpm battle:angular      6 tests     6 pass    0 fail
 ```
 
 The node count carries the ±3 band recorded above — the Studio packs flake under load, and the number
-to trust is the smallest of a few runs on a quiet machine. The 43 is 42 long-standing plus finding
-193's remaining half, which the owning session left open deliberately.
+to trust is the smallest of a few runs on a quiet machine. The 45 is 42 long-standing, plus finding
+193's remaining half which the owning session left open deliberately, plus findings 196 and 197. Two
+re-runs across the owning session's commits moved nothing else: no green battle turned red.
 
 **The Angular tier is green and runs in no CI job** (finding 36). It is the one adapter CLAUDE.md
 holds to migrating without unapproved variation, it cannot join `differential/runtimes/every-runtime`
