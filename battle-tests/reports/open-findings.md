@@ -10671,3 +10671,45 @@ Both refuse the two name shapes that matter for safety. What differs is everythi
 beyond the unknown kind are worth a look when this one is fixed: a **null entry** produces a raw
 `TypeError` in lit where plain names the problem, and a **dotted name** is taken by plain and dropped
 by lit — a disagreement about whether a dot in a field name is a path.
+
+## 180. A name that became a path
+
+**S1 · Modyra bug · `@modyra/core`** (both renderers show it, neither causes it)
+Claims: SUB-001, SEC-001
+Battle: `battle-tests/browser/a-name-that-became-a-path.spec.ts` — 2 failed
+
+A dot is this library's path separator, so a field *named* `a.b` is a name that reads as a path. The
+contract's answer is that it is not a name: `parseDynamicFields` **drops** it.
+
+Handed straight to a renderer, the engine builds the path:
+
+```
+fields: [{ name: "a.b", … }, { name: "plain", … }]
+
+plain   draws a control for it   submits {"plain":"", "a":{"b":"typed into the dotted one"}}
+lit     draws nothing for it     submits {"plain":"", "a":{"b":""}}
+```
+
+Both send a group called `a` that nothing declared. The renderer that draws **nothing** is the worse
+of the two: a value is in the payload with no control on the page that could have put it there.
+
+That is SUB-001 in its own words — *submission contains no undeclared path* — reached through the
+field's name rather than through rendering.
+
+### What the spec allows
+
+**The mount is refused, or what is submitted carries the names that were declared.** Dropping the
+field, refusing the list, and rendering it under its literal name all pass; nesting it does not. Both
+renderers currently nest.
+
+### Where this fits with 178 and 179
+
+Three findings from one sweep of hand-built field lists, and they separate cleanly:
+
+```
+178   duplicate name     lit renders a control for the entry it dropped, and it writes to the survivor
+179   unknown kind       lit renders a text box; plain refuses by name
+180   dotted name        both build a nested group the document never declared
+```
+
+The first two are renderer policy. This one is underneath both.
