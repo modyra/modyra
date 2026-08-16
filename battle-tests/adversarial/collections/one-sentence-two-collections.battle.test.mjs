@@ -18,10 +18,15 @@
  * collection out of a patch leaves it alone, in both. So the divergence is about naming a collection
  * with an empty value, not about patching at all.
  *
- * Either resolution closes this: the contract says which kind does which, or an empty value means the
- * same thing in both. The battle asserts the second because it is the one a reader would guess, and a
- * documented difference would make this battle wrong on purpose — which is a better outcome than a
- * consumer finding out from their data.
+ * The difference was kept and documented, for a reason this battle had not weighed: an index *is* a
+ * positional row's identity, so a partial list is not a partial patch but an ambiguous one. Making
+ * `[]` a no-op would leave a patch with **no spelling at all** for "this list is now empty", while a
+ * map keeps one in `setAll({})` — symmetry bought by removing a capability from one side.
+ *
+ * So what the second battle asserts now is the difference as declared, and the guard that makes it
+ * survivable: the destructive reading **says so**, in development, while the rows are still
+ * recoverable. The silence of the other two is asserted beside it, because a warning that fired on
+ * every patch would satisfy the first assertion and mean nothing.
  */
 
 import { array, createForm, field, group, record } from "@modyra/core";
@@ -29,15 +34,20 @@ import { array, createForm, field, group, record } from "@modyra/core";
 import { battle } from "../../harness/battle.mjs";
 import { expectClaim, expectEqual } from "../../harness/assertions.mjs";
 
-/** A form with one of each kind of collection, each holding two rows. */
-function filled() {
+/**
+ * A form with one of each kind of collection, each holding two rows.
+ *
+ * `devWarnings` is a parameter because the warning that makes the destructive reading survivable is
+ * dev-gated: a battle asking whether it speaks has to build a form that is listening.
+ */
+function filled({ devWarnings = false } = {}) {
   const form = createForm(
     {
       note: field("n"),
       rows: record(group({ code: field("") })),
       list: array(group({ sku: field("") })),
     },
-    { devWarnings: false },
+    { devWarnings },
   );
   form.f.rows.upsert("a", { code: "A" });
   form.f.rows.upsert("b", { code: "B" });
@@ -93,39 +103,80 @@ battle(
 battle(
   {
     claims: ["COL-002", "SUB-001"],
-    title: "naming a collection with nothing in it means the same for both kinds",
+    title: "the patch that empties a list says that it did",
     environments: ["node"],
   },
   async (ctx) => {
-    const outcomes = [];
+    /** Run something with the console captured, and give back what it said. */
+    const whileListening = (run) => {
+      const said = [];
+      const realWarn = console.warn;
+      console.warn = (...parts) => said.push(parts.join(" "));
+      try {
+        run();
+      } finally {
+        console.warn = realWarn;
+      }
+      return said;
+    };
 
-    const map = filled();
+    // A map named with nothing in it: no key to merge, so nothing changes — and nothing to warn about.
+    const map = filled({ devWarnings: true });
     const mapBefore = held(map);
-    map.patch({ rows: {} });
-    outcomes.push({ kind: "a keyed map, patched with {}", before: mapBefore, after: held(map) });
+    const aboutTheMap = whileListening(() => map.patch({ rows: {} }));
+    const mapAfter = held(map);
     map.destroy();
 
-    const list = filled();
+    // A list named with nothing in it: the whole list, because an index is a row's identity.
+    const list = filled({ devWarnings: true });
     const listBefore = held(list);
-    list.patch({ list: [] });
-    outcomes.push({ kind: "a list, patched with []", before: listBefore, after: held(list) });
+    const aboutTheList = whileListening(() => list.patch({ list: [] }));
+    const listAfter = held(list);
     list.destroy();
 
-    ctx.log.note("the same sentence, in two type systems", { outcomes });
+    // And a patch that leaves both out.
+    const untouched = filled({ devWarnings: true });
+    const untouchedBefore = held(untouched);
+    const aboutNothing = whileListening(() => untouched.patch({ note: "changed" }));
+    const untouchedAfter = held(untouched);
+    untouched.destroy();
 
-    // The premise: both started holding two rows, so a difference below is what the patch did.
-    expectClaim(outcomes.every((each) => each.before.rows.length === 2 && each.before.list === 2), {
-      claimIds: ["COL-002"],
-      what: "the forms did not start with rows in both collections",
-      detail: JSON.stringify(outcomes),
+    ctx.log.note("the same sentence, in two type systems", {
+      map: { before: mapBefore, after: mapAfter, said: aboutTheMap.length },
+      list: { before: listBefore, after: listAfter, said: aboutTheList.length },
+      neither: { before: untouchedBefore, after: untouchedAfter, said: aboutNothing.length },
     });
 
-    const mapKept = outcomes[0].after.rows.length === outcomes[0].before.rows.length;
-    const listKept = outcomes[1].after.list === outcomes[1].before.list;
-    expectEqual(listKept, mapKept, {
+    // The premise: both started holding two rows, so what follows is what each patch did.
+    expectClaim(mapBefore.rows.length === 2 && listBefore.list === 2, {
+      claimIds: ["COL-002"],
+      what: "the forms did not start with rows in both collections",
+      detail: () => JSON.stringify({ mapBefore, listBefore }),
+    });
+
+    // The difference, as declared.
+    expectEqual(mapAfter.rows, mapBefore.rows, {
+      claimIds: ["COL-002"],
+      what: "a keyed collection named with `{}` in a patch lost rows",
+    });
+
+    expectEqual(listAfter.list, 0, {
+      claimIds: ["COL-002"],
+      what: "a list named with `[]` in a patch was not emptied, so the sentence means something new",
+    });
+
+    // The guard that makes the difference survivable: the destructive reading is the one that
+    // speaks, and it names the collection and how much it took.
+    expectClaim(aboutTheList.some((line) => line.includes('"list"') && line.includes("2 row")), {
       claimIds: ["COL-002", "SUB-001"],
-      what: "naming a collection with nothing in it leaves a map alone and empties a list, and the contract says which for neither",
-      detail: JSON.stringify(outcomes),
+      what: "emptying a list through a patch said nothing, or said nothing about which list and how many rows",
+      detail: () => JSON.stringify(aboutTheList),
+    });
+
+    // And the control: the readings that take nothing say nothing.
+    expectEqual([aboutTheMap.length, aboutNothing.length], [0, 0], {
+      claimIds: ["COL-002"],
+      what: "a patch that took no rows warned as though it had",
     });
   },
 );
