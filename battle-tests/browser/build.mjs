@@ -6,7 +6,7 @@
  * entry points every other battle uses, which is what keeps this a consumer build rather than a
  * privileged one. Output is disposable and git-ignored.
  */
-import { mkdirSync, writeFileSync } from "node:fs";
+import { copyFileSync, mkdirSync, writeFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 
 import { build } from "esbuild";
@@ -16,6 +16,25 @@ const REPO_ROOT = resolve(BATTLE_ROOT, "..");
 const OUT_DIR = join(BATTLE_ROOT, ".tmp-browser");
 
 mkdirSync(OUT_DIR, { recursive: true });
+
+// The stylesheet, without which the host renders structure and no geometry.
+//
+// A popup's decided width, its placement above or below its anchor, a column's span and whether a
+// control is shown are all carried as `--mdy-overlay-*` and `--mdy-layout-*` custom properties, and
+// nothing turns them into a rendered box except these rules. A page without them answers every
+// geometric question with the same answer — unpositioned, `display: block` — which is an answer that
+// cannot fail, and a spec that asks one is measuring nothing.
+//
+// `default.css` is what `@modyra/styles` ships as its default and the layer the catalog's own class
+// names key on. The themes — material, ios, ionic — change geometry, so a tier that loaded one of
+// them would be measuring that theme rather than the contract every adapter shares.
+//
+// Copied from the package's build output for the same reason the Plain bundle is: the file a
+// consumer loads through the `@modyra/styles/default.css` subpath.
+copyFileSync(
+  join(REPO_ROOT, "packages", "styles", "dist", "modyra-default.css"),
+  join(OUT_DIR, "modyra.css"),
+);
 
 await build({
   entryPoints: [join(BATTLE_ROOT, "browser", "host", "entry.mjs")],
@@ -50,6 +69,7 @@ writeFileSync(
   <head>
     <meta charset="utf-8" />
     <title>Modyra battle host (lit)</title>
+    <link rel="stylesheet" href="./modyra.css" />
   </head>
   <body>
     <main id="stage"></main>
@@ -67,6 +87,7 @@ writeFileSync(
   <head>
     <meta charset="utf-8" />
     <title>Modyra battle host</title>
+    <link rel="stylesheet" href="./modyra.css" />
   </head>
   <body>
     <main id="stage"></main>

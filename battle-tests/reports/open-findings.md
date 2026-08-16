@@ -11087,3 +11087,26 @@ stands.
 **Next**: load a stylesheet in the host and re-measure the tier against the 69-red baseline, with the
 theme chosen and the reason written beside the `<link>`. A green obtained without CSS, on a question
 that depends on CSS, is an empty green.
+
+## Checked and clean: every name the widget contract uses names something it declares
+
+A kind contract refers to its parts from six places, and each is an opportunity for a name to drift
+out of the set it belongs to. Checked across all 17 kinds, in one process, no renderer involved:
+
+```
+part ↔ structure node        every part has a node, every node has a part
+node.parent                  names a part of the same kind
+MDY_WIDGET_RELATIONS         every from and every to is a part
+partsRequiringName           every name is a part
+staticParts, overlayOnlyParts every name is a part
+variants[].required          every name is a part
+```
+
+**Zero problems.** 249 parts, 249 nodes, 38 relations, and the parts a name is required on, all
+naming things the same contract declares. Finding 186's `optional`-versus-`overlayOnlyParts` reading
+was the contract's only internal inconsistency found, and it was one of meaning rather than of
+reference.
+
+Worth stating because the failures filed against this contract — 185, 186 — could be read as a
+surface that has drifted from itself. It has not. Both are about what the contract *says*, not about
+it having lost track of its own vocabulary.
