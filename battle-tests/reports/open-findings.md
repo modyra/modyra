@@ -11374,4 +11374,12 @@ campaign's standing instruction forbids reaching.
 
 **What this does not check.** That the files resolve *as a consumer would resolve them* — conditions,
 `types` ordering, ESM/CJS shape. `hostile-consumers/packed-consumer.battle.test.mjs` is where that
-lives.
+lives, and it is green: *a consumer installing the tarball sees what the workspace sees*.
+
+**And the release gate itself.** 163 changesets — 26 major, 99 minor, 148 patch bumps — of which 46
+name a package marked `private: true`: `@modyra/angular` and the `studio-*` family. That looked like
+46 defects until the tool was run instead of reasoned about: `pnpm changeset status` succeeds and
+lists them, because versioning a private package without publishing it is the documented default, and
+Angular is published by `scripts/publish-angular.mjs` rather than by the workspace script. Recorded
+because the near-miss is the useful part — a hand-written rule about a tool's inputs is not the tool.
+`core`, `widgets`, `plain`, `angular` and `lit` bump major.
