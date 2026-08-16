@@ -10542,3 +10542,38 @@ out as "claims with no battle".
 
 All fourteen of mine now name theirs. The convention is weak — sixty-four other specs still do not —
 but a claim registered for a finding and cited by nothing is a gap I made, and it is mine to close.
+
+## Measured, not filed: a parse result holds the document's own arrays
+
+`parseDynamicForm` is documented as parsing *untrusted input*, and what it returns aliases that input:
+
+```
+parsed.fields[0].options === OPTIONS                    true
+OPTIONS.push("loose", {label: "no value"}, {value: "__proto__"})
+parsed.fields[0].options                                all four, in a result that said ok
+parseDynamicForm(the same document) again               ok: false, MDY_DYNAMIC_OPTIONS_REQUIRED
+```
+
+So the verdict is about the document as it was, and the value handed back can stop matching it. A
+consumer holding `result.fields` after mutating their own document has a validated object carrying
+shapes the parser refuses.
+
+**Not filed**, because the documented flow does not reach it: the guide parses `await response.json()`
+— an object nobody else holds — and mounts from the result. Getting here means mutating a document you
+kept, which is your own array changing under your own feet. Filing it would be manufacturing a
+finding out of an ordinary API choice: copying every option list of every document is a real cost, and
+nothing promises a copy.
+
+Recorded because it is the kind of property that stops being harmless the day documents are cached in
+a store and re-mounted, and because the two halves that *are* guaranteed were measured beside it:
+
+- **Parsing does not mutate the document it was given** — byte-identical afterwards.
+- **A frozen options array parses** and is kept as it is, so a consumer who wants the guarantee can
+  have it today by freezing what they hand over.
+
+## Checked and clean: two forms do not share anything they were built from
+
+- A **shared initial value object** used by two forms: writing through one leaves the other at its
+  start, and the shared object itself is untouched.
+- A **shared schema object** used to build two forms: they are independent, and writing in one does
+  not move the other.
