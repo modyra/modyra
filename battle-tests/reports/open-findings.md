@@ -11465,7 +11465,11 @@ ten, a target naming no field, a condition reading no field. Discarded, uncounte
   *"report the Modyra Dynamic Form Contract's diagnostics for a form document written as a literal"*.
   Driven over these documents it reports every field fault — unknown kind, missing name, duplicate
   name, `__proto__` — and is **silent on all four rule faults**. It is not at fault: it reports the
-  diagnostics it is given, and there are none.
+  diagnostics it is given, and there are none. Driven over twelve inputs a real author writes — a
+  spread into `fields`, a computed key, a variable field list, a getter, a template-literal name, a
+  40-deep nesting, a self-reference, a 5000-character name, a function value — it neither crashes nor
+  invents: it reports what it can evaluate statically and stays silent on the rest, which is what a
+  lint rule should do.
 - **Parse time.** `diagnostics` is empty and `rejectedCount` does not move.
 - **Runtime.** The rule is gone, so there is nothing left to misbehave.
 
