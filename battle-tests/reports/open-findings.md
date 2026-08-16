@@ -11866,7 +11866,7 @@ fifty-nine to reconcile, and the handful still open with a measurement behind th
 column is the one that costs the most, because an unrecorded repair makes the next person redo the
 work rather than merely check it.
 
-## 195. A value the panel cannot print
+## 195. A value the panel cannot print — repair in flight
 
 **Severity** S2 · **Classification** published call stops instead of saying so · **Battle**
 `adversarial/reactivity/a-value-the-panel-cannot-print.battle.test.mjs` (red) · **Claims** API-001
@@ -11923,3 +11923,27 @@ cleanly — so the red is the value and not the panel.
 Goes green when a `BigInt` is described the way a `File` is. `Map`, `Set` and a function come out as
 `{}`, the same as plain `JSON.stringify` — not claimed here: the header names `File` and cycles as
 what it is for, and none of those three is a value a form's contracts say a field may hold.
+
+### Nearly retracted, and the retraction would have been the error
+
+Widening the sweep to every reader of a form's value — `getValue`, `submitValue`, `getChanges`,
+`buildSubmitEvent`, the snapshot — produced a table where all of them appeared to throw. **The probe's
+own logger was stringifying the results**, and `JSON.stringify` of a BigInt throws wherever it meets
+one, so the instrument failed on every row and read as the product failing on every row.
+
+Re-measured without the logger, everything returned — including `mdyFormSnapshot`. For a few minutes
+that read as *the finding was wrong and the panel never stopped*.
+
+It was not wrong. `packages/core/src/serialize.ts` is modified in the working tree, and the
+description it now carries is the repair:
+
+> *"`JSON.stringify` raises `Do not know how to serialize a BigInt` rather than writing something, so
+> a snapshot carrying one took the devtools panel down with it — the panel a developer opens precisely
+> when something is already wrong. […] Described, like a File, rather than coerced: `10n` and `10` are
+> not the same value."*
+
+Rebuilt against it, the battle passes. **The finding was real where it was filed, the fix arrived
+between the filing and the re-measurement, and a shared working tree makes those two indistinguishable
+unless the tree is checked.** Twice tonight a re-measurement picked up a peer's uncommitted repair —
+here and in finding 193 — and `git status` on the package is what separates *never true* from *true
+and just fixed*.
