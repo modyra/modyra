@@ -11058,6 +11058,15 @@ is always there.** A control that cannot fail for the reason under test is not a
 The spec is deleted rather than rewritten. A red that accuses the product of a hole in the test bench
 is the worst thing to leave in a register: whoever inherits it repairs in the wrong direction.
 
+**What replaced it.** `adversarial/widgets/a-width-the-anchoring-decides.battle.test.mjs`, green: the
+chain that was accused and found sound is now held. Given the flat geometry the function actually
+takes, `decideOverlayPlacement` returns `max(anchorWidth, minWidth)` and `overlayStyleProperties`
+emits it as `--mdy-overlay-width`, for both kinds that declare a minimum. The premise asserts the
+declared minimum is *wider than the anchor*, so a decision that merely echoed the anchor would fail
+rather than pass by coincidence, and a second control holds the neighbouring `--mdy-overlay-max-height`
+so an emission that emptied entirely could not leave this green. Deleting the spec had left UI-010
+with nothing testing it at all.
+
 ### What else this blinds
 
 Seven browser specs read `offsetParent`, `getComputedStyle`, `getBoundingClientRect`, `clientWidth`
