@@ -10178,3 +10178,46 @@ nothing at all.
 The assertion is now `the two must differ` rather than an unconditional failure — it goes green the
 moment anything observable tells them apart, which is what a repair would do. An earlier draft of this
 rewrite asserted `false` outright, which is a battle no fix can satisfy.
+
+## 172. Two answers to what leaves a form
+
+**S2 · Modyra bug · `@modyra/core`** (severity stated below the claims' own)
+Claims: VAL-002, SUB-001
+Battle: `battle-tests/adversarial/submission/two-answers-to-what-leaves.battle.test.mjs` (red, enforced)
+
+`submitValue()` leaves out a field that is out of play — VAL-002, stated as a promise about
+submission. `getChanges()` is documented as a *minimal nested patch*, an `Object.is` diff of each leaf
+against its initial, and the guide talks about it as something a consumer **sends**, in those words:
+*when a removal is itself something you need to send*.
+
+They disagree about the same field:
+
+```
+field in play              submitValue ["mode","secret"]   getChanges ["mode","secret"]
+switched off by a rule     submitValue ["mode"]            getChanges ["mode","secret"]
+disabled through a handle  submitValue ["a"]               getChanges ["a","b"]
+made inactive              submitValue ["a"]               getChanges ["a","b"]
+```
+
+Three ways out of three. So this is not the rules feature: it is how a form has always read, and the
+rules only made it easier to reach.
+
+Each function is right about its own question — the value really did change, and it really must not
+be submitted. The consumer is the one holding two answers, and a PATCH built the documented way
+carries exactly what the other way withholds. Nothing on either side says they differ.
+
+### Why S2 rather than the claims' own S0
+
+VAL-002 is S0 and is the promise at stake, but `submit()` itself is not wrong: a consumer following it
+gets exactly what the contract says. What is wrong is that a second published reader, presented in the
+guide as a way to send, answers differently for a value the first is deliberately withholding. That is
+a divergence between two surfaces rather than a payload the engine got wrong — and stated at S2 so
+the finding is not carried at a severity its own evidence does not reach.
+
+### Controls run
+
+- **In play, both carry it**, so two functions that never mention the field would not pass.
+- **The value is still held** in every case, which is what VAL-002 promises and what makes this about
+  reading rather than about losing it.
+- **All three ways of taking a field out of play** are measured separately, so a repair aimed at rules
+  alone is visible as one that fixed a third of it.
