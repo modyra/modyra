@@ -6,15 +6,18 @@
  * is read the same way — so the engine skips the check rather than half-starting it. That part is
  * documented and pinned in `angular/degraded-reactivity`.
  *
- * What is not pinned is what a consumer is told. In development a console warning names the field. In
- * production, with `devWarnings` off, there is nothing at all — and the strongest way to say that is
- * not to ask a sink whether it heard: it is to compare the form with one whose check ran and passed.
- * They are identical on every surface an application can read.
+ * What a consumer is told is the rest of it, and it is now something rather than nothing: a form takes
+ * a `diagnostics` sink and a skipped check reports `MDY_ASYNC_FEATURE_DISABLED` through it, outside
+ * development as well as in it. This battle is that repair's regression.
  *
- * `MDY_ASYNC_FEATURE_DISABLED` is exported for this situation and constructed nowhere in the
- * workspace, and a form takes no `diagnostics` option at all, so there is no sink to be silent —
- * finding 157 is that gap and this battle no longer measures through it. An earlier version installed
- * one on `createForm`, which does not read it, and would have stayed red after a correct repair.
+ * What it also pins is why the sink is needed at all: the two forms are **identical** on the surfaces
+ * an application reads without one. `valid` and `canSubmit` say the same thing whether the server
+ * judged the value or nobody did, so a uniqueness rule that quietly stopped being enforced looks
+ * exactly like one that passes. The sink is the only thing that tells them apart.
+ *
+ * An earlier version of this battle installed the sink on `createForm` when `createForm` did not read
+ * it, so "nothing reached the sink" was true whatever the engine did — it would have stayed red after
+ * a correct repair.
  *
  * The engine is not wrong to skip the check — running half of it would be worse. It is the silence
  * that a consumer cannot build on: a uniqueness rule that quietly stopped being enforced looks
@@ -37,13 +40,14 @@ function withoutEffects() {
 /** A form asking a server about its only field, over a given reactivity. */
 async function asking(reactivity, devWarnings, answer = async () => ["already taken"]) {
   let ran = 0;
+  const reported = [];
   const form = createForm(
     { a: field("", [], serverValidator(async (...args) => { ran += 1; return answer(...args); })) },
-    { reactivity, devWarnings },
+    { reactivity, devWarnings, diagnostics: { report: (diagnostic) => reported.push(diagnostic.code) } },
   );
   form.f.a.set("x");
   await settled();
-  const state = { ran, valid: form.state.valid(), canSubmit: form.state.canSubmit() };
+  const state = { ran, reported, valid: form.state.valid(), canSubmit: form.state.canSubmit() };
   form.destroy();
   return state;
 }
@@ -66,8 +70,7 @@ battle(
       detail: JSON.stringify(capable),
     });
 
-    // Skipping is the documented answer and not what this battle disputes: what it disputes is that
-    // nothing observable says it happened.
+    // Skipping is the documented answer and not what this battle disputes.
     const skipped = await asking(withoutEffects(), false);
     ctx.log.note("a reactivity that cannot, in production", skipped);
 
@@ -76,32 +79,36 @@ battle(
       what: "the check half-started on a reactivity that cannot run effects, which is worse than skipping it",
     });
 
-    // The comparison that needs no channel: a form whose check was skipped, against one whose check
-    // ran and answered nothing. If a consumer can act on the difference, there is a difference.
+    // The premise: the check really did run in the other one, so the two differ in what happened
+    // rather than in how they were built.
     const passed = await asking(vanillaReactivity(), false, async () => null);
-    const asRead = (state) => ({
-      valid: state.valid,
-      canSubmit: state.canSubmit,
-    });
-    ctx.log.note("the two forms, as an application reads them", { skipped: asRead(skipped), passed: asRead(passed) });
-
-    // The premise: the check really was skipped in one and really did run in the other, so what is
-    // compared below is a difference in what happened rather than two runs of the same thing.
-    expectClaim(skipped.ran === 0 && passed.ran === 1, {
+    expectClaim(passed.ran > 0, {
       claimIds: ["VAL-001"],
-      what: "the two forms did not differ in whether the check ran, so comparing what they report says nothing",
+      what: "the check did not run on a capable reactivity, so nothing below compares a skip with a run",
       detail: () => JSON.stringify({ skipped, passed }),
     });
 
-    // And the assertion this battle exists for: a consumer has to be able to tell them apart. It goes
-    // green the moment anything an application reads differs — a pending that stays true, an error,
-    // a state of its own — and stays red while a uniqueness rule that quietly stopped being enforced
-    // looks exactly like one that passes.
-    const same = JSON.stringify(asRead(skipped)) === JSON.stringify(asRead(passed));
-    expectClaim(!same, {
-      claimIds: ["VAL-001", "REA-002", "SUB-001"],
-      what: "a form whose server check was skipped reports exactly what a form whose check ran and passed reports, and with devWarnings off nothing else is said",
-      detail: () => JSON.stringify({ skipped: asRead(skipped), passed: asRead(passed) }),
+    // What an application reads without a sink: the same thing either way. This is why the channel
+    // matters, and it is asserted rather than described so that a future change making the state
+    // itself distinguishable is visible here.
+    const asRead = (state) => ({ valid: state.valid, canSubmit: state.canSubmit });
+    ctx.log.note("the two forms, as an application reads them", { skipped: asRead(skipped), passed: asRead(passed) });
+
+    expectEqual(asRead(skipped), asRead(passed), {
+      claimIds: ["SUB-001"],
+      what: "the two forms now differ in what they report, which would make the sink no longer the only way to tell them apart",
+    });
+
+    // And the channel itself, outside development: the skip is named, and a run that happened says
+    // nothing.
+    expectEqual(skipped.reported, ["MDY_ASYNC_FEATURE_DISABLED"], {
+      claimIds: ["REA-002", "VAL-001"],
+      what: "a skipped check did not name itself to the sink a consumer installed",
+    });
+
+    expectEqual(passed.reported, [], {
+      claimIds: ["REA-002"],
+      what: "a check that ran reported a degradation, so the sink says the same thing either way",
     });
   },
 );

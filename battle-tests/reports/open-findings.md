@@ -10397,3 +10397,30 @@ deciding where focus goes is something this package already does elsewhere.
 
 - **Tab order follows the document**, and a disabled field is skipped, in both renderers. The one
   visiting `one → two → three → four` still visits `one → three → four` with `two` disabled.
+
+
+## 174, half closed — and what the other half now looks like
+
+`rebaselineToCurrentValue()` is **on the form**, and the whole-form call works: after it, `getChanges()`
+is empty. That half is closed and verified.
+
+`setInitialValue` gained ancestor paths, and they land at some levels and not others. Asked one level
+at a time, with a real change to clear:
+
+```
+setInitialValue("grp", …)                 THROWS — "names \"grp\", which this form does not declare"
+setInitialValue("rows", …)                nothing happens, nothing said
+setInitialValue("rows.row-…", …)          works
+setInitialValue("rows.row-….c", …)        works
+```
+
+Three ancestor kinds, three different answers. A **row** takes an ancestor now; the **collection
+itself** does not, and is the only one that is silent about it — the level a consumer reaches for
+first, because it is the one they can name without knowing what the user created.
+
+And the group's refusal names the wrong reason: the form *does* declare `grp`, as a group. The check
+is "is this a leaf path", and the message says "not declared", which sends a reader looking for a
+typo in a name that is spelled correctly.
+
+The battle now asserts all three levels, with the two that work as the control — so a repair that
+reaches the collection is visible, and one that breaks a row is too.
