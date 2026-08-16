@@ -10620,3 +10620,54 @@ decide whose policy wins — plain's refusal and a quieter "render only what sur
 
 - **The surviving field takes its value first**, so the overwrite is measured against something real.
 - **Plain's refusal is asserted to name the reason**, rather than counting any failure as correct.
+
+## 179. A kind nobody declared becomes a text box
+
+**S1 · Modyra bug · `@modyra/lit`** (severity from SEC-005, which is what this is about)
+Claims: SEC-005, DYN-001
+Battle: `battle-tests/browser/a-kind-nobody-declared-becomes-a-text-box.spec.ts` — 1 failed, 1 passed
+
+`kind` is not decoration: `password` is a kind of its own precisely because what it means is how the
+control behaves, and an adapter is where that is read. A kind nobody declared has no behaviour to
+read, and the two renderers answer differently:
+
+```
+kind: "passwordd"      plain   refuses the mount, naming the kind
+                       lit     renders <input type="text">
+```
+
+One letter more than `password`, and what the user types is on the screen. The page looks finished.
+
+### The control that makes it narrow and real
+
+Every one of the seventeen declared kinds is mounted first, in the same run, and each renders as
+something of its own — no declared kind falls back to a text box. So this is about kinds nobody
+declared, not about a renderer that substitutes often.
+
+### Where it can be reached from
+
+The parser refuses an unknown kind with `MDY_DYNAMIC_UNKNOWN_KIND`, so the documented flow — parse,
+then mount what the parse returned — never arrives here. A field list built by hand and handed
+straight to the renderer does, and plain treats guarding it as the renderer's own job.
+
+### The rest of that sweep, recorded
+
+Nine malformed field lists, handed to each renderer directly:
+
+```
+                     plain                                   lit
+no name              refuses by name                         mounts a text field, warns
+empty name           refuses by name                         refuses by name
+name "__proto__"     refuses by name                         refuses by name
+dotted name          mounts one control                      mounts none, warns
+unknown kind         refuses by name                         mounts a text field, warns
+not an object        refuses by name                         mounts a text field, warns
+a null entry         refuses by name                         raw TypeError on `null.name`
+empty list           mounts nothing                          mounts nothing
+no label             mounts one control                      mounts one control
+```
+
+Both refuse the two name shapes that matter for safety. What differs is everything else, and two rows
+beyond the unknown kind are worth a look when this one is fixed: a **null entry** produces a raw
+`TypeError` in lit where plain names the problem, and a **dotted name** is taken by plain and dropped
+by lit — a disagreement about whether a dot in a field name is a path.
