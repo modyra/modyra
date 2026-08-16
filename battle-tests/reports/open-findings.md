@@ -11226,10 +11226,10 @@ anything about the other themes, which this tier does not load. The next measure
 takes this is every declared pair resolved *in its own scope*.
 
 
-## 189. A decision record that sends the reader to a package without the thing
+## 189. A decision record that sends the reader to a package without the thing — CLOSED
 
 **Severity** S3 · **Classification** decision record points at a path that does not exist ·
-**Battle** none — read from the packages' own exports · **Claims** —
+**Battle** none — read from the packages' own exports · **Claims** — · **Closed by** `1af86701`
 
 ADR 0015 is what makes finding 188's contrast question answerable at all: it carries the light-text
 rule, the floor, and the cost. It names where the number lives, twice:
@@ -11262,3 +11262,21 @@ took that path an hour ago and concluded the floor did not exist.
 
 Goes green when the record names `@modyra/styles`, or when `@modyra/core` exports it. The first is
 what the code already does.
+
+**Closed, and verified rather than accepted.** The record now names `@modyra/styles`, and the only
+surviving mention of `@modyra/core/color-utils` is inside a **named amendment** stating what it used
+to say and why that was dangerous — which is the form the project instructions requires: a record is superseded or
+amended, never edited into agreement with the present.
+
+Two things were repaired beyond what was filed:
+
+- **The sentence that caused the misreading.** `DESIGN.md` described the floor in a way that reads
+  like an acceptance threshold — *"3.5:1 … below AA for normal text on purpose"* — and both this hunt
+  and the owning session concluded from it that 4.09 was covered. The record now says it outright:
+  **the floor chooses which colour; AA is what a pair must reach.** Two numbers, and that paragraph
+  read as one.
+- **The Verification section named `npm run test:core`**, a suite that does not contain the test it
+  points at. Now `npm run test:styles`. Checked: the script exists, runs
+  `packages/styles/test/*.test.mjs`, and `color-utils.test.mjs` is there.
+
+The decision itself is untouched, which is right — nothing measured here challenged it.
