@@ -10808,3 +10808,42 @@ would justify both.
 reactivity` — no locale among them, and none needed: the renderer reads the tag from the **field**,
 which is the right place, since the tag that formats a date and the tag that names a button are the
 same tag. My first probe passed a locale in the mount options and measured nothing.
+
+## 183. Two judges of one address
+
+**S2 · Modyra bug · `@modyra/core` and the `email` kind together**
+Claims: VAL-004, DYN-001
+Battle: `battle-tests/browser/two-judges-of-one-address.spec.ts` (red)
+
+`kind: "email"` puts `type="email"` on the control, so the platform judges what is typed. A document
+may also ask for `validators: { email: true }`, and then the library judges it too. They disagree in
+both directions, and a form can be in either state:
+
+```
+typed                    platform   library (kind alone)   library (with the validator)
+a@b.c                    ok         ok                     ok            ← the control
+a@b                      ok         ok                     refused
+a@b..c                   refused    ok                     ok
+ünicode@example.com      refused    ok                     ok
+a@[127.0.0.1]            refused    ok                     ok
+```
+
+**VAL-004 names the second row**: a native constraint never promises less than the validators it came
+from, and a control that accepts `a@b` where the form refuses it has promised less. The user is
+invited to submit what will be refused.
+
+**The rows below it are the same disagreement the other way.** With the kind alone the platform is the
+only judge, and inside a native `<form>` it blocks a submission the library never objected to — with
+no message anywhere, because as far as the form is concerned the value is fine.
+
+### Corrected on the way
+
+The first version of this measurement set values programmatically and found three more disagreements —
+`"a@b.c "`, `" a@b.c"`, `"a@b.c\n"`. Those are not this: the platform **sanitises** what is typed into
+an email box, so a user cannot produce them, and setting them past the control leaves the model
+holding whitespace the box has already dropped. Every address here is typed.
+
+That is worth keeping as its own note: `setValue` on an email field can leave the model holding a
+string the control would never have produced, and the control shows the sanitised one. It is the same
+shape as finding 151 — an answer that depends on how the value arrived — and it is not filed
+separately because 151 already carries it.
