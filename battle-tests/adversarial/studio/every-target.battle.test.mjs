@@ -242,34 +242,49 @@ battle(
       what: "the door has no named refusal, so a raw type error is not a departure from anything",
     });
 
-    // A field with no name: accepted, compiled, and emitted under the name JavaScript prints for a
-    // value that is not there.
+    // The second control, and the one that makes the silence specific: the model does diagnose at
+    // this level. A select with no options is reported by name, through the same door, in the same
+    // call shape — so what follows is a gap in a vocabulary that covers exactly this, not a door that
+    // never speaks below its root.
+    expectClaim(result.selectWithoutOptions.loadDiagnostics > 0, {
+      claimIds: ["STU-003"],
+      what: "the model no longer reports a select with no options, so its field-level channel is not the comparison",
+      detail: () => JSON.stringify(result.selectWithoutOptions),
+    });
+
+    // What STU-003 asks of every node the model cannot represent: it reaches the output as itself, or
+    // it is reported. A `StudioModelError` is a report — the door's own refusal, by name — and so is a
+    // diagnostic. What satisfies neither half is silent acceptance, and what is worse than both is a
+    // raw type error: a crash is not a refusal, and the editor reading the file is what stops.
+    const answered = (outcome) =>
+      outcome.door === "StudioModelError"
+      || (outcome.loadDiagnostics ?? 0) + (outcome.generateDiagnostics ?? 0) > 0;
+
+    for (const [what, outcome] of [
+      ["a field with no name", result.nameless],
+      ["a field whose kind the catalog does not declare", result.strangeKind],
+      ["a field node with no validators", result.noValidators],
+      ["a group with no children", result.groupNoChildren],
+    ]) {
+      expectClaim(outcome.door !== "TypeError", {
+        claimIds: ["STU-003"],
+        what: `${what} was met with a raw TypeError rather than the door's own refusal`,
+        detail: () => String(outcome.message ?? ""),
+      });
+
+      expectClaim(answered(outcome), {
+        claimIds: ["STU-003"],
+        what: `${what} passed the loader and the generator without a word`,
+        detail: () => JSON.stringify(outcome).slice(0, 200),
+      });
+    }
+
+    // And the shape of the silence when there is one: a name that is not a name reaches the emitted
+    // module as the word JavaScript prints for a value that is not there.
     expectClaim(!result.nameless.form?.includes("undefined"), {
       claimIds: ["STU-003"],
       what: "a field with no name was emitted as a member called `undefined`",
       detail: () => String(result.nameless.form ?? "").replace(/\s+/g, " "),
     });
-
-    expectClaim((result.nameless.loadDiagnostics ?? 0) + (result.nameless.generateDiagnostics ?? 0) > 0, {
-      claimIds: ["STU-003"],
-      what: "a field with no name passed the loader and the generator without a word",
-      detail: () => JSON.stringify(result.nameless),
-    });
-
-    // A kind the catalog does not declare, through the same two doors.
-    expectClaim((result.strangeKind.loadDiagnostics ?? 0) + (result.strangeKind.generateDiagnostics ?? 0) > 0, {
-      claimIds: ["STU-003"],
-      what: "a field whose kind the catalog does not declare was carried to the output unreported",
-      detail: () => JSON.stringify(result.strangeKind),
-    });
-
-    // And the two shapes the door meets with a raw type error rather than its own refusal.
-    for (const what of ["noValidators", "groupNoChildren"]) {
-      expectClaim(result[what].door === "accepted" || result[what].door === "StudioModelError", {
-        claimIds: ["STU-003"],
-        what: `${what} was met with a raw ${result[what].door} rather than the door's own refusal`,
-        detail: () => String(result[what].message ?? ""),
-      });
-    }
   },
 );
