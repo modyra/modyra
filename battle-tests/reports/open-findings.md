@@ -10142,3 +10142,39 @@ the operator asks about the field alone. Green again.
 This is the second time this session a probe that emitted one shape for a whole vocabulary produced a
 false verdict, and the first time it nearly forced a contract decision. A generator that says the same
 thing to every member of a list is not testing the list.
+
+## A red that would have survived its own repair
+
+`adversarial/reactivity/a-check-nobody-runs.battle.test.mjs` is an S0 red on the queue, and its claim
+is true: a server check the reactivity cannot run is skipped — documented and right — and in
+production nothing says so. But it was measuring through a sink that was never installed.
+
+```js
+createForm(schema, { reactivity, devWarnings, diagnostics: { report } })
+```
+
+A form takes `submitMode, reactivity, validators, history, draft, security, autoActivate,
+devWarnings`. **`diagnostics` is not one of them**, so "nothing reached the sink" was guaranteed
+whatever the engine did, and the battle would have stayed red after a repair that routed the
+diagnostic correctly. The fourth time this session that a sink handed to `createForm` measured
+nothing, and the first time it was in a battle somebody else is working from.
+
+### What it asserts now, which needs no channel at all
+
+A form whose check was skipped, against one whose check ran and answered nothing:
+
+```
+check skipped     {valid: true, canSubmit: true, pending: false, errors: [], submitted: ["a"]}
+check ran, passed {valid: true, canSubmit: true, pending: false, errors: [], submitted: ["a"]}
+distinguishable?  no
+```
+
+Byte-identical on every surface an application can read. That is the finding stated at full strength:
+a uniqueness rule that quietly stopped being enforced looks exactly like one that passes.
+
+Measured beside it: with `devWarnings` on there is **one** console line naming the field; with it off,
+nothing at all.
+
+The assertion is now `the two must differ` rather than an unconditional failure — it goes green the
+moment anything observable tells them apart, which is what a repair would do. An earlier draft of this
+rewrite asserted `false` outright, which is a battle no fix can satisfy.

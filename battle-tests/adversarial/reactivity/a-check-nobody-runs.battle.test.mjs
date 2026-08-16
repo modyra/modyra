@@ -7,12 +7,14 @@
  * documented and pinned in `angular/degraded-reactivity`.
  *
  * What is not pinned is what a consumer is told. In development a console warning names the field. In
- * production, with `devWarnings` off, there is nothing: no console line, and nothing in the
- * `diagnostics` sink — the programmatic channel a consumer installs for exactly this. The form
- * reports `valid` and `canSubmit` for a value the server was supposed to judge and never saw.
+ * production, with `devWarnings` off, there is nothing at all — and the strongest way to say that is
+ * not to ask a sink whether it heard: it is to compare the form with one whose check ran and passed.
+ * They are identical on every surface an application can read.
  *
- * `MDY_ASYNC_FEATURE_DISABLED` is exported for this situation and never reaches the sink. The code,
- * the situation and the channel all exist and do not meet.
+ * `MDY_ASYNC_FEATURE_DISABLED` is exported for this situation and constructed nowhere in the
+ * workspace, and a form takes no `diagnostics` option at all, so there is no sink to be silent —
+ * finding 157 is that gap and this battle no longer measures through it. An earlier version installed
+ * one on `createForm`, which does not read it, and would have stayed red after a correct repair.
  *
  * The engine is not wrong to skip the check — running half of it would be worse. It is the silence
  * that a consumer cannot build on: a uniqueness rule that quietly stopped being enforced looks
@@ -33,16 +35,15 @@ function withoutEffects() {
 }
 
 /** A form asking a server about its only field, over a given reactivity. */
-async function asking(reactivity, devWarnings) {
+async function asking(reactivity, devWarnings, answer = async () => ["already taken"]) {
   let ran = 0;
-  const reported = [];
   const form = createForm(
-    { a: field("", [], serverValidator(async () => { ran += 1; return ["already taken"]; })) },
-    { reactivity, devWarnings, diagnostics: { report: (diagnostic) => reported.push(diagnostic.code) } },
+    { a: field("", [], serverValidator(async (...args) => { ran += 1; return answer(...args); })) },
+    { reactivity, devWarnings },
   );
   form.f.a.set("x");
   await settled();
-  const state = { ran, reported, valid: form.state.valid(), canSubmit: form.state.canSubmit() };
+  const state = { ran, valid: form.state.valid(), canSubmit: form.state.canSubmit() };
   form.destroy();
   return state;
 }
@@ -65,24 +66,42 @@ battle(
       detail: JSON.stringify(capable),
     });
 
-    // Skipping is the documented answer and not what this battle disputes: what it disputes is the
-    // form calling itself submittable while saying nothing to the channel built for saying things.
-    for (const devWarnings of [true, false]) {
-      const degraded = await asking(withoutEffects(), devWarnings);
-      ctx.log.note("a reactivity that cannot", { devWarnings, ...degraded });
+    // Skipping is the documented answer and not what this battle disputes: what it disputes is that
+    // nothing observable says it happened.
+    const skipped = await asking(withoutEffects(), false);
+    ctx.log.note("a reactivity that cannot, in production", skipped);
 
-      expectEqual(degraded.ran, 0, {
-        claimIds: ["REA-002"],
-        what: "the check half-started on a reactivity that cannot run effects, which is worse than skipping it",
-      });
+    expectEqual(skipped.ran, 0, {
+      claimIds: ["REA-002"],
+      what: "the check half-started on a reactivity that cannot run effects, which is worse than skipping it",
+    });
 
-      // The sink is the channel a consumer installs to learn what the engine did on their behalf.
-      // A dev-only console line is not one an application can act on.
-      expectClaim(degraded.reported.length > 0, {
-        claimIds: ["REA-002", "VAL-001"],
-        what: `with devWarnings ${devWarnings}, a server check was skipped and nothing reached the diagnostics sink`,
-        detail: JSON.stringify(degraded),
-      });
-    }
+    // The comparison that needs no channel: a form whose check was skipped, against one whose check
+    // ran and answered nothing. If a consumer can act on the difference, there is a difference.
+    const passed = await asking(vanillaReactivity(), false, async () => null);
+    const asRead = (state) => ({
+      valid: state.valid,
+      canSubmit: state.canSubmit,
+    });
+    ctx.log.note("the two forms, as an application reads them", { skipped: asRead(skipped), passed: asRead(passed) });
+
+    // The premise: the check really was skipped in one and really did run in the other, so what is
+    // compared below is a difference in what happened rather than two runs of the same thing.
+    expectClaim(skipped.ran === 0 && passed.ran === 1, {
+      claimIds: ["VAL-001"],
+      what: "the two forms did not differ in whether the check ran, so comparing what they report says nothing",
+      detail: () => JSON.stringify({ skipped, passed }),
+    });
+
+    // And the assertion this battle exists for: a consumer has to be able to tell them apart. It goes
+    // green the moment anything an application reads differs — a pending that stays true, an error,
+    // a state of its own — and stays red while a uniqueness rule that quietly stopped being enforced
+    // looks exactly like one that passes.
+    const same = JSON.stringify(asRead(skipped)) === JSON.stringify(asRead(passed));
+    expectClaim(!same, {
+      claimIds: ["VAL-001", "REA-002", "SUB-001"],
+      what: "a form whose server check was skipped reports exactly what a form whose check ran and passed reports, and with devWarnings off nothing else is said",
+      detail: () => JSON.stringify({ skipped: asRead(skipped), passed: asRead(passed) }),
+    });
   },
 );
