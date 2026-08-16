@@ -12444,3 +12444,35 @@ the part of this rule that did not hold.
 **Filed without a battle**, deliberately. This is a repository convention rather than a published
 promise, and no registered claim covers it — the same call as 189, which was repaired anyway. The
 check is one `grep` and is written above.
+
+## Checked and clean: a sanitizer that cannot run
+
+`setSanitizer(name, fn)` is on the published form surface and had **no battle at all**, while
+`security.sanitize` — the policy door to the same machinery — has five. It is documented as a
+protection with a stated purpose: `"strict"` *"removes `<`, `>` and backticks so the value can never
+form markup"*, and a function is *"full control; receives the whole field value and returns the
+sanitized one"*.
+
+A function that is full control can fail. What happens then, measured:
+
+```
+strict profile              "<script>alert(1)</script>" → "scriptalert(1)/script"   onViolation ["sanitized"]
+a working per-field fn      markup stripped                                        onViolation ["sanitized"]
+a per-field fn that throws  value kept as it arrived                               onViolation ["sanitizer-error"]
+a policy fn that throws     value kept as it arrived                               onViolation ["sanitizer-error"]
+```
+
+**Fail-open on the value, reported on the channel** — and reported on both doors, which is what makes
+it a choice rather than an oversight. A consumer whose sanitizer breaks keeps the value their user
+typed and is told, by name, that the protection did not run.
+
+**The near-miss is the part worth keeping.** The first measurement showed the hostile value kept, the
+form valid and submittable, and *nothing said* — which read as a security control failing open in
+silence, and was on its way to being filed as S1. It was silent because the form had been created
+with no `onViolation` callback: **the channel was never wired, and its absence was read as the engine
+having none.** Eighth instrument error of the night, caught by wiring the channel before writing
+anything down.
+
+`adversarial/security/a-sanitizer-that-cannot-run.battle.test.mjs` is green and now holds all four
+rows, with the two working cases asserted first so a `sanitizer-error` cannot be a channel that fires
+for everything.
