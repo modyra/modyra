@@ -1726,6 +1726,23 @@ export abstract class MdyTypedFormBase<
         // A value that is not an array says nothing about rows — it is not an instruction to delete
         // them. `patch({ items: response.items })` where the response omitted the list is the
         // ordinary way that value arrives, and emptying the collection over it is silent data loss.
+        //
+        // An empty array *is* an instruction, and it is the one place the two kinds of collection
+        // read the same sentence differently: `{}` names no key and merges nothing, while `[]` is a
+        // list of no rows and an index is a row's identity — a partial list would be an ambiguous
+        // PATCH rather than a partial one. Both readings are their kind's, and a consumer who learns
+        // one from a map and writes it for a list deletes their rows, so the destructive one says so
+        // out loud while it is still recoverable.
+        if (MDY_DEV && Array.isArray(v) && v.length === 0) {
+          const held = this._adapter.reactivity.untracked(() => array.rowCount());
+          if (held > 0) {
+            this._adapter.warnDev(
+              `patch({ ${key}: [] }) empties "${key}" — ${held} row(s). An array in a patch is the ` +
+              "whole list, because an index is a row's identity; a keyed collection merges by key, " +
+              "so `{}` there changes nothing. To leave the list alone, omit it.",
+            );
+          }
+        }
         array.setAllFrom(v);
       } else if (record) {
         // A patch names the rows it touches and leaves the others alone; replacing the collection is

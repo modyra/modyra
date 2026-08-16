@@ -59,7 +59,7 @@ component — it says so in its heading.
 | :--------------- | :----------------------------------------------------------------------------------------------------------------------------------------- |
 | `getValue()`     | Nested typed value of every schema field                                                                                                   |
 | `setValue(v)`    | **Replace**: requires the complete model; a schema field `v` does not name goes back to its **initial**, and a value naming no field at all is refused |
-| `patch(p)`       | Deep-partial merge — only the given paths change                                                                                           |
+| `patch(p)`       | Deep-partial merge — only the given paths change. A **keyed** collection merges by key (`{}` changes nothing); an **array** in a patch is the whole list (`[]` empties it), because an index is a row's identity |
 | `reset()`        | Back to the **schema initial values**; clears touched/dirty and the last submit errors                                                     |
 | `getChanges()`   | Minimal nested patch: only fields whose value differs (`Object.is`) from the schema initials                                               |
 | `submit(action)` | No-op (marks all touched) when `canSubmit()` is false; sets `submitting`, runs `action`, stores returned `MdyFormError[]` as server errors |
@@ -519,6 +519,14 @@ form.f.rows.rename("tmp:1", String(saved.id));
 goes back to the initial its schema declares. `patch({ [key]: partial })`
 **merges** into rows that exist, leaving their other fields alone, and writes
 several in one call. What the user did — `touched`, `dirty` — survives both.
+
+One sentence reads differently for the two kinds, and it is worth knowing
+which: `form.patch({ rows: {} })` changes nothing, while
+`form.patch({ list: [] })` **empties the list**. A keyed collection merges by
+key, so an empty object names none; a positional one is carried whole, because
+an index *is* a row's identity and a partial list would be an ambiguous PATCH
+rather than a partial one. The destructive reading warns in development while
+it is still recoverable; to leave a list alone, omit it.
 
 `setAll(rows)` declares exactly the keys it is given, and `setAll({})` is how
 you empty a collection deliberately; handed something that is not an object
