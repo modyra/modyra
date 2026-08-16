@@ -11383,3 +11383,52 @@ lists them, because versioning a private package without publishing it is the do
 Angular is published by `scripts/publish-angular.mjs` rather than by the workspace script. Recorded
 because the near-miss is the useful part — a hand-written rule about a tool's inputs is not the tool.
 `core`, `widgets`, `plain`, `angular` and `lit` bump major.
+
+## 191. One contract version, two anatomies
+
+**Severity** S3 · **Classification** ambiguous contract · **Battle** none — run from the project's own
+differ · **Claims** UI-009
+
+`MDY_WIDGET_CONTRACT_VERSION` is published, documented as *"Version of the framework-agnostic UI
+contract implemented by this package"*, and is `1`. It was `1` at `v2.1.2`.
+
+The project's own differ, asked the question its header says answers a release —
+`node scripts/contract-diff.mjs --since v2.1.2` — reports:
+
+```
+classification: major        4 major · 9 minor
+
+multiselect.searchButton     element changed: button → input   [major]
+multiselect.searchButton     role changed: none → combobox     [major]
+datepicker.actions           part removed                      [major]
+daterange.actions            part removed                      [major]
+```
+
+So a renderer written against "contract version 1" at 2.1.2 and one written against "contract
+version 1" at 3.0.0 implement two different anatomies. Two parts it was told to build are gone, and a
+third changed both its element and its ARIA role.
+
+**Why this is filed as an ambiguity and not a defect.** Nothing published says the version must move
+when the contract breaks. The differ treats a version change as *an input* to its classification
+(`contract-diff.mjs:123` records one as a major) rather than as something a major requires — it
+detects the removals directly and does not need the number. The number is not lying; it was never
+told what it must mean.
+
+**But it is load-bearing.** `scripts/audit-lit-widget-contract.mjs:19` fails outright on any value
+other than 1 — *"unsupported Widgets contract version"* — and `scripts/conformance-manifest.mjs`
+stamps every conformance result with it. A consumer reading it as "which contract am I implementing"
+gets the same answer across a breaking change, and the one gate that checks it is written so that
+moving it fails.
+
+**Why now.** 3.0.0 is 163 changesets away, with `widgets` among the packages bumping major. Once
+published, "contract version 1" names two anatomies in the wild permanently, and a decision taken
+after that is a decision taken too late.
+
+Goes green either way, and the choice is a real one: state that the version tracks the package's
+major and move it to 2 — updating the audit that refuses anything but 1 — or state that it names the
+*shape* of the contract rather than its content, and say so where it is declared, so nobody reads it
+as a compatibility number again.
+
+**Not claimed.** That the four changes are wrong. Every one of them looks like a repair —
+`searchButton` becoming an `input` with `role=combobox` is a control gaining the semantics it needed.
+The finding is the number that did not move with them.
