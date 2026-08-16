@@ -12205,3 +12205,23 @@ popup's own padding or a caret rather than the anchoring's arithmetic.
 consumer who reads `12` as *"a popup stays 12px from the edge"* is right for two kinds and wrong for
 four. The cheap repair is a sentence on each constant saying what it governs; the question of whether
 the four are also wrong follows from that sentence rather than preceding it.
+
+## State of the three tiers, measured
+
+```
+node      pnpm battle            528 tests   464 pass   43 fail   21 todo
+browser   pnpm battle:browser    253 tests   180 pass   73 fail
+angular   pnpm battle:angular      6 tests     6 pass    0 fail
+```
+
+The node count carries the ±3 band recorded above — the Studio packs flake under load, and the number
+to trust is the smallest of a few runs on a quiet machine. The 43 is 42 long-standing plus finding
+193's remaining half, which the owning session left open deliberately.
+
+**The Angular tier is green and runs in no CI job** (finding 36). It is the one adapter CLAUDE.md
+holds to migrating without unapproved variation, it cannot join `differential/runtimes/every-runtime`
+— `@modyra/angular` needs Angular's compiler and will not import in a bare Node process, which is why
+it has a tier of its own — and nothing in `.github/workflows` runs that tier. Six green tests that
+nobody would see turn red.
+
+The browser tier's 73 are all attributable: 51 spec files, every one named in this register.
