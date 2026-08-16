@@ -10314,8 +10314,22 @@ setDisabled("list.0")      that item out              submit {"list":[], …}
 ```
 
 So the same string that puts a collection out of play does **nothing at all**, in silence, when given
-to `setInitialValue`. Two path-taking calls on one form, one honouring an ancestor and one ignoring
-it, and neither says which it is.
+to `setInitialValue`. The whole family, asked the same question:
+
+```
+                              a collection   a row      the exact leaf
+setDisabled                   works          works      works
+setReadonly                   works          works      works
+setInactive                   works          works      works
+setInitialValue               nothing        nothing    works
+```
+
+Three calls honour an ancestor, one ignores it, none says which it is.
+
+**Corrected on the way.** The first version of that sweep built its row with `upsert("r", {c: "value"})`
+and read `getChanges()` — which is empty for such a row by finding 173, so `setInitialValue` appeared
+to work at every level. The two findings interfered: one made the other invisible. The row is created
+empty and filled afterwards now, so there is a change to clear before the question is asked.
 
 That is the third place this shape has appeared: `exclude` in a draft (finding 168), and now
 re-baselining. Both are per-leaf-path APIs meeting collections whose keys arrive at runtime — and
