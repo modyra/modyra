@@ -11866,7 +11866,7 @@ fifty-nine to reconcile, and the handful still open with a measurement behind th
 column is the one that costs the most, because an unrecorded repair makes the next person redo the
 work rather than merely check it.
 
-## 195. A value the panel cannot print — repair in flight
+## 195. A value the panel cannot print — CLOSED, and the mechanism was a step further on
 
 **Severity** S2 · **Classification** published call stops instead of saying so · **Battle**
 `adversarial/reactivity/a-value-the-panel-cannot-print.battle.test.mjs` (red) · **Claims** API-001
@@ -11884,13 +11884,27 @@ a cycle    → "[Circular]"
 a BigInt   → TypeError: Do not know how to serialize a BigInt
 ```
 
-A `BigInt` is the same class of value — one JSON cannot carry — and it is the one that throws.
-`mdyFormSnapshot`, which is what the devtools panel reads, throws with it:
+A `BigInt` is the same class of value — one JSON cannot carry — and it is the one that got through.
+
+**Where it actually broke, measured by the owning session on the pre-repair source.**
+`mdyFormSnapshot` did **not** throw: the serializer passed non-objects through before looking at them,
+so the BigInt arrived in the snapshot intact. What throws is the reader — `devtools.ts:156`,
+`JSON.stringify(f.value)`, inside the panel's render effect:
 
 ```
-createForm({ n: field(1) })   snapshot fine
-n.set(10n)                    TypeError, the panel stops
+mounted          n cell: 1
+after set(2)     n cell: 2      ← the control: the panel does repaint
+after set(10n)   [modyra] Uncaught error in effect: TypeError: Do not know how to serialize a BigInt
+                 n cell: 2      ← stays 2
 ```
+
+So the panel does not crash. The effect catches, and **the panel freezes on its last good paint while
+the form moves on** — showing a value that is no longer the field's, with nothing saying it is stale.
+That is a worse symptom than stopping, not a milder one: a developer reading the panel to find out
+what a form holds is shown something it held before.
+
+`packages/angular/.../mdy-forms-devtools.component.ts:293` composes the same two calls and was dead
+the same way; one line in the serializer repairs both.
 
 **A form can hold one.** The engine reports a wrong shape as a verdict rather than refusing the write
 — that is what lets a field show what a person typed and say why it is wrong — so a `BigInt` in a
@@ -12064,3 +12078,12 @@ the type-vocabulary message is a consequence of the seed rather than the only th
 Goes green either way, and both are defensible: seed each leaf with the empty value its kind declares
 so an untouched form is one its schema accepts, or keep `null` and have the bridge say *required*
 rather than *expected string, received null* — but not one on arrival and the other after a keystroke.
+
+**Closed by `d9583ff5`** — `10n → "[BigInt: 10]"`, described like a File rather than coerced, with the
+red-before isolated by stashing only `serialize.ts` and rebuilding.
+
+**And the instrument was the product, one step upstream.** The probe that produced the misleading
+"they all throw" table failed at `JSON.stringify` of an unserialised value — which is the same line,
+in the same shape, as the panel's renderer. The table was wrong about `getValue`, `submitValue` and
+`getChanges`, and right about the panel, for exactly the reason it looked wrong: the logger was doing
+what the panel does.
