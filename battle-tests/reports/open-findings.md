@@ -10577,3 +10577,46 @@ a store and re-mounted, and because the two halves that *are* guaranteed were me
   start, and the shared object itself is untouched.
 - A **shared schema object** used to build two forms: they are independent, and writing in one does
   not move the other.
+
+## 178. A control for a field that was dropped
+
+**S2 · Modyra bug · `@modyra/lit`**
+Claims: SUB-001, COL-002
+Battle: `battle-tests/browser/a-control-for-a-field-that-was-dropped.spec.ts` — 1 failed, 1 passed
+
+A field list with two entries of one name is a mistake a consumer makes by hand — a copied block, a
+generated list, a name typed twice. The contract's stance is not in doubt: `parseDynamicFields` drops
+the duplicate with a diagnostic.
+
+Both renderers notice. They do different things:
+
+```
+plain   refuses the mount, by name
+        [modyra] Duplicate field name "x": every field needs its own identity.
+
+lit     warns:  [modyra] Dropped duplicate dynamic field name "x".
+        mounts: mdy-text-field, mdy-number-field, mdy-text-field   ← three, for two fields
+        model:  { x, y }                                            ← the duplicate is gone from it
+```
+
+So lit draws a control for the entry it dropped, and that control is bound to the survivor:
+
+```
+setValue({ x: "what the user typed" })     the text box shows it
+type 42 into the box labelled "Second"     x becomes the number 42
+```
+
+A number field writes a number into a text field, over what the user typed, and nothing on the page
+says which of the two boxes owns the value — because the answer is that one of them should not be
+there.
+
+### What the spec asserts, and why not more
+
+**No control writes into a field it was not declared for.** Refusing the mount satisfies it; drawing
+one control satisfies it; drawing two and binding both does not. Stated that way so it does not
+decide whose policy wins — plain's refusal and a quieter "render only what survived" both pass.
+
+### Controls run
+
+- **The surviving field takes its value first**, so the overwrite is measured against something real.
+- **Plain's refusal is asserted to name the reason**, rather than counting any failure as correct.
