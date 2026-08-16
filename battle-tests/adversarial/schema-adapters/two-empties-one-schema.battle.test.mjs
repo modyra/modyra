@@ -78,6 +78,30 @@ battle(
     };
     ctx.log.note("the same field, empty twice", { onArrival, afterEmptying });
 
+    // The contradiction inside one state rather than across two. `required` drives
+    // `aria-required`, so a field that is valid, empty and required at the same moment tells
+    // assistive technology it must be answered while the form says it has been.
+    const requiredOf = (form, path) => {
+      const state = form.getField(path)?.();
+      const flag = state?.required;
+      return typeof flag === "function" ? flag() : flag;
+    };
+    ctx.log.note("the same moment, three ways", {
+      value: fresh.getValue().name,
+      valid: fresh.state.valid(),
+      required: requiredOf(fresh, "name"),
+    });
+
+    expectClaim(!(requiredOf(fresh, "name") === true && fresh.state.valid() && fresh.getValue().name === ""), {
+      claimIds: ["SCH-001"],
+      what: "a field is required, empty and valid in the same state",
+      detail: () => JSON.stringify({
+        value: fresh.getValue().name,
+        valid: fresh.state.valid(),
+        required: requiredOf(fresh, "name"),
+      }),
+    });
+
     // The form's own unfilled value has to be one its schema admits. Anything else means a form that
     // refuses itself before a person has done anything, in the schema's type vocabulary rather than
     // in a sentence about the answer.
@@ -95,8 +119,20 @@ battle(
       detail: () => JSON.stringify({ onArrival, afterEmptying }),
     });
 
+    // The control that consistency is expressible today: one constraint away, both empties are
+    // refused, in the same vocabulary at both moments.
+    const constrained = createZodForm(z.object({ name: z.string().min(1) }), { devWarnings: false });
+    constrained.f.name.set("Ada");
+    constrained.f.name.set("");
+    expectClaim(!constrained.state.valid() && messages(constrained, "name").length > 0, {
+      claimIds: ["SCH-001"],
+      what: "a constrained schema no longer refuses an emptied field, so consistency is not expressible",
+      detail: () => JSON.stringify(messages(constrained, "name")),
+    });
+
     derived.destroy();
     declared.destroy();
     fresh.destroy();
+    constrained.destroy();
   },
 );

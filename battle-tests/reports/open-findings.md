@@ -12024,7 +12024,7 @@ gets a form-level error with a sentence a person can read, rather than a crash, 
 string treated as a path. The refusal is the same shape as the one for a server answer arriving
 malformed.
 
-## 196. Two empties, one schema, two answers
+## 196. Two empties, one schema, two answers — CONFIRMED, awaiting a decision
 
 **Severity** S1 · **Classification** derived form refused by the schema that built it · **Battle**
 `adversarial/schema-adapters/two-empties-one-schema.battle.test.mjs` (red) · **Claims** SCH-001
@@ -12044,6 +12044,24 @@ on arrival        value null   valid FALSE   canSubmit FALSE
 typed "Ada"       value "Ada"  valid true    canSubmit true
 cleared to ""     value ""     valid TRUE    canSubmit TRUE
 ```
+
+**And a contradiction inside one state, not only across two.** Measured independently on a clean tree
+at `d9583ff5`, `packages/zod` rebuilt:
+
+```
+z.string()        cleared to ""    value ""   valid TRUE   required TRUE   no errors
+z.string().min(1) cleared to ""    value ""   valid false  required true   "Too small: expected …>=1"
+```
+
+A field that is **required, empty and valid at the same moment**. `required` drives `aria-required`,
+so assistive technology is told the field must be answered while the form says it has been, and the
+payload carries `""`. The bridge computes it as `requiredPiece = !acceptsUndefined &&
+!piece.safeParse(null).success` (`packages/zod/src/index.ts:220`) — *required* means *rejects null*,
+which is the sentinel the form chose, not the empty the kind declares.
+
+`min(1)` is the control that matters: one constraint away, **both** empties are refused, in the same
+vocabulary at both moments. Consistency is expressible today, and a bare `z.string()` is the shape
+that changes its answer depending on when it is asked.
 
 **The same field, empty twice, refused once.** Unfilled it is rejected in the schema's type
 vocabulary; emptied by the user it is accepted, because `""` is a string. Two keystrokes apart, and
@@ -12104,3 +12122,18 @@ red-before isolated by stashing only `serialize.ts` and rebuilding.
 in the same shape, as the panel's renderer. The table was wrong about `getValue`, `submitValue` and
 `getChanges`, and right about the panel, for exactly the reason it looked wrong: the logger was doing
 what the panel does.
+
+**Confirmed on a clean tree, and held for a decision rather than repaired.** The owning session
+reproduced it, established the `requiredPiece` mechanism, and stopped: the two repairs are not
+equivalent on the public contract, and no evidence here chooses between them.
+
+- **Seed the kind's empty (`""`)** is the honest reading of zod — `z.string()` accepts `""`, so it
+  asks for nothing, so `required` should be false and a fresh form valid and submittable. It fixes
+  `requiredPiece` too. The cost: a consumer who today sees Submit disabled on a freshly opened form
+  will see it enabled — a protection they never really had, but did see.
+- **Keep `null` and say *required*** repairs the message's vocabulary and leaves `""` accepted after
+  a keystroke, which leaves half of this finding standing.
+
+`contract:diff` is silent because no signature changes, and **a silent tool is not agreement**. It is
+a choice between two incompatible product behaviours on a published package, so it goes to the user
+with the first as the recommended default and this finding as the evidence.
