@@ -11672,3 +11672,43 @@ assertion, because a genuine packaging break must still read as one.
 
 **Until then, the number to trust is the smallest of a few runs on a quiet machine**, and any
 comparison across runs has to survive being re-measured before it becomes a claim.
+
+## 194. The sentence above the table says two, the table says eleven
+
+**Severity** S3 · **Classification** documentation contradicts the thing it introduces · **Battle**
+`adversarial/validation/which-kinds-can-be-empty.battle.test.mjs` (green — it pins the measurement the
+prose should be corrected against) · **Claims** VAL-004
+
+`MDY_VALUE_CONTRACTS` is the published table of what each kind's value is. The comment immediately
+above it, in `packages/core/src/value-contracts.ts:70-77`, says:
+
+> `nullable` is the half that matters most: it is the difference between a field that can be empty
+> and one that cannot, and therefore between a `required` that can fail and one that cannot. **The two
+> kinds that are not nullable — `slider` and the booleans** — are the two whose empty value is a real
+> one.
+
+Measured against the table it introduces, and against the engine:
+
+```
+not nullable, per the table (11)   checkbox colors daterange email file multiselect
+                                   password slider text textarea toggle
+required fails on the empty value  every kind except slider
+```
+
+**Wrong twice.** Eleven kinds are not nullable, not two. And `nullable === false` does not mean a
+`required` cannot fail: `checkbox` and `toggle` — the sentence's own examples — refuse `false`, which
+is exactly what a consent field is for, and `text` refuses `""`.
+
+**The behaviour is right.** A slider's thumb is always somewhere, so its `required` has nothing to
+refuse; everything else can be left empty and told so. What is wrong is the sentence a reader uses to
+decide whether a `required` on their field can fail — and it is the sentence introducing the table
+that answers that question.
+
+**Why it is filed rather than fixed in passing.** `value-contracts.ts` is `@modyra/core`, not this
+suite's to edit, and the same discipline as finding 189 applies: prose that carries a contract is
+corrected where it is declared, deliberately, not tidied by whoever noticed.
+
+The battle is green and stays green. It pins the eleven **as a list rather than a count**, so a kind
+moving in or out is visible, and it pins that `slider` is the only kind whose `required` cannot fail —
+with a control asserting `required` refuses more than one kind, so a `required` that stopped working
+could not make this pass.
