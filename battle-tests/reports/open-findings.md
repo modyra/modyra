@@ -11024,67 +11024,66 @@ Each was a plausible premise taken as read because it *sounded* like the rule.
 **185 stays open and is not touched by this.** `select.trigger` is required and its parent is on the
 page, so the new reading does not reach it.
 
-## 187. Two width rules a popup keeps neither of
+## 187. RETRACTED — two width rules, measured on a page with no stylesheet
 
-**Severity** S3 · **Classification** declared capability that governs placement, not size · **Battle**
-`browser/a-minimum-a-popup-does-not-keep.spec.ts` (both battles red) · **Claims** UI-010
+**Severity** — · **Classification** harness defect (mine) · **Battle** deleted · **Claims** UI-010
 
-`capabilities.anchoring` states two rules about how wide a popup is. `matchAnchorWidth` says it takes
-the anchor's width; `minWidth` says how narrow it may get. Measured in plain, viewport 1280:
+Filed as: `colors` renders below the `minWidth` its contract declares, `select` does not take the
+width `matchAnchorWidth` computed for it. **Both measurements were taken on an unstyled page.**
 
 ```
-colors    minWidth 280, matchAnchorWidth false
-          8 default swatches   142px       6 declared presets   110px
-          --mdy-overlay-width  (unset)
-
-select    matchAnchorWidth true
-          short labels         popup  66px   anchor 1264px   trigger 66px
-          long label           popup 457px   anchor 1264px   trigger 66px
-          --mdy-overlay-width  1264px, set on the element
+battle-tests/.tmp-browser/   host.js  index.html  lit-host.js  lit.html
+<link rel="stylesheet">      none
+*.css                        none
 ```
 
-**The popup is content-sized in every case measured, and neither rule reaches it.** `colors` renders
-below the minimum it declares; `select` renders at neither the width the anchoring computed for it
-nor its trigger's — with a short label the two coincide at 66px, which is why the long label is what
-the spec mounts.
+`battle-tests/browser/build.mjs` bundles two scripts and writes two HTML pages, and neither loads
+`@modyra/styles`. So `.mdy-popup { width: var(--mdy-overlay-width, auto) }` — `modyra.css:3460`, the
+rule that turns the decided width into a rendered one — never applies. Every popup in the browser
+tier is an unstyled block.
 
-Mechanism, read in source: `overlay.ts:636`,
-`const width = options.matchAnchorWidth ? decision.width : options.contentWidth` — for a kind that
-does not match its anchor the decision's width is discarded, and at `:640` the declared minimum
-survives only as `wanted`, an input to whether the popup *fits*. **The declared widths govern
-placement, not size.** For `select` the width is computed and emitted as `--mdy-overlay-width: 1264px`
-and the rendered popup does not take it.
+The engine's half works. Measured on the select popup: `--mdy-overlay-width: 1264px`, **inline, on the
+popup element itself**, which is the anchor's width as computed. What is missing is the half that
+consumes it, and it is missing because the harness does not load it.
 
-**The control that makes this an omission rather than a dead path.** `maxHeight` is declared in the
-same capabilities, travels the same route, and arrives as `--mdy-overlay-max-height` on the very
-elements measured here. One of the numbers a kind states about its overlay reaches it.
+**The tell was there and was read the wrong way.** Computed `box-sizing` on the popup is
+`content-box` while `.mdy-popup` declares `border-box` — a rule that plainly was not applying. It was
+noticed only when chasing the cascade for a different reason.
 
-**The 1264px, explained.** It was filed as unexplained. Measured: `.mdy-renderer`,
-`.mdy-input-wrapper`, `.mdy-input-wrapper__inliner` and `.mdy-select` are all 1264px — the full form
-width — while the trigger is 66px. The popup is anchored to the wrapper, so
-`decision.width = max(anchorWidth 1264, minWidth 160)` is 1264. No modal branch is involved:
-`--mdy-overlay-top: 106px`, `transform: none`, `left: 12px` is a `below` placement moved to the
-viewport margin. An unexplained number beside a real finding makes the finding doubtable, which is why
-it was chased rather than left.
+**Why the control passed.** `maxHeight` was asserted as the neighbour that arrives, and it did —
+`--mdy-overlay-max-height` was set on the same element. But that is a custom property, not an effect.
+**The check was reading variables rather than what the variables should cause, and a custom property
+is always there.** A control that cannot fail for the reason under test is not a control.
 
-**What this entry claimed first, and how it was wrong.** Filed as "a width nothing can carry" — that
-no decision, vocabulary or emitted property could hold the number. False.
-`decideOverlayPlacement` returns `width: Math.max(anchorWidth, minWidth)` and `overlayStyleProperties`
-emits `--mdy-overlay-width`. The measurement behind it called `decideOverlayPlacement` with a nested
-`{anchor, viewport}` object where it takes a flat geometry: it answered `width: null` and
-`placement: "overlay"` for a case with room on every side, and **a degenerate answer was read as
-evidence rather than as a wrong input** — the most dangerous of the night's four errors, because it
-looks like a finding to somebody hunting for one. The node battle asserting it is deleted rather than
-rewritten: a red that asserts something false is worse than no red, because whoever inherits it
-repairs in the wrong direction.
+The spec is deleted rather than rewritten. A red that accuses the product of a hole in the test bench
+is the worst thing to leave in a register: whoever inherits it repairs in the wrong direction.
 
-**A second correction inside the same finding.** The first browser measurement reported the colours
-popup empty — 0 swatches — which would have made a narrow popup meaningless. The selector was guessed
-(`mdy-colors__swatch`); the contract calls it `mdy-color-swatch`. Read from the contract, the popup
-holds eight. The spec asserts the swatch count as a control, so a future empty popup cannot pass as a
-width finding.
+### What else this blinds
 
-**Not claimed.** That `minSpace` is inert: it is plausibly an input to placement and was not tested.
+Seven browser specs read `offsetParent`, `getComputedStyle`, `getBoundingClientRect`, `clientWidth`
+or `offsetWidth`:
 
-Goes green when the declared width rules reach a content-sized popup, or when the kinds stop
-declaring them.
+```
+a-calendar-behind-a-closed-picker    a-layout-that-reaches-the-page
+a-popup-with-nowhere-below-to-go     a-rule-that-fires-on-nothing
+an-error-before-anyone-typed         the-same-thing-said-twice
+where-focus-goes-when-a-popup-closes
+```
+
+Two carry a claim on geometry. `a-popup-with-nowhere-below-to-go` asserts a popup's box sits above its
+anchor's — on a page where nothing is positioned; its other half, the `--above` modifier class, is a
+class name and stands. `a-layout-that-reaches-the-page` reads computed `display` and
+`gridColumnStart`, which without a stylesheet are `block` and `auto` for everything.
+
+Everything measuring model values, DOM structure, attributes, ARIA, live-region text, focus and tab
+order is unaffected: none of it needs CSS. **Findings 185 and its 34-pair sweep are not touched** —
+they count parts built, not parts painted.
+
+`a-rule-that-fires-on-nothing` (finding 156, closed) has one half to re-verify: its visibility check
+at line 72 answers correctly for an element removed or hidden by attribute and wrongly for one hidden
+by a class. Its S0 half — a disabled field's value still submitted — is a model measurement and
+stands.
+
+**Next**: load a stylesheet in the host and re-measure the tier against the 69-red baseline, with the
+theme chosen and the reason written beside the `<link>`. A green obtained without CSS, on a question
+that depends on CSS, is an empty green.
