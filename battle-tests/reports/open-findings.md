@@ -11479,7 +11479,7 @@ Angular is published by `scripts/publish-angular.mjs` rather than by the workspa
 because the near-miss is the useful part — a hand-written rule about a tool's inputs is not the tool.
 `core`, `widgets`, `plain`, `angular` and `lit` bump major.
 
-## 191. One contract version, two anatomies
+## 191. One contract version, two anatomies — CLOSED
 
 **Severity** S3 · **Classification** ambiguous contract · **Battle** none — run from the project's own
 differ · **Claims** UI-009
@@ -12758,3 +12758,23 @@ coupling for the sites that derive a code from a message, *"made visible rather 
 *"thirty sites that refuse something"* is called out as the right shape and **a different change**.
 Read as "every code a consumer may see", it would be a finding; read as what it says it is, it is
 complete.
+
+## The register's own shape, measured
+
+```
+numbered findings        198
+closed or retracted       23
+open with a battle       165
+open with none            10
+```
+
+The ten without a battle are the entries a test cannot hold: a tier no CI job runs (36), a capability
+nothing reads (37), constants outside a classifier (39), a campaign that explores one run (40), two
+entries about this hunt's own mistakes (51, 57), a hook two packages export (92), a form that submits
+what it did not validate (95), a gate that measures a page in the wrong colour (190), and forty-nine
+comments citing a plan that is not in the repository (198). Configuration, documentation and coverage
+— none of them a behaviour a battle could pin.
+
+**191 is marked closed here after checking rather than after being told**: `MDY_WIDGET_CONTRACT_VERSION`
+reads `2`, `docs/architecture/0084-a-contract-version-names-the-anatomy.md` exists, and `1a8138f9`
+carries both.
