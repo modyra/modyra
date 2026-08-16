@@ -11093,6 +11093,26 @@ rather than pass by coincidence, and a second control holds the neighbouring `--
 so an emission that emptied entirely could not leave this green. Deleting the spec had left UI-010
 with nothing testing it at all.
 
+### Re-measured with the stylesheet: the product was right
+
+The retraction was made because the instrument was blind. With the host loading `default.css`, the
+same question has an answer, and it is the one the contract declares:
+
+```
+colors        declared minWidth 280, matchAnchorWidth false   →  rendered 432px      honoured
+select        declared minWidth 160, matchAnchorWidth true    →  rendered 1256px, --mdy-overlay-width 1264px
+multiselect   declared minWidth 160, matchAnchorWidth true    →  rendered 1256px
+```
+
+`select` and `multiselect` take their anchor's width — the full-width input wrapper — clamped by the
+max-width the same arithmetic sets. `colors` is content-sized and comes out wider than its declared
+floor without needing it.
+
+So this entry is not merely *withdrawn for want of evidence*: the evidence exists now and says the
+widths hold. **And the two specs this finding named as blinded — `a-popup-with-nowhere-below-to-go`
+and `a-layout-that-reaches-the-page` — both pass with the stylesheet loaded**, so the geometry they
+assert is real rather than unmeasurable.
+
 ### What else this blinds
 
 Seven browser specs read `offsetParent`, `getComputedStyle`, `getBoundingClientRect`, `clientWidth`
