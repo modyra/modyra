@@ -25,16 +25,28 @@ Neither metric can be followed alone. The ratio is what an accessibility audit m
 most compliance regimes name. The perceptual metric is what a reader experiences, and following it
 without a bound puts 36 of those 112 pairs under AA, the worst at 2.96:1.
 
-This was not confined to the stylesheet. `onColorFor` in `@modyra/core/color-utils` is exact rather
+This was not confined to the stylesheet. `onColorFor` in `@modyra/styles/color-utils` is exact rather
 than estimated — it measures both candidates instead of approximating — and it returned black for
 `#3B82F6` too, because it was maximising the same ratio. Precomputing the palette would not have
 fixed the defect; the metric was the defect.
+
+**Amendment.** The module named throughout was `@modyra/core/color-utils`, and there is no such
+subpath: `@modyra/core` publishes `.`, `./serialize`, `./devtools`, `./datetime`, `./testing` and
+`./async-draft-storage`, and the code is in `@modyra/styles`. A reader checking this decision opened
+the package it names, found nothing, and had every reason to conclude the floor did not exist. The
+paths below are corrected; the decision is unchanged.
 
 ## Decision
 
 **An `on-` colour is light while light clears a contrast floor, and the higher ratio below that.**
 
-The floor is `MDY_ON_COLOR_FLOOR`, 3.5:1, exported from `@modyra/core/color-utils`.
+The floor is `MDY_ON_COLOR_FLOOR`, 3.5:1, in `packages/styles/src/color-utils.ts`.
+
+**The floor chooses which colour, not how much contrast is enough.** `light >= FLOOR ? light : the
+higher ratio` decides between a light `on-` colour and a dark one; what a pairing must *reach* is
+AA — 4.5:1, or 3:1 for large text — which is what `e2e/palette.spec.ts` asserts, with its named
+per-theme allowances for the pairings a design system fixes below it. Read as an acceptance
+threshold, this record says the opposite of what the gate enforces.
 
 The rule reduces to a single number, which is what makes it expressible in a stylesheet that cannot
 compute a ratio at all: 3.5:1 against white **is** a relative luminance of 0.25, and the perceptual
@@ -91,7 +103,7 @@ the metric is the same either way.
 
 ## Verification
 
-- `npm run test:core` — `color-utils.test.mjs` asserts the rule as a rule: light wherever light
+- `npm run test:styles` — `packages/styles/test/color-utils.test.mjs` asserts the rule as a rule: light wherever light
   clears the floor, the better ratio below it, and a named case on a saturated blue whose ratio
   alone would refuse. It also asserts the stylesheet's threshold **equals** the floor expressed as a
   luminance, so the two cannot drift into disagreement.

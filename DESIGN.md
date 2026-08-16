@@ -235,9 +235,14 @@ on a saturated colour where a reader plainly prefers light. Choosing by ratio al
 saturated blue in every theme.
 
 The bound is a floor, not a metric swap: light while it clears **3.5:1**, the higher ratio below
-that. `MDY_ON_COLOR_FLOOR` in `@modyra/core/color-utils` is the number, and
-[ADR 0015](docs/architecture/0015-light-text-while-it-is-readable.md) is why — including the cost,
-which is that this sits below AA for normal text on purpose.
+that. `MDY_ON_COLOR_FLOOR` in `@modyra/styles/color-utils` is the number, and
+[ADR 0015](docs/architecture/0015-light-text-while-it-is-readable.md) is why.
+
+**The floor chooses which colour; AA is what a pairing must reach.** They are two different numbers
+and this paragraph read as one: the floor decides between a light `on-` colour and a dark one, and
+`e2e/palette.spec.ts` then holds every pairing to **4.5:1** — 3:1 for large text — with named
+per-theme allowances for the ones a design system fixes below it. A derived `on-` colour that clears
+3.5:1 has satisfied the rule *for choosing it* and has not been excused from AA.
 
 **A theme states its design system's model, and derives every role from it.** Material is tonal — a
 role is a tone on a palette at an assigned chroma — and iOS is paired, naming the label colour that
