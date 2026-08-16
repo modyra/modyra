@@ -10970,44 +10970,45 @@ and required set). The second is the smaller change.
 
 **Not claimed.** That lit is wrong to use a native `<select>`.
 
-## 186. Six parts the contract requires and only lends while open
+## 186. Six parts the contract requires and only lends while open — CLOSED
 
-**Severity** S2 · **Classification** contract contradicts itself · **Battle**
-`adversarial/widgets/a-part-required-and-borrowed.battle.test.mjs` (red) · **Claims** UI-009
+**Severity** S2 · **Classification** contract prose defect (mine: wrong reference model) · **Battle**
+`adversarial/widgets/what-required-means-on-a-part.battle.test.mjs` (green, and now a grammar guard) ·
+**Claims** UI-009 · **Closed by** `a64a7a38`
 
-The same package publishes two statements about whether a part must exist, and for six parts they
-disagree. `structure.nodes[].optional === false` means the part is required. `overlayOnlyParts(kind)`
-names the parts that exist only while an overlay is open. Every kind that has an overlay has one part
-in both sets:
+Filed as a contract contradicting itself. Six parts are `optional: false` and named by
+`overlayOnlyParts` — one in every kind that has an overlay:
 
 ```
-select        listbox      required, and only present while open
-multiselect   listbox      required, and only present while open
-datepicker    calendar     required, and only present while open
-daterange     calendar     required, and only present while open
-timepicker    container    required, and only present while open
-colors        presets      required, and only present while open
+select.listbox  multiselect.listbox  datepicker.calendar
+daterange.calendar  timepicker.container  colors.presets
 ```
 
-Six kinds, six parts, and no kind with an overlay escapes it. This needs no renderer to demonstrate:
-both facts are read from `@modyra/widgets` in one process.
+The entry named the narrower reading — "required *within its parent*" — and dismissed it because
+nothing published said so. **That dismissal was wrong.** `overlayOnlyParts` had already said it, in
+its own doc: *"a closed widget is not required to render any of them, so a renderer that later mounts
+its overlay lazily is not breaking the contract, and one that mounts eagerly is not breaking it
+either. What both must do is render them when open."* The intent was stated, at one end of the
+contract, and this hunt read only the other.
 
-**Why it matters to somebody who is not this suite.** These are the two exports an adapter author
-reads to decide what to build eagerly. Trusting `optional: false`, they build a listbox into a closed
-select and a calendar into a closed datepicker — which is exactly the eager-vs-lazy divergence
-between the two shipped renderers measured in finding 113's sweep, now with a published reason for
-it. Trusting `overlayOnlyParts`, they build nothing and violate a part the structure marks required.
-There is no reading that satisfies both.
+So the defect was real but smaller than filed: not two statements disagreeing, one statement missing
+from where a reader looks. `MdyWidgetStructureNode.optional` now carries it — **required means
+required while its parent is on the page**, not for the widget's lifetime. No behaviour changed.
 
-**The narrower reading, and why it is not enough.** `optional: false` could mean "required *within
-its parent*" — a popup that exists must contain a listbox — which is coherent and probably the
-intent. Nothing published says so: `optional` is documented by neither export, the shell structure
-uses the same field with the plain meaning, and the parent of `select.listbox` is `popup`, which is
-itself `optional: true`. A required child of an optional parent is a sentence the contract has no
-grammar for.
+**What the battle asserts now.** Not the contradiction, which was never one. The grammar that makes
+both statements true: a part may be required and overlay-only only if something above it may be
+absent. All six sit inside a `popup` that is itself `optional: true`. A required overlay-only part
+with no optional ancestor would be the sentence the prose says cannot exist, and that is what fails.
+The second control asserts the six still exist, so the guard cannot pass by having nothing to check.
 
-Goes green when one of the two is qualified: `optional` gains a stated meaning relative to its
-parent, or the six parts stop being marked required, or a third statement says which export wins.
+**The two errors are the same shape**, and both were caught the same way. This entry dismissed a
+reading without measuring whether anything stated it; finding 185 claimed the contract had no
+vocabulary for optionality after reading one of a kind contract's seven keys; finding 113 archived a
+divergence with "markup is not what the contract fixes" without measuring what the contract fixes.
+Each was a plausible premise taken as read because it *sounded* like the rule.
+
+**185 stays open and is not touched by this.** `select.trigger` is required and its parent is on the
+page, so the new reading does not reach it.
 
 ## 187. A width nothing can carry
 
