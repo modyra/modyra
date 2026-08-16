@@ -10424,3 +10424,42 @@ typo in a name that is spelled correctly.
 
 The battle now asserts all three levels, with the two that work as the control — so a repair that
 reaches the collection is visible, and one that breaks a row is too.
+
+## 176. A calendar that outlived its field
+
+**S2 · Modyra bug · both renderers**
+Claims: UI-005, VAL-002
+Battle: `battle-tests/browser/a-calendar-that-outlived-its-field.spec.ts` — 2 failed
+
+A field can leave play while its popup is open, and it does not need anybody to click anything: a
+document's rule takes it out when *another* field changes, so a value arriving from a fetch can do it
+while the user is looking at the calendar.
+
+Nothing then happens:
+
+```
+                       cells   opener says
+calendar opened        42      aria-expanded="true"
+field disabled         42      aria-expanded="true"     ← unchanged
+a cell clicked         the model stays null             ← correct
+```
+
+Identical in both renderers, and the same through a document's rule as through the handle.
+
+The click doing nothing is **right** — the field is out of play. What is wrong is that the calendar is
+still there offering it: an overlay that looks live, reports itself expanded to a screen reader, and
+answers nothing. The user picks a date and the form does not move.
+
+### Controls run
+
+- **The calendar really was open** and the opener said so, before anything was disabled.
+- **The click is asserted to do nothing**, so the finding is not "a disabled field took a value" —
+  that would be a larger one, and it does not happen.
+
+### The path that needs no user
+
+Measured through `disable` because both renderers can be driven that way and the field leaves play
+identically. The path that matters is the other one: with `applyDynamicRules`, a rule fires on a value
+the user did not type, so this state arrives while they are mid-interaction rather than after
+something they did. That is the same door as finding 175, where the keyboard is dropped, and both
+arrive together — the calendar stays and the focus goes.
