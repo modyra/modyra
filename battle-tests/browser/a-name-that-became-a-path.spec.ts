@@ -1,24 +1,24 @@
 /**
- * A field called `a.b`, and a payload with an object in it.
+ * A value in the payload with no control on the page that could have put it there.
  *
- * A dot is this library's path separator: `rows.r.c` is a cell inside a row inside a collection. So a
- * field *named* `a.b` is a name that reads as a path, and the contract's answer is that it is not a
- * name — `parseDynamicFields` drops it, and one renderer draws nothing for it.
+ * A dot in a field name **is** a path here, by construction: a flattened document names
+ * `shipping.city`, and the trusted-list door reads it that way on purpose. So `{ a: { b: … } }` is not
+ * an undeclared group — it is what `a.b` means, and building it is the engine doing its job.
  *
- * Both renderers build the path anyway. One draws a control for it and the other draws nothing, and
- * either way the model holds `{ a: { b: … } }` — a group the consumer never declared — and that shape
- * is what leaves the form.
+ * What the two renderers then do differs. One draws a control for the field. The other draws nothing
+ * at all, and the value still leaves the form:
  *
- * The renderer that draws nothing is the worse of the two: the value is in the payload with no control
- * on the page that could have put it there, and nothing a user did explains it.
+ *     lit    no control on the page      submits { "plain": "", "a": { "b": "" } }
  *
- * So the parser calls the name unusable and the engine behind both renderers treats it as a path.
+ * That is the finding, and it is not about the dot. A form that submits a field it never rendered has
+ * a value nobody could have entered, corrected or seen — and no repair to the name grammar would
+ * touch it, because the name is legitimate.
  *
- * What is asserted allows either correct answer: **the mount is refused, or what is submitted carries
- * the names that were declared.** Dropping the field, refusing the list, and rendering it under its
- * literal name all pass; nesting it does not.
+ * So what is asserted is the pairing rather than the shape: **every field a form submits has a control
+ * on the page.** Rendering it under any shape passes; refusing the list passes; submitting a field
+ * with nothing drawn for it does not.
  *
- * Claims under attack: SUB-001, SEC-001.
+ * Claims under attack: SUB-001, A11Y-001.
  */
 
 import { expect, test } from "@playwright/test";
@@ -72,9 +72,17 @@ for (const host of HOSTS) {
 
     const sent = await page.evaluate(({ api }) => (window as never as Api)[api].submittedBy("d").at(-1) ?? {}, { api: host.api });
 
+    // One control per field the form will send. The dotted field is one of two, so a page drawing
+    // both is right whatever shape the payload takes.
+    const leaves = (value: unknown, prefix = ""): string[] =>
+      value !== null && typeof value === "object" && !Array.isArray(value)
+        ? Object.entries(value as Record<string, unknown>).flatMap(([key, inner]) => leaves(inner, prefix ? `${prefix}.${key}` : key))
+        : [prefix];
+    const sentPaths = leaves(sent).sort();
+
     expect(
-      Object.keys(sent).sort(),
-      `the form sent ${JSON.stringify(sent)}: a field named "a.b" became a group called "a" that nothing declared`,
-    ).not.toContain("a");
+      drawn,
+      `the form sent ${JSON.stringify(sentPaths)} and drew ${drawn} control(s): a value leaves the page that nothing on it could have entered`,
+    ).toBe(sentPaths.length);
   });
 }

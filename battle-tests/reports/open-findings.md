@@ -10672,10 +10672,10 @@ beyond the unknown kind are worth a look when this one is fixed: a **null entry*
 `TypeError` in lit where plain names the problem, and a **dotted name** is taken by plain and dropped
 by lit — a disagreement about whether a dot in a field name is a path.
 
-## 180. A name that became a path
+## 180. A value with no control that could have entered it
 
-**S1 · Modyra bug · `@modyra/core`** (both renderers show it, neither causes it)
-Claims: SUB-001, SEC-001
+**S1 · Modyra bug · `@modyra/lit`** — reframed after the owning session's reading, which was right
+Claims: SUB-001, A11Y-001
 Battle: `battle-tests/browser/a-name-that-became-a-path.spec.ts` — 2 failed
 
 A dot is this library's path separator, so a field *named* `a.b` is a name that reads as a path. The
@@ -10690,17 +10690,22 @@ plain   draws a control for it   submits {"plain":"", "a":{"b":"typed into the d
 lit     draws nothing for it     submits {"plain":"", "a":{"b":""}}
 ```
 
-Both send a group called `a` that nothing declared. The renderer that draws **nothing** is the worse
-of the two: a value is in the payload with no control on the page that could have put it there.
+### Corrected: the dot is not the defect
 
-That is SUB-001 in its own words — *submission contains no undeclared path* — reached through the
-field's name rather than through rendering.
+My first reading called the group `a` undeclared. It is not. A dot in a field name **is** a path here,
+by construction — a flattened document names `shipping.city`, and the trusted-list door reads it that
+way on purpose. Building `{a: {b: …}}` is the engine doing its job, and refusing the dot would break
+every flattened document.
 
-### What the spec allows
+What survives the correction is sharper and belongs to one renderer: **lit submits a field it drew
+nothing for.** A value leaves the page that nobody could have entered, corrected or seen, and no
+change to the name grammar would touch it because the name is legitimate.
 
-**The mount is refused, or what is submitted carries the names that were declared.** Dropping the
-field, refusing the list, and rendering it under its literal name all pass; nesting it does not. Both
-renderers currently nest.
+### What the spec allows now
+
+**Every field a form submits has a control on the page.** Rendering it under any shape passes;
+refusing the list passes; submitting a field with nothing drawn for it does not. Plain draws two
+controls and sends two paths and passes; lit draws one and sends two.
 
 ### Where this fits with 178 and 179
 
@@ -10713,3 +10718,49 @@ Three findings from one sweep of hand-built field lists, and they separate clean
 ```
 
 The first two are renderer policy. This one is underneath both.
+
+
+## 181. An initial nobody checked
+
+**S1 · Modyra bug · `@modyra/core` (dynamic parser)**
+Claims: DYN-001, VAL-004
+Battle: `battle-tests/adversarial/dynamic-contract/an-initial-nobody-checked.battle.test.mjs`
+— 2 battles, both red
+
+A document says what a field starts as. The parser measures a **collection's** starting value against
+its shape and a **field's** not at all:
+
+```
+a record given a number      refused    MDY_DYNAMIC_INVALID_RECORD
+a record given a list        refused    MDY_DYNAMIC_INVALID_RECORD
+an array given a number      refused    MDY_DYNAMIC_INVALID_ARRAY
+an array given an object     refused    MDY_DYNAMIC_INVALID_ARRAY
+a text field given 42        accepted, no diagnostic
+a text field given {}        accepted
+a text field given []        accepted
+a text field given true      accepted
+```
+
+The knowledge is published and used one layer later: `MDY_VALUE_CONTRACTS.text.shape` is `string`, and
+`matchesValueShape` answers `false` for `42` and `true` for `"ok"`. The engine calls that same
+judgement when the form is built — which is why the form is invalid rather than broken.
+
+### What the acceptance costs
+
+A document that parses clean in **strict** mode makes a form that is already refusing:
+
+```
+value      {"a": 42}
+valid      false
+canSubmit  false
+errors     ["This field holds string"]
+```
+
+Nobody has touched it. The message is about a value the user never entered, on a form the strictest
+available check said was fine.
+
+### The control
+
+The collection cases are asserted first: the parser *does* check initials, so the field case is an
+omission rather than a policy. And the published shape checker is asked directly, so the finding is
+not "there was no way to know".
