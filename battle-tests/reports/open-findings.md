@@ -11110,3 +11110,51 @@ reference.
 Worth stating because the failures filed against this contract — 185, 186 — could be read as a
 surface that has drifted from itself. It has not. Both are about what the contract *says*, not about
 it having lost track of its own vocabulary.
+
+## 188. What the auditor had nothing to say about, because it was looking at an unstyled page
+
+**Severity** S2 · **Classification** accessibility conformance failure in the shipped default theme ·
+**Battle** `browser/every-kind-under-an-auditor.spec.ts` (red in all three states) · **Claims**
+A11Y-001, A11Y-002, A11Y-003, A11Y-004
+
+The auditor spec exists because its rules were not chosen to match what the renderer does: axe-core,
+restricted to WCAG 2.0 and 2.1 A and AA, over one form of every kind, in three states. It was green.
+
+It was green because the host loaded no stylesheet (finding 187). With `@modyra/styles`' shipped
+`default.css` loaded — the file a consumer gets — axe reports two serious violations in every one of
+the three states:
+
+```
+color-contrast       serious   .mdy-button                    4.09 : 1   (#fcfeff on #7067ff, 14px)
+                               .mdy-colors__primary-picker    required 4.5 : 1
+nested-interactive   serious   .mdy-colors__primary-picker    "a negative tabindex on an element
+                                                              inside an interactive control does not
+                                                              prevent assistive technology..."
+```
+
+`.mdy-button` is the file field's *Select file*. Both are in the default theme and the colours
+widget, so both reach any consumer who loads what the docs tell them to load.
+
+**Neither was found by this suite's own reasoning.** They came from a rule set nobody here wrote,
+which is the whole argument for keeping an external auditor — and for the four years' worth of that
+argument to be worth anything, the auditor has to be shown the page the user gets. A contrast rule
+cannot fail on a page with no colours, and it did not.
+
+**The measurement.** Full browser tier, same tree, stylesheet the only change:
+
+```
+without the stylesheet   69 failed, 183 passed
+with it                  73 failed, 179 passed
+```
+
+Four tests changed colour, all in this direction: the auditor's three states, and
+`a-popup-lit-cannot-open-either`. **No test went the other way.** The stylesheet did not hide a
+failure; it revealed four.
+
+`battle-tests/browser/build.mjs` now copies `modyra-default.css` into the host and links it from both
+pages, with the reason written beside it: the themes change geometry, so a tier loading `material` or
+`ios` would be measuring that theme rather than the contract every adapter shares.
+
+**Not claimed.** That `4.09` is the only contrast failure in the theme — the auditor saw one form of
+each kind, in three states, not the whole catalog of states a theme has. Nor anything about the other
+themes, which are not loaded here.
