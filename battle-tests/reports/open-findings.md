@@ -11314,6 +11314,15 @@ measured in the catalog with the shipped stylesheet:
 Every surface painted from `--mdy-primary` / `--mdy-on-primary` — which is where the failing pair
 lives — is measured in amber. **The theme's own accent colour is never the one under test.**
 
+The demo is entitled to show itself in amber, and both example apps do it — the Angular one twice,
+the Lit one as an inline style on `<html>`. The mechanism to set a primary is in the same spec file,
+used by other tests in it (`:49`, `:202`); the contrast walk swaps `#mdy-theme-link` and nothing else.
+
+**Same shape as finding 187**, one level up: there, a harness measured a page with no stylesheet and
+called the product wrong; here, a gate measures a page wearing a colour the theme does not ship and
+calls it right. Both are greens obtained by answering a different question from the one written down,
+and both came from the instrument rather than the product.
+
 **And most of the palette is not on the page.** Counting the parts that carry a declared
 background-and-text pair in `modyra-default.css`, against what that page actually renders:
 
