@@ -12764,16 +12764,21 @@ complete.
 ```
 numbered findings        198
 closed or retracted       23
-open with a battle       165
-open with none            10
+open with a battle       168
+open with none             7
 ```
 
-The ten without a battle are the entries a test cannot hold: a tier no CI job runs (36), a capability
-nothing reads (37), constants outside a classifier (39), a campaign that explores one run (40), two
-entries about this hunt's own mistakes (51, 57), a hook two packages export (92), a form that submits
-what it did not validate (95), a gate that measures a page in the wrong colour (190), and forty-nine
-comments citing a plan that is not in the repository (198). Configuration, documentation and coverage
-— none of them a behaviour a battle could pin.
+The seven without a battle are the entries a test cannot hold: a capability nothing reads (37),
+constants outside a classifier (39), a campaign that explores one run (40), two entries about this
+hunt's own mistakes (51, 57), a hook two packages export (92), and forty-nine comments citing a plan
+that is not in the repository (198). Configuration, documentation and coverage — none of them a
+behaviour a battle could pin.
+
+**The first count of this said ten, and was wrong.** It looked for `.battle.test.mjs` and `.spec.ts`,
+and the `differential/` suites are named `.test.mjs` — so findings 36, 95 and 190 read as unheld when
+each has a battle. Tenth instrument error of the night, caught by reading one of the three: finding 95
+names `what-the-schema-says-the-value-is.test.mjs` in its second line. **A pattern that encodes a
+naming convention is an assumption about the repository**, and this one was three files out of date.
 
 **191 is marked closed here after checking rather than after being told**: `MDY_WIDGET_CONTRACT_VERSION`
 reads `2`, `docs/architecture/0084-a-contract-version-names-the-anatomy.md` exists, and `1a8138f9`
