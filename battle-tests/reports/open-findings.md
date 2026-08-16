@@ -11432,3 +11432,52 @@ as a compatibility number again.
 **Not claimed.** That the four changes are wrong. Every one of them looks like a repair —
 `searchButton` becoming an `input` with `role=combobox` is a control gaining the semantics it needed.
 The finding is the number that did not move with them.
+
+## 192. A rule the parser drops without a word
+
+**Severity** S2 · **Classification** silent loss of declared behaviour · **Battle**
+`adversarial/dynamic-contract/a-rule-the-parser-drops-without-a-word.battle.test.mjs` (red) ·
+**Claims** DYN-003
+
+The Dynamic Form Contract arrives from somewhere that is not the application, so the parser decides
+what it can accept and says what it could not. It does that for fields. It does not do it for rules.
+
+One document, both faults, one call:
+
+```
+fields: [{ name: "x", kind: "text" }, { name: "y", kind: "wormhole" }]
+rules:  [{ effect: "explode", target: "x", when: { field: "x", operator: "equals", value: 1 } }]
+
+fields kept      x                 → y dropped
+rules kept       0                 → the rule dropped
+rejectedCount    1                 → counts the field, not the rule
+diagnostics      [MDY_DYNAMIC_UNKNOWN_KIND]   → names the field, not the rule
+ok               true
+```
+
+Each way a rule can be unusable behaves the same — an effect outside the four, an operator outside the
+ten, a target naming no field, a condition reading no field. Discarded, uncounted, unreported,
+`ok: true`.
+
+**What reaches the author.** Nothing, at any of the three moments they could learn:
+
+- **Lint time.** `@modyra/eslint-plugin`'s only rule, `valid-dynamic-form`, describes itself as
+  *"report the Modyra Dynamic Form Contract's diagnostics for a form document written as a literal"*.
+  Driven over these documents it reports every field fault — unknown kind, missing name, duplicate
+  name, `__proto__` — and is **silent on all four rule faults**. It is not at fault: it reports the
+  diagnostics it is given, and there are none.
+- **Parse time.** `diagnostics` is empty and `rejectedCount` does not move.
+- **Runtime.** The rule is gone, so there is nothing left to misbehave.
+
+A `show` that never shows, and every instrument the project ships says the document is fine.
+
+**The control that makes this the rules and not the parser.** The bad field in the same call is
+dropped, counted and named. The reporting machinery works; it does not cover this half.
+
+**Severity, stated rather than borrowed.** Filed under DYN-003 alone — *"a contract's findings are the
+parser's, wherever they are reported"*. DYN-004 is registered S0 and would have carried this battle to
+S0 with it, but that claim is about a slot the parser **accepts** and nothing reads; this is one it
+**rejects** without saying so. Same family, one band down.
+
+Goes green when a discarded rule produces a diagnostic, the way a discarded field does. The codes and
+the counter already exist.
