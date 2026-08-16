@@ -12425,6 +12425,16 @@ property of the code. Half of these are one sentence away from doing that.
 here forty-nine comments name a document that does not exist. Both send a reader somewhere to check a
 reason, and both leave them unable to.
 
+**And it reaches the decision records.** Five ADRs cite "plan section 4/5/6/7/9/10" — thirteen
+references — for reasoning a reader cannot check. An ADR exists so the next person does not
+relitigate a decision from scratch; a clause resting on a plan section they cannot open leaves them
+exactly where the record was meant to save them.
+
+**The ADR corpus is otherwise sound on this**, swept rather than assumed: 86 records cite **153**
+repository paths and every one resolves. The two the scan flagged are not misses — `studio-target-java`
+appears in a sentence about what *adding* a Java target would cost, and `docs/architecture/0010` is a
+record referred to by its number. Finding 189's wrong package was the exception, not the pattern.
+
 **Filed without a battle**, deliberately. This is a repository convention rather than a published
 promise, and no registered claim covers it — the same call as 189, which was repaired anyway. The
 check is one `grep` and is written above.
