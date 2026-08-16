@@ -12705,3 +12705,32 @@ type into work  →  both hold their own answer
 Independent in both, including the validator: the shared `required()` produces a verdict per path
 rather than one shared between them, and a collection declared once and built twice keeps its rows
 apart. A descriptor is a blueprint and nothing built from it carries state back.
+
+## Checked and clean: the published schema against the parser, in both directions
+
+`spec/dynamic-form-v3.schema.json` is what a consumer validates their document against before sending
+it. The corpus half of that is already held — a script validates every fixture against the schema for
+its version, and `the-corpus-as-forms` builds a form from each. What was not asked is the other
+direction: **does a document the schema accepts get through the parser?**
+
+Six documents, each through `ajv` and through `parseDynamicForm`:
+
+```
+a sound document          schema true   parser true    agree
+an unknown effect         schema false  parser false   agree
+an unknown operator       schema false  parser false   agree
+an unknown kind           schema false  parser false   agree
+a rule targeting a ghost  schema TRUE   parser false   disagree
+a duplicate field name    schema TRUE   parser false   disagree
+```
+
+**Both disagreements are named in the schema's own `description`**, with the reason:
+
+> *"A document this schema accepts may still be rejected by the parser: JSON Schema cannot express a
+> cross-reference, so a layout slot naming a field that does not exist, a duplicate field name, or a
+> validation reading an undeclared path all pass here and fail there."*
+
+So the limit is stated where a consumer reading the schema meets it, and the measurement lands on two
+of the three cases it lists. Nothing to file — and worth recording because a published schema that
+says *"my green is not the parser's green"*, in its own description, is the rare version of a limit
+that a reader cannot miss.
