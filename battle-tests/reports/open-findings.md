@@ -10906,26 +10906,27 @@ indistinguishable here.
   `"2026-03-04"` under `en-GB`, `03/04/2026` arrives as `"2026-04-03"` — day-first, as that locale
   means — and prose is refused with the message named above, in the locale's own words.
 
-## 185. An anatomy only one renderer builds
 
-**Severity** S2 · **Classification** contract cannot express what it needs to say · **Battle**
-`browser/an-anatomy-only-one-renderer-builds.spec.ts` (red on lit) · **Claims** UI-009
+## 185. A part the contract requires and one renderer does not build
 
-`MDY_WIDGET_CONTRACTS` is not a list of kinds. It is **249 parts across 17 kinds**, 79 distinct part
-names, and each part declares the classes it wears, the states it can be in, the attributes it takes
-and — for **31 of them** — the ARIA role it answers to:
+**Severity** S2 · **Classification** published contract not met · **Battle**
+`browser/a-part-the-contract-requires.spec.ts` (red on lit) · **Claims** UI-009
+
+A kind contract carries seven things — `kind`, `rootClasses`, `parts`, `structure`,
+`presentationClasses`, `variants`, `capabilities` — and the anatomy is split across two of them.
+`parts` says what a part is made of; `structure` says where it sits and whether it has to be there.
+**All 249 nodes across the 17 kinds declare `optional`.**
+
+Three published statements about `select.trigger`, agreeing:
 
 ```
-select.parts.trigger  { classes: ["mdy-select__trigger"], role: "combobox", states: [open, disabled, readonly, invalid, loading] }
+parts.trigger      classes ["mdy-select__trigger"], role "combobox"
+structure node     element "input", parent "inputWrapper", optional FALSE
+staticParts        listed — not among the parts that exist only while an overlay is open
 ```
 
-A part has exactly four fields: `classes`, `attributes`, `states`, `role`. **None of the 249 has any
-way to say "only sometimes".** The same package knows how — `MDY_FORM_SHELL_STRUCTURE` marks both of
-its nodes `optional`. The widget contracts never use it.
-
-So `popup`, `listbox` and `option` are published in the same voice as `root` and `label`, and a
-reader cannot tell that the first three exist only while something is open. What the eighteen parts
-of `select` actually meet:
+A select has a trigger, always, and it is the element answering to `combobox`. Measured in both
+renderers:
 
 ```
                           plain                          lit
@@ -10938,25 +10939,72 @@ popup, listbox, option    portalled dropdown             absent
 
 plain builds the contract's combobox; lit renders a native `<select>` with `<option>` children.
 
-**This is not finding 113 again.** That one archived the same divergence with "markup is not what the
-contract fixes". Measured now: the contract fixes markup part by part, with class names and ARIA
-roles, and 31 parts carry a role. That premise was wrong, and nothing in the register names the
-missing optionality.
+The assertion is narrow on purpose. Not `popup` — `overlayOnlyParts` names it conditional and a
+closed control has every reason not to have built one. `trigger`, which the half of the contract
+whose job is to say so marks `optional: false`. `root` and `label` are asserted first as controls,
+green in both, so the red is the part and not the mount.
 
-The assertion is narrow on purpose. Not `popup` — a closed control has every reason not to have built
-one. `trigger`: the element the contract gives a role to, the thing a person clicks. `root` and
-`label` are asserted first as controls, and both are green in both renderers, so the red is the part
-and not the mount.
+**Not finding 113 again.** That one archived the same divergence with "markup is not what the
+contract fixes". The contract fixes markup part by part, with class names and ARIA roles, and 31 of
+the 249 parts carry a role. That premise was wrong.
+
+**What this entry got wrong first, and how.** It was filed claiming the contract had *no* way to say
+a part may be absent — measured from `parts[name]`, which indeed has only `classes`, `attributes`,
+`states`, `role`. `structure.nodes[].optional` was never read, and neither were `staticParts` or
+`overlayOnlyParts`. Two independent corrections landed together: `overlayOnlyParts("select")`
+returning the five conditional parts, and the owning session reading `optional` off the structure
+nodes. The finding survives and is sharper — `trigger` is not an unmarked part, it is a **required**
+one — but the first framing was the same defect it accuses 113 of: archiving a conclusion without
+measuring the thing being archived.
 
 **Who this reaches.** A consumer writing CSS against `.mdy-select__trigger`, a test against
-`[role=combobox]`, or a third adapter built by reading the published surface — each gets the declared
-anatomy in one renderer and something else in the other, with no published statement that this is
-allowed. `@modyra/styles` targets these class names.
+`[role=combobox]`, or a third adapter built by reading the published surface. `@modyra/styles`
+targets these class names.
 
-Goes green either way: lit builds the declared anatomy, or the contract says which parts are
-conditional and on what — an `optional` flag, a `when`, a renderer note. The second is the smaller
-change and the honest one, and it is the one the shell structure already demonstrates.
+Goes green two ways, and the owning session's reading of the cost is recorded here because it is the
+better half of the decision: either lit builds the combobox — which would discard a written choice
+for the native `<select>`'s platform typeahead, keyboard model and mobile picker, making the code
+follow the document in the wrong direction — or the contract gains a **variant** for the select, the
+machine it already has for `multiselect` (`variants: { single, multi }`, each with its own elements
+and required set). The second is the smaller change.
 
-**Not claimed.** That lit is wrong to use a native `<select>`. It has real advantages and the choice
-was examined. What is claimed is that the contract states an anatomy unconditionally, owns the
-vocabulary to qualify it, and does not.
+**Not claimed.** That lit is wrong to use a native `<select>`.
+
+## 186. Six parts the contract requires and only lends while open
+
+**Severity** S2 · **Classification** contract contradicts itself · **Battle**
+`adversarial/widgets/a-part-required-and-borrowed.battle.test.mjs` (red) · **Claims** UI-009
+
+The same package publishes two statements about whether a part must exist, and for six parts they
+disagree. `structure.nodes[].optional === false` means the part is required. `overlayOnlyParts(kind)`
+names the parts that exist only while an overlay is open. Every kind that has an overlay has one part
+in both sets:
+
+```
+select        listbox      required, and only present while open
+multiselect   listbox      required, and only present while open
+datepicker    calendar     required, and only present while open
+daterange     calendar     required, and only present while open
+timepicker    container    required, and only present while open
+colors        presets      required, and only present while open
+```
+
+Six kinds, six parts, and no kind with an overlay escapes it. This needs no renderer to demonstrate:
+both facts are read from `@modyra/widgets` in one process.
+
+**Why it matters to somebody who is not this suite.** These are the two exports an adapter author
+reads to decide what to build eagerly. Trusting `optional: false`, they build a listbox into a closed
+select and a calendar into a closed datepicker — which is exactly the eager-vs-lazy divergence
+between the two shipped renderers measured in finding 113's sweep, now with a published reason for
+it. Trusting `overlayOnlyParts`, they build nothing and violate a part the structure marks required.
+There is no reading that satisfies both.
+
+**The narrower reading, and why it is not enough.** `optional: false` could mean "required *within
+its parent*" — a popup that exists must contain a listbox — which is coherent and probably the
+intent. Nothing published says so: `optional` is documented by neither export, the shell structure
+uses the same field with the plain meaning, and the parent of `select.listbox` is `popup`, which is
+itself `optional: true`. A required child of an optional parent is a sentence the contract has no
+grammar for.
+
+Goes green when one of the two is qualified: `optional` gains a stated meaning relative to its
+parent, or the six parts stop being marked required, or a third statement says which export wins.
