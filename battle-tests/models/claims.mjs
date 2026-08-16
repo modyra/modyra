@@ -418,6 +418,17 @@ const CLAIMS = [
     ],
   },
   {
+    id: "LOC-003",
+    title: "A form that speaks a language speaks it in its refusals too.",
+    area: "localization",
+    severity: "S2",
+    publicEvidence: [
+      "@modyra/widgets messagesForLocale — a field that declares a locale speaks it",
+      "@modyra/core MdyDynamicValidation.message — required, because a validation nobody can read is a field that will not submit for no stated reason",
+      "spec/dynamic-form-v3.schema.json $defs.validators — required, email, min, max, minLength, maxLength, pattern",
+    ],
+  },
+  {
     id: "A11Y-003",
     title: "A palette derived from any brand colour keeps its text above the contrast floor.",
     area: "accessibility",

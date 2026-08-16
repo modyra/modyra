@@ -10764,3 +10764,47 @@ available check said was fine.
 The collection cases are asserted first: the parser *does* check initials, so the field case is an
 omission rather than a policy. And the published shape checker is asked directly, so the finding is
 not "there was no way to know".
+
+## 182. A refusal in a language nobody asked for
+
+**S2 · Modyra bug · `@modyra/core` and `@modyra/widgets` together**
+Claims: LOC-003 (registered for this), DYN-001
+Battle: `battle-tests/browser/a-refusal-in-a-language-nobody-asked-for.spec.ts` (red)
+
+A field that declares a locale speaks it, and that works:
+
+```
+locale it-IT    search box "Cerca…"     refusal "This field is required"
+locale en-GB    search box "Search…"    refusal "This field is required"
+```
+
+Forty keys of chrome follow the tag — placeholders, button labels, announcements. **None of them is a
+refusal.** `messagesForLocale` has no validation wording at all, and a document cannot supply its own:
+`$defs.validators` declares `required, email, min, max, minLength, maxLength, pattern` and no message.
+The text comes from `required(message = 'This field is required')` in core, and a document that writes
+`validators: { required: true }` takes the default.
+
+So a form generated for an Italian user asks in Italian and refuses in English, and nothing the author
+writes changes it.
+
+### The contrast is inside the same contract
+
+`MdyDynamicValidation` — the cross-field slot — makes `message` **required**, and says why in its own
+docblock: *a validation nobody can read is a field that will not submit for no stated reason*. The
+same sentence applies to the per-field rules, which have no message to require.
+
+So one half of a document's validation is authorable and the other is not, for the same reason that
+would justify both.
+
+### Controls run
+
+- **The locale reaches the page**, asserted first in both languages: `Cerca…` against `Search…`. A
+  page where the tag never arrived would produce the same English refusal and look like this finding.
+- **Both forms refused**, so there is a refusal to read rather than a silence.
+
+### What was measured on the way
+
+`mountMdyForm`'s options are `collections, onSubmit, submitLabel, layout, idPrefix, rules, form,
+reactivity` — no locale among them, and none needed: the renderer reads the tag from the **field**,
+which is the right place, since the tag that formats a date and the tag that names a button are the
+same tag. My first probe passed a locale in the mount options and measured nothing.
