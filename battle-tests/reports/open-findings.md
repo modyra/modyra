@@ -11490,3 +11490,23 @@ property instead of the effect it should cause (187) and auditing a popup with n
 owning session was told it was safe to repair.
 
 Nothing was reported to anyone as fixed, and no production code was changed on the strength of it.
+
+**What replaced it.** `adversarial/dynamic-contract/what-a-version-is-entitled-to-say.battle.test.mjs`,
+green — the dispatch nobody had pinned, which is what made the mistake possible:
+
+```
+version 2, whole            2 fields, 1 rule kept, layout kept, no diagnostics
+version 2, bad rule         refused, MDY_DYNAMIC_INVALID_RULE, rejectedCount moves
+                            (effect outside the four · operator outside the set ·
+                             target naming no field · condition reading no field)
+version 1 + layout + rules  fields kept; one MDY_DYNAMIC_UNSUPPORTED_VERSION per member
+                            it cannot use — not a silent drop
+version 1, fields only      nothing reported
+"2" · null · undefined · 2.5 · 0   ok false, nothing kept, MDY_DYNAMIC_UNSUPPORTED_VERSION
+```
+
+It is built around the control that was missing: **a valid rule must survive, with no diagnostic,
+before any assertion about a rejected one means anything.** And the effects are read from the
+parser's own vocabulary — `visible`, `hidden`, `enabled`, `disabled` — rather than guessed. Guessing
+`show` is what made a valid rule and an invalid one look identical, which is how a false control
+passed.
