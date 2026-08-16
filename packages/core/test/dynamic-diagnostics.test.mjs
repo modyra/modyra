@@ -172,3 +172,42 @@ test("a finding names the entry it is about, not the array it is in", () => {
     ["/fields"],
   );
 });
+
+test("a member a version predates is named, not ignored", () => {
+  // Version 1 is a flat field list and nothing else: `layout`, `rules` and `validations` are not in
+  // its vocabulary. Dropped in silence, an author who wrote rules against the wrong version number
+  // got a document the parser called clean, a lint with nothing to report, and a form where the
+  // rules simply were not there — the three places they could have learned, all quiet.
+  const v1 = (extra) => ({
+    version: 1,
+    id: "f",
+    fields: [{ name: "x", kind: "text", label: "X" }],
+    ...extra,
+  });
+  const rule = { effect: "hidden", target: "x", when: { field: "x", operator: "equals", value: "a" } };
+
+  for (const [slot, extra] of Object.entries({
+    rules: { rules: [rule] },
+    layout: { layout: [{ kind: "section", id: "s", children: ["x"] }] },
+    validations: { validations: [{ when: { op: "equals", operands: [{ path: "x" }, "a"] }, message: "no" }] },
+  })) {
+    const parsed = parseDynamicForm(v1(extra), { mode: "lenient" });
+    const named = parsed.diagnostics.filter((each) => each.path === `/${slot}`);
+    assert.equal(named.length, 1, `${slot} was dropped without a word`);
+    assert.equal(named[0].code, "MDY_DYNAMIC_UNSUPPORTED_VERSION");
+  }
+
+  // The control, and it is what makes the three above about the member rather than about version 1:
+  // a v1 document that stays inside its own vocabulary parses clean in the strictest mode there is.
+  assert.equal(parseDynamicForm(v1({}), { mode: "strict" }).ok, true);
+
+  // And the same members at the version that has them are read, not reported.
+  const v2 = parseDynamicForm({
+    version: 2,
+    id: "f",
+    fields: [{ name: "x", kind: "text", label: "X" }],
+    rules: [rule],
+  }, { mode: "strict" });
+  assert.equal(v2.ok, true);
+  assert.equal(v2.rules.length, 1);
+});

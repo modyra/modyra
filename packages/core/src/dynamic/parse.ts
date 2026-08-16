@@ -1069,6 +1069,25 @@ export function parseDynamicForm(
   /** Fields already placed by an accepted layout node — a field belongs in exactly one slot. */
   const placed = new Set<string>();
 
+  // A v1 envelope carrying a member its version predates. The slot is read by nothing here — v1 is
+  // fields and nothing else — so it was dropped in silence: an author who wrote rules against the
+  // wrong version number got a document the parser called clean, a lint that had nothing to report,
+  // and a form where the rules simply were not there. Reported rather than accepted, because the
+  // three ways they could have learned are the three that said nothing.
+  if (!structured && envelope) {
+    for (const slot of ["layout", "rules", "validations"] as const) {
+      if (envelope[slot] === undefined) continue;
+      diagnostics.push({
+        code: "MDY_DYNAMIC_UNSUPPORTED_VERSION",
+        severity: "error",
+        path: `/${slot}`,
+        // The registry's phrase for this code has to appear in the sentence: a consumer keys on the
+        // code, and `dynamic-diagnostics.test.mjs` is what keeps the two from drifting apart.
+        message: `Unsupported dynamic form config version for "${slot}": version 1 declares fields and nothing else. Set "version": 2 to use it.`,
+      });
+    }
+  }
+
   if (structured && envelope) {
     if (envelope.layout !== undefined && !Array.isArray(envelope.layout)) {
       diagnostics.push({ code: "MDY_DYNAMIC_INVALID_LAYOUT", severity: "error", path: "/layout", message: "layout must be an array." });
