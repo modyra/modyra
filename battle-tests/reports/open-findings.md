@@ -12287,3 +12287,34 @@ timestamp is not a gate on this path — which is worth knowing beside PER-004, 
 one draft replacing another. And nothing is said for any unreadable envelope: silence is defensible
 here, because a draft that cannot be read is the same situation as no draft, and a form that warned
 every time a schema changed under a saved draft would warn constantly.
+
+## Measured, not filed: two forms of one shape, and the ids they mint
+
+`mountMdyForm` takes an `idPrefix`, and `packages/plain/src/mount.ts:49-53` says exactly what happens
+without one:
+
+> *"Two forms built from the same field names therefore mint the same ids, and the second form's
+> relationships silently resolve to the first form's elements. Neither form examined alone looks
+> wrong, which is why only a page holding both can detect it. Unset is the default."*
+
+Measured, one text field mounted twice:
+
+```
+idPrefix: "same" on both     same-x×2  same-x__label×2  same-x__description×2  same-x__errors×2
+no idPrefix at all           x×2       x__label×2       x__description×2       x__errors×2
+```
+
+Four collisions per field, and the second set is the **default**. A `<label for="x">` then names two
+inputs, so clicking the second form's label focuses the first form's control, and an
+`aria-describedby` resolves to the wrong element.
+
+**Not filed.** The behaviour is documented in those words, the remedy is a published option, and the
+default is stated as deliberate — *"leaves every id exactly as it would be without this option"*.
+Calling a documented default with a named remedy a defect would be filing a design decision.
+
+**Worth recording** for two reasons. The measurement confirms the doc's sentence exactly rather than
+approximately — it is four relationships per field, not one. And the suite's own coverage tests the
+careful case: `plain-lifecycle` mounts two forms with **distinct** prefixes and asserts no duplicates,
+so nothing here exercises the default a consumer gets by writing less. That is the same shape as
+finding 190 — a check that passes because it measures the configuration somebody chose rather than the
+one that arrives on its own.
