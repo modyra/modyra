@@ -11350,3 +11350,28 @@ elsewhere in the same file, and the walk already collects `reached`.
 
 **Not claimed.** That the other three themes fail anything: they were measured under amber too, so
 this finding is about what the gate can see, not about what the themes do.
+
+## Checked and clean: every declared export ships in the tarball
+
+The release boundary is the one place this campaign does not cross, which makes what crosses it worth
+measuring. An export map that names a file the tarball does not carry is the classic release break:
+green in the workspace, `ERR_MODULE_NOT_FOUND` for the first consumer.
+
+Checked against real tarballs — `npm pack --dry-run --json` per package, not the `files` field read
+by eye:
+
+```
+packages in packages/                              24
+publishable (the rest are private)                 13
+export targets declared (exports, main, module, types, browser)   52
+targets missing from their tarball                  0
+targets missing from the working tree               0   (76 checked, private packages included)
+```
+
+Nothing to report, and the reason for saying so rather than staying silent: 163 changesets are open
+for 3.0.0, and this is the property whose failure is invisible until publication — the one moment the
+campaign's standing instruction forbids reaching.
+
+**What this does not check.** That the files resolve *as a consumer would resolve them* — conditions,
+`types` ordering, ESM/CJS shape. `hostile-consumers/packed-consumer.battle.test.mjs` is where that
+lives.
