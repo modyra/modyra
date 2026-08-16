@@ -10771,15 +10771,18 @@ not "there was no way to know".
 Claims: LOC-003 (registered for this), DYN-001
 Battle: `battle-tests/browser/a-refusal-in-a-language-nobody-asked-for.spec.ts` (red)
 
-A field that declares a locale speaks it, and that works:
+A field that declares a locale speaks it — **including in a refusal the widget makes**. Sharpened
+after the first measurement: it is not that no refusal is translated. One form, one locale, two
+refusals:
 
 ```
-locale it-IT    search box "Cerca…"     refusal "This field is required"
-locale en-GB    search box "Search…"    refusal "This field is required"
+from the widget      Non è stato possibile leggerlo. Correggilo, oppure svuota il campo.
+from the validator   This field is required
 ```
 
-Forty keys of chrome follow the tag — placeholders, button labels, announcements. **None of them is a
-refusal.** `messagesForLocale` has no validation wording at all, and a document cannot supply its own:
+An Italian date box handed prose refuses in Italian, because `entryUnreadable` is one of forty keys in
+`messagesForLocale`. A `required` rule on the field beside it refuses in English, because there is no
+validation wording in any locale table and a document cannot supply its own:
 `$defs.validators` declares `required, email, min, max, minLength, maxLength, pattern` and no message.
 The text comes from `required(message = 'This field is required')` in core, and a document that writes
 `validators: { required: true }` takes the default.
@@ -10798,9 +10801,11 @@ would justify both.
 
 ### Controls run
 
-- **The locale reaches the page**, asserted first in both languages: `Cerca…` against `Search…`. A
-  page where the tag never arrived would produce the same English refusal and look like this finding.
-- **Both forms refused**, so there is a refusal to read rather than a silence.
+- **The English run is the control**: asked for English, both refusals are the English ones. So what
+  fails is the *mixing*, not one of the two never being translated.
+- **The widget refusal is asserted to follow the locale** before the validator one is compared, so a
+  page where the tag never arrived would fail on that line instead and say so.
+- **Both forms produced both kinds of refusal**, so there are two to compare rather than a silence.
 
 ### What was measured on the way
 
@@ -10890,3 +10895,13 @@ not what a number input does — it is what one renderer does with what a number
 Two, both asserted before the clearing: an untouched field is empty, and a typed number is that
 number. Without them, a renderer that always said zero and one that always said null would be
 indistinguishable here.
+
+### Checked and clean, in the same sweep as 184
+
+- **Clearing a field returns it to where it started, for every kind but one.** `text`, `textarea`,
+  `email` and `password` all go back to `""` in both renderers; `number` is finding 184 and only in
+  plain. The colour and date rows of that sweep are my probe's limits — a colour's first input is the
+  native swatch, which cannot be cleared by typing — and not measurements.
+- **A date box reads what its locale writes.** `2026-03-04` and `04/03/2026` both arrive as
+  `"2026-03-04"` under `en-GB`, `03/04/2026` arrives as `"2026-04-03"` — day-first, as that locale
+  means — and prose is refused with the message named above, in the locale's own words.
