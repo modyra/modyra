@@ -12644,3 +12644,33 @@ file name before anyone reads the seed.
 **The two campaigns the register's preamble calls "not pins" remain the honest exception** — `history`
 and the positional campaign draw a fresh seed each run and reach their defect most times but not
 every time, so their green is not evidence and the battles beside them are.
+
+## The plan this campaign ran under, item by item, measured
+
+The plan lives outside the repository, so this is its only durable trace. Every item it named is
+closed, and each was checked rather than remembered:
+
+```
+Phase 0  reconnaissance            done — its numbers are the baseline the rest is measured against
+Phase 2  attack the harness first  harness/self-check holds the fixtures, including the lazy-detail
+                                   one added when a circular structure killed an S0 before its assert
+A / 3    widen the geometry        5 fixture specs, 8 campaigns, one geometry each
+Phase 4  async temporal warfare    a-write-after-the-end · async-across-identity · nested-async-undo
+                                   · paused-without-losing-anything
+Phase 5  mount-pattern bombardment harness/mount-strategy.mjs, with RENDERER_ONLY_FIELDS the only
+                                   exclusion — and a stale entry there would tighten the comparison,
+                                   not weaken it
+Phase 6  typed vs dynamic          differential/typed-vs-dynamic and differential/schemas, six routes
+Phase 7  hostile input             the security directory, every published door
+B        the four bare claims      REA-001/002, A11Y-001, PKG-001 all have battles
+C        history in the snapshot   canonical-snapshot.mjs:93 carries history: {canUndo, canRedo},
+                                   with the comment naming the PER-002 case it was added for
+D        the promised directories  scenarios/ 1 file · regressions/ 6
+E        run hostile-consumers     packed-consumer.battle.test.mjs runs and is green; the numbered
+                                   scratch probes are gone
+```
+
+What the plan proposed and the suite did differently is worth one line, because it is the better
+shape: the plan wanted one campaign choosing its geometry from the seed, and what exists is one
+campaign per geometry — a reference model can then be specific to the structure it describes, and a
+failure names the geometry in its file name before anyone reads a seed.
