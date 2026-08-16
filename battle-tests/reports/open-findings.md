@@ -11220,6 +11220,13 @@ three states and `a-popup-lit-cannot-open-either`, whose first test was mounting
 under the first one's open popup and is repaired. Nothing went the other way: the stylesheet hid no
 failure.
 
+**A count of colour changes understates it.** `every-kind-in-lit-under-an-auditor` had two failing
+tests before the stylesheet and two after, so it appears in no diff — but its violations now include
+the same `color-contrast` on `.mdy-button` and `.mdy-colors__primary-picker`. Both renderers'
+auditors report the pair, which is what places it in the stylesheet rather than in either renderer.
+A test that was already red can gain a finding without changing colour, and a red count will never
+say so.
+
 **Not claimed.** That `4.09` is the theme's only contrast failure — the sweep's method is sound only
 for tokens defined in one scope, and the auditor saw one form of each kind in three states. Nor
 anything about the other themes, which this tier does not load. The next measurement for whoever
