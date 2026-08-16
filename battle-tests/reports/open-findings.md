@@ -12261,3 +12261,29 @@ empty restore is the second form arriving, not drafts failing.
 Goes green when a second form claiming a live key is reported. Whether it should also be refused is a
 product decision — a warning naming the key would already turn a silent data loss into a five-minute
 fix, and it is the smaller change.
+
+## Checked and clean: a storage that hands back something that is not a draft
+
+`draft-shape-gate` attacks the *value* inside an envelope. This is the envelope itself — what a
+`localStorage` holds after a version change, a hand edit, or another application writing to the same
+key. Nine shapes, each read at form construction, with diagnostics captured at their default:
+
+```
+"{{{"                                     ignored, form keeps its initial
+"[]"  ·  "\"hello\""  ·  "null"           ignored
+{__mdyDraft:1, savedAt:1}   (no value)    ignored
+{__mdyDraft:99, …}          (wrong mark)  ignored
+{__mdyDraft:1, value:"x"}   (not a tree)  ignored
+{__mdyDraft:1, savedAt:"soon", value:{a:"x"}}   restored — savedAt is not read as a gate
+{__mdyDraft:1, value:{__proto__:{polluted:1}, a:"x"}}   restored as {a:"x"}
+```
+
+**Nothing throws, nothing is invented, and `({}).polluted` is undefined after the last one** — the
+hostile key is dropped and the rest of the envelope is restored. That is the property that would
+matter most, and it holds at a door that reads text from wherever the consumer's storage got it.
+
+Two things measured rather than assumed. A non-numeric `savedAt` does not stop the restore, so the
+timestamp is not a gate on this path — which is worth knowing beside PER-004, whose sentence is about
+one draft replacing another. And nothing is said for any unreadable envelope: silence is defensible
+here, because a draft that cannot be read is the same situation as no draft, and a form that warned
+every time a schema changed under a saved draft would warn constantly.
