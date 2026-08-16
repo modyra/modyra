@@ -12318,3 +12318,39 @@ careful case: `plain-lifecycle` mounts two forms with **distinct** prefixes and 
 so nothing here exercises the default a consumer gets by writing less. That is the same shape as
 finding 190 — a check that passes because it measures the configuration somebody chose rather than the
 one that arrives on its own.
+
+## Checked and clean: the declared classes no stylesheet targets
+
+`adversarial/styles` holds one battle, which asks that every custom property a sheet reads without a
+fallback is defined somewhere. The complementary question had never been asked: **which classes the
+widget contract declares are targeted by no rule in any shipped sheet?**
+
+Across the ten sheets in `packages/styles/dist` and the 132 distinct classes the contract and the two
+shell tables declare, **fifteen appear in no sheet at all**:
+
+```
+mdy-renderer--datepicker  --daterange  --file  --number  --select  --timepicker  --toggle
+mdy-toggle__control   mdy-toggle__label   mdy-chip-wrapper
+mdy-select__empty     mdy-timepicker__dialog
+mdy-timepicker-segment--hour   --minute      mdy-datepicker__popup--range
+```
+
+Rendered and looked at rather than counted:
+
+```
+mdy-toggle__control     input, 1×1 — the visually hidden native control
+mdy-toggle__track       52×32, radius 16px, styled        ← what a person sees
+mdy-toggle__thumb       24×24, coloured, styled
+mdy-toggle__label       span, text, inherits
+mdy-chip-wrapper        layout wrapper
+mdy-select__empty       not rendered until the popup opens with no options
+mdy-timepicker__dialog  rendered, display: none while closed
+```
+
+**Nothing to file.** Seven are root modifiers a theme has no need to style because `.mdy-renderer`
+carries the shared rules; the rest are a hidden input, text spans that inherit, a layout wrapper and
+two states that are not on screen. A toggle looks like a toggle.
+
+Worth recording because the list looked like fifteen unstyled parts and is none, and because
+`adversarial/styles` is the thinnest area in the suite — this is one of the two questions that can be
+asked of a stylesheet from the contract alone, and both now have an answer.
