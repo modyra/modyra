@@ -130,9 +130,38 @@ battle(
       detail: () => JSON.stringify(messages(constrained, "name")),
     });
 
+    // Where a person meets it rather than where a probe does. A collection's row is seeded the same
+    // way, so the form becomes unsubmittable as a result of the most ordinary action a collection
+    // form has — adding a row — with a type error on a cell nobody has touched.
+    const withRows = createZodForm(z.object({ rows: z.array(z.object({ sku: z.string() })) }), { devWarnings: false });
+    const emptyList = { valid: withRows.state.valid(), canSubmit: withRows.state.canSubmit() };
+
+    // The control: an empty collection is a form that can be sent, so what changes below is the row.
+    expectClaim(emptyList.valid && emptyList.canSubmit, {
+      claimIds: ["SCH-001"],
+      what: "a derived form with an empty collection cannot be sent, so adding a row is not what changes it",
+      detail: () => JSON.stringify(emptyList),
+    });
+
+    withRows.f.rows.push();
+    const oneRow = {
+      value: withRows.getValue().rows,
+      valid: withRows.state.valid(),
+      canSubmit: withRows.state.canSubmit(),
+      messages: messages(withRows, "rows.0.sku"),
+    };
+    ctx.log.note("a row a person added", oneRow);
+
+    expectClaim(oneRow.canSubmit, {
+      claimIds: ["SCH-001"],
+      what: "adding a row made the form unsendable, with a message about a cell nobody touched",
+      detail: () => JSON.stringify(oneRow),
+    });
+
     derived.destroy();
     declared.destroy();
     fresh.destroy();
     constrained.destroy();
+    withRows.destroy();
   },
 );
