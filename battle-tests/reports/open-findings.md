@@ -12351,6 +12351,29 @@ mdy-timepicker__dialog  rendered, display: none while closed
 carries the shared rules; the rest are a hidden input, text spans that inherit, a layout wrapper and
 two states that are not on screen. A toggle looks like a toggle.
 
-Worth recording because the list looked like fifteen unstyled parts and is none, and because
-`adversarial/styles` is the thinnest area in the suite — this is one of the two questions that can be
-asked of a stylesheet from the contract alone, and both now have an answer.
+Worth recording because the list looked like fifteen unstyled parts and is none.
+
+### And the third question, which had a stated answer and no guard
+
+`modyra.css` states a prohibition where the overlay coordinates are declared: *"Coordinates come from
+`anchorOverlay` … **A theme must never set these**: positioning an overlay is structure, and a theme
+that did it would be deciding whether a popup lands on its control."*
+
+A rule with a violation condition is something a test can hold rather than something a reviewer has to
+remember, and nothing held it. Measured from the **sources** — each theme's dist file bundles the base
+and foundation layers, so every built sheet mentions these properties whether or not its own layer
+sets one:
+
+```
+modyra-base.css   --mdy-overlay-top · bottom · left · right     structural, allowed
+modyra.css        --mdy-overlay-width                            structural, allowed
+the six themes    nothing                                        the prohibition holds
+```
+
+`adversarial/styles/a-theme-that-places-a-popup.battle.test.mjs` is green and now holds it, with two
+controls: the vocabulary still names the coordinates it searches for — a rename would make the search
+match nothing and pass — and a structural layer does set them, so the themes' silence is a fact rather
+than a string that never appears.
+
+That is the third of the three questions a stylesheet can be asked from the contract alone, and
+`adversarial/styles` — the thinnest area in the suite — now has an answer to each.
