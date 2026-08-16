@@ -12606,6 +12606,12 @@ the guides: `MdyStandardSchemaTree` and `MdyDynamicField` are **type-only export
 `export type` and absent from a runtime `Object.keys(await import(...))`. A check built on runtime
 keys cannot see a type, which is worth stating beside the number it produced.
 
+**And the calls resolve too**, checked for three shapes this hunt established are wrong: a
+`setDisabled`/`setReadonly`/`setInactive` given a literal boolean rather than a zero-argument
+function, an `onSubmit` passed to `createForm`, and `buildDynamicFormSchema` handed a whole document
+instead of its `schema`. Zero occurrences in the guides. The single repository-wide hit is ADR 0057
+showing the first one **as its counter-example**, comment and resulting `TypeError` included.
+
 What the gap would cost if it ever bit is not hypothetical — this hunt spent an hour on a Studio probe
 built as `{ field: { kind } }` when `FieldNode` declares `fieldKind`, and finding 189 was an ADR
 naming a subpath that does not exist. A sample carrying the same mistake would compile nowhere and
