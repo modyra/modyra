@@ -36,6 +36,74 @@ export interface NormalizeResult {
   diagnostics: StudioDiagnostic[];
 }
 
+/**
+ * The same rules the root is held to, applied to every node under it.
+ *
+ * A project is a file: saved, committed, hand-edited, written by an older editor and read by a newer
+ * one. The root refused what it could not use and said so by name; below it the walk trusted the
+ * type. A field node with no `name` loaded without a diagnostic and reached the generator, which
+ * emitted `undefined: field(undefined)` — valid TypeScript declaring a field called `undefined`, so
+ * "the generated code compiles" stayed true while the form was nonsense. A missing `validators` or
+ * `children` was worse in a smaller way: a raw `TypeError` out of a walk, where this door has a
+ * refusal with its own name.
+ *
+ * Refused rather than reported, because that is what this door already does with a project it cannot
+ * use — and a node it cannot represent is exactly that.
+ */
+function assertUsableSchema(root: unknown): void {
+  // An explicit stack, not recursion: a project is a file anyone may edit, so its nesting decides how
+  // much call stack this walk uses — and a deep one overflowed here *before* reaching the depth
+  // refusal a few lines below, turning a named "cannot be processed" into a RangeError with no path.
+  const pending: Array<{ raw: unknown; path: string }> = [{ raw: root, path: "schema" }];
+  // A node already walked is a cycle, and a cycle has its own refusal a few lines below — with a
+  // sentence that names it. Stopping here rather than reporting keeps that refusal the one a reader
+  // gets; without it this walk pushes frames until the process dies, which is a worse answer to the
+  // same file.
+  const walked = new WeakSet<object>();
+  while (pending.length > 0) {
+    const { raw, path } = pending.pop()!;
+    if (typeof raw !== "object" || raw === null) {
+      throw new StudioModelError(`Studio project schema node at ${path} is not an object`);
+    }
+    const node = raw as Record<string, unknown>;
+    if (walked.has(node)) continue;
+    walked.add(node);
+    const kind = node["node"];
+    if (kind !== "field" && kind !== "group" && kind !== "array") {
+      throw new StudioModelError(`Studio project schema node at ${path} declares no known node type`);
+    }
+    if (typeof node["id"] !== "string" || node["id"] === "") {
+      throw new StudioModelError(`Studio project schema node at ${path} is missing a string id`);
+    }
+    if (typeof node["name"] !== "string" || node["name"] === "") {
+      throw new StudioModelError(`Studio project schema node at ${path} is missing a string name`);
+    }
+    if (kind === "field") {
+      // The kind is deliberately not judged here. `compileToContract` already reports an unknown one
+      // as `UNSUPPORTED_FIELD_KIND` and degrades the field to text, so an author can open the file
+      // and fix it; refusing it at the door would take the editor away from the only person who can.
+      // What this walk answers for is a node whose *shape* the model cannot hold at all.
+      if (!Array.isArray(node["validators"])) {
+        throw new StudioModelError(`Studio project schema node at ${path} is missing its validators array`);
+      }
+      continue;
+    }
+    if (kind === "group") {
+      if (!Array.isArray(node["children"])) {
+        throw new StudioModelError(`Studio project schema node at ${path} is missing its children array`);
+      }
+      (node["children"] as unknown[]).forEach((child, index) => {
+        pending.push({ raw: child, path: `${path}.children[${index}]` });
+      });
+      continue;
+    }
+    if (!Array.isArray(node["validators"])) {
+      throw new StudioModelError(`Studio project schema node at ${path} is missing its validators array`);
+    }
+    pending.push({ raw: node["item"], path: `${path}.item` });
+  }
+}
+
 function assertStructurallyValidProject(raw: unknown): asserts raw is MdyStudioProject {
   if (typeof raw !== "object" || raw === null) {
     throw new StudioModelError("Studio project must be an object");
@@ -71,6 +139,7 @@ function assertStructurallyValidProject(raw: unknown): asserts raw is MdyStudioP
       throw new StudioModelError(`Studio project missing object field: ${objectField}`);
     }
   }
+  assertUsableSchema(schema);
 }
 
 /** No actual version migrations exist yet (only STUDIO_VERSION=1) — extend this when v2 ships. */
