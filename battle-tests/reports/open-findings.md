@@ -10905,3 +10905,58 @@ indistinguishable here.
 - **A date box reads what its locale writes.** `2026-03-04` and `04/03/2026` both arrive as
   `"2026-03-04"` under `en-GB`, `03/04/2026` arrives as `"2026-04-03"` — day-first, as that locale
   means — and prose is refused with the message named above, in the locale's own words.
+
+## 185. An anatomy only one renderer builds
+
+**Severity** S2 · **Classification** contract cannot express what it needs to say · **Battle**
+`browser/an-anatomy-only-one-renderer-builds.spec.ts` (red on lit) · **Claims** UI-009
+
+`MDY_WIDGET_CONTRACTS` is not a list of kinds. It is **249 parts across 17 kinds**, 79 distinct part
+names, and each part declares the classes it wears, the states it can be in, the attributes it takes
+and — for **31 of them** — the ARIA role it answers to:
+
+```
+select.parts.trigger  { classes: ["mdy-select__trigger"], role: "combobox", states: [open, disabled, readonly, invalid, loading] }
+```
+
+A part has exactly four fields: `classes`, `attributes`, `states`, `role`. **None of the 249 has any
+way to say "only sometimes".** The same package knows how — `MDY_FORM_SHELL_STRUCTURE` marks both of
+its nodes `optional`. The widget contracts never use it.
+
+So `popup`, `listbox` and `option` are published in the same voice as `root` and `label`, and a
+reader cannot tell that the first three exist only while something is open. What the eighteen parts
+of `select` actually meet:
+
+```
+                          plain                          lit
+root                      mdy-renderer--select           mdy-renderer--select
+label                     mdy-label                      mdy-label
+trigger [role=combobox]   button.mdy-select__trigger     absent
+value, placeholder, arrow span.mdy-select__*             absent
+popup, listbox, option    portalled dropdown             absent
+```
+
+plain builds the contract's combobox; lit renders a native `<select>` with `<option>` children.
+
+**This is not finding 113 again.** That one archived the same divergence with "markup is not what the
+contract fixes". Measured now: the contract fixes markup part by part, with class names and ARIA
+roles, and 31 parts carry a role. That premise was wrong, and nothing in the register names the
+missing optionality.
+
+The assertion is narrow on purpose. Not `popup` — a closed control has every reason not to have built
+one. `trigger`: the element the contract gives a role to, the thing a person clicks. `root` and
+`label` are asserted first as controls, and both are green in both renderers, so the red is the part
+and not the mount.
+
+**Who this reaches.** A consumer writing CSS against `.mdy-select__trigger`, a test against
+`[role=combobox]`, or a third adapter built by reading the published surface — each gets the declared
+anatomy in one renderer and something else in the other, with no published statement that this is
+allowed. `@modyra/styles` targets these class names.
+
+Goes green either way: lit builds the declared anatomy, or the contract says which parts are
+conditional and on what — an `optional` flag, a `when`, a renderer note. The second is the smaller
+change and the honest one, and it is the one the shell structure already demonstrates.
+
+**Not claimed.** That lit is wrong to use a native `<select>`. It has real advantages and the choice
+was examined. What is claimed is that the contract states an anatomy unconditionally, owns the
+vocabulary to qualify it, and does not.
