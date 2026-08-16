@@ -12616,3 +12616,31 @@ What the gap would cost if it ever bit is not hypothetical — this hunt spent a
 built as `{ field: { kind } }` when `FieldNode` declares `fieldKind`, and finding 189 was an ADR
 naming a subpath that does not exist. A sample carrying the same mistake would compile nowhere and
 nothing here would say so.
+
+## Checked and clean: the generative campaigns, against the plan that asked for them
+
+The plan this suite was widened under recorded a specific gap: *"a single form shape. `KEYED_ROWS_SPEC`
+= a flat record with three cells, all `text` … every claim about collections, submission and
+validation is demonstrated on one geometry."* Measured now:
+
+```
+fixture specs in models/schemas.mjs   5   KEYED_ROWS · POSITIONAL_ROWS · CONDITIONAL_ROWS
+                                          NESTED_ORDERS · POSITIONAL_ROOT
+campaigns in generative/properties    8   arrays · conditional · draft-roundtrip · history
+                                          keyed-nested · nested · records · sibling-collections
+runs per campaign                     20 by default, `MDY_BATTLE_RUNS` raises it
+```
+
+Eight campaigns, each with its own geometry, and none of them among the failures of the last full run.
+Driven directly rather than inferred from absence: `records.property.test.mjs` alone is 1 test, green,
+and its title is *"a keyed collection means what a much simpler model says it means"* — the
+independent reference model the plan asked for.
+
+The plan proposed one campaign choosing its spec from the seed. What exists instead is one campaign
+per geometry, which is the better shape for the same goal: a reference model can be specific to the
+structure it describes rather than branching inside itself, and a failure names the geometry in its
+file name before anyone reads the seed.
+
+**The two campaigns the register's preamble calls "not pins" remain the honest exception** — `history`
+and the positional campaign draw a fresh seed each run and reach their defect most times but not
+every time, so their green is not evidence and the battles beside them are.
