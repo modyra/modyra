@@ -11537,7 +11537,7 @@ parser's own vocabulary — `visible`, `hidden`, `enabled`, `disabled` — rathe
 `show` is what made a valid rule and an invalid one look identical, which is how a false control
 passed.
 
-## 193. A field nobody named — repair in flight
+## 193. A field nobody named — closed except for the kind
 
 **Severity** S1 · **Classification** silent acceptance at a public door · **Battle**
 `adversarial/studio/every-target.battle.test.mjs` + `a-field-nobody-named.consumer.mjs` (green once
@@ -11594,3 +11594,40 @@ Studio battles use, because these are private packages whose siblings are `works
 field reached the output under its own name with nothing reported. A select with no options is
 reported by name through the same door — so a gap here is a gap in a vocabulary that covers exactly
 this level, not a door that never speaks below its root.
+
+### Closed by `5a958713`, except the half that was never the model's
+
+Every node under the root is now held to the rules the root already applied — an object, a known
+`node`, a string `id` and `name`, a field's `validators`, a group's `children`, an array's `item` —
+refused as `StudioModelError` **with the path** (`schema.children[0]`, `schema.item`). The two raw
+type errors this entry distinguished are named refusals now. The `SELECT_WITHOUT_OPTIONS` control is
+intact.
+
+**The unknown `fieldKind` was deliberately left out, and the reasoning is better than the repair would
+have been.** `compileToContract` already reports it and degrades the field to text, with a test
+fixing that behaviour and its reason written down: *a field that disappears takes its parent's rules
+with it, and the author loses more than the one thing that was wrong.* Refusing such a project **at
+the door** would take the editor away from the only person who can fix the file.
+
+**Where it actually goes missing, measured after the repair landed:**
+
+```
+                  analyze                                   generate
+loadProject       (none)                                     —
+compileToContract UNSUPPORTED_FIELD_KIND, MDY_DYNAMIC_INVALID_FIELD
+json              compatible FALSE, both diagnostics         both diagnostics
+core              compatible TRUE,  none                     none
+react             compatible TRUE,  none                     none
+angular           compatible TRUE,  none                     none
+```
+
+The compiler finds it. **One target of four carries it; three discard it and answer `compatible:
+true` for a project their own compiler reports two errors on.** So the repair is not in the model and
+not in the compiler — it is the three targets that call `compileToContract` and drop what it hands
+back.
+
+This is the same shape as the standing red in the same file — *a target called a project compatible
+that the model reports an error for* — which names `react` for its own broken project. Measured with
+an unknown `fieldKind` the answer is `core`, `react` and `angular`. The battle is not widened here:
+it already asserts that **no** target may say yes, and one fixture proving it is enough to make the
+point that three do.
