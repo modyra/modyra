@@ -4701,6 +4701,28 @@ by A11Y-001's severity for a keyboard-only user of a radio group, who is told `H
 Either resolution closes it: implement the two keys in the renderers, or stop declaring them for these
 two kinds.
 
+**What one unanswered binding costs, measured after the fact.** `timepicker` declares `Enter` twice —
+`when: "closed"` → `open`, and `when: "open"` → `commit`. Neither renderer opens the picker on Enter
+from a closed field, and what each does instead diverges:
+
+```
+typed "22:30" into the field   plain                       lit
+before Enter                   canSubmit true              canSubmit true
+after Enter                    errors 1, canSubmit FALSE   errors 0, canSubmit TRUE
+after blur                     errors 1, canSubmit false   errors 1, canSubmit false
+```
+
+Both eventually report that the text could not be read. plain does it on Enter; **lit does nothing on
+Enter at all** — it does not commit `"10:30 PM"` either, so this is the binding being unanswered
+rather than a different reading of it.
+
+The cost is the window in between. Enter is the gesture that means *I am done with this field*, and in
+a form it is often the gesture that submits. In lit's window the form reports itself **ready** while
+holding `null` and showing `22:30` — so a Submit drawn from `canSubmit` is enabled, and what would
+leave is not what the person is looking at. Not observed end to end: driving a submission there needs
+a submit helper the lit host does not have, so what is measured is the affordance and the model's
+value, not a payload.
+
 ## 97. A star on every field, including the ones nobody must fill
 
 `browser/a-star-on-a-field-nobody-must-fill.spec.ts` — 1 red (plain), 1 green (lit).
