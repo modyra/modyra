@@ -10262,3 +10262,49 @@ that did not exist when the form was built.
 - **A removed row reports nothing**, which the guide states in its own words — *changed values, not
   structure* — and is not this finding. What the guide does not cover is the value inside a row that
   is new, which is reported neither as structure nor as a value.
+
+## 174. A baseline only the engine can move
+
+**S2 · Modyra bug · `@modyra/core`**
+Claims: PER-002, API-001
+Battle: `battle-tests/adversarial/persistence/a-baseline-only-the-engine-can-move.battle.test.mjs`
+(red, enforced)
+
+`clearDraft()` re-baselines: after discarding, the current value becomes what the form is compared
+against and `getChanges()` empties. The engine does it through `rebaselineToCurrentValue()`, and the
+changeset that added it says it was published **because a consumer who saves by another route wants
+the same thing** — someone who PUT the form themselves and wants the next `getChanges()` to be a diff
+against what the server now has.
+
+That consumer holds what `createForm` returned, and the method is not on it:
+
+```
+the form's surface   activate buildSubmitEvent claimField clearDraft deactivate destroy errorsFor
+                     getChanges getField getValue markAllTouched mutate onDestroy patch patchValue
+                     redo removeField removeValidators reportEntry reset setDisabled setInactive
+                     setInitialValue setReadonly setSanitizer submit submitValue undo
+rebaselineToCurrentValue   on MdyFormEngine; the engine behind a form is `protected`
+```
+
+### The workaround has finding 168's wall
+
+`setInitialValue(path, value)` is public and works — one leaf at a time:
+
+```
+setInitialValue("who", "typed")                          the change is gone
+setInitialValue("rows", {row: {c: "typed"}})             nothing happens
+setInitialValue("rows.row-the-user-added.c", "typed")    the change is gone
+```
+
+Naming the collection does nothing; only the full path works, and the row key in it is **data the
+user created**. A consumer cannot write the paths of rows that did not exist when they wrote their
+code — so rows a user added can never stop being reported as changes.
+
+That is the third place this shape has appeared: `exclude` in a draft (finding 168), and now
+re-baselining. Both are per-leaf-path APIs meeting collections whose keys arrive at runtime.
+
+### Why S2
+
+Nothing is lost or mis-sent — a consumer can still read `getValue()` and send everything. What is
+wrong is that a capability the release notes announce as available is not on the surface a consumer
+holds, and the public substitute cannot reach a collection.
