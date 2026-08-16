@@ -12009,3 +12009,58 @@ The last is the interesting one. A consumer who reads the action as *"return you
 gets a form-level error with a sentence a person can read, rather than a crash, a silent success, or a
 string treated as a path. The refusal is the same shape as the one for a server answer arriving
 malformed.
+
+## 196. Two empties, one schema, two answers
+
+**Severity** S1 · **Classification** derived form refused by the schema that built it · **Battle**
+`adversarial/schema-adapters/two-empties-one-schema.battle.test.mjs` (red) · **Claims** SCH-001
+
+`createZodForm(schema)` derives a whole form from a `z.object()`. A leaf it cannot seed starts at
+`null` — the guide states it, *"Leaves are `Output | null` (null = not filled in)"* — and the bridge
+reads a `.default()` where one is given, so `null` is a choice and not the only thing available.
+
+`z.string()` does not accept `null`. The most ordinary schema a consumer writes therefore produces
+this:
+
+```
+z.object({ name: z.string() })
+
+on arrival        value null   valid FALSE   canSubmit FALSE
+                  "Invalid input: expected string, received null"
+typed "Ada"       value "Ada"  valid true    canSubmit true
+cleared to ""     value ""     valid TRUE    canSubmit TRUE
+```
+
+**The same field, empty twice, refused once.** Unfilled it is rejected in the schema's type
+vocabulary; emptied by the user it is accepted, because `""` is a string. Two keystrokes apart, and
+the permissive state is the one a person reaches by interacting — so a consumer reading `z.string()`
+as *must be answered* gets `""` in the payload, and one reading the disabled Submit on a fresh form as
+*validation is working* is reading something that stops being true as soon as the form is used.
+
+Which shapes are born refused, and which are not:
+
+```
+z.string()                initial null    invalid
+z.number()                initial null    invalid
+z.boolean()               initial null    invalid
+z.string().optional()     initial null    valid
+z.string().nullable()     initial null    valid
+z.string().default("x")   initial "x"     valid     ← the bridge does seed when told
+```
+
+**Neither half is zod misbehaving.** `z.string()` rejects `null` and accepts `""`, exactly as its own
+`safeParse` does. What the two halves say together is that the form's representation of *unfilled* is
+not one its schema admits, while the user's representation of *emptied* is.
+
+**Not the transformation finding.** `differential/schemas/what-the-schema-says-the-value-is` already
+covers a different disagreement — what the value *is* after `.trim()`, `.coerce`, `.transform()`.
+This is about what the value *starts as*.
+
+**The controls, in the order that makes the red mean something.** A derived field accepts a value its
+schema likes, so the refusal is specific. And a hand-declared `required()` refuses an empty answer
+with a sentence about the answer — *"This field is required"* — so refusing empty is expressible, and
+the type-vocabulary message is a consequence of the seed rather than the only thing available.
+
+Goes green either way, and both are defensible: seed each leaf with the empty value its kind declares
+so an untouched form is one its schema accepts, or keep `null` and have the bridge say *required*
+rather than *expected string, received null* — but not one on arrival and the other after a keystroke.
