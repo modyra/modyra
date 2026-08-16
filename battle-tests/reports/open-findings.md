@@ -11010,46 +11010,52 @@ Each was a plausible premise taken as read because it *sounded* like the rule.
 **185 stays open and is not touched by this.** `select.trigger` is required and its parent is on the
 page, so the new reading does not reach it.
 
-## 187. A width nothing can carry
+## 187. A minimum a popup does not keep
 
-**Severity** S3 · **Classification** declared-but-inert property · **Battle**
-`adversarial/widgets/a-width-nothing-can-carry.battle.test.mjs` (red) · **Claims** UI-010
+**Severity** S3 · **Classification** declared capability that governs placement, not size · **Battle**
+`browser/a-minimum-a-popup-does-not-keep.spec.ts` (red) · **Claims** UI-010
 
-`capabilities.anchoring` states how a kind's overlay is placed. Three kinds declare how narrow it may
-get: `select` 160, `multiselect` 160, `colors` 280.
+`capabilities.anchoring` states two things that pull against each other: `matchAnchorWidth` takes the
+popup's width from its anchor, `minWidth` says how narrow it may get. Three kinds declare a minimum —
+`select` 160, `multiselect` 160, `colors` 280 — and `colors` is the only one that declares one **and**
+does not follow its anchor, which makes the minimum the only statement about its width.
 
-The path from that declaration to an element is published in full, and a minimum width is in none of
-it:
-
-```
-capabilities.anchoring        matchAnchorWidth, minSpace, minWidth, alignment
-decideOverlayPlacement  →     placement, alignment, maxHeight, width, fits
-MDY_CSS_PROPERTIES.overlay    top bottom left right width max-width max-height transform
-overlayStyleProperties  →     the same eight, none of them a minimum
-```
-
-Measured in the browser, in a 1280px viewport with room for either number:
+Measured with the contract's own class names, viewport 1280:
 
 ```
-colors   declared minWidth 280   popup 142px wide   computed min-width 0px
-select   declared minWidth 160   popup  66px wide   computed min-width 0px
+8 default swatches   popup 142px
+6 declared presets   popup 110px
+declared minimum     280px
+--mdy-overlay-width  (unset)
 ```
 
-The whole chain is readable in one process, so the battle needs no renderer. The browser numbers are
-the consequence, not the proof.
+The width tracks the content exactly. For a kind that does not match its anchor, `anchorOverlay`
+sizes from the measured content — `overlay.ts:636`, `options.matchAnchorWidth ? decision.width :
+options.contentWidth` — and the declared minimum survives only at `:640` as `wanted`, an input to
+whether the popup *fits*, never the width it takes. **The declared minimum governs placement, not
+size.**
 
-**The control that makes it an absence rather than a dead pipeline.** `maxHeight` is declared beside
-`minWidth`, survives into the decision, is named in the vocabulary and is emitted as
-`--mdy-overlay-max-height`. The neighbouring number arrives; this one has nowhere to go.
+**The control that makes this an omission rather than a dead path.** `maxHeight` is declared in the
+same capabilities, travels the same route, and arrives as `--mdy-overlay-max-height` on the very
+element measured here. One of the two numbers a kind states about its overlay reaches it.
 
-**What is not claimed.** That `minSpace` is inert — it is plausibly an input to the placement
-decision rather than an output, and this battle does not test it. Nor that `matchAnchorWidth` is
-broken: `select`'s dropdown does track its trigger's width, which is also why 66px happened. When
-both are declared they cannot both hold, and nothing published says which wins — but the measured
-defect here is narrower and needs no such argument: the minimum has no carrier at all.
+**What this entry claimed first, and how it was wrong.** It was filed as "a width nothing can carry" —
+that no decision, vocabulary or emitted property could hold the number. False.
+`decideOverlayPlacement` returns `width: Math.max(anchorWidth, minWidth)` and `overlayStyleProperties`
+emits `--mdy-overlay-width: 280px` for `colors`. The measurement behind the wrong claim was a call to
+`decideOverlayPlacement` with a nested `{anchor, viewport}` object where it takes a flat geometry: it
+answered `width: null` and `placement: "overlay"` for a case with room on every side, and **a
+degenerate answer was read as evidence instead of as a wrong input**. The owning session caught it.
 
-Same shape as finding 114, one severity band down: declared, type-correct, offered to a consumer
-reading the contract, and read by nothing. The consequence is a 142px colour picker, not a leak.
+**A second correction inside the same finding.** The first browser measurement reported the colours
+popup as empty — 0 swatches — which would have made a narrow popup meaningless. The selector was
+guessed (`mdy-colors__swatch`); the contract calls it `mdy-color-swatch`. Read from the contract, the
+popup holds eight. The spec now asserts the swatch count as a control, so a future empty popup cannot
+pass this as a width finding.
 
-Goes green when a minimum width reaches the element — a ninth custom property, a `minWidth` on the
-decision — or when the three kinds stop declaring one.
+**Not claimed.** Anything about `select`, whose `--mdy-overlay-width` measures as `1264px` — the full
+viewport less its margins — which neither the source reading nor this entry explains. Nor that
+`minSpace` is inert: it is plausibly an input to placement and was not tested.
+
+Goes green when a declared minimum reaches the element for a content-sized popup, or when `colors`
+stops declaring one.
