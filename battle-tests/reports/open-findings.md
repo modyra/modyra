@@ -10300,8 +10300,26 @@ Naming the collection does nothing; only the full path works, and the row key in
 user created**. A consumer cannot write the paths of rows that did not exist when they wrote their
 code — so rows a user added can never stop being reported as changes.
 
+### The sharper framing: its sibling does take an ancestor
+
+`setDisabled` is the same shape of call on the same form, and it reaches a collection by name at every
+level:
+
+```
+setDisabled("rows")        every row out of play      submit {"list":[…],"a":"kept"}
+setDisabled("rows.r")      that row's contents out    submit {"rows":{}, …}
+setDisabled("rows.r.c")    that cell out              submit {"rows":{}, …}
+setDisabled("list")        the whole array out        submit {"rows":{…},"a":"kept"}
+setDisabled("list.0")      that item out              submit {"list":[], …}
+```
+
+So the same string that puts a collection out of play does **nothing at all**, in silence, when given
+to `setInitialValue`. Two path-taking calls on one form, one honouring an ancestor and one ignoring
+it, and neither says which it is.
+
 That is the third place this shape has appeared: `exclude` in a draft (finding 168), and now
-re-baselining. Both are per-leaf-path APIs meeting collections whose keys arrive at runtime.
+re-baselining. Both are per-leaf-path APIs meeting collections whose keys arrive at runtime — and
+`setDisabled` shows the answer already exists in the same package.
 
 ### Why S2
 

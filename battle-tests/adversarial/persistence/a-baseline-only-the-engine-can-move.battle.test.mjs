@@ -15,6 +15,10 @@
  * path works, and the row key in it is data the user created. A consumer cannot write the paths of
  * rows that did not exist when they wrote the code.
  *
+ * And the inconsistency is inside one family: `setDisabled("rows", …)` takes the collection by name
+ * and puts every row out of play. The same string given to `setInitialValue` does nothing at all, in
+ * silence. Two path-taking calls on one form, and only one of them reaches a collection.
+ *
  * So the capability exists, the call for it exists, and neither is reachable from what a consumer has.
  */
 
@@ -81,6 +85,26 @@ battle(
     await settled();
     const afterNamingTheCollection = form.getChanges();
     ctx.log.note("after naming the collection", { afterNamingTheCollection });
+
+    expectClaim(Object.hasOwn(afterNamingTheCollection, "rows"), {
+      claimIds: ["API-001"],
+      what: "naming the collection did re-baseline it, so the wall this battle describes is not there",
+      detail: () => JSON.stringify(afterNamingTheCollection),
+    });
+
+    // And its sibling, which does take an ancestor. Two path-taking calls on one form, one reaching a
+    // collection by name and one silently doing nothing with the same string, and neither says so.
+    const other = await filledByHand();
+    other.setDisabled("rows", () => true);
+    await settled();
+    const disabledByName = Object.hasOwn(other.submitValue(), "rows");
+    ctx.log.note("the same string, given to setDisabled", { stillSubmitted: disabledByName });
+    other.destroy();
+
+    expectEqual(disabledByName, false, {
+      claimIds: ["API-001"],
+      what: "setDisabled does not take a collection by name either, so the inconsistency below is not the one this battle names",
+    });
 
     // And the capability itself: one call that says the current value is the new baseline.
     expectClaim(typeof form.rebaselineToCurrentValue === "function", {
