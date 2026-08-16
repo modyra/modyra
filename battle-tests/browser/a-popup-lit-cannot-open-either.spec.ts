@@ -49,6 +49,13 @@ test("a pointer opens both pickers, which is what makes the keyboard the questio
       `[data-form="${id}"]`,
     );
     expect(expanded, `${kind} did not open on a click`).toBe("true");
+
+    // Closed and taken off the page before the next kind mounts. An open popup is positioned over
+    // the stage, so a second control mounted beneath it is one the pointer cannot reach — the
+    // failure is the first picker's popup intercepting the click, not the second picker refusing it.
+    await page.keyboard.press("Escape");
+    await page.evaluate((mountId) => (window as never as { battleLit: LitHost }).battleLit.dispose(mountId), id);
+    await settled(page);
   }
 });
 
