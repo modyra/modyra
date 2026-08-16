@@ -152,6 +152,18 @@ battle(
         what: `${name}'s reactivity reported something this comparison does not account for`,
         detail: JSON.stringify(spoke),
       });
+
+      // The allowance asserted in the other direction. Solid is permitted one line here because this
+      // process resolves its server build and it says so; an allowance that stops describing anything
+      // is a waiver outliving its reason, and the next reader has no way to tell it apart from one
+      // that is still needed. If this fails, the thing to remove is the exception above.
+      if (name === "solid") {
+        expectClaim(spoke.some((line) => String(line).includes("server build")), {
+          claimIds: ["COL-001"],
+          what: "solid no longer reports the server build this comparison makes an allowance for",
+          detail: JSON.stringify(spoke),
+        });
+      }
     }
   },
 );
