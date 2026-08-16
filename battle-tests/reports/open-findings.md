@@ -12080,6 +12080,23 @@ z.string().nullable()     initial null    valid
 z.string().default("x")   initial "x"     valid     ← the bridge does seed when told
 ```
 
+**Where a person meets it.** The same seed reaches a collection's cells, so the form stops being
+sendable as the result of the most ordinary action a collection form has:
+
+```
+z.object({ rows: z.array(z.object({ sku: z.string() })) })
+
+empty list        {"rows": []}                 valid, canSubmit        ← the control
+push a row        {"rows": [{"sku": null}]}    INVALID, canSubmit FALSE
+                  "Invalid input: expected string, received null"      on a cell nobody touched
+type "ABC"        valid
+clear it to ""    {"rows": [{"sku": ""}]}      VALID
+```
+
+A person presses **Add row** and Submit goes dark, with a message about a field they have not
+reached — and the way out is to type a character into it and delete it again. On arrival the defect
+needs a probe to notice; here it needs one click.
+
 **The sibling bridge in the same repository does not have it, and the difference is one decision.**
 `createStandardForm(schema, fields, options)` takes the field tree from the consumer — the schema only
 validates — and zod implements Standard Schema, so the same schema can be put through both:
