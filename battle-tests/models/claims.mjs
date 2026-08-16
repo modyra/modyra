@@ -547,6 +547,17 @@ const CLAIMS = [
     ],
   },
   {
+    id: "UI-009",
+    title: "A part the widget contract declares is built by every renderer, or the contract says when it is not.",
+    area: "widgets",
+    severity: "S2",
+    publicEvidence: [
+      "@modyra/widgets MDY_WIDGET_CONTRACTS — 249 parts across 17 kinds, each declaring its classes, attributes, states and (31 of them) an ARIA role",
+      "@modyra/widgets MDY_FORM_SHELL_STRUCTURE — a node declares `optional`, so the package has a way to say a part may be absent",
+      "the project instructions — widgets is the complete framework-agnostic UI contract, consumed rather than redefined",
+    ],
+  },
+  {
     id: "STU-001",
     title: "Generated code compiles.",
     area: "studio",
