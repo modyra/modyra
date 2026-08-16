@@ -12377,3 +12377,54 @@ than a string that never appears.
 
 That is the third of the three questions a stylesheet can be asked from the contract alone, and
 `adversarial/styles` — the thinnest area in the suite — now has an answer to each.
+
+## 198. Forty-nine comments that cite a document nobody has
+
+**Severity** S3 · **Classification** comments cite a plan that is not in the repository · **Battle**
+none — read from the package sources · **Claims** —
+
+the project instructions § Comments and documentation forbids exactly one of the things these comments do:
+
+> Do not write: **Task or process references.** Plan numbers, commit SHAs, "task 28 fixed this",
+> "recorded in the ledger", anything about how the work was carried out or by whom.
+
+Counted in `packages/*/src`, TypeScript sources only:
+
+```
+core 34 · preact 4 · react 4 · vue 4 · angular 2 · solid 1      = 49 references
+```
+
+Every one points at a plan — `piano §4.2`, `piano §10.5`, `piano §14.2` — or names a file:
+
+```
+piano-modyra-reactivity-adapter-api.md §5 · §7 · §10.1 · §14
+cited by core/draft-manager.ts, core/form-engine.ts, core/reactive-owner.ts,
+          react/index.ts, preact/index.ts
+```
+
+**That file is not in the repository.** The only `*piano*` file anywhere is
+`.modyra/piano di comunicazione e go-to-market.md`, an unrelated document in the coordination
+directory that the project instructions itself says must never be the sole durable record of a decision. None of the
+`§` references cites an external standard — they are all this one plan.
+
+**What it costs a reader.** The comments are not decorative; they carry the reasoning:
+
+```
+// best-effort per piano §4.2
+// (out of scope per piano §6.4
+// silently ignored (piano §4.2
+// `deactivate()`) — see piano §10.5
+```
+
+*"silently ignored (piano §4.2)"* tells the next reader that the silence is deliberate and points at
+nothing they can open. The rule the project instructions gives for this case is in the same section: express a real
+constraint in code — a type, an assertion, a test — or state the invariant in the present tense as a
+property of the code. Half of these are one sentence away from doing that.
+
+**Same shape as finding 189**, one layer down: there an ADR named a package that had no such subpath;
+here forty-nine comments name a document that does not exist. Both send a reader somewhere to check a
+reason, and both leave them unable to.
+
+**Filed without a battle**, deliberately. This is a repository convention rather than a published
+promise, and no registered claim covers it — the same call as 189, which was repaired anyway. The
+check is one `grep` and is written above.
