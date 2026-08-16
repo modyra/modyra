@@ -11132,7 +11132,35 @@ nested-interactive   serious   .mdy-colors__primary-picker
 **The nested-interactive half is finding 137**, already filed against the same element. What is new
 there is only that the suite's own auditor now reaches it; the finding and its repair are unchanged.
 
-### The contrast half, and why the obvious repair cannot work
+### The contrast half is not covered by the decision that looks like it covers it
+
+`DESIGN.md:237` and ADR 0015 declare a floor of **3.5:1**, and say in those words that it *sits below
+AA for normal text on purpose*. Read quickly, that makes 4.09 a recorded decision rather than a
+defect. It is not, and the project's own gate says so:
+
+```
+e2e/palette.spec.ts:163   const shouldBeLight = light >= FLOOR ? true : light >= dark;
+e2e/palette.spec.ts:397   if (value >= (large ? 3 : 4.5)) return;
+```
+
+`MDY_ON_COLOR_FLOOR` decides **which** colour is used — light text or dark. The acceptance threshold
+is AA: 4.5 normal, 3 large, over all four of `CONTRAST_THEMES`, `modyra` included. Exceptions are
+named per theme, and there is exactly one entry:
+
+```
+SYSTEM_PAIRINGS = { "modyra-ios": ["mdy-chip__label", "mdy-chip__count", "mdy-button"] }
+```
+
+The default theme has no allowance for `mdy-button`, and **`e2e/palette.spec.ts` is green — 18
+passed**, measured. So the pair is not waived; it is outside what the gate reaches. The spec names
+that possibility itself at `:263`: *"a part the walk never reached on this platform is not evidence
+that its allowance has expired."* The gate walks `/`, one page, in one state.
+
+**What is not settled**: whether the button is absent from that page or present with different
+colours. Either way the conclusion is the same and the next measurement is the same — walk the parts
+the gate does not reach, or say in `SYSTEM_PAIRINGS` that the default theme's is allowed too.
+
+### Why the obvious repair cannot work
 
 The pair is `--mdy-primary` on `--mdy-on-primary`, which resolve through the theme's token chain —
 `--mdy-ref-color-indigo: #7067ff`, and an on-primary that is `color-mix(in srgb, primary, cloud 95%)`,
@@ -11196,3 +11224,41 @@ failure.
 for tokens defined in one scope, and the auditor saw one form of each kind in three states. Nor
 anything about the other themes, which this tier does not load. The next measurement for whoever
 takes this is every declared pair resolved *in its own scope*.
+
+
+## 189. A decision record that sends the reader to a package without the thing
+
+**Severity** S3 · **Classification** decision record points at a path that does not exist ·
+**Battle** none — read from the packages' own exports · **Claims** —
+
+ADR 0015 is what makes finding 188's contrast question answerable at all: it carries the light-text
+rule, the floor, and the cost. It names where the number lives, twice:
+
+```
+0015-light-text-while-it-is-readable.md:28   "onColorFor in @modyra/core/color-utils"
+0015-light-text-while-it-is-readable.md:37   "MDY_ON_COLOR_FLOOR, 3.5:1, exported from @modyra/core/color-utils"
+DESIGN.md:238                                 the same
+packages/core/CHANGELOG.md:1024               "newly exported from @modyra/core/color-utils"
+```
+
+Measured:
+
+```
+@modyra/core exports          85 names, neither MDY_ON_COLOR_FLOOR nor onColorFor
+@modyra/core subpaths         .  ./serialize  ./devtools  ./datetime  ./testing  ./async-draft-storage
+                              there is no ./color-utils at all
+the constant                  packages/styles/src/color-utils.ts:290, MDY_ON_COLOR_FLOOR = 3.5
+```
+
+The project's own palette gate already knows: `e2e/palette.spec.ts:2` imports it from
+`packages/styles/dist/color-utils.js`, and its prose at `:31` says *"`MDY_ON_COLOR_FLOOR` in
+`@modyra/styles`"*. Two governing documents point one way and the code and its test point the other.
+
+**Why this is worth a finding rather than a typo.** the project instructions make a decision record load-bearing:
+the thing that stops the next reader relitigating a decision from scratch. A reader verifying this one
+opens `@modyra/core`, finds no `color-utils` subpath and no such export, and has to decide whether the
+record is stale, whether the floor still exists, or whether they have the wrong package. This hunt
+took that path an hour ago and concluded the floor did not exist.
+
+Goes green when the record names `@modyra/styles`, or when `@modyra/core` exports it. The first is
+what the code already does.
