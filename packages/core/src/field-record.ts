@@ -52,6 +52,16 @@ export interface FieldRecord {
     ReadonlyMap<string, AsyncValidatorEntry>
   >;
   readonly asyncErrors: MdyWritableSignal<ReadonlyArray<MdyFieldError>>;
+  /** Aborts the run in flight, when there is one. Set by the runner, read by the watcher beside it. */
+  abandonAsync: (() => void) | null;
+  /**
+   * Bumped when the field comes back into play, so the runner asks again.
+   *
+   * The runner does not read interactivity: a field becoming read-only is still being asked about,
+   * and waking on that would restart a question the form never stopped asking. Coming back from out
+   * of play is the transition that *does* need a new run, and this is the one signal that says so.
+   */
+  readonly asyncWake: MdyWritableSignal<number>;
   /** What a control says about the entry it holds — see the signal's own note. */
   readonly entryProblem: MdyWritableSignal<string | null>;
   readonly pending: MdyWritableSignal<boolean>;
@@ -207,6 +217,8 @@ export function createFieldRecord(
     disabled: disabledSignal,
     readonly: readonlySignal,
     asyncRunId: 0,
+    abandonAsync: null,
+    asyncWake: rx.signal(0),
     asyncRunner: null,
     entryProblem,
     warn,
@@ -257,14 +269,49 @@ function readMessages(returned: unknown, warn: (message: string) => void): Reado
  * semantics, debounce, cancellation (AbortSignal), cross-field retrigger
  * (`dependsOn`), timeout, and a `when` precondition.
  */
+/**
+ * Abandons the run in flight when its field leaves play.
+ *
+ * A field out of play is not validated and not submitted, so a request still in flight about it
+ * holds the whole form: `pending` true, `canSubmit` false, and a person waiting for the answer to a
+ * question about a section they switched off. With a server that never answers, permanently.
+ */
+function watchLeavingPlay(rec: FieldRecord, rx: MdyReactivity, scope?: MdyReactiveScope): MdyEffectRef {
+  let wasOut = false;
+  return rx.effect(() => {
+    const out = rec.state.disabled();
+    if (!out) {
+      // Back in play: the question is being asked again, and the run that would have answered it was
+      // abandoned. Nothing else wakes the runner — the value has not changed — so this does.
+      if (wasOut) {
+        wasOut = false;
+        rx.untracked(() => rec.asyncWake.update((n) => n + 1));
+      }
+      return;
+    }
+    wasOut = true;
+    rx.untracked(() => {
+      rec.abandonAsync?.();
+      // The id moves too, so an answer already on its way lands on a run nobody is waiting for.
+      rec.asyncRunId += 1;
+      rec.pending.set(false);
+      rec.asyncErrors.set([]);
+    });
+  }, { scope, debugName: "modyra:async-left-play" });
+}
+
 export function createAsyncRunner(
   rec: FieldRecord,
   rx: MdyReactivity,
   host: MdyAsyncRunnerHost,
   scope?: MdyReactiveScope,
 ): MdyEffectRef {
-  return rx.effect((onCleanup) => {
+  const leaving = watchLeavingPlay(rec, rx, scope);
+  const runner = rx.effect((onCleanup) => {
     const v = rec.state.value();
+    // Tracked, and nothing else reads it: the only transition that wakes this effect from outside
+    // the value is a field returning to play.
+    rec.asyncWake();
     const entries = Array.from(rec.asyncValidators().values());
     // Touch dependsOn field values so their changes retrigger this effect.
     for (const e of entries) {
@@ -272,7 +319,16 @@ export function createAsyncRunner(
     }
     const runId = ++rec.asyncRunId;
     const controller = new AbortController();
-    onCleanup(() => controller.abort());
+    // Held so the watcher below can abandon it. A run is abandoned when its value stops being
+    // acceptable; a field leaving play is the other way the same thing happens, and the watcher is
+    // separate precisely so that reading what it reads does not put the runner back on the graph of
+    // every interactivity change — a field becoming read-only is still being asked about, and
+    // restarting its check there would be a question the form never stopped asking.
+    rec.abandonAsync = () => controller.abort();
+    onCleanup(() => {
+      controller.abort();
+      rec.abandonAsync = null;
+    });
 
     const formValue = rx.untracked(() => host.formValue());
     const applicable = entries.filter(
@@ -304,6 +360,15 @@ export function createAsyncRunner(
       rx.untracked(() => {
         rec.pending.set(false);
         // A verdict about a value that is no longer there is not a verdict about this one.
+        rec.asyncErrors.set([]);
+      });
+      return;
+    }
+    // Out of play before the question is even asked: the effect below abandons a run in flight, and
+    // this is the same rule for one that has not started.
+    if (rx.untracked(() => rec.state.disabled())) {
+      rx.untracked(() => {
+        rec.pending.set(false);
         rec.asyncErrors.set([]);
       });
       return;
@@ -370,4 +435,12 @@ export function createAsyncRunner(
       run();
     }
   }, { scope, debugName: `modyra:async-validator:${host.fieldPath}` });
+
+  // One handle for the pair: whoever created the runner destroys the watcher with it.
+  return {
+    destroy(): void {
+      runner.destroy();
+      leaving.destroy();
+    },
+  };
 }
