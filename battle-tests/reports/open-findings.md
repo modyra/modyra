@@ -11947,3 +11947,31 @@ between the filing and the re-measurement, and a shared working tree makes those
 unless the tree is checked.** Twice tonight a re-measurement picked up a peer's uncommitted repair —
 here and in finding 193 — and `git status` on the package is what separates *never true* from *true
 and just fixed*.
+
+## Measured, not filed: the values a form can hold and a draft cannot carry
+
+Finding 195 is one value JSON refuses. There are others, and what happens to each was not written down
+anywhere. Measured through a real draft round trip — write, wait for the save, reopen against the same
+storage:
+
+```
+held         written to the draft      restored as        note
+NaN          "n": null                 null               the kind's empty value
+Infinity     "n": null                 null               same
+-Infinity    "n": null                 null               same
+-0           "n": 0                    0                  a JSON universal, harmless
+10n          field omitted             1 (its initial)    the draft drops what it cannot write
+```
+
+**Two behaviours for the same class of value**, and neither is reported: a number that JSON turns into
+`null` is stored as `null`, and a BigInt is dropped and comes back as the field's declared initial.
+
+**Not filed**, because neither outcome invents a value a consumer cannot account for. `number` is
+`nullable: true`, so `null` is the kind's own empty value and a form that comes back empty is a form
+the contracts describe; and restoring a field to its declared initial is what a draft does with
+anything it does not carry. A user reaching either state has already put a value in the field that no
+form contract admits.
+
+**Worth having measured** because it bounds 195: the panel's repair — describing a BigInt rather than
+coercing it — does **not** reach the draft, which uses a different path and still omits the field.
+Checked after the repair landed in the working tree, so the two are known not to have moved together.
