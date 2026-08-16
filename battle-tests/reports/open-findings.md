@@ -10847,3 +10847,46 @@ That is worth keeping as its own note: `setValue` on an email field can leave th
 string the control would never have produced, and the control shows the sanitised one. It is the same
 shape as finding 151 — an answer that depends on how the value arrived — and it is not filed
 separately because 151 already carries it.
+
+## 184. A quantity nobody asked for
+
+**S0 · Modyra bug · `@modyra/plain`**
+Claims: SUB-001, UI-006
+Battle: `battle-tests/browser/a-quantity-nobody-asked-for.spec.ts` — 1 failed, 1 passed
+
+`MDY_VALUE_CONTRACTS.number` is `{ shape: "number", nullable: true }`. Empty is a value a number field
+may hold, and it is what an untouched one starts as.
+
+```
+                 plain                          lit
+untouched        shows ""    model null         shows ""   model null      ← both, the control
+typed 7          shows "7"   model 7            shows "7"  model 7         ← both, the control
+cleared          shows "0"   model 0            shows ""   model null
+typed letters    shows ""    model 0            shows ""   model null
+```
+
+The user deletes the number and plain supplies one. It reaches the wire:
+
+```
+typed 7, then cleared, then submitted    →    { "qty": 0 }
+```
+
+For a quantity that is an order line of none; for a price it is free; for a discount it is a hundred
+per cent of nothing. The box shows the zero, so noticing means re-reading a field you have just
+emptied.
+
+### Why S0
+
+The severity model's own words: *a renderer invents submitted data*. The declared semantics say this
+field may be empty, the user made it empty, and what left the page was a number nobody typed.
+
+### The other renderer is the proof it is a choice
+
+The same clearing, on the same kind, through the same public call, leaves `null` in lit. So this is
+not what a number input does — it is what one renderer does with what a number input reports.
+
+### Controls run
+
+Two, both asserted before the clearing: an untouched field is empty, and a typed number is that
+number. Without them, a renderer that always said zero and one that always said null would be
+indistinguishable here.
