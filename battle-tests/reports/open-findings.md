@@ -12174,3 +12174,34 @@ equivalent on the public contract, and no evidence here chooses between them.
 `contract:diff` is silent because no signature changes, and **a silent tool is not agreement**. It is
 a choice between two incompatible product behaviours on a published package, so it goes to the user
 with the first as the recommended default and this finding as the evidence.
+
+## Measured, not filed: two published overlay numbers and what six popups actually do
+
+`MDY_OVERLAY_GAP = 6` and `MDY_OVERLAY_VIEWPORT_MARGIN = 12` are exported from `@modyra/widgets`.
+With the host loading the stylesheet — a measurement this tier could not make until tonight — every
+kind that has a popup was opened and measured against its anchor and the viewport:
+
+```
+kind          gap to the anchor        left margin   right margin
+select        6 below                  12            12
+multiselect   34 below                 12            12
+datepicker    6 above                  978            8
+daterange     20 above                 978            8
+timepicker    6 above                  937            8
+colors        20 above                 840            8
+```
+
+Three kinds sit exactly `MDY_OVERLAY_GAP` from their anchor; three sit at 20 or 34. Two sit exactly
+`MDY_OVERLAY_VIEWPORT_MARGIN` from the edge; four sit at 8. No popup overlaps its anchor, which is
+the property that would matter most, and every one is inside the viewport.
+
+**Not filed, because the constants do not say what they promise.** `MDY_OVERLAY_VIEWPORT_MARGIN` has
+no doc comment of its own — the paragraph above it belongs to a different declaration — and it is used
+inside `anchorOverlay` as the margin for the *fits* decision. Whether it is also a floor on the
+rendered inset is not stated anywhere, so 8 is not provably wrong; and the larger gaps may be a
+popup's own padding or a caret rather than the anchoring's arithmetic.
+
+**Worth having measured** because the numbers are exported, so a consumer can read them — and a
+consumer who reads `12` as *"a popup stays 12px from the edge"* is right for two kinds and wrong for
+four. The cheap repair is a sentence on each constant saying what it governs; the question of whether
+the four are also wrong follows from that sentence rather than preceding it.
