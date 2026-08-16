@@ -11740,3 +11740,30 @@ the flat evaluator takes the **whole form value** and selects with `when.field`,
 (so `equals("a","a")` read as `false`); an expression's literal operand is **the value itself**, not
 `{ value }` (so `equals(5,5)` read as `false`); and `mdyEmptyValueFor` does not accept `slider`,
 whose kind vocabulary is not the value-contract one. Each looked like a finding for about a minute.
+
+## Checked and clean: what each field state contributes to the payload
+
+The S0 archetype for this campaign is *a renderer invents submitted data*, so the table of what each
+state does to a submission is worth having written down. Measured on a typed form with two fields:
+
+```
+                  getValue()          submitValue()
+untouched         a, b                a, b
+b disabled        a, b                a          ← held, not sent
+b inactive        a, b                a          ← held, not sent
+b readonly        a, b                a, b       ← readable, still the user's answer
+b removeField     a, b                a, b
+```
+
+The first three are the documented distinction and they hold: what the model carries is not what
+leaves, and a field taken out of play stops contributing without its value being destroyed — which is
+what lets it come back when the condition that hid it flips.
+
+**`removeField` is not the exception it looks like.** The engine's contract calls it what it is:
+*"releases one claim on the field; the record is destroyed only when no claiming control remains."*
+It answers a control letting go, not a schema being rewritten — and a field `createForm` declared is
+still declared when the last control releases it. Reading the name as "delete" is what makes the last
+row look like a leak.
+
+`setDisabled`, `setInactive` and `setReadonly` take a **zero-argument function**, not a boolean, and
+say so by name when handed one: *"a framework's own reactive value is wrapped in one: `() => ref.value`"*.
