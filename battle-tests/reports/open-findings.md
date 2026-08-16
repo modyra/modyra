@@ -10072,3 +10072,39 @@ This spec was written and pushed without its register entry. Found by listing th
 failing spec files and checking each against this document: **44 files fail and exactly one — this one
 — had nothing written about it.** A red test with no finding is a measurement nobody can act on, and
 the only reason it was visible at all is that the rest of the register is complete.
+
+## Closed: one sentence, two collections — kept and documented
+
+`form.patch({ rows: {} })` changes nothing and `form.patch({ list: [] })` empties the list, and that
+difference stays. The reason is one this battle had not weighed: an index **is** a positional row's
+identity, so a partial list is not a partial patch but an ambiguous one, and `MdyFormPatch`'s array
+branch is declared whole-list for that reason. Making `[]` a no-op would leave a patch with **no
+spelling at all** for "this list is now empty", while a map keeps one in `setAll({})` — symmetry
+bought by removing a capability from one side.
+
+What closes it instead is that the destructive reading now speaks, in development, while the rows are
+still recoverable:
+
+```
+[modyra] patch({ list: [] }) empties "list" — 2 row(s). An array in a patch is the whole list,
+because an index is a row's identity; a keyed collection merges by key, so `{}` there changes
+nothing. To leave the list alone, omit it.
+```
+
+The battle is rewritten on the declared difference and asserts the warning rather than the symmetry:
+the map keeps its rows, the list is emptied, and the message names **which** collection and **how
+many** rows it took. Beside it, the control that makes that assertion mean something: the two
+readings that take nothing say nothing. A warning on every patch would satisfy the first assertion
+and be worthless.
+
+### Two instrument errors on the way
+
+`filled()` built its forms with `devWarnings: false`, so the first version of the rewrite asserted a
+warning against a form that was not listening and failed for its own reason. The helper takes the
+flag now — a battle asking whether something speaks has to build something that can hear it.
+
+And the rewrite's first attempt **deleted the file's other battle**: the replacement was anchored on
+`claims: ["COL-002", "SUB-001"]`, which both battles carry, so it matched the first and cut everything
+after it. Caught because the run reported one test where there had been two, restored from HEAD, and
+redone anchored on the title. An edit that removes a check is the most expensive kind of mistake this
+suite can make, and the only thing that caught it was a count.
