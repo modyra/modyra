@@ -47,7 +47,7 @@ export function renderTextField(
     ? { min: ranged.min ?? null, max: ranged.max ?? null, step: ranged.step ?? null }
     : undefined;
 
-  const controller = createTextFieldController(
+  const controller = createTextFieldController<string | number | null>(
     {
       widgetId: widgetId,
       handle,
@@ -89,9 +89,33 @@ export function renderTextField(
   }
   container.appendChild(shell.root);
 
+  /**
+   * The number in the box, or nothing.
+   *
+   * Read from the text rather than from `valueAsNumber`: the property is unimplemented in some DOM
+   * implementations this renderer is asked to run in, and there it answers `NaN` for a box that
+   * plainly holds a number — turning every typed digit into an empty field.
+   */
+  const numberIn = (element: HTMLInputElement | HTMLTextAreaElement): number | null => {
+    const text = element.value.trim();
+    if (text === "") return null;
+    const parsed = Number(text);
+    return Number.isNaN(parsed) ? null : parsed;
+  };
+
   input.addEventListener("input", () => {
     const raw = input.value;
-    controller.dispatch({ type: "input", value: isNumeric ? Number(raw) : raw });
+    // `Number("")` is `0`, and `MDY_VALUE_CONTRACTS.number` says a numeric field is nullable: empty
+    // is a value it can hold and the one it starts from. Read through `Number`, clearing the box
+    // supplied a quantity nobody typed — shown in the field and carried to the wire, where a
+    // quantity is an order line of zero, a price is free and a discount is all of it.
+    //
+    // Empty is nothing, text that is not a number is nothing, and a number is itself — never a value
+    // the person did not write.
+    controller.dispatch({
+      type: "input",
+      value: isNumeric ? numberIn(input) : raw,
+    });
   });
   input.addEventListener("focus", () => controller.dispatch({ type: "focus" }));
   input.addEventListener("blur", () => controller.dispatch({ type: "blur" }));
