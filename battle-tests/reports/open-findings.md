@@ -10221,3 +10221,44 @@ the finding is not carried at a severity its own evidence does not reach.
   reading rather than about losing it.
 - **All three ways of taking a field out of play** are measured separately, so a repair aimed at rules
   alone is visible as one that fixed a third of it.
+
+## 173. A patch that depends on how the row was made
+
+**S1 · Modyra bug · `@modyra/core`** (severity stated above the claims' own)
+Claims: SUB-001, COL-002
+Battle: `battle-tests/adversarial/submission/a-patch-that-depends-on-how-the-row-was-made.battle.test.mjs`
+(red, enforced)
+
+`getChanges()` diffs each leaf against **its initial**. A row created with its values has those values
+as its initials, so there is nothing to diff:
+
+```
+upsert("line-1", { sku: "ABC-123" })          getValue ✓   submitValue ✓   getChanges {}
+upsert("line-1", {}) then cell.set("ABC-123") getValue ✓   submitValue ✓   getChanges {"rows":{"line-1":{"sku":"ABC-123"}}}
+```
+
+Same end state, two patches. And the two idioms are not a consumer's choice: creating a row **with**
+its values is what a renderer does when it adds a row with defaults, and creating it empty and filling
+it is what happens when a person types into a blank one.
+
+So a user adds a line, types a code, and saves — and whether the code reaches the server depends on an
+implementation detail of the control they used. Typing it and then correcting it makes it appear,
+which is the shape of finding 151 again: **an answer that depends on how the value arrived rather than
+on what it is.**
+
+### What is not wrong
+
+The value is never lost. `getValue()` and `submitValue()` carry it either way, and both are asserted
+before the patch is compared. `getChanges()` is also self-consistent: by its own definition a declared
+value is an initial. What is wrong is that the definition and the documented use — *a minimal nested
+patch*, sent *when a removal is itself something you need to send* — do not fit each other for a row
+that did not exist when the form was built.
+
+### Measured beside it
+
+- **Undo back to the start leaves no changes** (`{}`, `canUndo` false). Correct.
+- **A restored draft's edits stay changes**, which is the owning session's deliberate reading for
+  finding 170 and holds here.
+- **A removed row reports nothing**, which the guide states in its own words — *changed values, not
+  structure* — and is not this finding. What the guide does not cover is the value inside a row that
+  is new, which is reported neither as structure nor as a value.
