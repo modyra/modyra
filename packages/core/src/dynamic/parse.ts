@@ -18,6 +18,8 @@ import {
   warnDev,
 } from "./guards.js";
 import { dynamicPatternRefusal } from "./pattern-cost.js";
+import { explainValueMismatch, type MdyValueKind } from "../value-contracts.js";
+import { MDY_FIELD_KINDS } from "../field-kinds.js";
 import type { MdySelectOption } from "../types.js";
 
 import {
@@ -627,6 +629,22 @@ export function parseDynamicFields(input: unknown): MdyDynamicField[] {
     if (f.kind === "datepicker" || f.kind === "timepicker" || f.kind === "daterange") {
       if (!hasValidCalendarOptions(f as Partial<MdyDynamicCalendarOptions>, f.name)) return false;
     }
+    // The initial the document declares, against the shape the kind holds. A collection's initial is
+    // measured against its own shape — a record wants an object, an array a list, each refused by
+    // name — and a field's was measured against nothing: a text field declaring `42` produced a
+    // document that passed in strict mode and a form that was invalid before anyone touched it, with
+    // "This field holds string" on a value the user never entered.
+    //
+    // The knowledge was published and used one layer later. `explainValueMismatch` is the same
+    // sentence the engine says about a value that arrives at runtime; a declared initial is that
+    // value, arriving earlier.
+    if (f.initialValue !== undefined && (MDY_FIELD_KINDS as readonly unknown[]).includes(f.kind)) {
+      const mismatch = explainValueMismatch(f.kind as MdyValueKind, f.initialValue);
+      if (mismatch !== null) {
+        warnDev(`Dropped dynamic field "${f.name}": initialValue does not match the kind — ${mismatch}.`, at);
+        return false;
+      }
+    }
     const needsOptions = ["select", "radio", "multiselect", "segmented"];
     if (needsOptions.includes(f.kind as string)) {
       const options = (f as { options?: unknown }).options;
@@ -914,7 +932,30 @@ function validateDynamicSchema(input: unknown): MdyDynamicDiagnostic[] {
     }
 
     if (raw["node"] === "field") {
-      if (!isRecordValue(raw["field"])) out.push({ code: "MDY_DYNAMIC_INVALID_FIELD", severity: "error", path: `${path}/field`, message: "field node requires a field object." });
+      if (!isRecordValue(raw["field"])) {
+        out.push({ code: "MDY_DYNAMIC_INVALID_FIELD", severity: "error", path: `${path}/field`, message: "field node requires a field object." });
+        continue;
+      }
+      // The initial the document declares, against the shape the kind holds. A record's initial is
+      // measured against its own shape and an array's against its own; a field's was measured
+      // against nothing, so a text field declaring `42` passed in the strictest mode there is and
+      // produced a form that was invalid before anybody touched it — "This field holds string", on
+      // a value the user never entered.
+      const declared = raw["field"] as { kind?: unknown; initialValue?: unknown };
+      if (
+        declared.initialValue !== undefined
+        && (MDY_FIELD_KINDS as readonly unknown[]).includes(declared.kind)
+      ) {
+        const mismatch = explainValueMismatch(declared.kind as MdyValueKind, declared.initialValue);
+        if (mismatch !== null) {
+          out.push({
+            code: "MDY_DYNAMIC_INVALID_FIELD",
+            severity: "error",
+            path: `${path}/field/initialValue`,
+            message: `field initialValue does not match the kind — ${mismatch}.`,
+          });
+        }
+      }
       continue;
     }
 

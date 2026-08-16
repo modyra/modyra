@@ -7,6 +7,8 @@
  */
 
 import { MDY_FIELD_KINDS } from "../field-kinds.js";
+import { explainValueMismatch, type MdyValueKind } from "../value-contracts.js";
+import { warnDev } from "./guards.js";
 import type { MdySelectOption } from "../types.js";
 
 /**
@@ -196,7 +198,34 @@ export type MdyDynamicField =
  * so an untouched slider sits at its minimum and reads as filled.
  */
 export function mdyEmptyValueFor(field: MdyDynamicField): unknown {
-  if (field.initialValue !== undefined) return field.initialValue;
+  if (field.initialValue !== undefined) {
+    // An initial a kind cannot hold is refused where it is declared, rather than becoming the value
+    // the form starts from. `parseDynamicForm` now says so about a document; this is the same
+    // sentence for a tree written in code, which is a defect to report rather than input to survive.
+    // Kept, it made a form that was invalid before anybody touched it — the field reporting "holds
+    // string" about a value the user never entered and cannot see how to correct.
+    const mismatch = (MDY_FIELD_KINDS as readonly unknown[]).includes(field.kind)
+      ? explainValueMismatch(field.kind as MdyValueKind, field.initialValue)
+      : null;
+    if (mismatch !== null) {
+      // Dropped rather than thrown, and named while it is dropped. A form is the thing a person is
+      // looking at: refusing to build one over a declared initial takes the whole page away, while
+      // keeping it made a form that was invalid before anybody touched it — reporting "holds string"
+      // about a value the user never entered and cannot see how to correct. The kind's own empty
+      // value is what the field would have started from had the document said nothing.
+      warnDev(
+        `Field "${field.name}" declares an initialValue its kind cannot hold (${mismatch}); ` +
+        "the field starts empty instead.",
+      );
+      return emptyForKind(field);
+    }
+    return field.initialValue;
+  }
+  return emptyForKind(field);
+}
+
+/** What a field of this kind starts from when its document says nothing usable. */
+function emptyForKind(field: MdyDynamicField): unknown {
   switch (field.kind) {
     case "number":
       return null;
