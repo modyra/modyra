@@ -42,6 +42,13 @@ So: before believing a red, feed the same instrument a sound input and check it 
 Before believing a green, check that what it measures was present at all. Both are one measurement,
 and both were skipped exactly when the answer was the one being looked for.
 
+**And one about searching rather than measuring.** A timepicker investigation ran eight browser probes
+to establish that a 24-hour locale cannot type `22:30` — which this register already held, with the
+guide's own words and the note that `format="24h"` is the documented way out. One `grep` of this file
+for `24-hour` would have started from what was known. **Read the register for the topic before opening
+the subject**, not after: the file is long enough that its contents are no longer memorable, and that
+is exactly when it is most worth reading.
+
 ---
 
 ## 1. Five setters keep an argument they cannot use
@@ -12503,3 +12510,31 @@ appears nowhere in the existing file, and the per-field door is measured beside 
 as the comparison, because a protection that reports on one path and not the other is worse than one
 that reports on neither. Two battles asserting the same thing make a suite expensive without making
 it stronger.
+
+## Checked and clean: what `markAllTouched` reaches, and what an inactive field costs
+
+`markAllTouched` is what a form calls when somebody presses Submit on a form that is not ready: it
+marks every field touched so the verdicts already computed become visible. If it missed a field, the
+button would do nothing and nothing would say why — the most literal version of a form that ignores a
+person. One battle uses it and this register had never mentioned it.
+
+```
+before   top false · rows.a.sku false · an inactive field false
+after    top true  · rows.a.sku TRUE  · the inactive field TRUE
+```
+
+It reaches a collection row's cell and a field taken out of play, not only the leaves declared at
+construction.
+
+And what being out of play costs, measured beside the same field left in:
+
+```
+required and empty, active     valid false · canSubmit false · errorsFor ["This field is required"]
+required and empty, inactive   valid TRUE  · canSubmit TRUE  · errorsFor ["This field is required"]
+                               submitValue {"visible":"filled"} — the field is not in it
+```
+
+VAL-003 exactly: a field out of play does not alter the verdict and does not leave with the
+submission. Its error object is still readable to whoever asks `errorsFor` directly — the engine does
+not erase what it computed — and the widgets decide display through `shownErrors`, so nothing paints
+an error under a control that is not there.
