@@ -16,6 +16,8 @@
  *
  * The arrows are asserted to work first, because that is what makes the range meaningful — this is a
  * number a user walks up and down, not a label that happens to hold one.
+ *
+ * Claims under attack: A11Y-004.
  */
 
 import { expect, test } from "@playwright/test";

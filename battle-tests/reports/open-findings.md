@@ -10506,3 +10506,39 @@ unbounded, and the value-side case abandons its run immediately without one.
 - **A late answer still lands on the field.** When the held server finally replies, `errorsFor("code")`
   reports it even though the field is out of play. It does not change `valid`, so nothing is wrong
   with the verdict — but a consumer reading errors for a field the form is ignoring gets one.
+
+## Checked and clean: the round trip out of play and back
+
+A field taken out of play by a rule and put back keeps everything it should:
+
+```
+                        value   errors                    touched   valid   canSubmit
+typed, too short        "ab"    ["Minimum length is 3"]   true      false   false
+rule switched off       "ab"    same                      true      true    true
+rule switched back on   "ab"    same                      true      false   false
+```
+
+Value, touched and errors survive; validity follows play and comes back exactly where it was. The
+state machine is sound in both directions — which is what makes findings 175, 176 and 177 about the
+*moment* of leaving rather than about the state afterwards.
+
+`errorsFor` keeping its answer for a field out of play is consistent with what 177 records: the
+verdict ignores it, the reader still gets it.
+
+## Checked and clean: the linter cannot fall behind the parser
+
+`@modyra/eslint-plugin`'s `valid-dynamic-form` calls `parseDynamicForm` and reports its diagnostics,
+so it inherits every parser repair by construction — including finding 160's value checking, which
+landed after the rule was written. That is DYN-003 in its own words: *the findings are the parser's;
+this package positions them*. There is no version of this where the editor and the parser disagree
+about what a document says, because there is only one of them deciding.
+
+## Housekeeping: fourteen specs that did not name their claims
+
+Browser specs name the claims they attack in a docblock line — nine of eighty-seven did, and none of
+mine. That made the coverage count lie: `A11Y-005`, registered for finding 175, showed **zero**
+citations while a spec was attacking it, which is exactly the shape the campaign's first survey called
+out as "claims with no battle".
+
+All fourteen of mine now name theirs. The convention is weak — sixty-four other specs still do not —
+but a claim registered for a finding and cited by nothing is a gap I made, and it is mine to close.

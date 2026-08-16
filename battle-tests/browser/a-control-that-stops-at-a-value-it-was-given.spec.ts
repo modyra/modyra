@@ -18,6 +18,8 @@
  * Reduced to a published function in
  * `adversarial/widgets/a-value-the-model-was-allowed-to-hold.battle.test.mjs`; this is the
  * consequence.
+ *
+ * Claims under attack: UI-008, VAL-003.
  */
 
 import { expect, test } from "@playwright/test";

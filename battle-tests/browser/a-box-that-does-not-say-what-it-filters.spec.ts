@@ -17,6 +17,8 @@
  * associated `<label>`, `title`. A renderer that names it another way passes. That check has already
  * dismissed two findings on neighbouring parts of this same widget family, so it is the one that
  * makes the failure mean something.
+ *
+ * Claims under attack: A11Y-004.
  */
 
 import { expect, test } from "@playwright/test";

@@ -16,6 +16,8 @@
  * Measured through `disable` rather than through a rule because both renderers can be driven that way
  * and the field leaves play identically; the rule path is the one that reaches it without the user
  * doing anything, and is recorded in the register beside this.
+ *
+ * Claims under attack: UI-005, VAL-002.
  */
 
 import { expect, test } from "@playwright/test";
