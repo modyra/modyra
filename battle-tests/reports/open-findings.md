@@ -10357,3 +10357,43 @@ and `removeField` with a name the schema declares. Two misuses of my own in one 
 reading the declaration rather than the result. That is the same error as `timepickerDialKeyIntent`
 earlier in this campaign — **a function called with the wrong arity answers, and the answer looks like
 a finding.**
+
+## 175. Nowhere for the keyboard to stand
+
+**S2 · Modyra bug · both renderers**
+Claims: A11Y-005 (registered for this), A11Y-002
+Battle: `battle-tests/browser/nowhere-for-the-keyboard-to-stand.spec.ts` — 2 failed
+
+A field taken out of play under the cursor takes the keyboard with it:
+
+```
+                        before          after
+plain, made read-only   input#one       input#one      ← keeps it
+lit,   made read-only   input#…-0       input#…-0      ← keeps it
+plain, disabled         input#one       (nowhere)
+lit,   disabled         input#…-0       (nowhere)
+```
+
+The user was typing `"half a word"`. Their next Tab starts from the top of the document, and a screen
+reader is told nothing about where they went.
+
+Disabling a focused element blurs it — that is the platform. What follows from it is this library's:
+nothing decides where the user should be instead.
+
+### Why it is a finding and not a fact about browsers
+
+The control is in the same measurement: **read-only keeps the field focused**, in both renderers.
+Taking a field out of play does not have to cost the user their place — one of the two ways of doing
+it already does not.
+
+And it is reachable without anybody clicking anything. A document's rule takes a field out of play
+when *another* field changes, so a value arriving from a fetch can empty the keyboard's position
+mid-word. That path did not exist before `applyDynamicRules` landed.
+
+`@modyra/widgets` publishes `createFocusCustodian`, `focusTrigger` and `restoreFocusTrigger`, so
+deciding where focus goes is something this package already does elsewhere.
+
+### Checked and clean, in the same run
+
+- **Tab order follows the document**, and a disabled field is skipped, in both renderers. The one
+  visiting `one → two → three → four` still visits `one → three → four` with `two` disabled.

@@ -396,6 +396,17 @@ const CLAIMS = [
     ],
   },
   {
+    id: "A11Y-005",
+    title: "A field taken out of play does not leave the keyboard with nowhere to stand.",
+    area: "accessibility",
+    severity: "S2",
+    publicEvidence: [
+      "@modyra/widgets createFocusCustodian/focusTrigger/restoreFocusTrigger — placing focus is something this package already does",
+      "@modyra/core MdyDynamicRule — a document can take a field out of play while a user is in it",
+      "@modyra/core MdyInteractivity — read-only keeps a field reachable, disabled does not",
+    ],
+  },
+  {
     id: "LOC-001",
     title: "A localized date is read in the reader's own order, and an impossible one is refused.",
     area: "localization",
