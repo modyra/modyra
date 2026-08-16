@@ -13,9 +13,14 @@
 import { createBlankProject, loadProject } from "@modyra/studio-model";
 import { createCoreTarget } from "@modyra/studio-target-core";
 
+/**
+ * A field node as `FieldNode` declares one: `fieldKind` and `options` sit on the node itself, not
+ * inside a `field` object. Building it the other way is how a probe measures a model that read every
+ * property as `undefined` and still produced output — the controls pass and say nothing.
+ */
 const FIELD = {
-  node: "field", id: "nd_amount", name: "amount", validators: [],
-  field: { kind: "number", label: "Amount" },
+  node: "field", id: "nd_amount", name: "amount", label: "Amount",
+  fieldKind: "number", valueType: "number", initialValue: null, validators: [],
 };
 
 const projectWith = (node) => {
@@ -64,7 +69,8 @@ for (const [what, input] of [
 process.stdout.write(JSON.stringify({
   sound: await through(FIELD),
   nameless: await through(nameless),
-  strangeKind: await through({ ...FIELD, field: { ...FIELD.field, kind: "wormhole" } }),
+  strangeKind: await through({ ...FIELD, fieldKind: "wormhole" }),
+  selectWithoutOptions: await through({ ...FIELD, fieldKind: "select", valueType: "string" }),
   noValidators: await through(unvalidated),
   groupNoChildren: await through({ node: "group", id: "nd_g", name: "g" }),
   refusals,

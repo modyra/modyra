@@ -11511,61 +11511,60 @@ parser's own vocabulary — `visible`, `hidden`, `enabled`, `disabled` — rathe
 `show` is what made a valid rule and an invalid one look identical, which is how a false control
 passed.
 
-## 193. A field nobody named
+## 193. A field nobody named — repair in flight
 
 **Severity** S1 · **Classification** silent acceptance at a public door · **Battle**
-`adversarial/studio/every-target.battle.test.mjs` + `a-field-nobody-named.consumer.mjs` (red, through
-packed tarballs) · **Claims** STU-003
+`adversarial/studio/every-target.battle.test.mjs` + `a-field-nobody-named.consumer.mjs` (green once
+the repair lands; red at the HEAD it was filed against) · **Claims** STU-003
 
 A Studio project is a file: saved, committed, hand-edited, written by an older editor and read by a
-newer one. `loadProject` is the door it comes through, and the model has a named refusal it uses:
+newer one. `loadProject` is the door it comes through, and the model has a named refusal it uses at
+the root — a project that is not an object, a `schema` that is not an object, a `studioVersion` from
+the future are all `StudioModelError`, by name.
 
-```
-a project that is not an object     StudioModelError
-a schema that is not an object      StudioModelError
-a studioVersion from the future     StudioModelError — "only 1 is supported"
-```
-
-Below the root, the same door is quiet. A field node with no `name` is accepted with **no
-diagnostic**, compiles with **no diagnostic**, and the core target emits:
+Measured at HEAD, below the root, it was quiet. A field node with no `name` was accepted with no
+diagnostic and the core target emitted:
 
 ```ts
-import { createForm, field } from "@modyra/core";
-
 const schema = {
-  undefined: field(undefined),
+  undefined: field(null),
 };
-
-export const form = createForm(schema, { history: true });
 ```
 
-Valid TypeScript. So STU-001 — *generated code compiles* — is kept, while the form declares a field
-called `undefined` holding `undefined`. STU-003's sentence is *a field the author declared reaches
-the output, or is reported as dropped*, and this is answered by neither half: it reaches the output
-as something that is not a field, and nothing is reported.
+Valid TypeScript. STU-001 — *generated code compiles* — kept, while the form declares a field called
+`undefined`. STU-003's sentence is *reaches the output, or is reported as dropped*, and this answered
+neither half. A `fieldKind` outside the catalog went the same way, and two shapes were met with a raw
+`TypeError` — `node.validators is not iterable`, `node.children is not iterable` — which is a crash
+rather than a refusal: what stops is the editor reading the file.
 
-A `kind` the catalog does not declare goes the same way — accepted at both doors, emitted as though
-the kind had never been written.
+**Repair in flight.** `packages/studio-model/src/model.ts` is modified in the working tree, and the
+refusal it now carries — *"Studio project schema node at schema.children[0] is missing a string
+name"* — is **not at HEAD**. Rebuilt against it, all four are refused by name. The finding was real
+where it was filed and is being closed as this is written; the owning session should confirm what
+lands.
 
-**And two shapes it meets with a raw type error instead of its refusal:**
+### Two instrument errors, both mine, both caught before they reached a repair
 
-```
-a field node with no validators     TypeError: node.validators is not iterable
-a group with no children            TypeError: node.children is not iterable
-```
+**The node shape was wrong.** `FieldNode` declares `fieldKind`, `valueType`, `initialValue` and
+`options` **on the node**; the first probe built `{ field: { kind, label } }`, so every property the
+model reads was `undefined` — and it still produced output, so the controls passed and said nothing.
+Re-measured with the declared shape the finding held, but on the way it produced a second, false
+reading: `SELECT_WITHOUT_OPTIONS` looked like a declared diagnostic that could never fire, when it
+fires correctly the moment a select is shaped as a select. That one never left this file.
 
-The first is a plausible file: `validators` is an array a field carries, and a project written before
-it existed, or hand-edited, has none. The editor crashes rather than reporting.
+**The oracle was too narrow.** The battle demanded a *diagnostic*, so a `StudioModelError` — the
+door's own refusal, by name — read as a failure. A named refusal is a report: STU-003 asks that a node
+the model cannot represent be reported, not that it be reported through one particular channel. The
+oracle now accepts either, refuses silent acceptance, and refuses a raw `TypeError` separately, which
+is the distinction that matters — **a crash is not a refusal**.
+
+Both were caught the same way as the night's other three: feed the instrument a sound input and check
+it answers differently from the broken one.
 
 **Measured through the packed tarballs**, not the workspace — the same pack-and-install the other
-Studio battles use, because these are private packages whose siblings are `workspace:*`. What is
-red is what a consumer installs.
+Studio battles use, because these are private packages whose siblings are `workspace:*`.
 
-**The controls, in the order that makes the red mean something.** The consumer ran. A well-formed
-field reached the output under its own name with nothing reported — without which a compact `form.ts`
-would look like a dropped field. And the door's three named refusals hold — without which meeting a
-raw `TypeError` would be the only thing this door does rather than a departure from what it does
-elsewhere.
-
-Goes green when a node the model cannot represent is reported the way a bad `studioVersion` is. The
-diagnostic channel exists, is populated at the root, and is empty one level down.
+**The controls, in the order that makes the verdict mean something.** The consumer ran. A well-formed
+field reached the output under its own name with nothing reported. A select with no options is
+reported by name through the same door — so a gap here is a gap in a vocabulary that covers exactly
+this level, not a door that never speaks below its root.
