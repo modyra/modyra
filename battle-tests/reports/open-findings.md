@@ -10463,3 +10463,46 @@ identically. The path that matters is the other one: with `applyDynamicRules`, a
 the user did not type, so this state arrives while they are mid-interaction rather than after
 something they did. That is the same door as finding 175, where the keyboard is dropped, and both
 arrive together — the calendar stays and the focus goes.
+
+## 177. A question asked about a field that left
+
+**S1 · Modyra bug · `@modyra/core`** (severity stated above the claims' own)
+Claims: VAL-005, SUB-001
+Battle: `battle-tests/adversarial/validation/a-question-asked-about-a-field-that-left.battle.test.mjs`
+— 1 failed, 1 passed
+
+A server check is abandoned when its value stops being one the field accepts. A field **leaving play**
+is the other way of the same thing happening, and the run is not abandoned:
+
+```
+                                        before          after
+the value stops being acceptable        pending true    pending false   ← abandoned
+a rule takes the field out of play      pending true    pending true    ← still in flight
+```
+
+Both start identically. What differs is only the reason the field stopped mattering.
+
+### What it costs
+
+With a server that does not answer, the form is **permanently un-submittable**:
+
+```
+field out of play    pending true   canSubmit false   submits ["mode"]
+a second later       pending true   canSubmit false
+```
+
+The field is not in what would be sent, and the form cannot be sent. A user who switched a section
+off is waiting on a question about something they cannot see and could not answer, and the Submit
+button never enables.
+
+### The mitigation, recorded rather than treated as the answer
+
+`timeoutMs: 300` ends it — `pending` false, `canSubmit` true — and that is asserted in a second battle
+so a repair cannot quietly remove it. It is not the answer: the option is optional, its default is
+unbounded, and the value-side case abandons its run immediately without one.
+
+### Measured beside it
+
+- **A late answer still lands on the field.** When the held server finally replies, `errorsFor("code")`
+  reports it even though the field is out of play. It does not change `valid`, so nothing is wrong
+  with the verdict — but a consumer reading errors for a field the form is ignoring gets one.
