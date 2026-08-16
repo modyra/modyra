@@ -11111,7 +11111,7 @@ Worth stating because the failures filed against this contract — 185, 186 — 
 surface that has drifted from itself. It has not. Both are about what the contract *says*, not about
 it having lost track of its own vocabulary.
 
-## 188. What the auditor had nothing to say about, because it was looking at an unstyled page
+## 188. A colour pair the theme declares six times and no text can survive
 
 **Severity** S2 · **Classification** accessibility conformance failure in the shipped default theme ·
 **Battle** `browser/every-kind-under-an-auditor.spec.ts` (red in all three states) · **Claims**
@@ -11121,40 +11121,78 @@ The auditor spec exists because its rules were not chosen to match what the rend
 restricted to WCAG 2.0 and 2.1 A and AA, over one form of every kind, in three states. It was green.
 
 It was green because the host loaded no stylesheet (finding 187). With `@modyra/styles`' shipped
-`default.css` loaded — the file a consumer gets — axe reports two serious violations in every one of
-the three states:
+`default.css` loaded — the file the docs tell a consumer to load — axe reports, in every state:
 
 ```
-color-contrast       serious   .mdy-button                    4.09 : 1   (#fcfeff on #7067ff, 14px)
-                               .mdy-colors__primary-picker    required 4.5 : 1
-nested-interactive   serious   .mdy-colors__primary-picker    "a negative tabindex on an element
-                                                              inside an interactive control does not
-                                                              prevent assistive technology..."
+color-contrast       serious   .mdy-button                   4.09 : 1   (#fcfeff on #7067ff, 14px)
+                               .mdy-colors__primary-picker
+nested-interactive   serious   .mdy-colors__primary-picker
 ```
 
-`.mdy-button` is the file field's *Select file*. Both are in the default theme and the colours
-widget, so both reach any consumer who loads what the docs tell them to load.
+**The nested-interactive half is finding 137**, already filed against the same element. What is new
+there is only that the suite's own auditor now reaches it; the finding and its repair are unchanged.
 
-**Neither was found by this suite's own reasoning.** They came from a rule set nobody here wrote,
-which is the whole argument for keeping an external auditor — and for the four years' worth of that
-argument to be worth anything, the auditor has to be shown the page the user gets. A contrast rule
-cannot fail on a page with no colours, and it did not.
+### The contrast half, and why the obvious repair cannot work
 
-**The measurement.** Full browser tier, same tree, stylesheet the only change:
+The pair is `--mdy-primary` on `--mdy-on-primary`, which resolve through the theme's token chain —
+`--mdy-ref-color-indigo: #7067ff`, and an on-primary that is `color-mix(in srgb, primary, cloud 95%)`,
+landing on `#fcfeff`. Computed independently of axe, from WCAG relative luminance:
 
 ```
-without the stylesheet   69 failed, 183 passed
-with it                  73 failed, 179 passed
+#FCFEFF on #7067FF    4.09 : 1     what axe measures
+#FFFFFF on #7067FF    4.14 : 1     pure white is not enough either
+#F8FAFC on #7067FF    3.96 : 1
 ```
 
-Four tests changed colour, all in this direction: the auditor's three states, and
-`a-popup-lit-cannot-open-either`. **No test went the other way.** The stylesheet did not hide a
-failure; it revealed four.
+**Lightening the text cannot reach 4.5.** Anyone trying the obvious repair arrives at 4.14 believing
+it is fixed. The background has to move — `#5B51F0` gives 5.41, `#544AE0` 6.12 — and that is
+`--mdy-ref-color-indigo`, the shipped theme's primary, so it touches every accented surface and comes
+with a screenshot diff to review. It is a design decision, not a value swap.
+
+### It is not one button
+
+Swept over every rule in the theme declaring both a background and a colour — 40 pairs, resolved by
+the browser so `var()` chains and `color-mix()` are computed exactly rather than reimplemented:
+
+```
+.mdy-button                                                    4.09
+.mdy-spin-btn:active                                           4.09
+.mdy-datepicker__cell--selected                                4.09
+.mdy-datepicker__cell--range-end, --range-start                4.09
+.mdy-datepicker__month-cell--selected, --year-cell--selected   4.09
+```
+
+Three declare `var(--mdy-primary)` on `var(--mdy-on-primary)` by name; the rest resolve to the same
+two colours. axe saw one of them because it audits one form of each kind in three states — **a
+selected calendar date is the same failure and no spec here had opened a calendar in front of the
+auditor.**
+
+**What the sweep cannot support.** It also reported five pairs at ratios of 1.00–1.05, which would be
+invisible text. Custom properties are redefined per scope and the sweep resolves every token against
+one `.mdy-renderer` element, so a token belonging to a dropdown surface is resolved in the wrong
+place. Those five are discarded as an artefact of the method, not reported as findings. Only the
+`#7067ff` family survives, and it survives because two independent instruments agree on it — axe on
+the rendered page, and luminance arithmetic on the declared tokens.
+
+### The harness change behind all of this
 
 `battle-tests/browser/build.mjs` now copies `modyra-default.css` into the host and links it from both
-pages, with the reason written beside it: the themes change geometry, so a tier loading `material` or
-`ios` would be measuring that theme rather than the contract every adapter shares.
+pages, with the reason beside it: the themes change geometry, so a tier loading `material` or `ios`
+would measure that theme rather than the contract every adapter shares.
 
-**Not claimed.** That `4.09` is the only contrast failure in the theme — the auditor saw one form of
-each kind, in three states, not the whole catalog of states a theme has. Nor anything about the other
-themes, which are not loaded here.
+```
+without the stylesheet          69 failed, 183 passed
+with it                         73 failed, 179 passed
+with it, after repairing the
+two-form picker spec            72 failed, 180 passed
+```
+
+Four tests changed colour when the stylesheet arrived, **all in the same direction** — the auditor's
+three states and `a-popup-lit-cannot-open-either`, whose first test was mounting a second picker
+under the first one's open popup and is repaired. Nothing went the other way: the stylesheet hid no
+failure.
+
+**Not claimed.** That `4.09` is the theme's only contrast failure — the sweep's method is sound only
+for tokens defined in one scope, and the auditor saw one form of each kind in three states. Nor
+anything about the other themes, which this tier does not load. The next measurement for whoever
+takes this is every declared pair resolved *in its own scope*.
