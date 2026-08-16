@@ -16,6 +16,32 @@ in place rather than deleted so that anyone who read it finds out.
 
 The list is grouped by cause. Twenty-four causes, one of them withdrawn. All but the last run under `npm run battle`; the last needs `npm run battle:browser`.
 
+## How a finding here was checked, and how four of them were wrong
+
+Four entries were filed against the product and turned out to be the instrument. Each was caught the
+same way, and the rule is worth more than the four:
+
+**A control that passes for both the sound and the broken case is not a control.** It appeared in
+three costumes in one night. A battle read a custom property instead of the effect the property
+should cause — and a custom property is always there (187). An audit ran over a popup holding no
+swatches, so a narrow popup meant nothing (188). A premise asserted `rules.length === 0`, which is
+true for a valid rule at a version that has no rules (192).
+
+**An empty answer from a wrongly shaped call is not a finding.** `decideOverlayPlacement` given a
+nested object where it takes a flat geometry answers `width: null` for a case with room on every side
+(187). `parseDynamicForm` at version 1 answers `rules: []` because version 1 has no rules (192). A
+Studio field node built as `{ field: { kind } }` when `FieldNode` declares `fieldKind` on the node
+makes every property the model reads `undefined`, and it still produces output (193).
+
+**A green obtained without the thing under test is an empty green.** The browser tier served no
+stylesheet, so every geometric question had an answer that could not fail, and the accessibility
+auditor could not see a colour (187, 188). One page in one state is not "every rendered text colour"
+(190).
+
+So: before believing a red, feed the same instrument a sound input and check it answers differently.
+Before believing a green, check that what it measures was present at all. Both are one measurement,
+and both were skipped exactly when the answer was the one being looked for.
+
 ---
 
 ## 1. Five setters keep an argument they cannot use
