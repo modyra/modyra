@@ -11673,7 +11673,7 @@ assertion, because a genuine packaging break must still read as one.
 **Until then, the number to trust is the smallest of a few runs on a quiet machine**, and any
 comparison across runs has to survive being re-measured before it becomes a claim.
 
-## 194. The sentence above the table says two, the table says eleven
+## 194. The sentence above the table says two, the table says eleven — CLOSED
 
 **Severity** S3 · **Classification** documentation contradicts the thing it introduces · **Battle**
 `adversarial/validation/which-kinds-can-be-empty.battle.test.mjs` (green — it pins the measurement the
@@ -11712,3 +11712,31 @@ The battle is green and stays green. It pins the eleven **as a list rather than 
 moving in or out is visible, and it pins that `slider` is the only kind whose `required` cannot fail —
 with a control asserting `required` refuses more than one kind, so a `required` that stopped working
 could not make this pass.
+
+**Closed by `15606699`.** The comment is now two sentences because it was two questions fused into
+one: `nullable` says whether the field can hold `null` — whether *absence* is one of its values, which
+eleven kinds say no to — and **it does not say whether a `required` can fail**, which only `slider`
+cannot. The battle stays green and now pins the list while the prose names it, so a kind moving in or
+out is caught by one of the two.
+
+## Checked and clean: the two condition shapes agree wherever both are asked
+
+A rule's condition can be written flat — `{ field, operator, value }` through `evaluateRuleCondition`
+— or as a tree through `evaluateExpression`, and `expression.ts:250` claims one vocabulary across
+both: *"a document writing `in` means the same thing whichever of the two shapes it writes it in"*.
+
+Fourteen operators against fourteen value pairs, both shapes, **196 comparisons**: twelve
+disagreements, all in `lengthAtLeast` and `lengthAtMost`, and both are explained rather than defects.
+The rule vocabulary is declared at `parse.ts:47-50` and `:1122` as exactly ten operators; the flat
+evaluator implements those ten and returns `false` for anything else, and the expression tree
+implements four more. **A document cannot write the two that disagree**, because the parser refuses a
+rule whose operator is not one of the ten — which finding 192's replacement battle already pins.
+
+So the shared half agrees everywhere it is asked, and the unshared half is unreachable from a
+document. Nothing to file.
+
+**Three wrongly shaped calls on the way there**, each caught by a control before it became a claim:
+the flat evaluator takes the **whole form value** and selects with `when.field`, not the field's value
+(so `equals("a","a")` read as `false`); an expression's literal operand is **the value itself**, not
+`{ value }` (so `equals(5,5)` read as `false`); and `mdyEmptyValueFor` does not accept `slider`,
+whose kind vocabulary is not the value-contract one. Each looked like a finding for about a minute.
