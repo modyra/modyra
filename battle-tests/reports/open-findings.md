@@ -730,6 +730,19 @@ six runtimes and cannot carry this one.
 Measured, not battled — a battle would have to encode a guess about what the capability should change,
 and that guess is the decision.
 
+**Now pinned, at the level that guesses nothing.**
+`adversarial/lifecycle/a-capability-nothing-consults.battle.test.mjs` (red) asserts only that
+*something reads it*: every mention of `hydrated` in the packages' sources is inside the file that
+declares it. That is a fact about the sources rather than an opinion about behaviour, so it takes no
+side on what the capability should do — and it goes green the moment any consumer consults it,
+whatever it then does, which closes the finding in either direction.
+
+Two controls, because a source walk is easy to get wrong: the same walk finds `createForm` in more
+than two packages, so an empty result is the capability and not the walk; and the declaring file is
+still among the mentions, so a capability that had been deleted could not pass by leaving nothing to
+read. **The first version of this battle asserted the defect** — `readers` equal to `[]` — and was
+green while the finding stood. A battle that passes because the thing is broken is worse than none.
+
 `MdyWidgetRuntimeCapabilities.hydrated` is declared, set to `false` in `ssrRuntimeCapabilities`,
 computed by `browserRuntimeCapabilities({ hydrated })`, and documented at length:
 
