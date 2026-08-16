@@ -9,7 +9,10 @@ import { MDY_WIDGET_CONTRACT_VERSION, MDY_WIDGET_KINDS } from "../packages/widge
 const read = (path) => readFileSync(`packages/plain/src/${path}`, "utf8");
 const failures = [];
 
-if (MDY_WIDGET_CONTRACT_VERSION !== 1) failures.push(`unsupported Widgets contract version: ${MDY_WIDGET_CONTRACT_VERSION}`);
+// The anatomy this audit was written against. A bump means parts moved, so the audit is re-read
+// rather than the number widened: accepting a range would make this line pass through exactly the
+// change it exists to catch.
+if (MDY_WIDGET_CONTRACT_VERSION !== 2) failures.push(`unsupported Widgets contract version: ${MDY_WIDGET_CONTRACT_VERSION}`);
 
 const shell = read("field-shell.ts");
 if (!shell.includes("MDY_WIDGET_CONTRACTS[kind]")) failures.push("field-shell.ts does not take its root classes from the widget definition");

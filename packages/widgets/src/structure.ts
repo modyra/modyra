@@ -1,7 +1,20 @@
 import { MDY_STATE_MODIFIERS, stateClass, type MdyStateName } from "./state.js";
 
-/** Version of the framework-agnostic UI contract implemented by this package. */
-export const MDY_WIDGET_CONTRACT_VERSION = 1 as const;
+/**
+ * Version of the framework-agnostic UI contract implemented by this package.
+ *
+ * It names the **anatomy**, not the shape of the declaration: an adapter reads it to say *"the parts
+ * I build are the parts this number describes"*, and the audits that check a renderer against the
+ * catalogue refuse a version they were not written for. So it moves whenever a part a renderer was
+ * told to build stops existing, changes its element, or gains a role — the changes
+ * `contract:diff --since <tag>` classifies major.
+ *
+ * It stayed at 1 across a release that removed `datepicker.actions` and `daterange.actions` and
+ * turned `multiselect.searchButton` from a `button` into an `input` with `role="combobox"`. Two
+ * renderers written against "contract version 1" would then have implemented two different
+ * anatomies, and the number that exists to prevent exactly that said they were the same.
+ */
+export const MDY_WIDGET_CONTRACT_VERSION = 2 as const;
 
 /** Semantic element categories that presenters can map to their native rendering API. */
 export type MdyWidgetSemanticElement =

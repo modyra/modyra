@@ -7,8 +7,12 @@ import {
 import { MDY_FIELD_SHELL_STRUCTURE } from "../dist/vocabulary.js";
 import { inspectWidgetStructure } from "../dist/testing/index.js";
 
-test("contract v1 exposes the canonical field shell without structural issues", () => {
-  assert.equal(MDY_WIDGET_CONTRACT_VERSION, 1);
+test("the published contract version names the anatomy this suite checks", () => {
+  // Pinned, not read: the number exists so an adapter can say "the parts I build are the parts this
+  // number describes", and a test that took whatever it found would agree with any anatomy. It moved
+  // to 2 for the release that removed `datepicker.actions` and `daterange.actions` and turned
+  // `multiselect.searchButton` into an `input` with `role="combobox"`.
+  assert.equal(MDY_WIDGET_CONTRACT_VERSION, 2);
   assert.deepEqual(inspectWidgetStructure(MDY_FIELD_SHELL_STRUCTURE), []);
   assert.deepEqual(Object.keys(MDY_FIELD_SHELL_CLASSES), [
     "root", "label", "requiredMarker", "inputWrapper", "prefix", "control",
