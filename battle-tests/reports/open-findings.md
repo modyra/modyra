@@ -12560,3 +12560,26 @@ VAL-003 exactly: a field out of play does not alter the verdict and does not lea
 submission. Its error object is still readable to whoever asks `errorsFor` directly — the engine does
 not erase what it computed — and the widgets decide display through `shownErrors`, so nothing paints
 an error under a control that is not there.
+
+## Checked and clean: the teardown hook, which had no battle
+
+`onDestroy` is on the published form surface and appeared in this register only inside a list of
+method names. It is where a consumer unsubscribes a socket, cancels a request, releases a lock — work
+nothing else undoes — so each way it could fail costs something that does not come back.
+
+```
+destroy() called twice            the callback fires once
+one callback throws               the others still run, destroy() does not raise at its caller
+registered after destroy          runs immediately rather than being dropped or throwing
+reading getValue() inside it      {"a":"what the person left"} — the value is still there
+```
+
+All four hold, and `adversarial/lifecycle/what-a-teardown-hook-promises.battle.test.mjs` is green and
+now holds them.
+
+**One observation rather than a finding.** A callback that throws is isolated and **nothing is said**
+— not on the console, not through diagnostics — so a consumer whose cleanup is broken learns from its
+consequences rather than from the engine. That is defensible: teardown often runs while a page is
+going away, where a log is noise nobody reads. It is recorded here because the neighbouring failure of
+the same shape — a sanitizer that throws — *is* reported, through `onViolation`, and the two doors
+having different answers is worth knowing before either is changed.
