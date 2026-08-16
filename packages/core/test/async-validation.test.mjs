@@ -232,3 +232,48 @@ test("an async result that lands after its row was removed resurrects nothing", 
   assert.equal(form.state.valid(), true, "a late verdict for a dead row must not gate the form");
   form.destroy();
 });
+
+test("a field that leaves play abandons the question asked about it", async () => {
+  let asked = 0;
+  const form = createForm(
+    {
+      mode: field("on"),
+      secret: field("", [], {
+        asyncValidators: [
+          async () => {
+            asked += 1;
+            // A server that never answers, which is the case the abandonment is for.
+            await new Promise(() => {});
+            return [];
+          },
+        ],
+      }),
+    },
+    { devWarnings: false },
+  );
+  form.setInactive("secret", () => form.f.mode.value() === "off");
+  form.f.secret.set("typed");
+  await tick();
+
+  // The premise: a run is in flight and it is holding the form. (The count is what the effect did,
+  // not what a caller asked for: a value written to a fresh field runs it more than once.)
+  const beforeLeaving = asked;
+  assert.ok(beforeLeaving > 0);
+  assert.equal(form.state.pending(), true);
+  assert.equal(form.state.canSubmit(), false);
+
+  // A field out of play is not validated and not submitted, so a question still in flight about it
+  // holds a form for an answer nobody can act on: the person switched a section off and the Submit
+  // never comes back. With a server that does not answer, that is permanent.
+  form.f.mode.set("off");
+  await tick();
+  assert.equal(form.state.pending(), false);
+  assert.equal(form.state.canSubmit(), true);
+
+  // And the control: coming back into play asks again, so this is abandonment rather than a check
+  // that has been switched off for good.
+  form.f.mode.set("on");
+  await tick();
+  assert.ok(asked > beforeLeaving, "coming back into play did not ask again");
+  form.destroy();
+});

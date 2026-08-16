@@ -40,9 +40,12 @@ test("destroying the form's scope tears down draft/history/async effects it owns
   const scoped = rx.__effects.filter((e) => e.scope);
   assert.equal(
     scoped.length,
-    3,
-    "draft, history and the async validator should all register with the form's scope",
+    4,
+    "draft, history and the async validator's pair should all register with the form's scope",
   );
+  // Four rather than three because the async validator is a pair: the runner, and the watcher that
+  // abandons its run when the field leaves play. Separate on purpose — the runner must not wake on
+  // every interactivity change, because a field becoming read-only is still being asked about.
   const [scope] = scoped.map((e) => e.scope);
   assert.ok(
     scoped.every((e) => e.scope === scope),
