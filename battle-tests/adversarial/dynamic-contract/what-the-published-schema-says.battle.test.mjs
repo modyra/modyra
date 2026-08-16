@@ -149,7 +149,16 @@ battle(
       [
         "operator",
         schema.$defs?.rule?.properties?.when?.properties?.operator?.enum ?? [],
-        (value) => ({ ...workingRule, when: { ...workingRule.when, operator: value } }),
+        // The value each operator can use, because the parser checks it against the operator that
+        // will read it: a list for `in`, none where the operator asks about the field alone. Written
+        // as one shape for all of them, this battle would report the value being refused as the
+        // operator being refused — which is what it did until the check existed.
+        (value) => ({
+          ...workingRule,
+          when: ["isEmpty", "isNotEmpty"].includes(value)
+            ? { field: "a", operator: value }
+            : { field: "a", operator: value, value: ["in", "notIn"].includes(value) ? ["x"] : "x" },
+        }),
       ],
     ]) {
       expectClaim(list.length > 0, {
@@ -188,5 +197,53 @@ battle(
         detail: JSON.stringify(parsed.diagnostics),
       });
     }
+  },
+);
+
+battle(
+  {
+    claims: ["DYN-001", "DYN-003"],
+    title: "the envelope's own fields are the shapes the published schema gives them",
+    open: "reported, not enforced: the dynamic-contract batch map, cause C, open in battle-tests/reports/open-findings.md",
+    environments: ["node"],
+  },
+  async (ctx) => {
+    // The envelope's scalars are the part of the contract an author writes first and reads least: a
+    // name at the top of a file, checked by the editor the guide points `$schema` at. What the
+    // schema says about `id` is not a suggestion — it is the shape a document is underlined against.
+    const schema = JSON.parse(readFileSync(join(REPO, "spec", "dynamic-form-v3.schema.json"), "utf8"));
+    const declared = schema.properties?.id ?? {};
+    ctx.log.note("what the published schema says an id is", { declared });
+
+    expectEqual([declared.type, declared.minLength], ["string", 1], {
+      claimIds: ["DYN-003"],
+      what: "the published schema no longer declares the envelope id as a non-empty string, so this battle is asking for something nobody publishes",
+    });
+
+    const withId = (id) => parseDynamicForm(
+      { version: 2, id, fields: [{ name: "a", kind: "text", label: "A" }] },
+      { mode: "strict" },
+    );
+
+    // The control: the shape the schema names is accepted, so what follows is about the others.
+    expectClaim(withId("business-signup").ok === true, {
+      claimIds: ["DYN-001"],
+      what: "an id the schema allows was refused, so nothing below is about the parser being permissive",
+    });
+
+    // And the shapes it forbids. Each is refused by an editor the moment it is typed, and taken here
+    // without a word — the direction the parser is meant never to go.
+    const taken = [];
+    for (const id of ["", 42, null, {}, [], true]) {
+      const parsed = withId(id);
+      if (parsed.ok) taken.push(id);
+    }
+    ctx.log.note("ids the schema forbids and the parser took", { taken });
+
+    expectEqual(taken, [], {
+      claimIds: ["DYN-001", "DYN-003"],
+      what: `the parser accepted ${taken.length} envelope ids the published schema refuses, so a document can be green in an editor's terms and green in the parser's while the two disagree about it`,
+      detail: () => JSON.stringify(taken),
+    });
   },
 );
