@@ -787,14 +787,16 @@ export class MdyFormEngine
     //
     // The same question `exclude` answers for drafts, and the same answer: a name that is an
     // ancestor is about everything beneath it.
-    if (!this._fields.has(name)) {
-      const under = [...this._fields.keys()].filter((path) => path.startsWith(`${name}.`));
-      if (under.length > 0) {
-        for (const path of under) {
-          this.setInitialValue(path, this._rx.untracked(() => this._fields.get(path)!.state.value()));
-        }
-        return;
+    const under = [...this._fields.keys()].filter((path) => path.startsWith(`${name}.`));
+    if (under.length > 0) {
+      // Descendants first, and whether or not a field exists at this path itself: a collection
+      // carries a phantom field at its own path for collection-level errors, and asking whether one
+      // is there answered "leaf" for the very level a consumer reaches for — the collection, which
+      // is the one name they can write without knowing what the user created.
+      for (const path of under) {
+        this.setInitialValue(path, this._rx.untracked(() => this._fields.get(path)!.state.value()));
       }
+      return;
     }
     assertBaseline(name, this._initialValues.get(name), value);
     // Sanitized once here so reset()/getChanges() compare against the value

@@ -1705,6 +1705,11 @@ export abstract class MdyTypedFormBase<
     if (this._recordPaths.has(path) || this._arrayPaths.has(path)) return true;
     for (const prefix of this._recordPaths) if (path.startsWith(`${prefix}.`)) return true;
     for (const prefix of this._arrayPaths) if (path.startsWith(`${prefix}.`)) return true;
+    // A group is declared too, and the refusal that did not know it sent a reader looking for a typo
+    // in a name they had spelled correctly. What a caller may *do* with a group differs per method;
+    // that it exists is this question, and the answer is yes.
+    if (this._groupPaths.has(path)) return true;
+    for (const prefix of this._groupPaths) if (path.startsWith(`${prefix}.`)) return true;
     return false;
   }
 

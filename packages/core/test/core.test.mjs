@@ -887,3 +887,36 @@ test("eachOneOf: a multiselect survives the same round trip, and refuses the sam
   assert.deepEqual(v(JSON.parse(JSON.stringify([OPTIONS[0], OPTIONS[2]]))), []);
   assert.equal(v([{ id: 1 }, { id: 9 }]).length, 1, "one forged element among offered ones");
 });
+
+test("a baseline moves at every level a caller can name", () => {
+  // `setInitialValue` named one leaf, which answers for a form whose paths were all known when the
+  // code was written. A collection's keys are data — the row a user added has a path nobody could
+  // have written down — so the level a consumer reaches for first is the collection itself.
+  const form = createForm(
+    { grp: group({ a: field("") }), rows: record(group({ c: field("") })) },
+    { devWarnings: false },
+  );
+  form.f.rows.upsert("r1", {});
+  form.f.rows.row("r1").c.set("typed");
+  form.f.grp.a.set("typed");
+  assert.deepEqual(form.getChanges(), { grp: { a: "typed" }, rows: { r1: { c: "typed" } } });
+
+  // The collection, which is the one name a consumer can write without knowing what the user made.
+  // A phantom field sits at that path carrying collection-level errors, and asking "is a field here"
+  // answered "leaf" for exactly this level.
+  form.setInitialValue("rows", undefined);
+  assert.deepEqual(form.getChanges(), { grp: { a: "typed" } });
+
+  // And a group, which the form declares and the refusal used to deny existed — sending a reader to
+  // look for a typo in a name they had spelled correctly.
+  form.setInitialValue("grp", undefined);
+  assert.deepEqual(form.getChanges(), {});
+
+  // The control: a leaf still moves on its own, so the levels above are an addition rather than a
+  // replacement.
+  form.f.grp.a.set("again");
+  assert.deepEqual(form.getChanges(), { grp: { a: "again" } });
+  form.setInitialValue("grp.a", "again");
+  assert.deepEqual(form.getChanges(), {});
+  form.destroy();
+});
