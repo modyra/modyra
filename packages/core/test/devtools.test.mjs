@@ -117,3 +117,17 @@ test("a field nobody masked keeps its message as it was written", () => {
   assert.equal(snapshot.fields[0].value, "ada");
   assert.equal(snapshot.fields[0].errors[0], '[server] "ada" is already taken');
 });
+
+test("the panel survives a value JSON cannot carry", () => {
+  // The panel is what a developer opens when something is already wrong, so a value the form is
+  // allowed to hold must not be the thing that stops it: the engine reports an unexpected shape as
+  // a verdict rather than refusing the write, and a BigInt reaching the row renderer used to raise
+  // inside the render effect, freezing the panel on its previous paint.
+  const host = makeHost();
+  const dispose = mountMdyDevtools(makeForm("total", 10n, "wrong shape"), host, 1_000_000);
+  const rendered = host.innerHTML;
+  dispose();
+
+  assert.match(rendered, /<td>total<\/td>/, "the field is not in the panel at all");
+  assert.match(rendered, /\[BigInt: 10\]/, "the panel does not say what the value is");
+});

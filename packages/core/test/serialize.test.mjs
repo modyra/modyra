@@ -55,3 +55,21 @@ test("ordinary values pass through unchanged", () => {
   assert.deepEqual(mdyFormSerialize(value), value);
   assert.equal(mdyFormSerialize(undefined), undefined);
 });
+
+test("a BigInt is described, and describing it keeps it distinguishable from a number", () => {
+  // `JSON.stringify` raises on a BigInt rather than writing something, so a value a form is holding
+  // takes down whatever reads it — the same failure a File causes by being silent, in the loud
+  // direction. `10n` and `10` are not the same value, so it is described rather than coerced.
+  assert.equal(mdyFormSerialize(10n), "[BigInt: 10]");
+  assert.equal(mdyFormSerialize(-3n), "[BigInt: -3]");
+  assert.equal(mdyFormSerialize(9007199254740993n), "[BigInt: 9007199254740993]");
+  assert.notEqual(mdyFormSerialize(10n), mdyFormSerialize(10));
+
+  assert.deepEqual(mdyFormSerialize({ total: 10n, rows: [1n, { id: 2n }] }), {
+    total: "[BigInt: 10]",
+    rows: ["[BigInt: 1]", { id: "[BigInt: 2]" }],
+  });
+
+  // The property that matters to a caller: what comes back is something JSON can carry.
+  assert.equal(JSON.stringify(mdyFormSerialize({ total: 10n })), '{"total":"[BigInt: 10]"}');
+});
