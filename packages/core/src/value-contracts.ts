@@ -71,10 +71,18 @@ const live = (shape: MdyValueShape, nullable: boolean): MdyValueContract =>
 /**
  * One entry per kind, exhaustive by construction.
  *
- * `nullable` is the half that matters most: it is the difference between a field that can be empty
- * and one that cannot, and therefore between a `required` that can fail and one that cannot. The two
- * kinds that are not nullable — `slider` and the booleans — are the two whose empty value is a real
- * one, and {@link mdyEmptyValueFor} says the same thing from the other direction.
+ * `nullable` says whether the field may hold `null` — whether *absence* is one of its values. Eleven
+ * kinds say no: `checkbox`, `colors`, `daterange`, `email`, `file`, `multiselect`, `password`,
+ * `slider`, `text`, `textarea` and `toggle`. Each of them has an empty value that is a real value of
+ * its type — `false`, `""`, `[]`, `{start: null, end: null}` — which is what
+ * {@link mdyEmptyValueFor} answers from the other direction.
+ *
+ * **It does not say whether a `required` can fail.** That was the reading this comment invited and it
+ * is wrong in both directions: `checkbox` and `toggle` are not nullable and their `required` refuses
+ * `false`, which is the whole point of a consent field, and `text` refuses `""`. The one kind whose
+ * `required` has nothing to refuse is `slider` — a thumb is always somewhere, so there is no state
+ * for it to be empty in. Ask emptiness of `required`; ask `nullable` whether `null` is a value the
+ * field may hold.
  */
 export const MDY_VALUE_CONTRACTS: Readonly<Record<MdyValueKind, MdyValueContract>> = Object.freeze({
   text: live("string", false),
