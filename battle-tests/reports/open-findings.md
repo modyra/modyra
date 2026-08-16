@@ -11975,3 +11975,37 @@ form contract admits.
 **Worth having measured** because it bounds 195: the panel's repair — describing a BigInt rather than
 coercing it — does **not** reach the draft, which uses a different path and still omits the field.
 Checked after the repair landed in the working tree, so the two are known not to have moved together.
+
+## Checked and clean: an undo after a restore, and what a submit action's answer means
+
+Two user-shaped questions with nothing filed behind them, measured because the plan for this suite
+named the first as a gap — the canonical snapshot does not capture the history affordance, and the
+PER-002 defect lived exactly there.
+
+**Undo after a draft restore.** A form with `history` and a draft: two edits, saved, closed, reopened.
+
+```
+fresh          canUndo false
+after 2 edits  canUndo true
+after restore  canUndo FALSE, and undo() changes nothing
+```
+
+The affordance tells the truth. History is not persisted, so a restored form has nothing to undo, and
+it says so rather than offering a button that does nothing — which is the failure this was looking
+for.
+
+**What a submit action's answer means.** The value an action returns is the **server's error list**,
+not its result:
+
+```
+returns nothing              0 errors      success
+returns []                   0 errors      success
+returns [{path, message}]    1 error, carried with its path
+returns "server said ok"     1 error, path null:
+                             "The submitted answer could not be read."
+```
+
+The last is the interesting one. A consumer who reads the action as *"return your server's response"*
+gets a form-level error with a sentence a person can read, rather than a crash, a silent success, or a
+string treated as a path. The refusal is the same shape as the one for a server answer arriving
+malformed.
