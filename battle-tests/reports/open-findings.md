@@ -7248,7 +7248,7 @@ a minimum equal to its maximum, a maximum below its minimum, a non-number, an in
 dividing by zero. `dragPointOf` reads a mouse and a finger alike, and answers `null` for a touch event
 carrying no touches, which is the end of a gesture rather than a drag to the origin.
 
-## 130. A file picked, and nothing said
+## 130. A file picked, and nothing said — CLOSED
 
 **Closed — verified green** (`f00ead67`). The word came before the line, as the finding argued it had
 to: `fileRejected(names)` is now in all five message tables and takes the *list* rather than a joined
@@ -7388,7 +7388,7 @@ letters and an empty box leave the value alone rather than writing a broken one:
 no `value` at all rather than an unusable string. Choosing a preset commits *and* closes; typing does
 neither; an unreadable preset does nothing.
 
-## 132. A popup that opens without a word
+## 132. A popup that opens without a word — CLOSED
 
 **Closed — verified green** (`0a6d2960`). What was missing was not a renderer reading `announce` but
 an *edge* to read it on: both reflected the open state on every render, so reading the policy would
@@ -8524,7 +8524,7 @@ the shape of that inconsistency at the boundary.
 - **A slider past its maximum** shows the maximum and is marked invalid, in both. The control cannot
   draw 999 on a track that ends at 10, and it says so rather than pretending.
 
-## 152. A control that stops at a value it was given
+## 152. A control that stops at a value it was given — CLOSED
 
 **S1 · Modyra bug · `@modyra/widgets` (shared) and `@modyra/lit` (one kind more)**
 Claims: UI-008 (registered for this), VAL-003
@@ -8763,7 +8763,7 @@ Two of my own measurements were wrong before this landed, and both were caught b
   `["First","Alpha","First","Alpha"]` and both renderers looked broken. Each case now starts from a
   fresh page.
 
-## 155. A third way for a value to arrive, with no word for it
+## 155. A third way for a value to arrive, with no word for it — CLOSED
 
 **S3 · Ambiguous contract · `@modyra/core` (`MDY_VALUE_CONTRACTS`)**
 Claims: UI-006, VAL-003
@@ -8854,7 +8854,7 @@ state. To be re-measured once the tree is clean.
   `patchValue`, in both renderers: no uncaught error anywhere. `multiselectValueTransition` throws on
   `null` when called directly, and nothing routes a cleared value into it.
 
-## 156. A rule that fires on nothing
+## 156. A rule that fires on nothing — CLOSED
 
 **S0 · Modyra bug · `@modyra/core` (Dynamic Form Contract) — the whole `rules` slot**
 Claims: DYN-004 (registered for this, S0), DYN-001
@@ -9535,7 +9535,7 @@ where a finding lands are decisions each route takes separately.
   are kept and hold what they were given; the prototype is intact; and both routes end with the same
   key list.
 
-## 166. A row a draft invented
+## 166. A row a draft invented — CLOSED
 
 **S1 · Modyra bug · `@modyra/core`**
 Claims: PER-001, COL-002 · severity stated above the claims' own
@@ -9610,7 +9610,7 @@ consequence.
 "2026-01-10"` stays false, and `"beta" > "alpha"` stays a text comparison. The battle is promoted from
 a todo to an enforced regression.
 
-## 167. An array a draft grew
+## 167. An array a draft grew — CLOSED
 
 **S1 · Modyra bug · `@modyra/core`**
 Claims: PER-001, COL-001 · severity stated above the claims' own
@@ -9659,7 +9659,7 @@ had not: the script was in a scratchpad directory where `@modyra/core` does not 
 failure was silent because the output was buffered. Every case here runs in its own child process
 under a timeout, which is also the only way the `200000` row above could be measured at all.
 
-## 168. A secret with nowhere to hide
+## 168. A secret with nowhere to hide — CLOSED
 
 **S0 · Modyra bug · `@modyra/core` (draft `exclude`)**
 Claims: SEC-006 (registered for this, S0), PER-001
@@ -9711,7 +9711,7 @@ form is wrong afterwards — that is what makes it quiet.
   an excluded field does not restore it: the field comes back empty. The guide says "never persisted
   nor restored" and the restore half holds.
 
-## 169. A draft that never gets old
+## 169. A draft that never gets old — CLOSED
 
 **S2 · Modyra bug · `@modyra/core` (draft `ttlMs`)**
 Claims: PER-001, SEC-006 · severity stated above the claims' own
@@ -9836,7 +9836,7 @@ One instrument error on the way: the first dependency probe read `ctx.formValue.
 not exist, and reported `null`. The context offers `ctx.form.value()` and `ctx.form.fieldValue(path)`.
 Reading the type rather than guessing is what turned a false finding into a clean one.
 
-## 170. An undo of something nobody did
+## 170. An undo of something nobody did — CLOSED
 
 **S2 · Modyra bug · `@modyra/core`** (severity stated below the claims' own, see below)
 Claims: PER-002, PER-001
@@ -10289,7 +10289,7 @@ that did not exist when the form was built.
   structure* — and is not this finding. What the guide does not cover is the value inside a row that
   is new, which is reported neither as structure nor as a value.
 
-## 174. A baseline only the engine can move
+## 174. A baseline only the engine can move — CLOSED
 
 **S2 · Modyra bug · `@modyra/core`**
 Claims: PER-002, API-001
@@ -10490,7 +10490,7 @@ the user did not type, so this state arrives while they are mid-interaction rath
 something they did. That is the same door as finding 175, where the keyboard is dropped, and both
 arrive together — the calendar stays and the focus goes.
 
-## 177. A question asked about a field that left
+## 177. A question asked about a field that left — CLOSED
 
 **S1 · Modyra bug · `@modyra/core`** (severity stated above the claims' own)
 Claims: VAL-005, SUB-001
@@ -10746,7 +10746,7 @@ Three findings from one sweep of hand-built field lists, and they separate clean
 The first two are renderer policy. This one is underneath both.
 
 
-## 181. An initial nobody checked
+## 181. An initial nobody checked — CLOSED
 
 **S1 · Modyra bug · `@modyra/core` (dynamic parser)**
 Claims: DYN-001, VAL-004
@@ -11828,3 +11828,7 @@ found it — asserted rather than checked.
 1, 2, 3, 7, 10, 12, 16, 17, 22, 34, 38, 41, 42, 44, 46, 52, 59, 61, 62, 63, 64, 65, 68, 69, 71, 72, 73, 74, 75, 76, 77, 80, 81, 84, 85, 86, 87, 90, 118, 120, 125, 127, 130, 132, 141, 152, 154, 155, 156, 160, 161, 166, 167, 168, 169, 170, 174, 177, 181
 
 Each needs one run of its battle and one read of its body before its header changes.
+
+**Thirteen of the fifty-nine marked CLOSED**, on two independent signals rather than one: the owning
+session reported each as repaired, and each entry's battle passes in the last full run. The rest of
+the list stands as written — a number and a battle to run, not a verdict.
