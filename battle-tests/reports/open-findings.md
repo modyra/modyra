@@ -12435,6 +12435,12 @@ repository paths and every one resolves. The two the scan flagged are not misses
 appears in a sentence about what *adding* a Java target would cost, and `docs/architecture/0010` is a
 record referred to by its number. Finding 189's wrong package was the exception, not the pattern.
 
+**The neighbouring clause of the same rule is in far better shape.** the project instructions also forbids change
+history in comments — *"this used to be…", "the defect that shipped", "before this batch"* — and a
+scan of the same sources finds **eleven** phrases of that kind, of which only about half are history
+rather than a description of where a value sits. Eleven against forty-nine: the process references are
+the part of this rule that did not hold.
+
 **Filed without a battle**, deliberately. This is a repository convention rather than a published
 promise, and no registered claim covers it — the same call as 189, which was repaired anyway. The
 check is one `grep` and is written above.
