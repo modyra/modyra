@@ -12062,6 +12062,23 @@ z.string().nullable()     initial null    valid
 z.string().default("x")   initial "x"     valid     ← the bridge does seed when told
 ```
 
+**The sibling bridge in the same repository does not have it, and the difference is one decision.**
+`createStandardForm(schema, fields, options)` takes the field tree from the consumer — the schema only
+validates — and zod implements Standard Schema, so the same schema can be put through both:
+
+```
+createStandardForm(z.object({a: z.string()}), { a: field("") })
+    on arrival   valid, canSubmit          emptied by the user   valid, canSubmit
+createStandardForm(z.object({a: z.string()}), { a: field(null) })
+    on arrival   invalid — "Invalid input: expected string, received null"
+createZodForm(z.object({a: z.string()}))
+    on arrival   invalid, the same message · emptied   valid
+```
+
+Identical validator, identical schema, identical messages. **The only difference is who chooses the
+seed** — and a consumer who chooses `""` gets a form whose two empties agree. `createZodForm` chooses
+`null` on their behalf, and the disagreement follows from that alone.
+
 **Neither half is zod misbehaving.** `z.string()` rejects `null` and accepts `""`, exactly as its own
 `safeParse` does. What the two halves say together is that the form's representation of *unfilled* is
 not one its schema admits, while the user's representation of *emptied* is.
