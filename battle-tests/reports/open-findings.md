@@ -11832,3 +11832,36 @@ Each needs one run of its battle and one read of its body before its header chan
 **Thirteen of the fifty-nine marked CLOSED**, on two independent signals rather than one: the owning
 session reported each as repaired, and each entry's battle passes in the last full run. The rest of
 the list stands as written — a number and a battle to run, not a verdict.
+
+### The sweep needs two sources, not one, and a third question
+
+A green battle is compatible with three different histories, and the sweep above cannot tell them
+apart:
+
+```
+repaired          someone fixed it and did not record it
+never broken      the entry recorded a measurement, not a defect
+battle emptied    the assertion stopped measuring what it names
+```
+
+**`git log` answers the first.** Every repair here arrives as a commit with a changeset, so an entry
+naming a behaviour that a commit says was changed is *repaired*, and the green battle is the
+confirmation rather than the evidence. The owning session's thirty-three are on `main` between
+`f22d828a` and `15606699`; a `git log -S` on the symbol an entry names is the cheapest way to place
+any single one.
+
+**And a third case neither source catches: a repair that opened the next finding.** Where that
+happened the register should carry the link, because it is what tells a reader in six months why the
+repair was shaped the way it was:
+
+```
+156 → 161     the disabled field's submission, and what its repair moved
+166 → 167
+187 → 190     a harness with no stylesheet, and the gate measuring a page in the wrong colour
+193 → 193-kind
+```
+
+Reconciled honestly, the count is not *closed versus open*. It is **thirty-three closed and recorded,
+fifty-nine to reconcile, and the handful still open with a measurement behind them** — and the middle
+column is the one that costs the most, because an unrecorded repair makes the next person redo the
+work rather than merely check it.
