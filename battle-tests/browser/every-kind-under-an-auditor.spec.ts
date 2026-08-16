@@ -151,3 +151,34 @@ test("every declared kind is one the auditor has nothing to say about when it is
   const violations = await auditStage(page);
   expect(violations, JSON.stringify(violations, null, 1)).toEqual([]);
 });
+
+test("a form somebody has chosen things in is one the auditor has nothing to say about", async ({ page }) => {
+  // The state the other three never reach. A widget's selected surfaces — a chosen day, a chosen
+  // option — are painted from different tokens than its resting ones, and a rule set that audits a
+  // form nobody has answered never sees them. That is not hypothetical: the contrast pair this
+  // stylesheet fails on is declared on `.mdy-datepicker__cell--selected` as well as on a button, and
+  // only the button was ever in front of the auditor.
+  await mountEveryKind(page);
+
+  await page.locator('[data-form="k-datepicker"] .mdy-datepicker__toggle').first().click();
+  await settled(page);
+  await page.locator('[role="gridcell"]:not([aria-disabled="true"])').nth(15).click();
+  await settled(page);
+
+  await page.locator('[data-form="k-select"] [role="combobox"]').click();
+  await settled(page);
+  await page.locator('[role="option"]').first().click();
+  await settled(page);
+
+  // The control: the surfaces this state exists for are on the page. A clean audit of a form where
+  // nothing was chosen would be clean for the wrong reason, which is exactly how the three states
+  // above stayed green while this pair was failing.
+  const chosen = await page.evaluate(() => ({
+    day: document.querySelectorAll(".mdy-datepicker__cell--selected").length,
+    option: document.querySelectorAll(".mdy-select__option--selected, .mdy-select__trigger").length,
+  }));
+  expect(chosen.day, "no day is marked selected, so the selected surfaces are not being audited").toBeGreaterThan(0);
+
+  const violations = await auditStage(page);
+  expect(violations, JSON.stringify(violations, null, 1)).toEqual([]);
+});
