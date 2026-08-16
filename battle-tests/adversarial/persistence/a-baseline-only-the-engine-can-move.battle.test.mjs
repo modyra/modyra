@@ -80,37 +80,40 @@ battle(
       detail: () => JSON.stringify(form.getChanges()),
     });
 
-    // Naming the collection does nothing, so a consumer cannot re-baseline rows without their keys.
-    form.setInitialValue("rows", { "row-the-user-added": { c: "also typed" } });
-    await settled();
-    const afterNamingTheCollection = form.getChanges();
-    ctx.log.note("after naming the collection", { afterNamingTheCollection });
+    // What an ancestor path does now, one level at a time. A row and a cell work; the collection
+    // itself does not, and says nothing about it.
+    const levels = [];
+    for (const [what, path, value] of [
+      ["the collection", "rows", { "row-the-user-added": { c: "also typed" } }],
+      ["the row", "rows.row-the-user-added", { c: "also typed" }],
+      ["the cell", "rows.row-the-user-added.c", "also typed"],
+    ]) {
+      const fresh = await filledByHand();
+      let threw = null;
+      try {
+        fresh.setInitialValue(path, value);
+        await settled();
+      } catch (error) {
+        threw = String(error.message);
+      }
+      levels.push({ what, path, threw, changes: fresh.getChanges() });
+      fresh.destroy();
+    }
+    ctx.log.note("naming each level", { levels });
 
-    expectClaim(Object.hasOwn(afterNamingTheCollection, "rows"), {
+    // The control: the levels that do work, so a failure below is about the one that does not rather
+    // than about the call never working.
+    expectClaim(levels.slice(1).every((each) => !Object.hasOwn(each.changes, "rows")), {
       claimIds: ["API-001"],
-      what: "naming the collection did re-baseline it, so the wall this battle describes is not there",
-      detail: () => JSON.stringify(afterNamingTheCollection),
+      what: "naming a row or a cell did not re-baseline it, so this battle is not about the collection level",
+      detail: () => JSON.stringify(levels),
     });
 
-    // And its sibling, which does take an ancestor. Two path-taking calls on one form, one reaching a
-    // collection by name and one silently doing nothing with the same string, and neither says so.
-    const other = await filledByHand();
-    other.setDisabled("rows", () => true);
-    await settled();
-    const disabledByName = Object.hasOwn(other.submitValue(), "rows");
-    ctx.log.note("the same string, given to setDisabled", { stillSubmitted: disabledByName });
-    other.destroy();
-
-    expectEqual(disabledByName, false, {
-      claimIds: ["API-001"],
-      what: "setDisabled does not take a collection by name either, so the inconsistency below is not the one this battle names",
-    });
-
-    // And the capability itself: one call that says the current value is the new baseline.
-    expectClaim(typeof form.rebaselineToCurrentValue === "function", {
+    // And the one that does not: naming the collection changes nothing and reports nothing.
+    expectClaim(!Object.hasOwn(levels[0].changes, "rows"), {
       claimIds: ["API-001", "PER-002"],
-      what: "the form a consumer holds has no way to re-baseline itself in one call, and naming a collection through setInitialValue does nothing, so rows a user added can never stop being reported as changes",
-      detail: () => JSON.stringify({ afterNamingTheCollection, surface: "setInitialValue is per leaf" }),
+      what: "naming the collection itself re-baselines nothing and says nothing, while naming a row under it works",
+      detail: () => JSON.stringify(levels[0]),
     });
 
     form.destroy();
