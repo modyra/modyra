@@ -12674,3 +12674,34 @@ What the plan proposed and the suite did differently is worth one line, because 
 shape: the plan wanted one campaign choosing its geometry from the seed, and what exists is one
 campaign per geometry — a reference model can then be specific to the structure it describes, and a
 failure names the geometry in its file name before anyone reads a seed.
+
+## Checked and clean: two ways a consumer accidentally shares a field
+
+A `field()` is a description, and a consumer who treats it as one writes both of these without
+thinking twice. If either aliased, one person's typing would appear somewhere they never looked.
+
+**One schema object, two forms.**
+
+```
+const schema = { email: field("start"), rows: record(group({ sku: field("") })) };
+A = createForm(schema); B = createForm(schema);
+A.email → "only A typed this"; A.rows.upsert("r1", …)
+
+A   {"email":"only A typed this","rows":{"r1":{"sku":"A row"}}}
+B   {"email":"start","rows":{}}
+destroying A          B still writes and reads
+```
+
+**One field descriptor, two paths in one schema.**
+
+```
+const shared = field("", [required()]);
+createForm({ home: shared, work: shared })
+type into home  →  {"home":"home@example.com","work":""}
+                   home has no errors · work still "This field is required"
+type into work  →  both hold their own answer
+```
+
+Independent in both, including the validator: the shared `required()` produces a verdict per path
+rather than one shared between them, and a collection declared once and built twice keeps its rows
+apart. A descriptor is a blueprint and nothing built from it carries state back.
