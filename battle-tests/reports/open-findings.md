@@ -10108,3 +10108,37 @@ And the rewrite's first attempt **deleted the file's other battle**: the replace
 after it. Caught because the run reported one test where there had been two, restored from HEAD, and
 redone anchored on the title. An edit that removes a check is the most expensive kind of mistake this
 suite can make, and the only thing that caught it was a count.
+
+## The envelope's own id, and a probe a repair made false
+
+### Added to cause C: the parser takes ids the published schema refuses
+
+`spec/dynamic-form-v3.schema.json` declares the envelope's `id` as `{"type": "string", "minLength": 1}`
+— the shape an author's editor underlines a document against, since the guide points `$schema` at it.
+The parser takes **six** shapes it forbids:
+
+```
+id = ""      42      null      {}      []      true      → ok: true, no diagnostic
+id = "business-signup"                            → ok: true      ← the control
+```
+
+The `id` is not returned by the parse at all and nothing reads it, so the cost is not a wrong form —
+it is that a document can be green in an editor's terms and green in the parser's while the two
+disagree about it, which is the direction the parser is meant never to go. Added to
+`what-the-published-schema-says.battle.test.mjs` under the same open cause as the option-value case
+rather than filed as a finding of its own; the cause is one and it now carries three instances.
+
+### A battle that started failing for a reason that was not a defect
+
+The same file's enforced battle — *every effect and operator the schema names is one the parser
+takes* — went red on `operator: "in"` after finding 160's repair landed. The parser had not stopped
+taking `in`: it started checking a rule's `value` against the operator that reads it, and this probe
+built **one shape for every operator**, a bare `"x"`, so `in` was refused for its value and the battle
+reported it as the operator being refused.
+
+The probe now writes what each operator can use — a list for `in` and `notIn`, nothing at all where
+the operator asks about the field alone. Green again.
+
+This is the second time this session a probe that emitted one shape for a whole vocabulary produced a
+false verdict, and the first time it nearly forced a contract decision. A generator that says the same
+thing to every member of a list is not testing the list.
