@@ -11621,10 +11621,22 @@ react             compatible TRUE,  none                     none
 angular           compatible TRUE,  none                     none
 ```
 
-The compiler finds it. **One target of four carries it; three discard it and answer `compatible:
-true` for a project their own compiler reports two errors on.** So the repair is not in the model and
-not in the compiler — it is the three targets that call `compileToContract` and drop what it hands
-back.
+The compiler finds it. **One target of four carries it; three answer `compatible: true` for a project
+the contract compiler reports two errors on.**
+
+**They do not discard the diagnostics — they never ask for them.** Read in the sources:
+
+```
+studio-target-json     imports compileToContract, calls it in analyze and generate
+studio-target-core     calls its own generateFiles; the contract compiler is not in its path
+studio-target-react    compileToContract appears 0 times
+studio-target-angular  compileToContract appears 0 times
+```
+
+The distinction matters for whoever repairs it: "discarded" sends a reader looking for a filter that
+does not exist. The repair is that a target's own generation merges what `compileToContract` found
+with what it found itself — which is what `json` does two files away, and why it is the model to copy.
+It is smaller than it sounds, and it is not in the model or in the compiler.
 
 This is the same shape as the standing red in the same file — *a target called a project compatible
 that the model reports an error for* — which names `react` for its own broken project. Measured with
