@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { MDY_WIDGET_CONTRACTS, overlayOnlyParts, staticParts } from "@modyra/widgets";
+import { MDY_WIDGET_CONTRACTS, MDY_WIDGET_KINDS, overlayOnlyParts, staticParts } from "@modyra/widgets";
 
 /**
  * A part the contract declares mandatory, and the renderer that builds something else.
@@ -90,39 +90,61 @@ test("the contract declares the trigger mandatory, in the half of it that says s
   expect(overlayOnlyParts("select"), "the trigger became an overlay-only part").not.toContain("trigger");
 });
 
+const needsOptions = (kind: string) => /select|radio|segmented/.test(kind);
+
+/** What a renderer owes for a kind: required, and not one of the parts that live in an overlay. */
+function owedParts(kind: string): string[] {
+  const borrowed = new Set(overlayOnlyParts(kind));
+  return CONTRACTS[kind].structure.nodes
+    .filter((node) => node.optional === false && !borrowed.has(node.part))
+    .map((node) => node.part);
+}
+
 for (const host of HOSTS) {
-  test(`the part the contract gives a role to is built, ${host.name}`, async ({ page }) => {
-    test.setTimeout(120_000);
+  test(`every part the contract requires is built, ${host.name}`, async ({ page }) => {
+    test.setTimeout(300_000);
     await page.goto(host.page);
     await page.waitForFunction((flag) => (window as never as Record<string, boolean>)[flag] === true, host.ready);
 
-    const mounted = await page.evaluate(({ api }) =>
-      (window as never as Record<string, { mountFields(id: string, fields: unknown[]): { mounted: boolean; message?: string } }>)[api]
-        .mountFields("anatomy", [{
-          name: "pick",
-          kind: "select",
-          label: "Pick",
-          options: [{ value: "a", label: "A" }, { value: "b", label: "B" }],
-        }] as never), { api: host.api });
-    expect(mounted.mounted, `the select did not mount: ${mounted.message ?? ""}`).toBe(true);
-    await settled(page);
+    const gaps: string[] = [];
+    let owedTotal = 0;
 
-    const built = await partsPresent(page, "anatomy", {
-      root: CONTRACTS.select.parts.root.classes,
-      label: CONTRACTS.select.parts.label.classes,
-      trigger: CONTRACTS.select.parts.trigger.classes,
-    });
+    for (const kind of MDY_WIDGET_KINDS) {
+      const owed = owedParts(kind);
+      owedTotal += owed.length;
 
-    // The control: the parts of the anatomy that both renderers do build. Without these, a failure
-    // below would say nothing about `trigger` — it would say the mount never happened.
-    expect(built.root, `${host.name} built no element wearing the contract's root classes`).toBe(true);
-    expect(built.label, `${host.name} built no element wearing the contract's label class`).toBe(true);
+      const field: Record<string, unknown> = { name: "f", kind, label: `Label ${kind}`, validators: { required: true } };
+      if (needsOptions(kind)) field.options = [{ value: "a", label: "A" }, { value: "b", label: "B" }];
+      const mountId = `requires-${kind}`;
 
-    // And the part the contract gives a role to. Nothing in the published surface says a renderer
-    // may answer this with something else.
+      const mounted = await page.evaluate(({ api, id, declared }) =>
+        (window as never as Record<string, { mountFields(id: string, fields: unknown[]): { mounted: boolean; message?: string } }>)[api]
+          .mountFields(id, [declared] as never), { api: host.api, id: mountId, declared: field });
+      expect(mounted.mounted, `${kind} did not mount: ${mounted.message ?? ""}`).toBe(true);
+      await settled(page);
+
+      const built = await partsPresent(
+        page,
+        mountId,
+        Object.fromEntries(owed.map((part) => [part, CONTRACTS[kind].parts[part].classes])),
+      );
+
+      // The control, per kind: the root is one of the owed parts and is always built, so a kind that
+      // failed to render at all is a mount failure rather than a list of missing parts.
+      expect(built.root, `${host.name} built nothing at all for ${kind}`).toBe(true);
+
+      for (const [part, present] of Object.entries(built)) {
+        if (!present) gaps.push(`${kind}.${part}`);
+      }
+    }
+
+    // The sweep has to be asking for something. A contract that stopped requiring anything would
+    // leave this test green while measuring nothing.
+    expect(owedTotal, "the contract requires almost nothing, so this sweep is not a check").toBeGreaterThan(50);
+
     expect(
-      built.trigger,
-      `${host.name} built no ${CONTRACTS.select.parts.trigger.classes.join(".")}, which the contract declares with role ${CONTRACTS.select.parts.trigger.role} and marks optional: false`,
-    ).toBe(true);
+      gaps,
+      `${host.name} did not build parts the contract declares required and not overlay-only`,
+    ).toEqual([]);
   });
 }
