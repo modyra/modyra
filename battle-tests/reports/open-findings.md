@@ -11631,3 +11631,32 @@ that the model reports an error for* — which names `react` for its own broken 
 an unknown `fieldKind` the answer is `core`, `react` and `angular`. The battle is not widened here:
 it already asserts that **no** target may say yes, and one fixture proving it is enough to make the
 point that three do.
+
+## Measured, not filed: the node tier's count has a band, and it is the Studio packs
+
+Three runs of `pnpm battle` on the same tree, minutes apart:
+
+```
+quiet machine        526 tests, 43 failed
+quiet machine        526 tests, 42 failed
+while packing        526 tests, 45 failed
+```
+
+The three that move are all in `generated-identifiers.battle.test.mjs`, and they fail with *"the
+studio packages could not be packed and installed"* — the assertion those battles put first for
+exactly this. Run alone the file is 13 of 13 green; run beside `option-lists` it is green too, in
+parallel and serialised. What makes them fail is load, and the load is largely their own: that one
+file calls `runInConsumer` **six times**, each packing five packages and running an `npm install`.
+
+**Not filed as a finding** because it is the suite's own machinery, it is declared in the file that
+does it, and no assertion is weakened by it. **Recorded** because a count with a ±3 band is a count
+that can mislead, and it misled this hunt tonight: three battles that had moved were read as a peer's
+uncommitted change breaking them, and reported as such before being re-measured.
+
+The fix is a per-process pack cache — the tarballs and the consumer built once instead of six times —
+and it is deliberately not done here: six call sites in a seven-hundred-line file, for a load win, is
+the opportunistic refactor the working method warns against. Whoever does it should keep the first
+assertion, because a genuine packaging break must still read as one.
+
+**Until then, the number to trust is the smallest of a few runs on a quiet machine**, and any
+comparison across runs has to survive being re-measured before it becomes a claim.
