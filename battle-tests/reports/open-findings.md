@@ -10340,3 +10340,20 @@ re-baselining. Both are per-leaf-path APIs meeting collections whose keys arrive
 Nothing is lost or mis-sent — a consumer can still read `getValue()` and send everything. What is
 wrong is that a capability the release notes announce as available is not on the surface a consumer
 holds, and the public substitute cannot reach a collection.
+
+### Checked and clean: the rest of the path-taking family
+
+Measured while looking for a fourth instance of finding 174's shape. There is not one.
+
+- **`removeValidators(name, key)` takes two arguments**, and the pair works: added under a key the
+  rule fires, removed by that key it is gone, and removing a key that was never added leaves the rule
+  that is there. It does **not** remove a schema's own validators, which is right — they were not
+  added under a key.
+- **`removeField(name)` is for a ghost path** — a name a rule registered that the schema does not
+  declare — so calling it on a declared field doing nothing is the documented behaviour, not a gap.
+
+Both looked broken in a first sweep and neither is: `removeValidators` was called with one argument,
+and `removeField` with a name the schema declares. Two misuses of my own in one probe, both caught by
+reading the declaration rather than the result. That is the same error as `timepickerDialKeyIntent`
+earlier in this campaign — **a function called with the wrong arity answers, and the answer looks like
+a finding.**
