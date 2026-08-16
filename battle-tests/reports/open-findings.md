@@ -12473,6 +12473,21 @@ with no `onViolation` callback: **the channel was never wired, and its absence w
 having none.** Eighth instrument error of the night, caught by wiring the channel before writing
 anything down.
 
-`adversarial/security/a-sanitizer-that-cannot-run.battle.test.mjs` is green and now holds all four
-rows, with the two working cases asserted first so a `sanitizer-error` cannot be a channel that fires
-for everything.
+**And the whole violation vocabulary fires.** All five kinds the contract names were driven end to
+end, each doing what its documentation says:
+
+```
+sanitized         markup stripped
+max-length        "far too long" with maxValueLength 5  →  "far t", truncated
+draft-shape       a draft entry of the wrong shape dropped, the field keeps its initial
+error-path        a server error at "__proto__.polluted" dropped, 0 errors carried
+sanitizer-error   the value kept as it arrived
+```
+
+`violation-telemetry` already holds that ground — its first battle is *"every kind of interception
+the contract names is reported, against the path it happened at"*, and it has one for a failing
+policy sanitizer too. So the new battle was **narrowed to what it alone covers**: `setSanitizer`
+appears nowhere in the existing file, and the per-field door is measured beside the policy one only
+as the comparison, because a protection that reports on one path and not the other is worse than one
+that reports on neither. Two battles asserting the same thing make a suite expensive without making
+it stronger.

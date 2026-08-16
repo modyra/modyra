@@ -1,10 +1,11 @@
 /**
  * The per-field sanitizer, and what happens when it cannot do its job.
  *
- * `security.sanitize` is documented as a protection with a stated purpose — `"strict"` *"removes `<`,
- * `>` and backticks so the value can never form markup"* — and a custom function is *"full control;
- * receives the whole field value and returns the sanitized one"*. `setSanitizer(name, fn)` installs
- * one on a single field, and had no battle at all.
+ * `violation-telemetry` already holds the policy door: every interception kind the contract names,
+ * and a policy sanitizer that fails. It reaches that machinery through `security.sanitize`, and
+ * `setSanitizer` appears in it nowhere. **That per-field door is what this battle is for**, and the
+ * policy is measured beside it only as the comparison — a protection that reports on one path and
+ * not the other is worse than one that reports on neither.
  *
  * A function that is full control is a function that can fail. What the engine does then decides
  * whether a broken sanitizer is a defect a consumer finds or one their users carry: the value is kept
@@ -44,19 +45,8 @@ battle(
     environments: ["node"],
   },
   async (ctx) => {
-    // The control: the declared profile does what its documentation says.
-    const strict = formWatching({ sanitize: "strict" });
-    strict.form.f.bio.set(MARKUP);
-    ctx.log.note("the declared strict profile", { value: strict.form.getValue().bio, violations: strict.violations });
-
-    expectClaim(!strict.form.getValue().bio.includes("<") && strict.violations.includes("sanitized"), {
-      claimIds: ["SEC-002"],
-      what: "the strict profile did not strip markup or did not report doing so",
-      detail: () => JSON.stringify({ value: strict.form.getValue().bio, violations: strict.violations }),
-    });
-
-    // The second control: a per-field sanitizer that works is applied and reported through the same
-    // channel, so the channel is not one that only ever carries errors.
+    // The control: a per-field sanitizer that works is applied and reported through the channel, so
+    // the channel is not one that only ever carries errors and the door itself is known to work.
     const working = formWatching();
     working.form.setSanitizer("bio", (value) => String(value).replace(/</g, ""));
     working.form.f.bio.set(MARKUP);
@@ -102,7 +92,6 @@ battle(
       detail: () => JSON.stringify(policy.violations),
     });
 
-    strict.form.destroy();
     working.form.destroy();
     broken.form.destroy();
     policy.form.destroy();
