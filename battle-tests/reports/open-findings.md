@@ -12583,3 +12583,30 @@ consequences rather than from the engine. That is defensible: teardown often run
 going away, where a log is noise nobody reads. It is recorded here because the neighbouring failure of
 the same shape — a sanitizer that throws — *is* reported, through `onViolation`, and the two doors
 having different answers is worth knowing before either is changed.
+
+## Measured, not filed: what `test:guides` reaches, and whether the samples resolve
+
+`npm run test:guides` runs `node --test docs/examples/*/*.test.mjs`. Counted:
+
+```
+example directories with tests    5     feature-tour · formik-migration · rhf-migration
+                                        server-validation · typed-forms
+guides in docs/guides             24
+fenced code blocks in them        121, of which 85 are TypeScript or JavaScript
+```
+
+So the check named for the guides executes five example programs, and nothing runs the 85 samples a
+reader copies. That is the shape of finding 190 — a name broader than the reach — and it is recorded
+rather than filed, because the risk it describes was then measured and is not there:
+
+**Every named import in every guide resolves.** 53 named imports from `@modyra/core`,
+`@modyra/widgets`, `@modyra/lit`, `@modyra/zod` and `@modyra/standard-schema`, checked against what
+each package exports. Two came back missing and both are false positives of the instrument rather than
+the guides: `MdyStandardSchemaTree` and `MdyDynamicField` are **type-only exports**, declared as
+`export type` and absent from a runtime `Object.keys(await import(...))`. A check built on runtime
+keys cannot see a type, which is worth stating beside the number it produced.
+
+What the gap would cost if it ever bit is not hypothetical — this hunt spent an hour on a Studio probe
+built as `{ field: { kind } }` when `FieldNode` declares `fieldKind`, and finding 189 was an ADR
+naming a subpath that does not exist. A sample carrying the same mistake would compile nowhere and
+nothing here would say so.
