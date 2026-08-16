@@ -11510,3 +11510,62 @@ before any assertion about a rejected one means anything.** And the effects are 
 parser's own vocabulary — `visible`, `hidden`, `enabled`, `disabled` — rather than guessed. Guessing
 `show` is what made a valid rule and an invalid one look identical, which is how a false control
 passed.
+
+## 193. A field nobody named
+
+**Severity** S1 · **Classification** silent acceptance at a public door · **Battle**
+`adversarial/studio/every-target.battle.test.mjs` + `a-field-nobody-named.consumer.mjs` (red, through
+packed tarballs) · **Claims** STU-003
+
+A Studio project is a file: saved, committed, hand-edited, written by an older editor and read by a
+newer one. `loadProject` is the door it comes through, and the model has a named refusal it uses:
+
+```
+a project that is not an object     StudioModelError
+a schema that is not an object      StudioModelError
+a studioVersion from the future     StudioModelError — "only 1 is supported"
+```
+
+Below the root, the same door is quiet. A field node with no `name` is accepted with **no
+diagnostic**, compiles with **no diagnostic**, and the core target emits:
+
+```ts
+import { createForm, field } from "@modyra/core";
+
+const schema = {
+  undefined: field(undefined),
+};
+
+export const form = createForm(schema, { history: true });
+```
+
+Valid TypeScript. So STU-001 — *generated code compiles* — is kept, while the form declares a field
+called `undefined` holding `undefined`. STU-003's sentence is *a field the author declared reaches
+the output, or is reported as dropped*, and this is answered by neither half: it reaches the output
+as something that is not a field, and nothing is reported.
+
+A `kind` the catalog does not declare goes the same way — accepted at both doors, emitted as though
+the kind had never been written.
+
+**And two shapes it meets with a raw type error instead of its refusal:**
+
+```
+a field node with no validators     TypeError: node.validators is not iterable
+a group with no children            TypeError: node.children is not iterable
+```
+
+The first is a plausible file: `validators` is an array a field carries, and a project written before
+it existed, or hand-edited, has none. The editor crashes rather than reporting.
+
+**Measured through the packed tarballs**, not the workspace — the same pack-and-install the other
+Studio battles use, because these are private packages whose siblings are `workspace:*`. What is
+red is what a consumer installs.
+
+**The controls, in the order that makes the red mean something.** The consumer ran. A well-formed
+field reached the output under its own name with nothing reported — without which a compact `form.ts`
+would look like a dropped field. And the door's three named refusals hold — without which meeting a
+raw `TypeError` would be the only thing this door does rather than a departure from what it does
+elsewhere.
+
+Goes green when a node the model cannot represent is reported the way a bad `studioVersion` is. The
+diagnostic channel exists, is populated at the root, and is empty one level down.

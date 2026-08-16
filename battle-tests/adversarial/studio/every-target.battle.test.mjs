@@ -204,3 +204,72 @@ battle(
     });
   },
 );
+
+battle(
+  {
+    claims: ["STU-003"],
+    title: "a field the author declared reaches the output under a name, or is reported",
+    environments: ["node"],
+  },
+  async (ctx) => {
+    // The same packed consumer, a different script: a project file with one thing missing, through
+    // the door a saved project comes in by and out through a target.
+    const result = generateInConsumer("a-field-nobody-named.consumer.mjs");
+    ctx.log.note("a project file that is not what Studio would have written", {
+      ran: result.ran,
+      nameless: result.nameless?.form?.replace(/\s+/g, " ").slice(0, 80),
+      refusals: result.refusals,
+    });
+
+    expectClaim(result.ran, {
+      claimIds: ["STU-003"],
+      what: "the packed consumer did not run, so nothing below is about Studio",
+      detail: () => String(result.message ?? ""),
+    });
+
+    // The control: a well-formed field arrives under its own name with nothing reported, so a form
+    // that is small is not mistaken for a field that was dropped.
+    expectClaim(result.sound.door === "accepted" && result.sound.form.includes("amount:") && result.sound.loadDiagnostics === 0, {
+      claimIds: ["STU-003"],
+      what: "a well-formed field did not reach the output under its name",
+      detail: () => JSON.stringify(result.sound),
+    });
+
+    // And the door's own refusal, used for three shapes it will not read. Without this, meeting a
+    // raw TypeError below would be the only thing this door does rather than a departure.
+    expectEqual(Object.values(result.refusals), ["StudioModelError", "StudioModelError", "StudioModelError"], {
+      claimIds: ["STU-003"],
+      what: "the door has no named refusal, so a raw type error is not a departure from anything",
+    });
+
+    // A field with no name: accepted, compiled, and emitted under the name JavaScript prints for a
+    // value that is not there.
+    expectClaim(!result.nameless.form?.includes("undefined"), {
+      claimIds: ["STU-003"],
+      what: "a field with no name was emitted as a member called `undefined`",
+      detail: () => String(result.nameless.form ?? "").replace(/\s+/g, " "),
+    });
+
+    expectClaim((result.nameless.loadDiagnostics ?? 0) + (result.nameless.generateDiagnostics ?? 0) > 0, {
+      claimIds: ["STU-003"],
+      what: "a field with no name passed the loader and the generator without a word",
+      detail: () => JSON.stringify(result.nameless),
+    });
+
+    // A kind the catalog does not declare, through the same two doors.
+    expectClaim((result.strangeKind.loadDiagnostics ?? 0) + (result.strangeKind.generateDiagnostics ?? 0) > 0, {
+      claimIds: ["STU-003"],
+      what: "a field whose kind the catalog does not declare was carried to the output unreported",
+      detail: () => JSON.stringify(result.strangeKind),
+    });
+
+    // And the two shapes the door meets with a raw type error rather than its own refusal.
+    for (const what of ["noValidators", "groupNoChildren"]) {
+      expectClaim(result[what].door === "accepted" || result[what].door === "StudioModelError", {
+        claimIds: ["STU-003"],
+        what: `${what} was met with a raw ${result[what].door} rather than the door's own refusal`,
+        detail: () => String(result[what].message ?? ""),
+      });
+    }
+  },
+);
