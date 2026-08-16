@@ -11008,3 +11008,47 @@ grammar for.
 
 Goes green when one of the two is qualified: `optional` gains a stated meaning relative to its
 parent, or the six parts stop being marked required, or a third statement says which export wins.
+
+## 187. A width nothing can carry
+
+**Severity** S3 · **Classification** declared-but-inert property · **Battle**
+`adversarial/widgets/a-width-nothing-can-carry.battle.test.mjs` (red) · **Claims** UI-010
+
+`capabilities.anchoring` states how a kind's overlay is placed. Three kinds declare how narrow it may
+get: `select` 160, `multiselect` 160, `colors` 280.
+
+The path from that declaration to an element is published in full, and a minimum width is in none of
+it:
+
+```
+capabilities.anchoring        matchAnchorWidth, minSpace, minWidth, alignment
+decideOverlayPlacement  →     placement, alignment, maxHeight, width, fits
+MDY_CSS_PROPERTIES.overlay    top bottom left right width max-width max-height transform
+overlayStyleProperties  →     the same eight, none of them a minimum
+```
+
+Measured in the browser, in a 1280px viewport with room for either number:
+
+```
+colors   declared minWidth 280   popup 142px wide   computed min-width 0px
+select   declared minWidth 160   popup  66px wide   computed min-width 0px
+```
+
+The whole chain is readable in one process, so the battle needs no renderer. The browser numbers are
+the consequence, not the proof.
+
+**The control that makes it an absence rather than a dead pipeline.** `maxHeight` is declared beside
+`minWidth`, survives into the decision, is named in the vocabulary and is emitted as
+`--mdy-overlay-max-height`. The neighbouring number arrives; this one has nowhere to go.
+
+**What is not claimed.** That `minSpace` is inert — it is plausibly an input to the placement
+decision rather than an output, and this battle does not test it. Nor that `matchAnchorWidth` is
+broken: `select`'s dropdown does track its trigger's width, which is also why 66px happened. When
+both are declared they cannot both hold, and nothing published says which wins — but the measured
+defect here is narrower and needs no such argument: the minimum has no carrier at all.
+
+Same shape as finding 114, one severity band down: declared, type-correct, offered to a consumer
+reading the contract, and read by nothing. The consequence is a 142px colour picker, not a leak.
+
+Goes green when a minimum width reaches the element — a ninth custom property, a `minWidth` on the
+decision — or when the three kinds stop declaring one.
