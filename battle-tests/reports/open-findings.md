@@ -12225,3 +12225,39 @@ it has a tier of its own — and nothing in `.github/workflows` runs that tier. 
 nobody would see turn red.
 
 The browser tier's 73 are all attributable: 51 spec files, every one named in this register.
+
+## 197. One key, two forms, one answer kept
+
+**Severity** S1 · **Classification** silent loss of a user's autosaved work · **Battle**
+`adversarial/persistence/one-key-two-forms.battle.test.mjs` (red) · **Claims** PER-004
+
+A draft key is an identifier a consumer writes, and `draft: { key, storage }` is the whole surface.
+Two live forms holding the same key is not exotic — a component rendered twice, a route mounting a
+form beside another, a key copied along with the options it sits in.
+
+```
+form A   alpha = "the first person's answer"
+form B   beta  = "the second person's answer"
+both with draft key "shared", both alive
+
+the envelope   {"__mdyDraft":1,"savedAt":…,"value":{"beta":"the second person's answer"}}
+diagnostics    none, at devWarnings' default
+form A reopened   {"alpha": ""}
+```
+
+**The last save takes the whole envelope.** Not a merge and not a refusal: one person's typing is gone
+from the only place it was being kept, and reopening that form restores nothing — because the draft
+under its key describes a field it does not have, which is the shape gate correctly refusing a draft
+that should never have been there.
+
+**Nothing is said at any level.** Measured with `devWarnings` at its default rather than switched off,
+because the question is what a consumer is told. The engine holds the key, the storage and a
+diagnostics channel it uses elsewhere for exactly this kind of thing — a draft that cannot be read, a
+storage that refuses, a shape that does not match all reach it.
+
+**The control.** A form with a key of its own, through the same storage, saves and restores. So the
+empty restore is the second form arriving, not drafts failing.
+
+Goes green when a second form claiming a live key is reported. Whether it should also be refused is a
+product decision — a warning naming the key would already turn a silent data loss into a five-minute
+fix, and it is the smaller change.
