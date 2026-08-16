@@ -11865,3 +11865,46 @@ Reconciled honestly, the count is not *closed versus open*. It is **thirty-three
 fifty-nine to reconcile, and the handful still open with a measurement behind them** — and the middle
 column is the one that costs the most, because an unrecorded repair makes the next person redo the
 work rather than merely check it.
+
+## 195. A value the panel cannot print
+
+**Severity** S2 · **Classification** published call stops instead of saying so · **Battle**
+`adversarial/reactivity/a-value-the-panel-cannot-print.battle.test.mjs` (red) · **Claims** API-001
+
+`@modyra/core/serialize` exists for one class of value, and says so in its own header: a native
+`File` has no enumerable own properties and stringifies to `{}` — *"a payload or a devtools panel
+showing an empty object where the user picked a document"* — and a value that refers to itself is
+*"described rather than walked: a cycle is a mistake to report rather than a stack to exhaust."*
+
+Both are handled, by description:
+
+```
+a File     → "[File: note.txt (5 bytes)]"
+a cycle    → "[Circular]"
+a BigInt   → TypeError: Do not know how to serialize a BigInt
+```
+
+A `BigInt` is the same class of value — one JSON cannot carry — and it is the one that throws.
+`mdyFormSnapshot`, which is what the devtools panel reads, throws with it:
+
+```
+createForm({ n: field(1) })   snapshot fine
+n.set(10n)                    TypeError, the panel stops
+```
+
+**A form can hold one.** The engine reports a wrong shape as a verdict rather than refusing the write
+— that is what lets a field show what a person typed and say why it is wrong — so a `BigInt` in a
+number field is a state the model reaches rather than one it forbids. A domain using BigInt for money
+or identifiers reaches it by writing the value it already uses.
+
+**And the panel is the thing a developer opens because something is already wrong.** A form in a
+state its author did not expect is exactly when the panel is worth having, and this is a state where
+it dies instead of describing what it found.
+
+**The controls, first and in this order.** The serializer still describes a `File` and a cycle — so a
+red here is one value and not the serializer. And the same form with an ordinary number snapshots
+cleanly — so the red is the value and not the panel.
+
+Goes green when a `BigInt` is described the way a `File` is. `Map`, `Set` and a function come out as
+`{}`, the same as plain `JSON.stringify` — not claimed here: the header names `File` and cycles as
+what it is for, and none of those three is a value a form's contracts say a field may hold.
