@@ -13763,6 +13763,51 @@ of: Free, Pro"*, a multiselect with one smuggled member fails with *"Every value
 B"*, and neither validator was declared by the document.
 
 
+## 225 — The conformance gate accepts a runtime that decides `changed` differently (S1, REA-001 REA-003)
+
+`runReactivityContractTests` is what an adapter runs to claim it implements `MdyReactivity`. A gate is
+worth what it refuses, so eleven deliberate defects were run against it — each a mistake an adapter
+could plausibly ship. **Nine are caught**, several by more than one case:
+
+```
+a computed that never recomputes            caught
+a computed that recomputes on every read    caught
+an effect that never runs                   caught
+an effect that runs once and never again    caught
+asReadonly handing back the writable        caught
+update() ignoring its function              caught
+batch() dropping the work                   caught
+untracked() tracking anyway                 caught
+observe() firing on the initial run         caught
+```
+
+One is not: **an adapter whose default equality is `===` rather than `Object.is`**. The suite has a
+case for a *declared* `signalEquality` and none for the equality an adapter uses when it declares
+nothing.
+
+Measured against vanilla, which is `Object.is`:
+
+```
+             0 → -0          NaN → NaN       1 → 2
+vanilla      notifies        does not        notifies
+`===`        DOES NOT        does not        notifies
+```
+
+A number field holding `0`, written `-0`, changes value and nothing re-renders. Small in exactly the
+way finding 199 was small before it was measured — and the same root, an equality chosen once and
+assumed to be the same everywhere.
+
+Pinned by `adversarial/reactivity/a-conformance-suite-that-lets-one-through.battle.test.mjs`, which
+runs the published suite against the broken runtime through a recording `test`/`assert` pair. Three
+controls: both runtimes must notify an ordinary change, the broken one must actually diverge, and the
+suite must accept the reference runtime.
+
+**The other two "survivors" were null mutants**, and saying so matters more than the finding: a
+`createScope` wrapper that still called the original cascade, and a first `===` attempt whose check
+ran *before* vanilla's own `Object.is` and so changed nothing. Both read as "slipped through" until
+the divergence was measured directly. A mutation experiment needs its mutants proven to mutate.
+
+
 ## The browser tier, measured — a baseline this register never had
 
 `npm run battle:browser` on the working tree at `6ee29144`:
@@ -13919,9 +13964,9 @@ the half-fix to overlay teardown did not close it on plain either.
 ## The register's own shape, measured
 
 ```
-numbered findings        224
-closed or retracted       39
-open with a battle       191
+numbered findings        225
+closed or retracted       43
+open with a battle       192
 open with none            10
 ```
 
