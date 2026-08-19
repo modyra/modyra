@@ -14238,6 +14238,41 @@ stop. It asks that the numbers add up **or that the document is told they do not
 a small refused document to add up and every document to have really been refused.
 
 
+## 235 — A version this parser does not have, refused as a broken field (S2, DYN-004 DYN-003)
+
+**H-3 of the Fable 5 charter.** The charter names a tear — *"the parser accepts a version 4 that has
+no published schema at all"* — and the measurement turns it around: `spec/dynamic-form-v4.schema.json`
+now exists, v4 parses in the `schema` shape, and the tear is elsewhere.
+
+The contract publishes `MDY_DYNAMIC_UNSUPPORTED_VERSION`, one of the ten codes in
+`MDY_DYNAMIC_DIAGNOSTICS`. It is raised on one of the two shapes a document can take:
+
+```
+{ version: 4,    fields: [...] }   MDY_DYNAMIC_UNSUPPORTED_VERSION
+{ version: 5,    schema: {...} }   MDY_DYNAMIC_INVALID_FIELD
+{ version: 99,   schema: {...} }   MDY_DYNAMIC_INVALID_FIELD
+{ version: null, schema: {...} }   MDY_DYNAMIC_INVALID_FIELD
+```
+
+**Nothing is smuggled through** — every unsupported version is refused and produces zero fields, and
+that is the half that matters most. What is wrong is what the refusal says. A host handed a document
+from a newer publisher reads *"invalid field"* and goes looking for the broken field; the answer is
+that the document is from a version this reader does not have, and the code that says so exists, is
+published, and is used one path over.
+
+The same gap shows in the message the flat path *does* produce: *"expected 1, 2 or 3"* — while
+version 4 is accepted in the `schema` shape. The sentence is a version behind the parser it belongs
+to.
+
+Fourth finding in a row with this shape, after 230, 231 and 232: **the framework owns the answer and
+gives it at one door of two.**
+
+Pinned by `adversarial/dynamic-contract/a-version-refused-for-the-wrong-reason.battle.test.mjs`, with
+two controls — a supported version must parse, and the flat shape must already name the version — and
+a separate assertion that no unsupported version produces fields, so the serious half is pinned apart
+from the diagnostic half.
+
+
 ## The browser tier, measured — a baseline this register never had
 
 `npm run battle:browser` on the working tree at `6ee29144`:
@@ -14394,9 +14429,9 @@ the half-fix to overlay teardown did not close it on plain either.
 ## The register's own shape, measured
 
 ```
-numbered findings        234
-closed or retracted       54
-open with a battle       201
+numbered findings        235
+closed or retracted       55
+open with a battle       202
 open with none            10
 ```
 

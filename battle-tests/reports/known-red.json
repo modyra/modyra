@@ -9,6 +9,7 @@
     "[S0][DYN-001,SUB-001] the other bridge's value is the one its schema describes too",
     "[S0][DYN-002,DYN-001,COL-001] a collection that survived a round trip can still hold a row",
     "[S0][DYN-004,DYN-003] a key the published schema refuses is one the parser reports",
+    "[S0][DYN-004,DYN-003] a version the parser does not support is refused as a version",
     "[S0][DYN-004,SEC-004] the counts add up, or say that they do not",
     "[S0][LIF-001,PER-001] a form built without being activated is a paused form, and says so",
     "[S0][SEC-002,SEC-005] what the panel masks is protected elsewhere, or says it is only a guess",
