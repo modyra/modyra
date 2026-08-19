@@ -190,6 +190,13 @@ export type { MdyFieldKind } from "./field-kinds.js";
 // entry point, forty-seven of them from the least curated file in the package — so neither the type
 // surface nor the coverage audit was measuring a surface anyone had chosen.
 export {
+  MDY_VALIDATION_MESSAGES,
+  MDY_VALIDATION_MESSAGES_DEFAULT,
+  validationMessagesForLocale,
+} from "./validation-messages.js";
+export type { MdyValidationMessages } from "./validation-messages.js";
+
+export {
   MDY_MAX_EXPRESSION_DEPTH,
   evaluateExpression,
   evaluateRuleCondition,
