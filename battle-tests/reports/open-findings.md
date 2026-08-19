@@ -13370,6 +13370,42 @@ comment on `MdyDynamicRecordNode` reserves sessions to the application, and this
 builder emitting collections has no way to say it, so conditional rows are typed-only today.
 
 
+## 216 — A run in flight across a pause never settles (S0, LIF-001 SUB-001)
+
+`docs/guides/typed-forms.md` makes three promises in one paragraph: `deactivate()` *"pauses them
+again without losing any state"*, `activate()` *"resumes exactly where it left off"*, and both are
+*"idempotent and safe to call any number of times in any order"*. The same paragraph says what the
+mechanism exists for — it is what makes `useMdyForm` safe under React Strict Mode's *"dev-only
+mount→unmount→remount cycle"*.
+
+That cycle is immediate, and an async validator at `asyncDebounceMs: 0` starts on the first write.
+"A run is in flight when `deactivate()` is called" is therefore not a corner; it is the shape of the
+environment the feature was built for.
+
+```
+                      in flight   after the run settles       after activate()
+never paused          pending     not pending, submittable
+paused mid-flight     pending     PENDING, not submittable    PENDING, not submittable
+```
+
+The run resolves. Its answer is never taken, `pending` never reaches a terminal state, and
+`canSubmit` stays false — so the submit button of a form the user has finished filling never comes
+back, and `activate()` does not bring it back either.
+
+Not permanent, and the way out is what makes it worth pinning rather than tolerating: a **new** write
+starts a new run, and when that one settles the form frees itself. The user's escape from a stuck
+submit button is to touch the field again — which they have no reason to do, because nothing on
+screen says anything is waiting.
+
+Pinned by `adversarial/lifecycle/a-run-that-outlived-the-pause.battle.test.mjs`, which compares the
+paused run against the same run without a pause rather than against a remembered constant, with
+controls requiring the unpaused run to settle and a run to have been in flight at the pause.
+
+`adversarial/lifecycle/paused-without-losing-anything.battle.test.mjs` already covers the draft, the
+history and the not-starting of new runs across a pause. What it does not cover is a run that was
+**already** in flight, which is the one the environment guarantees.
+
+
 ## The browser tier, measured — a baseline this register never had
 
 `npm run battle:browser` on the working tree at `6ee29144`:
@@ -13526,9 +13562,9 @@ the half-fix to overlay teardown did not close it on plain either.
 ## The register's own shape, measured
 
 ```
-numbered findings        215
-closed or retracted       34
-open with a battle       186
+numbered findings        216
+closed or retracted       36
+open with a battle       187
 open with none             6
 ```
 

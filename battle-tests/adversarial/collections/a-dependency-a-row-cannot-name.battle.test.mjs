@@ -28,6 +28,10 @@
  * The approval stands for an input that is gone. And the direction is the one that opens: had the
  * old verdict been a refusal, the stale answer would have blocked a submit that should pass —
  * annoying. It was an approval, so the form submits a value nothing ever checked.
+ *
+ * The check below reads the cell it depends on rather than only its own value. A check reading only
+ * itself re-approves whenever it re-runs, so "it re-ran and approved again" and "it never ran" are
+ * the same reading — and the second is the one this is about.
  */
 
 import { createForm, field, group, record } from "@modyra/core";
@@ -119,6 +123,9 @@ battle(
 
     // And the consequence, on the arrangement an author would actually write: a verdict about a
     // value that has since changed must not still stand.
+    // The value the server approved against. The check below refuses anything else, so a verdict
+    // that outlives the value it was about becomes an error rather than a silence.
+    const approvedAgainst = "A1";
     const stale = await (async () => {
       const form = createForm(
         {
@@ -126,7 +133,13 @@ battle(
             group({
               code: field(""),
               verified: field("", [], {
-                asyncValidators: [async (value) => (value === "ok" ? [] : ["the server refused this"])],
+                // The check reads the cell it depends on, which is what ties the verdict to the
+                // value that changed. A check reading only its own value would re-approve on
+                // re-running, and "it re-ran" and "it never ran" would look identical from here.
+                asyncValidators: [
+                  async (_value, ctx) =>
+                    ctx.form.fieldValue("rows.a.code") === approvedAgainst ? [] : ["the code changed under the approval"],
+                ],
                 asyncDependsOn: ["code"],
                 asyncDebounceMs: 0,
               }),
