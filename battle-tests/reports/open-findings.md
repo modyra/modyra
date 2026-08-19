@@ -14507,7 +14507,22 @@ what the builder will build anyway. The battle asserts only that the two doors s
 Pinned by `adversarial/dynamic-contract/a-limit-only-one-door-keeps.battle.test.mjs`, with the
 124-level control that makes the measurement about the limit rather than about deep documents.
 
-Checked and clean while measuring this: the parser is iterative as ADR 0043 claims — a document
+**The builder is not a door without guards — it is a door with every guard but this one.**
+`compile.ts` imports from the same `guards.js` that declares the limit:
+
+```
+import { assertSafeDynamicName, isSafeDynamicSegment, MDY_MAX_DYNAMIC_PATTERN_LENGTH, warnDev }
+```
+
+Three of the four, and it enforces them: a child key of `__proto__`, `constructor`, `prototype`, `a.b`
+or `""` makes `buildDynamicFormSchema` throw `Invalid field name`, at the same document where the
+parser reports `MDY_DYNAMIC_UNSAFE_NAME`. The one name it does not import is
+`MDY_MAX_DYNAMIC_PATH_LENGTH`.
+
+Checked and clean while measuring this: the name guard holds at both doors for all five shapes above,
+including a `__proto__` written as a real own key with `defineProperty` — an object literal would have
+set a prototype instead of a key and the case would have vanished from the probe. The parser is
+iterative as ADR 0043 claims — a document
 100,000 collections deep parses, builds and creates a form, and `MDY_DYNAMIC_PATH_TOO_LONG` is
 published in `MDY_DYNAMIC_DIAGNOSTICS` (14 codes there now, not the 10 an earlier note in this
 register recorded).
