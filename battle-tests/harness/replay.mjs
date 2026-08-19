@@ -33,6 +33,23 @@ export async function replay(report) {
   });
   const operations = report.minimizedOperations?.length > 0 ? report.minimizedOperations : report.operations;
 
+  // A report with no sequence cannot be reproduced, and must not say it was. Replaying nothing lands
+  // on the initial state, so a report whose recorded state *is* the initial one comes back
+  // "reproduced" having executed not one operation — the failure it describes never happens, and the
+  // green means the opposite of what it looks like. Reports written from a break that was not driven
+  // through the operation interpreter are exactly this shape, and they say so in their own text.
+  if (!Array.isArray(operations) || operations.length === 0) {
+    await context.dispose();
+    return {
+      actual: null,
+      operations: [],
+      reproduced: null,
+      divergence: null,
+      comparable: false,
+      why: "the report carries no operations, so there is no sequence to reproduce",
+    };
+  }
+
   try {
     for (const operation of operations) {
       // `sync` is part of the sequence, not decoration: an operation the attack made without

@@ -13651,9 +13651,14 @@ missed defects are caught, and a *declared* source read passes. `harness.test.mj
 15/15, and the audit reports 0 violations over 439 files.
 
 
-## Two more of the Fase 2 false greens, tried and one repaired (harness)
+## Four of the Fase 2 false greens, tried — two were real (harness)
 
-The plan lists nine false greens the harness was never shown to catch. Two were tried.
+The plan lists nine false greens the harness was never shown to catch. Four were tried, and the two
+that were already covered are worth recording so nobody tries them again: **a malformed seed** is
+refused by `resolveSeed` with a named error — `abc`, `-1` and `3.5` all rejected, `42` and `0`
+accepted — and an unset one is drawn and announced rather than defaulted silently; **a replay against
+a state that was never a canonical observation** already answers `reproduced: null` rather than
+`true`, with the reasoning written beside it.
 
 **A differential comparing one object with itself.** `expectSameObservation(x, x)` passed and said
 nothing — one path measured twice, reported as agreement. It is an easy mistake to make, because the
@@ -13662,6 +13667,15 @@ two sides of a differential are built a dozen lines apart, and its green means n
 and `harness.test.mjs` carries the case, including its converse: two objects built separately and
 equal must still pass, because the rule is about identity and not content. Measured over the whole
 tier afterwards — **no battle was relying on it**, no new red.
+
+**A replay of a report with no sequence.** `replay()` came back `reproduced: true` for a report whose
+`operations` were empty — because replaying nothing lands on the initial state, and a report whose
+recorded state *is* the initial one then matches. The failure it describes never happens, and the
+green means the opposite of what it looks like. Reports written from a break that was not driven
+through the operation interpreter are exactly this shape, and several exist under
+`reports/failures/`; they say so in their own text and this did not read it. Now `reproduced: null`
+with a `why`, the same shape the file already uses for a report whose state was never comparable.
+`harness.test.mjs` carries the case, and the real replay test stays green.
 
 **The expected/actual matrix.** Twelve values — absent, `undefined`, `null`, `NaN`, `0`, `-0`, `""`,
 `false`, `[]`, `{}`, `[[]]`, `{a:1}` — compared pairwise, 132 pairs. Two came back equal: absent

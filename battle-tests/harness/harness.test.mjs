@@ -149,6 +149,17 @@ test("the canonical encoding keeps apart what JSON would merge", () => {
   assert.throws(() => encodeValue(cyclic), BattleHarnessError, "a cycle is a harness error, not a truncation");
 });
 
+test("a report with no sequence does not claim to have reproduced anything", async () => {
+  const { KEYED_ROWS_SPEC } = await import("../models/schemas.mjs");
+  const base = { schema: KEYED_ROWS_SPEC, formOptions: { options: {} } };
+
+  for (const report of [{ ...base, operations: [] }, { ...base }]) {
+    const outcome = await replay(report);
+    assert.equal(outcome.reproduced, null, "no sequence means no reproduction, not a successful one");
+    assert.ok(outcome.why, "and it says why");
+  }
+});
+
 test("a differential comparing one object with itself is a harness error", () => {
   const built = encodeValue({ rows: { a: 1 } });
   const alsoBuilt = encodeValue({ rows: { a: 1 } });
