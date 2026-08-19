@@ -1,7 +1,22 @@
 # What is red, and why
 
-Thirty battles fail on purpose, out of a suite of three hundred and three. Each is a claim the suite
-makes about published behaviour that the engine does not currently keep, reduced to the smallest
+## Open now, and in the order they are repaired
+
+```
+S0     8      the whole of it before any S1
+S1    14
+S2     3
+      --
+      25      open reds, 2026-08-19
+```
+
+Severity is the order of work: every S0, then every S1, then S2 and below. The same counts are in
+`known-red.json`, which the gate writes and sorts the same way, so the top of that list is the next
+thing to repair. This section is written from that file rather than by hand — when the two disagree
+the file is right, because a run wrote it.
+
+Twenty-five battles fail on purpose, out of a suite of five hundred and thirty-eight. Each is a claim
+the suite makes about published behaviour that the engine does not currently keep, reduced to the smallest
 sequence that shows it, and each names what would turn it green — usually two answers, because most
 have more than one defensible repair and the battle asserts the property rather than the fix.
 
