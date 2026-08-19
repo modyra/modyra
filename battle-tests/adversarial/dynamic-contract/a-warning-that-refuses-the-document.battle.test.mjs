@@ -1,25 +1,19 @@
 /**
- * The one warning a parse can report, and what it costs.
+ * The one warning a parse can report, and what it does not cost.
  *
  * `MdyDynamicDiagnostic.severity` is published as `"warning" | "error"`, so a consumer reads it to
- * tell what must be fixed from what is worth knowing. Every advisory finding the parser has — a
- * validator written on the field, a required a slider always satisfies, two options of one value —
- * carries `severity: "error"`. Exactly one diagnostic in the parser is a warning:
- * `MDY_DYNAMIC_COUNT_INCOMPLETE`, which says the counts are a floor because the reader stopped
- * counting.
+ * tell what must be fixed from what is worth knowing. Strict mode reads it too: it refuses a document
+ * that reports an **error**, and a warning leaves the document usable in either mode.
  *
- * Strict mode accepts a document only when it reports nothing at all, so that warning refuses the
- * document. Measured, one declaration over the reader's counting budget:
+ * Exactly one diagnostic in the parser is a warning. `MDY_DYNAMIC_COUNT_INCOMPLETE` says the counts
+ * are a floor because the reader stopped counting — a fact about the reader, not a defect in the
+ * document, and the fields are all there to be had:
  *
- *     99,999 declarations   strict: ok, 99,999 fields      lenient: ok, 99,999 fields
- *    100,001 declarations   strict: refused, 0 fields      lenient: ok, 100,001 fields
+ *      99,999 declarations   strict: ok,  99,999 fields   lenient: ok,  99,999 fields
+ *     100,001 declarations   strict: ok, 100,001 fields   lenient: ok, 100,001 fields
  *
- * Nothing in the second document is malformed. It is refused for a fact about the reader, and the
- * two modes disagree about the whole document rather than about a field in it.
- *
- * The battle asks that a diagnostic the parser itself calls a warning does not refuse the document.
- * Either repair answers it: strict fails on errors and not on warnings, or the parser stops calling
- * this a warning and says the document is too large to read.
+ * The battle holds the two modes to the same answer at the budget's edge, so that a severity the
+ * result publishes keeps meaning something at the one door that acts on it.
  */
 
 import { battle } from "../../harness/battle.mjs";
@@ -51,7 +45,6 @@ battle(
     claims: ["DYN-003"],
     title: "a diagnostic the parser calls a warning does not refuse the document",
     environments: ["node"],
-    requires: ["structural"],
   },
   async (ctx) => {
     // The control: a large document is not refused for being large, so what the measurement below
