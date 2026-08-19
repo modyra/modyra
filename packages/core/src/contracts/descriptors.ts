@@ -25,6 +25,8 @@ export interface MdyFieldDescriptor<TValue> {
   readonly when: ((value: unknown, formValue: Record<string, unknown>) => boolean) | null;
   /** Per-field sanitizer override; null → the form-level policy applies. */
   readonly sanitize: MdySanitizer | null;
+  /** Whether the value is a secret. See {@link MdyFieldOptions.sensitive}. */
+  readonly sensitive: boolean;
 }
 
 /** Group descriptor produced by {@link group}. */
@@ -50,6 +52,7 @@ export interface MdyAnyFieldDescriptor {
   readonly asyncWhen: ((value: unknown, formValue: Record<string, unknown>) => boolean) | null;
   readonly when: ((value: unknown, formValue: Record<string, unknown>) => boolean) | null;
   readonly sanitize: MdySanitizer | null;
+  readonly sensitive: boolean;
 }
 
 export interface MdyAnyGroupDescriptor {

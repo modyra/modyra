@@ -371,6 +371,8 @@ export class MdyFormEngine
   private readonly _security: MdySecurityPolicy;
   /** Per-field sanitizer overrides (schema-level), keyed by dotted path. */
   private readonly _fieldSanitizers = new Map<string, MdySanitizer>();
+  /** Paths a schema declared as holding a secret. */
+  private readonly _sensitivePaths = new Set<string>();
 
   readonly state: MdyFormState;
 
@@ -821,6 +823,20 @@ export class MdyFormEngine
     const rec = this._fields.get(name) ?? this._detachedFields.get(name);
     if (!rec) return;
     if (rec.entryProblem() !== problem) rec.entryProblem.set(problem);
+  }
+
+  markSensitive(name: string): void {
+    this._sensitivePaths.add(name);
+  }
+
+  /**
+   * The paths the schema declared as secrets, for whoever would otherwise copy their values out.
+   *
+   * Read by the devtools panel, which has no other way to know: its name heuristic is a guess in
+   * both directions, and a declaration is the one statement that is not.
+   */
+  sensitivePaths(): readonly string[] {
+    return [...this._sensitivePaths];
   }
 
   setSanitizer(name: string, sanitizer: MdySanitizer): void {
@@ -1331,7 +1347,15 @@ export class MdyFormEngine
    * {@link clearDraft}. `File` values are skipped (not serializable).
    */
   enableDraft(options: MdyDraftOptions): void {
-    this._draftManager.enableDraft(options);
+    // A field the schema calls sensitive is excluded whether or not the call names it. `exclude` is
+    // a list the application passes when it creates the form, and a document that marks a field
+    // secret has no way to reach it — so the flag reached a storage write in clear text while the
+    // only thing in the document that names secrecy said it should not. The call's own list is kept:
+    // this widens what is withheld, never narrows it.
+    const withSecrets = this._sensitivePaths.size === 0
+      ? options
+      : { ...options, exclude: [...(options.exclude ?? []), ...this._sensitivePaths] };
+    this._draftManager.enableDraft(withSecrets);
     // A restored draft is the state the form opens in, not a step away from one. Recorded as a step,
     // the first thing a person is offered to undo is something they did not do — and taking the
     // offer writes the empty form back over the draft, because the draft follows the model. What

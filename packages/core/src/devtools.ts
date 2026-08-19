@@ -10,6 +10,13 @@ import { MdyFormState } from "./types.js";
 interface InspectableForm {
   readonly state: MdyFormState;
   readonly fieldNames?: MdySignal<readonly string[]>;
+  /**
+   * The paths the schema declared as secrets.
+   *
+   * Optional because the panel takes any form-shaped object, including the doubles a test builds.
+   * Where it is present it outranks the name heuristic, which is a guess in both directions.
+   */
+  sensitivePaths?(): readonly string[];
   /** Exposed by every engine-backed form — enables reactive rendering. */
   readonly reactivity?: MdyReactivity;
   getField(name: string): (() => {
@@ -101,6 +108,7 @@ export function mdyFormSnapshot(form: InspectableForm, options: MdySnapshotOptio
   }>;
 } {
   const names = form.fieldNames?.() ?? [];
+  const declaredSecret = new Set(form.sensitivePaths?.() ?? []);
   return {
     valid: form.state.valid(),
     pending: form.state.pending(),
@@ -108,7 +116,12 @@ export function mdyFormSnapshot(form: InspectableForm, options: MdySnapshotOptio
     submitCount: form.state.submitCount(),
     fields: names.map((path) => {
       const state = form.getField(path)?.();
-      const masked = isSensitivePath(path, options.sensitive?.(path));
+      // The caller's predicate first — it is the panel's own override — then what the schema
+      // declared, then the name.
+      const masked = isSensitivePath(
+        path,
+        options.sensitive?.(path) ?? (declaredSecret.has(path) ? true : undefined),
+      );
       const raw = state?.value() ?? null;
       const messages = state?.errors().map((e) => `[${e.kind}] ${e.message}`) ?? [];
       return {

@@ -260,7 +260,11 @@ export function buildDynamicFormSchema(schema: MdyDynamicGroupNode): MdyFormSche
     // `marksRequired` is not passed on: a `required()` validator in the list already raises the
     // field's own `required` signal, so the flag would be a second spelling of the same fact.
     const { validators } = buildDynamicFieldValidators(descriptor);
-    return field(mdyEmptyValueFor(descriptor) as never, validators as never);
+    // The one property in a document that names secrecy. Carried onto the descriptor so the form
+    // itself knows, rather than leaving every protection to a list the application passes.
+    return field(mdyEmptyValueFor(descriptor) as never, validators as never, {
+      sensitive: descriptor.sensitive === true,
+    });
   };
 
   const build = (node: MdyDynamicNode, name: string): unknown => {

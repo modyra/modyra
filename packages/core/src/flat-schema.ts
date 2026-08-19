@@ -57,7 +57,7 @@ export function buildFlatFormSchema(
   assertSafeDynamicFieldNames(fields);
   if (collections.length === 0) {
     const flat: Record<string, unknown> = {};
-    for (const f of fields) flat[f.name] = field(mdyEmptyValueFor(f) as never, []);
+    for (const f of fields) flat[f.name] = field(mdyEmptyValueFor(f) as never, [], { sensitive: f.sensitive === true });
     return flat as MdyFormSchema;
   }
 
@@ -99,9 +99,9 @@ export function buildFlatFormSchema(
       rows.add(key!);
       // Every row has the same shape, so the first one describes the item and the rest confirm it.
       const within = tail.join(".");
-      if (within.length === 0) { leaf = field(mdyEmptyValueFor(f) as never, []); continue; }
+      if (within.length === 0) { leaf = field(mdyEmptyValueFor(f) as never, [], { sensitive: f.sensitive === true }); continue; }
       if (claimedByChild(within)) continue;
-      if (!(within in item)) item[within] = field(mdyEmptyValueFor(f) as never, []);
+      if (!(within in item)) item[within] = field(mdyEmptyValueFor(f) as never, [], { sensitive: f.sensitive === true });
     }
     // A row may exist only because a child collection was declared under it.
     for (const c of direct) rows.add(c.path.slice(prefix.length + 1).split(".")[0]!);
@@ -153,7 +153,7 @@ export function buildFlatFormSchema(
   }
   for (const f of fields) {
     if (claimed.has(f.name)) continue;
-    schema[f.name] = field(mdyEmptyValueFor(f) as never, []);
+    schema[f.name] = field(mdyEmptyValueFor(f) as never, [], { sensitive: f.sensitive === true });
   }
   return schema as MdyFormSchema;
 }
