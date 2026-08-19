@@ -13012,12 +13012,53 @@ Both pinned by `adversarial/security/a-secret-one-row-down.battle.test.mjs`, two
 control requiring the draft to have been written and the row's ordinary neighbour to have survived.
 
 
+## 207 — One value, two doors, two sanitizer passes (S1, SEC-003 COL-001)
+
+`SEC-003` is stated as a property of the value and not of the route: a sanitized value cannot form
+markup **wherever it entered the form**. Measured with a sanitizer that changes nothing except how
+many times it has been asked:
+
+```
+a root field, set        1
+a row's cell, set        1
+a row, upserted          2
+an item, pushed          2
+an item, inserted        2
+the whole form, set      2
+```
+
+Every door that writes through a collection runs the field's own sanitizer twice — and those are the
+doors a form is *populated* through, from a server response or a loaded record.
+
+Invisible with the sanitizer the documentation names: DOMPurify is idempotent. An escaping sanitizer
+is not, and escaping is what a text sanitizer does. Four load-and-save rounds against a server, with
+the user changing nothing:
+
+```
+round 1   "Tom &amp; Jerry"
+round 2   "Tom &amp;amp; Jerry"
+round 3   "Tom &amp;amp;amp; Jerry"
+round 4   "Tom &amp;amp;amp;amp; Jerry"
+```
+
+The battle asserts neither that a sanitizer must be idempotent — an opinion about other people's
+functions — nor what the right number of passes is. It asserts what `SEC-003` already says: the same
+value through two doors is the same value. Pinned by
+`adversarial/security/one-value-two-doors.battle.test.mjs`, with a control requiring every door to
+sanitize at least once, so a door that never sanitizes reports itself rather than reading as
+agreement.
+
+**Thirteenth instrument error, caught by the first red.** The probe charged the "row's cell, set"
+door for the `upsert` that had to create the row before a cell could be written into it — three
+passes for a door that makes one. Setup is now separated from the write under measurement.
+
+
 ## The register's own shape, measured
 
 ```
-numbered findings        206
+numbered findings        207
 closed or retracted       24
-open with a battle       177
+open with a battle       178
 open with none             6
 ```
 
