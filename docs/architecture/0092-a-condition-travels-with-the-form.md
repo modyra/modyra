@@ -1,6 +1,6 @@
 # ADR 0092: A condition travels with the form
 
-Status: Accepted
+Status: Accepted — amended 2026-08-19 (an operand names one thing)
 
 ## Context
 
@@ -92,6 +92,20 @@ does not supply refuses the build, which is the "before anything is painted" thi
 
 This also closes what was registered as a limit rather than a defect: a document can now condition a
 cell inside a collection row, which no `rules` entry could express.
+
+## Amendment: an operand names one thing
+
+An operand is an object naming one of four things — a field (`{path}`), the value the clause is
+written on (`{self}`), the whole form (`{root}`), or a value the host supplies (`{context}`). One
+carrying two of them was claimed by two guards at once and accepted by the validator, so which half
+it meant was decided by the order a reader happened to ask in. That is a document meaning one thing
+in this reader and another in the Rust or Java reader of the same contract, on a document all three
+accept — and no fixture carries the shape, so the shared corpus would not catch the disagreement.
+
+An operand naming more than one of the four is refused where an expression is validated, and each
+guard answers `false` for it: an ambiguous operand is not read as either half. A context key of no
+characters names nothing a host could supply, so it is not a context reference either — the guard
+and the validator agree, where before one claimed what the other turned away.
 
 ## Consequences
 

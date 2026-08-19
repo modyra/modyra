@@ -504,9 +504,11 @@ test("what a caller has to be given, and what it does not", () => {
 
   assert.deepEqual(validateExpression({ op: "equals", operands: [{ self: true }, 1] }, "w"), []);
   assert.deepEqual(validateExpression({ op: "equals", operands: [{ root: true }, 1] }, "w"), []);
+  // A key of no characters names nothing a host could supply, so it is not a context reference at
+  // all: it is refused with everything else an operand cannot be, and `isContextRef` says the same.
   assert.deepEqual(
     validateExpression({ op: "equals", operands: [{ context: "" }, 1] }, "w"),
-    ["w.operands[0]: a context key cannot be empty"],
+    ["w.operands[0]: an object operand must be {path}, {self}, {root}, {context} or a nested expression"],
   );
 });
 
