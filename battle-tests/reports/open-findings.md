@@ -14066,6 +14066,40 @@ otherwise this would be a framework with no opinion about dates rather than one 
 opinion twice.
 
 
+## 231 — A name the sanitizer strips from every value is accepted as a name (S1, SEC-001 DYN-004)
+
+`parseDynamicForm` refuses a duplicate name, `__proto__`, `constructor`, `prototype`, an empty
+segment, a trailing dot and a whitespace-only name — each with its own diagnostic. The care about
+names is there, and the reasoning with it: two fields under one name is a form that cannot say what
+it holds.
+
+The characters that make two different names **look** identical are not on the list. Measured in
+strict mode, `ok: true`, no diagnostic, for a zero-width space, a zero-width non-joiner, a byte-order
+mark, a right-to-left override, a first-strong isolate and a line separator.
+
+```
+the payload, as printed   "amount"  "amount\u200b"
+the payload, as seen      amount  |  amount
+```
+
+The framework knows this class exactly. `security.md` lists it in a table and `sanitize: "text"`
+strips it from **values** — `U+200B–200D`, `U+FEFF`, `U+202A–202E`, `U+2066–2069` — and the guide
+uses `U+202E` itself to explain why the profile exists: *"admin‮" looks like `admin` and is not*. The
+register already holds a green battle measuring all thirteen being removed from a value.
+
+**A name never meets the sanitizer**, and a name is what a value is filed under: it becomes a path, a
+payload key, and the label a reviewer reads when checking what a generated document declares. A
+document can therefore declare `amount` twice — once really and once invisibly — and the duplicate
+check, which exists precisely for names that collide, does not see it.
+
+Same shape as 230: the framework owns the list, applies it at one door and not at the other.
+
+Pinned by `adversarial/security/a-name-nobody-can-see.battle.test.mjs`, with two controls — an
+ordinary name must be kept, and the parser must already refuse *some* name (`__proto__`, and a real
+duplicate by `MDY_DYNAMIC_DUPLICATE_NAME`) — so this reads as an inconsistency rather than as a
+parser with no rules about names.
+
+
 ## The browser tier, measured — a baseline this register never had
 
 `npm run battle:browser` on the working tree at `6ee29144`:
@@ -14222,9 +14256,9 @@ the half-fix to overlay teardown did not close it on plain either.
 ## The register's own shape, measured
 
 ```
-numbered findings        230
-closed or retracted       47
-open with a battle       197
+numbered findings        231
+closed or retracted       49
+open with a battle       198
 open with none            10
 ```
 
