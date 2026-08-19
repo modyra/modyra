@@ -30,7 +30,9 @@ test("length rules and a pattern reach a text input", async () => {
   const input = inputOf(element);
   assert.equal(input.getAttribute("minlength"), "3");
   assert.equal(input.getAttribute("maxlength"), "8");
-  assert.equal(input.getAttribute("pattern"), "^[A-Z]+$");
+  // Wrapped, not copied: `pattern` is implicitly anchored by the platform, so a rule is projected as
+  // the platform reads one.
+  assert.equal(input.getAttribute("pattern"), "(?:^[A-Z]+$)");
 });
 
 test("a composed rule declares what it combines", async () => {

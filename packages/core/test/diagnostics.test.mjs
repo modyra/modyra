@@ -62,7 +62,8 @@ test("two patterns on one field say why neither reaches the control", () => {
 test("one pattern says nothing at all", () => {
   const said = warnings(() => {
     const form = createForm({ code: field("", [pattern(/^[A-Z]+$/), required()]) });
-    assert.equal(form.getField("code")().constraints().pattern, "^[A-Z]+$");
+    // Wrapped: the constraint is the rule said the way an implicitly anchored attribute reads one.
+    assert.equal(form.getField("code")().constraints().pattern, "(?:^[A-Z]+$)");
   });
 
   assert.deepEqual(said, []);

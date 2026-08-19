@@ -39,7 +39,15 @@ export interface MdyFieldConstraints {
   readonly step: number | null;
   readonly minLength: number | null;
   readonly maxLength: number | null;
-  /** Source of a regular expression, as `<input pattern>` spells it. */
+  /**
+   * A regular expression, as `<input pattern>` spells one.
+   *
+   * The attribute is implicitly anchored — a browser reads it as `^(?:…)$` — and a rule's expression
+   * is not. So a rule of `a+`, which accepts any value *containing* an `a`, became a control that
+   * refused `xax`: the control turned away a value the form accepts, and the person was told to match
+   * a format nobody wrote. What is projected here is the rule said the way the platform reads one,
+   * padded at whichever end carries no anchor, so every renderer writes the attribute the same way.
+   */
   readonly pattern: string | null;
   /**
    * `<input inputmode>` where a rule implies one, e.g. `email()` asking for the address keyboard.
@@ -156,13 +164,31 @@ export function mergeFacts(facts: readonly MdyValidatorFacts[]): {
     conflictingPatterns,
     constraints: {
       ...numbers,
-      pattern: conflictingPatterns ? null : [...patterns][0] ?? null,
+      pattern: conflictingPatterns ? null : nativePatternSource([...patterns][0] ?? null),
       inputMode,
     },
   };
 }
 
 /** The sum of what a list of validators declares. */
+/**
+ * A rule's expression, padded to mean the same thing inside an implicitly anchored attribute.
+ *
+ * An expression already carrying `^` or `$` is left as it is: there the two readings agree. One the
+ * platform cannot compile carries no attribute at all, because an invalid `pattern` is ignored by
+ * the browser — a rule that looks enforced and is not.
+ */
+function nativePatternSource(source: string | null): string | null {
+  if (source === null || source === "") return source;
+  const projected = `${source.startsWith("^") ? "" : ".*"}(?:${source})${source.endsWith("$") ? "" : ".*"}`;
+  try {
+    new RegExp(projected);
+  } catch {
+    return null;
+  }
+  return projected;
+}
+
 export function factsOfAll(validators: Iterable<unknown>): ReturnType<typeof mergeFacts> {
   return mergeFacts([...validators].map((fn) => factsOf(fn)));
 }

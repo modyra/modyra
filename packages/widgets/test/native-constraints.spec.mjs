@@ -61,3 +61,20 @@ test("narrowing takes the tighter end, and can never widen", () => {
     "a control alone may state a limit the rules do not",
   );
 });
+
+test("a control cannot loosen what the rules enforce", () => {
+  // The anchoring itself is `@modyra/core`'s: `MdyFieldConstraints.pattern` is already the rule said
+  // the way the platform reads one, so every renderer writes the same attribute.: a pattern is the one constraint two of them
+  // cannot be intersected into one, so the field's rule wins and a control's own only fills a silence.
+  // A control's pattern is taken unless it can be *shown* to loosen — a probe the rules refuse and it
+  // accepts. `^.*$` produces one on the first string; a stricter spelling of the same rule does not.
+  assert.equal(
+    narrowConstraints({ ...NONE, pattern: "^[a-z]{4,}$" }, { pattern: "^.*$" }).pattern,
+    "^[a-z]{4,}$",
+  );
+  assert.equal(
+    narrowConstraints({ ...NONE, pattern: "^[a-z]{4,}$" }, { pattern: "^[a-z]{8,}$" }).pattern,
+    "^[a-z]{8,}$",
+  );
+  assert.equal(narrowConstraints(NONE, { pattern: "^.*$" }).pattern, "^.*$");
+});
