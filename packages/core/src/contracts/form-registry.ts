@@ -12,6 +12,7 @@ import type {
   ValidatorFn,
 } from "../types.js";
 import type { MdySanitizer } from "../security.js";
+import type { MdyValueShape } from "../value-contracts.js";
 
 export interface MdyPathGate {
   isOpen?(path: string): boolean;
@@ -83,6 +84,15 @@ export interface MdyFormRegistry<
   markSensitive?(name: string): void;
   /** The paths declared through {@link markSensitive}. */
   sensitivePaths?(): readonly string[];
+  /**
+   * Declares the runtime shape a field's kind takes (`field(initial, validators, { shape })`).
+   *
+   * Optional for the same reason the two above are: a registry written against an earlier version of
+   * this contract still satisfies it, and keeps the behaviour it had.
+   */
+  declareShape?(name: string, shape: MdyValueShape): void;
+  /** Declares the values a field offers, for a kind that chooses from a list. */
+  declareOptions?(name: string, options: readonly unknown[]): void;
   setDisabled(name: string, disabled: TBooleanSignal): void;
   /** Declares that a field is only in play while the signal says so. */
   setInactive(name: string, inactive: TBooleanSignal): void;

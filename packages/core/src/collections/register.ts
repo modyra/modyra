@@ -102,6 +102,9 @@ export function registerRowNode(
     // secret in a row is the one most worth keeping out of storage: a row is data, so its path is
     // one nobody could have written into an `exclude` list before the user created it.
     if (node.sensitive) engine.markSensitive?.(fullPath);
+    // A row's cells declare their kind's shape too: a draft naming a row is the same untrusted input
+    // as one naming a root field, and the check that guards it needs the same thing to check against.
+    if (node.shape !== null) engine.declareShape?.(fullPath, node.shape);
     engine.setInitialValue(fullPath, value === undefined ? node.initial : value);
     engine.getField(fullPath);
     // The row declared it. A control showing it may come and go; the row is what ends it.

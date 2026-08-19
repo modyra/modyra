@@ -18,6 +18,7 @@ import {
   record,
   type MdyFormSchema,
 } from "./typed-form.js";
+import { MDY_VALUE_CONTRACTS, type MdyValueShape } from "./value-contracts.js";
 import type { MdyFormRegistry } from "./contracts/form-registry.js";
 import { collectSchemaPaths, numericKeysToArrays } from "./schema-utils.js";
 import {
@@ -27,6 +28,27 @@ import {
   type MdyDynamicCollection,
   type MdyDynamicField,
 } from "./dynamic-config.js";
+
+/**
+ * The shape a kind's values take, declared onto the descriptor so the form knows it later.
+ *
+ * A field seeded `null` tells a form nothing about what it may hold, and `null` is what the value
+ * contract declares for every kind with no empty of its own — so the check that guards a restored
+ * draft had nothing to check against for a number, a select or a date.
+ */
+function shapeOf(
+  f: { readonly kind?: string; readonly options?: ReadonlyArray<{ readonly value: unknown }> },
+): { shape?: MdyValueShape; options?: readonly unknown[] } {
+  const contract = (MDY_VALUE_CONTRACTS as Record<string, { shape: MdyValueShape } | undefined>)[
+    String(f.kind)
+  ];
+  if (contract === undefined) return {};
+  // The offered values travel with the shape: for a kind that chooses from a list, the shape alone
+  // is "anything non-nullish", which cannot tell an option carrying an object from any other object.
+  return Array.isArray(f.options)
+    ? { shape: contract.shape, options: f.options.map((option) => option.value) }
+    : { shape: contract.shape };
+}
 
 /**
  * Builds the (validator-free) schema for a flat field list — every field gets its default value;
@@ -57,7 +79,7 @@ export function buildFlatFormSchema(
   assertSafeDynamicFieldNames(fields);
   if (collections.length === 0) {
     const flat: Record<string, unknown> = {};
-    for (const f of fields) flat[f.name] = field(mdyEmptyValueFor(f) as never, [], { sensitive: f.sensitive === true });
+    for (const f of fields) flat[f.name] = field(mdyEmptyValueFor(f) as never, [], { sensitive: f.sensitive === true, ...shapeOf(f) });
     return flat as MdyFormSchema;
   }
 
@@ -99,9 +121,9 @@ export function buildFlatFormSchema(
       rows.add(key!);
       // Every row has the same shape, so the first one describes the item and the rest confirm it.
       const within = tail.join(".");
-      if (within.length === 0) { leaf = field(mdyEmptyValueFor(f) as never, [], { sensitive: f.sensitive === true }); continue; }
+      if (within.length === 0) { leaf = field(mdyEmptyValueFor(f) as never, [], { sensitive: f.sensitive === true, ...shapeOf(f) }); continue; }
       if (claimedByChild(within)) continue;
-      if (!(within in item)) item[within] = field(mdyEmptyValueFor(f) as never, [], { sensitive: f.sensitive === true });
+      if (!(within in item)) item[within] = field(mdyEmptyValueFor(f) as never, [], { sensitive: f.sensitive === true, ...shapeOf(f) });
     }
     // A row may exist only because a child collection was declared under it.
     for (const c of direct) rows.add(c.path.slice(prefix.length + 1).split(".")[0]!);
@@ -153,7 +175,7 @@ export function buildFlatFormSchema(
   }
   for (const f of fields) {
     if (claimed.has(f.name)) continue;
-    schema[f.name] = field(mdyEmptyValueFor(f) as never, [], { sensitive: f.sensitive === true });
+    schema[f.name] = field(mdyEmptyValueFor(f) as never, [], { sensitive: f.sensitive === true, ...shapeOf(f) });
   }
   return schema as MdyFormSchema;
 }

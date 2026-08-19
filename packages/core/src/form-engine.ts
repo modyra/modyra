@@ -46,6 +46,7 @@ import type { MdyCollectionHost } from "./contracts/collection-host.js";
 import type { MdyInteractivity } from "./types.js";
 import type { MdyPathGate } from "./contracts/form-registry.js";
 import { MDY_DEV } from "./dev-flags.js";
+import { matchesValueShape, type MdyValueShape } from "./value-contracts.js";
 import {
   applyValueSecurity,
   draftShapeMatches,
@@ -294,6 +295,38 @@ interface MdyPathBinding {
   readonly inactive?: MdySignal<boolean>;
 }
 
+/**
+ * Whether a value arriving from storage is one this field offers.
+ *
+ * An option's *shape* is "anything non-nullish" by design: ADR 0051 lets an option carry an object,
+ * so the shape check cannot tell a legitimate one from `{"hostile":true}`. The list can. Where a
+ * field declares none — a typed form that passes options nowhere — this says yes and the field is
+ * back to the shape check alone.
+ */
+function offeredHere(
+  offered: readonly unknown[] | undefined,
+  shape: MdyValueShape,
+  value: unknown,
+): boolean {
+  if (offered === undefined) return true;
+  if (shape === "option") return offered.some((option) => sameOptionValue(option, value));
+  if (shape === "option[]") {
+    return Array.isArray(value)
+      && value.every((member) => offered.some((option) => sameOptionValue(option, member)));
+  }
+  return true;
+}
+
+/** Two option values are the same when they hold the same thing — the rule `equals` follows. */
+function sameOptionValue(left: unknown, right: unknown): boolean {
+  if (Object.is(left, right)) return true;
+  if (typeof left !== "object" || typeof right !== "object" || left === null || right === null) {
+    return false;
+  }
+  return JSON.stringify(left) === JSON.stringify(right);
+}
+
+
 export class MdyFormEngine
   implements MdyFormAdapter<Record<string, unknown>>, MdyCollectionHost {
   private readonly _fields = new Map<string, FieldRecord>();
@@ -373,6 +406,10 @@ export class MdyFormEngine
   private readonly _fieldSanitizers = new Map<string, MdySanitizer>();
   /** Paths a schema declared as holding a secret. */
   private readonly _sensitivePaths = new Set<string>();
+  /** The runtime shape each path's kind declares, for the doors that read a value from outside. */
+  private readonly _declaredShapes = new Map<string, MdyValueShape>();
+  /** The values each option-shaped path offers, so a stored value can be held to the list. */
+  private readonly _declaredOptions = new Map<string, readonly unknown[]>();
 
   readonly state: MdyFormState;
 
@@ -845,6 +882,14 @@ export class MdyFormEngine
 
   markSensitive(name: string): void {
     this._sensitivePaths.add(name);
+  }
+
+  declareShape(name: string, shape: MdyValueShape): void {
+    this._declaredShapes.set(name, shape);
+  }
+
+  declareOptions(name: string, options: readonly unknown[]): void {
+    this._declaredOptions.set(name, options);
   }
 
   /**
@@ -1709,6 +1754,26 @@ export class MdyFormEngine
         return false;
       }
       return true;
+    }
+    // A declared shape is what the check is for. `null` is not the absence of a declaration — it is
+    // what the contract declares for every kind that has no empty of its own — so reading it as
+    // "nothing was declared" let an object into a `number`, a `select`, a `datepicker`: the type
+    // confusion this check exists to stop, from the least trustworthy input a form has.
+    // Wherever a kind declared one, and not only where the initial is `null`: a `daterange` starts at
+    // `{start:null,end:null}`, so "an object where an object is declared" accepted any object at all.
+    const shape = this._declaredShapes.get(key);
+    if (shape !== undefined) {
+      if (value === null || (matchesValueShape(shape, value) && offeredHere(this._declaredOptions.get(key), shape, value))) {
+        return true;
+      }
+      this._report({
+        kind: "draft-shape",
+        path: key,
+        detail:
+          `Draft entry "${key}" dropped: stored value shape does not match ` +
+          `the field's declared type (${shape}).`,
+      });
+      return false;
     }
     if (draftShapeMatches(this._initialValues.get(key), value)) return true;
     this._report({
