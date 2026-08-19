@@ -202,6 +202,7 @@ export function field<TValue>(
   validators: ReadonlyArray<ValidatorFn<MdyWiden<TValue>>> = [],
   options?: MdyFieldOptions<MdyWiden<TValue>>,
 ): MdyFieldDescriptor<MdyWiden<TValue>> {
+  reportUnknownFieldOptions(options);
   return {
     kind: "field",
     initial,
@@ -568,6 +569,35 @@ function reportUnknownOptions(options: unknown): void {
     `read. A form takes ${[...FORM_OPTIONS].join(", ")}${
       unknown.includes("sanitize") ? '; a sanitizer is asked for as security: { sanitize }' : ""
     }.`,
+  );
+}
+
+/** What a field may be given. Grows with the library, which is why an unknown key is said rather than refused. */
+const FIELD_OPTIONS: ReadonlySet<string> = new Set([
+  "asyncValidators", "asyncDebounceMs", "asyncDependsOn", "asyncTimeoutMs", "asyncWhen",
+  "when", "sanitize", "sensitive", "shape", "options",
+]);
+
+/**
+ * An option a field does not read is reported, the way `createForm` reports one it does not.
+ *
+ * The decision was already taken one level up and for this reason: a misplaced option is
+ * indistinguishable from not having asked. Inside a single option the contrast is the finding —
+ * `sanitize: "stict"` is refused by name at construction, while `sanitise: "strict"`, the British
+ * spelling and the ordinary way to get it wrong, built a field that was never sanitized and said
+ * nothing. `asyncDebounce` for `asyncDebounceMs` is the same shape at a different cost: every
+ * keystroke reaches the server.
+ *
+ * Said rather than refused, because this bag grows and a consumer passing an option a newer version
+ * understands must not be stopped by an older one.
+ */
+function reportUnknownFieldOptions(options: unknown): void {
+  if (!MDY_DEV || typeof options !== "object" || options === null) return;
+  const unknown = Object.keys(options).filter((key) => !FIELD_OPTIONS.has(key));
+  if (unknown.length === 0) return;
+  console.warn(
+    `[modyra] field() was given ${unknown.map((key) => `"${key}"`).join(", ")}, which it does not ` +
+    `read. A field takes ${[...FIELD_OPTIONS].join(", ")}.`,
   );
 }
 
