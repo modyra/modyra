@@ -320,6 +320,17 @@ const CLAIMS = [
     ],
   },
   {
+    id: "SCH-002",
+    title: "A form a schema builds holds a value that schema accepts.",
+    area: "schema-adapters",
+    severity: "S1",
+    publicEvidence: [
+      "@modyra/zod createZodForm/buildZodTree — a whole form derived from a z.object()",
+      "docs/architecture/0086-a-zod-form-starts-at-an-empty-its-schema-accepts.md",
+      "@modyra/core form.state.valid() — what the form says about itself before it is submitted",
+    ],
+  },
+  {
     id: "SEC-001",
     title: "Unsafe path segments never register fields or pollute prototypes.",
     area: "security",
