@@ -69,6 +69,13 @@ export interface MdyRowRegistration {
   /** The whole row's value, for a condition that reads across its siblings. */
   readonly rowValue: (rowPath: string) => Record<string, unknown>;
   /**
+   * The whole form's value, for a condition that reads back out of the row it is written in.
+   *
+   * A row is a template: a clause in it cannot name the row's own key, so what encloses it is the
+   * row — and this is the only way such a clause reaches anything above.
+   */
+  readonly readRoot?: () => Record<string, unknown>;
+  /**
    * What to do about a collection declared inside a row.
    *
    * Refusing is what both managers do today, and the refusal belongs to the caller because the two
@@ -133,6 +140,7 @@ export function registerRowNode(
           return {
             value: engine.getField(fullPath)?.().value(),
             enclosing: isRecord(row) ? row : {},
+            root: deps.readRoot?.() ?? {},
           };
         },
       });

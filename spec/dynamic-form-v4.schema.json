@@ -1,0 +1,711 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://modyra.dev/schemas/dynamic-form-v4.schema.json",
+  "title": "Modyra Dynamic Form Contract v4",
+  "description": "Contract v4: v3 plus a condition on a node (`when`, `asyncWhen`) and the context keys a document declares it reads (`requiresContext`). A v3 document is a v4 document with the version raised.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "version"
+  ],
+  "properties": {
+    "version": {
+      "const": 4
+    },
+    "id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "fields": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/field"
+      }
+    },
+    "layout": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/layout"
+      }
+    },
+    "rules": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/rule"
+      }
+    },
+    "validations": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/validation"
+      }
+    },
+    "schema": {
+      "$ref": "#/$defs/node"
+    },
+    "requiresContext": {
+      "type": "array",
+      "description": "The context keys this document's conditions read. A host is told what to supply; a key read and not declared is refused by the parser.",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    }
+  },
+  "$defs": {
+    "breakpoint": {
+      "enum": [
+        "base",
+        "sm",
+        "md",
+        "lg"
+      ]
+    },
+    "placement": {
+      "type": "object",
+      "additionalProperties": false,
+      "minProperties": 1,
+      "properties": {
+        "column": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 12
+        },
+        "hidden": {
+          "type": "boolean"
+        }
+      }
+    },
+    "placementAt": {
+      "type": "object",
+      "additionalProperties": false,
+      "propertyNames": {
+        "$ref": "#/$defs/breakpoint"
+      },
+      "properties": {
+        "base": {
+          "$ref": "#/$defs/placement"
+        },
+        "sm": {
+          "$ref": "#/$defs/placement"
+        },
+        "md": {
+          "$ref": "#/$defs/placement"
+        },
+        "lg": {
+          "$ref": "#/$defs/placement"
+        }
+      }
+    },
+    "trackCountAt": {
+      "type": "object",
+      "additionalProperties": false,
+      "propertyNames": {
+        "$ref": "#/$defs/breakpoint"
+      },
+      "properties": {
+        "base": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 12
+        },
+        "sm": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 12
+        },
+        "md": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 12
+        },
+        "lg": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 12
+        }
+      }
+    },
+    "validators": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "required": {
+          "type": "boolean"
+        },
+        "email": {
+          "type": "boolean"
+        },
+        "min": {
+          "type": "number"
+        },
+        "max": {
+          "type": "number"
+        },
+        "minLength": {
+          "type": "number"
+        },
+        "maxLength": {
+          "type": "number"
+        },
+        "pattern": {
+          "type": "string",
+          "maxLength": 256
+        },
+        "messages": {
+          "type": "object",
+          "description": "What each rule says when it refuses, in the author's own words. Omitted, the form answers in its own language.",
+          "additionalProperties": false,
+          "properties": {
+            "required": {
+              "type": "string",
+              "minLength": 1
+            },
+            "email": {
+              "type": "string",
+              "minLength": 1
+            },
+            "min": {
+              "type": "string",
+              "minLength": 1
+            },
+            "max": {
+              "type": "string",
+              "minLength": 1
+            },
+            "minLength": {
+              "type": "string",
+              "minLength": 1
+            },
+            "maxLength": {
+              "type": "string",
+              "minLength": 1
+            },
+            "pattern": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        }
+      }
+    },
+    "option": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "value",
+        "label"
+      ],
+      "properties": {
+        "value": {
+          "type": [
+            "string",
+            "number",
+            "boolean",
+            "object"
+          ]
+        },
+        "label": {
+          "type": "string"
+        },
+        "disabled": {
+          "type": "boolean"
+        }
+      }
+    },
+    "field": {
+      "type": "object",
+      "required": [
+        "name",
+        "kind"
+      ],
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "not": {
+            "enum": [
+              "__proto__",
+              "prototype",
+              "constructor"
+            ]
+          },
+          "pattern": "^[^.]+$"
+        },
+        "kind": {
+          "enum": [
+            "text",
+            "textarea",
+            "email",
+            "password",
+            "number",
+            "slider",
+            "checkbox",
+            "toggle",
+            "select",
+            "radio",
+            "multiselect",
+            "segmented",
+            "datepicker",
+            "daterange",
+            "timepicker",
+            "file",
+            "colors"
+          ]
+        },
+        "label": {
+          "type": "string"
+        },
+        "ariaLabel": {
+          "type": "string"
+        },
+        "placeholder": {
+          "type": "string"
+        },
+        "sensitive": {
+          "type": "boolean"
+        },
+        "initialValue": {},
+        "validators": {
+          "$ref": "#/$defs/validators"
+        },
+        "min": {
+          "type": "number"
+        },
+        "max": {
+          "type": "number"
+        },
+        "step": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "options": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/option"
+          }
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "kind": {
+                "enum": [
+                  "select",
+                  "radio",
+                  "multiselect",
+                  "segmented"
+                ]
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "options"
+            ]
+          }
+        }
+      ]
+    },
+    "slot": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "ref"
+      ],
+      "properties": {
+        "ref": {
+          "type": "string",
+          "minLength": 1
+        },
+        "at": {
+          "$ref": "#/$defs/placementAt"
+        }
+      }
+    },
+    "layoutChild": {
+      "oneOf": [
+        {
+          "type": "string"
+        },
+        {
+          "$ref": "#/$defs/slot"
+        },
+        {
+          "$ref": "#/$defs/layout"
+        }
+      ]
+    },
+    "layout": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "kind",
+            "id",
+            "children"
+          ],
+          "properties": {
+            "kind": {
+              "const": "section"
+            },
+            "id": {
+              "type": "string"
+            },
+            "label": {
+              "type": "string"
+            },
+            "at": {
+              "$ref": "#/$defs/placementAt"
+            },
+            "children": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/layoutChild"
+              }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "kind",
+            "id",
+            "columns"
+          ],
+          "properties": {
+            "kind": {
+              "const": "columns"
+            },
+            "id": {
+              "type": "string"
+            },
+            "at": {
+              "$ref": "#/$defs/trackCountAt"
+            },
+            "columns": {
+              "type": "array",
+              "items": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/$defs/layoutChild"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "rule": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "effect",
+        "target",
+        "when"
+      ],
+      "properties": {
+        "effect": {
+          "enum": [
+            "visible",
+            "hidden",
+            "enabled",
+            "disabled"
+          ]
+        },
+        "target": {
+          "type": "string"
+        },
+        "when": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "field",
+            "operator"
+          ],
+          "properties": {
+            "field": {
+              "type": "string"
+            },
+            "operator": {
+              "enum": [
+                "equals",
+                "notEquals",
+                "in",
+                "notIn",
+                "isEmpty",
+                "isNotEmpty",
+                "greaterThan",
+                "greaterThanOrEqual",
+                "lessThan",
+                "lessThanOrEqual"
+              ]
+            },
+            "value": {}
+          },
+          "allOf": [
+            {
+              "if": {
+                "properties": {
+                  "operator": {
+                    "enum": [
+                      "in",
+                      "notIn"
+                    ]
+                  }
+                },
+                "required": [
+                  "operator"
+                ]
+              },
+              "then": {
+                "required": [
+                  "value"
+                ],
+                "properties": {
+                  "value": {
+                    "type": "array"
+                  }
+                }
+              }
+            },
+            {
+              "if": {
+                "properties": {
+                  "operator": {
+                    "enum": [
+                      "greaterThan",
+                      "greaterThanOrEqual",
+                      "lessThan",
+                      "lessThanOrEqual"
+                    ]
+                  }
+                },
+                "required": [
+                  "operator"
+                ]
+              },
+              "then": {
+                "required": [
+                  "value"
+                ],
+                "properties": {
+                  "value": {
+                    "type": [
+                      "number",
+                      "string"
+                    ]
+                  }
+                }
+              }
+            }
+          ]
+        }
+      }
+    },
+    "validation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "when",
+        "message"
+      ],
+      "properties": {
+        "when": {
+          "description": "An expression tree. Its shape is the parser's to judge: a schema that described it would be a second definition of the expression language.",
+          "type": "object"
+        },
+        "message": {
+          "type": "string",
+          "minLength": 1
+        },
+        "target": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "fieldNode": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "node",
+        "field"
+      ],
+      "properties": {
+        "node": {
+          "const": "field"
+        },
+        "field": {
+          "$ref": "#/$defs/field"
+        },
+        "when": {
+          "$ref": "#/$defs/condition"
+        },
+        "asyncWhen": {
+          "$ref": "#/$defs/condition"
+        }
+      }
+    },
+    "groupNode": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "node",
+        "children"
+      ],
+      "properties": {
+        "node": {
+          "const": "group"
+        },
+        "label": {
+          "type": "string"
+        },
+        "children": {
+          "type": "object",
+          "propertyNames": {
+            "pattern": "^[^.]+$"
+          },
+          "additionalProperties": {
+            "$ref": "#/$defs/node"
+          }
+        },
+        "when": {
+          "$ref": "#/$defs/condition"
+        }
+      }
+    },
+    "arrayNode": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "node",
+        "item"
+      ],
+      "properties": {
+        "node": {
+          "const": "array"
+        },
+        "label": {
+          "type": "string"
+        },
+        "item": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/fieldNode"
+            },
+            {
+              "$ref": "#/$defs/groupNode"
+            },
+            {
+              "$ref": "#/$defs/recordNode"
+            },
+            {
+              "$ref": "#/$defs/arrayNode"
+            }
+          ],
+          "description": "A row's shape, a collection of either kind included. A row's descendants are addressed below this array's index, and a collection the row declares names its own rows the same way, so a second positional level is as addressable as the first (ADR 0043)."
+        },
+        "initialValue": {
+          "type": "array",
+          "maxItems": 100
+        },
+        "minItems": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "maxItems": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "recordNode": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "node",
+        "item"
+      ],
+      "properties": {
+        "node": {
+          "const": "record"
+        },
+        "label": {
+          "type": "string"
+        },
+        "item": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/fieldNode"
+            },
+            {
+              "$ref": "#/$defs/groupNode"
+            },
+            {
+              "$ref": "#/$defs/recordNode"
+            },
+            {
+              "$ref": "#/$defs/arrayNode"
+            }
+          ],
+          "description": "A row's shape, a collection of either kind included: keys address a row, so nothing below one moves."
+        },
+        "initialValue": {
+          "type": "object",
+          "propertyNames": {
+            "pattern": "^[^.]+$"
+          },
+          "maxProperties": 100
+        }
+      }
+    },
+    "node": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/fieldNode"
+        },
+        {
+          "$ref": "#/$defs/groupNode"
+        },
+        {
+          "$ref": "#/$defs/arrayNode"
+        },
+        {
+          "$ref": "#/$defs/recordNode"
+        }
+      ]
+    },
+    "condition": {
+      "type": "object",
+      "description": "A predicate tree \u2014 see MdyExpression. Evaluated against what encloses the clause.",
+      "required": [
+        "op"
+      ],
+      "properties": {
+        "op": {
+          "type": "string"
+        },
+        "operand": {},
+        "operands": {
+          "type": "array"
+        }
+      }
+    }
+  },
+  "oneOf": [
+    {
+      "required": [
+        "fields"
+      ]
+    },
+    {
+      "required": [
+        "schema"
+      ]
+    }
+  ]
+}

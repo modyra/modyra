@@ -1390,7 +1390,7 @@ export abstract class MdyTypedFormBase<
             holds: condition,
             read: () => {
               const formValue = this.getValue() as Record<string, unknown>;
-              return { value: valueAt(formValue, sectionPath), enclosing: formValue };
+              return { value: valueAt(formValue, sectionPath), enclosing: formValue, root: formValue };
             },
           });
         }
@@ -1402,6 +1402,7 @@ export abstract class MdyTypedFormBase<
           read: () => ({
             value: this._adapter.getField(path)?.().value(),
             enclosing: this.getValue() as Record<string, unknown>,
+            root: this.getValue() as Record<string, unknown>,
           }),
         });
       }

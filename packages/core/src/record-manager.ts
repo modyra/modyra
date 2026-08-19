@@ -107,6 +107,8 @@ export interface MdyRecordManagerDeps {
   readonly item: MdyRowNode;
   /** The host's development channel, so `devWarnings: false` silences these too. */
   readonly warn: (message: string) => void;
+  /** The whole form value, for a row-level condition that reads back out of its row. */
+  readonly readRoot?: () => Record<string, unknown>;
   /**
    * True when a positional collection encloses this one.
    *
@@ -571,6 +573,9 @@ export class MdyRecordManager implements MdyNestedCollection {
       readRow: (rowPath) => this._readNode(rowPath, this._deps.item),
       readNode: (path, node) => this._readNode(path, node as MdyRowNode),
       rowValue: (rowPath) => this._rowValue(rowPath),
+      // A clause written in a row's template cannot name the row's key, so what encloses it is the
+      // row; this is the way back out to the form, which is what `{ root: true }` reads.
+      readRoot: this._deps.readRoot,
       onCollection: (path, node, value) => {
         this._declareNested(path, node as MdyAnyRecordDescriptor, value);
       },

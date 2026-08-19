@@ -30,6 +30,28 @@ const REFUSALS = {
     options: [{ value: "pro", label: "Pro monthly" }, { value: "pro", label: "Pro yearly" }],
   }],
   MDY_DYNAMIC_UNKNOWN_PARSE_MODE: [{ name: "a", kind: "text" }],
+  // A condition on a node, in the two ways a document can get one wrong: a clause that is not an
+  // expression at all, and one reading a context key the envelope never declared.
+  MDY_DYNAMIC_INVALID_CONDITION: {
+    version: 4,
+    schema: {
+      node: "group",
+      children: { a: { node: "field", field: { kind: "text" }, when: { nope: true } } },
+    },
+  },
+  MDY_DYNAMIC_UNDECLARED_CONTEXT: {
+    version: 4,
+    schema: {
+      node: "group",
+      children: {
+        a: {
+          node: "field",
+          field: { kind: "text" },
+          when: { op: "equals", operands: [{ context: "role" }, "admin"] },
+        },
+      },
+    },
+  },
   MDY_DYNAMIC_CONSTRAINT_CANNOT_FAIL: [{ name: "a", kind: "slider", validators: { required: true } }],
   MDY_DYNAMIC_MISPLACED_VALIDATOR: [{ name: "a", kind: "text", required: true }],
   MDY_DYNAMIC_PATTERN_TOO_LONG: [{ name: "a", kind: "text", validators: { pattern: "x".repeat(300) } }],

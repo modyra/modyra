@@ -558,3 +558,64 @@ test("a context the host supplies cannot take the read down with it", () => {
     false,
   );
 });
+
+test("a document says when, and the clause is read against what encloses it", async () => {
+  const { buildDynamicFormSchema } = await import("../dist/index.js");
+  const document = {
+    node: "group",
+    children: {
+      kind: { node: "field", field: { kind: "text", label: "Kind" } },
+      detail: {
+        node: "field",
+        field: { kind: "text", label: "Detail" },
+        when: { op: "equals", operands: [{ path: "kind" }, "b"] },
+      },
+      rows: {
+        node: "record",
+        label: "Rows",
+        initialValue: { a: { kind: "b", note: "" }, z: { kind: "a", note: "" } },
+        item: {
+          node: "group",
+          children: {
+            kind: { node: "field", field: { kind: "text", label: "K" } },
+            // Written once for the template and read against **its own row**: the row's key does not
+            // exist when the clause is written, so a path is the only spelling available and it has
+            // to mean the row.
+            note: {
+              node: "field",
+              field: { kind: "text", label: "Note" },
+              when: { op: "equals", operands: [{ path: "kind" }, "b"] },
+            },
+            forAdmins: {
+              node: "field",
+              field: { kind: "text", label: "Admin" },
+              when: { op: "equals", operands: [{ context: "role" }, "admin"] },
+            },
+          },
+        },
+      },
+    },
+  };
+
+  const form = createForm(buildDynamicFormSchema(document, { context: { role: "admin" } }), {
+    devWarnings: false,
+  });
+  const inPlay = (path) => form.getField(path)?.().interactivity() ?? "(absent)";
+  try {
+    form.f.kind.set("a");
+    assert.equal(inPlay("detail"), "disabled");
+    form.f.kind.set("b");
+    assert.equal(inPlay("detail"), "enabled");
+
+    // The two rows disagree, which is the whole point: one clause, one answer per row.
+    assert.equal(inPlay("rows.a.note"), "enabled");
+    assert.equal(inPlay("rows.z.note"), "disabled");
+    assert.equal(inPlay("rows.a.forAdmins"), "enabled");
+  } finally {
+    form.destroy();
+  }
+
+  // A context key the host does not supply refuses the build: a condition that cannot be read
+  // decides false, and the field it guards would never appear with nothing said.
+  assert.throws(() => buildDynamicFormSchema(document, {}), /reads context "role"/);
+});
