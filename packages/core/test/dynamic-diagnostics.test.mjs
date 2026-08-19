@@ -62,6 +62,15 @@ const REFUSALS = {
   MDY_DYNAMIC_MISPLACED_VALIDATOR: [{ name: "a", kind: "text", required: true }],
   MDY_DYNAMIC_PATTERN_TOO_LONG: [{ name: "a", kind: "text", validators: { pattern: "x".repeat(300) } }],
   MDY_DYNAMIC_PATTERN_TOO_COSTLY: [{ name: "a", kind: "text", validators: { pattern: "(a+)+$" } }],
+  // More declarations than the count walks. What it reports then is a floor, and saying so is the
+  // difference between a number a host can act on and one that quietly saturates.
+  MDY_DYNAMIC_COUNT_INCOMPLETE: (() => {
+    const children = {};
+    for (let index = 0; index <= 100_000; index += 1) {
+      children[`f${index}`] = { node: "field", field: { kind: "text" } };
+    }
+    return { version: 3, schema: { node: "group", children } };
+  })(),
 };
 
 test("every named code is one the parser can actually produce", () => {
