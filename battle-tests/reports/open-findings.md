@@ -6156,10 +6156,27 @@ That is the case finding 99 is about seen from the other side: there an attribut
 rule it came from, here the attribute and the rule are the same rule. Holding this makes the
 difference between them visible if either moves.
 
-## 113. The kind whose whole meaning is the control, described nowhere a control is described
+## 113. The kind whose whole meaning is the control, described nowhere a control is described — **closed**
 
 **Severity** S1 · **Classification** incomplete contract · **Battle**
-`adversarial/security/a-kind-that-differs-only-by-name.battle.test.mjs` (red) · **Claim** SEC-005
+`adversarial/security/a-kind-that-differs-only-by-name.battle.test.mjs` (green) · **Claim** SEC-005
+
+**Closed, verified here.** The contract carries the statement in two places, and `@modyra/plain` reads
+it instead of the private map it used to keep:
+
+```
+MDY_WIDGET_CONTRACTS.password    controlType: "password", concealed: true
+MDY_VALUE_CONTRACTS.password     concealed: true
+MDY_WIDGET_CONTRACTS.text        controlType: "text",     concealed absent
+```
+
+The battle asks for **one** published table, not all six, and that is the repair to the battle rather
+than a concession. Four of the tables describe the two kinds identically because the equality is a
+fact: a password's keyboard is a text field's keyboard, neither has a state to transition through,
+both draw the same parts in the same ARIA relations, and `MDY_STATE_EXPRESSION` is one convention for
+all seventeen kinds. A table made to disagree with itself to satisfy an assertion would be worse than
+a table that agrees. The value shape is still asserted **equal**, separately: what a password conceals
+is a fact about the control and not about the string.
 
 `password` is a kind of its own in `MDY_FIELD_KINDS`, `MDY_DYNAMIC_FIELD_KINDS` and
 `MDY_WIDGET_KINDS`, and `spec/dynamic-form-v3.schema.json` lets a document name it — so it arrives
@@ -14810,7 +14827,7 @@ The security policy is at more doors than it looked. Measured, all green:
   inside arrays — a `daterange`'s `start`, a file's `name`, a list's items. The walk is over the
   value's shape and not over a kind's expectations, which is why all of them come back clean.
 
-## 245 — An order only one surface reports (S0, PER-002 COL-007 COL-002)
+## 245 — An order only one surface reports (S0, PER-002 COL-007 COL-002) — **closed**
 
 `keys()` is documented on the public handle as *"the declared keys, in declaration order"*, and for a
 record it is the **only** surface that can answer: a value is a plain object, and JavaScript puts an
@@ -14867,6 +14884,15 @@ So the statement is not about undo: **an operation that moves a key leaves `keys
 order and the next bulk write using another.** An undo restoring a removed row and a rename giving a
 row the old one's place are the two that move a key without adding or removing one, and both do it.
 Filed S0 rather than S1 for that reason — it is not one path, it is the surface.
+
+**Closed, verified here** — `d2e0d7fd`, `record-manager.ts`, and both battles green against a build
+made after it. A bulk write now orders survivors the way `keys()` says they stand, whether a rename or
+an undo moved a key first.
+
+A note on how it was verified, because it nearly went the other way: the battles read green before
+that build existed, against a `dist` older than the source. `against-baseline.mjs` does not build —
+`battle:ci` does — so a gate run on its own measures whatever was last compiled. Every closure
+recorded from a direct gate run is a closure against an unknown build unless a build was made first.
 
 Green when a bulk write orders survivors the way `keys()` says they stand. Pinned by
 `adversarial/persistence/an-order-only-one-surface-reports.battle.test.mjs`, two battles, each with
