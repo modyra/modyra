@@ -13084,6 +13084,9 @@ never made any rule fire.
 
 Pinned by `adversarial/dynamic-contract/a-rule-that-cannot-come-true.battle.test.mjs`.
 
+**Re-measured with `{ mode: "strict" }` after finding 211 exposed the wrong call shape, and it
+holds**: `ok: true`, no diagnostics, and no declared choice changes the answer.
+
 **A measurement that corrected itself twice.** The first probe wrote the chosen value as a fresh
 literal and read the rule as broken; the second passed the *same object* the rule carried and read it
 as working. Neither is what happens: a control hands back the value from the **options list**, which
@@ -13128,6 +13131,15 @@ already owns.
 Pinned by `adversarial/dynamic-contract/a-validator-one-level-too-high.battle.test.mjs`, measured
 through `buildDynamicFieldValidators` so it is not an artefact of one caller, with a control
 requiring every constraint to build something where it belongs.
+
+**Closed, `4892a492`** — `MDY_DYNAMIC_MISPLACED_VALIDATOR`: reported in both modes, the field
+refused in strict, kept without the constraint and reported in lenient.
+
+**And a correction to this entry's own wording.** It said `ok: true` in **strict**. That was false:
+the measurement called `parseDynamicForm(doc, "strict")` — a string, where the signature takes
+`{ mode: "strict" }` — so every "strict" measurement in it was lenient. The finding stood anyway
+(in lenient the constraint vanished and, at that commit, nothing was said), but the sentence naming
+strict was not measured. Fifteenth instrument error, and it produced [211].
 
 **Fourteenth instrument error, caught by its own control.** The first measurement read validity
 through `buildFlatFormSchema` alone, which builds a schema and applies no validators — so a
@@ -13176,12 +13188,46 @@ with a control requiring both halves to give both answers somewhere — otherwis
 statement about one constant answer given twice.
 
 
+## 211 — Asking for strict the wrong way is silently lenient (S1, DYN-004)
+
+`parseDynamicForm(document, options)` takes its mode as `{ mode: "strict" }`. Measured against every
+other way of asking:
+
+```
+nothing (default)      ok: true    the field is kept
+"strict"  (a string)   ok: true    the field is kept      ← asked for strict, got lenient
+"lenient" (a string)   ok: true    the field is kept
+{ mode: "lenient" }    ok: true    the field is kept
+{ mode: "strict" }     ok: false   the field is refused
+{ mode: "nonsense" }   ok: true    the field is kept
+null                   THROWS      reading `mode` of null
+```
+
+Two things, and the first is the one that costs.
+
+**A malformed mode is lenient, silently.** The guide says to use strict *"before publishing or
+registering a stored contract"* — the one call whose entire job is to refuse. Getting its shape
+wrong publishes an unchecked contract while reporting success. And the shape is easy to get wrong:
+the contract exports `MdyDynamicParseMode` as a public type spelling exactly `"lenient" | "strict"`,
+so a string is the shape the vocabulary suggests. TypeScript catches it; JavaScript does not, and a
+document pipeline is often JavaScript.
+
+**`null` raises**, from a parser whose stated contract is that a malformed document produces a report
+and *"never a throw"*. That promise is about the document rather than the options, but a caller
+passing a nullable configuration through gets an exception where the whole design is reports.
+
+**Found by making the mistake.** Findings 208 and 209 were both measured with `parseDynamicForm(doc,
+"strict")` and both described as "accepted in strict". They were measured in lenient. 208 survives
+re-measurement; 209's finding survived too but its wording did not. A public API where the natural
+wrong call is indistinguishable from the right one is the reason a hunt makes that mistake at all.
+
+
 ## The register's own shape, measured
 
 ```
-numbered findings        210
-closed or retracted       28
-open with a battle       181
+numbered findings        211
+closed or retracted       31
+open with a battle       182
 open with none             6
 ```
 
