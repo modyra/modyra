@@ -20,5 +20,34 @@ const MDY_FORBIDDEN_PATH_SEGMENTS = new Set([
  */
 export function isSafeFieldPath(name: string): boolean {
   if (name.length === 0) return false;
-  return name.split(".").every(part => !MDY_FORBIDDEN_PATH_SEGMENTS.has(part));
+  return name.split(".").every((part) => !MDY_FORBIDDEN_PATH_SEGMENTS.has(part) && isIdSegment(part));
+}
+
+/**
+ * The delimiter a generated id puts between its parts, mirrored from the id factory.
+ *
+ * Held here rather than imported so the lowest layer keeps no dependency on the widget contract:
+ * a path is checked where paths are handled, and the widget layer's own guard says the same thing
+ * from the other side.
+ */
+const MDY_PATH_ID_DELIMITER = "__";
+
+/**
+ * Whether a segment can be part of the id a control is given.
+ *
+ * A field's name becomes a widget id, and a widget id becomes the id of every part the control
+ * draws. Two spellings make that impossible:
+ *
+ * - **whitespace**, because `aria-labelledby` and its family are space-separated lists of ids: a
+ *   field named `a b` produces `aria-labelledby="a b__label"`, which resolves to two ids nobody
+ *   rendered, and the control has no accessible name at all;
+ * - **the delimiter**, because an id carrying it a second time cannot be taken apart again, and two
+ *   fields collide on one id.
+ *
+ * A document naming one has always been refused at the door. A form written in code held it, and the
+ * refusal arrived later from another package, at render time, about a name this guard had called
+ * safe — the asymmetry the guards' own comment says is not there.
+ */
+function isIdSegment(part: string): boolean {
+  return !/[\t\n\f\r ]/.test(part) && !part.includes(MDY_PATH_ID_DELIMITER);
 }
