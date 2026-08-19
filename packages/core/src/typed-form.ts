@@ -1199,9 +1199,19 @@ export abstract class MdyTypedFormBase<
   /**
    * Minimal nested patch: only the fields whose value differs from the
    * schema's initial values — ready for an API PATCH request.
+   *
+   * A disabled cell is left out here as it is left out of a submit, so a positional row may arrive
+   * partial, or empty where every one of its cells is out of play. The declared `MdyFormPatch` shape
+   * describes what `patch()` *accepts*, where a positional row is whole: feeding a change set back
+   * into `patch()` therefore restores the cells it omitted to their declared initial rather than
+   * leaving them alone. Round-tripping it is a whole-array write, not a merge.
    */
   getChanges(): MdyFormPatch<S> {
-    return this._flatToPatch(this._wholeArraysIn(this._adapter.getChanges()));
+    const flat = this._wholeArraysIn(this._adapter.getChanges());
+    return this._keepingPositions(
+      this._flatToPatch(flat) as unknown as MdySubmittedValue<S>,
+      flat,
+    ) as unknown as MdyFormPatch<S>;
   }
 
   /**
@@ -1222,6 +1232,10 @@ export abstract class MdyTypedFormBase<
    * against whatever now sits at its index, so removing a row does not report every row after it as
    * changed. What is added here is the rows that did *not* change, which is what makes the position
    * of the ones that did readable.
+   *
+   * Whole is read from what the form would *send*, not from what it holds. A change set is a PATCH,
+   * and a disabled cell is one something decided must not travel — reading the rows out of the value
+   * would put it back in through the door that carries the row for its neighbours' sake.
    */
   private _wholeArraysIn(changed: Record<string, unknown>): Record<string, unknown> {
     const keys = Object.keys(changed);
@@ -1243,7 +1257,7 @@ export abstract class MdyTypedFormBase<
     }
     if (carried.size === 0) return changed;
     const whole: Record<string, unknown> = { ...changed };
-    for (const [path, held] of Object.entries(this._adapter.getValue())) {
+    for (const [path, held] of Object.entries(this._adapter.submitValue())) {
       // Under the collection, never the collection itself: a collection registers a field at its own
       // path so its errors have somewhere to surface, and that field holds `null`. Carrying it would
       // put a scalar where the rows go.
