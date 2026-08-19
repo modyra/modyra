@@ -75,6 +75,8 @@ export interface MdyDraftOptions {
 /** Envelope every draft is stored in (adds expiry + versioning metadata). */
 interface DraftEnvelope {
   readonly __mdyDraft: number;
+  /** The shape of the form that wrote it, where the writer knew one. */
+  readonly shape?: string;
   readonly savedAt: number;
   readonly value: Record<string, unknown>;
 }
@@ -239,6 +241,14 @@ interface DraftManagerDeps {
   /** The paths the schema declared as secrets, asked for on every read and every write. */
   readonly secretPaths?: () => ReadonlySet<string>;
   /**
+   * A short, stable name for the shape of the form this draft belongs to.
+   *
+   * Written into the envelope and compared on the way back: "is every stored path one I declare"
+   * answers yes for a form whose shape *contains* another's, so a second form with one field more
+   * read the first's draft as its own and replaced it.
+   */
+  readonly formShape?: () => string;
+  /**
    * Form-owned scope (when the reactivity adapter provides one). The draft
    * effect registers with it so destroying the scope tears the effect down
    * too — a backstop alongside the explicit {@link MdyDraftManager.destroy}
@@ -329,6 +339,8 @@ export class MdyDraftManager {
     | undefined;
   private readonly _scope: MdyReactiveScope | undefined;
   private readonly _isDeactivated: () => boolean;
+  /** Which form this is, as a short name for its shape — see {@link DraftManagerDeps.formShape}. */
+  private readonly _formShape: (() => string) | undefined;
   /** Config from enableDraft(), recorded but not yet started (deactivated at the time). */
   private _pendingOptions: MdyDraftOptions | null = null;
   /**
@@ -375,6 +387,7 @@ export class MdyDraftManager {
     this._filterRestoredEntry = deps.filterRestoredEntry;
     if (deps.secretPaths) this._secretPaths = deps.secretPaths;
     this._isDeactivated = deps.isDeactivated;
+    this._formShape = deps.formShape;
     this._scope = deps.scope;
   }
 
@@ -664,6 +677,21 @@ export class MdyDraftManager {
     } catch {
       return [];
     }
+    // A shape the writer recorded and this form does not have: another form's work, whatever its
+    // paths look like from here. A draft written before shapes were recorded carries none, and falls
+    // through to the path comparison below.
+    const storedShape = (() => {
+      try {
+        const parsed = JSON.parse(raw) as { shape?: unknown };
+        return typeof parsed.shape === "string" ? parsed.shape : null;
+      } catch {
+        return null;
+      }
+    })();
+    const mine = this._formShape?.();
+    if (storedShape !== null && mine !== undefined && storedShape !== mine) {
+      return Object.keys(isRecord(value) ? value : {}).slice(0, 3);
+    }
     if (!isRecord(value)) return [];
     return Object.keys(value).filter(
       (path) =>
@@ -722,7 +750,10 @@ export class MdyDraftManager {
     const savedAt = believable && stored > now ? stored : now;
     // Build the envelope around the already-serialized payload so the value
     // is stringified only once per write.
-    const envelope = `{"__mdyDraft":${this._version},"savedAt":${savedAt},"value":${serialized}}`;
+    const shape = this._formShape?.();
+    const envelope = `{"__mdyDraft":${this._version}${
+      shape === undefined ? "" : `,"shape":${JSON.stringify(shape)}`
+    },"savedAt":${savedAt},"value":${serialized}}`;
     try {
       this._storage.write(this._key, envelope);
       this._lastWritten = serialized;

@@ -1048,6 +1048,7 @@
     "setReadonly(0) name: string,(1) readonly: MdySignal<boolean>,-> returns: void",
     "setSanitizer(0) name: string,(1) sanitizer: MdySanitizer,-> returns: void",
     "setValue(0) value: Record<string, unknown>,-> returns: void",
+    "shapeKey-> returns: string",
     "state: MdyFormState",
     "submit(0) action: (v: Record<string, unknown>) => Promise<MdyFormError[] | void> | MdyFormError[] | void,-> returns: Promise<void>",
     "submitValue-> returns: Record<string, unknown>",

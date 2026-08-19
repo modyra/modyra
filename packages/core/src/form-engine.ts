@@ -543,6 +543,9 @@ export class MdyFormEngine
       // cells when the user creates them, so a set taken once knows about none of them.
       secretPaths: () => this._sensitivePaths,
       filterRestoredEntry: (key, value) => this._draftEntryAllowed(key, value),
+      // Which form this is, as the paths it was built with: a draft belongs to a shape, not to
+      // whoever holds the key.
+      formShape: () => this.shapeKey(),
       isDeactivated: () => this._deactivated,
       scope: this._scope,
     });
@@ -888,6 +891,28 @@ export class MdyFormEngine
   /** Gives up ownership: the field goes back to living as long as something claims it. */
   disownField(name: string): void {
     this._owned.delete(name);
+  }
+
+  /**
+   * A short, stable name for the shape this form has.
+   *
+   * The paths it was built with, sorted and hashed. It says *which form* a stored draft belongs to:
+   * a form whose own shape happens to contain another's — one field more, the rest the same — read
+   * the other's draft as its own and replaced it, because "is every stored path one I declare"
+   * answers yes for a superset. Two forms are the same form when they have the same shape.
+   */
+  shapeKey(): string {
+    const names = [...(this._baselineFields ?? new Set(this._initialValues.keys()))].sort();
+    let hash = 0x811c9dc5;
+    for (const name of names) {
+      for (let index = 0; index < name.length; index += 1) {
+        hash ^= name.charCodeAt(index);
+        hash = Math.imul(hash, 0x01000193);
+      }
+      hash ^= 0x2e;
+      hash = Math.imul(hash, 0x01000193);
+    }
+    return (hash >>> 0).toString(36);
   }
 
   /**
