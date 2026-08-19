@@ -14001,6 +14001,35 @@ control requiring narrowing to actually narrow somewhere and a wider ask to be i
 "nothing is offered wrongly" would describe a function that ignores its second argument.
 
 
+## 229 — A datepicker restored from a tampered draft holds anything that is a string (S0, SEC-001 VAL-003)
+
+The layering this register already records — *"the shape gate accepts it, the layer below refuses it:
+the control is marked wrong and nothing is sent"* — holds when the **type** is wrong: a string in a
+`number` is caught below. It does not hold when the type is right and the content is not.
+
+```
+a draft carrying, for a datepicker:
+  "not a date at all"        restored, form VALID, submittable, no errors
+  "9999-99-99"               restored, form valid
+  "2026-04-03T00:00:00Z"     restored, form valid
+  "__proto__"                restored, form valid
+```
+
+A datepicker's value is an ISO calendar date — `i18n.md` says so: *"the stored value is an ISO
+calendar date (`"2026-12-31"`), not a `Date` instance and not an instant"*. `MDY_VALUE_CONTRACTS`
+declares its shape as `string`, and the shape gate is right to let a string through. Nothing after it
+asks whether the string is a date, so a tampered `localStorage` entry puts arbitrary text into a date
+field and the form calls itself valid and sends it.
+
+**Found by a battle whose way in had been sealed.** `draft-shape-gate.battle.test.mjs` used to hand
+the gate an object, an array, a number and a boolean, on the reasoning that a field whose initial is
+`null` had nothing to compare against. Finding 223 closed exactly that, so the battle stopped
+reaching the layer it was about — and said so through its own control rather than by going quietly
+green. Repointed at values of the kind's declared shape, it reaches the layer again and finds this.
+
+Pinned by the same battle, second `battle()`.
+
+
 ## The browser tier, measured — a baseline this register never had
 
 `npm run battle:browser` on the working tree at `6ee29144`:
@@ -14157,9 +14186,9 @@ the half-fix to overlay teardown did not close it on plain either.
 ## The register's own shape, measured
 
 ```
-numbered findings        228
-closed or retracted       46
-open with a battle       195
+numbered findings        229
+closed or retracted       47
+open with a battle       196
 open with none            10
 ```
 
