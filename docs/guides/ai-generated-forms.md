@@ -71,7 +71,7 @@ OUTPUT RULES
   "__proto__", "prototype" or "constructor".
 - "kind" MUST be one of: text, textarea, email, password, number, slider,
   checkbox, toggle, select, radio, multiselect, segmented, datepicker,
-  timepicker. Do not invent other kinds.
+  daterange, timepicker, colors, file. Do not invent other kinds.
 - Kinds select/radio/multiselect/segmented REQUIRE "options":
   [{ "value": <string|number|boolean>, "label": <string> }, ...].
 - Kinds number/slider accept "min", "max", "step" (numbers, min ≤ max).

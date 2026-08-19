@@ -285,7 +285,11 @@ export class MdyFormsDevtoolsComponent {
   }
 
   private _isMasked(path: string): boolean {
-    return SENSITIVE_PATH.test(path) || this.maskFields().includes(path);
+    // A named path covers what is under it. The guide says a listed path may name "the collection
+    // itself to hide all of it", and an exact match made that sentence false: someone hiding a table
+    // of payment rows wrote the collection's name and read every row in the clear.
+    return SENSITIVE_PATH.test(path)
+      || this.maskFields().some((named) => named === path || path.startsWith(`${named}.`));
   }
 
   private _displayValue(path: string, value: unknown): string {
