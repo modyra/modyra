@@ -1866,7 +1866,7 @@
     "protected _flatToPatch(0) flat: Record<string, unknown>,-> returns: MdyFormPatch<S>",
     "protected _flatToSubmitted(0) flat: Record<string, unknown>,-> returns: MdySubmittedValue<S>",
     "protected _flatToValue(0) flat: Record<string, unknown>,-> returns: MdyFormValue<S>",
-    "protected _flattenPatch(0) partial: Partial<MdyFormValue<S>> | MdyFormPatch<S>,-> returns: Record<string, unknown>",
+    "protected _flattenPatch(0) partial: Partial<MdyFormValue<S>> | MdyFormPatch<S>,(1) door?: string,-> returns: Record<string, unknown>",
     "protected _groupPaths: ReadonlySet<string>",
     "protected _leafPathSet: ReadonlySet<string>",
     "protected _leafPaths: readonly string[]",
