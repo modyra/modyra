@@ -605,6 +605,8 @@ export abstract class MdyTypedFormBase<
   protected readonly _leafPaths: readonly string[];
   /** What the form held when it was destroyed — see {@link MdyTypedFormBase.getValue}. */
   private _valueAtDestroy: MdyFormValue<S> | null = null;
+  /** What would have been sent at the moment the form ended; see {@link MdyTypedFormBase.getValue}. */
+  private _submitValueAtDestroy: MdySubmittedValue<S> | null = null;
   /** What was made from this form and has to end with it — see {@link MdyTypedFormBase.onDestroy}. */
   private readonly _teardowns = new Set<() => void>();
   /** The same paths as a set, for the reads that ask about one path at a time. */
@@ -843,6 +845,10 @@ export abstract class MdyTypedFormBase<
    * to show or log the payload without submitting.
    */
   submitValue(): MdySubmittedValue<S> {
+    // The same rule `getValue` follows, for the same reason: with no fields left, building the
+    // payload from them answers `{}` for a form that was holding rows — so the two reads described
+    // different forms, and a consumer composing them saw a contradiction rather than an ending.
+    if (this._submitValueAtDestroy !== null) return this._submitValueAtDestroy;
     return this._flatToSubmitted(this._adapter.submitValue());
   }
 
@@ -1151,6 +1157,7 @@ export abstract class MdyTypedFormBase<
     if (this._valueAtDestroy === null) {
       try {
         this._valueAtDestroy = this.getValue();
+        this._submitValueAtDestroy = this.submitValue();
       } catch {
         // A form that could not state its value while it was alive cannot state it afterwards; the
         // read then fails as it did before, which is the honest answer.
