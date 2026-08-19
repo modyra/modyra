@@ -6,9 +6,8 @@
 S0     1      the whole of it before any S1
 S1     3
 S2     4
-S3     1
       --
-       9      open reds, 2026-08-19
+       8      open reds, 2026-08-19
 ```
 
 Severity is the order of work: every S0, then every S1, then S2 and below. The same counts are in
@@ -15606,7 +15605,16 @@ Split by renderer where the name says one: 25 name `lit`, 22 name `plain`, the r
 `nowhere-for-the-keyboard-to-stand` fails on **both**, which answers a question asked of this measurement:
 the half-fix to overlay teardown did not close it on plain either.
 
-## 256 — A line in a guide a reader cannot run (S3, DOC-001)
+## 256 — A line in a guide a reader cannot run (S3, DOC-001) — CLOSED
+
+**Closed, `fc53bde4`** — the word `type`, in one place; the battle is green.
+
+Two things changed in the instrument after it was filed, both because closing this one exposed them.
+The angular entry points are no longer excluded: `import.meta.resolve` names a module's file without
+evaluating it, so the sixteen names behind `@modyra/angular/adapter` are now read off its export
+statements — `mdyForm` passes, an invented name beside it does not, both checked. And this register
+is excluded from the sweep, because it quotes the broken line of every finding it holds: filing a
+finding here would otherwise be the way to break the battle that finds them.
 
 `docs/guides/schemas.md:31` is the first line of the Standard Schema guide's opening example:
 
@@ -15650,6 +15658,47 @@ latter because it lives behind `@modyra/core/devtools` rather than the package r
 **Not a finding, checked:** `@modyra/core/ui`, `/theme-compiler`, `/localization` and `/color-utils`
 are named in markdown and are not exported at all — every mention is inside an ADR recording their
 removal or a changeset's `-import` diff line, which is where a removed specifier belongs.
+
+## 257 — An empty row in a list of words (S0, SUB-002 COL-001 VAL-002)
+
+ADR 0100 makes a position an identity: a row of a positional collection that sends nothing is sent as
+`{}` where it sits, so nothing after it moves. `_keepingPositions` writes that placeholder for every
+row it has to fill, and a positional collection may hold **leaves**:
+
+```
+array(field(""))          ["a","b","c"]      middle out    ["a",{},"c"]
+array(field(0))           [1,2,3]            middle out    [1,{},3]
+array(field(""))          ["a","b","c"]      all out       [{},{},{}]
+array(array(field("")))   [["a","b"],["c"]]  inner two out [[{},{}],["c"]]
+record(field(""))         {a:"x",b:"y"}      a out         {"b":"y"}     — keyed, unchanged
+```
+
+The element **type** changes. A list declared as strings is submitted holding an object, and a
+receiver validating `array of string` refuses the whole payload — where before it received a shorter
+list of strings, wrong about position and right about type. A declaration cannot produce `{}` at a
+leaf by any other route, so nothing downstream has a reason to expect it.
+
+There is no empty row for a leaf: a leaf that sends nothing has no members to send none of. `{}` is
+the shape of "a row that sent no cells", and a leaf is not a row.
+
+**Introduced by `551320a0`**, not pre-existing: `_flatToSubmitted` was `_flatToPatch`, which compacts,
+so the same form sent `["a","c"]` before. The decision the ADR takes is about position and is not in
+question here; what is in question is one placeholder used for two kinds of row.
+
+`packages/core/src/typed-form.ts`, in `_keepingPositions`:
+
+```ts
+rows.push(at === -1
+  ? {}
+  : restore(node[at], heldNode[index], `${path}.*`, `${concrete}.${index}`));
+```
+
+The branch has the held row in hand — `heldNode[index]` — and does not look at it.
+
+Two answers close it: a placeholder that is not an object when the row is not a record, or a leaf
+collection that compacts and says so in the ADR. Held by
+`battle-tests/adversarial/submission/an-empty-row-in-a-list-of-words.battle.test.mjs`, which carries
+the group case as a control so a repair that broke ADR 0100 would fail beside it.
 
 ## The register's own shape, measured
 
