@@ -19,6 +19,8 @@
  * The control is the same document's per-field rule, on the same page, in the same mount: it becomes
  * a native constraint and produces the document's message when broken. Document validation is wired.
  * It is the cross-field kind that is dropped, silently and with nothing to read.
+ *
+ * Claims under attack: DYN-004.
  */
 
 import { expect, test } from "@playwright/test";

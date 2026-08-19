@@ -17,6 +17,8 @@
  *
  * Anything the functions do not recognise lands on the days, which is the view a calendar can always
  * draw.
+ *
+ * Claims under attack: UI-002.
  */
 
 import { expect, test } from "@playwright/test";

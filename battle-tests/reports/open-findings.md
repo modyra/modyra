@@ -14908,14 +14908,21 @@ on every run until it stopped saying anything. Seventy-three specs are listed; a
 being listed fails the build.
 
 **Severity is derived rather than declared.** A browser spec's title carries none, so it is taken from
-the claims the file's header names — and only a third of the specs name one, which is why forty-three
-of the seventy-three read `unknown`. That is this suite's debt, not the product's.
+the claims the file's header names — the worst of them, where a file names several.
 
 ```
-S0  12      S1  17      S2  1      unknown  43
+S0  17      S1  42      S2  12      unknown  2
 ```
 
-The twelve S0, and they are not scattered — most are a value that does not survive:
+It read `unknown 43` until the specs were made to name their claims: only a third of them did, so two
+thirds of the tier could not be ordered at all. Twenty-nine files now say what they attack. Four of
+those assignments were wrong on the first pass and are worth naming, because each would have sent
+somebody to the wrong work: a required star read as `VAL-001` (which is about async ordering), two
+errors-before-typing read as `VAL-002` (disabled values), and a server refusal read as `SUB-001`
+(undeclared paths). The two still unknown are left so rather than assigned to whichever claim is
+closest.
+
+The S0 group, by file — most of them a value that does not survive:
 
 ```
 a-range-that-throws-away-what-you-type   three specs: what is typed, what lit does with it,

@@ -1,3 +1,7 @@
+/**
+ * Claims under attack: A11Y-001, A11Y-002, A11Y-003, A11Y-004.
+ */
+
 import type { LitHost } from "./host-api";
 import { readFileSync } from "node:fs";
 

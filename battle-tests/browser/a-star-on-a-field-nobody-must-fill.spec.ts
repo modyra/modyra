@@ -17,6 +17,8 @@
  * The control is the other half of the same pair: a field that *is* required must carry both. A
  * renderer that had simply stopped drawing markers would otherwise satisfy the invariant by never
  * agreeing about anything.
+ *
+ * Claims under attack: A11Y-004.
  */
 
 import { expect, test } from "@playwright/test";

@@ -1,3 +1,7 @@
+/**
+ * Claims under attack: VAL-003, UI-008.
+ */
+
 import type { EitherHost } from "./host-api";
 import { expect, test } from "@playwright/test";
 

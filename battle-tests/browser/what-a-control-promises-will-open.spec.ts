@@ -14,6 +14,8 @@
  * that role is on screen once it has.
  *
  * A field the browser draws is excluded — the platform makes both the promise and the popup.
+ *
+ * Claims under attack: A11Y-004.
  */
 
 import { expect, test } from "@playwright/test";

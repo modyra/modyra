@@ -14,6 +14,8 @@
  *
  * So the check is the set rather than the role alone: a control declared as a spinbutton carries the
  * role *and* the three values, because any of them alone is a number nobody can hear.
+ *
+ * Claims under attack: A11Y-004.
  */
 
 import { expect, test } from "@playwright/test";

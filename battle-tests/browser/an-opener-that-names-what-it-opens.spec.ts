@@ -17,6 +17,8 @@
  * Ids are not compared across renderers — they are generated, and one renderer's `x__grid` is
  * another's `mdy-field-2__grid`. What is compared is the suffix the projection derives from
  * `MDY_POPUP_OPENERS[kind].controls`, and whether the id resolves to an element on the page.
+ *
+ * Claims under attack: A11Y-001.
  */
 
 import { expect, test } from "@playwright/test";

@@ -35,6 +35,8 @@
  *
  * The kinds are read from the tables rather than listed here, so a kind that changes mechanism moves
  * this spec with it.
+ *
+ * Claims under attack: UI-009.
  */
 
 import { expect, test } from "@playwright/test";

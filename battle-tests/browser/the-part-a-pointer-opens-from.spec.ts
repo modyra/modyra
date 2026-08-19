@@ -16,6 +16,8 @@
  * A field rendering a native control is excluded, with the kind named: the browser owns that popup,
  * it is not in the document, and no DOM check can see it open. That is an architectural difference
  * rather than a renderer failing the table.
+ *
+ * Claims under attack: UI-009.
  */
 
 import { expect, test } from "@playwright/test";

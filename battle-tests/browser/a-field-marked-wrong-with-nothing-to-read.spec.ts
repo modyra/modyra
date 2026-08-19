@@ -17,6 +17,8 @@
  *
  * A field that reports itself valid is skipped rather than failed: a `required` slider holds `0`,
  * which is not empty, so it is never in this state and has nothing to say.
+ *
+ * Claims under attack: A11Y-004, VAL-003.
  */
 
 import { expect, test } from "@playwright/test";
