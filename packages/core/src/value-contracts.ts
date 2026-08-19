@@ -165,6 +165,10 @@ export function explainValueMismatch(kind: MdyValueKind, value: unknown): string
  * verdict, which is what lets a field show what a person typed and say why it is wrong.
  */
 function contentMismatch(kind: MdyValueKind, value: unknown): string | null {
+  // The empty string is how absence is written wherever a value is a formatted string — `email` and
+  // `pattern` both pass on it, and a document writing `initialValue: ""` for a date means "none".
+  // Refusing it here would drop the field, which is a heavier answer than the mistake.
+  if (value === "") return null;
   if (kind === "datepicker") {
     return isIsoDate(value) ? null : `${kind} holds an ISO date (yyyy-MM-dd), got ${JSON.stringify(value)}`;
   }
