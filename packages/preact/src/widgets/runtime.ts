@@ -8,6 +8,7 @@
 import { useCallback, useMemo, useRef } from "preact/hooks";
 import {
   createCommandRuntime,
+  sameControllerOptions,
   type MdyElementLookup,
   type MdyUiCommand,
   type MdyWidgetCommandHandlers,
@@ -64,4 +65,53 @@ export function useMdyCommandQueue(
     }),
     [flush],
   );
+}
+
+/**
+ * The configuration a controller was built from, kept while it still says the same thing.
+ *
+ * Every widget hook memoizes its controller on the configuration object, and a configuration written
+ * at the call is a new object on every render: a new controller, a new subscription, a state write,
+ * another render. Comparing what the configuration *says* rather than which object it is makes a
+ * literal at the call site work, which is what an argument that is an object literal invites.
+ *
+ * A handler written at the call is a new function every render too, and it cannot be compared by
+ * identity without defeating the whole thing. It is replaced by one stable function per member that
+ * calls whatever the latest render passed — so the controller keeps the handler it was built with,
+ * and that handler is never stale.
+ */
+export function useMdyStableOptions<T>(options: T): T {
+  const latest = useRef(options);
+  latest.current = options;
+  const compared = useRef<unknown>(null);
+  const built = useRef<T | null>(null);
+  if (built.current === null || !sameControllerOptions(compared.current, withoutFunctions(options))) {
+    compared.current = withoutFunctions(options);
+    built.current = withStableFunctions(options, latest);
+  }
+  return built.current;
+}
+
+/** The configuration's members that can be compared at all — a function never compares equal. */
+function withoutFunctions(options: unknown): unknown {
+  if (typeof options !== "object" || options === null || Array.isArray(options)) return options;
+  const out: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(options as Record<string, unknown>)) {
+    if (typeof value !== "function") out[key] = value;
+  }
+  return out;
+}
+
+/** The same configuration with one stable function per handler, each calling the latest one given. */
+function withStableFunctions<T>(options: T, latest: { current: T }): T {
+  if (typeof options !== "object" || options === null || Array.isArray(options)) return options;
+  const out: Record<string, unknown> = { ...(options as Record<string, unknown>) };
+  for (const [key, value] of Object.entries(options as Record<string, unknown>)) {
+    if (typeof value !== "function") continue;
+    out[key] = (...args: readonly unknown[]): unknown => {
+      const now = (latest.current as Record<string, unknown>)[key];
+      return typeof now === "function" ? (now as (...given: readonly unknown[]) => unknown)(...args) : undefined;
+    };
+  }
+  return out as T;
 }

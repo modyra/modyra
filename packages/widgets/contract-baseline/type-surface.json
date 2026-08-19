@@ -3157,6 +3157,11 @@
     "(3) createHarness: () => MdyReactivityTestHarness",
     "-> returns: void"
   ],
+  "sameControllerOptions": [
+    "(0) held: unknown",
+    "(1) next: unknown",
+    "-> returns: boolean"
+  ],
   "scrollOptionIntoView": [
     "(0) key: string",
     "-> returns: MdyUiCommand"
