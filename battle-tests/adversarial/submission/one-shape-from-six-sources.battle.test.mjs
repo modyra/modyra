@@ -25,12 +25,22 @@ import { expectClaim, expectEqual } from "../../harness/assertions.mjs";
 
 const settled = (ms = 140) => new Promise((resolve) => setTimeout(resolve, ms));
 
+/**
+ * Every member `MdyFormError` and `MdyFieldError` declare.
+ *
+ * Written out because a type is not readable at runtime, which means this list can fall behind the
+ * contract — and did: `origin` was added to distinguish a rule this form ran from a refusal that
+ * arrived over the wire, and this battle read it as a key nobody declared. The list is the thing to
+ * update when the contract gains a member, and the failure it produces says exactly which one.
+ */
+const DECLARED_MEMBERS = Object.freeze(["path", "kind", "message", "payload", "origin"]);
+
 /** What a renderer would read off one error. */
 const shapeOf = (error) => ({
   path: error.path === null ? "null" : typeof error.path,
   kind: error.kind,
   message: typeof error.message,
-  undeclared: Object.keys(error).filter((key) => !["path", "kind", "message", "payload"].includes(key)),
+  undeclared: Object.keys(error).filter((key) => !DECLARED_MEMBERS.includes(key)),
 });
 
 battle(
