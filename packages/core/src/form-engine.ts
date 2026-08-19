@@ -940,6 +940,12 @@ export class MdyFormEngine
 
   setDisabled(name: string, disabled: MdySignal<boolean>): void {
     assertReactive(disabled, "disabled", name);
+    // A name nobody declared creates a record nothing renders and nothing submits, so the binding is
+    // held against a field that does not exist. A typo in a path that came from data — a document, a
+    // rule, a saved layout — otherwise looks exactly like a control the form chose not to disable.
+    if (MDY_DEV && !this._fields.has(name) && !this._initialValues.has(name) && !this._gatesOver(name).length) {
+      this._warn(`setDisabled on "${name}": this form declares no such field, so the binding reaches nothing.`);
+    }
     const rec = this._getOrCreate(name);
     // A binding cannot put back in play what the schema left out, and finding that out by watching a
     // control stay grey is the kind of silence this library owes an explanation for.

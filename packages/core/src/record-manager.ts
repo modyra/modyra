@@ -231,6 +231,7 @@ export class MdyRecordManager implements MdyNestedCollection {
     const rowValue = value !== undefined
       ? value
       : this._declared.has(key) ? this._readRow(key) : undefined;
+    this._reportUndeclaredCells(`${this._deps.path}.${key}`, this._deps.item, rowValue);
     const isNew = !this._declared.has(key);
     if (isNew) {
       this._declared.add(key);
@@ -576,6 +577,25 @@ export class MdyRecordManager implements MdyNestedCollection {
     };
   }
 
+  /**
+   * Says which members of a written row this collection's template does not declare.
+   *
+   * A row's shape is the template's, so a key the template has no child for is a write that does
+   * nothing — and the form shows what it already held, which is indistinguishable from the write
+   * having landed. The doors this reaches are the ones where the keys come from data: a server
+   * response, a saved project, a document.
+   */
+  private _reportUndeclaredCells(fullPath: string, rowNode: MdyRowNode, value: unknown): void {
+    if (!MDY_DEV || rowNode.kind !== "group" || !isRecord(value)) return;
+    const declared = (rowNode as MdyAnyGroupDescriptor).children;
+    const unknown = Object.keys(value).filter((key) => !(key in declared));
+    if (unknown.length === 0) return;
+    this._warn(
+      `write to "${fullPath}" ignored ${unknown.map((key) => `"${key}"`).join(", ")}: a row of ` +
+      `"${this._deps.path}" declares no such member.`,
+    );
+  }
+
   /** Writes a partial row without re-registering it — the row keeps its validators and its flags. */
   private _writeInto(fullPath: string, rowNode: MdyRowNode, value: unknown): void {
     if (rowNode.kind === "field") {
@@ -589,6 +609,7 @@ export class MdyRecordManager implements MdyNestedCollection {
       return;
     }
     if (!isRecord(value)) return;
+    this._reportUndeclaredCells(fullPath, rowNode, value);
     for (const [key, child] of Object.entries((rowNode as MdyAnyGroupDescriptor).children)) {
       if (!(key in value)) continue;
       const at = `${fullPath}.${key}`;

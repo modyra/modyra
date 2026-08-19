@@ -897,12 +897,12 @@ export abstract class MdyTypedFormBase<
   }
 
   patchValue(partial: Partial<MdyFormValue<S>>): void {
-    this._applyFlatWithArrays(this._flattenPatch(partial));
+    this._applyFlatWithArrays(this._flattenPatch(partial, "patchValue"));
   }
 
   /** Deeply-typed variant of {@link patchValue} for nested groups. */
   patch(partial: MdyFormPatch<S>): void {
-    this._applyFlatWithArrays(this._flattenPatch(partial));
+    this._applyFlatWithArrays(this._flattenPatch(partial, "patch"));
   }
 
   setValue(value: MdyFormValue<S>): void {
@@ -1769,13 +1769,28 @@ export abstract class MdyTypedFormBase<
    */
   protected _flattenPatch(
     partial: Partial<MdyFormValue<S>> | MdyFormPatch<S>,
+    /** The door the caller used, so what is reported names the call they wrote. */
+    door?: string,
   ): Record<string, unknown> {
-    return this._described(flattenPatch(
+    const flat = flattenPatch(
       partial as Record<string, unknown>,
       this._groupPaths,
       this._arrayPaths,
       this._recordPaths,
-    ));
+    );
+    const kept = this._described(flat);
+    // Dropped, and said. The doors that matter here are the ones where the keys come from data — a
+    // document, a server response, a saved project — and a typo there is indistinguishable from an
+    // applied write: the form shows what it already held either way.
+    if (MDY_DEV && door !== undefined) {
+      const dropped = Object.keys(flat).filter((path) => !(path in kept));
+      if (dropped.length > 0) {
+        this._adapter.warnDev(
+          `${door} ignored ${dropped.map((path) => `"${path}"`).join(", ")}: this form declares no such field.`,
+        );
+      }
+    }
+    return kept;
   }
 
   /** Routes array- and record-path entries to their manager, the rest to the flat adapter. */
