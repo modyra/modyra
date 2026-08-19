@@ -13053,12 +13053,50 @@ door for the `upsert` that had to create the row before a cell could be written 
 passes for a door that makes one. Setup is now separated from the write under measurement.
 
 
+## 208 — A rule strict mode accepts that no choice can ever satisfy (S0, DYN-004)
+
+ADR 0051 lets an option carry an object as its value — what a select over records rather than over
+strings needs. `equals` compares objects by identity, and a document carries its options in one place
+and its rule in another, so the two are never the same object: two literals when written by hand, two
+results of one `JSON.parse` when it arrives over the wire.
+
+```
+options carrying strings, visible|hidden   the rule fires
+options carrying numbers, visible|hidden   the rule fires
+options carrying objects, visible|hidden   NO declared choice changes the answer
+                                           ok: true, diagnostics: 0, mode: strict
+```
+
+Strict mode's whole promise is that a partly valid document is never accepted. This one is accepted
+whole, and which way it fails depends on the effect:
+
+- `visible` — the field the rule was written to reveal never appears;
+- `hidden` — the field the rule was written to hide **is shown to everyone, and its values go into
+  the payload**. That is the failure `expression.ts` already narrates as having happened once for a
+  different cause: *"a section governed by a misspelled operator was shown to everyone"*. Here the
+  operator is spelled correctly and the value is not comparable.
+
+The battle asserts neither that the rule must be true — that depends on what the user picks — nor
+what `equals` should do with objects. It asserts that **a rule the parser accepts can come true**:
+somewhere among the choices the document itself declares, one changes the answer. A control requires
+the string and number spellings to fire, so "objects do not" is not a statement about a probe that
+never made any rule fire.
+
+Pinned by `adversarial/dynamic-contract/a-rule-that-cannot-come-true.battle.test.mjs`.
+
+**A measurement that corrected itself twice.** The first probe wrote the chosen value as a fresh
+literal and read the rule as broken; the second passed the *same object* the rule carried and read it
+as working. Neither is what happens: a control hands back the value from the **options list**, which
+is a third object again. Only the third arrangement is the product's own path, and it is the one
+measured here.
+
+
 ## The register's own shape, measured
 
 ```
-numbered findings        207
-closed or retracted       24
-open with a battle       178
+numbered findings        208
+closed or retracted       28
+open with a battle       179
 open with none             6
 ```
 
