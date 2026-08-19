@@ -31,6 +31,8 @@
  * already there, legitimately changes nothing, and a first pass here read six such no-ops as failures
  * — so the reading position is moved off the first option before a `move` binding is pressed, and the
  * list is three long so that first, next and last are three different places.
+ *
+ * Claims under attack: UI-002.
  */
 
 import { expect, test } from "@playwright/test";

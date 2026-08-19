@@ -17,6 +17,8 @@
  *
  * A kind a renderer builds from a native control is excluded by name: the browser owns that widget's
  * furniture, its arrow is drawn by the platform, and no class of ours belongs on it.
+ *
+ * Claims under attack: UI-009.
  */
 
 import { expect, test } from "@playwright/test";

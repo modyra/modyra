@@ -26,6 +26,8 @@
  * "Reachable" means what a browser and an assistive technology agree on: not `display:none`, not
  * `visibility:hidden`, not `hidden`, and not underneath an `aria-hidden="true"`. A popup hidden by
  * any of those is out of both trees and is not what this spec is about.
+ *
+ * Claims under attack: UI-005, A11Y-002.
  */
 
 import { expect, test } from "@playwright/test";

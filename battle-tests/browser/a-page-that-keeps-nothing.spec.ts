@@ -15,6 +15,8 @@
  *
  * The same shape as finding 117, where a document's cross-field validations have a compiler that no
  * adapter can call.
+ *
+ * Claims under attack: PER-001.
  */
 
 import { expect, test } from "@playwright/test";

@@ -1,3 +1,7 @@
+/**
+ * Claims under attack: UI-002, A11Y-004.
+ */
+
 import type { LitHost } from "./host-api";
 import { expect, test } from "@playwright/test";
 

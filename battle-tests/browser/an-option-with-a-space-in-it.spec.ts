@@ -1,3 +1,7 @@
+/**
+ * Claims under attack: UI-003.
+ */
+
 import { expect, test } from "@playwright/test";
 
 /**

@@ -15,6 +15,8 @@
  *
  * The check is not that the label carries a particular id: it is that whatever the grid points at
  * exists and has words in it.
+ *
+ * Claims under attack: A11Y-001, A11Y-004.
  */
 
 import { expect, test } from "@playwright/test";

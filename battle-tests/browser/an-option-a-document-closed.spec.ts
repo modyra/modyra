@@ -11,6 +11,8 @@
  *
  * The controls are what make that a renderer's gap rather than a document nobody reads: an *enabled*
  * option can be chosen in both, and the same document is refused by one of them.
+ *
+ * Claims under attack: DYN-004, UI-003.
  */
 
 import { expect, test } from "@playwright/test";

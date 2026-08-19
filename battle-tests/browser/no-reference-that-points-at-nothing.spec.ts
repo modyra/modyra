@@ -16,6 +16,8 @@
  * Two kinds of failure show up in that last state and both are here rather than described: a grid
  * whose label names an id nobody wrote, and an opener whose `aria-controls` still names the view it
  * has left.
+ *
+ * Claims under attack: A11Y-001.
  */
 
 import { expect, test } from "@playwright/test";

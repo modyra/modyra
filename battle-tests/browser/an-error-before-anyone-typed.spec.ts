@@ -18,6 +18,8 @@
  *
  * Measured in a real DOM because that is the only place it is visible: the handle is failing either
  * way, and every check that reads the engine agrees with the engine.
+ *
+ * Claims under attack: UI-008.
  */
 
 import { expect, test } from "@playwright/test";

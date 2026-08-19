@@ -16,6 +16,8 @@
  * A name is `aria-label` with something in it, or `aria-labelledby` pointing at an element that has
  * text. Pointing at an empty element is not a name, which is why the target's text is read rather
  * than its existence.
+ *
+ * Claims under attack: A11Y-004.
  */
 
 import { expect, test } from "@playwright/test";

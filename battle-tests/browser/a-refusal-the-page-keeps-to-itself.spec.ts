@@ -12,6 +12,8 @@
  * The control is the same field made wrong by a validator instead. If a renderer shows one and not
  * the other, the difference is where the error came from — not a page that cannot show errors at
  * all, which is what makes this a finding rather than a repeat of one.
+ *
+ * Claims under attack: VAL-003.
  */
 
 import { expect, test } from "@playwright/test";

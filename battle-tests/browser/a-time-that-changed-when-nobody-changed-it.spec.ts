@@ -21,6 +21,8 @@
  *
  * The control is the same interaction on a value already in the field's own format, which is stable.
  * So this is the mount and the first write disagreeing, not a confirmation that always rewrites.
+ *
+ * Claims under attack: UI-006.
  */
 
 import { expect, test } from "@playwright/test";

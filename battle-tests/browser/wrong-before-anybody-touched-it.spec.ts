@@ -18,6 +18,8 @@
  *
  * The control is the same field after a touch, which must show the message in both renderers —
  * otherwise this would be about a page that shows no messages at all, which is finding 125.
+ *
+ * Claims under attack: UI-008.
  */
 
 import { expect, test } from "@playwright/test";

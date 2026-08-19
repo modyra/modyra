@@ -15,6 +15,8 @@
  * The other pickers are measured alongside and not asserted on: no projection declares a dialog for
  * them, and one renderer builds their calendar as a `grid` rather than a `dialog`, which is a
  * different and defensible reading of the same widget.
+ *
+ * Claims under attack: A11Y-002, A11Y-004.
  */
 
 import { expect, test } from "@playwright/test";

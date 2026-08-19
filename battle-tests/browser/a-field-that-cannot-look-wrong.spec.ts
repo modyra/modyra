@@ -20,6 +20,8 @@
  * Two controls stand under it: the field really is refused — `aria-invalid="true"` is present — and
  * some kinds in the same renderer really are painted, so a kind that is not is that kind rather than
  * a page with no error styling in it.
+ *
+ * Claims under attack: UI-009, A11Y-004.
  */
 
 import { readFileSync, readdirSync } from "node:fs";

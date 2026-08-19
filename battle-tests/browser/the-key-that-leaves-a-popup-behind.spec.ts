@@ -16,6 +16,8 @@
  *
  * A field built from a native control is excluded by name: the browser owns that popup and answers
  * Tab itself.
+ *
+ * Claims under attack: UI-005, A11Y-002.
  */
 
 import { expect, test } from "@playwright/test";
