@@ -60,7 +60,15 @@ export function createSelectController<TValue>(
 
   const idFactory = defaultWidgetIdFactory;
   /** What the caller declared. */
-  const allOptions: MdySelectOption<TValue>[] = [...initialOptions];
+  /**
+   * What the caller declared, replaced rather than emptied and refilled.
+   *
+   * The painted list is a signal holding this array, and a subscriber is told a signal changed by
+   * the value being a different one. Rewriting this array in place made the new list *the same
+   * array* the signal already held: nothing was told, so a page kept the options it had until some
+   * other change happened to redraw it.
+   */
+  let allOptions: readonly MdySelectOption<TValue>[] = [...initialOptions];
   /**
    * What is painted: the declared list, plus a held value the list does not contain.
    *
@@ -330,15 +338,17 @@ export function createSelectController<TValue>(
 
   function setOptions(nextOptions: readonly MdySelectOption<TValue>[]): void {
     const selected = valueForKey(selectedKey());
-    allOptions.length = 0;
-    for (const option of nextOptions) {
-      allOptions.push(option);
-    }
+    allOptions = [...nextOptions];
     // The selection survives the list changing: options arriving, being filtered or being replaced
     // are not a user edit, and a value the new list does not name keeps an option of its own rather
     // than being dropped. What refuses such a value is a rule — `oneOf` — not the widget.
     rebuildOptionIndex(selected);
     selectedKey.set(keyForValue(selected));
+    // What the keyboard was pointing at is a different question from what is selected, and the
+    // pointer has no option of its own to keep: `aria-activedescendant` names an element, so a key
+    // the new list does not have names nothing on the page.
+    const pointing = activeKey();
+    if (pointing !== null && !optionByKey.has(pointing)) activeKey.set(null);
   }
 
   function setOpen(nextOpen: boolean): void {
