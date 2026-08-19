@@ -124,27 +124,35 @@ battle(
       what: "the draft the engine wrote does not hold what was typed",
     });
 
-    // Now the same envelope with something a datepicker cannot hold. No `required` anywhere, so
-    // whatever refuses it refuses it for its shape.
-    for (const hostile of [{ evil: true }, ["a"], 42, true]) {
+    // Now the same envelope carrying a value of the **right shape** and the wrong content. A
+    // datepicker holds a string, so each of these passes the shape gate — which is the point: the
+    // gate is not what stands between a tampered draft and a server, and this battle is about the
+    // layer that does.
+    //
+    // It used to hand the gate an object, an array, a number and a boolean, on the reasoning that a
+    // field whose initial is `null` had nothing to compare against and let them through. Finding 223
+    // closed that: the gate now reads the kind's declared shape rather than the field's initial, and
+    // refuses all four. A battle whose way in has been sealed is measuring nothing, and its own
+    // control said so before anything else did.
+    for (const hostile of ["not a date at all", "9999-99-99", "2026-04-03T00:00:00Z", "__proto__"]) {
       envelope.value.when = hostile;
       storage.written.set("hostile", JSON.stringify(envelope));
 
       const form = open();
       await restored();
-      ctx.log.note("a draft carrying a shape the field cannot hold", { hostile, restored: form.getValue().when });
+      ctx.log.note("a draft carrying a value the field's kind can hold and its rules cannot", { hostile, restored: form.getValue().when });
 
-      // The gate lets it through — the field's initial is null, so there was nothing to compare.
+      // The gate lets it through, because a datepicker does hold strings.
       expectEqual(form.getValue().when, hostile, {
         claimIds: ["PER-001"],
-        what: "the draft gate refused a value this battle expects it to accept, so the layer below is untested",
+        what: "the draft gate refused a value of the kind's own shape, so the layer below is untested",
       });
 
       // And the layer that does refuse it. This is what stands between a hostile draft and a
       // server: not the gate, the verdict.
       expectClaim(!form.state.valid() && form.state.canSubmit() === false, {
         claimIds: ["SEC-001", "VAL-003"],
-        what: `a datepicker holding ${JSON.stringify(hostile)} left the form submittable`,
+        what: `a datepicker restored from a draft holding ${JSON.stringify(hostile)} left the form submittable`,
         detail: JSON.stringify(form.errorsFor("when")()),
       });
 
