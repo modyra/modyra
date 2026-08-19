@@ -511,3 +511,35 @@ test("equality is SameValueZero wherever it is spelled", () => {
   assert.deepEqual(both("zero", 0), [true, true, true, true], "-0 and 0 are one answer");
   assert.deepEqual(both("zero", 1), [false, false, false, false], "the control: different values still differ");
 });
+
+test("an operand that claims to be a reference and is not decides nothing", () => {
+  const held = { n: 1, plan: { tier: "pro" } };
+  // The dual of the rule this module already holds for operators. These reached the literal branch
+  // and were compared as the objects they are — never empty, never equal — so a section governed by
+  // a misspelled operand was shown to everyone and the values inside it went into the payload.
+  for (const operand of [{ context: 123 }, { self: "yes" }, { root: 1 }, { path: 4 }]) {
+    assert.equal(evaluateExpression({ op: "isNotEmpty", operand }, held), false, JSON.stringify(operand));
+    assert.equal(evaluateExpression({ op: "equals", operands: [operand, 1] }, held), false, JSON.stringify(operand));
+    assert.notDeepEqual(validateExpression({ op: "isNotEmpty", operand }, "w"), []);
+  }
+
+  // And the control, which is why the rule is about a *claim* rather than about objects: a
+  // membership list is an array and an option's value may be an object.
+  assert.equal(evaluateExpression({ op: "in", operands: [{ path: "n" }, [1, 2]] }, held), true);
+  assert.equal(evaluateExpression({ op: "isNotEmpty", operand: { field: "n" } }, held), true);
+});
+
+test("a context the host supplies cannot take the read down with it", () => {
+  // The bag belongs to the application: in a real one it is a store, a signal or a Proxy, so reading
+  // a key is a property access that can throw. A condition is read every time the form is read.
+  const hostile = new Proxy({}, {
+    get() { throw new Error("the store exploded"); },
+    has: () => true,
+    ownKeys: () => ["role"],
+    getOwnPropertyDescriptor: () => ({ configurable: true, enumerable: true, value: 1 }),
+  });
+  assert.equal(
+    evaluateExpression({ op: "equals", operands: [{ context: "role" }, "admin"] }, {}, { context: hostile }),
+    false,
+  );
+});

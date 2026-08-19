@@ -46,6 +46,35 @@ that would otherwise copy the value out reads it.
 The registry members are optional (`markSensitive?`, `sensitivePaths?`), so an adapter written
 against the earlier contract still satisfies it and keeps the behaviour it had.
 
+## Amendment: a declaration is about one field, and it crosses a collection
+
+Two gaps, both measured with a leaf named `answer` so no name heuristic could explain the result:
+
+```
+                    panel        sensitivePaths()   draft
+answer              masked       listed             withheld
+inGroup.answer      masked       listed             withheld
+rows.a.answer       in clear     absent             withheld only by coincidence
+```
+
+**A row's cells never declared it.** The schema walk marks the leaves it visits, and a collection's
+cells are declared later — by the row template, when the user creates a row. So the arrangement where
+a secret is most likely (a card per row with its CVV, a beneficiary per row with their tax id) was
+the one arrangement the flag did not reach. A row's cell named `cvv` *was* masked, by the panel's
+name heuristic, which is what hides this from a hurried check.
+
+**And the draft withheld by leaf name rather than by path.** `exclude` is a list a consumer writes,
+where naming a leaf and meaning "wherever it is" is a convenience; a declaration is a fact about one
+field. Read the loose way it fails in both directions — a root `token` marked secret withheld a row's
+unrelated `token`, and a row's ordinary column disappeared from a restored draft because a field
+elsewhere shared its name. The second is a data loss wearing a security feature's clothes, and it
+would never be looked for among security bugs.
+
+So: `registerRowNode` marks a row cell that declares it, and the draft asks the engine for the
+declarations **on every read and write** rather than copying them once at `enableDraft` — a row
+created afterwards is otherwise invisible to a set taken before it existed. Declared secrets match by
+exact path or subtree, never by bare name.
+
 ## Consequences
 
 `MdyFieldDescriptor` and `MdyAnyFieldDescriptor` gain a **required** `sensitive` member. Code that

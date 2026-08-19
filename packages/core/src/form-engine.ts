@@ -453,6 +453,9 @@ export class MdyFormEngine
       patchValue: (value) => this.restoreValue(value),
       hasDraft,
       warn: (message, code) => this._warn(message, code),
+      // Asked for on every read and write rather than copied: a collection's rows declare their
+      // cells when the user creates them, so a set taken once knows about none of them.
+      secretPaths: () => this._sensitivePaths,
       filterRestoredEntry: (key, value) => this._draftEntryAllowed(key, value),
       isDeactivated: () => this._deactivated,
       scope: this._scope,
@@ -1358,15 +1361,12 @@ export class MdyFormEngine
    * {@link clearDraft}. `File` values are skipped (not serializable).
    */
   enableDraft(options: MdyDraftOptions): void {
-    // A field the schema calls sensitive is excluded whether or not the call names it. `exclude` is
-    // a list the application passes when it creates the form, and a document that marks a field
-    // secret has no way to reach it — so the flag reached a storage write in clear text while the
-    // only thing in the document that names secrecy said it should not. The call's own list is kept:
-    // this widens what is withheld, never narrows it.
-    const withSecrets = this._sensitivePaths.size === 0
-      ? options
-      : { ...options, exclude: [...(options.exclude ?? []), ...this._sensitivePaths] };
-    this._draftManager.enableDraft(withSecrets);
+    // A field the schema calls sensitive is withheld whether or not the call names it: `exclude` is a
+    // list the application passes when it creates the form, and a document that marks a field secret
+    // has no way to reach it. The manager asks for the declarations on every read and write rather
+    // than being handed them here, because a collection's rows declare their cells later — and it
+    // matches them by path, where `exclude` matches a bare name wherever it appears.
+    this._draftManager.enableDraft(options);
     // A restored draft is the state the form opens in, not a step away from one. Recorded as a step,
     // the first thing a person is offered to undo is something they did not do — and taking the
     // offer writes the empty form back over the draft, because the draft follows the model. What

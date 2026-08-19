@@ -98,6 +98,10 @@ export function registerRowNode(
 
   if (node.kind === "field") {
     if (node.sanitize !== null) engine.setSanitizer(fullPath, node.sanitize);
+    // A row's cells are declared by the same descriptor the schema walk reads at the top, and a
+    // secret in a row is the one most worth keeping out of storage: a row is data, so its path is
+    // one nobody could have written into an `exclude` list before the user created it.
+    if (node.sensitive) engine.markSensitive?.(fullPath);
     engine.setInitialValue(fullPath, value === undefined ? node.initial : value);
     engine.getField(fullPath);
     // The row declared it. A control showing it may come and go; the row is what ends it.
