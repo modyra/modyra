@@ -179,7 +179,7 @@ export function createFieldRecord(
     const syncErrors = Array.from(validators().values()).flatMap(fns =>
       fns.flatMap(fn =>
         readMessages(runValidator(fn, v, warn), warn).map(
-          message => ({ kind: "validation", message }) as MdyFieldError,
+          message => ({ kind: "validation", message, origin: "validation" }) as MdyFieldError,
         ),
       ),
     );
@@ -188,7 +188,7 @@ export function createFieldRecord(
       ...syncErrors,
       ...asyncErrors(),
       ...extraErrors(v),
-      ...(entry === null ? [] : [{ kind: "entry", message: entry } as MdyFieldError]),
+      ...(entry === null ? [] : [{ kind: "entry", message: entry, origin: "entry" } as MdyFieldError]),
     ];
   });
 
@@ -543,7 +543,7 @@ export function createAsyncRunner(
         timedOut = true;
         controller.abort();
         if (runId !== rec.asyncRunId) return;
-        rec.asyncErrors.set([{ kind: "async-timeout", message: "Validation timed out" }]);
+        rec.asyncErrors.set([{ kind: "async-timeout", message: "Validation timed out", origin: "async" }]);
         rec.pending.set(false);
       }, timeoutMs) : null;
 
@@ -559,7 +559,7 @@ export function createAsyncRunner(
           rec.asyncErrors.set(
             results
               .flatMap(returned => readMessages(returned, rec.warn))
-              .map(message => ({ kind: "async", message }) as MdyFieldError),
+              .map(message => ({ kind: "async", message, origin: "async" }) as MdyFieldError),
           );
           rec.asyncSettledFor = { value: v, wake: rx.untracked(() => rec.asyncWake()), deps: watched };
           rec.pending.set(false);
@@ -571,6 +571,7 @@ export function createAsyncRunner(
           rec.asyncErrors.set([{
             kind: "async",
             message: e instanceof Error ? e.message : String(e),
+            origin: "async",
           }]);
           rec.pending.set(false);
         });

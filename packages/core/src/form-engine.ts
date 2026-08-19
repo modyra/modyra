@@ -1804,7 +1804,7 @@ export class MdyFormEngine
     if (errors.length === 0) return [];
     return errors
       .filter(e => e.path === name)
-      .map(e => ({ kind: e.kind, message: e.message, payload: e.payload }));
+      .map(e => ({ kind: e.kind, message: e.message, payload: e.payload, origin: "cross-field" as const }));
   }
 
   /**
@@ -1821,7 +1821,10 @@ export class MdyFormEngine
     }
     return this._lastSubmitErrors()
       .filter(e => e.path === name)
-      .map(e => ({ kind: e.kind, message: e.message, payload: e.payload }));
+      // The origin is this form's own knowledge — it arrived from a submit — and it is not the word
+      // the payload chose: a refusal calling itself `validation` is otherwise printed exactly like a
+      // rule this form ran, in the one tool built to say where things come from.
+      .map(e => ({ kind: e.kind, message: e.message, payload: e.payload, origin: "server" as const }));
   }
 
   /** Lazily creates the effect that runs async validators for a field. */

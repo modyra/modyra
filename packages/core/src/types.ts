@@ -63,9 +63,18 @@ export type MdyFormValidatorFn<TValue = Record<string, unknown>> = (
 // ─── Errors ───────────────────────────────────────────────────────────────────
 
 export interface MdyFieldError {
+  /** What the refusal calls itself. A server chooses this word for its own refusals. */
   readonly kind: string;
   readonly message: string;
   readonly payload?: unknown;
+  /**
+   * Where the refusal came from, said by the form rather than by the refusal.
+   *
+   * `kind` is the payload's word — a server answering `{ path, message }` carries none, and one
+   * answering `kind: "validation"` is indistinguishable from a rule this form ran. The origin is the
+   * form's own knowledge: which list the error arrived in.
+   */
+  readonly origin?: "validation" | "async" | "cross-field" | "server" | "entry";
 }
 
 export interface MdyFormError {

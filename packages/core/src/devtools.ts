@@ -25,7 +25,12 @@ interface InspectableForm {
     touched(): boolean;
     dirty(): boolean;
     pending(): boolean;
-    errors(): ReadonlyArray<{ readonly kind: string; readonly message: string }>;
+    errors(): ReadonlyArray<{
+      readonly kind: string;
+      readonly message: string;
+      /** Where it came from, when the form knows — see {@link MdyFieldError.origin}. */
+      readonly origin?: string;
+    }>;
   }) | null;
 }
 
@@ -137,7 +142,10 @@ export function mdyFormSnapshot(form: InspectableForm, options: MdySnapshotOptio
         options.sensitive?.(path) ?? (coveredBySecret(declaredSecret, path) ? true : undefined),
       );
       const raw = state?.value() ?? null;
-      const messages = state?.errors().map((e) => `[${e.kind}] ${e.message}`) ?? [];
+      // The origin the form knows, and the payload's word only when there is none: prefixing with
+      // `kind` printed `[unknown]` for the ordinary server refusal — `{ path, message }` — and
+      // `[validation]` for one that called itself that, side by side with a rule this form ran.
+      const messages = state?.errors().map((e) => `[${e.origin ?? e.kind}] ${e.message}`) ?? [];
       return {
         path,
         // Described rather than handed over: a `File` carries no `toJSON`, so a snapshot that
