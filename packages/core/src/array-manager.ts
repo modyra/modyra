@@ -241,7 +241,23 @@ export class MdyArrayManager implements MdyNestedCollection {
     this._rebuild(values, values.length - 1);
   }
 
+  /**
+   * Whether `index` names a position at all.
+   *
+   * A position is computed — from a route parameter, a `data-` attribute, a lookup — and every one
+   * of those has a way of coming out wrong that produces no number: `Number.parseInt` of a missing
+   * attribute is `NaN`, a lookup that missed is `undefined`. Compared against the list's bounds,
+   * each of them answered "in range" and `splice` then read it as 0, so the one mistake that
+   * produces no number deleted the first row instead of nothing. The engine's own answer for a
+   * number that is not a position — `-1`, `99`, `Infinity` — is to leave the collection alone, and
+   * this is that answer applied to the values that are not numbers.
+   */
+  private static _isPosition(index: unknown): index is number {
+    return typeof index === "number" && Number.isInteger(index);
+  }
+
   insert(index: number, value: unknown): void {
+    if (!MdyArrayManager._isPosition(index)) return;
     const values = this._currentValues();
     const at = Math.max(0, Math.min(values.length, index));
     const order = this._identityOrder(values.length);
@@ -255,7 +271,7 @@ export class MdyArrayManager implements MdyNestedCollection {
     const values = this._currentValues();
     // An index the list does not have is not a removal, and a change that changes nothing must not
     // reset what the user did.
-    if (index < 0 || index >= values.length) return;
+    if (!MdyArrayManager._isPosition(index) || index < 0 || index >= values.length) return;
     const order = this._identityOrder(values.length);
     order.splice(index, 1);
     values.splice(index, 1);
@@ -264,6 +280,7 @@ export class MdyArrayManager implements MdyNestedCollection {
   }
 
   move(from: number, to: number): void {
+    if (!MdyArrayManager._isPosition(from) || !MdyArrayManager._isPosition(to)) return;
     const values = this._currentValues();
     const removed = values.splice(from, 1);
     if (removed.length === 0) return;
