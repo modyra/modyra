@@ -32,7 +32,7 @@ const ARRIVING: Record<string, unknown> = {
   number: 7, slider: 8, checkbox: true, toggle: true,
   select: "b", radio: "b", segmented: "b", multiselect: ["b"],
   datepicker: "2026-04-03", daterange: { start: "2026-04-03", end: "2026-04-09" },
-  timepicker: "02:30 PM", colors: "#ff0000",
+  timepicker: "14:30", colors: "#ff0000",
 };
 
 for (const host of HOSTS) {

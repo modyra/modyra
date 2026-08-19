@@ -33,7 +33,7 @@ const HOSTS = [
 const STATE = {
   label: "X", open: true, format: "12h",
   draft: { hour: 10, minute: 30, period: "AM" },
-  value: "10:30 AM",
+  value: "10:30",
   disabled: false, readonly: false, required: false, invalid: false, touched: false, dirty: false,
 };
 
