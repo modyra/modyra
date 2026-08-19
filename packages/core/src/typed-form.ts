@@ -1,4 +1,5 @@
 import type { MdyDiagnostics } from "./reactivity-diagnostics.js";
+import type { MdyValueShape } from "./value-contracts.js";
 import {
   MdyDraftOptions,
   MdyFormEngine,
@@ -163,6 +164,23 @@ export interface MdyFieldOptions<TValue> {
    * this is the field saying so once, where an author writes the field.
    */
   readonly sensitive?: boolean;
+  /**
+   * The runtime shape this field's value takes — `MDY_VALUE_CONTRACTS[kind].shape`.
+   *
+   * Declared so a value arriving from storage can be held to the kind's own shape. Without it the
+   * only thing a form knows about a field seeded `null` is that it is `null`, and `null` is what the
+   * contract declares for every kind that has no empty of its own — so the shape check that guards a
+   * restored draft had nothing to check against and let any JSON through.
+   */
+  readonly shape?: MdyValueShape;
+  /**
+   * The values this field offers, for a kind that chooses from a list.
+   *
+   * `oneOf` refuses a value outside them when the field is *validated*; this is the same list said
+   * where the form can read it, so a value arriving from storage is not written into the field first
+   * and judged afterwards — a renderer draws what the form holds, not what the form approves.
+   */
+  readonly options?: readonly unknown[];
 }
 
 /**
@@ -196,6 +214,8 @@ export function field<TValue>(
     when: (options?.when as MdyFieldDescriptor<MdyWiden<TValue>>["when"]) ?? null,
     sanitize: assertSanitizer(options?.sanitize),
     sensitive: options?.sensitive === true,
+    shape: options?.shape ?? null,
+    options: options?.options ?? null,
   };
 }
 
@@ -1318,6 +1338,8 @@ export abstract class MdyTypedFormBase<
       // A statement about the value, made where the field is declared and read wherever the value
       // would otherwise be copied out of the form.
       if (node.sensitive) this._adapter.markSensitive?.(path);
+      if (node.shape !== null) this._adapter.declareShape?.(path, node.shape);
+      if (node.options !== null) this._adapter.declareOptions?.(path, node.options);
       this._adapter.setInitialValue(path, node.initial);
       this._adapter.getField(path);
       // The schema declared it, so a control that unmounts releases its claim and nothing more.

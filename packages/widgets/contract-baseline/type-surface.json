@@ -60,8 +60,10 @@
     "asyncWhen: ((value: unknown, formValue: Record<string, unknown>) => boolean) | null",
     "initial: unknown",
     "kind: \"field\"",
+    "options: readonly unknown[] | null",
     "sanitize: MdySanitizer | null",
     "sensitive: boolean",
+    "shape: MdyValueShape | null",
     "validators: ReadonlyArray<ValidatorFn<never>>",
     "when: ((value: unknown, formValue: Record<string, unknown>) => boolean) | null"
   ],
@@ -815,8 +817,10 @@
     "asyncWhen: ((value: unknown, formValue: Record<string, unknown>) => boolean) | null",
     "initial: TValue",
     "kind: \"field\"",
+    "options: readonly unknown[] | null",
     "sanitize: MdySanitizer | null",
     "sensitive: boolean",
+    "shape: MdyValueShape | null",
     "validators: ReadonlyArray<ValidatorFn<TValue>>",
     "when: ((value: unknown, formValue: Record<string, unknown>) => boolean) | null"
   ],
@@ -855,8 +859,10 @@
     "asyncTimeoutMs?: number",
     "asyncValidators?: ReadonlyArray<MdyAsyncValidatorFn<TValue>>",
     "asyncWhen?: (value: TValue, formValue: Record<string, unknown>) => boolean",
+    "options?: readonly unknown[]",
     "sanitize?: MdySanitizer",
     "sensitive?: boolean",
+    "shape?: MdyValueShape",
     "when?: (value: TValue, formValue: Record<string, unknown>) => boolean"
   ],
   "MdyFieldRef": [
@@ -987,6 +993,8 @@
     "constructor(0) _rx: MdyReactivity,(1) _formValue?: MdySignal<Record<string, unknown> | undefined>,(2) _submitMode?: MdySignal<MdySubmitMode>,(3) options?: MdyFormEngineOptions,-> returns: (inferred)",
     "deactivate-> returns: void",
     "deactivated: boolean",
+    "declareOptions(0) name: string,(1) options: readonly unknown[],-> returns: void",
+    "declareShape(0) name: string,(1) shape: MdyValueShape,-> returns: void",
     "destroy-> returns: void",
     "destroyed: boolean",
     "disownField(0) name: string,-> returns: void",
@@ -1053,6 +1061,8 @@
   "MdyFormRegistry": [
     "addValidators: void",
     "claimField: void",
+    "declareOptions?: void",
+    "declareShape?: void",
     "markSensitive?: void",
     "removeField: void",
     "removeValidators: void",

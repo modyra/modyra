@@ -10,6 +10,7 @@ import type {
   ValidatorFn,
 } from "../types.js";
 import type { MdySanitizer } from "../security.js";
+import type { MdyValueShape } from "../value-contracts.js";
 
 /** Leaf descriptor produced by {@link field}. */
 export interface MdyFieldDescriptor<TValue> {
@@ -27,6 +28,10 @@ export interface MdyFieldDescriptor<TValue> {
   readonly sanitize: MdySanitizer | null;
   /** Whether the value is a secret. See {@link MdyFieldOptions.sensitive}. */
   readonly sensitive: boolean;
+  /** The runtime shape this field's kind declares, or null when nothing declared one. */
+  readonly shape: MdyValueShape | null;
+  /** The values this field offers, when its kind chooses from a list; null when it does not. */
+  readonly options: readonly unknown[] | null;
 }
 
 /** Group descriptor produced by {@link group}. */
@@ -53,6 +58,8 @@ export interface MdyAnyFieldDescriptor {
   readonly when: ((value: unknown, formValue: Record<string, unknown>) => boolean) | null;
   readonly sanitize: MdySanitizer | null;
   readonly sensitive: boolean;
+  readonly shape: MdyValueShape | null;
+  readonly options: readonly unknown[] | null;
 }
 
 export interface MdyAnyGroupDescriptor {
