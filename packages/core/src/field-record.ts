@@ -21,6 +21,14 @@ import type {
   MdyInteractivity,
   ValidatorFn,
 } from "./types.js";
+import {
+  MdyActivationError,
+  MdyAdapterContractError,
+  MdyComputedWriteError,
+  MdyCrossRuntimeObservationError,
+  MdyDestroyedScopeError,
+  MdyUnsupportedCapabilityError,
+} from "./reactivity-errors.js";
 import { factsOfAll, NO_CONSTRAINTS, type MdyFieldConstraints } from "./validator-facts.js";
 
 export interface AsyncValidatorEntry {
@@ -39,6 +47,8 @@ export interface MdyAsyncRunnerHost {
   formValue(): Record<string, unknown>;
   /** State of a field by dotted path, or null if not (yet) registered. */
   fieldState(path: string): MdyFieldState<unknown> | null;
+  /** The engine's development channel, for a rule of the application's that misbehaved. */
+  warn?(message: string): void;
 }
 
 export interface FieldRecord {
@@ -142,7 +152,7 @@ export function createFieldRecord(
     const v = value();
     const syncErrors = Array.from(validators().values()).flatMap(fns =>
       fns.flatMap(fn =>
-        readMessages(fn(v), warn).map(
+        readMessages(runValidator(fn, v, warn), warn).map(
           message => ({ kind: "validation", message }) as MdyFieldError,
         ),
       ),
@@ -244,6 +254,44 @@ export function createFieldRecord(
  * would let a rule someone wrote stop applying without a word. It becomes one message that says so —
  * the same trade a refused submit makes: whoever is looking at the form learns something is wrong.
  */
+/**
+ * A rule is application code, and application code throws: a property read on something that turned
+ * out to be null, a helper nobody imported, a locale table missing a key.
+ *
+ * The throw becomes the field's verdict, which is what the asynchronous half of the same feature
+ * already does — a `serverValidator` that throws leaves what it threw on the field and the form
+ * stays readable. Left to propagate, it came out of `state.valid()` instead, and out of every later
+ * read for as long as the value stayed one the rule chokes on: a form that cannot be rendered, with
+ * a stack pointing at whoever read it last rather than at the write.
+ */
+function runValidator(
+  fn: (value: unknown) => unknown,
+  value: unknown,
+  warn: (message: string) => void,
+): unknown {
+  try {
+    return fn(value);
+  } catch (error) {
+    // The engine's own refusals pass through. A rule that writes a signal from inside a computed is
+    // told so by name, and turning that into a message on the field would hide an invariant of the
+    // reactivity behind a sentence a user reads — the opposite of what the refusal is for.
+    if (isEngineRefusal(error)) throw error;
+    const message = error instanceof Error ? error.message : String(error);
+    warn(`threw while checking a value: ${message}`);
+    return [message];
+  }
+}
+
+/** Whether this is the engine refusing something, rather than an application rule failing. */
+function isEngineRefusal(error: unknown): boolean {
+  return error instanceof MdyComputedWriteError
+    || error instanceof MdyDestroyedScopeError
+    || error instanceof MdyCrossRuntimeObservationError
+    || error instanceof MdyAdapterContractError
+    || error instanceof MdyActivationError
+    || error instanceof MdyUnsupportedCapabilityError;
+}
+
 function readMessages(returned: unknown, warn: (message: string) => void): ReadonlyArray<string> {
   if (returned === undefined || returned === null) return [];
   // A rule with one thing to say, said without the list around it.
@@ -331,9 +379,22 @@ export function createAsyncRunner(
     });
 
     const formValue = rx.untracked(() => host.formValue());
-    const applicable = entries.filter(
-      e => e.when === null || e.when(v, formValue),
-    );
+    // A predicate that throws does not get to decide. Asking is the answer that cannot lose a
+    // verdict: skipping the check on a broken predicate would let a value through unexamined, and
+    // this one is read while the form is being built, so propagating took `createForm` with it and
+    // left nothing to render.
+    const applicable = entries.filter((e) => {
+      if (e.when === null) return true;
+      try {
+        return e.when(v, formValue);
+      } catch (error) {
+        host.warn?.(
+          `the predicate deciding whether to run an asynchronous check threw ` +
+          `(${error instanceof Error ? error.message : String(error)}). The check runs.`,
+        );
+        return true;
+      }
+    });
     const fns = applicable.flatMap(e => e.fns);
 
     if (fns.length === 0) {
@@ -354,7 +415,7 @@ export function createAsyncRunner(
     // has already declared — two truths that drift in silence the moment `minLength` changes. This
     // is the rule the field states, applied once.
     const refusedHere = Array.from(rec.validators().values()).some((list) =>
-      list.some((fn) => readMessages(fn(v), rec.warn).length > 0),
+      list.some((fn) => readMessages(runValidator(fn, v, rec.warn), rec.warn).length > 0),
     );
     if (refusedHere) {
       rx.untracked(() => {
@@ -400,7 +461,11 @@ export function createAsyncRunner(
         rec.pending.set(false);
       }, timeoutMs) : null;
 
-      void Promise.all(fns.map(fn => fn(v, ctx)))
+      // Called inside the promise chain, so a check that throws *before* returning one fails the
+      // same way as a check whose promise rejects. Declaring a validator `async` is what usually
+      // hides the difference; a plain function that reads a property of something undefined is the
+      // case that does not, and it was taking the form with it.
+      void Promise.all(fns.map(fn => Promise.resolve().then(() => fn(v, ctx))))
         .then(results => {
           if (timeout) clearTimeout(timeout);
           if (timedOut || controller.signal.aborted) return;

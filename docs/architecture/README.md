@@ -105,6 +105,7 @@ absent section reads as an oversight, and "no security impact" is a finding.
 - [ADR 0087: A target answers with everything it knows about the project](0087-a-target-answers-with-what-it-knows-about-the-project.md) — three code targets called a project compatible that the contract compiler reports errors on, and said nothing about a kind they cannot draw
 - [ADR 0088: A draft is not replaced by one belonging to another form](0088-a-draft-is-not-replaced-by-one-belonging-to-another-form.md) — two live forms on one key meant the last save deleted the other's work, and nothing said so
 - [ADR 0089: A field that says it is a secret is treated as one](0089-a-field-that-says-it-is-a-secret-is-treated-as-one.md) — the contract's `sensitive` flag reached no protection, so a secret was autosaved in clear and printed in the panel
+- [ADR 0090: A rule with a bug in it is a verdict, not an outage](0090-a-rule-with-a-bug-in-it-is-a-verdict-not-an-outage.md) — a validator that threw made every later read of the form throw, and a predicate that threw stopped the form being built
 
 ## Security-relevant records
 
