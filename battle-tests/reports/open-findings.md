@@ -13522,6 +13522,37 @@ by language), and the refusals must actually have been produced, so "they are th
 silences.
 
 
+## 220 — The mental model contradicts the ADR, the battle and the other guide on `setValue` (S2, documentation)
+
+`docs/guides/mental-model.md`, in the operation table:
+
+> `setValue(v)` | Replace. Every field is set; **fields absent from `v` become `null`**
+
+Three things say otherwise, and they agree with each other:
+
+- `docs/guides/troubleshooting.md`: *"a field the passed object does not name goes back to its
+  **initial** … It is not set to `null`, so a field that declares `initial: "pro"` reads `"pro"`
+  afterwards, not empty."*
+- ADR 0057, cited by `adversarial/validation/a-whole-value-that-names-nothing.battle.test.mjs:74`.
+- The measurement: a form with `a: field("pro")`, `a` edited, then `setValue({ b: … })` — `a` reads
+  `"pro"`.
+
+The direction matters. A reader following the mental model believes `setValue({ b })` empties `a`,
+and the form submits `a: "pro"` — a value the consumer believed they had removed. `mental-model.md`
+is the page the others link to for the underlying picture, and `troubleshooting.md` points at it by
+name for how equality is decided.
+
+No battle: the behaviour is already pinned, correctly, by the battle above. What is wrong is one row
+of one table, and it is recorded here with the measurement so it can be fixed against a fact rather
+than against an opinion.
+
+**The rest of that guide holds**, checked claim by claim: `clearDraft()` removes the stored draft and
+re-baselines (`getChanges()` empties, the value stays); a claim for a path a collection has not
+declared is genuinely **held** — invisible in `fieldNames`, `getField` and the value, and the cell
+arrives the moment the row is declared; `getField` exists and creates lazily; equality is `Object.is`
+at the leaves.
+
+
 ## The browser tier, measured — a baseline this register never had
 
 `npm run battle:browser` on the working tree at `6ee29144`:
@@ -13678,16 +13709,16 @@ the half-fix to overlay teardown did not close it on plain either.
 ## The register's own shape, measured
 
 ```
-numbered findings        219
+numbered findings        220
 closed or retracted       39
 open with a battle       189
-open with none             7
+open with none             8
 ```
 
 The seven without a battle are the entries a test cannot hold: a capability nothing reads (37),
 constants outside a classifier (39), a campaign that explores one run (40), two entries about this
 hunt's own mistakes (51, 57), forty-nine comments citing a plan that is not in the repository (198),
-and a sentence in a guide that sends a reader to the wrong place (218). Configuration, documentation and coverage — none of them a
+and two guides describing behaviour their own repository contradicts (218, 220). Configuration, documentation and coverage — none of them a
 behaviour a battle could pin.
 
 **The first count of this said ten, and was wrong.** It looked for `.battle.test.mjs` and `.spec.ts`,
