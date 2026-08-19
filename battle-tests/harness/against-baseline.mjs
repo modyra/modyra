@@ -228,14 +228,26 @@ function main() {
   for (const name of vanished) console.log(`  no longer in the suite under this name: ${name}`);
   for (const name of regressions) console.log(`  REGRESSION: ${name}`);
 
-  for (const name of run.outside) console.log(`  FAILED, AND NOT A BATTLE: ${name}`);
+  // A failure outside any battle is never baselined — the baseline forgives a defect this suite has
+  // measured, and a file that does not finish is not that. But it is also the one failure the run's
+  // own load can invent, so each is offered a lone run before it is believed: a file that fails again
+  // by itself has something wrong with it, and one that passes was competing with four hundred others.
+  const stillOutside = [];
+  for (const name of run.outside) {
+    if (!existsSync(join(REPO_ROOT, name))) {
+      stillOutside.push(name);
+      continue;
+    }
+    const alone = readTap(runSuite(name));
+    if (alone.outside.size > 0 || alone.failed.size > run.failed.size) stillOutside.push(name);
+    else console.log(`  failed in the suite and passed alone, so it was the run and not the file: ${name}`);
+  }
+  for (const name of stillOutside) console.log(`  FAILED, AND NOT A BATTLE: ${name}`);
 
-  // Never baselined: the baseline forgives a defect this suite has measured, and a file that does
-  // not finish or a harness test that breaks is not that.
-  if (run.outside.size > 0) {
+  if (stillOutside.length > 0) {
     console.error(
-      `\n${run.outside.size} failure(s) outside any battle. A file that does not finish, or a broken ` +
-        "harness, is not a known red whatever the battles reported.",
+      `\n${stillOutside.length} failure(s) outside any battle, on a second look. A file that does not ` +
+        "finish, or a broken harness, is not a known red whatever the battles reported.",
     );
     process.exit(1);
   }

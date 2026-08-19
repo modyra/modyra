@@ -1,32 +1,19 @@
 /**
- * Opening a picker on a value it cannot read, and losing the value.
+ * A time already in the field, and what opening the picker does to it.
  *
- * The rule is written down in this package, in `options-reconciliation`, about a different control:
- * **the widget does not write to the model to make itself consistent** — because "erasing the value
- * destroys the one thing that would let the user fix it", and a value that arrived from outside is
- * exactly the row a person has to see in order to resolve it.
+ * A picker reads a value, shows it, and writes back what the dials are set to. The value it writes
+ * has to be the moment that was already there when nobody moved a dial — anything else is a control
+ * changing a value in order to make itself consistent, which is what `UI-006` forbids.
  *
- * The timepicker seeded its draft with
- * `parseAnyTime(handle.value(), format) ?? currentTimeAsParsed()`, and `parseAnyTime` read only the
- * configured notation — a `"12h"` picker read `"10:37 AM"` and not `"10:37"`. A value in the other
- * notation parsed to `null`, the draft became **the current wall-clock time**, and confirming wrote
- * that over a time the user could see on the field.
+ * Notation is where that gets slippery, because a time has two spellings and only one of them is a
+ * value. `MDY_VALUE_CONTRACTS.timepicker` holds `HH:mm`; twelve-hour is what a `"12h"` picker
+ * **shows**. So a field holding `"10:37 AM"`, `"22:37"` or `"12:00 AM"` is holding one moment each,
+ * and after being opened and confirmed it holds that same moment written `HH:mm`.
  *
- * Both notations are read now, so what this battle guards is the property rather than the bug: the
- * **instant** a field holds survives being opened and confirmed. That is deliberately not the same
- * as the string surviving. A `"12h"` picker handed `"22:37"` writes back `"10:37 PM"` — the same
- * moment, in the notation the field declares — and normalising the representation is what this
- * package already does when it replaces a loosely matched option value with the option's own.
- *
- * Asserting the string instead would demand that the output depend on whether the dial moved, which
- * makes the same user action produce different data for invisible reasons.
- *
- * Midnight and noon are in the fixtures because they are where a twelve-hour conversion goes wrong
- * and where an off-by-twelve is invisible in every other case: `"00:15"` is `12:15 AM`, not
- * `0:15 AM`, and `"12:00"` is `12:00 PM`, not `12:00 AM`.
- *
- * `null` is the case where "now" is the right answer and it is asserted as such: an empty picker
- * opening at the current time is what every picker does, and a fix must not take that away.
+ * Every notation the field may arrive in is driven, against both picker formats, and the assertion is
+ * on minutes past midnight rather than on the string — the spelling is the contract's business and the
+ * moment is the property. The awkward hours are in the list because that is where an off-by-twelve
+ * hides: `"00:15"` is `12:15 AM`, not `0:15 AM`, and `"12:00"` is `12:00 PM`, not `12:00 AM`.
  */
 
 import { createForm, field } from "@modyra/core";
@@ -82,11 +69,14 @@ battle(
     // character. Where the notation already matches there is nothing to normalise, so a failure
     // here would be confirm overwriting rather than confirm normalising.
     const readable = openAndConfirm("10:37 AM");
-    ctx.log.note("a value the picker can read", readable);
+    ctx.log.note("a value written the way the picker shows it", readable);
 
-    expectEqual(readable.held, "10:37 AM", {
+    // `MDY_VALUE_CONTRACTS.timepicker` holds a time as `HH:mm`, and twelve-hour notation is what the
+    // control shows rather than what the form keeps. So the moment survives and the spelling becomes
+    // the contract's — which is the same statement the loop below makes for every other notation.
+    expectEqual(readable.held, "10:37", {
       claimIds: ["UI-006"],
-      what: "a value in the picker's own notation did not survive being opened and confirmed",
+      what: "a time opened and confirmed did not come back as the same moment in the notation its value contract names",
       detail: JSON.stringify(readable),
     });
 
