@@ -12965,12 +12965,59 @@ is what raised. Twelfth instrument error of the hunt, caught by the battle's own
 `snapshot` as the first divergence when the probe had predicted `getValue`.
 
 
+## 205 — A secret declared one row down is not treated as one (S0, SEC-005 SEC-002 COL-001)
+
+ADR 0089 makes `sensitive` a statement about the value, honoured everywhere the value would
+otherwise be copied: withheld from the draft, masked in the panel, published by `sensitivePaths()`.
+A row of a collection is where a form keeps the fields most likely to carry one — a card per row and
+a CVV in it, a beneficiary per row and a tax number in it — and it is a template declared once, which
+is the arrangement that makes declaring the flag once worth doing.
+
+Measured with a leaf named `answer`, so no name-based guess can account for the result:
+
+```
+                    panel       sensitivePaths()   draft
+answer              •••         listed             withheld
+inGroup.answer      •••         listed             withheld
+rows.a.answer       in clear    absent             see below
+list.0.answer       in clear    absent             see below
+```
+
+The first two lines are the control: the mechanism works, and works through a group, so the failure
+is the collection boundary and not the feature. The name matters — a row cell called `cvv` **is**
+masked, by the panel's own guess, which is what hides this from a casual test.
+
+## 206 — The draft withholds by leaf name, not by path (S0, SEC-005 COL-001)
+
+The same measurement, isolated. What a row's cell gets depends on whether some *other* field happens
+to share its name:
+
+```
+root `answer` sensitive, row `answer` sensitive   row's secret withheld — by coincidence
+root `token`  sensitive, row `answer` sensitive   row's secret WRITTEN IN CLEAR
+root `answer` sensitive, row `answer` ORDINARY    row's ordinary value withheld
+```
+
+Both directions are wrong, and the third proves the mechanism rather than merely showing a gap: an
+ordinary cell is dropped from the draft because an unrelated field elsewhere is a secret, so a person
+restoring their work finds a column of it missing — a data-loss bug wearing a security feature's
+clothes.
+
+And the protection on the first line is the worst kind available: it holds in a test where the names
+line up and fails in an application where they do not. It is also how this nearly escaped — the first
+probe of finding 205 happened to declare a root `answer`, saw the row's secret withheld, and would
+have reported the draft as sound.
+
+Both pinned by `adversarial/security/a-secret-one-row-down.battle.test.mjs`, two battles, each with a
+control requiring the draft to have been written and the row's ordinary neighbour to have survived.
+
+
 ## The register's own shape, measured
 
 ```
-numbered findings        204
+numbered findings        206
 closed or retracted       24
-open with a battle       175
+open with a battle       177
 open with none             6
 ```
 
