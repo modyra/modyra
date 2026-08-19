@@ -378,11 +378,16 @@ function hasValidValidatorConfig(
  * node is well formed. A node that is neither a field nor a container it can descend counts as one
  * declaration — something was written there, and it did not become a field.
  */
-function declaredFieldCount(schema: unknown): number {
+function declaredFieldCount(schema: unknown): { count: number; complete: boolean } {
   let count = 0;
   const stack: unknown[] = [schema];
-  // A bound, because the count is taken before the depth and size checks have run.
-  for (let steps = 0; stack.length > 0 && steps < 10_000; steps += 1) {
+  let complete = true;
+  // A bound, because the count is taken from a raw object rather than from a validated one, and a
+  // walk over a shape nothing has checked must be able to stop. It is an order of magnitude above
+  // the size at which a saturating count first reported a document as having lost a fifth of what it
+  // lost, and when the walk does stop the counts say so rather than passing a floor off as a total.
+  for (let steps = 0; stack.length > 0; steps += 1) {
+    if (steps >= MDY_MAX_DECLARATION_WALK) { complete = false; break; }
     const node = stack.pop();
     if (!isRecordValue(node)) continue;
     const kind = node["node"];
@@ -402,8 +407,16 @@ function declaredFieldCount(schema: unknown): number {
     // Something was declared here and it is not a node this reader knows.
     count += 1;
   }
-  return count;
+  return { count, complete };
 }
+
+/**
+ * How many declarations the count will walk before it stops.
+ *
+ * A document at this size is refused for every other reason before its counts matter; the number is
+ * here so that a shape nothing has validated cannot make the walk run without end.
+ */
+const MDY_MAX_DECLARATION_WALK = 100_000;
 
 export function flattenDynamicForm(schema: MdyDynamicGroupNode): {
   readonly fields: MdyDynamicField[];
@@ -926,6 +939,7 @@ export const MDY_DYNAMIC_DIAGNOSTICS: ReadonlyArray<{
   { code: "MDY_DYNAMIC_PATH_TOO_LONG", phrase: "a path may be" },
   { code: "MDY_DYNAMIC_PATTERN_TOO_LONG", phrase: "pattern length" },
   { code: "MDY_DYNAMIC_PATTERN_TOO_COSTLY", phrase: "backtracks exponentially" },
+  { code: "MDY_DYNAMIC_COUNT_INCOMPLETE", phrase: "a floor and not a total" },
 ];
 
 /** What a refusal is called when none of the named ones fits. */
@@ -1433,7 +1447,18 @@ export function parseDynamicForm(
     // turns down wholesale never reaches the walk, so without this a document declaring three
     // children reported none accepted and none rejected — three entered and nothing came out, with
     // the counts saying nothing happened.
-    declaredLeaves = declaredFieldCount(envelope.schema);
+    const declaration = declaredFieldCount(envelope.schema);
+    declaredLeaves = declaration.count;
+    if (!declaration.complete) {
+      diagnostics.push({
+        code: "MDY_DYNAMIC_COUNT_INCOMPLETE",
+        severity: "warning",
+        path: "/schema",
+        message:
+          `The document declares more than the ${MDY_MAX_DECLARATION_WALK} declarations this reader ` +
+          "counts, so what it accepted and what it turned down are a floor and not a total.",
+      });
+    }
     // A schema refused whole never reaches the walk, so everything it declared was turned down.
     // What the document says it needs from the host, against what its conditions read. The
     // declaration is an API between the application and whoever authors documents for it, so a key
