@@ -1,4 +1,4 @@
-import type { MdyDiagnostics } from "./reactivity-diagnostics.js";
+import { MDY_UNSUPPORTED_ADAPTER_OPTION, type MdyDiagnostics } from "./reactivity-diagnostics.js";
 import type { MdyValueShape } from "./value-contracts.js";
 import {
   MdyDraftOptions,
@@ -564,12 +564,20 @@ function reportUnknownOptions(options: unknown): void {
   if (!MDY_DEV || typeof options !== "object" || options === null) return;
   const unknown = Object.keys(options).filter((key) => !FORM_OPTIONS.has(key));
   if (unknown.length === 0) return;
-  console.warn(
-    `[modyra] createForm was given ${unknown.map((key) => `"${key}"`).join(", ")}, which it does not ` +
+  const message =
+    `createForm was given ${unknown.map((key) => `"${key}"`).join(", ")}, which it does not ` +
     `read. A form takes ${[...FORM_OPTIONS].join(", ")}${
       unknown.includes("sanitize") ? '; a sanitizer is asked for as security: { sanitize }' : ""
-    }.`,
-  );
+    }.`;
+  // To the sink the caller gave, if they gave one. A consumer who asked for these as events asked
+  // for *this* one too: an option a form does not read is the first thing a host wants routed, and
+  // it was the one degradation that could only ever reach a console.
+  const sink = (options as { diagnostics?: MdyDiagnostics }).diagnostics;
+  if (sink && typeof sink.report === "function") {
+    sink.report({ code: MDY_UNSUPPORTED_ADAPTER_OPTION, severity: "warning", message });
+    return;
+  }
+  console.warn(`[modyra] ${message}`);
 }
 
 /** What a field may be given. Grows with the library, which is why an unknown key is said rather than refused. */

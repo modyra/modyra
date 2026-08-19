@@ -1,9 +1,9 @@
 {
   "note": "Public names not yet asserted or not yet shown. The list may only get shorter.",
   "score": {
-    "published": 666,
-    "asserted": 405,
-    "shown": 69
+    "published": 694,
+    "asserted": 436,
+    "shown": 79
   },
   "uncovered": [
     {
@@ -26,9 +26,9 @@
     },
     {
       "name": "MDY_ASYNC_FEATURE_DISABLED",
-      "asserted": false,
+      "asserted": true,
       "shown": false,
-      "reason": "published, neither asserted nor shown"
+      "reason": "published and never shown"
     },
     {
       "name": "MDY_CHIP_CLASSES",
@@ -55,7 +55,19 @@
       "reason": "published, neither asserted nor shown"
     },
     {
+      "name": "MDY_DRAFT_KEY_IN_USE",
+      "asserted": true,
+      "shown": false,
+      "reason": "published and never shown"
+    },
+    {
       "name": "MDY_DYNAMIC_FIELD_KINDS",
+      "asserted": true,
+      "shown": false,
+      "reason": "published and never shown"
+    },
+    {
+      "name": "MDY_DYNAMIC_MEMBERS",
       "asserted": true,
       "shown": false,
       "reason": "published and never shown"
@@ -203,6 +215,18 @@
       "asserted": false,
       "shown": false,
       "reason": "published, neither asserted nor shown"
+    },
+    {
+      "name": "MDY_VALIDATION_MESSAGES",
+      "asserted": true,
+      "shown": false,
+      "reason": "published and never shown"
+    },
+    {
+      "name": "MDY_VALIDATION_MESSAGES_DEFAULT",
+      "asserted": true,
+      "shown": false,
+      "reason": "published and never shown"
     },
     {
       "name": "MDY_VALIDATOR_FACTS",
@@ -607,6 +631,12 @@
       "reason": "published and never shown"
     },
     {
+      "name": "MdyContextRef",
+      "asserted": true,
+      "shown": false,
+      "reason": "published and never shown"
+    },
+    {
       "name": "MdyControlOption",
       "asserted": true,
       "shown": false,
@@ -901,6 +931,12 @@
       "reason": "published, neither asserted nor shown"
     },
     {
+      "name": "MdyDynamicFlatForm",
+      "asserted": true,
+      "shown": false,
+      "reason": "published and never shown"
+    },
+    {
       "name": "MdyDynamicFormConfig",
       "asserted": false,
       "shown": false,
@@ -1067,6 +1103,12 @@
       "asserted": false,
       "shown": false,
       "reason": "published, neither asserted nor shown"
+    },
+    {
+      "name": "MdyExpressionScope",
+      "asserted": true,
+      "shown": false,
+      "reason": "published and never shown"
     },
     {
       "name": "MdyFieldConstraints",
@@ -1669,6 +1711,12 @@
       "reason": "published and never shown"
     },
     {
+      "name": "MdyRootRef",
+      "asserted": true,
+      "shown": false,
+      "reason": "published and never shown"
+    },
+    {
       "name": "MdySanitizer",
       "asserted": true,
       "shown": false,
@@ -1763,6 +1811,12 @@
       "asserted": false,
       "shown": false,
       "reason": "published, neither asserted nor shown"
+    },
+    {
+      "name": "MdySelfRef",
+      "asserted": true,
+      "shown": false,
+      "reason": "published and never shown"
     },
     {
       "name": "MdyServerValidatorOptions",
@@ -2036,6 +2090,12 @@
     },
     {
       "name": "MdyUnsupportedCapabilityError",
+      "asserted": true,
+      "shown": false,
+      "reason": "published and never shown"
+    },
+    {
+      "name": "MdyValidationMessages",
       "asserted": true,
       "shown": false,
       "reason": "published and never shown"
@@ -2491,6 +2551,12 @@
       "reason": "published and never shown"
     },
     {
+      "name": "comparableControllerOptions",
+      "asserted": true,
+      "shown": false,
+      "reason": "published and never shown"
+    },
+    {
       "name": "compareDates",
       "asserted": true,
       "shown": false,
@@ -2636,9 +2702,9 @@
     },
     {
       "name": "defaultOptionKey",
-      "asserted": false,
+      "asserted": true,
       "shown": false,
-      "reason": "published, neither asserted nor shown"
+      "reason": "published and never shown"
     },
     {
       "name": "defaultWidgetIdFactory",
@@ -2684,6 +2750,12 @@
     },
     {
       "name": "explainValueMismatch",
+      "asserted": true,
+      "shown": false,
+      "reason": "published and never shown"
+    },
+    {
+      "name": "expressionContextKeys",
       "asserted": true,
       "shown": false,
       "reason": "published and never shown"
@@ -2744,9 +2816,9 @@
     },
     {
       "name": "flattenDynamicForm",
-      "asserted": false,
+      "asserted": true,
       "shown": false,
-      "reason": "published, neither asserted nor shown"
+      "reason": "published and never shown"
     },
     {
       "name": "flattenDynamicSchema",
@@ -2863,6 +2935,12 @@
       "reason": "published and never shown"
     },
     {
+      "name": "isContextRef",
+      "asserted": true,
+      "shown": false,
+      "reason": "published and never shown"
+    },
+    {
       "name": "isDateBetween",
       "asserted": true,
       "shown": false,
@@ -2905,6 +2983,12 @@
       "reason": "published and never shown"
     },
     {
+      "name": "isRootRef",
+      "asserted": true,
+      "shown": false,
+      "reason": "published and never shown"
+    },
+    {
       "name": "isSafeFieldPath",
       "asserted": false,
       "shown": false,
@@ -2912,6 +2996,12 @@
     },
     {
       "name": "isSameDay",
+      "asserted": true,
+      "shown": false,
+      "reason": "published and never shown"
+    },
+    {
+      "name": "isSelfRef",
       "asserted": true,
       "shown": false,
       "reason": "published and never shown"
@@ -3385,6 +3475,12 @@
       "reason": "published and never shown"
     },
     {
+      "name": "sameControllerOptions",
+      "asserted": true,
+      "shown": false,
+      "reason": "published and never shown"
+    },
+    {
       "name": "scrollOptionIntoView",
       "asserted": false,
       "shown": false,
@@ -3422,6 +3518,12 @@
     },
     {
       "name": "stabilizeOverlayPlacement",
+      "asserted": true,
+      "shown": false,
+      "reason": "published and never shown"
+    },
+    {
+      "name": "stableControllerOptions",
       "asserted": true,
       "shown": false,
       "reason": "published and never shown"
@@ -3566,6 +3668,12 @@
     },
     {
       "name": "validateExpression",
+      "asserted": true,
+      "shown": false,
+      "reason": "published and never shown"
+    },
+    {
+      "name": "validationMessagesForLocale",
       "asserted": true,
       "shown": false,
       "reason": "published and never shown"
