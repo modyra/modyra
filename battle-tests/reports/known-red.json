@@ -26,7 +26,6 @@
     "[S1][VAL-003,COL-003] two conditions on one field are one answer, and any refusal is the answer",
     "[S2][ADP-001,DYN-001] an adapter that publishes a dynamic-form door reads the dynamic contract",
     "[S2][ADP-001] an adapter that wraps every controller wraps every controller",
-    "[S2][DYN-001,DYN-003] every version one runtime accepts is one the others have a position on",
-    "battle-tests/adversarial/dynamic-contract/the-versions-nobody-published.battle.test.mjs"
+    "[S2][DYN-001,DYN-003] every version one runtime accepts is one the others have a position on"
   ]
 }

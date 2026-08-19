@@ -40,22 +40,32 @@ export const BASELINE_FILE = join(BATTLE_ROOT, "reports", "known-red.json");
 export function readTap(tap) {
   const passed = new Set();
   const failed = new Set();
-  const DIRECTIVE = /\s#\s*(TODO|SKIP)\b/i;
+  const outside = new Set();
+  // The whole directive, reason included: a name keeping "# SKIP not in this environment" matches no
+  // baseline entry, so a battle that closes while carrying one reads as a battle that vanished.
+  const DIRECTIVE = /\s#\s*(TODO|SKIP)\b.*$/i;
+  // The runner names a battle by its title, which the harness prefixes with severity and claims.
+  // Anything else that fails is not a battle: a file the runner names because it did not finish, or
+  // one of the harness's own tests. Neither is a defect this suite has measured, so neither is
+  // baselined.
+  const BATTLE_TITLE = /^\[S\d/;
   for (const line of tap.split("\n")) {
     const ok = /^ok \d+ - (.+?)\s*$/.exec(line);
     if (ok) {
-      passed.add(ok[1].replace(DIRECTIVE, "").trim());
+      const name = ok[1].replace(DIRECTIVE, "").trim();
+      if (BATTLE_TITLE.test(name)) passed.add(name);
       continue;
     }
     const notOk = /^not ok \d+ - (.+?)\s*$/.exec(line);
     if (!notOk) continue;
     // A todo that fails is a todo. A todo that passes is reported by the runner as `ok`.
     if (DIRECTIVE.test(line)) continue;
-    failed.add(notOk[1]);
+    if (BATTLE_TITLE.test(notOk[1])) failed.add(notOk[1]);
+    else outside.add(notOk[1]);
   }
   // A name that appears both ways is a retry or a duplicate title; the failure is what matters.
   for (const name of failed) passed.delete(name);
-  return { passed, failed };
+  return { passed, failed, outside };
 }
 
 /**
@@ -118,6 +128,7 @@ function main() {
   if (accept) {
     writeBaseline(run.failed);
     console.log(`baseline check: recorded ${run.failed.size} known-red battle(s)`);
+    for (const name of run.outside) console.log(`  not recorded, and not a battle: ${name}`);
     return;
   }
 
@@ -129,6 +140,18 @@ function main() {
   for (const name of closed) console.log(`  CLOSED, update the baseline: ${name}`);
   for (const name of vanished) console.log(`  no longer in the suite under this name: ${name}`);
   for (const name of regressions) console.log(`  REGRESSION: ${name}`);
+
+  for (const name of run.outside) console.log(`  FAILED, AND NOT A BATTLE: ${name}`);
+
+  // Never baselined: the baseline forgives a defect this suite has measured, and a file that does
+  // not finish or a harness test that breaks is not that.
+  if (run.outside.size > 0) {
+    console.error(
+      `\n${run.outside.size} failure(s) outside any battle. A file that does not finish, or a broken ` +
+        "harness, is not a known red whatever the battles reported.",
+    );
+    process.exit(1);
+  }
 
   if (regressions.length > 0) {
     console.error(
