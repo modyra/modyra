@@ -94,13 +94,44 @@ export function readBaseline(file = BASELINE_FILE) {
   return parsed.knownRed;
 }
 
+/**
+ * The severity a battle's title carries, or `S9` for a name that carries none.
+ *
+ * The harness writes it into every title, so the list can be read by how much each open defect costs
+ * without opening anything else.
+ */
+export function severityOf(name) {
+  return /^\[(S\d)\]/.exec(name)?.[1] ?? "S9";
+}
+
+/** How many open reds there are, and how many at each severity. */
+export function countBySeverity(names) {
+  const counts = {};
+  for (const name of names) {
+    const severity = severityOf(name);
+    counts[severity] = (counts[severity] ?? 0) + 1;
+  }
+  return Object.fromEntries(Object.keys(counts).sort().map((key) => [key, counts[key]]));
+}
+
 function writeBaseline(names, file = BASELINE_FILE) {
+  // Severity first, then name: the file is read to decide what to repair next, and an S0 that sorts
+  // under "a" while an S2 sorts under "A" is a list nobody can triage from.
+  const ordered = [...names].sort((left, right) => {
+    const bySeverity = severityOf(left).localeCompare(severityOf(right));
+    return bySeverity !== 0 ? bySeverity : left.localeCompare(right);
+  });
   const body = {
     note:
       "Battles that are red because the defect they describe is open. A red listed here does not " +
       "fail a build; a red that is not listed is a regression. Rewrite with `npm run battle:ci -- --accept`.",
+    order:
+      "Repair in severity order: every S0, then every S1, then S2 and below. `bySeverity` is the " +
+      "count at each, and `knownRed` is sorted the same way, so the top of the list is the next work.",
     recordedAt: new Date().toISOString().slice(0, 10),
-    knownRed: [...names].sort(),
+    openReds: ordered.length,
+    bySeverity: countBySeverity(ordered),
+    knownRed: ordered,
   };
   writeFileSync(file, `${JSON.stringify(body, null, 2)}\n`, "utf8");
 }

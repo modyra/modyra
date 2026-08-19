@@ -101,7 +101,8 @@ battle(
   async (ctx) => {
     const documents = [];
     for (const version of readdirSync(CORPUS).sort()) {
-      for (const file of readdirSync(join(CORPUS, version)).sort().filter((each) => each.endsWith(".json"))) {
+      // A context twin holds what a host supplies rather than a document, so it is not one of these.
+      for (const file of readdirSync(join(CORPUS, version)).sort().filter((each) => each.endsWith(".json") && !each.endsWith(".context.json"))) {
         const document = JSON.parse(readFileSync(join(CORPUS, version, file), "utf8"));
         if (document.schema !== undefined) documents.push({ where: `${version}/${file}`, schema: document.schema });
       }

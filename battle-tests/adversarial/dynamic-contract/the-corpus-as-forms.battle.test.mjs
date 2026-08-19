@@ -35,15 +35,32 @@ import { expectClaim, expectEqual } from "../../harness/assertions.mjs";
 const HERE = dirname(new URL(import.meta.url).pathname);
 const CORPUS = resolve(HERE, "..", "..", "..", "spec", "fixtures", "dynamic-form");
 
-/** Every document in the corpus, with where it came from. */
+/**
+ * Every document in the corpus, with where it came from and the context it is built with.
+ *
+ * A fixture's context lives in a twin named for it — `x.json` is built with `x.context.json` — because
+ * the document is what three runtimes parse and the context is what a host supplies. A document with
+ * no twin is built without context, which is what a document that reads no context needs.
+ */
 function corpus() {
   const found = [];
   for (const version of readdirSync(CORPUS).sort()) {
-    for (const file of readdirSync(join(CORPUS, version)).sort().filter((each) => each.endsWith(".json"))) {
-      found.push({ where: `${version}/${file}`, document: JSON.parse(readFileSync(join(CORPUS, version, file), "utf8")) });
+    const files = readdirSync(join(CORPUS, version)).sort();
+    for (const file of files.filter((each) => each.endsWith(".json") && !each.endsWith(".context.json"))) {
+      const twin = file.replace(/\.json$/, ".context.json");
+      found.push({
+        where: `${version}/${file}`,
+        document: JSON.parse(readFileSync(join(CORPUS, version, file), "utf8")),
+        context: files.includes(twin) ? JSON.parse(readFileSync(join(CORPUS, version, twin), "utf8")) : undefined,
+      });
     }
   }
   return found;
+}
+
+/** The schema a fixture builds, with the context its twin supplies when it has one. */
+function schemaOf(document, context) {
+  return buildDynamicFormSchema(document.schema, context === undefined ? {} : { context });
 }
 
 /** What a row of this item is, read off the fixture. */
@@ -112,8 +129,8 @@ function memoryStorage() {
 }
 
 /** Every tree fixture, filled in, with what it held before and after. */
-function filled(document, options) {
-  const form = createForm(buildDynamicFormSchema(document.schema), { devWarnings: false, ...options });
+function filled(document, options, context) {
+  const form = createForm(schemaOf(document, context), { devWarnings: false, ...options });
   const initial = JSON.stringify(form.getValue());
   fillAndInspect(document.schema, form.f, "", []);
   return { form, initial, filled: JSON.stringify(form.getValue()) };
@@ -143,8 +160,8 @@ battle(
       what: "no fixture in the corpus declares a tree, so no collection was exercised",
     });
 
-    for (const { where, document } of trees) {
-      const form = createForm(buildDynamicFormSchema(document.schema), { devWarnings: false });
+    for (const { where, document, context } of trees) {
+      const form = createForm(schemaOf(document, context), { devWarnings: false });
       try {
         const found = [];
         fillAndInspect(document.schema, form.f, "", found);
@@ -235,8 +252,8 @@ battle(
     // History is where a nested geometry is most likely to disagree with itself: undoing a row that
     // holds a collection has to take the collection with it, and redoing has to bring back the same
     // one rather than a fresh empty. These are the deepest shapes anything in the project publishes.
-    for (const { where, document } of corpus().filter(({ document }) => document.schema !== undefined)) {
-      const { form, initial, filled: full } = filled(document, { history: true });
+    for (const { where, document, context } of corpus().filter(({ document }) => document.schema !== undefined)) {
+      const { form, initial, filled: full } = filled(document, { history: true }, context);
       try {
         expectClaim(full !== initial, {
           claimIds: ["COL-003"],
@@ -288,11 +305,11 @@ battle(
     // inside a keyed map inside a list, and a list whose rows are themselves lists. What comes back
     // has to be what was there, at every depth, or a user who closed the tab loses the part of the
     // form they went deepest into.
-    for (const { where, document } of corpus().filter(({ document }) => document.schema !== undefined)) {
+    for (const { where, document, context } of corpus().filter(({ document }) => document.schema !== undefined)) {
       const storage = memoryStorage();
       const draft = { key: "corpus", storage };
 
-      const first = filled(document, { draft });
+      const first = filled(document, { draft }, context);
       await settled(700);
       const envelope = storage.written.get("corpus");
       first.form.destroy();
@@ -304,7 +321,7 @@ battle(
         what: `${where} was filled in and nothing was written to the draft`,
       });
 
-      const second = createForm(buildDynamicFormSchema(document.schema), { devWarnings: false, draft });
+      const second = createForm(schemaOf(document, context), { devWarnings: false, draft });
       await settled(80);
       try {
         expectEqual(JSON.stringify(second.getValue()), first.filled, {

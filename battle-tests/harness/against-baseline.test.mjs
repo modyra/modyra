@@ -13,7 +13,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { compareWithBaseline, readTap } from "./against-baseline.mjs";
+import { compareWithBaseline, countBySeverity, readTap, severityOf } from "./against-baseline.mjs";
 
 const TAP = [
   "TAP version 13",
@@ -71,4 +71,19 @@ test("the baseline forgives what it lists and nothing else", () => {
 test("a run that reported nothing is not a green run", () => {
   const run = readTap("TAP version 13\n1..0\n");
   assert.equal(run.passed.size + run.failed.size, 0);
+});
+
+test("a battle's severity is read off its title, and a name without one sorts last", () => {
+  assert.equal(severityOf("[S0][A-001] the worst kind of open defect"), "S0");
+  assert.equal(severityOf("[S2][A-001] one that can wait"), "S2");
+  assert.equal(severityOf("a name the harness did not write"), "S9");
+});
+
+test("the baseline counts what is open at each severity", () => {
+  assert.deepEqual(countBySeverity([
+    "[S1][A-001] one",
+    "[S0][B-001] two",
+    "[S1][C-001] three",
+    "a name the harness did not write",
+  ]), { S0: 1, S1: 2, S9: 1 });
 });
