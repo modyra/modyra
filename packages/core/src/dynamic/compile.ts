@@ -8,6 +8,7 @@
 import { array, field, group, record, type MdyFormSchema } from "../typed-form.js";
 import type { MdyFormValidatorFn, ValidatorFn } from "../types.js";
 import { evaluateExpression, evaluateRuleCondition, expressionPaths } from "../expression.js";
+import { validationMessagesForLocale } from "../validation-messages.js";
 import {
   eachOneOf,
   email,
@@ -39,20 +40,29 @@ import type { MdyReactivity, MdySignal } from "../reactivity-contract.js";
  * Maps the serializable validator set to validator functions.
  * Returns the functions plus whether the set marks the field required.
  */
-export function buildDynamicValidators(config: MdyDynamicValidators): {
+export function buildDynamicValidators(
+  config: MdyDynamicValidators,
+  /**
+   * The language the refusals are written in. A form with an Italian label and an Italian calendar
+   * refusing in English leaves the one line a person must read to get any further in a language they
+   * did not ask for.
+   */
+  locale?: string,
+): {
   readonly validators: ReadonlyArray<ValidatorFn<never>>;
   readonly marksRequired: boolean;
 } {
+  const say = validationMessagesForLocale(locale);
   const out: Array<ValidatorFn<never>> = [];
-  if (config.required) out.push(required());
-  if (config.email) out.push(email() as ValidatorFn<never>);
-  if (config.min !== undefined) out.push(min(config.min) as ValidatorFn<never>);
-  if (config.max !== undefined) out.push(max(config.max) as ValidatorFn<never>);
+  if (config.required) out.push(required(say.required));
+  if (config.email) out.push(email(say.email) as ValidatorFn<never>);
+  if (config.min !== undefined) out.push(min(config.min, say.min(config.min)) as ValidatorFn<never>);
+  if (config.max !== undefined) out.push(max(config.max, say.max(config.max)) as ValidatorFn<never>);
   if (config.minLength !== undefined) {
-    out.push(minLength(config.minLength) as ValidatorFn<never>);
+    out.push(minLength(config.minLength, say.minLength(config.minLength)) as ValidatorFn<never>);
   }
   if (config.maxLength !== undefined) {
-    out.push(maxLength(config.maxLength) as ValidatorFn<never>);
+    out.push(maxLength(config.maxLength, say.maxLength(config.maxLength)) as ValidatorFn<never>);
   }
   if (config.pattern !== undefined) {
     if (config.pattern.length > MDY_MAX_DYNAMIC_PATTERN_LENGTH) {
@@ -71,7 +81,7 @@ export function buildDynamicValidators(config: MdyDynamicValidators): {
         );
       } else {
         try {
-          out.push(pattern(new RegExp(config.pattern)) as ValidatorFn<never>);
+          out.push(pattern(new RegExp(config.pattern), say.pattern) as ValidatorFn<never>);
         } catch {
           warnDev(
             `Skipped dynamic pattern validator: invalid RegExp source "${config.pattern}".`,
@@ -175,7 +185,11 @@ export function buildDynamicFieldValidators(field: MdyDynamicField): {
   readonly marksRequired: boolean;
 } {
   assertUsableOptions(field);
-  const declared = buildDynamicValidators(withFieldBounds(field));
+  // The field's own language, which a document declares beside the field it belongs to.
+  const declared = buildDynamicValidators(
+    withFieldBounds(field),
+    (field as { readonly locale?: string }).locale,
+  );
   // Every kind guards its own shape, the same doorway `oneOf` guards for the kinds that have an
   // option list: a value from a restored draft or a scripted write is not the widget's own.
   const base = {

@@ -1949,6 +1949,17 @@
     "capability: string",
     "constructor(0) capability: string,(1) adapterKind: string,-> returns: (inferred)"
   ],
+  "MdyValidationMessages": [
+    "dateRangeIncomplete: string",
+    "email: string",
+    "integer: string",
+    "max: string",
+    "maxLength: string",
+    "min: string",
+    "minLength: string",
+    "pattern: string",
+    "required: string"
+  ],
   "MdyValidatorFacts": [
     "inputMode?: string",
     "max?: number",
@@ -2286,6 +2297,7 @@
   ],
   "buildDynamicValidators": [
     "(0) config: MdyDynamicValidators",
+    "(1) locale?: string",
     "-> returns: { readonly validators: ReadonlyArray<ValidatorFn<never>>; readonly marksRequired: boolean; }"
   ],
   "buildFlatFormSchema": [
@@ -3313,6 +3325,10 @@
     "(0) expr: unknown",
     "(1) where: string",
     "-> returns: readonly string[]"
+  ],
+  "validationMessagesForLocale": [
+    "(0) locale?: string",
+    "-> returns: MdyValidationMessages"
   ],
   "vanillaReactivity": [
     "-> returns: MdyReactivity & MdyBatchingCapability & MdyFlushCapability & MdyObserveCapability"
