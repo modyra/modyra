@@ -13553,6 +13553,44 @@ arrives the moment the row is declared; `getField` exists and creates lazily; eq
 at the leaves.
 
 
+## 221 — The panel prints a `kind`, not an origin, and the server chooses it (S2, SEC-002 SUB-001)
+
+`docs/guides/devtools.md` promises provenance:
+
+> Each error is prefixed with its origin: `[validation]`, `[async]`, `[cross-field]`, `[server]`.
+
+Three of the four hold. The fourth cannot, because the prefix is the error's **`kind`**, and for a
+server refusal the kind is chosen by the server:
+
+```
+a server refusal with no kind             [unknown]
+a server refusal with kind "taken"        [taken]
+a server refusal with kind "server"       [server]
+a server refusal with kind "validation"   [validation]   ← the same word as a local rule
+```
+
+Two costs. The ordinary one: a server answering `{ path, message }` — the shape the examples show and
+`_readRefusal` accepts — is labelled **`[unknown]`** in the one tool built to say where things came
+from. The origin is not unknown; it arrived from a submit a moment earlier.
+
+The sharper one: a refusal naming itself `validation` is indistinguishable from a rule this form ran,
+printed side by side in the same panel with the same word. `_readRefusal` already treats part of that
+payload as untrusted — *"A path is still untrusted. An unsafe one is dropped and reported"* — while
+the `kind` beside it is taken as given and then printed as provenance.
+
+Pinned by `adversarial/security/an-origin-the-panel-cannot-show.battle.test.mjs`, asserting what the
+guide promises and not how — a separate field on the row, a prefix the panel controls rather than the
+payload, or a namespace for server-chosen kinds all satisfy it. Controls: both errors must have
+reached the panel, and a prefix must be printed at all.
+
+**Verified in the same pass, and sound**: `[validation]`, `[async]` and `[cross-field]` are correct;
+a `Date` renders as its ISO string, as the guide says.
+
+**Twenty-fourth instrument error, twice in a row.** The first two probes submitted a form that was
+already invalid, so `submit()` returned at the `canSubmit` gate without ever calling the action —
+and the server error read as missing. A form must be submittable before a server can refuse it.
+
+
 ## The browser tier, measured — a baseline this register never had
 
 `npm run battle:browser` on the working tree at `6ee29144`:
@@ -13709,9 +13747,9 @@ the half-fix to overlay teardown did not close it on plain either.
 ## The register's own shape, measured
 
 ```
-numbered findings        220
+numbered findings        221
 closed or retracted       39
-open with a battle       189
+open with a battle       190
 open with none             8
 ```
 
