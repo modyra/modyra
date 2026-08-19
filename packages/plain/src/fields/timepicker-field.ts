@@ -57,9 +57,10 @@ export function renderTimepickerField(
     // controller's, so both renderers answer a typed entry the same way.
     parseEntry: (text) => {
       const parsed = parseAnyTime(text, format);
-      // In the control's own notation, which is what it commits from the dial: a value written one
-      // way when picked and another when typed is two answers to one question.
-      return parsed ? formatTimeAs(parsed, format) : null;
+      // Canonical, which is what the dial commits too: a time is `HH:mm` wherever it is held, and
+      // the notation on screen is this control's own. Committing what was typed made the value the
+      // spelling a person happened to use.
+      return parsed ? formatTimeAs(parsed, "24h") : null;
     },
   }, reactivity);
 
@@ -307,7 +308,9 @@ export function renderTimepickerField(
 
     // The input mirrors the committed value, except while the person is typing — and except while it
     // holds an entry the field could not read, which stays where they can correct it.
-    const display = state.entryText ?? (state.value || "");
+    // The control's own notation, projected by the controller: the value is canonical `HH:mm`, and a
+    // twelve-hour control showing it directly would read `14:30` to a person who typed `2:30 PM`.
+    const display = state.display;
     if (!typing && control.value !== display) control.value = display;
     reflectOverlayOpen(dialog, state.open, messages);
     // Anchored by the contract, like every other overlay: the placement, the size and the

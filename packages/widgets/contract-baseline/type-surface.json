@@ -1827,6 +1827,7 @@
   "MdyTimepickerFieldState": [
     "dirty: boolean",
     "disabled: boolean",
+    "display: string",
     "draft: ParsedTime",
     "entryText: string | null",
     "entryUnreadable: boolean",

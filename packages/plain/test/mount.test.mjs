@@ -220,7 +220,9 @@ test("timepicker: setting hour/minute and confirming commits a formatted value",
   const confirm = [...wrapper.querySelectorAll("button")].find((b) => b.textContent === MSG.timepickerConfirm);
   confirm.dispatchEvent(new Event("click"));
 
-  assert.match(form.f.meeting.value(), /^07:15 (AM|PM)$/);
+  // The value is canonical `HH:mm`, which is what the value contract declares a time is; the
+  // notation on screen is the control's own, and a twelve-hour picker shows the meridiem.
+  assert.match(form.f.meeting.value(), /^(07|19):15$/);
   dispose();
 });
 

@@ -83,6 +83,15 @@ export interface MdyTimepickerFieldState {
    * way to learn why.
    */
   readonly entryText: string | null;
+  /**
+   * What the control shows: the outstanding entry, or the held time written in the field's format.
+   *
+   * The value itself is canonical `HH:mm`, which is what the value contract declares and what a
+   * payload carries. Which notation a person reads is the field's own — a twelve-hour picker shows
+   * `02:30 PM` — and a renderer that painted the value directly showed a twenty-four-hour time on a
+   * twelve-hour control.
+   */
+  readonly display: string;
   /** Whether the outstanding entry could not be read — the half a control shows a verdict for. */
   readonly entryUnreadable: boolean;
 }

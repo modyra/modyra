@@ -67,6 +67,13 @@ function currentTimeAsParsed(): ParsedTime {
  * `null` still opens at the current time. An empty picker has nothing to preserve, and opening it
  * anywhere else would be a worse answer than the one every picker gives.
  */
+/** A held time in the notation this field shows, or "" when it holds none. */
+function shownTime(value: string | null, format: MdyTimeFormat): string {
+  if (value === null || value === "") return "";
+  const parsed = parseAnyTime(value, "24h") ?? parseAnyTime(value, format);
+  return parsed ? formatTimeAs(parsed, format) : value;
+}
+
 function draftFor(value: string | null, format: MdyTimeFormat): ParsedTime {
   return parseAnyTime(value, format)
     ?? parseAnyTime(value, format === "12h" ? "24h" : "12h")
@@ -120,6 +127,7 @@ export function createTimepickerFieldController(
     pending: handle.pending(),
     entryText: entryText(),
     entryUnreadable: entryText() !== null,
+    display: entryText() ?? shownTime(handle.value(), format),
   }));
 
   const view: MdySignal<MdyWidgetViewContract> = reactivity.computed(() => {
@@ -197,7 +205,11 @@ export function createTimepickerFieldController(
   function confirm(): readonly MdyUiCommand[] {
     // A time arriving from the dial answers the outstanding entry.
     entryText.set(null);
-    handle.set(formatTimeAs(draft(), format));
+    // Canonical, whatever this field shows. `HH:mm` is what the value contract declares a time is,
+    // so a twelve-hour picker committing `02:30 PM` handed the form a value its own rules refuse —
+    // the field was invalid the moment it was answered, and the payload carried a notation nothing
+    // downstream parses. The notation belongs to the control, which reads it back from `display`.
+    handle.set(formatTimeAs(draft(), "24h"));
     handle.markAsDirty();
     handle.markAsTouched();
     open.set(false);

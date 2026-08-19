@@ -50,6 +50,7 @@ const RESTING: MdyTimepickerFieldState = Object.freeze({
   pending: false,
   entryText: null,
   entryUnreadable: false,
+  display: "",
 });
 
 export class MdyTimepickerFieldElement extends MdyFieldElement<string | null> {
@@ -130,7 +131,9 @@ export class MdyTimepickerFieldElement extends MdyFieldElement<string | null> {
         // the same thing here as in every other renderer.
         parseEntry: (text) => {
           const parsed = parseAnyTime(text.trim().toUpperCase(), this.format);
-          return parsed ? formatTimeAs(parsed, this.format) : null;
+          // Canonical, as the dial commits: a time is `HH:mm` wherever it is held, and the notation
+          // on screen is this control's own.
+          return parsed ? formatTimeAs(parsed, "24h") : null;
         },
       });
       this.unsubscribe = subscribeController(
@@ -602,7 +605,7 @@ export class MdyTimepickerFieldElement extends MdyFieldElement<string | null> {
             type="text"
             class="mdy-timepicker__input"
             placeholder=${this.effectivePlaceholder}
-            .value=${this.view.entryText ?? handle.value() ?? ""}
+            .value=${this.view.display}
             ?disabled=${handle.disabled()}
             ?readonly=${handle.readonly()}
             role="combobox"
