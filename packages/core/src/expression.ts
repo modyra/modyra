@@ -222,8 +222,11 @@ function isEmptyValue(value: unknown): boolean {
   if (typeof value === "boolean") return value === false;
   if (Array.isArray(value)) return value.length === 0;
   if (typeof value === "object") {
+    // A container that declares nothing says nothing about answers: `{}` is a form root before any
+    // field exists, not a field nobody filled in. What this reads is a value with members, all of
+    // them empty — a `daterange` before either end is picked, which always has its two.
     const members = Object.values(value as Record<string, unknown>);
-    return members.every((member) => isEmptyValue(member));
+    return members.length > 0 && members.every((member) => isEmptyValue(member));
   }
   return false;
 }

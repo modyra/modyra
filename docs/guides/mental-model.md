@@ -63,12 +63,12 @@ declared is held until it is.
 
 | Operation | Effect |
 | :--- | :--- |
-| `setValue(v)` | Replace. Every field is set; fields absent from `v` become `null` |
+| `setValue(v)` | Replace. Every field is set; a field absent from `v` returns to its **declared initial**, not to `null` — the same rule `reset()` follows |
 | `patchValue(p)` / `patch(p)` | Merge. Only the given paths change |
 | `reset()` | Values return to their declared initial values, otherwise `null`; touched and dirty clear; server errors clear |
 | `submit(action)` | Gated by `canSubmit` — if it fails, marks everything touched and returns. Errors the action returns become server errors, tied to the value that was submitted |
 | `undo()` / `redo()` | Restore recorded **values** only, never touched, dirty or errors |
-| `getChanges()` | An `Object.is` diff of each leaf against its initial value |
+| `getChanges()` | An `Object.is` diff of each leaf against its initial value, minus the fields that are out of play — the same ones `submitValue()` withholds |
 | `clearDraft()` | Removes the stored draft and re-baselines against the current value |
 
 ## How equality is decided
