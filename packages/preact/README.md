@@ -43,7 +43,7 @@ function SignupForm() {
   `useSyncExternalStore` (from `preact/compat`).
 - **`createStore`/`createFieldStore`** — the framework-free store the hooks
   wrap, directly testable in Node with no Preact renderer.
-- **The headless widgets bridge** — `useMdyField`/`useMdySelect`/
+- **The headless widgets bridge** — `useMdyTextField`/`useMdySelect`/
   `useMdyCommandQueue` from `@modyra/widgets`' controllers, same shape as
   the React adapter's (only the hook import source differs: `preact/hooks`
   instead of `react`).

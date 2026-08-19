@@ -10,8 +10,8 @@ export type {
   UseMdySelectOptions,
 } from "./select.js";
 
-export { useMdyField } from "./field.js";
+export { useMdyTextField } from "./field.js";
 export type {
-  MdyPreactFieldApi,
-  UseMdyFieldOptions,
+  MdyPreactTextFieldApi,
+  UseMdyTextFieldOptions,
 } from "./field.js";
