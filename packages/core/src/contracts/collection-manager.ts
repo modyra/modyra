@@ -59,6 +59,14 @@ export interface MdyNestedCollection {
   /** Replaces the rows wholesale; a value of the wrong shape says nothing and changes nothing. */
   setAllFrom(value: unknown): void;
   /**
+   * Writes what a patch names and leaves the rest of each row as it is.
+   *
+   * The difference from {@link MdyNestedCollection.setAllFrom} is the cells a row does *not* name: a
+   * replacement gives them the declaration's initial, which is what a row built from nothing gets,
+   * while a patch leaves what is there. Which rows exist is still the value's own statement in both.
+   */
+  patchFrom(value: unknown): void;
+  /**
    * The path of every collection declared below this one, its own excluded.
    *
    * A collection registers a field at its own path so that errors attributed to the collection have
