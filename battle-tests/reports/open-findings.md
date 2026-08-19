@@ -13969,6 +13969,38 @@ Pinned by `adversarial/dynamic-contract/a-key-the-schema-refuses.battle.test.mjs
 requiring the same five documents to parse clean once the extra key is removed.
 
 
+## 228 — A narrowed step offers values the field refuses (S1, VAL-004 UI-007)
+
+`native-constraints.ts` states the rule twice, identically: *"A control may ask for **less** than the
+field accepts and never for more: the rules are the authority."* `narrowConstraints` enforces it by
+taking the tighter of the two numbers — higher `min`, lower `max`, higher `minLength`, lower
+`maxLength`, higher `step`.
+
+For `step` the higher number is not the tighter one. **A step is a lattice, not a bound**, and one
+lattice sits inside another only when its step is a *multiple* of it:
+
+```
+the field says step 2       0  2  4  6  8  10  12
+a control asks step 4       0     4     8      12    a subset — fewer values, all legal
+a control asks step 3       0  3     6     9   12    3 and 9 are values the field refuses
+a control asks step 5       0        5        10     5 and 10 likewise
+a control asks step 1       0  2  4  6  8  10  12    correctly ignored: it asked for more
+```
+
+So a number input narrowed to step 3 over a field stepping by 2 lets a person land on 3, accepts it
+at the control, and hands the form a value its own rules reject — which is exactly the failure the
+file names. `min` and `max` narrow correctly; it is the one constraint whose arithmetic is not an
+inequality.
+
+The repair is arithmetic rather than policy: the tighter lattice containing both is their least
+common multiple — `lcm(2, 3) = 6`, offering `0 6 12`, a subset of each. The battle does not require
+that answer, only the property the file already states.
+
+Pinned by `adversarial/widgets/a-step-that-offers-what-the-form-refuses.battle.test.mjs`, with a
+control requiring narrowing to actually narrow somewhere and a wider ask to be ignored — otherwise
+"nothing is offered wrongly" would describe a function that ignores its second argument.
+
+
 ## The browser tier, measured — a baseline this register never had
 
 `npm run battle:browser` on the working tree at `6ee29144`:
@@ -14125,9 +14157,9 @@ the half-fix to overlay teardown did not close it on plain either.
 ## The register's own shape, measured
 
 ```
-numbered findings        227
+numbered findings        228
 closed or retracted       46
-open with a battle       194
+open with a battle       195
 open with none            10
 ```
 
