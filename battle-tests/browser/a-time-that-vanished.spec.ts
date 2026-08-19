@@ -107,8 +107,11 @@ test("the shape each picker does read is one it keeps", async ({ page }) => {
   const date = await typeAndLeave(page, "datepicker", "03/04/2026", "ok-date");
   expect({ shows: date.shows, value: date.value }).toEqual({ shows: "2026-03-04", value: "2026-03-04" });
 
+  // Two columns, and they are not the same thing: `MDY_VALUE_CONTRACTS.timepicker` holds a time as
+  // `HH:mm` — `explainValueMismatch("timepicker", "02:30 PM")` refuses it in those words — while
+  // twelve-hour notation is what this control shows the person who typed it.
   const time = await typeAndLeave(page, "timepicker", "2:30 PM", "ok-time");
-  expect({ shows: time.shows, value: time.value }).toEqual({ shows: "02:30 PM", value: "02:30 PM" });
+  expect({ shows: time.shows, value: time.value }).toEqual({ shows: "02:30 PM", value: "14:30" });
 });
 
 test("what a picker cannot read is either kept or explained", async ({ page }) => {
@@ -144,8 +147,12 @@ test("a picker that was corrected is holding the correction and nothing of the a
   // something the picker reads: a control still showing the text it could not read, or still
   // explaining an error about it, has turned a correction into a field that argues with its own
   // value.
+  // The timepicker row reads oddly on purpose: `"14:30"` is both the text this control cannot read
+  // and the value it holds once the same time is typed in the notation it does read. That is the two
+  // columns in one row — what a person may type is the control's business, what the form holds is the
+  // value contract's.
   const attempts = [
-    { kind: "timepicker", bad: "14:30", good: "2:30 PM", holds: "02:30 PM" },
+    { kind: "timepicker", bad: "14:30", good: "2:30 PM", holds: "14:30" },
     { kind: "datepicker", bad: "31/02/2026", good: "03/04/2026", holds: "2026-03-04" },
   ];
 

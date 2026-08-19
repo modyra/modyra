@@ -15022,6 +15022,43 @@ repository files. A supply-chain finding in a build tool is not nothing merely b
 shipped — but it is a different decision from one in `@modyra/core`, and the register should not blur
 them.
 
+## 249 — One renderer keeps a value the contract refuses (S1, UI-006, browser tier)
+
+`MDY_VALUE_CONTRACTS.timepicker` holds a time as `HH:mm`, and `explainValueMismatch("timepicker",
+"02:30 PM")` refuses twelve-hour notation in those words. Twelve-hour is what a control **shows**; it
+is not what a form keeps.
+
+A document mounts `initialValue: "02:30 PM"` — the mistake an author makes by copying what the screen
+says. The two renderers disagree about it:
+
+```
+plain   stored: null        the value is refused, the field is empty
+lit     stored: "02:30 PM"  the form holds a string its own contract rejects
+```
+
+Whichever answer is right, they cannot both be. `null` is the defensible one: a value the contract
+names as wrong is not a value to keep, and an empty field is visible where a bad string is not.
+
+Found by rewriting a spec whose premise the timepicker repair had inverted. It used to read *"the
+canonical 12h form, which is what the field normalises to"* with `"02:30 PM"` as the canonical value
+and `"14:30"` as the foreign one — the exact opposite of what the value contract says, pinned as
+correct behaviour by a spec of this suite. **Four specs did it**, and the other three are corrected
+beside this one:
+
+```
+a-time-that-vanished.spec.ts             two assertions expecting value "02:30 PM"
+a-popup-only-a-mouse-can-open.spec.ts    an expected value of "02:30 PM"
+a-time-that-changed-…-changed-it.spec.ts a constant named CANONICAL holding "02:30 PM"
+```
+
+That is the cost of a suite that pins what a renderer does rather than what a contract says: the
+repair arrives, and the tests defend the defect. The rewritten spec asks for the contract instead —
+a value in the contract's notation survives being confirmed without a dial touched, and a value in
+the display's notation is never what the form ends up holding.
+
+Pinned by `browser/a-time-that-changed-when-nobody-changed-it.spec.ts`, green on plain and red on lit,
+with the surviving-value case as its control.
+
 ## The browser tier, measured — and now gated like the other one
 
 `battle-tests/reports/known-red-browser.json` is the browser tier's baseline, written by
@@ -15213,7 +15250,7 @@ the half-fix to overlay teardown did not close it on plain either.
 ## The register's own shape, measured
 
 ```
-numbered findings        248
+numbered findings        249
 closed or retracted       58
 open with a battle       207
 open with none            10

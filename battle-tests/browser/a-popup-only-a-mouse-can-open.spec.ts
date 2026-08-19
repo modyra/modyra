@@ -98,7 +98,8 @@ test("a value can still be typed into the pickers whose popup will not open", as
   // is the popup. This is green, and it is the reason the one above is not filed as "cannot be used".
   for (const [index, [kind, text, expected]] of ([
     ["datepicker", "03/04/2026", "2026-03-04"],
-    ["timepicker", "2:30 PM", "02:30 PM"],
+    // Typed in the notation the control shows, held in the one the value contract names.
+    ["timepicker", "2:30 PM", "14:30"],
   ] as const).entries()) {
     const id = `typed-${index}`;
     await page.evaluate(

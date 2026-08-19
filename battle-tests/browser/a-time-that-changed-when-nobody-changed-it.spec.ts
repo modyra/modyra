@@ -1,26 +1,18 @@
 /**
- * The same moment, stored two ways, decided by whether anybody opened the picker.
+ * A time nobody changed, and the one notation a form holds it in.
  *
- * A timepicker has two published formats. In `24h` the stored value is `"HH:mm"` — `"14:30"` is the
- * example the guide uses — and in the default 12h it is `"hh:mm A"`. The guide calls the stored value
- * canonical and display-independent *within the chosen format*, which is the whole sentence: the two
- * formats store different strings for the same moment.
+ * `MDY_VALUE_CONTRACTS.timepicker` names what a timepicker holds — a time as `HH:mm` — and
+ * `explainValueMismatch("timepicker", "02:30 PM")` refuses twelve-hour notation in those words.
+ * Twelve-hour is what the control **shows**; it is not what the form keeps. The two are different
+ * columns, and a page that confuses them sends a payload nobody downstream can parse.
  *
- * A form arriving as data has no way to choose. `format` is an attribute a host sets on a control;
- * `$defs.field` does not declare it, and a document that carries it anyway reaches a control that
- * does not read it. So every timepicker a document builds is 12h, and `"14:30"` — the machine form,
- * the one the guide prints — is a value in the other format.
+ * So there are two things to hold. A value in the contract's own notation survives being confirmed
+ * without a dial being touched — nothing changed, so nothing should change. And a value in the
+ * display's notation is never what the form ends up holding: mounted, it is refused rather than
+ * kept, so the field is empty rather than holding a string its own contract rejects.
  *
- * The widget accepts it, shows it, and leaves it alone. Then the user opens the picker and presses
- * OK without touching a dial, and the value becomes `"02:30 PM"`. Nothing about the time changed.
- * What changed is that the field has now been written once, and a write is normalised while a mount
- * is not.
- *
- * The consequence crosses the submission boundary: the same page, the same form, sends `"14:30"` or
- * `"02:30 PM"` depending on whether anybody opened a picker they did not need to open.
- *
- * The control is the same interaction on a value already in the field's own format, which is stable.
- * So this is the mount and the first write disagreeing, not a confirmation that always rewrites.
+ * Both hosts, because a notation kept by one renderer and not the other is the same defect seen from
+ * one side.
  *
  * Claims under attack: UI-006.
  */
@@ -32,11 +24,11 @@ const HOSTS = [
   { name: "lit", page: "/lit.html", ready: "battleLitReady", api: "battleLit" },
 ];
 
-/** The canonical 12h form, which is what the field normalises to. */
-const CANONICAL = "02:30 PM";
+/** What a timepicker holds, in the notation its value contract names. */
+const CANONICAL = "14:30";
 
-/** The same moment in the other published format, and the one a document would carry. */
-const OTHER_FORMAT = "14:30";
+/** The same moment as the control shows it, which is not a value the contract accepts. */
+const DISPLAYED = "02:30 PM";
 
 for (const host of HOSTS) {
   test(`a time nobody changed is the time that was there, ${host.name}`, async ({ page }) => {
@@ -68,21 +60,25 @@ for (const host of HOSTS) {
       await page.waitForTimeout(420);
     };
 
-    // The control: a value already in the field's own format survives the same interaction, so what
-    // happens below is the format rather than a confirmation that rewrites whatever it finds.
+    // The control: a value in the contract's notation survives the interaction, so what the second
+    // half finds is the notation rather than a confirmation that rewrites whatever it is given.
     await mount("canonical", CANONICAL);
     expect(await stored("canonical")).toBe(CANONICAL);
     await confirmWithoutChanging("canonical");
-    expect(await stored("canonical"), "the canonical form did not survive being confirmed").toBe(CANONICAL);
+    expect(await stored("canonical"), "a time nobody changed did not survive being confirmed").toBe(CANONICAL);
 
-    // The same moment, written the other way, which is the way a document writes it.
-    await mount("other", OTHER_FORMAT);
-    expect(await stored("other")).toBe(OTHER_FORMAT);
-    await confirmWithoutChanging("other");
-
+    // The same moment as the control would show it. A document that carries this is carrying a value
+    // the contract refuses, and what must not happen is the form holding it anyway.
+    await mount("displayed", DISPLAYED);
     expect(
-      await stored("other"),
-      "confirming without changing anything rewrote the stored time into the other format",
-    ).toBe(OTHER_FORMAT);
+      await stored("displayed"),
+      "the form is holding a time in a notation its own value contract refuses",
+    ).not.toBe(DISPLAYED);
+
+    await confirmWithoutChanging("displayed");
+    expect(
+      await stored("displayed"),
+      "confirming without touching a dial left the field holding something other than a time",
+    ).not.toBe(DISPLAYED);
   });
 }
