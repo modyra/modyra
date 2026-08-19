@@ -116,6 +116,46 @@ export function nativeConstraintAttributes(
  * beyond them would invite a value the form is going to refuse. So each end takes whichever is
  * tighter, which is the same rule two validators already follow between themselves.
  */
+/**
+ * Strings a pattern comparison is tried against.
+ *
+ * Fixed and small on purpose: what this buys is a **counterexample**, and one is enough. Absence of
+ * one is not a proof that a control's pattern is tighter — it is the honest limit of comparing two
+ * regular expressions without deciding language containment, which is not something a render path
+ * can afford to attempt.
+ */
+const PATTERN_PROBES: readonly string[] = Object.freeze([
+  "", " ", "a", "ab", "abc", "abcd", "abcdefgh", "ABCD", "0", "01234", "a b", "xax", "-", "a-b", "é",
+]);
+
+/**
+ * The pattern a control ends up offering.
+ *
+ * A control may ask for **less** than the field accepts and never for more, and a pattern is the one
+ * constraint with no order between two of them: there is no expression that means "both" without
+ * writing it. So the control's own is taken unless it can be *shown* to loosen — a probe the rules
+ * refuse and the control's pattern accepts is that proof, and `^.*$` over `^[a-z]{4,}$` produces one
+ * on the first string.
+ *
+ * Where no counterexample turns up, the control's pattern is taken: a control asking for a stricter
+ * spelling of the same rule is the ordinary reason to narrow at all.
+ */
+function narrowedPattern(rules: string | null, offered: string | null): string | null {
+  if (offered === null) return rules;
+  if (rules === null || rules === offered) return offered;
+  let ruled: RegExp;
+  let control: RegExp;
+  try {
+    ruled = new RegExp(rules);
+    control = new RegExp(offered);
+  } catch {
+    // One of them is not a pattern the platform can read; the rules are the authority.
+    return rules;
+  }
+  const loosens = PATTERN_PROBES.some((probe) => control.test(probe) && !ruled.test(probe));
+  return loosens ? rules : offered;
+}
+
 export function narrowConstraints(
   rules: MdyFieldConstraints,
   narrowing: Partial<MdyFieldConstraints> | undefined,
@@ -132,7 +172,7 @@ export function narrowConstraints(
     step: higher(rules.step, narrowing.step),
     minLength: higher(rules.minLength, narrowing.minLength),
     maxLength: lower(rules.maxLength, narrowing.maxLength),
-    pattern: narrowing.pattern ?? rules.pattern,
+    pattern: narrowedPattern(rules.pattern, narrowing.pattern ?? null),
     inputMode: narrowing.inputMode ?? rules.inputMode,
   };
 }

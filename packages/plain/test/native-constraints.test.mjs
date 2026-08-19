@@ -50,7 +50,13 @@ test("a pattern reaches the input, unless two rules disagree about it", () => {
     { reactivity: rx },
   );
 
-  assert.equal(render({ name: "code", kind: "text", label: "Code" }, form.f.code, rx).getAttribute("pattern"), "^[A-Z]{3}$");
+  // The attribute is the rule said the way the platform reads one: `pattern` is implicitly anchored,
+  // so the rule is wrapped rather than copied — an unanchored rule would otherwise refuse values the
+  // form accepts.
+  assert.equal(
+    render({ name: "code", kind: "text", label: "Code" }, form.f.code, rx).getAttribute("pattern"),
+    "(?:^[A-Z]{3}$)",
+  );
   assert.equal(
     render({ name: "both", kind: "text", label: "Both" }, form.f.both, rx).getAttribute("pattern"),
     null,
