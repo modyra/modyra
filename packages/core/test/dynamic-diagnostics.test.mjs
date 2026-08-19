@@ -19,6 +19,11 @@ const REFUSALS = {
   MDY_DYNAMIC_UNSAFE_NAME: [{ name: "__proto__", kind: "text" }],
   MDY_DYNAMIC_UNKNOWN_KIND: [{ name: "a", kind: "wormhole" }],
   MDY_DYNAMIC_OPTIONS_REQUIRED: [{ name: "a", kind: "select" }],
+  MDY_DYNAMIC_DUPLICATE_OPTION: [{
+    name: "a",
+    kind: "select",
+    options: [{ value: "pro", label: "Pro monthly" }, { value: "pro", label: "Pro yearly" }],
+  }],
   MDY_DYNAMIC_PATTERN_TOO_LONG: [{ name: "a", kind: "text", validators: { pattern: "x".repeat(300) } }],
   MDY_DYNAMIC_PATTERN_TOO_COSTLY: [{ name: "a", kind: "text", validators: { pattern: "(a+)+$" } }],
 };

@@ -198,6 +198,21 @@ function hasValidCalendarOptions(field: Partial<MdyDynamicCalendarOptions>, name
   return true;
 }
 
+/**
+ * A comparable spelling of an option's value.
+ *
+ * A value may be a scalar or an object keyed by what it holds (ADR 0051), and two objects declaring
+ * the same members are the same option however they were written — so the key is the members in a
+ * fixed order rather than the reference.
+ */
+function optionValueKey(value: unknown): string {
+  if (value === null || typeof value !== "object") return JSON.stringify(value) ?? String(value);
+  const entries = Object.entries(value as Record<string, unknown>)
+    .sort(([left], [right]) => (left < right ? -1 : left > right ? 1 : 0))
+    .map(([key, held]) => `${JSON.stringify(key)}:${optionValueKey(held)}`);
+  return `{${entries.join(",")}}`;
+}
+
 function hasValidOptions(options: unknown): options is ReadonlyArray<MdySelectOption<unknown>> {
   if (!Array.isArray(options)) return false;
   return options.every((option) => {
@@ -548,7 +563,9 @@ export function parseDynamicFields(input: unknown): MdyDynamicField[] {
     return [];
   }
   const seenNames = new Set<string>();
-  return items.filter((item, index): item is MdyDynamicField => {
+  /** Option lists this read shortened, by the entry they belong to. */
+  const dedupedOptions = new Map<unknown, ReadonlyArray<MdySelectOption<unknown>>>();
+  const accepted: MdyDynamicField[] = items.filter((item, index): item is MdyDynamicField => {
     // Where this entry is written, so a finding underlines the entry rather than the array. A
     // duplicate names the *second* occurrence: the first is legitimate until the second exists, and
     // the second is the one a reader has to change.
@@ -675,9 +692,38 @@ export function parseDynamicFields(input: unknown): MdyDynamicField[] {
         );
         return false;
       }
+      // Two options that say the same value are the same defect two fields sharing a name are: the
+      // value builds an id — `s__option__pro` — so the second is unreachable, and the value itself
+      // names two different things, which neither the control nor the submission can resolve. The
+      // later ones are dropped, as the later of two fields with one name is.
+      const seenValues = new Set<string>();
+      const kept = options.filter((option) => {
+        const key = optionValueKey(option.value);
+        if (!seenValues.has(key)) {
+          seenValues.add(key);
+          return true;
+        }
+        warnDev(
+          `Dropped a duplicate option value ${key} on "${f.name}": an option's value is its identity, ` +
+          "so two options sharing one leave a value naming both and a control able to reach only the first.",
+          at,
+        );
+        return false;
+      });
+      if (kept.length !== options.length) {
+        // Recorded, not written back: the document belongs to the caller, and a parser that edits it
+        // leaves a second read of the same object answering differently from the first.
+        dedupedOptions.set(item, kept);
+      }
     }
     return true;
   });
+  return dedupedOptions.size === 0
+    ? accepted
+    : accepted.map((declared) => {
+      const kept = dedupedOptions.get(declared);
+      return kept === undefined ? declared : { ...declared, options: kept } as MdyDynamicField;
+    });
 }
 
 /**
@@ -701,6 +747,7 @@ export const MDY_DYNAMIC_DIAGNOSTICS: ReadonlyArray<{
   { code: "MDY_DYNAMIC_UNSAFE_NAME", phrase: "reserved or contains forbidden" },
   { code: "MDY_DYNAMIC_UNKNOWN_KIND", phrase: "unknown kind" },
   { code: "MDY_DYNAMIC_OPTIONS_REQUIRED", phrase: "requires a valid options" },
+  { code: "MDY_DYNAMIC_DUPLICATE_OPTION", phrase: "duplicate option value" },
   { code: "MDY_DYNAMIC_PATTERN_TOO_LONG", phrase: "pattern length" },
   { code: "MDY_DYNAMIC_PATTERN_TOO_COSTLY", phrase: "backtracks exponentially" },
 ];
