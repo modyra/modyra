@@ -67,6 +67,32 @@ its paths against the schema. There is no string syntax and no parser.
 
 The operator set grows only when a real predicate requires it. Today's measurement requires none.
 
+## Amendment: what the document half looks like, shipped
+
+Batch 1 (the three operands) and batch 2 (the document) are in. What batch 2 turned out to be is
+worth recording, because it is smaller than the decision above suggests:
+
+- A node's own `when` — on a field and on a group — and `asyncWhen` on a field. **Not** on a
+  collection: the typed descriptors a document compiles into carry a condition at those two levels,
+  and a collection that must come and go is a collection inside a group that says when. One spelling
+  rather than two that mean the same.
+- Contract **v4**: `MdyDynamicFormConfigV4` adds `version: 4` and `requiresContext`. Everything else
+  is v3's, so a v3 document is a v4 document with the version raised, and `rules` is untouched.
+- **No public slot changed type.** `buildDynamicFormSchema(schema, { context })` compiles each
+  expression into the closure `MdyFieldOptions.when` already takes. That is what makes the document
+  half additive and shippable before the breaking batch — and it means the two halves are running
+  side by side, which is the state a migration wants rather than a flag day.
+- `MdyCondition` gained the whole form value as a third argument, because `{ root: true }` from
+  inside a row had nothing to read otherwise: a clause in a row is enclosed by the row.
+
+The parser reads a clause against **what encloses it** — inside `item` that is the row's own cells —
+and refuses a path nothing there declares, an expression that is not one (`MDY_DYNAMIC_INVALID_CONDITION`),
+and a context key the document did not declare (`MDY_DYNAMIC_UNDECLARED_CONTEXT`). A key the *host*
+does not supply refuses the build, which is the "before anything is painted" this record asks for.
+
+This also closes what was registered as a limit rather than a defect: a document can now condition a
+cell inside a collection row, which no `rules` entry could express.
+
 ## Consequences
 
 **This is a breaking change**, released major, with a changeset carrying the closure-to-expression

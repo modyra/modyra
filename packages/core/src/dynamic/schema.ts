@@ -7,6 +7,7 @@
  */
 
 import { MDY_FIELD_KINDS } from "../field-kinds.js";
+import type { MdyExpression } from "../expression.js";
 import { explainValueMismatch, type MdyValueKind } from "../value-contracts.js";
 import { warnDev } from "./guards.js";
 import type { MdySelectOption } from "../types.js";
@@ -300,15 +301,46 @@ export function assertNeverField(field: never): never {
  */
 export const MDY_DYNAMIC_FIELD_KINDS = MDY_FIELD_KINDS;
 
+/**
+ * When a node is in play, as data.
+ *
+ * A typed schema says this with a function and a document could not say it at all: what it had was
+ * `rules`, which are form-level and name a leaf, so a condition on a cell of a row — the arrangement
+ * where a row is a template and the key does not exist yet — was not expressible. An expression is,
+ * because it is evaluated against **what encloses the clause**: inside a row that is the row, and
+ * `{ root: true }` is how a row-level condition reaches back out to the form.
+ *
+ * A field out of play keeps its value, is not validated and is not submitted — the same state
+ * `MdyFieldOptions.when` produces, because it *is* that state: the compiler turns this into one.
+ */
+export type MdyDynamicCondition = MdyExpression;
+
+/*
+ * Declared on a field and on a group, and not on a collection: the typed descriptors a document
+ * compiles into carry a condition at those two levels, and a collection that must come and go is a
+ * collection inside a group that says when. One spelling rather than two that mean the same.
+ */
+
 /** Recursive Contract v2 node: a renderable leaf, structural group, or repeatable array. */
 export interface MdyDynamicFieldNode {
   readonly node: "field";
   readonly field: Omit<MdyDynamicField, "name">;
+  /** Whether this field is in play. Contract v4. */
+  readonly when?: MdyDynamicCondition;
+  /**
+   * Whether this field's asynchronous checks run at all. Contract v4.
+   *
+   * Read against the same thing `when` is, which inside a row is the row — so a check declared once
+   * for a template asks about its own row rather than about the first one.
+   */
+  readonly asyncWhen?: MdyDynamicCondition;
 }
 export interface MdyDynamicGroupNode {
   readonly node: "group";
   readonly label?: string;
   readonly children: Readonly<Record<string, MdyDynamicNode>>;
+  /** Whether the whole section is in play — it takes what it contains with it. Contract v4. */
+  readonly when?: MdyDynamicCondition;
 }
 export interface MdyDynamicArrayNode {
   readonly node: "array";

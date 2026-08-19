@@ -21,8 +21,23 @@ import type { MdyReactivity, MdySignal } from "./reactivity-contract.js";
  * thing, differing only in what they read.
  */
 export interface MdyCondition {
-  readonly holds: (value: unknown, enclosing: Record<string, unknown>) => boolean;
-  readonly read: () => { readonly value: unknown; readonly enclosing: Record<string, unknown> };
+  readonly holds: (
+    value: unknown,
+    enclosing: Record<string, unknown>,
+    /**
+     * The whole form value.
+     *
+     * The same object as `enclosing` for a field at the root, and the form for a cell inside a row —
+     * which is the only way a clause written once in a row's template can reach back out. A
+     * predicate written before this existed takes two arguments and ignores it.
+     */
+    root: Record<string, unknown>,
+  ) => boolean;
+  readonly read: () => {
+    readonly value: unknown;
+    readonly enclosing: Record<string, unknown>;
+    readonly root?: Record<string, unknown>;
+  };
 }
 
 /**
@@ -39,14 +54,14 @@ export function composeConditions(
 ): MdySignal<boolean> {
   return rx.computed(() =>
     !conditions.every((condition) => {
-      const { value, enclosing } = condition.read();
-      const holds = condition.holds(value, enclosing);
+      const { value, enclosing, root } = condition.read();
+      const holds = condition.holds(value, enclosing, root ?? enclosing);
       // A predicate must be a pure function of what it is given: it re-runs when what it *reads*
       // changes, so one that reads anything else — a clock, a random source, a mutable outside the
       // form — answers correctly once and then goes stale with nothing to say so. Asking twice in
       // the same computation catches the ones that cannot even agree with themselves.
       if (MDY_DEV) {
-        const again = condition.holds(value, enclosing);
+        const again = condition.holds(value, enclosing, root ?? enclosing);
         if (again !== holds) {
           warn(
             "a `when` predicate gave two answers for the same value. It must be a pure function of " +

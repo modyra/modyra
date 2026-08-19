@@ -7,8 +7,15 @@
 
 import { array, field, group, record, type MdyFormSchema } from "../typed-form.js";
 import type { MdyFormValidatorFn, ValidatorFn } from "../types.js";
-import { evaluateExpression, evaluateRuleCondition, expressionPaths } from "../expression.js";
+import {
+  evaluateExpression,
+  evaluateRuleCondition,
+  expressionContextKeys,
+  expressionPaths,
+  type MdyExpression,
+} from "../expression.js";
 import { validationMessagesForLocale } from "../validation-messages.js";
+import { MDY_VALUE_CONTRACTS, type MdyValueShape } from "../value-contracts.js";
 import {
   eachOneOf,
   email,
@@ -264,7 +271,73 @@ function assertSafeSegment(key: string): void {
   assertSafeDynamicName(key);
 }
 
-export function buildDynamicFormSchema(schema: MdyDynamicGroupNode): MdyFormSchema {
+/** What a document's conditions are read against, beyond the value the clause is written on. */
+export interface MdyDynamicBuildOptions {
+  /**
+   * The facts the host supplies — a role, a tenant, today's date, a feature flag.
+   *
+   * Supplied once for the application rather than once per form: they are what the app knows
+   * whichever document arrives. A document reading a key the host does not supply is refused here,
+   * before anything is painted, because a condition that cannot be read decides `false` and the
+   * fields it guards would quietly never appear.
+   */
+  readonly context?: Readonly<Record<string, unknown>>;
+}
+
+/**
+ * A document's condition, as the closure the typed slots already take.
+ *
+ * This is what makes the document half of ADR 0092 additive: `when` on a descriptor keeps its
+ * signature, and what changes is that a document can now produce one. The expression is read
+ * against **what encloses the clause** — the row for a cell inside a collection, the form for a
+ * field at the root — which is the rule the typed `when` already follows; `{ self }` is the value
+ * the clause is written on, and `{ root }` is the way out of a row.
+ */
+function conditionFrom(
+  expression: MdyExpression,
+  context: Readonly<Record<string, unknown>> | undefined,
+): (value: unknown, enclosing: Record<string, unknown>, root?: Record<string, unknown>) => boolean {
+  return (value, enclosing, root) =>
+    evaluateExpression(expression, enclosing, {
+      self: value,
+      root: root ?? enclosing,
+      ...(context === undefined ? {} : { context }),
+    });
+}
+
+/**
+ * Every context key a document reads that the host did not supply.
+ *
+ * Read from the expressions rather than from what the document *declares* it needs: the declaration
+ * is a promise to a reader, this is what the document does.
+ */
+function missingContextKeys(
+  schema: MdyDynamicGroupNode,
+  context: Readonly<Record<string, unknown>> | undefined,
+): readonly string[] {
+  const missing = new Set<string>();
+  const pending: MdyDynamicNode[] = [schema];
+  while (pending.length > 0) {
+    const node = pending.pop()!;
+    for (const clause of [
+      (node as { when?: MdyExpression }).when,
+      (node as { asyncWhen?: MdyExpression }).asyncWhen,
+    ]) {
+      if (clause === undefined) continue;
+      for (const key of expressionContextKeys(clause)) {
+        if (context === undefined || !Object.hasOwn(context, key)) missing.add(key);
+      }
+    }
+    if (node.node === "group") pending.push(...Object.values(node.children));
+    else if (node.node === "array" || node.node === "record") pending.push(node.item);
+  }
+  return [...missing];
+}
+
+export function buildDynamicFormSchema(
+  schema: MdyDynamicGroupNode,
+  options: MdyDynamicBuildOptions = {},
+): MdyFormSchema {
   // The root of a parsed document, or nothing this can walk. `parseDynamicForm` is the door that
   // produces one; a caller arriving here with something else got a `TypeError` about `children` or
   // about converting null, which names neither the argument nor this call.
@@ -291,6 +364,16 @@ export function buildDynamicFormSchema(schema: MdyDynamicGroupNode): MdyFormSche
    * to use. Overflowing is not a refusal a consumer can act on — it carries no path, cannot be
    * caught by name, and looks exactly like a bug in their own code.
    */
+  // A key the document reads and the host does not supply, said here rather than answered `false`
+  // for the life of the form.
+  const missing = missingContextKeys(schema, options.context);
+  if (missing.length > 0) {
+    throw new Error(
+      `[modyra] This document reads context ${missing.map((key) => `"${key}"`).join(", ")}, which ` +
+      "the host did not supply. Pass it as buildDynamicFormSchema(schema, { context }); a condition " +
+      "that cannot be read decides false, so the fields it guards would never appear.",
+    );
+  }
   const built = new Map<MdyDynamicNode, unknown>();
   const leaf = (node: MdyDynamicNode & { node: "field" }, name: string): unknown => {
     const descriptor = { ...node.field, name } as MdyDynamicField;
@@ -299,8 +382,24 @@ export function buildDynamicFormSchema(schema: MdyDynamicGroupNode): MdyFormSche
     const { validators } = buildDynamicFieldValidators(descriptor);
     // The one property in a document that names secrecy. Carried onto the descriptor so the form
     // itself knows, rather than leaving every protection to a list the application passes.
+    const contract = (MDY_VALUE_CONTRACTS as Record<string, { shape: MdyValueShape } | undefined>)[
+      String(descriptor.kind)
+    ];
     return field(mdyEmptyValueFor(descriptor) as never, validators as never, {
       sensitive: descriptor.sensitive === true,
+      // The kind's own shape and, for a kind that chooses from a list, the values it offers: what a
+      // value arriving from storage is held to. The flat builder declares the same two.
+      ...(contract === undefined ? {} : { shape: contract.shape }),
+      ...(Array.isArray((descriptor as { options?: ReadonlyArray<{ value: unknown }> }).options)
+        ? {
+          options: (descriptor as { options: ReadonlyArray<{ value: unknown }> }).options
+            .map((option) => option.value),
+        }
+        : {}),
+      ...(node.when === undefined ? {} : { when: conditionFrom(node.when, options.context) as never }),
+      ...(node.asyncWhen === undefined
+        ? {}
+        : { asyncWhen: conditionFrom(node.asyncWhen, options.context) as never }),
     });
   };
 
@@ -334,7 +433,15 @@ export function buildDynamicFormSchema(schema: MdyDynamicGroupNode): MdyFormSche
       if (frame.node.node === "group") {
         const children: Record<string, unknown> = {};
         for (const [key, child] of Object.entries(frame.node.children)) children[key] = built.get(child);
-        built.set(frame.node, group(children as MdyFormSchema));
+        built.set(
+          frame.node,
+          group(
+            children as MdyFormSchema,
+            frame.node.when === undefined
+              ? undefined
+              : { when: conditionFrom(frame.node.when, options.context) as never },
+          ),
+        );
         continue;
       }
       const item = built.get(frame.node.item) as never;

@@ -272,7 +272,7 @@ it into an API registry: any diagnostic makes `ok` false and returns no
 renderable fields. `parseDynamicFields()` remains backward compatible and
 accepts v1, v2, v3 and the legacy bare field array.
 
-The machine-readable schema is `spec/dynamic-form-v3.schema.json`, with
+The machine-readable schema is `spec/dynamic-form-v4.schema.json` (v3 is `spec/dynamic-form-v3.schema.json`, and a v3 document is a v4 document with the version raised), with
 `spec/dynamic-form-v2.schema.json` for documents that stay on v2. Point a
 document's `$schema` at one and an editor underlines a malformed field as it
 is written, with no extension installed. Rust services can use the matching

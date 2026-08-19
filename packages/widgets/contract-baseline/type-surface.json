@@ -628,8 +628,10 @@
     "(opaque)"
   ],
   "MdyDynamicFieldNode": [
+    "asyncWhen?: MdyDynamicCondition",
     "field: Omit<MdyDynamicField, \"name\">",
-    "node: \"field\""
+    "node: \"field\"",
+    "when?: MdyDynamicCondition"
   ],
   "MdyDynamicFileField": [
     "accept?: string",
@@ -665,12 +667,13 @@
     "rejectedCount: number",
     "rules: ReadonlyArray<MdyDynamicRule>",
     "validations: ReadonlyArray<MdyDynamicValidation>",
-    "version: 1 | 2 | 3 | null"
+    "version: 1 | 2 | 3 | 4 | null"
   ],
   "MdyDynamicGroupNode": [
     "children: Readonly<Record<string, MdyDynamicNode>>",
     "label?: string",
-    "node: \"group\""
+    "node: \"group\"",
+    "when?: MdyDynamicCondition"
   ],
   "MdyDynamicLayoutChild": [
     "(opaque)"
@@ -2290,6 +2293,7 @@
   ],
   "buildDynamicFormSchema": [
     "(0) schema: MdyDynamicGroupNode",
+    "(1) options?: MdyDynamicBuildOptions",
     "-> returns: MdyFormSchema"
   ],
   "buildDynamicValidations": [

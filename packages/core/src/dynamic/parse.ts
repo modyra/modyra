@@ -6,7 +6,12 @@
  * built form — the caller decides whether a lenient result is good enough.
  */
 
-import { expressionPaths, validateExpression, type MdyExpression } from "../expression.js";
+import {
+  expressionContextKeys,
+  expressionPaths,
+  validateExpression,
+  type MdyExpression,
+} from "../expression.js";
 import {
   MDY_ID_DELIMITER,
   MDY_MAX_DYNAMIC_PATTERN_LENGTH,
@@ -538,10 +543,31 @@ export interface MdyDynamicFormConfigV3 extends Omit<MdyDynamicFormConfigV2, "ve
   readonly version: 3;
 }
 
+/**
+ * v4: a document can say **when**.
+ *
+ * v3 and everything below it condition a field through `rules`, which are form-level and name a
+ * leaf — so a condition on a cell inside a collection row, the arrangement where the row is a
+ * template and its key does not exist yet, was not expressible at all. A node's own `when` is, and
+ * it is read against what encloses the clause.
+ *
+ * `requiresContext` is the other half: the facts a document expects from the host. It is an API
+ * between the application and whoever authors documents for it, so it is declared rather than
+ * discovered, and a condition reading a key the document did not declare is refused.
+ *
+ * Everything else is v3's, unchanged: a v3 document is a v4 document with the version raised.
+ */
+export interface MdyDynamicFormConfigV4 extends Omit<MdyDynamicFormConfigV3, "version"> {
+  readonly version: 4;
+  /** The context keys this document's conditions read. */
+  readonly requiresContext?: readonly string[];
+}
+
 export type MdyDynamicFormDocument =
   | MdyDynamicFormConfig
   | MdyDynamicFormConfigV2
-  | MdyDynamicFormConfigV3;
+  | MdyDynamicFormConfigV3
+  | MdyDynamicFormConfigV4;
 
 export type MdyDynamicParseMode = "lenient" | "strict";
 
@@ -554,7 +580,7 @@ export interface MdyDynamicDiagnostic {
 
 export interface MdyDynamicFormParseResult {
   readonly ok: boolean;
-  readonly version: 1 | 2 | 3 | null;
+  readonly version: 1 | 2 | 3 | 4 | null;
   readonly fields: ReadonlyArray<MdyDynamicField>;
   /**
    * The collections the document declared, by path and kind.
@@ -832,6 +858,8 @@ export const MDY_DYNAMIC_DIAGNOSTICS: ReadonlyArray<{
   { code: "MDY_DYNAMIC_MISPLACED_VALIDATOR", phrase: "belongs in \"validators\"" },
   { code: "MDY_DYNAMIC_CONSTRAINT_CANNOT_FAIL", phrase: "can never refuse anything" },
   { code: "MDY_DYNAMIC_UNKNOWN_PARSE_MODE", phrase: "is not one this reader knows" },
+  { code: "MDY_DYNAMIC_INVALID_CONDITION", phrase: "expected an expression object" },
+  { code: "MDY_DYNAMIC_UNDECLARED_CONTEXT", phrase: "does not declare in" },
   { code: "MDY_DYNAMIC_PATTERN_TOO_LONG", phrase: "pattern length" },
   { code: "MDY_DYNAMIC_PATTERN_TOO_COSTLY", phrase: "backtracks exponentially" },
 ];
@@ -921,7 +949,7 @@ function refuse(reason: LayoutRefusal): false {
 function layoutRefusalDiagnostic(
   reason: LayoutRefusal,
   path: string,
-  version: 1 | 2 | 3 | null,
+  version: 1 | 2 | 3 | 4 | null,
 ): MdyDynamicDiagnostic {
   if (reason === "version") {
     return {
@@ -1073,9 +1101,13 @@ function validPlacement(at: unknown, trackCount: number): boolean {
 function validateDynamicSchema(input: unknown): {
   readonly structural: MdyDynamicDiagnostic[];
   readonly perField: MdyDynamicDiagnostic[];
+  /** The context keys the document's conditions read. */
+  readonly contextRead: readonly string[];
 } {
   const out: MdyDynamicDiagnostic[] = [];
   const perField: MdyDynamicDiagnostic[] = [];
+  /** Every context key the document's conditions read, for the envelope's declaration to match. */
+  const contextRead = new Set<string>();
 
   /**
    * The walk is a stack rather than recursion, and there is no depth to refuse.
@@ -1084,17 +1116,59 @@ function validateDynamicSchema(input: unknown): {
    * stack: a thousand-deep document is a document, and it is answered on its own merits. Frames are
    * pushed in reverse so the diagnostics still come out in the order the document reads.
    */
-  const stack: Array<{ raw: unknown; path: string }> = [{ raw: input, path: "/schema" }];
-  const push = (frames: Array<{ raw: unknown; path: string }>): void => {
+  /**
+   * A frame carries the names a clause written on that node may read.
+   *
+   * A condition is evaluated against **what encloses the clause**, so the readable names are the
+   * enclosing group's children — inside a collection's `item` that is the row's own cells, which is
+   * the whole reason a template can condition one of them without naming a key that does not exist
+   * yet.
+   */
+  const stack: Array<{ raw: unknown; path: string; scope: ReadonlySet<string> }> = [
+    { raw: input, path: "/schema", scope: new Set() },
+  ];
+  const push = (frames: Array<{ raw: unknown; path: string; scope: ReadonlySet<string> }>): void => {
     for (let index = frames.length - 1; index >= 0; index -= 1) stack.push(frames[index]!);
   };
 
   while (stack.length > 0) {
-    const { raw, path } = stack.pop()!;
+    const { raw, path, scope } = stack.pop()!;
 
     if (!isRecordValue(raw) || !["field", "group", "array", "record"].includes(String(raw["node"]))) {
       out.push({ code: "MDY_DYNAMIC_INVALID_NODE", severity: "error", path, message: "node must be field, group, array, or record." });
       continue;
+    }
+
+    // A clause a document writes on this node. Checked here because this is where the walk knows
+    // what encloses it: an expression is read against that, so the names it may use are the enclosing
+    // group's children — inside a collection's `item`, the row's own cells.
+    for (const slot of ["when", "asyncWhen"] as const) {
+      const clause = (raw as Record<string, unknown>)[slot];
+      if (clause === undefined) continue;
+      const problems = validateExpression(clause, `${path}/${slot}`);
+      if (problems.length > 0) {
+        out.push({
+          code: "MDY_DYNAMIC_INVALID_CONDITION",
+          severity: "error",
+          path: `${path}/${slot}`,
+          message: problems.join("; "),
+        });
+        continue;
+      }
+      const unreadable = expressionPaths(clause as MdyExpression)
+        .filter((read) => !scope.has(read.split(".")[0] ?? read));
+      if (unreadable.length > 0) {
+        out.push({
+          code: "MDY_DYNAMIC_UNKNOWN_FIELD_REFERENCE",
+          severity: "error",
+          path: `${path}/${slot}`,
+          message:
+            `condition reads ${unreadable.map((read) => `"${read}"`).join(", ")}, which nothing ` +
+            "encloses this clause declares — a condition is read against what encloses it, and " +
+            '{ "root": true } is how it reaches the whole form.',
+        });
+      }
+      for (const key of expressionContextKeys(clause as MdyExpression)) contextRead.add(key);
     }
 
     if (raw["node"] === "field") {
@@ -1145,10 +1219,11 @@ function validateDynamicSchema(input: unknown): {
 
     if (raw["node"] === "group") {
       if (!isRecordValue(raw["children"])) { out.push({ code: "MDY_DYNAMIC_INVALID_GROUP", severity: "error", path, message: "group requires children." }); continue; }
-      const children: Array<{ raw: unknown; path: string }> = [];
+      const children: Array<{ raw: unknown; path: string; scope: ReadonlySet<string> }> = [];
+      const here = new Set(Object.keys(raw["children"]));
       for (const [key, child] of Object.entries(raw["children"])) {
         if (!isSafeDynamicName(key)) out.push({ code: "MDY_DYNAMIC_UNSAFE_NAME", severity: "error", path: `${path}/children/${key}`, message: "unsafe child name." });
-        else children.push({ raw: child, path: `${path}/children/${key}` });
+        else children.push({ raw: child, path: `${path}/children/${key}`, scope: here });
       }
       push(children);
       continue;
@@ -1156,7 +1231,7 @@ function validateDynamicSchema(input: unknown): {
 
     if (raw["node"] === "record") {
       if (!isRecordValue(raw["item"])) out.push({ code: "MDY_DYNAMIC_INVALID_RECORD", severity: "error", path, message: "record requires an item node." });
-      else push([{ raw: raw["item"], path: `${path}/item` }]);
+      else push([{ raw: raw["item"], path: `${path}/item`, scope: new Set() }]);
       const initial = raw["initialValue"];
       if (initial !== undefined && !isRecordValue(initial)) out.push({ code: "MDY_DYNAMIC_INVALID_RECORD", severity: "error", path: `${path}/initialValue`, message: "record initialValue must be an object keyed by row key." });
       else if (isRecordValue(initial)) {
@@ -1169,11 +1244,11 @@ function validateDynamicSchema(input: unknown): {
     }
 
     if (!isRecordValue(raw["item"])) out.push({ code: "MDY_DYNAMIC_INVALID_ARRAY", severity: "error", path, message: "array requires an item node." });
-    else push([{ raw: raw["item"], path: `${path}/item` }]);
+    else push([{ raw: raw["item"], path: `${path}/item`, scope: new Set() }]);
     if (raw["initialValue"] !== undefined && !Array.isArray(raw["initialValue"])) out.push({ code: "MDY_DYNAMIC_INVALID_ARRAY", severity: "error", path: `${path}/initialValue`, message: "array initialValue must be an array." });
   }
 
-  return { structural: out, perField };
+  return { structural: out, perField, contextRead: [...contextRead] };
 }
 
 /** Parses v1/v2 untrusted input with structured diagnostics. */
@@ -1230,21 +1305,30 @@ export function parseDynamicForm(
     (message, path) => diagnostics.push({
       code: diagnosticCode(message), severity: "error", path: path ?? "/fields", message,
     }),
-    () => (rawEnvelope?.version === 2 || rawEnvelope?.version === 3) && rawEnvelope.schema !== undefined
+    () => (rawEnvelope?.version === 2 || rawEnvelope?.version === 3 || rawEnvelope?.version === 4)
+      && rawEnvelope.schema !== undefined
       ? []
       : parseDynamicFields(input),
   );
 
   const envelope = typeof input === "object" && input !== null && !Array.isArray(input)
-    ? input as { version?: unknown; fields?: unknown; schema?: unknown; layout?: unknown; rules?: unknown; validations?: unknown }
+    ? input as {
+      version?: unknown;
+      fields?: unknown;
+      schema?: unknown;
+      layout?: unknown;
+      rules?: unknown;
+      validations?: unknown;
+      requiresContext?: unknown;
+    }
     : undefined;
-  const version: 1 | 2 | 3 | null = Array.isArray(input) || envelope?.version === 1
-    ? 1 : envelope?.version === 2 ? 2 : envelope?.version === 3 ? 3 : null;
+  const version: 1 | 2 | 3 | 4 | null = Array.isArray(input) || envelope?.version === 1
+    ? 1 : envelope?.version === 2 ? 2 : envelope?.version === 3 ? 3 : envelope?.version === 4 ? 4 : null;
   // v3 is v2 plus per-slot placement: every envelope member is read the same way, and only the
   // layout validator is told which vocabulary the document is entitled to use.
-  const structured = version === 2 || version === 3;
+  const structured = version === 2 || version === 3 || version === 4;
   if (structured && envelope?.schema !== undefined) {
-    const { structural, perField } = validateDynamicSchema(envelope.schema);
+    const { structural, perField, contextRead } = validateDynamicSchema(envelope.schema);
     diagnostics.push(...structural, ...perField);
     // What the document said it had, counted before anything is refused. A schema the validator
     // turns down wholesale never reaches the walk, so without this a document declaring three
@@ -1252,6 +1336,25 @@ export function parseDynamicForm(
     // the counts saying nothing happened.
     declaredLeaves = declaredFieldCount(envelope.schema);
     // A schema refused whole never reaches the walk, so everything it declared was turned down.
+    // What the document says it needs from the host, against what its conditions read. The
+    // declaration is an API between the application and whoever authors documents for it, so a key
+    // read and not declared is a promise the document did not make and the host cannot keep.
+    const declared = new Set(
+      Array.isArray(envelope.requiresContext)
+        ? (envelope.requiresContext as readonly unknown[]).filter((key): key is string => typeof key === "string")
+        : [],
+    );
+    const undeclared = contextRead.filter((key) => !declared.has(key));
+    if (undeclared.length > 0) {
+      diagnostics.push({
+        code: "MDY_DYNAMIC_UNDECLARED_CONTEXT",
+        severity: "error",
+        path: "/requiresContext",
+        message:
+          `conditions read context ${undeclared.map((key) => `"${key}"`).join(", ")}, which this ` +
+          "document does not declare in \"requiresContext\" — a host cannot supply what it is not told about.",
+      });
+    }
     // A shape the walk cannot enter turns the document down whole; a field that declares something
     // nobody can render is one field, and the count says so.
     treeRejected = structural.length > 0 ? declaredLeaves : perField.length;
@@ -1318,7 +1421,7 @@ export function parseDynamicForm(
         continue;
       }
       layoutRefusal = "reference";
-      if (!validLayoutNode(raw, names, placed, 1, version === 3)) {
+      if (!validLayoutNode(raw, names, placed, 1, version === 3 || version === 4)) {
         diagnostics.push(layoutRefusalDiagnostic(layoutRefusal, `/layout/${index}`, version));
         continue;
       }
