@@ -1543,7 +1543,11 @@ export class MdyFormEngine
     this._draftManager.pause();
     this._historyManager.pause();
     this._fields.forEach(rec => {
-      rec.asyncRunner?.destroy();
+      // Paused, not destroyed: a run already in flight is about the value the form still holds, and
+      // its answer is what `activate()` promises to resume onto. Tearing the runner down instead
+      // aborted the run, so the promise resolved into a form that stayed `pending` for good and the
+      // submit button of a completed form never came back.
+      rec.asyncRunner?.pause();
       rec.asyncRunner = null;
     });
   }

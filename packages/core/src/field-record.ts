@@ -82,7 +82,17 @@ export interface FieldRecord {
   readonly inactive: MdyWritableSignal<MdySignal<boolean>>;
   readonly readonly: MdyWritableSignal<MdySignal<boolean>>;
   asyncRunId: number;
-  asyncRunner: MdyEffectRef | null;
+  asyncRunner: MdyAsyncRunner | null;
+  /**
+   * What the last completed run answered about: this field's value, the values it was told to watch,
+   * and the wake counter. Resuming a paused form must not re-ask a settled question, and a
+   * dependency changing must not look like one.
+   */
+  asyncSettledFor?: {
+    readonly value: unknown;
+    readonly wake: number;
+    readonly deps: readonly unknown[];
+  };
   /** Says what a caller could not have worked out from the field alone. Silent in production. */
   readonly warn: (message: string) => void;
 }
@@ -388,22 +398,53 @@ function dependencyState(
   return host.fieldState(`${host.fieldPath.slice(0, at)}.${dep}`);
 }
 
+/**
+ * The runner's handle: torn down for good, or set aside while the form is paused.
+ *
+ * The two are different acts. Destroying abandons a run in flight; pausing lets it land, because a
+ * pause does not change the value the run is about.
+ */
+export interface MdyAsyncRunner {
+  destroy(): void;
+  pause(): void;
+}
+
 export function createAsyncRunner(
   rec: FieldRecord,
   rx: MdyReactivity,
   host: MdyAsyncRunnerHost,
   scope?: MdyReactiveScope,
-): MdyEffectRef {
+): MdyAsyncRunner {
   const leaving = watchLeavingPlay(rec, rx, scope);
+  /** True while the runner is being torn down for a pause rather than for good. */
+  let pausing = false;
   const runner = rx.effect((onCleanup) => {
     const v = rec.state.value();
     // Tracked, and nothing else reads it: the only transition that wakes this effect from outside
     // the value is a field returning to play.
     rec.asyncWake();
     const entries = Array.from(rec.asyncValidators().values());
-    // Touch dependsOn field values so their changes retrigger this effect.
+    // Touch dependsOn field values so their changes retrigger this effect, and keep them: what a run
+    // answered about is its own value *and* the values it was told to watch, so a dependency that
+    // changed is a new question even though this field holds what it held.
+    const watched: unknown[] = [];
     for (const e of entries) {
-      for (const dep of e.dependsOn) dependencyState(host, dep)?.value();
+      for (const dep of e.dependsOn) watched.push(dependencyState(host, dep)?.value());
+    }
+    // Already answered, for this value and this wake. Resuming a paused form rebuilds this effect,
+    // and running again would ask a server the same question about a value nobody changed — and
+    // leave the form `pending` on the way to the answer it already has. A field returning to play
+    // bumps `asyncWake`, which is what makes that a different question.
+    const settled = rec.asyncSettledFor;
+    if (
+      settled !== undefined
+      && Object.is(settled.value, v)
+      && settled.wake === rec.asyncWake()
+      && settled.deps.length === watched.length
+      && settled.deps.every((held, index) => Object.is(held, watched[index]))
+    ) {
+      rx.untracked(() => rec.pending.set(false));
+      return;
     }
     const runId = ++rec.asyncRunId;
     const controller = new AbortController();
@@ -414,7 +455,12 @@ export function createAsyncRunner(
     // restarting its check there would be a question the form never stopped asking.
     rec.abandonAsync = () => controller.abort();
     onCleanup(() => {
-      controller.abort();
+      // A pause is not an abandonment. `deactivate()` promises to resume exactly where it left off,
+      // and the environment it exists for — React Strict Mode's mount→unmount→remount — pauses a
+      // form while a check debounced at zero is still in flight. Aborting there left the promise to
+      // resolve into a form nobody was listening to, so `pending` never reached a terminal state and
+      // the submit button of a completed form never came back.
+      if (!pausing) controller.abort();
       rec.abandonAsync = null;
     });
 
@@ -515,6 +561,7 @@ export function createAsyncRunner(
               .flatMap(returned => readMessages(returned, rec.warn))
               .map(message => ({ kind: "async", message }) as MdyFieldError),
           );
+          rec.asyncSettledFor = { value: v, wake: rx.untracked(() => rec.asyncWake()), deps: watched };
           rec.pending.set(false);
         })
         .catch((e: unknown) => {
@@ -546,6 +593,19 @@ export function createAsyncRunner(
     destroy(): void {
       runner.destroy();
       leaving.destroy();
+    },
+    /**
+     * Stops scheduling and lets a run already in flight land.
+     *
+     * The answer it brings is about the value the form still holds — a pause does not change one —
+     * so taking it is what "resumes exactly where it left off" means. Destroying instead threw the
+     * answer away and left the question open for good.
+     */
+    pause(): void {
+      pausing = true;
+      runner.destroy();
+      leaving.destroy();
+      pausing = false;
     },
   };
 }
