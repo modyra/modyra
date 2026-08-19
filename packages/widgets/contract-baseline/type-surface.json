@@ -748,6 +748,7 @@
     "email?: boolean",
     "max?: number",
     "maxLength?: number",
+    "messages?: MdyDynamicValidatorMessages",
     "min?: number",
     "minLength?: number",
     "pattern?: string",

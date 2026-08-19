@@ -242,6 +242,11 @@ function hasValidOptions(options: unknown): options is ReadonlyArray<MdySelectOp
   });
 }
 
+/** The rules a field declares, and so the only keys its messages may name. */
+const MDY_VALIDATOR_MESSAGE_KEYS: ReadonlySet<string> = new Set([
+  "required", "email", "min", "max", "minLength", "maxLength", "pattern",
+]);
+
 function hasValidValidatorConfig(
   validators: unknown,
   fieldName: string,
@@ -272,6 +277,31 @@ function hasValidValidatorConfig(
         `Dropped dynamic field "${fieldName}": validators.${key} must be a finite number.`,
       );
       return false;
+    }
+  }
+  // The words an author wrote for their own rules. Checked like everything else a document declares:
+  // a message that is not a string is a sentence nobody can read, which is the thing this slot exists
+  // to prevent.
+  if (config.messages !== undefined) {
+    if (!isRecordValue(config.messages)) {
+      warnDev(`Dropped dynamic field "${fieldName}": validators.messages must be an object.`);
+      return false;
+    }
+    for (const [key, said] of Object.entries(config.messages)) {
+      if (!MDY_VALIDATOR_MESSAGE_KEYS.has(key)) {
+        warnDev(
+          `Dropped dynamic field "${fieldName}": validators.messages names "${key}", which is not a ` +
+          "rule a field declares.",
+        );
+        return false;
+      }
+      if (typeof said !== "string" || said.trim() === "") {
+        warnDev(
+          `Dropped dynamic field "${fieldName}": validators.messages.${key} must be a message a ` +
+          "person can read.",
+        );
+        return false;
+      }
     }
   }
   if (
