@@ -252,6 +252,7 @@ export type {
   MdyDynamicDiagnostic,
   MdyDynamicField,
   MdyDynamicFieldNode,
+  MdyDynamicFlatForm,
   MdyDynamicFileField,
   MdyDynamicFormConfig,
   MdyDynamicFormConfigV2,

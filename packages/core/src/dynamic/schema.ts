@@ -379,4 +379,22 @@ export type MdyDynamicNode =
 export interface MdyDynamicCollection {
   readonly path: string;
   readonly kind: "array" | "record";
+  /**
+   * One row's shape, flattened with names relative to the row.
+   *
+   * The flat fields describe the rows a document *has*; a collection declared with none has nothing
+   * in the field list, and a form rebuilt from the pair alone then had no shape to make a row from —
+   * it accepted a row and held an empty object, saying the row was there and that it was not at the
+   * same moment. The template is that shape, so the rebuild answers the same as the tree.
+   *
+   * A row that is itself a leaf is the single field named `""`; a row that is itself a collection is
+   * the single collection at path `""`.
+   */
+  readonly item?: MdyDynamicFlatForm;
+}
+
+/** A document taken apart: the flat fields a renderer consumes and the collections they came from. */
+export interface MdyDynamicFlatForm {
+  readonly fields: readonly MdyDynamicField[];
+  readonly collections: readonly MdyDynamicCollection[];
 }
