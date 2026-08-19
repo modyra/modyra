@@ -14527,6 +14527,46 @@ iterative as ADR 0043 claims — a document
 published in `MDY_DYNAMIC_DIAGNOSTICS` (14 codes there now, not the 10 an earlier note in this
 register recorded).
 
+## 241 — The one warning a parse can report refuses the document (S2, DYN-003)
+
+`MdyDynamicDiagnostic.severity` is published as `"warning" | "error"`. Measured, the union has one
+member that never behaves differently from the other.
+
+Every advisory finding the parser has carries `severity: "error"` — a validator written on the field,
+a `required` a slider always satisfies, two options of one value, all three of them things a document
+can be used despite. Exactly one diagnostic is a **warning**: `MDY_DYNAMIC_COUNT_INCOMPLETE`, which
+says the counts are *"a floor and not a total"* because the reader stopped counting.
+
+Strict mode accepts a document only when it reports nothing at all — `ok: !strict ||
+diagnostics.length === 0`, one expression, no severity in it. So the only warning the parser has is
+fatal:
+
+```
+ 99,999 declarations   strict: ok, 99,999 fields    lenient: ok,  99,999 fields
+100,001 declarations   strict: refused, 0 fields    lenient: ok, 100,001 fields
+```
+
+Nothing in the second document is malformed. It is refused for a fact about **the reader**, and the
+two modes then disagree about the whole document rather than about a field in it: a hundred thousand
+and one fields, or none.
+
+Two readings, and the finding does not have to choose:
+
+- **`severity` is a distinction nothing acts on.** A consumer reads it to tell what must be fixed from
+  what is worth knowing, and at the one door that acts on diagnostics it makes no difference.
+- **A reader's budget is not a document's defect.** The bound is right and finding 234 argued for
+  keeping it; what the honesty about it costs is the whole document, in the mode a cautious consumer
+  chooses precisely because it is cautious.
+
+Either repair turns the battle green: strict fails on errors and not on warnings, or the parser stops
+calling this a warning and says plainly that the document is too large to read. Pinned by
+`adversarial/dynamic-contract/a-warning-that-refuses-the-document.battle.test.mjs`, with the 99,999
+control that keeps the measurement on the budget rather than on size, and the premise asserted that
+the only thing the document is told is that one warning.
+
+Sits next to finding 234, and is its other half: raising the bound to 100,000 and reporting when it is
+reached made the reader honest, and the report is a refusal.
+
 ## The browser tier, measured — a baseline this register never had
 
 `npm run battle:browser` on the working tree at `6ee29144`:
@@ -14683,9 +14723,9 @@ the half-fix to overlay teardown did not close it on plain either.
 ## The register's own shape, measured
 
 ```
-numbered findings        240
+numbered findings        241
 closed or retracted       56
-open with a battle       207
+open with a battle       208
 open with none            10
 ```
 
