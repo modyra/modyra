@@ -13877,6 +13877,41 @@ ran *before* vanilla's own `Object.is` and so changed nothing. Both read as "sli
 the divergence was measured directly. A mutation experiment needs its mutants proven to mutate.
 
 
+## 226 — A misspelled field option is accepted in silence (S2, API-001 SEC-003)
+
+`createForm` reports an option it does not know, by name: *"[modyra] createForm was given
+\"autoActivte\", which it does not read"*. The decision that a misspelled option should be reported
+has already been taken here, for this reason. `field()` does not do it.
+
+```
+createForm({ autoActivte: false })      reported by name
+createForm({ validaters: [...] })       reported by name
+createForm({ securty: {...} })          reported by name
+field("", [], { asyncDebounce: 300 })   nothing
+field("", [], { asyncTimeout: 500 })    nothing
+field("", [], { requred: true })        nothing
+field("", [], { sanitise: "strict" })   nothing
+```
+
+The contrast **inside one option** is the finding:
+
+```
+sanitize: "strict"    the value is sanitized — `<b>x</b>` becomes `bx/b`
+sanitize: "stict"     REFUSED by name, at construction
+sanitise: "strict"    built, `<b>x</b>` kept whole, nothing said
+```
+
+A wrong **value** is caught immediately and loudly; a wrong **key** passes. And `sanitise` is the
+British spelling — the most ordinary way to get it wrong — leaving a field unsanitized while its
+author believes otherwise. `asyncDebounce` for `asyncDebounceMs` is the same shape at a different
+cost: every keystroke reaches the server.
+
+Pinned by `adversarial/validation/an-option-nobody-declared.battle.test.mjs`, which asserts the rule
+the form half already follows and does not ask for a throw — warning is enough, because warning is
+what `createForm` does. Controls: the form half must really report by name, and the correctly spelled
+sanitizer must really sanitize.
+
+
 ## The browser tier, measured — a baseline this register never had
 
 `npm run battle:browser` on the working tree at `6ee29144`:
@@ -14033,9 +14068,9 @@ the half-fix to overlay teardown did not close it on plain either.
 ## The register's own shape, measured
 
 ```
-numbered findings        225
-closed or retracted       43
-open with a battle       192
+numbered findings        226
+closed or retracted       46
+open with a battle       193
 open with none            10
 ```
 
