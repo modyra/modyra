@@ -15249,6 +15249,45 @@ first pass at it: a sweep of all nine slots reported `layoutColumns.kind` as une
 the probe overwriting the discriminant that decides which member list applies. Measured again with the
 discriminant left alone, `layoutColumns` is enforced and `layoutSlot` is the only one that is not.
 
+## 254 — A name three published doors disagree about (S1, SEC-001 A11Y-001 API-001)
+
+`@modyra/core`'s guards say why a field name matters, in their own words: a widget id is built from
+it, and *"whitespace splits an id reference into several, each resolving to nothing — so the control
+would have no accessible name"*, while `__` *"separates the segments of a generated id, so this name
+would collide with another field's parts"*. The comment beside them states the intention plainly —
+**"the same rules hold on both paths"**, a document and a list written in code, *"and only the
+response differs"*.
+
+Three doors, one name:
+
+```
+isSafeFieldPath("a b")            true        the published guard a consumer would check with
+createForm({ "a b": field() })    accepted    the form holds it
+assertUsableWidgetId("a b")       refused     "cannot be a widget id"
+the same name in a document       refused     assertSafeDynamicName, by name
+```
+
+So a form written in code carries a field the widget layer will not build an id for. The refusal
+arrives at **render time, from another package**, about a name core took and the published guard
+blessed — while the same name arriving in a document is refused at the door. That asymmetry is the one
+the comment says is not there.
+
+`a\tb` behaves the same. `a__b` is the same story with a different ending: not a refusal but a
+collision, two elements answering to one id, which is the failure `MDY_ID_DELIMITER` exists to
+prevent.
+
+Green when the three answers agree, whichever way: a name a form may hold is a name a widget id can be
+built from, or the guard published for checking says so before the form is built. Pinned by
+`adversarial/security/a-name-three-doors-disagree-about.battle.test.mjs`, with two controls — an
+ordinary name is taken by all three, and `__proto__` is still refused by both core doors, so the
+disagreement is not a guard that has stopped working.
+
+**Found in the 258.** `test:coverage-and-demo` is green as a ratchet, not as a statement of coverage:
+of 694 public names, 436 are asserted somewhere and **258 are recorded as neither asserted nor
+shown**. `isSafeFieldPath` is one of them — the guard the whole of `SEC-001` rests on, published, and
+exercised by nothing. So is `assertUsableWidgetId`, the door that disagrees with it. The first two
+names taken off that list produced this.
+
 ## The browser tier, measured — and now gated like the other one
 
 `battle-tests/reports/known-red-browser.json` is the browser tier's baseline, written by
@@ -15440,7 +15479,7 @@ the half-fix to overlay teardown did not close it on plain either.
 ## The register's own shape, measured
 
 ```
-numbered findings        253
+numbered findings        254
 closed or retracted       58
 open with a battle       207
 open with none            10
