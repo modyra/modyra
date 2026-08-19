@@ -13244,6 +13244,37 @@ vocabulary rather than about the slider, so a kind added later whose empty is a 
 covered the day it arrives. Control: at least twelve kinds must have a working `required`.
 
 
+## 213 — A mask that means two things, and only one of them is protected (S2, SEC-002 SEC-005)
+
+The panel honours `sensitive` and also **guesses** from the name, so a field called `password` is
+masked whether or not anyone declared it. The guess is a kindness to a developer reading the panel.
+The two are indistinguishable in what the panel prints:
+
+```
+path        panel   sensitivePaths()   autosaved draft
+password    •••     no                 "VALUE-password"
+apiToken    •••     no                 "VALUE-apiToken"
+secret      •••     no                 "VALUE-secret"
+answer      •••     yes                withheld
+ordinary    plain   no                 "VALUE-ordinary"
+```
+
+A snapshot row carries `path`, `value`, `valid`, `touched`, `dirty`, `pending`, `errors` — nothing
+that says which of the two decided the bullets. A developer opens the panel, sees `•••` beside
+`password`, and draws the only conclusion available: the framework knows this is a secret and treats
+it as one. It treats it as one **here**. The draft, the surface that persists, writes it to storage
+in clear.
+
+**The battle does not ask the draft to start guessing.** Guessing what to withhold is the defect from
+the other direction — finding 206 was a column of somebody's work vanishing because an unrelated
+field shared its name — and it should stay declared-only. It asks the narrower thing: what the panel
+masks is either protected elsewhere, or distinguishable from what is. Either repair satisfies it —
+carry the reason on the row, or stop masking what nobody declared.
+
+Pinned by `adversarial/security/a-mask-that-promises-more.battle.test.mjs`, with a three-way control:
+the draft ran, an ordinary field is neither masked nor withheld, and a declared one is both.
+
+
 ## The browser tier, measured — a baseline this register never had
 
 `npm run battle:browser` on the working tree at `6ee29144`:
@@ -13400,9 +13431,9 @@ the half-fix to overlay teardown did not close it on plain either.
 ## The register's own shape, measured
 
 ```
-numbered findings        212
-closed or retracted       31
-open with a battle       183
+numbered findings        213
+closed or retracted       34
+open with a battle       184
 open with none             6
 ```
 
