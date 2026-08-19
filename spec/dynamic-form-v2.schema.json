@@ -19,7 +19,7 @@
     "fields": {
       "type": "array",
       "items": {
-        "$ref": "#/$defs/field"
+        "$ref": "#/$defs/flatField"
       }
     },
     "layout": {
@@ -172,7 +172,6 @@
     "field": {
       "type": "object",
       "required": [
-        "name",
         "kind"
       ],
       "properties": {
@@ -261,6 +260,19 @@
               "options"
             ]
           }
+        }
+      ]
+    },
+    "flatField": {
+      "description": "A field in the flat list, where the field carries its own name. In the tree the parent's key is the name, which is why the name is required here and not on the field itself.",
+      "allOf": [
+        {
+          "$ref": "#/$defs/field"
+        },
+        {
+          "required": [
+            "name"
+          ]
         }
       ]
     },
