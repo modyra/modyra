@@ -11,6 +11,7 @@
  * range picker's draft has and for the same reason.
  */
 import { observerFor, type MdyReactivity, type MdySignal } from "@modyra/core";
+import { closeOverlayWhenOutOfPlay } from "./leaving-play.js";
 import { colorValueEquals, colorValueTransition } from "../behavior.js";
 import { MDY_WIDGET_CONTRACTS } from "../catalog.js";
 import type { MdyUiCommand } from "../commands.js";
@@ -40,6 +41,9 @@ export function createColorsFieldController(
 
   const readonly = reactivity.signal(initialReadonly);
   const open = reactivity.signal(false);
+  // A field taken out of play does not keep an overlay open over it: the popup looked live, said
+  // `aria-expanded="true"` to a screen reader, and answered nothing.
+  const stopWatchingPlay = closeOverlayWhenOutOfPlay(reactivity, () => handle.interactivity(), open);
   /**
    * What is in the box while the user is typing, and `null` the rest of the time.
    *
@@ -175,6 +179,7 @@ export function createColorsFieldController(
   }
 
   function destroy(): void {
+    stopWatchingPlay();
     open.set(false);
   }
 

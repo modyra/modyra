@@ -14,6 +14,7 @@
  * is view state and never reaches the form.
  */
 import { addMonths, buildMonthGrid, formatIsoDate, isDateInRange, parseIsoDate, today, type CalendarDate } from "@modyra/core/datetime";
+import { closeOverlayWhenOutOfPlay } from "./leaving-play.js";
 import { calendarKeyboardTarget } from "../keyboard.js";
 import { observerFor, type MdyReactivity, type MdySignal } from "@modyra/core";
 import { dateRangeValueTransition, type MdyDateRangeValue } from "../behavior.js";
@@ -75,6 +76,9 @@ export function createDaterangeFieldController(
 
   const readonly = reactivity.signal(initialReadonly);
   const open = reactivity.signal(false);
+  // A field taken out of play does not keep an overlay open over it: the popup looked live, said
+  // `aria-expanded="true"` to a screen reader, and answered nothing.
+  const stopWatchingPlay = closeOverlayWhenOutOfPlay(reactivity, () => handle.interactivity(), open);
   const draft = reactivity.signal<MdyDateRangeValue>(handle.value() ?? EMPTY);
   /** The cell under the pointer while the end is still open. Never committed. */
   const preview = reactivity.signal<string | null>(null);
@@ -340,6 +344,7 @@ export function createDaterangeFieldController(
   }
 
   function destroy(): void {
+    stopWatchingPlay();
     open.set(false);
     preview.set(null);
   }

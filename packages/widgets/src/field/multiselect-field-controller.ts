@@ -10,6 +10,7 @@
  * `filterOptionsByQuery`, shared with select so one search behaves the same in both.
  */
 import { blocksFocus, blocksValueChange } from "../interactivity.js";
+import { closeOverlayWhenOutOfPlay } from "./leaving-play.js";
 import type { MdyReactivity, MdySelectOption, MdySignal } from "@modyra/core";
 import { observerFor } from "@modyra/core";
 import { filterOptionsByQuery, defaultOptionKey } from "../options-utils.js";
@@ -96,6 +97,9 @@ export function createMultiselectFieldController<TValue>(
   const readonly = reactivity.signal(initialReadonly);
   const query = reactivity.signal("");
   const open = reactivity.signal(false);
+  // A field taken out of play does not keep an overlay open over it: the popup looked live, said
+  // `aria-expanded="true"` to a screen reader, and answered nothing.
+  const stopWatchingPlay = closeOverlayWhenOutOfPlay(reactivity, () => handle.interactivity(), open);
 
   // A field that has never been set holds null, not an empty list — a document-declared control and
   // a registry-backed one both start there. Read once, so nothing below has to remember it.
@@ -332,6 +336,7 @@ export function createMultiselectFieldController<TValue>(
   }
 
   function destroy(): void {
+    stopWatchingPlay();
     // No owned effects; the handle lifecycle belongs to the form engine.
   }
 

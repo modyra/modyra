@@ -11,6 +11,7 @@
  * same functions.
  */
 import { blocksValueChange } from "../interactivity.js";
+import { closeOverlayWhenOutOfPlay } from "./leaving-play.js";
 import type { MdyReactivity, MdySignal } from "@modyra/core";
 import { observerFor } from "@modyra/core";
 import {
@@ -85,6 +86,9 @@ export function createTimepickerFieldController(
 
   const readonly = reactivity.signal(initialReadonly);
   const open = reactivity.signal(false);
+  // A field taken out of play does not keep an overlay open over it: the popup looked live, said
+  // `aria-expanded="true"` to a screen reader, and answered nothing.
+  const stopWatchingPlay = closeOverlayWhenOutOfPlay(reactivity, () => handle.interactivity(), open);
   const focusedField = reactivity.signal<"hour" | "minute">("hour");
   // The clock is the picker; the number fields are the alternative a user asks for. Starting on the
   // dial is what makes "pick a time" mean the same gesture in every renderer.
@@ -265,6 +269,7 @@ export function createTimepickerFieldController(
   }
 
   function destroy(): void {
+    stopWatchingPlay();
     // No owned effects; the handle lifecycle belongs to the form engine.
   }
 
