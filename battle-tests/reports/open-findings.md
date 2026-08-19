@@ -13700,6 +13700,38 @@ guide's own rule and not the mechanism: carrying the kind's shape into the check
 contract, or refusing objects where the seed is `null`, all satisfy it.
 
 
+## 224 — The prompt the AI guide tells you to copy omits three kinds (S2, documentation)
+
+`docs/guides/ai-generated-forms.md` carries a prompt under *"Copy-adapt this to constrain the model
+to the contract"*, and the prompt says:
+
+> "kind" MUST be one of: text, textarea, email, password, number, slider, checkbox, toggle, select,
+> radio, multiselect, segmented, datepicker, timepicker. Do not invent other kinds.
+> …
+> Anything outside this contract is discarded by the renderer, so stay inside it.
+
+Fourteen. `MDY_FIELD_KINDS` has **seventeen**: `daterange`, `file` and `colors` are missing. Measured
+in the exact shape the prompt generates — a v1 `fields` entry — all three parse clean, no
+diagnostics.
+
+So the artefact a reader is told to copy teaches a model that three supported kinds are outside the
+contract. A user asking for a date range gets two datepickers or a refusal; asking to upload a
+document or pick a colour gets a text box. The failure is quiet and permanent: it lives in a prompt,
+so it is wrong once and wrong in every form generated afterwards.
+
+No battle: the artefact is prose inside a guide, and a test asserting a prompt's wording breaks on a
+rewrite. The measurement is here so the list can be fixed against `MDY_FIELD_KINDS` rather than
+retyped.
+
+**The rest of that guide is exact, including its arithmetic.** Its end-to-end example claims *"5
+fields kept, 4 dropped"* for a response carrying an unknown kind, a select with no options, a
+reserved name and a duplicate: measured, five kept — `fullName, email, plan, satisfaction,
+startDate` — and four dropped, each with its own named warning. And the automatic anti-tampering
+whitelist it promises is real: a select given a value nobody offered fails with *"Value must be one
+of: Free, Pro"*, a multiselect with one smuggled member fails with *"Every value must be one of: A,
+B"*, and neither validator was declared by the document.
+
+
 ## The browser tier, measured — a baseline this register never had
 
 `npm run battle:browser` on the working tree at `6ee29144`:
@@ -13856,16 +13888,16 @@ the half-fix to overlay teardown did not close it on plain either.
 ## The register's own shape, measured
 
 ```
-numbered findings        223
+numbered findings        224
 closed or retracted       39
 open with a battle       191
-open with none             9
+open with none            10
 ```
 
 The seven without a battle are the entries a test cannot hold: a capability nothing reads (37),
 constants outside a classifier (39), a campaign that explores one run (40), two entries about this
 hunt's own mistakes (51, 57), forty-nine comments citing a plan that is not in the repository (198),
-and three guides describing behaviour their own repository contradicts (218, 220, 222). Configuration, documentation and coverage — none of them a
+and four guides describing behaviour their own repository contradicts (218, 220, 222, 224). Configuration, documentation and coverage — none of them a
 behaviour a battle could pin.
 
 **The first count of this said ten, and was wrong.** It looked for `.battle.test.mjs` and `.spec.ts`,
