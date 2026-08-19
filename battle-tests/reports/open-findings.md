@@ -13307,8 +13307,26 @@ refusal it would block a submit that should pass — annoying. It is an approval
 value nothing ever checked.
 
 Third time in one session that a declaration written in a row's template does not cross the boundary
-— after `sensitive` (205) and the sanitizer (207). The pattern is worth more than the three:
-**whatever a template declares about a cell, check that it survives instantiation.**
+— after `sensitive` (205) and the sanitizer (207). Three failures at one boundary was reason to walk
+the rest of `MdyFieldOptions` rather than wait for the fourth, and walking it made the rule narrower
+and more useful than "a template loses its declarations":
+
+```
+asyncDebounceMs   carried
+asyncTimeoutMs    carried
+asyncWhen         carried
+when              carried — a cell reads its enclosing row, which is what a row's rule needs
+asyncDependsOn    NOT carried, and the only one of the five that names a path
+```
+
+**A declaration containing a path is not rewritten relative to the row it lands in.** That is where
+to look next, and it points at every other slot carrying a path rather than a value.
+
+The four that work are held green by
+`adversarial/collections/what-a-template-carries-across.battle.test.mjs`, which compares each option
+at the root against the same option one row down. Worth holding because the boundary is now known to
+be fragile: a regression in `when` one row down would put a field back in play that a row's own rule
+had taken out, in the place it is least likely to be noticed.
 
 Pinned by `adversarial/collections/a-dependency-a-row-cannot-name.battle.test.mjs`, with the root
 control and a second control requiring the server to have approved the row before the change.
