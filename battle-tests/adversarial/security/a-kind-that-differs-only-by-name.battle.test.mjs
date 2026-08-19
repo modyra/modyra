@@ -1,25 +1,26 @@
 /**
- * The one kind whose whole meaning is what the control does, said nowhere a control is described.
+ * The one kind whose whole meaning is what the control does, and where it is said.
  *
  * `password` is a kind of its own in every table that enumerates kinds, and a document may name it:
  * the Dynamic Form Contract carries `kind` as data from outside the application. The one thing that
  * makes it a password rather than a short piece of text is that the control does not show what is
  * typed into it — there is no other difference, no separate value shape, no rule only it carries.
  *
- * `@modyra/widgets` is the framework-agnostic UI contract each adapter implements. Normalise the
- * kind's own name out of it and the published description of `password` is the published
- * description of `text`, in the contract, the keyboard map, the relations, the transitions and the
- * state expression alike — and `MDY_VALUE_CONTRACTS` agrees with all five. The tables are able to
- * hold a per-kind fact; `select` differs from `text` in exactly the same comparison. For this kind
- * they hold none.
+ * So the published surface has to say it somewhere an adapter reads, or masking is knowledge each
+ * renderer carries privately and the failure mode of not carrying it is a password in clear text.
+ * Two tables say it:
  *
- * The consequence is not hypothetical and does not need a bug to reach a user: an adapter reading
- * the published surface has no statement to implement, so masking is knowledge each one carries
- * privately, and the failure mode of not carrying it is a password rendered in clear text. Where a
- * control's native type appears at all it is an option a caller supplies, defaulted to plain text.
+ *     MDY_WIDGET_CONTRACTS.password    controlType: "password", concealed: true
+ *     MDY_VALUE_CONTRACTS.password     concealed: true
  *
- * This battle is red. It becomes green when the published surface distinguishes the two — a
- * declared control type, a `secret` flag on the contract, any statement an adapter can read.
+ * One is enough, and asking for more would be asking for differences that are not there. A password's
+ * keyboard is a text field's keyboard, neither kind has a state to transition through, and both draw
+ * the same parts in the same ARIA relations — those equalities are facts about the two kinds, and a
+ * table made to disagree with itself to satisfy a test is worse than a table that agrees.
+ *
+ * The value shape is asserted equal on purpose, and separately: what a password conceals is a fact
+ * about the control, not about the string, so `shape`, `nullable` and `commit` staying identical is
+ * what keeps this battle about the statement rather than about the value.
  */
 
 import { MDY_VALUE_CONTRACTS, MDY_FIELD_KINDS, MDY_DYNAMIC_FIELD_KINDS } from "@modyra/core";
@@ -121,15 +122,26 @@ battle(
 
     ctx.log.note("tables describing the two kinds identically", { silent });
 
-    // A value contract is where a kind says what it holds, and both hold the same live string —
-    // correctly, since a password is a string. It is named here so the distinction being asked for
-    // is not mistaken for a difference in the value.
-    expectEqual(MDY_VALUE_CONTRACTS.password, MDY_VALUE_CONTRACTS.text, {
+    // A value contract is where a kind says what it *holds*, and both hold the same live string —
+    // correctly, since a password is a string. The shape is named here so the distinction being asked
+    // for is not mistaken for a difference in the value: what a password conceals is a fact about the
+    // control, not about the string.
+    const shapeOf = ({ shape, nullable, commit }) => ({ shape, nullable, commit });
+    expectEqual(shapeOf(MDY_VALUE_CONTRACTS.password), shapeOf(MDY_VALUE_CONTRACTS.text), {
       claimIds: ["SEC-005"],
-      what: "the two kinds no longer hold the same shape, so this battle is comparing something else",
+      what: "the two kinds no longer hold the same value shape, so this battle is comparing something else",
     });
 
-    expectEqual(silent, [], {
+    const speaking = tables.filter(({ name }) => !silent.includes(name)).map(({ name }) => name);
+
+    // One published table is enough, and asking for more would be asking for differences that are not
+    // there. A password's keyboard is a text field's keyboard; neither kind has a state to transition
+    // through; both draw the same parts in the same ARIA relations. Those equalities are facts, and a
+    // table made to disagree with itself to satisfy a test is worse than a table that agrees.
+    //
+    // What the claim needs is that an adapter has *something* to read, so that concealing a value is
+    // the contract's statement rather than a renderer's private knowledge.
+    expectClaim(speaking.length > 0, {
       claimIds: ["SEC-005"],
       what: "every published description of a password is the published description of a text field, so an adapter has no statement to implement and masking is private knowledge",
       detail: JSON.stringify({ silent, examined: tables.map((each) => each.name) }),
