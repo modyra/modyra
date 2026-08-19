@@ -21,6 +21,15 @@ import {
 } from "./types.js";
 
 /** Kinds whose value is picked from a declared list — an empty list makes them unusable. */
+/**
+ * What separates the parts of a generated id, mirroring the engine's `MDY_ID_DELIMITER`.
+ *
+ * Written here rather than imported: this package declares no runtime dependency, which is what lets
+ * a Studio project be read anywhere. The value is a published constant of the contract, and the
+ * battle that packs these packages and compiles a list through them is what holds the two together.
+ */
+const MDY_STUDIO_ID_DELIMITER = "__";
+
 const OPTION_FIELD_KINDS: ReadonlySet<StudioFieldKind> = new Set(["select", "radio", "segmented", "multiselect"]);
 
 /** Thrown for structurally invalid input — not a project shape at all. */
@@ -235,6 +244,39 @@ function diagnoseProject(project: MdyStudioProject, idx: StudioIndexes): StudioD
           message: `Field "${node.name}" is a ${node.fieldKind} with no options`,
           nodeId: node.id,
         });
+      }
+      // An option's value becomes part of the option's id, and an id is what a control points at.
+      // Two options sharing a value share an id, so the rendered list is short one option and a
+      // keyboard lands on whichever the DOM found first; a value carrying a space or the delimiter
+      // that separates an id's parts produces an id that no ARIA reference can name, because those
+      // attributes are space-separated lists of ids.
+      if (OPTION_FIELD_KINDS.has(node.fieldKind) && node.options?.length) {
+        const seen = new Set<string>();
+        for (const option of node.options) {
+          const spelled = String(option.value);
+          if (seen.has(spelled)) {
+            diagnostics.push({
+              code: "DUPLICATE_OPTION_VALUE",
+              severity: "error",
+              message:
+                `Field "${node.name}" offers "${spelled}" more than once: two options sharing a ` +
+                "value share an id, so one of them cannot be rendered or chosen",
+              nodeId: node.id,
+            });
+          }
+          seen.add(spelled);
+          if (/\s/.test(spelled) || spelled.includes(MDY_STUDIO_ID_DELIMITER)) {
+            diagnostics.push({
+              code: "OPTION_VALUE_UNUSABLE_IN_ID",
+              severity: "error",
+              message:
+                `Field "${node.name}" offers "${spelled}", which cannot be part of an id: a space ` +
+                `splits an ARIA reference into several, and "${MDY_STUDIO_ID_DELIMITER}" separates ` +
+                "an id's own parts",
+              nodeId: node.id,
+            });
+          }
+        }
       }
       if (SENSITIVE_FIELD_NAME.test(node.name) || (node.label && SENSITIVE_FIELD_NAME.test(node.label))) {
         if (!draftExcluded.has(node.id)) {
