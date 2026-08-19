@@ -12868,12 +12868,33 @@ Pinned by `adversarial/schema-adapters/how-a-rule-was-written.battle.test.mjs`, 
 kind against a bare leaf of the same kind rather than against a constant, and keeps a control
 requiring at least two kinds to start somewhere other than `null`.
 
+**Closed, `5ec4a99b`.** `holdsEmpty` read only `too_small`/`too_big`; a refinement reports `custom`,
+which is the same category — *refused for what the value is, not for the type it has*. Adding it
+seeds `""` and `false` again, and the author's message arrives because the predicate is finally
+reached. `invalid_type` and `invalid_value` stay out, so number, enum and literal still start at
+`null`.
+
+**Eleventh instrument error, and it was hiding in the control.** The battle compared seeds with
+`Object.is`, and the array row's seed is `[]` — two of which are never `Object.is`-equal whatever the
+product does. That row was the positive control, the one showing introspection *can* see through a
+refinement; it would have read as divergent against a perfect product. Now compared structurally.
+
+**And a better statement of the rule came out of it**, guarded by
+`adversarial/schema-adapters/where-a-kind-starts.battle.test.mjs`: ADR 0086 phrased as *"the empty
+its schema accepts"* can only be checked against whichever schema library is installed. The
+framework already publishes the answer for all seventeen kinds — `MDY_VALUE_CONTRACTS` declares each
+kind's `shape` and whether it is `nullable` — so the property is `seed === null` **iff** the kind is
+nullable, and the empty of its declared `shape` otherwise. Measured across the whole vocabulary:
+seventeen of seventeen agree. Nothing forces the two published facts to agree — the contracts are a
+table, the seeds are chosen where a schema is built — so a kind added to one and not the other is
+the silence that battle breaks.
+
 
 ## The register's own shape, measured
 
 ```
 numbered findings        201
-closed or retracted       23
+closed or retracted       24
 open with a battle       172
 open with none             6
 ```
