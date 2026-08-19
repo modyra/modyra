@@ -140,6 +140,26 @@ returns `{}` from `getValue()`; the positional one accepts `push` and stays empt
 **Green when** the row is refused or held. The two contradictory answers are the part that is wrong
 under any reading.
 
+**Re-measured, and it has a second half nobody had joined to it.** The same walk that loses the row
+template also under-reports the **inventory**, and the inventory is what a host mounts from:
+
+```
+a record whose rows carry a nested array
+  flatten keeps          ["title"]                            the row's cells are gone
+  collections reports    [{ path: "rows", kind: "record" }]   the nested array is not there
+  rebuilt                upsert("a", { code, lines }) → { rows: {} }
+  the nested list        is not a collection
+```
+
+`packages/plain/src/mount.ts:18` says what that inventory is for, and says the cost of a missing
+entry: *"A field name is a path, and a path cannot say whether `lines.0` was an array row or the
+record key `\"0\"`. Handed these, the form holds the shape the document declared; **without them it
+holds nested groups**"*. So a collection the inventory omits is not merely unlisted — it is mounted
+as a group, and a person looking at the form cannot add or remove a line.
+
+The two halves are one defect: the walk stops at the first collection boundary, and both what it
+keeps and what it reports stop there with it.
+
 ## 7. The v2 tree parser drops field defects in silence
 
 **Closed — verified green.** Every battle this finding names now passes (6 tests, 0 failures), run on its own. What is verified is the battle's verdict, not a reading of the repair: the check that was red is the check that is green.
