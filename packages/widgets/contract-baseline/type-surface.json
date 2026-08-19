@@ -2844,7 +2844,7 @@
   "mdyFormSnapshot": [
     "(0) form: InspectableForm",
     "(1) options?: MdySnapshotOptions",
-    "-> returns: { readonly valid: boolean; readonly pending: boolean; readonly submitting: boolean; readonly submitCount: number; readonly fields: ReadonlyArray<{ readonly path: string; readonly value: unknown; readonly valid: boolean; readonly touched: boolean; readonly dirty: boolean; readonly pending: boolean; readonly errors: readonly string[]; }>; }"
+    "-> returns: { readonly valid: boolean; readonly pending: boolean; readonly submitting: boolean; readonly submitCount: number; readonly fields: ReadonlyArray<{ readonly path: string; readonly value: unknown; readonly valid: boolean; readonly touched: boolean; readonly dirty: boolean; readonly pending: boolean; readonly errors: readonly string[]; /** * Why the value reads as bullets, when it does. * * The panel masks two different things and printed them identically: a field the schema declares * a secret, protected wherever the value would otherwise be copied, and a field whose *name* * looks like one, protected here and nowhere else — a draft writes it to storage in clear. A * reader seeing bullets drew the stronger conclusion because nothing on the row offered the * weaker one. */ readonly masked?: \"declared\" | \"guessed\" | \"caller\"; }>; }"
   ],
   "mergeFacts": [
     "(0) facts: readonly MdyValidatorFacts[]",
