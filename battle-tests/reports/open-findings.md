@@ -14340,6 +14340,40 @@ audit rather than reading it: it is a published command of this project, and wha
 answer. Control: schemas exist, the audit read at least one, and it reported a verdict.
 
 
+## Checked and clean: the closed catalogue, attacked through every container (H-4)
+
+`adversarial/security/a-kind-nothing-lets-through.battle.test.mjs` — green, and meant to stay green.
+
+H-4 of the Fable 5 charter is marked **defend**, with the charter's highest severity if it gives way:
+an unregistered kind rendering *is* the remote-contract security boundary. The attack is not the kind
+— it is everything that might carry it past the check while the check looks elsewhere. Eleven ways
+in, all refused:
+
+```
+a flat field                            MDY_DYNAMIC_UNKNOWN_KIND
+a tree leaf                             MDY_DYNAMIC_UNKNOWN_KIND
+nested three groups deep                MDY_DYNAMIC_UNKNOWN_KIND
+inside a record row                     MDY_DYNAMIC_UNKNOWN_KIND
+inside an array item                    MDY_DYNAMIC_UNKNOWN_KIND
+an array inside a record                MDY_DYNAMIC_UNKNOWN_KIND
+named by a layout slot                  MDY_DYNAMIC_UNKNOWN_KIND
+a kind that is an object with toString  MDY_DYNAMIC_UNKNOWN_KIND
+a kind in different case                MDY_DYNAMIC_UNKNOWN_KIND
+a kind with a trailing space            MDY_DYNAMIC_UNKNOWN_KIND
+a field smuggled through a draft        dropped, reported as draft-shape
+```
+
+The draft is a different door and kept beside the others deliberately: a draft carries values rather
+than kinds, so what it could introduce is a **field** the document never declared. That is refused
+too, and reported.
+
+**The control took two attempts, and the first was wrong in an instructive way.** It demanded that
+the same containers produce a *field* with a registered kind, and the three collection containers
+produce none — the flatten walk stops at the first collection boundary, which is finding 6 and not
+what this battle is about. Counting fields **or** collections is what makes it a control instead of a
+second finding.
+
+
 ## The browser tier, measured — a baseline this register never had
 
 `npm run battle:browser` on the working tree at `6ee29144`:
