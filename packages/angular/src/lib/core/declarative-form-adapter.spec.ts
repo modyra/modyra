@@ -295,7 +295,10 @@ describe("MdyDeclarativeAdapter", () => {
       adapter.upsertAsyncValidators("user", "k", [
         () => new Promise<string[]>((r) => (release = r)),
       ]);
-      TestBed.inject(ApplicationRef).tick();
+      // A check is invoked a microtask after the write, so the promise this test holds is handed out
+      // then and not in the tick that scheduled it. Without the wait, `release` is still unassigned
+      // and the test measures its own timing rather than what a destroyed field does.
+      await flushAsync();
       expect(adapter.state.pending()).toBe(true);
 
       adapter.removeField("user"); // destroys the async runner

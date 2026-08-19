@@ -92,6 +92,14 @@ export interface FieldRecord {
     readonly value: unknown;
     readonly wake: number;
     readonly deps: readonly unknown[];
+    /**
+     * The validators it answered *with*.
+     *
+     * A settled question is settled for the checks that asked it. Left out, removing an async
+     * validator looked like the same question again and the memo answered from the run before: the
+     * error the removed check had reported stayed on a field nothing was checking any more.
+     */
+    readonly validators: unknown;
   };
   /** Says what a caller could not have worked out from the field alone. Silent in production. */
   readonly warn: (message: string) => void;
@@ -436,9 +444,11 @@ export function createAsyncRunner(
     // leave the form `pending` on the way to the answer it already has. A field returning to play
     // bumps `asyncWake`, which is what makes that a different question.
     const settled = rec.asyncSettledFor;
+    const declared = rec.asyncValidators();
     if (
       settled !== undefined
       && Object.is(settled.value, v)
+      && Object.is(settled.validators, declared)
       && settled.wake === rec.asyncWake()
       && settled.deps.length === watched.length
       && settled.deps.every((held, index) => Object.is(held, watched[index]))
@@ -561,7 +571,12 @@ export function createAsyncRunner(
               .flatMap(returned => readMessages(returned, rec.warn))
               .map(message => ({ kind: "async", message, origin: "async" }) as MdyFieldError),
           );
-          rec.asyncSettledFor = { value: v, wake: rx.untracked(() => rec.asyncWake()), deps: watched };
+          rec.asyncSettledFor = {
+            value: v,
+            wake: rx.untracked(() => rec.asyncWake()),
+            deps: watched,
+            validators: declared,
+          };
           rec.pending.set(false);
         })
         .catch((e: unknown) => {

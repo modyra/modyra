@@ -21,7 +21,9 @@ describe("mdyFormFromSchema", () => {
       const form = makeForm();
       expect(form.f.age.value()).toBe(18); // .default(18)
       expect(form.f.email.value()).toBeNull(); // required, no default
-      expect(form.f.nickname.value()).toBeNull(); // optional → parses to undefined → null
+      // An optional string starts at the empty its own piece accepts — `""` — not at `null`, which
+      // every optional piece refuses (ADR 0086).
+      expect(form.f.nickname.value()).toBe("");
       expect(form.f.address.zip.value()).toBe(""); // nested default
     });
 
@@ -58,7 +60,7 @@ describe("mdyFormFromSchema", () => {
       expect(form.getValue()).toEqual({
         email: "a@b.co",
         age: 18,
-        nickname: null,
+        nickname: "",
         address: { city: "Rome", zip: "" },
       });
     });
