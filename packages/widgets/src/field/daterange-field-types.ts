@@ -28,6 +28,15 @@ export interface MdyDaterangeFieldControllerOptions {
   readonly firstDayOfWeek?: number;
   /** Whether the widget is visually/programmatically readonly. */
   readonly readonly?: boolean;
+  /**
+   * Reads a date a person typed, in whatever form the host offers them.
+   *
+   * The same door the datepicker has, for the same reason: a renderer parsing text itself and
+   * dispatching only when it succeeds makes an unreadable entry vanish — nothing is dispatched, and
+   * the next repaint rewrites the input from a value that never changed. Returns an ISO
+   * `YYYY-MM-DD`, or `null` for text this locale cannot read.
+   */
+  readonly parseEntry?: (text: string) => string | null;
 }
 
 /**
@@ -71,6 +80,13 @@ export interface MdyDaterangeFieldState {
   readonly open: boolean;
   /** Whether the next pick sets the start or closes the range. */
   readonly picking: "start" | "end";
+  /**
+   * What was typed into each end and could not be read, or `null` where there is nothing outstanding.
+   *
+   * A renderer paints these instead of the formatted value, so text the field could not take stays
+   * where the person left it. Both are `null` for a range that was picked or read successfully.
+   */
+  readonly entryText: { readonly start: string | null; readonly end: string | null };
   readonly invalid: boolean;
   readonly disabled: boolean;
   /**
@@ -103,4 +119,12 @@ export type MdyDaterangeFieldIntent =
   | { readonly type: "cancel" }
   | { readonly type: "clear" }
   | { readonly type: "focus" }
+  /**
+   * One end of the range, as the person typed it.
+   *
+   * Text rather than a parsed date, so the controller decides what happens to what it cannot read:
+   * a half-written range is a range, and text nothing can read is kept on screen where it can be
+   * corrected instead of being erased on the way out of the field.
+   */
+  | { readonly type: "type"; readonly end: "start" | "end"; readonly text: string }
   | { readonly type: "blur" };

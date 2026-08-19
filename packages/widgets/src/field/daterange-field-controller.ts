@@ -151,6 +151,7 @@ export function createDaterangeFieldController(
       cells,
       open: open(),
       picking: picking(),
+      entryText: { start: startEntry(), end: endEntry() },
       // Out of play, no verdict: a disabled field is not validated by the form, so painting it as
       // failing would show a verdict the form itself ignores. See verdict.ts.
       invalid: showsAsInvalid({ valid: handle.valid(), disabled: handle.disabled() }),
@@ -209,9 +210,61 @@ export function createDaterangeFieldController(
     };
   }
 
+  /**
+   * What was typed into each end and could not be read.
+   *
+   * Kept rather than parsed away: a range typed into two boxes is written one end at a time, and a
+   * renderer that only committed a whole readable range erased a half-written one on the way out of
+   * the field. Text that reads cleanly leaves nothing behind here.
+   */
+  const startEntry = reactivity.signal<string | null>(null);
+  const endEntry = reactivity.signal<string | null>(null);
+
+  /** One end, as it was typed. Commits what reads, keeps what does not, and never loses the other. */
+  function takeEntry(which: "start" | "end", text: string): readonly MdyUiCommand[] {
+    const entry = which === "start" ? startEntry : endEntry;
+    const trimmed = text.trim();
+    const held = handle.value() ?? EMPTY;
+    if (trimmed.length === 0) {
+      entry.set(null);
+      const next = dateRangeValueTransition({ ...held, [which]: null } as MdyDateRangeValue, bounds());
+      draft.set(next);
+      handle.set(next);
+      handle.markAsDirty();
+      handle.markAsTouched();
+      return [{ type: "mark-dirty" }, { type: "mark-touched" }];
+    }
+    const iso = options.parseEntry?.(trimmed) ?? null;
+    if (iso === null) {
+      // Unreadable: the text stays on screen and this end holds nothing, which is the pair that says
+      // "not taken" rather than a field showing one date and holding another.
+      entry.set(text);
+      const next = dateRangeValueTransition({ ...held, [which]: null } as MdyDateRangeValue, bounds());
+      draft.set(next);
+      handle.set(next);
+      handle.markAsDirty();
+      handle.markAsTouched();
+      return [{ type: "mark-dirty" }, { type: "mark-touched" }];
+    }
+    entry.set(null);
+    const parsed = parseIsoDate(iso);
+    if (!parsed || !isDateInRange(parsed, minDate(), maxDate())) return [];
+    // A half-written range is a range: the other end keeps whatever it held, including nothing.
+    const next = dateRangeValueTransition({ ...held, [which]: iso } as MdyDateRangeValue, bounds());
+    draft.set(next);
+    handle.set(next);
+    handle.markAsDirty();
+    handle.markAsTouched();
+    moveFocus(parsed);
+    return [{ type: "mark-dirty" }, { type: "mark-touched" }];
+  }
+
   function pick(iso: string): readonly MdyUiCommand[] {
     const parsed = parseIsoDate(iso);
     if (!parsed || !isDateInRange(parsed, minDate(), maxDate())) return [];
+    // A date arriving from the calendar answers whatever was outstanding in the boxes.
+    startEntry.set(null);
+    endEntry.set(null);
     moveFocus(parsed);
     preview.set(null);
 
@@ -316,7 +369,11 @@ export function createDaterangeFieldController(
       }
       case "select-date":
         return pick(intent.iso);
+      case "type":
+        return takeEntry(intent.end, intent.text);
       case "clear": {
+        startEntry.set(null);
+        endEntry.set(null);
         draft.set(EMPTY);
         preview.set(null);
         handle.set(EMPTY);

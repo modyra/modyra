@@ -8,7 +8,7 @@ import { overlayControlledId, partClasses, calendarViewOnToggle,
 } from "@modyra/widgets";
 import { html, nothing, type PropertyDeclarations } from "lit";
 import { type MdyDateRange, type MdyFieldHandle, observerFor } from "@modyra/core";
-import { buildDateLocale, calendarYearRange, type MdyDateLocale, isMonthOutOfRange, isYearOutOfRange, type CalendarCell, type CalendarDate, compareDates, formatIsoDate, isDateBetween, isDateInRange, orderDates, parseIsoDate, today } from "@modyra/core/datetime";
+import { buildDateLocale, calendarYearRange, type MdyDateLocale, isMonthOutOfRange, isYearOutOfRange, type CalendarCell, type CalendarDate, compareDates, formatIsoDate, isDateBetween, isDateInRange, orderDates, parseIsoDate, parseLocalizedDate, today } from "@modyra/core/datetime";
 import { applyWidgetCommands, bindOutsidePointer } from "../widget-runtime/overlay-host.js";
 import { MdyFieldElement, mdyIcon } from "../base.js";
 import { calendarGridKey, calendarRows, renderMonthPicker, renderYearPicker } from "./calendar-pickers.js";
@@ -44,6 +44,7 @@ const RESTING: MdyDaterangeFieldState = Object.freeze({
   cells: [],
   open: false,
   picking: "start",
+  entryText: { start: null, end: null },
   invalid: false,
   disabled: false,
   interactivity: "enabled",
@@ -269,6 +270,20 @@ export class MdyDaterangeFieldElement extends MdyFieldElement<MdyDateRange | nul
 
   private onYearSelected(year: number): void {
     this.send({ type: "select-year", year });
+  }
+
+  /**
+   * A date a person typed, in this field's own locale or as an ISO string.
+   *
+   * Reading only ISO is why a well-formed date typed the way the placeholder shows it was thrown
+   * away: nothing could parse it, so the value was set to nothing and the box was rewritten from
+   * that nothing. What still cannot be read is kept on screen, where it can be corrected.
+   */
+  private readTyped(raw: string): string | null {
+    const trimmed = raw.trim();
+    if (trimmed.length === 0) return null;
+    const parsed = parseLocalizedDate(trimmed, this.resolvedLocale) ?? parseIsoDate(trimmed);
+    return parsed ? formatIsoDate(parsed) : null;
   }
 
   private commitRange(
@@ -547,12 +562,14 @@ export class MdyDaterangeFieldElement extends MdyFieldElement<MdyDateRange | nul
               aria-label=${`${baseLabel}Start date`}
               autocomplete="off"
               @change=${(e: Event) => {
-                const raw = (e.target as HTMLInputElement).value.trim();
+                const input = e.target as HTMLInputElement;
+                const raw = input.value.trim();
                 const current = handle.value() ?? { start: null, end: null };
-                const parsed = raw ? parseIsoDate(raw) : null;
-                const iso = parsed ? formatIsoDate(parsed) : null;
+                const iso = this.readTyped(raw);
                 this.commitRange(handle, iso, current.end);
-                (e.target as HTMLInputElement).value = iso ?? "";
+                // Text nothing could read stays where it was typed: erasing it leaves an empty box
+                // and no way to learn that anything was wrong with what was in it.
+                if (iso !== null || raw.length === 0) input.value = iso ?? "";
               }}
               @blur=${() => handle.markAsTouched()}
             />
@@ -573,12 +590,12 @@ export class MdyDaterangeFieldElement extends MdyFieldElement<MdyDateRange | nul
               aria-label=${`${baseLabel}End date`}
               autocomplete="off"
               @change=${(e: Event) => {
-                const raw = (e.target as HTMLInputElement).value.trim();
+                const input = e.target as HTMLInputElement;
+                const raw = input.value.trim();
                 const current = handle.value() ?? { start: null, end: null };
-                const parsed = raw ? parseIsoDate(raw) : null;
-                const iso = parsed ? formatIsoDate(parsed) : null;
+                const iso = this.readTyped(raw);
                 this.commitRange(handle, current.start, iso);
-                (e.target as HTMLInputElement).value = iso ?? "";
+                if (iso !== null || raw.length === 0) input.value = iso ?? "";
               }}
               @blur=${() => handle.markAsTouched()}
             />

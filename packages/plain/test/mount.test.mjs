@@ -472,10 +472,13 @@ test("daterange, file and colors mount and round-trip their own value shape", ()
   const [start, end] = [...host.querySelectorAll(".mdy-renderer--daterange .mdy-daterange__input")];
   assert.ok(start && end, "a daterange owns two endpoints");
   assert.ok(host.querySelector(".mdy-renderer--daterange .mdy-daterange__sep"), "and a separator between them");
-  // An incomplete range does not commit — the widget's own draft policy, not the renderer's.
+  // A typed end is kept as it is typed. The calendar's draft policy — nothing commits until the
+  // second click — is about picking: there the first click is half a gesture, while a person who
+  // typed a start and stopped has said something, and erasing it leaves two empty boxes and no way
+  // to learn what happened.
   start.value = "2026-07-01";
   start.dispatchEvent(new Event("change"));
-  assert.deepEqual(mounted.form.f.stay.value(), { start: null, end: null });
+  assert.deepEqual(mounted.form.f.stay.value(), { start: "2026-07-01", end: null });
   end.value = "2026-07-08";
   end.dispatchEvent(new Event("change"));
   assert.deepEqual(mounted.form.f.stay.value(), { start: "2026-07-01", end: "2026-07-08" });
