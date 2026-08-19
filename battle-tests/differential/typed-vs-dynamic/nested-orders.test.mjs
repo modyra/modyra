@@ -154,13 +154,23 @@ battle(
       paths: seeded.collections.map((each) => each.path),
     });
 
-    expectEqual(seeded.collections, [
+    // Path and kind only. A reported collection now carries its `item` as well — the row template the
+    // flatten walk used to stop at — so comparing whole objects would pin the shape of the repair
+    // rather than the thing this line is about, which is that every level is reported.
+    expectEqual(seeded.collections.map(({ path, kind }) => ({ path, kind })), [
       { path: "orders", kind: "record" },
       { path: "orders.o1.lines", kind: "array" },
       { path: "orders.o1.lines.0.allocations", kind: "array" },
     ], {
       claimIds: ["DYN-002"],
       what: "a document that declares its rows does not report every collection under them",
+    });
+
+    // And the half that arrived with the repair: a reported collection carries the template its rows
+    // are built from, so a host mounting from this list can build a row rather than only name one.
+    expectEqual(seeded.collections.filter((each) => each.item === undefined).map((each) => each.path), [], {
+      claimIds: ["DYN-002"],
+      what: "a reported collection does not carry the row template, so a host reading this list knows a collection exists and not what a row of it holds",
     });
 
     expectEqual(seeded.fields.map((each) => each.name), [

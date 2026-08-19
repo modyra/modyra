@@ -14408,6 +14408,40 @@ what this battle is about. Counting fields **or** collections is what makes it a
 second finding.
 
 
+## 238 — Three runtimes, three answers to "which documents exist" (S2, DYN-001 DYN-003)
+
+**H-6 of the Fable 5 charter**, which asks that the same conditional semantics hold in
+`@modyra/core`, the Rust SDK and the Java SDK. Before semantics can agree, the three have to agree on
+which documents are documents. Measured:
+
+```
+@modyra/core   accepts 1, 2, 3, 4
+sdk/rust       accepts 2, 3        "expected contract version 2 or 3"      (lib.rs:354)
+sdk/java       accepts 2, 3        version == 2 || version == 3            (MdyDynamicFormParser.java:504)
+
+in TypeScript and not in the others: 1 and 4
+```
+
+Each SDK **states its position**, which is the letter of what H-6 asks: a version it does not know is
+refused with a message. What that leaves is a **v4 document — the one carrying `when`, `asyncWhen`
+and `requiresContext`, which is exactly the conditional semantics H-6 wants proven identical** —
+rendered by one runtime and refused by the other two. Not a divergence in behaviour; an absence of it
+in two places of three. And v1, the oldest shape, is in the same position at the other end.
+
+The sentences do not agree either: `@modyra/core` says *"expected 1, 2 or 3"* while accepting 4 in the
+tree shape (finding 235), Rust says *"expected contract version 2 or 3"*, Java says it in code and not
+in words. Three vocabularies for one question, and the one wrong about itself is the reference
+implementation.
+
+Pinned by `adversarial/dynamic-contract/three-runtimes-three-vocabularies.battle.test.mjs`. It asks
+TypeScript at runtime and reads the other two from their sources — a Rust crate and a Maven module are
+not things a node battle can run — with a control requiring all three sets to be found and to name at
+least two versions each, so a regex that matched nothing cannot read as agreement.
+
+What it cannot do is prove the **semantics** agree. The shared fixtures exist for that, and there are
+none for v4: finding 237.
+
+
 ## The browser tier, measured — a baseline this register never had
 
 `npm run battle:browser` on the working tree at `6ee29144`:
@@ -14564,9 +14598,9 @@ the half-fix to overlay teardown did not close it on plain either.
 ## The register's own shape, measured
 
 ```
-numbered findings        237
+numbered findings        238
 closed or retracted       55
-open with a battle       204
+open with a battle       205
 open with none            10
 ```
 
