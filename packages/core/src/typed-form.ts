@@ -154,6 +154,15 @@ export interface MdyFieldOptions<TValue> {
    * editor), or a function for custom allow-listing (e.g. DOMPurify).
    */
   readonly sanitize?: MdySanitizer;
+  /**
+   * Whether this field holds a secret.
+   *
+   * It is a statement about the value, and every place that would otherwise copy it reads it: the
+   * draft leaves it out of storage, and the devtools panel masks it without needing the name to
+   * look like a password. A form-level `exclude` and the panel's own predicate still apply on top —
+   * this is the field saying so once, where an author writes the field.
+   */
+  readonly sensitive?: boolean;
 }
 
 /**
@@ -186,6 +195,7 @@ export function field<TValue>(
     asyncWhen: (options?.asyncWhen as MdyFieldDescriptor<MdyWiden<TValue>>["asyncWhen"]) ?? null,
     when: (options?.when as MdyFieldDescriptor<MdyWiden<TValue>>["when"]) ?? null,
     sanitize: assertSanitizer(options?.sanitize),
+    sensitive: options?.sensitive === true,
   };
 }
 
@@ -1244,6 +1254,17 @@ export abstract class MdyTypedFormBase<
     this._adapter.rebaselineToCurrentValue();
   }
 
+  /**
+   * The paths this form's schema declared as secrets.
+   *
+   * The devtools panel reads it, and so can anything else that copies values out — a logger, a
+   * telemetry payload, a bug report. The declaration is on the field because that is where an
+   * author knows it; asking every consumer to keep a second list is how the two come to disagree.
+   */
+  sensitivePaths(): readonly string[] {
+    return this._adapter.sensitivePaths?.() ?? [];
+  }
+
   setSanitizer(name: string, sanitizer: MdySanitizer): void {
     this._adapter.setSanitizer(name, sanitizer);
   }
@@ -1287,6 +1308,9 @@ export abstract class MdyTypedFormBase<
       if (node.sanitize !== null) {
         this._adapter.setSanitizer(path, node.sanitize);
       }
+      // A statement about the value, made where the field is declared and read wherever the value
+      // would otherwise be copied out of the form.
+      if (node.sensitive) this._adapter.markSensitive?.(path);
       this._adapter.setInitialValue(path, node.initial);
       this._adapter.getField(path);
       // The schema declared it, so a control that unmounts releases its claim and nothing more.

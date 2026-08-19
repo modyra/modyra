@@ -61,6 +61,7 @@
     "initial: unknown",
     "kind: \"field\"",
     "sanitize: MdySanitizer | null",
+    "sensitive: boolean",
     "validators: ReadonlyArray<ValidatorFn<never>>",
     "when: ((value: unknown, formValue: Record<string, unknown>) => boolean) | null"
   ],
@@ -807,6 +808,7 @@
     "initial: TValue",
     "kind: \"field\"",
     "sanitize: MdySanitizer | null",
+    "sensitive: boolean",
     "validators: ReadonlyArray<ValidatorFn<TValue>>",
     "when: ((value: unknown, formValue: Record<string, unknown>) => boolean) | null"
   ],
@@ -846,6 +848,7 @@
     "asyncValidators?: ReadonlyArray<MdyAsyncValidatorFn<TValue>>",
     "asyncWhen?: (value: TValue, formValue: Record<string, unknown>) => boolean",
     "sanitize?: MdySanitizer",
+    "sensitive?: boolean",
     "when?: (value: TValue, formValue: Record<string, unknown>) => boolean"
   ],
   "MdyFieldRef": [
@@ -989,6 +992,7 @@
     "getValue-> returns: Record<string, unknown>",
     "hasDraft: MdySignal<boolean>",
     "markAllTouched-> returns: void",
+    "markSensitive(0) name: string,-> returns: void",
     "mutate(0) fn: () => void,-> returns: void",
     "orderRowsUnder(0) prefix: string,(1) order: ReadonlyArray<string>,-> returns: void",
     "ownField(0) name: string,-> returns: void",
@@ -1006,6 +1010,7 @@
     "reset-> returns: void",
     "restoreValue(0) value: Record<string, unknown>,-> returns: void",
     "runOwned(0) build: () => T,-> returns: T",
+    "sensitivePaths-> returns: readonly string[]",
     "setDisabled(0) name: string,(1) disabled: MdySignal<boolean>,-> returns: void",
     "setFormValidators(0) validators: ReadonlyArray<MdyFormValidatorFn<Record<string, unknown>>>,-> returns: void",
     "setInactive(0) name: string,(1) inactive: MdySignal<boolean>,-> returns: void",
@@ -1040,8 +1045,10 @@
   "MdyFormRegistry": [
     "addValidators: void",
     "claimField: void",
+    "markSensitive?: void",
     "removeField: void",
     "removeValidators: void",
+    "sensitivePaths?: readonly string[]",
     "setDisabled: void",
     "setInactive: void",
     "setInitialValue: void",
@@ -1877,6 +1884,7 @@
     "removeValidators(0) name: string,(1) key: string,-> returns: void",
     "reportEntry(0) name: string,(1) problem: string | null,-> returns: void",
     "reset-> returns: void",
+    "sensitivePaths-> returns: readonly string[]",
     "setDisabled(0) name: string,(1) disabled: TBooleanSignal,-> returns: void",
     "setInactive(0) name: string,(1) inactive: TBooleanSignal,-> returns: void",
     "setInitialValue(0) name: string,(1) value: unknown,-> returns: void",

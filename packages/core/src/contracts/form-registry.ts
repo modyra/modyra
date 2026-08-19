@@ -73,6 +73,16 @@ export interface MdyFormRegistry<
    * is created.
    */
   setSanitizer(name: string, sanitizer: MdySanitizer): void;
+  /**
+   * Declares that a field holds a secret (`field(initial, validators, { sensitive: true })`).
+   *
+   * Optional, so a registry written against an earlier version of this contract still satisfies it:
+   * a form whose adapter does not implement it keeps the behaviour it had, which is the name
+   * heuristic and an explicit `exclude`.
+   */
+  markSensitive?(name: string): void;
+  /** The paths declared through {@link markSensitive}. */
+  sensitivePaths?(): readonly string[];
   setDisabled(name: string, disabled: TBooleanSignal): void;
   /** Declares that a field is only in play while the signal says so. */
   setInactive(name: string, inactive: TBooleanSignal): void;
