@@ -336,6 +336,19 @@ function hasValidValidatorConfig(
       warnDev(
         `Dropped validators.pattern on dynamic field "${fieldName}": the pattern has ${refusal}.`,
       );
+    } else {
+      // And one the platform cannot compile at all. The cost gate above answers about a pattern that
+      // runs too long; `[` does not run: the validator is skipped where it is built, and a document
+      // carrying it passed strict mode with nothing said — a publishing gate approving a rule that
+      // will never exist.
+      try {
+        new RegExp(config.pattern);
+      } catch {
+        warnDev(
+          `Dropped validators.pattern on dynamic field "${fieldName}": "${config.pattern}" is not a ` +
+          "regular expression this platform can compile, so the rule never runs.",
+        );
+      }
     }
   }
   return true;
@@ -1361,9 +1374,21 @@ export function parseDynamicForm(
       }
       // Every path the condition reads must exist, for the same reason: a condition asking about a
       // field that is not in the form is a rule that can never be satisfied, and it fails silently.
-      const unknown = expressionPaths(validation.when as MdyExpression).filter((path) => path !== "" && !validValidationPath(path, names));
+      // The empty path is the whole form value, and a rule's `field` has never accepted it — so the
+      // same condition was a condition in one half of the document format and not in the other, and
+      // the half that took it produced a check that can never fire: comparing the form object to a
+      // scalar is false for every value the form can be driven to. `{ root: true }` is the operand
+      // that reads the whole form, and it says so.
+      const unknown = expressionPaths(validation.when as MdyExpression).filter((path) => !validValidationPath(path, names));
       if (unknown.length > 0) {
-        diagnostics.push({ code: "MDY_DYNAMIC_UNKNOWN_FIELD_REFERENCE", severity: "error", path: at, message: `validation condition references unknown field(s): ${unknown.join(", ")}.` });
+        diagnostics.push({
+          code: "MDY_DYNAMIC_UNKNOWN_FIELD_REFERENCE",
+          severity: "error",
+          path: at,
+          message:
+            `validation condition references unknown field(s): ${unknown.map((path) => `"${path}"`).join(", ")}` +
+            `${unknown.includes("") ? ' — the whole form value is { "root": true }' : ""}.`,
+        });
         continue;
       }
       validations.push(raw as MdyDynamicValidation);
