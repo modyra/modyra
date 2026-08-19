@@ -15340,6 +15340,25 @@ null-operands case asserted at every door as the control.
 targets, and `validateExpression` — which they sit beside — is what gave way when the shapes went
 past what a document usually carries.
 
+### Also taken off that list, and clean
+
+Measured rather than assumed, so the zeros mean something:
+
+```
+parse24Time            refuses 24:00, 14:60, 7:5, 14:30:45, 1430, -1:00, "abc", full-width digits;
+                       trims " 14:30 "; converts to twelve-hour parts correctly
+angleToHour            all twelve hours round-trip through hourToAngle; 0° is 12, 30° is 1
+angleToMinute          0°→0, 6°→1, 90°→15, 354°→59, and it wraps: 360°→0, −6°→59
+localeDateOrder        nine locales, including the year-first ones; falls back for an unknown tag
+firstWeekday           agrees with Date for 2026, 2024, and both century years 1900 and 2000
+createFocusCustodian   borrows, restores once, does not hand back twice after focus has moved on,
+                       and stops restoring after release — which is A11Y-002's whole mechanism
+fieldShellPartIds      builds a__label / a__description / a__errors, and refuses the names of 254
+```
+
+Six of the eight names looked at were sound. That is the shape of this vein: it is not that unasserted
+means broken, it is that nothing had ever looked.
+
 ## The browser tier, measured — and now gated like the other one
 
 `battle-tests/reports/known-red-browser.json` is the browser tier's baseline, written by
