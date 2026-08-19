@@ -62,6 +62,16 @@ const FIELD_BY_KIND = [
  * carries it, and a tree document that repeats it is naming a member the contract has.
  */
 export const MDY_DYNAMIC_MEMBERS = Object.freeze({
+  /**
+   * The envelope's own members, every version's together.
+   *
+   * A member a version predates is reported as a version finding rather than an unknown one — the
+   * document is written against a contract, and being told which contract has the member is the more
+   * useful sentence.
+   */
+  document: Object.freeze([
+    "version", "id", "fields", "schema", "layout", "rules", "validations", "requiresContext",
+  ] as readonly string[]),
   field: Object.freeze([...FIELD_BASE, ...FIELD_BY_KIND] as readonly string[]),
   validators: Object.freeze([
     "required", "email", "min", "max", "minLength", "maxLength", "pattern", "messages",
