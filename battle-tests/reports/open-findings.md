@@ -13620,6 +13620,29 @@ core predicate makes no hierarchical claim to falsify. Recorded with both measur
 number, because the repair is one line and the sentence is one line.
 
 
+## `schemas.md`, checked claim by claim — and one thing this suite cannot reach
+
+Every verifiable sentence in `docs/guides/schemas.md` holds:
+
+- a **fully async** Standard Schema throws at creation, with the reason and the remedy in the message;
+- a schema that is async **only for some inputs** holds the form invalid and puts that same message on
+  `errorsFor("")` rather than throwing later;
+- issues are attributed to their dotted path — `email`, `address.city`, and `items.0.name` for a row,
+  with numeric and string indices both landing on the same cell;
+- `createStandardForm` is `buildStandardTree` + `buildStandardValidator`, and both are exported.
+
+And the claim that *"the adapter test suite runs against both Zod and Valibot"* is **true**, which
+took two measurements to establish. `import("valibot")` from the repository root fails with
+`ERR_MODULE_NOT_FOUND`, and stopping there would have made this a finding. It is a workspace
+dependency of `packages/standard-schema`, not hoisted: run from that package, all 18 tests pass with
+Valibot among them.
+
+The consequence for **this** suite is worth recording. A battle imports by bare specifier from the
+root, so a three-way differential — hand-written against Zod against Valibot — cannot be written here
+without breaking the black-box rule. The zod↔standard differential is two-way for that reason, and
+the third vendor is covered only by the package's own tests.
+
+
 ## The browser tier, measured — a baseline this register never had
 
 `npm run battle:browser` on the working tree at `6ee29144`:
