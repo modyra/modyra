@@ -73,6 +73,18 @@ export interface MdyI18nMessages {
 }
 
 /** Default English strings. Replace individual keys by spreading over this. */
+/**
+ * The names a rejection message lists, however they arrive.
+ *
+ * The parameter is declared as a list and every caller in this package passes one, but a message is
+ * a string a host may also call directly — from a log line, a test, a translation tool checking that
+ * a sentence carries what it was given. A message that raises is worse than one that reads oddly:
+ * the control ends up with no text at all, in that language only.
+ */
+function namesInMessage(names: readonly string[] | string): string {
+  return Array.isArray(names) ? names.join(", ") : String(names);
+}
+
 export const MDY_I18N_MESSAGES_DEFAULT: MdyI18nMessages = {
   searchPlaceholder: "Search\u2026",
   entryUnreadable: "That could not be read. Leave it and correct it, or clear the field.",
@@ -110,7 +122,7 @@ export const MDY_I18N_MESSAGES_DEFAULT: MdyI18nMessages = {
   fileSelectMultiple: "Select files",
   fileNoneSelected: "No file selected",
   fileClearSelection: "Clear selection",
-  fileRejected: (names: readonly string[]): string => `Not accepted: ${names.join(", ")}`,
+  fileRejected: (names: readonly string[]): string => `Not accepted: ${namesInMessage(names)}`,
   overlayOpened: "Popup opened",
   overlayClosed: "Popup closed",
   selectCreateOption: (query: string): string => `Create "${query}"`,
@@ -165,7 +177,7 @@ export const MDY_I18N_MESSAGES_IT: MdyI18nMessages = {
   fileSelectMultiple: "Seleziona file",
   fileNoneSelected: "Nessun file selezionato",
   fileClearSelection: "Rimuovi selezione",
-  fileRejected: (names: readonly string[]): string => `Non accettati: ${names.join(", ")}`,
+  fileRejected: (names: readonly string[]): string => `Non accettati: ${namesInMessage(names)}`,
   overlayOpened: "Popup aperto",
   overlayClosed: "Popup chiuso",
   selectCreateOption: (query: string): string => `Crea "${query}"`,
@@ -213,7 +225,7 @@ export const MDY_I18N_MESSAGES_DE: MdyI18nMessages = {
   fileSelectMultiple: "Dateien auswählen",
   fileNoneSelected: "Keine Datei ausgewählt",
   fileClearSelection: "Auswahl entfernen",
-  fileRejected: (names: readonly string[]): string => `Nicht akzeptiert: ${names.join(", ")}`,
+  fileRejected: (names: readonly string[]): string => `Nicht akzeptiert: ${namesInMessage(names)}`,
   overlayOpened: "Popup geöffnet",
   overlayClosed: "Popup geschlossen",
   selectCreateOption: (query: string): string => `"${query}" erstellen`,
@@ -261,7 +273,7 @@ export const MDY_I18N_MESSAGES_FR: MdyI18nMessages = {
   fileSelectMultiple: "Sélectionner des fichiers",
   fileNoneSelected: "Aucun fichier sélectionné",
   fileClearSelection: "Effacer la sélection",
-  fileRejected: (names: readonly string[]): string => `Non acceptés : ${names.join(", ")}`,
+  fileRejected: (names: readonly string[]): string => `Non acceptés : ${namesInMessage(names)}`,
   overlayOpened: "Popup ouvert",
   overlayClosed: "Popup fermé",
   selectCreateOption: (query: string): string => `Créer « ${query} »`,
@@ -309,7 +321,7 @@ export const MDY_I18N_MESSAGES_ES: MdyI18nMessages = {
   fileSelectMultiple: "Seleccionar archivos",
   fileNoneSelected: "Ningún archivo seleccionado",
   fileClearSelection: "Borrar selección",
-  fileRejected: (names: readonly string[]): string => `No aceptados: ${names.join(", ")}`,
+  fileRejected: (names: readonly string[]): string => `No aceptados: ${namesInMessage(names)}`,
   overlayOpened: "Ventana emergente abierta",
   overlayClosed: "Ventana emergente cerrada",
   selectCreateOption: (query: string): string => `Crear "${query}"`,
