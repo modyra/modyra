@@ -56,9 +56,24 @@ test("and/or/not compose, so a condition can span three fields", () => {
   assert.equal(evaluateExpression({ op: "or", operands: [expr, { op: "isEmpty", operand: { path: "coupon" } }] }, value), true);
 });
 
-test("`0` and `false` are answers, not emptiness", () => {
+test("emptiness is what each kind's contract calls its empty", () => {
+  // `0` is an answer: a slider's thumb is always somewhere, so an untouched slider reads as filled —
+  // and `required` says the same about it, which is the agreement the rest of this was made to match.
   assert.equal(evaluateExpression({ op: "isEmpty", operand: { path: "n" } }, { n: 0 }), false);
-  assert.equal(evaluateExpression({ op: "isEmpty", operand: { path: "b" } }, { b: false }), false);
+  // `false` is not. A checkbox's contract says absence is not one of its values, so "not ticked" is
+  // the only way that field can say *nothing yet* — and `required` refuses it, which is the same
+  // question in the other spelling.
+  assert.equal(evaluateExpression({ op: "isEmpty", operand: { path: "b" } }, { b: false }), true);
+  assert.equal(evaluateExpression({ op: "isEmpty", operand: { path: "b" } }, { b: true }), false);
+  // A daterange before either end is picked.
+  assert.equal(
+    evaluateExpression({ op: "isEmpty", operand: { path: "range" } }, { range: { start: null, end: null } }),
+    true,
+  );
+  assert.equal(
+    evaluateExpression({ op: "isEmpty", operand: { path: "range" } }, { range: { start: "2026-01-01", end: null } }),
+    false,
+  );
   // A user who typed only a space has not filled the field in.
   assert.equal(evaluateExpression({ op: "isEmpty", operand: { path: "s" } }, { s: "   " }), true);
 });

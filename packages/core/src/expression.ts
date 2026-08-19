@@ -203,15 +203,28 @@ function memberAccess(value: unknown, path: string): unknown {
 }
 
 /**
- * Emptiness as a *form* means it.
+ * Emptiness as a *form* means it: the value a field holds when nobody has answered it.
  *
- * A whitespace-only string is empty because a user who typed a space has not filled the field in;
- * `0` and `false` are **not** empty, because they are answers.
+ * Read from what each kind's value contract calls its empty rather than from what a JavaScript
+ * value looks like. A whitespace-only string is empty because a user who typed a space has not
+ * filled the field in. `false` is empty because a checkbox's contract says absence is not one of its
+ * values, so "not ticked" is the only way that field can say *nothing yet* — and `required` already
+ * refuses it, which is the same question asked in the other spelling. An object every member of
+ * which is empty is empty, which is what a `daterange` holds before either end is picked.
+ *
+ * `0` stays an answer, and that is the agreement rather than the exception: a slider's thumb is
+ * always somewhere, so an untouched slider reads as filled — and `required` says the same, which is
+ * why the two halves agree there and had to be made to agree everywhere else.
  */
 function isEmptyValue(value: unknown): boolean {
   if (value === null || value === undefined) return true;
   if (typeof value === "string") return value.trim() === "";
+  if (typeof value === "boolean") return value === false;
   if (Array.isArray(value)) return value.length === 0;
+  if (typeof value === "object") {
+    const members = Object.values(value as Record<string, unknown>);
+    return members.every((member) => isEmptyValue(member));
+  }
   return false;
 }
 
