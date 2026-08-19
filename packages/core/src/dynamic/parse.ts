@@ -342,40 +342,56 @@ export function flattenDynamicForm(schema: MdyDynamicGroupNode): {
 } {
   const out: MdyDynamicField[] = [];
   const collections: MdyDynamicCollection[] = [];
-  const visit = (node: MdyDynamicNode, path: string, initial: unknown): void => {
+  /**
+   * An explicit stack, for the reason the validator has one: a document is untrusted and its nesting
+   * has no cap, so a recursive walk lets the document decide how much stack to use. A `RangeError`
+   * carries no path, cannot be caught by name and looks exactly like a bug in the caller's own code
+   * — the parser's own answer for a document it cannot carry is a diagnostic.
+   *
+   * Children are pushed in reverse so they come off in the order the document declares them: the
+   * flat list a consumer reads is in document order, and a form built from it renders in that order.
+   */
+  const pending: Array<{ node: MdyDynamicNode; path: string; initial: unknown }> = [
+    { node: schema, path: "", initial: undefined },
+  ];
+  while (pending.length > 0) {
+    const { node, path, initial } = pending.pop()!;
     if (node.node === "field") {
       const candidate = { ...node.field, name: path, initialValue: initial ?? node.field.initialValue } as MdyDynamicField;
       // Generated dotted/index paths are trusted structure; validate the leaf with
       // a temporary safe name, then restore the generated path.
       const parsed = parseDynamicFields([{ ...candidate, name: "leaf" }]);
       if (parsed[0]) out.push({ ...parsed[0], name: path } as MdyDynamicField);
-      return;
+      continue;
     }
     if (node.node === "group") {
       const value = isRecordValue(initial) ? initial : {};
-      for (const [key, child] of Object.entries(node.children)) {
-        if (!isSafeDynamicSegment(key)) continue;
-        visit(child, path ? `${path}.${key}` : key, value[key]);
+      const entries = Object.entries(node.children).filter(([key]) => isSafeDynamicSegment(key));
+      for (let index = entries.length - 1; index >= 0; index -= 1) {
+        const [key, child] = entries[index]!;
+        pending.push({ node: child, path: path ? `${path}.${key}` : key, initial: value[key] });
       }
-      return;
+      continue;
     }
     if (node.node === "record") {
       collections.push({ path, kind: "record" });
       const declared = isRecordValue(initial)
         ? initial
         : isRecordValue(node.initialValue) ? node.initialValue : {};
-      for (const [key, row] of Object.entries(declared)) {
-        // The key is a path segment like any other, and an unsafe one addresses something else.
-        if (!isSafeDynamicSegment(key)) continue;
-        visit(node.item, path ? `${path}.${key}` : key, row);
+      // The key is a path segment like any other, and an unsafe one addresses something else.
+      const rows = Object.entries(declared).filter(([key]) => isSafeDynamicSegment(key));
+      for (let index = rows.length - 1; index >= 0; index -= 1) {
+        const [key, row] = rows[index]!;
+        pending.push({ node: node.item, path: path ? `${path}.${key}` : key, initial: row });
       }
-      return;
+      continue;
     }
     collections.push({ path, kind: "array" });
     const rows = Array.isArray(initial) ? initial : Array.isArray(node.initialValue) ? node.initialValue : [];
-    rows.forEach((row, index) => visit(node.item, `${path}.${index}`, row));
-  };
-  visit(schema, "", undefined);
+    for (let index = rows.length - 1; index >= 0; index -= 1) {
+      pending.push({ node: node.item, path: `${path}.${index}`, initial: rows[index] });
+    }
+  }
   return { fields: out, collections };
 }
 
