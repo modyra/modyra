@@ -21,12 +21,18 @@
  * `when.field` is not a declared field, and the operators that read a field's value never read into
  * it. The context is the door that is open, and this battle is about that door only.
  *
- * **An operand nobody declared opens rather than closes.** The resolver recognises `{path}`,
- * `{self:true}`, `{root:true}` and `{context:"key"}`; anything else that is an object falls through
- * to the literal branch and is compared as the object it is — which is never empty, so `isNotEmpty`
- * answers `true` and the field it guards is shown. `validateExpression` refuses those same operands
- * by name. The reporting half and the deciding half disagree, which is the one thing the contract
- * says they may not do.
+ * **An operand that claims to be a reference and is not one opens rather than closes.** The resolver
+ * recognises `{path}`, `{self:true}`, `{root:true}` and `{context:"key"}`. An object carrying one of
+ * those keys with a value of the wrong type — `{context: 123}`, `{self: "yes"}`, `{root: 1}` — is
+ * none of them, falls through to the literal branch, and is compared as the object it is: never
+ * empty, so `isNotEmpty` answers `true` and the field it guards is shown. `validateExpression`
+ * refuses those same operands by name. The reporting half and the deciding half disagree, which is
+ * the one thing the contract says they may not do.
+ *
+ * The line is drawn at *claims to be a reference* rather than at *an object I do not recognise*, and
+ * the difference is not pedantic: an array is an object, so the wider rule would refuse `in` against
+ * a literal list, and since `equals` became structural an option value may legitimately be an object
+ * too.
  */
 
 import { evaluateExpression, evaluateRuleCondition, validateExpression } from "@modyra/core";
@@ -111,14 +117,19 @@ battle(
     environments: ["node"],
   },
   async (ctx) => {
-    // Each is an object that looks like one of the four known operands and is not one: a context key
-    // that is not a string, a `self` that is not `true`, a `root` that is not `true`, and a shape
-    // that names none of them.
+    // Each is an object that **claims** to be one of the four known operands and is not one: a context
+    // key that is not a string, a `self` that is not `true`, a `root` that is not `true`.
+    //
+    // An object naming none of them — `{ field: "n" }` — is deliberately absent. It was here once,
+    // on the reasoning that an object literal can never usefully be compared. That reasoning died
+    // when `equals` became structural: `{ tier: "pro" }` is now a legitimate literal, an option value
+    // may be an object, and an array is an object too — so "an object I do not recognise" would
+    // refuse `in` against a literal list. The line that survives is narrower and is the one asserted
+    // here: an object that *declares* itself a reference and is not one decides nothing.
     const MALFORMED = Object.freeze([
       { name: "a context key that is not a string", operand: { context: 123 } },
       { name: "a self that is not true", operand: { self: "yes" } },
       { name: "a root that is not true", operand: { root: 1 } },
-      { name: "an object naming no operand at all", operand: { field: "n" } },
     ]);
 
     const scope = { self: null, root: {}, context: {} };
