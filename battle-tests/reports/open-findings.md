@@ -13651,6 +13651,30 @@ missed defects are caught, and a *declared* source read passes. `harness.test.mj
 15/15, and the audit reports 0 violations over 439 files.
 
 
+## Two more of the Fase 2 false greens, tried and one repaired (harness)
+
+The plan lists nine false greens the harness was never shown to catch. Two were tried.
+
+**A differential comparing one object with itself.** `expectSameObservation(x, x)` passed and said
+nothing — one path measured twice, reported as agreement. It is an easy mistake to make, because the
+two sides of a differential are built a dozen lines apart, and its green means nothing at all.
+`expectSameObservation` now raises a `BattleHarnessError` when both arguments are the same object,
+and `harness.test.mjs` carries the case, including its converse: two objects built separately and
+equal must still pass, because the rule is about identity and not content. Measured over the whole
+tier afterwards — **no battle was relying on it**, no new red.
+
+**The expected/actual matrix.** Twelve values — absent, `undefined`, `null`, `NaN`, `0`, `-0`, `""`,
+`false`, `[]`, `{}`, `[[]]`, `{a:1}` — compared pairwise, 132 pairs. Two came back equal: absent
+against `undefined`, and `0` against `-0`. `diffCanonical` decided with `===`, which is the third
+place in this repository where that choice has mattered (findings 199 and 225 are the other two).
+
+It is now `Object.is`, with key presence checked before the values. **But the hole was not reachable
+from where the suite stands**, and saying so is the point: `encodeValue` already marks `-0` and
+`undefined` explicitly, so an observation that went through the encoding carried the distinction
+before it arrived. The repair makes the function right when it is handed raw values — which is what
+a probe does — and the comment now says that rather than claiming a defect it did not have.
+
+
 ## A permission this suite grants itself and cannot exercise (harness)
 
 `battle-tests/harness/black-box-audit.mjs:6` names the specifiers a battle may import, and
