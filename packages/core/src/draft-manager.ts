@@ -231,6 +231,8 @@ interface DraftManagerDeps {
    * Return false to drop the entry.
    */
   readonly filterRestoredEntry?: (key: string, value: unknown) => boolean;
+  /** The paths the schema declared as secrets, asked for on every read and every write. */
+  readonly secretPaths?: () => ReadonlySet<string>;
   /**
    * Form-owned scope (when the reactivity adapter provides one). The draft
    * effect registers with it so destroying the scope tears the effect down
@@ -290,6 +292,25 @@ function draftPathExcluded(path: string, patterns: ReadonlySet<string>): boolean
 }
 
 
+/**
+ * Whether `path` is one the schema declared a secret, or sits under one.
+ *
+ * Exact paths and subtrees only — never the bare-name match `exclude` allows. `exclude` is a list a
+ * consumer writes, where naming a leaf and meaning "wherever it is" is a convenience; a declaration
+ * is a fact about **one** field. Read the loose way, a root `token` marked secret withheld a row's
+ * unrelated `token`, and a row's `answer` was protected only when some other field happened to share
+ * its name — a value withheld by coincidence, and an ordinary column disappearing from a restored
+ * draft because a field elsewhere was a secret.
+ */
+function declaredSecret(path: string, secrets: ReadonlySet<string>): boolean {
+  if (secrets.size === 0) return false;
+  if (secrets.has(path)) return true;
+  for (const secret of secrets) {
+    if (path.startsWith(`${secret}.`)) return true;
+  }
+  return false;
+}
+
 export class MdyDraftManager {
   private readonly _rx: MdyReactivity;
   private readonly _getValue: () => Record<string, unknown>;
@@ -315,6 +336,14 @@ export class MdyDraftManager {
   private _effect: MdyEffectRef | null = null;
   private _timer: ReturnType<typeof setTimeout> | null = null;
   private _exclude: ReadonlySet<string> = new Set();
+  /**
+   * The paths the schema calls secrets, asked for on every write rather than copied once.
+   *
+   * A collection's rows are data: a row created after the draft was enabled declares its cells then,
+   * so a set snapshotted at enable time knows about none of them — and a secret in a row is the one
+   * a consumer could never have named in `exclude`, because its path did not exist yet.
+   */
+  private _secretPaths: () => ReadonlySet<string> = () => new Set();
   private _version = 1;
   private _debounceMs = 400;
   /** Serialized value at enable time — a pristine form writes no draft. */
@@ -328,6 +357,7 @@ export class MdyDraftManager {
     this._hasDraft = deps.hasDraft;
     this._warn = deps.warn;
     this._filterRestoredEntry = deps.filterRestoredEntry;
+    if (deps.secretPaths) this._secretPaths = deps.secretPaths;
     this._isDeactivated = deps.isDeactivated;
     this._scope = deps.scope;
   }
@@ -393,6 +423,7 @@ export class MdyDraftManager {
             Object.entries(value).filter(
               ([k, v]) =>
                 !draftPathExcluded(k, this._exclude) &&
+                !declaredSecret(k, this._secretPaths()) &&
                 isSafeFieldPath(k) &&
                 (this._filterRestoredEntry?.(k, v) ?? true),
             ),
@@ -526,7 +557,10 @@ export class MdyDraftManager {
   private _serialize(value: Record<string, unknown>): string | null {
     const serializable = Object.fromEntries(
       Object.entries(value).filter(
-        ([k, v]) => !draftPathExcluded(k, this._exclude) && !containsFile(v),
+        ([k, v]) =>
+          !draftPathExcluded(k, this._exclude)
+          && !declaredSecret(k, this._secretPaths())
+          && !containsFile(v),
       ),
     );
     const seen = new WeakSet<object>();

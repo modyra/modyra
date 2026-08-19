@@ -24,6 +24,24 @@ export function mdyFormSerialize(value: unknown): unknown {
 /** Placeholder for a value already met on the way down — a cycle. */
 const CIRCULAR = "[Circular]";
 
+/** What a member read answers with when reading it raised. */
+const UNREADABLE = Symbol("modyra:unreadable-member");
+
+/** Reads one member of somebody else's object without letting an accessor decide the outcome. */
+function readMember(value: object, key: string): unknown {
+  try {
+    return (value as Record<string, unknown>)[key];
+  } catch {
+    return UNREADABLE;
+  }
+}
+
+/** The shortest true thing that can be said about a thrown value. */
+function describeThrow(error: unknown): string {
+  if (error instanceof Error) return error.name;
+  return typeof error;
+}
+
 function serialize(value: unknown, seen: Set<object>): unknown {
   // The other value JSON cannot carry, and the loud one: `JSON.stringify` raises
   // `Do not know how to serialize a BigInt` rather than writing something, so a form holding one
@@ -48,11 +66,23 @@ function serialize(value: unknown, seen: Set<object>): unknown {
   if (seen.has(value)) return CIRCULAR;
   seen.add(value);
   try {
-    const toJson = (value as { toJSON?: unknown }).toJSON;
+    // Every read below is a read of somebody else's object. A getter can throw, a `toJSON` can
+    // fail, a Proxy can refuse to be enumerated — and this function exists so that reading a form's
+    // value is never the thing that fails. A value it cannot read is described, like the ones it
+    // cannot carry: the panel stays readable, which is the whole point of it, and the description
+    // says which member it stopped at instead of leaving a stack trace where a value should be.
+    const toJson = readMember(value, "toJSON");
+    if (toJson === UNREADABLE) return `[Unreadable: toJSON]`;
     if (typeof toJson === "function") {
       // What it returns may itself need describing — a `toJSON` returning an object with a File in
       // it is unusual but not wrong.
-      return serialize((toJson as () => unknown).call(value), seen);
+      let produced: unknown;
+      try {
+        produced = (toJson as () => unknown).call(value);
+      } catch (error) {
+        return `[Unreadable: toJSON threw ${describeThrow(error)}]`;
+      }
+      return serialize(produced, seen);
     }
 
     if (Array.isArray(value)) {
@@ -60,8 +90,19 @@ function serialize(value: unknown, seen: Set<object>): unknown {
     }
 
     const result: Record<string, unknown> = {};
-    for (const [key, entry] of Object.entries(value)) {
-      result[key] = serialize(entry, seen);
+    let keys: string[];
+    try {
+      // Keys rather than entries: `Object.entries` *reads* every member, so one accessor that throws
+      // would lose the whole object where only that member is unreadable.
+      keys = Object.keys(value);
+    } catch (error) {
+      // A Proxy refusing `ownKeys`, or an exotic object whose enumeration raises. There is nothing
+      // to walk, and what it is is still worth saying.
+      return `[Unreadable: ${describeThrow(error)}]`;
+    }
+    for (const key of keys) {
+      const entry = readMember(value, key);
+      result[key] = entry === UNREADABLE ? `[Unreadable: ${key}]` : serialize(entry, seen);
     }
     return result;
   } finally {

@@ -150,7 +150,11 @@ const OPS: ReadonlySet<string> = new Set<MdyExpressionOp>([
 
 /** Whether `operand` names a field rather than carrying a literal. */
 export function isPathRef(operand: MdyOperand): operand is MdyPathRef {
-  return typeof operand === "object" && operand !== null && !("op" in operand) && "path" in operand;
+  // The member has to *be* a path, not merely be there. `{ path: 4 }` answered true here and then
+  // took the read down inside `memberAccess`, where a number has no `split` — a malformed reference
+  // becoming an exception in the middle of reading a form.
+  return typeof operand === "object" && operand !== null && !("op" in operand)
+    && typeof (operand as MdyPathRef).path === "string";
 }
 
 /** Whether `operand` names the value of the field the clause is written on. */
@@ -270,6 +274,21 @@ const ARITY_OF: Readonly<Record<MdyExpressionOp, number>> = Object.freeze({
  */
 const UNAVAILABLE = Symbol("modyra:operand-unavailable");
 
+/** The member names an operand uses to say it is a reference rather than a value. */
+const REFERENCE_KEYS = ["path", "self", "root", "context"] as const;
+
+/**
+ * Whether this operand meant to be a reference and is not one.
+ *
+ * Reached only after every well-formed shape has been recognised, so anything here that names one of
+ * the four is a reference somebody wrote wrongly — a `context` that is a number, a `self` that is a
+ * string. Everything else is a literal and stays one.
+ */
+function claimsToBeAReference(operand: MdyOperand): boolean {
+  if (typeof operand !== "object" || operand === null || Array.isArray(operand)) return false;
+  return REFERENCE_KEYS.some((key) => Object.hasOwn(operand, key));
+}
+
 /** One member of an `and`/`or`: an operand nobody can read is not a member that holds. */
 function truthyOperand(
   operand: MdyOperand,
@@ -298,10 +317,27 @@ function resolveOperand(
   if (isRootRef(operand)) return scope !== undefined && "root" in scope ? scope.root : UNAVAILABLE;
   if (isContextRef(operand)) {
     const context = scope?.context;
-    return context !== undefined && Object.hasOwn(context, operand.context)
-      ? context[operand.context]
-      : UNAVAILABLE;
+    if (context === undefined || !Object.hasOwn(context, operand.context)) return UNAVAILABLE;
+    // The bag is the application's, not the engine's: in a real app it is a store, a signal or a
+    // Proxy, so reading a key is a property access that can throw. A condition is read every time
+    // the form is read, so a throw here is not a slow form, it is a form that does not paint and a
+    // submit that raises.
+    try {
+      return context[operand.context];
+    } catch {
+      return UNAVAILABLE;
+    }
   }
+  // An object that claims to be a reference and is not a well-formed one. `{ context: 123 }`,
+  // `{ self: "yes" }`, `{ path: 4 }` reach the literal branch below and are compared as the objects
+  // they are — never empty, never equal to anything — so `isNotEmpty` answered true and a section
+  // governed by a misspelled operand was shown to everyone. The same answer an unknown *operator*
+  // gets, for the same reason: a question with no reading is not answered with the one that opens.
+  //
+  // Only names that claim it. An object with none of them is a legitimate literal — an option's
+  // value may be an object (ADR 0051), and a membership list is an array — so the rule is about a
+  // reference written wrongly, not about objects.
+  if (claimsToBeAReference(operand)) return UNAVAILABLE;
   return operand;
 }
 
