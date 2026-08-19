@@ -1063,6 +1063,10 @@ function validateDynamicSchema(input: unknown): {
       // inside a collection: a `kind` nobody declared, or a `validators.pattern` that is a number,
       // parsed clean at any depth below a row and then met the engine — where a person is already
       // waiting — or produced a control nobody asked for.
+      // Named by the key its parent gave it. A field in a tree carries no `name` of its own — the
+      // key is the name — so every finding below one read `Dynamic field "leaf"`, and a document
+      // with two bad fields produced two identical sentences distinguished only by their path.
+      const named = path.slice(path.lastIndexOf("/") + 1);
       collectingDiagnostics(
         (message) => perField.push({
           code: diagnosticCode(message),
@@ -1070,7 +1074,7 @@ function validateDynamicSchema(input: unknown): {
           path: `${path}/field`,
           message,
         }),
-        () => parseDynamicFields([{ ...(raw["field"] as object), name: "leaf" } as MdyDynamicField]),
+        () => parseDynamicFields([{ ...(raw["field"] as object), name: named } as MdyDynamicField]),
       );
       // The initial the document declares, against the shape the kind holds. A record's initial is
       // measured against its own shape and an array's against its own; a field's was measured

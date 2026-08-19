@@ -364,6 +364,30 @@ function watchLeavingPlay(rec: FieldRecord, rx: MdyReactivity, scope?: MdyReacti
   }, { scope, debugName: "modyra:async-left-play" });
 }
 
+/**
+ * The field a `dependsOn` name points at, from where the clause was written.
+ *
+ * A row is a **template**: declared once, instantiated per key. A cell naming its sibling can only
+ * write the name that sibling has inside the row, and that name resolved against the form root,
+ * where it does not exist — so the only spelling that worked was `rows.a.code`, which a template
+ * cannot write, because it precedes every row and is shared by all of them. The result was a server
+ * verdict left standing over a value that had since changed: an approval for an input nobody
+ * checked.
+ *
+ * The absolute path is tried first, so nothing that resolves today resolves differently; the
+ * row-relative reading only fills a silence.
+ */
+function dependencyState(
+  host: MdyAsyncRunnerHost,
+  dep: string,
+): MdyFieldState<unknown> | null {
+  const absolute = host.fieldState(dep);
+  if (absolute !== null) return absolute;
+  const at = host.fieldPath.lastIndexOf(".");
+  if (at < 0) return null;
+  return host.fieldState(`${host.fieldPath.slice(0, at)}.${dep}`);
+}
+
 export function createAsyncRunner(
   rec: FieldRecord,
   rx: MdyReactivity,
@@ -379,7 +403,7 @@ export function createAsyncRunner(
     const entries = Array.from(rec.asyncValidators().values());
     // Touch dependsOn field values so their changes retrigger this effect.
     for (const e of entries) {
-      for (const dep of e.dependsOn) host.fieldState(dep)?.value();
+      for (const dep of e.dependsOn) dependencyState(host, dep)?.value();
     }
     const runId = ++rec.asyncRunId;
     const controller = new AbortController();
