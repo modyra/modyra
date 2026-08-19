@@ -6,6 +6,7 @@ reports/*.json
 # describe is open, so a build can fail on a regression and on nothing else. Ignoring it would make
 # every known red look new on a fresh checkout.
 !reports/known-red.json
+!reports/known-red-browser.json
 
 # Packed tarballs and the temporary consumers installed from them.
 hostile-consumers/**/node_modules/
