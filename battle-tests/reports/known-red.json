@@ -11,6 +11,7 @@
     "[S0][DYN-002,DYN-001,COL-001] a collection that survived a round trip can still hold a row",
     "[S0][DYN-004,DYN-003] a key the published schema refuses is one the parser reports",
     "[S0][LIF-001,PER-001] a form built without being activated is a paused form, and says so",
+    "[S0][SEC-001,PER-001,VAL-003] a hostile draft reaches the model and cannot be submitted from it",
     "[S0][SEC-002,SEC-005] what the panel masks is protected elsewhere, or says it is only a guess",
     "[S0][SUB-001,COL-001] a row the form would reset away is a row it reports as a change",
     "[S0][VAL-002,COL-001,COL-008,SUB-001] a claim made before the row survives the row being replaced",
@@ -28,6 +29,7 @@
     "[S1][SEC-005] the published surface says a password is not a text field",
     "[S1][STU-002,DYN-003,A11Y-002] an option list Studio compiles is one every option survives",
     "[S1][SUB-001,COL-002] a patch says what a row holds, however the row came to hold it",
-    "[S1][VAL-003,COL-003] two conditions on one field are one answer, and any refusal is the answer"
+    "[S1][VAL-003,COL-003] two conditions on one field are one answer, and any refusal is the answer",
+    "[S1][VAL-004,UI-007] a control offers no value the field would refuse"
   ]
 }
