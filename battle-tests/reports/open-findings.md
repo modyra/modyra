@@ -13591,6 +13591,35 @@ already invalid, so `submit()` returned at the `canSubmit` gate without ever cal
 and the server error read as missing. A form must be submittable before a server can refuse it.
 
 
+## 222 — Naming a collection in the mask list hides nothing (S2, documentation and `@modyra/angular`)
+
+`docs/guides/devtools.md`, on masking:
+
+> A collection's rows are addressed the way they are everywhere else, so the rule reaches inside one
+> and a path you list may name a row's field: `items.0.legacyPwd`, **or the collection itself to hide
+> all of it**.
+
+The first half is true; the second is false in both surfaces that implement it.
+
+```
+sensitive: path === "rows.0.legacyPwd"   rows.0.legacyPwd = •••      the cell is masked
+sensitive: path === "rows"               rows.0.legacyPwd = "SECRET" nothing is masked
+```
+
+`packages/angular/src/lib/devtools/mdy-forms-devtools.component.ts:288` is the same answer in one
+line: `SENSITIVE_PATH.test(path) || this.maskFields().includes(path)` — **exact match**, no prefix.
+The core's `MdySnapshotOptions.sensitive` is a predicate, so a consumer *can* implement the prefix
+themselves; nothing in the core promises it, and the guide promises it for the list.
+
+The cost is exactly the case the sentence was written for: a reader wanting to hide a table of
+payment rows in the panel writes the collection's name, and reads every row in the clear. It is also
+the sentence a reader would trust most, because the paragraph around it is correct.
+
+No battle in this tier: the promise lives in `@modyra/angular`'s component and in a guide, and the
+core predicate makes no hierarchical claim to falsify. Recorded with both measurements and the line
+number, because the repair is one line and the sentence is one line.
+
+
 ## The browser tier, measured — a baseline this register never had
 
 `npm run battle:browser` on the working tree at `6ee29144`:
@@ -13747,16 +13776,16 @@ the half-fix to overlay teardown did not close it on plain either.
 ## The register's own shape, measured
 
 ```
-numbered findings        221
+numbered findings        222
 closed or retracted       39
 open with a battle       190
-open with none             8
+open with none             9
 ```
 
 The seven without a battle are the entries a test cannot hold: a capability nothing reads (37),
 constants outside a classifier (39), a campaign that explores one run (40), two entries about this
 hunt's own mistakes (51, 57), forty-nine comments citing a plan that is not in the repository (198),
-and two guides describing behaviour their own repository contradicts (218, 220). Configuration, documentation and coverage — none of them a
+and three guides describing behaviour their own repository contradicts (218, 220, 222). Configuration, documentation and coverage — none of them a
 behaviour a battle could pin.
 
 **The first count of this said ten, and was wrong.** It looked for `.battle.test.mjs` and `.spec.ts`,
