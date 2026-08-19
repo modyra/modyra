@@ -15288,6 +15288,50 @@ shown**. `isSafeFieldPath` is one of them — the guard the whole of `SEC-001` r
 exercised by nothing. So is `assertUsableWidgetId`, the door that disagrees with it. The first two
 names taken off that list produced this.
 
+## 255 — A condition the reader cannot read (S0, SEC-004 DYN-003)
+
+`SEC-004` is that a document cannot make the form stop answering. A document is untrusted input, and
+`parseDynamicForm` is the door it arrives at: what it meets there is a diagnostic, not an exception.
+
+`{ op: "equals", operands: "x" }` is a condition an author reaches by writing one pair of brackets
+less. `validateExpression` reads `operands` and calls `forEach` on it:
+
+```
+operands: null        MDY_DYNAMIC_INVALID_CONDITION, refused, the document is answered
+operands: "x"         TypeError: operands.forEach is not a function
+operands: 7           the same
+operands: { a: 1 }    the same
+operands: true        the same
+```
+
+**The guard exists and is incomplete.** It recognises a condition that is *missing* and not one that
+is the wrong *shape*. `null` proves the path works, which is what makes the rest a hole rather than an
+absence.
+
+Every door a condition can be written at reaches it, in **both** parse modes:
+
+```
+a field's when          a field's asyncWhen       a group's when
+a validation's when     one nested inside an and
+```
+
+Lenient is the mode a consumer chooses precisely to survive a document they do not control, and it
+throws too. What arrives is `operands.forEach is not a function` — an internal naming neither the
+document, nor the field, nor the clause. A consumer catching it learns that something was wrong and
+nothing about what or where.
+
+Same family as finding 244, and the same sentence describes both: **the guard is broken by the input
+it guards.** There it was a recursive walk over a hostile draft; here it is a shape check that stops
+one value short.
+
+Green when a condition of any shape is refused with a diagnostic rather than thrown out of the reader.
+Pinned by `adversarial/security/a-condition-the-reader-cannot-read.battle.test.mjs`, with the
+null-operands case asserted at every door as the control.
+
+**Found in the 258 unasserted public names**, three names in: `isExpression` and `isPathRef` were the
+targets, and `validateExpression` — which they sit beside — is what gave way when the shapes went
+past what a document usually carries.
+
 ## The browser tier, measured — and now gated like the other one
 
 `battle-tests/reports/known-red-browser.json` is the browser tier's baseline, written by
@@ -15479,7 +15523,7 @@ the half-fix to overlay teardown did not close it on plain either.
 ## The register's own shape, measured
 
 ```
-numbered findings        254
+numbered findings        255
 closed or retracted       58
 open with a battle       207
 open with none            10
