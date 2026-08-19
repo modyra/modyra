@@ -1,6 +1,13 @@
 {
   "note": "Battles that are red because the defect they describe is open. A red listed here does not fail a build; a red that is not listed is a regression. Rewrite with `npm run battle:ci -- --accept`.",
+  "order": "Repair in severity order: every S0, then every S1, then S2 and below. `bySeverity` is the count at each, and `knownRed` is sorted the same way, so the top of the list is the next work.",
   "recordedAt": "2026-08-19",
+  "openReds": 25,
+  "bySeverity": {
+    "S0": 8,
+    "S1": 14,
+    "S2": 3
+  },
   "knownRed": [
     "[S0][COL-001,COL-005] a batch of orders costs what its orders cost, not more",
     "[S0][COL-001,COL-005] a value that cannot name a position does not name the first one",

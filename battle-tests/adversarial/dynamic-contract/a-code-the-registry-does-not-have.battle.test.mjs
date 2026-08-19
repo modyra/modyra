@@ -132,7 +132,9 @@ battle(
       for (const diagnostic of parsed.diagnostics ?? []) record(diagnostic.code, what);
     }
     for (const version of readdirSync(FIXTURES)) {
-      for (const file of readdirSync(join(FIXTURES, version))) {
+      // A fixture's context twin is not a document: it holds what a host supplies, and parsing it
+      // as one would put a refusal in this table that no published document produces.
+      for (const file of readdirSync(join(FIXTURES, version)).filter((each) => each.endsWith(".json") && !each.endsWith(".context.json"))) {
         const parsed = parseDynamicForm(JSON.parse(readFileSync(join(FIXTURES, version, file), "utf8")), {
           mode: "strict",
         });

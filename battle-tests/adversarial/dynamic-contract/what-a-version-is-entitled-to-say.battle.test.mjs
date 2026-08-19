@@ -99,14 +99,20 @@ battle(
       what: "a version 1 document lost the fields that are its whole vocabulary",
     });
 
-    expectEqual(codesOf(legacy), ["MDY_DYNAMIC_UNSUPPORTED_VERSION", "MDY_DYNAMIC_UNSUPPORTED_VERSION"], {
+    // The deprecation comes first and is a warning: version 1 is on its way out and still readable.
+    // The two after it are the members, one each.
+    expectEqual(codesOf(legacy), [
+      "MDY_DYNAMIC_DEPRECATED_VERSION",
+      "MDY_DYNAMIC_UNSUPPORTED_VERSION",
+      "MDY_DYNAMIC_UNSUPPORTED_VERSION",
+    ], {
       claimIds: ["DYN-003"],
       what: "a version 1 document dropped its layout and rules without saying they belong to another version",
     });
 
-    // And the same document with nothing outside its vocabulary says nothing, so the two diagnostics
-    // above are the members rather than the version.
-    expectEqual(codesOf(parseDynamicForm({ version: 1, id: "invoice", fields: FIELDS })), [], {
+    // And the same document with nothing outside its vocabulary says only that the version is on its
+    // way out, so the two diagnostics above are the members rather than the version.
+    expectEqual(codesOf(parseDynamicForm({ version: 1, id: "invoice", fields: FIELDS })), ["MDY_DYNAMIC_DEPRECATED_VERSION"], {
       claimIds: ["DYN-003"],
       what: "a version 1 document carrying only fields was reported against anyway",
     });

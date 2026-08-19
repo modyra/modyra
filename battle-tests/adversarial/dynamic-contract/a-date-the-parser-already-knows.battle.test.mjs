@@ -72,7 +72,10 @@ function throughACalendarBound(value) {
     { version: 1, fields: [{ name: "d", kind: "datepicker", label: "D", minDate: value }] },
     { mode: "strict" },
   );
-  return { accepted: parsed.fields.length > 0 && parsed.diagnostics.length === 0, codes: parsed.diagnostics.map((each) => each.code) };
+  // An error is what refuses a document; a warning leaves it usable, which is what `severity` on a
+  // diagnostic is for. A `version: 1` document is told it is deprecated and still parses.
+  const refused = parsed.diagnostics.some((each) => each.severity === "error");
+  return { accepted: parsed.fields.length > 0 && !refused, codes: parsed.diagnostics.map((each) => each.code) };
 }
 
 /** The door that is not guarded: the field's declared initial. */
