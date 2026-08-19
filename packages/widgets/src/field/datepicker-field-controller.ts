@@ -155,7 +155,10 @@ export function createDatepickerFieldController(
   const view: MdySignal<MdyWidgetViewContract> = reactivity.computed(() => {
     const currentState = state();
     const a11y = projectDatepickerFieldA11y(currentState, handle.errors(), { widgetId });
-    const parts: Record<string, ReturnType<typeof a11yCell>> = {};
+    // A null prototype, because these keys are data: an option valued `__proto__` assigned into a
+    // plain object sets that object's prototype instead of adding a member, so the part vanished and
+    // the renderer was handed `undefined` — the control disappeared from the page mid-draw.
+    const parts: Record<string, ReturnType<typeof a11yCell>> = Object.create(null);
     for (const cell of currentState.cells) parts[cell.iso] = a11yCell(cell);
     return {
       root: a11y.root,
