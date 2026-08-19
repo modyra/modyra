@@ -15700,6 +15700,48 @@ collection that compacts and says so in the ADR. Held by
 `battle-tests/adversarial/submission/an-empty-row-in-a-list-of-words.battle.test.mjs`, which carries
 the group case as a control so a repair that broke ADR 0100 would fail beside it.
 
+## 258 — A change set that carries what was disabled (S0, VAL-002 SUB-001 COL-001)
+
+A disabled value is not submitted. `submitValue` keeps that everywhere. `getChanges` — documented as
+*"ready for an API PATCH request"* — keeps it for a flat field and for a keyed row, and does not keep
+it for a positional one:
+
+```
+                       getChanges                                 submitValue
+flat field disabled    absent                                     absent
+keyed cell disabled    absent                                     absent
+positional cell        {"list":[{"tag":"SECRET","note":"n1"}…]}   {"list":[{"note":"n1"}…]}
+whole row disabled     {"list":[{"tag":"a","note":"x"}…]}         {"list":[{}…]}
+array under a key      {"o":{"k":{"lines":[{"v":"p"}…]}}}         {"o":{"k":{"lines":[{}…]}}}
+```
+
+A cell is disabled because something decided it must not travel — a permission rule, a mode, a field
+the person cannot edit. A consumer building a PATCH from the change set sends it anyway.
+
+`_wholeArraysIn` is why, and its intent is sound: a *partial* positional list is ambiguous, so a list
+that changed is carried whole and a server applying it by index is not guessing. Whole is read from
+the wrong place:
+
+```ts
+for (const [path, held] of Object.entries(this._adapter.getValue())) {
+  for (const prefix of carried) {
+    if (path.startsWith(`${prefix}.`)) whole[path] = held;
+  }
+}
+```
+
+`getValue` holds every cell, disabled or not. The rows are the form's; the cells inside them are the
+submittable ones.
+
+**Pre-existing, not from ADR 0100** — `e6b35e4f`, the commit that introduced whole-list carrying.
+0100 widens the gap rather than opening it: a fully disabled row is now `{}` on one door and a
+complete row on the other.
+
+Held by `battle-tests/adversarial/submission/a-change-set-that-carries-what-was-disabled.battle.test.mjs`,
+which asserts the flat and keyed halves as controls, asserts that the list is still carried whole so a
+repair cannot pass by removing the row, and finally asserts the two doors equal — the property, rather
+than either shape.
+
 ## The register's own shape, measured
 
 ```
