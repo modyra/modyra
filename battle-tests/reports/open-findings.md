@@ -3,11 +3,11 @@
 ## Open now, and in the order they are repaired
 
 ```
-S0     0      the whole of it before any S1
+S0     2      the whole of it before any S1
 S1     6
 S2     3
       --
-       9      open reds, 2026-08-19
+      11      open reds, 2026-08-19
 ```
 
 Severity is the order of work: every S0, then every S1, then S2 and below. The same counts are in
@@ -15059,6 +15059,57 @@ the display's notation is never what the form ends up holding.
 Pinned by `browser/a-time-that-changed-when-nobody-changed-it.spec.ts`, green on plain and red on lit,
 with the surviving-value case as its control.
 
+## 250 — An operand that is two things (S1, EXP-001 DYN-004)
+
+ADR 0092 gives a condition three ways to name what it reads besides a path — `{self: true}`,
+`{root: true}`, `{context: "key"}` — and the package publishes a guard for each so a consumer can tell
+them apart. Each shape on its own is claimed by exactly one guard and taken by every door. An operand
+carrying two of them is claimed by **both**, accepted by the validator, and parsed clean in strict
+mode:
+
+```
+{self: true}              isSelfRef ✓                accepted   reads the value the clause is on
+{root: true}              isRootRef ✓                accepted   reads the whole form
+{self: true, root: true}  isSelfRef ✓  isRootRef ✓   accepted   reads the value
+```
+
+Which half wins is decided by the order an implementation happens to check in, and **the record that
+introduced the forms does not say** — that record is this hunt's own, which is why it is filed rather
+than argued.
+
+It is a contract question and not a branch: the same document is meant to mean the same thing in
+`@modyra/core`, the Rust SDK and the Java SDK, and nothing in the published schema, the parser or the
+record tells the second and third which half to read. **No fixture carries the shape**, so the
+conformance corpus cannot catch a disagreement — and the SDK work now under way is exactly when it
+would be introduced.
+
+A smaller disagreement sits beside it, filed in the same battle:
+
+```
+isContextRef({context: ""})   true          the guard claims it
+validateExpression(…)         refuses it    the door does not
+```
+
+A guard that claims what the door turns away tells a consumer to handle an operand the contract will
+not accept.
+
+Green when the two doors agree: an operand that is two things is refused where an operand is read, or
+the guards stop claiming what the validator will not take. Pinned by
+`adversarial/expression/an-operand-that-is-two-things.battle.test.mjs`, two battles, each controlled —
+the three single shapes behave as the record says, and an ordinary context operand is claimed and
+accepted, so neither guard is simply always true.
+
+**Found by exercising a surface nothing exercises.** `isSelfRef`, `isRootRef`, `isContextRef`,
+`expressionContextKeys` and thirteen other public names are what `test:coverage-and-demo` reports as
+*published and unexercised*, and it is the gate holding CI red. Seventeen of the eighteen are not
+named anywhere in this suite either — measured, not assumed. The first surface anyone pointed at
+produced this.
+
+Worth knowing about that gate: **`battle-tests/` is not among its `TEST_ROOTS`** — they are
+`packages/*/test`, `packages/angular/src/lib`, `docs/examples` and `e2e` — so nothing this suite
+exercises counts toward `asserted somewhere: 418`. That is a fact about the instrument rather than a
+defect, and it means the number understates coverage by however much this suite is worth.
+
 ## The browser tier, measured — and now gated like the other one
 
 `battle-tests/reports/known-red-browser.json` is the browser tier's baseline, written by
@@ -15250,7 +15301,7 @@ the half-fix to overlay teardown did not close it on plain either.
 ## The register's own shape, measured
 
 ```
-numbered findings        249
+numbered findings        250
 closed or retracted       58
 open with a battle       207
 open with none            10
