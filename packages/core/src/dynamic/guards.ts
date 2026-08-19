@@ -69,6 +69,18 @@ export function isSafeDynamicSegment(value: string): boolean {
  * document refused by one build route and taken by the other means which pair of functions a
  * consumer called decides whether their document works.
  */
+/**
+ * Whether a single path segment is one a document may name, asked without throwing.
+ *
+ * The same three rules {@link assertSafeDynamicName} raises on, for the reader that reports rather
+ * than refuses — a document's tree is walked by a validator that collects diagnostics, and a name it
+ * lets through is one the flat door drops, so the shape an author wrote decided whether their
+ * mistake was caught.
+ */
+export function isSafeDynamicName(name: string): boolean {
+  return isSafeDynamicSegment(name) && !name.includes(MDY_ID_DELIMITER) && !/\s/.test(name);
+}
+
 export function assertSafeDynamicName(name: string): void {
   if (name.includes(MDY_ID_DELIMITER)) {
     throw new Error(
