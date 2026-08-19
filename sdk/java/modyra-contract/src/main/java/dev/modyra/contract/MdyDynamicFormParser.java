@@ -7,7 +7,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Deque;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -38,6 +40,11 @@ public final class MdyDynamicFormParser {
   private static final Set<String> FORBIDDEN_NAMES = Set.of("__proto__", "prototype", "constructor");
 
   private static final Set<String> SCHEMA_NODE_KINDS = Set.of("field", "group", "array", "record");
+  /** The operators an expression may name, mirroring {@code MdyExpressionOp}. */
+  private static final Set<String> EXPRESSION_OPS = Set.of(
+      "equals", "notEquals", "isEmpty", "isNotEmpty", "lengthAtLeast", "lengthAtMost",
+      "greaterThan", "greaterThanOrEqual", "lessThan", "lessThanOrEqual",
+      "in", "notIn", "matches", "and", "or", "not");
   private static final Set<String> RULE_EFFECTS = Set.of("visible", "hidden", "enabled", "disabled");
   private static final Set<String> RULE_OPERATORS = Set.of(
       "equals", "notEquals", "in", "notIn", "isEmpty", "isNotEmpty",
@@ -117,13 +124,26 @@ public final class MdyDynamicFormParser {
     } else if (root.isObject() && isStructuredVersion(root.path("version").asInt(-1)) && root.has("schema")) {
       version = root.path("version").asInt();
       List<MdyDynamicDiagnostic> schemaDiagnostics = new ArrayList<>();
-      validateSchema(root.get("schema"), "/schema", 0, schemaDiagnostics, new int[]{0});
+      Set<String> contextKeys = new LinkedHashSet<>();
+      validateSchema(root.get("schema"), "/schema", 0, schemaDiagnostics, new int[]{0}, contextKeys);
+      // A key a condition reads and the document does not declare. `requiresContext` is the whole of
+      // what tells a host which values to supply, so a key missing from it is one no host would think
+      // to pass — and a condition that cannot be read decides false, hiding the fields it guards.
+      Set<String> declared = new LinkedHashSet<>();
+      JsonNode requires = root.path("requiresContext");
+      if (requires.isArray()) for (JsonNode key : requires) if (key.isTextual()) declared.add(key.asText());
+      for (String key : contextKeys) {
+        if (!declared.contains(key)) {
+          schemaDiagnostics.add(new MdyDynamicDiagnostic("MDY_DYNAMIC_UNDECLARED_CONTEXT", MdyDynamicDiagnostic.ERROR, "/schema",
+              "a condition reads context \"" + key + "\", which the document does not declare in requiresContext."));
+        }
+      }
       diagnostics.addAll(schemaDiagnostics);
       accepted = schemaDiagnostics.isEmpty() ? flattenSchema(root.get("schema")) : List.of();
       sourceCount = accepted.size();
     } else if (root.isObject() && root.has("fields")) {
       int v = root.path("version").isInt() ? root.path("version").asInt() : -1;
-      if (v != 1 && v != 2 && v != 3) {
+      if (v != 1 && v != 2 && v != 3 && v != 4) {
         return new MdyDynamicFormParseResult(false, null, List.of(), List.of(), List.of(), List.of(), 0, 0);
       }
       version = v;
@@ -145,6 +165,13 @@ public final class MdyDynamicFormParser {
           0, 0);
     }
 
+    // A member the document's version predates. `requiresContext` arrived with v4, so a v2 or v3
+    // document carrying it declares a need nothing acts on — the answer the TypeScript reader gives,
+    // so one contract does not say two things to one author.
+    if (version != null && version < 4 && root.isObject() && root.has("requiresContext")) {
+      diagnostics.add(new MdyDynamicDiagnostic("MDY_DYNAMIC_UNSUPPORTED_VERSION", MdyDynamicDiagnostic.ERROR, "/requiresContext",
+          "requiresContext arrived with version 4, and this document says " + version + "."));
+    }
     Set<String> names = new HashSet<>();
     for (MdyDynamicField field : accepted) names.add(field.name());
     List<JsonNode> layout = new ArrayList<>();
@@ -239,6 +266,18 @@ public final class MdyDynamicFormParser {
    * nothing afterwards, so it is gone rather than threaded through inert.
    */
   private void validateSchema(JsonNode node, String path, int depth, List<MdyDynamicDiagnostic> out, int[] count) {
+    validateSchema(node, path, depth, out, count, new HashSet<>());
+  }
+
+  /**
+   * Walks a schema, reporting what it cannot use, and collecting the context keys its conditions
+   * read.
+   *
+   * A condition — contract v4's {@code when} and {@code asyncWhen} — is checked as a shape rather
+   * than evaluated: this reader says whether a document is a document, and a clause it cannot check
+   * is one a host would find out about only when a field failed to appear.
+   */
+  private void validateSchema(JsonNode node, String path, int depth, List<MdyDynamicDiagnostic> out, int[] count, Set<String> contextKeys) {
     count[0]++;
     if (depth > SCHEMA_MAX_DEPTH || count[0] > SCHEMA_MAX_NODES) {
       out.add(new MdyDynamicDiagnostic("MDY_DYNAMIC_SCHEMA_LIMIT", MdyDynamicDiagnostic.ERROR, path, "schema exceeds depth/node limits."));
@@ -248,6 +287,10 @@ public final class MdyDynamicFormParser {
     if (!node.isObject() || kind == null || !SCHEMA_NODE_KINDS.contains(kind)) {
       out.add(new MdyDynamicDiagnostic("MDY_DYNAMIC_INVALID_NODE", MdyDynamicDiagnostic.ERROR, path, "node must be field, group, array, or record."));
       return;
+    }
+    for (String member : List.of("when", "asyncWhen")) {
+      JsonNode clause = node.path(member);
+      if (!clause.isMissingNode()) validateExpression(clause, path + "/" + member, out, contextKeys);
     }
     if (kind.equals("field")) {
       if (!node.path("field").isObject()) {
@@ -267,7 +310,7 @@ public final class MdyDynamicFormParser {
         if (!isSafeSegment(key)) {
           out.add(new MdyDynamicDiagnostic("MDY_DYNAMIC_UNSAFE_NAME", MdyDynamicDiagnostic.ERROR, childPath, "unsafe child name."));
         } else {
-          validateSchema(entry.getValue(), childPath, depth + 1, out, count);
+          validateSchema(entry.getValue(), childPath, depth + 1, out, count, contextKeys);
         }
       }
       return;
@@ -277,7 +320,7 @@ public final class MdyDynamicFormParser {
       if (!item.isObject()) {
         out.add(new MdyDynamicDiagnostic("MDY_DYNAMIC_INVALID_RECORD", MdyDynamicDiagnostic.ERROR, path, "record requires an item node."));
       } else {
-        validateSchema(item, path + "/item", depth + 1, out, count);
+        validateSchema(item, path + "/item", depth + 1, out, count, contextKeys);
       }
       JsonNode rows = node.path("initialValue");
       if (!rows.isMissingNode() && !rows.isObject()) {
@@ -499,9 +542,46 @@ public final class MdyDynamicFormParser {
     return true;
   }
 
+  /**
+   * Reports what an expression gets wrong, and collects the context keys it reads.
+   *
+   * An object operand is one of the four the contract names — {@code path}, {@code self},
+   * {@code root}, {@code context} — or a nested expression. An object that is none of them is a
+   * reference reading nothing, which is what a hand-written document gets wrong.
+   */
+  private void validateExpression(JsonNode expression, String path, List<MdyDynamicDiagnostic> out, Set<String> contextKeys) {
+    if (!expression.isObject() || !expression.path("op").isTextual()) {
+      out.add(new MdyDynamicDiagnostic("MDY_DYNAMIC_INVALID_CONDITION", MdyDynamicDiagnostic.ERROR, path, "expected an expression object with an op."));
+      return;
+    }
+    Deque<JsonNode> pending = new ArrayDeque<>();
+    pending.push(expression);
+    while (!pending.isEmpty()) {
+      JsonNode operand = pending.pop();
+      if (!operand.isObject()) continue;
+      if (operand.has("op")) {
+        if (!operand.path("op").isTextual() || !EXPRESSION_OPS.contains(operand.path("op").asText())) {
+          out.add(new MdyDynamicDiagnostic("MDY_DYNAMIC_INVALID_CONDITION", MdyDynamicDiagnostic.ERROR, path, "expression names an operator this contract does not have."));
+        }
+        JsonNode single = operand.path("operand");
+        if (!single.isMissingNode()) pending.push(single);
+        JsonNode list = operand.path("operands");
+        if (list.isArray()) for (JsonNode each : list) pending.push(each);
+        continue;
+      }
+      if (operand.path("context").isTextual()) {
+        contextKeys.add(operand.path("context").asText());
+        continue;
+      }
+      if (operand.has("path") || operand.has("self") || operand.has("root")) continue;
+      out.add(new MdyDynamicDiagnostic("MDY_DYNAMIC_INVALID_CONDITION", MdyDynamicDiagnostic.ERROR, path,
+          "an object operand must be {path}, {self}, {root}, {context} or a nested expression."));
+    }
+  }
+
   /** Whether a structured envelope carries a schema and a layout — v2 and everything after it. */
   private static boolean isStructuredVersion(int version) {
-    return version == 2 || version == 3;
+    return version == 2 || version == 3 || version == 4;
   }
 
   /**

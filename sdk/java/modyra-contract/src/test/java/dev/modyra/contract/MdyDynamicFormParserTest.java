@@ -32,6 +32,12 @@ class MdyDynamicFormParserTest {
     return Files.readString(SPEC_FIXTURES_V3.resolve(name));
   }
 
+  private static final Path SPEC_FIXTURES_V4 = Path.of("../../../spec/fixtures/dynamic-form/v4");
+
+  private static String readV4Fixture(String name) throws IOException {
+    return Files.readString(SPEC_FIXTURES_V4.resolve(name));
+  }
+
   private final MdyDynamicFormParser parser = new MdyDynamicFormParser();
 
   @Test
@@ -345,9 +351,63 @@ class MdyDynamicFormParserTest {
         + "\"layout\":[{\"kind\":\"columns\",\"id\":\"r\",\"columns\":[[\"a\"],[{\"ref\":\"b\"}]]}]}";
     assertTrue(parser.parse(plainSlot, MdyDynamicFormParser.Mode.STRICT).ok());
 
-    // A version this parser has never heard of is still refused.
-    String v4 = "{\"version\":4,\"fields\":[{\"name\":\"a\",\"kind\":\"text\"}]}";
-    assertFalse(parser.parse(v4, MdyDynamicFormParser.Mode.STRICT).ok());
+    // A version this parser has never heard of is still refused. Four is one it has: v4 is v3 plus a
+    // condition on a node and the context keys a document declares it reads.
+    String v5 = "{\"version\":5,\"fields\":[{\"name\":\"a\",\"kind\":\"text\"}]}";
+    assertFalse(parser.parse(v5, MdyDynamicFormParser.Mode.STRICT).ok());
+  }
+
+  /**
+   * The shared corpus's v4 documents, read by this parser.
+   *
+   * The corpus is what makes one contract out of three implementations: the same documents, the same
+   * verdict. A fixture's context lives in a twin file beside it (ADR 0098) and is not read here —
+   * this parser says whether a document is a document, and supplying context is a host's part of
+   * building a form.
+   */
+  @Test
+  void acceptsTheSharedV4Fixtures() throws IOException {
+    for (String name : new String[]{"conditional-tree.json", "self-and-root.json", "context-conditions.json"}) {
+      MdyDynamicFormParseResult result = parser.parse(readV4Fixture(name), MdyDynamicFormParser.Mode.STRICT);
+      assertTrue(result.ok(), () -> "a published v4 fixture was refused: " + name + " " + result.diagnostics());
+      assertEquals(4, result.version());
+    }
+  }
+
+  /**
+   * The three readers of this contract accept the same versions, and read v4's own members.
+   *
+   * A document rendered by one runtime and refused by two is not one contract, and v4 carries the
+   * conditional semantics — so it is where disagreeing costs the most. The clause is checked as a
+   * shape: this parser says whether a document is a document, and building a form is the runtime's
+   * work.
+   */
+  @Test
+  void readsAV4DocumentAndTheContextItDeclares() {
+    String declared = "{\"version\":4,\"requiresContext\":[\"tier\"],"
+        + "\"schema\":{\"node\":\"group\",\"children\":{"
+        + "\"vat\":{\"node\":\"field\",\"field\":{\"kind\":\"text\"},"
+        + "\"when\":{\"op\":\"equals\",\"operands\":[{\"context\":\"tier\"},\"business\"]}}}}}";
+    assertTrue(parser.parse(declared, MdyDynamicFormParser.Mode.STRICT).ok());
+
+    String undeclared = "{\"version\":4,"
+        + "\"schema\":{\"node\":\"group\",\"children\":{"
+        + "\"vat\":{\"node\":\"field\",\"field\":{\"kind\":\"text\"},"
+        + "\"when\":{\"op\":\"equals\",\"operands\":[{\"context\":\"tier\"},\"business\"]}}}}}";
+    assertTrue(parser.parse(undeclared, MdyDynamicFormParser.Mode.LENIENT).diagnostics().stream()
+        .anyMatch(d -> d.code().equals("MDY_DYNAMIC_UNDECLARED_CONTEXT")));
+
+    String malformed = "{\"version\":4,\"requiresContext\":[\"tier\"],"
+        + "\"schema\":{\"node\":\"group\",\"children\":{"
+        + "\"vat\":{\"node\":\"field\",\"field\":{\"kind\":\"text\"},"
+        + "\"when\":{\"op\":\"equals\",\"operands\":[{\"nonsense\":\"tier\"},\"business\"]}}}}}";
+    assertTrue(parser.parse(malformed, MdyDynamicFormParser.Mode.LENIENT).diagnostics().stream()
+        .anyMatch(d -> d.code().equals("MDY_DYNAMIC_INVALID_CONDITION")));
+
+    // And a member the version predates, the same answer the TypeScript and Rust readers give.
+    String early = "{\"version\":3,\"requiresContext\":[\"tier\"],\"fields\":[{\"name\":\"a\",\"kind\":\"text\"}]}";
+    assertTrue(parser.parse(early, MdyDynamicFormParser.Mode.LENIENT).diagnostics().stream()
+        .anyMatch(d -> d.code().equals("MDY_DYNAMIC_UNSUPPORTED_VERSION")));
   }
 
   /**

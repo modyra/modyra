@@ -970,6 +970,7 @@ export const MDY_DYNAMIC_DIAGNOSTICS: ReadonlyArray<{
   { code: "MDY_DYNAMIC_PATTERN_TOO_COSTLY", phrase: "backtracks exponentially" },
   { code: "MDY_DYNAMIC_COUNT_INCOMPLETE", phrase: "a floor and not a total" },
   { code: "MDY_DYNAMIC_UNKNOWN_MEMBER", phrase: "which this contract does not declare" },
+  { code: "MDY_DYNAMIC_DEPRECATED_VERSION", phrase: "Version 1 is deprecated" },
 ];
 
 /** What a refusal is called when none of the named ones fits. */
@@ -1571,6 +1572,33 @@ export function parseDynamicForm(
   // wrong version number got a document the parser called clean, a lint that had nothing to report,
   // and a form where the rules simply were not there. Reported rather than accepted, because the
   // three ways they could have learned are the three that said nothing.
+  // Version 1 is still read, and it is the oldest shape there is: no published schema describes it,
+  // no fixture measures it, and the two other runtimes of this contract do not have it. A document
+  // written against it is told, once, in the one place that reads it. A bare field array is not that
+  // document: it declares no version at all, and it is the shape most callers pass.
+  if (envelope?.version === 1) {
+    diagnostics.push({
+      code: "MDY_DYNAMIC_DEPRECATED_VERSION",
+      severity: "warning",
+      path: "/version",
+      message:
+        "Version 1 is deprecated: it declares fields and nothing else, no published schema " +
+        "describes it, and the Rust and Java readers of this contract do not have it. Raise the " +
+        'document to "version": 2, which reads the same fields.',
+    });
+  }
+  // A member the document's version predates, on the envelope. `requiresContext` arrived with v4 and
+  // is read by the builder, so a v2 or v3 document carrying it declares a need nothing acts on.
+  if (envelope?.requiresContext !== undefined && version !== null && version < 4) {
+    diagnostics.push({
+      code: "MDY_DYNAMIC_UNSUPPORTED_VERSION",
+      severity: "error",
+      path: "/requiresContext",
+      message:
+        `Unsupported dynamic form config version for "requiresContext": it arrived with version 4, ` +
+        `and this document says ${version}. Set "version": 4 to use it.`,
+    });
+  }
   if (!structured && envelope) {
     for (const slot of ["layout", "rules", "validations"] as const) {
       if (envelope[slot] === undefined) continue;

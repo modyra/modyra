@@ -47,10 +47,11 @@ fn validators(required: bool) -> Validators {
 }
 
 fn field(kind: &str, label: &str, initial: Option<Value>, validators: Option<Validators>) -> DynamicNode {
-    DynamicNode::Field { field: Field {
+    DynamicNode::Field { when: None, async_when: None, field: Field {
         name: "leaf".into(), kind: kind.into(), label: Some(label.into()),
         placeholder: None, initial_value: initial, validators,
         min: None, max: None, step: None, options: None,
+        mode: None, searchable: None,
     }}
 }
 
@@ -59,19 +60,20 @@ fn checkout_form(config: &CheckoutConfiguration) -> DynamicFormV2 {
         value: json!(country.code), label: country.label.clone(), disabled: None,
     }).collect();
     let mut country = match field("select", "Country", Some(json!(config.default_country)), Some(validators(true))) {
-        DynamicNode::Field { field } => field,
+        DynamicNode::Field { field, .. } => field,
         _ => unreachable!(),
     };
     country.options = Some(country_options);
 
     let mut qty = match field("number", "Quantity", Some(json!(1)), Some(Validators { min: Some(1.0), ..validators(true) })) {
-        DynamicNode::Field { field } => field,
+        DynamicNode::Field { field, .. } => field,
         _ => unreachable!(),
     };
     qty.min = Some(1.0); qty.max = Some(100.0); qty.step = Some(1.0);
 
     let shipping = DynamicNode::Group {
         label: Some("Shipping address".into()),
+        when: None,
         children: BTreeMap::from([
             ("city".into(), field("text", "City", None, Some(validators(true)))),
             ("zip".into(), field("text", "ZIP", None, Some(Validators { pattern: Some("^\\d{5}$".into()), ..validators(true) }))),
@@ -79,18 +81,21 @@ fn checkout_form(config: &CheckoutConfiguration) -> DynamicFormV2 {
     };
     let item = DynamicNode::Group {
         label: None,
+        when: None,
         children: BTreeMap::from([
             ("sku".into(), field("text", "SKU", None, Some(validators(true)))),
-            ("qty".into(), DynamicNode::Field { field: qty }),
+            ("qty".into(), DynamicNode::Field { field: qty, when: None, async_when: None }),
         ]),
     };
     let schema = DynamicNode::Group {
         label: Some("Checkout".into()),
+        when: None,
         children: BTreeMap::from([
-            ("country".into(), DynamicNode::Field { field: country }),
+            ("country".into(), DynamicNode::Field { field: country, when: None, async_when: None }),
             ("shipping".into(), shipping),
             ("items".into(), DynamicNode::Array {
                 label: Some("Items".into()),
+                when: None,
                 item: Box::new(item),
                 initial_value: vec![json!({ "sku": config.default_sku, "qty": config.default_quantity })],
                 min_items: Some(1), max_items: Some(20),
@@ -101,7 +106,7 @@ fn checkout_form(config: &CheckoutConfiguration) -> DynamicFormV2 {
 
     DynamicFormV2 {
         version: 2, id: Some("checkout".into()), fields: vec![],
-        schema: Some(schema), layout: vec![], rules: vec![],
+        schema: Some(schema), layout: vec![], rules: vec![], requires_context: vec![],
     }
 }
 

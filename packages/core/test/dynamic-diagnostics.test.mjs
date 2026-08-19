@@ -67,6 +67,8 @@ const REFUSALS = {
   // A member nobody declared, in the slot a document is most often assembled by hand: the parser is
   // the only one of the three checks a stored or generated document ever meets.
   MDY_DYNAMIC_UNKNOWN_MEMBER: [{ name: "a", kind: "text", nonsenseKey: 1 }],
+  // The oldest shape of the contract, still read and no longer recommended.
+  MDY_DYNAMIC_DEPRECATED_VERSION: { version: 1, fields: [{ name: "a", kind: "text" }] },
   MDY_DYNAMIC_COUNT_INCOMPLETE: (() => {
     const children = {};
     for (let index = 0; index <= 100_000; index += 1) {

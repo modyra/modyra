@@ -28,9 +28,12 @@ fn serializes_recursive_schema_without_null_optionals() {
         fields: vec![],
         schema: Some(DynamicNode::Group {
             label: None,
+            when: None,
             children: BTreeMap::from([(
                 "city".into(),
                 DynamicNode::Field {
+                    when: None,
+                    async_when: None,
                     field: Field {
                         name: "leaf".into(),
                         kind: "text".into(),
@@ -50,6 +53,7 @@ fn serializes_recursive_schema_without_null_optionals() {
         }),
         layout: vec![],
         rules: vec![],
+        requires_context: vec![],
     };
 
     let value = serde_json::to_value(form).unwrap();
@@ -152,10 +156,58 @@ fn refuses_placement_where_no_column_can_honour_it() {
     let result = parse_v2(past_the_end, ValidationMode::Strict).unwrap();
     assert!(!result.valid, "a column the row does not have must be refused");
 
-    // And a version this SDK has never heard of is still refused.
-    let v4 = r#"{"version":4,"fields":[{"name":"a","kind":"text"}]}"#;
-    let result = parse_v2(v4, ValidationMode::Strict).unwrap();
+    // And a version this SDK has never heard of is still refused. Four is one it has: v4 is v3 plus
+    // a condition on a node and the context keys a document declares it reads.
+    let v5 = r#"{"version":5,"fields":[{"name":"a","kind":"text"}]}"#;
+    let result = parse_v2(v5, ValidationMode::Strict).unwrap();
     assert!(result.diagnostics.iter().any(|d| d.code == "MDY_DYNAMIC_UNSUPPORTED_VERSION"));
+}
+
+/// The three readers of this contract accept the same versions, and read v4's own members.
+///
+/// A document rendered by one runtime and refused by two is not one contract, and v4 is the version
+/// that carries the conditional semantics — so it is the one where disagreeing costs the most. The
+/// clause is checked as a shape here: this SDK says whether a document is a document, and building
+/// a form from it is the runtime's work.
+#[test]
+fn reads_a_v4_document_and_the_context_it_declares() {
+    let declared = r#"{"version":4,"requiresContext":["tier"],
+        "schema":{"node":"group","children":{
+          "vat":{"node":"field","field":{"kind":"text"},
+                 "when":{"op":"equals","operands":[{"context":"tier"},"business"]}}}}}"#;
+    let result = parse_v2(declared, ValidationMode::Strict).unwrap();
+    assert!(result.valid, "a v4 document was refused: {:?}", result.diagnostics);
+
+    // A key read and not declared: the host is told what to supply by `requiresContext` alone, so a
+    // key missing from it is one no host would think to pass.
+    let undeclared = r#"{"version":4,
+        "schema":{"node":"group","children":{
+          "vat":{"node":"field","field":{"kind":"text"},
+                 "when":{"op":"equals","operands":[{"context":"tier"},"business"]}}}}}"#;
+    let result = parse_v2(undeclared, ValidationMode::Strict).unwrap();
+    assert!(result
+        .diagnostics
+        .iter()
+        .any(|d| d.code == "MDY_DYNAMIC_UNDECLARED_CONTEXT"));
+
+    // An operand shape the contract does not have, in a clause a reader would otherwise carry.
+    let malformed = r#"{"version":4,
+        "schema":{"node":"group","children":{
+          "vat":{"node":"field","field":{"kind":"text"},
+                 "when":{"op":"equals","operands":[{"nonsense":"tier"},"business"]}}}}}"#;
+    let result = parse_v2(malformed, ValidationMode::Strict).unwrap();
+    assert!(result
+        .diagnostics
+        .iter()
+        .any(|d| d.code == "MDY_DYNAMIC_INVALID_CONDITION"));
+
+    // And a member the version predates, the same answer the TypeScript reader gives.
+    let early = r#"{"version":3,"requiresContext":["tier"],"fields":[{"name":"a","kind":"text"}]}"#;
+    let result = parse_v2(early, ValidationMode::Strict).unwrap();
+    assert!(result
+        .diagnostics
+        .iter()
+        .any(|d| d.code == "MDY_DYNAMIC_UNSUPPORTED_VERSION"));
 }
 
 /// A mode survives a round trip, and an unknown one is reported rather than carried.
@@ -269,4 +321,25 @@ fn a_collection_nests_without_a_limit() {
         .diagnostics
         .iter()
         .any(|d| d.code == "MDY_DYNAMIC_UNSAFE_NAME"));
+}
+
+/// The shared corpus's v4 documents, read by this SDK.
+///
+/// The corpus is what makes one contract out of three implementations: the same documents, the same
+/// verdict. A version present in one reader and absent from two is the shape that costs the most,
+/// and v4 is the version that carries the conditions.
+#[test]
+fn accepts_the_shared_v4_fixtures() {
+    for json in [
+        include_str!("../../../../spec/fixtures/dynamic-form/v4/conditional-tree.json"),
+        include_str!("../../../../spec/fixtures/dynamic-form/v4/self-and-root.json"),
+        include_str!("../../../../spec/fixtures/dynamic-form/v4/context-conditions.json"),
+    ] {
+        let result = parse_v2(json, ValidationMode::Strict).unwrap();
+        assert!(
+            result.valid,
+            "a published v4 fixture was refused: {:?}",
+            result.diagnostics
+        );
+    }
 }

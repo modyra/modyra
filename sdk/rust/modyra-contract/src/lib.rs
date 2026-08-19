@@ -46,6 +46,10 @@ pub struct Validators {
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Field {
+    /// The name a field carries in the flat list. In the tree the parent's key is the name — the
+    /// contract's own type removes it there — so a document written as a tree has none to read, and
+    /// requiring it made this reader refuse documents the runtime builds.
+    #[serde(default)]
     pub name: String,
     pub kind: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -229,6 +233,107 @@ pub struct Condition {
     pub value: Option<Value>,
 }
 
+/// The operators an expression may name, mirroring `MdyExpressionOp`.
+const EXPRESSION_OPS: &[&str] = &[
+    "equals",
+    "notEquals",
+    "isEmpty",
+    "isNotEmpty",
+    "lengthAtLeast",
+    "lengthAtMost",
+    "greaterThan",
+    "greaterThanOrEqual",
+    "lessThan",
+    "lessThanOrEqual",
+    "in",
+    "notIn",
+    "matches",
+    "and",
+    "or",
+    "not",
+];
+
+/// A condition written on a node, as contract v4 declares it.
+///
+/// Read as a shape rather than evaluated: this reader says whether a document is a document, and a
+/// clause it cannot check is a clause a host would find out about only when a field failed to
+/// appear. Evaluating it is the runtime's work, and this SDK does not build forms.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct Expression {
+    pub op: String,
+
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub operand: Option<Value>,
+
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub operands: Option<Vec<Value>>,
+}
+
+/// Reports what an expression gets wrong, and collects the context keys it reads.
+///
+/// An object operand is one of the four the contract names — `{path}`, `{self}`, `{root}`,
+/// `{context}` — or a nested expression. Anything else is a literal only when it is not an object:
+/// an object nobody declared is a reference that reads nothing, which is the shape a hand-written
+/// document gets wrong.
+fn validate_expression(
+    expression: &Expression,
+    path: &str,
+    out: &mut Vec<Diagnostic>,
+    context_keys: &mut Vec<String>,
+) {
+    if !EXPRESSION_OPS.contains(&expression.op.as_str()) {
+        out.push(diag(
+            "MDY_DYNAMIC_INVALID_CONDITION",
+            path,
+            "expression names an operator this contract does not have",
+        ));
+    }
+    let mut operands: Vec<&Value> = Vec::new();
+    if let Some(operand) = &expression.operand {
+        operands.push(operand);
+    }
+    if let Some(list) = &expression.operands {
+        operands.extend(list.iter());
+    }
+    let mut pending: Vec<&Value> = operands;
+    while let Some(operand) = pending.pop() {
+        let Some(object) = operand.as_object() else { continue };
+        if let Some(op) = object.get("op") {
+            // A nested expression: the same rules, one level down, over the same stack.
+            if !op
+                .as_str()
+                .is_some_and(|op| EXPRESSION_OPS.contains(&op))
+            {
+                out.push(diag(
+                    "MDY_DYNAMIC_INVALID_CONDITION",
+                    path,
+                    "expression names an operator this contract does not have",
+                ));
+            }
+            if let Some(inner) = object.get("operand") {
+                pending.push(inner);
+            }
+            if let Some(list) = object.get("operands").and_then(Value::as_array) {
+                pending.extend(list.iter());
+            }
+            continue;
+        }
+        if let Some(key) = object.get("context").and_then(Value::as_str) {
+            context_keys.push(key.to_string());
+            continue;
+        }
+        if object.contains_key("path") || object.contains_key("self") || object.contains_key("root")
+        {
+            continue;
+        }
+        out.push(diag(
+            "MDY_DYNAMIC_INVALID_CONDITION",
+            path,
+            "an object operand must be {path}, {self}, {root}, {context} or a nested expression",
+        ));
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Rule {
     pub effect: String,
@@ -241,17 +346,31 @@ pub struct Rule {
 pub enum DynamicNode {
     Field {
         field: Field,
+
+        /// Contract v4: whether this field is in play, decided from the form and the host's context.
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        when: Option<Expression>,
+
+        /// Contract v4: whether this field's asynchronous validation runs.
+        #[serde(default, rename = "asyncWhen", skip_serializing_if = "Option::is_none")]
+        async_when: Option<Expression>,
     },
     Group {
         #[serde(default, skip_serializing_if = "Option::is_none")]
         label: Option<String>,
         children: std::collections::BTreeMap<String, DynamicNode>,
+
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        when: Option<Expression>,
     },
     Array {
         #[serde(default, skip_serializing_if = "Option::is_none")]
         label: Option<String>,
 
         item: Box<DynamicNode>,
+
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        when: Option<Expression>,
 
         #[serde(
             default,
@@ -275,6 +394,9 @@ pub enum DynamicNode {
         label: Option<String>,
 
         item: Box<DynamicNode>,
+
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        when: Option<Expression>,
 
         #[serde(
             default,
@@ -303,6 +425,14 @@ pub struct DynamicFormV2 {
 
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub rules: Vec<Rule>,
+
+    /// Contract v4: the context keys this document's conditions read, declared for the host.
+    #[serde(
+        default,
+        rename = "requiresContext",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub requires_context: Vec<String>,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -351,11 +481,21 @@ pub fn parse_v2(json: &str, mode: ValidationMode) -> Result<ValidationResult, se
     // so a v3 document parses here exactly as a v2 one does. Studio emits v3 the
     // moment a layout places a slot per breakpoint, and refusing it outright made
     // a form authored responsively unreadable by this SDK.
-    if form.version != 2 && form.version != 3 {
+    if form.version != 2 && form.version != 3 && form.version != 4 {
         d.push(diag(
             "MDY_DYNAMIC_UNSUPPORTED_VERSION",
             "/version",
-            "expected contract version 2 or 3",
+            "expected contract version 2, 3 or 4",
+        ));
+    }
+    // A member the document's version predates. `requiresContext` arrived with v4, and a v2 or v3
+    // document carrying it declares a need nothing acts on — the same answer the TypeScript reader
+    // gives, so an author is not told two different things by two readers of one contract.
+    if !form.requires_context.is_empty() && form.version < 4 {
+        d.push(diag(
+            "MDY_DYNAMIC_UNSUPPORTED_VERSION",
+            "/requiresContext",
+            "requiresContext arrived with version 4",
         ));
     }
     let mut names = HashSet::new();
@@ -469,8 +609,21 @@ pub fn parse_v2(json: &str, mode: ValidationMode) -> Result<ValidationResult, se
             ));
         }
     }
+    let mut context_keys: Vec<String> = Vec::new();
     if let Some(schema) = &form.schema {
-        validate_node(schema, "/schema", &mut d);
+        validate_node(schema, "/schema", &mut d, &mut context_keys);
+    }
+    // A key a condition reads and the document does not declare. The host is told what to supply by
+    // `requiresContext` alone, so a key missing from it is one no host would think to pass — and a
+    // condition that cannot be read decides false, hiding the fields it guards.
+    for key in &context_keys {
+        if !form.requires_context.contains(key) {
+            d.push(diag(
+                "MDY_DYNAMIC_UNDECLARED_CONTEXT",
+                "/schema",
+                "a condition reads a context key the document does not declare in requiresContext",
+            ));
+        }
     }
     let valid = d.is_empty();
     Ok(ValidationResult {
@@ -496,12 +649,33 @@ pub fn parse_v2(json: &str, mode: ValidationMode) -> Result<ValidationResult, se
 /// record below a positional level may hold one. Both were refused here, matching a rule ADR 0043
 /// removed from the engine — so this SDK told an author their document was invalid while the runtime
 /// accepted it.
-fn validate_node(node: &DynamicNode, path: &str, out: &mut Vec<Diagnostic>) {
+fn validate_node(
+    node: &DynamicNode,
+    path: &str,
+    out: &mut Vec<Diagnostic>,
+    context_keys: &mut Vec<String>,
+) {
     let mut pending: Vec<(&DynamicNode, String)> = vec![(node, path.to_string())];
 
     while let Some((node, path)) = pending.pop() {
+        // A condition written on this node, whichever kind of node it is. Checked as a shape and
+        // read for the context keys it names, which is what a document's `requiresContext` is held
+        // against.
+        for (clause, member) in match node {
+            DynamicNode::Field { when, async_when, .. } => [when.as_ref(), async_when.as_ref()],
+            DynamicNode::Group { when, .. }
+            | DynamicNode::Array { when, .. }
+            | DynamicNode::Record { when, .. } => [when.as_ref(), None],
+        }
+        .into_iter()
+        .zip(["when", "asyncWhen"])
+        {
+            if let Some(clause) = clause {
+                validate_expression(clause, &format!("{path}/{member}"), out, context_keys);
+            }
+        }
         match node {
-            DynamicNode::Field { field } => {
+            DynamicNode::Field { field, .. } => {
                 if !KINDS.contains(&field.kind.as_str()) {
                     out.push(diag("MDY_DYNAMIC_UNKNOWN_KIND", &path, "unknown field kind"));
                 }
