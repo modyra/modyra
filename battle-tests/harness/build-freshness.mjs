@@ -14,6 +14,9 @@
  *
  * `packages/angular/dist` is the case that prompted this: it is written only by `build:angular`,
  * which no other command runs, so it is the stalest artefact in the workspace by construction.
+ *
+ * @source-inspection — comparing a package's newest source against its built output is what this
+ * file is for. It reads timestamps, never contents.
  */
 
 import { readdirSync, statSync } from "node:fs";

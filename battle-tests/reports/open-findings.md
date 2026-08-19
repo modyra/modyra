@@ -13620,6 +13620,37 @@ core predicate makes no hierarchical claim to falsify. Recorded with both measur
 number, because the repair is one line and the sentence is one line.
 
 
+## The black-box audit had two holes, found by running broken files past it (harness, repaired)
+
+The rule every finding in this register rests on is that the suite may only use the doors a consumer
+has. The audit that enforces it reads import specifiers. Seven deliberately broken files were written
+and run past it — a relative import into `packages/*/src`, a `@modyra/core/src/…` subpath, a
+`require` of built output, a dynamic import, a re-export, a `readFileSync` of a source file, and a
+reach for `form._adapter`.
+
+**Five were caught. Two were not**, and both are constraints this suite states:
+
+- **reading a package's source instead of importing it.** A path built with `resolve()` and `join()`
+  leaves no specifier, so nothing saw it — and three battles were already doing it: findings 37 and
+  92 walk the sources because *"nothing reads this capability"* and *"this name is shadowed"* are
+  facts about the source graph that no public door exposes, and the theme battle reads authored CSS
+  for the same reason. Legitimate, and undeclared, which made the rule "anyone may, as long as they
+  build the path".
+- **reaching for a private member.** `form._adapter` is not an import at all. It is the one
+  constraint this suite carries that nothing verified — and, measured, nothing in the suite was
+  violating it.
+
+Repaired in `harness/black-box-audit.mjs`: a file that reads the filesystem while naming both
+`packages` and a `src` directory must declare `@source-inspection` **with its reason on the same
+line**, and a dotted member beginning with an underscore is a violation. Generated trees are skipped,
+because a browser host is a bundle of the packages themselves and every private member the product
+uses would read as the suite reaching for one.
+
+The five source-reading files now say why. Re-run against the same seven mutants: both previously
+missed defects are caught, and a *declared* source read passes. `harness.test.mjs` stays green at
+15/15, and the audit reports 0 violations over 439 files.
+
+
 ## A permission this suite grants itself and cannot exercise (harness)
 
 `battle-tests/harness/black-box-audit.mjs:6` names the specifiers a battle may import, and

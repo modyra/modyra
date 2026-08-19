@@ -17,6 +17,10 @@
  *
  * Read from the sources rather than from the built package: at runtime only the survivor exists, so
  * the shadowing is invisible from the outside — which is the whole reason it goes unnoticed.
+ *
+ * @source-inspection — a name declared in one module and star-exported from another is a property of
+ * the source graph. From outside, the shadowed export is simply absent, which is indistinguishable
+ * from never having existed. The walk asserts what the files declare, not what they do.
  */
 
 import { readFileSync, readdirSync, statSync } from "node:fs";

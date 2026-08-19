@@ -4,6 +4,9 @@
  * These are not battles: they attack the machinery every battle depends on. A suite whose reports
  * are not replayable, or which accepts a test that exercised nothing, produces green runs that mean
  * nothing at all — so the machinery is checked before anything it measures.
+ *
+ * @source-inspection — it builds a fake package with a `src` directory to exercise the freshness
+ * check above. Nothing here reads the real packages.
  */
 
 import { execFileSync } from "node:child_process";
