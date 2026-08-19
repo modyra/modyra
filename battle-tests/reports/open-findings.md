@@ -15742,6 +15742,45 @@ which asserts the flat and keyed halves as controls, asserts that the list is st
 repair cannot pass by removing the row, and finally asserts the two doors equal — the property, rather
 than either shape.
 
+## 259 — A change set its own door cannot read (S0, SUB-001 COL-001 COL-002)
+
+`getChanges()` returns `MdyFormPatch<S>` and `patch()` takes one: two published doors, one type. They
+read an array branch differently.
+
+```
+getChanges   a row may name only some of its cells — a withheld cell is not in it
+patch        a row is whole: a cell the row does not name goes back to its declared initial
+```
+
+So a change set carrying a partial row, fed back, rewrites cells nobody touched:
+
+```
+held        { list: [ { tag: "a", note: "EDIT0" }, … ] }   tag "a" is disabled
+changes     { list: [ {           note: "EDIT0" }, … ] }
+after patch { list: [ { tag: "t", note: "EDIT0" }, … ] }   "t" is the field's declared initial
+```
+
+`"t"` is a value nobody entered at any point: not the row's initial, not what the person typed — the
+*field declaration's* initial, which is what a row rebuilt from nothing gets. A server merging the
+same body leaves the column alone.
+
+The keyed branch is the contrast on the same operation: its rows are deep-partial, so
+`{rows:{a:{note:"EDIT"}}}` round-trips and `tag` survives.
+
+**Opened by ADR 0102's repair, and the repair was right.** Before it, `getChanges` carried the row
+whole from `getValue()` — which is why the array branch could be whole-item — and it carried disabled
+values out with it. Filling from `submitValue()` closes that and makes the row partial, which the
+array branch of `MdyFormPatch` does not describe.
+
+Two answers close it: an array branch that patches deep-partially like the keyed one, or a change set
+that names a whole row and says which of its cells are withheld. A third — widening `MdyFormPatch` —
+was considered and rejected in 0102 on the grounds that it invites the merge reading a whole-item
+write does not have; that argument is against widening the *type*, and this finding is about the two
+doors disagreeing whatever the type says.
+
+Held by `battle-tests/adversarial/submission/a-change-set-its-own-door-cannot-read.battle.test.mjs`,
+with the keyed round trip as the control.
+
 ## The register's own shape, measured
 
 ```
