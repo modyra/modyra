@@ -14990,7 +14990,7 @@ Neither is mine to close, and both are cheap: the first wants the body moved int
 `@modyra/widgets` or recorded with a reason, the second wants the classification reviewed and
 accepted.
 
-## 248 — Twenty-eight advisories, none of them shipped (S2, repository)
+## 248 — Twenty-eight advisories from `pnpm audit`, and the two trees it cannot see (S2, repository)
 
 `pnpm audit`: **10 high, 17 moderate, 1 low**. The number to state first is the one that decides what
 it costs:
@@ -15021,6 +15021,22 @@ runner, where several are denial-of-service or path-traversal shapes in build to
 repository files. A supply-chain finding in a build tool is not nothing merely because it is not
 shipped — but it is a different decision from one in `@modyra/core`, and the register should not blur
 them.
+
+**"None of them shipped" was true of what `pnpm audit` can see, and that is less than the
+repository.** It reads the pnpm workspace and nothing else. Two dependency trees are outside it:
+
+```
+sdk/java/modyra-contract/pom.xml   a Maven tree — see finding 251
+site/package-lock.json             the documentation site's own npm project, not this workspace
+```
+
+The second carries three runtime-scope alerts of its own — `nanoid` (high, `< 3.3.18`), `js-yaml`
+(high, `< 4.3.1`) and `postcss` (medium, `<= 8.5.22`). Not shipped to a consumer, but deployed as a
+website by a workflow in this repository.
+
+The lesson is about the instrument rather than the packages: **a clean `pnpm audit` is a statement
+about one manifest format.** GitHub's Dependabot reads all of them, and reading it is what found the
+one that matters.
 
 ## 249 — One renderer keeps a value the contract refuses (S1, UI-006, browser tier)
 
@@ -15109,6 +15125,39 @@ Worth knowing about that gate: **`battle-tests/` is not among its `TEST_ROOTS`**
 `packages/*/test`, `packages/angular/src/lib`, `docs/examples` and `e2e` — so nothing this suite
 exercises counts toward `asserted somewhere: 418`. That is a fact about the instrument rather than a
 defect, and it means the number understates coverage by however much this suite is worth.
+
+## 251 — A published SDK ships a dependency with two high advisories (S1, repository)
+
+`sdk/java/modyra-contract/pom.xml` declares one runtime dependency and pins it:
+
+```
+<jackson.version>2.18.2</jackson.version>      com.fasterxml.jackson.core:jackson-databind
+```
+
+Dependabot holds **seven open alerts against it, two of them high**, all in the range
+`>= 2.18.0, <= 2.18.8`, all patched in **2.18.9**:
+
+```
+high     array subtype allowlist bypass
+high     PolymorphicTypeValidator bypass
+medium   @JsonView bypassed for @JsonUnwrapped                (and three more @JsonView / @JsonIgnore bypasses)
+medium   InetSocketAddress deserialization
+```
+
+The scope is what makes this different from the other twenty-eight: `runtime`, on
+`dev.modyra:modyra-contract:0.1.0`. JUnit sits beside it in the same file marked *"Test-scope only —
+never bundled into the shipped artifact"*, which is exactly the distinction Jackson does not have.
+The shapes are deserialization bypasses in the library the SDK uses **to read documents that arrive
+from elsewhere** — the same untrusted input the whole dynamic contract is written around.
+
+The remedy is one line, inside the same minor: `2.18.2` → `2.18.9`. Not applied here, because it is a
+dependency change on a package this hunt does not own, and because it wants a build and the SDK's own
+tests to run behind it — `mvn` is not on this machine and `mvnw` is the only path.
+
+**Filed because `pnpm audit` said the opposite.** It reported twenty-eight advisories and not one of
+them touching a published package, which was true of every manifest it reads and false of the
+repository. Two trees are invisible to it, and the one carrying a shipped runtime dependency is the
+one it cannot see at all.
 
 ## The browser tier, measured — and now gated like the other one
 
@@ -15301,7 +15350,7 @@ the half-fix to overlay teardown did not close it on plain either.
 ## The register's own shape, measured
 
 ```
-numbered findings        250
+numbered findings        251
 closed or retracted       58
 open with a battle       207
 open with none            10
