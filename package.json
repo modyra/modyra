@@ -67,6 +67,7 @@
     "battle": "npm run build:packages && npm run build:plain && npm run battle:audit && node --test \"battle-tests/**/*.test.mjs\"",
     "battle:quick": "node --test \"battle-tests/adversarial/**/*.test.mjs\"",
     "battle:audit": "node battle-tests/harness/black-box-audit.mjs",
+    "battle:ci": "npm run build:packages && npm run build:plain && npm run battle:audit && node battle-tests/harness/against-baseline.mjs",
     "battle:generative": "node --test \"battle-tests/generative/**/*.test.mjs\"",
     "battle:angular": "npm run build:angular && node --test \"battle-tests/angular/*.battle.mjs\"",
     "battle:browser": "npm run build:plain && node battle-tests/browser/build.mjs && playwright test -c battle-tests/playwright.config.ts",

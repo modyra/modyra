@@ -47,11 +47,19 @@ jobs:
       - name: Black-box rule
         run: pnpm run battle:audit
 
+      # Against the recorded baseline rather than against zero. A hunt that files a red for every
+      # open defect makes this job permanently red, and a permanently red job stops being read —
+      # which costs exactly the signal it exists to carry. `battle:ci` fails on a battle that was
+      # not known to be failing, and only on that: a defect somebody closed is reported and does
+      # not fail, because closing one must never be the thing that breaks a build.
+      #
+      # The baseline is `battle-tests/reports/known-red.json`, a list of names rather than a count,
+      # rewritten with `pnpm run battle:ci -- --accept`.
       - name: Adversarial, differential and regression battles
         env:
           MDY_BATTLE_SEED: "20260814"
           MDY_BATTLE_RUNS: "25"
-        run: pnpm run battle
+        run: pnpm run battle:ci
 
       # The main glob is `battle-tests/**/*.test.mjs` and the Angular battles are `*.battle.mjs`,
       # built by `build:angular`, which `build:packages` does not run. Without this step they are
