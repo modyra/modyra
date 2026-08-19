@@ -111,13 +111,29 @@ export function createFieldRecord(
    * told, so a row declared after the sentence was spoken is covered by it too.
    */
   outerVerdict: MdySignal<MdyInteractivity> = () => "enabled",
+  /**
+   * Whether writes are over.
+   *
+   * A form that has ended still answers — a renderer torn down in the other order reads for a beat,
+   * and throwing there turns an ordinary unmount race into a crash. A *write* in that beat is the
+   * same race, and taking it left the two surfaces describing different forms: the handle held what
+   * the control last sent, with its own verdict about it, while the form kept what it ended with and
+   * will never submit either.
+   */
+  writesRefused: () => boolean = () => false,
 ): FieldRecord {
   const rawValue = rx.signal<unknown>(initialValue);
-  const value: MdyWritableSignal<unknown> = beforeWrite
+  const write = (next: () => unknown): void => {
+    if (writesRefused()) {
+      warn("was written to after the form ended. The write is not kept: the form answers with what it held when it ended.");
+      return;
+    }
+    rawValue.set(beforeWrite ? beforeWrite(next()) : next());
+  };
+  const value: MdyWritableSignal<unknown> = beforeWrite || writesRefused !== undefined
     ? Object.assign(() => rawValue(), {
-      set: (v: unknown) => rawValue.set(beforeWrite(v)),
-      update: (fn: (v: unknown) => unknown) =>
-        rawValue.set(beforeWrite(fn(rawValue()))),
+      set: (v: unknown) => write(() => v),
+      update: (fn: (v: unknown) => unknown) => write(() => fn(rawValue())),
       asReadonly: () => rawValue.asReadonly(),
     })
     : rawValue;

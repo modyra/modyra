@@ -532,6 +532,11 @@ export class MdyFormEngine
       submitting: this._submitting,
       submitCount: this._submitCount,
       canSubmit: _rx.computed(() => {
+        // A form that has ended cannot send anything: its fields are gone, so `valid()` is the
+        // vacuous truth of a form with nothing left to be wrong. Answering `true` here is what let
+        // `if (form.state.canSubmit()) send(form.submitValue())` post an empty payload from a
+        // teardown path.
+        if (this._destroyed) return false;
         if (this._submitting()) return false;
         const mode = this._submitMode();
         if (mode === "valid-only") return valid() && !pending();
@@ -1609,6 +1614,7 @@ export class MdyFormEngine
       (v) => this._applySecurity(name, v),
       (message) => this._warn(`"${name}" ${message}`),
       this._rx.computed(() => this._outerVerdict(name)),
+      () => this._destroyed,
     );
 
     // A record built for a path a binding already spoke about answers to that binding from the
