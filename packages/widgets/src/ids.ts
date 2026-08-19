@@ -81,6 +81,28 @@ export const defaultWidgetIdFactory: MdyWidgetIdFactory = {
     return `${widgetId}${MDY_ID_DELIMITER}${part}`;
   },
   item(widgetId, part, key) {
-    return `${widgetId}${MDY_ID_DELIMITER}${part}${MDY_ID_DELIMITER}${key}`;
+    return `${widgetId}${MDY_ID_DELIMITER}${part}${MDY_ID_DELIMITER}${idSafeKey(key)}`;
   },
 };
+
+/**
+ * A key as a piece of an id.
+ *
+ * A widget id is a host's word and is refused when it cannot be one; an item key is **data** — an
+ * option's value, a row's key — and refusing it would refuse the document that declared it. So it is
+ * spelled instead, in the one encoding an id may carry.
+ *
+ * Whitespace is why: `aria-activedescendant` and its family are space-separated lists of ids, so an
+ * option valued `New York` produced `city__option__New York`, which an assistive technology reads as
+ * two references and resolves to neither. The person operating the list by keyboard is pointed at
+ * nothing, on an option that is on screen.
+ *
+ * Percent-encoded rather than replaced: `%` goes first so the encoding stays reversible, and the
+ * delimiter is encoded because an id carrying it a second time cannot be taken apart again.
+ */
+function idSafeKey(key: string): string {
+  return key
+    .replaceAll("%", "%25")
+    .replaceAll(MDY_ID_DELIMITER, "%5F%5F")
+    .replace(/[\t\n\f\r ]/g, "%20");
+}

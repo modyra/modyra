@@ -91,6 +91,18 @@ export function createSelectController<TValue>(
    */
   const labelSeen = new Map<string, string>();
 
+  /**
+   * The key each painted option was given, by the option itself.
+   *
+   * A value repeated in a list is a document defect the parser reports, and it is not a reason for
+   * one of the options to disappear: the second gets a key of its own so the list can show it and a
+   * reference can name it. Selection still follows the value, which is what a person chose.
+   */
+  const keyByOption = new Map<MdySelectOption<TValue>, string>();
+
+  /** The key this option was given while the list was indexed. */
+  const keyOf = (option: MdySelectOption<TValue>): string => keyByOption.get(option) ?? keyFor(option);
+
   function rebuildOptionIndex(selected: TValue | null): void {
     const painted = optionsWithUnrecognizedValue(
       allOptions,
@@ -100,10 +112,18 @@ export function createSelectController<TValue>(
     paintedOptions.set(painted);
     optionByKey.clear();
     valueToKey.clear();
+    keyByOption.clear();
     for (const option of painted) {
-      const key = keyFor(option);
+      const base = keyFor(option);
+      // A key already taken by an earlier option with the same value: the second one is still an
+      // option, and an element with a duplicate id is one no reference can point at.
+      let key = base;
+      for (let repeat = 2; optionByKey.has(key); repeat += 1) key = `${base}%23${repeat}`;
+      keyByOption.set(option, key);
       optionByKey.set(key, option);
-      valueToKey.set(option.value, key);
+      // The first option carrying a value is the one a value selects: two options that say the same
+      // thing are one choice, whatever the list shows.
+      if (!valueToKey.has(option.value)) valueToKey.set(option.value, key);
       labelSeen.set(key, option.label);
     }
   }
@@ -119,12 +139,12 @@ export function createSelectController<TValue>(
     filterOptionsByQuery(paintedOptions(), query);
 
   const visibleKeys = (query: string): readonly string[] =>
-    filteredOptions(query).map(keyFor);
+    filteredOptions(query).map(keyOf);
 
   const navigableKeys = (query: string): readonly string[] =>
     filteredOptions(query)
       .filter((o) => !o.disabled)
-      .map(keyFor);
+      .map(keyOf);
 
   const open = reactivity.signal(false);
   const query = reactivity.signal("");
@@ -146,6 +166,7 @@ export function createSelectController<TValue>(
 
   const state: MdySignal<MdySelectState<TValue>> = reactivity.computed(() => ({
     options: paintedOptions(),
+    optionKeys: paintedOptions().map(keyOf),
     open: open(),
     query: query(),
     activeKey: activeKey(),
@@ -186,7 +207,7 @@ export function createSelectController<TValue>(
     // left the survivor with no part: an element inside a listbox with no id, no `role="option"`
     // and no `aria-selected`, and the one entry the user needs in order to replace their value.
     for (const option of paintedOptions()) {
-      const key = keyFor(option);
+      const key = keyOf(option);
       parts[key] = a11y.option(key);
     }
 

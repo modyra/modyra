@@ -1644,6 +1644,7 @@
     "invalid: boolean",
     "loading: boolean",
     "open: boolean",
+    "optionKeys: readonly string[]",
     "options: readonly MdySelectOption<TValue>[]",
     "query: string",
     "readonly: boolean",
