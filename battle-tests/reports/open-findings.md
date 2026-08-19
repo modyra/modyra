@@ -13222,12 +13222,34 @@ re-measurement; 209's finding survived too but its wording did not. A public API
 wrong call is indistinguishable from the right one is the reason a hunt makes that mistake at all.
 
 
+## 212 — A required that cannot fail, accepted in silence (S2, VAL-001 DYN-004)
+
+`schema.ts` states the reasoning beside the table it belongs to: *"A kind whose empty value is a
+usable value cannot be required… `slider` is the deliberate exception: a thumb is always somewhere,
+so an untouched slider sits at its minimum and reads as filled."* The reasoning is right; the
+consequence is not drawn. A document may write `validators: { required: true }` on a slider, and the
+parser accepts it in strict with no diagnostic.
+
+Measured across the vocabulary after ADR 0094: **sixteen of seventeen** kinds have a `required` that
+can refuse their own starting value. The slider's cannot, and nothing says so.
+
+It looks like noise from the inside. From the outside it is a false assurance: an author writes
+`required` to make a choice compulsory, ships it, and the form is submitted by someone who never
+touched the control. The only party who could have said otherwise is the parser — the same parser
+that now refuses a constraint written one level too high (finding 209) on the grounds that a
+constraint doing nothing should be reported rather than dropped.
+
+Pinned by `adversarial/validation/a-rule-that-cannot-fail.battle.test.mjs`, written over the
+vocabulary rather than about the slider, so a kind added later whose empty is a usable value is
+covered the day it arrives. Control: at least twelve kinds must have a working `required`.
+
+
 ## The register's own shape, measured
 
 ```
-numbered findings        211
+numbered findings        212
 closed or retracted       31
-open with a battle       182
+open with a battle       183
 open with none             6
 ```
 
