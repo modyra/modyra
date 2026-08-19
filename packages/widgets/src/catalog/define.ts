@@ -132,6 +132,10 @@ export const SHELL_CLASS_FALLBACK: Readonly<Record<string, readonly string[]>> =
 
 /** Per-widget deviations from the shared tables: where a part hangs, and the class it carries. */
 interface MdyWidgetShape<TPart extends string = string> {
+  /** The native control this kind is rendered with — see {@link MdyWidgetDefinition.controlType}. */
+  readonly controlType?: string;
+  /** Whether the control conceals what is typed into it — see {@link MdyWidgetDefinition.concealed}. */
+  readonly concealed?: boolean;
   readonly parents?: Readonly<Partial<Record<TPart, TPart>>>;
   readonly classes?: Readonly<Partial<Record<TPart, readonly string[]>>>;
   /**
@@ -410,7 +414,10 @@ export function define<const TPart extends string>(kind: MdyWidgetKind, rootClas
     siblingCount.set(parent, order + 1);
     return Object.freeze({ part: name, element: shape.elements?.[name] ?? semanticElement(name), parent: parent as TPart, order, optional: !(REQUIRED_PARTS.has(name) || shape.required?.includes(name)), repeated: REPEATED_PARTS.has(name) });
   });
-  return Object.freeze({ kind, rootClasses: Object.freeze([...rootClasses]), parts: Object.freeze(partMap), structure: Object.freeze({ kind, nodes: Object.freeze(nodes) }), presentationClasses: Object.freeze([...(shape.presentation ?? [])]), variants, capabilities: Object.freeze({ overlay, dismissOnOutsidePointer: overlay ? "light-dismiss" as const : false, dismissOnFocusOutside: overlay, overlayScrolls: SCROLLING_OVERLAYS.includes(kind), ...(overlay && ANCHORING[kind] ? { anchoring: Object.freeze(ANCHORING[kind]) } : {}) }) });
+  return Object.freeze({ kind, rootClasses: Object.freeze([...rootClasses]),
+    ...(shape.controlType === undefined ? {} : { controlType: shape.controlType }),
+    ...(shape.concealed === undefined ? {} : { concealed: shape.concealed }),
+    parts: Object.freeze(partMap), structure: Object.freeze({ kind, nodes: Object.freeze(nodes) }), presentationClasses: Object.freeze([...(shape.presentation ?? [])]), variants, capabilities: Object.freeze({ overlay, dismissOnOutsidePointer: overlay ? "light-dismiss" as const : false, dismissOnFocusOutside: overlay, overlayScrolls: SCROLLING_OVERLAYS.includes(kind), ...(overlay && ANCHORING[kind] ? { anchoring: Object.freeze(ANCHORING[kind]) } : {}) }) });
 }
 /**
  * The semantic every part answers to, declared rather than defaulted.

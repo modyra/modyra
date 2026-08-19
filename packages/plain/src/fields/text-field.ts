@@ -19,13 +19,23 @@ import {
 import { applyPart, el, setErrors, setText } from "../dom.js";
 import { buildFieldShell, insertControl } from "../field-shell.js";
 
+/**
+ * The native control each kind is drawn with.
+ *
+ * `number` and `slider` are this renderer's own choice of element for a numeric kind; the rest come
+ * from the contract, which is where a kind's control type is declared. A private map is how a
+ * password ends up rendered in clear text by one adapter and concealed by another.
+ */
 const NATIVE_INPUT_TYPE: Record<string, string> = {
-  text: "text",
-  email: "email",
-  password: "password",
   number: "number",
   slider: "range",
 };
+
+/** What the contract says this kind's control is, or what this renderer draws for it. */
+function nativeInputType(kind: string): string {
+  const declared = (MDY_WIDGET_CONTRACTS as Record<string, { controlType?: string } | undefined>)[kind];
+  return declared?.controlType ?? NATIVE_INPUT_TYPE[kind] ?? "text";
+}
 
 export function renderTextField(
   container: HTMLElement,
@@ -51,7 +61,7 @@ export function renderTextField(
     {
       widgetId: widgetId,
       handle,
-      inputType: isTextarea ? undefined : NATIVE_INPUT_TYPE[f.kind],
+      inputType: isTextarea ? undefined : nativeInputType(f.kind),
       kind: f.kind,
       constraints: () => narrowing ?? {},
     },
