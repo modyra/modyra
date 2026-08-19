@@ -159,18 +159,53 @@ export function isPathRef(operand: MdyOperand): operand is MdyPathRef {
 
 /** Whether `operand` names the value of the field the clause is written on. */
 export function isSelfRef(operand: MdyOperand): operand is MdySelfRef {
-  return typeof operand === "object" && operand !== null && !("op" in operand) && (operand as MdySelfRef).self === true;
+  return namesOneThing(operand, "self") && (operand as MdySelfRef).self === true;
 }
 
 /** Whether `operand` names the whole form value. */
 export function isRootRef(operand: MdyOperand): operand is MdyRootRef {
-  return typeof operand === "object" && operand !== null && !("op" in operand) && (operand as MdyRootRef).root === true;
+  return namesOneThing(operand, "root") && (operand as MdyRootRef).root === true;
 }
 
 /** Whether `operand` names a fact the host supplies. */
 export function isContextRef(operand: MdyOperand): operand is MdyContextRef {
-  return typeof operand === "object" && operand !== null && !("op" in operand)
-    && typeof (operand as MdyContextRef).context === "string";
+  const key = namesOneThing(operand, "context") ? (operand as MdyContextRef).context : undefined;
+  // A key of no characters names nothing a host could supply, and the validator refuses it: a guard
+  // claiming what the door turns away tells a consumer to handle something that never arrives.
+  return typeof key === "string" && key.length > 0;
+}
+
+/** The members that make an object an operand of one kind. */
+const OPERAND_MARKERS = ["path", "self", "root", "context"] as const;
+
+/**
+ * Whether `operand` is an object naming exactly `marker` and nothing else it could also be.
+ *
+ * An operand carrying two markers — `{ self: true, root: true }` — was claimed by two guards at
+ * once, and which half won was decided by the order an implementation happened to ask in. That is a
+ * document meaning one thing here and another in the Rust or Java reader of the same contract, on a
+ * document all three accept. One operand names one thing (ADR 0092).
+ */
+function namesOneThing(operand: MdyOperand, marker: (typeof OPERAND_MARKERS)[number]): boolean {
+  if (typeof operand !== "object" || operand === null || "op" in operand) return false;
+  const held = operand as unknown as Record<string, unknown>;
+  if (!(marker in held)) return false;
+  return OPERAND_MARKERS.every((each) => each === marker || !(each in held));
+}
+
+/**
+ * Whether `operand` is an object reaching for more than one of the four things an operand can name.
+ *
+ * Read where an expression is validated: the guards above answer `false` for it, which stops it from
+ * being *read* as either, and this is what makes the document say so instead of falling through to
+ * being treated as a literal object.
+ */
+export function claimsTwoThings(operand: MdyOperand): boolean {
+  if (typeof operand !== "object" || operand === null || "op" in operand || Array.isArray(operand)) {
+    return false;
+  }
+  const held = operand as unknown as Record<string, unknown>;
+  return OPERAND_MARKERS.filter((marker) => marker in held).length > 1;
 }
 
 /** Whether `operand` is itself a predicate to evaluate first. */
@@ -724,6 +759,14 @@ function validateAt(expr: unknown, where: string, depth: number): readonly strin
 
   operands.forEach((operand, index) => {
     if (isExpression(operand)) problems.push(...validateAt(operand, `${where}.operands[${index}]`, depth + 1));
+    // Two of the four at once: which one it is would be decided by the order a reader happens to
+    // ask in, and the three readers of this contract need not ask in the same order.
+    else if (claimsTwoThings(operand)) {
+      problems.push(
+        `${where}.operands[${index}]: an operand names one of {path}, {self}, {root}, {context}, ` +
+        "and this one names more than one",
+      );
+    }
     else if (isPathRef(operand)) {
       if (!isReadablePath(operand.path)) {
         problems.push(`${where}.operands[${index}]: "${operand.path}" is not a field path`);
@@ -732,9 +775,8 @@ function validateAt(expr: unknown, where: string, depth: number): readonly strin
       // Nothing to check: they name one thing each, and whether it is available is a question about
       // the caller rather than about the expression.
     } else if (isContextRef(operand)) {
-      if (operand.context.length === 0) {
-        problems.push(`${where}.operands[${index}]: a context key cannot be empty`);
-      }
+      // Nothing left to check: a key of no characters is not a context reference at all, and falls
+      // to the refusal below with the rest of what an operand cannot be.
     } else if (typeof operand === "object" && operand !== null) {
       problems.push(
         `${where}.operands[${index}]: an object operand must be {path}, {self}, {root}, {context} ` +
