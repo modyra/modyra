@@ -14590,6 +14590,49 @@ consumer that read `ok: false` as "any diagnostic at all" reads a different answ
 Sits next to finding 234, and is its other half: raising the bound to 100,000 and reporting when it is
 reached made the reader honest, and the report is a refusal.
 
+## 242 — A controller with no hook, in the adapter that says it wraps them all (S3, ADP-001)
+
+`docs/guides/headless-recipes.md` states the adapters' division plainly:
+
+> `@modyra/react` ships a hook for each widget controller. The other four reactivity adapters ship
+> two, and that is a deliberate gap rather than an oversight.
+
+The second sentence holds — preact, solid, svelte and vue ship two bridge hooks apiece, measured.
+The first is a count, and the count is six of seven:
+
+```
+createBooleanFieldController       useMdyBooleanField       ✓
+createDatepickerFieldController    useMdyDatepickerField    ✓
+createDaterangeFieldController     useMdyDaterangeField     absent
+createMultiselectFieldController   useMdyMultiselectField   ✓
+createOptionFieldController        useMdyOptionField        ✓
+createSelectController             useMdySelect             ✓
+createTextFieldController          useMdyTextField          ✓
+createTimepickerFieldController    useMdyTimepickerField    ✓
+```
+
+`daterange` is a kind in every list the contract keeps — `MDY_FIELD_KINDS`, `MDY_VALUE_CONTRACTS`
+(`{shape: "dateRange", nullable: false, commit: "complete"}`), and the seventeen structure nodes of
+`MDY_WIDGET_CONTRACTS`. It has a controller. It has no hook, and no line of the guide says it is the
+exception.
+
+**Small on purpose, and filed as reporting rather than as capability.** The guide is right that a
+wrapper is ergonomics: `createDaterangeFieldController` takes a handle and a runtime like the other
+six, and the guide shows how to drive one without a hook. What is measured is the sentence. An
+adapter that says it wraps every controller wraps every controller, or names the one it leaves out —
+and a consumer counting on the pattern finds it holds for the six kinds they tried first.
+
+Two ways to green and the battle takes either: the hook exists, or the guide names the kind it does
+not ship. Pinned by `adversarial/widgets/a-controller-with-no-hook.battle.test.mjs`, whose second
+battle asserts the half that holds — without it, a react adapter that wrapped nothing would satisfy
+the first by having no pattern to fall out of.
+
+Checked and clean beside it: ADR 0085's own verification holds at the package roots —
+`useMdyField.length === 1` and `useMdyTextField.length === 2` in react and preact, and `useMdyField`
+is the arity-2 widget hook in solid, svelte and vue exactly as the record says. React's dynamic
+renderer has no kind gap to go with this one: it renders no elements at all, by design, so there is
+no switch for a kind to be missing from.
+
 ## The browser tier, measured — a baseline this register never had
 
 `npm run battle:browser` on the working tree at `6ee29144`:
@@ -14746,9 +14789,9 @@ the half-fix to overlay teardown did not close it on plain either.
 ## The register's own shape, measured
 
 ```
-numbered findings        241
+numbered findings        242
 closed or retracted       58
-open with a battle       206
+open with a battle       207
 open with none            10
 ```
 
