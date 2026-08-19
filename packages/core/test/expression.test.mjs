@@ -8,6 +8,7 @@ import {
   createForm,
   evaluateExpression,
   evaluateRuleCondition,
+  expressionContextKeys,
   expressionPaths,
   field,
   parseDynamicForm,
@@ -417,4 +418,96 @@ test("a rule's value is checked against the operator that will read it", () => {
   const held = { plan: "pro" };
   assert.equal(evaluateRuleCondition({ field: "plan", operator: "in", value: "pro" }, held), false);
   assert.equal(evaluateRuleCondition({ field: "plan", operator: "notIn", value: "pro" }, held), true);
+});
+
+test("the three operands that are not paths read what encloses the clause", () => {
+  const form = { kind: "company", rows: { a: { qty: 0 } } };
+
+  // `{self}` is how a clause written once for the item of a collection reads its own value: the row
+  // has no name until somebody creates it, so a path cannot say this.
+  assert.equal(
+    evaluateExpression({ op: "notEquals", operands: [{ self: true }, 0] }, form, { self: 3 }),
+    true,
+  );
+  assert.equal(
+    evaluateExpression({ op: "notEquals", operands: [{ self: true }, 0] }, form, { self: 0 }),
+    false,
+  );
+
+  // `{root}` is how a condition evaluated against a row reaches back out to the form.
+  assert.equal(
+    evaluateExpression(
+      { op: "equals", operands: [{ op: "equals", operands: [{ root: true }, null] }, false] },
+      { qty: 1 },
+      { root: form },
+    ),
+    true,
+  );
+
+  // `{context}` is a fact the host supplies, once for the application.
+  const roleIsAdmin = { op: "equals", operands: [{ context: "role" }, "admin"] };
+  assert.equal(evaluateExpression(roleIsAdmin, form, { context: { role: "admin" } }), true);
+  assert.equal(evaluateExpression(roleIsAdmin, form, { context: { role: "editor" } }), false);
+});
+
+test("a reference the scope does not carry closes rather than opens", () => {
+  // The direction matters more than the answer. `undefined` would make `isEmpty` true and `notEquals`
+  // true — a clause that cannot be read would *show* the field it was written to hide, and a value
+  // nobody meant to send would reach the payload.
+  const form = { kind: "company" };
+  assert.equal(evaluateExpression({ op: "notEquals", operands: [{ self: true }, 0] }, form), false);
+  assert.equal(evaluateExpression({ op: "isEmpty", operand: { self: true } }, form), false);
+  assert.equal(evaluateExpression({ op: "equals", operands: [{ context: "role" }, "admin"] }, form, { context: {} }), false);
+  // And inside a join: a member nobody can read is not a member that holds.
+  assert.equal(
+    evaluateExpression({
+      op: "and",
+      operands: [
+        { op: "equals", operands: [{ path: "kind" }, "company"] },
+        { op: "equals", operands: [{ context: "role" }, "admin"] },
+      ],
+    }, form),
+    false,
+  );
+});
+
+test("what a caller has to be given, and what it does not", () => {
+  const expression = {
+    op: "or",
+    operands: [
+      { op: "equals", operands: [{ path: "kind" }, "company"] },
+      { op: "equals", operands: [{ context: "role" }, "admin"] },
+      { op: "isNotEmpty", operand: { self: true } },
+    ],
+  };
+
+  // Context keys are an API between the host and whoever authors documents, so they are askable
+  // before a form exists.
+  assert.deepEqual(expressionContextKeys(expression), ["role"]);
+  // And the three are not field paths: nothing subscribes to them.
+  assert.deepEqual(expressionPaths(expression), ["kind"]);
+
+  assert.deepEqual(validateExpression({ op: "equals", operands: [{ self: true }, 1] }, "w"), []);
+  assert.deepEqual(validateExpression({ op: "equals", operands: [{ root: true }, 1] }, "w"), []);
+  assert.deepEqual(
+    validateExpression({ op: "equals", operands: [{ context: "" }, 1] }, "w"),
+    ["w.operands[0]: a context key cannot be empty"],
+  );
+});
+
+test("equality is SameValueZero wherever it is spelled", () => {
+  // A number field holding text it cannot read is NaN, which the engine documents; -0 is what a
+  // minus in front of a zero parses to. Both are answers a form holds, and the four doors gave three
+  // different verdicts about them.
+  const held = { n: Number.NaN, zero: -0 };
+  const both = (field, value) => [
+    evaluateExpression({ op: "equals", operands: [{ path: field }, value] }, held),
+    evaluateRuleCondition({ field, operator: "equals", value }, held),
+    evaluateExpression({ op: "in", operands: [{ path: field }, [value]] }, held),
+    evaluateRuleCondition({ field, operator: "in", value: [value] }, held),
+  ];
+
+  assert.deepEqual(both("n", Number.NaN), [true, true, true, true], "NaN is the answer the field holds");
+  assert.deepEqual(both("zero", 0), [true, true, true, true], "-0 and 0 are one answer");
+  assert.deepEqual(both("zero", 1), [false, false, false, false], "the control: different values still differ");
 });

@@ -312,6 +312,9 @@
     "debugName?: string",
     "equal?: MdyEqualityFn<T>"
   ],
+  "MdyContextRef": [
+    "context: string"
+  ],
   "MdyControlOption": [
     "disabled?: boolean",
     "label: string",
@@ -789,6 +792,11 @@
     "\"notEquals\"",
     "\"notIn\"",
     "\"or\""
+  ],
+  "MdyExpressionScope": [
+    "context?: Readonly<Record<string, unknown>>",
+    "root?: unknown",
+    "self?: unknown"
   ],
   "MdyFieldConstraints": [
     "inputMode: string | null",
@@ -1498,6 +1506,9 @@
     "\"aria-labelledby\"",
     "\"for\""
   ],
+  "MdyRootRef": [
+    "root: true"
+  ],
   "MdySanitizeProfile": [
     "\"off\"",
     "\"strict\"",
@@ -1621,6 +1632,9 @@
     "given: { readonly open: boolean; readonly selectedKey: string | null; readonly activeKey: string | null; readonly query: string; }",
     "intent: MdySelectIntent",
     "name: string"
+  ],
+  "MdySelfRef": [
+    "self: true"
   ],
   "MdyServerValidatorOptions": [
     "debounceMs?: number",
@@ -2500,6 +2514,7 @@
   "evaluateExpression": [
     "(0) expr: MdyExpression",
     "(1) value: unknown",
+    "(2) scope?: MdyExpressionScope",
     "-> returns: boolean"
   ],
   "evaluateRuleCondition": [
@@ -2515,6 +2530,10 @@
     "(0) kind: MdyValueKind",
     "(1) value: unknown",
     "-> returns: string | null"
+  ],
+  "expressionContextKeys": [
+    "(0) expr: MdyExpression",
+    "-> returns: readonly string[]"
   ],
   "expressionPaths": [
     "(0) expr: MdyExpression",
@@ -2671,6 +2690,10 @@
     "(0) structure: MdyWidgetStructure",
     "-> returns: readonly MdyStructureContractIssue[]"
   ],
+  "isContextRef": [
+    "(0) operand: MdyOperand",
+    "-> returns: operand is MdyContextRef"
+  ],
   "isDateBetween": [
     "(0) date: CalendarDate",
     "(1) start: CalendarDate | null",
@@ -2706,6 +2729,10 @@
     "(0) origin: MdyPointerOrigin",
     "-> returns: boolean"
   ],
+  "isRootRef": [
+    "(0) operand: MdyOperand",
+    "-> returns: operand is MdyRootRef"
+  ],
   "isSafeFieldPath": [
     "(0) name: string",
     "-> returns: boolean"
@@ -2714,6 +2741,10 @@
     "(0) a: CalendarDate",
     "(1) b: CalendarDate",
     "-> returns: boolean"
+  ],
+  "isSelfRef": [
+    "(0) operand: MdyOperand",
+    "-> returns: operand is MdySelfRef"
   ],
   "isSensitivePath": [
     "(0) path: string",

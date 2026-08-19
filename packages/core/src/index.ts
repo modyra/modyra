@@ -193,16 +193,24 @@ export {
   MDY_MAX_EXPRESSION_DEPTH,
   evaluateExpression,
   evaluateRuleCondition,
+  expressionContextKeys,
   expressionPaths,
+  isContextRef,
   isExpression,
   isPathRef,
+  isRootRef,
+  isSelfRef,
   validateExpression,
 } from "./expression.js";
 export type {
+  MdyContextRef,
   MdyExpression,
   MdyExpressionOp,
+  MdyExpressionScope,
   MdyOperand,
   MdyPathRef,
+  MdyRootRef,
+  MdySelfRef,
 } from "./expression.js";
 
 export {
