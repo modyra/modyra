@@ -26,7 +26,7 @@
 import { readdirSync, readFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import Ajv from "ajv/dist/2020.js";
-import { MDY_DYNAMIC_FIELD_KINDS, parseDynamicForm } from "../packages/core/dist/dynamic-config.js";
+import { MDY_DYNAMIC_FIELD_KINDS, MDY_DYNAMIC_MEMBERS, parseDynamicForm } from "../packages/core/dist/dynamic-config.js";
 
 const ROOT = resolve(import.meta.dirname, "..");
 const CORPUS = join(ROOT, "spec/fixtures/dynamic-form");
@@ -70,10 +70,42 @@ const documentSlots = (version) => {
 const findings = [];
 const note = (schema, detail) => findings.push(`${schema}: ${detail}`);
 
+/**
+ * Where each slot's members are written in a published schema.
+ *
+ * A layout node is two shapes under one `oneOf`, so the section and the row are read by their index
+ * — which is why the path is a list rather than a name.
+ */
+const MEMBER_SLOTS = [
+  ["field", ["$defs", "field"]],
+  ["validators", ["$defs", "validators"]],
+  ["option", ["$defs", "option"]],
+  ["rule", ["$defs", "rule"]],
+  ["validation", ["$defs", "validation"]],
+  ["layoutSection", ["$defs", "layout", "oneOf", 0]],
+  ["layoutColumns", ["$defs", "layout", "oneOf", 1]],
+  ["layoutSlot", ["$defs", "slot"]],
+];
+
+/** Slots that arrived with contract v3, so a v2 schema is right not to have them. */
+const SINCE_V3 = new Set(["layoutSlot"]);
+
+/** The member names a schema declares at `path`, or null when it declares nothing there. */
+const memberNamesAt = (schema, path) => {
+  let node = schema;
+  for (const step of path) {
+    if (node === undefined || node === null) return null;
+    node = node[step];
+  }
+  const properties = node?.properties;
+  return properties ? Object.keys(properties) : null;
+};
+
 const kindsOf = (schema) => schema?.$defs?.field?.properties?.kind?.enum ?? [];
 const slotsOf = (schema) => Object.keys(schema?.properties ?? {});
 
-for (const { path, version } of SCHEMAS) {
+for (const { path: schemaPath, version } of SCHEMAS) {
+  const path = schemaPath;
   const schema = readJson(path);
 
   if (schema.properties?.version?.const !== version) {
@@ -85,6 +117,27 @@ for (const { path, version } of SCHEMAS) {
   const unknown = declared.filter((kind) => !MDY_DYNAMIC_FIELD_KINDS.includes(kind));
   if (missing.length > 0) note(path, `does not list kind(s) the parser accepts: ${missing.join(", ")}`);
   if (unknown.length > 0) note(path, `lists kind(s) the parser rejects: ${unknown.join(", ")}`);
+
+  // The members of every slot, against the list the parser reports an undeclared member from. The
+  // two are one contract read twice: a member in the schema and not in the parser's list is one the
+  // parser reports for a document the editor accepted, and a member in the list and not in the
+  // schema is one the editor underlines in a document the parser reads.
+  for (const [slot, path] of MEMBER_SLOTS) {
+    // A slot the version predates is not a slot it omits: placement — the `slot` shape and a
+    // section's `at` — arrived with v3, and v2 documents are read by a v2 schema.
+    if (SINCE_V3.has(slot) && version < 3) continue;
+    const declared = memberNamesAt(schema, path);
+    if (declared === null) {
+      note(schemaPath, `does not declare ${slot} where this audit reads it (${path.join("/")})`);
+      continue;
+    }
+    const known = MDY_DYNAMIC_MEMBERS[slot]
+      .filter((member) => !(version < 3 && slot === "layoutSection" && member === "at"));
+    const missing = known.filter((member) => !declared.includes(member));
+    const extra = declared.filter((member) => !known.includes(member));
+    if (missing.length > 0) note(schemaPath, `${slot} omits member(s) the parser reads: ${missing.join(", ")}`);
+    if (extra.length > 0) note(schemaPath, `${slot} declares member(s) the parser reports as unknown: ${extra.join(", ")}`);
+  }
 
   // Only a closed object can reject a slot for being absent from the list.
   if (schema.additionalProperties === false) {

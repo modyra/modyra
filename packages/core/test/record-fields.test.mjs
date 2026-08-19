@@ -1063,9 +1063,8 @@ test("a layout slot and a validation may address a row's leaf", async () => {
     layout: [{ kind: "section", id: "s", label: "Rows", children: ["rows.12.n"] }],
     validations: [
       {
-        id: "v",
         message: "the row says bad",
-        path: "rows.12.n",
+        target: "rows.12.n",
         when: { op: "equals", operands: [{ path: "rows.12.n" }, "bad"] },
       },
     ],

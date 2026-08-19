@@ -10,6 +10,7 @@ export {
   MDY_ID_DELIMITER,
   assertSafeDynamicFieldNames,
 } from "./dynamic/guards.js";
+export * from "./dynamic/members.js";
 export * from "./dynamic/schema.js";
 export * from "./dynamic/parse.js";
 export * from "./dynamic/compile.js";

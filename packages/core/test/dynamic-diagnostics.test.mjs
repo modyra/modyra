@@ -64,6 +64,9 @@ const REFUSALS = {
   MDY_DYNAMIC_PATTERN_TOO_COSTLY: [{ name: "a", kind: "text", validators: { pattern: "(a+)+$" } }],
   // More declarations than the count walks. What it reports then is a floor, and saying so is the
   // difference between a number a host can act on and one that quietly saturates.
+  // A member nobody declared, in the slot a document is most often assembled by hand: the parser is
+  // the only one of the three checks a stored or generated document ever meets.
+  MDY_DYNAMIC_UNKNOWN_MEMBER: [{ name: "a", kind: "text", nonsenseKey: 1 }],
   MDY_DYNAMIC_COUNT_INCOMPLETE: (() => {
     const children = {};
     for (let index = 0; index <= 100_000; index += 1) {
