@@ -682,6 +682,23 @@ export function parseDynamicFields(input: unknown): MdyDynamicField[] {
         return false;
       }
     }
+    // A constraint written one level too high. `validators: { required: true }` is the contract's
+    // spelling, and `required: true` on the field is what an author — or a model writing the
+    // document — reaches for instead: it is kept, nothing reads it, and the form has no rule where
+    // its author believes there is one. Not silence, because the name is one the contract itself
+    // declares, so reporting it costs no forward compatibility: a document may carry members this
+    // reader has never heard of, and these are not that.
+    //
+    // `min` and `max` are left out: they are legitimate members of a number field, describing the
+    // control's range, so the same word means two things by design.
+    for (const misplaced of ["required", "email", "minLength", "maxLength", "pattern"] as const) {
+      if ((f as Record<string, unknown>)[misplaced] === undefined) continue;
+      warnDev(
+        `Dynamic field "${f.name}" declares "${misplaced}" on the field, and it belongs in "validators" — ` +
+        `nothing reads it here, so the field has no such rule.`,
+        at,
+      );
+    }
     const needsOptions = ["select", "radio", "multiselect", "segmented"];
     if (needsOptions.includes(f.kind as string)) {
       const options = (f as { options?: unknown }).options;
@@ -748,6 +765,7 @@ export const MDY_DYNAMIC_DIAGNOSTICS: ReadonlyArray<{
   { code: "MDY_DYNAMIC_UNKNOWN_KIND", phrase: "unknown kind" },
   { code: "MDY_DYNAMIC_OPTIONS_REQUIRED", phrase: "requires a valid options" },
   { code: "MDY_DYNAMIC_DUPLICATE_OPTION", phrase: "duplicate option value" },
+  { code: "MDY_DYNAMIC_MISPLACED_VALIDATOR", phrase: "belongs in \"validators\"" },
   { code: "MDY_DYNAMIC_PATTERN_TOO_LONG", phrase: "pattern length" },
   { code: "MDY_DYNAMIC_PATTERN_TOO_COSTLY", phrase: "backtracks exponentially" },
 ];

@@ -24,6 +24,7 @@ const REFUSALS = {
     kind: "select",
     options: [{ value: "pro", label: "Pro monthly" }, { value: "pro", label: "Pro yearly" }],
   }],
+  MDY_DYNAMIC_MISPLACED_VALIDATOR: [{ name: "a", kind: "text", required: true }],
   MDY_DYNAMIC_PATTERN_TOO_LONG: [{ name: "a", kind: "text", validators: { pattern: "x".repeat(300) } }],
   MDY_DYNAMIC_PATTERN_TOO_COSTLY: [{ name: "a", kind: "text", validators: { pattern: "(a+)+$" } }],
 };
