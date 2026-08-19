@@ -30,12 +30,20 @@ import { canonicalObservation } from "../../harness/canonical-snapshot.mjs";
 const SCHEMA = z.object({
   rows: z.record(
     z.string(),
-    z.object({ code: z.string(), note: z.string().default("unset") }),
+    z.object({ code: z.string().min(1), note: z.string().default("unset") }),
   ),
 });
 
-/** The same shape a maintainer would write if there were no schema library involved. */
-const byHand = () => ({ rows: record(group({ code: field(null), note: field("unset") })) });
+/**
+ * The same shape a maintainer would write if there were no schema library involved.
+ *
+ * A text cell starts at `""` because that is what a maintainer writing a text field writes, and
+ * because ADR 0086 has the derivation arrive at the same place: a derived field starts at the empty
+ * its own kind accepts. The two agreeing here is the decision holding, not the twin being bent to
+ * match — `how-a-rule-was-written.battle.test.mjs` is where that agreement is attacked directly,
+ * against the kind rather than against this file.
+ */
+const byHand = () => ({ rows: record(group({ code: field(""), note: field("unset") })) });
 
 /**
  * Keys chosen for what they mean to JavaScript rather than to a domain.
@@ -92,8 +100,8 @@ battle(
     fromZod.destroy();
 
     // The two forms differ in one way on purpose: a derived tree carries the schema's rules and a
-    // hand-written one carries none, so the derived form is invalid where a cell is null and the
-    // other is not. That is the adapter working. Everything else — which rows exist, in which order,
+    // hand-written one carries none, so the derived form is invalid where a cell holds an empty its
+    // rules refuse and the other is not. That is the adapter working. Everything else — which rows exist, in which order,
     // what they hold, what a submit would carry, which cells are marked — may not differ at all,
     // and the two verdict fields are excluded here and asserted below rather than dropped.
     const VERDICT = Object.freeze(["valid", "errors", "collections"]);
@@ -118,7 +126,10 @@ battle(
     );
 
     // And the excluded half, stated: the hand-written form has no rules and is valid; the derived
-    // one is invalid for the reason the schema gives, naming the cell that is null.
+    // one is invalid for the reason the schema gives, naming the cell whose empty its rules refuse.
+    // `min(1)` is what makes that visible — a bare `z.string()` accepts the empty its own kind
+    // starts at, so the derived form would be valid and the two would agree by having nothing to
+    // disagree about.
     expectClaim(written.valid && written.errors.length === 0, {
       claimIds: ["DYN-002"],
       what: "the hand-written form carries no rules of its own",
@@ -161,7 +172,7 @@ const NESTED_SCHEMA = z.object({
 });
 
 const nestedByHand = () => ({
-  rows: record(group({ code: field(null), lines: array(group({ sku: field(null) })) })),
+  rows: record(group({ code: field(""), lines: array(group({ sku: field("") })) })),
 });
 
 function driveNested(tree) {
