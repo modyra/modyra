@@ -81,16 +81,45 @@ battle(
     // Deliberate rather than accidental: a destroyed form still answers for what it held, so the
     // route from a handle to it has to survive too. A widget torn down after its form would
     // otherwise lose the ability to read the last value it was showing.
-    const form = createForm({ a: field("A") }, { devWarnings: false });
+    //
+    // What it answers there is measured against **itself while it was alive**, not against a
+    // remembered constant. A constant pins whichever behaviour happened to ship; the comparison
+    // states the property that matters and is the reason the route is worth having: ending a form
+    // does not change the answer it gives. Both readers are compared, because they are allowed to
+    // disagree with each other and not allowed to change their minds — which is exactly what a
+    // capture taken at destroy can get wrong in two opposite ways.
+    const form = createForm(
+      { a: field("A"), skipped: field("S") },
+      { devWarnings: false },
+    );
     const handle = form.f.a;
+
+    // The legitimate divergence, established while the form is alive: a disabled field is held and
+    // not submitted. A teardown that captured one reader and handed its answer to both would erase
+    // this, and erasing it is not visible on a form where the two agree.
+    form.setDisabled("skipped", () => true);
+
+    const alive = {
+      value: form.getValue(),
+      submitted: form.submitValue(),
+    };
+
+    expectClaim(
+      Object.hasOwn(alive.value, "skipped") && !Object.hasOwn(alive.submitted, "skipped"),
+      {
+        claimIds: ["LIF-001"],
+        what: "the living form did not hold a field it declines to submit, so the battle attacks nothing",
+        detail: JSON.stringify(alive),
+      },
+    );
 
     form.destroy();
 
     const found = handleFormOf(handle);
     ctx.log.note("what a handle leads to after its form ended", {
       same: found === form,
-      value: found?.getValue(),
-      submitted: found?.submitValue(),
+      alive,
+      ended: { value: found?.getValue(), submitted: found?.submitValue() },
     });
 
     expectClaim(found === form, {
@@ -98,16 +127,14 @@ battle(
       what: "a handle stopped leading to its form once the form ended, so a widget outliving it has nowhere to look",
     });
 
-    // What it answers there is the destroyed form's own contract, pinned here because the route is
-    // what makes it reachable: the last value it held, and nothing to submit.
-    expectEqual(found.getValue(), { a: "A" }, {
+    expectEqual(found.getValue(), alive.value, {
       claimIds: ["LIF-001"],
-      what: "a form reached through a handle after it ended does not report what it held",
+      what: "a form reached through a handle after it ended reports something other than what it held",
     });
 
-    expectEqual(found.submitValue(), {}, {
+    expectEqual(found.submitValue(), alive.submitted, {
       claimIds: ["LIF-001"],
-      what: "a form that has ended offered something to submit",
+      what: "ending a form changed what it offers to submit",
     });
   },
 );
