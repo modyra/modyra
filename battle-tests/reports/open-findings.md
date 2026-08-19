@@ -15159,6 +15159,26 @@ them touching a published package, which was true of every manifest it reads and
 repository. Two trees are invisible to it, and the one carrying a shipped runtime dependency is the
 one it cannot see at all.
 
+### What is watched, and what the zeros mean
+
+A zero is worth nothing until you know something looked. The dependency graph was asked what it knows:
+
+```
+npm            2011 packages      37 alerts   the workspace, all development scope
+cargo           145 packages       0 alerts   sdk/rust — watched, and clean
+maven             4 packages       7 alerts   sdk/java — the finding above
+githubactions     7 packages       0 alerts
+site                               3 alerts   runtime scope, its own lockfile
+```
+
+So the Rust SDK's silence is a measured zero rather than an unwatched one, and the actions are seen
+too.
+
+**There is no `.github/dependabot.yml`.** Alerts are raised and nothing opens a pull request for them:
+every remediation is somebody noticing. Thirty-three are open, and the two that matter most are on the
+one artifact a consumer runs. That is a posture rather than a defect, and it is the reason this
+register did not know about Jackson until the page was read by hand.
+
 ## The browser tier, measured — and now gated like the other one
 
 `battle-tests/reports/known-red-browser.json` is the browser tier's baseline, written by
