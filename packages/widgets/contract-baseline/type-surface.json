@@ -2309,8 +2309,8 @@
     "-> returns: Promise<MdyStateMatrixResult>"
   ],
   "colorValueEquals": [
-    "(0) left: string | null",
-    "(1) right: string",
+    "(0) left: string | null | undefined",
+    "(1) right: string | null | undefined",
     "-> returns: boolean"
   ],
   "colorValueTransition": [

@@ -16,12 +16,12 @@ import {
 
 import { useMdyCommandQueue } from "./runtime.js";
 
-export type UseMdyFieldOptions<TValue> = Omit<
+export type UseMdyTextFieldOptions<TValue> = Omit<
   MdyTextFieldControllerOptions<TValue>,
   "handle"
 >;
 
-export interface MdyReactFieldApi<TValue> {
+export interface MdyReactTextFieldApi<TValue> {
   readonly state: MdyFieldState<TValue>;
   readonly view: MdyWidgetViewContract;
   dispatch(intent: MdyTextFieldIntent<TValue>): void;
@@ -30,10 +30,10 @@ export interface MdyReactFieldApi<TValue> {
   destroy(): void;
 }
 
-export function useMdyField<TValue>(
+export function useMdyTextField<TValue>(
   handle: MdyFieldHandle<TValue>,
-  options: UseMdyFieldOptions<TValue>,
-): MdyReactFieldApi<TValue> {
+  options: UseMdyTextFieldOptions<TValue>,
+): MdyReactTextFieldApi<TValue> {
   const reactivity = useMemo(() => observerFor(handle), [handle]);
 
   const controller = useMemo(
