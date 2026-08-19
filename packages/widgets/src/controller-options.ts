@@ -55,3 +55,39 @@ export function sameControllerOptions(held: unknown, next: unknown): boolean {
     sameMember((held as Record<string, unknown>)[key], (next as Record<string, unknown>)[key]),
   );
 }
+
+/**
+ * The configuration's members that can be compared at all.
+ *
+ * A handler written at the call is a new function every render, so comparing one by identity defeats
+ * the comparison entirely — the functions are answered by {@link stableControllerOptions} instead,
+ * and what is compared is everything else.
+ */
+export function comparableControllerOptions(options: unknown): unknown {
+  if (typeof options !== "object" || options === null || Array.isArray(options)) return options;
+  const out: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(options as Record<string, unknown>)) {
+    if (typeof value !== "function") out[key] = value;
+  }
+  return out;
+}
+
+/**
+ * The same configuration with one stable function per handler, each calling the latest one given.
+ *
+ * A controller keeps the handler it was built with, and a host that rebuilt the controller whenever
+ * a handler's identity changed rebuilt it on every render. `latest` is read at call time, so the
+ * handler the controller holds is never the one from a render that has passed.
+ */
+export function stableControllerOptions<T>(options: T, latest: () => T): T {
+  if (typeof options !== "object" || options === null || Array.isArray(options)) return options;
+  const out: Record<string, unknown> = { ...(options as Record<string, unknown>) };
+  for (const [key, value] of Object.entries(options as Record<string, unknown>)) {
+    if (typeof value !== "function") continue;
+    out[key] = (...args: readonly unknown[]): unknown => {
+      const now = (latest() as Record<string, unknown>)[key];
+      return typeof now === "function" ? (now as (...given: readonly unknown[]) => unknown)(...args) : undefined;
+    };
+  }
+  return out as T;
+}

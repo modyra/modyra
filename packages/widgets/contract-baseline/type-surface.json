@@ -2380,6 +2380,10 @@
     "(0) intent: MdyColorValueIntent",
     "-> returns: MdyColorValueTransition"
   ],
+  "comparableControllerOptions": [
+    "(0) options: unknown",
+    "-> returns: unknown"
+  ],
   "compareDates": [
     "(0) a: CalendarDate",
     "(1) b: CalendarDate",
@@ -3226,6 +3230,11 @@
     "(1) next: MdyOverlayDecision",
     "(2) input: MdyOverlayGeometry",
     "-> returns: MdyOverlayDecision"
+  ],
+  "stableControllerOptions": [
+    "(0) options: T",
+    "(1) latest: () => T",
+    "-> returns: T"
   ],
   "stateCarriers": [
     "(0) kind: MdyWidgetKind",
