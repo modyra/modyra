@@ -1463,10 +1463,17 @@ export class MdyFormEngine
   /**
    * Minimal patch of the form: only the fields whose current value differs
    * (Object.is) from their declared initial value — ready for an API PATCH.
+   *
+   * A field out of play is left out, the same rule `submitValue` applies. Both answer the question
+   * *what leaves this form*, and a patch built the documented way was carrying exactly the value a
+   * submission withholds — a form can hold a value it must not transmit, and the two published ways
+   * of reading it disagreed about which value that was. The value is still held and still reported
+   * by `getValue`, which is the total read.
    */
   getChanges(): Record<string, unknown> {
     const out: Record<string, unknown> = {};
     for (const [name, rec] of this._fields) {
+      if (rec.state.interactivity() === "disabled") continue;
       const initial = this._initialValues.has(name)
         ? this._initialValues.get(name)
         : null;
