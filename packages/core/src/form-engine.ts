@@ -330,8 +330,16 @@ function sameOptionValue(left: unknown, right: unknown): boolean {
 export class MdyFormEngine
   implements MdyFormAdapter<Record<string, unknown>>, MdyCollectionHost {
   private readonly _fields = new Map<string, FieldRecord>();
-  /** Reactive list of field names — drives state.valid computation. */
-  private readonly _fieldNames: MdyWritableSignal<readonly string[]>;
+  /**
+   * How many times the set of field names has changed.
+   *
+   * The names themselves are the keys of `_fields`, in their own order, and `fieldNames` derives the
+   * list from them. Held as a list instead, every field created copied it: one row's cells cost the
+   * length of the form, and declaring two thousand rows in one write spent most of its time
+   * allocating arrays nobody read. A counter says the same thing — *the shape changed* — in one
+   * write, and a reader inside a batch pays for the list once rather than once per row.
+   */
+  private readonly _structure: MdyWritableSignal<number>;
   private readonly _initialValues = new Map<string, unknown>();
 
   /**
@@ -346,6 +354,34 @@ export class MdyFormEngine
    * stopped being built, and reporting every field as new would be worse than reporting none.
    */
   private _baselineFields: Set<string> | null = null;
+
+  /**
+   * How many fields live under each dotted prefix a field's path passes through.
+   *
+   * A name may address a subtree — a collection, a group — and the two places that answer "is this an
+   * ancestor" walked every field the form holds to find out. Once per cell of a row, that is the
+   * whole cost of writing a collection in bulk: two thousand rows paid for six thousand walks over a
+   * growing map. The count is kept where the fields are, and answering costs one lookup.
+   */
+  private readonly _pathPrefixes = new Map<string, number>();
+
+  /** Records (or releases) the prefixes `name` sits under. */
+  private _indexPrefixes(name: string, added: boolean): void {
+    let at = name.indexOf(".");
+    while (at !== -1) {
+      const prefix = name.slice(0, at);
+      const held = this._pathPrefixes.get(prefix) ?? 0;
+      if (added) this._pathPrefixes.set(prefix, held + 1);
+      else if (held <= 1) this._pathPrefixes.delete(prefix);
+      else this._pathPrefixes.set(prefix, held - 1);
+      at = name.indexOf(".", at + 1);
+    }
+  }
+
+  /** Whether any field lives below `name` — the question a subtree write has to ask first. */
+  private _hasFieldsUnder(name: string): boolean {
+    return this._pathPrefixes.has(name);
+  }
   /** Reference count of controls claiming each field name. */
   private readonly _claims = new Map<string, number>();
   /**
@@ -521,8 +557,11 @@ export class MdyFormEngine
     });
     this.canUndo = this._historyManager.canUndo;
     this.canRedo = this._historyManager.canRedo;
-    this._fieldNames = _rx.signal<readonly string[]>([]);
-    this.fieldNames = this._fieldNames.asReadonly();
+    this._structure = _rx.signal(0);
+    this.fieldNames = _rx.computed(() => {
+      this._structure();
+      return [...this._fields.keys()];
+    });
     this._formValidators = _rx.signal<
       ReadonlyArray<MdyFormValidatorFn<Record<string, unknown>>>
     >([]);
@@ -532,7 +571,7 @@ export class MdyFormEngine
     this._submitSnapshot = _rx.signal<Record<string, unknown> | null>(null);
 
     this.value = _rx.computed(() => {
-      const names = this._fieldNames();
+      const names = this.fieldNames();
       const namesChanged =
         names.length !== this._valueSnapshotNames.length ||
         names.some((n, i) => n !== this._valueSnapshotNames[i]);
@@ -570,14 +609,14 @@ export class MdyFormEngine
     // contribute, and the user cannot clear the error because they cannot type into it.
     const valid = _rx.computed(
       () =>
-        this._fieldNames().every((n) => {
+        this.fieldNames().every((n) => {
           const rec = this._fields.get(n);
           if (!rec) return true;
           return rec.state.interactivity() === "disabled" || rec.state.valid();
         }) && this._crossErrors().length === 0,
     );
     const pending = _rx.computed(() =>
-      this._fieldNames().some(n => this._fields.get(n)?.state.pending() ?? false),
+      this.fieldNames().some(n => this._fields.get(n)?.state.pending() ?? false),
     );
     this.state = {
       valid,
@@ -827,9 +866,8 @@ export class MdyFormEngine
     if (!rec) return;
     rec.asyncRunner?.destroy();
     this._fields.delete(name);
-    this._rx.untracked(() =>
-      this._fieldNames.update(names => names.filter(n => n !== name)),
-    );
+    this._indexPrefixes(name, false);
+    this._rx.untracked(() => this._structure.update((version) => version + 1));
     this._initialValues.delete(name);
     this._fieldSanitizers.delete(name);
     // The binding outlives the record only while something is still bound: a claim, or a claim
@@ -873,6 +911,7 @@ export class MdyFormEngine
   noteBaseline(name: string): void {
     if (this._baselineFields === null) return;
     this._baselineFields.add(name);
+    if (!this._hasFieldsUnder(name)) return;
     for (const held of this._fields.keys()) {
       if (held.startsWith(`${name}.`)) this._baselineFields.add(held);
     }
@@ -886,7 +925,9 @@ export class MdyFormEngine
     //
     // The same question `exclude` answers for drafts, and the same answer: a name that is an
     // ancestor is about everything beneath it.
-    const under = [...this._fields.keys()].filter((path) => path.startsWith(`${name}.`));
+    const under = this._hasFieldsUnder(name)
+      ? [...this._fields.keys()].filter((path) => path.startsWith(`${name}.`))
+      : [];
     if (under.length > 0) {
       // Descendants first, and whether or not a field exists at this path itself: a collection
       // carries a phantom field at its own path for collection-level errors, and asking whether one
@@ -1165,7 +1206,7 @@ export class MdyFormEngine
     }
     this._fields.clear();
     for (const [name, rec] of placed) this._fields.set(name, rec);
-    this._rx.untracked(() => this._fieldNames.set([...placed.keys()]));
+    this._rx.untracked(() => this._structure.update((version) => version + 1));
   }
 
   /** Releases a path's binding and, where the field is there, what it was saying. */
@@ -1230,7 +1271,7 @@ export class MdyFormEngine
     // Reads the name list as a signal, so a computed built on this value depends on *which* fields
     // exist and not only on what they hold. Without it, a value read while a collection was empty
     // stays empty after rows arrive: the map iterated below is not reactive.
-    this._fieldNames();
+    this.fieldNames();
     return Object.fromEntries(
       Array.from(this._fields.entries()).map(([n, r]) => [n, r.state.value()]),
     );
@@ -1259,7 +1300,7 @@ export class MdyFormEngine
     return this._rx.computed(() => {
       // Depend on the reactive name list so the computed re-evaluates when
       // the field is created after the first read.
-      this._fieldNames();
+      this.fieldNames();
       const fieldErrors = (this._fields.get(path)?.state.errors() ?? []).map(
         e => ({ ...e, path }),
       );
@@ -1687,7 +1728,7 @@ export class MdyFormEngine
     this._owned.clear();
     this._initialValues.clear();
     this._rx.untracked(() => {
-      this._fieldNames.set([]);
+      this._structure.update((version) => version + 1);
     });
     // Backstop: any effect registered with the scope (draft/history/async
     // validators, and anything a future migrated adapter attaches to it)
@@ -1725,9 +1766,8 @@ export class MdyFormEngine
     if (!rec) {
       rec = this._createFieldRecord(name);
       this._fields.set(name, rec);
-      this._rx.untracked(() =>
-        this._fieldNames.update(names => [...names, name]),
-      );
+      this._indexPrefixes(name, true);
+      this._rx.untracked(() => this._structure.update((version) => version + 1));
     }
     return rec;
   }

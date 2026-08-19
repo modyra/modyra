@@ -237,7 +237,8 @@ export class MdyRecordManager implements MdyNestedCollection {
     const isNew = !this._declared.has(key);
     if (isNew) {
       this._declared.add(key);
-      this._keysSig.update((keys) => [...keys, key]);
+      if (this._bulkDepth > 0) this._bulkKeys = true;
+      else this._keysSig.update((keys) => [...keys, key]);
     }
     try {
       // One row, one change. A row's cells are registered one at a time, and a runtime whose
@@ -260,7 +261,10 @@ export class MdyRecordManager implements MdyNestedCollection {
     // row has registered its own fields, so that the row's shape is the template's and not the
     // order in which controls happened to arrive. A value whose keys follow the rendering is a
     // value the rendering can be read out of.
-    if (isNew) this._deps.engine.refreshPathGate(this._deps.path);
+    if (isNew) {
+      if (this._bulkDepth > 0) this._bulkDeclared = true;
+      else this._deps.engine.refreshPathGate(this._deps.path);
+    }
   }
 
   /**
@@ -355,8 +359,13 @@ export class MdyRecordManager implements MdyNestedCollection {
     // which is a shape the schema does not describe and a read that raises.
     this._batched(() => {
       this._destroyNestedUnder(`${this._deps.path}.${key}`);
-      this._keysSig.update((keys) => keys.filter((k) => k !== key));
-      this._deps.engine.refreshPathGate(this._deps.path);
+      if (this._bulkDepth > 0) {
+        this._bulkKeys = true;
+        this._bulkDeclared = true;
+      } else {
+        this._keysSig.update((keys) => keys.filter((k) => k !== key));
+        this._deps.engine.refreshPathGate(this._deps.path);
+      }
     });
   }
 
@@ -366,6 +375,44 @@ export class MdyRecordManager implements MdyNestedCollection {
    * Handed something that is not an object — the `undefined` a response can carry — it declares
    * nothing and says so. Emptying the collection stays possible and stays deliberate: `setAll({})`.
    */
+  /**
+   * How many bulk writes are in progress, and whether one of them declared a row.
+   *
+   * Declaring a row re-reads the gate over this collection, which walks every claim and every field
+   * the form holds: one row's worth of work is small, and one per row of a two-thousand-row write is
+   * the whole cost of the write. A bulk write does it once, at the end, which is the same state — a
+   * gate re-read admits waiting claims, and nothing between the rows of one write can be looking.
+   */
+  private _bulkDepth = 0;
+  private _bulkDeclared = false;
+  /**
+   * Whether the published key list is behind the declared set.
+   *
+   * The list is a value, so adding one key copies it: a two-thousand-row write copied a growing
+   * array two thousand times, which is the same cost the gate re-read had. The set is the answer
+   * `has()` gives and it is already up to date; the list is published once, from it.
+   */
+  private _bulkKeys = false;
+
+  /** Runs `write` as one bulk write: the gate is re-read once, when the outermost one finishes. */
+  private _asBulk(write: () => void): void {
+    this._bulkDepth += 1;
+    try {
+      write();
+    } finally {
+      this._bulkDepth -= 1;
+      if (this._bulkDepth === 0 && this._bulkKeys) {
+        this._bulkKeys = false;
+        // Insertion order is declaration order, which is the order the incremental writes produced.
+        this._keysSig.set([...this._declared]);
+      }
+      if (this._bulkDepth === 0 && this._bulkDeclared) {
+        this._bulkDeclared = false;
+        this._deps.engine.refreshPathGate(this._deps.path);
+      }
+    }
+  }
+
   setAll(values: Readonly<Record<string, unknown>>): void {
     if (!isRecord(values) || Array.isArray(values)) {
       this._warn(
@@ -379,12 +426,14 @@ export class MdyRecordManager implements MdyNestedCollection {
     // table with some rows written and some not at each of them — states the collection was never
     // in. `patch` on the same handle already answered as one.
     this._deps.engine.mutate(() => {
-      for (const key of [...this._declared]) {
-        if (!(key in wanted)) this.remove(key);
-      }
-      for (const [key, value] of Object.entries(wanted)) {
-        this.upsert(key, value);
-      }
+      this._asBulk(() => {
+        for (const key of [...this._declared]) {
+          if (!(key in wanted)) this.remove(key);
+        }
+        for (const [key, value] of Object.entries(wanted)) {
+          this.upsert(key, value);
+        }
+      });
     });
   }
 
@@ -530,7 +579,12 @@ export class MdyRecordManager implements MdyNestedCollection {
 
   /** The row key a path below this collection belongs to. */
   private _keyOf(path: string): string {
-    return path.slice(this._deps.path.length + 1).split(".")[0] ?? "";
+    // Read without allocating: this answers the gate for every field of every form the collection
+    // shares an engine with, once per row of a bulk write, and `split` built a whole array to throw
+    // away all but its first member.
+    const start = this._deps.path.length + 1;
+    const end = path.indexOf(".", start);
+    return end === -1 ? path.slice(start) : path.slice(start, end);
   }
 
   /**
