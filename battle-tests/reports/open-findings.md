@@ -14941,6 +14941,87 @@ Checked and clean beside it: every other disabled position behaves as the line d
 field, a field inside a group, a whole group, one cell of a two-cell row in either collection kind.
 The rule is right everywhere it has a field to apply to.
 
+## 247 — Continuous integration has been dark all day (S0, repository)
+
+Not a defect in the product. It is the thing that would have told anyone about one.
+
+```
+gh run list --limit 40    23 failures, and no success in the last 60 runs of "CI"
+```
+
+Three workflows — **CI**, **Battle tests**, **Deploy docs site** — every one failing since at least
+13:45, most of them in fifteen to thirty seconds, which is far too fast to have reached a test.
+
+```
+ERR_PNPM_OUTDATED_LOCKFILE  Cannot install with "frozen-lockfile" because pnpm-lock.yaml is not
+                            up to date with <ROOT>/package.json
+  specifiers in the lockfile don't match specifiers in package.json:
+* 1 dependencies were added: @types/node@^26.1.1
+```
+
+**The reason nobody noticed is the interesting half: the repository is written on one package manager
+and validated on another.** `.github/workflows/ci.yml` pins `pnpm/action-setup@v4` to `version: 10`;
+this machine runs pnpm 11.2.2; and there is no `packageManager` field in `package.json` to make them
+agree. A lockfile pnpm 11 calls current is one pnpm 10 refuses:
+
+```
+pnpm install --frozen-lockfile                    (11.2.2)   Already up to date
+npx pnpm@10 install --frozen-lockfile             (10.34.5)  ERR_PNPM_OUTDATED_LOCKFILE
+```
+
+Reproduced locally in the CI's exact form, with `--lockfile-only` so nothing was written, and the
+working tree clean afterwards.
+
+The lockfile is repaired — three lines recording the specifier the manifest already declares, and
+`--frozen-lockfile` now passes under **both** versions. The drift that produced it is not repaired,
+and is a decision rather than a fix: pin `packageManager` so the two agree, or raise CI to the version
+development actually uses. Until one of those, the next lockfile written here is the next red build,
+and it will again look like a change nobody made.
+
+**Two gates are red behind the install**, waiting to fire the moment it goes green:
+
+```
+test:cross-adapter-similarity   preact:withoutFunctions ≡ react:withoutFunctions
+                                packages/{preact,react}/src/widgets/runtime.ts:69 — 2 pairs, 1 recorded
+test:type-surface               MdyTimepickerFieldState.display was added (required) [major]
+```
+
+Neither is mine to close, and both are cheap: the first wants the body moved into `@modyra/core` or
+`@modyra/widgets` or recorded with a reason, the second wants the classification reviewed and
+accepted.
+
+## 248 — Twenty-eight advisories, none of them shipped (S2, repository)
+
+`pnpm audit`: **10 high, 17 moderate, 1 low**. The number to state first is the one that decides what
+it costs:
+
+```
+@modyra/core, @modyra/styles              no runtime dependencies at all
+every other published package             @modyra/* and a peer, and nothing else
+```
+
+So **nothing a consumer installs carries any of them.** Every advisory enters through the development
+toolchain, and the roots are the same handful each time:
+
+```
+high      fast-uri, image-size, ip-address, js-yaml, nanoid, postcss, undici
+moderate  hono, @hono/node-server, ip-address, postcss, tar, undici, webpack-dev-server
+low       hono
+
+reached through  @angular-devkit/build-angular, @angular/cli, angular-eslint, ng-packagr,
+                 jest, jest-preset-angular, jsdom, @changesets/cli
+```
+
+`hono` is the one direct dependency among them — a devDependency, used by a single docs example
+(`docs/examples/server-validation/hono-app.mjs`), and the installed 4.12.31 is below the 4.12.34 the
+advisory names while the declared range `^4.12.31` already allows it.
+
+What it still costs, stated rather than dismissed: these run on developer machines and on the CI
+runner, where several are denial-of-service or path-traversal shapes in build tooling that reads
+repository files. A supply-chain finding in a build tool is not nothing merely because it is not
+shipped — but it is a different decision from one in `@modyra/core`, and the register should not blur
+them.
+
 ## The browser tier, measured — and now gated like the other one
 
 `battle-tests/reports/known-red-browser.json` is the browser tier's baseline, written by
@@ -15132,7 +15213,7 @@ the half-fix to overlay teardown did not close it on plain either.
 ## The register's own shape, measured
 
 ```
-numbered findings        246
+numbered findings        248
 closed or retracted       58
 open with a battle       207
 open with none            10
