@@ -26,16 +26,25 @@ export interface MdySelectReconciliationState<TValue> {
  * Whether a value and an option's value are the same choice.
  *
  * Loose between primitives, because a value read from JSON arrives as `"1"` where the option holds
- * `1` and they are the same choice. **Never loose between objects**: `String()` renders every plain
- * object as `[object Object]`, so a comparison through it says two different entities are the same
- * one — and the caller then replaces the model's entity with the option's.
+ * `1` and they are the same choice.
+ *
+ * Between objects the question is the same one and the answer is not `String()`: every plain object
+ * renders as `[object Object]` through it, which would call two different entities one. The answer
+ * is the key an option is identified by — the rule `oneOf` uses and the rule a part id is built from
+ * (ADR 0051) — so an option that came back as a fresh object, which is what a restored draft, a
+ * refetch and an import all produce, is the option it is a copy of. Compared by reference instead,
+ * the list gained a second entry for a choice already in it, labelled with its own JSON and sharing
+ * a key with the entry below it: a keyboard pointing at whichever the DOM found first.
  */
 function sameChoice(value: unknown, optionValue: unknown): boolean {
   if (Object.is(value, optionValue)) return true;
   if (value === null || value === undefined || optionValue === null || optionValue === undefined) {
     return false;
   }
-  if (typeof value === "object" || typeof optionValue === "object") return false;
+  if (typeof value === "object" || typeof optionValue === "object") {
+    if (typeof value !== "object" || typeof optionValue !== "object") return false;
+    return defaultOptionKey(value) === defaultOptionKey(optionValue);
+  }
   return String(value) === String(optionValue);
 }
 
