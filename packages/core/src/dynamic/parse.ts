@@ -928,8 +928,23 @@ function validPlacement(at: unknown, trackCount: number): boolean {
 }
 
 
-function validateDynamicSchema(input: unknown): MdyDynamicDiagnostic[] {
+/**
+ * What is wrong with a document's tree, in two kinds.
+ *
+ * `structural` is about the shape the walk needs — a node that is not an object, a group with no
+ * children, an item a collection does not have. Any of them and there is nothing to walk, so the
+ * document is turned down whole.
+ *
+ * `perField` is about what one field declares: a kind nobody named, a validator of the wrong shape.
+ * The walk still runs and every other field survives, which is what makes the counts mean what they
+ * say — one field refused out of three is not three fields lost.
+ */
+function validateDynamicSchema(input: unknown): {
+  readonly structural: MdyDynamicDiagnostic[];
+  readonly perField: MdyDynamicDiagnostic[];
+} {
   const out: MdyDynamicDiagnostic[] = [];
+  const perField: MdyDynamicDiagnostic[] = [];
 
   /**
    * The walk is a stack rather than recursion, and there is no depth to refuse.
@@ -962,7 +977,7 @@ function validateDynamicSchema(input: unknown): MdyDynamicDiagnostic[] {
       // parsed clean at any depth below a row and then met the engine — where a person is already
       // waiting — or produced a control nobody asked for.
       collectingDiagnostics(
-        (message) => out.push({
+        (message) => perField.push({
           code: diagnosticCode(message),
           severity: "error",
           path: `${path}/field`,
@@ -1023,7 +1038,7 @@ function validateDynamicSchema(input: unknown): MdyDynamicDiagnostic[] {
     if (raw["initialValue"] !== undefined && !Array.isArray(raw["initialValue"])) out.push({ code: "MDY_DYNAMIC_INVALID_ARRAY", severity: "error", path: `${path}/initialValue`, message: "array initialValue must be an array." });
   }
 
-  return out;
+  return { structural: out, perField };
 }
 
 /** Parses v1/v2 untrusted input with structured diagnostics. */
@@ -1066,16 +1081,18 @@ export function parseDynamicForm(
   // layout validator is told which vocabulary the document is entitled to use.
   const structured = version === 2 || version === 3;
   if (structured && envelope?.schema !== undefined) {
-    const schemaDiagnostics = validateDynamicSchema(envelope.schema);
-    diagnostics.push(...schemaDiagnostics);
+    const { structural, perField } = validateDynamicSchema(envelope.schema);
+    diagnostics.push(...structural, ...perField);
     // What the document said it had, counted before anything is refused. A schema the validator
     // turns down wholesale never reaches the walk, so without this a document declaring three
     // children reported none accepted and none rejected — three entered and nothing came out, with
     // the counts saying nothing happened.
     declaredLeaves = declaredFieldCount(envelope.schema);
     // A schema refused whole never reaches the walk, so everything it declared was turned down.
-    treeRejected = schemaDiagnostics.length > 0 ? declaredLeaves : 0;
-    if (schemaDiagnostics.length === 0) {
+    // A shape the walk cannot enter turns the document down whole; a field that declares something
+    // nobody can render is one field, and the count says so.
+    treeRejected = structural.length > 0 ? declaredLeaves : perField.length;
+    if (structural.length === 0) {
       // The walk reports the way the flat list does. Without this it ran outside the collector, so a
       // leaf `parseDynamicFields` refused was dropped and nothing said it — the same defect written
       // as a tree instead of a list received silence where the list received a diagnostic, and a
