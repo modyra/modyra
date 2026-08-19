@@ -57,8 +57,13 @@ export function readPlaywrightJson(report) {
  */
 export function severitiesByFile(files, claimsSource) {
   const severityOfClaim = new Map();
-  const entries = claimsSource.matchAll(/id:\s*"([A-Z0-9-]+)"[\s\S]{0,400?}?severity:\s*"(S\d)"/g);
-  for (const [, id, severity] of entries) severityOfClaim.set(id, severity);
+  // One claim per block, so a claim's severity is the first one after its id rather than whichever
+  // `severity:` a greedy read reaches first.
+  for (const block of claimsSource.split(/\bid:\s*"/).slice(1)) {
+    const id = block.slice(0, block.indexOf('"'));
+    const severity = /severity:\s*"(S\d)"/.exec(block)?.[1];
+    if (severity !== undefined) severityOfClaim.set(id, severity);
+  }
   const found = {};
   for (const [file, source] of Object.entries(files)) {
     const ids = [...new Set((source.match(/\b[A-Z0-9]{2,4}-\d{3}\b/g) ?? []))];
@@ -76,11 +81,15 @@ function readBaselineFile() {
 }
 
 function writeBaselineFile(names, severities) {
-  const ordered = [...names].sort();
+  // Severity first, then name: the file is read to decide what to repair next.
+  const severityOf = (name) => severities[name.split(" \u203a ")[0]] ?? "unknown";
+  const ordered = [...names].sort((left, right) => {
+    const bySeverity = severityOf(left).localeCompare(severityOf(right));
+    return bySeverity !== 0 ? bySeverity : left.localeCompare(right);
+  });
   const counts = {};
   for (const name of ordered) {
-    const severity = severities[name.split(" › ")[0]] ?? "unknown";
-    counts[severity] = (counts[severity] ?? 0) + 1;
+    counts[severityOf(name)] = (counts[severityOf(name)] ?? 0) + 1;
   }
   const body = {
     note:
@@ -109,8 +118,30 @@ function runSuite(jsonPath) {
   return JSON.parse(readFileSync(jsonPath, "utf8"));
 }
 
+/** Every failing spec's file, read once, so a severity can be taken from the claims it names. */
+function severitiesFor(names) {
+  const files = {};
+  for (const name of names) {
+    const file = name.split(" \u203a ")[0];
+    if (files[file] !== undefined) continue;
+    const path = join(BATTLE_ROOT, "browser", file);
+    files[file] = existsSync(path) ? readFileSync(path, "utf8") : "";
+  }
+  return severitiesByFile(files, readFileSync(join(BATTLE_ROOT, "models", "claims.mjs"), "utf8"));
+}
+
 function main() {
   const accept = process.argv.includes("--accept");
+
+  // Re-summarise what is already recorded, without a run. The list is the expensive part to produce
+  // and the counts are derived from it, so a change to how severity is read costs nothing to apply.
+  if (process.argv.includes("--recount")) {
+    const names = readBaselineFile();
+    writeBaselineFile(names, severitiesFor(names));
+    console.log(`browser baseline check: re-counted ${names.length} known-red spec(s)`);
+    return;
+  }
+
   const report = runSuite(join(mkdtempSync(join(tmpdir(), "mdy-browser-")), "report.json"));
   const run = readPlaywrightJson(report);
 
@@ -119,13 +150,7 @@ function main() {
     process.exit(2);
   }
 
-  const files = {};
-  for (const name of [...run.failed]) {
-    const file = name.split(" › ")[0];
-    const path = join(BATTLE_ROOT, "browser", file);
-    if (files[file] === undefined) files[file] = existsSync(path) ? readFileSync(path, "utf8") : "";
-  }
-  const severities = severitiesByFile(files, readFileSync(join(BATTLE_ROOT, "models", "claims.mjs"), "utf8"));
+  const severities = severitiesFor([...run.failed]);
 
   if (accept) {
     writeBaselineFile(run.failed, severities);

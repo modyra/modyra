@@ -129,6 +129,11 @@ function writeBaseline(names, file = BASELINE_FILE) {
       "Repair in severity order: every S0, then every S1, then S2 and below. `bySeverity` is the " +
       "count at each, and `knownRed` is sorted the same way, so the top of the list is the next work.",
     recordedAt: new Date().toISOString().slice(0, 10),
+    // The generative battles draw from this, so which names are here depends on it. A baseline
+    // recorded under one seed and checked under another reports a regression that is a different
+    // random walk rather than a new defect.
+    seed: process.env.MDY_BATTLE_SEED ?? "(none — the run drew a fresh seed, so this list is one walk of many)",
+    runs: process.env.MDY_BATTLE_RUNS ?? "(default)",
     openReds: ordered.length,
     bySeverity: countBySeverity(ordered),
     knownRed: ordered,

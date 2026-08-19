@@ -3,11 +3,11 @@
 ## Open now, and in the order they are repaired
 
 ```
-S0     5      the whole of it before any S1
-S1    15
+S0     3      the whole of it before any S1
+S1     7
 S2     3
       --
-      23      open reds, 2026-08-19
+      13      open reds, 2026-08-19
 ```
 
 Severity is the order of work: every S0, then every S1, then S2 and below. The same counts are in
@@ -14810,6 +14810,70 @@ The security policy is at more doors than it looked. Measured, all green:
   inside arrays — a `daterange`'s `start`, a file's `name`, a list's items. The walk is over the
   value's shape and not over a kind's expectations, which is why all of them come back clean.
 
+## 245 — An order only one surface reports (S0, PER-002 COL-007 COL-002)
+
+`keys()` is documented on the public handle as *"the declared keys, in declaration order"*, and for a
+record it is the **only** surface that can answer: a value is a plain object, and JavaScript puts an
+integer-like key ahead of every other one whatever order it was written in. Everything downstream of
+that order has to be reading the same one.
+
+Undoing a removal restores the row to its place, and `keys()` says so. The next bulk write says
+otherwise. Same three operations, same object handed to `setAll`, the undo the only difference:
+
+```
+declared          5aac, 3
+
+no undo   before  ["5aac", "3"]     after setAll  ["5aac", "3", "segment8"]
+an undo   before  ["5aac", "3"]     after setAll  ["3", "5aac", "segment8"]
+```
+
+The reported order going in is **identical**, and the results differ. So what `setAll` consults is not
+what `keys()` reports: without the undo a surviving key keeps its place and a new key is appended;
+with it, the survivors come back in whatever order the object handed in happened to have — which for
+an integer-like key is never the order anybody wrote.
+
+A restore that leaves one notion of order behind looks complete until the next bulk write, which can
+be a long way from the undo that caused it.
+
+**How it was found is the point.** The generative campaign produced it, minimised twenty-one
+operations to five, and recorded the seed. Both this hunt and the executor's saw the battle red once
+in a full run, green in isolation, and both of us wrote it down as a ghost. It is not a ghost: it is a
+random search reaching a real defect on the runs where the generator happens to produce an
+integer-like key, and green on the runs where it does not. A generative red is a counterexample, and
+the seed in the report is what makes it one.
+
+The path from there was four wrong turns, and they are worth recording because each looked right:
+
+```
+the model's setAll keeps a survivor's place, the product rebuilds   changed the model — wrong, reverted
+the value's key order is what diverged                              it was the keys() array
+undo appends a restored row at the end                              measured: it restores the place
+setAll always takes the object's order                              measured: only after an undo
+```
+
+The first was a repair to the reference model, written and reverted after a probe contradicted it. A
+model that is "fixed" to agree with the product stops being an oracle, which is why the measurement
+had to come before the edit rather than after.
+
+**A rename does it too**, which is what the second counterexample said and a probe then confirmed.
+Three rows, one renamed in place, then a write keeping two of them and bringing one new key:
+
+```
+after the rename    keys()  ["tmp:18", "tmp:5", "47"]
+after the setAll    keys()  ["47", "tmp:18", "20"]      and not ["tmp:18", "47", "20"]
+```
+
+So the statement is not about undo: **an operation that moves a key leaves `keys()` reporting one
+order and the next bulk write using another.** An undo restoring a removed row and a rename giving a
+row the old one's place are the two that move a key without adding or removing one, and both do it.
+Filed S0 rather than S1 for that reason — it is not one path, it is the surface.
+
+Green when a bulk write orders survivors the way `keys()` says they stand. Pinned by
+`adversarial/persistence/an-order-only-one-surface-reports.battle.test.mjs`, two battles, each with
+its own control: the undo really did restore the declared order, the rename really did leave the new
+key in the old one's place, and the written object's own order really does disagree with both —
+without that last one, a battle where they happened to agree would prove nothing.
+
 ## The browser tier, measured — a baseline this register never had
 
 `npm run battle:browser` on the working tree at `6ee29144`:
@@ -14966,7 +15030,7 @@ the half-fix to overlay teardown did not close it on plain either.
 ## The register's own shape, measured
 
 ```
-numbered findings        244
+numbered findings        245
 closed or retracted       58
 open with a battle       207
 open with none            10
