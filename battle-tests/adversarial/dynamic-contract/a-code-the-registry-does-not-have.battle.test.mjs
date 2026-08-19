@@ -1,18 +1,27 @@
 /**
  * The codes a parse can report, against the list the package publishes.
  *
- * `MDY_DYNAMIC_DIAGNOSTICS` is exported, and it is what a consumer switches on: seven entries, each a
- * `code` and the `phrase` its message carries. It is the only published account of what a parse can
- * say.
+ * `MDY_DYNAMIC_DIAGNOSTICS` is exported, and it is what a consumer switches on: each entry a `code`
+ * and the `phrase` its message carries. It is the only published account of what a parse can say.
  *
- * The parser says more. Driving it with one malformed document per known mistake, plus every
- * published fixture, three codes come back that the list does not have —
- * `MDY_DYNAMIC_INVALID_FIELD`, `MDY_DYNAMIC_INVALID_RULE`, `MDY_DYNAMIC_UNKNOWN_FIELD_REFERENCE`.
- * All three are reachable from an ordinary mistake: a validator of the wrong type, a rule pointing
- * somewhere it may not, a layout naming a field that is not there.
+ * The parser says more. Driving it with one malformed document per known mistake, plus a mode it
+ * does not know, plus every published fixture, seven codes come back that the list does not have:
  *
- * A consumer handling the seven and falling through on anything else meets a diagnostic they were
- * never told about, on documents they will certainly receive.
+ *     MDY_DYNAMIC_INVALID_FIELD              a validator of the wrong type
+ *     MDY_DYNAMIC_INVALID_RULE               a rule pointing somewhere it may not
+ *     MDY_DYNAMIC_UNKNOWN_FIELD_REFERENCE    a layout naming a field that is not there
+ *     MDY_DYNAMIC_INVALID_LAYOUT             a column count outside 1..12
+ *     MDY_DYNAMIC_INVALID_NODE               a node kind nobody declared
+ *     MDY_DYNAMIC_INVALID_RECORD             a record with no item
+ *     MDY_DYNAMIC_INVALID_ARRAY              an array initial value that is not a list
+ *
+ * Every one is reachable from an ordinary mistake, and a consumer handling the published list and
+ * falling through on anything else meets a diagnostic they were never told about, on documents they
+ * will certainly receive.
+ *
+ * The corpus reaches **every** published code, which is what makes an undeclared one a hole in the
+ * list rather than a corpus that wandered somewhere unusual. Two of them cost what they cost: a leaf
+ * 125 groups down for the path limit, and a hundred thousand and one declarations for the count.
  *
  * The corpus is deliberately built from mistakes rather than from fuzzing, so each row is a thing an
  * author does. `__proto__` is spelled as a computed key: written as a literal in an object it sets
@@ -33,6 +42,20 @@ const FIXTURES = resolve(HERE, "..", "..", "..", "spec", "fixtures", "dynamic-fo
 
 const leaf = (over) => ({ node: "field", field: { kind: "text", label: "L", ...over } });
 const hostileName = "__proto__";
+
+/** Deep enough that the leaf's path passes the 512 characters a path may be. */
+function nestedBy(depth) {
+  let node = leaf({});
+  for (let index = depth - 1; index >= 0; index -= 1) node = { node: "group", children: { [`g${index}`]: node } };
+  return node;
+}
+
+/** Wide enough that the reader stops counting what the document declares. */
+function wideBy(count) {
+  const children = {};
+  for (let index = 0; index < count; index += 1) children[`f${index}`] = leaf({});
+  return { node: "group", children };
+}
 
 /** One document per mistake an author makes. */
 const MISTAKES = Object.freeze([
@@ -63,7 +86,24 @@ const MISTAKES = Object.freeze([
     rows: { node: "record", label: "R" } } } }],
   ["an array initial value that is not a list", { version: 3, schema: { node: "group", children: {
     rows: { node: "array", label: "A", item: { node: "group", children: {} }, initialValue: "x" } } } }],
+  ["two options of one value", { version: 3, fields: [{ name: "f", kind: "select", label: "L",
+    options: [{ value: "a", label: "A" }, { value: "a", label: "B" }] }] }],
+  ["a validator written on the field", { version: 3, fields: [
+    { name: "f", kind: "text", label: "L", required: true }] }],
+  ["a required a slider always satisfies", { version: 3, fields: [
+    { name: "f", kind: "slider", label: "L", validators: { required: true } }] }],
+  ["a condition that is not an expression", { version: 4, schema: { node: "group", children: {
+    f: { ...leaf({}), when: "yes" } } } }],
+  ["a context key nothing declares", { version: 4, schema: { node: "group", children: {
+    f: { ...leaf({}), when: { op: "equals", operands: [{ context: "tier" }, "gold"] } } } } }],
+  ["a member the contract does not name", { version: 3, fields: [{ name: "f", kind: "text", label: "L" }],
+    rules: [{ effect: "hidden", target: "f", when: { field: "f", operator: "equals", value: "x" }, extra: 1 }] }],
+  ["a path past the length limit", { version: 3, schema: nestedBy(125) }],
+  ["more declarations than the reader counts", { version: 3, schema: wideBy(100_001) }],
 ]);
+
+/** A mode is not a document, and it is the one refusal a corpus of documents cannot reach. */
+const MISTAKEN_MODE = "nope";
 
 battle(
   {
@@ -100,16 +140,20 @@ battle(
       }
     }
 
+    // The mode the reader is given is refused like a document is, and no document can carry it.
+    for (const diagnostic of parseDynamicForm({ version: 3, fields: [] }, { mode: MISTAKEN_MODE }).diagnostics ?? []) {
+      record(diagnostic.code, "a mode this reader does not know");
+    }
+
     const undeclared = [...seen].filter(([code]) => !declared.has(code)).map(([code, from]) => ({ code, from }));
     const unreached = [...declared].filter((code) => !seen.has(code));
     ctx.log.note("what a parse can say", { seen: [...seen.keys()], undeclared, unreached });
 
-    // The control: the corpus reaches most of the published list, so an undeclared code is a code the
-    // list is missing rather than a corpus that wandered somewhere unusual.
-    expectClaim(declared.size - unreached.length >= declared.size / 2, {
+    // The control: the corpus reaches every published code, so an undeclared one is a code the list
+    // is missing rather than a corpus that wandered somewhere unusual.
+    expectEqual(unreached, [], {
       claimIds: ["DYN-003"],
-      what: "this corpus triggers less than half the published list, so it is not exercising the ordinary paths",
-      detail: JSON.stringify({ declared: [...declared], unreached }),
+      what: "the corpus no longer reaches every published code, so it has stopped exercising the paths it compares against",
     });
 
     expectEqual(undeclared, [], {
