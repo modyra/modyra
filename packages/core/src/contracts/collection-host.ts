@@ -36,6 +36,19 @@ export interface MdyCollectionHost<TBooleanSignal = MdySignal<boolean>>
   /** Every field name the form currently holds. */
   fieldNames(): readonly string[];
   /**
+   * The one path segment each child of `prefix` occupies: a keyed collection's keys, a positional
+   * one's indices, as strings.
+   *
+   * Scoped to the prefix rather than filtered out of {@link MdyCollectionHost.fieldNames}, so a
+   * collection asking which rows it has pays for its own rows and not for the width of the form.
+   * Tracks the same shape changes `fieldNames` does.
+   *
+   * Optional because a host can already answer it, slower, from `fieldNames`: the collection falls
+   * back to filtering that when it is absent, so a host written against the earlier contract keeps
+   * working. What it costs is the width of the whole form, once per collection.
+   */
+  childSegmentsUnder?(prefix: string): readonly string[];
+  /**
    * Moves what a binder said about these paths onto the paths their rows now have — see
    * {@link import("../form-engine.js").MdyFormEngine.carryBindings}. A collection calls it when a
    * row changes identity, so a disabled cell stays disabled on the row the consumer disabled.

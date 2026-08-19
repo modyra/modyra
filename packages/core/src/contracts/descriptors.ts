@@ -179,7 +179,8 @@ export type MdyFormValue<S extends MdyFormSchema> = {
  * date range optional would describe a payload the form can never produce. Only the schema
  * distinguishes the two, which is why this is driven by `S` rather than by the value type.
  *
- * Arrays keep their element type: a row is submitted whole or not at all.
+ * A row is partial for the same reason a group is, and a *positional* row may be missing entirely
+ * while the ones after it stay where they are — see {@link MdySubmittedItemValue}.
  */
 export type MdySubmittedValue<S extends MdyFormSchema> = {
   readonly [K in keyof S]?: S[K] extends MdyFieldDescriptor<infer V>
@@ -187,11 +188,31 @@ export type MdySubmittedValue<S extends MdyFormSchema> = {
   : S[K] extends MdyGroupDescriptor<infer C>
   ? MdySubmittedValue<C>
   : S[K] extends MdyArrayDescriptor<infer I>
-  ? ReadonlyArray<MdyArrayItemValue<I>>
+  ? ReadonlyArray<MdySubmittedItemValue<I> | undefined>
   : S[K] extends MdyRecordDescriptor<infer I>
-  ? Readonly<Record<string, MdyArrayItemValue<I>>>
+  ? Readonly<Record<string, MdySubmittedItemValue<I>>>
   : never;
 };
+
+/**
+ * A row as it is submitted: {@link MdyArrayItemValue} with the same weakening
+ * {@link MdySubmittedValue} applies to the form itself.
+ *
+ * A row of cells is partial, because any of its cells may be disabled — a row whose cells are all
+ * disabled is `{}`, an object with none of its members, at the index it holds. A row that is a
+ * single value has no members to leave out, so a positional collection of them carries `undefined`
+ * where such a row is: a list of words stays a list of words, and the position of every other word
+ * is the position it has in the form.
+ */
+export type MdySubmittedItemValue<I> = I extends MdyGroupDescriptor<infer C>
+  ? MdySubmittedValue<C>
+  : I extends MdyFieldDescriptor<infer V>
+  ? V
+  : I extends MdyRecordDescriptor<infer R>
+  ? Readonly<Record<string, MdySubmittedItemValue<R>>>
+  : I extends MdyArrayDescriptor<infer A>
+  ? ReadonlyArray<MdySubmittedItemValue<A> | undefined>
+  : never;
 
 /** Deep partial of the schema value — accepted by `patch`. */
 export type MdyFormPatch<S extends MdyFormSchema> = {

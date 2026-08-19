@@ -104,6 +104,7 @@ export type {
   MdyFormValue,
   MdyGroupDescriptor,
   MdyRecordDescriptor,
+  MdySubmittedItemValue,
   MdySubmittedValue,
 } from "./contracts/descriptors.js";
 export type {
@@ -661,6 +662,8 @@ export abstract class MdyTypedFormBase<
   protected readonly _adapter: MdyFormEngine;
   /** Leaf paths in schema order. */
   protected readonly _leafPaths: readonly string[];
+  /** The leaf patterns inside a row, which say whether a row is a value or a set of cells. */
+  protected readonly _itemLeafPaths: ReadonlySet<string>;
   /** What the form held when it was destroyed — see {@link MdyTypedFormBase.getValue}. */
   private _valueAtDestroy: MdyFormValue<S> | null = null;
   /** What would have been sent at the moment the form ended; see {@link MdyTypedFormBase.getValue}. */
@@ -716,6 +719,7 @@ export abstract class MdyTypedFormBase<
 
     const paths = collectSchemaPaths(schema);
     this._leafPaths = paths.leafPaths;
+    this._itemLeafPaths = paths.itemLeafPaths;
     this._leafPathSet = new Set(paths.leafPaths);
     this._groupPaths = paths.groupPaths;
     this._arrayPaths = paths.arrayPaths;
@@ -934,8 +938,11 @@ export abstract class MdyTypedFormBase<
    * after the missing one is sent at a position it does not have. In a positional collection the
    * position is the identity: a server told "row 0" is told about a row the person can see below it.
    *
-   * A row that sent nothing is sent as nothing — `{}` — at the place it occupies. The alternative,
-   * a shorter list, is the one answer that cannot be read correctly by anyone.
+   * A row that sent nothing holds nothing at the place it occupies, in the shape its own declaration
+   * has: a row of cells is `{}`, a row that is itself a list is a list of the same length holding
+   * nothing, and a row that is a single value is `undefined` — a list of words stays a list of
+   * words. The alternative, a shorter list, is the one answer that cannot be read correctly by
+   * anyone.
    *
    * Keyed collections are untouched: a key that is not sent is a key a merge leaves alone, which is
    * a reading a server already has.
@@ -946,38 +953,66 @@ export abstract class MdyTypedFormBase<
   ): MdySubmittedValue<S> {
     if (this._arrayPaths.size === 0) return submitted;
     const held = this.getValue() as Record<string, unknown>;
+    // Every prefix of every submitted key, so "did row 3 of this list send anything" is one lookup
+    // rather than a scan of the payload. Without it the walk below costs rows × keys, which on a
+    // form of a few thousand cells is the whole submit.
+    const sent = new Set<string>();
+    for (const key of Object.keys(flat)) {
+      let cut = key.indexOf(".");
+      while (cut !== -1) {
+        sent.add(key.slice(0, cut));
+        cut = key.indexOf(".", cut + 1);
+      }
+      sent.add(key);
+    }
     const restore = (node: unknown, heldNode: unknown, path: string, concrete: string): unknown => {
       if (Array.isArray(node) && Array.isArray(heldNode) && this._arrayPaths.has(path)) {
-        // Which rows sent something, in the order the compacted list holds them.
-        const present = [...new Set(
-          Object.keys(flat)
-            .filter((key) => key.startsWith(`${concrete}.`))
-            .map((key) => Number(key.slice(concrete.length + 1).split(".")[0]))
-            .filter((index) => Number.isInteger(index)),
-        )].sort((a, b) => a - b);
         const rows: unknown[] = [];
+        // `at` walks the compacted list: a row that sent nothing consumes no entry of it.
+        let at = 0;
         for (let index = 0; index < heldNode.length; index += 1) {
-          const at = present.indexOf(index);
-          rows.push(at === -1
-            ? {}
-            : restore(node[at], heldNode[index], `${path}.*`, `${concrete}.${index}`));
+          if (!sent.has(`${concrete}.${index}`)) {
+            rows.push(this._nothingLike(`${path}.*`, heldNode[index]));
+            continue;
+          }
+          rows.push(restore(node[at], heldNode[index], `${path}.*`, `${concrete}.${index}`));
+          at += 1;
         }
         return rows;
       }
       if (isRecordValue(node) && isRecordValue(heldNode)) {
-        return Object.fromEntries(
-          Object.entries(node).map(([key, child]) => [
-            key,
-            restore(child, heldNode[key], this._recordPaths.has(path) || this._arrayPaths.has(path)
-              ? `${path}.*`
-              : path === "" ? key : `${path}.${key}`,
-              concrete === "" ? key : `${concrete}.${key}`),
-          ]),
-        );
+        const under = this._recordPaths.has(path) || this._arrayPaths.has(path);
+        const out: Record<string, unknown> = {};
+        for (const [key, child] of Object.entries(node)) {
+          out[key] = restore(
+            child,
+            heldNode[key],
+            under ? `${path}.*` : path === "" ? key : `${path}.${key}`,
+            concrete === "" ? key : `${concrete}.${key}`,
+          );
+        }
+        return out;
       }
       return node;
     };
     return restore(submitted, held, "", "") as MdySubmittedValue<S>;
+  }
+
+  /**
+   * What a row that sent nothing is, in the shape its own declaration has.
+   *
+   * A row is not always a record. A positional collection of leaves holds values, and an empty
+   * object in one of them changes the *type* of the element: a list declared as words is sent with
+   * an object in it, and a receiver validating a list of words rejects the whole payload rather than
+   * the one position it cannot read. The shape is taken from the schema and not from the held value,
+   * because an object-valued leaf — a range, a colour — is a single value and not a row of cells.
+   */
+  private _nothingLike(pattern: string, held: unknown): unknown {
+    if (this._itemLeafPaths.has(pattern)) return undefined;
+    if (this._arrayPaths.has(pattern) && Array.isArray(held)) {
+      return held.map((row) => this._nothingLike(`${pattern}.*`, row));
+    }
+    return {};
   }
 
   /**

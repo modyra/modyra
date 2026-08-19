@@ -41,7 +41,7 @@ import {
   MDY_ASYNC_FEATURE_DISABLED,
   type MdyDiagnostics,
 } from "./reactivity-diagnostics.js";
-import { isSafeFieldPath } from "./path-utils.js";
+import { ancestorsOf, isSafeFieldPath } from "./path-utils.js";
 import type { MdyCollectionHost } from "./contracts/collection-host.js";
 import type { MdyInteractivity } from "./types.js";
 import type { MdyPathGate } from "./contracts/form-registry.js";
@@ -363,24 +363,49 @@ export class MdyFormEngine
    * whole cost of writing a collection in bulk: two thousand rows paid for six thousand walks over a
    * growing map. The count is kept where the fields are, and answering costs one lookup.
    */
-  private readonly _pathPrefixes = new Map<string, number>();
+  private readonly _pathPrefixes = new Map<string, Map<string, number>>();
 
-  /** Records (or releases) the prefixes `name` sits under. */
+  /** Records (or releases) the prefixes `name` sits under, and the segment it takes under each. */
   private _indexPrefixes(name: string, added: boolean): void {
     let at = name.indexOf(".");
     while (at !== -1) {
       const prefix = name.slice(0, at);
-      const held = this._pathPrefixes.get(prefix) ?? 0;
-      if (added) this._pathPrefixes.set(prefix, held + 1);
-      else if (held <= 1) this._pathPrefixes.delete(prefix);
-      else this._pathPrefixes.set(prefix, held - 1);
-      at = name.indexOf(".", at + 1);
+      const next = name.indexOf(".", at + 1);
+      const segment = next === -1 ? name.slice(at + 1) : name.slice(at + 1, next);
+      const children = this._pathPrefixes.get(prefix);
+      if (added) {
+        if (children) children.set(segment, (children.get(segment) ?? 0) + 1);
+        else this._pathPrefixes.set(prefix, new Map([[segment, 1]]));
+      } else if (children) {
+        const held = children.get(segment) ?? 0;
+        if (held <= 1) children.delete(segment);
+        else children.set(segment, held - 1);
+        if (children.size === 0) this._pathPrefixes.delete(prefix);
+      }
+      at = next;
     }
   }
 
   /** Whether any field lives below `name` — the question a subtree write has to ask first. */
   private _hasFieldsUnder(name: string): boolean {
     return this._pathPrefixes.has(name);
+  }
+
+  /**
+   * The one path segment each child of `prefix` occupies — a collection's keys, or its row indices.
+   *
+   * A collection asking which of its rows the form holds used to read every field name and keep the
+   * ones under its own path. Each collection paid the width of the whole form, so a form holding a
+   * collection per row paid it once per row: the cost of declaring rows grew with the square of
+   * their number. The index answers from where the fields are.
+   *
+   * Reads the structure signal, so a caller inside an effect re-runs when the shape changes, exactly
+   * as {@link MdyFormEngine.fieldNames} does.
+   */
+  childSegmentsUnder(prefix: string): readonly string[] {
+    this._structure();
+    const children = this._pathPrefixes.get(prefix);
+    return children ? [...children.keys()] : [];
   }
   /** Reference count of controls claiming each field name. */
   private readonly _claims = new Map<string, number>();
@@ -736,9 +761,8 @@ export class MdyFormEngine
    * its rows are removed by the ordinary path, by their owner.
    */
   private _gateCovers(name: string): boolean {
-    for (const [prefix, gate] of this._gates) {
-      if (!gate.isOpen) continue;
-      if (name === prefix || name.startsWith(`${prefix}.`)) return true;
+    for (const prefix of ancestorsOf(name)) {
+      if (this._gates.get(prefix)?.isOpen) return true;
     }
     return false;
   }
@@ -750,11 +774,16 @@ export class MdyFormEngine
    * admit it, and the outermost is the one whose refusal a caller can act on.
    */
   private _gatesOver(name: string): Array<[string, MdyPathGate]> {
+    if (this._gates.size === 0) return [];
     const covering: Array<[string, MdyPathGate]> = [];
-    for (const [prefix, gate] of this._gates) {
-      if (name === prefix || name.startsWith(`${prefix}.`)) covering.push([prefix, gate]);
+    // The covering prefixes are exactly the path's own ancestors, so they are looked up rather than
+    // searched for: a form whose rows each register a gate has as many gates as rows, and scanning
+    // them for every path makes every write cost the size of the collection.
+    for (const prefix of ancestorsOf(name)) {
+      const gate = this._gates.get(prefix);
+      if (gate) covering.push([prefix, gate]);
     }
-    return covering.sort(([a], [b]) => a.length - b.length);
+    return covering;
   }
 
   /**

@@ -100,6 +100,16 @@ function hostDouble(rx) {
     peekField: (name) => fields.get(name) ?? null,
     getField: (name) => refFor(name),
     fieldNames: () => [...fields.keys()],
+    // The prefix-scoped half of the same question: which children a path has, without handing back
+    // the whole form for the caller to filter.
+    childSegmentsUnder: (prefix) => {
+      const under = new Set();
+      for (const name of fields.keys()) {
+        if (!name.startsWith(`${prefix}.`)) continue;
+        under.add(name.slice(prefix.length + 1).split(".")[0]);
+      }
+      return [...under];
+    },
     errorsFor: () => rx.computed(() => []),
     ownField: (...a) => note("ownField", ...a),
     disownField: (...a) => note("disownField", ...a),
@@ -123,6 +133,24 @@ test("an array manager runs against a host that is not the engine", () => {
 
   // The gate is how a collection answers for its own paths, and it is on the contract now.
   assert.deepEqual(engine.gatesHeld(), ["items"], "the manager did not claim its path range");
+  manager.destroy();
+});
+
+test("an array manager reconciles against a host that answers only the older contract", () => {
+  const rx = vanillaReactivity();
+  const engine = hostDouble(rx);
+  // `childSegmentsUnder` is optional, so a host written before it exists must still reconcile — from
+  // `fieldNames`, which is what the collection falls back to. Removed rather than never added, so
+  // the double stays one object and the two paths are the same object's two answers.
+  delete engine.childSegmentsUnder;
+
+  const manager = new MdyArrayManager(
+    { rx, engine, path: "items", item: group({ name: field("") }) },
+    [{ name: "Bolt" }],
+  );
+  assert.equal(manager.rowCount(), 1);
+  manager.push({ name: "Nut" });
+  assert.equal(manager.rowCount(), 2, "the fallback reconciliation lost a row the manager declared");
   manager.destroy();
 });
 
