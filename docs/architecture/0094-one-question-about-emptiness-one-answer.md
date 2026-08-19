@@ -49,7 +49,13 @@ for every boolean regardless of its state — stops firing when the box is clear
 
 `isEmpty` now walks an object's members, so a condition over a group or a collection row answers
 about what is inside it rather than about the container being an object. The walk is over own
-enumerable values only, and a value with no members reads as empty.
+enumerable values only.
+
+An object with **no** members is not empty. A container that declares nothing says nothing about
+answers — `{}` is a form root before any field exists, not a field nobody filled in — and reading it
+as empty took the root of a form out of `isNotEmpty`, which
+`battle-tests/adversarial/security/expression-paths.battle.test.mjs` holds. A `daterange` always
+carries its two members, so the case this record is about is unaffected.
 
 ## Alternatives rejected
 
