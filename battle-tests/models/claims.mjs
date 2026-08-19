@@ -665,6 +665,17 @@ const CLAIMS = [
       "docs/architecture/0025-a-tag-publishes-and-nothing-else-does.md",
     ],
   },
+  {
+    id: "EXP-001",
+    title: "A condition decides the same thing however it is spelled.",
+    area: "dynamic-contract",
+    severity: "S1",
+    publicEvidence: [
+      "@modyra/core evaluateExpression — a closed operator set over a form value, with no eval",
+      "@modyra/core MdyFieldOptions.when — the same question asked as a predicate",
+      "docs/architecture/0092-a-condition-travels-with-the-form.md",
+    ],
+  },
 ];
 
 const BY_ID = new Map();

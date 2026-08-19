@@ -12772,6 +12772,58 @@ coupling for the sites that derive a code from a message, *"made visible rather 
 Read as "every code a consumer may see", it would be a finding; read as what it says it is, it is
 complete.
 
+## 199 — One comparison, four spellings, three answers (S1, EXP-001)
+
+**Measured, and the contract states the opposite in its own comment.** `expression.ts` says, beside
+the operators it added to the tree, *"one vocabulary, so a document writing `in` means the same thing
+whichever of the two shapes it writes it in"*, and *"the tree and the flat form cannot come to
+disagree"*. They do:
+
+```
+held            equals (tree)   in (tree)   equals (rule)   in (rule)
+NaN vs NaN          true          true          false          true
+-0  vs 0            false         true          true           true
+0   vs -0           false         true          true           true
+7   vs 7            true          true          true           true
+```
+
+The tree's `equals` is `Object.is`, the flat rule's is `===`, and both `in` are
+`Array.prototype.includes`, which is SameValueZero and agrees with neither.
+
+Neither value is exotic. A number field given text it cannot read holds `NaN` — the engine's
+documented behaviour — and `-0` is what a minus in front of a zero parses to. A `rules` entry with
+effect `hidden` decides whether a field is in play, and a field out of play is not submitted: two
+authors writing the same condition in the two slots the contract offers get opposite answers about
+whether a value reaches the payload.
+
+**No answer needs inventing.** `in` is the operator that already agrees with itself across both
+spellings, and SameValueZero is the reading a form wants: `NaN` equals `NaN`, because the field
+either holds unreadable text or it does not; `-0` equals `0`, because they are the same answer to the
+question the form asked.
+
+Pinned by `adversarial/expression/one-vocabulary-four-answers.battle.test.mjs`, which keeps a control
+requiring all four to agree on ordinary values — so it reports a broken probe before it reports a
+broken contract.
+
+## 200 — Half the repository's conditions cannot be said as data (S1, EXP-001)
+
+Every `when` and `asyncWhen` outside tests was classified against the sixteen operators:
+`examples/plain`, `examples/lit`, `examples/angular`, `docs/guides/typed-forms.md`,
+`docs/examples/typed-forms`, `packages/studio-preview`. All are expressible — **none needs an
+operator that does not exist** — but about half read the field's *own* value, and the language
+addresses fields by path with no way to say *this one*.
+
+Today the translation does not merely fail, it fails **in the direction that opens**:
+`notEquals({self:true}, 0)` answers `true` for every value, because `{self:true}` is not an operand
+the resolver knows and is compared as the object it is. A `when` translated as it stands shows a
+field that should be out of play, and its value reaches the payload.
+
+Pinned by `adversarial/expression/the-same-condition-written-twice.battle.test.mjs`, a census rather
+than a sample: each row is a predicate that exists in the repository, the expression it becomes, and
+the values both are asked about. Decided by ADR 0092 (`{self}`, `{root}`, `{context}`); the battle is
+written against the settled contract, so it goes green when the operands land and not before.
+
+
 ## The register's own shape, measured
 
 ```
