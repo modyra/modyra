@@ -15212,6 +15212,43 @@ measurement by never reporting anything.
 Found by exercising `MDY_DRAFT_KEY_IN_USE`, one of the eighteen names `test:coverage-and-demo` reports
 as published and unexercised. Second finding from that list, after 250.
 
+## 253 — A member list nothing reads (S2, DYN-003 DYN-001)
+
+`MDY_DYNAMIC_MEMBERS` names what each slot of a document may carry, and
+`MDY_DYNAMIC_UNKNOWN_MEMBER` is what a parse says about a member outside the list. Nine slots are
+published. **Eight are enforced:**
+
+```
+document  field  validators  option  rule  validation  layoutSection  layoutColumns    reported
+layoutSlot                                                                             silent
+```
+
+A stray member on a columns node is reported at `/layout/0` and refused by strict mode. The same
+member one level down, on the slot inside it, produces nothing — in a section or in a columns row
+alike.
+
+A slot is the one node where the member *is* the meaning. `{ref, at}` is the whole list, and `at` is
+where a field says which column it sits in at which size. So a slot written `att` or `ats` is a
+placement that will not happen:
+
+```
+{ ref: "f", at:  { base: { column: 2 } } }   ok, and the field sits in column 2
+{ ref: "f", att: { base: { column: 2 } } }   ok, no diagnostic, and the field sits wherever it lands
+```
+
+The misspelled member is **kept in the parsed layout** and handed to whatever draws it, so the junk
+travels one step further than the silence.
+
+Green when a member outside `MDY_DYNAMIC_MEMBERS.layoutSlot` is reported the way one outside the other
+eight lists is. Pinned by `adversarial/dynamic-contract/a-member-list-nothing-reads.battle.test.mjs`,
+with the columns node above the slot as the control — the mechanism is present and reaches layout, so
+what is measured is the slot and not layout in general.
+
+Third finding from the eighteen unexercised names, after 250 and 252. Also a correction of my own
+first pass at it: a sweep of all nine slots reported `layoutColumns.kind` as unenforced too, which was
+the probe overwriting the discriminant that decides which member list applies. Measured again with the
+discriminant left alone, `layoutColumns` is enforced and `layoutSlot` is the only one that is not.
+
 ## The browser tier, measured — and now gated like the other one
 
 `battle-tests/reports/known-red-browser.json` is the browser tier's baseline, written by
@@ -15403,7 +15440,7 @@ the half-fix to overlay teardown did not close it on plain either.
 ## The register's own shape, measured
 
 ```
-numbered findings        252
+numbered findings        253
 closed or retracted       58
 open with a battle       207
 open with none            10
