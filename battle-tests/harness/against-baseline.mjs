@@ -134,6 +134,32 @@ function writeBaseline(names, file = BASELINE_FILE) {
     knownRed: ordered,
   };
   writeFileSync(file, `${JSON.stringify(body, null, 2)}\n`, "utf8");
+  writeRegisterSummary(body);
+}
+
+/**
+ * The register's opening count, rewritten from the file a run just wrote.
+ *
+ * The two are read by different people for the same decision — what to repair next — and a count
+ * kept by hand drifts the first time nobody remembers to change it. Only the fenced block is
+ * touched, and a register without one is left alone rather than guessed at.
+ */
+export function writeRegisterSummary(body, file = join(BATTLE_ROOT, "reports", "open-findings.md")) {
+  if (!existsSync(file)) return;
+  const register = readFileSync(file, "utf8");
+  const block = /```\nS0 +\d+ +the whole of it before any S1\nS1 +\d+\nS2 +\d+\n +--\n +\d+ +open reds, [\d-]+\n```/;
+  if (!block.test(register)) return;
+  const at = (key) => String(body.bySeverity[key] ?? 0).padStart(2);
+  const written = [
+    "```",
+    `S0    ${at("S0")}      the whole of it before any S1`,
+    `S1    ${at("S1")}`,
+    `S2    ${at("S2")}`,
+    "      --",
+    `      ${String(body.openReds).padStart(2)}      open reds, ${body.recordedAt}`,
+    "```",
+  ].join("\n");
+  writeFileSync(file, register.replace(block, written), "utf8");
 }
 
 function runSuite(pattern) {

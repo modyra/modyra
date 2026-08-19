@@ -13,7 +13,11 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { compareWithBaseline, countBySeverity, readTap, severityOf } from "./against-baseline.mjs";
+import { mkdtempSync, readFileSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+
+import { compareWithBaseline, countBySeverity, readTap, severityOf, writeRegisterSummary } from "./against-baseline.mjs";
 
 const TAP = [
   "TAP version 13",
@@ -86,4 +90,35 @@ test("the baseline counts what is open at each severity", () => {
     "[S1][C-001] three",
     "a name the harness did not write",
   ]), { S0: 1, S1: 2, S9: 1 });
+});
+
+test("the register's count is rewritten from the file a run wrote", () => {
+  const file = join(mkdtempSync(join(tmpdir(), "mdy-register-")), "open-findings.md");
+  writeFileSync(file, [
+    "# What is red, and why",
+    "",
+    "```",
+    "S0     1      the whole of it before any S1",
+    "S1     2",
+    "S2     3",
+    "      --",
+    "       6      open reds, 2026-01-01",
+    "```",
+    "",
+    "the rest of the register, which must survive",
+  ].join("\n"), "utf8");
+
+  writeRegisterSummary({ openReds: 24, bySeverity: { S0: 6, S1: 15, S2: 3 }, recordedAt: "2026-08-19" }, file);
+  const written = readFileSync(file, "utf8");
+  assert.match(written, /S0 {5}6 {6}the whole of it before any S1/);
+  assert.match(written, /S1 {4}15/);
+  assert.match(written, / {6}24 {6}open reds, 2026-08-19/);
+  assert.match(written, /the rest of the register, which must survive/);
+});
+
+test("a register without the block is left alone rather than guessed at", () => {
+  const file = join(mkdtempSync(join(tmpdir(), "mdy-register-")), "open-findings.md");
+  writeFileSync(file, "# What is red, and why\n\nno block here at all\n", "utf8");
+  writeRegisterSummary({ openReds: 24, bySeverity: { S0: 6 }, recordedAt: "2026-08-19" }, file);
+  assert.equal(readFileSync(file, "utf8"), "# What is red, and why\n\nno block here at all\n");
 });
