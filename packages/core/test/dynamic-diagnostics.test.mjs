@@ -207,10 +207,12 @@ test("a finding names the entry it is about, not the array it is in", () => {
     [["MDY_DYNAMIC_DUPLICATE_NAME", "/fields/2"]],
   );
 
-  // An envelope-level refusal is about the list rather than about an entry, and still says so.
+  // A version this reader does not have is about the version, not about the list: a document from a
+  // publisher one version ahead sent its reader hunting for a broken field it does not have.
   assert.deepEqual(
-    parseDynamicForm({ version: 99, fields: [{ name: "a", kind: "text" }] }).diagnostics.map((d) => d.path),
-    ["/fields"],
+    parseDynamicForm({ version: 99, fields: [{ name: "a", kind: "text" }] }).diagnostics
+      .map((d) => [d.code, d.path]),
+    [["MDY_DYNAMIC_UNSUPPORTED_VERSION", "/version"]],
   );
 });
 

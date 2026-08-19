@@ -38,25 +38,33 @@ const readJson = (path) => JSON.parse(readFileSync(join(ROOT, path), "utf8"));
 const SCHEMAS = [
   { path: "spec/dynamic-form-v2.schema.json", version: 2 },
   { path: "spec/dynamic-form-v3.schema.json", version: 3 },
+  { path: "spec/dynamic-form-v4.schema.json", version: 4 },
 ];
 
 /**
- * The slots a document carries, read from the type rather than restated here.
+ * The slots a document of each version carries, read from the types rather than restated here.
  *
- * `MdyDynamicFormConfigV3` is `Omit<…V2, "version">`, so v2's members are the list for both, and
- * reading them from the declaration means a slot added to the contract shows up as a schema defect
- * on the next run instead of the next bug report.
+ * Every version extends the one before it — `…V3` is `Omit<…V2, "version">`, `…V4` is `Omit<…V3,
+ * "version">` plus its own members — so a version's slots are its own declaration plus everything
+ * below it. Reading them from the declarations means a slot added to the contract shows up as a
+ * schema defect on the next run instead of the next bug report: `requiresContext` arrived with v4
+ * and no gate knew about it.
  */
-const documentSlots = () => {
+const documentSlots = (version) => {
   // Read from wherever the document's modules put it: which file holds the declaration is an
   // internal arrangement, and a gate that pins one is a gate that breaks on a rename.
   const dir = join(ROOT, "packages/core/src/dynamic");
-  const block = readdirSync(dir)
+  const sources = readdirSync(dir)
     .filter((name) => name.endsWith(".ts"))
-    .map((name) => /export interface MdyDynamicFormConfigV2 \{([\s\S]*?)\n\}/.exec(readFileSync(join(dir, name), "utf8")))
-    .find(Boolean);
-  if (!block) throw new Error("MdyDynamicFormConfigV2 is no longer declared where this audit reads it");
-  return [...block[1].matchAll(/^\s*readonly (\w+)\??:/gm)].map((match) => match[1]);
+    .map((name) => readFileSync(join(dir, name), "utf8"));
+  const slots = new Set();
+  for (let each = 2; each <= version; each += 1) {
+    const pattern = new RegExp(`export interface MdyDynamicFormConfigV${each}[^{]*\\{([\\s\\S]*?)\\n\\}`);
+    const block = sources.map((source) => pattern.exec(source)).find(Boolean);
+    if (!block) throw new Error(`MdyDynamicFormConfigV${each} is no longer declared where this audit reads it`);
+    for (const match of block[1].matchAll(/^\s*readonly (\w+)\??:/gm)) slots.add(match[1]);
+  }
+  return [...slots];
 };
 
 const findings = [];
@@ -80,7 +88,7 @@ for (const { path, version } of SCHEMAS) {
 
   // Only a closed object can reject a slot for being absent from the list.
   if (schema.additionalProperties === false) {
-    const absent = documentSlots().filter((slot) => !slotsOf(schema).includes(slot));
+    const absent = documentSlots(version).filter((slot) => !slotsOf(schema).includes(slot));
     if (absent.length > 0) {
       note(path, `is closed and does not declare slot(s) the document carries: ${absent.join(", ")}`);
     }
@@ -147,7 +155,7 @@ console.log("# Contract schema audit\n");
 console.log(`Schemas: ${SCHEMAS.map((s) => s.path).join(", ")}`);
 console.log(`Fixtures checked: ${fixtureCount}`);
 console.log(`Kinds the parser accepts: ${MDY_DYNAMIC_FIELD_KINDS.length}`);
-console.log(`Document slots read from the type: ${documentSlots().join(", ")}\n`);
+console.log(`Document slots read from the type: ${documentSlots(Math.max(...SCHEMAS.map(({ version }) => version))).join(", ")}\n`);
 
 console.log("Cross-reference findings are the parser's, not the schema's: a slot naming an absent");
 console.log("field, a duplicate name and a validation on an undeclared path pass any JSON Schema.");

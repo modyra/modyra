@@ -670,9 +670,12 @@ export function parseDynamicFields(input: unknown): MdyDynamicField[] {
     "fields" in input
   ) {
     const envelope = input as { version?: unknown; fields?: unknown };
-    if (envelope.version !== 1 && envelope.version !== 2 && envelope.version !== 3) {
+    if (
+      envelope.version !== 1 && envelope.version !== 2
+      && envelope.version !== 3 && envelope.version !== 4
+    ) {
       warnDev(
-        `Unsupported dynamic form config version ${String(envelope.version)} — expected 1, 2 or 3.`,
+        `Unsupported dynamic form config version ${String(envelope.version)} — expected 1, 2, 3 or 4.`,
       );
       return [];
     }
@@ -1349,6 +1352,41 @@ export function parseDynamicForm(
   const rawEnvelope = typeof input === "object" && input !== null && !Array.isArray(input)
     ? input as { version?: unknown; schema?: unknown }
     : undefined;
+  /**
+   * A version this reader does not have, answered as a version.
+   *
+   * The document is refused either way — nothing a newer publisher wrote is read as if it were this
+   * contract — but which refusal it gets decides where the host looks: read as a malformed field
+   * list, a document from a publisher one version ahead sent its reader hunting for the broken
+   * field, when the answer is that this reader does not have that version at all.
+   */
+  const versionDeclared = rawEnvelope !== undefined && "version" in rawEnvelope
+    ? rawEnvelope.version
+    : undefined;
+  const versionUnderstood = versionDeclared === undefined
+    || versionDeclared === 1 || versionDeclared === 2 || versionDeclared === 3 || versionDeclared === 4;
+  if (!versionUnderstood) {
+    return {
+      ok: false,
+      version: null,
+      fields: [],
+      collections: [],
+      layout: [],
+      rules: [],
+      validations: [],
+      acceptedCount: 0,
+      rejectedCount: 0,
+      diagnostics: [{
+        code: "MDY_DYNAMIC_UNSUPPORTED_VERSION",
+        severity: "error",
+        path: "/version",
+        message:
+          `Unsupported dynamic form config version ${JSON.stringify(versionDeclared)} — this reader ` +
+          "has versions 1, 2, 3 and 4. The document is from a publisher this reader does not know, " +
+          "and nothing in it was read.",
+      }],
+    };
+  }
   let collections: MdyDynamicCollection[] = [];
   /** How many fields a tree document declared, kept or not — `undefined` until a tree is walked. */
   let declaredLeaves: number | undefined;
