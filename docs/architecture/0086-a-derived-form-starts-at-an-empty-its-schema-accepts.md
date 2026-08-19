@@ -43,6 +43,51 @@ The seed is chosen in the order the value contracts use:
 not required; `z.string().min(1)` starts at `""`, is invalid, and says *Too small* both at arrival
 and after the user empties the box.
 
+## Amendment: the rule is the kind's value contract, not the schema library
+
+The decision above is stated over Zod pieces, which makes it checkable only against the installed
+library — a handful of leaf shapes standing in for a vocabulary of seventeen kinds. The same rule
+said over what the framework already publishes is stronger and covers all of them:
+
+```
+seed === null   if and only if   MDY_VALUE_CONTRACTS[kind].nullable
+the seed's shape                 is MDY_VALUE_CONTRACTS[kind].shape
+```
+
+Measured across all seventeen kinds, through `parseDynamicForm` + `buildFlatFormSchema`: they agree.
+
+```
+text/textarea/email/password/colors  nullable false  string      ""
+slider                               false           number      0
+checkbox/toggle                      false           boolean     false
+multiselect                          false           option[]    []
+file                                 false           file[]      []
+daterange                            false           dateRange   {start:null,end:null}
+number/select/radio/segmented        true            —           null
+datepicker/timepicker                true            string      null
+```
+
+Both halves carry weight. Without the second, `nullable: false` would be satisfied by *any*
+non-null value — `0` in a text field, `""` in a checkbox — and a form would open showing an answer
+nobody gave.
+
+This settles the boolean by derivation rather than by exception. A checkbox's contract says absence
+is not one of its values, so its empty is `false`; `expression.ts` saying `false` is not *empty*
+speaks about a condition reading an answer a person gave, which is a different question from what a
+field holds before anybody touches it.
+
+The Zod-side reading — accept the empty when the piece refuses it for `too_small`, `too_big` or
+`custom` rather than for its type — is the **translation** into this rule, not the rule. A
+refinement is how an author writes a rule the library has no built-in for, and reading only the
+library's own checks made the seed depend on how a rule was spelled: `z.string().min(2)` started at
+`""` and `z.string().refine(…)` at `null`, where the author's own message never appeared because a
+value of the wrong type never reaches the predicate carrying it.
+
+`battle-tests/adversarial/schema-adapters/where-a-kind-starts.battle.test.mjs` holds it across the
+vocabulary. Nothing else forces the two published facts to agree — the value contracts are a table,
+the seeds are chosen where a schema is built — so a kind added to one and not the other is exactly
+the silence it breaks.
+
 ## Consequences
 
 A form built from a schema of plain `z.string()` fields is **valid on arrival and submittable**.
