@@ -12827,9 +12827,9 @@ written against the settled contract, so it goes green when the operands land an
 ## The register's own shape, measured
 
 ```
-numbered findings        198
+numbered findings        200
 closed or retracted       23
-open with a battle       168
+open with a battle       170
 open with none             7
 ```
 
