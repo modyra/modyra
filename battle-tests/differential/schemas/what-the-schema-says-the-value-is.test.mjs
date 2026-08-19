@@ -1,42 +1,38 @@
 /**
- * The value a Zod form holds, against the value the schema itself produces.
+ * The value a derived form holds, against the value its schema produces.
  *
- * `createZodForm(schema)` derives a whole form from a `z.object()`. Zod is its own oracle here: the
+ * `createZodForm(schema)` derives a whole form from a `z.object()`, and Zod is its own oracle: the
  * same value can be put through `schema.safeParse` and through the form, and the two answers
  * compared. On the question of what is *allowed* they agree everywhere measured — length, range,
  * regex, int, positive, multipleOf, enum, literal, email, url, uuid, refine, superRefine, union,
- * optional, nullable, and a transform behind a `pipe`. That is the control battle, and it is what
- * makes the second one specific.
+ * optional, nullable, and a transform behind a `pipe`. That is the first battle, and it is what makes
+ * the others specific.
  *
- * They do not agree on what the value *is*. Zod's parse output is the value after its transformations
- * — `.trim()`, `.toLowerCase()`, `.transform()`, `.catch()`, `z.coerce.*`. The form holds what was
- * put in, and submits it.
+ * They do not agree on what the value *is*, and that is the form's side of a real division. A
+ * schema's parse output is the value after its transformations — `.trim()`, `.toLowerCase()`,
+ * `.transform()`, `.catch()`, `z.coerce.*`. A form holds what the person typed: trimming on every
+ * keystroke takes the space away while they are still typing it, and coercing `"4"` to `4` rewrites
+ * a number halfway through `"42"`.
  *
- * That would be a defensible choice for a form library — a form holds what the person typed — except
- * for what the package publishes about it. The leaf type is written twice, in the derived tree and in
- * the item descriptor, as `MdyFieldDescriptor<z.output<Piece> | null>`, and the comment above it says
- * so in words: "every other schema becomes a leaf field typed `z.output<Piece> | null`". `z.output`
- * is the type *after* the transformations that are not applied. So for any piece whose transform
- * changes the type, the declared type and the held value are different kinds of thing:
- * `z.coerce.number()` declares `number | null` and holds `"42"`.
+ * So what has to hold is not that the two agree, but that the package **says which one it is**. Both
+ * bridges say it in their published leaf type, and the guide beside them has to agree:
  *
- * `docs/guides/schemas.md` is the guide for this adapter and does not mention transformations,
- * coercion, or the difference between a form's value and a schema's output.
+ *     @modyra/zod               MdyFieldDescriptor<z.input<Piece> | null>
+ *     @modyra/standard-schema   a tree mapped over MdyStandardInput
+ *     docs/guides/schemas.md    "Leaves are `Input | null` (null = not filled in)"
  *
- * Three repairs, and the battle is written to accept any of them: apply the schema's transformations
- * to the value, refuse to derive a form from a transforming schema, or declare the leaf as
- * `z.input` so the published type describes what is really there. The last is why the battle reads
- * the published type rather than only the values — a repair that retyped the leaves would otherwise
- * leave it red forever.
+ * Each battle here takes either answer: the value is what the schema produces, or the published type
+ * describes the value the form really holds. Written that way because a form that transforms and a
+ * form that declares what it keeps are both defensible, and a form that keeps one thing while its
+ * type promises another is not.
  *
- * The other bridge says the same thing by a different route and behaves the same way.
- * `MdyStandardSchemaTree` maps over `MdyStandardOutput<TSchema>`, and `docs/guides/schemas.md:39`
- * puts it in prose beside the example a reader copies: "Leaves are `Output | null`". The third
- * battle holds that one, through Zod acting as a Standard Schema vendor, because the spec's
- * `~standard.validate` returns the output value and so is an oracle of the same kind.
+ * The last battle asks the same question of the other bridge through Zod acting as a Standard Schema
+ * vendor, because the spec's `~standard.validate` returns the output value and so is an oracle of the
+ * same kind.
  */
 
 import { readFileSync } from "node:fs";
+import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { z } from "zod";
@@ -83,6 +79,23 @@ function publishedLeafType() {
   return {
     saysOutput: /MdyFieldDescriptor<z\.output</.test(text),
     saysInput: /MdyFieldDescriptor<z\.input</.test(text),
+  };
+}
+
+/**
+ * What the other bridge publishes about its leaves, in its types and in the guide beside them.
+ *
+ * The same question as `publishedLeafType`, asked of the package that has its own spelling for it:
+ * a tree mapped over the schema's input describes a form that holds what was typed.
+ */
+function publishedStandardLeafType() {
+  const entry = fileURLToPath(import.meta.resolve("@modyra/standard-schema"));
+  const text = readFileSync(entry.replace(/\.js$/, ".d.ts"), "utf8");
+  const guide = readFileSync(resolve(dirname(fileURLToPath(import.meta.url)), "..", "..", "..", "docs", "guides", "schemas.md"), "utf8");
+  return {
+    saysInput: /MdyStandardInput</.test(text),
+    saysOutput: /MdyStandardOutput</.test(text),
+    guideSaysInput: /Leaves are `Input \| null`/.test(guide),
   };
 }
 
@@ -235,10 +248,23 @@ battle(
       detail: JSON.stringify(form.errorsFor("f")().map((each) => each.message)),
     });
 
-    expectEqual(held, produced.value.f, {
+    // Either the value is what the schema produces, or what the package publishes describes what the
+    // form really holds. A form holds what a person typed, which is a defensible thing for a form to
+    // do and an indefensible thing to hold silently under a type that says otherwise — so the tree's
+    // own spelling settles it, and the guide beside it has to agree.
+    const published = publishedStandardLeafType();
+    ctx.log.note("what the other bridge publishes about its leaves", published);
+
+    expectClaim(published.saysInput || published.saysOutput, {
+      claimIds: ["DYN-001"],
+      what: "the published leaf type is neither the schema's input nor its output, so this battle cannot say what was promised",
+      detail: JSON.stringify(published),
+    });
+
+    expectClaim(held === produced.value.f || (published.saysInput && published.guideSaysInput), {
       claimIds: ["DYN-001", "SUB-001"],
-      what: "the form holds the input where its schema tree is typed from the output — `MdyStandardSchemaTree` maps over `MdyStandardOutput`, and the guide says \"Leaves are `Output | null`\"",
-      detail: JSON.stringify({ held, heldType: typeof held, schemaProduces: produced.value.f }),
+      what: "the form holds the input while its tree or its guide still describes the output, so a consumer reads one kind of thing and submits another",
+      detail: JSON.stringify({ held, heldType: typeof held, schemaProduces: produced.value.f, published }),
     });
 
     form.destroy();
