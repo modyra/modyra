@@ -35,6 +35,18 @@ export interface MdySelectState<TValue> {
    * to remember — and it is what gives the user something to click in order to replace the value.
    */
   readonly options: readonly MdySelectOption<TValue>[];
+  /**
+   * One key per painted option, in the same order.
+   *
+   * A key identifies an option *in this list*, and the id a renderer puts on the element is built
+   * from it. Computed per option from its value, two options a document declares with the same
+   * value produced one key, one element and one id: a list of three offered a person two, and the
+   * one they could not reach was the one below.
+   *
+   * Read this rather than keying an option by its value: the controller disambiguates a repeated
+   * value here, so an element exists for each declared option and every reference resolves.
+   */
+  readonly optionKeys: readonly string[];
   readonly open: boolean;
   readonly query: string;
   readonly activeKey: string | null;

@@ -97,10 +97,12 @@ export function renderSelectField(
    * not contain is painted as an option of its own so the user can see it and replace it. Building
    * the `<li>`s once would leave both of those invisible.
    */
-  function syncOptions(painted: readonly MdySelectOption<unknown>[]): void {
+  function syncOptions(painted: readonly MdySelectOption<unknown>[], keys: readonly string[]): void {
     const wanted = new Set<string>();
-    for (const option of painted) {
-      const key = keyFor(option);
+    for (const [index, option] of painted.entries()) {
+      // The key the controller gave this option, not one computed from its value: a value a document
+      // repeats is still two options, and two elements sharing an id are one a reference can reach.
+      const key = keys[index] ?? keyFor(option);
       wanted.add(key);
       let li = optionEls.get(key);
       if (!li) {
@@ -118,7 +120,7 @@ export function renderSelectField(
       optionEls.delete(key);
     }
   }
-  syncOptions(controller.state().options);
+  syncOptions(controller.state().options, controller.state().optionKeys);
 
   // `mdy-select` is what the themes anchor the dropdown against (position: relative).
   const wrapper = el("div", "mdy-select");
@@ -215,7 +217,7 @@ export function renderSelectField(
       const match = typeaheadMatch(controller.state().options, typeahead.push(event.key));
       if (match) {
         event.preventDefault();
-        dispatch({ type: "activate", optionKey: keyFor(match) });
+        dispatch({ type: "activate", optionKey: state.optionKeys[state.options.indexOf(match)] ?? keyFor(match) });
       }
       return;
     }
@@ -277,7 +279,7 @@ export function renderSelectField(
     applyPart(search, view.parts.search);
     applyPart(listbox, view.parts.listbox);
     setErrors(shell.errorList, shownErrorsOf(handle).map((e) => e.message));
-    syncOptions(state.options);
+    syncOptions(state.options, state.optionKeys);
 
     reflectOverlayOpen(popup, state.open, messages);
     // The chevron points down when closed and up when open — the stylesheet has always carried the
@@ -298,7 +300,7 @@ export function renderSelectField(
       if (search.value) search.value = "";
     }
     // The trigger always shows the committed value: nothing the user types can hide it.
-    const selected = state.options.find((o) => keyFor(o) === state.selectedKey);
+    const selected = state.options[state.optionKeys.indexOf(state.selectedKey ?? "")];
     setText(valueText, selected?.label ?? "");
     valueText.hidden = !selected;
     placeholderText.hidden = Boolean(selected);
