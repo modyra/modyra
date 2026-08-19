@@ -19,6 +19,20 @@ import { isSafeFieldPath } from "../path-utils.js";
 export const MDY_ID_DELIMITER = "__";
 
 export const MDY_MAX_DYNAMIC_PATTERN_LENGTH = 256;
+
+/**
+ * How long a field's path may be.
+ *
+ * A nested document has no depth limit, deliberately — a form's shape is the author's business —
+ * but a path is not only structure: it is the payload key, the draft key, the widget id, and a
+ * string every renderer carries per field. A hundred thousand levels of group produced a name of two
+ * hundred thousand characters, parsed clean in a few milliseconds, and the cost of that name is paid
+ * on every read of every value.
+ *
+ * A length rather than a depth, because it is the length that costs: a document nested nine levels
+ * deep with short names is nothing to refuse.
+ */
+export const MDY_MAX_DYNAMIC_PATH_LENGTH = 512;
 const MDY_FORBIDDEN_DYNAMIC_NAMES = new Set([
   "__proto__",
   "prototype",
@@ -78,7 +92,28 @@ export function isSafeDynamicSegment(value: string): boolean {
  * mistake was caught.
  */
 export function isSafeDynamicName(name: string): boolean {
-  return isSafeDynamicSegment(name) && !name.includes(MDY_ID_DELIMITER) && !/\s/.test(name);
+  return isSafeDynamicSegment(name)
+    && !name.includes(MDY_ID_DELIMITER)
+    && !/\s/.test(name)
+    && !MDY_INVISIBLE_IN_NAME.test(name);
+}
+
+/**
+ * The characters that make two different names look like one.
+ *
+ * The same class `sanitize: "text"` strips from a **value**, and `security.md` explains why with the
+ * case that matters: `"admin\u202E"` looks like `admin` and is not. A name never met the sanitizer,
+ * and a name is what a value is filed under — a path, a payload key, a draft key, and the string a
+ * reviewer reads when they check what a generated document declares. So a document could declare
+ * `amount` twice, once really and once invisibly, and the duplicate check that exists precisely for
+ * names that collide saw two different names.
+ */
+// eslint-disable-next-line no-control-regex -- matching control characters is the whole point of this regex
+const MDY_INVISIBLE_IN_NAME = /[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F-\u009F\u200B-\u200D\u2028-\u202E\u2066-\u2069\uFEFF]/;
+
+/** Whether a name carries one of them — asked where a path is read rather than thrown on. */
+export function hasInvisibleCharacters(name: string): boolean {
+  return MDY_INVISIBLE_IN_NAME.test(name);
 }
 
 export function assertSafeDynamicName(name: string): void {
@@ -93,6 +128,13 @@ export function assertSafeDynamicName(name: string): void {
       `[modyra] Invalid field name "${name}": a widget id is built from this name, and ` +
         "whitespace splits an id reference into several, each resolving to nothing — so the " +
         "control would have no accessible name.",
+    );
+  }
+  if (MDY_INVISIBLE_IN_NAME.test(name)) {
+    throw new Error(
+      `[modyra] Invalid field name ${JSON.stringify(name)}: it carries a character that cannot be ` +
+        "seen, so two names that read the same are two different fields — and the value sanitizer " +
+        "removes exactly these from a value for the same reason.",
     );
   }
 }

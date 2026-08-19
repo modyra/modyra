@@ -14,11 +14,13 @@ import {
 } from "../expression.js";
 import {
   MDY_ID_DELIMITER,
+  MDY_MAX_DYNAMIC_PATH_LENGTH,
   MDY_MAX_DYNAMIC_PATTERN_LENGTH,
   collectingDiagnostics,
   isFiniteNumber,
   isIsoDate,
   isRecordValue,
+  hasInvisibleCharacters,
   isSafeDynamicName,
   isSafeDynamicSegment,
   warnDev,
@@ -423,6 +425,15 @@ export function flattenDynamicForm(schema: MdyDynamicGroupNode): {
   while (pending.length > 0) {
     const { node, path, initial } = pending.pop()!;
     if (node.node === "field") {
+      if (path.length > MDY_MAX_DYNAMIC_PATH_LENGTH) {
+        warnDev(
+          `Dropped a dynamic field whose path is ${path.length} characters, past the ` +
+          `${MDY_MAX_DYNAMIC_PATH_LENGTH} a path may be: a path is the payload key, the draft key ` +
+          "and the widget id, and every read of the value carries it.",
+          "/schema",
+        );
+        continue;
+      }
       const candidate = { ...node.field, name: path, initialValue: initial ?? node.field.initialValue } as MdyDynamicField;
       // Generated dotted/index paths are trusted structure; validate the leaf with
       // a temporary safe name, then restore the generated path.
@@ -657,6 +668,17 @@ export function parseDynamicFields(input: unknown): MdyDynamicField[] {
       );
       return false;
     }
+    // A character that cannot be seen makes two different names read the same, and a name is what a
+    // value is filed under — the duplicate check exists for exactly this collision and would not see
+    // it. The value sanitizer removes this class for the same reason.
+    if (hasInvisibleCharacters(f.name)) {
+      warnDev(
+        `Dropped dynamic field ${JSON.stringify(f.name)}: the name carries a character that cannot ` +
+        "be seen, so two names that read the same would be two different fields.",
+        at,
+      );
+      return false;
+    }
     if (f.name.includes(MDY_ID_DELIMITER)) {
       warnDev(
         `Dropped dynamic field "${f.name}": "${MDY_ID_DELIMITER}" separates the segments of a generated id, ` +
@@ -860,6 +882,7 @@ export const MDY_DYNAMIC_DIAGNOSTICS: ReadonlyArray<{
   { code: "MDY_DYNAMIC_UNKNOWN_PARSE_MODE", phrase: "is not one this reader knows" },
   { code: "MDY_DYNAMIC_INVALID_CONDITION", phrase: "expected an expression object" },
   { code: "MDY_DYNAMIC_UNDECLARED_CONTEXT", phrase: "does not declare in" },
+  { code: "MDY_DYNAMIC_PATH_TOO_LONG", phrase: "a path may be" },
   { code: "MDY_DYNAMIC_PATTERN_TOO_LONG", phrase: "pattern length" },
   { code: "MDY_DYNAMIC_PATTERN_TOO_COSTLY", phrase: "backtracks exponentially" },
 ];

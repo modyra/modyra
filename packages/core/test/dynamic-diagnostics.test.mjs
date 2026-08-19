@@ -30,6 +30,12 @@ const REFUSALS = {
     options: [{ value: "pro", label: "Pro monthly" }, { value: "pro", label: "Pro yearly" }],
   }],
   MDY_DYNAMIC_UNKNOWN_PARSE_MODE: [{ name: "a", kind: "text" }],
+  // A path is the payload key and the widget id, and a document can grow one without limit.
+  MDY_DYNAMIC_PATH_TOO_LONG: (() => {
+    let node = { node: "field", field: { kind: "text", label: "L" } };
+    for (let level = 0; level < 400; level += 1) node = { node: "group", children: { group: node } };
+    return { version: 3, schema: node };
+  })(),
   // A condition on a node, in the two ways a document can get one wrong: a clause that is not an
   // expression at all, and one reading a context key the envelope never declared.
   MDY_DYNAMIC_INVALID_CONDITION: {
