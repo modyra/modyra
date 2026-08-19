@@ -199,6 +199,7 @@ export class MdyRecordManager implements MdyNestedCollection {
         const order = [...present].filter((key) => this._declared.has(key));
         if (order.length === this._declared.size) {
           this._keysSig.set(order);
+          this._reorderDeclared(order);
           this._deps.engine.orderRowsUnder(this._deps.path, order);
         }
       },
@@ -511,6 +512,7 @@ export class MdyRecordManager implements MdyNestedCollection {
         const others = keys.filter((key) => key !== to);
         return [...others.slice(0, at), to, ...others.slice(at)];
       });
+      this._reorderDeclared(this.keysNow());
       // And the value reads its rows in the order their fields were registered, which the move has
       // just changed. Both answer for the same list, so both follow the keys.
       this._deps.engine.orderRowsUnder(this._deps.path, this.keysNow());
@@ -701,6 +703,21 @@ export class MdyRecordManager implements MdyNestedCollection {
    */
   setAllFrom(value: unknown): void {
     if (isRecord(value)) this.setAll(value);
+  }
+
+  /**
+   * Puts the declared set in the order the list reports.
+   *
+   * Two operations move a key without adding or removing one — an undo that puts a row back where it
+   * was, and a rename that gives a row the old key's place — and both wrote the new order into the
+   * list only. The set kept the order the keys were first declared in, and the set is what a whole
+   * value and a bulk write read: `keys()` said the row had moved and the next `setAll` put it back,
+   * arbitrarily far from the operation that caused it. One order, in both places.
+   */
+  private _reorderDeclared(order: readonly string[]): void {
+    if (order.length !== this._declared.size) return;
+    this._declared.clear();
+    for (const key of order) this._declared.add(key);
   }
 
   /** The declared keys as a plain array, for a sibling manager reading through this one. */
