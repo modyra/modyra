@@ -15781,6 +15781,69 @@ doors disagreeing whatever the type says.
 Held by `battle-tests/adversarial/submission/a-change-set-its-own-door-cannot-read.battle.test.mjs`,
 with the keyed round trip as the control.
 
+## 260 — Nothing has run on main since 15:17Z (repository, blocks release)
+
+Not a defect in the product. `CI` and `Battle tests` have not completed a run on `main` for six
+hours, and the reason is a pair of jobs that started and never ended:
+
+```
+32272998309  CI            build-and-test               in_progress since 15:56:15Z, updated 15:56:16Z
+32269117606  Battle tests  Plain lifecycle in a browser in_progress since 15:17:05Z
+```
+
+Both workflows set `cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}` — false on `main`, so
+a push queues behind the run in front of it instead of replacing it. A run that never finishes
+therefore holds the group for ever, and each new push cancels only the *pending* run before it:
+
+```
+f76eeb3e  CI cancelled   Battle tests cancelled
+09944758  CI cancelled   Battle tests cancelled
+6d31da65  CI cancelled   Battle tests cancelled
+25d004c0  CI pending     Battle tests pending      — waiting behind a job stopped five hours ago
+```
+
+`Deploy docs site` succeeds on every one of those commits: it is in a different concurrency group
+(`pages`), which is what says runners are available and the problem is the group rather than the
+account.
+
+**The queue clears by cancelling the two runs.** `gh run cancel` is refused in this session, so it is
+the one step here that needs the user. Nothing else unblocks it: a new push cannot, because a push is
+what queues behind them.
+
+The last completed `Battle tests` run, `7e1b5a50`, also carries a real result worth keeping — see the
+studio-build finding, which that run is the evidence for.
+
+## 261 — A gate that reported nineteen regressions from one missing build (harness)
+
+The last completed CI run of `Battle tests`, `7e1b5a50`, reported **19 new reds**. Seventeen were
+Studio, and the report for each says the same thing:
+
+```
+[S1][STU-001] studio-codegen could not be packed and installed
+  (node:internal/modules/esm/resolve:275   throw new ERR_MODULE_NOT_FOUND()
+```
+
+`battle:ci` built `build:packages` and `build:plain`. The battles import six Studio packages, and
+nothing built them, so every battle that touches one failed on resolution — and the gate, which knows
+only "red, and not in the baseline", called each a regression against a product that was fine. Two of
+those carried `S0` and the name of a security claim.
+
+Locally the same suite is green because `packages/*/dist` is left behind by earlier work. The gate
+was measuring what a developer's disk happened to hold.
+
+Repaired here, in two parts:
+
+- `battle:ci` runs `build:studio` as well — the existing script, `5.8s`, not a new command.
+- the packages under measurement are **read off the suite** rather than listed: every
+  `from "@modyra/x"` in a `.mjs` the node glob covers, excluding the Angular tier which another step
+  builds. A package with no `dist` now exits 2 with a sentence naming it, instead of being reported as
+  a red. `buildFreshness` called that case `known: false` — an absent build was "nothing to compare",
+  which is exactly the case that produces the loudest wrong answer.
+
+Falsified by removing `packages/studio-target-json/dist` and running the gate: exit 2, naming the
+package, no battle reported. The workflow's exact command — `MDY_BATTLE_SEED=20260814
+MDY_BATTLE_RUNS=25 pnpm run battle:ci` — exits 0 locally with the build step in place.
+
 ## The register's own shape, measured
 
 ```
