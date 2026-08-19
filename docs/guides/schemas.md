@@ -28,7 +28,7 @@ the schema — it follows the same model as TanStack Form:
 ```ts
 import * as v from "valibot";
 import { field } from "@modyra/core";
-import { createStandardForm, MdyStandardSchemaTree } from "@modyra/standard-schema";
+import { createStandardForm, type MdyStandardSchemaTree } from "@modyra/standard-schema";
 
 const schema = v.object({
   email: v.pipe(v.string(), v.email("Invalid email")),
