@@ -35,7 +35,11 @@ const codesOf = (messages) =>
   });
 
 const fixtures = readdirSync(CORPUS).flatMap((version) =>
-  readdirSync(join(CORPUS, version)).map((file) => ({
+  readdirSync(join(CORPUS, version))
+    // A fixture's context lives in a twin file beside it and is not a document (ADR 0098): linting
+    // it would ask the rule what the parser says about an object the parser never reads.
+    .filter((file) => !file.endsWith(".context.json"))
+    .map((file) => ({
     name: `${version}/${file}`,
     document: JSON.parse(readFileSync(join(CORPUS, version, file), "utf8")),
   })),
