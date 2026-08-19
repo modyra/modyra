@@ -17,6 +17,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import { auditBlackBox, auditedFileCount } from "./black-box-audit.mjs";
+import { expectSameObservation } from "./assertions.mjs";
 import { diffCanonical, encodeValue, BattleHarnessError } from "../models/observations.mjs";
 import { createOperationLog, assertExercised, EmptyBattleError } from "./operation-log.mjs";
 import { assertFreshBuild, buildFreshness } from "./build-freshness.mjs";
@@ -146,6 +147,20 @@ test("the canonical encoding keeps apart what JSON would merge", () => {
   const cyclic = { name: "row" };
   cyclic.self = cyclic;
   assert.throws(() => encodeValue(cyclic), BattleHarnessError, "a cycle is a harness error, not a truncation");
+});
+
+test("a differential comparing one object with itself is a harness error", () => {
+  const built = encodeValue({ rows: { a: 1 } });
+  const alsoBuilt = encodeValue({ rows: { a: 1 } });
+
+  assert.throws(
+    () => expectSameObservation(built, built, { claimIds: ["COL-001"], ignore: [], what: "one path, twice" }),
+    BattleHarnessError,
+    "comparing an object with itself measures one path and always agrees",
+  );
+
+  // Two objects built separately and equal must still pass: the rule is about identity, not content.
+  expectSameObservation(built, alsoBuilt, { claimIds: ["COL-001"], ignore: [], what: "two paths that agree" });
 });
 
 test("diffCanonical reports the first divergence and honours a narrow ignore list", () => {

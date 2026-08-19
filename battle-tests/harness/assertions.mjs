@@ -7,7 +7,7 @@
  */
 
 import { countAssertion } from "./assertion-scope.mjs";
-import { diffCanonical } from "../models/observations.mjs";
+import { BattleHarnessError, diffCanonical } from "../models/observations.mjs";
 import { claim } from "../models/claims.mjs";
 
 export class BattleBreak extends Error {
@@ -41,6 +41,15 @@ export class BattleBreak extends Error {
  */
 export function expectSameObservation(actual, expected, { claimIds, ignore = [], what }) {
   countAssertion();
+  // One object compared with itself always agrees, and a differential that does it has measured one
+  // path twice. It is an easy mistake — the two sides of a differential are built a dozen lines
+  // apart — and it produces a green that means nothing, which is the failure this whole suite is
+  // arranged against. A harness error rather than a claim break: nothing about the product is known.
+  if (actual === expected && typeof actual === "object" && actual !== null) {
+    throw new BattleHarnessError(
+      `${what}: both sides of the comparison are the same object, so only one path was built`,
+    );
+  }
   const divergence = diffCanonical(expected, actual, { ignore });
   if (!divergence) return;
   throw new BattleBreak({
