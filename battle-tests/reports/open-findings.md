@@ -15179,6 +15179,39 @@ every remediation is somebody noticing. Thirty-three are open, and the two that 
 one artifact a consumer runs. That is a posture rather than a defect, and it is the reason this
 register did not know about Jackson until the page was read by hand.
 
+## 252 — A key one form can take (S1, PER-004 PER-001)
+
+The draft manager refuses to write over work that is not its own and says so once with
+`MDY_DRAFT_KEY_IN_USE`: *"a draft under this key holds paths this form does not declare, so it belongs
+to another form. This form keeps no draft: saving would replace work nothing could read back."*
+
+The detection is **foreign paths** — what the stored draft holds that the writing form does not
+declare. That catches an other form which is larger, and cannot catch one which is smaller, because a
+form whose shape contains the other's sees nothing foreign at all:
+
+```
+A declares {a, b}, then B declares {a}      B refuses, reports the code, keeps no draft
+A declares {a},    then B declares {a, b}   B overwrites A's draft, and says nothing
+```
+
+Same mistake, same two forms, same key — and whether anybody is told depends on which of them typed
+second. A short edit form beside a full one, sharing a key by accident, reaches the second row: the
+full form destroys the short one's draft, the short one silently stops keeping a draft at all, and
+neither person is told.
+
+The stamp rule beside it — the newest typing wins — is right for two views of **one** form, which is
+what a key is documented to identify. What is measured here is that the two rules answer the same
+event differently depending on a shape, and only one of them names the situation.
+
+Green when a form that would replace another form's draft is stopped whichever shape it has, or when
+the one that is stopped is not stopped either. Pinned by
+`adversarial/persistence/a-key-one-form-can-take.battle.test.mjs`, with the direction the guard was
+built for asserted as the control — without it, a guard that had stopped working would satisfy the
+measurement by never reporting anything.
+
+Found by exercising `MDY_DRAFT_KEY_IN_USE`, one of the eighteen names `test:coverage-and-demo` reports
+as published and unexercised. Second finding from that list, after 250.
+
 ## The browser tier, measured — and now gated like the other one
 
 `battle-tests/reports/known-red-browser.json` is the browser tier's baseline, written by
@@ -15370,7 +15403,7 @@ the half-fix to overlay teardown did not close it on plain either.
 ## The register's own shape, measured
 
 ```
-numbered findings        251
+numbered findings        252
 closed or retracted       58
 open with a battle       207
 open with none            10
