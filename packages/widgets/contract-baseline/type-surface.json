@@ -827,6 +827,7 @@
   "MdyFieldError": [
     "kind: string",
     "message: string",
+    "origin?: \"validation\" | \"async\" | \"cross-field\" | \"server\" | \"entry\"",
     "payload?: unknown"
   ],
   "MdyFieldHandle": [
