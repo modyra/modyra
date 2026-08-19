@@ -13337,6 +13337,39 @@ the root control read as broken too. The control is what surfaced it: a mechanis
 root as well is a probe, not a finding.
 
 
+## 215 — A document cannot condition a cell of a row, and says so (limit, DYN-004 COL-001)
+
+Not a defect. Recorded because it is the **precedent finding 208 is asking for**, and because it is
+a product decision nobody has taken.
+
+A document can declare a collection and can declare rules. The two do not meet: a rule names its
+target by path, and a cell of a row has no path until the application creates the row. Every way of
+trying is refused by name:
+
+```
+target "rows.detail"        MDY_DYNAMIC_INVALID_RULE
+target "rows.*.detail"      MDY_DYNAMIC_INVALID_RULE
+target "rows.item.detail"   MDY_DYNAMIC_INVALID_RULE
+target "rows.a.detail"      MDY_DYNAMIC_INVALID_RULE
+target "detail"             MDY_DYNAMIC_INVALID_RULE
+target "plain"              accepted                    ← the control
+```
+
+**A missing capability that is reported is a limit; one that is accepted is a defect.** Finding 208
+is this same parser keeping a rule that no declared choice can satisfy — parsed, kept, silently
+inert. Here it refuses. The behaviour 208 asks for already exists a few lines away.
+
+Guarded green by `adversarial/dynamic-contract/a-rule-a-document-cannot-write.battle.test.mjs`, as a
+regression guard on the precedent: if a later change teaches the parser to accept `rows.detail`
+because it looks like a path, without teaching the engine to apply it per row, the contract will have
+swapped a stated limit for a silent one.
+
+**The decision nobody has taken**, and it belongs to the user rather than to a repair: *"in every
+row, show `detail` when `kind` is b"* is a property of the row's shape, not of a session — the
+comment on `MdyDynamicRecordNode` reserves sessions to the application, and this is not one. A form
+builder emitting collections has no way to say it, so conditional rows are typed-only today.
+
+
 ## The browser tier, measured — a baseline this register never had
 
 `npm run battle:browser` on the working tree at `6ee29144`:
@@ -13493,9 +13526,9 @@ the half-fix to overlay teardown did not close it on plain either.
 ## The register's own shape, measured
 
 ```
-numbered findings        214
+numbered findings        215
 closed or retracted       34
-open with a battle       185
+open with a battle       186
 open with none             6
 ```
 
