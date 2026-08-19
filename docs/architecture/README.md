@@ -107,6 +107,7 @@ absent section reads as an oversight, and "no security impact" is a finding.
 - [ADR 0089: A field that says it is a secret is treated as one](0089-a-field-that-says-it-is-a-secret-is-treated-as-one.md) — the contract's `sensitive` flag reached no protection, so a secret was autosaved in clear and printed in the panel
 - [ADR 0090: A rule with a bug in it is a verdict, not an outage](0090-a-rule-with-a-bug-in-it-is-a-verdict-not-an-outage.md) — a validator that threw made every later read of the form throw, and a predicate that threw stopped the form being built
 - [ADR 0091: A form that has ended answers with one voice](0091-a-form-that-ended-answers-with-one-voice.md) — a destroyed form called itself submittable with nothing to submit, and a late write reached one surface of two
+- [ADR 0093: A field that leaves play takes its overlay with it](0093-a-field-that-leaves-play-takes-its-overlay-with-it.md) — a rule took a field out of play and left its calendar open, expanded, and answering nothing
 - [ADR 0092: A condition travels with the form](0092-a-condition-travels-with-the-form.md) — `when` and `asyncWhen` were closures, so a schema carrying one was not data and the document half could not say what the typed half said
 
 ## Security-relevant records

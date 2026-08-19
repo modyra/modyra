@@ -14,6 +14,7 @@
  * same grid and keyboard behaviour.
  */
 import { blocksValueChange } from "../interactivity.js";
+import { closeOverlayWhenOutOfPlay } from "./leaving-play.js";
 import type { MdyReactivity, MdySignal } from "@modyra/core";
 import { observerFor } from "@modyra/core";
 import {
@@ -79,6 +80,9 @@ export function createDatepickerFieldController(
 
   const readonly = reactivity.signal(initialReadonly);
   const open = reactivity.signal(false);
+  // A field taken out of play does not keep an overlay open over it: the popup looked live, said
+  // `aria-expanded="true"` to a screen reader, and answered nothing.
+  const stopWatchingPlay = closeOverlayWhenOutOfPlay(reactivity, () => handle.interactivity(), open);
 
   // What the person typed while it is not a date. Held here rather than in a renderer, because the
   // failure this closes is that neither renderer held it: an unparseable entry committed nothing, a
@@ -319,6 +323,7 @@ export function createDatepickerFieldController(
   }
 
   function destroy(): void {
+    stopWatchingPlay();
     // No owned effects; the handle lifecycle belongs to the form engine.
   }
 
