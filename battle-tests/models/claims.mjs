@@ -206,6 +206,17 @@ const CLAIMS = [
     ],
   },
   {
+    id: "DYN-005",
+    title: "A limit the contract states is enforced at every door that pays its cost.",
+    area: "dynamic-contract",
+    severity: "S2",
+    publicEvidence: [
+      "@modyra/core MDY_MAX_DYNAMIC_PATH_LENGTH — a path is the payload key, the draft key, the widget id",
+      "@modyra/core parseDynamicForm/buildDynamicFormSchema — two public doors onto one document",
+      "docs/architecture/0043-a-collection-nests-without-a-limit.md — the agreement between parser and builder",
+    ],
+  },
+  {
     id: "REA-001",
     title: "Every handle a form hands out is observed through its owning runtime.",
     area: "reactivity",
