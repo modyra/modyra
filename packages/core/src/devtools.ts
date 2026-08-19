@@ -63,6 +63,20 @@ function escapeHtml(text: string): string {
 }
 
 
+/**
+ * Whether a path is declared a secret, or sits under one.
+ *
+ * A declaration covers what is under it: naming a collection hides its rows, which is what a person
+ * hiding a table of payment rows means by writing its name.
+ */
+function coveredBySecret(secrets: ReadonlySet<string>, path: string): boolean {
+  if (secrets.has(path)) return true;
+  for (const secret of secrets) {
+    if (path.startsWith(`${secret}.`)) return true;
+  }
+  return false;
+}
+
 /** What a masked value reads as, wherever it would otherwise be printed. */
 const MASK = "•••";
 
@@ -120,7 +134,7 @@ export function mdyFormSnapshot(form: InspectableForm, options: MdySnapshotOptio
       // declared, then the name.
       const masked = isSensitivePath(
         path,
-        options.sensitive?.(path) ?? (declaredSecret.has(path) ? true : undefined),
+        options.sensitive?.(path) ?? (coveredBySecret(declaredSecret, path) ? true : undefined),
       );
       const raw = state?.value() ?? null;
       const messages = state?.errors().map((e) => `[${e.kind}] ${e.message}`) ?? [];
