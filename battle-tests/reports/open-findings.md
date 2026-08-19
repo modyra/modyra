@@ -15389,6 +15389,20 @@ the claims the file's header names — the worst of them, where a file names sev
 S0  17      S1  42      S2  12      unknown  2
 ```
 
+**Evidence for one of them, measured on the node side.** `a-name-that-became-a-path` has lit drawing
+one control where plain draws two, for a form declaring a field named `a.b` beside an ordinary one —
+and the value of the undrawn field is submitted anyway. The model is unambiguous about what that name
+means, so the renderer is not choosing between two readings:
+
+```
+createForm({ "a.b": field("flat") })            value {"a":{"b":"flat"}}, reachable as f.a.b
+createForm({ a: group({ b: field("nested") }) }) value {"a":{"b":"nested"}}, the same shape
+buildFlatFormSchema([{ name: "a.b", … }])        value {"a":{"b":""}}
+```
+
+All three doors agree that a dotted name is a path. Whatever lit is doing with it, it is not resolving
+an ambiguity — there is none to resolve.
+
 It read `unknown 43` until the specs were made to name their claims: only a third of them did, so two
 thirds of the tier could not be ordered at all. Twenty-nine files now say what they attack. Four of
 those assignments were wrong on the first pass and are worth naming, because each would have sent
