@@ -23,7 +23,7 @@ import {
   valueShape,
 } from "../validators.js";
 
-import { MDY_MAX_DYNAMIC_PATTERN_LENGTH, warnDev } from "./guards.js";
+import { assertSafeDynamicName, isSafeDynamicSegment, MDY_MAX_DYNAMIC_PATTERN_LENGTH, warnDev } from "./guards.js";
 import { dynamicPatternRefusal } from "./pattern-cost.js";
 import {
   mdyEmptyValueFor,
@@ -227,6 +227,23 @@ export function buildDynamicFieldValidators(field: MdyDynamicField): {
  * caller needing a live nested form has to read some other model instead. That is a gap in the
  * contract's runtime support, not a preference about how to build forms.
  */
+/**
+ * One child key of a document's tree, held to the rule a flat list's names are held to.
+ *
+ * A tree names one segment at a time and a flat list names a path, and both become the same widget
+ * id. Without this, a name refused by `buildFlatFormSchema` was taken by this route — so which pair
+ * of functions a consumer called decided whether their document worked.
+ */
+function assertSafeSegment(key: string): void {
+  if (!isSafeDynamicSegment(key)) {
+    throw new Error(
+      `[modyra] Invalid field name "${key}": every segment of a path must be present and must not ` +
+      "be a prototype key, or the form would be keyed onto the prototype chain.",
+    );
+  }
+  assertSafeDynamicName(key);
+}
+
 export function buildDynamicFormSchema(schema: MdyDynamicGroupNode): MdyFormSchema {
   // The root of a parsed document, or nothing this can walk. `parseDynamicForm` is the door that
   // produces one; a caller arriving here with something else got a `TypeError` about `children` or
@@ -282,6 +299,10 @@ export function buildDynamicFormSchema(schema: MdyDynamicGroupNode): MdyFormSche
         frame.expanded = true;
         if (frame.node.node === "group") {
           for (const [key, child] of Object.entries(frame.node.children)) {
+            // A tree names one segment at a time and a flat list names a path, and both end up as
+            // the same widget id. Refused here too, so which pair of functions a consumer called
+            // does not decide whether their document works.
+            assertSafeSegment(key);
             pending.push({ node: child, name: key, expanded: false });
           }
         } else {
@@ -318,7 +339,10 @@ export function buildDynamicFormSchema(schema: MdyDynamicGroupNode): MdyFormSche
   };
 
   const root: Record<string, unknown> = {};
-  for (const [key, child] of Object.entries(schema.children)) root[key] = build(child, key);
+  for (const [key, child] of Object.entries(schema.children)) {
+    assertSafeSegment(key);
+    root[key] = build(child, key);
+  }
   return root as MdyFormSchema;
 }
 
