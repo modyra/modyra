@@ -16,6 +16,11 @@ in place rather than deleted so that anyone who read it finds out.
 
 The list is grouped by cause. Twenty-four causes, one of them withdrawn. All but the last run under `npm run battle`; the last needs `npm run battle:browser`.
 
+Active hunting assignments beyond this list live in
+[`../charter/fable5-hunts.md`](../charter/fable5-hunts.md): claims derived from the fable5 work
+orders, some red-by-construction (the pin arrives before the capability), some to be broken.
+Findings from those hunts are numbered here when filed.
+
 ## How a finding here was checked, and how four of them were wrong
 
 Four entries were filed against the product and turned out to be the instrument. Each was caught the
@@ -14100,6 +14105,41 @@ duplicate by `MDY_DYNAMIC_DUPLICATE_NAME`) — so this reads as an inconsistency
 parser with no rules about names.
 
 
+## 232 — A depth the contract names, on a walk that has none (S2, SEC-004 DYN-004)
+
+`expression.ts:238` explains why an expression tree is capped at 32, and argues by precedent:
+
+> recursion over one is bounded for the same reason the **schema is bounded at 8 levels and the
+> layout at 6**: a document deep enough to exhaust the call stack would take the host down instead of
+> being reported.
+
+The layout is: six levels of nested sections parse, seven are refused with
+`MDY_DYNAMIC_INVALID_LAYOUT`, three thousand likewise.
+
+The schema is not:
+
+```
+    100 levels     1 ms   ok: true, no diagnostic   field name      204 characters
+ 10 000 levels     8 ms   ok: true, no diagnostic   field name   20 004 characters
+100 000 levels    59 ms   ok: true, no diagnostic   field name  200 004 characters
+```
+
+The stack survives — the walk is not recursive — so the failure the sentence describes does not
+happen. What happens instead is a field named with two hundred thousand characters, and that name is
+not a label: it is a path, a payload key, a draft key, and a string every renderer carries per
+control. Cost linear in the document, unbounded in the name.
+
+**The battle does not assert the number eight.** Imposing it now would refuse documents nine levels
+deep that work today, and the sentence may be describing an intention rather than a fact. It asserts
+that there **is** a bound, at whatever depth the contract chooses, with the layout beside it as proof
+that this codebase already knows how to have one.
+
+Same shape as 230 and 231: the reasoning is written down, and applied to one of the two things it
+names.
+
+Pinned by `adversarial/dynamic-contract/a-depth-the-contract-claims.battle.test.mjs`.
+
+
 ## The browser tier, measured — a baseline this register never had
 
 `npm run battle:browser` on the working tree at `6ee29144`:
@@ -14256,9 +14296,9 @@ the half-fix to overlay teardown did not close it on plain either.
 ## The register's own shape, measured
 
 ```
-numbered findings        231
+numbered findings        232
 closed or retracted       49
-open with a battle       198
+open with a battle       199
 open with none            10
 ```
 
