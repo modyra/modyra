@@ -13485,6 +13485,43 @@ gives two causes — a promise that never resolves, and a value that keeps resta
 There is a third: a run that was in flight when the form was paused.
 
 
+## 219 — A form that speaks a language refuses in English (S2, LOC-003)
+
+One of the two claims that had no battle at all. Measured, the same document at three locales:
+
+```
+it   required → "This field is required"   email → "Invalid email address"
+de   required → "This field is required"   email → "Invalid email address"
+en   required → "This field is required"   email → "Invalid email address"
+```
+
+The locale is not ignored elsewhere. The parser refuses a malformed tag rather than degrading it
+(*"`Intl` throws a `RangeError`"*), it reaches the calendar's month names and first day, and
+`messagesForLocale("it")` answers with the widget's own words — `noResults` is *"Nessun risultato"*.
+Of that catalogue's 43 keys, **none is a validator refusal**: no `required`, no `email`, no
+`minLength`, no `pattern`. `@modyra/core` exports nothing localized at all.
+
+So an Italian form has an Italian label, an Italian calendar, and beneath it a sentence in English
+saying why it will not submit — the one line the user must read to get past it.
+
+**A document cannot work around it.** The field validator vocabulary is booleans and numbers with no
+message slot; `{ required: { value: true, message: "obbligatorio" } }` and `{ required: "…" }` are
+both refused by the parser. A typed form can pass `required("obbligatorio")` by hand. A document —
+the surface written by people who do not write code, and the one `ai-generated-forms.md` exists for —
+cannot.
+
+**The contract already holds the principle one slot over.** `MdyDynamicValidation.message` is
+*required*, and the stated reason is this exact failure: *"a validation nobody can read is a field
+that will not submit for no stated reason"*. A cross-field rule must be readable; a `required` on a
+field need not be.
+
+Pinned by `adversarial/validation/a-refusal-in-the-forms-own-language.battle.test.mjs`, asserting the
+property and not the mechanism — a catalogue for validators, a message slot in the document, or both,
+all satisfy it. Two controls: the locale must be alive (parser accepts it, widget catalogue differs
+by language), and the refusals must actually have been produced, so "they are the same" is not two
+silences.
+
+
 ## The browser tier, measured — a baseline this register never had
 
 `npm run battle:browser` on the working tree at `6ee29144`:
@@ -13641,9 +13678,9 @@ the half-fix to overlay teardown did not close it on plain either.
 ## The register's own shape, measured
 
 ```
-numbered findings        218
-closed or retracted       36
-open with a battle       188
+numbered findings        219
+closed or retracted       39
+open with a battle       189
 open with none             7
 ```
 
