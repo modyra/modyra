@@ -156,6 +156,28 @@ function narrowedPattern(rules: string | null, offered: string | null): string |
   return loosens ? rules : offered;
 }
 
+/**
+ * The coarser of two steps, and coarser means *contained*.
+ *
+ * A step is a lattice, not a limit: 4 over a field of 2 offers `0 4 8`, a subset of `0 2 4 6 8`, and
+ * 3 over the same field offers `3` and `9`, which the field refuses. Taking the higher number read
+ * "asks for less" the way `max` does and it does not hold — a control narrowed to 3 let a person
+ * stop on a value its own form rejects.
+ *
+ * The tightest lattice containing both is the least common multiple: over 2 and 3 it is 6, which
+ * offers `0 6 12` and sits inside each. Whole steps only; a fractional one has no lcm to speak of,
+ * and there the field's own step stands.
+ */
+function coarser(rules: number | null, offered: number | null | undefined): number | null {
+  if (rules === null) return offered ?? null;
+  if (offered === null || offered === undefined) return rules;
+  if (!Number.isInteger(rules) || !Number.isInteger(offered) || rules <= 0 || offered <= 0) {
+    return Math.max(rules, offered);
+  }
+  const gcd = (a: number, b: number): number => (b === 0 ? a : gcd(b, a % b));
+  return (rules / gcd(rules, offered)) * offered;
+}
+
 export function narrowConstraints(
   rules: MdyFieldConstraints,
   narrowing: Partial<MdyFieldConstraints> | undefined,
@@ -169,7 +191,7 @@ export function narrowConstraints(
   return {
     min: higher(rules.min, narrowing.min),
     max: lower(rules.max, narrowing.max),
-    step: higher(rules.step, narrowing.step),
+    step: coarser(rules.step, narrowing.step),
     minLength: higher(rules.minLength, narrowing.minLength),
     maxLength: lower(rules.maxLength, narrowing.maxLength),
     pattern: narrowedPattern(rules.pattern, narrowing.pattern ?? null),
