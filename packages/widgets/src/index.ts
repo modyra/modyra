@@ -26,6 +26,7 @@ export type {
   MdyWidgetStructureNode,
 } from "./structure.js";
 
+export { sameControllerOptions } from "./controller-options.js";
 export { dynamicParts, isFullyServerRenderable, staticParts } from "./ssr.js";
 export {
   MDY_SEMANTICS_REQUIRING_NAME,

@@ -14,7 +14,7 @@ import {
   type MdyBooleanFieldState,
 } from "@modyra/widgets";
 
-import { useMdyCommandQueue } from "./runtime.js";
+import { useMdyCommandQueue, useMdyStableOptions } from "./runtime.js";
 
 export type UseMdyBooleanFieldOptions = Omit<
   MdyBooleanFieldControllerOptions,
@@ -35,9 +35,12 @@ export function useMdyBooleanField(
 ): MdyReactBooleanFieldApi {
   const reactivity = useMemo(() => observerFor(handle), [handle]);
 
+  // Held while it says the same thing: a configuration written at the call is a new object every
+  // render, and rebuilding the controller on its identity never settles.
+  const stableOptions = useMdyStableOptions(options);
   const controller = useMemo(
-    () => createBooleanFieldController({ ...options, handle }, reactivity),
-    [options, handle, reactivity],
+    () => createBooleanFieldController({ ...stableOptions, handle }, reactivity),
+    [stableOptions, handle, reactivity],
   );
 
   const { execute } = useMdyCommandQueue(

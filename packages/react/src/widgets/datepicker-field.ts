@@ -14,7 +14,7 @@ import {
   type MdyDatepickerFieldState,
 } from "@modyra/widgets";
 
-import { useMdyCommandQueue } from "./runtime.js";
+import { useMdyCommandQueue, useMdyStableOptions } from "./runtime.js";
 
 export type UseMdyDatepickerFieldOptions = Omit<
   MdyDatepickerFieldControllerOptions,
@@ -35,9 +35,12 @@ export function useMdyDatepickerField(
 ): MdyReactDatepickerFieldApi {
   const reactivity = useMemo(() => observerFor(handle), [handle]);
 
+  // Held while it says the same thing: a configuration written at the call is a new object every
+  // render, and rebuilding the controller on its identity never settles.
+  const stableOptions = useMdyStableOptions(options);
   const controller = useMemo(
-    () => createDatepickerFieldController({ ...options, handle }, reactivity),
-    [options, handle, reactivity],
+    () => createDatepickerFieldController({ ...stableOptions, handle }, reactivity),
+    [stableOptions, handle, reactivity],
   );
 
   const { execute } = useMdyCommandQueue(

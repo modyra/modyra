@@ -13,7 +13,7 @@ import {
   type MdyMultiselectFieldState,
 } from "@modyra/widgets";
 
-import { useMdyCommandQueue } from "./runtime.js";
+import { useMdyCommandQueue, useMdyStableOptions } from "./runtime.js";
 
 export type UseMdyMultiselectFieldOptions<TValue> = Omit<
   MdyMultiselectFieldControllerOptions<TValue>,
@@ -35,9 +35,12 @@ export function useMdyMultiselectField<TValue>(
 ): MdyReactMultiselectFieldApi<TValue> {
   const reactivity = useMemo(() => observerFor(handle), [handle]);
 
+  // Held while it says the same thing: a configuration written at the call is a new object every
+  // render, and rebuilding the controller on its identity never settles.
+  const stableOptions = useMdyStableOptions(options);
   const controller = useMemo(
-    () => createMultiselectFieldController({ ...options, handle }, reactivity),
-    [options, handle, reactivity],
+    () => createMultiselectFieldController({ ...stableOptions, handle }, reactivity),
+    [stableOptions, handle, reactivity],
   );
 
   const { execute } = useMdyCommandQueue(

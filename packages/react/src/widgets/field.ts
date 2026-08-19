@@ -14,7 +14,7 @@ import {
   type MdyWidgetViewContract,
 } from "@modyra/widgets";
 
-import { useMdyCommandQueue } from "./runtime.js";
+import { useMdyCommandQueue, useMdyStableOptions } from "./runtime.js";
 
 export type UseMdyTextFieldOptions<TValue> = Omit<
   MdyTextFieldControllerOptions<TValue>,
@@ -36,10 +36,13 @@ export function useMdyTextField<TValue>(
 ): MdyReactTextFieldApi<TValue> {
   const reactivity = useMemo(() => observerFor(handle), [handle]);
 
+  // Held while it says the same thing: a configuration written at the call is a new object every
+  // render, and rebuilding the controller on its identity never settles.
+  const stableOptions = useMdyStableOptions(options);
   const controller = useMemo(
-    () => createTextFieldController({ ...options, handle }, reactivity),
+    () => createTextFieldController({ ...stableOptions, handle }, reactivity),
     // Recreate only when the identity of options/handle changes.
-    [options, handle, reactivity],
+    [stableOptions, handle, reactivity],
   );
 
   const { execute } = useMdyCommandQueue(
