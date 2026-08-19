@@ -13450,6 +13450,41 @@ names all exist and `examples/plain/panels/headless.js` uses exactly this API. W
 send a controller an intent its kind does not have.
 
 
+## 218 — Troubleshooting sends a reader to the wrong place for a cross-field error (S3, documentation)
+
+`docs/guides/troubleshooting.md`, first answer, on why `canSubmit()` is false:
+
+> **valid: false** — some field has errors, or a cross-field validator failed (form-level errors show
+> on `errorsFor("")`).
+
+Measured, and the product is coherent — an error goes where its `path` says:
+
+```
+crossField(["a","b"], …)      errorsFor("")  []                errorsFor("a")  ["…"]
+crossField([], …)             errorsFor("")  ["…"]             errorsFor("a")  []
+a validator returning path null  errorsFor("")  ["…"]          errorsFor("a")  []
+a validator returning path "a"   errorsFor("")  []             errorsFor("a")  ["…"]
+```
+
+So a cross-field validator that **names** its paths — which is what naming them is for — puts the
+error on those fields, and a reader following the sentence looks in the empty place. It is the
+common case, and this is the page someone opens when they are already stuck.
+
+No battle: this is prose, and a test asserting the wording of a guide is a test that breaks on a
+rewrite. Recorded with the measurement so the sentence can be fixed against it.
+
+**The rest of that guide is accurate**, checked claim by claim: `pending` covers debounce plus run;
+a server error is cleared by editing the field; an error naming no registered field surfaces on
+`errorsFor("")`; `setValue` returns unnamed fields to their **initial** (`"pro"`, not empty) and
+refuses a value naming none of the form's fields with a throw; `getChanges` reports a re-created
+deep-equal array as changed; a pristine form writes no draft; `exclude` is honoured on restore; a
+successful submit clears the draft.
+
+One thing it does not list, and finding 216 is why: under *"Why is a field still `pending`?"* it
+gives two causes — a promise that never resolves, and a value that keeps restarting the debounce.
+There is a third: a run that was in flight when the form was paused.
+
+
 ## The browser tier, measured — a baseline this register never had
 
 `npm run battle:browser` on the working tree at `6ee29144`:
@@ -13606,16 +13641,16 @@ the half-fix to overlay teardown did not close it on plain either.
 ## The register's own shape, measured
 
 ```
-numbered findings        217
+numbered findings        218
 closed or retracted       36
 open with a battle       188
-open with none             6
+open with none             7
 ```
 
 The seven without a battle are the entries a test cannot hold: a capability nothing reads (37),
 constants outside a classifier (39), a campaign that explores one run (40), two entries about this
-hunt's own mistakes (51, 57), and forty-nine comments citing a plan that is not in the repository
-(198). Configuration, documentation and coverage — none of them a
+hunt's own mistakes (51, 57), forty-nine comments citing a plan that is not in the repository (198),
+and a sentence in a guide that sends a reader to the wrong place (218). Configuration, documentation and coverage — none of them a
 behaviour a battle could pin.
 
 **The first count of this said ten, and was wrong.** It looked for `.battle.test.mjs` and `.spec.ts`,
