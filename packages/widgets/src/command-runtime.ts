@@ -73,11 +73,18 @@ export interface MdyWidgetCommandContext {
  * and mean the same thing on a server as in a browser.
  */
 export function processWidgetCommands(
-  commands: readonly MdyUiCommand[],
+  commands: readonly MdyUiCommand[] | null | undefined,
   context: MdyWidgetCommandContext,
 ): void {
   const dom = context.capabilities?.dom ?? true;
-  for (const command of commands) {
+  // Nothing to do is a legitimate answer, and it arrives as `undefined`: a controller handles the
+  // intents its kind has — a text field has no popup, a checkbox no step, a select no cancel — and a
+  // `dispatch` that met one it does not know returns nothing rather than an empty list. The guide's
+  // headless recipe feeds `dispatch` straight into `execute`, so a host driving every widget from
+  // one generic handler — which is the reason to go headless — crashed on the first widget that did
+  // not have the intent under the cursor. An intent nobody declared is the same class of input as an
+  // operator nobody declared, and this is the same answer: it does nothing.
+  for (const command of commands ?? []) {
     if (!dom && DOM_COMMANDS.has(command.type)) continue;
     switch (command.type) {
       case "focus":
@@ -177,8 +184,14 @@ export interface MdyCommandRuntimeOptions {
 }
 
 export interface MdyCommandRuntime {
+  /**
+   * Runs what a controller answered with.
+   *
+   * `commands` may be nothing: a controller handed an intent its kind does not have answers with
+   * `undefined`, and the documented headless path feeds `dispatch` straight into this call.
+   */
   execute(
-    commands: readonly MdyUiCommand[],
+    commands: readonly MdyUiCommand[] | null | undefined,
     lookup: MdyElementLookup,
     handlers: MdyWidgetCommandHandlers,
   ): void;

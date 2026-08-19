@@ -3009,7 +3009,7 @@
     "-> returns: Element | null"
   ],
   "processWidgetCommands": [
-    "(0) commands: readonly MdyUiCommand[]",
+    "(0) commands: readonly MdyUiCommand[] | null | undefined",
     "(1) context: MdyWidgetCommandContext",
     "-> returns: void"
   ],
