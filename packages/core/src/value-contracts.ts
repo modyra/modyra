@@ -150,5 +150,45 @@ export function explainValueMismatch(kind: MdyValueKind, value: unknown): string
   if (!matchesValueShape(contract.shape, value)) {
     return `${kind} holds ${contract.shape}, got ${typeof value === "object" ? JSON.stringify(value) : typeof value}`;
   }
+  return contentMismatch(kind, value);
+}
+
+/**
+ * Why a value of the right *shape* is still not one this kind can hold.
+ *
+ * Three kinds carry a string with a form: a date is ISO `yyyy-MM-dd`, a time is `HH:mm`, and a range
+ * is two of the first. The shape check cannot see it — `string` is `string` — so a value arriving
+ * from outside the control, a tampered draft above all, was taken whole: a datepicker restored from
+ * storage held `"not a date at all"` and the form called itself valid and submittable.
+ *
+ * Said as a reason rather than refused here: the engine reports a shape it does not expect as a
+ * verdict, which is what lets a field show what a person typed and say why it is wrong.
+ */
+function contentMismatch(kind: MdyValueKind, value: unknown): string | null {
+  if (kind === "datepicker") {
+    return isIsoDate(value) ? null : `${kind} holds an ISO date (yyyy-MM-dd), got ${JSON.stringify(value)}`;
+  }
+  if (kind === "timepicker") {
+    return typeof value === "string" && /^([01]\d|2[0-3]):[0-5]\d$/.test(value)
+      ? null
+      : `${kind} holds a time (HH:mm), got ${JSON.stringify(value)}`;
+  }
+  if (kind === "daterange") {
+    const range = value as { start?: unknown; end?: unknown };
+    for (const end of ["start", "end"] as const) {
+      const held = range[end];
+      if (held === null || held === undefined || isIsoDate(held)) continue;
+      return `${kind} holds ISO dates, and ${end} is ${JSON.stringify(held)}`;
+    }
+    return null;
+  }
   return null;
+}
+
+/** ISO `yyyy-MM-dd`, and a real date rather than a well-shaped impossible one. */
+function isIsoDate(value: unknown): boolean {
+  if (typeof value !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+  const [year, month, day] = value.split("-").map(Number);
+  const date = new Date(Date.UTC(year!, month! - 1, day!));
+  return date.getUTCFullYear() === year && date.getUTCMonth() === month! - 1 && date.getUTCDate() === day;
 }

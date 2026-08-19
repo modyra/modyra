@@ -1,5 +1,10 @@
 import { MdyFormValidatorFn, ValidatorFn } from "./types.js";
-import { MDY_VALUE_CONTRACTS, matchesValueShape, type MdyValueKind } from "./value-contracts.js";
+import {
+  explainValueMismatch,
+  MDY_VALUE_CONTRACTS,
+  matchesValueShape,
+  type MdyValueKind,
+} from "./value-contracts.js";
 import { factsOf, mergeFacts, withFacts, type MdyValidatorFacts } from "./validator-facts.js";
 
 /**
@@ -83,8 +88,16 @@ export const valueShape = <T>(
 ): ValidatorFn<T> => (value) => {
   if (value === null || value === undefined) return [];
   const contract = MDY_VALUE_CONTRACTS[kind];
-  if (!contract || matchesValueShape(contract.shape, value)) return [];
-  return [message ?? `This field holds ${contract.shape}`];
+  if (!contract) return [];
+  // The whole contract, not the shape alone: three kinds carry a string with a form — a date is ISO
+  // `yyyy-MM-dd`, a time is `HH:mm` — and asking only about the shape left a datepicker holding
+  // "not a date at all" with the form calling itself valid and submittable. A value from outside the
+  // control is where that arrives: a tampered draft, a server response, a scripted write.
+  const mismatch = explainValueMismatch(kind, value);
+  if (mismatch === null) return [];
+  return [message ?? (matchesValueShape(contract.shape, value)
+    ? `This field holds ${mismatch.slice(mismatch.indexOf("holds") + 6)}`
+    : `This field holds ${contract.shape}`)];
 };
 
 /**
