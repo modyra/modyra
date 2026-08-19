@@ -12824,12 +12824,46 @@ the values both are asked about. Decided by ADR 0092 (`{self}`, `{root}`, `{cont
 written against the settled contract, so it goes green when the operands land and not before.
 
 
+## 201 — How a rule was spelled decides where the field starts (S1, SCH-001)
+
+**Falsifies a premise of ADR 0086, measured the day it was accepted.** The decision states that a
+derived field starts at the empty its own kind accepts, so `z.string().min(1)` starts at `""` and
+says *Too small* at both moments. True for a built-in check. False for a refinement:
+
+```
+z.string()                      ""     —
+z.string().min(2)               ""     "Too small: expected string to have >=2 characters"
+z.string().refine(…)            null   "Invalid input: expected string, received null"
+z.boolean()                     false  —
+z.boolean().refine(…)           null   "Invalid input: expected boolean, received null"
+z.array(z.string())             []     —
+z.array(z.string()).min(1)      []     "Too small: expected array to have >=1 items"
+z.array(z.string()).refine(…)   []     "pick one"        ← the author's message, correctly
+```
+
+`.refine(fn, "message")` is what an author reaches for whenever the rule is not one of the library's
+built-ins — a consent box that must be ticked, a code with a checksum, a list that must contain a
+member. Two costs, and the second is the one a person meets:
+
+- the seed moves because of **how** the rule was spelled rather than what it says;
+- the author's wording never arrives. The value is of the wrong type, so the predicate carrying the
+  message is never reached, and the person is shown a type error about a value they did not enter.
+
+`array` is the control that makes this a defect rather than a limit: under the same refinement it
+keeps its seed **and** delivers the author's message, so introspection can see through the wrapper —
+for one kind out of three.
+
+Pinned by `adversarial/schema-adapters/how-a-rule-was-written.battle.test.mjs`, which compares each
+kind against a bare leaf of the same kind rather than against a constant, and keeps a control
+requiring at least two kinds to start somewhere other than `null`.
+
+
 ## The register's own shape, measured
 
 ```
-numbered findings        200
+numbered findings        201
 closed or retracted       23
-open with a battle       170
+open with a battle       171
 open with none             7
 ```
 

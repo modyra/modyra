@@ -13,11 +13,16 @@
  * change to either could quietly make a form say something different depending on which import a
  * project happened to pick.
  *
- * Where they differ is before the user has done anything, and it follows from the same asymmetry:
- * introspection knows the shape and nothing about what the fields should start as, so a derived tree
- * starts empty, while a declared tree starts at whatever was declared. Both then report against the
- * schema honestly — "expected string, received null" against nothing, "too small" against a short
- * one. Naming that here is what keeps it from being read as a divergence and "fixed" into one.
+ * Where they differ is before the user has done anything, and it follows from the same asymmetry.
+ * Introspection reads the kind, so a derived field starts at the empty its own kind accepts and
+ * `null` where the kind has none (ADR 0086); a declared tree starts at whatever the consumer
+ * declared, which introspection has no way to know. Both then report against the schema honestly
+ * from where they start. Naming that here is what keeps it from being read as a divergence and
+ * "fixed" into one.
+ *
+ * So the seed is not pinned as a constant, which would only record whichever value shipped. It is
+ * measured against the kind itself: the field starts where a bare leaf of that kind starts, and that
+ * is a property the decision states rather than a number this file remembers.
  */
 
 import { createStandardForm } from "@modyra/standard-schema";
@@ -111,25 +116,39 @@ battle(
 battle(
   {
     claims: ["SCH-001"],
-    title: "a derived tree starts empty and a declared one starts where it was declared",
+    title: "a derived tree starts at its kind's empty and a declared one where it was declared",
     environments: ["node"],
   },
   async (ctx) => {
     const derived = createZodForm(SCHEMA, { devWarnings: false });
     const given = createStandardForm(SCHEMA, declared(), { devWarnings: false });
 
+    // The oracle, measured rather than remembered: where a bare leaf of each kind starts. Comparing
+    // the derived tree against these instead of against a literal is what keeps this battle from
+    // ratifying whichever seed happens to ship.
+    const bare = createZodForm(z.object({ name: z.string(), age: z.number() }), { devWarnings: false });
+    const kindStart = bare.getValue();
+    bare.destroy();
+
     try {
       const start = { derived: observe(derived), given: observe(given) };
-      ctx.log.note("what each adapter's form holds before the user does anything", start);
-
-      // Introspection knows the shape and nothing about what a field should start as, so the
-      // derived tree starts empty. This is the difference, and it is named so it is not read as a
-      // divergence and made to agree.
-      expectEqual(start.derived.value, { name: null, inner: { age: null } }, {
-        claimIds: ["SCH-001"],
-        what: "a tree derived from a schema no longer starts empty, so the declared tree is now the odd one",
-        detail: JSON.stringify(start.derived.value),
+      ctx.log.note("what each adapter's form holds before the user does anything", {
+        ...start,
+        kindStart,
       });
+
+      // Introspection reads the kind, so a derived field starts at that kind's own empty — and the
+      // constraints written on top of it do not move it. This is the difference from a declared
+      // tree, and it is named so it is not read as a divergence and made to agree.
+      expectEqual(
+        start.derived.value,
+        { name: kindStart.name, inner: { age: kindStart.age } },
+        {
+          claimIds: ["SCH-001"],
+          what: "a derived field does not start where its own kind starts, so the constraints on it moved the seed",
+          detail: JSON.stringify({ derived: start.derived.value, kindStart }),
+        },
+      );
 
       expectEqual(start.given.value, { name: "", inner: { age: 0 } }, {
         claimIds: ["SCH-001"],
