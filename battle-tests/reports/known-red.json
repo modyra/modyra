@@ -7,7 +7,6 @@
     "[S0][COL-001,COL-005] writing a collection in bulk costs the same per row however many there are",
     "[S0][DYN-001,SEC-001] a value a form holds names one option",
     "[S0][DYN-001,SUB-001] the other bridge's value is the one its schema describes too",
-    "[S0][DYN-002,DYN-001,COL-001] a collection that survived a round trip can still hold a row",
     "[S0][DYN-004,DYN-003] a key the published schema refuses is one the parser reports",
     "[S0][DYN-004,DYN-003] a version the parser does not support is refused as a version",
     "[S0][DYN-004,DYN-003] every published schema is one the audit reads",
@@ -31,6 +30,7 @@
     "[S1][STU-002,DYN-003,A11Y-002] an option list Studio compiles is one every option survives",
     "[S1][SUB-001,COL-002] a patch says what a row holds, however the row came to hold it",
     "[S1][VAL-003,COL-003] two conditions on one field are one answer, and any refusal is the answer",
-    "[S2][ADP-001,DYN-001] an adapter that publishes a dynamic-form door reads the dynamic contract"
+    "[S2][ADP-001,DYN-001] an adapter that publishes a dynamic-form door reads the dynamic contract",
+    "[S2][DYN-001,DYN-003] every version one runtime accepts is one the others have a position on"
   ]
 }
