@@ -408,6 +408,9 @@ importers:
       '@modyra/studio-codegen':
         specifier: workspace:*
         version: link:../studio-codegen
+      '@modyra/studio-contract':
+        specifier: workspace:*
+        version: link:../studio-contract
       '@modyra/studio-model':
         specifier: workspace:*
         version: link:../studio-model
@@ -417,6 +420,9 @@ importers:
       '@modyra/studio-codegen':
         specifier: workspace:*
         version: link:../studio-codegen
+      '@modyra/studio-contract':
+        specifier: workspace:*
+        version: link:../studio-contract
       '@modyra/studio-model':
         specifier: workspace:*
         version: link:../studio-model
@@ -438,6 +444,9 @@ importers:
       '@modyra/studio-codegen':
         specifier: workspace:*
         version: link:../studio-codegen
+      '@modyra/studio-contract':
+        specifier: workspace:*
+        version: link:../studio-contract
       '@modyra/studio-model':
         specifier: workspace:*
         version: link:../studio-model

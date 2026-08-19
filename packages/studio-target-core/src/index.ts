@@ -6,7 +6,8 @@
  * ADR-0005, , ), and, when the project declares a submit action,
  * `submit-example.ts` showing it wired to `form.submit()`.
  */
-import { buildStubsModule, type Artifact, type ArtifactFile, type StudioTarget, type TargetAnalysis, type TargetCapabilities, type TargetManifest } from "@modyra/studio-codegen";
+import { buildStubsModule, capabilityDiagnostics, type Artifact, type ArtifactFile, type StudioTarget, type TargetAnalysis, type TargetCapabilities, type TargetManifest } from "@modyra/studio-codegen";
+import { compileToContract } from "@modyra/studio-contract";
 import type { MdyStudioProject, StudioDiagnostic } from "@modyra/studio-model";
 import { buildFormModule } from "./field-mapper.js";
 
@@ -33,7 +34,20 @@ function buildSubmitExample(project: MdyStudioProject, stubNameFor: Map<string, 
 function generateFiles(project: MdyStudioProject): { files: ArtifactFile[]; diagnostics: StudioDiagnostic[] } {
   const stubsResult = buildStubsModule(project);
   const formResult = buildFormModule(project, stubsResult.nameFor);
-  const diagnostics = [...stubsResult.diagnostics, ...formResult.diagnostics];
+  // A project the contract compiler cannot express is a fact about the project rather than about the
+  // one target that happens to ask: a field kind the catalog does not declare is an error there, and
+  // a target that never asks answers `compatible: true` for it.
+  //
+  // Errors only. The compiler's warnings are about the *contract document* it is building — a server
+  // validator with no Contract v2 equivalent is omitted from that document and carried into this
+  // target's own output — so repeating them here would tell an author something was dropped that
+  // this target emits.
+  const diagnostics = [
+    ...stubsResult.diagnostics,
+    ...formResult.diagnostics,
+    ...compileToContract(project).diagnostics.filter((d) => d.severity === "error"),
+    ...capabilityDiagnostics(project, { id: "core", capabilities: CAPABILITIES }),
+  ];
 
   if (!formResult.code) return { files: [], diagnostics };
 
