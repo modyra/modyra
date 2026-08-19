@@ -15,3 +15,4 @@ export { compileExpressionToJs } from "./expression-compiler.js";
 export { buildFormModule, type FormModuleResult, type TargetProfile } from "./schema-mapper.js";
 export { buildStubsModule, type StubsResult } from "./stubs.js";
 export { arrangementDiagnostics } from "./arrangement.js";
+export { capabilityDiagnostics } from "./capability.js";

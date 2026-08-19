@@ -187,10 +187,16 @@ test("a bound that is not a finite number is reported and left out, never emitte
 
     assert.doesNotMatch(form, /minLength\(null\)/, `${String(value)} was emitted as a null bound`);
     assert.doesNotMatch(form, /minLength\(/, `${String(value)} was emitted as a bound at all`);
-    assert.deepEqual(
-      artifact.diagnostics.map((d) => d.code),
-      ["MISSING_VALIDATOR_VALUE"],
-      `${String(value)} was dropped in silence`,
+    const codes = artifact.diagnostics.map((d) => d.code);
+    assert.ok(
+      codes.includes("MISSING_VALIDATOR_VALUE"),
+      `${String(value)} was dropped in silence: ${JSON.stringify(codes)}`,
+    );
+    // And the contract compiler's own verdict on the same field reaches the target's answer, so a
+    // project it cannot express is never called compatible here.
+    assert.ok(
+      artifact.diagnostics.some((d) => d.severity === "error"),
+      `${String(value)} left the target with nothing an author's tooling would stop on`,
     );
   }
 

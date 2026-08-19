@@ -2,7 +2,7 @@
   "name": "@modyra/studio-target-core",
   "version": "0.5.1",
   "private": true,
-  "description": "Modyra Studio: the Core target scope (plan section 10) — generates a real @modyra/core createForm() definition, implementation stubs, and a submit example from a Studio project.",
+  "description": "Modyra Studio: the Core target scope (plan section 10) \u2014 generates a real @modyra/core createForm() definition, implementation stubs, and a submit example from a Studio project.",
   "license": "MIT",
   "type": "module",
   "main": "./dist/index.js",
@@ -19,7 +19,8 @@
   },
   "sideEffects": false,
   "dependencies": {
-    "@modyra/studio-model": "workspace:*",
-    "@modyra/studio-codegen": "workspace:*"
+    "@modyra/studio-codegen": "workspace:*",
+    "@modyra/studio-contract": "workspace:*",
+    "@modyra/studio-model": "workspace:*"
   }
 }

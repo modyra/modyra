@@ -17,6 +17,7 @@
 import {
   buildFormModule,
   arrangementDiagnostics,
+  capabilityDiagnostics,
   buildStubsModule,
   type Artifact,
   type ArtifactFile,
@@ -25,6 +26,7 @@ import {
   type TargetCapabilities,
   type TargetManifest,
 } from "@modyra/studio-codegen";
+import { compileToContract } from "@modyra/studio-contract";
 import type { MdyStudioProject, StudioDiagnostic } from "@modyra/studio-model";
 
 const REACT_PROFILE = {
@@ -53,10 +55,20 @@ function generateFiles(project: MdyStudioProject): { files: ArtifactFile[]; diag
   const formResult = buildFormModule(project, stubsResult.nameFor, REACT_PROFILE);
   // This target emits a form module and no markup, so an arranged project loses its
   // arrangement here. Reported rather than dropped in silence.
+  // A project the contract compiler cannot express is a fact about the project rather than about the
+  // one target that happens to ask: a field kind the catalog does not declare is an error there, and
+  // a target that never asks answers `compatible: true` for it.
+  //
+  // Errors only. The compiler's warnings are about the *contract document* it is building — a server
+  // validator with no Contract v2 equivalent is omitted from that document and carried into this
+  // target's own output — so repeating them here would tell an author something was dropped that
+  // this target emits.
   const diagnostics = [
     ...stubsResult.diagnostics,
     ...formResult.diagnostics,
+    ...compileToContract(project).diagnostics.filter((d) => d.severity === "error"),
     ...arrangementDiagnostics(project, { id: "react", capabilities: CAPABILITIES }),
+    ...capabilityDiagnostics(project, { id: "react", capabilities: CAPABILITIES }),
   ];
 
   if (!formResult.code) return { files: [], diagnostics };
