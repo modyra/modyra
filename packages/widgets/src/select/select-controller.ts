@@ -201,7 +201,10 @@ export function createSelectController<TValue>(
       popupRendered: popupRendered(),
     });
 
-    const parts: Record<string, ReturnType<typeof a11y.option>> = {};
+    // A null prototype, because these keys are data: an option valued `__proto__` assigned into a
+    // plain object sets that object's prototype instead of adding a member, so the part vanished and
+    // the renderer was handed `undefined` — the control disappeared from the page mid-draw.
+    const parts: Record<string, ReturnType<typeof a11y.option>> = Object.create(null);
     // What the state paints, not what the caller declared. `MdySelectState.options` says a renderer
     // paints *this* rather than the list it was handed — so building parts from the declared list
     // left the survivor with no part: an element inside a listbox with no id, no `role="option"`

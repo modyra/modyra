@@ -157,7 +157,10 @@ export function createMultiselectFieldController<TValue>(
     const currentState = state();
     const a11y = projectMultiselectFieldA11y(currentState, handle.errors(), { widgetId });
 
-    const parts: Record<string, ReturnType<typeof a11yOption>> = {};
+    // A null prototype, because these keys are data: an option valued `__proto__` assigned into a
+    // plain object sets that object's prototype instead of adding a member, so the part vanished and
+    // the renderer was handed `undefined` — the control disappeared from the page mid-draw.
+    const parts: Record<string, ReturnType<typeof a11yOption>> = Object.create(null);
     // What is painted, not what was declared: a choice the list no longer offers is kept — that is
     // this widget's rule — and building parts from the declared list left it with no id, no
     // `role="option"` and nothing `aria-activedescendant` could point at. The one entry the user

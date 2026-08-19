@@ -127,7 +127,10 @@ export function createOptionFieldController<TValue>(
       ...(options.errorsVisible ? { errorsVisible: options.errorsVisible(currentState) } : {}),
     });
 
-    const parts: Record<string, ReturnType<typeof a11yOption>> = {};
+    // A null prototype, because these keys are data: an option valued `__proto__` assigned into a
+    // plain object sets that object's prototype instead of adding a member, so the part vanished and
+    // the renderer was handed `undefined` — the control disappeared from the page mid-draw.
+    const parts: Record<string, ReturnType<typeof a11yOption>> = Object.create(null);
     for (const option of allOptions()) {
       const key = keyFor(option);
       parts[key] = a11yOption(key, option, currentState, currentActiveKey);
