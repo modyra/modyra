@@ -14757,6 +14757,19 @@ Same walk, another door: `security.js`'s `isPlainObject` overflows on a deep val
 `setValue`. That one is the application's own value rather than an attacker's, which is why the draft
 is what this is filed on.
 
+**Everything else about a hostile envelope is guarded**, which is what makes the walk the one hole
+rather than one of many. Each of these leaves a form that exists and holds its declared empty:
+
+```
+not JSON at all          the literal null         a bare number
+an array                 an object with no value  value is an array
+value is a string        a 5 MB string value      read() itself throws
+```
+
+The last is worth naming on its own: a `storage.read` that throws — private mode, a quota, a
+disabled origin — is caught and the form is built. The manager is careful about this input in every
+way except how deep it goes.
+
 ### One red seen once, and not since
 
 A full-suite run reported `[S0][COL-003,COL-004] renaming a row twice, at two depths, carries the
