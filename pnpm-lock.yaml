@@ -94,6 +94,9 @@ importers:
       '@types/jest':
         specifier: ^30.0.0
         version: 30.0.0
+      '@types/node':
+        specifier: ^26.1.1
+        version: 26.1.1
       ajv:
         specifier: ^8.20.0
         version: 8.20.0
