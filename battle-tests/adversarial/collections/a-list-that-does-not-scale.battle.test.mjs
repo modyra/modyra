@@ -23,12 +23,19 @@
  * cost is in declaring rows into a keyed collection, and the collection beside it does the same work
  * without it.
  *
- * Timing is a poor thing to assert, so nothing here asserts a duration. Each size is the cheapest of
- * five writes — the run the scheduler interrupted least — and the whole pair is taken again if the
- * first pair accuses the engine. Beside twenty other test processes the larger write occupies the
- * longer window and is the more likely of the two to be preempted, so a ratio built from single runs
- * moves for a reason that is not the code. Both passes are minima and the better ratio is the one
- * kept: the claim is what the engine can do, not what a loaded machine allowed once.
+ * Timing is a poor thing to assert, so nothing here asserts a duration and nothing asserts a raw
+ * ratio either. **Per-row cost grows with size for any work on a real machine** — allocation,
+ * garbage collection and cache behaviour all differ between two hundred and fifty of something and
+ * two thousand. Measured here, repeating one independent write per field shows a per-row growth of a
+ * little over two, and that is work which is linear by construction. A threshold on a collection's
+ * raw growth therefore sits on top of that number, with almost no margin, and the first busy machine
+ * crosses it — which is what this battle did three times before the instrument was changed.
+ *
+ * So the collection is measured against that reference, taken in the same process at the same time:
+ * whatever the machine is doing to one it is doing to the other, and the ratio cancels it. Each size
+ * is the cheapest of five. After the repair both routes come in **below** the reference — 0.4 to 0.9
+ * — while their raw growth still swings between 1.0 and 1.8. The defect this was written for was a
+ * keyed route growing 4.6 where the reference grows about 2.
  *
  * Both assertions are ratios:
  * one route against the other at one size, and each route against itself as the size grows. A slower
@@ -36,7 +43,7 @@
  * beside checks that care about correctness.
  */
 
-import { createForm, vanillaReactivity } from "@modyra/core";
+import { createForm, field, vanillaReactivity } from "@modyra/core";
 
 import { battle } from "../../harness/battle.mjs";
 import { expectClaim } from "../../harness/assertions.mjs";
@@ -64,12 +71,7 @@ function timeBulkWrite(kind, count) {
 }
 
 /**
- * The cheapest of three writes, which is the one the scheduler interrupted least.
- *
- * A ratio of two timings measures the engine only while both timings measure the engine. Run beside
- * the rest of the suite, the larger write meets more of someone else's work than the smaller one
- * does, and the ratio moves for a reason that is not the code. The minimum is the run that met the
- * least of it.
+ * The cheapest of five writes, which is the one the scheduler interrupted least.
  */
 function bestBulkWrite(kind, count, attempts = 5) {
   let best = null;
@@ -81,24 +83,34 @@ function bestBulkWrite(kind, count, attempts = 5) {
 }
 
 /**
- * The whole pair of measurements, taken again if the first pair accuses the engine.
+ * `count` independent writes, one field each — linear in the number of operations by construction.
  *
- * The larger write occupies a longer window than the smaller one, so beside twenty other test
- * processes it is the more likely of the two to be preempted — and a ratio built from a preempted
- * sample accuses the code of what the scheduler did. A second pair is not a second chance at the
- * threshold: both pairs are minima, and the claim is what the engine can do rather than what a loaded
- * machine allowed once.
+ * This is the calibration, and it exists because per-row cost grows with size for *any* work on a
+ * real machine: allocation, garbage collection and cache behaviour all differ between two hundred and
+ * fifty of something and two thousand. Measured here, the same operation repeated shows a per-row
+ * growth of a little over two — so a threshold on a collection's raw growth is a threshold sitting on
+ * top of that, and the first busy machine crosses it.
  */
-function measurePair(kind, small, large, acceptable) {
-  let seen = null;
-  for (let pass = 0; pass < 2; pass += 1) {
-    const measured = { small: bestBulkWrite(kind, small), large: bestBulkWrite(kind, large) };
-    const growth = (measured.large.elapsed / large) / (measured.small.elapsed / small);
-    if (seen === null || growth < seen.growth) seen = { ...measured, growth };
-    if (seen.growth < acceptable) break;
-  }
-  return seen;
+function timeIndependentWrites(count) {
+  const shape = {};
+  for (let index = 0; index < count; index += 1) shape[`f${index}`] = field("");
+  const form = createForm(shape, { devWarnings: false });
+  const started = process.hrtime.bigint();
+  for (let index = 0; index < count; index += 1) form.f[`f${index}`].set("x");
+  const elapsed = Number(process.hrtime.bigint() - started) / 1e6;
+  form.destroy();
+  return elapsed;
 }
+
+/** Per-row growth between the two sizes, cheapest of five at each. */
+function growthOf(measure) {
+  const small = Math.min(...Array.from({ length: 5 }, () => measure(SMALL)));
+  const large = Math.min(...Array.from({ length: 5 }, () => measure(LARGE)));
+  return (large / LARGE) / (small / SMALL);
+}
+
+const SMALL = 250;
+const LARGE = 2000;
 
 battle(
   {
@@ -107,14 +119,15 @@ battle(
     environments: ["node"],
   },
   async (ctx) => {
-    const SMALL = 250;
-    const LARGE = 2000;
+    // The calibration, measured in this process beside everything else: how much dearer one write
+    // gets per row simply for there being more of them. Whatever the machine is doing to the
+    // collection it is doing to this too.
+    const reference = growthOf(timeIndependentWrites);
 
-    const ACCEPTABLE = 2.5;
     const measured = {};
     for (const kind of ["positional", "keyed"]) {
-      const pair = measurePair(kind, SMALL, LARGE, ACCEPTABLE);
-      const { small, large } = pair;
+      const small = bestBulkWrite(kind, SMALL);
+      const large = bestBulkWrite(kind, LARGE);
 
       // The control on the measurement: both writes landed every row. A route that silently wrote
       // nothing would be the fastest of all.
@@ -125,34 +138,40 @@ battle(
       });
 
       measured[kind] = {
-        perRowSmall: small.elapsed / SMALL,
-        perRowLarge: large.elapsed / LARGE,
+        growth: (large.elapsed / LARGE) / (small.elapsed / SMALL),
         largeTotal: large.elapsed,
       };
     }
 
-    ctx.log.note("what a bulk write costs per row", measured);
+    ctx.log.note("per-row growth, against a reference that is linear by construction", {
+      reference,
+      positional: measured.positional.growth,
+      keyed: measured.keyed.growth,
+      againstReference: {
+        positional: measured.positional.growth / reference,
+        keyed: measured.keyed.growth / reference,
+      },
+    });
 
-    // Each route against itself. A linear write costs the same per row at any size; a quadratic one
-    // costs more per row the more rows there are. The threshold is wide — the positional route
-    // measured 1.2 and the keyed one 4.6 — so machine noise does not decide it.
+    // The calibration has to be worth calibrating against: a reference that did not grow at all would
+    // make every ratio below meaningless.
+    expectClaim(reference > 1, {
+      claimIds: ["COL-005"],
+      what: "a linear reference showed no growth at all between the two sizes, so there is nothing to measure the collection against",
+      detail: JSON.stringify({ reference }),
+    });
+
+    // A linear write costs no more per row, relative to work that is linear by construction. Measured
+    // after the repair, both routes come in under the reference — 0.4 to 0.9 — and the defect this
+    // battle was written for was a keyed route growing 4.6 where the reference grows about 2.
     for (const kind of ["positional", "keyed"]) {
-      const growth = measured[kind].perRowLarge / measured[kind].perRowSmall;
-      expectClaim(growth < ACCEPTABLE, {
+      const relative = measured[kind].growth / reference;
+      expectClaim(relative < 1.5, {
         claimIds: ["COL-005", "COL-001"],
-        what: `a ${kind} bulk write of ${LARGE} rows costs ${growth.toFixed(1)}× as much per row as one of ${SMALL}`,
-        detail: JSON.stringify(measured[kind]),
+        what: `a ${kind} bulk write of ${LARGE} rows costs ${relative.toFixed(1)}× as much per row as work that is linear by construction`,
+        detail: JSON.stringify({ ...measured[kind], reference, relative }),
       });
     }
-
-    // And the two against each other at one size, which cancels the machine entirely: the same rows
-    // with the same cells through the collection's own bulk write.
-    const ratio = measured.keyed.largeTotal / measured.positional.largeTotal;
-    expectClaim(ratio < 5, {
-      claimIds: ["COL-001", "COL-005"],
-      what: `writing ${LARGE} keyed rows costs ${ratio.toFixed(1)}× what writing ${LARGE} positional rows costs`,
-      detail: JSON.stringify(measured),
-    });
   },
 );
 
