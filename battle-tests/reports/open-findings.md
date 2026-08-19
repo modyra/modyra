@@ -3,11 +3,11 @@
 ## Open now, and in the order they are repaired
 
 ```
-S0     6      the whole of it before any S1
+S0     5      the whole of it before any S1
 S1    15
 S2     3
       --
-      24      open reds, 2026-08-19
+      23      open reds, 2026-08-19
 ```
 
 Severity is the order of work: every S0, then every S1, then S2 and below. The same counts are in
@@ -14704,6 +14704,99 @@ Distinct from the bridge finding already open about transformations: that one is
 against what the form holds after a `.trim()` or a `z.coerce`, and its control checked what each
 piece *allows* for a value supplied to it. Nothing there measured the value the form starts at.
 
+## 244 — The guard that reads untrusted input is broken by it (S0, SEC-004 PER-003)
+
+`docs/guides/security.md` states the threat model in its own words:
+
+> A stored draft is untrusted input (`localStorage` is writable by any script on the origin)
+
+and what the form does about one: a value of the wrong shape is *"dropped and reported
+(`draft-shape`) instead of causing type confusion downstream"*.
+
+It holds for the ordinary hostile draft. It does not survive a nested one:
+
+```
+{"f": {"inner":{"inner": … {"s":"x"} … }}}
+
+   depth    100    dropped, reported draft-shape, the form exists
+   depth 20,000    RangeError: Maximum call stack size exceeded, thrown out of createForm
+```
+
+The stack names it:
+
+```
+at isDraftUnsafeLeaf   (draft-manager.js:121)
+at containsFileInner   (draft-manager.js:144)
+at containsFileInner   (draft-manager.js:154)   … once per level
+```
+
+**The guard is what gives way, not the parse.** `JSON.parse` reads the same text without difficulty —
+V8 parses it iteratively — so the value arrives intact and the walk that checks it for leaves it must
+not accept recurses once per level until the stack ends. The violation is even *reported* first:
+`heard: ["draft-shape"]`, and then the throw. The report is written and the form is not.
+
+What it costs: a script on the origin writes a string into `localStorage`, and the next
+`createForm` throws. Not a form with a dropped draft — no form. The application gets an exception
+from a constructor, at startup, on every load until someone clears the key. Writing it takes no
+object and no allocation on the attacker's side: `'{"inner":'.repeat(20000)` is text.
+
+Filed S0 because the promise it breaks is the one made about hostile input, and it is broken by
+hostile input of a shape the guide's own threat model describes.
+
+The depth is the runtime's stack rather than a property of the contract — around three thousand on
+this machine — so the battle pins no number: it uses a depth well past any stack and asserts what
+happens. The parse is asserted separately, so a runtime that could not read the text either would
+say so rather than letting the battle claim the guard gave way.
+
+Green either way: the walk is bounded, or the restore is wrapped so a draft it cannot read is dropped
+and reported like every other draft it will not take. Pinned by
+`adversarial/security/a-guard-the-input-it-guards-can-break.battle.test.mjs`, with the depth-100
+control that shows the promise kept where the guard can finish.
+
+Same walk, another door: `security.js`'s `isPlainObject` overflows on a deep value written through
+`setValue`. That one is the application's own value rather than an attacker's, which is why the draft
+is what this is filed on.
+
+### One red seen once, and not since
+
+A full-suite run reported `[S0][COL-003,COL-004] renaming a row twice, at two depths, carries the
+defect with it both times` as a regression. It is written down because a gate that fires on a flake is
+worse than no gate, and because the next person to see this name should find this paragraph rather
+than start over.
+
+What was ruled out, in order:
+
+```
+the file alone, three runs                       2 green each time
+the same sequence by hand, hand-written schema   the error is carried
+the same sequence by hand, from the fixture      the error is carried
+300 runs, the error read in the same tick as
+  the rename and again after one                 absent 0 times, both readings
+a second full-suite run                          green
+```
+
+So it is not the document path, not the depth, and not a race between the rename and the read — the
+three explanations that fit the symptom. **No cause is offered here**, because none was found: what is
+recorded is one observation and five checks that did not reproduce it. The machine was building
+packages during the run that saw it, which is a circumstance rather than an explanation.
+
+### Checked and clean while hunting this
+
+The security policy is at more doors than it looked. Measured, all green:
+
+- **the value a form is born holding.** A field seeded past `maxValueLength` is cut at construction
+  and the violation reported — by hand and from a document's `initialValue` alike, which matters
+  because a document is untrusted input. Markup in a document's `initialValue` is stripped exactly as
+  it is through a `set`.
+- **the collection doors.** `array.push` and `record.upsert` cut and report like the seven doors
+  already pinned.
+- **prototype keys through every whole-object write.** `setValue`, `patch`, a row upsert, a row patch
+  and `setInitialValue`+`reset`, each given a real own `__proto__` and `constructor` key built with
+  `JSON.parse`: nothing polluted, nothing thrown, neither key kept.
+- **a string in a nested position.** Sanitisation reaches array elements, object values, and objects
+  inside arrays — a `daterange`'s `start`, a file's `name`, a list's items. The walk is over the
+  value's shape and not over a kind's expectations, which is why all of them come back clean.
+
 ## The browser tier, measured — a baseline this register never had
 
 `npm run battle:browser` on the working tree at `6ee29144`:
@@ -14860,7 +14953,7 @@ the half-fix to overlay teardown did not close it on plain either.
 ## The register's own shape, measured
 
 ```
-numbered findings        243
+numbered findings        244
 closed or retracted       58
 open with a battle       207
 open with none            10

@@ -2,19 +2,18 @@
   "note": "Battles that are red because the defect they describe is open. A red listed here does not fail a build; a red that is not listed is a regression. Rewrite with `npm run battle:ci -- --accept`.",
   "order": "Repair in severity order: every S0, then every S1, then S2 and below. `bySeverity` is the count at each, and `knownRed` is sorted the same way, so the top of the list is the next work.",
   "recordedAt": "2026-08-19",
-  "openReds": 24,
+  "openReds": 23,
   "bySeverity": {
-    "S0": 6,
+    "S0": 5,
     "S1": 15,
     "S2": 3
   },
   "knownRed": [
     "[S0][COL-001,COL-005] a batch of orders costs what its orders cost, not more",
-    "[S0][COL-001,COL-005] a value that cannot name a position does not name the first one",
     "[S0][COL-001,COL-005] writing a collection in bulk costs the same per row however many there are",
     "[S0][DYN-001,SEC-001] a value a form holds names one option",
     "[S0][DYN-001,SUB-001] the other bridge's value is the one its schema describes too",
-    "[S0][SEC-002,SEC-005] what the panel masks is protected elsewhere, or says it is only a guess",
+    "[S0][SEC-004,PER-003] a draft the form will not take is dropped and reported, not thrown",
     "[S1][A11Y-001,LOC-002] every language ships every message the default ships",
     "[S1][A11Y-001] the option being pointed at is one the list still has",
     "[S1][A11Y-004] a widget announcing a state only when it is in it is still reported",
