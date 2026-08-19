@@ -1691,15 +1691,20 @@ export function parseDynamicForm(
     ? Math.max(0, sourceCount - fields.length)
     : treeRejected) + elsewhere;
   const strict = modeUnderstood && asked === "strict";
+  // What strict mode refuses on. A warning is published as the severity a consumer reads to tell
+  // what must be fixed from what is worth knowing, so refusing the whole document for one turns the
+  // distinction into a second word for "error" — and the document it refused had nothing malformed
+  // in it, only more declarations than the reader counts.
+  const refusals = diagnostics.filter((diagnostic) => diagnostic.severity === "error").length;
   return {
     // A mode nobody knows is not a document that parsed: `ok` is what a publishing gate reads, and
     // answering `true` for a run that was never the run the caller asked for is the whole finding.
-    ok: modeUnderstood && version !== null && (!strict || diagnostics.length === 0),
+    ok: modeUnderstood && version !== null && (!strict || refusals === 0),
     version,
-    fields: strict && diagnostics.length > 0 ? [] : fields,
-    layout: strict && diagnostics.length > 0 ? [] : layout,
-    rules: strict && diagnostics.length > 0 ? [] : rules,
-    validations: strict && diagnostics.length > 0 ? [] : validations,
+    fields: strict && refusals > 0 ? [] : fields,
+    layout: strict && refusals > 0 ? [] : layout,
+    rules: strict && refusals > 0 ? [] : rules,
+    validations: strict && refusals > 0 ? [] : validations,
     collections,
     diagnostics,
     // What the document declared and the parser understood. For a tree that is every field node it

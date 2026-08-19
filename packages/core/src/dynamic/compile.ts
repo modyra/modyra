@@ -31,7 +31,13 @@ import {
   valueShape,
 } from "../validators.js";
 
-import { assertSafeDynamicName, isSafeDynamicSegment, MDY_MAX_DYNAMIC_PATTERN_LENGTH, warnDev } from "./guards.js";
+import {
+  assertSafeDynamicName,
+  isSafeDynamicSegment,
+  MDY_MAX_DYNAMIC_PATH_LENGTH,
+  MDY_MAX_DYNAMIC_PATTERN_LENGTH,
+  warnDev,
+} from "./guards.js";
 import { dynamicPatternRefusal } from "./pattern-cost.js";
 import {
   mdyEmptyValueFor,
@@ -375,7 +381,23 @@ export function buildDynamicFormSchema(
     );
   }
   const built = new Map<MdyDynamicNode, unknown>();
-  const leaf = (node: MdyDynamicNode & { node: "field" }, name: string): unknown => {
+  /**
+   * A field the path limit leaves out, so the group above it can tell "not built" from "built as
+   * undefined". The parser drops the same field, and a form that built it held a value under a path
+   * the contract calls unusable — in the payload and on no screen, because the renderer had nothing
+   * to draw.
+   */
+  const OVER_THE_LIMIT = Symbol("mdy.path-too-long");
+  const leaf = (node: MdyDynamicNode & { node: "field" }, name: string, path: string): unknown => {
+    if (path.length > MDY_MAX_DYNAMIC_PATH_LENGTH) {
+      warnDev(
+        `Dropped a dynamic field whose path is ${path.length} characters, past the ` +
+        `${MDY_MAX_DYNAMIC_PATH_LENGTH} a path may be: a path is the payload key, the draft key ` +
+        "and the widget id, and every read of the value carries it.",
+        "/schema",
+      );
+      return OVER_THE_LIMIT;
+    }
     const descriptor = { ...node.field, name } as MdyDynamicField;
     // `marksRequired` is not passed on: a `required()` validator in the list already raises the
     // field's own `required` signal, so the flag would be a second spelling of the same fact.
@@ -404,13 +426,13 @@ export function buildDynamicFormSchema(
   };
 
   const build = (node: MdyDynamicNode, name: string): unknown => {
-    const pending: Array<{ node: MdyDynamicNode; name: string; expanded: boolean }> = [
-      { node, name, expanded: false },
+    const pending: Array<{ node: MdyDynamicNode; name: string; path: string; expanded: boolean }> = [
+      { node, name, path: name, expanded: false },
     ];
     while (pending.length > 0) {
       const frame = pending[pending.length - 1]!;
       if (frame.node.node === "field") {
-        built.set(frame.node, leaf(frame.node, frame.name));
+        built.set(frame.node, leaf(frame.node, frame.name, frame.path));
         pending.pop();
         continue;
       }
@@ -422,17 +444,31 @@ export function buildDynamicFormSchema(
             // the same widget id. Refused here too, so which pair of functions a consumer called
             // does not decide whether their document works.
             assertSafeSegment(key);
-            pending.push({ node: child, name: key, expanded: false });
+            pending.push({ node: child, name: key, path: `${frame.path}.${key}`, expanded: false });
           }
         } else {
-          pending.push({ node: frame.node.item, name: frame.name, expanded: false });
+          // A row template has no path of its own: a row key is data, so what a cell is filed under
+          // is not known until a row exists. The declared path is what is measured here, and each
+          // row's own path is measured as it is flattened.
+          pending.push({ node: frame.node.item, name: frame.name, path: frame.path, expanded: false });
         }
         continue;
       }
       pending.pop();
       if (frame.node.node === "group") {
         const children: Record<string, unknown> = {};
-        for (const [key, child] of Object.entries(frame.node.children)) children[key] = built.get(child);
+        for (const [key, child] of Object.entries(frame.node.children)) {
+          const child_ = built.get(child);
+          if (child_ === OVER_THE_LIMIT) continue;
+          children[key] = child_;
+        }
+        // Every child gone and the document declaring some: the group described one thing, that thing
+        // is past the limit, and a group with nothing in it is not what the document said. It goes
+        // the same way its children did, so the refusal reaches the level a consumer can see.
+        if (Object.keys(children).length === 0 && Object.keys(frame.node.children).length > 0) {
+          built.set(frame.node, OVER_THE_LIMIT);
+          continue;
+        }
         built.set(
           frame.node,
           group(
@@ -445,6 +481,12 @@ export function buildDynamicFormSchema(
         continue;
       }
       const item = built.get(frame.node.item) as never;
+      // A collection whose row shape is past the limit has no row shape, so it is not a collection
+      // the document can have — it goes the way its item did.
+      if (item === (OVER_THE_LIMIT as never)) {
+        built.set(frame.node, OVER_THE_LIMIT);
+        continue;
+      }
       if (frame.node.node === "record") {
         // Same template idea as an array's item: one row shape, whatever key it ends up under.
         built.set(frame.node, record(item, {
@@ -468,7 +510,9 @@ export function buildDynamicFormSchema(
   const root: Record<string, unknown> = {};
   for (const [key, child] of Object.entries(schema.children)) {
     assertSafeSegment(key);
-    root[key] = build(child, key);
+    const node = build(child, key);
+    if (node === OVER_THE_LIMIT) continue;
+    root[key] = node;
   }
   return root as MdyFormSchema;
 }

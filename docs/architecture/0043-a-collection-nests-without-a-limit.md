@@ -1,6 +1,7 @@
 # ADR 0043: A collection nests without a limit
 
-Status: Accepted — amended 2026-08-14 (Studio followed); supersedes the one-positional-level rule of
+Status: Accepted — amended 2026-08-14 (Studio followed) and 2026-08-19 (the path length both doors
+keep); supersedes the one-positional-level rule of
 [ADR 0040](0040-a-collection-owns-its-subtree.md)
 
 ## Context
@@ -48,6 +49,23 @@ frame per level, because each level's collection manager builds the next while i
 stack. Measured, 200 levels of rows build and read back; 1000 do not. That is the runtime's stack
 rather than a rule of this decision, which is why no number is pinned in a test — the check that
 exists asserts the working depth and the agreement between parser and builder, not a ceiling.
+
+## Amendment: the one length a path may not exceed, kept by both doors
+
+A path is the payload key, the draft key, the widget id and a string every renderer carries per
+field, so `MDY_MAX_DYNAMIC_PATH_LENGTH` — 512 characters — is a bound on what a *form* can hold, not
+on how deep a document may nest. It is the one limit this decision's "no maximum" does not cover, and
+it was kept by one door only: `parseDynamicForm` dropped the field and reported
+`MDY_DYNAMIC_PATH_TOO_LONG` while `buildDynamicFormSchema` built it from the same document. A
+consumer rendering the reported fields and holding data in the built form had a value in the payload
+and no control on any screen.
+
+Both doors keep it. The builder leaves out a field whose declared path is past the limit, and a group
+or a collection whose whole content went that way goes with it, so the document's own shape decides
+what is missing rather than an empty group appearing where the document declared a field. What the
+builder measures is the **declared** path — group keys and collection names — because a row key is
+data and a row's path is not known until the row exists; each row's own path is measured as it is
+flattened, which is where a key long enough to pass the limit is caught.
 
 ## Consequences
 
