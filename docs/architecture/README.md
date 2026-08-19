@@ -109,6 +109,7 @@ absent section reads as an oversight, and "no security impact" is a finding.
 - [ADR 0091: A form that has ended answers with one voice](0091-a-form-that-ended-answers-with-one-voice.md) — a destroyed form called itself submittable with nothing to submit, and a late write reached one surface of two
 - [ADR 0093: A field that leaves play takes its overlay with it](0093-a-field-that-leaves-play-takes-its-overlay-with-it.md) — a rule took a field out of play and left its calendar open, expanded, and answering nothing
 - [ADR 0094: One question about emptiness, one answer](0094-one-question-about-emptiness-one-answer.md) — `required` refused a value `isEmpty` called filled, so a rule opened a section the form was still refusing to submit
+- [ADR 0095: A flat pair carries the shape of a row](0095-a-flat-pair-carries-the-shape-of-a-row.md) — a collection with no rows had no template, so a form rebuilt from the flat pair accepted a row and held nothing
 - [ADR 0092: A condition travels with the form](0092-a-condition-travels-with-the-form.md) — `when` and `asyncWhen` were closures, so a schema carrying one was not data and the document half could not say what the typed half said
 
 ## Security-relevant records

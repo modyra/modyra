@@ -161,7 +161,7 @@ test("a document's array reads back as a list, and a record keyed by digits stay
   const parsed = parseDynamicForm(document_);
   assert.deepEqual(parsed.diagnostics, []);
   assert.deepEqual(
-    [...parsed.collections],
+    parsed.collections.map(({ path, kind }) => ({ path, kind })),
     [{ path: "lines", kind: "array" }, { path: "m", kind: "record" }],
     "the parser must say which kind each collection is",
   );

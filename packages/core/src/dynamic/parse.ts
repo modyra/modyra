@@ -36,6 +36,7 @@ import {
   MDY_DYNAMIC_FIELD_KINDS,
   type MdyDynamicCalendarOptions,
   type MdyDynamicCollection,
+  type MdyDynamicFlatForm,
   type MdyDynamicField,
   type MdyDynamicNode,
   type MdyDynamicGroupNode,
@@ -408,8 +409,46 @@ export function flattenDynamicForm(schema: MdyDynamicGroupNode): {
   readonly fields: MdyDynamicField[];
   readonly collections: MdyDynamicCollection[];
 } {
-  const out: MdyDynamicField[] = [];
+  const fields: MdyDynamicField[] = [];
   const collections: MdyDynamicCollection[] = [];
+  /**
+   * The row templates, keyed by the item node.
+   *
+   * Keyed by node so a collection inside a row is flattened once and not once per row — the shape
+   * belongs to the node, and a list of a thousand rows would otherwise pay for the same template a
+   * thousand times. The queue keeps the templates a flat piece of work: a document nests as deep as
+   * it likes, and a walk that descended into each item as it met it would spend the stack the
+   * iterative walk below exists to protect.
+   */
+  const templates = new Map<MdyDynamicNode, { fields: MdyDynamicField[]; collections: MdyDynamicCollection[] }>();
+  const queue: MdyDynamicNode[] = [];
+  const templateOf = (item: MdyDynamicNode): MdyDynamicFlatForm => {
+    const held = templates.get(item);
+    if (held) return held;
+    // Handed out empty and filled when the queue reaches it: a template is a row's shape, and an
+    // item that reaches itself is answered rather than followed forever.
+    const fresh = { fields: [] as MdyDynamicField[], collections: [] as MdyDynamicCollection[] };
+    templates.set(item, fresh);
+    queue.push(item);
+    return fresh;
+  };
+
+  flattenNode(schema, fields, collections, templateOf);
+  while (queue.length > 0) {
+    const item = queue.pop()!;
+    const held = templates.get(item)!;
+    flattenNode(item, held.fields, held.collections, templateOf);
+  }
+  return { fields, collections };
+}
+
+/** The walk itself: one node's subtree into the flat pair, with row templates asked for by node. */
+function flattenNode(
+  root: MdyDynamicNode,
+  out: MdyDynamicField[],
+  collections: MdyDynamicCollection[],
+  templateOf: (item: MdyDynamicNode) => MdyDynamicFlatForm,
+): void {
   /**
    * An explicit stack, for the reason the validator has one: a document is untrusted and its nesting
    * has no cap, so a recursive walk lets the document decide how much stack to use. A `RangeError`
@@ -420,7 +459,7 @@ export function flattenDynamicForm(schema: MdyDynamicGroupNode): {
    * flat list a consumer reads is in document order, and a form built from it renders in that order.
    */
   const pending: Array<{ node: MdyDynamicNode; path: string; initial: unknown }> = [
-    { node: schema, path: "", initial: undefined },
+    { node: root, path: "", initial: undefined },
   ];
   while (pending.length > 0) {
     const { node, path, initial } = pending.pop()!;
@@ -451,7 +490,7 @@ export function flattenDynamicForm(schema: MdyDynamicGroupNode): {
       continue;
     }
     if (node.node === "record") {
-      collections.push({ path, kind: "record" });
+      collections.push({ path, kind: "record", item: templateOf(node.item) });
       const declared = isRecordValue(initial)
         ? initial
         : isRecordValue(node.initialValue) ? node.initialValue : {};
@@ -466,13 +505,12 @@ export function flattenDynamicForm(schema: MdyDynamicGroupNode): {
       }
       continue;
     }
-    collections.push({ path, kind: "array" });
+    collections.push({ path, kind: "array", item: templateOf(node.item) });
     const rows = Array.isArray(initial) ? initial : Array.isArray(node.initialValue) ? node.initialValue : [];
     for (let index = rows.length - 1; index >= 0; index -= 1) {
       pending.push({ node: node.item, path: `${path}.${index}`, initial: rows[index] });
     }
   }
-  return { fields: out, collections };
 }
 
 /** The fields alone — {@link flattenDynamicForm} also reports the collections they came from. */

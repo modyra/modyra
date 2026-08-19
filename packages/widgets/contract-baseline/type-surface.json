@@ -599,6 +599,7 @@
     "minDate?: string"
   ],
   "MdyDynamicCollection": [
+    "item?: MdyDynamicFlatForm",
     "kind: \"array\" | \"record\"",
     "path: string"
   ],
@@ -637,6 +638,10 @@
     "accept?: string",
     "kind: \"file\"",
     "multiple?: boolean"
+  ],
+  "MdyDynamicFlatForm": [
+    "collections: readonly MdyDynamicCollection[]",
+    "fields: readonly MdyDynamicField[]"
   ],
   "MdyDynamicFormConfig": [
     "fields: ReadonlyArray<MdyDynamicField>",

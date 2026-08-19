@@ -28,6 +28,7 @@ import {
   type MdyDynamicCollection,
   type MdyDynamicField,
 } from "./dynamic-config.js";
+import type { MdyDynamicFlatForm } from "./dynamic/schema.js";
 
 /**
  * The shape a kind's values take, declared onto the descriptor so the form knows it later.
@@ -132,6 +133,13 @@ export function buildFlatFormSchema(
       const { item: childItem } = rowOf(child.path);
       item[within] = child.kind === "array" ? array(childItem as never) : record(childItem as never);
     }
+    // Nothing under this path says what a row looks like: the collection was declared with no rows,
+    // so the flat fields describe none. The template the flattening kept is the shape, and without
+    // it the rebuilt collection accepted rows and held nothing.
+    if (Object.keys(item).length === 0) {
+      const template = declared.find((c) => c.path === prefix)?.item;
+      if (template) return { item: itemFromTemplate(template), rows };
+    }
     return { item: group(nest(item)), rows };
   };
 
@@ -178,6 +186,31 @@ export function buildFlatFormSchema(
     schema[f.name] = field(mdyEmptyValueFor(f) as never, [], { sensitive: f.sensitive === true, ...shapeOf(f) });
   }
   return schema as MdyFormSchema;
+}
+
+/**
+ * The descriptor for one row, from the template a flattening kept.
+ *
+ * A row is a leaf when the template holds the single field named `""`, and a collection when it
+ * holds the single collection at path `""` — the two shapes a row can have that are not a group of
+ * named cells.
+ */
+function itemFromTemplate(template: MdyDynamicFlatForm): unknown {
+  const rowCollection = template.collections.find((c) => c.path === "");
+  if (rowCollection) {
+    const inner = rowCollection.item
+      ? itemFromTemplate(rowCollection.item)
+      : field(null as never, []);
+    return rowCollection.kind === "array" ? array(inner as never) : record(inner as never);
+  }
+  const rowLeaf = template.fields.find((f) => f.name === "");
+  if (rowLeaf) {
+    return field(mdyEmptyValueFor(rowLeaf) as never, [], {
+      sensitive: rowLeaf.sensitive === true,
+      ...shapeOf(rowLeaf),
+    });
+  }
+  return group(buildFlatFormSchema(template.fields, template.collections));
 }
 
 /** Turns the dotted keys of a row's fields into the nested shape they describe. */
