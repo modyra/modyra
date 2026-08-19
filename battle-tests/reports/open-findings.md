@@ -13275,6 +13275,50 @@ Pinned by `adversarial/security/a-mask-that-promises-more.battle.test.mjs`, with
 the draft ran, an ordinary field is neither masked nor withheld, and a declared one is both.
 
 
+## 214 — A row's template cannot name its own sibling (S1, COL-001 VAL-002)
+
+`asyncDependsOn` exists for one failure: a verdict obtained from a server about one value, still
+standing after the value it was about has changed. A row of a collection is a **template**, declared
+once and instantiated per key, and a cell in it names its sibling the only way it can — by the name
+that sibling has inside the row. That name is resolved against the form's root, where it is not.
+
+```
+at the root, dependsOn ["code"]          re-runs        ← the control
+in a row,    dependsOn ["code"]          never re-runs
+in a row,    dependsOn ["./code"]        never re-runs
+in a row,    dependsOn ["rows.*.code"]   never re-runs
+in a row,    dependsOn ["rows.a.code"]   re-runs        ← and unwritable in a template
+```
+
+The last line is the one that makes this a defect rather than a missing feature: the mechanism works
+and only the addressing fails. And it is the one spelling a template cannot write, because the
+template predates every row and is shared by all of them — it does not know, and must not know, the
+key. **There is no correct way to declare a cross-field server check inside a collection.**
+
+Measured cost, on the arrangement an author would write:
+
+```
+the server approves the row                     form valid
+the user replaces the code with something else  form still valid, no errors, not pending
+```
+
+The approval stands for an input that is gone. Direction matters: had the stale verdict been a
+refusal it would block a submit that should pass — annoying. It is an approval, so the form submits a
+value nothing ever checked.
+
+Third time in one session that a declaration written in a row's template does not cross the boundary
+— after `sensitive` (205) and the sanitizer (207). The pattern is worth more than the three:
+**whatever a template declares about a cell, check that it survives instantiation.**
+
+Pinned by `adversarial/collections/a-dependency-a-row-cannot-name.battle.test.mjs`, with the root
+control and a second control requiring the server to have approved the row before the change.
+
+**Eighteenth instrument error.** The first probe passed the async validator as `field(initial,
+[check])` — the second argument is the *sync* validator list, so nothing async ran anywhere, and
+the root control read as broken too. The control is what surfaced it: a mechanism that fails at the
+root as well is a probe, not a finding.
+
+
 ## The browser tier, measured — a baseline this register never had
 
 `npm run battle:browser` on the working tree at `6ee29144`:
@@ -13431,9 +13475,9 @@ the half-fix to overlay teardown did not close it on plain either.
 ## The register's own shape, measured
 
 ```
-numbered findings        213
+numbered findings        214
 closed or retracted       34
-open with a battle       184
+open with a battle       185
 open with none             6
 ```
 
