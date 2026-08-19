@@ -24,7 +24,7 @@
 import { execFileSync } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
-import { pathToFileURL } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 
 import { battle } from "../harness/battle.mjs";
 import { expectClaim, expectEqual } from "../harness/assertions.mjs";
@@ -36,14 +36,33 @@ const REPO = resolve(HERE, "..", "..");
 const IMPORT_CLAUSE = /import\s*(type\s+)?\{([^}]*)\}\s*from\s*["'](@modyra\/[a-z0-9-]+(?:\/[a-z0-9/-]+)?)["']/g;
 
 /**
- * The entry points a plain node process cannot load, and why.
+ * The names an entry point exports, read without evaluating it.
  *
- * Angular's `adapter` and `ui` pull in `PlatformLocation`, which needs a compiled platform — the
- * import fails with "needs to be compiled using the JIT compiler" before any export is visible.
- * The names behind those two doors are the angular tier's to check; skipping them here is stated in
- * an assertion below so that a *new* unloadable specifier fails instead of joining them.
+ * The fallback for a module a plain node process cannot evaluate: Angular's entry points reach
+ * `PlatformLocation` and fail with "needs to be compiled using the JIT compiler" before any export
+ * is visible, and skipping them would mean the names behind those doors are checked by nothing.
+ *
+ * `null` when the file re-exports from elsewhere. A static read of `export * from "…"` sees no
+ * names, and a set that is missing names reports imports as wrong — so the honest answer there is
+ * that this instrument cannot say, which the caller turns into a failure rather than a pass.
  */
-const NOT_LOADABLE_IN_NODE = new Set(["@modyra/angular/adapter", "@modyra/angular/ui"]);
+function declaredExports(file) {
+  const source = readFileSync(file, "utf8");
+  if (/^export\s+(\*|\{[^}]*\}\s*from)/m.test(source)) return null;
+  const names = new Set();
+  for (const match of source.matchAll(/^export\s*\{([^}]*)\}/gm)) {
+    for (const piece of match[1].split(",")) {
+      const written = piece.trim();
+      if (!written) continue;
+      const parts = written.split(/\s+as\s+/);
+      names.add((parts[1] ?? parts[0]).trim());
+    }
+  }
+  for (const match of source.matchAll(/^export\s+(?:async\s+)?(?:const|let|var|function\*?|class)\s+([A-Za-z_$][\w$]*)/gm)) {
+    names.add(match[1]);
+  }
+  return names.size > 0 ? names : null;
+}
 
 const tracked = (pattern) =>
   execFileSync("git", ["ls-files", pattern], { cwd: REPO, encoding: "utf8" })
@@ -93,21 +112,38 @@ battle(
     const known = manifests();
     const exportsOf = new Map();
 
-    const runtimeExports = async (pkg) => {
-      if (NOT_LOADABLE_IN_NODE.has(pkg)) return new Set();
-      if (exportsOf.has(pkg)) return exportsOf.get(pkg);
+    /**
+     * Three reads, in falling order of fidelity: the bare specifier a consumer writes, the entry
+     * point named by the package's own manifest — not every workspace package is linked at the
+     * repository root, and one that is not would otherwise be skipped — and finally the export
+     * statements of that file, for a module this process cannot evaluate.
+     */
+    const runtimeExports = async (specifier) => {
+      if (exportsOf.has(specifier)) return exportsOf.get(specifier);
+      const entry = entryOf(specifier, known);
       let names = null;
+      let how = "not read";
       try {
-        names = new Set(Object.keys(await import(pkg)));
+        names = new Set(Object.keys(await import(specifier)));
+        how = "imported";
       } catch {
-        const entry = entryOf(pkg, known);
-        if (entry) {
+        // The resolver runs without evaluating anything, so a module that throws on import still
+        // says where it is — which is the only way to see the names behind a door that cannot open.
+        let resolved = null;
+        try { resolved = fileURLToPath(import.meta.resolve(specifier)); } catch { /* unlinked */ }
+        const file = resolved ?? entry;
+        if (file) {
           try {
-            names = new Set(Object.keys(await import(pathToFileURL(entry).href)));
-          } catch { /* recorded below as unreadable rather than as a pass */ }
+            names = new Set(Object.keys(await import(pathToFileURL(file).href)));
+            how = "imported from its entry point";
+          } catch {
+            names = declaredExports(file);
+            if (names) how = "read from its export statements, unevaluated";
+          }
         }
       }
-      exportsOf.set(pkg, names);
+      ctx.log.note("a package was asked what it exports", { specifier, how, names: names?.size ?? 0 });
+      exportsOf.set(specifier, names);
       return names;
     };
 
@@ -117,7 +153,6 @@ battle(
 
     const wrong = [];
     const unreadable = new Set();
-    const skipped = new Set();
     let checked = 0;
 
     for (const page of pages) {
@@ -126,7 +161,6 @@ battle(
       for (const match of text.matchAll(IMPORT_CLAUSE)) {
         const [, typeOnly, clause, pkg] = match;
         if (typeOnly) continue;
-        if (NOT_LOADABLE_IN_NODE.has(pkg)) { skipped.add(pkg); continue; }
         const names = await runtimeExports(pkg);
         if (!names) { unreadable.add(pkg); continue; }
         const line = text.slice(0, match.index).split("\n").length;
@@ -155,12 +189,6 @@ battle(
     expectEqual([...unreadable].sort(), [], {
       claimIds: ["DOC-001"],
       what: "every package a guide imports from could be loaded and asked what it exports",
-    });
-    // The exclusion is stated rather than silent: what is skipped is fixed, and a new specifier
-    // that cannot load lands in `unreadable` above instead of quietly joining it.
-    expectEqual([...skipped].sort(), [...NOT_LOADABLE_IN_NODE].sort(), {
-      claimIds: ["DOC-001"],
-      what: "the entry points this tier cannot load are the declared two and no others",
     });
 
     expectEqual(wrong, [], {
