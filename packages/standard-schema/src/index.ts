@@ -89,10 +89,15 @@ export type MdyStandardOutput<TSchema extends MdyStandardSchemaV1> =
 // ─── Type-level tree (opt-in compile-time agreement) ─────────────────────────
 
 /**
- * Maps a Standard Schema's output type to the Modyra descriptor tree that
+ * Maps a Standard Schema's **input** type to the Modyra descriptor tree that
  * mirrors it: records become groups, arrays become typed field arrays,
  * everything else becomes a leaf field. Use it to annotate the declared
- * fields so a drift between schema and tree does not compile:
+ * fields so a drift between schema and tree does not compile.
+ *
+ * Input rather than output, because that is what a form holds: it keeps what a person typed and
+ * what a server sent and validates it against the schema, and it does not run the schema's
+ * transformations. Mapped over the output type the leaf promised the value after a transformation
+ * nobody applied — a coercing schema declared `number` over a field holding `"42"`.
  *
  * ```ts
  * const fields: MdyStandardSchemaTree<typeof userSchema> = {
@@ -102,8 +107,8 @@ export type MdyStandardOutput<TSchema extends MdyStandardSchemaV1> =
  * ```
  */
 export type MdyStandardSchemaTree<TSchema extends MdyStandardSchemaV1> = {
-  [K in keyof MdyStandardOutput<TSchema>]: MdyStandardNode<
-    MdyStandardOutput<TSchema>[K]
+  [K in keyof MdyStandardInput<TSchema>]: MdyStandardNode<
+    MdyStandardInput<TSchema>[K]
   >;
 };
 
