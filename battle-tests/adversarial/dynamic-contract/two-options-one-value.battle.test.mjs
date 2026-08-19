@@ -70,16 +70,24 @@ battle(
     environments: ["node"],
   },
   async (ctx) => {
-    // No renderer needed for this half. The guard's job is to answer whether a value is one of the
-    // offered ones; with a duplicate, "yes" does not say which.
-    const guard = oneOf(PLANS.map((option) => option.value));
-    const matching = PLANS.filter((option) => option.value === "pro");
-    ctx.log.note("what one accepted value names", { accepted: guard("pro").length === 0, matching });
+    // What the form is given, rather than what the document offered: the parser drops a duplicate
+    // value and says so, so the options a control renders are the ones to ask the question of.
+    const kept = parseDynamicFields([{ name: "s", kind: "select", label: "Plan", options: [...PLANS] }])[0]?.options ?? [];
+    const guard = oneOf(kept.map((option) => option.value));
+    const matching = kept.filter((option) => option.value === "pro");
+    ctx.log.note("what one accepted value names", { offered: PLANS.length, kept: kept.length, accepted: guard("pro").length === 0, matching });
 
-    // The control: the guard works at all.
+    // Two controls. The guard answers at all, and the value under test is one the form takes —
+    // without the second, a parser that dropped *both* copies would satisfy the assertion below by
+    // leaving nothing to name.
     expectClaim(guard("enterprise").length > 0, {
       claimIds: ["SEC-001"],
       what: "the guard accepts a value that was never offered, which is a different finding",
+    });
+    expectClaim(guard("pro").length === 0, {
+      claimIds: ["DYN-001"],
+      what: "the value the document offered twice is not accepted at all, so the count below is about a value nobody can choose",
+      detail: JSON.stringify(kept),
     });
 
     expectEqual(matching.length, 1, {

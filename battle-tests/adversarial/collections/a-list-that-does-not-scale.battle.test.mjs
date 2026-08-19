@@ -23,7 +23,12 @@
  * cost is in declaring rows into a keyed collection, and the collection beside it does the same work
  * without it.
  *
- * Timing is a poor thing to assert, so nothing here asserts a duration. Both assertions are ratios:
+ * Timing is a poor thing to assert, so nothing here asserts a duration, and each size is the
+ * cheapest of three writes — the run the scheduler interrupted least. Beside the rest of the suite
+ * the larger write meets more of someone else's work than the smaller one, and a ratio built from
+ * single runs moves for a reason that is not the code.
+ *
+ * Both assertions are ratios:
  * one route against the other at one size, and each route against itself as the size grows. A slower
  * machine moves both numbers together and neither ratio moves, which is what makes them safe to run
  * beside checks that care about correctness.
@@ -56,6 +61,23 @@ function timeBulkWrite(kind, count) {
   return { elapsed, written };
 }
 
+/**
+ * The cheapest of three writes, which is the one the scheduler interrupted least.
+ *
+ * A ratio of two timings measures the engine only while both timings measure the engine. Run beside
+ * the rest of the suite, the larger write meets more of someone else's work than the smaller one
+ * does, and the ratio moves for a reason that is not the code. The minimum is the run that met the
+ * least of it.
+ */
+function bestBulkWrite(kind, count) {
+  let best = null;
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    const measured = timeBulkWrite(kind, count);
+    if (best === null || measured.elapsed < best.elapsed) best = measured;
+  }
+  return best;
+}
+
 battle(
   {
     claims: ["COL-001", "COL-005"],
@@ -68,8 +90,8 @@ battle(
 
     const measured = {};
     for (const kind of ["positional", "keyed"]) {
-      const small = timeBulkWrite(kind, SMALL);
-      const large = timeBulkWrite(kind, LARGE);
+      const small = bestBulkWrite(kind, SMALL);
+      const large = bestBulkWrite(kind, LARGE);
 
       // The control on the measurement: both writes landed every row. A route that silently wrote
       // nothing would be the fastest of all.
