@@ -442,6 +442,11 @@ export class MdyRecordManager implements MdyNestedCollection {
    * Writes several rows in one call. A key that is not declared yet is declared here: a patch on a
    * record comes from whoever owns the keys, which is the one party allowed to say a row exists.
    */
+  /** {@link MdyNestedCollection.patchFrom} for a keyed collection: the rows a patch names, merged. */
+  patchFrom(value: unknown): void {
+    if (isRecord(value) && !Array.isArray(value)) this.patch(value);
+  }
+
   patch(values: Readonly<Record<string, unknown>>): void {
     if (!isRecord(values) || Array.isArray(values)) {
       this._warn(
@@ -664,9 +669,10 @@ export class MdyRecordManager implements MdyNestedCollection {
       if (ref) ref().value.set(value);
       return;
     }
-    // A collection is written whole, by its own manager, rather than walked into here.
+    // A collection is written by its own manager rather than walked into here — as a patch, because
+    // this is the patch door: a row of it that names some cells keeps the ones it does not name.
     if (rowNode.kind === "record" || rowNode.kind === "array") {
-      this._nested.get(fullPath)?.setAllFrom(value);
+      this._nested.get(fullPath)?.patchFrom(value);
       return;
     }
     if (!isRecord(value)) return;
@@ -675,9 +681,10 @@ export class MdyRecordManager implements MdyNestedCollection {
       if (!(key in value)) continue;
       const at = `${fullPath}.${key}`;
       if ((child as MdyAnyRowDescriptor).kind === "record" || (child as MdyAnyRowDescriptor).kind === "array") {
-        // `setAll`, because a whole-row write says what the row is: a nested collection the write
-        // does not mention is emptied, not left behind.
-        this._nested.get(at)?.setAllFrom(value[key]);
+        // The value names this collection, so what it carries is the whole list of rows — a row it
+        // omits is gone. What it does not say is what the rows it does carry hold in the cells they
+        // leave out, and a patch leaves those alone.
+        this._nested.get(at)?.patchFrom(value[key]);
         continue;
       }
       this._writeInto(at, child as MdyRowNode, value[key]);

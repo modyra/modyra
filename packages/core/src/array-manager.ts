@@ -569,6 +569,44 @@ export class MdyArrayManager implements MdyNestedCollection {
   }
 
   /**
+   * The rows a patch names, over the rows the collection has.
+   *
+   * The list is still the whole list — its length says which rows there are, because an index is a
+   * row's identity — but a row it carries is read the way a keyed collection reads one: the cells it
+   * names are written, and the cells it does not name stay as they are. Rebuilding from the row
+   * alone gave an unnamed cell the *declaration's* initial, which is neither what the person typed
+   * nor what the row started as: it is what a row created from nothing gets. A change set that
+   * leaves out a disabled cell would put that value back on the way in.
+   *
+   * A row past the end is new, so there is nothing to keep and it is taken as it came.
+   */
+  patchFrom(value: unknown): void {
+    if (!Array.isArray(value)) return;
+    const held = this._currentValues();
+    this.setAll(value.map((row, index) => (
+      index < held.length ? this._merged(this._deps.item, held[index], row) : row
+    )));
+  }
+
+  /**
+   * A row's incoming value over its held one, by the shape the schema declares.
+   *
+   * Driven by the descriptor and not by the value: an object-valued *leaf* — a range, a colour — is
+   * one value and is replaced, where a group of cells is merged cell by cell. A collection inside a
+   * row is written whole by its own manager, as a whole-row write already does.
+   */
+  private _merged(node: MdyArrayManagerDeps["item"], held: unknown, incoming: unknown): unknown {
+    if (node.kind !== "group") return incoming;
+    if (!isRecord(incoming) || !isRecord(held)) return incoming;
+    const out: Record<string, unknown> = { ...held };
+    for (const [key, child] of Object.entries((node as MdyAnyGroupDescriptor).children)) {
+      if (!(key in incoming)) continue;
+      out[key] = this._merged(child as MdyArrayManagerDeps["item"], held[key], incoming[key]);
+    }
+    return out;
+  }
+
+  /**
    * Ends a row: its subtree, its ownership, and then its fields.
    *
    * The fields go when the gate stops admitting them — the count falls and

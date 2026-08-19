@@ -1992,7 +1992,9 @@ export abstract class MdyTypedFormBase<
             );
           }
         }
-        array.setAllFrom(v);
+        // A patch names cells, so a row it carries is merged over the row that is there — the list
+        // is still the whole list, and its length still says which rows there are.
+        array.patchFrom(v);
       } else if (record) {
         // A patch names the rows it touches and leaves the others alone; replacing the collection is
         // what `setValue` means, and it goes through `setAll` below. The manager is handed the value
