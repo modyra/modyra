@@ -2,6 +2,7 @@
 // The Studio bundle is copied into public/studio-app before the site build.
 // It remains a static asset because the documentation site has an isolated
 // dependency installation and does not resolve workspace packages.
+import CloudflareAnalytics from '../../components/CloudflareAnalytics.astro';
 const base = import.meta.env.BASE_URL.replace(/\/$/, '');
 ---
 
@@ -13,6 +14,7 @@ const base = import.meta.env.BASE_URL.replace(/\/$/, '');
     <title>Modyra Studio</title>
     <meta name="description" content="Local-first visual form editor." />
     <link rel="stylesheet" href={`${base}/studio-app/studio.css`} />
+    <CloudflareAnalytics />
   </head>
   <body style="margin:0">
     <div data-modyra-studio></div>

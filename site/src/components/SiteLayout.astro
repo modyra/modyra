@@ -1,5 +1,6 @@
 ---
 import '../styles/custom.css';
+import CloudflareAnalytics from '../components/CloudflareAnalytics.astro';
 
 interface Props {
   title: string;
@@ -24,6 +25,7 @@ const based = (path: string) =>
     <meta property="og:image" content={new URL(based('brand/05-social/og-image.png'), Astro.site)} />
     <meta name="twitter:card" content="summary_large_image" />
     <title>{title}</title>
+    <CloudflareAnalytics />
   </head>
   <body>
     <header class="site-header">
