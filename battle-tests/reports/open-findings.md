@@ -15375,6 +15375,31 @@ fieldShellPartIds      builds a__label / a__description / a__errors, and refuses
 Six of the eight names looked at were sound. That is the shape of this vein: it is not that unasserted
 means broken, it is that nothing had ever looked.
 
+Two more surfaces taken the same way, and both hold:
+
+**The validator facts.** `validator-facts.ts` states an invariant with a failure history attached —
+*"the facts of a list of rules add up, every combinator carries the sum of what it combines, and a
+field reports the total"*, written because `compose(required(), …)` once produced a field that was not
+marked required. Driven through every published combinator, the sum survives:
+
+```
+required() alone                    required, no constraints
+[required(), minLength(3)]          required, minLength 3
+compose(required(), minLength(3))   required, minLength 3      — and in the other order
+composeFirst(…)                     the same
+compose(compose(required(), minLength(3)), max(9))   required, minLength 3, max 9
+compose(min(1), max(9), integer())  min 1, max 9, step 1       — step inferred from integer()
+```
+
+And the same rules written as a **document** — `{ required: true, minLength: 3, maxLength: 9, pattern:
+"^a+$" }` through `buildFlatFormSchema` and `applyFlatValidators` — report a constraint set identical
+to the hand-written one, pattern wrapping included. Two doors, one answer.
+
+**`SSR-001`**, that a widget command needing a DOM is not executed where there is none. Driven with
+`ssrRuntimeCapabilities` — `dom: false` — a batch of focus, blur, scrollIntoView, announce and
+selectRange commands asks the context for **nothing at all**; the same batch with `dom: true` reaches
+it. The capability is consulted before the command, not after.
+
 ## The browser tier, measured — and now gated like the other one
 
 `battle-tests/reports/known-red-browser.json` is the browser tier's baseline, written by
