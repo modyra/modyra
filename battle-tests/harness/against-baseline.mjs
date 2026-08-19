@@ -25,6 +25,8 @@ import { spawnSync } from "node:child_process";
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join, relative, resolve } from "node:path";
 
+import { buildFreshness } from "./build-freshness.mjs";
+
 const HARNESS = dirname(new URL(import.meta.url).pathname);
 const BATTLE_ROOT = resolve(HARNESS, "..");
 const REPO_ROOT = resolve(BATTLE_ROOT, "..");
@@ -177,8 +179,31 @@ function runSuite(pattern) {
   return result.stdout ?? "";
 }
 
+/**
+ * The packages a run measures, checked against the source they were built from.
+ *
+ * This gate runs the suite; it does not build. Invoked on its own — rather than through `battle:ci`,
+ * which builds first — it would report on whatever was last compiled, and a verdict about a build
+ * nobody named is worth nothing whichever way it comes out. A closure recorded against a stale `dist`
+ * is the worse half: a defect reads as repaired because the repair has not been compiled yet.
+ */
+function assertBuildsAreCurrent() {
+  const stale = [];
+  for (const name of ["core", "widgets", "plain"]) {
+    const freshness = buildFreshness(name);
+    if (freshness.known && !freshness.fresh) stale.push(`@modyra/${name} (${freshness.behindBySeconds}s behind)`);
+  }
+  if (stale.length === 0) return;
+  console.error(
+    `baseline check: ${stale.join(", ")} built before last written. This gate does not build, so ` +
+      "anything it reported would be about the older version. Run `npm run battle:ci`, which builds first.",
+  );
+  process.exit(2);
+}
+
 function main() {
   const accept = process.argv.includes("--accept");
+  assertBuildsAreCurrent();
   const pattern = process.argv.find((a) => a.endsWith(".mjs") && a.includes("*")) ?? "battle-tests/**/*.test.mjs";
 
   const run = readTap(runSuite(pattern));
