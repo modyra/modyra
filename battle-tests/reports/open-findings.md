@@ -14030,6 +14030,42 @@ green. Repointed at values of the kind's declared shape, it reaches the layer ag
 Pinned by the same battle, second `battle()`.
 
 
+## 230 — The parser knows what a date is, and asks at two doors of four (S1, DYN-004 VAL-003)
+
+`parse.ts` carries `DATE_KINDS` — *"the kinds whose value is an ISO date, so a comparison against
+them is a date comparison"* — and `isIsoDate` beside it, and the message it produces shows the
+reasoning is already worked out:
+
+> `greaterThan` on a datepicker compares dates as text, so "value" must be a full ISO date
+> (yyyy-MM-dd); "2026-4-3" would order wrongly.
+
+It asks at two doors and not at the other two:
+
+```
+the calendar's minDate/maxDate    checked      parse.ts:196
+a comparison rule's value         checked      parse.ts:901
+the field's initialValue          NOT checked  parsed clean, no diagnostic
+anything written afterwards       NOT checked  valid, no errors, submittable
+```
+
+So `"not a date at all"` is refused as a rule's operand and accepted as the field's own starting
+value, in the same document. Written into a live form it is valid and submittable, which is finding
+229 arriving by a second road.
+
+**And an author cannot ask for it.** The validator vocabulary is `required, email, min, max,
+minLength, maxLength, pattern`; there is no "is a date", and `pattern` means retyping what the *kind*
+already says — badly, since `^\d{4}-\d{2}-\d{2}$` accepts `9999-99-99`.
+
+The same holds for `timepicker` and `colors`, whose formats the framework also knows (`parseAnyTime`,
+the colour helpers) and does not consult after the value arrives. `email` is the one kind with a way
+out, because `validators.email` exists — which is the shape of the answer for the others.
+
+Pinned by `adversarial/dynamic-contract/a-date-the-parser-already-knows.battle.test.mjs`, with two
+controls: a real ISO date must be accepted at every door, and at least one door must already refuse —
+otherwise this would be a framework with no opinion about dates rather than one applying its own
+opinion twice.
+
+
 ## The browser tier, measured — a baseline this register never had
 
 `npm run battle:browser` on the working tree at `6ee29144`:
@@ -14186,9 +14222,9 @@ the half-fix to overlay teardown did not close it on plain either.
 ## The register's own shape, measured
 
 ```
-numbered findings        229
+numbered findings        230
 closed or retracted       47
-open with a battle       196
+open with a battle       197
 open with none            10
 ```
 
