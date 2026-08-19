@@ -103,6 +103,7 @@ absent section reads as an oversight, and "no security impact" is a finding.
 - [ADR 0085: A name a package exports belongs to one function](0085-a-name-a-package-exports-belongs-to-one-function.md) — two hooks shipped under `useMdyField`, and `export *` yielded to the local one in silence
 - [ADR 0086: A derived form starts at an empty its schema accepts](0086-a-derived-form-starts-at-an-empty-its-schema-accepts.md) — a bridge seeded a sentinel its own schema refused, so one emptiness got two answers and `required` contradicted `valid`
 - [ADR 0087: A target answers with everything it knows about the project](0087-a-target-answers-with-what-it-knows-about-the-project.md) — three code targets called a project compatible that the contract compiler reports errors on, and said nothing about a kind they cannot draw
+- [ADR 0088: A draft is not replaced by one belonging to another form](0088-a-draft-is-not-replaced-by-one-belonging-to-another-form.md) — two live forms on one key meant the last save deleted the other's work, and nothing said so
 
 ## Security-relevant records
 

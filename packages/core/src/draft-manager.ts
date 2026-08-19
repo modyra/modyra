@@ -16,6 +16,7 @@ import { reactivityRunsEffects } from "./reactivity-contract.js";
 import { isSafeFieldPath } from "./path-utils.js";
 import { MDY_DEV } from "./dev-flags.js";
 import { isRecord } from "./record-utils.js";
+import { MDY_DRAFT_KEY_IN_USE } from "./reactivity-diagnostics.js";
 
 /** Pluggable storage for {@link MdyDraftManager.enableDraft}. */
 export interface MdyDraftStorage {
@@ -224,7 +225,7 @@ interface DraftManagerDeps {
   readonly getValue: () => Record<string, unknown>;
   readonly patchValue: (value: Record<string, unknown>) => void;
   readonly hasDraft: MdyWritableSignal<boolean>;
-  readonly warn: (message: string) => void;
+  readonly warn: (message: string, code?: string) => void;
   /**
    * Extra always-on gate for restored entries (draft shape validation).
    * Return false to drop the entry.
@@ -294,7 +295,7 @@ export class MdyDraftManager {
   private readonly _getValue: () => Record<string, unknown>;
   private readonly _patchValue: (value: Record<string, unknown>) => void;
   private readonly _hasDraft: MdyWritableSignal<boolean>;
-  private readonly _warn: (message: string) => void;
+  private readonly _warn: (message: string, code?: string) => void;
   /** The stamp this form last wrote, so a stamp it did not write is recognisable as another writer's. */
   private _lastStamp: number | null = null;
   private readonly _filterRestoredEntry:
@@ -307,6 +308,8 @@ export class MdyDraftManager {
   /** True once `_start()` has run at least once — resume() then just restarts the effect. */
   private _hasStarted = false;
 
+  /** True once this form has refused to replace a draft describing a form that is not it. */
+  private _refusedForeign = false;
   private _key: string | null = null;
   private _storage: MdyDraftStorage | null = null;
   private _effect: MdyEffectRef | null = null;
@@ -484,7 +487,7 @@ export class MdyDraftManager {
     ) ?? null;
   }
 
-  /** Releases timers and effects and resets the hasDraft signal. */
+  /** Releases timers, effects, this form's claim on its draft key, and resets the hasDraft signal. */
   destroy(): void {
     if (this._timer !== null) {
       clearTimeout(this._timer);
@@ -578,6 +581,43 @@ export class MdyDraftManager {
     }
   }
 
+  /**
+   * The paths of a stored envelope this form does not declare.
+   *
+   * A draft key names one form's work. Two live forms sharing a key is not exotic — a component
+   * rendered twice, a route mounting a form beside another, a key copied along with the options it
+   * sits in — and the last save takes the whole envelope: one person's typing is gone from the only
+   * place it was kept, and reopening their form restores nothing, because the draft under their key
+   * now describes fields they do not have.
+   *
+   * The shape is what tells the two apart. A form re-opened on its own draft, or a second tab of the
+   * same form, stores paths this form declares, and replacing that is the intended behaviour. Paths
+   * it cannot read back belong to a different form.
+   */
+  private _foreignPaths(): string[] {
+    if (!this._key || !this._storage || !this._filterRestoredEntry) return [];
+    let raw: string | null = null;
+    try {
+      raw = this._storage.read(this._key);
+    } catch {
+      return [];
+    }
+    if (typeof raw !== "string" || raw.length === 0) return [];
+    let value: unknown;
+    try {
+      value = (JSON.parse(raw) as { value?: unknown }).value;
+    } catch {
+      return [];
+    }
+    if (!isRecord(value)) return [];
+    return Object.keys(value).filter(
+      (path) =>
+        !draftPathExcluded(path, this._exclude) &&
+        isSafeFieldPath(path) &&
+        !this._filterRestoredEntry!(path, (value as Record<string, unknown>)[path]),
+    );
+  }
+
   private _write(value: Record<string, unknown>): void {
     if (!this._key || !this._storage) return;
     const serialized = this._serialize(value);
@@ -585,6 +625,24 @@ export class MdyDraftManager {
     // Nothing the user changed → no draft; unchanged → no rewrite.
     if (serialized === this._lastWritten) return;
     if (this._lastWritten === null && serialized === this._baseline) {
+      return;
+    }
+    // A draft describing a form that is not this one is another form's work, and replacing it loses
+    // it: what is left behind is a draft neither form can read back. This form keeps no draft of its
+    // own rather than take the key, and says so once — a person's every keystroke is not a new
+    // event.
+    const foreign = this._foreignPaths();
+    if (foreign.length > 0) {
+      if (!this._refusedForeign) {
+        this._refusedForeign = true;
+        this._warn(
+          `A draft under "${this._key}" holds ${foreign.slice(0, 3).map((path) => `"${path}"`).join(", ")}` +
+          `${foreign.length > 3 ? ", …" : ""}, which this form does not declare, so it belongs to another ` +
+          "form. This form keeps no draft: saving would replace work nothing could read back. Give each " +
+          "form its own key.",
+          MDY_DRAFT_KEY_IN_USE,
+        );
+      }
       return;
     }
     const now = Date.now();
