@@ -16,6 +16,10 @@
  * Read from the **sources** rather than the built sheets. Each theme's dist file is a bundle carrying
  * the base and foundation layers inside it, so every built sheet mentions these properties whether or
  * not its own layer sets one. The question is about a theme's own rules.
+ *
+ * @source-inspection — the stylesheet's authored source, because a custom property a theme never
+ * declares cannot be observed from the compiled output: it is simply not there, exactly as an
+ * unused one is not there.
  */
 
 import { readFileSync, readdirSync } from "node:fs";

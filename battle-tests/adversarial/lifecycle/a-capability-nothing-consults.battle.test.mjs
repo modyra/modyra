@@ -17,6 +17,10 @@
  *
  * It goes green the moment any consumer consults it, whatever it then does — so it closes itself when
  * the decision is taken, in either direction, without this battle having taken a side.
+ *
+ * @source-inspection — whether any module *reads* a declared capability is a fact about the sources
+ * and about nothing else: a capability nobody consults behaves identically to one everybody does,
+ * so no public door can tell them apart. The walk asserts what is written, never what it means.
  */
 
 import { readdirSync, readFileSync, statSync } from "node:fs";
