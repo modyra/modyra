@@ -111,6 +111,7 @@ absent section reads as an oversight, and "no security impact" is a finding.
 - [ADR 0094: One question about emptiness, one answer](0094-one-question-about-emptiness-one-answer.md) — `required` refused a value `isEmpty` called filled, so a rule opened a section the form was still refusing to submit
 - [ADR 0095: A flat pair carries the shape of a row](0095-a-flat-pair-carries-the-shape-of-a-row.md) — a collection with no rows had no template, so a form rebuilt from the flat pair accepted a row and held nothing
 - [ADR 0096: A row the form was not built with is a change](0096-a-row-the-form-was-not-built-with-is-a-change.md) — `reset()` threw a new row away while `getChanges()` reported nothing, so a patch never carried the rows a user made
+- [ADR 0097: A member nobody declared is reported](0097-a-member-nobody-declared-is-reported.md) — the published schema closes every object and the parser closed none, so the one check a stored document meets said nothing
 - [ADR 0092: A condition travels with the form](0092-a-condition-travels-with-the-form.md) — `when` and `asyncWhen` were closures, so a schema carrying one was not data and the document half could not say what the typed half said
 
 ## Security-relevant records

@@ -25,6 +25,7 @@ import {
   isSafeDynamicSegment,
   warnDev,
 } from "./guards.js";
+import { MDY_DYNAMIC_MEMBERS, unknownMembers } from "./members.js";
 import { dynamicPatternRefusal } from "./pattern-cost.js";
 import { explainValueMismatch, type MdyValueKind } from "../value-contracts.js";
 import { MDY_FIELD_KINDS } from "../field-kinds.js";
@@ -781,6 +782,34 @@ export function parseDynamicFields(input: unknown): MdyDynamicField[] {
     if (!hasValidValidatorConfig(f.validators, f.name)) {
       return false;
     }
+    // Members nobody declared, on the field and on the objects it carries. The field is kept: a
+    // reader may meet a document written against a contract it predates, and dropping the field
+    // would turn a report into a loss. What is not kept is the silence.
+    for (const [value, declared, what] of [
+      [item, MDY_DYNAMIC_MEMBERS.field, `dynamic field "${f.name}"`],
+      [f.validators, MDY_DYNAMIC_MEMBERS.validators, `the validators of "${f.name}"`],
+    ] as const) {
+      const unknown = unknownMembers(value, declared);
+      if (unknown.length > 0) {
+        warnDev(
+          `${what} carries ${unknown.map((member) => JSON.stringify(member)).join(", ")}, which ` +
+          "this contract does not declare, so nothing reads it.",
+          at,
+        );
+      }
+    }
+    if (Array.isArray((f as { options?: unknown }).options)) {
+      for (const [index, option] of ((f as { options: readonly unknown[] }).options).entries()) {
+        const unknown = unknownMembers(option, MDY_DYNAMIC_MEMBERS.option);
+        if (unknown.length > 0) {
+          warnDev(
+            `an option of "${f.name}" carries ${unknown.map((member) => JSON.stringify(member)).join(", ")}, ` +
+            "which this contract does not declare, so nothing reads it.",
+            `${at}/options/${index}`,
+          );
+        }
+      }
+    }
     if (f.kind === "number" || f.kind === "slider") {
       const numberField = f as Partial<MdyDynamicNumberField>;
       if (numberField.min !== undefined && !isFiniteNumber(numberField.min)) {
@@ -940,6 +969,7 @@ export const MDY_DYNAMIC_DIAGNOSTICS: ReadonlyArray<{
   { code: "MDY_DYNAMIC_PATTERN_TOO_LONG", phrase: "pattern length" },
   { code: "MDY_DYNAMIC_PATTERN_TOO_COSTLY", phrase: "backtracks exponentially" },
   { code: "MDY_DYNAMIC_COUNT_INCOMPLETE", phrase: "a floor and not a total" },
+  { code: "MDY_DYNAMIC_UNKNOWN_MEMBER", phrase: "which this contract does not declare" },
 ];
 
 /** What a refusal is called when none of the named ones fits. */
@@ -1335,6 +1365,32 @@ export function parseDynamicForm(
   options: { readonly mode?: MdyDynamicParseMode } = {},
 ): MdyDynamicFormParseResult {
   const diagnostics: MdyDynamicDiagnostic[] = [];
+  /**
+   * A member nobody declared, reported where it is written.
+   *
+   * The published JSON Schema closes every one of these objects and an editor says so while the
+   * document is being typed. A document from a CMS, a model or a server met neither the type nor the
+   * editor, and the parser — the only check it does meet — passed the same member without a word.
+   */
+  const reportUnknownMembers = (value: unknown, at: string, what: string): void => {
+    const members = at.startsWith("/layout")
+      ? (value as { kind?: unknown }).kind === "columns"
+        ? MDY_DYNAMIC_MEMBERS.layoutColumns
+        : MDY_DYNAMIC_MEMBERS.layoutSection
+      : at.startsWith("/rules")
+        ? MDY_DYNAMIC_MEMBERS.rule
+        : MDY_DYNAMIC_MEMBERS.validation;
+    const unknown = unknownMembers(value, members);
+    if (unknown.length === 0) return;
+    diagnostics.push({
+      code: "MDY_DYNAMIC_UNKNOWN_MEMBER",
+      severity: "error",
+      path: at,
+      message:
+        `${what} carries ${unknown.map((member) => JSON.stringify(member)).join(", ")}, which this ` +
+        "contract does not declare, so nothing reads it.",
+    });
+  };
   // A mode nobody declared is not lenient. `strict` is what a publishing gate asks for, and the
   // answer to a typo in it — or to the options object being a bare string, or `null` — was a lenient
   // parse reported as a success, so a contract nobody checked went out with `ok: true` beside it.
@@ -1544,6 +1600,7 @@ export function parseDynamicForm(
         diagnostics.push({ code: "MDY_DYNAMIC_INVALID_LAYOUT", severity: "error", path: `/layout/${index}`, message: "a section at the top of the layout occupies no column and cannot be placed." });
         continue;
       }
+      reportUnknownMembers(raw, `/layout/${index}`, "a layout node");
       layoutRefusal = "reference";
       if (!validLayoutNode(raw, names, placed, 1, version === 3 || version === 4)) {
         diagnostics.push(layoutRefusalDiagnostic(layoutRefusal, `/layout/${index}`, version));
@@ -1558,6 +1615,7 @@ export function parseDynamicForm(
         diagnostics.push({ code: "MDY_DYNAMIC_INVALID_RULE", severity: "error", path: `/rules/${index}`, message: "rule must be an object." });
         continue;
       }
+      reportUnknownMembers(raw, `/rules/${index}`, "a rule");
       const rule = raw as Partial<MdyDynamicRule>;
       const effects = ["visible", "hidden", "enabled", "disabled"];
       const operators = ["equals", "notEquals", "in", "notIn", "isEmpty", "isNotEmpty", "greaterThan", "greaterThanOrEqual", "lessThan", "lessThanOrEqual"];
@@ -1583,6 +1641,7 @@ export function parseDynamicForm(
         diagnostics.push({ code: "MDY_DYNAMIC_INVALID_VALIDATION", severity: "error", path: at, message: "validation must be an object." });
         continue;
       }
+      reportUnknownMembers(raw, at, "a validation");
       const validation = raw as Partial<MdyDynamicValidation>;
       if (typeof validation.message !== "string" || validation.message.trim() === "") {
         diagnostics.push({ code: "MDY_DYNAMIC_INVALID_VALIDATION", severity: "error", path: at, message: "validation needs a non-empty message." });

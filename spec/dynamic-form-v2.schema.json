@@ -239,6 +239,62 @@
           "items": {
             "$ref": "#/$defs/option"
           }
+        },
+        "prefix": {
+          "type": "string",
+          "description": "Short content set against the control \u2014 a currency mark, a unit, a domain."
+        },
+        "suffix": {
+          "type": "string",
+          "description": "Short content set after the control."
+        },
+        "mode": {
+          "enum": [
+            "single",
+            "multi"
+          ],
+          "description": "Multiselect only: a toggle set, or a bag the same option can be taken into more than once."
+        },
+        "searchable": {
+          "type": "boolean",
+          "description": "Select and multiselect only: whether the list filters as the user types, which decides whether the widget is a listbox or a combobox."
+        },
+        "loading": {
+          "type": "boolean",
+          "description": "Select and multiselect only: the options are being fetched, shown on the control."
+        },
+        "locale": {
+          "type": "string",
+          "description": "Calendar kinds: BCP 47 tag. Unset follows the browser."
+        },
+        "firstDayOfWeek": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 6,
+          "description": "Calendar kinds: 0 = Sunday \u2026 6 = Saturday. Unset follows the locale."
+        },
+        "minDate": {
+          "type": "string",
+          "description": "Calendar kinds: earliest selectable date, ISO yyyy-MM-dd. Presentation only \u2014 bounds are enforced by validators."
+        },
+        "maxDate": {
+          "type": "string",
+          "description": "Calendar kinds: latest selectable date, ISO yyyy-MM-dd."
+        },
+        "accept": {
+          "type": "string",
+          "description": "File only: mirrors the native input attribute."
+        },
+        "multiple": {
+          "type": "boolean",
+          "description": "File only: mirrors the native input attribute."
+        },
+        "presets": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Colors only: the palette offered beside free choice."
         }
       },
       "allOf": [
