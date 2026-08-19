@@ -101,7 +101,9 @@ test("confirm commits the draft, marks dirty/touched, and closes", () => {
   controller.dispatch({ type: "open" });
   controller.dispatch({ type: "set-hour", hour: 7 });
   const commands = controller.dispatch({ type: "confirm" });
-  assert.strictEqual(handle.value(), "07:30 PM");
+  // Canonical: `HH:mm` is what a time is wherever it is held, whatever this field shows.
+  assert.strictEqual(handle.value(), "19:30");
+  assert.strictEqual(controller.state().display, "07:30 PM");
   assert.strictEqual(handle.dirty(), true);
   assert.strictEqual(handle.touched(), true);
   assert.strictEqual(controller.state().open, false);
