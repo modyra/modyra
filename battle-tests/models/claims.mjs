@@ -666,6 +666,17 @@ const CLAIMS = [
     ],
   },
   {
+    id: "DEV-001",
+    title: "The panel describes a value it cannot serialize rather than raising on it.",
+    area: "lifecycle",
+    severity: "S1",
+    publicEvidence: [
+      "@modyra/core/devtools mdyFormSnapshot",
+      "@modyra/core serialize — a BigInt and a cycle are described so that reading a form's value is never the thing that fails",
+      "docs/guides/devtools.md — the panel a developer opens when something is already wrong",
+    ],
+  },
+  {
     id: "EXP-001",
     title: "A condition decides the same thing however it is spelled.",
     area: "dynamic-contract",

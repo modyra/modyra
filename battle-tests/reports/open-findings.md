@@ -12890,12 +12890,87 @@ table, the seeds are chosen where a schema is built — so a kind added to one a
 the silence that battle breaks.
 
 
+## 202 — An operand nobody declared opens the field it guards (S1, DYN-003 VAL-003)
+
+`expression.ts` states the rule three times in the same words: an operator nobody declared decides
+`false`, *"because a question with no answer is not answered with the one that opens: a section
+governed by a misspelled operator was shown to everyone, and the values inside it went into the
+payload"* — and `validateExpression` is required to refuse what the evaluator refuses, the two halves
+*"having to agree"*.
+
+An **operand** nobody declared gets the opposite treatment. The resolver recognises `{path}`,
+`{self:true}`, `{root:true}` and `{context:"key"}`; an object that is none of them falls through to
+the literal branch and is compared as the object it is — never empty, so `isNotEmpty` answers `true`:
+
+```
+{context: 123}     validator: refused    evaluator: true
+{self: "yes"}      validator: refused    evaluator: true
+{root: 1}          validator: refused    evaluator: true
+{field: "n"}       validator: refused    evaluator: true
+```
+
+`{context: ""}` is the counter-example that shows this is a recognition gap and not a policy: it *is*
+recognised, the key is absent, and it correctly decides `false`.
+
+Not reachable from a document — the parser refuses these before they arrive — so today it is the two
+halves disagreeing rather than an exploit. It becomes reachable with ADR 0092's typed builder, where
+`eq(path("x"), someVariable)` with an unset variable is an ordinary mistake. Fix: an object operand
+the resolver does not recognise decides like an unknown operator, which closes.
+
+Pinned by `adversarial/expression/a-condition-that-cannot-be-asked.battle.test.mjs`, second battle,
+with a control requiring a well-formed operand to decide and pass validation.
+
+## 203 — A context the host supplies can raise out of a condition (S0, SEC-004)
+
+Reading a context key is a property access and a property can be an accessor. The bag is supplied by
+the **application**, not built by the engine, so it is exactly the object likely to be a store, a
+signal or a Proxy. A condition is read every time the form is read, so a throw there is a form that
+cannot be rendered and a submit button that raises.
+
+Measured before it was claimed, and this bounds it: a **document cannot reach this**. The parser
+refuses a rule whose `when.field` is not a declared field, and the operators that read a field's
+value — `isEmpty`, `equals` — never read into the object it holds. The context is the door that is
+open. Classified **Probable**: the path is real and public, no application in this repository walks it.
+
+Same battle, first `battle()`.
+
+## 204 — The panel raises on a value the form holds (S1, DEV-001)
+
+`serialize.ts` exists to make one promise and names its beneficiary: a value JSON cannot carry is
+**described**, *"so that reading a form's value is never the thing that fails"* — *"including the
+devtools panel, which is what a developer opens precisely when something is already wrong"*.
+
+```
+a BigInt                              described
+a value that refers to itself         described
+an accessor that refuses to be read   raises
+a toJSON that fails                   raises
+a proxy that refuses enumeration      raises
+```
+
+The engine keeps its side: `getValue()`, `submitValue()` and `getChanges()` hand the object back
+untouched — they never read into it, so they cannot fail on it. `mdyFormSnapshot` is the one surface
+that walks the value, and it is the one that raises. **Narrow, not small**: the failure lands exactly
+on the tool whose purpose is to be readable when the form is already wrong.
+
+Two of the five shapes are described today, which is what makes it an inconsistency rather than a
+limit — the serializer knows how to say *"I could not read this"* and says it for some values only.
+
+Pinned by `adversarial/security/a-value-that-refuses-to-be-read.battle.test.mjs`, with two controls:
+an ordinary value must be described, and at least one hard shape must already be described.
+
+**A correction this battle made to its own author.** The first measurement reported `getValue()` and
+`submitValue()` raising too, and they do not — the probe wrapped them in `JSON.stringify`, and that
+is what raised. Twelfth instrument error of the hunt, caught by the battle's own red naming
+`snapshot` as the first divergence when the probe had predicted `getValue`.
+
+
 ## The register's own shape, measured
 
 ```
-numbered findings        201
+numbered findings        204
 closed or retracted       24
-open with a battle       172
+open with a battle       175
 open with none             6
 ```
 
