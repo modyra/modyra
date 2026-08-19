@@ -13417,6 +13417,39 @@ submit is unaffected. What is lost is the answer of a run that had **already sta
 began.
 
 
+## 217 — An intent a controller does not know raises out of the documented recipe (S1, API-001 SEC-004)
+
+`docs/guides/headless-recipes.md` teaches the wrapper-less path in two lines and calls them *"the
+only two a wrapper does for you"*. The second is verbatim:
+
+```js
+runtime.execute(controller.dispatch({ type: "open" }), lookup, handlers);
+```
+
+The result of `dispatch` goes straight into `execute`. A controller handles the intents its kind has
+— a text field has no popup, a checkbox has no step, a select has no cancel — and handed one it does
+not know, `dispatch` returns `undefined` rather than an empty list. `createCommandRuntime().execute(
+undefined, …)` then raises `commands is not iterable`.
+
+Measured across three controllers and five intents: **every pairing that does not apply raises**.
+So a host that follows the recipe and drives its widgets from one generic handler — which is the
+reason to be headless at all — crashes on the first widget that lacks the intent under the cursor.
+
+This is the one direction the rest of the framework refuses, and says so three times: an operator
+nobody declared decides `false`; a pattern that will not compile *"decides nothing instead"*, because
+raising went through *"whatever read the form last — the submit button included"*. An intent nobody
+declared is the same shape of input, and gets the opposite treatment.
+
+Pinned by `adversarial/widgets/an-intent-a-controller-does-not-know.battle.test.mjs`, taking no side
+on the repair — `dispatch` returning an empty list, or `execute` accepting what `dispatch` returns,
+both satisfy it — with the recipe's own happy path as the control.
+
+**Found by checking a guide's own claim rather than its code.** The same recipe says it *"is checked
+by its browser suite, so it cannot rot into a snippet that no longer compiles"*. It compiles: the
+names all exist and `examples/plain/panels/headless.js` uses exactly this API. What no suite does is
+send a controller an intent its kind does not have.
+
+
 ## The browser tier, measured — a baseline this register never had
 
 `npm run battle:browser` on the working tree at `6ee29144`:
@@ -13573,9 +13606,9 @@ the half-fix to overlay teardown did not close it on plain either.
 ## The register's own shape, measured
 
 ```
-numbered findings        216
+numbered findings        217
 closed or retracted       36
-open with a battle       187
+open with a battle       188
 open with none             6
 ```
 
