@@ -14481,7 +14481,7 @@ is reported. It names no slot the contract must choose. Pinned by
 vocabulary must really fail closed, and the same document without the computation must parse clean.
 
 
-## 240 — A limit only one of the two doors keeps (S2, DYN-005 DYN-001)
+## 240 — A limit only one of the two doors keeps (S2, DYN-005 DYN-001) — **closed**
 
 `MDY_MAX_DYNAMIC_PATH_LENGTH` is 512, and the constant carries its own reason: *a path is the payload
 key, the draft key, the widget id, and a string every renderer carries per field.* All four costs are
@@ -14524,6 +14524,19 @@ or `""` makes `buildDynamicFormSchema` throw `Invalid field name`, at the same d
 parser reports `MDY_DYNAMIC_UNSAFE_NAME`. The one name it does not import is
 `MDY_MAX_DYNAMIC_PATH_LENGTH`.
 
+**Closed, verified here.** The limit is kept at the **builder** rather than dropped from the parser:
+`buildDynamicFormSchema` leaves out a field whose declared path passes 512, and a group or collection
+left holding nothing goes with it — an empty group where the document declared a field would be a
+shape the document did not describe. `MDY_DYNAMIC_PATH_TOO_LONG` stays published, which is the half
+that could not be given up: removing it would take a capability away with nothing replacing it.
+
+The precision that mattered is in what gets measured. The path is the one a document **declares** —
+group keys and collection names — not a row template. A first version counted a `*` segment per
+collection level and turned `nested-collections.test.mjs` red instantly: five thousand nested arrays
+that the parser accepts, because with no rows they produce no path at all. That is this same finding
+inverted — the builder refusing what the parser accepts — and it says the row key is data: a row's
+path exists when the row does, and the flattener is what measures it there. ADR 0043 amended in place.
+
 Checked and clean while measuring this: the name guard holds at both doors for all five shapes above,
 including a `__proto__` written as a real own key with `defineProperty` — an object literal would have
 set a prototype instead of a key and the case would have vanished from the probe. The parser is
@@ -14532,7 +14545,7 @@ iterative as ADR 0043 claims — a document
 published in `MDY_DYNAMIC_DIAGNOSTICS` (14 codes there now, not the 10 an earlier note in this
 register recorded).
 
-## 241 — The one warning a parse can report refuses the document (S2, DYN-003)
+## 241 — The one warning a parse can report refuses the document (S2, DYN-003) — **closed**
 
 `MdyDynamicDiagnostic.severity` is published as `"warning" | "error"`. Measured, the union has one
 member that never behaves differently from the other.
@@ -14568,6 +14581,11 @@ calling this a warning and says plainly that the document is too large to read. 
 `adversarial/dynamic-contract/a-warning-that-refuses-the-document.battle.test.mjs`, with the 99,999
 control that keeps the measurement on the budget rather than on size, and the premise asserted that
 the only thing the document is told is that one warning.
+
+**Closed, verified here.** `strict` now refuses on errors rather than on any diagnostic — `refusals =
+diagnostics.filter((d) => d.severity === "error").length` — and 100,001 declarations parse to 100,001
+fields in both modes with the warning reported. The repair **relaxes** strict for warnings, so a
+consumer that read `ok: false` as "any diagnostic at all" reads a different answer now.
 
 Sits next to finding 234, and is its other half: raising the bound to 100,000 and reporting when it is
 reached made the reader honest, and the report is a refusal.
@@ -14729,8 +14747,8 @@ the half-fix to overlay teardown did not close it on plain either.
 
 ```
 numbered findings        241
-closed or retracted       56
-open with a battle       208
+closed or retracted       58
+open with a battle       206
 open with none            10
 ```
 

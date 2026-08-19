@@ -1,18 +1,20 @@
 /**
- * A path too long to report, and a form built from it anyway.
+ * A path too long to report, and no form built from it.
  *
  * `MDY_MAX_DYNAMIC_PATH_LENGTH` is 512, and the reason is written where the constant is: a path is
  * the payload key, the draft key, the widget id, and a string every renderer carries per field.
- * Every one of those four costs is paid by the form, not by the report — so the door that builds the
- * form is the one that has to keep the limit, and it is the one door that does not check it.
+ * Every one of those four costs is paid by the form, so both doors onto a document keep the limit:
+ * `parseDynamicForm` drops the field with `MDY_DYNAMIC_PATH_TOO_LONG`, and `buildDynamicFormSchema`
+ * leaves it out of the schema it builds, along with any group or collection left holding nothing.
  *
- * `parseDynamicForm` drops the field with `MDY_DYNAMIC_PATH_TOO_LONG`. `buildDynamicFormSchema`,
- * given the same document's root node, builds it: the value is in the form, under the path the
- * parser called unusable. In the default mode the parse still answers `ok: true`, so a consumer that
- * renders from `fields` and holds data in the built form shows no control and submits a value.
+ * What is measured is the agreement, not the number. A consumer renders from `fields` and holds data
+ * in the built form; the two have to describe the same document, or a value sits in a payload under
+ * a path no control on the screen corresponds to.
  *
- * The battle asks only that the two doors say the same thing about one document. Which way they
- * agree is the contract's to choose: refuse in both, or accept in both.
+ * The limit is a **length**, and the length is of the path a document *declares* — group keys and
+ * collection names. A row's key is data: it exists when the row does, and it is the flattener that
+ * measures it there. A document nesting five thousand collections with no rows in them declares no
+ * long path at all and both doors accept it.
  */
 
 import { battle } from "../../harness/battle.mjs";
@@ -45,7 +47,6 @@ battle(
     claims: ["DYN-005", "DYN-001"],
     title: "the parser and the builder answer the same about a path at the limit",
     environments: ["node"],
-    requires: ["structural"],
   },
   async (ctx) => {
     // The control, and it is what makes the measurement below about the limit rather than about
@@ -80,7 +81,6 @@ battle(
     claims: ["DYN-005"],
     title: "a value under a refused path is not a value the form quietly carries",
     environments: ["node"],
-    requires: ["structural"],
   },
   async (ctx) => {
     const document = documentNestedBy(200);

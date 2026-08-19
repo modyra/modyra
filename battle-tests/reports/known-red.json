@@ -25,9 +25,6 @@
     "[S1][STU-002,DYN-003,A11Y-002] an option list Studio compiles is one every option survives",
     "[S1][VAL-003,COL-003] two conditions on one field are one answer, and any refusal is the answer",
     "[S2][ADP-001,DYN-001] an adapter that publishes a dynamic-form door reads the dynamic contract",
-    "[S2][DYN-001,DYN-003] every version one runtime accepts is one the others have a position on",
-    "[S2][DYN-003] a diagnostic the parser calls a warning does not refuse the document",
-    "[S2][DYN-005,DYN-001] the parser and the builder answer the same about a path at the limit",
-    "[S2][DYN-005] a value under a refused path is not a value the form quietly carries"
+    "[S2][DYN-001,DYN-003] every version one runtime accepts is one the others have a position on"
   ]
 }
