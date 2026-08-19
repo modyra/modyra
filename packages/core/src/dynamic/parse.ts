@@ -956,6 +956,20 @@ function validateDynamicSchema(input: unknown): MdyDynamicDiagnostic[] {
         out.push({ code: "MDY_DYNAMIC_INVALID_FIELD", severity: "error", path: `${path}/field`, message: "field node requires a field object." });
         continue;
       }
+      // Every check a field gets in a flat list, applied wherever the field is. The walk knew a
+      // node's *shape* and left what the field declares to the flat reader, which never sees a cell
+      // inside a collection: a `kind` nobody declared, or a `validators.pattern` that is a number,
+      // parsed clean at any depth below a row and then met the engine — where a person is already
+      // waiting — or produced a control nobody asked for.
+      collectingDiagnostics(
+        (message) => out.push({
+          code: diagnosticCode(message),
+          severity: "error",
+          path: `${path}/field`,
+          message,
+        }),
+        () => parseDynamicFields([{ ...(raw["field"] as object), name: "leaf" } as MdyDynamicField]),
+      );
       // The initial the document declares, against the shape the kind holds. A record's initial is
       // measured against its own shape and an array's against its own; a field's was measured
       // against nothing, so a text field declaring `42` passed in the strictest mode there is and
