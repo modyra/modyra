@@ -100,6 +100,7 @@ absent section reads as an oversight, and "no security impact" is a finding.
 - [ADR 0082: A commit word answers for the control a person types in](0082-a-commit-word-answers-for-the-control-a-person-types-in.md) — a range is neither `live` nor `confirm`, and a colours field has two controls that commit differently
 - [ADR 0083: A form reports what it could not do](0083-a-form-reports-what-it-could-not-do.md) — the diagnostics vocabulary was published and nothing took a sink, so a check that stopped running was invisible on every surface
 - [ADR 0084: A contract version names the anatomy](0084-a-contract-version-names-the-anatomy.md) — parts were removed and an element changed while the number that exists to say so stayed at 1
+- [ADR 0086: A derived form starts at an empty its schema accepts](0086-a-derived-form-starts-at-an-empty-its-schema-accepts.md) — a bridge seeded a sentinel its own schema refused, so one emptiness got two answers and `required` contradicted `valid`
 
 ## Security-relevant records
 

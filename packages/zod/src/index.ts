@@ -155,9 +155,10 @@ function buildZodNode(
   if (piece instanceof z.ZodArray) {
     // pieceValidator's ValidatorFn<unknown> accepts any value, including
     // the collection itself — safe to reuse as the collection-level validator.
+    const initial = initialForArray(piece);
     return array(rowDescriptor(piece.element as z.ZodType), {
-      initial: initialForArray(piece),
-      validators: [pieceValidator(piece)],
+      initial,
+      validators: [pieceValidator(piece, initial)],
     });
   }
   if (piece instanceof z.ZodRecord) {
@@ -166,12 +167,14 @@ function buildZodNode(
     // no row could be added to — and, since a record rejects `null`, a form invalid from its first
     // moment. The keys the schema constrains stay the schema's business: the whole-piece validator
     // is on the collection, so a key it refuses is refused there.
+    const initial = initialForRecord(piece);
     return record(rowDescriptor(piece.valueType as z.ZodType), {
-      initial: initialForRecord(piece),
-      validators: [pieceValidator(piece)],
+      initial,
+      validators: [pieceValidator(piece, initial)],
     });
   }
-  return field<unknown>(initialFor(piece), [pieceValidator(piece)]);
+  const empty = initialFor(piece);
+  return field<unknown>(empty, [pieceValidator(piece, empty)]);
 }
 
 /** A collection's row is read exactly like a schema key: the row of a row is a row too. */
@@ -183,10 +186,44 @@ function rowDescriptor(element: z.ZodType):
   return buildZodNode(element);
 }
 
-/** Initial value: what the piece parses `undefined` into (default/optional), else null. */
+/**
+ * Initial value: what a field of this piece holds before anybody fills it.
+ *
+ * A form needs a representation for "not filled in yet", and the honest one is the one the piece
+ * itself accepts. `null` cannot be it for every piece: `z.string()` refuses `null` and accepts `""`,
+ * so seeding `null` makes a form invalid on arrival in the schema's own vocabulary — and then valid
+ * two keystrokes later, when the user clears the field back to `""`. One emptiness, two answers,
+ * and the permissive one is the state a person reaches by using the form.
+ *
+ * The order below is the order of the value contracts: absence first, because a piece that takes
+ * `null` says that absence is one of its values; then the empty a text-shaped piece holds; then the
+ * empty a boolean holds. A piece that accepts none of them has no representation for empty — a
+ * number, an enum — and keeps `null`, which it refuses at the start and refuses again when the
+ * control is cleared. The same answer both times is the property this is for.
+ */
 function initialFor(piece: z.ZodType): unknown {
   const parsed = piece.safeParse(undefined);
-  return parsed.success ? (parsed.data ?? null) : null;
+  if (parsed.success) return parsed.data ?? null;
+  if (piece.safeParse(null).success) return null;
+  if (holdsEmpty(piece, "")) return "";
+  if (holdsEmpty(piece, false)) return false;
+  return null;
+}
+
+/**
+ * Whether a value is the piece's own empty — the value the control hands back when a person clears
+ * the field, rather than a value of some other type.
+ *
+ * Accepted is the plain case. Refused *for a reason other than its type* is the one that matters:
+ * `z.string().min(1)` refuses `""` because it is too short, not because it is not a string, so `""`
+ * is still what the field holds when nobody has typed — and seeding it makes the form say the same
+ * thing at the start as it says after the user empties the box. A refusal naming the type means the
+ * piece holds something else entirely, and the field's empty is absence.
+ */
+function holdsEmpty(piece: z.ZodType, candidate: "" | false): boolean {
+  const result = piece.safeParse(candidate);
+  if (result.success) return true;
+  return result.error.issues.every((issue) => issue.code === "too_small" || issue.code === "too_big");
 }
 
 /** Array initial value: what the piece parses `undefined` into (default/optional), else []. */
@@ -204,11 +241,15 @@ function initialForRecord(piece: z.ZodType): Readonly<Record<string, unknown>> {
 }
 
 /**
- * Wraps a Zod piece as a field validator. When the piece rejects both
- * `undefined` and `null` it is semantically required, so the validator is
- * tagged with MDY_MARKS_REQUIRED and the field drives aria-required.
+ * Wraps a Zod piece as a field validator.
+ *
+ * `required` is the statement that leaving the field alone is not an answer, and what the field
+ * holds when it is left alone is `empty` — so that, and not the form's `null` sentinel, is what
+ * decides it. A piece accepting its own empty asks for nothing: `z.string()` takes `""`, and a
+ * field marked required while `""` passes its own validator says two things at once to the same
+ * reader, one through `aria-required` and one through `valid`.
  */
-function pieceValidator(piece: z.ZodType): ValidatorFn<unknown> {
+function pieceValidator(piece: z.ZodType, empty: unknown): ValidatorFn<unknown> {
   // The form's "empty" sentinel is null, but z.string().optional() only
   // accepts undefined — treat null as undefined for such pieces.
   const acceptsUndefined = piece.safeParse(undefined).success;
@@ -216,8 +257,7 @@ function pieceValidator(piece: z.ZodType): ValidatorFn<unknown> {
     const result = piece.safeParse(normalizeLeaf(value, acceptsUndefined));
     return result.success ? [] : result.error.issues.map((i) => i.message);
   };
-  const requiredPiece =
-    !acceptsUndefined && !piece.safeParse(null).success;
+  const requiredPiece = !piece.safeParse(normalizeLeaf(empty, acceptsUndefined)).success;
   return withFacts(fn, {
     ...(requiredPiece ? { required: true } : {}),
     ...factsOfPiece(piece),
