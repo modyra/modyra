@@ -15284,6 +15284,22 @@ fieldShellPartIds("a__b")   throws: "a__b" cannot be a widget id
 fieldShellPartIds("a b")    throws
 ```
 
+**Which way they should agree is not an open question — the repository answers it.** `ids.ts`
+explains the distinction it already draws:
+
+> A widget id is a host's word and is refused when it cannot be one; an item key is **data** — an
+> option's value, a row's key — and refusing it would refuse the document that declared it. So it is
+> spelled instead, in the one encoding an id may carry.
+
+An option value with a space becomes `city__option__New%20York`; a field name with a space is
+refused. Both are deliberate, and they are the same rule applied to two kinds of string: **data is
+encoded, a host's word is refused.** A field name is a host's word by that rule — it is written in
+code — so the refusal is the right answer and the only question is where it happens. Today it happens
+in the renderer; it belongs at the door, and `isSafeFieldPath` is the door's published name.
+
+So no decision record is needed for this one: the rule exists, in prose, in the package that draws the
+line.
+
 Green when the three answers agree, whichever way: a name a form may hold is a name a widget id can be
 built from, or the guard published for checking says so before the form is built. Pinned by
 `adversarial/security/a-name-three-doors-disagree-about.battle.test.mjs`, with two controls — an
