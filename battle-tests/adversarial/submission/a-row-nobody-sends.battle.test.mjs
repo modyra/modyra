@@ -1,22 +1,19 @@
 /**
- * A row the form will throw away, and will not tell a server about.
+ * A row the form would throw away, and what it tells a server about it.
  *
  * `getChanges()` is documented as the fields whose value differs from the schema's initial values,
  * ready for an API `PATCH`. `reset()` is documented as returning the form to those same initial
- * values. They are two readings of one baseline, and they do not agree about a row.
+ * values. They are two readings of one baseline, and they must agree about a row: `reset()` throws a
+ * declared row away, so the baseline has no such row, so everything in it is new.
  *
- * Declare a row and the form holds it. `reset()` throws it away, which says the baseline has no such
- * row. `getChanges()` reports nothing, which says there is nothing new. Both cannot be true, and the
- * one a consumer acts on decides whether a row a user created is ever sent.
+ * They did not. A row created as `upsert("a", { code: "A" })` and left alone was invisible to
+ * `getChanges()`; edit one of its cells and that cell alone appeared. A form where a user added three
+ * lines and typed in none produced an empty patch, and one where they added three and corrected one
+ * produced a patch holding one cell of one line.
  *
- * What is reported is only what was written to a row *after* it was declared. A row created as
- * `upsert("a", { code: "A" })` and left alone is invisible to `getChanges()`; edit one of its cells
- * and that cell alone appears. So a form where the user added three lines and typed in none of them
- * produces an empty patch, and a form where they added three and corrected one produces a patch
- * holding one cell of one line.
- *
- * The control is a plain field: edited, it is reported. The mechanism works — it is the values a row
- * is born with that fall through it.
+ * Both battles below now hold, and they are kept as the regression: the first that a declared row is
+ * a change, the second that **every** cell of it is — including the ones left at their seed, because
+ * a row that did not exist has nothing unchanged in it.
  */
 
 import { battle } from "../../harness/battle.mjs";
@@ -38,7 +35,7 @@ battle(
       claimIds: ["SUB-001"],
       what: "an edited field was not reported as a change, so nothing below is about collections",
     });
-    plain.destroy();
+    await plain.dispose();
 
     for (const [what, spec, declare, path] of [
       ["a keyed row", KEYED_ROWS_SPEC, { type: "record.upsert", path: "rows", key: "a", value: { code: "A" } }, "rows"],
@@ -81,28 +78,33 @@ battle(
 battle(
   {
     claims: ["SUB-001"],
-    title: "what a row is edited to is reported, which is how the omission stays quiet",
+    title: "a row reports everything it gained, whether by declaration or by edit",
     environments: ["node"],
     requires: ["structural"],
   },
   async (ctx) => {
-    // The half that works, and the reason the half above goes unnoticed: a consumer who edits a cell
-    // sees a patch and concludes the mechanism is working.
+    // What a row reports having gained. This used to be the *reason* the defect above went unnoticed:
+    // an edited cell was reported and the cell an `upsert` introduced was not, so a consumer editing
+    // one cell saw a patch and concluded the mechanism worked.
     const context = ctx.open(KEYED_ROWS_SPEC);
     await context.execute({ type: "record.upsert", path: "rows", key: "a", value: { code: "A" } });
     await context.execute({ type: "field.set", path: "rows.a.note", value: "N" });
     const changes = context.form.getChanges();
     ctx.log.note("a row declared, then one cell edited", { changes });
 
-    expectEqual(changes, { rows: { a: { note: "N" } } }, {
+    // Every cell of the row, including the two left at their seed: the row did not exist before, so
+    // nothing in it is unchanged. `tax` is `""` because that is where a text cell starts.
+    expectEqual(changes, { rows: { a: { code: "A", note: "N", tax: "" } } }, {
       claimIds: ["SUB-001"],
-      what: "an edit inside a row was not reported",
+      what: "a row did not report everything it gained — the cell an upsert declared, or the cell an edit changed",
     });
 
-    // And the cell the row was born with is not in it, beside the one that was typed.
-    expectClaim(changes.rows?.a?.code === undefined, {
+    // The control, and it is what keeps this from passing on an empty answer: a plain field edited
+    // the ordinary way is reported, so a row reporting nothing would be about rows and not about
+    // `getChanges` being silent altogether.
+    expectClaim(Object.keys(changes).length > 0 && changes.rows?.a !== undefined, {
       claimIds: ["SUB-001"],
-      what: "the value a row was declared with is reported after all, which would make the battle above about something else",
+      what: "the row is not in the change set at all, so the comparison above is against nothing",
       detail: JSON.stringify(changes),
     });
 
