@@ -22,8 +22,8 @@
  */
 
 import { spawnSync } from "node:child_process";
-import { existsSync, readFileSync, writeFileSync } from "node:fs";
-import { dirname, join, relative, resolve } from "node:path";
+import { existsSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
+import { dirname, join, relative, resolve, sep } from "node:path";
 
 import { buildFreshness } from "./build-freshness.mjs";
 
@@ -192,11 +192,50 @@ function runSuite(pattern) {
  * nobody named is worth nothing whichever way it comes out. A closure recorded against a stale `dist`
  * is the worse half: a defect reads as repaired because the repair has not been compiled yet.
  */
+/**
+ * Every workspace package the suite imports, read off the suite itself.
+ *
+ * A fixed list goes out of date the moment a battle imports something new, and what it costs is not
+ * a missing check: a package with no `dist` fails every battle that imports it, and each of those
+ * reads as a regression against the baseline. Nineteen of them arrived in one run that way, all
+ * saying `ERR_MODULE_NOT_FOUND` behind a name that sounded like a product defect.
+ */
+function packagesUnderMeasurement() {
+  const found = new Set();
+  const walk = (directory) => {
+    for (const entry of readdirSync(directory, { withFileTypes: true })) {
+      if (entry.name === "node_modules") continue;
+      const path = join(directory, entry.name);
+      if (entry.isDirectory()) { walk(path); continue; }
+      // The node gate's own glob: the browser specs and the Angular tier are built and run by other
+      // steps, and a name written in a comment is not an import.
+      if (!path.endsWith(".mjs") || path.includes(`${sep}angular${sep}`)) continue;
+      for (const match of readFileSync(path, "utf8").matchAll(/(?:from|import)\s*\(?\s*["']@modyra\/([a-z0-9-]+)/g)) {
+        if (existsSync(join(REPO_ROOT, "packages", match[1]))) found.add(match[1]);
+      }
+    }
+  };
+  walk(BATTLE_ROOT);
+  return [...found].sort();
+}
+
 function assertBuildsAreCurrent() {
   const stale = [];
-  for (const name of ["core", "widgets", "plain"]) {
+  const missing = [];
+  for (const name of packagesUnderMeasurement()) {
     const freshness = buildFreshness(name);
+    // `dist` absent is not "unknown": it is a package every battle that imports it will fail on,
+    // for a reason that has nothing to do with what the battle claims.
+    if (!existsSync(join(REPO_ROOT, "packages", name, "dist"))) { missing.push(`@modyra/${name}`); continue; }
     if (freshness.known && !freshness.fresh) stale.push(`@modyra/${name} (${freshness.behindBySeconds}s behind)`);
+  }
+  if (missing.length > 0) {
+    console.error(
+      `baseline check: ${missing.join(", ")} ${missing.length === 1 ? "is" : "are"} imported by this ` +
+        "suite and never built. Every battle that imports one fails with a resolution error, which " +
+        "this gate would report as a regression. Build the workspace before measuring it.",
+    );
+    process.exit(2);
   }
   if (stale.length === 0) return;
   console.error(
