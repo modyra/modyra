@@ -508,7 +508,46 @@ function evaluateAt(
  * equals `0`, because they are the same answer to the question the form asked.
  */
 function sameValue(left: unknown, right: unknown): boolean {
-  return left === right || (Number.isNaN(left as number) && Number.isNaN(right as number));
+  if (left === right) return true;
+  if (Number.isNaN(left as number) && Number.isNaN(right as number)) return true;
+  return sameStructure(left, right, 0);
+}
+
+/**
+ * Two objects or two arrays that hold the same thing are the same value.
+ *
+ * ADR 0051 lets an option carry an object, and a document carries its options in one place and the
+ * rule that names one in another: two hand-written literals, or two results of a single
+ * `JSON.parse`. Never the same object. Compared by identity, a rule over such an option could not
+ * come true for any choice the document itself declares — and the direction of the failure follows
+ * the effect: a `visible` rule reveals nothing ever, a `hidden` rule hides nothing ever and the
+ * values it was written to withhold reach the payload.
+ *
+ * Depth-capped like the tree around it, because the values come from the same untrusted document.
+ */
+function sameStructure(left: unknown, right: unknown, depth: number): boolean {
+  if (depth > MDY_MAX_EXPRESSION_DEPTH) return false;
+  if (typeof left !== "object" || typeof right !== "object" || left === null || right === null) {
+    return false;
+  }
+  if (Array.isArray(left) !== Array.isArray(right)) return false;
+  if (Array.isArray(left) && Array.isArray(right)) {
+    return left.length === right.length
+      && left.every((member, index) => sameAt(member, right[index], depth));
+  }
+  const leftKeys = Object.keys(left as Record<string, unknown>);
+  const rightKeys = Object.keys(right as Record<string, unknown>);
+  if (leftKeys.length !== rightKeys.length) return false;
+  return leftKeys.every((key) =>
+    Object.hasOwn(right as object, key)
+    && sameAt((left as Record<string, unknown>)[key], (right as Record<string, unknown>)[key], depth));
+}
+
+/** One member of a structural comparison: the same rule, one level down. */
+function sameAt(left: unknown, right: unknown, depth: number): boolean {
+  if (left === right) return true;
+  if (Number.isNaN(left as number) && Number.isNaN(right as number)) return true;
+  return sameStructure(left, right, depth + 1);
 }
 
 /**
@@ -539,8 +578,8 @@ export function evaluateRuleCondition(
     // list is not one made the careful spelling — the negative, written to be safe — give the same
     // answer as the positive. A document cannot reach this: the parser refuses a membership test
     // whose value is not a list.
-    case "in": return Array.isArray(expected) && expected.includes(held);
-    case "notIn": return !(Array.isArray(expected) && expected.includes(held));
+    case "in": return membership(held, expected);
+    case "notIn": return !membership(held, expected);
     case "isEmpty": return isEmptyValue(held);
     case "isNotEmpty": return !isEmptyValue(held);
     case "greaterThan": return compareOrdered(held, expected, (order) => order > 0);
@@ -553,7 +592,9 @@ export function evaluateRuleCondition(
 
 /** Membership of a list, and nothing else: a test against something that is not one has no members. */
 function membership(held: unknown, expected: unknown): boolean {
-  return Array.isArray(expected) && expected.includes(held);
+  // The same equality `equals` uses, so a list that offers an option and a rule that names one agree
+  // about which values are in it.
+  return Array.isArray(expected) && expected.some((member) => sameValue(held, member));
 }
 
 /** Two numbers or two strings, or no order at all. */
