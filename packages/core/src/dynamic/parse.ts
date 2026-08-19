@@ -14,6 +14,7 @@ import {
   isFiniteNumber,
   isIsoDate,
   isRecordValue,
+  isSafeDynamicName,
   isSafeDynamicSegment,
   warnDev,
 } from "./guards.js";
@@ -366,7 +367,7 @@ export function flattenDynamicForm(schema: MdyDynamicGroupNode): {
     }
     if (node.node === "group") {
       const value = isRecordValue(initial) ? initial : {};
-      const entries = Object.entries(node.children).filter(([key]) => isSafeDynamicSegment(key));
+      const entries = Object.entries(node.children).filter(([key]) => isSafeDynamicName(key));
       for (let index = entries.length - 1; index >= 0; index -= 1) {
         const [key, child] = entries[index]!;
         pending.push({ node: child, path: path ? `${path}.${key}` : key, initial: value[key] });
@@ -378,8 +379,11 @@ export function flattenDynamicForm(schema: MdyDynamicGroupNode): {
       const declared = isRecordValue(initial)
         ? initial
         : isRecordValue(node.initialValue) ? node.initialValue : {};
-      // The key is a path segment like any other, and an unsafe one addresses something else.
-      const rows = Object.entries(declared).filter(([key]) => isSafeDynamicSegment(key));
+      // The key is a path segment like any other, and an unsafe one addresses something else. A row
+      // key becomes part of a widget id here, so the whole name rule applies to it: flattened with
+      // only the prototype half checked, `rows.  .cell` reached the flat builder, which refuses it —
+      // and the same document built through the tree, where a row key is data and never a name.
+      const rows = Object.entries(declared).filter(([key]) => isSafeDynamicName(key));
       for (let index = rows.length - 1; index >= 0; index -= 1) {
         const [key, row] = rows[index]!;
         pending.push({ node: node.item, path: path ? `${path}.${key}` : key, initial: row });
@@ -979,7 +983,7 @@ function validateDynamicSchema(input: unknown): MdyDynamicDiagnostic[] {
       if (!isRecordValue(raw["children"])) { out.push({ code: "MDY_DYNAMIC_INVALID_GROUP", severity: "error", path, message: "group requires children." }); continue; }
       const children: Array<{ raw: unknown; path: string }> = [];
       for (const [key, child] of Object.entries(raw["children"])) {
-        if (!isSafeDynamicSegment(key)) out.push({ code: "MDY_DYNAMIC_UNSAFE_NAME", severity: "error", path: `${path}/children/${key}`, message: "unsafe child name." });
+        if (!isSafeDynamicName(key)) out.push({ code: "MDY_DYNAMIC_UNSAFE_NAME", severity: "error", path: `${path}/children/${key}`, message: "unsafe child name." });
         else children.push({ raw: child, path: `${path}/children/${key}` });
       }
       push(children);
@@ -994,7 +998,7 @@ function validateDynamicSchema(input: unknown): MdyDynamicDiagnostic[] {
       else if (isRecordValue(initial)) {
         for (const key of Object.keys(initial)) {
           // A key that cannot be a path segment names a row nothing can address.
-          if (!isSafeDynamicSegment(key)) out.push({ code: "MDY_DYNAMIC_UNSAFE_NAME", severity: "error", path: `${path}/initialValue/${key}`, message: "unsafe row key." });
+          if (!isSafeDynamicName(key)) out.push({ code: "MDY_DYNAMIC_UNSAFE_NAME", severity: "error", path: `${path}/initialValue/${key}`, message: "unsafe row key." });
         }
       }
       continue;
