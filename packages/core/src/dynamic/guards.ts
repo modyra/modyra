@@ -57,6 +57,34 @@ export function isSafeDynamicSegment(value: string): boolean {
  * document. What is refused is a path no form can hold — an empty segment, a prototype key, the id
  * delimiter, or a name already taken.
  */
+/**
+ * What a name may be, wherever a form reads one.
+ *
+ * A flat list names a path and a tree names one segment at a time, and both arrive at the same DOM:
+ * a widget id is built from the name and reaches `aria-describedby`, which is a space-separated list
+ * of ids — so whitespace there becomes several references, each resolving to nothing, and the
+ * control has no accessible name. The id delimiter collides the name with another field's parts.
+ *
+ * Held in one function because the two doors disagreeing is the defect it exists to prevent: a
+ * document refused by one build route and taken by the other means which pair of functions a
+ * consumer called decides whether their document works.
+ */
+export function assertSafeDynamicName(name: string): void {
+  if (name.includes(MDY_ID_DELIMITER)) {
+    throw new Error(
+      `[modyra] Invalid field name "${name}": "${MDY_ID_DELIMITER}" separates the segments of a ` +
+        `generated id, so this name would collide with another field's parts.`,
+    );
+  }
+  if (/\s/.test(name)) {
+    throw new Error(
+      `[modyra] Invalid field name "${name}": a widget id is built from this name, and ` +
+        "whitespace splits an id reference into several, each resolving to nothing — so the " +
+        "control would have no accessible name.",
+    );
+  }
+}
+
 export function assertSafeDynamicFieldNames(
   fields: ReadonlyArray<{ readonly name: string }>,
 ): void {
@@ -86,24 +114,7 @@ export function assertSafeDynamicFieldNames(
           `not be a prototype key, or the form would be keyed onto the prototype chain.`,
       );
     }
-    if (name.includes(MDY_ID_DELIMITER)) {
-      throw new Error(
-        `[modyra] Invalid field name "${name}": "${MDY_ID_DELIMITER}" separates the segments of a ` +
-          `generated id, so this name would collide with another field's parts.`,
-      );
-    }
-    // The other half of the same sentence the renderer refuses on. A widget id is built from this
-    // name and reaches `aria-describedby`, which is a space-separated list of ids — so whitespace
-    // here becomes several references, each resolving to nothing. Refusing only the delimiter meant
-    // an author ran the gate, was told the document was fine, saved it, and the field never
-    // appeared: the renderer refused what the parser had approved.
-    if (/\s/.test(name)) {
-      throw new Error(
-        `[modyra] Invalid field name "${name}": a widget id is built from this name, and ` +
-          "whitespace splits an id reference into several, each resolving to nothing — so the " +
-          "control would have no accessible name.",
-      );
-    }
+    assertSafeDynamicName(name);
     if (seen.has(name)) {
       throw new Error(`[modyra] Duplicate field name "${name}": every field needs its own identity.`);
     }
