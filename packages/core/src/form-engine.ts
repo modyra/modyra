@@ -1741,6 +1741,7 @@ export class MdyFormEngine
         fieldPath: name,
         formValue: () => this.getValue(),
         fieldState: (p) => this._fields.get(p)?.state ?? null,
+        warn: (message) => this._warn(`Field "${name}": ${message}`),
       },
       this._scope,
     );
