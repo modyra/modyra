@@ -215,7 +215,18 @@ export function isExpression(operand: unknown): operand is MdyExpression {
 
 /** The operands of `expr`, however it spelled them. */
 function operandsOf(expr: MdyExpression): readonly MdyOperand[] {
-  return expr.operands ?? (expr.operand !== undefined ? [expr.operand] : []);
+  // A list, or nothing to read. `operands` arrives from a document, and a document is written by a
+  // person one pair of brackets short or by a model producing JSON: `{ op: "equals", operands: "x" }`
+  // is the shape that mistake takes. Read without asking, it reached `.forEach` and threw an
+  // internal out of the reader — naming neither the document, nor the field, nor the clause, in the
+  // lenient mode a consumer chooses precisely to survive a document they do not control.
+  if (expr.operands !== undefined) return Array.isArray(expr.operands) ? expr.operands : [];
+  return expr.operand !== undefined ? [expr.operand] : [];
+}
+
+/** True when `operands` is present and is not a list — a clause nothing can read. */
+function operandsAreMalformed(expr: MdyExpression): boolean {
+  return expr.operands !== undefined && !Array.isArray(expr.operands);
 }
 
 /**
@@ -733,7 +744,11 @@ function validateAt(expr: unknown, where: string, depth: number): readonly strin
   if (!OPS.has(expr.op)) problems.push(`${where}: unknown operator "${String(expr.op)}"`);
 
   const operands = operandsOf(expr);
-  if (operands.length === 0) problems.push(`${where}: "${String(expr.op)}" has no operands`);
+  if (operandsAreMalformed(expr)) {
+    problems.push(`${where}: "operands" must be a list of operands`);
+  } else if (operands.length === 0) {
+    problems.push(`${where}: "${String(expr.op)}" has no operands`);
+  }
 
   if (expr.op === "matches") {
     const [, pattern] = operands;

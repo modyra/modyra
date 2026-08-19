@@ -220,7 +220,18 @@ export function renderDaterangeField(
 
     const monthKey = `${anchor.year}-${anchor.month}`;
     setText(monthLabel, `${dateLocale.monthNamesLong[anchor.month - 1]} ${anchor.year}`);
-    if (renderedMonth !== monthKey) {
+    // Named by the month, not by the numbers inside it — which are gone while the calendar is closed.
+    grid.setAttribute("aria-label", `${dateLocale.monthNamesLong[anchor.month - 1]} ${anchor.year}`);
+    // A closed calendar holds no cells: the popup element stays, because it is built once and lives
+    // as long as the field, and what is inside it is six weeks of buttons that a screen reader
+    // counts and a Tab key walks through while nothing is open.
+    if (!state.open) {
+      if (renderedMonth !== "") {
+        grid.replaceChildren();
+        cellEls = new Map();
+        renderedMonth = "";
+      }
+    } else if (renderedMonth !== monthKey) {
       // The second pick closes the range, writes it and shuts the popup — all the controller's,
       // because this kind's value contract says `live`.
       cellEls = fillCalendar(grid, "daterange", anchor.year, anchor.month, dateLocale, (cell) =>
