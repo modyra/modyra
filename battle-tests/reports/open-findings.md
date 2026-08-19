@@ -14476,6 +14476,42 @@ is reported. It names no slot the contract must choose. Pinned by
 vocabulary must really fail closed, and the same document without the computation must parse clean.
 
 
+## 240 — A limit only one of the two doors keeps (S2, DYN-005 DYN-001)
+
+`MDY_MAX_DYNAMIC_PATH_LENGTH` is 512, and the constant carries its own reason: *a path is the payload
+key, the draft key, the widget id, and a string every renderer carries per field.* All four costs are
+paid by the **form**. The check exists at one site, `parse.ts:480`, inside the parser's flatten walk —
+the door that only reports.
+
+One document, 125 nested groups, one text field. Measured:
+
+```
+ 124 groups   parse: 1 field, path 509 chars, no diagnostic   build: value present
+ 125 groups   parse: 0 fields, MDY_DYNAMIC_PATH_TOO_LONG      build: value present
+```
+
+`buildDynamicFormSchema`, given the same document's root node, builds the field the parser dropped.
+The form holds `"secret"` at a 609-character path at depth 200, and `getValue()` returns it.
+
+**In the default mode the parse still answers `ok: true`.** A consumer does what the reference
+consumer does — `mountMdyForm(container, parsed.fields)` for the screen, the built form for the data —
+and gets no control to render and a value to submit. The field is in the payload and on no screen.
+
+This contradicts ADR 0043 in prose as well as in behaviour: *"A document has no size the parser will
+refuse"* and *"there is no maximum depth"*. There is one — a length, reached at 125 levels of
+two-character names — and it is the amendment's own subject, **the agreement between parser and
+builder**, that does not hold at it.
+
+Either repair turns the battle green: the builder keeps the limit too, or the parser stops dropping
+what the builder will build anyway. The battle asserts only that the two doors say the same thing.
+Pinned by `adversarial/dynamic-contract/a-limit-only-one-door-keeps.battle.test.mjs`, with the
+124-level control that makes the measurement about the limit rather than about deep documents.
+
+Checked and clean while measuring this: the parser is iterative as ADR 0043 claims — a document
+100,000 collections deep parses, builds and creates a form, and `MDY_DYNAMIC_PATH_TOO_LONG` is
+published in `MDY_DYNAMIC_DIAGNOSTICS` (14 codes there now, not the 10 an earlier note in this
+register recorded).
+
 ## The browser tier, measured — a baseline this register never had
 
 `npm run battle:browser` on the working tree at `6ee29144`:
@@ -14632,9 +14668,9 @@ the half-fix to overlay teardown did not close it on plain either.
 ## The register's own shape, measured
 
 ```
-numbered findings        239
+numbered findings        240
 closed or retracted       56
-open with a battle       206
+open with a battle       207
 open with none            10
 ```
 
