@@ -252,14 +252,26 @@ export class MdyArrayManager implements MdyNestedCollection {
    * number that is not a position — `-1`, `99`, `Infinity` — is to leave the collection alone, and
    * this is that answer applied to the values that are not numbers.
    */
-  private static _isPosition(index: unknown): index is number {
-    return typeof index === "number" && Number.isInteger(index);
+  /**
+   * `index` as a position, or null when it names none.
+   *
+   * A digit string counts: a position arrives from a `data-` attribute, a route parameter or a form
+   * control, and every one of those hands over text. What does not count is text that is not a
+   * number, or a number that is not a whole one — those are the mistakes that produced no position
+   * at all and were read as zero.
+   */
+  private static _positionOf(index: unknown): number | null {
+    if (typeof index === "number") return Number.isInteger(index) ? index : null;
+    if (typeof index !== "string" || !/^-?\d+$/.test(index)) return null;
+    const parsed = Number(index);
+    return Number.isInteger(parsed) ? parsed : null;
   }
 
   insert(index: number, value: unknown): void {
-    if (!MdyArrayManager._isPosition(index)) return;
+    const position = MdyArrayManager._positionOf(index);
+    if (position === null) return;
     const values = this._currentValues();
-    const at = Math.max(0, Math.min(values.length, index));
+    const at = Math.max(0, Math.min(values.length, position));
     const order = this._identityOrder(values.length);
     order.splice(at, 0, NEW_ROW);
     values.splice(at, 0, value);
@@ -271,26 +283,29 @@ export class MdyArrayManager implements MdyNestedCollection {
     const values = this._currentValues();
     // An index the list does not have is not a removal, and a change that changes nothing must not
     // reset what the user did.
-    if (!MdyArrayManager._isPosition(index) || index < 0 || index >= values.length) return;
+    const position = MdyArrayManager._positionOf(index);
+    if (position === null || position < 0 || position >= values.length) return;
     const order = this._identityOrder(values.length);
-    order.splice(index, 1);
-    values.splice(index, 1);
-    this._carryBindings(order, [index]);
-    this._rebuild(values, index);
+    order.splice(position, 1);
+    values.splice(position, 1);
+    this._carryBindings(order, [position]);
+    this._rebuild(values, position);
   }
 
   move(from: number, to: number): void {
-    if (!MdyArrayManager._isPosition(from) || !MdyArrayManager._isPosition(to)) return;
+    const start = MdyArrayManager._positionOf(from);
+    const target = MdyArrayManager._positionOf(to);
+    if (start === null || target === null) return;
     const values = this._currentValues();
-    const removed = values.splice(from, 1);
+    const removed = values.splice(start, 1);
     if (removed.length === 0) return;
-    const at = Math.max(0, Math.min(values.length, to));
+    const at = Math.max(0, Math.min(values.length, target));
     values.splice(at, 0, removed[0]);
     const order = this._identityOrder(values.length + 1);
-    const [moved] = order.splice(from, 1);
+    const [moved] = order.splice(start, 1);
     order.splice(at, 0, moved!);
     this._carryBindings(order);
-    this._rebuild(values, Math.min(from, at));
+    this._rebuild(values, Math.min(start, at));
   }
 
   /** `[0, 1, … length - 1]`, the order before a structural change rearranges it. */
