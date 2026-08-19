@@ -14193,6 +14193,51 @@ that exists and is unused, seen from outside. Declared with `@source-inspection`
 audit now enforces.
 
 
+## 234 — A count that saturates, on the path the counts were added for (S2, DYN-004 SEC-004)
+
+**H-5 of the Fable 5 charter**, found by building the hostile payload it asks for — max depth, fifty
+thousand fields, a ReDoS-shaped pattern and an unsafe segment in one document.
+
+First, the good half, because it is most of the answer. That payload:
+
+```
+83 ms, 30 MB, no throw
+MDY_DYNAMIC_UNSAFE_NAME          the __proto__ segment
+MDY_DYNAMIC_PATTERN_TOO_COSTLY   the (a+)+$ pattern
+MDY_DYNAMIC_UNKNOWN_FIELD_REFERENCE
+zero fields accepted
+```
+
+The defences hold together and the parser does not stall. What does not hold is the arithmetic.
+
+`parse.ts` says why `acceptedCount` and `rejectedCount` exist: *"without this a document declaring
+three children reported none accepted and none rejected — three entered and nothing came out, with
+the counts saying nothing happened."* `declaredFieldCount` walks the raw object over an explicit
+stack with a bound, and the bound is right — *"the count is taken before the depth and size checks
+have run"*, so it must not be able to spin. Beyond ten thousand nodes it saturates:
+
+```
+declared    accepted   rejected   unaccounted for
+   101            0        101           0
+ 10 000           0      9 999           1
+ 10 002           0      9 999           3
+ 50 001           0      9 999      40 002
+```
+
+A document that lost fifty thousand fields reports having lost 9 999. A host reading those numbers to
+see how much of a generated document survived — which `ai-generated-forms.md` teaches, `// 5 fields
+kept, 4 dropped` — is told a number short by a factor of five.
+
+When every field is **accepted** the counts are exact at fifty thousand, because that path counts
+what the walk produced. It is only the refused-whole path — the one the counts were added for — that
+saturates.
+
+The battle does not ask for the bound to be removed: a count taken before validation must be able to
+stop. It asks that the numbers add up **or that the document is told they do not**. Pinned by
+`adversarial/dynamic-contract/a-count-that-stops-counting.battle.test.mjs`, with a control requiring
+a small refused document to add up and every document to have really been refused.
+
+
 ## The browser tier, measured — a baseline this register never had
 
 `npm run battle:browser` on the working tree at `6ee29144`:
@@ -14349,9 +14394,9 @@ the half-fix to overlay teardown did not close it on plain either.
 ## The register's own shape, measured
 
 ```
-numbered findings        233
+numbered findings        234
 closed or retracted       54
-open with a battle       200
+open with a battle       201
 open with none            10
 ```
 
