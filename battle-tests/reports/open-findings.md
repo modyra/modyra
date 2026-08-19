@@ -13644,6 +13644,21 @@ No battle in this tier: the promise lives in `@modyra/angular`'s component and i
 core predicate makes no hierarchical claim to falsify. Recorded with both measurements and the line
 number, because the repair is one line and the sentence is one line.
 
+**And the repair exists already, in this repository, thirty lines away.** The draft's `exclude` does
+every shape the panel's list does not:
+
+```
+exclude: ["cards.a.pan", "cards.b.pan"]   the two cells withheld
+exclude: ["cards.*.pan"]                  withheld in every row — `*` is exactly one segment
+exclude: ["pan"]                          withheld by bare name
+exclude: ["cards"]                        the whole collection withheld
+```
+
+So *"or the collection itself to hide all of it"* is true of `exclude` and false of `maskFields`, and
+the guide states it for the panel. Whoever repairs it has a working implementation to read rather
+than a rule to invent — `draft-manager.ts:272` documents the wildcard in the same words the guide
+uses.
+
 
 ## The black-box audit had two holes, found by running broken files past it (harness, repaired)
 
