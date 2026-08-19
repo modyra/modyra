@@ -45,6 +45,25 @@ export interface MdyWidgetDefinition<TPart extends string = string> {
     readonly elements: Readonly<Record<string, MdyWidgetSemanticElement>>;
     readonly required: readonly string[];
   }>>>;
+  /**
+   * The native control this kind is rendered with, where a platform has one.
+   *
+   * A password differs from a text field in exactly one way — the control does not show what is
+   * typed into it — and that difference lived nowhere a renderer could read it: every adapter kept a
+   * private map from kind to input type, and the failure mode of one that forgets is a password in
+   * clear text. Declared here, it is a statement an adapter implements rather than knowledge each
+   * one carries privately.
+   *
+   * Absent for a kind a platform has no single control for — a select drawn as a trigger and a
+   * listbox, a daterange drawn as two calendars.
+   */
+  readonly controlType?: string;
+  /**
+   * Whether this kind's control conceals what is typed into it.
+   *
+   * The whole meaning of `password`, and the one fact that separates it from `text`.
+   */
+  readonly concealed?: boolean;
   readonly capabilities: {
     /**
      * Whether this kind owns an overlay.

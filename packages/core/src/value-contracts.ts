@@ -63,6 +63,18 @@ export interface MdyValueContract {
   /** Whether the value may be absent. A kind that cannot be empty is one `required` never rejects. */
   readonly nullable: boolean;
   readonly commit: MdyValueCommit;
+  /**
+   * Whether this kind's value is concealed wherever it is shown.
+   *
+   * The whole meaning of `password`: it holds a string exactly as `text` does, and the one thing
+   * that makes it a password is that what is typed into it is not displayed. Said nowhere, that
+   * difference was knowledge each adapter carried privately — and the failure mode of an adapter
+   * that does not carry it is a password rendered in clear text.
+   *
+   * Distinct from a field's own `sensitive`, which an author declares about *this* field's value
+   * (ADR 0089). This is a property of the kind, true before any form exists.
+   */
+  readonly concealed?: boolean;
 }
 
 const live = (shape: MdyValueShape, nullable: boolean): MdyValueContract =>
@@ -88,7 +100,7 @@ export const MDY_VALUE_CONTRACTS: Readonly<Record<MdyValueKind, MdyValueContract
   text: live("string", false),
   textarea: live("string", false),
   email: live("string", false),
-  password: live("string", false),
+  password: Object.freeze({ ...live("string", false), concealed: true }),
   // The hex box is what the label names and what a keyboard types into, and it writes on blur or
   // Enter rather than per keystroke: `#11` is not a colour, and a field that took it would hold a
   // value nothing could show. The native swatch beside it writes as soon as it is used — one word

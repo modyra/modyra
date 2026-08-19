@@ -113,6 +113,7 @@ absent section reads as an oversight, and "no security impact" is a finding.
 - [ADR 0096: A row the form was not built with is a change](0096-a-row-the-form-was-not-built-with-is-a-change.md) — `reset()` threw a new row away while `getChanges()` reported nothing, so a patch never carried the rows a user made
 - [ADR 0097: A member nobody declared is reported](0097-a-member-nobody-declared-is-reported.md) — the published schema closes every object and the parser closed none, so the one check a stored document meets said nothing
 - [ADR 0098: A fixture's context lives beside it](0098-a-fixtures-context-lives-beside-it.md) — v4's conditions read what the host supplies, and the shared corpus had no way to say what that is
+- [ADR 0099: A password is said to be one](0099-a-password-is-said-to-be-one.md) — the published description of a password was the description of a text field, so masking was private knowledge in every adapter
 - [ADR 0092: A condition travels with the form](0092-a-condition-travels-with-the-form.md) — `when` and `asyncWhen` were closures, so a schema carrying one was not data and the document half could not say what the typed half said
 
 ## Security-relevant records
