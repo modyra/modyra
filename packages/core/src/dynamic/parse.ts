@@ -788,6 +788,7 @@ export const MDY_DYNAMIC_DIAGNOSTICS: ReadonlyArray<{
   { code: "MDY_DYNAMIC_DUPLICATE_OPTION", phrase: "duplicate option value" },
   { code: "MDY_DYNAMIC_MISPLACED_VALIDATOR", phrase: "belongs in \"validators\"" },
   { code: "MDY_DYNAMIC_CONSTRAINT_CANNOT_FAIL", phrase: "can never refuse anything" },
+  { code: "MDY_DYNAMIC_UNKNOWN_PARSE_MODE", phrase: "is not one this reader knows" },
   { code: "MDY_DYNAMIC_PATTERN_TOO_LONG", phrase: "pattern length" },
   { code: "MDY_DYNAMIC_PATTERN_TOO_COSTLY", phrase: "backtracks exponentially" },
 ];
@@ -1138,6 +1139,26 @@ export function parseDynamicForm(
   options: { readonly mode?: MdyDynamicParseMode } = {},
 ): MdyDynamicFormParseResult {
   const diagnostics: MdyDynamicDiagnostic[] = [];
+  // A mode nobody declared is not lenient. `strict` is what a publishing gate asks for, and the
+  // answer to a typo in it — or to the options object being a bare string, or `null` — was a lenient
+  // parse reported as a success, so a contract nobody checked went out with `ok: true` beside it.
+  //
+  // Reported rather than thrown: this parser's whole design is a report. The report is what makes
+  // `ok` false, which is the half that closes the gate.
+  const asked = typeof options === "object" && options !== null
+    ? (options as { mode?: unknown }).mode
+    : options;
+  const modeUnderstood = asked === undefined || asked === "strict" || asked === "lenient";
+  if (!modeUnderstood) {
+    diagnostics.push({
+      code: "MDY_DYNAMIC_UNKNOWN_PARSE_MODE",
+      severity: "error",
+      path: "/options/mode",
+      message:
+        `parse mode ${JSON.stringify(asked)} is not one this reader knows — it is "strict" or ` +
+        `"lenient". The document was read leniently, which is not what was asked for.`,
+    });
+  }
   const rawEnvelope = typeof input === "object" && input !== null && !Array.isArray(input)
     ? input as { version?: unknown; schema?: unknown }
     : undefined;
@@ -1320,9 +1341,11 @@ export function parseDynamicForm(
   const rejectedCount = (declaredLeaves === undefined
     ? Math.max(0, sourceCount - fields.length)
     : treeRejected) + elsewhere;
-  const strict = options.mode === "strict";
+  const strict = asked === "strict";
   return {
-    ok: version !== null && (!strict || diagnostics.length === 0),
+    // A mode nobody knows is not a document that parsed: `ok` is what a publishing gate reads, and
+    // answering `true` for a run that was never the run the caller asked for is the whole finding.
+    ok: modeUnderstood && version !== null && (!strict || diagnostics.length === 0),
     version,
     fields: strict && diagnostics.length > 0 ? [] : fields,
     layout: strict && diagnostics.length > 0 ? [] : layout,

@@ -13,6 +13,11 @@ import { test } from "node:test";
 import { MDY_DYNAMIC_DIAGNOSTICS, applyFlatValidators, buildFlatFormSchema, createForm, parseDynamicForm } from "../dist/index.js";
 
 /** A document refused for each named reason. */
+/** The options a code needs to be produced, when the document alone cannot produce it. */
+const ASKED_WITH = {
+  MDY_DYNAMIC_UNKNOWN_PARSE_MODE: { mode: "STRICT" },
+};
+
 const REFUSALS = {
   MDY_DYNAMIC_UNSUPPORTED_VERSION: { version: 99, fields: [{ name: "a", kind: "text" }] },
   MDY_DYNAMIC_DUPLICATE_NAME: [{ name: "a", kind: "text" }, { name: "a", kind: "text" }],
@@ -24,6 +29,7 @@ const REFUSALS = {
     kind: "select",
     options: [{ value: "pro", label: "Pro monthly" }, { value: "pro", label: "Pro yearly" }],
   }],
+  MDY_DYNAMIC_UNKNOWN_PARSE_MODE: [{ name: "a", kind: "text" }],
   MDY_DYNAMIC_CONSTRAINT_CANNOT_FAIL: [{ name: "a", kind: "slider", validators: { required: true } }],
   MDY_DYNAMIC_MISPLACED_VALIDATOR: [{ name: "a", kind: "text", required: true }],
   MDY_DYNAMIC_PATTERN_TOO_LONG: [{ name: "a", kind: "text", validators: { pattern: "x".repeat(300) } }],
@@ -34,7 +40,7 @@ test("every named code is one the parser can actually produce", () => {
   for (const { code } of MDY_DYNAMIC_DIAGNOSTICS) {
     const document_ = REFUSALS[code];
     assert.ok(document_, `${code} has no document that produces it`);
-    const { diagnostics } = parseDynamicForm(document_);
+    const { diagnostics } = parseDynamicForm(document_, ASKED_WITH[code]);
     assert.ok(
       diagnostics.some((d) => d.code === code),
       `${code} was never reported — got ${JSON.stringify(diagnostics.map((d) => d.code))}`,
@@ -44,7 +50,7 @@ test("every named code is one the parser can actually produce", () => {
 
 test("the phrase each code is recognised by still appears in its message", () => {
   for (const { code, phrase } of MDY_DYNAMIC_DIAGNOSTICS) {
-    const { diagnostics } = parseDynamicForm(REFUSALS[code]);
+    const { diagnostics } = parseDynamicForm(REFUSALS[code], ASKED_WITH[code]);
     const reported = diagnostics.find((d) => d.code === code);
     assert.ok(
       reported && reported.message.includes(phrase),
