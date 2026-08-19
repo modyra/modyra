@@ -37,7 +37,7 @@ const VALUE: Record<string, unknown> = {
   text: "t", textarea: "t", email: "a@b.c", password: "p", number: 5, slider: 5,
   checkbox: true, toggle: true, select: "a", radio: "a", segmented: "a",
   multiselect: ["a"], datepicker: "2026-03-04",
-  daterange: { start: "2026-03-04", end: "2026-03-06" }, timepicker: "10:30 AM",
+  daterange: { start: "2026-03-04", end: "2026-03-06" }, timepicker: "10:30",
   colors: "#112233", file: [],
 };
 
