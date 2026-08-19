@@ -15272,9 +15272,17 @@ arrives at **render time, from another package**, about a name core took and the
 blessed — while the same name arriving in a document is refused at the door. That asymmetry is the one
 the comment says is not there.
 
-`a\tb` behaves the same. `a__b` is the same story with a different ending: not a refusal but a
-collision, two elements answering to one id, which is the failure `MDY_ID_DELIMITER` exists to
-prevent.
+`a\tb` and `a__b` behave the same way — measured, not assumed: `fieldShellPartIds("a__b")` throws
+rather than colliding, so the delimiter case is a refusal too. That is worth stating because the
+collision is what `MDY_ID_DELIMITER`'s comment describes as the danger, and the widgets layer is
+coherent about preventing it. What a form built in code produces is therefore not a silent collision
+but a **throw at render time**, when the renderer asks for the part ids of a field core accepted:
+
+```
+fieldShellPartIds("a")      { labelId: "a__label", descriptionId: "a__description", errorId: "a__errors" }
+fieldShellPartIds("a__b")   throws: "a__b" cannot be a widget id
+fieldShellPartIds("a b")    throws
+```
 
 Green when the three answers agree, whichever way: a name a form may hold is a name a widget id can be
 built from, or the guard published for checking says so before the form is built. Pinned by
