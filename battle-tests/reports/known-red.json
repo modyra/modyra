@@ -4,14 +4,15 @@
   "recordedAt": "2026-08-19",
   "seed": "20260814",
   "runs": "25",
-  "openReds": 9,
+  "openReds": 10,
   "bySeverity": {
-    "S0": 2,
+    "S0": 3,
     "S1": 3,
     "S2": 4
   },
   "knownRed": [
     "[S0][PER-004,PER-001] a form that would replace another form's draft is stopped whichever shape it has",
+    "[S0][SEC-001,A11Y-001,API-001] a name a form may hold is one a widget id can be built from",
     "[S0][VAL-002,SUB-002,COL-001] a row whose cells are disabled leaves the rows after it where they were",
     "[S1][A11Y-004] a widget announcing a state only when it is in it is still reported",
     "[S1][PKG-001,REA-002] a second copy of the package does not turn the cross-runtime guard off",
