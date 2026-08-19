@@ -14442,6 +14442,35 @@ What it cannot do is prove the **semantics** agree. The shared fixtures exist fo
 none for v4: finding 237.
 
 
+## 239 — A document that declares a computation is accepted in silence (S2, DYN-004 EXP-001)
+
+**H-2 of the Fable 5 charter**, red by construction — and the pin is not the missing feature, it is
+what happens today to an author who reaches for it.
+
+The half that is already right: the vocabulary is closed and **fails closed**. `multiply`, `add`,
+`sum` and `count` are each refused by `validateExpression` and each evaluate to `false`, which is the
+direction that shuts a field rather than opening it.
+
+The half that is not:
+
+```
+{ computations: [{ target: "total", expression: … }] }   ok: true, three fields, no diagnostic
+{ field: { …, computed: { op: "multiply", … } } }        ok: true, two fields, no diagnostic
+```
+
+A document saying *"total is quantity times price"* parses clean, renders, and `total` never moves.
+Nothing is said at parse time, nothing at render time, and nothing when the form submits a total
+somebody typed by hand or left at zero.
+
+**A missing capability that is reported is a limit; one that is accepted is a defect** — the line
+finding 215 draws for conditional rows, where this same parser refuses by name and is right to.
+
+The battle goes green either way the work lands: when a computation runs, or when a slot nobody reads
+is reported. It names no slot the contract must choose. Pinned by
+`adversarial/dynamic-contract/a-computation-nobody-refuses.battle.test.mjs`, with two controls — the
+vocabulary must really fail closed, and the same document without the computation must parse clean.
+
+
 ## The browser tier, measured — a baseline this register never had
 
 `npm run battle:browser` on the working tree at `6ee29144`:
@@ -14598,9 +14627,9 @@ the half-fix to overlay teardown did not close it on plain either.
 ## The register's own shape, measured
 
 ```
-numbered findings        238
-closed or retracted       55
-open with a battle       205
+numbered findings        239
+closed or retracted       56
+open with a battle       206
 open with none            10
 ```
 
