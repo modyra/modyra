@@ -13244,6 +13244,159 @@ vocabulary rather than about the slider, so a kind added later whose empty is a 
 covered the day it arrives. Control: at least twelve kinds must have a working `required`.
 
 
+## The browser tier, measured — a baseline this register never had
+
+`npm run battle:browser` on the working tree at `6ee29144`:
+
+```
+253 cases
+180 passed
+ 73 failed
+```
+
+The register had no browser count before this, only references to individual specs — which is why a peer's
+`73/253` could not be checked against anything. It can now, and **names** are what a next run should be
+compared against: two different totals do not say which spec lit up.
+
+A caution about how this number is read. The first attempt here piped the run through `tail -40` and reported
+`180 passed, exit 0` as if the tier were green — the `73 failed` line was above the cut. **Seventeenth
+instrument error**, and the one with the worst shape: a truncation that removes bad news reads exactly like
+good news, and it was reported to a peer as a disagreement with their count before being re-read.
+
+The seventy-three, by file:
+
+```
+a-box-that-does-not-say-what-it-filters
+    the filter box says what it is and what it changes, lit
+a-calendar-behind-a-closed-picker
+    plain: a closed popup is closed for everyone
+    plain: tabbing past a closed widget reaches the next field
+a-calendar-that-outlived-its-field
+    a calendar that outlived its field, lit
+    a calendar that outlived its field, plain
+a-choice-shown-that-was-never-made
+    a select holding a value no option carries, lit
+a-control-for-a-field-that-was-dropped
+    a control for a field that was dropped, lit
+a-control-inside-another-control
+    no control sits inside another control, lit
+a-control-nobody-named
+    every control has a name even when the document declared none
+a-dialog-nothing-can-point-at
+    the opener points at the dialog it opens, lit
+a-dialog-the-page-can-be-walked-out-of
+    a time picker's dialog says the page behind it is not there, lit
+a-field-marked-wrong-with-nothing-to-read
+    a field that says it is wrong says what is wrong, lit
+a-field-that-cannot-look-wrong
+    lit: a field the form refused is one the page can paint
+a-form-that-ended-under-the-controls
+    controls left on the page after the form ended are not still offering to edit it
+a-grid-that-names-a-label-nobody-wrote
+    every grid a calendar shows is named, lit
+a-grid-with-no-name
+    lit: a role that must be named has a name
+    plain: a role that must be named has a name
+a-kind-nobody-declared-becomes-a-text-box
+    a kind nobody declared, lit
+a-list-emptied-by-one-of-its-own-choices
+    a multiselect whose option list carries an inherited name, plain
+    a select whose option list carries an inherited name, plain
+a-mount-that-stopped-halfway
+    a mount that refuses a field leaves nothing of the fields it had already painted
+a-name-that-became-a-path
+    a name that became a path, lit
+a-number-nobody-can-hear
+    a clock says what it is set to, lit
+a-number-you-change-with-arrows
+    the hour and minute segments carry what the contract declares, lit
+a-page-that-keeps-nothing
+    a form asked to keep a draft keeps one, plain
+a-part-the-contract-requires
+    every part the contract requires is built, lit
+a-popup-lit-cannot-open-either
+    every lit control that declares a popup opens it from the keyboard
+a-popup-only-a-mouse-can-open
+    every control that declares a popup opens it from the keyboard
+a-range-that-throws-away-what-you-type
+    a range the control can read is one it keeps when it is typed
+    lit discards it too, so the defect belongs to the contract
+    what the range could not read is kept or explained
+a-refusal-in-a-language-nobody-asked-for
+    a refusal in a language nobody asked for
+a-refusal-in-two-renderers
+    plain: every option a document declares is one a person can choose
+a-refusal-the-page-keeps-to-itself
+    a refusal about a field reaches that field, lit
+a-rule-the-preview-enforces
+    a document's cross-field rule reaches the page
+a-star-on-a-field-nobody-must-fill
+    plain: a required marker and aria-required say the same thing
+a-state-class-that-never-arrives
+    lit: a refused field wears the state class its kind declares
+    lit: a refused field's label says so
+    plain: a refused field's label says so
+    plain: an empty field's label is not lifted
+    plain: an open field says it is open
+a-state-no-contract-declares
+    plain: a part asserts only the states its kind declares
+a-time-that-changed-when-nobody-changed-it
+    a time nobody changed is the time that was there, lit
+    a time nobody changed is the time that was there, plain
+a-verdict-that-depends-on-how-it-arrived
+    a value refused when typed is refused when given, lit
+    a value refused when typed is refused when given, plain
+an-error-before-anyone-typed
+    a required field nobody has reached is not painted as failing
+an-hour-the-clock-does-not-have
+    an hour the clock does not have, plain
+an-opener-that-names-what-it-opens
+    an opener names the overlay it opens, lit
+an-option-a-document-closed
+    lit: an option the document disabled is one nobody can choose
+an-option-that-never-appears
+    every option a document declares is one a person can choose
+an-option-with-a-space-in-it
+    an option whose value has a space is pointed at properly too
+every-key-a-kind-declares
+    lit: every key a kind declares does something
+    plain: every key a kind declares does something
+every-kind-in-lit-under-an-auditor
+    every declared kind is one the auditor has nothing to say about when it is required
+    every declared kind renders a lit form the auditor has nothing to say about
+every-kind-under-an-auditor
+    a form somebody has chosen things in is one the auditor has nothing to say about
+    a form the user has opened and filled is still one the auditor has nothing to say about
+    every declared kind is one the auditor has nothing to say about when it is required
+    every declared kind renders a form the auditor has nothing to say about
+no-reference-that-points-at-nothing
+    no attribute names an id that is not there, lit
+nowhere-for-the-keyboard-to-stand
+    a field taken out of play under the cursor, lit
+    a field taken out of play under the cursor, plain
+the-buttons-at-the-end-of-a-field
+    a field carries the controls it is declared to have, lit
+    a field carries the controls it is declared to have, plain
+the-key-that-leaves-a-popup-behind
+    tab closes what it tabs out of, lit
+the-part-a-pointer-opens-from
+    a pointer on the declared part opens the popup, lit
+the-way-down-a-calendar
+    a calendar goes where the moves say, plain
+two-judges-of-one-address
+    two judges of one address
+what-a-control-promises-will-open
+    what a control promises is what opens, lit
+    what a control promises is what opens, plain
+wrong-before-anybody-touched-it
+    a field wrong on arrival says why, lit
+    a field wrong on arrival says why, plain
+```
+
+Split by renderer where the name says one: 25 name `lit`, 22 name `plain`, the rest name neither.
+`nowhere-for-the-keyboard-to-stand` fails on **both**, which answers a question asked of this measurement:
+the half-fix to overlay teardown did not close it on plain either.
+
 ## The register's own shape, measured
 
 ```
