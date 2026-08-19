@@ -124,6 +124,16 @@ export function mdyFormSnapshot(form: InspectableForm, options: MdySnapshotOptio
     readonly dirty: boolean;
     readonly pending: boolean;
     readonly errors: readonly string[];
+    /**
+     * Why the value reads as bullets, when it does.
+     *
+     * The panel masks two different things and printed them identically: a field the schema declares
+     * a secret, protected wherever the value would otherwise be copied, and a field whose *name*
+     * looks like one, protected here and nowhere else — a draft writes it to storage in clear. A
+     * reader seeing bullets drew the stronger conclusion because nothing on the row offered the
+     * weaker one.
+     */
+    readonly masked?: "declared" | "guessed" | "caller";
   }>;
 } {
   const names = form.fieldNames?.() ?? [];
@@ -137,10 +147,18 @@ export function mdyFormSnapshot(form: InspectableForm, options: MdySnapshotOptio
       const state = form.getField(path)?.();
       // The caller's predicate first — it is the panel's own override — then what the schema
       // declared, then the name.
-      const masked = isSensitivePath(
-        path,
-        options.sensitive?.(path) ?? (coveredBySecret(declaredSecret, path) ? true : undefined),
-      );
+      const fromCaller = options.sensitive?.(path);
+      const fromSchema = coveredBySecret(declaredSecret, path) ? true : undefined;
+      const masked = isSensitivePath(path, fromCaller ?? fromSchema);
+      // Which of the three said so, in the order they are consulted. A guess is the weakest of them
+      // and the only one that protects nothing anywhere else.
+      const maskedBy = !masked
+        ? undefined
+        : fromCaller === true
+          ? "caller" as const
+          : fromSchema === true
+            ? "declared" as const
+            : "guessed" as const;
       const raw = state?.value() ?? null;
       // The origin the form knows, and the payload's word only when there is none: prefixing with
       // `kind` printed `[unknown]` for the ordinary server refusal — `{ path, message }` — and
@@ -157,6 +175,7 @@ export function mdyFormSnapshot(form: InspectableForm, options: MdySnapshotOptio
         dirty: state?.dirty() ?? false,
         pending: state?.pending() ?? false,
         errors: masked ? messages.map((message) => withoutValue(message, raw)) : messages,
+        ...(maskedBy === undefined ? {} : { masked: maskedBy }),
       };
     }),
   };
@@ -188,7 +207,18 @@ export function mountMdyDevtools(
     const rows = s.fields
       .map(
         (f) =>
-          `<tr><td>${escapeHtml(f.path)}</td><td>${escapeHtml(JSON.stringify(f.value) ?? "undefined")}</td>` +
+          // A masked value says which of the three decided it, where a reader hovers. A guess is
+          // masked here and nowhere else — the draft writes that value to storage in clear — so a
+          // panel that showed the same bullets for both was making a promise it does not keep.
+          `<tr><td>${escapeHtml(f.path)}</td><td${
+            f.masked === undefined
+              ? ""
+              : ` title="${f.masked === "guessed"
+                ? "masked because the name looks like a secret — nothing else protects it"
+                : f.masked === "declared"
+                  ? "declared sensitive by the schema — kept out of drafts and copies"
+                  : "masked by this panel's own predicate"}"`
+          }>${escapeHtml(JSON.stringify(f.value) ?? "undefined")}</td>` +
           `<td>${f.valid ? "✓" : "✗"}</td><td>${f.touched ? "✓" : "·"}</td>` +
           `<td>${f.dirty ? "✓" : "·"}</td><td>${f.pending ? "…" : "·"}</td>` +
           `<td style="color:#d33">${escapeHtml(f.errors.join(" | "))}</td></tr>`,
