@@ -159,7 +159,15 @@ export function unflatten(
       }
     }
     const leaf = parts[parts.length - 1];
-    if (leaf !== undefined) target[leaf] = v;
+    if (leaf === undefined) continue;
+    // A path that also names a branch holds nothing of its own: a group, a collection and a section
+    // each carry a field at their own path so that what is said *about* them — a condition, an
+    // error — has somewhere to live, and its value is always `null`. Written last, that `null`
+    // replaced the branch it names, and every field under it disappeared from the value; written
+    // first it was harmlessly replaced, which is why this depended on the order the paths were
+    // created in rather than on what the form held.
+    if (isRecord(target[leaf])) continue;
+    target[leaf] = v;
   }
   return out;
 }
