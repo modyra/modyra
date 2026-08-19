@@ -14308,6 +14308,38 @@ which asserts only the direction a grammar cannot explain and logs the other six
 demanding them. Control: the corpus must contain a document both surfaces take and one both refuse.
 
 
+## 237 — A published schema no gate reads, and a version the SDKs cannot be measured on (S2, DYN-004 DYN-003)
+
+**H-3 of the Fable 5 charter**, whose green condition is stated there: *"a v4 schema exists, the audit
+covers it, and a differential campaign finds no residue."* The first is done. The second is not.
+
+`npm run test:contract-schema` names what it read:
+
+```
+Schemas: spec/dynamic-form-v2.schema.json, spec/dynamic-form-v3.schema.json
+Document slots read from the type: version, id, fields, schema, layout, rules, validations
+CONTRACT SCHEMA CLEAN
+```
+
+It reports clean while leaving `spec/dynamic-form-v4.schema.json` unread, and the slot list it prints
+carries no `requiresContext` — the member v4 adds, and the one deciding whether a host can supply what
+a document's conditions read.
+
+`spec/fixtures/dynamic-form/` holds `v2` and `v3` and no `v4`. That reaches past this audit: those
+fixtures are what **H-6** uses to prove the Rust and Java SDKs agree with the TypeScript interpreter,
+so a version with no fixtures is a version the other two runtimes have nothing to be measured
+against. The same walk shows `v1` has neither a published schema nor fixtures, and nothing marks it
+deprecated — the parser still accepts it.
+
+The battle asserts what the charter states — every schema published under `spec/` is one the audit
+reads — and adds the fixtures as a second, separate assertion. It says nothing about what the audit
+should conclude.
+
+Pinned by `adversarial/dynamic-contract/a-schema-nothing-audits.battle.test.mjs`, which **runs** the
+audit rather than reading it: it is a published command of this project, and what it prints is its
+answer. Control: schemas exist, the audit read at least one, and it reported a verdict.
+
+
 ## The browser tier, measured — a baseline this register never had
 
 `npm run battle:browser` on the working tree at `6ee29144`:
@@ -14464,9 +14496,9 @@ the half-fix to overlay teardown did not close it on plain either.
 ## The register's own shape, measured
 
 ```
-numbered findings        236
+numbered findings        237
 closed or retracted       55
-open with a battle       203
+open with a battle       204
 open with none            10
 ```
 
