@@ -1145,10 +1145,18 @@ export function parseDynamicForm(
   //
   // Reported rather than thrown: this parser's whole design is a report. The report is what makes
   // `ok` false, which is the half that closes the gate.
+  // Read only from where the signature puts it. A bare `"strict"` in the options position is a
+  // caller's mistake, and honouring it would invent a second spelling of the argument — one nobody
+  // documented and every later reader would have to know about. It is reported, which is the half
+  // that matters: what must not happen is a lenient parse answering `ok: true` to a caller who asked
+  // for a gate.
   const asked = typeof options === "object" && options !== null
     ? (options as { mode?: unknown }).mode
-    : options;
-  const modeUnderstood = asked === undefined || asked === "strict" || asked === "lenient";
+    : options === undefined ? undefined : options;
+  const optionsAreAnObject = options === undefined
+    || (typeof options === "object" && options !== null && !Array.isArray(options));
+  const modeUnderstood = optionsAreAnObject
+    && (asked === undefined || asked === "strict" || asked === "lenient");
   if (!modeUnderstood) {
     diagnostics.push({
       code: "MDY_DYNAMIC_UNKNOWN_PARSE_MODE",
@@ -1341,7 +1349,7 @@ export function parseDynamicForm(
   const rejectedCount = (declaredLeaves === undefined
     ? Math.max(0, sourceCount - fields.length)
     : treeRejected) + elsewhere;
-  const strict = asked === "strict";
+  const strict = modeUnderstood && asked === "strict";
   return {
     // A mode nobody knows is not a document that parsed: `ok` is what a publishing gate reads, and
     // answering `true` for a run that was never the run the caller asked for is the whole finding.
