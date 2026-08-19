@@ -920,7 +920,64 @@ export abstract class MdyTypedFormBase<
    * so the check is shared rather than restated.
    */
   protected _flatToSubmitted(flat: Record<string, unknown>): MdySubmittedValue<S> {
-    return this._flatToPatch(flat) as unknown as MdySubmittedValue<S>;
+    return this._keepingPositions(
+      this._flatToPatch(flat) as unknown as MdySubmittedValue<S>,
+      flat,
+    );
+  }
+
+  /**
+   * Puts back the positions a compacted list lost.
+   *
+   * A submitted value leaves out disabled fields, and a row whose fields are all disabled therefore
+   * contributes no key at all — so the list built from what is left is *shorter*, and every row
+   * after the missing one is sent at a position it does not have. In a positional collection the
+   * position is the identity: a server told "row 0" is told about a row the person can see below it.
+   *
+   * A row that sent nothing is sent as nothing — `{}` — at the place it occupies. The alternative,
+   * a shorter list, is the one answer that cannot be read correctly by anyone.
+   *
+   * Keyed collections are untouched: a key that is not sent is a key a merge leaves alone, which is
+   * a reading a server already has.
+   */
+  private _keepingPositions(
+    submitted: MdySubmittedValue<S>,
+    flat: Record<string, unknown>,
+  ): MdySubmittedValue<S> {
+    if (this._arrayPaths.size === 0) return submitted;
+    const held = this.getValue() as Record<string, unknown>;
+    const restore = (node: unknown, heldNode: unknown, path: string, concrete: string): unknown => {
+      if (Array.isArray(node) && Array.isArray(heldNode) && this._arrayPaths.has(path)) {
+        // Which rows sent something, in the order the compacted list holds them.
+        const present = [...new Set(
+          Object.keys(flat)
+            .filter((key) => key.startsWith(`${concrete}.`))
+            .map((key) => Number(key.slice(concrete.length + 1).split(".")[0]))
+            .filter((index) => Number.isInteger(index)),
+        )].sort((a, b) => a - b);
+        const rows: unknown[] = [];
+        for (let index = 0; index < heldNode.length; index += 1) {
+          const at = present.indexOf(index);
+          rows.push(at === -1
+            ? {}
+            : restore(node[at], heldNode[index], `${path}.*`, `${concrete}.${index}`));
+        }
+        return rows;
+      }
+      if (isRecordValue(node) && isRecordValue(heldNode)) {
+        return Object.fromEntries(
+          Object.entries(node).map(([key, child]) => [
+            key,
+            restore(child, heldNode[key], this._recordPaths.has(path) || this._arrayPaths.has(path)
+              ? `${path}.*`
+              : path === "" ? key : `${path}.${key}`,
+              concrete === "" ? key : `${concrete}.${key}`),
+          ]),
+        );
+      }
+      return node;
+    };
+    return restore(submitted, held, "", "") as MdySubmittedValue<S>;
   }
 
   /**

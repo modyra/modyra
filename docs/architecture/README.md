@@ -114,6 +114,7 @@ absent section reads as an oversight, and "no security impact" is a finding.
 - [ADR 0097: A member nobody declared is reported](0097-a-member-nobody-declared-is-reported.md) — the published schema closes every object and the parser closed none, so the one check a stored document meets said nothing
 - [ADR 0098: A fixture's context lives beside it](0098-a-fixtures-context-lives-beside-it.md) — v4's conditions read what the host supplies, and the shared corpus had no way to say what that is
 - [ADR 0099: A password is said to be one](0099-a-password-is-said-to-be-one.md) — the published description of a password was the description of a text field, so masking was private knowledge in every adapter
+- [ADR 0100: A position is an identity](0100-a-position-is-an-identity.md) — a fully disabled row left the payload, so every row after it was sent at a position it does not have
 - [ADR 0092: A condition travels with the form](0092-a-condition-travels-with-the-form.md) — `when` and `asyncWhen` were closures, so a schema carrying one was not data and the document half could not say what the typed half said
 
 ## Security-relevant records
