@@ -57,6 +57,22 @@ const KINDS = Object.freeze([
   },
 ]);
 
+/**
+ * Whether two seeds are the same seed.
+ *
+ * Structural, not by identity. A seed can be a collection's empty — `[]` — and two of those are
+ * never the same object, so identity would report the array row as divergent whatever the product
+ * did. That row is this battle's positive control: it is the one showing that introspection *can*
+ * see through a refinement, and a control that cannot pass proves nothing.
+ */
+function sameSeed(left, right) {
+  if (Object.is(left, right)) return true;
+  if (typeof left !== "object" || typeof right !== "object" || left === null || right === null) {
+    return false;
+  }
+  return JSON.stringify(left) === JSON.stringify(right);
+}
+
 /** What a form derived from a one-field schema starts at, and what it says about that start. */
 function derive(leaf) {
   const form = createZodForm(z.object({ x: leaf }), { devWarnings: false });
@@ -99,7 +115,7 @@ battle(
         ["refined", row.refined],
       ].filter(([, seen]) => seen !== null);
       return spellings.flatMap(([spelling, seen]) =>
-        Object.is(seen.seed, row.base.seed)
+        sameSeed(seen.seed, row.base.seed)
           ? []
           : [{ kind: row.kind, spelling, base: row.base.seed, seen: seen.seed }],
       );
