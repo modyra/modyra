@@ -13643,6 +13643,43 @@ without breaking the black-box rule. The zod↔standard differential is two-way 
 the third vendor is covered only by the package's own tests.
 
 
+## 223 — Seven kinds of seventeen skip the draft's shape check (S0, SEC-006 SEC-001)
+
+`docs/guides/security.md` lists draft shape validation under **always-on structural checks**, and is
+careful about why it exists: *"A stored draft is untrusted input (`localStorage` is writable by any
+script on the origin)"*. An object restored into a `number` field is *"dropped and reported
+(`draft-shape`) instead of causing type confusion downstream"*.
+
+It names one exemption: *"Fields without a declared initial (raw-engine usage, where drafts
+legitimately create fields) restore as-is."*
+
+The exemption is wider than the sentence. What disables the check is an initial of **`null`** — and
+`null` is not the absence of a declaration. It is what the contract declares for every kind with no
+empty of its own. Measured with a hostile object stored in the draft, per kind:
+
+```
+number, select, radio, segmented, datepicker, timepicker   restored whole, nothing reported
+daterange                                                  restored whole, nothing reported
+text, textarea, email, password, colors, slider, checkbox,
+toggle, multiselect, file                                  dropped and reported
+```
+
+Seven of seventeen. Six because their seed is `null` — the contract's own answer for a kind with no
+empty (ADR 0086) — and `daterange` because its empty is itself an object, so any object fits.
+
+Not a remote corner: a number, a select, a date. A script on the origin writes `{"x":{…}}` into the
+stored draft and the form restores it whole into a field a renderer will read as a number, which is
+the *"type confusion downstream"* the check names as the thing it prevents. `field(null)` is the same
+story from the typed side, and it is the ordinary spelling of an optional field.
+
+The control is in the same measurement: ten kinds do drop and report it, so the check exists and
+works — it is the exemption that is drawn in the wrong place.
+
+Pinned by `adversarial/security/a-draft-check-half-the-kinds-skip.battle.test.mjs`, asserting the
+guide's own rule and not the mechanism: carrying the kind's shape into the check, or the value
+contract, or refusing objects where the seed is `null`, all satisfy it.
+
+
 ## The browser tier, measured — a baseline this register never had
 
 `npm run battle:browser` on the working tree at `6ee29144`:
@@ -13799,9 +13836,9 @@ the half-fix to overlay teardown did not close it on plain either.
 ## The register's own shape, measured
 
 ```
-numbered findings        222
+numbered findings        223
 closed or retracted       39
-open with a battle       190
+open with a battle       191
 open with none             9
 ```
 
