@@ -13136,12 +13136,52 @@ for any kind". `applyFlatValidators` is the other half, and the control that dem
 value be refused is what surfaced it.
 
 
+## 210 — The validator and the condition disagree about what empty means (S1, VAL-001 DYN-004)
+
+Two parts of the contract answer *has this been filled in?* — `required`, and the `isEmpty` a
+document's rules are written in. For three kinds they answer differently:
+
+```
+kind        seed                    required refuses it   isEmpty says empty
+text        ""                      yes                   yes
+number      null                    yes                   yes
+slider      0                       no                    no      ← the declared exception
+checkbox    false                   yes                   NO
+toggle      false                   yes                   NO
+daterange   {start:null,end:null}   yes                   NO
+```
+
+`slider` is the shape of an agreement rather than a defect — `schema.ts` says a thumb is always
+somewhere, so an untouched slider reads as filled, and **both halves read it that way**. It is the
+control that makes the other three wrong rather than merely different.
+
+Measured end to end on one consent box, before anyone touches it:
+
+```
+the rule reveals the address : true
+the form blocks the submit   : true
+what it says about consent   : ["This field is required"]
+```
+
+The form says the field is empty and the rule says it is filled, about the same untouched box, at the
+same moment. And the rule fails in the direction that opens: a section meant to appear *after* an
+answer appears before it — the failure `expression.ts` narrates for a different cause, *"shown to
+everyone, and the values inside it went into the payload"*.
+
+`daterange` is the same shape and harder to spot: its empty is `{start:null,end:null}`, and an object
+is not one of the things `isEmptyValue` looks inside.
+
+Pinned by `adversarial/validation/two-ideas-of-empty.battle.test.mjs`, over the whole vocabulary,
+with a control requiring both halves to give both answers somewhere — otherwise agreement would be a
+statement about one constant answer given twice.
+
+
 ## The register's own shape, measured
 
 ```
-numbered findings        209
+numbered findings        210
 closed or retracted       28
-open with a battle       180
+open with a battle       181
 open with none             6
 ```
 
