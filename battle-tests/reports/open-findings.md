@@ -13620,6 +13620,37 @@ core predicate makes no hierarchical claim to falsify. Recorded with both measur
 number, because the repair is one line and the sentence is one line.
 
 
+## A permission this suite grants itself and cannot exercise (harness)
+
+`battle-tests/harness/black-box-audit.mjs:6` names the specifiers a battle may import, and
+`@modyra/plain` is on the list. It does not resolve:
+
+```
+node_modules/@modyra/   angular core eslint-plugin lit preact react solid
+                        standard-schema svelte vue widgets zod          (12)
+the workspace has                                                        24
+the root package.json declares                                           12
+absent: @modyra/plain, @modyra/styles, and the ten @modyra/studio-*
+```
+
+pnpm links a workspace package into the root `node_modules` when something depends on it, and the
+root declares twelve. `packages/plain/dist/index.js` is built and its `exports` map is correct — the
+link is what is missing.
+
+Nothing fails today, and the reason is worth writing down rather than trusting: **no battle imports
+any of the twelve.** `every-runtime.test.mjs` names `@modyra/plain` only in a comment, the browser
+host bundles it after `build:plain`, and the Studio battles reach their targets through
+`execFileSync` rather than through an import. Checked one of each.
+
+So this is a trap rather than a break. A battle written against `@modyra/plain` — which the audit
+permits, which the original plan called for, and which is the **first** adapter in this project's
+stated priority order — fails at the import with `ERR_MODULE_NOT_FOUND`, and the failure looks
+nothing like its cause. It is also why the node tier has no coverage of plain at all: the tier that
+could hold it cannot import it.
+
+Classification: harness defect. The repair is a dependency line, not a change to any product.
+
+
 ## `i18n.md`, checked claim by claim — sound
 
 Every measurable sentence holds:
