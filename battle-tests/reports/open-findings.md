@@ -14900,9 +14900,37 @@ its own control: the undo really did restore the declared order, the rename real
 key in the old one's place, and the written object's own order really does disagree with both —
 without that last one, a battle where they happened to agree would prove nothing.
 
-## The browser tier, measured — a baseline this register never had
+## The browser tier, measured — and now gated like the other one
 
-`npm run battle:browser` on the working tree at `6ee29144`:
+`battle-tests/reports/known-red-browser.json` is the browser tier's baseline, written by
+`npm run battle:browser:ci -- --accept` and read by the CI job, which ran `battle:browser` and was red
+on every run until it stopped saying anything. Seventy-three specs are listed; a spec red without
+being listed fails the build.
+
+**Severity is derived rather than declared.** A browser spec's title carries none, so it is taken from
+the claims the file's header names — and only a third of the specs name one, which is why forty-three
+of the seventy-three read `unknown`. That is this suite's debt, not the product's.
+
+```
+S0  12      S1  17      S2  1      unknown  43
+```
+
+The twelve S0, and they are not scattered — most are a value that does not survive:
+
+```
+a-range-that-throws-away-what-you-type   three specs: what is typed, what lit does with it,
+                                         and what the contract does with what it could not read
+what-a-page-actually-sends               an array-shaped form's payload, and the gap a removal leaves
+one-document-two-renderers-one-payload   every kind, the same thing sent from both renderers
+a-time-that-vanished                     a corrected picker holding the correction and nothing else
+a-calendar-that-outlived-its-field       lit and plain both
+a-control-for-a-field-that-was-dropped   lit
+a-list-emptied-by-one-of-its-own-choices an option list carrying an inherited name, select and
+                                         multiselect, plain
+a-name-that-became-a-path                lit
+```
+
+The earlier run, for comparison — the same 73, and the count the register first carried:
 
 ```
 253 cases
