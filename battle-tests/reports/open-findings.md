@@ -13620,6 +13620,26 @@ core predicate makes no hierarchical claim to falsify. Recorded with both measur
 number, because the repair is one line and the sentence is one line.
 
 
+## `i18n.md`, checked claim by claim — sound
+
+Every measurable sentence holds:
+
+- the five presets (`en it de fr es`) carry **all 43** keys of `MDY_I18N_MESSAGES_DEFAULT`, none
+  missing and none extra. Only three strings per language are identical to English, and they are
+  words that legitimately coincide — "OK" for both confirms, "Minute" in German and French;
+- localized numeric parsing follows the locale's own order — `31/12/2026` (it-IT), `12/31/2026`
+  (en-US), `31.12.2026` (de-DE) — and **ISO is accepted everywhere**;
+- two-digit years map to 2000–2099 (`26`→2026, `99`→2099, `00`→2000);
+- `30/02/2026`, `29/02/2026`, month `13` and day `00` are all refused; `29/02/2024` is accepted.
+  `12/31/2026` read as it-IT is refused rather than guessed at.
+
+One imprecision, too small to number: the guide says *"`parseLocalizedDate` is exported for reuse"*
+without saying from where. It is not on `@modyra/core` — `@modyra/core/date-utils` does not resolve
+either — and neither are `parseAnyTime`, `to24Hour`, `formatTimeAs` or `buildDateLocale`. All five
+are on **`@modyra/core/datetime`**. Reading only the first measurement would have made this a
+finding; it is a missing subpath in a sentence.
+
+
 ## `schemas.md`, checked claim by claim — and one thing this suite cannot reach
 
 Every verifiable sentence in `docs/guides/schemas.md` holds:
