@@ -36,7 +36,7 @@ const DOCUMENT = Object.freeze({
               item: {
                 node: "group",
                 children: {
-                  sku: { node: "field", field: { kind: "text", label: "Sku", required: true } },
+                  sku: { node: "field", field: { kind: "text", label: "Sku", validators: { required: true } } },
                   allocations: {
                     node: "array",
                     item: {

@@ -25,13 +25,13 @@ const DOCUMENT = Object.freeze({
   schema: {
     node: "group",
     children: {
-      title: { node: "field", field: { kind: "text", label: "Title", required: true, initialValue: "invoice" } },
+      title: { node: "field", field: { kind: "text", label: "Title", validators: { required: true }, initialValue: "invoice" } },
       rows: {
         node: "record",
         item: {
           node: "group",
           children: {
-            code: { node: "field", field: { kind: "text", label: "Code", required: true } },
+            code: { node: "field", field: { kind: "text", label: "Code", validators: { required: true } } },
             note: { node: "field", field: { kind: "text", label: "Note" } },
             tax: { node: "field", field: { kind: "text", label: "Tax" } },
           },
