@@ -28,6 +28,8 @@ export const MDY_UNSUPPORTED_ADAPTER_OPTION = "MDY_UNSUPPORTED_ADAPTER_OPTION";
 export const MDY_ASYNC_FEATURE_DISABLED = "MDY_ASYNC_FEATURE_DISABLED";
 export const MDY_SSR_SNAPSHOT_MISMATCH = "MDY_SSR_SNAPSHOT_MISMATCH";
 export const MDY_ADAPTER_CONTRACT_VIOLATION = "MDY_ADAPTER_CONTRACT_VIOLATION";
+/** A second live form asked to persist under a draft key another form already holds. */
+export const MDY_DRAFT_KEY_IN_USE = "MDY_DRAFT_KEY_IN_USE";
 
 /** Reports every diagnostic to `console` (mapped by severity). Suitable as a dev-mode default. */
 export function createConsoleDiagnostics(): MdyDiagnostics {

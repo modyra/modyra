@@ -450,7 +450,7 @@ export class MdyFormEngine
       getValue: () => this.value(),
       patchValue: (value) => this.restoreValue(value),
       hasDraft,
-      warn: (message) => this._warn(message),
+      warn: (message, code) => this._warn(message, code),
       filterRestoredEntry: (key, value) => this._draftEntryAllowed(key, value),
       isDeactivated: () => this._deactivated,
       scope: this._scope,
