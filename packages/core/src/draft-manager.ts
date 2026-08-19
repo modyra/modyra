@@ -326,6 +326,17 @@ export class MdyDraftManager {
   private readonly _isDeactivated: () => boolean;
   /** Config from enableDraft(), recorded but not yet started (deactivated at the time). */
   private _pendingOptions: MdyDraftOptions | null = null;
+  /**
+   * What the form held when a deferred start was recorded.
+   *
+   * The baseline is "what the user has not changed", and for a form that starts with its own
+   * construction that is its initial value. A form built deactivated starts later, and taking the
+   * baseline then made everything written in between part of it: a form hydrated from a payload in
+   * the tick it was built kept nothing until the user typed, while a form that paused and resumed
+   * wrote on resuming. React and Preact construct with `autoActivate: false`, so that was the common
+   * case rather than the exotic one.
+   */
+  private _deferredBaseline: string | null = null;
   /** True once `_start()` has run at least once — resume() then just restarts the effect. */
   private _hasStarted = false;
 
@@ -379,8 +390,12 @@ export class MdyDraftManager {
     }
     if (this._isDeactivated()) {
       // Construction must stay pure and storage-free until activation
-      // (piano §10.5/§10.7) — record the config, do nothing else yet.
+      // (piano §10.5/§10.7) — record the config, do nothing else yet. The value is read, which
+      // touches no storage: it is the baseline the start would have taken had it happened here.
       this._pendingOptions = options;
+      this._deferredBaseline = this._serialize(
+        this._rx.untracked(() => this._getValue()),
+      ) ?? null;
       return;
     }
     this._start(options);
@@ -435,9 +450,10 @@ export class MdyDraftManager {
         this._storage.remove(this._key);
       }
     }
-    this._baseline = this._serialize(
+    this._baseline = this._deferredBaseline ?? this._serialize(
       this._rx.untracked(() => this._getValue()),
     ) ?? null;
+    this._deferredBaseline = null;
 
     this._hasStarted = true;
     this._startEffect();
