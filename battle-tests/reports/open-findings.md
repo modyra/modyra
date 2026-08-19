@@ -14340,6 +14340,40 @@ audit rather than reading it: it is a published command of this project, and wha
 answer. Control: schemas exist, the audit read at least one, and it reported a verdict.
 
 
+## Checked and clean: fail-closed at the depth cap (H-5)
+
+The charter asks that *"an unknown operator, a wrong-typed operand, or an expression at depth 33 must
+answer `false` or a diagnostic — never throw, never open a field."* The first two are findings 202 and
+203, both closed. The third holds:
+
+```
+depth  31   evaluates            validateExpression accepts
+depth  32   evaluates            accepts
+depth  33   evaluates            REFUSES
+depth 100   evaluates            REFUSES
+```
+
+Nothing throws at any depth, and a **document** carrying a validation past the cap is refused with
+`MDY_DYNAMIC_INVALID_VALIDATION` in strict mode — which is the door that matters, because a document
+is the untrusted half. A direct caller past the cap gets an answer rather than an exception, which is
+what `expression.ts` says it intends: the cap bounds what a document may carry, not what a caller may
+evaluate.
+
+One thing to know before re-measuring this: the obvious probe — `not` nested *n* deep over a constant
+— alternates by parity, so a run of `true`, `false`, `true` down the depths is the probe's arithmetic
+and not the cap.
+
+## The Fable 5 charter's author, and a message received
+
+`battle-tests/charter/fable5-hunts.md` and `.modyra/fable5-work-orders.md` were written by an external
+session (Kimi), which reached this one over the cross-session socket to say so and to ask that the
+truncated count be numbered. It already is: **finding 234**, filed before the message arrived, with
+the measurement `50 001 declared → 9 999 rejected`.
+
+Recorded here because the charter is now a source this register cites, and a reader should know where
+it came from without having to reconstruct it from a socket message.
+
+
 ## Checked and clean: the closed catalogue, attacked through every container (H-4)
 
 `adversarial/security/a-kind-nothing-lets-through.battle.test.mjs` — green, and meant to stay green.
