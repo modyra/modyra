@@ -171,6 +171,16 @@ for (const version of readdirSync(CORPUS)) {
   }
 
   for (const file of readdirSync(join(CORPUS, version))) {
+    // The context a fixture is built with lives beside it, not in it: the document is what three
+    // runtimes parse and the context is what a host supplies, which is the distinction ADR 0092
+    // draws. A fixture with no twin is one built without context.
+    if (file.endsWith(".context.json")) {
+      const document = file.replace(/\.context\.json$/, ".json");
+      if (!readdirSync(join(CORPUS, version)).includes(document)) {
+        findings.push(`spec/fixtures/dynamic-form/${version}/${file}: names no document (${document} is not there)`);
+      }
+      continue;
+    }
     fixtureCount += 1;
     const where = `spec/fixtures/dynamic-form/${version}/${file}`;
     const document = readJson(join("spec/fixtures/dynamic-form", version, file));
