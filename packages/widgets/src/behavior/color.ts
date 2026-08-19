@@ -22,7 +22,17 @@ export function colorValueTransition(intent: MdyColorValueIntent): MdyColorValue
   };
 }
 
-/** Case-insensitive comparison for equivalent HEX spellings. */
-export function colorValueEquals(left: string | null, right: string): boolean {
-  return (left ?? "").toLowerCase() === right.toLowerCase();
+/**
+ * Case-insensitive comparison for equivalent HEX spellings.
+ *
+ * Either side may be absent. A colour field holds a string by contract, but this function is
+ * published and decides whether the swatch redraws, whether the field is dirty and whether a draft
+ * is written — so a caller holding a colour nobody has chosen yet asks the question on both sides.
+ * Two absences are the same colour; one absence is not the colour on the other side.
+ */
+export function colorValueEquals(left: string | null | undefined, right: string | null | undefined): boolean {
+  if (left === null || left === undefined || right === null || right === undefined) {
+    return (left ?? null) === (right ?? null);
+  }
+  return left.toLowerCase() === right.toLowerCase();
 }
