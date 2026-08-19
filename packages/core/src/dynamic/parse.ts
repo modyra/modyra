@@ -21,6 +21,8 @@ import {
 import { dynamicPatternRefusal } from "./pattern-cost.js";
 import { explainValueMismatch, type MdyValueKind } from "../value-contracts.js";
 import { MDY_FIELD_KINDS } from "../field-kinds.js";
+import { required } from "../validators.js";
+import { mdyEmptyValueFor } from "./schema.js";
 import type { MdySelectOption } from "../types.js";
 
 import {
@@ -699,6 +701,25 @@ export function parseDynamicFields(input: unknown): MdyDynamicField[] {
         at,
       );
     }
+    // A constraint that cannot fail. A kind whose empty is a usable value — a slider, whose thumb is
+    // always somewhere — starts at a value `required` accepts, so the rule can never refuse
+    // anything. Nothing is lost and nothing leaks; what an author loses is the belief that a choice
+    // is compulsory, on a form that is submitted by somebody who never touched the control.
+    if (
+      (f as { validators?: { required?: unknown } }).validators?.required === true
+      && (MDY_FIELD_KINDS as readonly unknown[]).includes(f.kind)
+      // The **kind's** empty, not this field's initial: `mdyEmptyValueFor` answers with a declared
+      // initial when there is one, and a row that starts with values in it would otherwise read as a
+      // field whose `required` cannot fail — which is a statement about the kind, not about a value
+      // somebody put there.
+      && required()(mdyEmptyValueFor({ name: f.name, kind: f.kind } as MdyDynamicField)).length === 0
+    ) {
+      warnDev(
+        `Dynamic field "${f.name}" declares "required", and a "${String(f.kind)}" starts at a value ` +
+        `that satisfies it — the rule can never refuse anything, so the field is not compulsory.`,
+        at,
+      );
+    }
     const needsOptions = ["select", "radio", "multiselect", "segmented"];
     if (needsOptions.includes(f.kind as string)) {
       const options = (f as { options?: unknown }).options;
@@ -766,6 +787,7 @@ export const MDY_DYNAMIC_DIAGNOSTICS: ReadonlyArray<{
   { code: "MDY_DYNAMIC_OPTIONS_REQUIRED", phrase: "requires a valid options" },
   { code: "MDY_DYNAMIC_DUPLICATE_OPTION", phrase: "duplicate option value" },
   { code: "MDY_DYNAMIC_MISPLACED_VALIDATOR", phrase: "belongs in \"validators\"" },
+  { code: "MDY_DYNAMIC_CONSTRAINT_CANNOT_FAIL", phrase: "can never refuse anything" },
   { code: "MDY_DYNAMIC_PATTERN_TOO_LONG", phrase: "pattern length" },
   { code: "MDY_DYNAMIC_PATTERN_TOO_COSTLY", phrase: "backtracks exponentially" },
 ];
