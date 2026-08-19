@@ -56,8 +56,66 @@ export interface MdyPathRef {
   readonly path: string;
 }
 
-/** An operand is a literal, a reference to a field's value, or a nested expression. */
-export type MdyOperand = MdyPathRef | string | number | boolean | null | MdyExpression;
+/**
+ * The value of the field the clause is written on.
+ *
+ * A path names a field from the root, which a clause written once for the item of a collection
+ * cannot use: the row has no name until a person creates it. `{ self: true }` is how a condition
+ * says *this* value, wherever the clause ends up.
+ */
+export interface MdySelfRef {
+  readonly self: true;
+}
+
+/**
+ * The whole form value.
+ *
+ * An expression is evaluated against what encloses the clause, which inside a collection row is the
+ * row. `{ root: true }` is how a row-level condition reaches back out to the form it belongs to.
+ */
+export interface MdyRootRef {
+  readonly root: true;
+}
+
+/**
+ * A fact the host application supplies — a role, a tenant, today's date, a feature flag.
+ *
+ * It is an API between the application and whoever authors documents for it: the host supplies its
+ * context once for the application, and a document declares the keys it reads, so a document naming
+ * a key nobody supplies is answerable before anything is painted.
+ */
+export interface MdyContextRef {
+  readonly context: string;
+}
+
+/** An operand is a literal, a reference to a value, or a nested expression. */
+export type MdyOperand =
+  | MdyPathRef
+  | MdySelfRef
+  | MdyRootRef
+  | MdyContextRef
+  | string
+  | number
+  | boolean
+  | null
+  | MdyExpression;
+
+/**
+ * What an expression is read against, beyond the value it is evaluated on.
+ *
+ * Every member is optional because a caller may have none of them — a rule evaluated against a form
+ * value alone, which is every caller before this existed. A reference to something the scope does
+ * not carry does not resolve to nothing: the expression holding it answers `false`, so a condition
+ * that cannot be read never opens what it guards.
+ */
+export interface MdyExpressionScope {
+  /** The value of the field the clause is written on, for `{ self: true }`. */
+  readonly self?: unknown;
+  /** The whole form value, for `{ root: true }`. */
+  readonly root?: unknown;
+  /** The facts the host supplies, for `{ context: "key" }`. */
+  readonly context?: Readonly<Record<string, unknown>>;
+}
 
 /**
  * A predicate tree.
@@ -93,6 +151,22 @@ const OPS: ReadonlySet<string> = new Set<MdyExpressionOp>([
 /** Whether `operand` names a field rather than carrying a literal. */
 export function isPathRef(operand: MdyOperand): operand is MdyPathRef {
   return typeof operand === "object" && operand !== null && !("op" in operand) && "path" in operand;
+}
+
+/** Whether `operand` names the value of the field the clause is written on. */
+export function isSelfRef(operand: MdyOperand): operand is MdySelfRef {
+  return typeof operand === "object" && operand !== null && !("op" in operand) && (operand as MdySelfRef).self === true;
+}
+
+/** Whether `operand` names the whole form value. */
+export function isRootRef(operand: MdyOperand): operand is MdyRootRef {
+  return typeof operand === "object" && operand !== null && !("op" in operand) && (operand as MdyRootRef).root === true;
+}
+
+/** Whether `operand` names a fact the host supplies. */
+export function isContextRef(operand: MdyOperand): operand is MdyContextRef {
+  return typeof operand === "object" && operand !== null && !("op" in operand)
+    && typeof (operand as MdyContextRef).context === "string";
 }
 
 /** Whether `operand` is itself a predicate to evaluate first. */
@@ -186,10 +260,48 @@ const ARITY_OF: Readonly<Record<MdyExpressionOp, number>> = Object.freeze({
   not: 1,
 });
 
-function resolveOperand(operand: MdyOperand | undefined, value: unknown, depth: number): unknown {
+/**
+ * What a reference resolves to when the scope does not carry it.
+ *
+ * Not `undefined` and not `null`: both are values a form holds, so a missing `{ self: true }`
+ * answering `undefined` would make `isEmpty` true and open whatever it guards. An expression
+ * holding one of these answers `false` instead, which is the direction that keeps a field out of
+ * play rather than putting it in.
+ */
+const UNAVAILABLE = Symbol("modyra:operand-unavailable");
+
+/** One member of an `and`/`or`: an operand nobody can read is not a member that holds. */
+function truthyOperand(
+  operand: MdyOperand,
+  value: unknown,
+  depth: number,
+  scope: MdyExpressionScope | undefined,
+): boolean {
+  const resolved = resolveOperand(operand, value, depth, scope);
+  return resolved !== UNAVAILABLE && Boolean(resolved);
+}
+
+function resolveOperand(
+  operand: MdyOperand | undefined,
+  value: unknown,
+  depth: number,
+  scope: MdyExpressionScope | undefined,
+): unknown {
   if (operand === undefined || operand === null) return null;
-  if (isExpression(operand)) return evaluateAt(operand, value, depth + 1);
+  if (isExpression(operand)) return evaluateAt(operand, value, depth + 1, scope);
   if (isPathRef(operand)) return memberAccess(value, operand.path);
+  // The three that read something other than the value the expression is evaluated against. A
+  // caller with no scope has none of them, and a caller with a scope may still be missing one — a
+  // document naming a context key the host does not supply is the case the contract refuses before
+  // anything is painted, and this is what that refusal rests on.
+  if (isSelfRef(operand)) return scope !== undefined && "self" in scope ? scope.self : UNAVAILABLE;
+  if (isRootRef(operand)) return scope !== undefined && "root" in scope ? scope.root : UNAVAILABLE;
+  if (isContextRef(operand)) {
+    const context = scope?.context;
+    return context !== undefined && Object.hasOwn(context, operand.context)
+      ? context[operand.context]
+      : UNAVAILABLE;
+  }
   return operand;
 }
 
@@ -204,11 +316,25 @@ function resolveOperand(operand: MdyOperand | undefined, value: unknown, depth: 
  * this is the last resort rather than the only defence — but the two halves have to agree, and the
  * half that *decides* is this one.
  */
-export function evaluateExpression(expr: MdyExpression, value: unknown): boolean {
-  return evaluateAt(expr, value, 0);
+export function evaluateExpression(
+  expr: MdyExpression,
+  value: unknown,
+  /**
+   * What `{ self }`, `{ root }` and `{ context }` read. Omitted, none of them is available and an
+   * expression naming one answers `false` — which is what every caller written before they existed
+   * gets, unchanged.
+   */
+  scope?: MdyExpressionScope,
+): boolean {
+  return evaluateAt(expr, value, 0, scope);
 }
 
-function evaluateAt(expr: MdyExpression, value: unknown, depth: number): boolean {
+function evaluateAt(
+  expr: MdyExpression,
+  value: unknown,
+  depth: number,
+  scope?: MdyExpressionScope,
+): boolean {
   // Not an expression at all — `null`, a bare string, an object with no `op`. Reading an operand off
   // one raised from inside the submit a person had just pressed, which is the failure answering
   // `false` to an unknown operator exists to avoid: a document defect must not become a form that
@@ -227,14 +353,22 @@ function evaluateAt(expr: MdyExpression, value: unknown, depth: number): boolean
   // that opens.
   if (operands.length < ARITY_OF[expr.op as MdyExpressionOp]) return false;
   const [a, b] = operands;
-  const av = (): unknown => resolveOperand(a, value, depth);
-  const bv = (): unknown => resolveOperand(b, value, depth);
+  // Resolved before the operator runs, because an operand nobody can read is not a value to compare:
+  // whichever way the operator would answer, the honest answer is that the question was not asked.
+  // `and`/`or` are the exception — they hold whole expressions, each of which answers for itself.
+  if (expr.op !== "and" && expr.op !== "or" && expr.op !== "not") {
+    for (const operand of operands) {
+      if (resolveOperand(operand, value, depth, scope) === UNAVAILABLE) return false;
+    }
+  }
+  const av = (): unknown => resolveOperand(a, value, depth, scope);
+  const bv = (): unknown => resolveOperand(b, value, depth, scope);
 
   switch (expr.op) {
     case "equals":
-      return Object.is(av(), bv());
+      return sameValue(av(), bv());
     case "notEquals":
-      return !Object.is(av(), bv());
+      return !sameValue(av(), bv());
     case "isEmpty":
       return isEmptyValue(av());
     case "isNotEmpty":
@@ -284,9 +418,9 @@ function evaluateAt(expr: MdyExpression, value: unknown, depth: number): boolean
       }
     }
     case "and":
-      return operands.every((operand) => Boolean(resolveOperand(operand, value, depth)));
+      return operands.every((operand) => truthyOperand(operand, value, depth, scope));
     case "or":
-      return operands.some((operand) => Boolean(resolveOperand(operand, value, depth)));
+      return operands.some((operand) => truthyOperand(operand, value, depth, scope));
     case "not":
       return !av();
     default:
@@ -304,6 +438,27 @@ function evaluateAt(expr: MdyExpression, value: unknown, depth: number): boolean
  * A cross-field validator has to declare what it depends on, or it will not re-run when the field it
  * asks about changes. Deriving that from the expression removes the chance of the two disagreeing.
  */
+/**
+ * Equality as a form means it: SameValueZero, the comparison `Array.prototype.includes` and `Map`
+ * keys already use.
+ *
+ * The vocabulary is one vocabulary, and it had three answers for one comparison. The tree's
+ * `equals` was `Object.is`, the flat rule's was `===`, and both spellings of `in` were
+ * SameValueZero, which agrees with neither: `NaN` equalled `NaN` in three of the four doors and
+ * `-0` equalled `0` in two. Neither value is exotic — a number field holding text it cannot read
+ * *is* `NaN`, which the engine documents, and `-0` is what a minus in front of a zero parses to —
+ * and a `rules` entry with effect `hidden` decides whether a field is in play, so two authors
+ * writing the same condition in the two slots the contract offers got opposite answers about
+ * whether a value reaches the payload.
+ *
+ * SameValueZero is the reading that fits a form: `NaN` equals `NaN`, because the field either holds
+ * something unreadable or it does not and that is the only way to say so in a condition; `-0`
+ * equals `0`, because they are the same answer to the question the form asked.
+ */
+function sameValue(left: unknown, right: unknown): boolean {
+  return left === right || (Number.isNaN(left as number) && Number.isNaN(right as number));
+}
+
 /**
  * Answers a rule's condition — the flat predicate a document's `rules` slot carries.
  *
@@ -326,8 +481,8 @@ export function evaluateRuleCondition(
   const held = memberAccess(value, when.field);
   const expected = when.value;
   switch (when.operator) {
-    case "equals": return held === expected;
-    case "notEquals": return held !== expected;
+    case "equals": return sameValue(held, expected);
+    case "notEquals": return !sameValue(held, expected);
     // A pair, and complements: `notIn` is exactly `in` negated. Answering `false` to both when the
     // list is not one made the careful spelling — the negative, written to be safe — give the same
     // answer as the positive. A document cannot reach this: the parser refuses a membership test
@@ -398,10 +553,36 @@ export function expressionPaths(expr: MdyExpression): readonly string[] {
     }
     // A path the engine will not register is not a dependency; `validateExpression` refuses the
     // document that carries one, so nothing downstream has to subscribe to it.
+    //
+    // `{self}`, `{root}` and `{context}` are not paths and never appear here. The first two are read
+    // from what encloses the clause, which the caller already re-reads when it changes; the third is
+    // supplied by the host once for the application and is not a field at all.
     if (isPathRef(operand) && isReadablePath(operand.path)) paths.add(operand.path);
   };
   for (const operand of operandsOf(expr)) walk(operand, 1);
   return [...paths];
+}
+
+/**
+ * The context keys `expr` reads, so a host can be asked for them before a form is built.
+ *
+ * A document declaring a key nobody supplies is answerable at parse time rather than as a condition
+ * that quietly never fires: the keys are an API between the application and whoever authors
+ * documents for it, and this is the half a reader can check.
+ */
+export function expressionContextKeys(expr: MdyExpression): readonly string[] {
+  const keys = new Set<string>();
+  const walk = (operand: MdyOperand | undefined, depth: number): void => {
+    if (operand === undefined || operand === null) return;
+    if (depth > MDY_MAX_EXPRESSION_DEPTH) return;
+    if (isExpression(operand)) {
+      for (const nested of operandsOf(operand)) walk(nested, depth + 1);
+      return;
+    }
+    if (isContextRef(operand) && operand.context.length > 0) keys.add(operand.context);
+  };
+  for (const operand of operandsOf(expr)) walk(operand, 1);
+  return [...keys];
 }
 
 /**
@@ -454,8 +635,18 @@ function validateAt(expr: unknown, where: string, depth: number): readonly strin
       if (!isReadablePath(operand.path)) {
         problems.push(`${where}.operands[${index}]: "${operand.path}" is not a field path`);
       }
+    } else if (isSelfRef(operand) || isRootRef(operand)) {
+      // Nothing to check: they name one thing each, and whether it is available is a question about
+      // the caller rather than about the expression.
+    } else if (isContextRef(operand)) {
+      if (operand.context.length === 0) {
+        problems.push(`${where}.operands[${index}]: a context key cannot be empty`);
+      }
     } else if (typeof operand === "object" && operand !== null) {
-      problems.push(`${where}.operands[${index}]: an object operand must be {path} or a nested expression`);
+      problems.push(
+        `${where}.operands[${index}]: an object operand must be {path}, {self}, {root}, {context} ` +
+        "or a nested expression",
+      );
     }
   });
 
