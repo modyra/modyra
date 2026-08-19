@@ -53,16 +53,22 @@ export function buildDynamicValidators(
   readonly marksRequired: boolean;
 } {
   const say = validationMessagesForLocale(locale);
+  // The author's own words where the document wrote them, the form's language everywhere else.
+  const wrote = config.messages ?? {};
   const out: Array<ValidatorFn<never>> = [];
-  if (config.required) out.push(required(say.required));
-  if (config.email) out.push(email(say.email) as ValidatorFn<never>);
-  if (config.min !== undefined) out.push(min(config.min, say.min(config.min)) as ValidatorFn<never>);
-  if (config.max !== undefined) out.push(max(config.max, say.max(config.max)) as ValidatorFn<never>);
+  if (config.required) out.push(required(wrote.required ?? say.required));
+  if (config.email) out.push(email(wrote.email ?? say.email) as ValidatorFn<never>);
+  if (config.min !== undefined) {
+    out.push(min(config.min, wrote.min ?? say.min(config.min)) as ValidatorFn<never>);
+  }
+  if (config.max !== undefined) {
+    out.push(max(config.max, wrote.max ?? say.max(config.max)) as ValidatorFn<never>);
+  }
   if (config.minLength !== undefined) {
-    out.push(minLength(config.minLength, say.minLength(config.minLength)) as ValidatorFn<never>);
+    out.push(minLength(config.minLength, wrote.minLength ?? say.minLength(config.minLength)) as ValidatorFn<never>);
   }
   if (config.maxLength !== undefined) {
-    out.push(maxLength(config.maxLength, say.maxLength(config.maxLength)) as ValidatorFn<never>);
+    out.push(maxLength(config.maxLength, wrote.maxLength ?? say.maxLength(config.maxLength)) as ValidatorFn<never>);
   }
   if (config.pattern !== undefined) {
     if (config.pattern.length > MDY_MAX_DYNAMIC_PATTERN_LENGTH) {
@@ -81,7 +87,7 @@ export function buildDynamicValidators(
         );
       } else {
         try {
-          out.push(pattern(new RegExp(config.pattern), say.pattern) as ValidatorFn<never>);
+          out.push(pattern(new RegExp(config.pattern), wrote.pattern ?? say.pattern) as ValidatorFn<never>);
         } catch {
           warnDev(
             `Skipped dynamic pattern validator: invalid RegExp source "${config.pattern}".`,

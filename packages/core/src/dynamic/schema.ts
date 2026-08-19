@@ -15,6 +15,29 @@ import type { MdySelectOption } from "../types.js";
  * Serializable validator set for dynamic fields — safe to store as JSON in
  * a CMS or form-builder backend.
  */
+/**
+ * What a document may say instead of the framework's own sentence, per rule.
+ *
+ * The cross-field slot has carried a **mandatory** `message` since it existed, with the reason
+ * written beside it: *a validation nobody can read is a field that will not submit for no stated
+ * reason*. A field's own rules had no such slot, so the only sentence a person must read to get any
+ * further was the one an author could not write — and a document is the surface written by people
+ * who do not write code.
+ *
+ * Optional here rather than mandatory: the framework has a sentence for every one of these, in the
+ * form's own language, which the cross-field slot cannot have because only the author knows what the
+ * relationship means.
+ */
+export interface MdyDynamicValidatorMessages {
+  readonly required?: string;
+  readonly email?: string;
+  readonly min?: string;
+  readonly max?: string;
+  readonly minLength?: string;
+  readonly maxLength?: string;
+  readonly pattern?: string;
+}
+
 export interface MdyDynamicValidators {
   readonly required?: boolean;
   readonly email?: boolean;
@@ -24,6 +47,8 @@ export interface MdyDynamicValidators {
   readonly maxLength?: number;
   /** RegExp source string. */
   readonly pattern?: string;
+  /** What each rule says when it refuses, in the author's own words. */
+  readonly messages?: MdyDynamicValidatorMessages;
 }
 
 interface MdyDynamicFieldBase {

@@ -107,6 +107,41 @@
         "pattern": {
           "type": "string",
           "maxLength": 256
+        },
+        "messages": {
+          "type": "object",
+          "description": "What each rule says when it refuses, in the author's own words. Omitted, the form answers in its own language.",
+          "additionalProperties": false,
+          "properties": {
+            "required": {
+              "type": "string",
+              "minLength": 1
+            },
+            "email": {
+              "type": "string",
+              "minLength": 1
+            },
+            "min": {
+              "type": "string",
+              "minLength": 1
+            },
+            "max": {
+              "type": "string",
+              "minLength": 1
+            },
+            "minLength": {
+              "type": "string",
+              "minLength": 1
+            },
+            "maxLength": {
+              "type": "string",
+              "minLength": 1
+            },
+            "pattern": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
         }
       }
     },
