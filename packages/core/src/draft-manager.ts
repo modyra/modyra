@@ -196,28 +196,33 @@ function isDraftUnsafeLeaf(value: unknown): boolean {
   return false;
 }
 
-/** True when the value is (or contains) a draft-unsafe leaf (see above). */
+/**
+ * True when the value is (or contains) a draft-unsafe leaf (see above).
+ *
+ * Walked over an explicit stack, because this is one of the checks a **stored** draft has to pass
+ * and a stored draft is untrusted input: `localStorage` is writable by any script on the origin.
+ * `JSON.parse` reads a deeply nested document without difficulty, so the value arrives whole and a
+ * recursive check ran one frame per level until the stack ended — the guard failing on exactly the
+ * input it exists to check. The throw escaped `createForm`, so an application got no form at all,
+ * on every load, until someone cleared the key.
+ */
 function containsFile(value: unknown): boolean {
   if (value === null) return false;
   if (isDraftUnsafeLeaf(value)) return true;
-  if (typeof value === "object") {
-    return containsFileInner(value, new WeakSet<object>());
+  if (typeof value !== "object") return false;
+  const seen = new WeakSet<object>();
+  const pending: unknown[] = [value];
+  while (pending.length > 0) {
+    const held = pending.pop();
+    if (held === null) continue;
+    if (isDraftUnsafeLeaf(held)) return true;
+    if (typeof held !== "object") continue;
+    if (seen.has(held)) continue;
+    seen.add(held);
+    if (Array.isArray(held)) pending.push(...held);
+    else pending.push(...Object.values(held));
   }
   return false;
-}
-
-function containsFileInner(value: unknown, seen: WeakSet<object>): boolean {
-  if (value === null) return false;
-  if (isDraftUnsafeLeaf(value)) return true;
-  if (typeof value !== "object") return false;
-  if (seen.has(value)) return false;
-  seen.add(value);
-  if (Array.isArray(value)) {
-    return value.some(item => containsFileInner(item, seen));
-  }
-  return Object.values(value).some(item =>
-    containsFileInner(item, seen),
-  );
 }
 
 interface DraftManagerDeps {
