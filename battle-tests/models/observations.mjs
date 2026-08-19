@@ -107,18 +107,45 @@ export function diffCanonical(expected, actual, { ignore = [] } = {}) {
   return walk(expected, actual, "", new Set(ignore));
 }
 
+/**
+ * Whether one side carries the key at all.
+ *
+ * A record with no key and a record whose key holds `undefined` are different, and reading both
+ * through `record[key]` makes them the same. Encoded observations already keep them apart — the key
+ * list is part of the encoding — so this is the same guarantee for a record handed in raw.
+ */
+function presenceDivergence(expected, actual, key, at) {
+  const inExpected = Object.hasOwn(expected, key);
+  const inActual = Object.hasOwn(actual, key);
+  if (inExpected === inActual) return null;
+  return {
+    path: at,
+    expected: inExpected ? describe(expected[key]) : "<absent>",
+    actual: inActual ? describe(actual[key]) : "<absent>",
+  };
+}
+
 function walk(expected, actual, path, ignore) {
   if (path === "" && isPlainRecord(expected) && isPlainRecord(actual)) {
     const keys = sortedPaths(new Set([...Object.keys(expected), ...Object.keys(actual)]));
     for (const key of keys) {
       if (ignore.has(key)) continue;
+      const missing = presenceDivergence(expected, actual, key, key);
+      if (missing) return missing;
       const found = walk(expected[key], actual[key], key, ignore);
       if (found) return found;
     }
     return null;
   }
 
-  if (expected === actual) return null;
+  // `Object.is`, not `===`: two observations differing by the sign of a zero differ, and two `NaN`s
+  // are the same observation.
+  //
+  // Not a hole the suite could fall into — `encodeValue` already marks `-0` and `undefined`, so an
+  // observation that went through it carries the distinction before it arrives here. This makes the
+  // function right when it is called with raw values, which is what a probe does, and costs nothing
+  // when it is not.
+  if (Object.is(expected, actual)) return null;
 
   if (Array.isArray(expected) && Array.isArray(actual)) {
     const length = Math.max(expected.length, actual.length);
@@ -132,7 +159,10 @@ function walk(expected, actual, path, ignore) {
   if (isPlainRecord(expected) && isPlainRecord(actual)) {
     const keys = sortedPaths(new Set([...Object.keys(expected), ...Object.keys(actual)]));
     for (const key of keys) {
-      const found = walk(expected[key], actual[key], path ? `${path}.${key}` : key, ignore);
+      const at = path ? `${path}.${key}` : key;
+      const missing = presenceDivergence(expected, actual, key, at);
+      if (missing) return missing;
+      const found = walk(expected[key], actual[key], at, ignore);
       if (found) return found;
     }
     return null;
