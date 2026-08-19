@@ -1587,6 +1587,22 @@ export function parseDynamicForm(
         'document to "version": 2, which reads the same fields.',
     });
   }
+  // A member no version of this contract has. A document reaching for something the contract does
+  // not do — a computation, a slot an author expected to exist — parsed clean and rendered a form
+  // that quietly did not do it.
+  if (envelope !== undefined) {
+    const unknown = unknownMembers(envelope, MDY_DYNAMIC_MEMBERS.document);
+    if (unknown.length > 0) {
+      diagnostics.push({
+        code: "MDY_DYNAMIC_UNKNOWN_MEMBER",
+        severity: "error",
+        path: "/",
+        message:
+          `the document carries ${unknown.map((member) => JSON.stringify(member)).join(", ")}, which ` +
+          "this contract does not declare, so nothing reads it.",
+      });
+    }
+  }
   // A member the document's version predates, on the envelope. `requiresContext` arrived with v4 and
   // is read by the builder, so a v2 or v3 document carrying it declares a need nothing acts on.
   if (envelope?.requiresContext !== undefined && version !== null && version < 4) {
