@@ -809,14 +809,24 @@ export class MdyFormEngine
       return;
     }
     assertBaseline(name, this._initialValues.get(name), value);
-    // Sanitized once here so reset()/getChanges() compare against the value
-    // the field actually holds; the record write below re-applies the
-    // (idempotent) sanitizer harmlessly.
-    const sanitized = this._applySecurity(name, value);
-    this._initialValues.set(name, sanitized);
+    // Sanitized here so `reset()` and `getChanges()` compare against the value the field actually
+    // holds — and the record is written with the value as it arrived, because the signal sanitizes
+    // every write of its own.
+    //
+    // Handing the sanitized value down instead ran the sanitizer twice, which was written off as
+    // harmless on the grounds that a sanitizer is idempotent. DOMPurify is; escaping is not, and
+    // escaping is what a text sanitizer does. Every door that writes *through* a collection goes
+    // this way — a server response, a loaded record, a row added — so four load-and-save rounds with
+    // nobody touching the field turned `Tom & Jerry` into `Tom &amp;amp;amp; Jerry`, with no moment
+    // at which anyone got it wrong.
+    this._initialValues.set(name, this._applySecurity(name, value));
     const rec = this._fields.get(name);
-    if (rec) {
-      rec.state.value.set(sanitized);
+    if (rec === undefined) return;
+    // Only when it is not already what the field holds. Re-baselining a collection hands each
+    // descendant the value it is already holding, and writing it back runs the sanitizer over an
+    // output of the sanitizer — which is a second escape, not a repeat of the first.
+    if (!Object.is(this._rx.untracked(() => rec.state.value()), value)) {
+      rec.state.value.set(value);
     }
   }
 
@@ -1616,13 +1626,18 @@ export class MdyFormEngine
     // Untracked so no reactive dependency on the seed value is created when
     // called from inside a computed. has() (not ??) so an explicit initial
     // value of null wins over the seed.
-    const initialValue = this._initialValues.has(name)
+    // A declared initial has already been through the sanitizer, in `setInitialValue`, which is what
+    // `reset()` and `getChanges()` compare against. Running it again here escaped it a second time —
+    // the door every collection row goes through, so a value loaded and saved four times came back
+    // as `Tom &amp;amp;amp; Jerry` with nobody having got it wrong at any point.
+    const declared = this._initialValues.has(name);
+    const initialValue = declared
       ? this._initialValues.get(name)
       : this._rx.untracked(() => this._formValue())?.[name] ?? null;
 
     const rec = createFieldRecord(
       this._rx,
-      this._applySecurity(name, initialValue),
+      declared ? initialValue : this._applySecurity(name, initialValue),
       (v) => [...this._crossErrorsFor(name), ...this._serverErrorsFor(name, v)],
       (v) => this._applySecurity(name, v),
       (message) => this._warn(`"${name}" ${message}`),
