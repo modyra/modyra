@@ -14900,6 +14900,47 @@ its own control: the undo really did restore the declared order, the rename real
 key in the old one's place, and the written object's own order really does disagree with both —
 without that last one, a battle where they happened to agree would prove nothing.
 
+## 246 — A row that left no gap (S0, VAL-002 SUB-002 COL-001)
+
+`submitValue()` documents itself in one line — *"What would be sent right now: every field except the
+disabled ones"* — and that is a promise about **fields**. A row is not a field: in a positional
+collection it is a position, and position is identity.
+
+Two rows, one cell each, the first row's cell disabled:
+
+```
+getValue      [{"code":"v0a"}, {"code":"v0b"}]     both rows, as the form holds them
+submitValue   [{"code":"v0b"}]                     a list of one, and v0b is now index 0
+```
+
+A row with a second, **enabled** cell keeps its place — `[{"note":"v1a"}, {…}]` — so what decides is
+whether anything of the row survives, not whether the row is disabled. That is the shape of it: the
+rule is applied field by field, and a row that ends up with no fields stops being a row.
+
+**A renderer says "this line is locked" by disabling its cells.** An already-invoiced line, a row a
+permission forbids, a row the workflow has closed: the ordinary way to express it is exactly the way
+that removes it from the payload, and the rows below it are then sent at positions they do not have.
+A server updating by index writes into the wrong row.
+
+The keyed collection loses the row too, and that is the defensible half — a key that is not sent is a
+key a merge leaves alone. A list has no such reading.
+
+```
+disabled rows.a.code    {"b":{"code":"v0b"}}       a key absent from a patch
+disabled items.0.code   [{"code":"v0b"}]           a different list
+```
+
+Green when a positional collection's payload keeps the positions the form holds: the row survives with
+what it has left, or the contract says a fully disabled row is removed and a consumer reading
+`submitValue` can tell that it happened. Pinned by
+`adversarial/submission/a-row-that-left-no-gap.battle.test.mjs`, with two controls — a partly disabled
+row keeps its place, and the form itself still holds both rows, so the finding is about what is sent
+rather than about what was lost.
+
+Checked and clean beside it: every other disabled position behaves as the line documents — a top-level
+field, a field inside a group, a whole group, one cell of a two-cell row in either collection kind.
+The rule is right everywhere it has a field to apply to.
+
 ## The browser tier, measured — and now gated like the other one
 
 `battle-tests/reports/known-red-browser.json` is the browser tier's baseline, written by
@@ -15091,7 +15132,7 @@ the half-fix to overlay teardown did not close it on plain either.
 ## The register's own shape, measured
 
 ```
-numbered findings        245
+numbered findings        246
 closed or retracted       58
 open with a battle       207
 open with none            10
