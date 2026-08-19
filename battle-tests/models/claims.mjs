@@ -711,6 +711,17 @@ const CLAIMS = [
     ],
   },
   {
+    id: "DOC-001",
+    title: "Every import a guide shows is one the package exports at runtime.",
+    area: "documentation",
+    severity: "S3",
+    publicEvidence: [
+      "docs/guides/*.md — the code a reader copies into their own file",
+      "the exports of the published packages, which are what that code resolves against",
+      "docs/examples/feature-tour/feature-tour.test.mjs — one page's snippets, run",
+    ],
+  },
+  {
     id: "EXP-001",
     title: "A condition decides the same thing however it is spelled.",
     area: "dynamic-contract",

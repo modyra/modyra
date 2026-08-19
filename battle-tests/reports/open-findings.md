@@ -3,9 +3,10 @@
 ## Open now, and in the order they are repaired
 
 ```
-S0     2      the whole of it before any S1
+S0     1      the whole of it before any S1
 S1     3
 S2     4
+S3     1
       --
        9      open reds, 2026-08-19
 ```
@@ -15179,7 +15180,10 @@ every remediation is somebody noticing. Thirty-three are open, and the two that 
 one artifact a consumer runs. That is a posture rather than a defect, and it is the reason this
 register did not know about Jackson until the page was read by hand.
 
-## 252 — A key one form can take (S1, PER-004 PER-001)
+## 252 — A key one form can take (S1, PER-004 PER-001) — CLOSED
+
+**Closed, `6d31da65`, verified here by running it:** the battle is green against a build made from
+that commit, and the S0 count in the block at the top of this file fell from 2 to 1 as a result.
 
 The draft manager refuses to write over work that is not its own and says so once with
 `MDY_DRAFT_KEY_IN_USE`: *"a draft under this key holds paths this form does not declare, so it belongs
@@ -15601,6 +15605,51 @@ wrong-before-anybody-touched-it
 Split by renderer where the name says one: 25 name `lit`, 22 name `plain`, the rest name neither.
 `nowhere-for-the-keyboard-to-stand` fails on **both**, which answers a question asked of this measurement:
 the half-fix to overlay teardown did not close it on plain either.
+
+## 256 — A line in a guide a reader cannot run (S3, DOC-001)
+
+`docs/guides/schemas.md:31` is the first line of the Standard Schema guide's opening example:
+
+```ts
+import { createStandardForm, MdyStandardSchemaTree } from "@modyra/standard-schema";
+```
+
+`MdyStandardSchemaTree` is a **type**. The package exports it as one — `export type
+MdyStandardSchemaTree<TSchema extends MdyStandardSchemaV1>` — and there is no value behind the name,
+so the line resolves against nothing at runtime:
+
+```
+node, .mjs               SyntaxError: The requested module '@modyra/standard-schema'
+                         does not provide an export named 'MdyStandardSchemaTree'
+tsc, verbatimModuleSyntax  TS1484: 'MdyStandardSchemaTree' is a type and must be
+                         imported using a type-only import
+tsc, plain               compiles — the type is erased, which is why nobody saw it
+```
+
+Both were measured, not reasoned: the node error above is the process output, and TS1484 came from
+`tsc` over the same line with `verbatimModuleSyntax` on and again with `isolatedModules` alone, which
+tolerates it. The repository's own `tsconfig.json` sets neither, so nothing in this repository can
+catch it — the reader who does is the one who copied it.
+
+The repair is `type`, in one place. What is worth more than the line is what the sweep behind it
+found: **229 value-imported names, across 195 tracked markdown files, and this is the only one.**
+`@modyra/plain`, `@modyra/styles` and `@modyra/studio-codegen` are not linked at the repository root
+and had to be resolved through their own manifests — read as a bare specifier they would have been
+skipped, and skipped reads as clean.
+
+Two entry points are excluded and say so: `@modyra/angular/adapter` and `@modyra/angular/ui` reach
+`PlatformLocation` and fail with "needs to be compiled using the JIT compiler" before any export is
+visible. Their names are unchecked by anything today.
+
+Held by `battle-tests/hostile-consumers/a-snippet-a-reader-cannot-run.battle.test.mjs`, which cites
+the new claim `DOC-001` and carries two controls — the sweep must have read imports at all, and the
+set of unloadable specifiers must be exactly those two. Falsified by injecting a second wrong import
+into `docs/guides/devtools.md`: both the injected name **and** `mdyFormSnapshot` were caught, the
+latter because it lives behind `@modyra/core/devtools` rather than the package root.
+
+**Not a finding, checked:** `@modyra/core/ui`, `/theme-compiler`, `/localization` and `/color-utils`
+are named in markdown and are not exported at all — every mention is inside an ADR recording their
+removal or a changeset's `-import` diff line, which is where a removed specifier belongs.
 
 ## The register's own shape, measured
 

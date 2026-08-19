@@ -116,6 +116,32 @@ test("the register's count is rewritten from the file a run wrote", () => {
   assert.match(written, /the rest of the register, which must survive/);
 });
 
+test("a severity the block never had gets a row rather than only a larger total", () => {
+  // The rows and the total have to agree. Written as three fixed lines, the first S3 red raised the
+  // total and appeared nowhere under it, so the section that says "the file is right" pointed at a
+  // block that had lost a row.
+  const file = join(mkdtempSync(join(tmpdir(), "mdy-register-")), "open-findings.md");
+  writeFileSync(file, [
+    "```",
+    "S0     1      the whole of it before any S1",
+    "S1     2",
+    "S2     3",
+    "      --",
+    "       6      open reds, 2026-01-01",
+    "```",
+  ].join("\n"), "utf8");
+
+  writeRegisterSummary({ openReds: 10, bySeverity: { S0: 1, S1: 3, S2: 4, S3: 2 }, recordedAt: "2026-08-19" }, file);
+  const written = readFileSync(file, "utf8");
+  assert.match(written, /S3 {5}2/);
+  const rows = [...written.matchAll(/^S\d {4} ?(\d+)/gm)].map((each) => Number(each[1]));
+  assert.equal(rows.reduce((sum, each) => sum + each, 0), 10);
+
+  // And the same block, rewritten a second time with the severity gone, loses the row again.
+  writeRegisterSummary({ openReds: 8, bySeverity: { S0: 1, S1: 3, S2: 4 }, recordedAt: "2026-08-20" }, file);
+  assert.doesNotMatch(readFileSync(file, "utf8"), /S3/);
+});
+
 test("a register without the block is left alone rather than guessed at", () => {
   const file = join(mkdtempSync(join(tmpdir(), "mdy-register-")), "open-findings.md");
   writeFileSync(file, "# What is red, and why\n\nno block here at all\n", "utf8");
