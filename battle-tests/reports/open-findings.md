@@ -4394,6 +4394,17 @@ that loses to a local declaration is not an error.
 
 Classification: intentional limit or dead code, undeclared either way. S3.
 
+**Closed, and now guarded at the level that guesses nothing.** `2c81244a` renames the widget hook to
+`useMdyTextField` in both packages, and ADR 0085 records why a name a package exports belongs to one
+function.
+
+`adversarial/reactivity/a-name-that-shadows-an-export.battle.test.mjs` is the permanent regression.
+It takes no side about which hook should have won: it scans `packages/{react,preact,vue,svelte,solid,lit}/src`
+and asserts only that **no name an entry declares is also exported by another of its modules** — a
+fact about the sources rather than an opinion about behaviour, satisfied by renaming, by adding a
+subpath, or by dropping one. A control requires more than twenty modules scanned, so a glob that
+stopped matching reports itself instead of passing.
+
 Either resolution closes it: stop exporting it from `widgets/index.ts` and drop the module, or give
 the package a `./widgets` entry point so the name it publishes there is reachable.
 
@@ -12863,14 +12874,14 @@ requiring at least two kinds to start somewhere other than `null`.
 ```
 numbered findings        201
 closed or retracted       23
-open with a battle       171
-open with none             7
+open with a battle       172
+open with none             6
 ```
 
 The seven without a battle are the entries a test cannot hold: a capability nothing reads (37),
 constants outside a classifier (39), a campaign that explores one run (40), two entries about this
-hunt's own mistakes (51, 57), a hook two packages export (92), and forty-nine comments citing a plan
-that is not in the repository (198). Configuration, documentation and coverage — none of them a
+hunt's own mistakes (51, 57), and forty-nine comments citing a plan that is not in the repository
+(198). Configuration, documentation and coverage — none of them a
 behaviour a battle could pin.
 
 **The first count of this said ten, and was wrong.** It looked for `.battle.test.mjs` and `.spec.ts`,
