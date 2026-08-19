@@ -3,11 +3,11 @@
 ## Open now, and in the order they are repaired
 
 ```
-S0     8      the whole of it before any S1
-S1    14
+S0     6      the whole of it before any S1
+S1    15
 S2     3
       --
-      25      open reds, 2026-08-19
+      24      open reds, 2026-08-19
 ```
 
 Severity is the order of work: every S0, then every S1, then S2 and below. The same counts are in
@@ -15,7 +15,7 @@ Severity is the order of work: every S0, then every S1, then S2 and below. The s
 thing to repair. This section is written from that file rather than by hand — when the two disagree
 the file is right, because a run wrote it.
 
-Twenty-five battles fail on purpose, out of a suite of five hundred and thirty-eight. Each is a claim
+Twenty-four battles fail on purpose, out of a suite of five hundred and thirty-eight. Each is a claim
 the suite makes about published behaviour that the engine does not currently keep, reduced to the smallest
 sequence that shows it, and each names what would turn it green — usually two answers, because most
 have more than one defensible repair and the battle asserts the property rather than the fix.
@@ -14648,6 +14648,62 @@ is the arity-2 widget hook in solid, svelte and vue exactly as the record says. 
 renderer has no kind gap to go with this one: it renders no elements at all, by design, so there is
 no switch for a kind to be missing from.
 
+## 243 — An empty the piece refuses, and a valid form holding it (S1, SCH-002)
+
+ADR 0086 states the rule the zod bridge follows: *"The initial value of a derived leaf is an empty
+**its own piece accepts**"*, chosen in order — first *"what the piece parses `undefined` into — a
+default or an optional, unchanged"*, then `null` where the piece accepts it, then `""`, then `false`,
+then `null` for a piece with no representation for empty at all.
+
+Steps one, two and three hold. Measured, each seed accepted by its own piece:
+
+```
+z.string()                 ""     accepted
+z.string().default("d")    "d"    accepted        step one, working
+z.string().nullable()      null   accepted
+z.boolean()                false  accepted
+z.array(z.string())        []     accepted
+```
+
+An **optional** piece is step one's other half, and it lands on step five:
+
+```
+z.string().optional()      null   REFUSED         undefined and "" both pass
+z.number().optional()      null   REFUSED
+z.boolean().optional()     null   REFUSED
+z.enum([…]).optional()     null   REFUSED
+```
+
+The descriptor is where it happens — `buildZodTree(z.object({ f: z.string().optional() })).f` carries
+`initial: null` — so it is the bridge's choice and not core normalising an `undefined` away. The
+mechanism is visible in zod's own answer: `z.string().optional().safeParse(undefined)` returns
+`{success: true}` with **no `data` key at all**, so a step-one implementation reading `result.data`
+gets `undefined` and falls through whatever `?? null` follows. `.default("d")` returns `data: "d"`
+and takes the same step correctly, which is why four of five steps look right.
+
+**What makes it more than a seed.** A schema whose fields are all optional has nothing to require, so
+the form reports `valid: true` from the moment it exists:
+
+```
+form.state.valid()                    true
+form.getValue()                       {"note":null,"count":null,"agreed":null,"tier":null}
+schema.safeParse(form.getValue())     false — invalid_type ×3, invalid_value ×1
+```
+
+The consumer's natural last step before sending is to parse the value with the schema that describes
+it. It throws, on a form the library called ready, about fields nobody touched. Type one of them and
+the other three still throw.
+
+Green either way: the seed is one the piece accepts, or the form does not call itself valid while
+holding one it does not. Pinned by
+`adversarial/schema-adapters/an-empty-the-piece-refuses.battle.test.mjs`, with the five settled steps
+as the control and `form.state.valid()` asserted as the premise — a form that called itself invalid
+would be a form nobody submits, and the second battle would be asking nothing.
+
+Distinct from the bridge finding already open about transformations: that one is about `z.output`
+against what the form holds after a `.trim()` or a `z.coerce`, and its control checked what each
+piece *allows* for a value supplied to it. Nothing there measured the value the form starts at.
+
 ## The browser tier, measured — a baseline this register never had
 
 `npm run battle:browser` on the working tree at `6ee29144`:
@@ -14804,7 +14860,7 @@ the half-fix to overlay teardown did not close it on plain either.
 ## The register's own shape, measured
 
 ```
-numbered findings        242
+numbered findings        243
 closed or retracted       58
 open with a battle       207
 open with none            10
