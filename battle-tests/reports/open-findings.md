@@ -13405,6 +13405,17 @@ controls requiring the unpaused run to settle and a run to have been in flight a
 history and the not-starting of new runs across a pause. What it does not cover is a run that was
 **already** in flight, which is the one the environment guarantees.
 
+**The boundary, measured, because it narrows the repair.** Two neighbouring cases behave correctly:
+
+```
+paused during the debounce window   does not run while paused, runs after activate(), pending closes
+paused while a submit is in flight  the submit completes, submitting returns to false, submitCount 1
+```
+
+So it is not "the pause loses async work". A run that has not started is deferred correctly and a
+submit is unaffected. What is lost is the answer of a run that had **already started** when the pause
+began.
+
 
 ## The browser tier, measured — a baseline this register never had
 
