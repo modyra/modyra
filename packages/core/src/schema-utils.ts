@@ -14,6 +14,14 @@ import type { ValidatorFn } from "./types.js";
 /** Schema traversal result used by typed forms. */
 export interface MdySchemaPaths {
   readonly leafPaths: readonly string[];
+  /**
+   * The leaves declared *inside* a collection's row, as patterns — `tags.*`, `orders.*.lines.*.sku`.
+   *
+   * Kept apart from {@link MdySchemaPaths.leafPaths}, which is the list of paths a form actually has
+   * and which readers iterate to reach fields. A pattern reaches no field; it says what the shape of
+   * a row is, which is the question "is a row of this collection a value or a set of cells".
+   */
+  readonly itemLeafPaths: ReadonlySet<string>;
   readonly groupPaths: ReadonlySet<string>;
   readonly arrayPaths: ReadonlySet<string>;
   readonly recordPaths: ReadonlySet<string>;
@@ -82,6 +90,7 @@ function collectItemPaths(
   item: unknown,
   arrayPaths: Set<string>,
   recordPaths: Set<string>,
+  itemLeafPaths: Set<string>,
 ): void {
   // Over a stack for the same reason `walkSchema` is: nesting is unbounded, and the depth a document
   // declares must cost memory rather than stack.
@@ -109,7 +118,9 @@ function collectItemPaths(
     if (node.kind === "record") {
       recordPaths.add(current.prefix);
       pending.push({ prefix: `${current.prefix}.*`, item: node.item });
+      continue;
     }
+    itemLeafPaths.add(current.prefix);
   }
 }
 
@@ -118,6 +129,7 @@ export function collectSchemaPaths(nodes: MdyFormSchema): MdySchemaPaths {
   const groupPaths = new Set<string>();
   const arrayPaths = new Set<string>();
   const recordPaths = new Set<string>();
+  const itemLeafPaths = new Set<string>();
   walkSchema(
     nodes,
     "",
@@ -125,14 +137,14 @@ export function collectSchemaPaths(nodes: MdyFormSchema): MdySchemaPaths {
     (path) => groupPaths.add(path),
     (path, node) => {
       arrayPaths.add(path);
-      collectItemPaths(`${path}.*`, node.item, arrayPaths, recordPaths);
+      collectItemPaths(`${path}.*`, node.item, arrayPaths, recordPaths, itemLeafPaths);
     },
     (path, node) => {
       recordPaths.add(path);
-      collectItemPaths(`${path}.*`, node.item, arrayPaths, recordPaths);
+      collectItemPaths(`${path}.*`, node.item, arrayPaths, recordPaths, itemLeafPaths);
     },
   );
-  return { leafPaths, groupPaths, arrayPaths, recordPaths };
+  return { leafPaths, groupPaths, arrayPaths, recordPaths, itemLeafPaths };
 }
 
 /** Rebuilds the nested value shape from a flat dotted-path record. */

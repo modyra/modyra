@@ -24,6 +24,26 @@ export function isSafeFieldPath(name: string): boolean {
 }
 
 /**
+ * The path and every dotted path above it, outermost first: `"a.b.c"` yields `"a"`, `"a.b"`,
+ * `"a.b.c"`.
+ *
+ * The set of prefixes that cover a path is the set of its ancestors, so anything keyed by prefix is
+ * answered by lookups over this rather than by a scan: a form whose rows each register something
+ * under their own path has as many entries as rows, and scanning them once per path makes every
+ * write cost the size of the collection.
+ */
+export function ancestorsOf(name: string): string[] {
+  const paths: string[] = [];
+  let cut = name.indexOf(".");
+  while (cut !== -1) {
+    paths.push(name.slice(0, cut));
+    cut = name.indexOf(".", cut + 1);
+  }
+  paths.push(name);
+  return paths;
+}
+
+/**
  * The delimiter a generated id puts between its parts, mirrored from the id factory.
  *
  * Held here rather than imported so the lowest layer keeps no dependency on the widget contract:

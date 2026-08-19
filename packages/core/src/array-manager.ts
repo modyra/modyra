@@ -203,8 +203,7 @@ export class MdyArrayManager implements MdyNestedCollection {
 
     this._reconcile = reactivityRunsEffects(deps.rx)
       ? deps.rx.effect(() => {
-        const names = deps.engine.fieldNames();
-        const present = this._presentIndices(names);
+        const present = this._declaredIndices();
         deps.rx.untracked(() => this._absorb(present));
       })
       : null;
@@ -640,6 +639,18 @@ export class MdyArrayManager implements MdyNestedCollection {
     const segment = name.slice(prefix.length).split(".")[0] ?? "";
     const index = Number(segment);
     return Number.isInteger(index) && index >= 0 && String(index) === segment ? index : null;
+  }
+
+  /** The rows the form holds under this collection, asked of the form rather than filtered out of it. */
+  private _declaredIndices(): Set<number> {
+    const engine = this._deps.engine;
+    if (!engine.childSegmentsUnder) return this._presentIndices(engine.fieldNames());
+    const out = new Set<number>();
+    for (const segment of engine.childSegmentsUnder(this._deps.path)) {
+      const index = Number(segment);
+      if (Number.isInteger(index) && index >= 0 && String(index) === segment) out.add(index);
+    }
+    return out;
   }
 
   private _presentIndices(names: readonly string[]): Set<number> {
