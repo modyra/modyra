@@ -211,10 +211,16 @@ function rowDescriptor(element: z.ZodType):
  */
 function initialFor(piece: z.ZodType): unknown {
   const parsed = piece.safeParse(undefined);
-  if (parsed.success) return parsed.data ?? null;
+  // A default: the piece turns absence into a value, and that value is the seed.
+  if (parsed.success && parsed.data !== undefined) return parsed.data;
   if (piece.safeParse(null).success) return null;
   if (holdsEmpty(piece, "")) return "";
   if (holdsEmpty(piece, false)) return false;
+  // An optional accepts absence and nothing else here: it parses `undefined` into `undefined`, with
+  // no `data` at all. Read as a default, that answered `null` — a value the piece refuses — so a
+  // form of optional fields called itself valid while holding four values its own schema rejects,
+  // and the last thing a consumer does before sending is parse what the form holds.
+  if (parsed.success) return undefined;
   return null;
 }
 
