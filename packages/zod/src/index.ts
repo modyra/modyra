@@ -223,7 +223,16 @@ function initialFor(piece: z.ZodType): unknown {
 function holdsEmpty(piece: z.ZodType, candidate: "" | false): boolean {
   const result = piece.safeParse(candidate);
   if (result.success) return true;
-  return result.error.issues.every((issue) => issue.code === "too_small" || issue.code === "too_big");
+  // Refused for what the value *is*, not for what type it is. `too_small` and `too_big` are the
+  // library's own length checks; `custom` is a `.refine()`, which is what an author reaches for
+  // whenever the rule is not one of the built-ins — a consent to tick, a code with a checksum, a
+  // list that must contain a member. Reading only the first two made the seed depend on **how** a
+  // rule was written rather than on what it says: the same field with `.min(2)` started at `""` and
+  // with `.refine()` at `null`, where the author's own message never appeared either, because a
+  // value of the wrong type never reaches the predicate carrying it.
+  return result.error.issues.every(
+    (issue) => issue.code === "too_small" || issue.code === "too_big" || issue.code === "custom",
+  );
 }
 
 /** Array initial value: what the piece parses `undefined` into (default/optional), else []. */
