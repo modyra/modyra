@@ -655,7 +655,11 @@ export class MdyFormEngine
       this._claims.delete(name);
       // The claim moves to waiting before the record goes, so that what is keyed by the name and
       // belongs to the control — its disabled and readonly bindings — is kept for the row's return.
-      this._pendingClaims.set(name, count);
+      // It adds to whatever is already waiting: a path can hold live claims and waiting ones at once,
+      // when one control bound before the row existed and another after, and a count that replaced
+      // instead of adding lost the earlier control — releasing one then emptied the path while a
+      // control was still bound, and its bindings went with it.
+      this._pendingClaims.set(name, (this._pendingClaims.get(name) ?? 0) + count);
       this._destroyField(name);
     }
 
@@ -791,6 +795,15 @@ export class MdyFormEngine
    * fields survive, and the reconciliation that reads field names absorbs them back as rows.
    */
   endField(name: string): void {
+    // A control still bound does not stop being bound because the row under it ended. Its claim goes
+    // back to waiting — the state ADR 0044 calls a claim waiting for its row — so the next row this
+    // path names finds it there, with whatever the control had said about the field: a cell the
+    // consumer excluded stayed excluded for the row that arrived next, where deleting the claim let
+    // it back into the payload.
+    const held = this._claims.get(name);
+    if (held !== undefined && held > 0) {
+      this._pendingClaims.set(name, (this._pendingClaims.get(name) ?? 0) + held);
+    }
     this._claims.delete(name);
     this._owned.delete(name);
     this._destroyField(name);
