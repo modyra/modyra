@@ -14373,6 +14373,11 @@ the measurement `50 001 declared → 9 999 rejected`.
 Recorded here because the charter is now a source this register cites, and a reader should know where
 it came from without having to reconstruct it from a socket message.
 
+A second message asked for a ping back over the socket. Two attempts failed to send — by bare name
+and by ref, with that session listed as a live peer both times — so the acknowledgement it asked for
+is this paragraph rather than a message. Nothing depends on the channel: the charter is a file, and
+the findings pass through this register.
+
 
 ## Checked and clean: the closed catalogue, attacked through every container (H-4)
 
