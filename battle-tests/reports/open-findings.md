@@ -14273,6 +14273,41 @@ a separate assertion that no unsupported version produces fields, so the serious
 from the diagnostic half.
 
 
+## 236 — The published schema wants a `name` the type excludes (S2, DYN-004 DYN-003)
+
+**H-3 of the Fable 5 charter**, the differential it asks for: the published schema and the parser,
+over one corpus, in both directions.
+
+Six disagreements go one way and are **not** a defect: the schema accepts a costly pattern, a rule
+naming a field that is not there, a layout naming a ghost, an initial value of the wrong shape — and
+the parser refuses each. A JSON Schema is a shape grammar; it cannot know that `(a+)+$` backtracks or
+that `ghost` was never declared. Demanding agreement there is demanding that a grammar do semantics.
+
+The seventh goes the other way, and nothing about a grammar's limits explains it:
+
+```
+{ version: 3, schema: { node: "group", children: { a: { node: "field", field: { kind, label } } } } }
+   the published schema   REFUSES     "/schema/children/a/field must have required property 'name'"
+   the parser             accepts, and builds the form
+```
+
+`MdyDynamicFieldNode` declares `field: Omit<MdyDynamicField, "name">` — the name is the key the
+parent files it under, deliberately. **The published schema requires the property the type removes**,
+in `dynamic-form-v3.schema.json` and in `dynamic-form-v4.schema.json` alike.
+
+So an author writing the tree form against the types is told by their editor that a working document
+is wrong — `apps/vscode/package.json` points every `*.form.json` at that schema. An author following
+the editor writes a `name` the type says is not there, and which, by finding 227, the parser does not
+read.
+
+The tree form is the one the contract recommends for collections, so this lands on the shape used for
+the hardest documents.
+
+Pinned by `adversarial/dynamic-contract/the-schema-and-the-parser-on-one-corpus.battle.test.mjs`,
+which asserts only the direction a grammar cannot explain and logs the other six rather than
+demanding them. Control: the corpus must contain a document both surfaces take and one both refuse.
+
+
 ## The browser tier, measured — a baseline this register never had
 
 `npm run battle:browser` on the working tree at `6ee29144`:
@@ -14429,9 +14464,9 @@ the half-fix to overlay teardown did not close it on plain either.
 ## The register's own shape, measured
 
 ```
-numbered findings        235
+numbered findings        236
 closed or retracted       55
-open with a battle       202
+open with a battle       203
 open with none            10
 ```
 
