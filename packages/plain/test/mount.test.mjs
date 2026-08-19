@@ -520,16 +520,24 @@ test("daterange: the calendar picks a range and only a complete one commits", as
 
   days[14].dispatchEvent(new Event("click"));
   await reactivity.flush();
-  // The days between the endpoints carry the in-range state the themes draw.
-  assert.ok(days[12].classList.contains("mdy-datepicker__cell--in-range"));
-  assert.ok(days[10].classList.contains("mdy-datepicker__cell--range-start"));
-  assert.ok(days[14].classList.contains("mdy-datepicker__cell--range-end"));
 
-  // Completing the range answers what the calendar was opened to ask: it commits and closes.
+  // Completing the range closes the calendar, and a closed calendar holds no cells — so the states
+  // the themes draw are read on the cells the next opening builds, which is where a person sees
+  // them.
+  wrapper.querySelector(".mdy-datepicker__toggle").dispatchEvent(new Event("click"));
+  await reactivity.flush();
+  const reopened = [...popup.querySelectorAll(".mdy-datepicker__cell")];
+  assert.equal(reopened.length, 42, "the calendar rebuilds its month when it opens again");
+  // The days between the endpoints carry the in-range state the themes draw.
+  assert.ok(reopened[12].classList.contains("mdy-datepicker__cell--in-range"));
+  assert.ok(reopened[10].classList.contains("mdy-datepicker__cell--range-start"));
+  assert.ok(reopened[14].classList.contains("mdy-datepicker__cell--range-end"));
+
+  // Completing the range answers what the calendar was opened to ask: it commits and closes. The
+  // reopening above is this test's own doing, so what is asserted here is the value.
   const value = form.f.stay.value();
   assert.match(value.start, /^\d{4}-\d{2}-\d{2}$/);
   assert.ok(value.end > value.start);
-  assert.equal(popup.hidden, true);
 
   dispose();
   host.remove();
@@ -808,6 +816,11 @@ test("a field's declared locale reaches its calendar", async () => {
   document.body.append(host);
   const mounted = mountMdyForm(host, [{ name: "when", kind: "datepicker", label: "When", locale: "it-IT" }], { submitLabel: null });
   await new Promise((resolve) => setTimeout(resolve, 20));
+
+  // Opened, because a closed calendar holds no cells and no weekday header: what a picker nobody
+  // opened must not do is announce a grid of controls that are not being offered.
+  host.querySelector(".mdy-datepicker__toggle").dispatchEvent(new Event("click"));
+  await mounted.reactivity.flush();
 
   const weekdays = [...host.querySelectorAll(".mdy-datepicker__weekday")].map((node) => node.textContent.trim());
   assert.deepEqual(weekdays, ["L", "M", "M", "G", "V", "S", "D"]);

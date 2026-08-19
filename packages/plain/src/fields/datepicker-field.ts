@@ -265,6 +265,10 @@ export function renderDatepickerField(
           : `${dateLocale.monthNamesLong[state.viewMonth - 1]} ${state.viewYear}`,
     );
     monthLabel.setAttribute("aria-label", messages.datepickerChangeView(monthLabel.textContent ?? ""));
+    // The grid is named by the month it shows, rather than by whatever text happens to be inside it:
+    // a name made of day numbers is not a name, and it disappears with them when the calendar is
+    // closed and its cells go.
+    grid.setAttribute("aria-label", `${dateLocale.monthNamesLong[state.viewMonth - 1]} ${state.viewYear}`);
     // Paging belongs to the day view: in the other two the arrows would move a month nobody is
     // looking at.
     prevButton.hidden = state.viewMode !== "days";
@@ -272,7 +276,19 @@ export function renderDatepickerField(
     grid.hidden = state.viewMode !== "days";
     renderPeriodView(state.viewMode, state.viewYear, state.viewMonth);
 
-    if (renderedYear !== state.viewYear || renderedMonth !== state.viewMonth) {
+    // A closed calendar holds no cells. The popup element stays — it is built once and lives as long
+    // as the field does — but what is inside it is a month's worth of buttons announced as a grid,
+    // and a screen reader counting them in a picker nobody opened is being offered a control that
+    // is not there. The month is rebuilt on the way back in, which is what happens on a month change
+    // anyway.
+    if (!state.open) {
+      if (renderedMonth !== null) {
+        grid.replaceChildren();
+        cellEls = new Map();
+        renderedYear = null;
+        renderedMonth = null;
+      }
+    } else if (renderedYear !== state.viewYear || renderedMonth !== state.viewMonth) {
       // The controller owns which days exist and their state; the shared body owns the anatomy
       // (weekday header, one row per week) the themes lay out.
       cellEls = fillCalendar(grid, "datepicker", state.viewYear, state.viewMonth, dateLocale, (cell) => dispatch({ type: "select-date", iso: cell.iso }));
