@@ -47,7 +47,9 @@ describe("the constraints a field's rules state", () => {
     const [code] = inputs().all;
     expect(code!.getAttribute("minlength")).toBe("3");
     expect(code!.getAttribute("maxlength")).toBe("8");
-    expect(code!.getAttribute("pattern")).toBe("^[A-Z]+$");
+    // Wrapped, because the native attribute is anchored by the platform: a rule the author anchored
+    // themselves keeps its own anchors inside the group rather than being anchored twice.
+    expect(code!.getAttribute("pattern")).toBe("(?:^[A-Z]+$)");
   });
 
   it("survive composition", () => {
