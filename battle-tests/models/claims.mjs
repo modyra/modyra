@@ -666,6 +666,18 @@ const CLAIMS = [
     ],
   },
   {
+    id: "ADP-001",
+    title: "An adapter that publishes a door consumes the contract behind it.",
+    area: "dynamic-contract",
+    severity: "S2",
+    publicEvidence: [
+      "@modyra/react useMdyDynamicForm — the document path, published and consumed",
+      "@modyra/plain mountMdyForm — the same path, named differently",
+      "@modyra/angular MdyDynamicFormComponent — a door named for the contract",
+      "battle-tests/charter/fable5-hunts.md — H-1",
+    ],
+  },
+  {
     id: "DEV-001",
     title: "The panel describes a value it cannot serialize rather than raising on it.",
     area: "lifecycle",

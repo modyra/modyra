@@ -14155,6 +14155,44 @@ names.
 Pinned by `adversarial/dynamic-contract/a-depth-the-contract-claims.battle.test.mjs`.
 
 
+## 233 — Angular publishes a door named for the contract and never reads it (S2, ADP-001 DYN-001)
+
+**H-1 of `charter/fable5-hunts.md`, red by construction.** The work order names the missing
+capability; this is the pin that turns green when WO-1 lands.
+
+The document path is `parseDynamicForm` → `buildDynamicFormSchema` → `applyDynamicRules`. Measured
+across all eight adapters:
+
+```
+@modyra/react     publishes useMdyDynamicForm        names the path 4 times
+@modyra/plain     publishes mountMdyForm             names the path 3 times
+@modyra/angular   publishes MdyDynamicFormComponent  names it 0 times
+lit vue svelte solid preact   publish no such door   name it 0 times
+```
+
+The five silent adapters are not in question — an adapter that promises nothing about documents owes
+nothing. What `MdyDynamicFormComponent` promises is in its name, and what it takes is a `[fields]`
+input already parsed and already typed, leaving the host holding the untrusted half.
+`mdy-dynamic-form.component.ts:279` takes `layout` the same way, pre-parsed, which is how
+`ai-generated-forms.md` can truthfully say layout *is* applied by `@modyra/angular` while the path
+producing it lives elsewhere.
+
+The cost is the one the charter names: an application rendering one server document on two adapters
+writes the parse step twice — once as `mountMdyForm(container, result.fields, …)` and once by hand,
+with strict-mode diagnostics and the refusal of a partial form as the part most easily forgotten.
+
+Pinned by `adversarial/dynamic-contract/a-door-named-for-a-contract-it-does-not-read.battle.test.mjs`,
+which guesses nothing about the API that will close it: any shape of `[contract]` input satisfies it.
+Three controls — the walk found real files, at least one adapter publishes a door, at least one reads
+the contract.
+
+**Why source inspection rather than a call.** `@modyra/angular` cannot be imported here: its JIT
+compiler runs before any test gets a say (`battle-tests/angular/factories.battle.mjs` says the same
+and packs the published bundle instead). And a door that does not exist is indistinguishable from one
+that exists and is unused, seen from outside. Declared with `@source-inspection` under the rule the
+audit now enforces.
+
+
 ## The browser tier, measured — a baseline this register never had
 
 `npm run battle:browser` on the working tree at `6ee29144`:
@@ -14311,9 +14349,9 @@ the half-fix to overlay teardown did not close it on plain either.
 ## The register's own shape, measured
 
 ```
-numbered findings        232
-closed or retracted       49
-open with a battle       199
+numbered findings        233
+closed or retracted       54
+open with a battle       200
 open with none            10
 ```
 
