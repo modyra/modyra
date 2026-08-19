@@ -36,7 +36,9 @@ const schema = v.object({
 });
 
 // Opt-in: annotate with MdyStandardSchemaTree so schema/field drift
-// does not compile. Leaves are `Output | null` (null = not filled in).
+// does not compile. Leaves are `Input | null` (null = not filled in): a form holds what a person
+// typed and what a server sent, and validates it against the schema — it does not run the schema's
+// transformations, so `z.coerce.number()` is a field holding `"42"`, not `42`.
 const fields: MdyStandardSchemaTree<typeof schema> = {
   email: field<string | null>(null),
   age: field<number | null>(18),

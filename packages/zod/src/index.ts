@@ -51,15 +51,23 @@ export type MdyZodItemDescriptor<Elem extends z.ZodType> =
     ? MdyArrayDescriptor<MdyZodItemDescriptor<Item>>
     : Elem extends z.ZodRecord<infer _K, infer Value extends z.ZodType>
     ? MdyRecordDescriptor<MdyZodItemDescriptor<Value>>
-    : MdyFieldDescriptor<z.output<Elem> | null>;
+    : MdyFieldDescriptor<z.input<Elem> | null>;
 
 /**
  * Maps a Zod object shape to a Modyra schema tree at the type level:
  * nested `z.object()`s become groups, `z.array()`s become typed field
  * arrays, `z.record()`s become keyed collections, every other schema
- * becomes a leaf field typed
- * `z.output<Piece> | null` (`null` = not filled in yet — the Zod
- * validators reject it at submit time when the piece is required).
+ * becomes a leaf field typed `z.input<Piece> | null` (`null` = not filled in
+ * yet — the Zod validators reject it at submit time when the piece is required).
+ *
+ * **Input, not output.** A form holds what a person typed and what a server sent, and it validates
+ * that against the schema; it does not run the schema's transformations — `.trim()`,
+ * `.toLowerCase()`, `.transform()`, `z.coerce.*`. Typed as `z.output` the leaf promised the value
+ * *after* a transformation nobody applied, so `z.coerce.number()` declared `number | null` over a
+ * field holding `"42"`, and the type was wrong in the direction a consumer would trust.
+ *
+ * Transforming on the way in was the alternative and it costs more than it buys: `.trim()` applied
+ * to every keystroke takes the space out of "a b" while it is being typed.
  */
 export type MdyZodSchemaTree<Shape extends z.ZodRawShape> = {
   [K in keyof Shape]: Shape[K] extends z.ZodObject<infer Inner>
@@ -68,7 +76,7 @@ export type MdyZodSchemaTree<Shape extends z.ZodRawShape> = {
     ? MdyArrayDescriptor<MdyZodItemDescriptor<Elem>>
     : Shape[K] extends z.ZodRecord<infer _Key, infer Value extends z.ZodType>
     ? MdyRecordDescriptor<MdyZodItemDescriptor<Value>>
-    : MdyFieldDescriptor<z.output<Shape[K]> | null>;
+    : MdyFieldDescriptor<z.input<Shape[K]> | null>;
 };
 
 export interface MdyZodFormOptions<
