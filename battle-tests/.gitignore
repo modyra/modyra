@@ -2,6 +2,10 @@
 # promoting it to regressions/, not by committing the raw report.
 reports/failures/
 reports/*.json
+# The baseline is a decision, not a report: it records which battles are red because the defect they
+# describe is open, so a build can fail on a regression and on nothing else. Ignoring it would make
+# every known red look new on a fresh checkout.
+!reports/known-red.json
 
 # Packed tarballs and the temporary consumers installed from them.
 hostile-consumers/**/node_modules/
