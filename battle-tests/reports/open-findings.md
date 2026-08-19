@@ -13091,12 +13091,57 @@ is a third object again. Only the third arrangement is the product's own path, a
 measured here.
 
 
+## 209 — A constraint one level too high is silently no constraint (S1, DYN-004 VAL-001)
+
+The contract keeps a field's constraints in `validators`. Written on the field itself, five of the
+seven names do nothing and nothing says so — while two of them work, which is what makes the rule
+unlearnable:
+
+```
+             in `validators`   on the field   parser said
+required           2 rules         1 rule       nothing     ← lost
+email              2               1            nothing     ← lost
+minLength          2               1            nothing     ← lost
+maxLength          2               1            nothing     ← lost
+pattern            2               1            nothing     ← lost
+min                2               2            nothing       still works
+max                2               2            nothing       still works
+```
+
+`min` and `max` are legitimate members of `MdyDynamicNumberField` — they describe the control's
+range — so at the top level they are read. The other five are read by nobody: `required` is not part
+of `MdyDynamicFieldBase` at all, yet the parser keeps it on the field, and
+`buildDynamicFieldValidators` — the function the product itself uses — builds nothing from it. No
+validation, no `required()` on the handle, no `aria-required`. `ok: true` in **strict**.
+
+`docs/guides/ai-generated-forms.md` exists because these documents are written by models, and has to
+say in its own words *"validators may only contain: required (boolean), …"*. That sentence is there
+because this is the mistake that gets made; the parser does not catch it.
+
+**The battle does not ask the parser to refuse every property it does not know.** Ignoring the
+unknown is what lets a v3 document be read by a parser predating v3, and that is worth more than
+catching a typo. It asks something narrower and in the contract's own vocabulary: a property whose
+name **is** a validator the contract declares, appearing where validators do not live, either takes
+effect or is reported. Forward compatibility does not require silence about a word the contract
+already owns.
+
+Pinned by `adversarial/dynamic-contract/a-validator-one-level-too-high.battle.test.mjs`, measured
+through `buildDynamicFieldValidators` so it is not an artefact of one caller, with a control
+requiring every constraint to build something where it belongs.
+
+**Fourteenth instrument error, caught by its own control.** The first measurement read validity
+through `buildFlatFormSchema` alone, which builds a schema and applies no validators — so a
+`minLength: 2` control passed on an empty string and the whole table read as "required never works,
+for any kind". `applyFlatValidators` is the other half, and the control that demanded a known-bad
+value be refused is what surfaced it.
+
+
 ## The register's own shape, measured
 
 ```
-numbered findings        208
+numbered findings        209
 closed or retracted       28
-open with a battle       179
+open with a battle       180
 open with none             6
 ```
 
