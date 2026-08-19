@@ -14,8 +14,8 @@
  * page at once: not whether the snippet works, only whether the names in its import lines exist.
  *
  * Read from the built packages rather than from a list, because a list is a third surface that can
- * disagree. `CHANGELOG.md` and `.changeset/` are excluded: they record what was true at a version,
- * and a name a release removed is meant to still be named there.
+ * disagree. Pages that quote a *former* or *broken* import on purpose are excluded — a changelog, a
+ * changeset, and this suite's own register of findings.
  *
  * Green when every value-imported name in the tracked markdown is a runtime export of the package
  * the line names.
@@ -42,13 +42,14 @@ const IMPORT_CLAUSE = /import\s*(type\s+)?\{([^}]*)\}\s*from\s*["'](@modyra\/[a-
  * `PlatformLocation` and fail with "needs to be compiled using the JIT compiler" before any export
  * is visible, and skipping them would mean the names behind those doors are checked by nothing.
  *
- * `null` when the file re-exports from elsewhere. A static read of `export * from "…"` sees no
- * names, and a set that is missing names reports imports as wrong — so the honest answer there is
- * that this instrument cannot say, which the caller turns into a failure rather than a pass.
+ * `null` when the file carries `export * from "…"`, which names nothing a static read can see: a
+ * set that is missing names reports sound imports as wrong, so the honest answer there is that this
+ * instrument cannot say, which the caller turns into a failure rather than into a pass. A named
+ * `export { a, b } from "…"` is not lossy — every name it forwards is written on the line.
  */
 function declaredExports(file) {
   const source = readFileSync(file, "utf8");
-  if (/^export\s+(\*|\{[^}]*\}\s*from)/m.test(source)) return null;
+  if (/^export\s*\*/m.test(source)) return null;
   const names = new Set();
   for (const match of source.matchAll(/^export\s*\{([^}]*)\}/gm)) {
     for (const piece of match[1].split(",")) {
@@ -111,6 +112,7 @@ battle(
   async (ctx) => {
     const known = manifests();
     const exportsOf = new Map();
+    const readHow = new Map();
 
     /**
      * Three reads, in falling order of fidelity: the bare specifier a consumer writes, the entry
@@ -143,13 +145,19 @@ battle(
         }
       }
       ctx.log.note("a package was asked what it exports", { specifier, how, names: names?.size ?? 0 });
+      readHow.set(specifier, how);
       exportsOf.set(specifier, names);
       return names;
     };
 
-    const pages = tracked("*.md").filter(
-      (file) => !file.includes("CHANGELOG") && !file.startsWith(".changeset/"),
-    );
+    // A changelog and a changeset record what was true at a version, so a name a release removed
+    // belongs in both. This suite's own register quotes the broken line of every finding it holds,
+    // which is the same thing one step closer: a page that reports a defect is not a page that has
+    // one, and reading it as one would make filing a finding here the way to break this battle.
+    const pages = tracked("*.md").filter((file) =>
+      !file.includes("CHANGELOG")
+      && !file.startsWith(".changeset/")
+      && !file.startsWith("battle-tests/reports/"));
 
     const wrong = [];
     const unreadable = new Set();
@@ -189,6 +197,16 @@ battle(
     expectEqual([...unreadable].sort(), [], {
       claimIds: ["DOC-001"],
       what: "every package a guide imports from could be loaded and asked what it exports",
+    });
+
+    // Reading a module's export statements is the weakest of the three reads and the one that
+    // cannot notice a name the module fails to actually define. It is a fallback, so most doors must
+    // still open: an environment where every import throws would otherwise go green on static text.
+    const evaluated = [...readHow.values()].filter((how) => how.startsWith("imported")).length;
+    expectClaim(evaluated >= readHow.size - 2 && evaluated >= 5, {
+      claimIds: ["DOC-001"],
+      what: "the packages were read by importing them, bar the few that cannot be evaluated here",
+      detail: [...readHow].map(([specifier, how]) => `${specifier}: ${how}`).sort().join("; "),
     });
 
     expectEqual(wrong, [], {

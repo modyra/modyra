@@ -143,11 +143,13 @@ export function createArrayReferenceModel({ cells, initial = [] } = {}) {
     value: () => rows.map((row) => ({ ...row })),
 
     /**
-     * What a submit would carry: every cell except the disabled ones.
+     * What a submit would carry: every cell except the disabled ones, at the position it holds.
      *
-     * A row whose every cell is disabled contributes nothing and is absent rather than present and
-     * empty — the same shape a keyed collection produces, and the same sharp edge: a server that
-     * reads an absent row as a deletion sees a fully disabled one as one.
+     * A row whose every cell is disabled contributes nothing and is sent as `{}` rather than left
+     * out. In a positional collection the index is the identity — a correlated list beside it, a
+     * server that reads row three as row three — so dropping a row would move every row after it to
+     * a position that is not theirs. A keyed collection omits the key instead, because there the
+     * name is the identity and the order carries nothing.
      */
     submitted() {
       const out = [];
@@ -156,7 +158,7 @@ export function createArrayReferenceModel({ cells, initial = [] } = {}) {
         for (const name of cellNames) {
           if (!disabled.has(`${index}.${name}`)) kept[name] = row[name];
         }
-        if (Object.keys(kept).length > 0) out.push(kept);
+        out.push(kept);
       }
       return out;
     },
