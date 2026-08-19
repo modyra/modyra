@@ -720,6 +720,9 @@ export abstract class MdyTypedFormBase<
     this._registerSchema(schema);
     const arrayValidators = this._buildArrayValidators(schema);
 
+    // The form is built: what it holds now is what it started with, rows included.
+    this._adapter.markBaseline();
+
     this._enableHistory(options?.history);
     this._enableDraft(options?.draft);
     this._installFormValidators(options?.validators ?? [], arrayValidators);
@@ -1293,6 +1296,8 @@ export abstract class MdyTypedFormBase<
     // the wrong thing, arbitrarily far from the line that caused it.
     this._assertDeclares(name, "setInitialValue");
     this._adapter.setInitialValue(name, value);
+    // Declaring what a path started as says the path was there to start with.
+    this._adapter.noteBaseline?.(name);
   }
 
   /**

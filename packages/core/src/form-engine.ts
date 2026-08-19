@@ -333,6 +333,19 @@ export class MdyFormEngine
   /** Reactive list of field names — drives state.valid computation. */
   private readonly _fieldNames: MdyWritableSignal<readonly string[]>;
   private readonly _initialValues = new Map<string, unknown>();
+
+  /**
+   * The paths the form started with, once someone has said when that was.
+   *
+   * A baseline is two things and they are not the same: what a field started as, and whether the
+   * field was there at all. A row a user adds has cells whose declared initial is the value the row
+   * arrived with, so every one of them equals its own baseline and a patch built from the difference
+   * carried no trace of a row that is not in the stored document. Names are what separates them.
+   *
+   * `null` until a baseline is taken: an engine driven directly has never been told when its form
+   * stopped being built, and reporting every field as new would be worse than reporting none.
+   */
+  private _baselineFields: Set<string> | null = null;
   /** Reference count of controls claiming each field name. */
   private readonly _claims = new Map<string, number>();
   /**
@@ -839,6 +852,32 @@ export class MdyFormEngine
     this._owned.delete(name);
   }
 
+  /**
+   * Records which paths the form holds now as the ones it started with.
+   *
+   * Called when the form is built and whenever the current value becomes the baseline. What existed
+   * at that moment is the baseline's shape; what appears later — a row a user added — is a change
+   * whatever its cells hold.
+   */
+  markBaseline(): void {
+    this._baselineFields = new Set([...this._fields.keys(), ...this._initialValues.keys()]);
+  }
+
+  /**
+   * Adds a path to the baseline's shape, for a consumer declaring what that path started as.
+   *
+   * The subtree with it: a baseline declared on a collection is a statement about the rows it holds,
+   * and a consumer naming the level they can write — the collection — means the rows a user made
+   * under it are the ones the form now starts from.
+   */
+  noteBaseline(name: string): void {
+    if (this._baselineFields === null) return;
+    this._baselineFields.add(name);
+    for (const held of this._fields.keys()) {
+      if (held.startsWith(`${name}.`)) this._baselineFields.add(held);
+    }
+  }
+
   setInitialValue(name: string, value: unknown): void {
     // A path may name an ancestor. A collection's keys are data — a row the user added has a path
     // nobody could have written down — so a caller who can only name leaves can never move the
@@ -1069,6 +1108,14 @@ export class MdyFormEngine
    * Every pair is read before any is written, so a swap does not clear what it has just carried.
    */
   carryBindings(pairs: ReadonlyArray<readonly [from: string, to: string]>): void {
+    // Whether the baseline had the path travels with the rest: a row renamed is the row the form
+    // started with under another key, and a key is not a change of value. A row the baseline never
+    // had stays new under either key.
+    if (this._baselineFields !== null) {
+      for (const [from, to] of pairs) {
+        if (this._baselineFields.delete(from)) this._baselineFields.add(to);
+      }
+    }
     const carried: Array<{ from: string; to: string; binding: MdyPathBinding }> = [];
     for (const [from, to] of pairs) {
       const binding = this._bindings.get(from);
@@ -1471,6 +1518,8 @@ export class MdyFormEngine
         this.setInitialValue(name, rec.state.value());
       }
     });
+    // The shape too: the rows the form holds now are the rows it started with.
+    this.markBaseline();
     this._historyManager.rebaseline();
   }
 
@@ -1552,6 +1601,10 @@ export class MdyFormEngine
         ? this._initialValues.get(name)
         : null;
       const current = rec.state.value();
+      // A field the baseline never had is a change on its own: the cells of a row a user added carry
+      // the values the row arrived with as their declared initial, so nothing about them differs and
+      // a patch would have described a form with no such row.
+      if (this._baselineFields !== null && !this._baselineFields.has(name)) { out[name] = current; continue; }
       if (!Object.is(initial, current)) out[name] = current;
     }
     return out;
