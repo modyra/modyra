@@ -1089,6 +1089,9 @@ test("a layout slot and a validation may address a row's leaf", async () => {
 test("a rename is structure, so the change set stays quiet — and the next edit does not", () => {
   const form = createForm({ rows: record(rowSchema()) });
   form.f.rows.upsert("tmp:1", { nome: "typed", qta: 2 });
+  // A row the form was not built with is itself a change — reset would throw it away — so the
+  // baseline moves to hold it, and what the rename does is the only thing left to read.
+  form.rebaselineToCurrentValue();
 
   form.f.rows.rename("tmp:1", "77");
   assert.deepEqual(
