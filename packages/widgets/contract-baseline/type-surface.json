@@ -458,6 +458,7 @@
     "handle: MdyFieldHandle<MdyDateRangeValue>",
     "maxDate?: string | null",
     "minDate?: string | null",
+    "parseEntry?: (text: string) => string | null",
     "readonly?: boolean",
     "widgetId: string"
   ],
@@ -469,6 +470,7 @@
     "dirty: boolean",
     "disabled: boolean",
     "draft: MdyDateRangeValue",
+    "entryText: { readonly start: string | null; readonly end: string | null; }",
     "focusedDate: string",
     "interactivity: MdyInteractivity",
     "invalid: boolean",

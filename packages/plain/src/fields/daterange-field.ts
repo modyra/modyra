@@ -57,6 +57,14 @@ export function renderDaterangeField(
       minDate: bounds.minIso,
       maxDate: bounds.maxIso,
       firstDayOfWeek: dateLocale.firstDayOfWeek,
+      // The text goes to the controller as text, and the locale is what this renderer knows: a
+      // renderer that parsed here and dispatched only on success made an unreadable entry vanish,
+      // because nothing was dispatched and the repaint below rewrote the box from a value that had
+      // not changed.
+      parseEntry: (text) => {
+        const parsed = parseLocalizedDate(text, dateLocale.locale);
+        return parsed ? formatIsoDate(parsed) : null;
+      },
     },
     reactivity,
   );
@@ -122,35 +130,22 @@ export function renderDaterangeField(
     }
   }
 
-  function commitTyped(): void {
-    const parse = (raw: string): string | null => {
-      const parsed = parseLocalizedDate(raw, dateLocale.locale);
-      return parsed ? formatIsoDate(parsed) : null;
-    };
-    const start = parse(startInput.value);
-    const end = parse(endInput.value);
-    // Typing names both ends at once, which the controller reaches by picking them in order — the
-    // same two intents a click produces, so a typed range and a clicked one commit the same way.
-    if (start === null && end === null) {
-      dispatch({ type: "clear" });
-      return;
-    }
-    dispatch({ type: "clear" });
-    if (start !== null) dispatch({ type: "select-date", iso: start });
-    if (end !== null) dispatch({ type: "select-date", iso: end });
-    dispatch({ type: "confirm" });
-  }
-
   // Committing from the calendar restores focus to the start input, so the endpoints are synced
   // unless the user is mid-edit.
   let typing = false;
   toggle.addEventListener("click", () =>
     dispatch(controller.state().open ? { type: "cancel" } : { type: "open" }),
   );
-  for (const input of [startInput, endInput]) {
+  for (const [input, which] of [[startInput, "start"], [endInput, "end"]] as const) {
     input.addEventListener("input", () => { typing = true; });
-    input.addEventListener("change", () => { typing = false; commitTyped(); });
-    input.addEventListener("blur", () => { typing = false; handle.markAsTouched(); });
+    // One end at a time, as text. A range is written one box at a time, and committing only a whole
+    // readable range threw away a half-written one on the way out of the field.
+    input.addEventListener("change", () => { typing = false; dispatch({ type: "type", end: which, text: input.value }); });
+    input.addEventListener("blur", () => {
+      typing = false;
+      dispatch({ type: "type", end: which, text: input.value });
+      handle.markAsTouched();
+    });
   }
   prevButton.addEventListener("click", () => dispatch({ type: "navigate-month", delta: -1 }));
   nextButton.addEventListener("click", () => dispatch({ type: "navigate-month", delta: 1 }));
@@ -194,11 +189,13 @@ export function renderDaterangeField(
     applyPart(shell.errorList, a11y.error);
     // Merged, not applied twice: a second `applyPart` on the same element recomputes its classes
     // from the base it captured on the first call, which would silently drop the part's own.
-    for (const [input, iso, part] of [
-      [startInput, value.start, definition.parts.startControl],
-      [endInput, value.end, definition.parts.endControl],
+    for (const [input, iso, part, outstanding] of [
+      [startInput, value.start, definition.parts.startControl, state.entryText.start],
+      [endInput, value.end, definition.parts.endControl, state.entryText.end],
     ] as const) {
-      if (!typing) input.value = iso ?? "";
+      // What the field could not read stays where the person left it, so it can be corrected rather
+      // than silently emptied.
+      if (!typing) input.value = outstanding ?? (iso ?? "");
       // Both endpoints carry the state: a range half of which announces itself invalid is worse
       // than one that says nothing at all.
       applyPart(input, { ...part, attributes: { ...part.attributes, ...a11y.control.attributes } });
