@@ -97,10 +97,25 @@ const MASK = "•••";
  */
 function withoutValue(message: string, raw: unknown): string {
   const literals: string[] = [];
+  const seen = new WeakSet<object>();
   const collect = (value: unknown): void => {
     if (typeof value === "string") { if (value.length > 0) literals.push(value); return; }
     if (typeof value === "number" || typeof value === "bigint") { literals.push(String(value)); return; }
-    if (Array.isArray(value)) { for (const entry of value) collect(entry); }
+    if (value === null || typeof value !== "object") return;
+    // A cycle in a field's value is a host's business, not a reason to hang while masking a message.
+    if (seen.has(value)) return;
+    seen.add(value);
+    if (Array.isArray(value)) { for (const entry of value) collect(entry); return; }
+    // A form value is not only a string, a number or a list of them. A daterange holds
+    // `{ start, end }`, a file field a list of descriptors, a multiselect a list of option values
+    // that may be objects — and a kind's own contract check quotes the part it could not read. So
+    // the masked column and the errors column of one row disagreed about whether a value is a
+    // secret, which is the whole of what masking is for.
+    //
+    // Values only, never keys: a key masked out of a message — `pan`, `start` — would make every
+    // sentence naming the field unreadable, and a key is the field's own vocabulary rather than
+    // what the person typed.
+    for (const entry of Object.values(value as Record<string, unknown>)) collect(entry);
   };
   collect(raw);
   // Longest first: a value that contains another must not leave the shorter one's occurrence behind
