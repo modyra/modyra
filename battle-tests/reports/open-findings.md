@@ -3,8 +3,8 @@
 ## Open now, and in the order they are repaired
 
 ```
-S0     0      the whole of it before any S1
-S2     2
+S0     1      the whole of it before any S1
+S2     1
       --
        2      open reds, 2026-08-20
 ```
@@ -16385,6 +16385,54 @@ comment: refused, every combination, with a message naming the member.
 **Markup into the DOM.** The only `innerHTML` in `plain`, `widgets` and `lit` is `mdyIcon`, and it
 writes the package's own icon geometry — which is why finding 271 is about that constant being
 writable rather than about the assignment.
+
+## 274 — The repair for 272 deletes ten ordinary patterns (S0, SEC-004)
+
+`29044417` closed the ReDoS by reading two axes: a body is **variable** when it holds a quantifier
+whose minimum differs from its maximum, a group is **repeated** when what follows it can apply twice
+or more. Variable and repeated, refused.
+
+That is necessary and not sufficient, and the cost is not a corner case. **Ten of twenty patterns a
+form author plausibly writes are now refused**, and every one of them is measurably cheap:
+
+```
+                          refused    near-miss cost, by input length
+^(\d{1,3}\.){3}\d{1,3}$     yes        21:0.03  31:0.05  41:0.00  51:0.00  61:0.00  81:0.00
+^([a-z]+-)*[a-z]+$          yes        21:0.02  31:0.02  41:0.00  51:0.00  61:0.00  81:0.00
+^(\w+\.)*\w+$               yes        21:0.02  31:0.03  41:0.00  51:0.02  61:0.01  81:0.00
+^(\d+/)*\d+$                yes        21:0.02  31:0.02  41:0.00  51:0.00  61:0.00  81:0.00
+^(\s*[^,]+,)*\s*[^,]+$      yes        21:0.03  31:0.03  41:0.00  51:0.00  61:0.00  81:0.00
+^(\d{4}[ -]?){3}\d{4}$      yes        51:0.02  76:0.05 101:0.00 126:0.00 151:0.00 201:0.00
+^([A-Z][a-z]+ ?){1,4}$      yes        31:0.02  46:0.03  61:0.00  76:0.00  91:0.00 121:0.00
+^(ab?){3}$                  yes        21:0.01  31:0.02  41:0.00  51:0.00  61:0.00  81:0.00
+a hostname                  yes        31:0.03  46:0.04  61:0.00  76:0.00  91:0.00 121:0.00
+a hand-written email        yes        21:0.03  31:0.06  41:0.00  51:0.00  61:0.00  81:0.00
+
+^(a+){15}b$                 yes        11:0.05  16:0.18  21:5    26:146   31:3106     ← the control
+```
+
+Each input is that pattern's own near miss — its unit repeated, then a character that breaks the
+anchor — so this is not the "0 ms because the rule never ran" reading that has caught this hunt twice.
+The control curve is what a real one looks like beside them.
+
+An IPv4 validator, a hostname, a slug, a card number in groups, a name: these are what
+`validators.pattern` is *for*. A refusal deletes the rule, so a form that checked an IP address now
+accepts anything.
+
+**What separates the two sets, in the data.** The cheap ones have a **forced boundary**: the body ends
+in a literal or class the variable part cannot match — `\.`, `-`, `/`, `,`, a space — or is
+fixed-width, so there is exactly one way to split the input between two repetitions. `(a+){15}` has
+fifteen variable spans with nothing between them; `(.*a){20}` has a boundary that `.` can eat. Variable
+repetition creates the *opportunity* to split the input more than one way; only ambiguity makes the
+engine try them all.
+
+`esecutore` reported the `(ab?){3}` case unprompted and recorded it in the ADR amendment as a declared
+cost. The measurement says the cost is ten in twenty rather than one shape, which is a different
+decision than the one the amendment describes, and it is the user's to take: today `validators.pattern`
+refuses half of what it is used for.
+
+Held by the same battle as 272 — the ten are now in `MUST_STAY_ALLOWED`, so the two directions fail
+against each other and neither can be satisfied by giving up on the other.
 
 ## The register's own shape, measured
 

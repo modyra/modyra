@@ -2,14 +2,15 @@
   "note": "Battles that are red because the defect they describe is open. A red listed here does not fail a build; a red that is not listed is a regression. Rewrite with `npm run battle:ci -- --accept`.",
   "order": "Repair in severity order: every S0, then every S1, then S2 and below. `bySeverity` is the count at each, and `knownRed` is sorted the same way, so the top of the list is the next work.",
   "recordedAt": "2026-08-20",
-  "seed": "20260814",
-  "runs": "25",
+  "seed": "(none — the run drew a fresh seed, so this list is one walk of many)",
+  "runs": "(default)",
   "openReds": 2,
   "bySeverity": {
-    "S2": 2
+    "S0": 1,
+    "S2": 1
   },
   "knownRed": [
-    "[S2][DYN-001,DYN-003] every version one runtime accepts is one the others have a position on",
-    "[S2][DYN-003,DYN-001] a path too long is refused whichever door declared it"
+    "[S0][SEC-004] a pattern a document declares cannot stop the page",
+    "[S2][DYN-001,DYN-003] every version one runtime accepts is one the others have a position on"
   ]
 }
