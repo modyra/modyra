@@ -481,7 +481,12 @@ export function createRenameProjectCommand(name: string): Command {
       return name.trim() ? [] : error("EMPTY_NAME", "Form name cannot be empty");
     },
     apply(project: MdyStudioProject): MdyStudioProject {
-      return { ...structuredClone(project), name: name.trim() };
+      // The spread is the whole copy this command needs. It changes one top-level string and
+      // touches nothing under `schema`, so the deep clone that used to sit here duplicated every
+      // node in the document to leave all of them identical — the cost of the project paid for the
+      // cost of the edit. Every other command in this file mutates its copy in place and still
+      // needs one; this one never did.
+      return { ...project, name: name.trim() };
     },
     inverse(before: MdyStudioProject): Command {
       return createRenameProjectCommand(before.name);
