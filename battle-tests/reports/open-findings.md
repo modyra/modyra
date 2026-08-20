@@ -4,10 +4,9 @@
 
 ```
 S0     0      the whole of it before any S1
-S1     1
 S2     1
       --
-       2      open reds, 2026-08-20 09:08:38 UTC
+       1      open reds, 2026-08-20 09:39:25 UTC
 ```
 
 Severity is the order of work: every S0, then every S1, then S2 and below. The same counts are in
