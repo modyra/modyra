@@ -1,6 +1,6 @@
 {
   "name": "@modyra/preact",
-  "version": "0.6.0",
+  "version": "0.7.0",
   "description": "Preact binding for the Modyra form engine — a thin variant of the React adapter on preact/hooks.",
   "keywords": [
     "preact",
@@ -39,8 +39,8 @@
   },
   "sideEffects": false,
   "dependencies": {
-    "@modyra/core": "^2.1.2",
-    "@modyra/widgets": "^2.1.0"
+    "@modyra/core": "^2.2.0",
+    "@modyra/widgets": "^2.2.0"
   },
   "peerDependencies": {
     "preact": ">=10.19.0"

@@ -1,5 +1,245 @@
 # @modyra/standard-schema
 
+## 0.7.0
+
+### Minor Changes
+
+- bc26268: A derived leaf is typed by what the form holds
+
+  A form holds what a person typed and what a server sent, and validates it against the schema. It does
+  not run the schema's transformations — `.trim()`, `.toLowerCase()`, `.transform()`, `z.coerce.*` —
+  and the published leaf type said otherwise: mapped over `z.output` / the Standard Schema output type,
+  `z.coerce.number()` declared `number | null` over a field holding `"42"`. The type promised the value
+  after a transformation nobody applied, which is wrong in the direction a consumer trusts.
+
+  Both trees now map over the **input** type, and the guide says so.
+
+  **Migration.** Where the two differ, a leaf's type changes: `z.coerce.number()` is now
+  `string | number | null` rather than `number | null`. Transform at the boundary you own — in the
+  submit action, or with `.transform()` applied to the value you send — rather than expecting the form
+  to have done it. Applying transformations on the way in was the alternative and it costs more than it
+  buys: `.trim()` on every keystroke takes the space out of `"a b"` while it is being typed.
+
+### Patch Changes
+
+- 7811bde: A library that breaks the spec is reported, not allowed to take the form down
+
+  The Standard Schema contract on this side is a TypeScript interface — a structural copy with zero
+  dependencies, and nothing checking the other end at runtime. An issue is therefore untrusted input,
+  and `issue.path` was read as though it were not:
+
+  ```js
+  { message: "…", path: "name" }        // TypeError: issue.path.map is not a function
+  { message: "…", path: { key: "name" } }
+  { message: "…", path: 3 }
+  ```
+
+  That throws out of form-level validation, which runs on construction _and_ on every write — so it is
+  not a form missing one message, it is no form at all. Every other untrusted ingress in the engine
+  reports and skips: an invalid RegExp source, a hostile field name, a draft of the wrong shape.
+
+  A malformed path now attributes its message to the **form** and warns once, naming the vendor from
+  `~standard.vendor`:
+
+  ```
+  [modyra] @modyra/standard-schema: "pretend-validator" returned an issue where issue.path is not an
+  array. Standard Schema v1 says a path is an array of keys or { key } objects; the message is kept
+  and attributed to the form rather than to a field.
+  ```
+
+  The message is kept: a rule the engine cannot place is still a rule the user has to be told about.
+  Once per vendor and shape, because form-level validation runs on every keystroke and the finding does
+  not become truer by repetition.
+
+  Both spellings the spec allows keep reaching their field — `["profile", "city"]` and
+  `[{ key: "profile" }, { key: "city" }]` — and an absent, empty or `null` path stays form-level. A
+  single segment written without its array, `{ key: "name" }`, is **not** accepted: it is the most
+  likely honest mistake and accepting it would make this adapter's shape space wider than the spec's,
+  so the next library guesses differently.
+
+  Found by `battle-tests/adversarial/schema-adapters/standard-issue-paths.battle.test.mjs`.
+
+- Updated dependencies [435a31a]
+- Updated dependencies [76509d3]
+- Updated dependencies [d2cdcaa]
+- Updated dependencies [27224d8]
+- Updated dependencies [894699d]
+- Updated dependencies [f297a3c]
+- Updated dependencies [09b1c21]
+- Updated dependencies [6e53749]
+- Updated dependencies [25d004c]
+- Updated dependencies [57c68d8]
+- Updated dependencies [de7e122]
+- Updated dependencies [3fa4c1a]
+- Updated dependencies [45eb775]
+- Updated dependencies [d2cdcaa]
+- Updated dependencies [039059c]
+- Updated dependencies [3f0787e]
+- Updated dependencies [7ac08a7]
+- Updated dependencies [4892a49]
+- Updated dependencies [d9203ee]
+- Updated dependencies [2904441]
+- Updated dependencies [ccde959]
+- Updated dependencies [1c164b7]
+- Updated dependencies [5440e08]
+- Updated dependencies [b9897fb]
+- Updated dependencies [a9dcdb4]
+- Updated dependencies [d95d4c4]
+- Updated dependencies [d470286]
+- Updated dependencies [f22d828]
+- Updated dependencies [f47ef54]
+- Updated dependencies [69b18ae]
+- Updated dependencies [6690972]
+- Updated dependencies [6d31da6]
+- Updated dependencies [a51d3db]
+- Updated dependencies [6bc3df5]
+- Updated dependencies [404109c]
+- Updated dependencies [5f8a35c]
+- Updated dependencies [d51b2fa]
+- Updated dependencies [8dde798]
+- Updated dependencies [cec751a]
+- Updated dependencies [95bb48b]
+- Updated dependencies [f00ead6]
+- Updated dependencies [0c3a770]
+- Updated dependencies [1783afc]
+- Updated dependencies [f47ee5e]
+- Updated dependencies [b6a1325]
+- Updated dependencies [3ff02a3]
+- Updated dependencies [7f847da]
+- Updated dependencies [3233dd4]
+- Updated dependencies [d89c221]
+- Updated dependencies [1b76a2c]
+- Updated dependencies [a2a2bda]
+- Updated dependencies [7c8e0b4]
+- Updated dependencies [eab4653]
+- Updated dependencies [c521845]
+- Updated dependencies [599695f]
+- Updated dependencies [d443319]
+- Updated dependencies [5b5b2df]
+- Updated dependencies [ade50ff]
+- Updated dependencies [a336b22]
+- Updated dependencies [0994475]
+- Updated dependencies [7c53545]
+- Updated dependencies [896f37b]
+- Updated dependencies [86bda68]
+- Updated dependencies [abb242d]
+- Updated dependencies [b1874dd]
+- Updated dependencies [bc1cc05]
+- Updated dependencies [1c8e529]
+- Updated dependencies [0a96145]
+- Updated dependencies [e59d37c]
+- Updated dependencies [ecca49f]
+- Updated dependencies [2e005a4]
+- Updated dependencies [892c01b]
+- Updated dependencies [551320a]
+- Updated dependencies [e6b35e4]
+- Updated dependencies [e35174d]
+- Updated dependencies [5e32e40]
+- Updated dependencies [29849b2]
+- Updated dependencies [626ec0a]
+- Updated dependencies [8ad9612]
+- Updated dependencies [a0f68a9]
+- Updated dependencies [c5f854a]
+- Updated dependencies [618a7d0]
+- Updated dependencies [906115b]
+- Updated dependencies [c395a2c]
+- Updated dependencies [df8db70]
+- Updated dependencies [9133c94]
+- Updated dependencies [e712ea0]
+- Updated dependencies [2066daa]
+- Updated dependencies [2882c66]
+- Updated dependencies [9133c94]
+- Updated dependencies [c8f3eb4]
+- Updated dependencies [2dd4cff]
+- Updated dependencies [fe06a63]
+- Updated dependencies [afb6d57]
+- Updated dependencies [7695d89]
+- Updated dependencies [7f739f7]
+- Updated dependencies [70ccff8]
+- Updated dependencies [02bbad2]
+- Updated dependencies [e2ad213]
+- Updated dependencies [7c299e2]
+- Updated dependencies [717a69e]
+- Updated dependencies [e7e15c7]
+- Updated dependencies [6712836]
+- Updated dependencies [2bf8290]
+- Updated dependencies [095e9ef]
+- Updated dependencies [9f45e15]
+- Updated dependencies [c7b25ce]
+- Updated dependencies [cfa1ec6]
+- Updated dependencies [c228019]
+- Updated dependencies [0879e90]
+- Updated dependencies [44a23e5]
+- Updated dependencies [daf38f2]
+- Updated dependencies [d6a97f6]
+- Updated dependencies [7cbcd34]
+- Updated dependencies [ca1c6c3]
+- Updated dependencies [aa3574c]
+- Updated dependencies [c464e35]
+- Updated dependencies [bbf6081]
+- Updated dependencies [4914abd]
+- Updated dependencies [b5c81b7]
+- Updated dependencies [315a533]
+- Updated dependencies [30d8a97]
+- Updated dependencies [c0e0348]
+- Updated dependencies [49cebaa]
+- Updated dependencies [7d5dc5b]
+- Updated dependencies [8802f09]
+- Updated dependencies [bf0c12e]
+- Updated dependencies [67aa107]
+- Updated dependencies [e30a985]
+- Updated dependencies [85ff99a]
+- Updated dependencies [9190e59]
+- Updated dependencies [ad86c08]
+- Updated dependencies [0f9cf08]
+- Updated dependencies [e4182c0]
+- Updated dependencies [cd62884]
+- Updated dependencies [59c70fe]
+- Updated dependencies [211ee54]
+- Updated dependencies [3fa4c1a]
+- Updated dependencies [000f195]
+- Updated dependencies [bd8a9ed]
+- Updated dependencies [357316c]
+- Updated dependencies [7997644]
+- Updated dependencies [5589197]
+- Updated dependencies [9f29b19]
+- Updated dependencies [89e7d14]
+- Updated dependencies [bda72f8]
+- Updated dependencies [d2e0d7f]
+- Updated dependencies [556517c]
+- Updated dependencies [4749edc]
+- Updated dependencies [eacc848]
+- Updated dependencies [83e94a5]
+- Updated dependencies [50e1211]
+- Updated dependencies [2707f44]
+- Updated dependencies [87ff0a4]
+- Updated dependencies [621866a]
+- Updated dependencies [3c7f88f]
+- Updated dependencies [d9583ff]
+- Updated dependencies [d51b2fa]
+- Updated dependencies [8e5fef8]
+- Updated dependencies [c8c8470]
+- Updated dependencies [e712ea0]
+- Updated dependencies [5029184]
+- Updated dependencies [ca1c6c3]
+- Updated dependencies [07bea5d]
+- Updated dependencies [c849c60]
+- Updated dependencies [e16ed4f]
+- Updated dependencies [b137ea2]
+- Updated dependencies [2b04e24]
+- Updated dependencies [55dd238]
+- Updated dependencies [4bc6e19]
+- Updated dependencies [74dbda3]
+- Updated dependencies [3b6ecac]
+- Updated dependencies [8347116]
+- Updated dependencies [bd05055]
+- Updated dependencies [9133c94]
+- Updated dependencies [14d74cc]
+- Updated dependencies [e7b5f9c]
+- Updated dependencies [bb37b4e]
+- Updated dependencies [c48c9c1]
+  - @modyra/core@2.2.0
+
 ## 0.6.0
 
 ### Minor Changes

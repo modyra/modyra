@@ -1,5 +1,116 @@
 # @modyra/studio-ui
 
+## 0.6.0
+
+### Minor Changes
+
+- 9116bde: Studio can author a keyed collection
+
+  `RecordNode` joins `ArrayNode` in the project model, and a collection's row may itself be a
+  collection. The compiler emits the contract's `record` node, codegen emits `record(...)` with the
+  rows the author declared as `initial`, the index walks a row template of either kind, and the
+  preview draws a keyed collection from the keys its handle reports rather than from a row count.
+
+  One rule holds across the pipeline: a path crosses **one** positional level. An array below another
+  array is refused at compile with `UNSUPPORTED_NESTING`, naming the node that declared it, and
+  nothing unaddressable is emitted.
+
+### Patch Changes
+
+- 1b26cac: A row count that is not a finite number does not reach the contract as `null`
+
+  The same gate as the code generator's bounds, in a different package reading the same field.
+  `compileToContract` spread a collection's row count when `typeof minItems === "number"`, and the
+  contract is written as JSON:
+
+  ```
+  min: 3         →  "minItems": 3
+  min: "3"       →  absent            (the wrong type was already dropped)
+  min: NaN       →  "minItems": null  nothing reported
+  min: Infinity  →  "minItems": null  nothing reported
+  ```
+
+  `parseDynamicForm` accepts the resulting contract with no diagnostic either, so the author's rule is
+  absent from the output and nothing between the project and the engine says so.
+
+  A project has two outputs and one validator feeds both, in two packages that each decided for
+  themselves what a number is. Both are `Number.isFinite` now.
+
+  `@modyra/studio-ui` had the third instance on authored data: a layout's track count for a breakpoint,
+  where `NaN` reached the grid as `repeat(NaN, …)` and painted a layout nobody wrote.
+
+  Found by `battle-tests/adversarial/studio/`, filed as one defect across two surfaces rather than two
+  coincidences.
+
+- Updated dependencies [bf05bc0]
+- Updated dependencies [c0b44a8]
+- Updated dependencies [ac052bc]
+- Updated dependencies [f76eeb3]
+- Updated dependencies [2a4e09a]
+- Updated dependencies [d03419c]
+- Updated dependencies [439d615]
+- Updated dependencies [85a7ad0]
+- Updated dependencies [a300af5]
+- Updated dependencies [f00ead6]
+- Updated dependencies [75cfd90]
+- Updated dependencies [28485d9]
+- Updated dependencies [833a5f6]
+- Updated dependencies [6e672c5]
+- Updated dependencies [5a95871]
+- Updated dependencies [a219a90]
+- Updated dependencies [0a96145]
+- Updated dependencies [117ecba]
+- Updated dependencies [0a6d296]
+- Updated dependencies [9191632]
+- Updated dependencies [9cd8dc2]
+- Updated dependencies [8c92015]
+- Updated dependencies [be91a76]
+- Updated dependencies [9fab18e]
+- Updated dependencies [1b26cac]
+- Updated dependencies [afb6d57]
+- Updated dependencies [2d01ed6]
+- Updated dependencies [0211979]
+- Updated dependencies [32ae232]
+- Updated dependencies [4051d66]
+- Updated dependencies [7cd79cc]
+- Updated dependencies [9a7c524]
+- Updated dependencies [b75b5d3]
+- Updated dependencies [7cbcd34]
+- Updated dependencies [023d6c7]
+- Updated dependencies [1f91ae2]
+- Updated dependencies [1eaa4cd]
+- Updated dependencies [178ddce]
+- Updated dependencies [e4182c0]
+- Updated dependencies [c3b519f]
+- Updated dependencies [7e1b5a5]
+- Updated dependencies [4678b59]
+- Updated dependencies [000f195]
+- Updated dependencies [92b7f7b]
+- Updated dependencies [1e91463]
+- Updated dependencies [8514984]
+- Updated dependencies [89e7d14]
+- Updated dependencies [4af560a]
+- Updated dependencies [621866a]
+- Updated dependencies [483d9b7]
+- Updated dependencies [a9f1f37]
+- Updated dependencies [9116bde]
+- Updated dependencies [ea534af]
+- Updated dependencies [010fa6a]
+- Updated dependencies [009d7ad]
+- Updated dependencies [294ff44]
+- Updated dependencies [a629f50]
+  - @modyra/studio-codegen@0.6.0
+  - @modyra/plain@0.9.0
+  - @modyra/styles@0.8.0
+  - @modyra/studio-contract@0.6.0
+  - @modyra/studio-target-json@0.5.6
+  - @modyra/studio-model@0.6.0
+  - @modyra/studio-editor@0.6.0
+  - @modyra/studio-target-core@0.5.2
+  - @modyra/studio-target-react@0.5.2
+  - @modyra/studio-target-angular@0.5.2
+  - @modyra/studio-preview@0.5.6
+
 ## 0.5.6
 
 ### Patch Changes

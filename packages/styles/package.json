@@ -1,6 +1,6 @@
 {
     "name": "@modyra/styles",
-    "version": "0.7.1",
+    "version": "0.8.0",
     "description": "Framework-agnostic themes for modyra: the stylesheets, and the colour arithmetic that generates them.",
     "license": "MIT",
     "author": "Lorenzo Muscherà",

@@ -1,8 +1,8 @@
 {
   "name": "@modyra/studio-target-react",
-  "version": "0.5.1",
+  "version": "0.5.2",
   "private": true,
-  "description": "Modyra Studio: the React MVP target scope (plan section 10) \u2014 generates a real @modyra/react useMdyForm() definition and implementation stubs from a Studio project.",
+  "description": "Modyra Studio: the React MVP target scope (plan section 10) — generates a real @modyra/react useMdyForm() definition and implementation stubs from a Studio project.",
   "license": "MIT",
   "type": "module",
   "main": "./dist/index.js",

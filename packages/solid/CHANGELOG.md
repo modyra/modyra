@@ -1,5 +1,361 @@
 # @modyra/solid
 
+## 0.7.0
+
+### Minor Changes
+
+- 1780236: A Solid server render no longer reports an invalid form as valid
+
+  Node resolves `solid-js` to its **server build** unless the `browser` export condition is set — which
+  is what a server render uses. On that build `createMemo` computes once and never again and
+  `createEffect` never runs, so every derived value in a form freezes at the state it was created in:
+
+  ```js
+  createForm(
+    { name: field("", [required()]) },
+    { reactivity: solidReactivity() }
+  );
+
+  form.state.valid(); // true
+  form.state.canSubmit(); // true  ← for a form with an empty required field
+  form.f.name.set("x");
+  form.state.valid(); // still true — nothing recomputes
+  ```
+
+  It failed in the permissive direction, silently: a server consulting the form to decide whether to
+  accept a submission was told yes. The adapter meanwhile reported `capabilities.effects: true`.
+
+  `solidReactivity()` now probes the graph it resolved — one signal, one memo, once per process, since
+  which build was resolved is fixed when the module loads — and when
+  computations do not re-run it returns the framework-agnostic graph carrying `kind: "solid"`, warning
+  once with the cause. A server render reads each value once and emits markup, which that graph does
+  correctly and the inert build cannot do at all.
+
+  **The client build is untouched**: it has a live graph, never reaches the fallback, and hydration
+  runs on Solid's own signals exactly as before. The probe asks about behaviour rather than matching a
+  filename, so a future Solid build whose server graph recomputes takes the live path automatically.
+
+  Found while checking a differential's Solid disagreement that had been classified as an artefact of
+  the test runner's export condition. It is an artefact there and the production SSR path here.
+  Recorded as [ADR 0055](https://github.com/modyra/modyra/blob/main/docs/architecture/0055-a-runtime-that-cannot-recompute-is-not-the-one-to-run-on.md).
+
+### Patch Changes
+
+- dc54501: The reactivity binding gets a module of its own
+
+  Three packages declared their binding to the host's reactivity in the package
+  entry, and the entry re-exports the widget hooks — so a hook reaching for the
+  binding imported the entry that exports it. Six module cycles, the same ring
+  three times.
+
+  The binding moves to `src/reactivity.ts` in each, as `@modyra/core` did with
+  its own, and both the entry and the hooks import it from there. Nothing about
+  the published surface changes: the entry still exports every name it exported.
+
+- 404109c: A draft is not a linked signal
+
+  Asked whether the reactive contract should grow a linked signal — a writable
+  signal that resets when its source changes — the four places that looked like it
+  turned out to be three things.
+
+  Two were caches and stale, and a plain `computed` removed them. Two are drafts,
+  and a linked signal would make them **wrong**: a draft is what protects a choice
+  in progress from what arrives elsewhere, so resetting it when the value changes is
+  the yank it exists to prevent — a calendar jumping to a range that came from the
+  server while the user is choosing one. They re-seed on _open_, which is an event,
+  not a dependency.
+
+  So `linked` does not enter `MdyReactivity`, and `capabilities.writableComputed`
+  leaves it: a capability every one of the eight adapters answered `false` and no
+  consumer ever asked about. Adapters that spelled it delete the line.
+
+  Recorded as ADR 0034, including the check the decision does not have: nothing
+  asserts that an external write during an open popup leaves a draft alone.
+
+- 0f9cf08: A runtime that declares no comparator decides change with `Object.is`
+
+  The published conformance suite had a case for a _declared_ `equal` and none for the comparison a
+  runtime makes when nothing is declared, so `===` and `Object.is` were both conformant. They differ on
+  two values: `===` calls `0` and `-0` the same and `NaN` different from itself, so a number field
+  written `-0` over `0` re-renders nothing and one holding `NaN` re-renders on every write of the same
+  `NaN`.
+
+  `runReactivityContractTests` now requires `Object.is`. An adapter for a runtime whose native default
+  is `===` must override it — `@modyra/solid` did not, despite a comment claiming otherwise, and now
+  passes `Object.is` to `createSignal` and `createMemo`. Vue, React, Preact and Svelte were measured
+  and already agreed.
+
+  An adapter outside this repository that ran the suite and passed may now fail; the failure predates
+  the case. See ADR 0104.
+
+- 8514984: Executing widget commands, written once
+
+  Eight adapters had the same command executor: collect focus and scroll into a queue, run everything
+  else now, drain the queue after the host has rendered. What differed was the id of a live region and
+  one call — `queueMicrotask`, `requestAnimationFrame`, `afterNextRender`, `host.updateComplete.then`.
+
+  `createCommandRuntime({ announcerId, defer })` in `@modyra/widgets` is that function. Each adapter
+  passes its own beat and writes nothing else, which is also where the difference becomes visible: the
+  framework-free renderer's `defer` runs immediately, because it writes to the document itself and has
+  nothing to wait for.
+
+  Two more shapes every binding was writing itself:
+
+  - `subscribeController(controller, reactivity, notify)` — watch a controller and hand back the
+    teardown for it and the subscription. Six of the eight hooks in the two hook-based adapters watched
+    `state` alone and were right by coincidence: every controller's view is currently a function of its
+    state, and the contract does not promise it.
+  - `fieldCommandHandlers(handle)` — what a control with no overlay gives a command executor. `setOpen`
+    is a no-op rather than absent, because one vocabulary means answering the question rather than
+    crashing on it.
+
+  `MdyAngularCommandHandlers` and `MdyLitCommandHandlers` are aliases of `MdyWidgetCommandHandlers`
+  instead of member-by-member copies, which is what the other five adapters always did.
+
+  A guard moved upstream with the code: the framework-free renderer checked for `scrollIntoView` before
+  calling it, because the DOM implementation every adapter's suite runs under does not have it. That
+  check now protects all of them.
+
+- Updated dependencies [435a31a]
+- Updated dependencies [76509d3]
+- Updated dependencies [d2cdcaa]
+- Updated dependencies [27224d8]
+- Updated dependencies [894699d]
+- Updated dependencies [f297a3c]
+- Updated dependencies [09b1c21]
+- Updated dependencies [c0b44a8]
+- Updated dependencies [6e53749]
+- Updated dependencies [25d004c]
+- Updated dependencies [57c68d8]
+- Updated dependencies [ac052bc]
+- Updated dependencies [61e814c]
+- Updated dependencies [de7e122]
+- Updated dependencies [3fa4c1a]
+- Updated dependencies [45eb775]
+- Updated dependencies [d2cdcaa]
+- Updated dependencies [039059c]
+- Updated dependencies [a76fc10]
+- Updated dependencies [3f0787e]
+- Updated dependencies [7ac08a7]
+- Updated dependencies [437bad1]
+- Updated dependencies [4892a49]
+- Updated dependencies [1a8138f]
+- Updated dependencies [d03419c]
+- Updated dependencies [d9203ee]
+- Updated dependencies [2904441]
+- Updated dependencies [ccde959]
+- Updated dependencies [1c164b7]
+- Updated dependencies [9b89cd2]
+- Updated dependencies [5440e08]
+- Updated dependencies [b9897fb]
+- Updated dependencies [a9dcdb4]
+- Updated dependencies [d95d4c4]
+- Updated dependencies [d470286]
+- Updated dependencies [f22d828]
+- Updated dependencies [f47ef54]
+- Updated dependencies [69b18ae]
+- Updated dependencies [6690972]
+- Updated dependencies [6d31da6]
+- Updated dependencies [a51d3db]
+- Updated dependencies [6bc3df5]
+- Updated dependencies [404109c]
+- Updated dependencies [5f8a35c]
+- Updated dependencies [d51b2fa]
+- Updated dependencies [8dde798]
+- Updated dependencies [cec751a]
+- Updated dependencies [3bd2d09]
+- Updated dependencies [111aa5b]
+- Updated dependencies [95bb48b]
+- Updated dependencies [f00ead6]
+- Updated dependencies [0c3a770]
+- Updated dependencies [1783afc]
+- Updated dependencies [f47ee5e]
+- Updated dependencies [b6a1325]
+- Updated dependencies [3ff02a3]
+- Updated dependencies [7f847da]
+- Updated dependencies [833a5f6]
+- Updated dependencies [3233dd4]
+- Updated dependencies [d89c221]
+- Updated dependencies [1b76a2c]
+- Updated dependencies [a2a2bda]
+- Updated dependencies [7c8e0b4]
+- Updated dependencies [aa09065]
+- Updated dependencies [eab4653]
+- Updated dependencies [a6dc4de]
+- Updated dependencies [1b24d8f]
+- Updated dependencies [c521845]
+- Updated dependencies [599695f]
+- Updated dependencies [d443319]
+- Updated dependencies [5b5b2df]
+- Updated dependencies [ade50ff]
+- Updated dependencies [a336b22]
+- Updated dependencies [0994475]
+- Updated dependencies [7c53545]
+- Updated dependencies [896f37b]
+- Updated dependencies [86bda68]
+- Updated dependencies [abb242d]
+- Updated dependencies [b1874dd]
+- Updated dependencies [bc1cc05]
+- Updated dependencies [1c8e529]
+- Updated dependencies [0a96145]
+- Updated dependencies [e59d37c]
+- Updated dependencies [ecca49f]
+- Updated dependencies [2e005a4]
+- Updated dependencies [ecee2fd]
+- Updated dependencies [117ecba]
+- Updated dependencies [501dbb2]
+- Updated dependencies [0a6d296]
+- Updated dependencies [892c01b]
+- Updated dependencies [551320a]
+- Updated dependencies [e6b35e4]
+- Updated dependencies [e35174d]
+- Updated dependencies [5e32e40]
+- Updated dependencies [4d4110b]
+- Updated dependencies [af002ed]
+- Updated dependencies [9fab18e]
+- Updated dependencies [29849b2]
+- Updated dependencies [626ec0a]
+- Updated dependencies [8ad9612]
+- Updated dependencies [a0f68a9]
+- Updated dependencies [c5f854a]
+- Updated dependencies [618a7d0]
+- Updated dependencies [906115b]
+- Updated dependencies [c395a2c]
+- Updated dependencies [df8db70]
+- Updated dependencies [9133c94]
+- Updated dependencies [e712ea0]
+- Updated dependencies [2066daa]
+- Updated dependencies [2882c66]
+- Updated dependencies [9133c94]
+- Updated dependencies [c8f3eb4]
+- Updated dependencies [2dd4cff]
+- Updated dependencies [fe06a63]
+- Updated dependencies [afb6d57]
+- Updated dependencies [7695d89]
+- Updated dependencies [7f739f7]
+- Updated dependencies [70ccff8]
+- Updated dependencies [02bbad2]
+- Updated dependencies [e2ad213]
+- Updated dependencies [7c299e2]
+- Updated dependencies [717a69e]
+- Updated dependencies [e7e15c7]
+- Updated dependencies [6712836]
+- Updated dependencies [2bf8290]
+- Updated dependencies [095e9ef]
+- Updated dependencies [9f45e15]
+- Updated dependencies [9fc24f7]
+- Updated dependencies [70220fc]
+- Updated dependencies [c7b25ce]
+- Updated dependencies [cfa1ec6]
+- Updated dependencies [7cd79cc]
+- Updated dependencies [9a7c524]
+- Updated dependencies [c228019]
+- Updated dependencies [b75b5d3]
+- Updated dependencies [0879e90]
+- Updated dependencies [44a23e5]
+- Updated dependencies [daf38f2]
+- Updated dependencies [d6a97f6]
+- Updated dependencies [7cbcd34]
+- Updated dependencies [ca1c6c3]
+- Updated dependencies [aa3574c]
+- Updated dependencies [b1a31dd]
+- Updated dependencies [023d6c7]
+- Updated dependencies [c464e35]
+- Updated dependencies [bbf6081]
+- Updated dependencies [4914abd]
+- Updated dependencies [b5c81b7]
+- Updated dependencies [315a533]
+- Updated dependencies [5165a7b]
+- Updated dependencies [30d8a97]
+- Updated dependencies [136fd3a]
+- Updated dependencies [c0e0348]
+- Updated dependencies [49cebaa]
+- Updated dependencies [7d5dc5b]
+- Updated dependencies [8802f09]
+- Updated dependencies [bf0c12e]
+- Updated dependencies [67aa107]
+- Updated dependencies [611fd20]
+- Updated dependencies [e30a985]
+- Updated dependencies [85ff99a]
+- Updated dependencies [9190e59]
+- Updated dependencies [ad86c08]
+- Updated dependencies [0f9cf08]
+- Updated dependencies [e4182c0]
+- Updated dependencies [cd62884]
+- Updated dependencies [59c70fe]
+- Updated dependencies [1b24d8f]
+- Updated dependencies [7e1b5a5]
+- Updated dependencies [d522e25]
+- Updated dependencies [211ee54]
+- Updated dependencies [4678b59]
+- Updated dependencies [3fa4c1a]
+- Updated dependencies [1aff75a]
+- Updated dependencies [000f195]
+- Updated dependencies [92b7f7b]
+- Updated dependencies [bd8a9ed]
+- Updated dependencies [357316c]
+- Updated dependencies [8514984]
+- Updated dependencies [7997644]
+- Updated dependencies [f207e5e]
+- Updated dependencies [5589197]
+- Updated dependencies [9f29b19]
+- Updated dependencies [89e7d14]
+- Updated dependencies [bda72f8]
+- Updated dependencies [d2e0d7f]
+- Updated dependencies [8d0cadf]
+- Updated dependencies [556517c]
+- Updated dependencies [4749edc]
+- Updated dependencies [eacc848]
+- Updated dependencies [83e94a5]
+- Updated dependencies [50e1211]
+- Updated dependencies [4af560a]
+- Updated dependencies [2707f44]
+- Updated dependencies [87ff0a4]
+- Updated dependencies [621866a]
+- Updated dependencies [483d9b7]
+- Updated dependencies [3c7f88f]
+- Updated dependencies [e2828ed]
+- Updated dependencies [d9583ff]
+- Updated dependencies [e6ca669]
+- Updated dependencies [d51b2fa]
+- Updated dependencies [8e5fef8]
+- Updated dependencies [c8c8470]
+- Updated dependencies [e712ea0]
+- Updated dependencies [ee8040c]
+- Updated dependencies [ea534af]
+- Updated dependencies [010fa6a]
+- Updated dependencies [1aff75a]
+- Updated dependencies [009d7ad]
+- Updated dependencies [5029184]
+- Updated dependencies [ca1c6c3]
+- Updated dependencies [07bea5d]
+- Updated dependencies [7f738dd]
+- Updated dependencies [c849c60]
+- Updated dependencies [e16ed4f]
+- Updated dependencies [b137ea2]
+- Updated dependencies [2b04e24]
+- Updated dependencies [55dd238]
+- Updated dependencies [4bc6e19]
+- Updated dependencies [0956768]
+- Updated dependencies [74dbda3]
+- Updated dependencies [3b6ecac]
+- Updated dependencies [8347116]
+- Updated dependencies [324d2aa]
+- Updated dependencies [bd05055]
+- Updated dependencies [2cbfb3f]
+- Updated dependencies [a629f50]
+- Updated dependencies [9133c94]
+- Updated dependencies [14d74cc]
+- Updated dependencies [e7b5f9c]
+- Updated dependencies [a64a7a3]
+- Updated dependencies [bb37b4e]
+- Updated dependencies [61b5b04]
+- Updated dependencies [d1733cb]
+- Updated dependencies [8478a18]
+- Updated dependencies [c48c9c1]
+  - @modyra/core@2.2.0
+  - @modyra/widgets@2.2.0
+
 ## 0.6.0
 
 ### Minor Changes

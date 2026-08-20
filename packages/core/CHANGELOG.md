@@ -1,5 +1,3117 @@
 # @modyra/core
 
+## 2.2.0
+
+### Minor Changes
+
+- 27224d8: A bound written beside a field is enforced, not only drawn
+
+  A number's limits can be written twice, and both render `min`/`max` on the control — so a browser
+  refuses what a person types either way. Only one of them was a rule:
+
+  ```jsonc
+  { "kind": "slider", "max": 50 }                    // drew the range, enforced nothing
+  { "kind": "slider", "validators": { "max": 50 } }  // enforced
+  ```
+
+  A prefilled `150` against `max: 50` left the form holding 150 while the page showed the thumb at its
+  maximum, `aria-invalid="false"`, no message — a person sees a slider at 50 and sends three times
+  that. A tampered draft carrying a value outside the bound restored into a form that called itself
+  valid and submittable, which is the threat model the security guide names in those words.
+
+  `min` and `max` beside a `number` or a `slider` now compile to the same validators the explicit
+  spelling does. An explicit `validators` entry still wins where both are written. The rule is
+  generated from the field's declared bound and never from the control's drawn range, because the range
+  is already derived from the rules — deriving the rule back from it would close a loop.
+
+  A document that declared a bound beside a field and relied on it being only a hint now has a form
+  that reports values outside it. `step` is unchanged: the validator vocabulary has no `step`, so it
+  still speaks only to the keyboard. Recorded as
+  [ADR 0066](../docs/architecture/0066-a-bound-beside-the-field-is-a-rule.md).
+
+- 3fa4c1a: Declaring rows into a collection no longer costs more per row the more rows there are
+
+  Two questions scoped to a path were answered by a scan of the whole form: the gates covering a path
+  were found by walking every registered gate, and an array's reconciliation read every field name the
+  form holds to keep the ones under itself. A collection registers a gate and runs that effect, so a
+  form holding a collection per row paid both once per row — the cost of a bulk write grew with the
+  square of the row count. Measured on orders holding ten lines each, per order: 1.12 ms at 25 orders,
+  1.63 at 100, 3.56 at 200.
+
+  Gates are now looked up at the path's own ancestors, and `MdyFormEngine` keeps the child segments
+  under each prefix and answers `childSegmentsUnder(prefix)` from them. Per order after: 0.55, 0.41,
+  0.58 — flat.
+
+  `MdyCollectionHost.childSegmentsUnder` is optional, so a host implemented against the published
+  interface keeps working and is asked `fieldNames()` as before. `MdyFormEngine` gains the method,
+  which is additive. See ADR 0101.
+
+- d2cdcaa: A collection nests without a limit
+
+  An array may now hold another array, and a form may nest as deep as it needs — in a typed schema and
+  in a parsed document alike. The one-positional-level rule and the eight-level cap are gone, together
+  with the node-count cap on documents; the document validator's schema walk is an explicit stack, so a
+  deep document is answered on its own merits rather than overflowing while being read. See ADR 0043.
+
+  **Breaking, for consumers that read a descriptor's `item`.** These properties widen:
+
+  | Type                     | `item` was                    | `item` is             |
+  | ------------------------ | ----------------------------- | --------------------- |
+  | `MdyAnyArrayDescriptor`  | field or group                | `MdyAnyRowDescriptor` |
+  | `MdyAnyRecordDescriptor` | field or group                | `MdyAnyRowDescriptor` |
+  | `MdyDynamicArrayNode`    | field, group or record        | `MdyDynamicNode`      |
+  | `MdyDynamicRecordNode`   | field, group, record or array | `MdyDynamicNode`      |
+
+  A `switch` over `item.kind` that handled `"field"` and `"group"` exhaustively now has cases it does
+  not: a row may be a collection of either kind. Building descriptors through `array()`, `record()`,
+  `group()` and `field()` is unaffected — those calls accept everything they accepted before.
+
+  Also fixed, and the reason the campaigns went red on this shape: replacing a nested collection in
+  place left the fields of the subtree it replaced behind, so a reorder above a nested list duplicated
+  that list into the row that moved and the row that arrived.
+
+- 039059c: A commit word answers for the control a person types in
+
+  `MDY_VALUE_CONTRACTS`' `commit` column had two words and had never been compared against a widget. Two
+  kinds disagreed with it.
+
+  **A daterange is neither.** One endpoint writes nothing — a start with no end is not a range — and the
+  second writes both. Not `live`, because the first click does not write; not `confirm`, because there
+  is nothing to confirm. `MdyValueCommit` gains **`complete`**: the field changes when what the user is
+  building becomes a value at all, which is the sentence `completeRange()` already makes from the other
+  side.
+
+  **A colours field has two controls that commit differently.** The native swatch writes on every choice;
+  the hex box holds `#11` and writes on blur or Enter, because `#11` is not a colour. One word per kind
+  cannot say both, so the word answers for the control the label names and a keyboard types into — the
+  one a person can leave half-finished. `colors` is therefore **`confirm`**, with no change in behaviour:
+  what changes is that the published answer is now true for the control it describes.
+
+  Adding a member to a published union breaks an exhaustive `switch`, and anything branching on
+  `colors.commit === "live"` takes the other branch now.
+
+- 3f0787e: An expression can name its own value, the form it is in, and a fact the host supplies
+
+  Three operand forms join `{path}` — `{ self: true }`, `{ root: true }` and `{ context: "key" }` —
+  which is the whole of what the language gains under ADR 0092. A clause written once for the item of
+  a collection can read _its_ value, because the row has no name until somebody creates it; a
+  row-level condition can reach back out to the form; and a host can supply role, tenant or today's
+  date once for the application rather than per form.
+
+  `evaluateExpression(expr, value, scope?)` takes the scope; without one none of the three is
+  available, and an expression naming one answers **false** — the direction that keeps a field out of
+  play rather than showing it. `expressionContextKeys(expr)` lists the keys a document reads, so a
+  host can be asked for them before a form is built, and `expressionPaths` is unchanged: none of the
+  three is a field path.
+
+  Also: `equals` and `notEquals` are SameValueZero in both halves of the vocabulary. The tree's
+  `equals` was `Object.is`, the flat rule's was `===`, and both spellings of `in` were SameValueZero —
+  so `NaN` (what a number field holds when it is given text it cannot read) and `-0` got three
+  different verdicts across four doors, and a `rules` entry deciding whether a field is in play
+  decided opposite ways depending on which slot an author wrote it in.
+
+- a9dcdb4: A document's pattern cannot make the form stop answering
+
+  `validators.pattern` is a string that arrives from a CMS, a saved project or a POST. The engine
+  checked that it parses and never what it costs:
+
+  ```
+  (a+)+$   against thirty characters and a miss   ->  12.6 seconds
+  ```
+
+  Each further character roughly quadruples the work, and `^(a|a)*$` and `^(a*)*$` behave the same. A
+  match is synchronous, so it is not one slow field — it is the thread, between two keystrokes.
+
+  A pattern whose shape backtracks exponentially is now refused the way one that will not parse
+  already was: **nested unbounded repetition** (`(a+)+`, `(a*)*`) and **repeated alternatives that can
+  match the same text** (`(a|a)*`, `(a|ab)+`). The parser reports the new diagnostic
+  `MDY_DYNAMIC_PATTERN_TOO_COSTLY` and **keeps the field** — one rule the engine will not run is not a
+  reason to take an input away from the person filling the form.
+
+  The check reads structure, not speed, because JavaScript cannot bound a match's cost from outside it.
+  It is deliberately conservative: bounded repetition is left alone, and alternatives it cannot read
+  cheaply are allowed rather than refused on suspicion. Twelve ordinary patterns — email, IBAN, phone,
+  URL, zip, word alternation — are pinned as unaffected.
+
+  Typed schemas are untouched: `pattern(new RegExp(...))` in your own module is your code.
+
+  Found by `battle-tests/adversarial/security/document-patterns.battle.test.mjs`. Recorded as
+  [ADR 0050](https://github.com/modyra/modyra/blob/main/docs/architecture/0050-a-document-cannot-make-the-form-stop-answering.md).
+
+- d95d4c4: A document may nest a collection, in every SDK
+
+  `MdyDynamicRecordNode.item` now accepts a record or an array, and `MdyDynamicArrayNode.item`
+  accepts a record: the document contract expresses what the runtime already runs. One rule is
+  enforced everywhere — a path crosses **one** positional level, so an array below another array is
+  refused where it is written, as `MDY_DYNAMIC_INVALID_ARRAY` or `MDY_DYNAMIC_INVALID_RECORD`
+  depending on which collection found it.
+
+  **Migration.** Both `item` types are unions with two more members, so an exhaustive `switch` over
+  `node.item.node` stops compiling until it answers for `"record"` and `"array"`. A reader that only
+  descends recursively needs no change. Documents already valid stay valid; nothing that parsed
+  before is refused now.
+
+  The JSON Schemas (`spec/dynamic-form-v2.schema.json`, `v3`), the Rust SDK (a `DynamicNode::Record`
+  variant) and the Java SDK (`"record"` among the schema node kinds, with its rows named by key in
+  the flat view) accept the same documents and refuse the same shape with the same codes.
+
+- d470286: A document can say when — Contract v4
+
+  A document could condition a field only through `rules`, which are form-level and name a leaf. A
+  condition on a cell inside a collection row — the arrangement where the row is a template and its key
+  does not exist yet — was not expressible at all, and was registered as a limit rather than a defect.
+
+  Contract v4 gives a node its own `when` (a field and a group) and a field its `asyncWhen`, written as
+  the expression language batch 1 completed. A clause is read against **what encloses it**: inside a
+  row that is the row, so one clause written once for a template answers per row, and `{ root: true }`
+  is how it reaches back out to the form. `requiresContext` declares the facts the document expects
+  from the host; `buildDynamicFormSchema(schema, { context })` supplies them and **refuses to build**
+  when a key the document reads is missing, because a condition that cannot be read decides `false` and
+  the fields it guards would never appear.
+
+  No public slot changed type: the compiler turns a document's expression into the closure
+  `MdyFieldOptions.when` already takes. A v3 document is a v4 document with the version raised, and
+  `rules` is untouched. The parser refuses a clause that is not an expression
+  (`MDY_DYNAMIC_INVALID_CONDITION`), a path nothing enclosing the clause declares, and a context key
+  the document did not declare (`MDY_DYNAMIC_UNDECLARED_CONTEXT`). Published as
+  `spec/dynamic-form-v4.schema.json`. ADR 0092.
+
+- 6d31da6: A form is stopped from replacing another form's draft even when its own shape contains the other's.
+  The guard asked "is every stored path one I declare", which answers yes for a superset — so a second
+  form with one field more read the first's work as its own and overwrote it, silently. A draft now
+  carries the shape of the form that wrote it (`MdyFormEngine.shapeKey()`, the paths it was built with,
+  hashed), and a form that does not have that shape keeps no draft under the key and says so. A draft
+  written before this carries no shape and falls back to the path comparison, so nothing stored
+  already becomes unreadable.
+- 6bc3df5: A draft entry no field of that kind could hold is dropped and reported
+
+  The draft shape check is named among the always-on structural protections, with one exemption:
+  _fields without a declared initial restore as-is_. What actually disabled it was an initial of
+  `null` — and `null` is not the absence of a declaration, it is what the value contract declares for
+  every kind with no empty of its own. So seven kinds of seventeen skipped the check: a script on the
+  origin could write `{"x":{…}}` into the stored draft and a `number`, a `select` or a `datepicker`
+  restored it whole, which is the type confusion the check exists to stop. `daterange` skipped it for
+  the mirror reason — its own empty is an object, so any object matched.
+
+  A field now declares the shape its kind takes, and a kind that chooses from a list declares the
+  values it offers — an option's shape is "anything non-nullish" by design, so only the list can tell
+  a legitimate option carrying an object from a hostile one. Both travel on the descriptor and reach a
+  collection's rows, which is where a draft is most likely to name something nobody declared.
+
+  **Breaking.** `MdyFieldDescriptor` and `MdyAnyFieldDescriptor` gain required `shape` and `options`
+  members: code building a descriptor as an object literal rather than through `field()` needs them.
+
+- 404109c: A draft is not a linked signal
+
+  Asked whether the reactive contract should grow a linked signal — a writable
+  signal that resets when its source changes — the four places that looked like it
+  turned out to be three things.
+
+  Two were caches and stale, and a plain `computed` removed them. Two are drafts,
+  and a linked signal would make them **wrong**: a draft is what protects a choice
+  in progress from what arrives elsewhere, so resetting it when the value changes is
+  the yank it exists to prevent — a calendar jumping to a range that came from the
+  server while the user is choosing one. They re-seed on _open_, which is an event,
+  not a dependency.
+
+  So `linked` does not enter `MdyReactivity`, and `capabilities.writableComputed`
+  leaves it: a capability every one of the eight adapters answered `false` and no
+  consumer ever asked about. Adapters that spelled it delete the line.
+
+  Recorded as ADR 0034, including the check the decision does not have: nothing
+  asserts that an external write during an open popup leaves a draft alone.
+
+- 5f8a35c: A draft is not replaced by one belonging to another form
+
+  Two live forms sharing a draft key meant the last save took the whole envelope: one person's typing
+  was gone from the only place it was kept, in silence, and reopening their form restored nothing
+  because the draft under their key described fields they did not have.
+
+  A form now refuses to replace a stored draft holding paths it does not declare, reports
+  `MDY_DRAFT_KEY_IN_USE` once, and leaves the other form's work where it is. Restoring is unchanged,
+  and a form reopening its own draft — or a second tab of the same form — still replaces it. ADR 0088.
+
+- 8dde798: A draft is a convenience: it can fail, expire and be discarded without taking the form with it
+
+  Four defects on one path, found together and repaired together.
+
+  **A storage that refuses to be read took `createForm` with it.** Safari in private browsing throws on
+  access, an enterprise policy throws, a blocked third-party context throws — and a draft is optional, so
+  failing to read one now means there is no draft, never that there is no form. The write side was
+  already swallowed for this reason; `clearDraft()` follows the same rule, and what it promises about
+  the _form_ holds whether or not the entry could be deleted.
+
+  **`ttlMs` believed whatever `savedAt` said.** A stamp that is missing, is not a number, or sits further
+  ahead than a clock can explain is not an age — and an expiry a draft can opt out of by lying is not an
+  expiry. A stamp within five minutes of the future is a clock; beyond that it is a claim, and it is no
+  longer carried forward on later writes either, which is what made an impossible age permanent.
+
+  **`clearDraft()` did half of what it documents.** It removed the entry and left `getChanges()`
+  reporting every edited field, so a `PATCH` built from it sent exactly what the caller had decided to
+  discard. It re-baselines now, through `rebaselineToCurrentValue()` — published, because a consumer who
+  saves by another route wants the same thing.
+
+  **A restored draft was an undoable step.** A form opened on a draft offered, as the first thing to
+  undo, something the user had not done — and taking the offer wrote the empty form back over the draft,
+  because the draft follows the model. History now starts from the restored state. The restored edits
+  are still changes against the values the form was built with, so `getChanges()` is unaffected.
+
+- 95bb48b: A field that says it is a secret is treated as one
+
+  `sensitive` was declared by the Dynamic Form Contract, type-checked by the parser and offered by the
+  editor, and nothing that protects a value read it: a field marked sensitive was written to draft
+  storage in clear text and printed in full by the devtools panel.
+
+  It is now a property of the field — `field(initial, validators, { sensitive: true })`, or the
+  document's flag carried onto the descriptor — and the form excludes those paths from drafts, the
+  panel masks them, and `form.sensitivePaths()` publishes the list for anything else that copies values
+  out. ADR 0089.
+
+  **Breaking.** `MdyFieldDescriptor` and `MdyAnyFieldDescriptor` gain a required `sensitive` member:
+  descriptors built as object literals rather than through `field()` need it. A field already marked
+  sensitive in a document stops being autosaved, which is the repair.
+
+- f00ead6: A file the field turned away is something the page says
+
+  `fileSelectionTransition` reports what a pick refused. Nothing showed it: a field declaring
+  `accept="image/*"` given a `.txt` left the page unchanged in `@modyra/plain` — same text, no message,
+  no live region — and `@modyra/angular` emitted `filesRejected` for a host to catch and said nothing
+  itself. `@modyra/lit` was not applying the policy at all: it wrote the raw pick, so a refused file
+  appeared in the list as though it had been taken, and `accept`, `maxFileSize` and `maxFiles` meant
+  nothing there.
+
+  **`MDY_WIDGET_CONTRACTS.file` gains an optional `rejected` part**, `role="status"`, beside the file
+  list rather than inside it — the list is the value, and a refused file is what did not become part of
+  it. **`MdyI18nMessages` gains `fileRejected(names)`**, which takes the list and returns the sentence,
+  in all five published tables: the join is a locale's decision, not a renderer's.
+
+  **`MdyFormAdapter` gains `reportEntry(name, problem)`.** The previous release put `reportEntry` on the
+  field handle; a handle is built over an adapter, and Angular's could not implement the handle contract
+  without this. Both additions are required members — an implementer of either interface adds one.
+  Spreading over `MDY_I18N_MESSAGES_DEFAULT` is unaffected.
+
+  `@modyra/lit` and `@modyra/angular` now write what the transition answers rather than rebuilding a
+  shape beside it, so a single-file field holds a list in every renderer. A page relying on lit ignoring
+  `accept` will find that it no longer does.
+
+- 1783afc: `MdyDynamicCollection` now carries `item`, one row's shape flattened with names relative to the row,
+  and `buildFlatFormSchema` builds rows from it where the flat fields say nothing. A collection a
+  document declares with no rows contributed no fields, so a form rebuilt from the flat pair had no
+  template: it accepted `upsert` or `push` and held an empty object, reporting the row as present in
+  `keys()` and absent in `getValue()`. Pairs stored before this keep building — `item` is optional, and
+  a collection whose rows exist is still described by its rows. See ADR 0095.
+- 3ff02a3: A form reports what it could not do
+
+  A form degrades rather than failing: an async check a reactivity cannot run is skipped, a draft
+  without effects is not started. Measured side by side, a form whose uniqueness check never ran and one
+  whose check passed are identical on `valid`, `canSubmit`, `pending`, `errors` and `submitValue()`.
+
+  The vocabulary for saying so was already published — `MdyDiagnostics`, `createConsoleDiagnostics`,
+  `createSilentDiagnostics`, and the codes — and nothing took a sink: the only option accepting one
+  belonged to an adapter's reactivity. **`createForm` now takes `diagnostics`.** The sink replaces the
+  console rather than doubling it, and a degradation is reported whether or not this is a development
+  build: a check that is not running is not a development-time nicety.
+
+  **`setInitialValue` accepts an ancestor path**, moving every leaf beneath it to its current value. A
+  collection's keys are data — a row a user added has a path nobody could have written down — so an API
+  that names only leaves could never move the baseline of what a user built. Same question as `exclude`
+  in the draft options, same answer.
+
+  **`rebaselineToCurrentValue()` is on the form.** It was published on the engine and announced in a
+  release note, and the engine behind a form is not the consumer's to reach.
+
+- d89c221: A handle belongs to its form, not to the computation that asked for it
+
+  On `@modyra/solid` a nested collection's cell read `null` for the life of the form while the value
+  was correct, and a handle taken from a positional collection kept reporting the row it held before a
+  `move`:
+
+  ```js
+  form.f.orders.upsert("o1", { customer: "Ada" });
+  form.f.orders.row("o1").lines.push({ sku: "S-1", qty: 3 });
+  form.f.orders.row("o1").lines.at(0).sku.value(); // null — getValue() has "S-1"
+  ```
+
+  A handle is made of computations and outlives the read that asked for it: a row handle is built
+  inside its collection's `rows` computation, a cell handle inside whatever the consumer was computing
+  when it called `cell()`. Solid owns a computation by the computation that created it, so the owner
+  re-running disposed the handle, and a disposed computation keeps answering with the value it last
+  held — `null` when the row's fields were not registered yet.
+
+  `MdyFormEngine.runOwned(build)` builds such an object under the form's own scope, and row and cell
+  handles use it. A runtime that does not own computations has no scope and calls the builder directly,
+  so nothing changes for it.
+
+  Every headless adapter now declares a nested collection in its own suite, which is what caught this.
+
+- c521845: A masked row in `mdyFormSnapshot` says why it is masked: `"declared"` when the schema calls the
+  field sensitive, `"guessed"` when only its name looks like a secret, `"caller"` when the panel's own
+  predicate decided. The panel printed the same bullets for both, and they mean different things — a
+  declared secret is kept out of drafts and copies, a guessed one is protected in the panel and nowhere
+  else, so a draft writes it to storage in clear. The devtools panel carries the reason as the title on
+  the value cell. Nothing about what is masked changed, and the draft still withholds only what was
+  declared: guessing what to keep out of storage is the defect from the other direction.
+- 599695f: A member a version predates is named, not ignored
+
+  Version 1 of the Dynamic Form Contract is a flat field list: `layout`, `rules` and `validations` are
+  not in its vocabulary. An envelope that carried one had it dropped without a word — so an author who
+  wrote rules against the wrong version number got a document the parser called clean, a lint with
+  nothing to report, and a form where the rules simply were not there. All three places they could have
+  learned were quiet.
+
+  `parseDynamicForm` now reports `MDY_DYNAMIC_UNSUPPORTED_VERSION` against the member's own path,
+  naming it and the version that has it. A v1 document that stays inside its vocabulary is unaffected,
+  and the same members at version 2 or 3 are read as before.
+
+  In strict mode this refuses the document, which is what strict mode means: a partly valid document is
+  never accepted, and a document whose rules will not run is exactly that.
+
+- d443319: The parser reports a member the contract does not declare — on a field, its validators, an option, a
+  rule, a validation or a layout node — as `MDY_DYNAMIC_UNKNOWN_MEMBER`, at the path where it is
+  written. The published JSON Schema closes every one of those objects and an editor says so while a
+  document is typed; a document from a CMS, a model or a server meets neither, and the parser was the
+  one check it did meet. It reports rather than drops, so a document written against a newer contract
+  still renders in lenient mode; a strict parse — what a publishing gate asks for — refuses it. The
+  member lists are published as `MDY_DYNAMIC_MEMBERS`, and `npm run test:contract-schema` holds them
+  against every published schema in both directions: `spec/dynamic-form-v2/v3/v4.schema.json` were
+  missing twelve members of a field, including `mode`, `searchable`, `accept` and `presets`. See
+  ADR 0097.
+- 5b5b2df: A document can write what its own rules say when they refuse
+
+  The cross-field slot has carried a mandatory `message` since it existed, with the reason beside it:
+  _a validation nobody can read is a field that will not submit for no stated reason_. A field's own
+  rules had no such slot, so the one sentence a person must read to get any further was the one an
+  author could not write — and a document is the surface written by people who do not write code.
+
+  `validators.messages` names the rules a field declares — `required`, `email`, `min`, `max`,
+  `minLength`, `maxLength`, `pattern` — and each takes a sentence. Optional, because the framework has
+  one for every rule in the form's own language; a key that names no rule, or a message nobody can
+  read, is refused where the document is read. Both published schemas carry the slot.
+
+- 0994475: A field name a widget id cannot be built from is refused where names are checked, instead of at
+  render time by another package. `isSafeFieldPath` — the guard published for a consumer to check
+  with — called `a b` and `a__b` safe, `createForm` held them, and the widget layer then threw when it
+  asked for the field's part ids: whitespace turns an `aria-labelledby` into two references that
+  resolve to nothing, and the delimiter makes an id that cannot be taken apart. A document naming one
+  has always been refused at the door; a form written in code now gets the same answer at the same
+  place.
+
+  **Breaking for a form whose field names carry whitespace or `__`.** Such a form could not render in
+  any adapter — the refusal came from `assertUsableWidgetId` — so what changes is where it is refused.
+  Rename the field, or, if the name is data rather than a name, put it in a collection: a row key is
+  data and is spelled into an id rather than refused.
+
+- 86bda68: A field may not be named `toString`
+
+  A form's value is an ordinary object, so a field with that name becomes a data property of it and
+  `ToPrimitive` is left with nothing callable: `` `${form.getValue()}` `` and `String(form.getValue())`
+  throw `Cannot convert object to primitive value` — in the consumer's own code, with a message naming
+  neither the field nor the document that declared it. `JSON.stringify` is unaffected, which is why it
+  went unseen.
+
+  The name is refused at the document door, where the field is dropped with a diagnostic, and at the
+  typed door, where it throws as other invalid names do. **This removes a capability**: a document
+  declaring such a field rendered before and now loses it. The migration is to rename the field; there
+  is no way to keep the name, because the collision is with the language.
+
+  One name rather than a list: `ToPrimitive` tries `valueOf` then `toString`, so shadowing `valueOf`
+  alone changes nothing and shadowing both is unreachable once `toString` is refused. See ADR 0113.
+
+- b1874dd: A nested collection reaches every package that restates it
+
+  `@modyra/core` allows a collection inside a collection at any depth. Three packages a consumer
+  imports could not express that, and their suites were green throughout.
+
+  **`@modyra/angular`** re-declares `array()` and `record()` so their handles carry Angular signals, and
+  both still constrained a row to a field or a group:
+
+  ```ts
+  array(group({ lines: array(group({ sku: field("") })) })); // ok in @modyra/core, refused here
+  ```
+
+  They now take what the engine's take. The refusal bites when a row **is** a collection — a collection
+  inside a group inside a row was always legal, since a group's children have always been able to hold
+  one. `@modyra/studio-target-angular` generates code against these factories, so a project whose row
+  is a collection generated Angular code that did not compile.
+  `MdyAnyRowDescriptor`, `MdyAnyRecordDescriptor`, `MdyRecordDescriptor` and `MdyRecordHandle` are
+  exported too: the array half was nameable and the record half was not.
+
+  **`@modyra/zod`** mapped a collection's element to a group or a leaf, so `z.record(z.array(...))` and
+  `z.array(z.array(...))` became one opaque value where the schema declared a list. A row is now read
+  exactly like a schema key. Shapes the engine has no node for — tuple, set, map — still degrade to a
+  leaf.
+
+  **A document made of arrays** built a form whose nested collections held no rows. A row's value
+  arrives flat, so a collection inside it is keyed `"0"`, `"1"` — what a record holds and what an array
+  refuses — and `buildFlatFormSchema` seeded it unchanged. The value read as correct in structure and
+  was empty in fact: `@modyra/plain` mounted one control out of three for a three-level document.
+  Seeds are now shaped against the descriptor at every depth, so a list inside a keyed row and a keyed
+  row inside a list each keep their own shape.
+
+  **`MdyAnyRowDescriptor` is exported** from `@modyra/core`: it is the constraint of the public
+  `array()` and `record()` factories, and a consumer writing a helper over row descriptors could not
+  name it.
+
+  **A nested collection's value now has the same type as a top-level one.** `MdyArrayItemValue`
+  returned `ReadonlyArray` and `Readonly<Record>` for a collection directly inside a collection while
+  `MdyFormValue` returned mutable ones a level up — the same value, two types depending on the depth it
+  was read at. Nothing changes at runtime; a nested list is no longer typed readonly.
+
+  Recorded as [ADR 0046](https://github.com/modyra/modyra/blob/main/docs/architecture/0046-an-adapter-states-no-less-than-the-engine.md).
+
+- 0a96145: The contract says a password is not a text field: `MDY_WIDGET_CONTRACTS[kind].controlType` names the
+  native control a kind is drawn with, and `concealed` — on the widget contract and on
+  `MDY_VALUE_CONTRACTS` — says the control does not show what is typed into it. The one difference
+  between the two kinds was said nowhere a renderer could read it, so every adapter kept a private map
+  from kind to input type and the failure mode of one that does not is a password in clear text.
+  `@modyra/plain` reads the contract instead of its own map. Both members are optional; nothing an
+  adapter does today breaks. See ADR 0099.
+- e59d37c: A patch names cells in a positional collection too
+
+  `patch({ list: [row] })` replaced the row: every cell `row` did not name was rebuilt from the field
+  declaration's initial — not what the person typed, not what the row started as, but what a row
+  created from nothing gets. The keyed collection was already right on the same call, so a change set
+  fed back through `patch` restored a keyed row and overwrote a positional one.
+
+  A row a patch carries is now written over the row that is there, cell by cell, driven by the schema
+  so an object-valued leaf is still replaced whole. The list itself is unchanged in meaning: its length
+  states which rows there are. A row past the end is new and taken as it came. The same holds for a
+  collection reached through a patched keyed row.
+
+  A caller who used a partial row to mean "and clear the rest" must now name the cells to clear, which
+  is what the keyed collection has always required. `MdyNestedCollection` gains `patchFrom`. See ADR 0103.
+
+- 551320a: A positional collection's submitted value keeps the positions the form holds
+
+  `submitValue()` left out disabled fields, and a row whose fields were all disabled therefore
+  contributed no key at all — so the list built from what remained was shorter, and every row after the
+  missing one was sent at a position it does not occupy. A server reading `list[0]` after the first row
+  was locked read the row the person can see below it. Nothing in the payload said so and no type
+  moved.
+
+  A row that contributed nothing is now submitted as `{}` at the index it holds, so
+  `submitValue().list.length === getValue().list.length` for every array in the form. The field promise
+  is unchanged — a disabled field contributes no key, at any depth — and keyed collections are
+  untouched: an absent key stays absent.
+
+  A consumer that assumed every row in a submitted list was populated will now see `{}` for a row that
+  sent nothing. No API changes, so the type surface and the contract snapshot are unmoved; this is a
+  change to what a payload means and lands as a minor for that reason. See ADR 0100.
+
+- e6b35e4: A change set says which row of a positional collection changed
+
+  `getChanges()` is documented as ready for a PATCH, and for a keyed collection it composed into
+  something a server could act on. For a positional one it was a compacted list of the changed rows,
+  with nothing saying where they were:
+
+  ```
+  edit index 0   { list: [{ t: "EDITED" }] }
+  edit index 1   { list: [{ t: "EDITED" }] }   the same body
+  edit 0 and 2   { list: [{ t: "A" }, { t: "C" }] }   reads as 0 and 1
+  ```
+
+  A server applying it by position wrote the wrong row in two cases out of three.
+
+  An index _is_ the identity of a positional row, so a partial list is not a partial PATCH — it is an
+  ambiguous one. A positional collection with any change is now carried **whole**, which is the shape
+  `MdyFormPatch` already declares for an array: whole-item, where a record's branch is deep-partial. A
+  keyed collection is unchanged.
+
+  The comparison is untouched — a row is still compared against its own initial, so removing a row does
+  not report every row after it as changed. What is added is the rows that did _not_ change, which is
+  what makes the position of the ones that did readable.
+
+  A PATCH carrying a long positional collection now carries all of it. Recorded as
+  [ADR 0072](../docs/architecture/0072-a-positional-change-set-carries-its-whole-list.md).
+
+- 29849b2: A record's row may hold a record
+
+  The first nesting the runtime can execute, and the first ADR 0040 enables:
+
+  ```ts
+  const form = createForm({
+    orders: record(
+      group({ customer: field(""), lines: record(group({ sku: field("") })) })
+    ),
+  });
+  form.f.orders.upsert("o1", { customer: "Ada", lines: {} });
+  form.f.orders.row("o1").lines.upsert("l1", { sku: "SKU-1" });
+  ```
+
+  The row's collection is a collection, not a cell: it has `keys`, `upsert`,
+  `remove`, `rename` and rows of its own, and it is resolved on each read so a row
+  removed and declared again is answered by the manager it has now.
+
+  Removing the parent takes the whole subtree — values, fields and async runners —
+  and a descendant nobody mounted still decides the form's validity.
+
+  Everything else is still refused, and still when the form is built rather than
+  when a row arrives. The message says what a row may hold, so the supported set
+  is readable from the failure.
+
+- 8ad9612: A form that speaks a language refuses in it too
+
+  A document declares `locale`, and the parser takes it seriously — a malformed tag is refused rather
+  than degraded — and it reached the month names, the first day of the week and every word the widget
+  catalogue says. It stopped at the refusals: an Italian form with an Italian calendar answered
+  _This field is required_, which is the one line a person has to read to get any further.
+
+  `validationMessagesForLocale(locale)` publishes the refusals in the five languages the widget
+  catalogue already speaks, and a document's own validators are built with the language the field
+  declares. A tag nobody translated falls back to its language and then to English, so a form always
+  refuses in a language rather than in nothing.
+
+- c5f854a: A refusal the server sent reaches somebody, however it is addressed
+
+  A submit action returns errors to refuse, and its argument is whatever an application derived from a
+  server's answer. Three ordinary shapes vanished:
+
+  ```js
+  await form.submit(async () => [{ message: "Already registered" }]); // no path at all
+  await form.submit(async () => [{ path: "", message: "…" }]); // the form, explicitly
+  await form.submit(async () => ["Already registered"]); // a bare message
+  // each: no error anywhere, the field still valid, the draft cleared
+  ```
+
+  All three were dropped by the guard that drops a hostile path — `isSafeFieldPath` refuses an empty
+  string and refuses `undefined` — so a refusal was discarded as if it were an attack. A person pressed
+  Send, the server said no, and nothing appeared.
+
+  A path that is absent, `null` or `""` now means the form. A bare string is a message about the form.
+  A return that is not a list becomes one form-level error instead of surfacing
+  `errors.filter is not a function`, and the development channel says what the contract is. A message
+  that is not a string no longer reaches a page as `[object Object]`: it is replaced by a readable
+  sentence and what it held is kept on `payload`.
+
+  An unsafe path is still dropped and still reported as a security violation — that is the one case
+  where losing the message is the lesser harm.
+
+  A shape that used to vanish now shows a message, which may appear in a place that was previously
+  empty. Recorded as [ADR 0060](../docs/architecture/0060-a-refusal-reaches-somebody.md), which also
+  states what is left: `@modyra/plain` renders no surface for a form-level error, so on that renderer
+  these reach `lastSubmitErrors` and no further.
+
+- c395a2c: A renamed row stays where it is, and the value agrees with the handle
+
+  `rename` is defined against `remove` followed by `upsert` — what only it can keep is the state the
+  user produced. It also did what that pair does and appended the row:
+
+  ```js
+  form.f.orders.upsert("b", { ref: "A1" });
+  form.f.orders.upsert("c", { ref: "A1" });
+  form.f.orders.rename("b", "a");
+  // keys(): ["c", "a"]   — the row a user renamed jumps to the bottom of their table
+  ```
+
+  A keyed collection was keeping two orders: the key list `keys()` answers, and the order a row's
+  fields sit in, which is what the flat value is read out of. Nothing else diverged them — `upsert` on
+  an existing key, `remove` and remove-then-upsert all had both answers agreeing.
+
+  A rename now leaves the row where it is, and `getValue()`, `submitValue()` and `getChanges()` say so
+  too. Remove-then-upsert still appends, which is the difference the two operations exist to have.
+  `MdyFormEngine` gains `orderRowsUnder`, so a collection rather than the engine decides the order of
+  the rows under its path. `MdyCollectionHost` declares it too; that interface is not on any entry
+  point, so implementing it is this repository's business and not a consumer's.
+
+  A consumer diffing serialized output across a rename now sees the key change and nothing else move.
+  Recorded as [ADR 0058](../docs/architecture/0058-a-rename-moves-a-key-not-a-row.md).
+
+- 2882c66: A record's row may hold an array, and a form's nesting has one published limit.
+
+  Phase B of the nested-collections ladder: a `record()` row may now declare an
+  `array()` — an order whose lines are positional, a line whose allocations are a
+  list. The row owns it like any other subtree: it is created with the row,
+  removed with it, and restored whole by undo.
+
+  An array's row still holds no collection: its rows are positional, so a
+  descendant's whole path moves on every insert, remove and move (ADR 0040).
+
+  Nesting is capped at 8 levels, collections included — the number the document
+  validator has published since before collections could nest. A deeper schema is
+  refused where the form is built.
+
+- 2dd4cff: `getChanges()` now reports a field the form's baseline never had, so a row a user added is in the
+  patch even when no cell of it was edited. A row's cells take the value the row arrived with as their
+  initial, so nothing about a new row differed from its own baseline: `reset()` threw the row away
+  while `getChanges()` said there was no change, and a `PATCH` built the documented way never carried
+  the rows a user made. A rename carries baseline membership with the row, and
+  `rebaselineToCurrentValue()` — or `setInitialValue` on the collection — makes rows already there the
+  form's own starting point. See ADR 0096.
+- afb6d57: A rule a document writes is a rule the form keeps
+
+  The Dynamic Form Contract's `rules` array was read by the parser as behaviour — an undeclared effect,
+  an undeclared operator, a target that is not a field and a condition on a field that is not there are
+  each refused, and in strict mode the whole document goes with them — and then nothing applied one.
+  Every reference to a document's rules in the workspace was inside the parser.
+
+  The end of it is the payload. Same field, same value, same page, and the only difference is which path
+  disabled it: through the field handle the form sends `{"customerType":"person"}`; by the document's
+  rule it sends `{"customerType":"person","taxId":"SSN-123-45-6789"}`. A document saying "disable the tax
+  id for a private customer" produced a form that sent it.
+
+  **`applyDynamicRules(form, rules)`** is the sibling `buildDynamicValidations` already had.
+  `visible`/`hidden` take the field out of play — not asked for, not validated, not submitted;
+  `enabled`/`disabled` leave it in the form and stop it being answered. Two rules naming one field
+  compose rather than replace.
+
+  **`mountMdyForm` accepts `rules`** and applies them, so the documented path carries the whole document:
+  `mountMdyForm(container, result.fields, { layout: result.layout, rules: result.rules })`. A host that
+  does not pass them gets what it got before.
+
+  **`evaluateRuleCondition(when, value)`** is published beside `evaluateExpression`. The rule predicate is
+  flat and its vocabulary is wider than the expression tree's — `in`, `notIn` and the two "or equal"
+  comparisons exist only here — and a host rendering its own controls can now ask the question the
+  binding asks instead of reimplementing ten operators. An operator nobody declared answers `false`;
+  comparisons are between two numbers or two strings, so an ISO date rule works and nothing is coerced.
+
+  The generated-forms guide no longer says that no renderer applies rules.
+
+- 6712836: A secret is excluded by the name a person writes
+
+  The draft guide instructs, in bold, to always `exclude` passwords, card numbers and tokens. `exclude`
+  matched an exact leaf path and nothing else — and a card number lives in a list, where the row key is
+  data. Of the four ways a consumer writes that intent, the only one that worked was `["cards.a.pan"]`:
+  the spelling nobody can write before the user has added the row. `["cards"]`, `["cards.*.pan"]` and
+  `["pan"]` all left the number in `localStorage` in plain text, and nothing about the form afterwards
+  looked wrong.
+
+  An entry is now matched four ways: the exact path; an **ancestor** (`cards` excludes the subtree); a
+  **pattern**, where `*` stands for exactly one segment (`cards.*.pan`); and a **bare name** with no dot,
+  which excludes any cell of that name wherever it sits.
+
+  The matching is deliberately generous, and that is the decision: an entry excluded by mistake costs a
+  convenience, an entry persisted by mistake is a card number that survives a logout. `exclude: ["name"]`
+  will keep `person.name` out too — write a full path when you need precision.
+
+  Both directions as always: the same matcher answers on save and on restore, so a tampered draft
+  carrying an excluded path still restores nothing.
+
+- cfa1ec6: A surface you can read from the entry point
+
+  Four `export *` published seventy-four symbols nobody could enumerate without opening four files,
+  forty-seven of them from the least curated module in the package. Neither the type-surface audit nor
+  the coverage audit was measuring a surface anyone had chosen — they were measuring whatever those
+  files happened to contain.
+
+  They are named exports now, and the proof that the enumeration is complete is that the type surface
+  did not move: 581 shapes before and after.
+
+  `MDY_FIELD_KINDS` and `MdyFieldKind` are on the entry, so a consumer can ask what a field can be
+  without going through the document parser that used to own the list.
+
+  `MDY_DYNAMIC_DIAGNOSTICS` makes the code table data. Codes were derived by substring-matching English
+  error messages, so rewording a sentence renamed a code somebody was matching on and nothing objected.
+  The coupling is not removed — the phrases still have to appear in the messages — but it is written
+  down and checked: every named code is driven by a document that must produce it, and rewording a
+  message without updating the table fails two tests by name.
+
+  One thing the tests now state that the types did not: `ok` reports whether the _envelope_ was
+  understood, and the counts report what happened to the _fields_. A document whose every field was
+  refused is `ok: true` with `fields: []`, so a consumer reading only `ok` mounts nothing and believes
+  it succeeded.
+
+- c228019: A rule about a field the schema does not have is refused, not attached
+
+  One transposed letter made a working form unsendable:
+
+  ```js
+  form.addValidators("emial", [required()]);
+  form.state.canSubmit(); // false — and submit() never calls its action
+  ```
+
+  Nothing renders a control for a path the schema never declared, so the rule can never be satisfied.
+  The error sat on a path nothing was bound to: a filled-in form, a dead Submit button, and no message
+  anywhere, `devWarnings: true` included.
+
+  `addValidators`, `upsertValidators`, `upsertAsyncValidators` and `setInitialValue` now refuse a path
+  the form does not describe, naming it. A collection's cells still count as declared before their row
+  exists, because a control mounting ahead of its row is ordinary.
+
+  The check is the typed form's, not the engine's: `MdyFormEngine` has no schema, and a field coming
+  into being because something asked for it is how a declarative adapter builds a form.
+
+  `upsertValidators` on an undeclared path used to attach a rule that could be removed again by key.
+  That undo is withdrawn deliberately — the dead Submit is the same through either door, and an escape
+  hatch only helps someone who already knows what happened.
+
+  The three interactivity setters are unchanged: given a _group_ path they do nothing rather than
+  reaching the fields inside it, and refusing an undeclared path without answering that would fix half
+  a door. Recorded as
+  [ADR 0064](../docs/architecture/0064-a-typed-form-refuses-a-path-it-does-not-declare.md).
+
+- 7cbcd34: A form does not send a field that says it cannot be read
+
+  A date or time a control cannot read is kept on screen and explained — and the value the field holds
+  is `null`, which no rule objects to unless the field is required. So the page and the form disagreed:
+
+  ```
+  type "not a date", leave the field
+    the page     aria-invalid="true", "That could not be read…", the text still there
+    the form     valid, submittable
+    the submit   { "when": null }
+  ```
+
+  A server received a field left empty while the person was looking at the opposite. The submit path
+  was not at fault — the same field marked `required` disables the button — it was an error the verdict
+  could not see.
+
+  **`MdyFieldHandle` gains `reportEntry(problem)`:** a control says that what it holds does not
+  represent what was entered, in the words a person reads, or `null` once the two agree again. The
+  engine folds it into the field's errors, so `valid()`, `canSubmit()` and every error list see it.
+
+  Anything implementing `MdyFieldHandle` implements one more member — a test double, an adapter
+  building its own handle. Handles produced by `createForm` are unaffected.
+
+  A form that used to submit `{ when: null }` while showing an error now reports itself unsubmittable
+  until the entry is corrected or cleared. Recorded as
+  [ADR 0073](../docs/architecture/0073-a-verdict-a-person-can-see-is-one-the-form-counts.md).
+
+- 4914abd: An array's row may hold a record, rebuilt atomically.
+
+  Phase C of the nested-collections ladder: an `array()` row may declare a
+  `record()` — an order line whose allocations are keyed by lot. `insert`,
+  `remove` and `move` rebuild the descendant under its new index: values follow
+  the row, and touched/dirty do not, exactly as an array's own rows have always
+  behaved (ADR 0040).
+
+  The rule that replaces the old blanket refusal is **one positional level per
+  path**: an array below another array is refused where the schema is written,
+  including below a record an array's row declared, because two positional levels
+  make a descendant's path move for two reasons nothing can tell apart.
+
+- bf0c12e: `oneOf` recognises an option by what it holds, so a draft's round trip is not tampering
+
+  A draft is written as JSON and read back as JSON, and `oneOf` compared options with `Object.is`:
+
+  ```js
+  const OPTIONS = [
+    { id: 1, label: "One" },
+    { id: 2, label: "Two" },
+  ];
+  field(null, [oneOf(OPTIONS)]);
+
+  // user picks OPTIONS[0]           → valid
+  // draft saves, form reopens       → { id: 1, label: "One" }, a different object
+  //                                 → "not an offered option", form invalid
+  ```
+
+  A user who left a form half-filled and came back was told their own choice was not on the list, with
+  no way out but to pick the same thing again.
+
+  `oneOf` and `eachOneOf` now compare an object option by its members, recursively — for the shapes
+  JSON round-trips: plain objects, arrays, dates and primitives. A class instance, a `Map` or an option
+  carrying a function keeps identity comparison.
+
+  **The guard is exactly as strict.** A member missing, a member added, a member of the wrong type, a
+  member differing in case, an id that was never offered, a bare label instead of the option — all
+  still refused. Two structurally identical options in one list do become indistinguishable, which is
+  the correct answer to the question `oneOf` asks.
+
+  `getChanges()` is unchanged and still compares leaves with `Object.is`.
+
+  Found by `battle-tests/adversarial/persistence/option-identity.battle.test.mjs`. Recorded as
+  [ADR 0051](https://github.com/modyra/modyra/blob/main/docs/architecture/0051-an-option-is-recognised-by-what-it-holds.md).
+
+- e30a985: An error says where it came from, and the panel prints that
+
+  The devtools panel promises each error is prefixed with its origin — `[validation]`, `[async]`,
+  `[cross-field]`, `[server]` — and printed the error's `kind` instead, which for a server refusal is
+  whatever the server chose. The ordinary shape, `{ path, message }`, arrived as **`[unknown]`** in the
+  one tool built to say where things come from; a refusal that called itself `validation` was printed
+  exactly like a rule this form had run.
+
+  `MdyFieldError.origin` is the form's own knowledge — which list the error arrived in — and the panel
+  prints it, falling back to `kind` only where nothing set one.
+
+- 9190e59: A condition nobody can read does not open a section, and cannot hang the form
+
+  `MdyExpressionOp` is a closed set of twelve, and the two functions that read it disagreed about a
+  thirteenth:
+
+  ```js
+  validateExpression({ op: "eqals", … }, "when")   // ["when: unknown operator \"eqals\""]
+  evaluateExpression({ op: "eqals", … }, value)    // true
+  ```
+
+  A section meant to appear for one country was shown to everyone, and the values inside it went into
+  the payload — from one transposed letter. An unknown operator now evaluates to `false`: a question
+  with no answer is not answered with the one that opens.
+
+  The same asymmetry carried a cost. ADR 0050 gates patterns arriving through a document's
+  `validators.pattern`; `matches` is the **second** door a pattern arrives through, and it had no gate.
+  A `when` is read every time the form is read, so `(a+)+$` there does not make a slow form — it makes
+  one that stops answering between two keystrokes. `evaluateExpression` now applies the same cost
+  refusal and the same length cap, and `validateExpression` reports both the way it already reports an
+  unknown operator.
+
+  An operator among the twelve with nothing to compare — `equals` with no operands, `and` with none to
+  join, `not` with nothing to negate — is unreadable too and answers the same way. So is an expression
+  that is not one at all: `null` and a bare string used to raise from inside whatever read the form
+  last, the submit button included, and a `matches` pattern that does not compile did the same.
+
+  An expression nested past the depth cap is **not** covered: that cap limits what a document may
+  carry, not what a caller may evaluate.
+
+  This reverses a documented default: an unreadable condition used to keep a section visible. A
+  validation whose condition cannot be read still never fires; a section whose condition cannot be read
+  now never shows. Recorded as
+  [ADR 0069](../docs/architecture/0069-an-unreadable-condition-does-not-open.md).
+
+- 0f9cf08: A runtime that declares no comparator decides change with `Object.is`
+
+  The published conformance suite had a case for a _declared_ `equal` and none for the comparison a
+  runtime makes when nothing is declared, so `===` and `Object.is` were both conformant. They differ on
+  two values: `===` calls `0` and `-0` the same and `NaN` different from itself, so a number field
+  written `-0` over `0` re-renders nothing and one holding `NaN` re-renders on every write of the same
+  `NaN`.
+
+  `runReactivityContractTests` now requires `Object.is`. An adapter for a runtime whose native default
+  is `===` must override it — `@modyra/solid` did not, despite a comment claiming otherwise, and now
+  passes `Object.is` to `createSignal` and `createMemo`. Vue, React, Preact and Svelte were measured
+  and already agreed.
+
+  An adapter outside this repository that ran the suite and passed may now fail; the failure predates
+  the case. See ADR 0104.
+
+- e4182c0: The colour arithmetic ships with the themes it generates
+
+  `@modyra/core/color-utils` and `@modyra/core/theme-compiler` move to
+  `@modyra/styles`, which gains a JavaScript entry beside its stylesheets. Between
+  them they were 1065 lines — the second and sixth largest files in a package
+  described as a form engine — and nothing in that engine ever executed one of
+  them.
+
+  Measured before moving, because a move that grows a dependency edge is worse than
+  the misplacement it fixes: `color-utils` imports nothing, `theme-compiler` imports
+  only `color-utils`, no package imported either, and `@modyra/styles` had no
+  `@modyra` dependency at all. A leaf moving to a leaf; the graph cannot grow a
+  cycle from it.
+
+  Migration, for the thirty-one names that leave core:
+
+  ```diff
+  -import { MDY_PALETTE_MODELS } from "@modyra/core/color-utils";
+  -import { compileMdyTheme } from "@modyra/core/theme-compiler";
+  +import { MDY_PALETTE_MODELS, compileMdyTheme } from "@modyra/styles";
+  ```
+
+  Their tests move with them and run as `npm run test:styles`, which is part of
+  `npm run test` — a move that leaves its tests unreachable has deleted them
+  without saying so.
+
+  Recorded as ADR 0035, including the check it does not have: nothing enforces that
+  the two modules stay dependency-free, which is the property the move rests on.
+
+- cd62884: An abstraction you can substitute something for
+
+  `MdyFormRegistry` was declared inside the engine's own file, beside its only implementation, and both
+  collection managers imported the concrete `MdyFormEngine` and called eight methods that were on no
+  interface at all — `registerPathGate`, `refreshPathGate`, `peekField`, `ownField`, `disownField`,
+  `fieldNames`, `getField`, `errorsFor`. The interface described the class; nothing could be put in its
+  place, and nothing said so.
+
+  - `MdyCollectionHost` names what a collection actually needs from the form that holds it: a control
+    claims one field, a collection creates and destroys a range of them and answers for which are in
+    play. Both managers now depend on it, and a test drives them against a double that is not the
+    engine — behind a `Proxy` that throws on any method the contract does not have.
+  - `MdyFormRegistry` and `MdyPathGate` moved to `contracts/`, out of the implementation file.
+  - `MdyReactivity` and its neighbours moved to `reactivity-contract.ts`; the reference runtime and its
+    module-level scheduler live in `vanilla-reactivity.ts`. Nine modules that only name the types no
+    longer pull four hundred lines of scheduler to do it.
+  - `MDY_FIELD_KINDS` is a leaf module. `MdyValueKind` was `(typeof MDY_DYNAMIC_FIELD_KINDS)[number]` —
+    this library's canonical type derived from a constant inside a JSON parser, which also closed a
+    cycle between three modules that compiled only because the build erases type-only edges. The
+    document format names the vocabulary now instead of owning it, and a test fails if the re-export
+    ever forks.
+
+  `MdyArrayManagerDeps.engine` and `MdyRecordManagerDeps.engine` are typed `MdyCollectionHost` rather
+  than `MdyFormEngine`. The differ reads that as major and it is worth stating plainly: for anyone
+  _constructing_ these deps it is a widening — the engine satisfies the interface — and for anyone
+  _reading_ `deps.engine` expecting the engine's other methods it is a narrowing. Neither type is on
+  the package entry. Undoing it would mean undoing the inversion, which is the point.
+
+- 59c70fe: Every kind consumes the controller written for it — and the registry that made one of them silent
+
+  Adoption reaches 45/45 and projections 48/48. The last two were the clocks: both
+  kept the draft the timepicker's controller owns, which is the one kind whose value
+  contract says `confirm`, so the draft is real and belongs where the contract put
+  it.
+
+  **`registerHandleOwner` is public.** `observerFor` was already, and it reads a
+  registry nothing public could write to — so an adapter building a handle of its
+  own could not say which runtime owns it. Angular's declaratively named controls
+  build exactly such a handle, registered it in the neighbouring _form_ registry by
+  mistake, and `observerFor` fell back to a vanilla runtime whose signals an Angular
+  computed cannot see. The controller's state changed and the template never
+  re-rendered: the clock's hand would not move, and nothing failed anywhere else,
+  which is the silence that registry exists to end.
+
+  `applyWidgetCommands` joins the Lit overlay runtime. Which command opens a popup,
+  closes it and gives focus back is the same three for every kind, and the three
+  renderers that adopted a controller had written the loop identically.
+
+- 211ee54: History crosses structural changes.
+
+  `undo()` and `redo()` now act on the value as it is at the moment of the call:
+  a row declared, removed or renamed — at any depth, nested collections included —
+  is undoable immediately, not only after the reactivity's scheduler has run.
+  A removed subtree comes back whole; a rename is one step. The boundary is
+  unchanged: only the value is restored — touched, dirty and verdicts are not,
+  and a restored row revalidates as a fresh declaration (ADR 0041).
+
+- 3fa4c1a: A row that sends nothing takes the shape of the row it stands for
+
+  A positional row that contributed no field is submitted at the place it occupies, and it was
+  submitted as `{}` whatever the row was. A collection of leaves — `array(field(""))`, a list of words
+  — then carried an object where a word goes, so a receiver validating a list of words rejected the
+  whole payload rather than the one position it could not read.
+
+  The placeholder is now the empty form of the row's own declaration, taken from the schema: `{}` for
+  a row of cells, a list of the same length for a row that is itself a list, and `undefined` for a row
+  that is a single value (`JSON.stringify` writes that as `null`, which is all an array can carry).
+  `undefined` rather than `null` so a withheld row is not mistaken for a field the person cleared.
+
+  `MdySubmittedValue` says this now: a positional row is `MdySubmittedItemValue<I> | undefined`, and a
+  row of cells is the partial of its own schema rather than the complete value. `MdySubmittedItemValue`
+  is newly exported. Code reading `submitValue()` on a form with a positional collection may need to
+  handle a missing row — which is the case that was silently misreported before. See ADR 0100.
+
+- 000f195: A handle is observed by the runtime that owns it
+
+  The defect had been diagnosed, fixed and documented once already — and the fix reached two callers
+  out of roughly seventeen. `CHANGELOG.md` records what it costs: a binding that builds a fresh
+  `vanillaReactivity()` to observe a handle works only because vanilla's tracking is global to the
+  module, and silently never re-renders for a handle owned by another form.
+
+  `observerFor(handle, requested?)` is the one place that reads the ownership registry, so a caller no
+  longer has to know it should. Every field controller and every field renderer now resolves through
+  it; a runtime passed in explicitly is honoured rather than replaced, because a host with its own
+  scheduling has a right to be believed.
+
+  `MdyCrossRuntimeObservationError` and `MDY_CROSS_RUNTIME_OBSERVATION` were declared when the defect
+  was first found and constructed by nothing, which is why the other fifteen went unnoticed. They are
+  now raised when a caller observes a handle through a runtime that does not own it.
+
+  The select hooks keep their own runtime, and say why: that controller takes options and a callback
+  rather than a field, so there is no form whose runtime it could observe through.
+
+  Also in this release, for the suites rather than the library:
+
+  - `settleFor(beat, hostFlush?)` and `MDY_PAINT_BEATS` — when a renderer's DOM catches up with a
+    write, declared by the renderer instead of guessed per fixture. Plain's twenty milliseconds turn
+    out to have been one task all along.
+  - Lit and Angular drive the lifecycle contract, which one renderer had been carrying alone.
+
+- bd8a9ed: The calendar's questions about its bounds, asked once
+
+  `isMonthOutOfRange`, `isYearOutOfRange` and `calendarYearRange` join
+  `@modyra/core/datetime`. Angular and Lit each carried their own copy of all
+  three, and Lit carried two copies — its range picker is its date picker,
+  copied — so four implementations decided which months a picker greys out and
+  which years it offers.
+
+  They are asked of a month and a year rather than of a date, which is the part
+  that was easy to get wrong: the first of a month can fall before `min` while most
+  of that month is reachable, so testing the first day hides a month the user is
+  allowed to pick in.
+
+  The Lit calendars also stop recomputing month and weekday names through `Intl`.
+  `buildDateLocale` has produced both all along.
+
+- 357316c: One call is one step of history, and a restored row comes back where it was
+
+  Undo is a promise about states: every step on the way back is somewhere the person was. A collection
+  on the path broke it twice.
+
+  A write that changed several rows cost one press per row. `record.setAll` with three rows took three
+  undos to return, and each press in between showed a table with some rows written and some not —
+  while `record.patch` on the same handle, `array.setAll` and `form.patch` all cost one. `reset`,
+  `setValue`, `record.setAll({})` and a restored draft never returned at all: the rows came back one at
+  a time, reversed. All of them now record one entry, and `MdyCollectionHost` gains `mutate` so a
+  collection tells its host that a bulk write is one change.
+
+  A row a restore brought back arrived last, because restoring declares it again and a row declared
+  again is a new row:
+
+  ```js
+  upsert("a");
+  upsert("b");
+  upsert("c");
+  remove("a");
+  undo();
+  // keys(): ["b", "c", "a"]   — was
+  // keys(): ["a", "b", "c"]   — is
+  ```
+
+  A whole-value write now carries the order it holds, through an undo, a redo and a draft alike.
+
+  Undo counts change: a consumer pressing undo three times after a three-row `setAll` now goes three
+  steps further back. Nothing published stated the old count, and the intermediate states are no longer
+  reachable — which is the point.
+
+  Recorded as [ADR 0059](../docs/architecture/0059-a-step-of-history-is-a-state-the-form-was-in.md).
+
+- 7997644: One door per name, and nothing published before it is used
+
+  **The surface was not what it was measured to be.** The audit that snapshots the public type surface
+  read every emitted `.d.ts` in `dist`, so it counted 623 shapes when a consumer could reach 26
+  subpaths — `FieldRecord`, `AsyncValidatorEntry`, `define` and `MdyWidgetShape` were all reported as
+  public and none of them is on an entry. It now resolves the names through the TypeScript checker
+  starting from the `exports` map, which is the only definition of the surface that a consumer sees.
+  The first honest number is 581 shapes.
+
+  **A name is reachable from one subpath.** 82 of `@modyra/core`'s 155 symbols could be imported by
+  two paths, and the adapters had divided themselves between the aliases: `calendarKeyboardTarget` from
+  `/ui` and `/keyboard`, `CalendarDate` from `/datetime` and `/date-utils`. Every duplicate was an
+  aggregate published beside the granular files it re-exported, and the aggregate wins because it names
+  a domain rather than a file. `scripts/audit-public-doors.mjs` now fails on a name with two doors.
+
+  Removed from `@modyra/core`, each redundant with the entry or with the aggregate that keeps it:
+
+  | removed                       | import from                 |
+  | ----------------------------- | --------------------------- |
+  | `@modyra/core/form`           | `@modyra/core`              |
+  | `@modyra/core/validation`     | `@modyra/core`              |
+  | `@modyra/core/dynamic-config` | `@modyra/core`              |
+  | `@modyra/core/date-utils`     | `@modyra/core/datetime`     |
+  | `@modyra/core/time-utils`     | `@modyra/core/datetime`     |
+  | `@modyra/core/date-locale`    | `@modyra/core/datetime`     |
+  | `@modyra/core/icons`          | `@modyra/core/ui`           |
+  | `@modyra/core/keyboard`       | `@modyra/core/ui`           |
+  | `@modyra/core/options-utils`  | `@modyra/core/ui`           |
+  | `@modyra/core/i18n`           | `@modyra/core/localization` |
+
+  Removed from `@modyra/widgets`, all three wholly contained in the entry:
+
+  | removed                    | import from       |
+  | -------------------------- | ----------------- |
+  | `@modyra/widgets/ids`      | `@modyra/widgets` |
+  | `@modyra/widgets/runtime`  | `@modyra/widgets` |
+  | `@modyra/widgets/commands` | `@modyra/widgets` |
+
+  `@modyra/widgets/testing` no longer re-exports `portalRootFor`; the runtime needs it and it has been
+  on the package entry since it moved there.
+
+  **Two audiences, two doors.** The entry offers what a renderer draws with — part ids, root classes,
+  projections, controllers, the interactivity predicates. The tables a theme or a conformance checker
+  reads move to `@modyra/widgets/vocabulary`: `MDY_WIDGET_STATES`, `MDY_WIDGET_STATE_SUPPORT`,
+  `MDY_WIDGET_STATE_CONTRACTS`, `MDY_CANONICAL_UI_CLASSES`, `MDY_CSS_PROPERTY_NAMES`,
+  `MDY_SHARED_UI_CLASSES`, `MDY_STATE_MODIFIERS`, `MDY_LABELABLE_TAGS`, `MDY_FIELD_SHELL_STRUCTURE`,
+  `widgetSupportsState`, `widgetStateMatrixSize`. The types a presenter implements stay on the entry,
+  because that is where a renderer reaches for them. The unused `@modyra/widgets/contract` subpath,
+  which published those same types a second time, is gone.
+
+  **Nothing is published before an implementation uses it.** Seven names were added while the
+  controllers behind them were being written and no renderer consumes them yet, so they leave the entry
+  and return with the renderer that takes them up: `createColorsFieldController`,
+  `createFileFieldController`, `createSelectFieldController`, `createPointerDrag`, `dragPointOf`,
+  `daterangeFieldPartIds`, `daterangeFieldRootClasses` — with `MdyDragPoint`, `MdyPointerDrag` and
+  `MdyPointerDragOptions`, which described the last two. All remain in the package; the modules that
+  declare them are unchanged.
+
+- 89e7d14: A form from a flat field list, built in one place
+
+  `buildDynamicFormSchema` meant two things. In `@modyra/core` it takes the nested node a document
+  declares; in the React binding it took the flat list a parse produces — a different function with the
+  same name. The framework-free renderer had a third under `buildFormSchema`, a **superset** that also
+  rebuilds collections, and the Angular one inlined a fourth. Three implementations of one rule can
+  differ, and the only way anyone would have found out is a user reporting that the same document
+  behaves differently in two renderers.
+
+  `buildFlatFormSchema(fields, collections?)` and `applyFlatValidators(form, fields, key?)` are that
+  rule, named for what they take. The superset behaviour is the one that survived: a path cannot say
+  whether `lines.0` came from an array or a record keyed by digits, so the collections are passed rather
+  than guessed. The nested builder keeps its name — renaming a working export to make room for a new
+  one is a break with no gain.
+
+  `applyFlatValidators` asks for the one method it uses rather than a whole `MdyTypedForm`: one of the
+  three callers passes a component that owns a form, and a signature wider than its use turns a working
+  call into a cast.
+
+  `useMdyField` now applies the verdict rule. `errors` is what the field **shows** — a field the form is
+  not asking about shows none — and `heldErrors` is what it still carries, for a debugging view.
+  `showsAsInvalid` and `errorsVisible` come with it. The rule landed in the renderers a while ago and
+  had never reached the hooks.
+
+- 621866a: A flattened path now rebuilds every collection it crossed.
+
+  `buildFlatFormSchema` turns a collection declared inside another collection's row
+  (`orders.o1.lines` inside `orders`) into a real nested descriptor — the first row
+  describes the child's item, and each row's leaves seed it through the parent's
+  initial. Plain's `mountMdyForm` walks such paths the way each collection is
+  addressed, so `orders.o1.lines.l1.sku` mounts a real control two collections deep.
+  One-level documents build exactly as before.
+
+- e16ed4f: The storage a browser already has is taken as it is
+
+  The draft guide says the default storage is `localStorage`. A consumer reading that and then naming it
+  — for a different key prefix, a session instead of a local, a wrapper that counts writes — passes
+  `window.localStorage`, which is the object the sentence names. `MdyDraftStorage` is
+  `{read, write, remove}` and Web Storage is `{getItem, setItem, removeItem}`; nothing published
+  converted between them, and the mismatch was not refused. The first read threw
+  `this._storage.read is not a function`: a private field, from a stack inside the engine, about an
+  argument the caller had passed.
+
+  `draft.storage` now takes either shape. A Web Storage is adapted at the boundary, with its methods
+  bound to the object they came from. Anything that is neither is refused where it is passed, naming
+  what was expected.
+
+  `MdyWebStorageLike` is published for the second shape, and `MdyDraftOptions.storage` widens to
+  `MdyDraftStorage | MdyWebStorageLike`.
+
+- b137ea2: The UI contract lives in one package
+
+  `@modyra/core/ui` is removed. The icon geometry, the keyboard policy a listbox
+  and a calendar answer to, and the option filter move to `@modyra/widgets`, which
+  is what ADR 0006 said they were all along.
+
+  The reason is worse than misplacement: **`@modyra/widgets` imported them from the
+  engine, in five files.** The package that is the UI contract was reaching
+  sideways for its own material, and the three renderers each imported the same
+  door directly — so a widget's keyboard had two plausible homes and every consumer
+  picked one.
+
+  ```diff
+  -import { calendarKeyboardTarget, filterOptionsByQuery, MDY_ICONS } from "@modyra/core/ui";
+  +import { calendarKeyboardTarget, filterOptionsByQuery, MDY_ICONS } from "@modyra/widgets";
+  ```
+
+  `listboxNavigationIndex` is gone with it. It was `listboxNextIndex` re-exported
+  under a second name, so one function answered to two depending on which renderer
+  was asking; the name it has is `listboxNextIndex`.
+
+  Recorded as ADR 0036, including the check it does not have: nothing forbids a new
+  UI module appearing in the engine tomorrow.
+
+- 55dd238: The words a widget says belong to the widget contract
+
+  `@modyra/core/localization` is removed. The forty-one UI strings and their five
+  locales move to `@modyra/widgets`: a search box's placeholder and a clock's
+  confirm button are what a widget _says_, and the engine has no opinion about
+  either.
+
+  The subpath goes with them because nothing else was left in it — `buildDateLocale`
+  had already moved to `@modyra/core/datetime`, where the calendar that reads a
+  locale lives.
+
+  ```diff
+  -import { MDY_I18N_MESSAGES_IT } from "@modyra/core/localization";
+  +import { MDY_I18N_MESSAGES_IT } from "@modyra/widgets";
+  ```
+
+  What this makes possible and does not yet do: the tables had exactly one consumer
+  while they sat in the engine. The framework-free and Lit renderers hardcode
+  English, so the same button reads "Open the calendar" in one, "Open date picker"
+  in another and "Toggle calendar" in the table neither of them opened. They can
+  reach it now; they still do not.
+
+- 3b6ecac: `required` and `isEmpty` agree about what empty means
+
+  A form asks _has this been answered?_ in two spellings, and they disagreed: on a consent checkbox
+  nobody had ticked, the form refused the submit with _This field is required_ while a rule reading
+  `isNotEmpty` on the same box revealed the section it guarded — failing in the direction that opens.
+
+  Emptiness now follows the kind's value contract in both halves. `false` is empty (a checkbox's
+  contract says absence is not one of its values, so "not ticked" is how that field says _nothing
+  yet_), an object whose every member is empty is empty (a `daterange` before either end is picked),
+  and `0` stays an answer — the slider's thumb is always somewhere, which is the agreement the rest was
+  made to match. ADR 0094.
+
+  **Migration.** A rule written as `isNotEmpty` over a boolean used to fire whatever the box held; it
+  now fires when the box is ticked.
+
+- bd05055: Two rules that each show a field show it
+
+  `applyDynamicRules` composed both effects over _switched off_: a field was out if any rule said so.
+  For the negative effects that is what an author means. For the positive ones it inverts them —
+  `visible when C` is _off unless C_, and two of those compose to "off unless C₁ or off unless C₂",
+  which is in play only when **both** hold. An author writing "show this for a business, and also for a
+  charity" got a field nobody was ever shown, submitted for nobody.
+
+  A positive rule is a way in and any one of them is enough; a negative rule is a veto and holds whatever
+  else is true. A veto still beats a way in.
+
+  **A rule's `value` is checked against the operator that will read it.** Four of a rule's five members
+  were guarded and the one the operator actually consults was not: `greaterThan` against an object, `in`
+  against a string, `notIn` against a number all parsed clean in strict mode and then answered the same
+  thing forever. A rule that can never fire is indistinguishable from a rule nobody wrote. Comparing
+  dates is comparing strings, so a comparison on a date field requires a full ISO date — `"2026-2-01"`
+  sorts before `"2026-1-10"`, and the zero padding is what hides it. The published v2 and v3 schemas say
+  the same thing, so the document a schema validator accepts is the document the parser accepts.
+
+  **`in` and `notIn` are complements.** Answering `false` to both when the value is not a list made the
+  careful spelling give the same answer as the one it was written to be safer than.
+
+  **`MdyExpressionOp` gains `in`, `notIn`, `greaterThanOrEqual` and `lessThanOrEqual`.** The flat rule
+  predicate had four operators the expression tree did not know, so a document could write an operator
+  nothing published could check. One vocabulary now answers both shapes. Adding members to a published
+  union is breaking for an exhaustive `switch`.
+
+- e7b5f9c: Disabling a section disables what is in it
+
+  A schema could put a section out of play — `group(children, { when })` takes it out of the payload
+  and puts it back. The imperative door could not: `setDisabled`, `setReadonly` and `setInactive`
+  honoured only leaves, at every level and in both kinds of collection.
+
+  ```js
+  form.setDisabled("billing", () => !wantsBilling());
+  form.f.billing.iban.disabled(); // false
+  form.submitValue(); // billing is still in it
+  ```
+
+  Nothing was said. Someone who wrote that had done what the documentation shows, and the first
+  evidence was on a server.
+
+  What a binder says about a path is now answered by every field under it — a group, a collection, a
+  row. The verdict is composed when a field is asked rather than pushed down when the call is made, so
+  a row declared _after_ the sentence was spoken is covered by it too. `disabled` still wins over
+  `readonly` at any depth.
+
+  This is a behaviour change in the direction of the call working: code that named a container
+  believing it worked starts working, and code that named one by accident now sees a section leave the
+  payload. Recorded as
+  [ADR 0065](../docs/architecture/0065-what-is-said-about-a-path-is-said-about-what-is-under-it.md).
+
+- bb37b4e: A binding made from a form's handle ends when the form does
+
+  `createFieldStore` opens an effect over a handle's signals, and a component on `useSyncExternalStore`
+  subscribes to it. The store exposed its own `destroy` and that worked — but a component's cleanup and
+  the form's `destroy()` race on unmount, and the consumer does not get to order them. A store still
+  notifying after the form ended re-renders a component against a form that is gone:
+
+  ```js
+  const store = createFieldStore(form.f.rows.cell("a", "code"));
+  store.subscribe(onChange);
+  form.destroy();
+  cell.set("anything"); // onChange fired again
+  ```
+
+  `MdyTypedFormBase.onDestroy(teardown)` is the affordance a binding uses to say it belongs to a form:
+  teardowns run when the form is destroyed, in registration order, each isolated so one that throws
+  neither stops the others nor the engine. It returns a release function, and registering on a form
+  that is already destroyed runs the teardown at once — a binding built from a dead form's handle is
+  dead too.
+
+  `@modyra/react` and `@modyra/preact` register their field stores with it. Calling `store.destroy()`
+  yourself still works and releases the registration, so a store you ended is not held by the form.
+
+  Found by `battle-tests/adversarial/lifecycle/adapter-store-after-destroy.battle.test.mjs`. The other
+  adapters bind through their own framework primitives and were not measured; the same question applies
+  to any binding that outlives its form.
+
+### Patch Changes
+
+- 435a31a: A baseline moves at every level a caller can name
+
+  `setInitialValue` took an ancestor path in the previous release and landed at some levels and not
+  others: a row worked, a leaf worked, the **collection itself** did nothing and said nothing, and a
+  **group** threw — with the wrong reason, `"which this form does not declare"`, sending a reader to look
+  for a typo in a name they had spelled correctly.
+
+  The collection is the level that matters: it is the one name a consumer can write without knowing what
+  the user created. A phantom field sits at a collection's own path to carry collection-level errors, so
+  the question "is there a field here" answered _leaf_ for exactly that level. Descendants are now
+  looked for first, whether or not a field exists at the path itself.
+
+  A group is declared, and the form now says so: what a caller may _do_ with one differs per method, but
+  whether it exists is not in question.
+
+- 76509d3: `mutate` refuses a callback that has not finished
+
+  `mutate` exists for one promise — one history entry, not three — and it keeps it under every shape a
+  batch takes, except one:
+
+  ```js
+  form.mutate(async () => { set(a); await …; set(b); await …; set(c); });
+  // three undo steps, nothing said
+  ```
+
+  The batch closes when the synchronous part ends, so every write after the first `await` lands outside
+  it and the caller gets exactly the history `mutate` exists to prevent. TypeScript does not stop it: a
+  function returning `Promise<void>` is assignable where `void` is expected. And nothing on the calling
+  side can see it — `mutate` returns `void`, so awaiting it waits for nothing, and the only symptom is
+  counting undo steps.
+
+  A callback that returns a thenable is now refused, at the call. The check reads the **return value**
+  rather than a thrown error, because an async function that fails after an `await` does not raise —
+  it returns a rejected promise, which is the same reason the defect is invisible to whoever writes it.
+
+  Every other shape is unchanged: nested `mutate` still collapses into the outermost, a callback that
+  throws still keeps the write it made before throwing, and a callback that changes nothing still
+  records no entry.
+
+- d2cdcaa: A disabled or readonly binding travels with its row
+
+  `setDisabled` and `setReadonly` lived on the field record, keyed by path — and a row's path is not
+  its identity:
+
+  - a keyed row renamed from `a` to `b` arrived without the binding, and the cell the consumer had
+    excluded was **submitted** again;
+  - a positional row moved from index 0 to index 1 left the binding at index 0, where it suppressed the
+    cell of whichever row arrived there — a value silently absent from the payload, and another
+    silently present.
+
+  Everything else a row carries crossed both — value, touched, dirty, verdicts — and a binding made
+  before a row exists already waits for it, so a binding is row state rather than a subscription to a
+  spelling. It now travels with the row across `rename`, `insert`, `remove` and `move`.
+
+  What travels is the value, not the signal: the signal belongs to a control bound to the old path, and
+  a control stays where it is while rows move under it. A control that follows its row states its
+  binding again on the next render. See ADR 0044.
+
+  Every handle a form hands out is also registered with its owning runtime now — collection handles and
+  row trees as well as field handles — so `observerFor` no longer falls back to a fresh runtime, and
+  observing one through a foreign runtime is reported rather than silently accepted.
+
+- 894699d: A bound narrows the year picker instead of greying it out
+
+  `calendarYearRange` widened past whatever it was given: `Math.min(min, …, 1920)`
+  and `Math.max(max, …, 2120)` meant the floor was always at most 1920 and the
+  ceiling always at least 2120. A field accepting 2020 to 2030 offered **207
+  years**, 196 of them rendered and disabled.
+
+  A bound is a bound now. Where there is none the span stays wide enough for a
+  birth date and a far maturity, and the year on screen is always present either
+  way — a view can sit outside the bounds when a value arrives from a draft or a
+  server, and a picker that cannot show where it is has no way back.
+
+  All three renderers read this one function, so all three narrow.
+
+- f297a3c: A repeated group is refused for ambiguity, not for a variable body alone
+
+  Refusing every repeated group whose body can match different lengths caught the exponential shapes
+  and deleted ten of twenty patterns from a corpus of what form authors actually write — an IPv4
+  address, a hostname, a slug, a grouped card number, a person's name — each measured flat against its
+  own near miss out to two hundred characters.
+
+  What the cheap ones have is a boundary the stretchy part cannot stand in for, so the division between
+  one repetition and the next falls in exactly one place. The check reads that seam now: a body ending
+  stretchy is pinned unless the ending accepts everything the body's first element does; a body ending
+  fixed is pinned unless the stretchy part before it accepts everything the ending does. `\d{1,3}\.`
+  is pinned — a dot is not a digit. `.*a` is not — a dot _is_ an `a`.
+
+  `^(a+)+b$`, `^(a+){15}b$`, `^(a{1,10})+b$`, `(.*a){20}$` and `^((ab)+)+$` are still refused; a body
+  this cannot take apart still is too. See ADR 0050.
+
+  Also: `escapeLiteral` no longer escapes `-`, which is only special inside a character class and is an
+  invalid escape under the `u` flag — so a hyphen compiled to nothing and `([a-z]+-)*` was refused for
+  that alone.
+
+- 09b1c21: Reading a form no longer depends on the order its fields were created in. A group, a collection and a
+  section each carry a field at their own path so that what is said _about_ them — a condition, an
+  error — has somewhere to live, and that field's value is always `null`. Assembling the value wrote
+  paths in creation order, so when such a path was created _after_ the fields under it — which is what
+  `setInactive` on a section does — its `null` replaced the whole branch, and `getValue()` threw
+  "Flat value does not match schema shape" on a form that held everything it should. A path that names
+  a branch no longer overwrites it.
+- 6e53749: A call that could not do anything says so
+
+  `devWarnings` is documented as reporting "the calls that could not do anything", and five doors that
+  take a field name accepted one nobody declared, did nothing with it and said nothing: `patch`,
+  `patchValue`, `record.upsert`, `record.patch` and `setDisabled`. A typed consumer is covered by their
+  compiler; these are the doors where the keys come from data — a document, a server response, a saved
+  project — and there a typo is indistinguishable from a write that landed, because the form shows what
+  it already held either way.
+
+  Each now names what it ignored, in the sentence `setValue` already used.
+
+- 25d004c: A change set no longer carries a cell the form disabled
+
+  `getChanges()` carries a positional collection whole, so that a server applying the patch by index
+  knows which row is which. It read those rows from `getValue()`, which holds every cell disabled or
+  not — so a value something had decided must not travel left through the change set while
+  `submitValue()` correctly withheld it. The flat and keyed halves were already right, which is what
+  kept this looking like a detail.
+
+  The carried rows now come from the form's submittable fields and go through the same
+  position-keeping walk a submit uses, so the two doors agree cell for cell. A change set may
+  therefore contain a partial row, or `{}` where every cell of a row is out of play — the shape a
+  submit already produced. See ADR 0102.
+
+- 57c68d8: A check a document keeps is one that can fire
+
+  Two rules the parser accepted and the engine could never run.
+
+  A `validators.pattern` the platform cannot compile — `[` — passed strict mode with nothing said: the
+  cost gate answers about a pattern that runs too long, and one that does not run at all went through,
+  so a publishing gate approved a rule that would never exist.
+
+  And a validation whose condition read the empty path. The empty path is the whole form value, a
+  rule's `field` has never accepted it, and the half that did produced a check comparing the form
+  object to a scalar — false for every value the form can be driven to. Both halves now refuse it, and
+  the message names `{ "root": true }`, which is the operand that reads the whole form.
+
+- de7e122: A path can hold live claims and waiting ones at the same time — one control bound before the row
+  existed, another after. When a whole-value write ended the row, the count moving into waiting
+  replaced what was already waiting instead of adding to it, so two bound controls became one.
+  Releasing one of them then emptied the path while a control was still bound, and the bindings kept
+  under that name — the disabled and readonly signals a consumer sets — went with it: a cell excluded
+  from the payload was back in it for the row that arrived next. The same loss happened one level down,
+  where a replaced nested collection ended its leaves' claims outright rather than putting them back
+  in waiting.
+- 45eb775: A correct document does not report that something was rejected
+
+  The counter added so `acceptedCount + rejectedCount` describes the document treated a collection as a
+  declaration that failed to become a field. It is neither:
+
+  ```
+  a leaf and a record   accepted 1, rejected 1, diagnostics []   collections ["rows"]
+  ```
+
+  A correct document reported that something had been lost, with nothing to look at — while the same
+  result handed the author a `collections` list naming exactly the thing the count was about.
+
+  A collection is _understood_, not lost: it is reported by path and kind, and its cells are not flat
+  fields because a document cannot name rows that do not exist yet. It now counts as neither accepted
+  nor rejected, so a rejection always has a reason beside it.
+
+- 7ac08a7: A condition whose `operands` is not a list is refused with a diagnostic instead of throwing out of
+  the reader. The shape guard recognised a _missing_ clause and not a malformed one, so
+  `{ op: "equals", operands: "x" }` — the shape a missing pair of brackets takes, and what a model
+  generating JSON produces — reached `.forEach` and raised `operands.forEach is not a function`,
+  naming neither the document nor the field nor the clause, in lenient mode as well as strict. Lenient
+  is the mode a consumer chooses precisely to survive a document they do not control.
+- 4892a49: A constraint written where constraints do not live is reported
+
+  `validators: { required: true }` is the contract's spelling. `required: true` on the field is what an
+  author — or a model writing the document — reaches for instead, and the parser kept it, nothing read
+  it, and the form had no rule where its author believed there was one: no validation, no `required()`
+  on the handle, no `aria-required`, `ok: true` in strict mode. The same for `email`, `minLength`,
+  `maxLength` and `pattern`.
+
+  The nuance is what made it hard to learn: `min` and `max` at that level _do_ work, because they are
+  legitimate members of a number field, so the same word meant two things depending on the level, and
+  only for some words.
+
+  A property whose name is a validator the contract declares, appearing where validators do not live,
+  is now reported (`MDY_DYNAMIC_MISPLACED_VALIDATOR`). Unknown members are still ignored, which is what
+  lets a v3 document be read by a parser that predates v3 — this is narrower: the contract already owns
+  these names.
+
+- d9203ee: `acceptedCount` and `rejectedCount` add up for the documents a host actually receives: the walk that
+  counts what a document declared stopped at ten thousand declarations, so a document refused whole
+  after declaring fifty thousand fields reported having lost 9,999 of them — a number short by a factor
+  of five for a host reading the counts to see how much of a generated document survived. The bound
+  stays, an order of magnitude higher, and a document past it now carries
+  `MDY_DYNAMIC_COUNT_INCOMPLETE`: the counts are a floor and say so.
+- 2904441: A pattern from a document is refused for a variable body, not only an unbounded one
+
+  `dynamicPatternRefusal` looked for repetition with no ceiling and left a counted one alone. A ceiling
+  on the outer repetition does not bound the work — it writes the exponent as a number instead of
+  leaving it as the length of the input. Measured in a killable child process, milliseconds by input
+  length:
+
+                        24     26     28     30      32
+      ^(a+){15}b$       85    284    960   3063   >8000
+      ^(a{1,10})+b$     85    339   1353   5385   >8000
+      (.*a){20}$       408   1714   6592  >8000
+
+  Thirty-six characters is minutes, and the match is synchronous, so it is the whole thread.
+
+  The check now reads two things: a group's body is _variable_ when it holds a quantifier whose minimum
+  and maximum differ, and a group is _repeated_ when what follows it may apply twice or more, counted
+  or not. A variable body repeated is refused. `(\d{2}){3}` and `(?:ab){3}` are not — a fixed-length
+  body gives the engine one way to divide the input.
+
+  A pattern refused now that was accepted before is a rule the author must rewrite; a variable body is
+  necessary for the blowup but not sufficient, so a shape like `(ab?){3}` is refused without being
+  exponential. See ADR 0050.
+
+- ccde959: A declaration that raises while it is read leaves nothing behind
+
+  A row's value is not always plain data. An ORM entity behind a lazy association, or a proxy over a
+  store, raises when a column nobody loaded is read — and the key was committed to the collection
+  before the row's fields were registered, so a caller who caught that error was left with two public
+  reads disagreeing:
+
+  ```js
+  form.f.rows.upsert("bad", {
+    get code() {
+      throw new Error("not loaded");
+    },
+  }); // throws
+  form.f.rows.keys(); // ["ok", "bad"]
+  form.getValue().rows; // { ok: … }   — "bad" is not there
+  ```
+
+  A positional collection said it twice as plainly: `length()` counted the row, the value did not have
+  it.
+
+  A declaration is atomic now. If reading the value raises, a key that was new is withdrawn and a list
+  goes back to the rows it had, then the error is rethrown — a rewrite of an existing row already left
+  the row it was rewriting, and that is now the rule for all of them.
+
+  Two things decided alongside, both previously unstated:
+
+  - **A row reads the object it was given, prototype chain included.** A class instance or an ORM
+    entity keeps cells on its prototype, and a row built from one has to see them. Untrusted shapes
+    enter through other doors — a document, a draft, a patch — which are filtered to the paths the
+    schema declares.
+  - **A polluted `Object.prototype` no longer answers for a schema.** The normaliser read its
+    accumulator through the prototype chain, so `Object.prototype.note` set by anything else on the
+    page made `createForm({ note: field("") })` fail with `Schema key "note" is declared twice` — a
+    message naming a defect in a schema that had none.
+
+- 1c164b7: A row's template can name its own sibling in `asyncDependsOn`
+
+  A row is a template: declared once, instantiated per key. A cell naming its sibling can only write
+  the name that sibling has _inside_ the row, and that name was resolved against the form root, where
+  it does not exist — so the only spelling that re-ran the check was `rows.a.code`, which a template
+  cannot write, because it precedes every row and is shared by all of them. There was no correct way
+  to declare a cross-field server check inside a collection.
+
+  A `dependsOn` name now falls back to the row that encloses the clause. The absolute path is tried
+  first, so nothing that resolves today resolves differently.
+
+  A finding reported under a document's tree also names the field by the key its parent gave it, rather
+  than by the placeholder the leaf reader uses.
+
+- 5440e08: A draft discarded while the store is still reading stays discarded
+
+  `createHydratedDraftStorage` answers reads from a cache it fills in the background. A write landing
+  during hydration was already protected — it is newer than what the store held — and a removal was
+  not:
+
+  ```js
+  const store = createHydratedDraftStorage({ backend, keys: ["draft"] });
+  store.remove("draft");
+  store.read("draft"); // null
+  await store.ready;
+  store.read("draft"); // "older, from the backend" — it came back
+  ```
+
+  An absent cache entry meant two different things during hydration: never set, and thrown away by the
+  user. The guard read both as the first. In an app that restores a draft on startup — what
+  `docs/guides/react-native.md` documents this store for — a user who presses discard before startup
+  finishes finds the draft again.
+
+  The store now tracks the keys removed while hydration is in flight and drops the arriving value for
+  them. A write clears that state: a write is newer than the removal that preceded it.
+
+  Found by `battle-tests/adversarial/persistence/hydrating-store.battle.test.mjs`.
+
+- b9897fb: A tree document is told what a flat document is told
+
+  The same defect written as a flat list and as a v2 tree got two answers, and the tree — the shape the
+  current spec describes and a CMS sends — got silence:
+
+  ```
+  a kind nobody declared     flat: MDY_DYNAMIC_UNKNOWN_KIND       tree: kept 0, nothing said
+  a select with no options   flat: MDY_DYNAMIC_OPTIONS_REQUIRED   tree: kept 0, nothing said
+  a costly pattern           flat: MDY_DYNAMIC_PATTERN_TOO_COSTLY tree: kept 1, nothing said
+  ```
+
+  `strict` approved a document whose only field it had dropped — `ok: true, fields: [], diagnostics:
+[]` — because `ok` follows the diagnostics and there were none. Strict mode is the check documented
+  for saving a contract or accepting one into a registry.
+
+  The tree walk now reports through the same sink the flat list does, with the leaf's own path. And the
+  counts describe the document rather than what survived it: `acceptedCount + rejectedCount` equals what
+  was declared, including for a schema refused before the walk runs — three children entering and
+  nothing coming back used to report `rejectedCount: 0`.
+
+  `strict` now refuses documents it used to approve. Recorded as
+  [ADR 0071](../docs/architecture/0071-a-document-is-answered-the-same-in-both-its-shapes.md).
+
+- f22d828: A document the parser accepts is one the engine can build
+
+  A tree of nested collections deep enough passed `parseDynamicForm(…, { mode: "strict" })` with
+  `ok: true` and no diagnostics, passed `buildDynamicFormSchema`, and then made `createForm` raise:
+
+  ```
+  RangeError: Maximum call stack size exceeded
+  ```
+
+  Around five thousand levels for a record, more for an array — a threshold that belongs to the stack
+  rather than to the contract. The error carries no path, cannot be caught by name, and looks exactly
+  like a defect in the caller's own code.
+
+  [ADR 0043](../docs/architecture/0043-a-collection-nests-without-a-limit.md) removed the depth cap on
+  purpose and made the document walk **iterative** for exactly this reason — _"a deep document is
+  parsed or rejected on its own merits instead of overflowing"_. The shape check that runs when a
+  collection is built stayed recursive, so the promise held on the way in and broke on the way out.
+
+  It walks over an explicit stack now. A document the parser accepts builds, at any depth it accepts.
+
+- f47ef54: A document nested past what the walk can carry is refused, not thrown out of
+
+  `flattenDynamicForm` walked a document's schema recursively, so a document nesting fifty thousand
+  groups raised a `RangeError` out of `parseDynamicForm` in both modes — an exception carrying no path,
+  catchable by no name, and indistinguishable from a bug in the caller's own code. The layout half of
+  the same parser has always answered with a diagnostic.
+
+  The walk is an explicit stack now, in document order, so the parser's own refusals are what a deep
+  document meets.
+
+- 69b18ae: A door that takes a schema refuses what is not one, by name
+
+  `createForm`, `buildFlatFormSchema`, `buildDynamicFormSchema` and the Zod bridge all took a schema and
+  none of them checked it. Sixteen ways of getting it wrong produced JavaScript internals:
+
+  ```
+  createForm("nope")                  TypeError: Cannot convert undefined or null to object
+  buildFlatFormSchema(42)             TypeError: fields is not iterable
+  buildDynamicFormSchema(null)        TypeError: Cannot read properties of null (reading 'children')
+  createZodForm(z.array(…))           TypeError: Cannot convert undefined or null to object
+  ```
+
+  Three different mistakes answered by one sentence naming neither the argument nor the call, which a
+  consumer cannot tell apart from a defect in the library.
+
+  Two were worse than an internal: `createForm(42)` and `createForm(true)` **built** — a form with no
+  fields that reported itself valid and submittable.
+
+  Each door now refuses by name and says what a schema is. A field list checks its entries too: an entry
+  that is not an object, or names nothing, is reported instead of reaching a path check that reads
+  `.length` off `undefined`. `createZodForm` and `buildZodTree` say that a form's schema has to name its
+  fields, and to wrap the shape in `z.object({ … })`.
+
+- 6690972: A hydrating draft storage does not let a form overwrite the draft it never saw
+
+  `createHydratedDraftStorage` answers a read before hydration with `null` — "no draft", never a stale
+  one — and that is documented. What was not is the other half: a form built without awaiting `ready`
+  restored nothing, the person typed, the debounce fired, and the write went through the cache to the
+  backend **over the draft that was still in flight**. Their earlier work was gone from the only place
+  it was kept, and they were never shown it.
+
+  A write for a key that has not hydrated is now kept in the cache and not flushed: the live form sees
+  what is being typed, the stored draft survives, and the key writes through as normal once its value
+  has arrived. A `remove` still goes through — it is a decision about the key itself — and leaves
+  nothing for a later write to overwrite, so that write is not held back either.
+
+- a51d3db: A save reads the draft it is replacing, and its stamp never goes backwards
+
+  A draft key names the **form**, not the window — that is what makes a draft survive a reload — so two
+  tabs of one form share it by design. A tab that had been open a while replaced a draft another view
+  had saved a minute later, and stamped the replacement with the earlier time:
+
+  ```
+  tab A saves         savedAt …957878
+  another view saves  savedAt …018229   ← newer
+  tab A saves again   savedAt …958629   ← the record went backwards 59 seconds
+  ```
+
+  Losing the other draft is a defensible last-write-wins. The stamp is not: it is the only field a
+  later reader has, and it said the opposite of what happened.
+
+  A save now reads what is there first. The typing in front of the person still wins — discarding what
+  someone is writing to keep what they are not is the worse answer — but replacing a more recently
+  saved draft is reported on the development channel, and the stamp is never earlier than the one it
+  replaced.
+
+  Each write costs one read of a key the form already owns. Recorded as
+  [ADR 0068](../docs/architecture/0068-a-draft-does-not-go-backwards.md).
+
+- d51b2fa: A form does not restore a draft belonging to another form
+
+  A stored draft records the shape of the form that wrote it, and the write side reads it: a form
+  refuses to overwrite an envelope whose shape is not its own. The read side never looked, so the draft
+  the writer had declined to replace was the one the reader restored — one person's unsent text
+  appeared pre-filled in another person's form, and was submitted from there. Nothing was tampered
+  with: both envelopes were written by this library and both shapes were recorded.
+
+  Restore now asks the same question. The entry is left where it is rather than removed — it belongs to
+  another form, which can still read it — and the write side then refuses the key under
+  `MDY_DRAFT_KEY_IN_USE`. An envelope recording no shape is still restored: it is this form's own
+  earlier work as far as anything can tell. See ADR 0107.
+
+- cec751a: A value the draft cannot read does not take the form down
+
+  Deciding whether a value may be stored walked it with `Object.values`, which _reads_ every member —
+  so a field holding an object with a throwing getter raised out of the debounced write, from a timer
+  nobody is awaiting, and took the form with it.
+
+  The walk reads keys and takes each member in a guard. A member it cannot read is a member it cannot
+  store either, so it answers the question the same way a `File` does: this value is not written to the
+  draft.
+
+- 0c3a770: A document's finding names the entry it is about, not the array it is in
+
+  Every per-field diagnostic carried `path: "/fields"` — the line the array opens on:
+
+  ```
+  a duplicate name, three fields down   written on line 6, reported on line 3
+  a kind nobody declared, deep in list  written on line 7, reported on line 3
+  a name that is a path, on the last    written on line 6, reported on line 3
+  ```
+
+  So a two-hundred-line document assembled by a CMS sent the reader to the same line whichever entry
+  was wrong, and an editor's underline stopped being worth more than the console message it duplicates.
+
+  A finding reported while a field is being read now carries `/fields/<index>`. An envelope-level
+  refusal — an unsupported version, a body that is not a list — still carries `/fields`, because it is
+  about the list.
+
+  **A duplicate names the second occurrence.** The first is legitimate until the second exists, and the
+  second is the one a reader has to change.
+
+  Nothing in `@modyra/eslint-plugin` changes: it walks the literal as far as the path reaches and
+  underlines the deepest node it got to, which is why a more precise path lands correctly with no edit
+  there — and the console message gains the same precision for consumers who never install it.
+
+  Found by `battle-tests/adversarial/tooling/`.
+
+- f47ee5e: A form built with `autoActivate: false` and hydrated before it is activated now writes its draft when
+  it starts. The draft baseline — "what the user has not changed" — was taken at the deferred start,
+  so everything written between construction and `activate()` became part of it and the first draft
+  waited for an unrelated edit. React and Preact construct with `autoActivate: false`, so a form filled
+  from a payload in the tick it was built kept nothing until the user typed, while a form that paused
+  and resumed wrote on resuming. The baseline is now taken when the start is deferred, which is where
+  the form's own value still is.
+- b6a1325: A key the schema never declared cannot enter a typed form
+
+  Three lines of public API were enough to make a form unable to say what it would submit:
+
+  ```js
+  const form = createForm({ name: field("") });
+  form.patch({ evil: 1 });
+  form.submitValue(); // threw: [modyra] Flat patch does not match schema shape
+  ```
+
+  `patch()` takes whatever a consumer received, and an undeclared member became a field. `getValue()`
+  then answered with a key outside `MdyFormValue<S>` — the shape its type promises — and the next
+  `submitValue()` threw on the shape check, permanently.
+
+  The same key arrives through a restored draft, which is the door that matters: the default draft
+  storage is `localStorage`, plain text and writable by every script on the origin, so a form could be
+  bricked, and `fieldNames()` given a name of the writer's choosing, by data at rest. A
+  document-driven renderer draws from `fieldNames()`.
+
+  Both doors now hold the schema's line. A patch keeps only the members the schema describes, as
+  `setValue()` always has. A draft restores only what the form declares — a field it owns, or a path
+  inside one of its collections, so a restored order still gets its lines back. Used without a schema,
+  the engine still lets a draft create fields; that is what an undeclared form is for.
+
+- 7f847da: A form that has ended answers with one voice
+
+  A destroyed form reported `canSubmit() === true` while `submitValue()` answered `{}` — so
+  `if (form.state.canSubmit()) send(form.submitValue())` posted an empty payload from a teardown path —
+  and a write arriving in the same beat landed on the handle only, leaving a control showing a value and
+  an error about a form that held neither.
+
+  `canSubmit()` is now `false` once destroyed, `submitValue()` answers from what was captured at the
+  end as `getValue()` already did, and a late write is refused and reported. Reads still answer;
+  nothing throws. ADR 0091.
+
+- 3233dd4: A stored draft holding a deeply nested value is dropped and reported like any other draft the form
+  will not take, instead of throwing out of `createForm`. `localStorage` is writable by any script on
+  the origin, and `JSON.parse` reads a deeply nested document without difficulty — so the value arrived
+  whole and the check for values a draft must not carry recursed once per level until the stack ended.
+  The application got no form at all, on every load, until someone cleared the key. The walk is
+  iterative, and costs a string in storage nothing to attempt.
+- 1b76a2c: A field name longer than a path may be is refused at the flat door too
+
+  `MDY_MAX_DYNAMIC_PATH_LENGTH` is 512, and it is a _length_ rather than a depth for the reason written
+  where it is declared: a path is the payload key, the draft key, the widget id and a string every
+  renderer carries per field, so the cost of a name is paid at every read of every value.
+
+  The nested door held documents to it. The flat door did not — a name of 513 characters, or of a
+  hundred thousand, was accepted with no diagnostic — and the flat door is the one an untrusted
+  document arrives at: `fields: [{ name, kind, label }]` is the whole of version 1 and the field half
+  of every version since.
+
+  Both doors now refuse under the same code, `MDY_DYNAMIC_PATH_TOO_LONG`. A document carrying such a
+  name loses that field, as it already did through the other door.
+
+- a2a2bda: `buildDynamicFormSchema` keeps the path limit the parser reports on: a field whose declared path is
+  past `MDY_MAX_DYNAMIC_PATH_LENGTH` is left out, and a group or collection left with nothing goes with
+  it. The parser dropped such a field and the builder built it, so a consumer rendering the reported
+  fields and holding data in the built form submitted a value with no control on any screen. Strict
+  mode also stops refusing a document for a **warning**: it refuses on errors, so
+  `MDY_DYNAMIC_COUNT_INCOMPLETE` — a fact about how much the reader counts, not about the document —
+  no longer turns a document with nothing malformed in it into zero fields. See ADR 0043's amendment.
+- 7c8e0b4: A control bound to a row a list does not have waits for it
+
+  An array's rows follow its **value**: a write below its path is a row of it, which is how a restored
+  draft or an undo brings one back. A _claim_ is not a write, and the two were indistinguishable at
+  the level the reconciliation read, so binding a control to `items.1.sku` on an empty list:
+
+  - created two rows, one of them a hole `getValue()` could not describe — it threw
+    `Flat value does not match schema shape`;
+  - put a row nobody declared into `submitValue()`, with a null cell.
+
+  A virtualised table binding a row before its data arrives is exactly that call.
+
+  A list now answers what a keyed collection answers: a claim waits for the row, and binds when it
+  arrives. A value written below the path still grows the list to receive it, so drafts and undo are
+  unchanged, and a row's fields now end when the collection stops admitting them rather than when a
+  control releases its claim.
+
+- eab4653: A structural change to a list resets the rows it moves, and only those
+
+  An array rebuilt every row on every structural call — remove them all, register them again. That is
+  invisible for values and expensive for everything else attached to a row:
+
+  - a control bound to a row nothing moved **lost its claim**, and with it what a binder had said about
+    the cell, so a disabled column came back enabled and was **submitted** after a push at the other
+    end of the list;
+  - `push` cleared the touched and dirty marks of every existing row, so the errors a form only shows
+    on a visited field vanished when the user added a line;
+  - `remove(9)` on a list of three — which removes nothing — did the same.
+
+  Rows that survive a change are now written in place, and only the rows the change actually moved are
+  marked clean: none for a push, from the insertion point for an insert, from the removal point for a
+  remove, across the span for a move, all of them for a whole-value write. An out-of-range removal is
+  no longer a change at all.
+
+  Also fixed alongside: `submitValue()` and `getChanges()` threw `Flat patch does not match schema
+shape` for any list whose row carried a disabled cell or a partial change, because the shape guard
+  demanded complete rows from a value that is partial by definition.
+
+- ade50ff: A mistake the parser reports at the top of a document is reported inside a row
+
+  The document walk knew a node's shape and left what a _field_ declares to the flat reader, which
+  never sees a cell inside a collection. So a `kind` nobody declared, or a `validators.pattern` that is
+  a number, parsed clean in every mode at any depth below a row — and then met `buildDynamicFormSchema`,
+  which throws, at the point where a person is already waiting.
+
+  Every check a field gets in a flat list now applies wherever the field is, reported at its own path.
+
+- a336b22: A field name a renderer will refuse is one the document is told about
+
+  A widget id is built from a field's name, and the renderer refuses two things in one sentence: the
+  id delimiter, and whitespace — both because `aria-describedby` is a space-separated list of ids, so
+  either one splits a reference into pieces that resolve to nothing.
+
+  The parser enforced one of them:
+
+  ```
+  "a__b", "__b"     refused where the document is read
+  "a b", "a\tb"     accepted, kept, and never rendered
+  ```
+
+  An author ran `mode: "strict"`, was told the document was fine, saved it, and the field never
+  appeared. Whitespace in a field name is now refused where the delimiter already was, with the same
+  reason — and both messages name the widget id the rule is about, so the author learns why rather than
+  only that.
+
+  Every other name that mounts is unaffected and measured: quotes, colons, brackets, accented letters
+  and a long name all associate their label and resolve their descriptions.
+
+- 7c53545: A name the contract refuses at one door is refused at every door
+
+  `buildFlatFormSchema` refused a field name carrying whitespace, the id delimiter or a prototype key;
+  `buildDynamicFormSchema` — the tree route, the one a parsed document goes through — took the same
+  name and built a form from it. Which pair of functions a consumer called decided whether their
+  document worked, and a name that reaches a widget id needs the same answer either way: whitespace
+  splits an `aria-describedby` reference into several, each resolving to nothing.
+
+  The rule now lives in one place (`assertSafeDynamicName`) and both routes read it.
+
+- 896f37b: A field name refused by the flat door is refused for the reason it was refused
+
+  `isSafeFieldPath` grew to refuse whitespace and the id delimiter, which closed a real asymmetry — and
+  made two of the three specific reasons in `assertSafeDynamicFieldNames` unreachable, because it was
+  asked first and its message is the catch-all:
+
+      "a b"     said "must not be a prototype key"   the defect is a space
+      "a__b"    said "must not be a prototype key"   the defect is the id delimiter
+
+  The verdict was right in every row and the reason was wrong in two, sending a reader to look for a
+  prototype key inside `"a b"` — and disagreeing with what the parser says about the same name, which
+  is the agreement `guards.ts` exists to keep.
+
+  Each reason is now asked for by name. Pollution stays first, because `__proto__` also carries the id
+  delimiter and the prototype chain is what matters about it; the specific reasons follow; the general
+  path check is last.
+
+- abb242d: A name that cannot be seen, and a path without a limit
+
+  Two doors on the same string.
+
+  **A name carrying an invisible character** was accepted — zero-width space, BOM, an RTL override, a
+  directional isolate — so a document could declare `amount` twice, once really and once invisibly, and
+  the duplicate check that exists precisely for names that collide saw two different names. The
+  framework knows this class exactly: `sanitize: "text"` strips it from every **value**, and
+  `security.md` explains why with `"admin‮"`, which looks like `admin` and is not. A name never met
+  the sanitizer, and a name is what a value is filed under.
+
+  **A path had no limit.** A hundred thousand nested groups parsed clean in 65ms and produced a field
+  whose name was two hundred thousand characters. Nesting stays unbounded — a form's shape is the
+  author's business — but a path is the payload key, the draft key and the widget id, and every read of
+  that value carries it: `MDY_MAX_DYNAMIC_PATH_LENGTH` is 512, reported as `MDY_DYNAMIC_PATH_TOO_LONG`.
+
+- bc1cc05: The devtools snapshot no longer prints what it masks
+
+  `mdyFormSnapshot` masked a sensitive field's value and carried its error messages verbatim:
+
+  ```js
+  password: field("hunter2", [(v) => [`"${v}" is not long enough`]]);
+  // value:  "•••"
+  // errors: ['[validation] "hunter2" is not long enough']
+  ```
+
+  Bulleted in one column, readable in the next. Quoting what was rejected is the most ordinary way to
+  write a validation message, and a server message is not the consumer's to rewrite at all.
+
+  A masked field's value is now taken out of every error on that field — lists and numbers included,
+  longest occurrence first — while the message itself is kept, because why a field is invalid is what a
+  panel exists to show.
+
+  A snapshot's values also go through `mdyFormSerialize` now, so a `File` reads as
+  `[File: name (size bytes)]` rather than as `{}`, which is what the devtools guide already promised.
+
+  Found by `battle-tests/adversarial/security/devtools-masking.battle.test.mjs`. Recorded as
+  [ADR 0048](https://github.com/modyra/modyra/blob/main/docs/architecture/0048-a-panel-does-not-print-what-it-masks.md).
+
+- 1c8e529: A snapshot describes a `Map`, a `Set` and an `Error`, and stops before the stack does
+
+  `mdyFormSerialize` exists because a `File` carries no `toJSON`, so passing it through read as `{}` —
+  the same as a field nobody filled in. Three more values had exactly that shape: a `Map` holding
+  entries, a `Set` holding members and an `Error` carrying a message all serialized to `{}`. Somebody
+  opens the panel to find out why a form is wrong, and the panel answered a different question. They
+  are described now — `[Map: 1 entry]`, `[Set: 2 members]`, `[Error: boom]`.
+
+  And the walk has a ceiling. Every other walk in this library has one — a path is 512 characters, an
+  expression is 32 levels — and the one without was the walk whose whole promise is that reading a
+  form's value never fails: at eight thousand levels it raised `Maximum call stack size exceeded`. It
+  does not take a hostile value to get there, only a recursive structure from an API or a tree an
+  editor built. Past 512 levels the value reads `[Too deep]`, beside `[Circular]` and `[Unreadable: …]`.
+
+- ecca49f: A patch member that is not an array no longer deletes the rows
+
+  `form.patch({ items: response.items })` is how a list arrives from a server, and a response that
+  omitted the list hands the form an `undefined` — a `null` arrives the same way. Every row of the
+  array was deleted, silently: no diagnostic, no error, nothing to notice until the next save.
+
+  The keyed collection beside it already read such a member as saying nothing about rows, and both
+  managers document that rule for whole-value writes. Only the patch path turned it into an empty
+  array.
+
+  A patch now hands the collection the value as it came: an array replaces the rows, anything else
+  changes nothing, and a keyed collection reports a shape it cannot use rather than reading it as "no
+  rows". Rows leave because their owner said so.
+
+- 2e005a4: A control offers the rule's pattern, and cannot loosen it
+
+  Two halves of one defect. `<input pattern>` is implicitly anchored — a browser reads it as `^(?:…)$`
+  — and a rule's expression is not, so a rule of `a+`, which accepts any value _containing_ an `a`,
+  became a control that refused `xax`: the control turned away a value the form accepts and told the
+  person to match a format nobody wrote. `MdyFieldConstraints.pattern` is now the rule said the way the
+  platform reads one, padded at whichever end carries no anchor, so every renderer writes the same
+  attribute.
+
+  And a control's own pattern replaced the field's outright, so a control offering `^.*$` over a rule of
+  `^[a-z]{4,}$` invited exactly what the form was about to refuse. A control may ask for less and never
+  for more: its pattern is taken unless it can be **shown** to loosen — a probe the rules refuse and it
+  accepts. Absence of a counterexample is not a proof, and that limit is written where the probes are.
+
+- 892c01b: A positional collection takes a whole-number position written as text. A position arrives from a
+  `data-` attribute, a route parameter or a form control, and every one of those hands it over as a
+  string: refusing them alongside the values that name no position at all — `NaN` from a failed parse,
+  `undefined` from a lookup that missed — made `remove("1")` a call that changed nothing. What is still
+  refused is text that is not a number and a number that is not whole, which is the finding this
+  guard exists for.
+- e35174d: Every published `MDY_*` constant is frozen all the way down
+
+  Twenty-two of the thirty-six already were; sixteen were not, and five of those were frozen on the
+  surface only — an array frozen around live objects is a table anything sharing the page can rewrite
+  one entry at a time. The kind lists, the diagnostic table, the icon geometry, the four locale message
+  tables and the widget relation, transition and keyboard tables are now frozen at every level, with
+  `Object.freeze` written where the value is built rather than through a new shared helper.
+
+  Nothing in this repository mutated any of them, and the documented way to change UI strings is
+  `provideModyraLocale(locale, { overrides })` or a table of your own — so nothing documented is taken
+  away. `contract:diff` and `test:type-surface` are unmoved, which is what says no `as const` was lost.
+
+- 5e32e40: A field that leaves play abandons the question asked about it
+
+  A server run is abandoned when the value stops being acceptable. A field **leaving play** is the other
+  way the same thing happens, and it was not: the request stayed in flight, `pending` stayed true and
+  `canSubmit` stayed false — for a field that is neither validated nor submitted. The person had
+  switched a section off and was waiting for the answer to a question about a field they could no longer
+  see; with a server that never answers, permanently.
+
+  Leaving play now abandons the run, clears the pending state, and moves the run id so a late answer
+  lands on a run nobody is waiting for. Coming back into play asks again.
+
+  The watcher is a second effect rather than a condition inside the runner, and that is the point: a
+  field becoming **read-only** is still being asked about, and a runner that woke on every interactivity
+  change would cancel and restart a question the form never stopped asking.
+
+- 626ec0a: A refusal names the choices in the words the person can see
+
+  `oneOf` builds the sentence a rejected choice reads, and it built it out of the values:
+
+  ```js
+  oneOf([
+    { id: 1, label: "One" },
+    { id: 2, label: "Two" },
+  ]);
+  // "Value must be one of: [object Object], [object Object]"
+
+  oneOf([]); // "Value must be one of: "   — a sentence that ends at its colon
+  ```
+
+  Object options are ordinary — a domain writes `{ id, label }`, and the value contracts admit them —
+  so the first told a person their choice was not among two things it did not name. The second is the
+  restored-draft case: a saved choice measured against a list that has not arrived yet, refused
+  correctly and explained with nothing after the colon.
+
+  A field compiled from a document now names its options by their **labels**, which is what the person
+  can match against the list in front of them. `oneOf` and `eachOneOf` render an object option as what
+  it holds rather than as `[object Object]`, and an empty list says `There are no choices to pick from.`
+  instead of trailing off.
+
+  `oneOf(values, message)` is untouched: a caller with better words keeps them.
+
+- a0f68a9: A layout refusal names what was wrong, not a field that was right
+
+  Every reason a layout node could be refused arrived at the reader as one code:
+
+  ```
+  a v3 placement in a v2 document   MDY_DYNAMIC_UNKNOWN_FIELD_REFERENCE, twice, and every
+                                    name it referenced resolved
+  a layout nested past the cap      the same code, naming a field the document declares
+  a node with no `id`               the same code again
+  ```
+
+  An author reading it went looking for a misspelled field in a document whose fields were all correct.
+  A refusal that names a cause the document does not have costs more than a vague one: it spends the
+  reader's time on the wrong file.
+
+  Each reason now carries its own code and sentence — `MDY_DYNAMIC_UNSUPPORTED_VERSION` for a construct
+  the declared version precedes, `MDY_DYNAMIC_INVALID_LAYOUT` for a shape or a depth, and
+  `MDY_DYNAMIC_UNKNOWN_FIELD_REFERENCE` only for a name the document does not have.
+
+  The refusals themselves are unchanged: the same documents are refused, and only what they are told
+  has moved.
+
+- 618a7d0: An option value the published schema allows is one the parser takes, and a refusal's advice works
+
+  Three things a refusal or a schema said were not true.
+
+  **The published schemas allowed three scalar option values; the parser took an object, an array and
+  `null` as well.** An author whose editor underlined an option got a runtime that accepted it. ADR 0051
+  makes an object option deliberate — an option is keyed by what it holds — so the schemas now allow
+  `object` too, and the parser refuses `null` (which cannot be told apart from no choice) and arrays
+  (which the schemas do not allow). Both readers of a document now agree.
+
+  **`buildDynamicFormSchema` told the caller to write `parseDynamicForm(document).schema`.** There is no
+  `schema` on a parse result: following the instruction produced `undefined`, which produced the same
+  refusal again. It names the document's own `schema` now — which is what the caller had before parsing.
+  And the two shapes the refusal exists for, `{}` and `{ node: "group" }`, reached an internal instead
+  of it: a root group with no children is refused by name too.
+
+  **`setValue` said "Pass {} to empty the form deliberately".** `{}` returns every field to its
+  _initial_, which ADR 0057 decided on purpose and states in its own consequences — so the message and
+  the record disagreed about the same call, and the message is what a caller reads while deciding. It
+  now says what `{}` does.
+
+- 906115b: A cross-field verdict that decides `valid` can be read
+
+  A form-level validator attributes its errors to field paths, and a keyed collection's paths are
+  data — a rule about rows names `rows.a.code`, computed from a server response or a list of ids. When
+  the row leaves while the rule still names it, or when the path never had a field at all, the error
+  kept deciding `state.valid()` and `state.canSubmit()` and was returned by no public read: not
+  `errorsFor` at its own path, not the form's own bucket, not the submit event.
+
+  A form that will not submit and cannot say why is the one state a consumer cannot render.
+
+  Such an error now surfaces at the form — `errorsFor("")` — which is where a _server_ error whose path
+  matches no field has always surfaced, for exactly the same reason. Errors naming a live field are
+  unchanged: they read at that field, as before.
+
+- df8db70: A path is an instruction a row's shape can refuse
+
+  A draft is written flat and read back flat, and a row named by a path the collection does not have yet
+  is created to receive it — that is how a saved order gets its lines back. It also makes the path an
+  instruction, and a draft lives where every script on the origin can write it.
+
+  One extra segment was the whole attack. `lines.a.b.sku` asks for a row `a` holding a `b` holding a
+  `sku`; there is no row `a` and no `b` inside a row, and both were made. The collection then held a row
+  of a shape its own template never described, and with no field there to be invalid the form reported
+  itself **valid, submittable and without errors** — while `submitValue()` threw `Flat patch does not
+match schema shape` and `submit()` threw a raw `TypeError` from inside the engine.
+
+  A collection now creates a row for a path only when its template declares the cell that path names: a
+  group answers for its named children, a field for nothing below it, and a nested collection for its own
+  subtree. A path the template does not declare is ignored and named in a development warning, rather
+  than thrown — a form that refuses to open because storage holds a bad key is a denial of service with
+  extra steps.
+
+  An honest draft is unaffected: the row and its value come back as before.
+
+- 9133c94: A row's value is shaped by its template, not by which control mounted first
+
+  Declaring a row admitted the claims of controls waiting on it before the row registered its own
+  fields, so a cell someone had mounted early was created first — and the row's value came back with
+  its keys in that order. `{ note, code }` for a table whose second column happened to render first,
+  `{ code, note }` for the same schema rendered the other way.
+
+  The order is data: it is what a serialized payload carries, what a signature over that payload
+  covers, and what a snapshot test compares. Rows now register their fields from the template before
+  waiting claims are admitted, so the shape follows the schema and nothing about the rendering can be
+  read out of the value.
+
+- e712ea0: A row is taken apart as one change, like it is declared
+
+  Declaring a row was made atomic; ending one was not, and they are the same hazard. On
+  `@modyra/solid`, taking a row apart raised:
+
+  ```js
+  form.f.rows.upsert("r", { a: "A" });
+  form.f.rows.rename("r", "q"); // [modyra] Flat value does not match schema shape
+  form.f.rows.remove("r"); // the same
+  form.f.lines.remove(0); // and the positional half, through setAll too
+  ```
+
+  A row ends cell by cell, so a runtime whose computations run eagerly reads the form between two of
+  them and finds a shape the schema does not describe. A keyed collection's `remove` and `rename` are
+  now one change each, and a positional collection batches the whole rebuild — ending rows included —
+  rather than only the registration half.
+
+  Every headless adapter's suite now renames, removes and rebuilds a two-cell row on its own
+  reactivity. Found by `battle-tests/differential/runtimes/`, which could not even reach its handle
+  comparison on Solid because the scenario renames a row first.
+
+- 2066daa: A row's cells land as one change, so eager runtimes can declare a collection
+
+  `@modyra/solid` could not declare a collection row with more than one cell:
+
+  ```js
+  createForm(
+    { rows: record(group({ code: field(""), note: field("") })) },
+    { reactivity: solidReactivity() }
+  );
+  form.f.rows.upsert("a", { code: "A" });
+  // [modyra] Flat value does not match schema shape
+  ```
+
+  A row registers its cells one at a time. Solid's computations run eagerly, so one of them re-read the
+  form between two cells and found a row holding some of them — a shape the schema does not describe,
+  and a read that raises. One cell worked, which is why it survived: the adapter's suite runs under
+  `--conditions=browser`, and nothing in it declared a collection.
+
+  Both managers now register a row, and a whole-value rebuild, inside `batch()` where the runtime
+  reports it. A runtime without batching behaves exactly as before, and the rollback added alongside
+  still restores if reading the value raises.
+
+  This was every Solid consumer with a collection. The other eager runtimes were not affected in
+  measurement, but the change protects them by construction rather than by their scheduling.
+
+- 9133c94: A row declared without a value carries the template's initial values
+
+  `upsert(key)` states that a row exists without stating its contents, and a keyed collection's item
+  descriptor is what a row is. Declaring a row that way read the row back from the engine first — and
+  a row that does not exist yet reads as `null` for every cell, so the row arrived as a row of nulls
+  instead of the row the template describes.
+
+  The difference was visible in the submitted payload and in every control bound to a cell that should
+  have started at its declared initial. `upsert(key, {})`, `patch` and `setAll` were already correct,
+  so the same collection produced two different rows depending on which call declared them.
+
+  Re-declaring a row that already exists is unchanged: `upsert(key)` on a declared row still keeps what
+  the row holds.
+
+- c8f3eb4: A row that carries a collection ends when its declaration is replaced
+
+  Re-declaring a row replaces what is there — an `upsert` on a key that already names a row is not a
+  patch. It held for a row of plain cells and not for a row carrying a collection of its own:
+
+  ```js
+  form.f.orders.upsert("a", { ref: "first", lines: [] });
+  form.f.orders.row("a").lines.push({ sku: "S1", allocations: [] });
+  form.f.orders.upsert("a", { ref: "second", lines: [] });
+  // lines: [{ allocations: [], sku: null }]   — the line survived, its cell nulled
+  ```
+
+  A collection registers a field at its own path so that errors attributed to the collection have
+  somewhere to surface. That field is not a leaf, so tearing a replaced subtree down by its leaves left
+  it behind, and a field under a row is a row as far as the reconciliation is concerned: it declared
+  the row again, holding nothing. One level deeper the form could not be read at all — `getValue()`
+  threw `Flat value does not match schema shape`.
+
+  Both managers now end the collections below a subtree they replace, at any depth, and
+  `MdyNestedCollection` gained `collectionPathsNow()` to answer for them. Measured on five shapes: a
+  list or a map inside a row, a map of rows, three positional levels, and the row of plain cells that
+  was already correct.
+
+  Found by `battle-tests/regressions/a-row-that-would-not-go.battle.test.mjs`; it also closes the
+  keyed-nested and history generative campaigns, which had been reporting this class through a longer
+  sequence.
+
+- fe06a63: Two values that hold the same thing are the same value
+
+  ADR 0051 lets an option carry an object, and a document carries its options in one place and the rule
+  that names one in another — two hand-written literals, or two results of a single `JSON.parse`, never
+  the same object. Compared by identity, a rule over such an option could not come true for any choice
+  the document itself declares, and strict mode accepted it: a `visible` rule that revealed nothing
+  ever, or a `hidden` rule whose field was shown to everyone with its values in the payload.
+
+  `equals`, `notEquals`, `in` and `notIn` now compare objects and arrays by what they hold, in both
+  halves of the vocabulary, depth-capped like the tree around them.
+
+- 7695d89: A `required` that cannot refuse anything is reported
+
+  A kind whose empty is a usable value starts at a value `required` accepts, so the rule can never
+  refuse anything — `slider` is the one, and `schema.ts` says so in words. The parser took it in
+  silence, so an author wrote `required` to make a choice compulsory, shipped, and the form was
+  submitted by somebody who never touched the control: not a lost value, a constraint believed in and
+  absent.
+
+  Reported as `MDY_DYNAMIC_CONSTRAINT_CANNOT_FAIL`, and asked of the **kind's** empty rather than the
+  field's declared initial — a row that starts with values in it is not a field whose rule cannot fail.
+
+- 7f739f7: A validator with no `else` no longer takes the form down with it
+
+  This is what a person writes, and it returned `undefined`:
+
+  ```js
+  field("", [
+    (value) => {
+      if (value === "taken") return ["Already taken"];
+    },
+  ]);
+  form.state.valid(); // TypeError: Cannot read properties of undefined (reading 'map')
+  ```
+
+  The throw came from inside the computed every read of `valid()` goes through, so the form existed and
+  could not be asked anything — not its validity, not through a renderer, not by a submit — with a stack
+  pointing at the engine while the mistake sat in the consumer's own rule. The asynchronous half of the
+  same idiom failed more quietly: every good value marked invalid, with the word `"undefined"` shown
+  next to the field.
+
+  `undefined` and `null` now mean no messages. A bare string is one message. Anything else — a boolean,
+  a number, an object, or a list holding one — reports the value as unchecked and names the shape on the
+  development channel, rather than passing the value as though the rule had run.
+
+  `false` is read as unreadable, not as "invalid": guessing otherwise would add a second way to answer a
+  rule that no adapter knows about. Recorded as
+  [ADR 0061](../docs/architecture/0061-a-rule-that-says-nothing-says-nothing.md).
+
+- 70ccff8: A rule with a bug in it is a verdict, not an outage
+
+  A synchronous validator that threw let the write through and made `state.valid()` throw instead — and
+  every later read, so the form could not be rendered. An `asyncValidators` function that threw before
+  returning a promise escaped the chain the same way, and an `asyncWhen` predicate that threw took
+  `createForm` with it.
+
+  Each now behaves like the `serverValidator` path that always worked: the thrown message becomes an
+  error on the field and the form stays readable, a predicate that throws lets the check run rather
+  than deciding, and the engine's own refusals (`MdyComputedWriteError` and its siblings) still
+  propagate by name. ADR 0090.
+
+- 02bbad2: A run in flight when the form is paused still reaches a terminal state
+
+  `deactivate()` tore the async runner down, which aborted a run already in flight: the promise
+  resolved into a form nobody was listening to, `pending` never settled, and `canSubmit` stayed false —
+  so the submit button of a form the user had finished filling in never came back, and `activate()` did
+  not bring it back either. The environment the feature exists for is React Strict Mode's immediate
+  mount→unmount→remount, where a validator debounced at zero is in flight exactly then.
+
+  A pause now lets a run land: its answer is about a value a pause does not change, which is what
+  "resumes exactly where it left off" means. Resuming no longer re-asks a question already answered for
+  the same value and the same dependencies — and a dependency that changed is still a new question.
+
+- e2ad213: A sanitizer asked for badly is refused, not silently the one that does nothing
+
+  `sanitize` defaults to `"off"`, deliberately — and that default made every way of getting the option
+  wrong indistinguishable from not having asked for it:
+
+  ```js
+  createForm(schema, { security: { sanitise: "strict" } }); // the British spelling
+  createForm(schema, { security: { sanitize: "stict" } }); // a typo in the value
+  field("", [], { sanitize: "stict" }); // the same, per field
+  // markup kept, nothing said, an XSS defence off
+  ```
+
+  The profile names are a closed set, so a member outside it is not a preference — it is a request for
+  something that does not exist, answered with the least protective member of the set.
+
+  A profile that is not one of `off`, `text`, `strict` or a function is now refused, naming what was
+  asked for, at the form and at the field alike. `security` refuses a key it does not have, and an
+  option the form does not read — `{ sanitize: "strict" }` written at the top level instead of inside
+  `security` — is reported on the development channel.
+
+  Not sanitizing by default is unchanged: a consumer who asks for nothing still gets nothing. What is
+  refused is asking for something that does not exist.
+
+- 7c299e2: The pattern check reads the seam wherever it falls, and compares words whole
+
+  A hold-out corpus found a hole in each direction. Refused that should not have been: a list of words
+  — `(foo|bar|baz)+`, `(GET|POST|PUT)+` — because two alternatives start with the same letter, and a
+  quoted comma-separated list, because the comma at the end of its body is something `[^"]` can take
+  while the quote before it is not. Accepted that should not have been: `([A-Za-z]+[0-9]*)+`, whose
+  pinning digits may all be absent, and `([^x]+[^y]+)+z$`, which has no boundary anywhere and holds the
+  thread past a second and a half at thirty characters.
+
+  So the seam is read in every place it falls — trailing elements that may contribute nothing are
+  dropped first, the boundary is looked for across the whole fixed run after the stretchy part, and a
+  body that ends stretchy is ambiguous when two stretchy elements inside it can take the same
+  character. Literal alternatives are compared whole rather than by their first character; what makes
+  them ambiguous is one being a prefix of another. See ADR 0050.
+
+- 717a69e: A `sensitive` field's value is masked in its messages too, whatever shape the value has
+
+  `mdyFormSnapshot` masks a `sensitive` field's value and removes it from that field's messages —
+  masking a value and reprinting it in the next column does not mask it. It collected the literals to
+  remove from strings, numbers, bigints and arrays, and a form value can also be an **object**, in
+  which case it collected nothing:
+
+      a string            rejected "•••"                                  masked
+      an object           rejected {"start":"hunter2…","end":"hunter2…"}   PRINTED
+      an object in a list rejected [{"pan":"hunter2…"}]                    PRINTED
+
+  This reaches shipped kinds with no custom validator: a `daterange` holds `{ start, end }` and its own
+  contract check quotes the end it could not read; `file` holds descriptors and `multiselect` may hold
+  object option values. The value column and the errors column of one row disagreed about whether a
+  value is a secret.
+
+  Objects are walked now, values only and never keys — a masked key would make every message naming the
+  field unreadable — with the existing longest-first ordering kept so a value containing another leaves
+  no fragment behind, and a cycle guard so a self-referential value cannot hang the panel.
+
+- e7e15c7: A secret in a collection row is treated as one
+
+  `sensitive` reached a leaf and a leaf inside a group, and stopped at a collection boundary: a row's
+  cell was printed in the panel, missing from `sensitivePaths()`, and kept out of the draft only when
+  some unrelated field happened to share its name. A row is where a form most often holds a secret — a
+  card per row with its CVV, a beneficiary per row with their tax id — and it is declared once, by the
+  template.
+
+  Two repairs: a row's cells declare the flag when the row is created, and the draft asks for the
+  declarations on every read and write rather than copying them once (a row created later was invisible
+  to a set taken before it existed). Declared secrets now match by exact path or subtree, never by bare
+  leaf name — which also stops an ordinary column vanishing from a restored draft because a field
+  elsewhere was a secret.
+
+- 2bf8290: A server is asked only about a value the field's own rules accept
+
+  Typing a tax id one group at a time — `minLength(11)`, a pause between groups — sent four requests,
+  for `""`, `"I"`, `"IT"` and `"IT1"`. The form already knew all four were too short to be a tax id,
+  and asked anyway.
+
+  The debounce is not the answer: it limits how _often_ a settled value is sent, and a settled prefix is
+  still a prefix. `when` could suppress them, and doing so means restating in a second predicate what
+  the field has already declared — two truths that drift in silence the moment `minLength` changes.
+
+  An async validator now runs only when the field's own synchronous rules accept the value. It is the
+  rule Angular's `AbstractControl` follows and the one line missing from the comparison table, so a
+  consumer arriving from there brings the assumption with them.
+
+  A field whose value its own rules refuse reports nothing pending and holds no stale async verdict —
+  an answer about a value that is no longer there is not an answer about this one. A visible
+  consequence: an empty required field shows no spinner, because no check is running.
+
+  Recorded as [ADR 0070](../docs/architecture/0070-a-server-is-asked-about-a-value-the-field-accepts.md),
+  which keeps the alternative that loses: `when` is documented for exactly this and it asks a consumer
+  to restate in a second predicate what the field already declared, so the two drift the moment the
+  bound changes.
+
+- 095e9ef: A stray member is reported on a layout slot, and at every depth
+
+  `MDY_DYNAMIC_MEMBERS.layoutSlot` had no reader. A slot — `{ref, at}`, a field and where it sits — is
+  the one node where the member carries the meaning: `at` says which column the field takes at which
+  size, so a slot written `att` is a placement that never happens, and the document parsed clean in
+  strict mode with the misspelling kept in the parsed layout and handed to whatever draws it.
+
+  The layout was also only checked at its top. A row inside a section inside a row could carry a member
+  nothing reads and nothing said so.
+
+  The parser now walks the whole layout tree and reports at the path where the member is written —
+  `/layout/0/columns/1/0` rather than `/layout/0`. A document that parsed clean in strict mode may now
+  be refused; what it carried was already unread. See ADR 0097.
+
+- 9f45e15: An envelope member no version of the contract has is reported as `MDY_DYNAMIC_UNKNOWN_MEMBER`. A
+  document reaching for something the contract does not do — a `computations` slot beside the schema,
+  say — parsed clean, rendered, and quietly did not do it. The check joins the five slots ADR 0097
+  already covers; a member an _older_ version predates keeps its version finding, which is the more
+  useful sentence.
+- c7b25ce: A nested collection is read, written, renamed and restored with the row that owns it
+
+  The row readers still stopped at a collection, so the operations that read a
+  whole row and write it back could not see one: `rename` threw, and `setAll` and
+  `patch` would have dropped what they could not read.
+
+  They descend now, through the manager that owns the nested rows rather than
+  through the declaration, which names no keys:
+
+  - **rename** carries the whole subtree, and a child renamed inside one parent
+    leaves the identically-named row under another parent alone;
+  - **setAll** replaces — a row it does not mention goes, subtree included;
+  - **patch** merges — a subtree it does not name stays where it was;
+  - a **restored draft** rebuilds both levels.
+
+  Recorded rather than fixed: undo does not cross a structural change. It does not
+  at one level either, so nesting neither introduced this nor worsened it, and the
+  test says so at both depths instead of leaving a skip that reads like a pass.
+
+- 0879e90: A value of the right shape is still held to what its kind can carry, and a narrowed step offers nothing the field refuses
+
+  Two halves of "a control may ask for less and never for more".
+
+  **The value.** Three kinds carry a string with a form — a date is ISO `yyyy-MM-dd`, a time is
+  `HH:mm`, a range is two dates — and only the _shape_ was checked, which for all three is `string`. So
+  a datepicker restored from a tampered draft held `"not a date at all"`, `"9999-99-99"` or an ISO
+  _datetime_, and the form called itself valid and submittable. The value still reaches the model — a
+  form reports a shape it does not expect as a verdict rather than refusing the write — and now the
+  verdict exists.
+
+  **The step.** `narrowConstraints` took the higher of two steps, reading "asks for less" the way `max`
+  does. A step is a lattice, not a limit: 3 over a field of 2 offers `3` and `9`, which the field
+  refuses, so a person could stop on a value their own form rejects. The coarser lattice containing
+  both is the least common multiple — over 2 and 3 it is 6.
+
+- 44a23e5: `remove`, `insert` and `move` on a positional collection leave the list alone when the index is not a
+  position. An index is computed — from a route parameter, a `data-` attribute, a lookup — and the
+  mistakes that produce no number at all (`NaN` from a failed parse, `undefined` from a lookup that
+  missed, `null`) passed the bounds check and `splice` then read them as 0: the one shape of mistake
+  that yields no number deleted the first row and its values, where `-1`, `99` and `Infinity` already
+  changed nothing. `insert` and `move` put the row at the front for the same reason.
+- daf38f2: A control draws the value the model was allowed to hold
+
+  `patchValue` is public, a draft is data, and a server's answer is data: a multiselect or a file field
+  can be handed a string, a number or an object. The engine's own shape gate is what should object —
+  the model holds it, the field is invalid, `canSubmit` is false — and that verdict only arrives while
+  the control is still drawing.
+
+  Two places read the value as a list without asking: `optionsWithUnrecognizedValues` guarded emptiness
+  where its singular sibling guards shape, and `@modyra/lit`'s multiselect and file elements mapped over
+  whatever they were given. Each threw from inside the effect that draws the widget, and an effect that
+  throws stops running — so the control kept whatever it was showing _before_ the write, with
+  `aria-invalid="false"` and an empty error list. The person had nothing to read and nothing to correct.
+
+  A value that is not a list is now one value, which is what the singular form has always done. The
+  shape gate then has something to object to, visibly.
+
+  `optionsWithUnrecognizedValues`' `values` parameter widens to accept a bare value. The type-surface
+  audit classifies that major; my own reading is that widening a parameter breaks no caller, and the
+  stricter classification is the one that ships.
+
+  `evaluateRuleCondition` compares two calendar dates as dates. Text order agrees with calendar order
+  only while every part is zero-padded — `"2026-2-01"` sorts before `"2026-1-10"` — and a document
+  cannot reach that, because the parser refuses an unpadded date on a date field. This function is
+  published on its own, and a caller comparing a date out of their own model has no parser in between.
+
+- d6a97f6: Removing an asynchronous validator takes its verdict with it. The memo that stops a resumed form from
+  re-asking a settled question remembered the value, the watched dependencies and the wake counter, but
+  not the validators the answer came from — so removing one looked like the same question again and the
+  memo answered from the run before, leaving the error a removed check had reported on a field nothing
+  was checking any more.
+- ca1c6c3: A document whose `version` this reader does not have is refused as a version: it reports
+  `MDY_DYNAMIC_UNSUPPORTED_VERSION` at `/version` naming the version it carries, in both the flat and
+  the tree form. A tree document from a publisher one version ahead was refused as a malformed field
+  list, sending its host hunting for a broken field that does not exist. The flat reader also accepts
+  version 4 — v4 is v3 plus per-node conditions — and its message names all four versions instead of
+  three.
+- aa3574c: A whole value that names none of the form's fields is refused, not obeyed
+
+  `setValue` refuses a string, a number, `null`, `undefined` and an array. An object was the one shape
+  it let through, and a wrong-shaped response is an object:
+
+  ```js
+  form.setValue({ emial: "x" }); // one transposed letter
+  form.getValue(); // every field back to its initial
+  form.state.valid(); // true
+  ```
+
+  The rule that a field the value does not name returns to its initial then emptied the form, silently,
+  with nothing said on either channel — which is the erasure the argument check was written to close.
+
+  A whole value naming none of the form's fields now throws, and names the keys it did not recognise.
+  `setValue({})` is unchanged: it is the spelling for emptying a form deliberately, and it is what a
+  caller who means that writes. A value naming some of them writes those and reports the rest on the
+  development channel, because a server that renamed one field is the ordinary way this happens.
+
+  Recorded as an amendment to
+  [ADR 0057](../docs/architecture/0057-an-argument-is-refused-where-it-arrives.md), whose Security
+  section claimed a protection the decision did not yet deliver.
+
+- c464e35: An argument is refused where it arrives, instead of failing somewhere else
+
+  Seven public entry points accepted a value they could not use, returned normally, and left the form
+  to fail on a later read with a message naming an engine internal.
+
+  ```js
+  form.setDisabled("rows.a.code", true); // the documented shape is () => true
+  form.state.valid(); // TypeError: disabledSignal(...) is not a function
+  ```
+
+  `setDisabled`, `setReadonly` and `setInactive` now refuse anything that is not a zero-argument
+  function, naming the parameter and what to wrap. `addValidators`, `upsertValidators` and
+  `upsertAsyncValidators` refuse anything that is not an array of functions. TypeScript declared these
+  parameters all along, so a typed consumer is unaffected — this is the adapter-facing surface, where a
+  framework's ref reaches the engine untyped.
+
+  `setValue` refuses a string, a number, `null`, `undefined` or an array: none of them is a whole form
+  value, and every one of them used to empty the form while `state.valid()` went on reading true. A
+  field the new value does not name now returns to its initial rather than to `null`, which is the rule
+  `reset()` already follows — `explainValueMismatch` called the old result `text cannot hold null`. A
+  consumer who relied on `setValue` to null a field that declares an initial must now write the null.
+
+  `setInitialValue` refuses a baseline of a different shape from the one the schema declared. An
+  initial is what `reset()` returns to and what `dirty` measures against, so one the field cannot hold
+  is a form that can never be clean and can always be reset into a value its own contract forbids.
+
+  Recorded as [ADR 0057](../docs/architecture/0057-an-argument-is-refused-where-it-arrives.md), which
+  states the residual gap: a field whose schema declared `null` accepts any initial, because a typed
+  schema carries no kind to check against.
+
+- bbf6081: A list grows to receive the next row, not to reach a number
+
+  A draft is read back flat, and a path for a row the list does not have yet made the list grow to reach
+  it. `tags.5` on a list of one produced `["t", "", "", "", "", "X"]` — five entries nobody typed — and
+  the number came from storage, which anything on the origin can write. It is not linear: a list of
+  50,001 took five seconds to restore and a large enough index stopped the form opening at all.
+
+  A positional collection now grows by the row a path names and only when that row is the next one. A
+  write that legitimately carries a list carries every index in it.
+
+  **A flat write is applied in path order**, numerically where a segment is a number. Object key order
+  is the order a document happened to be serialised in; sorting makes a write's effect the same
+  whichever order it arrives in, which is what lets a list grow one row at a time without depending on
+  how storage was written.
+
+- b5c81b7: An object with no members is not empty
+
+  ADR 0094 made an object whose every member is empty read as empty — a `daterange` before either end
+  is picked. The rule caught `{}` with it, and `{}` is a form root before any field exists rather than
+  a field nobody filled in, so the root of a form stopped reading as a value that exists.
+
+  Emptiness now needs something to be empty _of_: a value with members, all of them empty.
+
+- 315a533: A document's predicate reads what a field could name
+
+  `MdyExpression` addresses fields by path and was the one door that did not consult the engine's path
+  guard:
+
+  ```js
+  evaluateExpression(
+    { op: "isNotEmpty", operand: { path: "constructor" } },
+    {}
+  ); // true
+  validateExpression(
+    { op: "equals", operands: [{ path: "__proto__" }, 1] },
+    "doc"
+  ); // no issues
+  ```
+
+  An empty form has no cells, and a predicate asking about one answered `true`, because the read walked
+  the prototype chain. Nothing is written and nothing is polluted — what moves is which branch a
+  document says applies: a rule that should never fire fires, a section that should be hidden shows.
+
+  `validateExpression` now applies `isSafeFieldPath` to every `{path}` operand, so a document carrying
+  `__proto__`, `prototype` or `constructor` is refused where it is read; `expressionPaths` omits them,
+  since a path the engine will not register is not a dependency; and `evaluateExpression` answers from
+  the value's own properties.
+
+  `""` is unchanged and still means the root value, which is how a form-level rule reads the whole
+  object.
+
+  Found by `battle-tests/adversarial/security/expression-paths.battle.test.mjs`. Recorded as
+  [ADR 0047](https://github.com/modyra/modyra/blob/main/docs/architecture/0047-an-expression-reads-what-a-field-could-name.md).
+
+- 30d8a97: An initial value is checked where the document declares it
+
+  A collection's initial was measured against its own shape — a record wants an object, an array a list,
+  each refused by name — and a field's was measured against nothing. `{ kind: "text", initialValue: 42 }`
+  passed in the strictest mode there is and produced a form that was invalid before anybody touched it:
+  `{"a": 42}`, `valid: false`, _"This field holds string"_ on a value the user never entered and cannot
+  see how to correct.
+
+  The knowledge was already published and used one layer later — `explainValueMismatch` is the sentence
+  the engine says about a value that arrives at runtime, and a declared initial is that value arriving
+  earlier. Both parser doors now say it: the flat field list and the schema tree.
+
+  `buildDynamicFormSchema` drops an initial its kind cannot hold and names it in a development warning,
+  starting the field from the kind's own empty value. Dropped rather than thrown: a form is the thing a
+  person is looking at, and refusing to build one takes the whole page away.
+
+- c0e0348: An operand that names more than one of `{path}`, `{self}`, `{root}` and `{context}` is refused where
+  an expression is validated, and each guard answers `false` for it. One carrying two was claimed by
+  two guards at once and parsed clean, so which half it meant was decided by the order a reader
+  happened to ask in — a document meaning one thing here and another in the Rust or Java reader of the
+  same contract, on a document all three accept. A context key of no characters is not a context
+  reference either: the guard now agrees with the validator that has always refused it. See ADR 0092's
+  amendment.
+- 49cebaa: An operand that claims to be a reference and is not decides nothing, and the panel describes what it cannot read
+
+  Three repairs to the same rule — _a question with no reading is not answered with the one that opens_:
+
+  - `{ context: 123 }`, `{ self: "yes" }`, `{ root: 1 }`, `{ path: 4 }` reached the literal branch and
+    were compared as the objects they are — never empty, never equal — so `isNotEmpty` answered `true`
+    and a section governed by a misspelled operand was shown to everyone. They now decide nothing, the
+    way an unknown operator does. An object with none of those members stays a literal: an option's
+    value may be an object and a membership list is an array.
+  - `isPathRef` required the member to be _present_; `{ path: 4 }` then took the read down inside
+    `memberAccess`, where a number has no `split`.
+  - A context key that throws when read — the bag belongs to the application, so in a real one it is a
+    store, a signal or a Proxy — no longer takes the whole form read with it.
+
+  And `mdyFormSerialize` describes a value it cannot read, as it already described the ones it cannot
+  carry: an accessor that raises becomes `[Unreadable: <member>]` with the rest of the object intact, a
+  `toJSON` that fails names itself, and an object that refuses enumeration is described rather than
+  raising. The panel is what a developer opens when something is already wrong.
+
+- 7d5dc5b: An option a field does not read is reported, the way a form's is
+
+  `createForm` names an option it does not know — the decision that a misplaced one must be said was
+  already taken, and for this reason: it is indistinguishable from not having asked. `field()` did not
+  follow it, and the contrast lived inside a single option:
+
+  ```
+  sanitize: "strict"    the value is sanitized
+  sanitize: "stict"     refused by name, at construction
+  sanitise: "strict"    built, never sanitized, nothing said
+  ```
+
+  `sanitise` is the British spelling and the ordinary way to get it wrong, and it left a field
+  unsanitized while its author believed otherwise. `asyncDebounce` for `asyncDebounceMs` is the same
+  shape at a different cost: every keystroke reaches the server.
+
+  Said rather than refused, because the bag grows with the library.
+
+- 8802f09: An option `createForm` does not read is reported to the diagnostics sink when one was given, under
+  `MDY_UNSUPPORTED_ADAPTER_OPTION`, instead of only to the console. A consumer who supplies a sink
+  asked for these as events, and this was the one degradation that could reach nothing else — the first
+  thing a host wants routed, since a misplaced option looks exactly like not having asked.
+- 67aa107: An option list the contract cannot read is refused where the rules are compiled
+
+  A host that assembles its own fields — rather than parsing a document — could hand `select`, `radio`,
+  `multiselect` or `segmented` an option list of bare strings. Each option's `value` is then
+  `undefined`, so the compiled rule rejects every value, and the sentence a person read was:
+
+  ```
+  Value must be one of: undefined, undefined
+  ```
+
+  A prefilled value arrived rejected, with `aria-invalid="true"`, for a list the author believed they
+  had declared. Omitting the list entirely was worse: `Cannot read properties of undefined (reading
+'map')`, an engine internal surfacing on a caller's mistake.
+
+  `parseDynamicForm` already refuses both with `MDY_DYNAMIC_OPTIONS_REQUIRED`; the compiler now agrees.
+  It throws rather than dropping the field, because a caller on this path has no document to report a
+  diagnostic about — the parser has a channel and uses it, and this door does not.
+
+  An empty list is still accepted: a select whose choices arrive later is legitimate, and the published
+  schema allows it.
+
+- 85ff99a: An overlapping alternative is refused however it is written
+
+  The pattern guard compared a repeated alternation's branches by their first characters, and gave up
+  at a character class — so the same ambiguity written as a class walked through:
+
+  ```
+  ^(a|a)*$          refused
+  ^([a-z]|[a-z])*$  allowed — 279ms at 22 characters, 4.5s at 26
+  ^(\w|[a-z])*$     allowed — 338ms / 5.4s
+  ```
+
+  Roughly ×16 per four characters: the exponential signature, not a slow pattern. The last one is what
+  makes it ordinary rather than contrived — nobody writes `(a|a)`, and people do write "word characters
+  or letters" without noticing the second is contained in the first.
+
+  Branches are now compared by **what they accept**: a class, a class escape (`\w`, `\d`, `\s`), a dot
+  and a literal are four notations for a set of characters, and two branches are ambiguous when their
+  sets share one.
+
+  The line that keeps this usable is unchanged and pinned: `^([a-z]|[0-9])+$`, `^([a-z]+|[0-9]+)$` and
+  `^(.|\n)*$` are **not** refused — a digit is not a letter, and `.` does not match a newline. A branch
+  beginning with a nested group or a backreference stays undecidable and allowed.
+
+  Found by `battle-tests/adversarial/security/overlapping-alternatives.battle.test.mjs`, which also
+  pins the boundary.
+
+- ad86c08: Asking for strict either gets strict or gets told
+
+  `parseDynamicForm(document, { mode: "STRICT" })` — or a bare `"strict"` where the options object
+  belongs, or `null` — was read leniently and answered `ok: true`. A publishing gate asks for strict
+  precisely so a partly valid contract does not go out, and a typo in the request turned that gate into
+  a pass.
+
+  A mode this reader does not know is now reported (`MDY_DYNAMIC_UNKNOWN_PARSE_MODE`) and makes `ok`
+  false. It is a report rather than a throw, because this parser's whole design is a report.
+
+- 5589197: A value a kind cannot hold is refused by whichever builder made the form
+
+  `buildDynamicFormSchema` attaches each kind's shape guard to every leaf it makes; `buildFlatFormSchema`
+  attached none. Both are published, and the flat one is where `flattenDynamicForm`'s output goes — so
+  the same document, flattened and rebuilt, stopped refusing values its kinds cannot hold. Measured:
+
+      datepicker holding "not a date at all"    tree: invalid    flat: valid
+
+  A value from outside the control is where this lands — a tampered draft, a server response, a
+  scripted write — and the form called itself valid and submittable, depending only on which of the two
+  builders the consumer called.
+
+  `buildFlatFormSchema` now attaches it too. It is not one of the document's validators — those stay in
+  `applyFlatValidators`, a separate call by design — it is what the _kind_ is, exactly as the `shape`
+  option beside it already was.
+
+- 9f29b19: The cross-runtime guard survives a second copy of the package
+
+  `observerFor` catches a binding observing a handle through a runtime that does not own it, by reading
+  a module-level `WeakMap` of owners. A module-level map is per module _instance_: two copies of
+  `@modyra/core` in one dependency tree — what a package manager builds whenever two dependents need
+  versions it cannot deduplicate — are two registries, so a handle registered in one is unknown to the
+  other. `observerFor` reports only when it can see an owner that differs, so an unknown handle is one
+  it says nothing about, and the guard turned itself off in exactly the tree it exists for.
+
+  The registry is now keyed by `Symbol.for("modyra.handle-registry")`, so every copy loaded in one
+  realm shares one pair of maps, and read defensively so a copy of another version with a different
+  shape is not trusted. See ADR 0105.
+
+- bda72f8: A name the contract refuses at one door is refused at every door
+
+  The name rule has three halves — a safe path segment, no id delimiter, no whitespace — and only the
+  flat field list applied all three. A tree child and a collection's row key were checked for the
+  prototype half alone, so `{ children: { "  ": … } }` parsed clean where the same name in a flat list
+  was dropped, and a row key like `"a b"` flattened into a path `buildFlatFormSchema` then refused —
+  one document, two build routes, two answers.
+
+  The whole rule now applies wherever a document names something (`isSafeDynamicName`), so which shape
+  an author wrote no longer decides whether their mistake is caught.
+
+- d2e0d7f: A keyed collection keeps one declaration order. Two operations move a key without adding or removing
+  one — an undo that puts a row back where it was, and a rename that gives a row the old key's place —
+  and both wrote the new order into the list `keys()` reports while the declared set kept the order the
+  keys were first declared in. The set is what a whole-value write and the value itself read, so a form
+  looked correct until the next `setAll`, which restored an order the user had already undone —
+  arbitrarily far from the operation that caused it. `keys()` remains the only surface that can answer
+  the question at all: a value is a plain object, and JavaScript puts an integer-like key first however
+  it was written.
+- 556517c: A field reports each message once, however many rules say it
+
+  The kind's own shape guard is attached by the schema `buildFlatFormSchema` produces _and_ by
+  `applyFlatValidators`, which applies a document's validators — and calling both is what the flat
+  route documents. A field holding the wrong shape then reported `This field holds number` twice, once
+  per call.
+
+  Two rules that say the same sentence are one thing for the person to fix, so a field's synchronous
+  errors are reported once per distinct message. Nothing about which rules run changes.
+
+- 4749edc: An empty array in a patch says so while it is still recoverable
+
+  `form.patch({ rows: {} })` changes nothing and `form.patch({ list: [] })` empties the list. Both are
+  their kind's reading — a keyed collection merges by key, so an empty object names none; a positional
+  one is carried whole, because an index _is_ a row's identity and a partial list would be an ambiguous
+  PATCH rather than a partial one — and the difference is invisible until a consumer who learned the
+  first writes the second and loses their rows.
+
+  The behaviour is unchanged, deliberately: the array branch of `MdyFormPatch` is already declared
+  whole-list, and making `[]` a no-op would leave no spelling for "this list is now empty" in a patch.
+  What changes is that the destructive reading is no longer silent — in development, emptying a
+  non-empty positional collection through `patch` names the collection, the number of rows, and the
+  reason the two kinds differ. The guide's operation table and its collections section say the same.
+
+- eacc848: One set of layout sizes, not four spellings of it
+
+  `base | sm | md | lg` was written four times: once as the document's type, twice
+  as inline arrays validating that document, and once more as the keys of the
+  widget contract's breakpoint table — whose comment said it was mirroring the
+  other, by hand.
+
+  The set is declared once, in the layer both reach, and derived from there.
+  `MdyLayoutBreakpoint` and `MdyLayoutSlotPlacement` are now aliases of the
+  document's types rather than restatements of them; they resolve to exactly what
+  they resolved to before, so no consumer changes.
+
+  Adding a size is now a compile error until every table carries it, and removing
+  one is a compile error at the declaration. The constraint sits inside
+  `Object.freeze` rather than on the binding: a literal handed to a call is no
+  longer fresh, and an annotation there would accept a key the union had dropped —
+  which caught the addition and missed the removal.
+
+- 83e94a5: A value is sanitized the same number of times whichever door it came through
+
+  Every write that went _through_ a collection ran the field's sanitizer twice: `setInitialValue`
+  sanitized into the baseline and the record then seeded itself from that baseline through the
+  sanitizer again. Those are the doors a form is _populated_ by — a server response, a loaded record, a
+  row added.
+
+  It was written off on the grounds that a sanitizer is idempotent. DOMPurify is; escaping is not, and
+  escaping is what a text sanitizer does, so four load-and-save rounds with nobody touching the field
+  turned `Tom & Jerry` into `Tom &amp;amp;amp; Jerry` — a value nobody typed, with no moment at which
+  anyone got it wrong.
+
+  A declared initial is sanitized once, where it is declared; re-baselining a collection no longer
+  rewrites a value the field is already holding.
+
+- 50e1211: One visit declares a row, and a record's cells are owned like an array's
+
+  Both collection managers wrote the same recursive walk — sanitizer, initial
+  value, validators, composed conditions, async runners — and the copies had
+  already drifted: only the array told the form that the row _owns_ its cells, so
+  the sentence `MdyCollectionHost` states about ownership was true of one
+  collection and not the other.
+
+  Nothing in the value showed it, because the path gate refuses a removal before
+  ownership is consulted. That is how the difference survived, and it is why the
+  rule is now asserted for both kinds rather than assumed from one.
+
+  The walk lives in `collections/register.ts`, recursive over a row's shape, with
+  what to do about a collection inside a row handed in by the caller — the part
+  the two kinds do not share, and the part still being built.
+
+- 2707f44: A path is in play only when every collection above it admits it
+
+  The engine answered a path from the first gate whose prefix matched, in
+  registration order. With one collection that is the collection; with two, a
+  child registered before its parent admitted paths the closed parent refused —
+  neither the innermost nor the outermost, but an accident of construction order.
+
+  Gates compose now, outermost first: refused if any of them refuses, and a
+  whole-value write is offered to the outer collection before the inner one is
+  asked anything, because a row cannot be declared inside a parent row that does
+  not exist.
+
+  It is the sentence `conditions.ts` already states about sections, over a
+  different set of ancestors.
+
+- 87ff0a4: `MdyFormPatch` lets a patch name one cell of one row
+
+  `patch()` merges what it carries into a keyed collection and leaves the cells it does not name
+  alone — that is what the record manager does and what the type's own description ("deep partial of
+  the schema value") says. The record branch of `MdyFormPatch<S>` nevertheless required the complete
+  row, so `form.patch({ rows: { a: { sku: "A" } } })` did not compile against a row that also declares
+  `qty`, and a consumer had to cast to write the documented call.
+
+  The branch is now a deep partial of the row. Positional collections are unchanged: a whole-array
+  write states which rows there are, so it still takes complete item values.
+
+  Found by typechecking a consumer installed from a packed tarball under `strict`.
+
+- 3c7f88f: `getValue()` and the `value` signal answer after `destroy()`
+
+  `destroy()` removes every field, so building the value from the engine's flat map produced a shape
+  the schema does not describe and the read threw `[modyra] Flat value does not match schema shape` —
+  for every schema shape, including a plain one.
+
+  Teardown is a read path. A renderer unmounts while a computed evaluates once more, a component logs
+  what it held, a cleanup handler saves it: all of them read a form that has just been destroyed, and
+  an internal invariant's message is not an answer.
+
+  Both now return what the form held when it was destroyed. `submitValue()`, `state`, `fieldNames()`
+  and `getChanges()` already answered and are unchanged.
+
+- d9583ff: `mdyFormSerialize` describes a `BigInt` instead of raising on it
+
+  `JSON.stringify` refuses a `BigInt` outright, so a form holding one stopped every reader of its
+  value that serialises — including the devtools panel, whose render effect froze on its previous
+  paint. It is now described the way a `File` is, `10n` becoming `"[BigInt: 10]"`, which keeps it
+  distinguishable from the number `10`.
+
+  No migration: values that serialised before are unchanged.
+
+- d51b2fa: The browser battle tier builds the stylesheet it copies
+
+  Second missing build in the same chain: with core built, the host build reached
+  `packages/styles/dist/modyra-default.css` and found nothing there. `battle:browser` and
+  `battle:browser:ci` now build styles too. Verified by deleting `packages/core/dist` and
+  `packages/styles/dist` and running the CI script in its exact form: 191 green, 59 red, 0 new.
+
+- 8e5fef8: The browser battle tier builds the engine before reading it
+
+  `battle:browser` and `battle:browser:ci` began at `build:plain`, which compiles widgets and plain and
+  not core. On a fresh checkout — which is every CI run — `@modyra/core` had no `dist`, so the browser
+  tier failed at its first compile with 81 "Cannot find module '@modyra/core'" errors and never reached
+  a battle. Locally it passed because a previous build had left the directory there, which is the same
+  trap the node tier's own gate exists to catch.
+
+  Both scripts now build core first. Measured with `packages/core/dist` moved aside: 81 errors before,
+  0 after.
+
+- c8c8470: `canUndo` and `canRedo` answer for the value as it is now
+
+  `undo()` records any change the snapshot effect has not seen before it pops, so a row declared,
+  removed or renamed is undoable in the task that changed it. The two signals a consumer binds an
+  Undo and a Redo button to were still answering for the last state the scheduler had seen.
+
+  The gap was reachable from ordinary code: a click handler that adds a line and a toolbar that
+  re-reads its own state run in the same task, so `canUndo()` read `false` while `undo()` would have
+  removed the row. Its mirror lit a Redo button after an edit that had already invalidated the redo
+  stack, offering an operation that did nothing.
+
+  Both are now derived from the current value rather than stored, so the affordance and the operation
+  answer the same question. The cost is one value comparison per read after a change, on signals a
+  consumer reads to paint a button.
+
+- e712ea0: A document the contract accepts is a document the engine builds
+
+  Removing the document's depth cap made `validateDynamicSchema` iterative, because untrusted input
+  must not decide how much stack the engine uses. The walks that run _after_ it were left recursive, so
+  a deep document passed every check the contract offers and failed when it was used:
+
+  ```js
+  parseDynamicForm(deep); // ok, no diagnostics
+  flattenDynamicForm(deep.schema); // ok
+  createForm(buildDynamicFormSchema(deep.schema)); // RangeError: Maximum call stack size exceeded
+  ```
+
+  A stack overflow is not a refusal a consumer can act on: it names no path, cannot be caught by kind,
+  and is the same error their own bug produces.
+
+  `buildDynamicFormSchema`, `walkSchema`, `collectItemPaths`, the collection-validator registration
+  walk, the row-shape check and the schema normaliser now walk over explicit stacks. A document nesting
+  100,000 levels parses, builds and creates a form.
+
+  **What is still bounded**: instantiating a row at _every_ level, since each level's manager builds
+  the next while its own call is on the stack. Measured, that holds past 200 levels and gives way
+  somewhere before 1000 — against forms that hold two or three levels in practice. The limit is the
+  runtime's stack rather than a rule of the contract, so no number is pinned in a test.
+
+  Found by `battle-tests/adversarial/security/nesting-depth.battle.test.mjs`.
+
+- 5029184: The guides describe the whole-value write the engine performs
+
+  ADR 0057 changed what `setValue` does with a field the passed object does not name — it goes back to
+  its **initial** rather than to `null` — and said so in its own consequences. Two published guides went
+  on saying the old thing:
+
+  ```
+  docs/guides/troubleshooting.md   "fields absent from the passed object are reset to `null`"
+  docs/guides/typed-forms.md       "schema fields absent from `v` are reset to `null`"
+  ```
+
+  The troubleshooting one costs more, because it sits under _"Why did my value reset to null after
+  `setValue()`?"_ — a person reads it while already confused, is told to look for a `null`, and finds
+  the field's initial.
+
+  Both now describe the write that happens, and both mention the other half of the same decision: a
+  whole value naming none of the form's fields is refused rather than obeyed.
+
+- ca1c6c3: `spec/dynamic-form-v2/v3/v4.schema.json` no longer require `name` on a field written in the tree
+  form: there the parent's key is the name, which is why the type declares
+  `field: Omit<MdyDynamicField, "name">`. The published schema demanded the member the type removes, so
+  an editor — `apps/vscode/package.json` points every `*.form.json` at it — underlined a working
+  document, and following the editor meant writing a name the parser does not read. The flat list still
+  requires it, where the field carries its own name. `npm run test:contract-schema` now reads the v4
+  schema and the v4 fixture corpus, and takes each version's slots from that version's own type, so
+  `requiresContext` is a slot the gate knows about.
+- 07bea5d: The published document schemas nest the way the engine does
+
+  [ADR 0043](https://github.com/modyra/modyra/blob/main/docs/architecture/0043-a-collection-nests-without-a-limit.md)
+  removed the one-positional-level rule from the engine and the parser. The **published JSON Schemas
+  kept it**: `spec/dynamic-form-v2.schema.json` and `v3` accepted a record as an array's row and
+  refused an array, with the reason written in the description.
+
+  So a consumer validating a document against the schema Modyra publishes was told their document was
+  invalid while `parseDynamicForm` accepted it — the two answers a contract exists to keep identical,
+  disagreeing about the shape the release's headline feature is _for_.
+
+  Both schemas now admit a collection of either kind as a row, and `spec/fixtures/dynamic-form/v3/positional-nesting.json`
+  carries the shape that distinguishes them: an array whose **item is an array**, as against one
+  reached through a group, which was always legal. `scripts/audit-contract-schema.mjs` fails on that
+  fixture against the old schema, naming it — so the two verdicts are checked against each other rather
+  than assumed to agree.
+
+  The Rust and Java SDKs still enforce the removed rule and are reported separately.
+
+- c849c60: The Rust and Java SDKs nest the way the engine does
+
+  [ADR 0043](https://github.com/modyra/modyra/blob/main/docs/architecture/0043-a-collection-nests-without-a-limit.md)
+  removed the one-positional-level rule from the engine, and the published SDKs kept enforcing it —
+  the same divergence the JSON Schemas carried, one layer further out and shipped as a package:
+
+  ```
+  {"node":"array","item":{"node":"array", …}}     MDY_DYNAMIC_INVALID_ARRAY
+  {"node":"array","item":{"node":"record",
+                          "item":{"node":"array", …}}}   MDY_DYNAMIC_INVALID_RECORD
+  ```
+
+  An author whose document the runtime accepts was told by their SDK that it was invalid. Both now
+  accept a collection of either kind as a row, at any depth.
+
+  **Rust also carried the removed depth cap**, and its walk was recursive — where a document deep
+  enough would end the process rather than raise something a caller can answer. It walks over an
+  explicit stack now, with no cap, matching what the engine's own parser was changed to.
+
+  **Java's cap moves from 8 to 100 and is named for what it bounds.** Its walk is still recursive, so
+  the limit is about what this parser can process rather than about the contract — stated as such in
+  the code. A residual divergence remains at depths no arranged form reaches: the engine accepts more.
+
+  The `positional` flag that carried the old rule is gone from both rather than threaded through inert,
+  and each SDK's test for it now states the rule that replaced it, with a refusal it still makes
+  asserted in the same run.
+
+  Verified: `cargo test` 11 passed, `./mvnw test` 22 passed.
+
+- 2b04e24: Eighteen subpaths removed at a patch version
+
+  `@modyra/core` goes from twenty subpath entries to six and `@modyra/widgets` from
+  six to three. Under semver that is a major; it ships as a patch because the
+  library has no consumers and every import that would break is in this repository
+  and was updated alongside.
+
+  The complete migration table and the reasoning are ADR 0039 — including why this
+  is bounded to one release rather than a habit, and how "no consumers" was
+  established rather than assumed.
+
+  Three subpath families moved to a different package (`@modyra/widgets` for the UI
+  vocabulary, `@modyra/styles` for the colour arithmetic); the rest were entries
+  whose every export was already reachable from the package's main entry, so they
+  were a second door rather than a second surface.
+
+- 4bc6e19: A document declaring `version: 1` reports `MDY_DYNAMIC_DEPRECATED_VERSION`: no published schema
+  describes v1, no fixture measures it, and the Rust and Java readers of this contract do not have it.
+  It is a warning, so a v1 document still parses and still renders — a bare field array, which declares
+  no version at all, is unaffected. A v2 or v3 document carrying `requiresContext` is reported too: it
+  arrived with v4, and all three readers now say so.
+- 74dbda3: `getChanges()` withholds a field that is out of play, as `submitValue()` does
+
+  Both answer _what leaves this form_, and they disagreed: a field taken out of play — by a document's
+  rule, by `setDisabled`, or by `setInactive` — was withheld from `submitValue()` and carried by
+  `getChanges()`, so a PATCH built the documented way sent exactly the value a submission refuses to.
+
+  The value is still held and still reported by `getValue()`, which is the total read.
+
+- 8347116: A document offering one value twice is told so
+
+  Two fields sharing a name are refused, because a name builds an id and two ids that collide stop
+  being addressable. An option's value builds an id the same way — `s__option__pro` — and nothing
+  checked it, so `[{pro, "Pro monthly"}, {pro, "Pro yearly"}]` parsed clean, kept both, rendered one,
+  and left a submitted `"pro"` naming two different things.
+
+  The later duplicate is dropped with `MDY_DYNAMIC_DUPLICATE_OPTION`, the way the later of two fields
+  with one name is. Values are compared by what they hold, so two objects declaring the same members
+  are one option however they were written, and the document the caller passed is never edited.
+
+- 9133c94: A `disabled` or `readonly` binding survives the row it was made on
+
+  A keyed collection lets a control bind before its row is declared — a cell handle exists and stays
+  inert until the key arrives, and a claim waits with it. What a control said about the field did not
+  wait: `setDisabled` and `setReadonly` lived on the field record, which the row owns, so the binding
+  was dropped when the row arrived and again whenever a row was removed and re-declared under a
+  control that never moved.
+
+  The result was a field the binder believed was disabled, enabled and **submitted**. That is a
+  payload difference, not a cosmetic one.
+
+  Bindings are now kept beside the record, keyed by path, and re-applied to every record built for that
+  path. They last as long as something is bound there — a claim, or a claim waiting for its row — and
+  are released with the field when nothing is.
+
+- 14d74cc: `acceptedCount + rejectedCount` is what the document declared
+
+  The pair is worth reading because it lets a caller tell "three fields, one refused" from "two
+  fields". For a document whose fields all live inside collections it said neither:
+
+  ```
+  v3/nested-collections.json   accepted 0, rejected 0   — it declares five fields
+  v3/positional-nesting.json   accepted 0, rejected 0   — it declares four
+  ```
+
+  Both are published fixtures, both parse cleanly, and both have their collections found and reported.
+  A field inside a collection is declared and legitimately never becomes a flat field — a document
+  cannot name rows that do not exist yet — so `fields` cannot answer for it, and the pair was the one
+  place that could.
+
+  The count now descends into collections, and a rejection is counted from what was **reported** rather
+  than from the difference between declared and kept: counting the difference would call every
+  collection cell a rejection, and a correct document would read as having lost everything.
+
+  A collection itself still counts as neither — it is understood, and reported by path and kind.
+
+- c48c9c1: A bulk write into a keyed collection costs what its rows cost: 2,000 rows in one `setAll` went from
+  about 1,600ms to about 70ms, and the per-row cost stopped growing with the row count. Three things
+  were quadratic and each was paid once per row: the gate over the collection was re-read after every
+  row, walking every claim and every field the form holds; the published key list was copied for each
+  key; and `fieldNames` was a list copied for each field created. The gate is re-read once per bulk
+  write, the key list is published once from the set that already answers `has()`, and `fieldNames` is
+  derived from the fields the engine holds behind a version counter, so a reader inside a batch pays
+  for the list once instead of once per row. Nothing about what the collection holds changed.
+
 ## 2.1.2
 
 ### Minor Changes
