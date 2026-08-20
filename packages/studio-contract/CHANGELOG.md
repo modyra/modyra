@@ -1,5 +1,12 @@
 # @modyra/studio-contract
 
+## 0.6.1
+
+### Patch Changes
+
+- Updated dependencies [20c69d0]
+  - @modyra/core@2.3.0
+
 ## 0.6.0
 
 ### Minor Changes
