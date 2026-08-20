@@ -16857,6 +16857,43 @@ surface of every adapter — eight of them — which is a cross-package migratio
 change. The narrow first step is `@modyra/plain`, which is the renderer the browser tier measures;
 the rest is a batch with its own sequencing. Both are the user's call.
 
+## 286 — Two battles that asked for the behaviour a record removed (harness)
+
+`esecutore` triaged three browser reds that looked like `@modyra/plain` and sent back two that were
+mine, both asserting against a decision this repository had already taken and written down. Both are
+now corrected, and both got **stronger** for it.
+
+**`wrong-before-anybody-touched-it`** set its scene with a document's `initialValue` that the kind
+cannot hold, and asserted the control comes up marked wrong. The engine drops it and warns instead,
+and `dynamic/schema.ts` says why in the words the battle should have read: *"kept, it made a form that
+was invalid before anybody touched it — the field reporting 'holds string' about a value the user
+never entered and cannot see how to correct."*
+
+The distinction is the point, and it is right: a value from a **draft, a server or a scripted write**
+is a fact of the world, so it is kept and marked — that is what `valueShape` is for. A document's
+`initialValue` is a defect of the **document**, and the person reading the page cannot correct it.
+Two doors, two answers.
+
+The battle's own header already named three doors — *"an initial value the shape refuses, a draft
+restored from an older schema, a value a server sent back"* — and the test picked the one that
+legitimately drops it. Now it arrives by `setValue`, and the result is sharper than before: **plain
+green, lit red.** The renderers disagree about whether the reason is shown on arrival, which is the
+finding, and it was invisible while both failed on the premise.
+
+**`an-hour-the-clock-does-not-have`** asserted that what the hour box *shows* stays inside its own
+`max`. ADR 0063 removed exactly that, with a table: *"a value a control cannot read stays where it can
+be corrected"*, marked `aria-invalid` with a `title` naming the range. The battle was asking for the
+behaviour the record replaced.
+
+Corrected to assert the other half of the same decision — the value is **marked** and the range is
+readable beside it — and the half that decides what leaves the page: **an hour the clock does not
+have is not committed.** The display may hold what was typed; the form may not take it. Green.
+
+**The rule these two share.** A battle whose premise cannot be established is not a red, it is a
+question that never got asked — and both of these hid a real answer behind a premise that argued with
+a record. **Before asserting a behaviour, look for the record that decided it**: `docs/architecture/`
+is searchable, and in both cases the reasoning was better than the assertion.
+
 ## The register's own shape, measured
 
 ```

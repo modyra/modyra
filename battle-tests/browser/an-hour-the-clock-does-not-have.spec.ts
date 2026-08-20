@@ -43,7 +43,13 @@ async function openTimePopup(page: import("@playwright/test").Page, id: string) 
 const shownHour = (page: import("@playwright/test").Page) =>
   page.evaluate((selector) => {
     const box = document.querySelector(selector) as HTMLInputElement | null;
-    return box === null ? null : { value: box.value, max: box.max, ariaMax: box.getAttribute("aria-valuemax") };
+    return box === null ? null : {
+      value: box.value,
+      max: box.max,
+      ariaMax: box.getAttribute("aria-valuemax"),
+      invalid: box.getAttribute("aria-invalid"),
+      title: box.getAttribute("title"),
+    };
   }, HOUR);
 
 test("an hour the clock does not have, plain", async ({ page }) => {
@@ -82,17 +88,26 @@ test("an hour the clock does not have, plain", async ({ page }) => {
   const shown = await shownHour(page);
   const bound = Number(shown?.max ?? shown?.ariaMax ?? 12);
 
-  // The box states its own range, and this is the assertion: what it shows is inside it.
+  // What the box shows is **not** asserted to be inside the bound, and that is a correction: ADR 0063
+  // decided that a value a control cannot read stays where it can be corrected, rather than being
+  // discarded or truncated under the person's cursor. Asserting the range here would be asking for
+  // the behaviour that record removed, with its table of why.
+  //
+  // What is asserted is the other half of the same decision: a value outside the range is **marked**,
+  // and the range is readable beside it. Text left in place with nothing said about it is the failure
+  // 0063 replaced one defect with.
   expect(
-    Number(shown?.value),
-    `the hour box declares max="${shown?.max}" and aria-valuemax="${shown?.ariaMax}" and is showing ${JSON.stringify(shown?.value)}`,
-  ).toBeLessThanOrEqual(bound);
+    { invalid: shown?.invalid, saysRange: (shown?.title ?? "").length > 0 || shown?.ariaMax !== null },
+    `the hour box is showing ${JSON.stringify(shown?.value)} against max="${shown?.max}" and says ${JSON.stringify(shown?.title)}`,
+  ).toEqual({ invalid: "true", saysRange: true });
 
-  // The second half, in case the display is ever fixed by clamping silently at confirmation time:
-  // what is committed is what the user was shown.
+  // And the half that decides what leaves the page: an hour the clock does not have is not committed.
+  // The display may hold what was typed; the form may not take it.
   await confirm();
+  const taken = String(await committed() ?? "");
+  const hourTaken = Number(taken.split(":")[0]);
   expect(
-    String(await committed()),
-    `the page showed ${JSON.stringify(shown?.value)} as the hour and the form took ${JSON.stringify(await committed())}`,
-  ).toContain(String(shown?.value).padStart(2, "0"));
+    Number.isNaN(hourTaken) ? 0 : hourTaken,
+    `the page showed ${JSON.stringify(shown?.value)} as the hour and the form took ${JSON.stringify(taken)}`,
+  ).toBeLessThanOrEqual(bound);
 });
