@@ -159,13 +159,17 @@ export function solidReactivity(): MdyReactivity &
       serverSnapshots: false,
     },
     signal<T>(initial: T, options?: MdySignalOptions<T>): MdyWritableSignal<T> {
-      // `equals: false` is a special Solid sentinel meaning "always treat
-      // as changed" -- omitting the option entirely (not passing `false`)
-      // is what keeps Solid's own default (Object.is-like) equality when
-      // no custom comparator is given.
+      // `equals: false` is a special Solid sentinel meaning "always treat as changed", so a
+      // comparator is always a function here and never that.
+      //
+      // `Object.is` is passed rather than left out: Solid's own default is `===`, which calls `0`
+      // and `-0` the same value and `NaN` a different one from itself — a number field written `-0`
+      // over `0` would re-render nothing, and one holding `NaN` would re-render on every write of
+      // the same `NaN`. The contract's reference runtime decides change with `Object.is`, and an
+      // adapter that decided it differently would be a different framework under the same form.
       const [get, set] = createSignal(
         initial,
-        options?.equal ? { equals: options.equal } : undefined,
+        { equals: options?.equal ?? Object.is },
       );
       const read = (() => get()) as MdyWritableSignal<T>;
       // Wrapped in `() => value`: Solid's setter calls a function argument
@@ -180,7 +184,7 @@ export function solidReactivity(): MdyReactivity &
       const memo = createMemo(
         fn,
         undefined,
-        options?.equal ? { equals: options.equal } : undefined,
+        { equals: options?.equal ?? Object.is },
       );
       return () => memo();
     },

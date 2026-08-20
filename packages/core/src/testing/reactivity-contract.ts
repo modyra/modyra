@@ -262,6 +262,36 @@ export function runReactivityContractTests(
     destroy();
   });
 
+  test(`${name}: change is decided the way the reference runtime decides it`, async () => {
+    const { reactivity: rx, flushIfSupported, destroy } = createHarness();
+    if (rx.capabilities?.effects !== true) {
+      destroy();
+      return;
+    }
+
+    /** Whether writing `to` over `from` makes a watcher run again. */
+    const notifies = async (from: unknown, to: unknown): Promise<boolean> => {
+      const signal = rx.signal(from);
+      let runs = 0;
+      rx.effect(() => { signal(); runs += 1; });
+      await flushIfSupported();
+      const before = runs;
+      signal.set(to);
+      await flushIfSupported();
+      return runs > before;
+    };
+
+    // A runtime that declares no comparator still decides what "changed" means, and the two
+    // plausible answers differ on exactly two values. `===` says `0` and `-0` are the same value and
+    // `NaN` is a different one from itself, so a field holding `0` written `-0` re-renders nothing
+    // and a field holding `NaN` re-renders forever. `Object.is` — what this contract's own reference
+    // runtime uses, and what every adapter in this repository was measured to use — answers both the
+    // other way. Left undeclared, an adapter could ship either and pass every other case here.
+    assert.equal(await notifies(0, -0), true, "writing -0 over 0 is a change: default equality must be Object.is, not ===");
+    assert.equal(await notifies(NaN, NaN), false, "writing NaN over NaN is not a change: default equality must be Object.is, not ===");
+    destroy();
+  });
+
   test(`${name}: a declared signalEquality is actually honoured`, async () => {
     const { reactivity: rx, flushIfSupported, destroy } = createHarness();
     if (rx.capabilities?.signalEquality !== true || rx.capabilities?.effects !== true) {

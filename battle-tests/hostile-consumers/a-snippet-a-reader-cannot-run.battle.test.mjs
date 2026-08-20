@@ -103,6 +103,20 @@ function entryOf(specifier, known) {
   return existsSync(file) ? file : null;
 }
 
+/**
+ * Whether the package behind a specifier has been built at all.
+ *
+ * This tier builds core, the adapters, plain and studio; `@modyra/angular` is built by the step that
+ * runs the Angular battles, which is after this one. A specifier whose package has no `dist` is one
+ * this run cannot answer for — and saying so is different from saying the names are wrong, which is
+ * what an unreadable-but-built package means.
+ */
+function isBuilt(specifier, known) {
+  const slash = specifier.indexOf("/", specifier.indexOf("/") + 1);
+  const found = known.get(slash === -1 ? specifier : specifier.slice(0, slash));
+  return found ? existsSync(join(found.dir, "dist")) : false;
+}
+
 battle(
   {
     claims: ["DOC-001"],
@@ -161,6 +175,7 @@ battle(
 
     const wrong = [];
     const unreadable = new Set();
+    const unbuilt = new Set();
     let checked = 0;
 
     for (const page of pages) {
@@ -170,7 +185,7 @@ battle(
         const [, typeOnly, clause, pkg] = match;
         if (typeOnly) continue;
         const names = await runtimeExports(pkg);
-        if (!names) { unreadable.add(pkg); continue; }
+        if (!names) { (isBuilt(pkg, known) ? unreadable : unbuilt).add(pkg); continue; }
         const line = text.slice(0, match.index).split("\n").length;
         for (const piece of clause.split(",")) {
           const written = piece.trim();
@@ -194,10 +209,13 @@ battle(
       what: "the guides yielded value imports to check",
       detail: `${checked} name(s) across ${pages.length} page(s)`,
     });
+    // Built and still unreadable is a finding; never built is this tier's own boundary, reported so
+    // that the names behind it are known to be unchecked rather than assumed sound.
     expectEqual([...unreadable].sort(), [], {
       claimIds: ["DOC-001"],
       what: "every package a guide imports from could be loaded and asked what it exports",
     });
+    if (unbuilt.size > 0) ctx.log.note("not built in this tier, so not checked here", [...unbuilt].sort());
 
     // Reading a module's export statements is the weakest of the three reads and the one that
     // cannot notice a name the module fails to actually define. It is a fallback, so most doors must

@@ -194,9 +194,29 @@ battle(
     // step puts three times the threshold between the measurement and the assertion instead of a
     // sixth of it, which is what keeps this from deciding itself on a loaded machine.
     const LINES = 10;
-    const small = build(25, LINES);
-    const large = build(100, LINES);
-    ctx.log.note("a batch of orders, twice the size", { small, large });
+
+    // One write at each size before any is timed. The first write of a process compiles the whole
+    // path, and the first write here is the *small* one — so a cold run reads the small size as
+    // expensive and the growth as smaller than it is. The battle then passes on the artefact rather
+    // than on the engine, which is what it was doing: warm, the same measurement reads 2.2 where
+    // cold it reads 0.8.
+    build(25, LINES);
+    build(100, LINES);
+
+    // Cheapest of five at each size, the way the bulk-write battle above takes its numbers: a single
+    // sample carries whatever the scheduler did during it, and the two samples are divided by each
+    // other, so one interruption moves the verdict.
+    const bestBuild = (orders) => {
+      let best = null;
+      for (let attempt = 0; attempt < 5; attempt += 1) {
+        const measured = build(orders, LINES);
+        if (best === null || measured.elapsed < best.elapsed) best = measured;
+      }
+      return best;
+    };
+    const small = bestBuild(25);
+    const large = bestBuild(100);
+    ctx.log.note("a batch of orders, four times the size", { small, large });
 
     // The control on the measurement: every order and every line landed, at both sizes.
     expectClaim(small.orders === 25 && small.leaves === 25 * LINES && large.orders === 100 && large.leaves === 100 * LINES, {
@@ -209,8 +229,15 @@ battle(
     // costs about eight times as much — measured 7.6, 7.8 and 8.0 across three runs — and the same
     // growth carries on: a hundred orders of twenty lines takes eight seconds where reading them
     // back takes seven milliseconds.
+    //
+    // The threshold is 4 rather than 2.5, and the difference between those two numbers is the whole
+    // reason this measurement is taken the way it is above. Warm and cheapest-of-five, the growth of
+    // work that is *not* superlinear reads 1.79 to 2.22 across eight rounds on one machine — the
+    // file's opening notes read 2.4 for work linear by construction — so 2.5 was a threshold sitting
+    // on the noise floor, and it went red on a shared runner while passing here. 4 clears the floor
+    // by nearly double and still sits at half the growth the defect showed.
     const growth = (large.elapsed / large.orders) / (small.elapsed / small.orders);
-    expectClaim(growth < 2.5, {
+    expectClaim(growth < 4, {
       claimIds: ["COL-005", "COL-001"],
       what: `four times the orders cost ${growth.toFixed(1)}× as much per order`,
       detail: JSON.stringify({ small, large }),

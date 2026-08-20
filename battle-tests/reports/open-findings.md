@@ -15844,6 +15844,63 @@ Falsified by removing `packages/studio-target-json/dist` and running the gate: e
 package, no battle reported. The workflow's exact command — `MDY_BATTLE_SEED=20260814
 MDY_BATTLE_RUNS=25 pnpm run battle:ci` — exits 0 locally with the build step in place.
 
+## 262 — A gate asking for a demo of a type (S3, tooling)
+
+`test:coverage-and-demo` refuses a public name that is not both *asserted* and *shown*, and tells the
+author what to do about it:
+
+```
+- MdySubmittedItemValue: no test mentions it; no demo shows it
+Add the check and the demo, or record it: node scripts/audit-coverage-and-demo.mjs --write
+```
+
+Half of that instruction cannot be carried out. A name is *shown* when a panel under
+`examples/plain/panels` lists it in its `exercises:` block and that panel's browser test passes — a
+panel drives values at runtime, and a type has none. Measured against the runtime exports of `core`,
+`widgets` and `plain`:
+
+```
+asserted, never shown                        362
+  no runtime value behind the name (a type)  177
+  a value                                    185
+```
+
+The 185 are a real backlog: a constant or a function could be shown by a panel that does not exist
+yet. The 177 cannot be, ever, and the gate has an answer for exactly this shape — `TESTING_ONLY`, the
+set for names no demo could show without demonstrating the harness. Types are the second family with
+that property and do not have it, so each new exported type costs a `--write` whose reason is always
+the same sentence.
+
+The ratchet itself is sound and stays sound either way: what changes is whether `shown` counts a
+population that can move. Today it reads 79 of 695 and 177 of the remainder are ineligible rather
+than pending.
+
+Found by the gate going red on `e59d37c5` for `MdySubmittedItemValue`, a type exported by ADR 0100.
+
+## 263 — Two battles of mine that were green for the wrong reason (harness)
+
+Both were caught by the first CI run that got past the queue, and neither was a product defect.
+
+**A timing battle that passed on a cold start.** `a batch of orders costs what its orders cost` takes
+one measurement at 25 orders and one at 100, and the 25 comes first — so it pays the compilation of
+the whole write path and reads as expensive, which makes the growth read *smaller* than it is. Warm,
+the same measurement reads 2.2 where cold it reads 0.8, against a threshold of 2.5. On a shared runner
+it read 2.6 and went red.
+
+The threshold was the second half of it: this file's own opening notes record that work linear by
+construction reads a per-row growth of 2.4 here, so 2.5 was sitting on the noise floor. Now warmed,
+cheapest-of-five at each size — which reads 1.79 to 2.22 across eight rounds — against a threshold of
+4, which clears the floor by nearly double and still sits at half the growth the original defect
+showed (7.6, 7.8, 8.0).
+
+**A documentation battle that depended on a build its own tier does not make.**
+`a-snippet-a-reader-cannot-run` asserted that every package a guide imports could be loaded and asked
+what it exports. `@modyra/angular` is built by the step that runs the Angular battles, which is after
+this one, so on CI the specifier resolved to nothing and the battle failed on the tier boundary rather
+than on a guide. A package with no `dist` is now recorded as not built here rather than as unreadable
+— the distinction being that unreadable-but-built is still a finding. Falsified by removing
+`packages/angular/dist` locally: green, with the skipped specifiers named in the log.
+
 ## The register's own shape, measured
 
 ```
