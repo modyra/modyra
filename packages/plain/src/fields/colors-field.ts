@@ -5,6 +5,7 @@
  * What counts as a colour, and whether picking one should close the popup, is
  * `colorValueTransition` in `@modyra/widgets` — this renderer asks and obeys.
  */
+import { applyOpenerPromise } from "../opener-promise.js";
 import { observerFor, type MdyFieldHandle, type MdyReactivity } from "@modyra/core";
 import type { MdyDynamicColorsField } from "@modyra/core";
 import {
@@ -79,7 +80,8 @@ export function renderColorsField(
   const toggle = el("button") as HTMLButtonElement;
   toggle.type = "button";
   applyPart(toggle, definition.parts.toggle);
-  toggle.setAttribute("aria-haspopup", "listbox");
+  // Asked of the contract rather than written here — see the same call in the daterange field.
+  applyOpenerPromise(toggle, "colors");
   toggle.setAttribute("aria-label", messages.selectColorPrefix);
   // The themes draw the caret on `.mdy-select__arrow`, which is where the contract nests it
   // inside this toggle — an empty button would have no size at all.
