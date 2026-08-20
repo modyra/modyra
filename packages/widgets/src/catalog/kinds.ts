@@ -9,7 +9,7 @@ import type { MdyPartContract } from "../contract.js";
 import type { MdyOutsideDismiss } from "../dismissal.js";
 import type { MdyWidgetSemanticElement, MdyWidgetStructure } from "../structure.js";
 
-export const MDY_WIDGET_KINDS = ["text", "email", "password", "textarea", "number", "slider", "checkbox", "toggle", "radio", "segmented", "select", "multiselect", "datepicker", "daterange", "timepicker", "file", "colors"] as const;
+export const MDY_WIDGET_KINDS = Object.freeze(["text", "email", "password", "textarea", "number", "slider", "checkbox", "toggle", "radio", "segmented", "select", "multiselect", "datepicker", "daterange", "timepicker", "file", "colors"] as const);
 export type MdyWidgetKind = (typeof MDY_WIDGET_KINDS)[number];
 
 /**

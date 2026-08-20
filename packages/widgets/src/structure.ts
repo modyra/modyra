@@ -210,8 +210,8 @@ export const MDY_FORM_SHELL_CLASSES = Object.freeze({
 export const MDY_FORM_SHELL_STRUCTURE: MdyWidgetStructure<MdyFormShellPart> = Object.freeze({
   kind: "form-shell",
   nodes: Object.freeze<readonly MdyWidgetStructureNode<MdyFormShellPart>[]>([
-    { part: "formErrors", element: "status", order: 0, optional: true },
-    { part: "formErrorItem", element: "text", parent: "formErrors", order: 0, optional: true, repeated: true },
+    Object.freeze({ part: "formErrors", element: "status", order: 0, optional: true }),
+    Object.freeze({ part: "formErrorItem", element: "text", parent: "formErrors", order: 0, optional: true, repeated: true }),
   ]),
 });
 

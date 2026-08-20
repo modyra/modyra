@@ -104,7 +104,16 @@ function relationsFor(kind: MdyWidgetKind): readonly MdyWidgetRelation[] {
 export const MDY_WIDGET_RELATIONS: Readonly<Record<MdyWidgetKind, readonly MdyWidgetRelation[]>> =
   Object.freeze(
     Object.fromEntries(
-      (Object.keys(MDY_WIDGET_CONTRACTS) as MdyWidgetKind[]).map((kind) => [kind, relationsFor(kind)]),
+      (Object.keys(MDY_WIDGET_CONTRACTS) as MdyWidgetKind[]).map((kind) => [kind, Object.freeze(relationsFor(kind).map((entry) => Object.freeze({
+        ...entry,
+        // One level deeper than the entry itself: a trigger and a list of parts are objects the
+        // caller holds a reference to, and an entry frozen around live members is not frozen.
+        ...Object.fromEntries(
+          Object.entries(entry)
+            .filter(([, member]) => member !== null && typeof member === "object")
+            .map(([key, member]) => [key, Object.freeze(member)]),
+        ),
+      })))]),
     ) as Record<MdyWidgetKind, readonly MdyWidgetRelation[]>,
   );
 

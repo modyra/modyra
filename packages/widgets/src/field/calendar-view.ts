@@ -9,7 +9,7 @@
  * The mode is state, so it belongs to the controller for the kind rather than to each renderer, for
  * the reason the timepicker already demonstrates: it holds `viewMode` and its renderers ask.
  */
-export const MDY_CALENDAR_VIEW_MODES = ["days", "months", "years"] as const;
+export const MDY_CALENDAR_VIEW_MODES = Object.freeze(["days", "months", "years"] as const);
 
 export type MdyCalendarViewMode = (typeof MDY_CALENDAR_VIEW_MODES)[number];
 
