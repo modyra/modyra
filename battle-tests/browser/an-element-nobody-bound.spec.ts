@@ -22,9 +22,14 @@
  * exactly this class — its own evidence line is *"the calls that could not do anything"*. The element
  * surface is the one published door that fails in silence.
  *
- * Two frames, not zero, because binding after appending is legitimate and is what every host does:
- * `createElement`, append, assign `.field`. What is under attack is an element that has been given a
- * frame to paint and still has nothing to paint from.
+ * Not zero frames, because binding after appending is legitimate and is what every host does:
+ * `createElement`, append, assign `.field`. What is under attack is an element that has been given
+ * time to paint and still has nothing to paint from.
+ *
+ * **And the other direction is asserted beside it**, because it is the one a repair gets wrong: an
+ * element bound a frame *after* it was appended must stay silent. Measured while this was being
+ * repaired, a warning at two frames fired on exactly that host — legitimate code, told off. Without
+ * this half, a repair that warns immediately goes green here and is wrong everywhere.
  *
  * Green when an element that painted without a field says so once, where a developer will find it.
  * Throwing is the wrong answer — it would break the create-then-bind order every host uses.
@@ -68,6 +73,26 @@ test("an element that painted without a field says so", async ({ page }) => {
     }
     return seen;
   }, TAGS);
+
+  // The other direction, in the same page: an element bound one frame after it was appended is a
+  // host doing the ordinary thing, and must draw no complaint. Asserted before the finding below so
+  // that a repair which warns too eagerly fails here rather than passing on the half it satisfies.
+  const boundLate = await page.evaluate(async () => {
+    const stage = document.querySelector("#stage") as HTMLElement;
+    const before = (window as never as { __mdySaid?: string[] }).__mdySaid ?? [];
+    const element = document.createElement("mdy-text-field");
+    element.setAttribute("label", "Late");
+    stage.append(element);
+    await new Promise((resolve) => requestAnimationFrame(() => resolve(null)));
+    const host = (window as never as Record<string, Record<string, (...a: unknown[]) => unknown>>).battleLit;
+    host.mountFields("late", [{ name: "v", kind: "text", label: "Late" }] as never);
+    await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve(null))));
+    return { drew: element.querySelectorAll("input").length, before: before.length };
+  });
+  const complainedAboutLate = said.filter((line) => /Late/.test(line));
+  expect(complainedAboutLate, `an element bound a frame after it was appended was told off: ${complainedAboutLate.join(" | ")}`)
+    .toEqual([]);
+  expect(boundLate.drew).toBeGreaterThanOrEqual(0);
 
   // The control on the measurement: the elements really are defined and really did paint nothing.
   // An undefined custom element would also be empty, and would be a different finding.
