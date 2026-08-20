@@ -47,6 +47,20 @@ escape rather than the one that was demonstrated.
 guard that took the pair for symmetry would close the exit and the language with it, which is the
 failure mode this record exists to prevent as much as the escape is.
 
+**Amendment — containment lives where the interpolation happens.** The guard above is in
+`compileMdyTheme`, which is the function that *builds* the theme object. The function that *writes the
+sheet* is `serializeMdyThemeCss`, it is exported, and it validated nothing: `MdyResolvedTheme` is a
+plain frozen object, so a caller holding its own tokens constructs one and reaches the writer without
+passing the compiler. Measured, not supposed — the same payload lands verbatim in the CSS, and `seed`
+and `model` escape the header comment with `*/` before doing the same. A type cannot enforce
+provenance at runtime, so a guard on the constructor is a guard on the polite path only.
+
+`serializeMdyThemeCss` now refuses every field it interpolates: the selector by the rule above, `seed`
+and `model` by **what they are** — a hex, and a name the registry knows — rather than by characters
+they lack, and each token name and value by the same containment. `compileMdyTheme` keeps its check,
+because failing at the boundary a caller usually touches gives a better message than failing at the
+write.
+
 **The guard still does not decide *which* selectors a theme should accept.** A caller compiling themes
 from someone else's data owns that question. This is containment, not a policy on names.
 
@@ -90,6 +104,10 @@ signature invites exactly the use — a per-tenant theme name — that makes it 
   `[data-theme="brand"]`, `.a > .b`, a `:not()` and a comma-separated list. The second half is what
   stops the cheapest way to pass being a guard that refuses everything.
 - Falsified rather than assumed: removing `<` from the class fails that battle; restoring it passes.
+- The writer checked directly, in both directions: a hostile selector, a `seed` and a `model` that
+  escape the header comment, a token value carrying `}` and a token name carrying one are all
+  refused, while a compiled theme and `.a > .b:not(.c)` still serialize. **No battle covers the
+  writer yet** — the suite drives `compileMdyTheme`, which is the path that was already guarded.
 - `npm run test:styles` — 32 assertions over the compiler, including that it is deterministic across
   representative seeds and that every selector shape it supports still compiles.
 
@@ -106,3 +124,7 @@ arbitrary script in the origin serving the stylesheet, which is total.
 **What remains unguarded is stated above and is real**: containment here says nothing about what a
 caller does with the compiled text, and a build that interpolates untrusted strings elsewhere has the
 same defect where this function cannot see it.
+
+The amendment is the sharper lesson. The first fix guarded the door a caller is expected to use and
+left the one next to it open, and only asking *which function writes the text* found it. A guard
+placed by where an object is made rather than by where it is written is a guard on convention.
