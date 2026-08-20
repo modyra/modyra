@@ -444,6 +444,10 @@ export class MdyDraftManager {
         );
       }
     }
+    // Another form's work is neither restored nor removed. `_parse` answering `null` means the entry
+    // is unusable — corrupt, superseded, expired — and the caller drops it; an envelope belonging to
+    // another form is perfectly usable, by that form, and this one has no standing to delete it.
+    if (stored !== null && this._belongsToAnotherForm(stored)) stored = null;
     if (stored !== null) {
       const value = this._parse(stored, options.ttlMs);
       if (value !== null) {
@@ -561,6 +565,30 @@ export class MdyDraftManager {
     this._effect?.destroy();
     this._effect = null;
     this._hasDraft.set(false);
+  }
+
+  /**
+   * Whether a stored envelope records a form shape that is not this form's.
+   *
+   * The same question the write side asks, on the way back in. A draft records the shape of the form
+   * that wrote it so two forms sharing a key can tell their work apart, and the writer already
+   * refuses to overwrite an envelope carrying another shape — so the draft it declined to replace was
+   * the one this restored. What one person typed in one form arrived filled in in another, and was
+   * submitted from there; no storage was tampered with, and both envelopes were written here.
+   *
+   * A draft that records no shape is this form's own earlier work as far as anything can tell:
+   * refusing it would discard what a person typed to close a hole that draft cannot be on either side
+   * of. The path comparison the write side makes is what covers those.
+   */
+  private _belongsToAnotherForm(stored: string): boolean {
+    if (this._formShape === undefined) return false;
+    let shape: unknown;
+    try {
+      shape = (JSON.parse(stored) as { shape?: unknown }).shape;
+    } catch {
+      return false;
+    }
+    return typeof shape === "string" && shape !== this._formShape();
   }
 
   /**
