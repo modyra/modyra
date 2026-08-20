@@ -166,10 +166,11 @@ it. The devtools panel builds its table as HTML and escapes every external strin
 `escapeHtml`: the field path, the value, and the error messages. What nobody can give you by reading
 is a guarantee that no single unescaped interpolation exists anywhere; grep does not prove absence.
 
-**The theme compiler guards the CSS rule, not the HTML around it.** `compileMdyTheme` refuses a
-hostile `seed` and a hostile `name` outright, and refuses a `selector` containing `{`, `}`, `;`, `@`
-or a comment marker — each of which ends the rule and turns the rest into a stylesheet of its own.
-It does **not** refuse `</style><script>…`, which contains none of those:
+**The theme compiler guards the CSS rule, not the HTML around it — open, and being repaired.**
+`compileMdyTheme` refuses a hostile `seed` and a hostile `name` outright, and refuses a `selector`
+containing `{`, `}`, `;`, `@` or a comment marker — each of which ends the rule and turns the rest
+into a stylesheet of its own. It does **not** refuse `</style><script>…`, which contains none of
+those:
 
 ```
 seed      "</style><script>alert(1)</script>"   REFUSED
@@ -177,10 +178,19 @@ name      "</style><script>alert(1)</script>"   REFUSED
 selector  "</style><script>alert(1)</script>"   ACCEPTED, and reaches the serialized CSS verbatim
 ```
 
-The compiler says so itself — *"a caller compiling themes from someone else's data still owns that
-question"* — and that is the correct division as long as you know about it. If your themes come from
-your own repository, this cannot reach you. If a selector can come from a user, validate it before
-compiling, and never inject the result into an inline `<style>` element.
+The guard was written against CSS-rule escape, and the source says so: *"a caller compiling themes
+from someone else's data still owns that question."* Breaking out of the `<style>` **element** is a
+different question, and it was not being asked.
+
+**How far it reaches.** Nothing in this repository compiles a theme from user input: the only callers
+of `compileMdyTheme` are its own tests, and no editor surface carries a theme selector. The value
+comes from whoever writes the build. That is the reason it is not a live hole here — and not a reason
+to leave it, because compiling a theme per tenant or per brand is what a theme compiler is for, and
+that is the shape where a customer names the selector.
+
+Until the refusal widens: validate a selector you did not write, and never inject compiled theme CSS
+into an inline `<style>` element. The repair is one character — `<` is valid nowhere in a CSS
+selector — and `>` has to keep working, because `.a > .b` is an ordinary descendant rule.
 
 **Client-side checks are not a boundary.** Everything on this page runs in the browser, and anything
 in the browser can be bypassed with curl. The whitelisting story, and the one schema that drives the
