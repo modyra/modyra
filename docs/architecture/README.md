@@ -118,6 +118,7 @@ absent section reads as an oversight, and "no security impact" is a finding.
 - [ADR 0101: A collection asks for its own rows](0101-a-collection-asks-for-its-own-rows.md) — a question scoped to a path was answered by a scan of the whole form, so declaring rows cost more the more rows there were
 - [ADR 0102: A change set is a payload too](0102-a-change-set-is-a-payload-too.md) — a positional list was carried whole out of the form value, so a disabled cell left through the change set that a submit withheld
 - [ADR 0103: A patch names cells, in a list too](0103-a-patch-names-cells-in-a-list-too.md) — a partial positional row rebuilt the cells it did not name from the schema, so a form could not read the change set its own door produced
+- [ADR 0104: Change is decided by `Object.is`](0104-change-is-decided-by-object-is.md) — the conformance gate accepted a runtime whose default equality was `===`, so a field written `-0` over `0` re-rendered nothing
 - [ADR 0092: A condition travels with the form](0092-a-condition-travels-with-the-form.md) — `when` and `asyncWhen` were closures, so a schema carrying one was not data and the document half could not say what the typed half said
 
 ## Security-relevant records
