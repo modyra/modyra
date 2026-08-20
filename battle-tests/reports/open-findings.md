@@ -15930,7 +15930,38 @@ the order.
 it was found; the same contract had a second door one level down that no battle in the tier touched.
 A finding about a collection is worth re-asking through a collection.
 
-## 265 — An overlay with no declared opener (S2, UI-010 UI-009)
+## 265 — An overlay with no declared opener — WITHDRAWN, the reading was wrong
+
+**Withdrawn.** `@modyra/widgets` exports `MDY_POPUP_OPENERS`, which declares the opener for **all six**
+overlay kinds, daterange and colors included:
+
+```
+select       { opener: "trigger",      controls: "listbox", role: "combobox" }
+multiselect  { opener: "searchButton", controls: "popup",   role: "combobox" }
+datepicker   { opener: "control",      controls: "grid",    role: "combobox", typeable: true }
+timepicker   { opener: "control",      controls: "popup",   role: "combobox", typeable: true }
+daterange    { opener: "toggle",       controls: "popup" }
+colors       { opener: "toggle",       controls: "popup" }
+```
+
+The two without a `role` are the two whose opener is a `<button>`, and **that is correct**: under the
+ARIA pattern a button that opens a popup must not claim `role="combobox"` — a combobox is the control
+that holds the value. My battle asserted a part with the combobox role, so its only route to green was
+to give daterange and colors one, which is the thing the finding's own text said not to do. Caught by
+`esecutore` reading the assertion against the pattern rather than against the measurement.
+
+What is left is thinner than a finding and is recorded rather than filed: the opener relation lives in
+a second exported table, so a renderer reading `MDY_WIDGET_CONTRACTS` alone — which the repository
+describes as the complete framework-agnostic UI contract — does not meet it there.
+
+The battle is repointed at `MDY_POPUP_OPENERS` and is green: every overlay kind declares an opener,
+the opener names a part the contract has, and a combobox role appears only where the opener holds the
+field's value.
+
+
+
+*(The measurement below stands as a description of what `MDY_WIDGET_CONTRACTS` alone carries; the
+conclusion drawn from it does not.)*
 
 `capabilities.overlay: true` is how a kind says it has a popup, and it is the whole of what
 `MDY_WIDGET_CONTRACTS` says about opening one. What carries the popup relationship is said only
@@ -15960,7 +15991,15 @@ is why the hole exists and not a reason to keep it.
 
 Held by `battle-tests/adversarial/widgets/an-overlay-with-no-declared-opener.battle.test.mjs`.
 
-## 266 — A name refused for a reason that is not the reason (S3, DYN-003 API-001)
+## 266 — A name refused for a reason that is not the reason (S3, DYN-003 API-001) — CLOSED
+
+**Closed, `896f37b9`.** Each row now gives the reason that belongs to it, in the order
+pollution → the specific reasons → the general path check, because `__proto__` also carries the
+delimiter and the prototype chain is what matters about it.
+
+**Withdrawn once, wrongly, and put back.** I re-measured after a rebuild, saw green, and retracted it
+as an instrument error — see 268, which is the real lesson and is not the one I first wrote down.
+
 
 `09944758` widened `isSafeFieldPath` to refuse whitespace and the id delimiter — correct, and it is
 what closed a real asymmetry. `assertSafeDynamicFieldNames` asks that first and raises its own message
@@ -15992,7 +16031,20 @@ own words that holding these rules in one function exists to prevent:
 Caught by `battle-tests/browser/a-name-the-page-cannot-carry.spec.ts`, which asserts the message names
 a widget id — it was green before `09944758` and is red now. Left red.
 
-## 267 — A check only one of the two builders runs (S2, VAL-005 DYN-003)
+## 267 — A check only one of the two builders runs (S2, VAL-005 DYN-003) — CLOSED
+
+**Closed, `55891979`.** `leafFor` attaches `valueShape` to every leaf the flat builder makes. The
+comment I read as describing an open defect was describing one closed a minute earlier, in a working
+tree — see 268.
+
+**One half of the original measurement was mine and is withdrawn**: `required`, `minLength`, `pattern`
+and `email` do not fire from `buildFlatFormSchema` because they are `applyFlatValidators`, a separate
+call the consumer makes, documented on the function. The line that survives is the one the repair
+took: the builder declares **what the kind is** — the empty value, the shape, the offered values, and
+the guard that says a value of another shape is wrong — and `applyFlatValidators` applies **what the
+document says**.
+
+
 
 `MDY_VALUE_CONTRACTS` says what a value of a kind may be, `explainValueMismatch` is the published
 oracle for it, and `valueShape` turns it into a validator. `buildDynamicFormSchema` attaches one to
@@ -16025,6 +16077,42 @@ validator.
 Held by `battle-tests/adversarial/dynamic-contract/a-check-only-one-builder-runs.battle.test.mjs`,
 which picks each kind's probe value from `explainValueMismatch` itself rather than by hand, so a kind
 added later is covered without touching the file.
+
+## 268 — A retraction that was itself wrong (harness, and the rule that follows)
+
+266 and 267 were real. I re-measured both after a rebuild, found them green, and retracted them as
+instrument errors. **The green came from the repairs themselves**: this is a shared working tree, the
+fixes were in it uncommitted, and my rebuild compiled them. What I read as "the defect was never there"
+was "the defect was closed a minute ago, by the session I was reporting it to."
+
+So the rule is not the one I first wrote down. Rebuilding before believing is necessary and is not
+sufficient:
+
+**A probe run in a shared working tree measures work in flight, not `HEAD`.** A verdict taken there is
+about the tree, and saying which one it is about is part of the measurement. To ask about what is
+pushed, ask a worktree on `origin/main`.
+
+The stale-build failure is still real and still worth its guards — it produced a genuine phantom earlier
+in this campaign, and its direction is what makes it dangerous: a stale build does not give a doubtful
+answer, it gives a confident one about a version that no longer exists, and the report crosses to the
+person who wrote the fix.
+
+The browser tier has a third artefact that makes it worse: the host page under `.tmp-browser` inlines
+`@modyra/plain` and everything under it, so a stale reading survives a package rebuild. 266 was still
+red after `build:core` and green only after the page was rebuilt too — the packages were current and
+the page was not.
+
+Two guards, both falsified by making them fire:
+
+- `against-browser-baseline.mjs` refuses to run when `core`, `widgets` or `plain` is behind its source,
+  **or when the host page is older than any of their `dist`**. Checked by touching `packages/core/src`
+  (exit 2, names the package) and then by rebuilding only the package (exit 2, names the page).
+- `battle-tests/harness/fresh-probe.mjs` — `onlyIfFresh()`, the first line of any ad-hoc probe. It
+  never builds: recompiling from inside a probe would hide the thing worth noticing, and would
+  recompile a package another session is editing.
+
+What remains true from 267's measurement, still to be checked on a fresh build: `min` and `max` on a
+number, and option membership on a select, read `tree invalid, flat valid`.
 
 ## The register's own shape, measured
 

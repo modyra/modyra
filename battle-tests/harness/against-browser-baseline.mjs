@@ -16,11 +16,12 @@
  *   node battle-tests/harness/against-browser-baseline.mjs [--accept]
  */
 import { spawnSync } from "node:child_process";
-import { existsSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, mkdtempSync, readFileSync, readdirSync, statSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join, relative, resolve } from "node:path";
 
 import { compareWithBaseline } from "./against-baseline.mjs";
+import { buildFreshness } from "./build-freshness.mjs";
 
 const HARNESS = dirname(new URL(import.meta.url).pathname);
 const BATTLE_ROOT = resolve(HARNESS, "..");
@@ -130,6 +131,63 @@ function severitiesFor(names) {
   return severitiesByFile(files, readFileSync(join(BATTLE_ROOT, "models", "claims.mjs"), "utf8"));
 }
 
+/**
+ * Refusing to measure a page built before the code it renders.
+ *
+ * This tier has a third artefact the node tier does not: the host bundle under `.tmp-browser`, which
+ * inlines `@modyra/plain` and everything it imports. So a stale reading survives two rebuilds — the
+ * packages can be current and the page still be the old one — and what it produces is the worst kind
+ * of red, a defect reported against code that no longer has it. Two findings were filed that way in
+ * one night, one of them at the browser tier for exactly this reason.
+ *
+ * `battle:browser:ci` builds both before calling this. Running it, or `playwright test`, by hand does
+ * not, which is when the page is a week old and says so to nobody.
+ */
+function assertPageIsCurrent() {
+  const stale = [];
+  for (const name of ["core", "widgets", "plain"]) {
+    const freshness = buildFreshness(name);
+    if (freshness.known && !freshness.fresh) stale.push(`@modyra/${name} (${freshness.behindBySeconds}s behind its source)`);
+  }
+
+  const host = join(BATTLE_ROOT, ".tmp-browser", "host.js");
+  if (!existsSync(host)) {
+    console.error(
+      "browser baseline check: there is no host page to run against. Build it with " +
+        "`npm run battle:browser:ci`, which builds the packages and the page before measuring.",
+    );
+    process.exit(2);
+  }
+  const builtAt = statSync(host).mtimeMs;
+  for (const name of ["core", "widgets", "plain"]) {
+    const dist = join(REPO_ROOT, "packages", name, "dist");
+    if (!existsSync(dist)) continue;
+    const distAt = newestUnder(dist);
+    if (distAt !== null && distAt > builtAt) {
+      stale.push(`the host page (@modyra/${name} was built ${Math.round((distAt - builtAt) / 1000)}s after it)`);
+    }
+  }
+
+  if (stale.length === 0) return;
+  console.error(
+    `browser baseline check: ${stale.join(", ")}. What this measured would be an older version, and a ` +
+      "red from it names a defect the code may no longer have. Run `npm run battle:browser:ci`, which builds first.",
+  );
+  process.exit(2);
+}
+
+/** The newest mtime under a directory — the same question `buildFreshness` asks of a package. */
+function newestUnder(directory) {
+  let newest = null;
+  for (const entry of readdirSync(directory, { withFileTypes: true })) {
+    if (entry.name === "node_modules") continue;
+    const path = join(directory, entry.name);
+    const at = entry.isDirectory() ? newestUnder(path) : statSync(path).mtimeMs;
+    if (at !== null && (newest === null || at > newest)) newest = at;
+  }
+  return newest;
+}
+
 function main() {
   const accept = process.argv.includes("--accept");
 
@@ -141,6 +199,8 @@ function main() {
     console.log(`browser baseline check: re-counted ${names.length} known-red spec(s)`);
     return;
   }
+
+  assertPageIsCurrent();
 
   const report = runSuite(join(mkdtempSync(join(tmpdir(), "mdy-browser-")), "report.json"));
   const run = readPlaywrightJson(report);
