@@ -734,6 +734,21 @@ export function parseDynamicFields(input: unknown): MdyDynamicField[] {
       );
       return false;
     }
+    // The same cap the nested door applies, asked here too. This is the door an untrusted document
+    // arrives at — `fields: [{ name, kind, label }]` is the whole of version 1 and the field half of
+    // every version after it — and it was the one with no ceiling, so a name of a hundred thousand
+    // characters was accepted without a word. The cost is not in the parse: it is what the constant
+    // names, paid again at every read of every value, because the path is the payload key, the draft
+    // key, the widget id and a string every renderer carries per field.
+    if (f.name.length > MDY_MAX_DYNAMIC_PATH_LENGTH) {
+      warnDev(
+        `Dropped a dynamic field whose path is ${f.name.length} characters, past the ` +
+          `${MDY_MAX_DYNAMIC_PATH_LENGTH} a path may be: a path is the payload key, the draft key ` +
+          "and the widget id, and every read of the value carries it.",
+        at,
+      );
+      return false;
+    }
     if (f.name.includes(MDY_ID_DELIMITER)) {
       warnDev(
         `Dropped dynamic field "${f.name}": "${MDY_ID_DELIMITER}" separates the segments of a generated id, ` +
