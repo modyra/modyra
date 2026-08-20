@@ -17867,6 +17867,55 @@ shape answered.
 The original narrowing stands and is still open: a battle claiming *"a refused submit reveals every
 field"* holds it over three paths it names rather than over the form's leaves.
 
+## 309 — Angular tells a screen reader a dialog opens, and a grid opens (S1, UI-010 A11Y-004)
+
+`MDY_POPUP_OPENERS` is the table that says what each control's opener promises. Plain reads it
+(`packages/plain/src/opener-promise.ts`); Lit reads it (`this.popupPromise`, from the catalogue).
+**Angular writes the answer by hand, ten times across five components** — and three kinds disagree
+with the table.
+
+```
+kind         MDY_POPUP_OPENERS.promises     Angular writes
+datepicker   grid                           "dialog"    datepicker.component.ts:84, :103
+daterange    grid                           "dialog"    daterange-renderer.component.ts:89, :115, :126
+colors       listbox                        "dialog"    colors-renderer.component.ts:60
+                                            "listbox"   colors-renderer.component.ts:118
+timepicker   dialog                         "dialog"    right value, still a literal
+select       listbox                        "listbox"   right value, still a literal
+```
+
+**`aria-haspopup` is announced with the control, before anything opens.** It is how a person who
+cannot see the page decides whether to press. Told `dialog`, they expect a window that traps focus and
+that Escape closes; a **grid** is a calendar they arrow around inside. The announcement is not a label
+that is merely inaccurate — it is the instruction for what to do next, and it is wrong for the two
+date controls in one of the three shipped renderers.
+
+**The colours renderer is the sharp one: it announces two different things about one popup.** Both
+buttons call `toggleOverlay($event)` — the same overlay:
+
+```
+colors-renderer.component.ts:60    aria-haspopup="dialog"     .mdy-colors__primary-picker
+colors-renderer.component.ts:118   aria-haspopup="listbox"    [mdyPart]="openerPart()"
+```
+
+The second is right, and right by luck: it takes its **part** from the catalogue and its **promise**
+from a literal that happens to match. A component that asks the contract for one attribute and writes
+the other by hand is the state just before this defect, held in one file.
+
+**Not a stale build, and that mattered.** The battle
+`a-promise-nine-renderers-write-themselves.battle.test.mjs` is red in the node tier and I expected the
+cause to be that `battle:ci` never builds `lit` — a harness defect of mine. It reads **source**, not
+`dist`. Every one of the ten rows it names is Angular, and lit and plain are clean because both were
+moved onto the catalogue.
+
+Register correction: this was listed as *"six unowned `aria-haspopup` literals"*. It is **ten across
+five files**, and six of them announce something the contract contradicts.
+
+**Unowned.** `@modyra/angular` has no session. The repair is the one Lit already took: an accessor
+that reads `MDY_POPUP_OPENERS[kind].promises`, then ten call sites. The three wrong values are what
+makes it a defect rather than a cleanup, and they are only visible once the literal is replaced by the
+lookup — which is the argument for doing it as one change rather than correcting three strings.
+
 ## The register's own shape, measured
 
 ```
