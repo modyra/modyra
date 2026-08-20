@@ -4,7 +4,8 @@
 
 ```
 S0     0      the whole of it before any S1
-S2     2
+S1     1
+S2     1
       --
        2      open reds, 2026-08-20
 ```
@@ -16643,6 +16644,56 @@ values its kinds could not hold; the rule builder already had it, and nothing lo
 Held twice: `battle-tests/adversarial/validation/one-rule-attached-twice.battle.test.mjs` over eight
 kinds in node, and `battle-tests/browser/two-renderers-one-document.spec.ts`, which compares the two
 renderers' answers for every kind and is the instrument that found it.
+
+## 281 — A panel that raises on what it promises to describe (S1, DEV-001)
+
+`DEV-001` is that the panel **describes** a value it cannot serialize rather than raising on it, and
+`mdyFormSnapshot`'s own comment gives the reason: a panel is what a developer opens when something is
+already wrong, so reading a form's value must never be the thing that fails.
+
+Swept across sixteen shapes a form value can take. Thirteen are described well:
+
+```
+a BigInt                            "[BigInt: 10]"
+a cycle                             { name: "loop", self: "[Circular]" }
+a getter that throws                { boom: "[Unreadable: boom]" }
+a Proxy that throws on every trap   "[Unreadable: toJSON]"
+a Date                              "2026-08-20T00:00:00.000Z"
+a class instance                    { x: 1 }
+a null-prototype object             { a: 1 }
+a Symbol, a function                undefined
+NaN, Infinity, -0                   { a: null, b: null, c: 0 }
+a typed array                       { "0": 1, "1": 2, "2": 3 }
+```
+
+**Three are described as something else**, and it is the defect the panel already fixed once. Its own
+comment about `File` says it: *"a `File` carries no `toJSON`, so a snapshot that passed it through
+read as `{}` — the same as a field nobody filled"*.
+
+```
+new Map([["a", 1]])   {}
+new Set([1, 2])       {}
+new Error("boom")     {}
+```
+
+A developer opening the panel to find out why a form is wrong is shown, for a Map holding entries, the
+same thing they are shown for a field nobody filled.
+
+**And one raises.**
+
+```
+depth 4000   described
+depth 8000   RangeError: Maximum call stack size exceeded
+```
+
+Every other walk in this library is capped — a path at 512 characters, an expression at 32 levels, a
+declaration walk at 100 000 — and the one walk with no cap is the one whose whole promise is that it
+never fails. A recursive structure from an API, a linked list, a tree built by an editor: none of them
+has to be adversarial to reach four thousand.
+
+Held by `battle-tests/adversarial/lifecycle/a-panel-that-raises-on-what-it-describes.battle.test.mjs`,
+with the descriptions that already work asserted first, so a repair that stopped describing anything
+fails there rather than emptying the assertions it has to satisfy.
 
 ## The register's own shape, measured
 
