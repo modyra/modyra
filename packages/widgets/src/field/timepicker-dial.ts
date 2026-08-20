@@ -121,14 +121,51 @@ export interface MdyTimepickerDialKeyResult {
  *
  * Returns `null` for a key the dial does not claim, so a host can let it through.
  */
+/**
+ * How far in the inner ring sits, as a fraction of the outer one.
+ *
+ * The stylesheet draws it at `0.6` of the hand's length and says why there; this is the same number
+ * because the two have to agree — a hit test that disagrees with the drawing sends a person's touch
+ * to a number their finger is not on. The boundary between the rings is the midpoint.
+ */
+const INNER_RING_RADIUS = 0.6;
+
+/**
+ * Which ring of the face a pointer landed on.
+ *
+ * A 12-hour face has one ring and always answers `"outer"`. A 24-hour face has two at the same twelve
+ * positions, so the angle alone cannot name the hour — asked without this, half the numbers the face
+ * draws had no way to be chosen.
+ *
+ * Here rather than in each renderer for the same reason `timepickerDialNumbers` is: a renderer that
+ * works out which ring it drew is a renderer with its own clock, and three of them working it out
+ * separately is three chances to disagree with the drawing.
+ */
+export function timepickerDialRing(
+  face: { readonly width: number; readonly height: number; readonly left: number; readonly top: number },
+  clientX: number,
+  clientY: number,
+  format: MdyTimeFormat,
+): "outer" | "inner" {
+  if (format !== "24h") return "outer";
+  const radius = Math.min(face.width, face.height) / 2;
+  if (radius <= 0) return "outer";
+  const dx = clientX - (face.left + face.width / 2);
+  const dy = clientY - (face.top + face.height / 2);
+  const reach = Math.sqrt(dx * dx + dy * dy) / radius;
+  return reach < (1 + INNER_RING_RADIUS) / 2 ? "inner" : "outer";
+}
+
 export function timepickerDialKeyIntent(
   key: string,
   field: "hour" | "minute",
   format: MdyTimeFormat,
   current: number,
 ): MdyTimepickerDialKeyResult | null {
-  // Hours are held 1–12 in the draft whatever the format; a 24-hour face names 0–23, and the host
-  // converts at the boundary exactly as it does for the typed input.
+  // Every surface of a 24-hour picker speaks 0–23 — this one, the face, the segment bounds, what a
+  // typed entry is accepted as — and the working copy is canonically 1–12. The controller converts:
+  // `set-hour` and `set-from-angle` take the hour in the picker's own format and derive the half of
+  // the day from it. A host sends what its face shows and nothing else.
   const min = field === "minute" ? 0 : format === "24h" ? 0 : 1;
   const max = field === "minute" ? 59 : format === "24h" ? 23 : 12;
   const span = max - min + 1;

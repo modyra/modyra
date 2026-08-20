@@ -21,6 +21,7 @@ import {
   stepTimeField,
   timeFieldBounds,
   timepickerDialNumbers,
+  timepickerDialRing,
   timepickerSelectedDialValue,
   type MdyElementLookup,
   MDY_I18N_MESSAGES_DEFAULT,
@@ -245,8 +246,14 @@ export function renderTimepickerField(
   function pickFromPointer(event: PointerEvent): void {
     const state = controller.state();
     if (state.viewMode !== "dial") return;
-    const angle = pointerAngle(dialFace.getBoundingClientRect(), event.clientX, event.clientY);
-    dispatch({ type: "set-from-angle", field: state.focusedField, angle });
+    const face = dialFace.getBoundingClientRect();
+    const angle = pointerAngle(face, event.clientX, event.clientY);
+    // A 24-hour face draws twelve more numbers on a shorter radius, so the direction alone does not
+    // say which hour is under the pointer. Which ring it is belongs to the contract, like which
+    // numbers there are: a renderer deciding for itself is a renderer that can disagree with its own
+    // drawing.
+    const ring = timepickerDialRing(face, event.clientX, event.clientY, state.format);
+    dispatch({ type: "set-from-angle", field: state.focusedField, angle, ring });
   }
   let dragging = false;
   dialFace.addEventListener("pointerdown", (event) => {
