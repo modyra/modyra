@@ -179,7 +179,7 @@ export abstract class MdyDropdownFieldElement<T> extends MdyOptionsFieldElement<
           ? html`<span class="mdy-label__required" aria-hidden="true">*</span>`
           : nothing}
       </label>
-      <div class="mdy-input-wrapper ${handle.disabled() ? "mdy-input-wrapper--disabled" : ""}">
+      <div class="${this.wrapperClass(handle)}">
         <button
           type="button"
           class="mdy-select__trigger"

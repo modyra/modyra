@@ -607,7 +607,7 @@ export class MdyTimepickerFieldElement extends MdyFieldElement<string | null> {
           }
         }}
       >
-        <div class="mdy-input-wrapper ${handle.disabled() ? "mdy-input-wrapper--disabled" : ""}">
+        <div class="${this.wrapperClass(handle)}">
           <input
             id=${this.fieldId}
             type="text"

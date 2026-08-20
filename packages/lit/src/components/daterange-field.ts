@@ -553,7 +553,7 @@ export class MdyDaterangeFieldElement extends MdyFieldElement<MdyDateRange | nul
     const baseLabel = this.label ? `${this.label} — ` : "";
     return html`
       <div class="mdy-datepicker">
-        <div class="mdy-input-wrapper mdy-daterange__group">
+        <div class="${this.wrapperClass(handle)} mdy-daterange__group">
           <span
             class="mdy-daterange__input-sizer"
             data-value=${range.start ?? this.startPlaceholder}

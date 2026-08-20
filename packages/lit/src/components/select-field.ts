@@ -386,7 +386,7 @@ export class MdySelectFieldElement extends MdyDropdownFieldElement<unknown | nul
     return html`
       ${this.renderLabel(handle, trigger.id)}
       <div class="mdy-select">
-        <div class="mdy-input-wrapper ${handle.disabled() ? "mdy-input-wrapper--disabled" : ""}">
+        <div class="${this.wrapperClass(handle)}">
           <div class="mdy-input-prefix"><slot name="prefix"></slot></div>
           <button
             type="button"

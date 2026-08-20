@@ -143,7 +143,7 @@ export class MdyColorsFieldElement extends MdyFieldElement<string | null> {
           }
         }}
       >
-        <div class="mdy-input-wrapper ${handle.disabled() ? "mdy-input-wrapper--disabled" : ""}">
+        <div class="${this.wrapperClass(handle)}">
           <div class="mdy-input-wrapper__inliner">
             <button
               type="button"
