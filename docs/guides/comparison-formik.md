@@ -79,7 +79,7 @@ schema's actual validity from the first computed value.
 ## Performance
 
 No head-to-head benchmark yet — see the "Where we lose" honesty note in
-[the comparison doc](comparison-form-libraries.md#4-where-modyra-is-behind-read-this-before-adopting).
+[the comparison doc](comparison-form-libraries.md#where-modyra-is-behind).
 Formik re-renders the whole subscribed tree on most changes unless you
 reach for `<FastField>`/`useField` scoping; Modyra's per-field reactive
 state recomputes only that field's dependents by default — not measured

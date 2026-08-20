@@ -74,7 +74,7 @@ proxy step — reading it anywhere, any time, reflects the current value.
 ## Performance
 
 No head-to-head benchmark yet — see the "Where we lose" honesty note in
-[the comparison doc](comparison-form-libraries.md#4-where-modyra-is-behind-read-this-before-adopting).
+[the comparison doc](comparison-form-libraries.md#where-modyra-is-behind).
 Architecturally, RHF's uncontrolled-by-default model avoids most re-renders
 by not touching React state per keystroke; Modyra's per-field reactive
 state means an update recomputes only that field's dependents, not the

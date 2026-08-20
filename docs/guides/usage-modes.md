@@ -78,6 +78,88 @@ Strict mode returns nothing at all when any diagnostic exists — a partly valid
 accepted. Lenient mode keeps what parsed and reports the rest, which is what an editor preview
 wants. See [forms as data](./ai-generated-forms.md) for the trust boundary in full.
 
+## A condition in both modes
+
+The two modes differ in one place that decides what the mode is *for*, and it is easy to read past.
+A condition — when a field applies, when a section shows — is written as **code** in the typed mode
+and as **data** in the contract mode.
+
+```ts
+// Typed: a closure. It reads the form value and answers.
+reason: field("", [required()], {
+  when: (_value, form) => form.kind === "detailed",
+}),
+```
+
+```json
+// Contract: an expression. The same question as a tree of enumerated operators.
+{ "op": "equals", "operands": [{ "path": "kind" }, "detailed"] }
+```
+
+The closure is the better tool where it works: it is your language, your editor, your types. What it
+cannot do is leave the process.
+
+```
+JSON.stringify({ name: "reason", kind: "text", label: "R", when: (v, f) => … })
+→ {"name":"reason","kind":"text","label":"R"}
+```
+
+**The condition is gone and nothing said so.** A function has no JSON representation, so a document
+carrying a closure arrives as a document with no rule in it — valid, renderable, and missing the
+behaviour its author wrote. That is the whole reason the expression form exists: a form that travels
+as data has to carry its behaviour as data too, or it does not really travel.
+
+### The expression, and what its limits buy
+
+An expression is a closed tree: sixteen enumerated operators over `{ "path": … }` references and
+literals. Everything a document can say, it says with those.
+
+```ts
+import { evaluateExpression, expressionPaths, validateExpression } from "@modyra/core";
+
+const rule = {
+  op: "and",
+  operands: [
+    { op: "equals", operands: [{ path: "kind" }, "detailed"] },
+    { op: "isNotEmpty", operand: { path: "reason" } },
+  ],
+};
+
+validateExpression(rule);                                   // [] — nothing wrong with it
+expressionPaths(rule);                                      // ["kind", "reason"]
+evaluateExpression(rule, { kind: "detailed", reason: "x" }); // true
+evaluateExpression(rule, { kind: "simple", reason: "" });    // false
+```
+
+The three limits read as restrictions and are the opposite — they are what makes it safe to accept a
+condition from a document you did not write:
+
+- **The operator set is closed.** An unknown operator is a refusal, not an extension point:
+  `validateExpression({ op: "nope", … })` answers `["unknown operator \"nope\""]`. There is no
+  `eval`, no callback, no string that becomes code.
+- **Depth is capped** at `MDY_MAX_EXPRESSION_DEPTH`, which is `32`. A tree 33 levels deep is refused
+  with *"nests deeper than 32 levels"* rather than recursed into.
+- **Patterns are cost-gated.** A `matches` whose regex backtracks exponentially is refused where the
+  condition is checked, and the evaluator answers `false` without running it — see
+  [what has been attacked](./hostile-input.md#a-pattern-that-would-stop-the-page-is-refused-at-parse).
+
+`validateExpression` is the authoring tool: it says *why* a condition is malformed rather than
+failing later with a form that quietly does nothing. `expressionPaths` derives what a rule reads,
+which is how a tool can answer "what does this rule depend on" without executing it.
+
+### Where the capability stops
+
+An expression covers conditions — a field's `when`, a section's visibility, a `validations` entry.
+It does not cover everything a closure can be. A `serverValidator()` takes a function and only a
+function, so Studio holds a serializable condition while it is being edited and **prints a closure**
+when it generates code. The rule survives as data up to the boundary of the thing that cannot read
+data, and there it becomes code again.
+
+Two further gaps are worth knowing before you plan around this: a document's `validations` are
+compiled but no shipped renderer mounts them ([forms as data](./ai-generated-forms.md#cross-field-validations-are-parsed-and-no-renderer-mounts-them)),
+and the reasoning behind the whole division is
+[ADR 0092](../architecture/0092-a-condition-travels-with-the-form.md).
+
 ## Headless
 
 The engine drives your own components. Nothing is rendered for you, and nothing is assumed about
