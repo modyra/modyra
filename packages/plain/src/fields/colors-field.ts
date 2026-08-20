@@ -211,6 +211,7 @@ export function renderColorsField(
     toggleArrow.classList.toggle("mdy-select__arrow--open", isOpen);
     setErrors(shell.errorList, shownErrorsOf(handle).map((error) => error.message));
     shell.syncState({
+      open: isOpen,
       touched: handle.touched(), disabled: handle.disabled(),
       hasError: showsAsInvalid({ valid: handle.valid(), disabled: handle.disabled() }), filled: Boolean(value), required: handle.required(),
     });

@@ -8,12 +8,7 @@
  */
 import { observerFor, type MdyFieldHandle, type MdyReactivity } from "@modyra/core";
 import type { MdyDynamicBooleanField } from "@modyra/core";
-import {
-  fieldAccessibleName,
-  MDY_WIDGET_CONTRACTS,
-  createBooleanFieldController,
-  shownErrorsOf,
-} from "@modyra/widgets";
+import { MDY_FIELD_STATE_CLASSES, MDY_WIDGET_CONTRACTS, createBooleanFieldController, fieldAccessibleName, shownErrorsOf, showsAsInvalid } from "@modyra/widgets";
 import { applyPart, el, setErrors, setText } from "../dom.js";
 
 export function renderBooleanField(
@@ -80,6 +75,13 @@ export function renderBooleanField(
     // adapter emits; the canonical state class on a renderer root is `mdy-renderer--touched`.
     root.classList.toggle("mdy-renderer--touched", state.touched);
     applyPart(labelText, view.parts.label);
+    // After `applyPart`, which replaces everything but the base class: the label's error state is
+    // the shared shell's vocabulary, and a boolean has no shared shell to apply it. The control says
+    // it is wrong with `aria-invalid`, and the words beside it said nothing.
+    labelText.classList.toggle(
+      MDY_FIELD_STATE_CLASSES.label + "--has-error",
+      showsAsInvalid({ valid: handle.valid(), disabled: handle.disabled() }),
+    );
     applyPart(input, view.parts.input);
     applyPart(description, view.parts.description);
     applyPart(errorList, view.parts.error);

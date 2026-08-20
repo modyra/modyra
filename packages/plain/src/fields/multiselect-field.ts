@@ -253,6 +253,7 @@ export function renderMultiselectField(
     applyPart(shell.errorList, view.parts.error);
     setErrors(shell.errorList, shownErrorsOf(handle).map((e) => e.message));
     shell.syncState({
+      open: state.open,
       touched: state.touched,
       disabled: state.disabled,
       hasError: state.invalid,

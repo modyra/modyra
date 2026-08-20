@@ -214,6 +214,7 @@ export function renderDaterangeField(
     else releaseOverlayPlacement(popup);
     setErrors(shell.errorList, shownErrorsOf(handle).map((error) => error.message));
     shell.syncState({
+      open: state.open,
       touched: handle.touched(), disabled: handle.disabled(),
       hasError: showsAsInvalid({ valid: handle.valid(), disabled: handle.disabled() }), filled: value.start !== null, required: handle.required(),
     });

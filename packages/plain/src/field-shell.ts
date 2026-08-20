@@ -6,7 +6,7 @@
  *
  * Renderers build the control themselves and insert it into the wrapper.
  */
-import { fieldAccessibleName, MDY_FIELD_SHELL_CLASSES, MDY_WIDGET_CONTRACTS, type MdyWidgetKind } from "@modyra/widgets";
+import { MDY_FIELD_SHELL_CLASSES, MDY_FIELD_STATE_CLASSES, MDY_WIDGET_CONTRACTS, fieldAccessibleName, type MdyWidgetKind } from "@modyra/widgets";
 import { el, setText } from "./dom.js";
 
 export interface FieldShell {
@@ -23,7 +23,7 @@ export interface FieldShell {
   /** The field's own name — the last thing left to name a control with. */
   readonly fieldName?: string;
   /** Reflects state the themes key off: touched on the root, disabled/error on the wrapper. */
-  syncState(state: { touched?: boolean; disabled?: boolean; hasError?: boolean; filled?: boolean; required?: boolean }): void;
+  syncState(state: { touched?: boolean; disabled?: boolean; hasError?: boolean; filled?: boolean; required?: boolean; open?: boolean }): void;
 }
 
 export interface FieldShellAffixes {
@@ -79,8 +79,13 @@ export function buildFieldShell(
     wrapper,
     description,
     errorList,
-    syncState({ touched, disabled, hasError, filled, required }) {
+    syncState({ touched, disabled, hasError, filled, required, open }) {
       root.classList.toggle("mdy-renderer--touched", Boolean(touched));
+      // The other state a renderer root carries, and the one nothing was applying. The contract
+      // lists `open` beside `touched` in `MDY_FIELD_STATE_CLASSES.fieldStates` and names the class
+      // it takes, so a theme can style a field while its popup is showing — and a field whose popup
+      // was open looked exactly like one whose popup was not.
+      root.classList.toggle(MDY_FIELD_STATE_CLASSES.rendererOpen, Boolean(open));
       wrapper.classList.toggle("mdy-input-wrapper--disabled", Boolean(disabled));
       wrapper.classList.toggle("mdy-input-wrapper--error", Boolean(hasError));
       label.classList.toggle("mdy-label--filled", Boolean(filled));

@@ -302,6 +302,7 @@ export function renderTimepickerField(
     setErrors(shell.errorList, shownErrorsOf(handle).map((e) => e.message));
     control.setAttribute("aria-invalid", String(showsAsInvalid({ valid: handle.valid(), disabled: handle.disabled() })));
     shell.syncState({
+      open: state.open,
       touched: handle.touched(), disabled: handle.disabled(),
       hasError: showsAsInvalid({ valid: handle.valid(), disabled: handle.disabled() }), filled: (state.value || "") !== "", required: handle.required(),
     });
