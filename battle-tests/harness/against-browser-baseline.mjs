@@ -81,6 +81,30 @@ function readBaselineFile() {
   return parsed.knownRed;
 }
 
+/**
+ * Refusing to record a red nobody can rank.
+ *
+ * A third of the specs name no claim, and a red among them lands as `unknown` — which sorts after
+ * `S2`, so a release blocker would be filed below a styling difference and read as the least urgent
+ * thing in the file. The list is read to decide what to repair next; a row that cannot be ranked is
+ * worse there than a missing row.
+ *
+ * The debt only has to be paid where it costs something: a spec that is green needs no claim line,
+ * and one that goes red needs one before it can be recorded.
+ */
+function assertRedsAreRanked(names, severities) {
+  const unranked = [...names]
+    .filter((name) => (severities[name.split(" \u203a ")[0]] ?? "unknown") === "unknown")
+    .sort();
+  if (unranked.length === 0) return;
+  console.error(
+    `browser baseline check: ${unranked.length} red spec(s) name no claim, so nothing can rank them ` +
+      "against the rest. Add a `Claims under attack:` line to each file's header and run this again:\n  " +
+      unranked.map((name) => name.split(" \u203a ")[0]).filter((file, at, all) => all.indexOf(file) === at).join("\n  "),
+  );
+  process.exit(2);
+}
+
 function writeBaselineFile(names, severities) {
   // Severity first, then name: the file is read to decide what to repair next.
   const severityOf = (name) => severities[name.split(" \u203a ")[0]] ?? "unknown";
@@ -253,6 +277,7 @@ function main() {
   const severities = severitiesFor([...run.failed]);
 
   if (accept) {
+    assertRedsAreRanked(run.failed, severities);
     writeBaselineFile(run.failed, severities);
     console.log(`browser baseline check: recorded ${run.failed.size} known-red spec(s)`);
     return;

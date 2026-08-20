@@ -25,6 +25,8 @@ import { MDY_WIDGET_KINDS } from "@modyra/widgets";
  *
  * Either repair closes it: require a label where a document is read, or give a control the field's
  * own name when nobody wrote one. What this refuses is a control with a role and no name.
+ *
+ * Claims under attack: A11Y-004, A11Y-001.
  */
 
 const AXE = readFileSync("node_modules/axe-core/axe.min.js", "utf8");
