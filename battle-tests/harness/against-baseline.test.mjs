@@ -142,6 +142,26 @@ test("a severity the block never had gets a row rather than only a larger total"
   assert.doesNotMatch(readFileSync(file, "utf8"), /S3/);
 });
 
+test("the block carries the time as well as the day", () => {
+  // Three sessions repair at once, so a count is read beside the question "from which run?". A date
+  // alone cannot tell one of a day's runs from another.
+  const file = join(mkdtempSync(join(tmpdir(), "mdy-register-")), "open-findings.md");
+  writeFileSync(file, [
+    "```",
+    "S0     1      the whole of it before any S1",
+    "      --",
+    "       1      open reds, 2026-01-01",
+    "```",
+  ].join("\n"), "utf8");
+
+  writeRegisterSummary({ openReds: 1, bySeverity: { S0: 1 }, recordedAt: "2026-08-20T09:41:07Z" }, file);
+  assert.match(readFileSync(file, "utf8"), /open reds, 2026-08-20 09:41:07 UTC/);
+
+  // And the block it just wrote is one it can rewrite again, which a stricter pattern would not be.
+  writeRegisterSummary({ openReds: 2, bySeverity: { S0: 2 }, recordedAt: "2026-08-20T10:02:00Z" }, file);
+  assert.match(readFileSync(file, "utf8"), /open reds, 2026-08-20 10:02:00 UTC/);
+});
+
 test("a register without the block is left alone rather than guessed at", () => {
   const file = join(mkdtempSync(join(tmpdir(), "mdy-register-")), "open-findings.md");
   writeFileSync(file, "# What is red, and why\n\nno block here at all\n", "utf8");
