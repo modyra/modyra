@@ -250,6 +250,14 @@ goes with each system colour. A literal written at the site that paints it is ha
 replacing the accent replaces one half, and the other keeps whatever it was. Every one of them is a
 variable, so a design system is retuned in numbers rather than rewritten in rules.
 
+**A seed Modyra ships is a colour its own text can be read on.** The floor and AA leave a band —
+13% of sRGB, measured — where the rule selects light because light clears 3.5:1 and light does not
+reach 4.5:1. Nothing in that band is unusable: 100% of sRGB clears AA in one direction or the other.
+But a colour standing there cannot carry the pairing the rule builds on it, so the seeds in this
+repository stay out of it. `--mdy-ref-color-indigo` is `#6458EF` for that reason, and
+[ADR 0108](docs/architecture/0108-a-seed-a-theme-can-be-read-on.md) is the record. A host that sets
+its own primary is not bound by this and owns what it picks.
+
 **Where a design system's own pairing sits below the floor, the system wins and the exception is
 named.** White on Apple's system blue is 4.02:1; it is in the HIG and it stays. A theme that darkened
 it to reach 4.5:1 would stop being iOS, which is the worse defect. `e2e/palette.spec.ts` lists such
