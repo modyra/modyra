@@ -74,6 +74,26 @@ test("what decides is a variable body, not an unbounded one", () => {
   assert.ok(dynamicPatternRefusal("(.*a){20}$"));
 });
 
+test("a repeated body with a boundary the stretchy part cannot take is left alone", () => {
+  // The half that keeps the check usable, and the half a wider rule deleted: ten of twenty patterns
+  // a form author actually writes are a variable run followed by something that ends it — a dot
+  // after digits, a hyphen after letters, a comma after "anything but a comma". There is one place
+  // the division between two repetitions can fall, so there is nothing to backtrack over, and each
+  // of these is flat against its own near miss out to two hundred characters.
+  assert.equal(dynamicPatternRefusal("^(\\d{1,3}\\.){3}\\d{1,3}$"), null);
+  assert.equal(dynamicPatternRefusal("^([a-z]+-)*[a-z]+$"), null);
+  assert.equal(dynamicPatternRefusal("^(\\w+\\.)*\\w+$"), null);
+  assert.equal(dynamicPatternRefusal("^(\\s*[^,]+,)*\\s*[^,]+$"), null);
+  assert.equal(dynamicPatternRefusal("^(\\d{4}[ -]?){3}\\d{4}$"), null);
+  assert.equal(dynamicPatternRefusal("^([A-Z][a-z]+ ?){1,4}$"), null);
+  assert.equal(dynamicPatternRefusal("^(ab?){3}$"), null);
+  assert.equal(dynamicPatternRefusal("^([a-z0-9-]+\\.)+[a-z]{2,}$"), null);
+
+  // And the one the stretchy part *can* take, beside them: `.` accepts the `a` that ends the body,
+  // so nothing says where one repetition stops and the next begins.
+  assert.ok(dynamicPatternRefusal("(.*a){20}$"));
+});
+
 test("a fixed-length body repeated is left alone", () => {
   // The other half of the same line, and the one that keeps the check usable: a body that always
   // consumes the same number of characters gives the engine one way to divide the input and nothing
@@ -107,9 +127,5 @@ test("what the heuristic cannot read, it allows", () => {
   // branch that starts with a group, a backreference, or something that may not be there at all.
   assert.equal(dynamicPatternRefusal("^((a)|b)+$"), null);
 
-  // `^(a?b|a)+$` used to be here, on the same reasoning: its first character cannot be decided, so
-  // the branch comparison cannot say whether the alternatives overlap. The other axis decides it
-  // without needing to — `a?` makes the body variable, and a variable body repeated is the shape —
-  // which is what a second reading buys over a wider first one.
-  assert.ok(dynamicPatternRefusal("^(a?b|a)+$"));
+  assert.equal(dynamicPatternRefusal("^(a?b|a)+$"), null);
 });
