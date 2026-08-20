@@ -20,7 +20,16 @@ import {
   pointerAngle,
   to24Hour,
 } from "@modyra/core/datetime";
-import { timeClockTransition, timepickerDialAria, timepickerDialKeyIntent, timepickerDialNumbers, timepickerSelectedDialValue, createPointerDrag, dragPointOf } from "@modyra/widgets";
+import {
+  createPointerDrag,
+  dragPointOf,
+  timeClockTransition,
+  timepickerDialAria,
+  timepickerDialKeyIntent,
+  timepickerDialNumbers,
+  timepickerDialRing,
+  timepickerSelectedDialValue,
+} from "@modyra/widgets";
 import { MDY_I18N_MESSAGES } from "../../core/i18n";
 import { MdyTimepickerHeaderComponent } from "./timepicker-header.component";
 
@@ -44,6 +53,15 @@ export class MdyTimepickerClockComponent {
    */
   readonly open = input<boolean>(false);
   readonly timePicked = output<string>();
+  /**
+   * A position on the face, rather than a time read off it.
+   *
+   * The dial used to emit a formatted string that the renderer parsed back — with the 12-hour
+   * parser, whatever the format — so every pointer landed on the outer ring by construction and a
+   * 24-hour picker could only ever name twelve of the twenty-four numbers it draws. What this
+   * control knows is where the pointer is; what that means is the controller's to say.
+   */
+  readonly dialPicked = output<{ readonly field: "hour" | "minute"; readonly angle: number; readonly ring: "outer" | "inner" }>();
   readonly cancelClicked = output<void>();
   readonly confirmClicked = output<void>();
 
@@ -55,6 +73,16 @@ export class MdyTimepickerClockComponent {
   protected readonly dragAngle = signal<number | null>(null);
 
   private dragField: "hour" | "minute" = "hour";
+  /**
+   * Which ring of the face the pointer is over.
+   *
+   * A 24-hour face draws `00` and 13–23 on an inner ring at the same twelve positions, so `3` and
+   * `15` lie in exactly the same direction: the angle alone cannot say which one a finger is on.
+   * `timepickerDialRing` answers it from the face's own geometry, which is where the question
+   * belongs — a renderer working out which ring it drew is a renderer that can disagree with its
+   * own drawing.
+   */
+  private dragRing: "outer" | "inner" = "outer";
 
   private switchTimer: ReturnType<typeof setTimeout> | null = null;
 
@@ -168,6 +196,28 @@ export class MdyTimepickerClockComponent {
     this.timePicked.emit(next);
   }
 
+  /**
+   * An arrow key on a segment, which reports the value it asks for rather than writing it.
+   *
+   * The segment's input has an owner — the template binds `[value]` — and a handler that also
+   * assigned it gave one value two owners: the bound value was written back over the stepped one
+   * before the frame painted, so the arrows appeared to do nothing. The step travels the same way a
+   * typed character does, and the DOM follows the model rather than racing it.
+   */
+  protected onHourStep(value: number): void {
+    const next = timeClockTransition(this.value(), { type: "hour", value, format: this.format() });
+    if (next === null) return;
+    this.focusedField.set("hour");
+    this.timePicked.emit(next);
+  }
+
+  protected onMinuteStep(value: number): void {
+    const next = timeClockTransition(this.value(), { type: "minute", value });
+    if (next === null) return;
+    this.focusedField.set("minute");
+    this.timePicked.emit(next);
+  }
+
   protected onMinuteInput(event: Event): void {
     const target = event.target as HTMLInputElement;
     const next = timeClockTransition(this.value(), {
@@ -271,8 +321,7 @@ export class MdyTimepickerClockComponent {
     const angle = this.dragAngle();
     if (angle === null) return;
 
-    const next = timeClockTransition(this.value(), { type: "dial", field: this.dragField, angle });
-    if (next !== null) this.timePicked.emit(next);
+    this.dialPicked.emit({ field: this.dragField, angle, ring: this.dragRing });
   }
 
   protected onDragEnd(): void {
@@ -280,9 +329,8 @@ export class MdyTimepickerClockComponent {
 
     const angle = this.dragAngle();
     if (angle !== null) {
-      const next = timeClockTransition(this.value(), { type: "dial", field: this.dragField, angle });
       if (this.dragField === "hour") this.scheduleMinuteSwitch(300);
-      if (next !== null) this.timePicked.emit(next);
+      this.dialPicked.emit({ field: this.dragField, angle, ring: this.dragRing });
     }
 
     this.isDragging.set(false);
@@ -294,6 +342,8 @@ export class MdyTimepickerClockComponent {
     if (!el) return;
     const coords = dragPointOf(event);
     if (!coords) return;
-    this.dragAngle.set(pointerAngle(el.getBoundingClientRect(), coords.clientX, coords.clientY));
+    const face = el.getBoundingClientRect();
+    this.dragAngle.set(pointerAngle(face, coords.clientX, coords.clientY));
+    this.dragRing = timepickerDialRing(face, coords.clientX, coords.clientY, this.format());
   }
 }

@@ -20,6 +20,7 @@ import { MdyTimepickerPeriodToggleComponent } from "./timepicker-period-toggle.c
           [readonly]="viewMode() === 'dial'"
           [showLabel]="viewMode() === 'input'"
           (inputChange)="hourInput.emit($event)"
+          (stepped)="hourStep.emit($event)"
           (focused)="fieldFocus.emit('hour')"
           (clicked)="fieldClick.emit('hour')"
         />
@@ -36,6 +37,7 @@ import { MdyTimepickerPeriodToggleComponent } from "./timepicker-period-toggle.c
           [readonly]="viewMode() === 'dial'"
           [showLabel]="viewMode() === 'input'"
           (inputChange)="minuteInput.emit($event)"
+          (stepped)="minuteStep.emit($event)"
           (focused)="fieldFocus.emit('minute')"
           (clicked)="fieldClick.emit('minute')"
         />
@@ -64,7 +66,11 @@ export class MdyTimepickerHeaderComponent {
   readonly disabled = input<boolean>(false);
 
   readonly hourInput = output<Event>();
+  /** What an arrow key on the hour asks for, as a value. */
+  readonly hourStep = output<number>();
   readonly minuteInput = output<Event>();
+  /** What an arrow key on the minute asks for, as a value. */
+  readonly minuteStep = output<number>();
   readonly fieldFocus = output<'hour' | 'minute'>();
   readonly fieldClick = output<'hour' | 'minute'>();
   readonly periodChange = output<'AM' | 'PM'>();
