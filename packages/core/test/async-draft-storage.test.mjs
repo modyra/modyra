@@ -81,7 +81,7 @@ test("a write is readable immediately and reaches the store afterwards", async (
   assert.equal(backend.store.get("form"), "typed");
 });
 
-test("a write during hydration wins over what the store held", async () => {
+test("a write during hydration wins in memory and does not replace the stored draft", async () => {
   const backend = fakeBackend({ seed: { form: "stale" }, delay: 20 });
   const storage = createHydratedDraftStorage({ backend, keys: ["form"] });
 
@@ -89,8 +89,19 @@ test("a write during hydration wins over what the store held", async () => {
   await storage.ready;
 
   assert.equal(storage.read("form"), "typed", "hydration must not overwrite a newer local write");
+
+  // And the store keeps what it held. A write before the key hydrated comes from a form that read
+  // `null` — the documented answer during hydration — so it is a form that was never shown the
+  // draft. Flushed, it would take the person's earlier work out of the only place it was kept,
+  // without anything saying so.
   await storage.flushed();
-  assert.equal(backend.store.get("form"), "typed");
+  assert.equal(backend.store.get("form"), "stale");
+
+  // Once the value has arrived the key writes through as normal: what happens after the form could
+  // have shown the draft is the form's business.
+  storage.write("form", "second");
+  await storage.flushed();
+  assert.equal(backend.store.get("form"), "second");
 });
 
 test("a failed flush neither throws nor loses the draft", async () => {
