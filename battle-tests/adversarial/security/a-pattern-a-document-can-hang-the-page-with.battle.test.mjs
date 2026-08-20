@@ -46,6 +46,8 @@
 import { spawn } from "node:child_process";
 import { dirname, join } from "node:path";
 
+import { parseDynamicForm } from "@modyra/core";
+
 import { battle } from "../../harness/battle.mjs";
 import { expectClaim, expectEqual } from "../../harness/assertions.mjs";
 
@@ -85,6 +87,37 @@ function measure(pattern, input) {
   });
 }
 
+/**
+ * Patterns an author writes and the analyser must keep taking.
+ *
+ * A refusal deletes a rule somebody wrote, so the cost of widening the analyser is paid here: a
+ * fixed-length body repeated is not the exponential shape, and neither is a variable span that
+ * nothing repeats. `(\d{2}){3}` is the one to watch — reading a counted repetition as unbounded,
+ * rather than asking whether its body is variable, refuses it and every pattern shaped like it.
+ */
+const MUST_STAY_ALLOWED = Object.freeze([
+  ["(\\d{2}){3}", "a fixed-length body repeated"],
+  ["^\\d{3}-\\d{4}$", "a phone number"],
+  ["^[A-Z]{2}\\d{6}$", "a passport"],
+  ["^(19|20)\\d{2}-\\d{2}-\\d{2}$", "an ISO date, alternation of literals"],
+  ["^[a-z0-9._%+-]+@[a-z0-9.-]+\\.[a-z]{2,}$", "the ordinary email pattern"],
+  ["^#[0-9a-fA-F]{6}$", "a hex colour"],
+  ["^\\+?[0-9 ()-]{7,20}$", "an international phone"],
+  ["^(?:[A-Z]{3}){2}$", "a non-capturing fixed body repeated"],
+  ["^\\w+$", "one unbounded quantifier, not nested"],
+  ["^(cat|dog)$", "an alternation that cannot overlap"],
+  ["^[A-Z]{1,3}-\\d{1,4}$", "two variable spans, neither repeated"],
+]);
+
+/** Whether the parser refused this pattern for cost. */
+function refusedForCost(pattern) {
+  const parsed = parseDynamicForm(
+    { version: 2, fields: [{ name: "v", kind: "text", label: "V", validators: { pattern } }], layout: [] },
+    { mode: "lenient" },
+  );
+  return parsed.diagnostics.some((each) => each.code === "MDY_DYNAMIC_PATTERN_TOO_COSTLY");
+}
+
 /** Each one a counted repetition of a group whose body matches a span of any length. */
 const COUNTED = Object.freeze([
   ["^(a+){15}b$", "a".repeat(32)],
@@ -115,6 +148,17 @@ battle(
       claimIds: ["SEC-004"],
       what: "a safe pattern of the same shape was refused, killed, or never ran — the measurement is not sound",
       detail: JSON.stringify(safe),
+    });
+
+    // The other direction, and the expensive half of any widening: eleven patterns an author
+    // actually writes, which have to keep working. Without them the cheapest way to make the
+    // assertion below pass is to refuse everything.
+    const wronglyRefused = MUST_STAY_ALLOWED
+      .filter(([pattern]) => refusedForCost(pattern))
+      .map(([pattern, why]) => `${pattern} — ${why}`);
+    expectEqual(wronglyRefused, [], {
+      claimIds: ["SEC-004"],
+      what: "the analyser refuses a pattern that does not backtrack, so a rule an author wrote is deleted",
     });
 
     const overBudget = [];

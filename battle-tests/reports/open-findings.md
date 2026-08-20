@@ -16239,7 +16239,14 @@ Held by `battle-tests/adversarial/security/a-constant-anything-can-rewrite.battl
 walks every exported `MDY_` constant of both packages and requires it frozen all the way down — a
 frozen array of live objects is not frozen for this purpose.
 
-## 272 — A pattern a document can hang the page with (S0, SEC-004)
+## 272 — A pattern a document can hang the page with (S0, SEC-004) — CLOSED
+
+**Closed, `29044417`** — *a counted repetition is a repetition*. Verified by exercising, not by
+reading: all four exponential shapes now refused, and **eleven patterns an author actually writes
+still accepted**, including `(\d{2}){3}`, the false positive a naive widening produces. That set is
+now asserted inside the battle, because the cheapest way to satisfy a cost check is to refuse
+everything, and a refusal deletes a rule somebody wrote.
+
 
 `dynamicPatternRefusal` refuses two shapes: nested **unbounded** repetition, and repeated alternatives
 that can match the same text. `UNBOUNDED` is `*`, `+` and `{n,}` — a *counted* repetition is left
@@ -16332,6 +16339,48 @@ a 1M-character label   parse 1ms, accepted
 `MDY_MAX_DECLARATION_WALK` is 100 000 and does not cap the flat field count: 150 000 fields parse
 clean. Whether a document may declare an unbounded number of fields is a question for the host's own
 limits rather than a defect, and is recorded here so the next reader does not re-measure it.
+
+## Swept and clean, with what was tried
+
+Recorded so the next reader does not re-measure them, and because "no material concern survives" is
+worth nothing without the list of what was examined. All against a build made from the tree at the
+time, with `onlyIfFresh()` refusing a stale one.
+
+**Prototype pollution, seven public doors.** `parseDynamicForm` (field name, `initialValue`),
+`setValue`, `patch`, `patchValue`, `record` keys, expression paths and context keys,
+`buildFlatFormSchema`. `__proto__` from `JSON.parse` rather than a literal, plus `constructor` and
+`prototype`. `Object.prototype`, `Array.prototype` and `Function.prototype` clean after every one.
+
+**Prototype-chain reads in expressions.** `toString`, `valueOf`, `hasOwnProperty`, `isPrototypeOf`,
+`propertyIsEnumerable`, `toLocaleString`, at the root and one level down, against a value holding none
+of them as own properties: `isNotEmpty` false, `exists` false, `isEmpty` true. The old SEC-001 is
+closed for real.
+
+**Sanitization, eleven entry routes.** With `security: { sanitize: "strict" }`: the schema's own
+initial value, `setValue`, `patchValue`, `cellHandle().set`, `setInitialValue` + `reset`, `array.push`,
+`array.setAll`, `record.upsert`, an object-valued field with markup nested two deep, a restored draft,
+and `mutate`. Every one sanitized. `"text"` strips invisibles and not markup, which is what the guide
+says it does.
+
+**Draft restore, tampered by hand.** An undeclared path dropped; `__proto__` inert; a value of the
+wrong shape for its kind refused; a row index past the end reported by number and ignored; a field
+declared `sensitive` not restored even when the stored draft carries it. `exclude` holds through two
+collection levels and in all four documented spellings, plus `*.pan` and `*.*.pan`, and it is applied
+on **restore** as well as on write.
+
+**The fifth ingress door — a server's own errors.** A path the form does not declare stays in
+`lastSubmitErrors` with its path and attaches to no field; an unsafe path is dropped and reported
+through the security channel; a hundred-thousand-character path is treated as any other undeclared
+one; a non-string message is replaced and the original kept on `payload`. A hundred thousand errors
+attach in 25 ms and are not capped, which is a host's question rather than a defect.
+
+**The theme compiler, every string it takes.** `seed`, `name` and `selector`, each given
+`</style><script>`, a rule-breaking `}`, `@import`, `expression()`, a `data:` URL and an unterminated
+comment: refused, every combination, with a message naming the member.
+
+**Markup into the DOM.** The only `innerHTML` in `plain`, `widgets` and `lit` is `mdyIcon`, and it
+writes the package's own icon geometry — which is why finding 271 is about that constant being
+writable rather than about the assignment.
 
 ## The register's own shape, measured
 
