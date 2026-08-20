@@ -22,6 +22,15 @@ export interface MdySchemaPaths {
    * a row is, which is the question "is a row of this collection a value or a set of cells".
    */
   readonly itemLeafPaths: ReadonlySet<string>;
+  /**
+   * The bare keys a schema declares, at any depth — not the paths they sit at.
+   *
+   * A caller asking "did anyone declare a node called X" wants the key, and reading it back out of a
+   * path costs the length of the path. On a deeply nested schema that is the depth again per node,
+   * which is quadratic: a document nested sixty thousand deep stopped building at all. Collected
+   * once, where the key is already in hand.
+   */
+  readonly declaredNames: ReadonlySet<string>;
   readonly groupPaths: ReadonlySet<string>;
   readonly arrayPaths: ReadonlySet<string>;
   readonly recordPaths: ReadonlySet<string>;
@@ -91,6 +100,7 @@ function collectItemPaths(
   arrayPaths: Set<string>,
   recordPaths: Set<string>,
   itemLeafPaths: Set<string>,
+  declaredNames: Set<string>,
 ): void {
   // Over a stack for the same reason `walkSchema` is: nesting is unbounded, and the depth a document
   // declares must cost memory rather than stack.
@@ -106,6 +116,7 @@ function collectItemPaths(
       const entries = Object.entries(node.children);
       for (let index = entries.length - 1; index >= 0; index -= 1) {
         const [key, child] = entries[index]!;
+        declaredNames.add(key);
         pending.push({ prefix: `${current.prefix}.${key}`, item: child });
       }
       continue;
@@ -130,21 +141,27 @@ export function collectSchemaPaths(nodes: MdyFormSchema): MdySchemaPaths {
   const arrayPaths = new Set<string>();
   const recordPaths = new Set<string>();
   const itemLeafPaths = new Set<string>();
+  const declaredNames = new Set<string>();
+  const noteName = (path: string): void => {
+    declaredNames.add(path.slice(path.lastIndexOf(".") + 1));
+  };
   walkSchema(
     nodes,
     "",
-    (path) => leafPaths.push(path),
-    (path) => groupPaths.add(path),
+    (path) => { leafPaths.push(path); noteName(path); },
+    (path) => { groupPaths.add(path); noteName(path); },
     (path, node) => {
       arrayPaths.add(path);
-      collectItemPaths(`${path}.*`, node.item, arrayPaths, recordPaths, itemLeafPaths);
+      noteName(path);
+      collectItemPaths(`${path}.*`, node.item, arrayPaths, recordPaths, itemLeafPaths, declaredNames);
     },
     (path, node) => {
       recordPaths.add(path);
-      collectItemPaths(`${path}.*`, node.item, arrayPaths, recordPaths, itemLeafPaths);
+      noteName(path);
+      collectItemPaths(`${path}.*`, node.item, arrayPaths, recordPaths, itemLeafPaths, declaredNames);
     },
   );
-  return { leafPaths, groupPaths, arrayPaths, recordPaths, itemLeafPaths };
+  return { leafPaths, groupPaths, arrayPaths, recordPaths, itemLeafPaths, declaredNames };
 }
 
 /** Rebuilds the nested value shape from a flat dotted-path record. */
