@@ -17350,7 +17350,33 @@ on a project too small to time, the ratio would be noise against noise.
 The repair is a shape change — copy the path from the root to the touched node rather than the
 document — so it wants a record and a plan, not a line. `packages/studio-editor` is in no lane.
 
-## 297 — A theme's selector can close the sheet it is written into (S0, SEC-003)
+## 297 — A theme's selector can close the sheet it is written into (S0, SEC-003) — CLOSED, and it was wider
+
+**Closed, `02119792` and `86cd040e`**, and the second commit is the finding behind the finding.
+
+`esecutore3` asked the question the report had not: *which function actually writes the text?* Not the
+one the guard was on.
+
+```
+compileMdyTheme        builds the object   ← where the guard was
+serializeMdyThemeCss   writes the sheet    ← exported, and validated nothing
+```
+
+`MdyResolvedTheme` is a plain frozen object. A caller holding their own tokens builds one and reaches
+the writer without passing the compiler at all — and two of the fields that escape are **not the
+selector**: `seed` and `model` are written into the sheet's header comment, and a comment-closer ends
+a comment the way `}` ends a rule.
+
+**The generalisation is mine, one level up.** I read three refusals as a guard because every payload
+carried a `}`. The repair guarded the door the finding named, and the door beside it stayed open,
+because it looked at *where the guard is* rather than *where the text is produced*. **A guard placed
+where an object is constructed guards a convention** — a type cannot enforce provenance at runtime.
+
+Held now by `battle-tests/adversarial/styles/a-sheet-guarded-where-it-is-written.battle.test.mjs`:
+five escapes on a hand-built theme, plus an ordinary compiled theme and three ordinary field values
+asserted beside them, because refusing everything satisfies the first half alone. ADR 0111 recorded
+the writer as an uncovered gap; it is covered.
+
 
 Found by `esecutore4` re-measuring my own sweep instead of transcribing it. **I had reported the theme
 compiler as refusing hostile input on all three strings it takes, and it does not.**
@@ -17524,6 +17550,46 @@ documentation: **two surfaces answer the same question and only one of them is w
 
 Handed to the documentation lane with the reasoning already recorded in ADRs 0005, 0007, 0047, 0069
 and 0092 — the material exists, and none of it is in a guide.
+
+## 302 — A carriage return the guide says is stripped, and is not (S2, SEC-003)
+
+`docs/guides/security.md` describes the `"text"` profile as: *"Strips control characters (except
+`\t`/`\n`), DEL/C1, zero-width characters, bidi overrides/isolates and line/paragraph separators.
+Prevents UI spoofing and **log/CSV injection**."*
+
+Two exceptions are named. The implementation has three:
+
+```
+packages/core/src/security.ts:100
+/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F-\u009F\u200B-\u200D\u2028-\u202E\u2066-\u2069\uFEFF]/g
+              ↑ 0009 tab      ↑ 000A LF        ↑ 000D CR
+```
+
+The class skips `\u0009`, `\u000A` **and `\u000D`**. Carriage return is exempt and undocumented — and
+it is the one that matters for the sentence it sits under. Measured on both profiles:
+
+```
+"ok\rINJECTED admin logged in"   kept, text and strict
+"ok\nINJECTED"                   kept
+"ok\tINJECTED"                   kept
+"=1+1"  "+1+1"  "-1+1"  "@SUM(1+1)"  "=cmd|' /C calc'!A0"   all kept
+```
+
+**Two claims in one sentence, and they need separating.** *Log injection* is about `\r` and `\n`
+splitting a line — and both survive, so the claim is false as a reader would take it. *CSV injection*
+in ordinary use means **formula injection**, and no profile touches a leading `=`, `+`, `-` or `@` —
+which is defensible, because a formula prefix is a legitimate value in a form field and stripping it
+would corrupt data, but it is not what the sentence says.
+
+Neither is necessarily a code defect: keeping newlines is right for a `textarea`, and refusing `=`
+would be wrong. **The defect is the sentence** — it promises a protection the profile does not give,
+in the guide a reader consults precisely when they are deciding what they still have to do
+themselves. The honest form names what is stripped, and says that line breaks and formula prefixes are
+the consumer's to handle at the boundary where they matter — a log writer, a CSV encoder.
+
+The undocumented `\r` exemption is the part worth deciding rather than only rewording: `\t` and `\n`
+are exempt because a textarea legitimately holds them. A bare `\r` in a form value is not something a
+person types.
 
 ## The register's own shape, measured
 
