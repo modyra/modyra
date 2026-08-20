@@ -12,6 +12,13 @@
  *
  * That is a synchronous match, so it is the whole thread: no keystroke is handled, nothing repaints.
  *
+ * What is refused is a **repeated group whose body can match different lengths** — the two halves
+ * that together make backtracking exponential. A fixed-length body consumes the same number of
+ * characters however the match reaches it, so there is one way to divide the input and nothing to
+ * backtrack over; a variable one has many, and repeating it multiplies them. Whether the repetition
+ * is written as a count or left open-ended does not change the shape: `(a+){15}` writes the exponent
+ * as a number and reaches seconds at thirty characters, exactly as `(a+)+` does.
+ *
  * What is refused is **structure, not slowness** — JavaScript offers no way to bound a match's cost
  * from outside it, so the only checkable thing is the shape of the source. The two shapes below are
  * what makes backtracking exponential rather than merely quadratic; a pattern that is slow for some
@@ -23,24 +30,55 @@
  * alternation whose branches cannot be compared is not refused on suspicion.
  */
 
-/** Repetition with no ceiling — the only kind that turns nesting into exponential backtracking. */
-const UNBOUNDED = new Set(["*", "+"]);
-
 interface Group {
   /** Where the group's body starts, for reading its alternatives back. */
   readonly start: number;
-  /** Whether anything inside it repeats without a ceiling. */
-  unbounded: boolean;
+  /**
+   * Whether the group's body can match runs of different lengths.
+   *
+   * This is the half that makes a repetition ambiguous: a body of fixed length consumes the same
+   * number of characters however the match arrives at it, so the engine has one way to divide the
+   * input and nothing to backtrack over. A body that can be short or long has many, and repeating it
+   * multiplies them.
+   */
+  variable: boolean;
   /** Where each top-level alternative of this group starts. */
   readonly alternatives: number[];
 }
 
-/** True when `source[at]` opens an unbounded `{n,}` repetition. */
-function bracesAreUnbounded(source: string, at: number): boolean {
+/** How many times a quantifier may repeat what it follows. `Infinity` for the open-ended ones. */
+interface Repetition {
+  readonly min: number;
+  readonly max: number;
+  /** Index of the last character of the quantifier, so a scan can step past it. */
+  readonly end: number;
+}
+
+/**
+ * The quantifier at `at`, or `null` when nothing there is one.
+ *
+ * `{` is only a quantifier when what follows spells a count: a pattern may contain a literal brace,
+ * and reading `{a}` as a repetition would make the scan lose its place.
+ */
+function repetitionAt(source: string, at: number): Repetition | null {
+  const character = source[at];
+  if (character === "*") return { min: 0, max: Infinity, end: at };
+  if (character === "+") return { min: 1, max: Infinity, end: at };
+  if (character === "?") return { min: 0, max: 1, end: at };
+  if (character !== "{") return null;
   const close = source.indexOf("}", at);
-  if (close === -1) return false;
+  if (close === -1) return null;
   const body = source.slice(at + 1, close);
-  return /^\d+,\s*$/.test(body);
+  const exact = /^(\d+)$/.exec(body);
+  if (exact) {
+    const count = Number(exact[1]);
+    return { min: count, max: count, end: close };
+  }
+  const open = /^(\d+),\s*$/.exec(body);
+  if (open) return { min: Number(open[1]), max: Infinity, end: close };
+  const range = /^(\d+),\s*(\d+)$/.exec(body);
+  if (range) return { min: Number(range[1]), max: Number(range[2]), end: close };
+  return null;
 }
 
 /**
@@ -184,7 +222,23 @@ export function dynamicPatternRefusal(source: string): string | null {
       continue;
     }
     if (character === "(") {
-      groups.push({ start: at + 1, unbounded: false, alternatives: [at + 1] });
+      // `(?:`, `(?=`, `(?!`, `(?<=`, `(?<!`, `(?<name>` — the `?` there names the kind of group and
+      // is not a quantifier. Read as one it made every non-capturing group look variable, which
+      // refused `(?:ab){3}`: a fixed body repeated a fixed number of times, with nothing to divide.
+      let body = at + 1;
+      if (source[body] === "?") {
+        body += 1;
+        if (source[body] === "<" && source[body + 1] !== "=" && source[body + 1] !== "!") {
+          const named = source.indexOf(">", body);
+          body = named === -1 ? body + 1 : named + 1;
+        } else if (source[body] === "<") {
+          body += 2;
+        } else {
+          body += 1;
+        }
+      }
+      groups.push({ start: body, variable: false, alternatives: [body] });
+      at = body - 1;
       continue;
     }
     if (character === "|") {
@@ -194,26 +248,36 @@ export function dynamicPatternRefusal(source: string): string | null {
     if (character === ")") {
       const group = groups.pop();
       if (!group) continue;
-      const quantifier = source[at + 1];
-      const repeats = quantifier !== undefined
-        && (UNBOUNDED.has(quantifier) || (quantifier === "{" && bracesAreUnbounded(source, at + 1)));
+      const repetition = repetitionAt(source, at + 1);
+      // Repeated at all is `max >= 2`: once is not a repetition, and a group that may be skipped is
+      // not one either. Whether the count is written or open-ended does not change the shape — it
+      // only writes the exponent as a number instead of leaving it as the length of the input.
+      const repeats = repetition !== null && repetition.max >= 2;
       if (repeats) {
-        if (group.unbounded) {
-          refusal = "nested unbounded repetition, which backtracks exponentially";
+        if (group.variable) {
+          refusal = "a repeated group whose body can match different lengths, which backtracks exponentially";
         } else if (overlap(alternativesOf(source, group, at))) {
           refusal = "repeated alternatives that can match the same text, which backtracks exponentially";
         }
       }
-      // A group that repeats, or that holds something repeating, makes its parent nested too.
-      if (repeats || group.unbounded) {
+      // What this group contributes to the one around it: a variable body stays variable however it
+      // is repeated, and a fixed body becomes variable when the repetition itself is variable.
+      if (group.variable || (repetition !== null && repetition.min !== repetition.max)) {
         const parent = groups[groups.length - 1];
-        if (parent) parent.unbounded = true;
+        if (parent) parent.variable = true;
       }
+      if (repetition !== null) at = repetition.end;
       continue;
     }
-    if (UNBOUNDED.has(character) || (character === "{" && bracesAreUnbounded(source, at))) {
-      const parent = groups[groups.length - 1];
-      if (parent) parent.unbounded = true;
+    const repetition = repetitionAt(source, at);
+    if (repetition !== null) {
+      // A quantifier whose minimum and maximum differ is what makes the run around it variable.
+      // `{2}` on a single character is not: it consumes two, always, and offers nothing to divide.
+      if (repetition.min !== repetition.max) {
+        const parent = groups[groups.length - 1];
+        if (parent) parent.variable = true;
+      }
+      at = repetition.end;
     }
   }
 
