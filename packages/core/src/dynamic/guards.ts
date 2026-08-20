@@ -5,7 +5,7 @@
  * predicate owned by either would make the other import it back.
  */
 
-import { isSafeFieldPath, namesAPrototypeKey } from "../path-utils.js";
+import { breaksValueConversion, isSafeFieldPath, namesAPrototypeKey } from "../path-utils.js";
 
 /**
  * What separates the segments of a generated DOM id (`@modyra/widgets`' id factory builds
@@ -93,6 +93,7 @@ export function isSafeDynamicSegment(value: string): boolean {
  */
 export function isSafeDynamicName(name: string): boolean {
   return isSafeDynamicSegment(name)
+    && !breaksValueConversion(name)
     && !name.includes(MDY_ID_DELIMITER)
     && !/\s/.test(name)
     && !MDY_INVISIBLE_IN_NAME.test(name);
@@ -170,6 +171,15 @@ export function assertSafeDynamicFieldNames(
     // disagreeing with what the parser says about the same name. Pollution stays ahead of the rest,
     // because `__proto__` also carries the id delimiter and the prototype chain is what matters
     // about it.
+    // Before the general path check, beside the other two specific reasons: a value the consumer
+    // cannot convert to a string is a defect that surfaces in their code, not ours.
+    if (breaksValueConversion(name)) {
+      throw new Error(
+        `[modyra] Invalid field name "${name}": a form's value is an object, so a field named ` +
+          `"toString" shadows the method every string conversion of that value goes through — ` +
+          "`${value}` and `String(value)` then throw. Name the field something else.",
+      );
+    }
     if (namesAPrototypeKey(name)) {
       throw new Error(
         `[modyra] Invalid field name "${name}": every segment of a path must be present and must ` +

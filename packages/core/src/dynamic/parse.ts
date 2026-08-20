@@ -29,6 +29,7 @@ import { MDY_DYNAMIC_MEMBERS, unknownMembers } from "./members.js";
 import { dynamicPatternRefusal } from "./pattern-cost.js";
 import { explainValueMismatch, type MdyValueKind } from "../value-contracts.js";
 import { MDY_FIELD_KINDS } from "../field-kinds.js";
+import { breaksValueConversion } from "../path-utils.js";
 import { required } from "../validators.js";
 import { mdyEmptyValueFor } from "./schema.js";
 import type { MdySelectOption } from "../types.js";
@@ -745,6 +746,18 @@ export function parseDynamicFields(input: unknown): MdyDynamicField[] {
         `Dropped a dynamic field whose path is ${f.name.length} characters, past the ` +
           `${MDY_MAX_DYNAMIC_PATH_LENGTH} a path may be: a path is the payload key, the draft key ` +
           "and the widget id, and every read of the value carries it.",
+        at,
+      );
+      return false;
+    }
+    // A form's value is an object, and a field named `toString` becomes a data property of it — so
+    // `${value}` and `String(value)` throw `Cannot convert object to primitive value` in the
+    // consumer's own code, naming neither the field nor the document. `JSON.stringify` is fine,
+    // which is why it went unseen: serialization is the path everybody tries.
+    if (breaksValueConversion(f.name)) {
+      warnDev(
+        `Dropped dynamic field "${f.name}": a form's value is an object, so this name shadows the ` +
+          "method every string conversion of that value goes through, and `${value}` then throws.",
         at,
       );
       return false;

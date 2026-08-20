@@ -20,7 +20,31 @@ const MDY_FORBIDDEN_PATH_SEGMENTS = new Set([
  */
 export function isSafeFieldPath(name: string): boolean {
   if (name.length === 0) return false;
-  return !namesAPrototypeKey(name) && name.split(".").every(isIdSegment);
+  return !namesAPrototypeKey(name) && !breaksValueConversion(name) && name.split(".").every(isIdSegment);
+}
+
+/**
+ * The one name a field cannot have without breaking the value the form produces.
+ *
+ * A form's value is an ordinary object, so a field called `toString` becomes a *data property* of it
+ * — and `ToPrimitive` then has nothing callable to reach. `${value}`, `String(value)`, an `alert`,
+ * some spellings of `console.log`: all of them throw `Cannot convert object to primitive value`,
+ * outside this library, in the consumer's own code, with a message naming neither the field nor the
+ * document that declared it. `JSON.stringify` is unaffected, which is why this survived — the
+ * serialization path is the one everybody tries.
+ *
+ * One name and not a list, and the reason is what keeps it one: `ToPrimitive` tries `valueOf` first
+ * and `toString` second, so shadowing `valueOf` alone changes nothing — the prototype's `toString`
+ * still answers — and shadowing both is unreachable once `toString` itself is refused.
+ * `Symbol.toPrimitive` cannot be a field name at all, because a name is a string.
+ *
+ * Refused rather than worked around: a non-enumerable `Symbol.toPrimitive` on the produced value
+ * repairs the object the engine hands over and not the copy a consumer makes of it — measured,
+ * `String(structuredClone(value))` throws again — so the defect would reappear further from its
+ * cause than it is now.
+ */
+export function breaksValueConversion(name: string): boolean {
+  return name.split(".").some((part) => part === "toString");
 }
 
 /**
