@@ -15901,6 +15901,36 @@ than on a guide. A package with no `dist` is now recorded as not built here rath
 — the distinction being that unreadable-but-built is still a finding. Falsified by removing
 `packages/angular/dist` locally: green, with the skipped specifiers named in the log.
 
+## 264 — A patch that meant something else one collection deeper (S0, SUB-001 COL-001 COL-002) — CLOSED
+
+Found by `esecutore` falsifying ADR 0103's repair rather than repeating its happy path, and recorded
+here because the battle that holds it is this suite's.
+
+A patch writes a positional row cell by cell over the row that is there. Reached *through* a keyed
+row — orders by reference, each holding its lines by position, which is the shape a real form has —
+it did not:
+
+```
+before  patch({o:{k:{lines:[{v:"NEW"},{v:"V2"}]}}})  →  [{v:"NEW",w:"q"},{v:"V2",w:"q"}]
+after                                                →  [{v:"NEW",w:"W1"},{v:"V2",w:"W2"}]
+```
+
+`"q"` is the declaration's initial — the same `"t"` as finding 259, one level down. `_writeInto` in
+`record-manager.ts` wrote a nested collection with `setAllFrom`; `record.patch` is the patch door, so
+it writes with `patchFrom`, and `MdyNestedCollection` gains `patchFrom` beside `setAllFrom` so the two
+readings have names instead of being decided by the caller.
+
+Held now by `battle-tests/adversarial/submission/a-patch-that-stops-at-the-first-collection.battle.test.mjs`:
+the same patch written at both depths, asserted equal to each other rather than to a literal, with the
+cell declarations deliberately holding nothing the rows hold — so a row rebuilt rather than written
+over is distinguishable in the value. The keyed row it is routed through is asserted intact beside
+them, because a repair that reached the lines by rebuilding the order would satisfy the lines and lose
+the order.
+
+**The lesson is the method, not the defect.** 259 was filed against a flat list because that is where
+it was found; the same contract had a second door one level down that no battle in the tier touched.
+A finding about a collection is worth re-asking through a collection.
+
 ## The register's own shape, measured
 
 ```
