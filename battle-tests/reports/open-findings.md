@@ -16867,6 +16867,11 @@ Not "the only renderer that reads them is Studio" — **the only consumer is not
 verified by running it rather than deduced: `buildDynamicValidations(parsed.validations)` handed to
 `createForm` as form-level validators produces the document's message on the document's target.
 
+**That page has an expiry date attached to this entry.** It states *"No shipped renderer reads it —
+the only consumer is Studio's live preview, which is not a published package"*, which is true today
+and becomes false the moment this finding is closed. Whoever closes it removes that section and the
+`buildDynamicValidations` workaround it recommends, in the same batch.
+
 **Why the repair is put rather than assigned.** Closing it means adding an option to the published
 mount surface of every adapter — eight of them — which is a cross-package migration and a public
 contract change. The narrow first step is `@modyra/plain`, which is the renderer the browser tier
