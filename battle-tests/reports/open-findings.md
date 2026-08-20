@@ -16151,6 +16151,48 @@ Held by `battle-tests/adversarial/persistence/a-draft-that-belongs-to-another-fo
 which asserts both directions and carries two controls: a draft was actually written, and the envelope
 actually records a shape — without either, the battle would pass on a form that restored nothing.
 
+## 270 — A secret the panel quotes back (S0, SEC-002)
+
+`mdyFormSnapshot` masks the value of a field declared `sensitive`, **and** masks that value out of the
+field's messages — `withoutValue` exists for it, and its comment says why: masking a value and
+printing it back beside it does not mask the value.
+
+It collects the literals to remove from strings, numbers, bigints and arrays. A form value may also be
+an **object**, and then it collects nothing:
+
+```
+a string                rejected "•••"                                    masked
+a number                rejected •••                                      masked
+an array                rejected ["•••"]                                  masked
+an object               rejected {"start":"hunter2…","end":"hunter2…"}    printed
+an object in an array   rejected [{"pan":"hunter2…"}]                     printed
+a nested object         rejected {"a":{"b":"hunter2…"}}                   printed
+```
+
+The array branch walks into the array and drops what it finds there, so a list of objects is the case
+that looks covered and is not.
+
+**It reaches shipped kinds without any custom validator.** A `daterange` holds `{ start, end }`, and
+its own contract check quotes the endpoint it could not read. Measured on a document declaring four
+sensitive fields:
+
+```
+born  datepicker  value "•••"  errors: This field holds an ISO date (yyyy-MM-dd), got "•••"
+at    timepicker  value "•••"  errors: This field holds a time (HH:mm), got "•••"
+span  daterange   value "•••"  errors: This field holds ISO dates, and start is "hunter2-THE-SECRET"
+pick  select      value "•••"  errors: Value must be one of: A
+```
+
+Three of the four are masked in the message. The one that is not is the one whose value is an object.
+`file` holds a list of files and `multiselect` a list of option values, which may be objects too.
+
+The value column and the error column of one row disagreeing about whether a value is a secret is
+`SEC-002` in its own words: a value the panel masks is readable elsewhere in the same panel.
+
+Held by `battle-tests/adversarial/security/a-secret-the-panel-quotes-back.battle.test.mjs`, over every
+shape a form value can take, with the masked value column asserted beside it so that a repair which
+simply stopped masking fails too.
+
 ## The register's own shape, measured
 
 ```
