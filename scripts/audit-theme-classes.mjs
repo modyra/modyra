@@ -12,7 +12,7 @@
  */
 
 import { readFileSync, readdirSync } from "node:fs";
-import { MDY_CHIP_CLASSES, MDY_FIELD_SHELL_CLASSES, MDY_WIDGET_CONTRACTS, popupPlacementClass } from "../packages/widgets/dist/index.js";
+import { MDY_CHIP_CLASSES, MDY_FIELD_SHELL_CLASSES, MDY_FIELD_STATE_CLASSES, MDY_WIDGET_CONTRACTS, popupPlacementClass } from "../packages/widgets/dist/index.js";
 import { dirname, extname, join, relative, resolve } from "node:path";
 
 const ROOT = resolve(import.meta.dirname, "..");
@@ -179,6 +179,25 @@ function extractAngularClasses(ts, filePath, kind) {
   return new Set([...fromTemplate, ...host, ...fromContract]);
 }
 
+/** The base/modifier pairs `MDY_FIELD_STATE_CLASSES` publishes, as they are named on it. */
+const STATE_FAMILIES = Object.freeze([
+  ["field", "fieldStates"],
+  ["control", "controlStates"],
+  ["label", "labelStates"],
+]);
+
+/**
+ * Whether this source composes class names out of one of those families.
+ *
+ * Deliberately loose: it asks whether the file *reaches for* the base and its modifier list, not how
+ * it joins them. A renderer that names both is a renderer that emits the whole family — and the
+ * alternative, matching the composition itself, is a scanner that reads one spelling of a `map` and
+ * misses the next one, which is the failure this repair exists to remove rather than move.
+ */
+function referencesStateFamily(ts, base, states) {
+  return ts.includes(`MDY_FIELD_STATE_CLASSES.${base}`) && ts.includes(`MDY_FIELD_STATE_CLASSES.${states}`);
+}
+
 function extractTemplateClasses(template) {
   const classes = [];
 
@@ -331,6 +350,25 @@ function extractLitAllTokens(ts) {
  */
 function extractContractClasses(ts, kind) {
   const classes = [];
+  // The state vocabulary, composed rather than spelled.
+  //
+  // `MDY_FIELD_STATE_CLASSES` publishes a base and the modifiers that may hang off it — `control`
+  // with `controlStates`, `label` with `labelStates`, `field` with `fieldStates` — and a renderer
+  // that builds `${base}--${state}` from them emits exactly the class a renderer that typed it
+  // emits. Read as text, the composed one looks like a renderer that dropped the state, so this
+  // gate punished the refactor it exists to encourage: Lit's wrapper stopped hand-writing
+  // `mdy-input-wrapper--disabled` and started deriving it, and eleven classes across nine kinds
+  // were reported missing while the rendered DOM carried every one of them.
+  //
+  // The same shape the chip alias already accepts, one level further: a member read off a published
+  // constant is as literal as the constant.
+  for (const [base, states] of STATE_FAMILIES) {
+    if (!referencesStateFamily(ts, base, states)) continue;
+    classes.push(MDY_FIELD_STATE_CLASSES[base]);
+    for (const state of MDY_FIELD_STATE_CLASSES[states]) {
+      classes.push(`${MDY_FIELD_STATE_CLASSES[base]}--${state}`);
+    }
+  }
   const shellRe = /(?:MDY_FIELD_SHELL_CLASSES|SHELL)\.([A-Za-z0-9_]+)/g;
   let shellMatch;
   while ((shellMatch = shellRe.exec(ts)) !== null) {
