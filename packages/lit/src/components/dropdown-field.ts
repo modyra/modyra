@@ -184,7 +184,7 @@ export abstract class MdyDropdownFieldElement<T> extends MdyOptionsFieldElement<
           type="button"
           class="mdy-select__trigger"
           id=${this.fieldId}
-          aria-haspopup="listbox"
+          aria-haspopup=${this.popupPromise}
           aria-expanded=${this._open ? "true" : "false"}
           aria-labelledby=${this.labelId}
           aria-invalid=${shownErrorsOf(handle).length > 0 ? "true" : "false"}

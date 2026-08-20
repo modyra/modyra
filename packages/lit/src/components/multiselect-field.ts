@@ -302,7 +302,7 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
               }}
               aria-label=${this.messages.searchOptionsLabel}
               role=${MDY_POPUP_OPENERS.multiselect?.role ?? nothing}
-              aria-haspopup="listbox"
+              aria-haspopup=${this.popupPromise}
               aria-expanded=${this._open ? "true" : "false"}
               aria-required=${String(handle.required())}
               aria-readonly=${handle.readonly() ? "true" : nothing}

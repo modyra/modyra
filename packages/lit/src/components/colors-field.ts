@@ -150,7 +150,7 @@ export class MdyColorsFieldElement extends MdyFieldElement<string | null> {
               class="mdy-colors__primary-picker"
               ?disabled=${handle.disabled()}
               aria-expanded=${this._open ? "true" : "false"}
-              aria-haspopup="dialog"
+              aria-haspopup=${this.popupPromise}
               aria-label=${this.label || "Color"}
               @click=${(e: Event) => {
                 if (this._open) {
@@ -202,7 +202,7 @@ export class MdyColorsFieldElement extends MdyFieldElement<string | null> {
               type="button"
               class="mdy-colors__toggle-area mdy-input-suffix"
               ?disabled=${handle.disabled()}
-              aria-haspopup="listbox"
+              aria-haspopup=${this.popupPromise}
               aria-expanded=${this._open ? "true" : "false"}
               aria-controls=${this._open ? overlayControlledId("colors", this.fieldId) ?? nothing : nothing}
               aria-label=${`${this.label} — open color presets`}
