@@ -124,6 +124,7 @@ absent section reads as an oversight, and "no security impact" is a finding.
 - [ADR 0107: A draft is read by the form that wrote it](0107-a-draft-is-read-by-the-form-that-wrote-it.md) — the write side compared the recorded form shape and the read side did not, so the draft the writer refused to replace was the one the reader restored
 - [ADR 0108: A seed a theme can be read on](0108-a-seed-a-theme-can-be-read-on.md) — the default primary sat in the 13% of sRGB where the rule picks light text that cannot reach AA, so the filled button shipped at 4.09:1
 - [ADR 0109: An element nobody bound says so](0109-an-element-nobody-bound-says-so.md) — the element surface was the one published door that failed in silence: an empty custom element, no control, and nothing said
+- [ADR 0110: A promise is declared where the popup is](0110-a-promise-is-declared-where-the-popup-is.md) — `aria-haspopup` was a literal at fourteen openers with no common source, so two kinds promised a popup neither renderer opened
 - [ADR 0092: A condition travels with the form](0092-a-condition-travels-with-the-form.md) — `when` and `asyncWhen` were closures, so a schema carrying one was not data and the document half could not say what the typed half said
 
 ## Security-relevant records

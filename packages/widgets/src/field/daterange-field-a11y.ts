@@ -114,7 +114,6 @@ export function projectDaterangeFieldA11y(
       // `aria-expanded`, which is why the opener relation declares no role for this kind — and why
       // a role written here as well said something the relation had deliberately left unsaid.
       attributes: {
-        "aria-haspopup": "grid",
         ...opener?.attributes,
         "aria-labelledby": labelId,
         "aria-disabled": String(state.disabled),
