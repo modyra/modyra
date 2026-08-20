@@ -155,6 +155,38 @@ masked for containing "card". The panel says which of the three decided, so a ma
 looks more protected than it is. The reasoning is [ADR 0089](../architecture/0089-a-field-that-says-it-is-a-secret-is-treated-as-one.md),
 including the amendment for a secret inside a collection row, where the flag originally did not reach.
 
+## A theme selector cannot close the sheet it is written into
+
+This one is on the page because it was **found by being wrong about it**, which is the only kind of
+security claim worth printing.
+
+`compileMdyTheme` writes a `selector` into a CSS rule, so it refuses anything that could end that
+rule: `{`, `}`, `;`, `@`, or a comment marker. Three hostile strings were tried against it and all
+three were refused — and the conclusion drawn, that the member was guarded, was wrong. Every one of
+those payloads carried a `}` or an `@`. They were refused for the wrong reason, and a fourth shape
+walked straight through:
+
+```
+before   selector "</style><script>alert(1)</script>"   ACCEPTED, verbatim in the serialized CSS
+after    selector "</style><script>alert(1)</script>"   REFUSED
+```
+
+Breaking out of the CSS **rule** and breaking out of the `<style>` **element** are two questions, and
+only the first was being asked. Nothing in this repository compiles a theme from user input — the
+only callers of `compileMdyTheme` are its own tests — but compiling a theme per tenant or per brand
+is what a theme compiler is *for*, and that is where a customer names the selector.
+
+The repair is one character, and the cost of getting it wrong is refusing selectors people write:
+`<` is valid nowhere in a CSS selector, while `>` has to keep working. Measured after the fix:
+
+```
+".a > .b"   ".a, .b"   ":root"   "#app"   "[data-tenant=\"acme\"]"   all ACCEPTED
+"@import url(//evil)"                                                REFUSED
+```
+
+The lesson generalises past this member: **a payload has to be shown to reach the guard it is
+testing.** Three refusals for a reason you did not intend read exactly like a defence.
+
 ## What has not been proved
 
 A page like this is only worth its exclusions.
@@ -165,32 +197,6 @@ from `MDY_ICONS`, a frozen constant with no registration API — there is no pat
 it. The devtools panel builds its table as HTML and escapes every external string through
 `escapeHtml`: the field path, the value, and the error messages. What nobody can give you by reading
 is a guarantee that no single unescaped interpolation exists anywhere; grep does not prove absence.
-
-**The theme compiler guards the CSS rule, not the HTML around it — open, and being repaired.**
-`compileMdyTheme` refuses a hostile `seed` and a hostile `name` outright, and refuses a `selector`
-containing `{`, `}`, `;`, `@` or a comment marker — each of which ends the rule and turns the rest
-into a stylesheet of its own. It does **not** refuse `</style><script>…`, which contains none of
-those:
-
-```
-seed      "</style><script>alert(1)</script>"   REFUSED
-name      "</style><script>alert(1)</script>"   REFUSED
-selector  "</style><script>alert(1)</script>"   ACCEPTED, and reaches the serialized CSS verbatim
-```
-
-The guard was written against CSS-rule escape, and the source says so: *"a caller compiling themes
-from someone else's data still owns that question."* Breaking out of the `<style>` **element** is a
-different question, and it was not being asked.
-
-**How far it reaches.** Nothing in this repository compiles a theme from user input: the only callers
-of `compileMdyTheme` are its own tests, and no editor surface carries a theme selector. The value
-comes from whoever writes the build. That is the reason it is not a live hole here — and not a reason
-to leave it, because compiling a theme per tenant or per brand is what a theme compiler is for, and
-that is the shape where a customer names the selector.
-
-Until the refusal widens: validate a selector you did not write, and never inject compiled theme CSS
-into an inline `<style>` element. The repair is one character — `<` is valid nowhere in a CSS
-selector — and `>` has to keep working, because `.a > .b` is an ordinary descendant rule.
 
 **Client-side checks are not a boundary.** Everything on this page runs in the browser, and anything
 in the browser can be bypassed with curl. The whitelisting story, and the one schema that drives the
