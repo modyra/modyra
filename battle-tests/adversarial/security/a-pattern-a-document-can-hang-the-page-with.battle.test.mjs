@@ -96,6 +96,16 @@ function measure(pattern, input) {
  * rather than asking whether its body is variable, refuses it and every pattern shaped like it.
  */
 const MUST_STAY_ALLOWED = Object.freeze([
+  ["^(\\d{1,3}\\.){3}\\d{1,3}$", "an IPv4 address"],
+  ["^([a-z]+-)*[a-z]+$", "a kebab-case slug"],
+  ["^(\\w+\\.)*\\w+$", "a dotted identifier"],
+  ["^(\\d+/)*\\d+$", "slash-separated numbers"],
+  ["^(\\s*[^,]+,)*\\s*[^,]+$", "a comma-separated list"],
+  ["^(\\d{4}[ -]?){3}\\d{4}$", "a card number in groups"],
+  ["^([A-Z][a-z]+ ?){1,4}$", "a person's name, up to four words"],
+  ["^(ab?){3}$", "a variable body whose split points are forced"],
+  ["^(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\\.)+[a-z]{2,}$", "a hostname"],
+  ["^([A-Za-z0-9]+[.-_])*[A-Za-z0-9]+@[A-Za-z0-9-]+(\\.[A-Za-z]{2,})+$", "a hand-written email"],
   ["(\\d{2}){3}", "a fixed-length body repeated"],
   ["^\\d{3}-\\d{4}$", "a phone number"],
   ["^[A-Z]{2}\\d{6}$", "a passport"],
