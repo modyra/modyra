@@ -23,6 +23,7 @@ export function mdyFormSerialize(value: unknown): unknown {
 
 /** Placeholder for a value already met on the way down — a cycle. */
 const CIRCULAR = "[Circular]";
+const TOO_DEEP = "[Too deep]";
 
 /** What a member read answers with when reading it raised. */
 const UNREADABLE = Symbol("modyra:unreadable-member");
@@ -42,7 +43,18 @@ function describeThrow(error: unknown): string {
   return typeof error;
 }
 
-function serialize(value: unknown, seen: Set<object>): unknown {
+/**
+ * How deep a value is walked before it is described instead.
+ *
+ * Every other walk in this library has a ceiling — a path is 512 characters, an expression is 32
+ * levels, a declaration walk is 100 000 nodes — and the one without one was the walk whose entire
+ * promise is that reading a form's value never fails. It did not take a hostile value to reach the
+ * stack limit: a recursive structure from an API, a linked list, a tree an editor built. Described
+ * rather than thrown, like `[Circular]` beside it.
+ */
+const MAX_DEPTH = 512;
+
+function serialize(value: unknown, seen: Set<object>, depth = 0): unknown {
   // The other value JSON cannot carry, and the loud one: `JSON.stringify` raises
   // `Do not know how to serialize a BigInt` rather than writing something, so a form holding one
   // stops whatever reads it — including the devtools panel, which is what a developer opens
@@ -63,7 +75,17 @@ function serialize(value: unknown, seen: Set<object>): unknown {
     return `[File: ${value.name} (${value.size} bytes)]`;
   }
 
+  // The same reason as `File`, one collection at a time: none of these carries its contents in its
+  // own enumerable properties, so passing them through wrote `{}` — what a field nobody filled in
+  // looks like. Somebody opens the panel to find out why a form is wrong; a `Map` holding entries
+  // reading the same as an empty field is the panel answering a different question than the one
+  // asked.
+  if (value instanceof Map) return `[Map: ${value.size} ${value.size === 1 ? "entry" : "entries"}]`;
+  if (value instanceof Set) return `[Set: ${value.size} ${value.size === 1 ? "member" : "members"}]`;
+  if (value instanceof Error) return `[${value.name}: ${value.message}]`;
+
   if (seen.has(value)) return CIRCULAR;
+  if (depth >= MAX_DEPTH) return TOO_DEEP;
   seen.add(value);
   try {
     // Every read below is a read of somebody else's object. A getter can throw, a `toJSON` can
@@ -82,11 +104,11 @@ function serialize(value: unknown, seen: Set<object>): unknown {
       } catch (error) {
         return `[Unreadable: toJSON threw ${describeThrow(error)}]`;
       }
-      return serialize(produced, seen);
+      return serialize(produced, seen, depth + 1);
     }
 
     if (Array.isArray(value)) {
-      return value.map((entry) => serialize(entry, seen));
+      return value.map((entry) => serialize(entry, seen, depth + 1));
     }
 
     const result: Record<string, unknown> = {};
@@ -102,7 +124,7 @@ function serialize(value: unknown, seen: Set<object>): unknown {
     }
     for (const key of keys) {
       const entry = readMember(value, key);
-      result[key] = entry === UNREADABLE ? `[Unreadable: ${key}]` : serialize(entry, seen);
+      result[key] = entry === UNREADABLE ? `[Unreadable: ${key}]` : serialize(entry, seen, depth + 1);
     }
     return result;
   } finally {
