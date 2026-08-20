@@ -58,13 +58,36 @@ test("the patterns a form is actually written with are left alone", () => {
   }
 });
 
-test("a bounded repetition is not nesting, however deep it looks", () => {
-  // The line the heuristic draws. `(a{2,4})+` repeats something that repeats, and the inner
-  // repetition has a ceiling — the blowup needs both to be unbounded.
-  assert.equal(dynamicPatternRefusal("^(a{2,4})+$"), null);
-  assert.equal(dynamicPatternRefusal("^(a?)+$"), null);
-  // …and an unbounded inner one is refused whichever spelling it arrives in.
+test("what decides is a variable body, not an unbounded one", () => {
+  // The line the heuristic draws, and it is not about ceilings. A body whose length can vary offers
+  // the engine several ways to divide the same input, and repeating it multiplies them — the
+  // ceiling on the inner repetition only puts a number on how many. Measured, `^(a{1,10})+b$`
+  // reaches 5.4 seconds at thirty characters, which `(a+)+` does at the same size.
+  assert.ok(dynamicPatternRefusal("^(a{2,4})+$"));
+  assert.ok(dynamicPatternRefusal("^(a?)+$"));
   assert.ok(dynamicPatternRefusal("^(a{2,})+$"));
+
+  // And a counted repetition is not a way out of it: the exponent is written as a number instead of
+  // being the length of the input, and fifteen is already seconds.
+  assert.ok(dynamicPatternRefusal("^(a+){15}b$"));
+  assert.ok(dynamicPatternRefusal("^([a-z]+){12}!$"));
+  assert.ok(dynamicPatternRefusal("(.*a){20}$"));
+});
+
+test("a fixed-length body repeated is left alone", () => {
+  // The other half of the same line, and the one that keeps the check usable: a body that always
+  // consumes the same number of characters gives the engine one way to divide the input and nothing
+  // to backtrack over, however many times it is repeated.
+  assert.equal(dynamicPatternRefusal("(\\d{2}){3}"), null);
+  assert.equal(dynamicPatternRefusal("^(a{3}){4}$"), null);
+  assert.equal(dynamicPatternRefusal("^(abc)+$"), null);
+
+  // A group's kind is not a quantifier. `(?:`, a lookahead, a lookbehind and a named group all
+  // begin with `?`, and reading it as one made every non-capturing group look variable.
+  assert.equal(dynamicPatternRefusal("^(?:ab){3}$"), null);
+  assert.equal(dynamicPatternRefusal("^(?<year>\\d{4})-(?<month>\\d{2})$"), null);
+  assert.equal(dynamicPatternRefusal("^(?=.*\\d)[a-z]{8,}$"), null);
+  assert.equal(dynamicPatternRefusal("(?<!x)(\\d{2}){4}"), null);
 });
 
 test("alternatives that cannot match the same character are left alone", () => {
@@ -83,5 +106,10 @@ test("what the heuristic cannot read, it allows", () => {
   // A refusal removes a rule the document's author wrote, so anything undecidable goes through: a
   // branch that starts with a group, a backreference, or something that may not be there at all.
   assert.equal(dynamicPatternRefusal("^((a)|b)+$"), null);
-  assert.equal(dynamicPatternRefusal("^(a?b|a)+$"), null);
+
+  // `^(a?b|a)+$` used to be here, on the same reasoning: its first character cannot be decided, so
+  // the branch comparison cannot say whether the alternatives overlap. The other axis decides it
+  // without needing to — `a?` makes the body variable, and a variable body repeated is the shape —
+  // which is what a second reading buys over a wider first one.
+  assert.ok(dynamicPatternRefusal("^(a?b|a)+$"));
 });

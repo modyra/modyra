@@ -84,6 +84,47 @@ and the first is the message.
 Typed schemas are untouched. `pattern(new RegExp(...))` written in a consumer's own module is their
 code running their regex, and the engine has no business rewriting what a developer wrote.
 
+## Amendment: what counts as structure is a variable body, not an unbounded one
+
+The decision holds — the check refuses **structure, not slowness** — and what it read as structure was
+wrong on one axis. It looked for repetition with no ceiling, `*`, `+`, `{n,}`, and left a counted
+repetition alone on the reasoning that a ceiling bounds the work.
+
+A ceiling on the *outer* repetition does not. It writes the exponent as a number instead of leaving
+it as the length of the input. Measured with a killable child process, one process per measurement,
+milliseconds by input length:
+
+                      24     26     28     30      32
+    ^(a+){15}b$       85    284    960   3063   >8000
+    ^(a{1,10})+b$     85    339   1353   5385   >8000
+    ^([a-z]+){12}!$   56    146    388    959    2330
+    (.*a){20}$       408   1714   6592  >8000
+
+About 3.2× every two characters: thirty-six characters is minutes, forty is hours. And it is the
+*near miss* that costs — a string that matches immediately stays flat at 14ms whatever its length,
+which is precisely what an attacker sends.
+
+So the rule reads two things instead of one:
+
+- a group's body is **variable** when it holds a quantifier whose minimum and maximum differ — `+`,
+  `*`, `?`, `{n,}`, `{n,m}` with n≠m. `{2}` on a single character is not: it consumes two, always,
+  and offers nothing to divide.
+- a group is **repeated** when the quantifier after it may apply two or more times, whether that is
+  written as a count or left open.
+
+A variable body that is repeated is the exponential shape. `(\d{2}){3}` is not — its body always
+consumes two characters, so there is one way to divide the input and nothing to backtrack over — and
+neither is `(?:ab){3}`, once the `?` that names a group's kind is no longer read as a quantifier.
+
+**What this newly refuses, stated rather than discovered.** A variable body is a necessary condition
+for the blowup and not a sufficient one: variability creates the *opportunity* to divide the input
+several ways, ambiguity is what makes the engine try them. `(ab?){3}` is variable and repeated and
+is not ambiguous — the `b` is decided by the next character — and it is refused now. The check
+cannot tell the two apart cheaply, and it errs toward refusing, which reverses the direction this
+record's own "deliberately conservative" paragraph describes for this one shape. A refusal is a
+diagnostic naming the shape and an author can rewrite the rule; the failure in the other direction
+is a page that stops.
+
 ## Alternatives rejected
 
 **Match under a deadline.** The right fix, and JavaScript cannot express it: `RegExp.prototype.test`
