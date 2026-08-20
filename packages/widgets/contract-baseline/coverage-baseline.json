@@ -1,8 +1,8 @@
 {
   "note": "Public names not yet asserted or not yet shown. The list may only get shorter.",
   "score": {
-    "published": 697,
-    "asserted": 441,
+    "published": 698,
+    "asserted": 442,
     "shown": 79
   },
   "uncovered": [
@@ -200,6 +200,12 @@
     },
     {
       "name": "MDY_STATE_EXPRESSION",
+      "asserted": true,
+      "shown": false,
+      "reason": "published and never shown"
+    },
+    {
+      "name": "MDY_TIMEPICKER_INNER_RING",
       "asserted": true,
       "shown": false,
       "reason": "published and never shown"
