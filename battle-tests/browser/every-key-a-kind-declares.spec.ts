@@ -133,7 +133,16 @@ for (const host of HOSTS) {
           ? [null]
           // Capped: a calendar has forty-two focusable cells and offering a key to each of them
           // measures nothing the first few do not.
-          : (await page.locator(`${scope} [role="combobox"], ${scope} input, ${scope} button, ${scope} [tabindex]`).all()).slice(0, 4);
+          //
+          // `input[type=color]` is left out, and it is the one exclusion here. Space on it opens the
+          // platform's own colour dialog, which takes the keyboard away from the page — every press
+          // after it lands nowhere this spec can see, so the binding reads as unanswered and so does
+          // everything the sweep tries next. It is the first part of a colour field in document
+          // order, which is why that field alone reported a binding the renderer answers: focusing
+          // any other part of it first, the same key is answered.
+          : (await page.locator(
+            `${scope} [role="combobox"], ${scope} input:not([type="color"]), ${scope} button, ${scope} [tabindex]`,
+          ).all()).slice(0, 4);
         if (parts.length === 0) { unreached.push(`${kind} ${binding.key}: nothing focusable`); continue; }
 
         let answered = false;

@@ -17591,6 +17591,184 @@ The undocumented `\r` exemption is the part worth deciding rather than only rewo
 are exempt because a textarea legitimately holds them. A bare `\r` in a form value is not something a
 person types.
 
+## 303 — A link whose section was renamed away (S3, DOC-002)
+
+The docs gate checks that a linked **file** exists. It does not check the fragment, and a fragment is
+a copy of a heading's text living outside the heading. Rename the heading and the copy is not
+updated: the link still resolves, still renders, and lands the reader at the top of the page instead
+of on the section.
+
+Two were standing when this was written, both pointing at the same reworded heading:
+
+```
+docs/guides/comparison-formik.md           -> comparison-form-libraries.md#4-where-modyra-is-behind-read-this-before-adopting
+docs/guides/comparison-react-hook-form.md  -> same
+the heading now reads   ## Where Modyra is behind   ->   id="where-modyra-is-behind"
+```
+
+The section is *where Modyra is behind* — the one both comparison guides send a reader to out of
+honesty about the project's own weaknesses, and the one a reader arriving from a competitor's page
+is most likely to click.
+
+Found and repaired by `esecutore4` (`f9c188aa`). **The gap in the gate is what this entry is for**,
+and it is closed by `a-section-a-link-still-names.battle.test.mjs`, which is wider than the scan that
+found them: same-page fragments as well as cross-page, every tracked `*.md` rather than `docs/` alone,
+and a GitHub URL naming this repository resolved to the local `README.md`.
+
+**The instrument is a slug rule, so the instrument is the risk.** The rule is checked against the
+built site before it is used — 983 headings against the ids those pages carry, 0 disagreements — and
+that check found two of its own defects first: `brand/README.md` matched onto the site's own brand
+page, and `docs/README.md` onto a hand-written front page that renders no page of `docs/`. Both would
+have made a correct rule look wrong. A page built before it was last written is excused, for the same
+reason a stale `dist` cannot measure a fix.
+
+The rule that survived is not the obvious one: **each space becomes a hyphen, not each run**, and
+there is no trim. `Prefixes & suffixes` is `prefixes--suffixes`; `(Valibot, ArkType, …)` ends on a
+hyphen. A rule that collapses whitespace disagrees with the site on all 27 headings holding a dash or
+a slash — it was wrong on the first draft here, and the check is what said so.
+
+Mutation, both directions: the exact heading `esecutore4` found, reworded back to its old form, is
+caught on **three** links — including a same-page one on the renamed page itself, which a cross-page
+scan does not look at.
+
+`#readme` on `https://github.com/modyra/modyra` is excused by name: it is GitHub's own anchor for the
+README card, the one fragment there that no heading answers and that works anyway. Every other
+fragment on that URL stays checked, and one of them — `#what-headless-means-for-conformance`, from
+`docs/known-issues.md` — is a real heading of the root `README.md`, so the exception is narrow enough
+to still catch its neighbours.
+
+This is the same shape as 289 and 298: **a piece of text outlives the thing it described.** Here the
+text is a fragment of a URL.
+
+## 304 — The comparison page's own number, re-run today, is less than half the truth (S1, DOC-001)
+
+`docs/guides/comparison-form-libraries.md` publishes Modyra's bundle weight beside seven competitors
+and names the command that reproduces it. The command was run.
+
+```
+the page, measured 2026-08-10 against @modyra/core@2.0.0
+  Whole entry         69.7 KB min    19.8 KB gzip
+  Realistic surface   47.7 KB min    13.4 KB gzip
+
+npm run test:core-bundle, run 2026-08-20 against the current tree
+  @modyra/core whole entry:        148.6 KB min, 43.1 KB gzip
+  @modyra/core realistic surface:   93.3 KB min, 26.3 KB gzip
+```
+
+**Gzip has more than doubled.** +118% on the whole entry, +96% on the realistic surface. Minified,
++113%.
+
+The number matters more than most stale numbers do, because of where it sits. The same page's table
+lists every competitor between 9.8 and 18.1 KB gzip, and the page's argument is that Modyra is in
+that weight class while carrying more. At **26.3 KB realistic it is the heaviest entry on its own
+table** — heavier than `@angular/forms` and `@tanstack/react-form` at 18.1, and more than twice
+react-hook-form at 11.9. The ordering the page declines to state has changed sign.
+
+**Two claims fail, not one.** The version too: the page says *"`@modyra/core` and `@modyra/widgets`
+are at 2.0.0"*. They are at **2.1.2** and **2.1.0**.
+
+**Not an instrument artefact, and this was the check worth running.** A doubled number read from a
+changed measuring tool is a story about the tool:
+
+```
+git log --since=2026-08-09 -- scripts/check-core-bundle.mjs     no commits — unchanged
+git log --oneline --since=2026-08-09 -- packages/core/src       202 commits
+packages/core/src, bytes at the measuring commit                434,495   (44 files)
+packages/core/src, bytes now                                    788,999   (54 files)
+```
+
+The instrument has not been touched since before the figure was taken, and the source it measures
+grew 82% underneath it. Source bytes are not bundle bytes — this repository's comment density is
+high and comments minify away — so the two percentages are not the same quantity. They point the
+same way, and they rule out the alternative explanation.
+
+**Why it drifted is written in the tool's own output**: *"Reported, not gated — see the note in this
+file for why these numbers do not fail a build."* A figure that is measured, published, quoted
+against competitors, and gated by nothing.
+
+The page is honest about the general risk — it names two measurement dates and declines to rank the
+libraries because of the gap. **That honesty is what makes this worse rather than better**: a reader
+told exactly which figure is fresh and which is stale is a reader who will trust the fresh one, and
+the fresh one is the one that moved. The stale competitor snapshot is the half the page warns about;
+the half it vouches for is the half that is wrong.
+
+Two halves, two owners. The prose is `esecutore4`. **The doubling itself is a product finding, not a
+documentation one** — nothing in the repository would have said so, and nothing will say so the next
+time.
+
+## 305 — A published column nobody has an opinion about (S3, DOC-001)
+
+`docs/reactivity-capability-matrix.md` is generated. Regenerated on 2026-08-20, one column moved:
+
+```
+Generated 2026-08-10  ->  2026-08-20
+writableComputed: every adapter but angular,  "no"  ->  "—"
+
+grep -rn writableComputed --include='*.ts' --include='*.mjs' packages scripts | grep -v dist
+  scripts/reactivity-capability-matrix.mjs:32   "writableComputed",
+  scripts/reactivity-capability-matrix.mjs:65   writableComputed: false,
+  scripts/reactivity-capability-matrix.mjs:81   writableComputed: false,
+```
+
+**The key exists only inside the generator.** No adapter declares it, it is not in core's `capabilities`
+type, and the two `false` lines are the script's hand-written fallbacks — the angular rows, verified
+from source rather than imported, which is why angular is the only row still reading `no`. The script
+has not changed since 2026-08-09, so the move came from the adapters: the key left their
+`capabilities` and the generator still asks for it.
+
+Finding 37's family seen from the documentation side: a capability nobody reads, published as a column
+in a table a reader uses to choose an adapter.
+
+The legend does not cover it either. It says `—` means *"the adapter has no `capabilities` object yet
+… or could not be constructed"* — an explanation **per row**, while this dash is **per cell**, on rows
+that do have a `capabilities`. The legend is true for the case it was written for and mute on this one.
+Rewriting it before the column is decided would document something in order to undo it.
+
+Found by `esecutore4` while sweeping for other figures dated 2026-08-10, after 304.
+
+## 306 — The battle that measured the one command needing no clone (S1, STU-006, harness defect)
+
+`a-command-that-costs-the-whole-project.battle.test.mjs` states that a command's cost is proportional
+to the project and independent of the edit. It timed **`renameProject`**, and `renameProject` was the
+one command in the file that did not need its clone:
+
+```
+apply(project) { return { ...structuredClone(project), name }; }
+```
+
+The spread already builds the new top object, and the command touches nothing under `schema`, so the
+deep clone duplicated every node to leave them all identical. Repaired in `73c5973e`: 0.782 ms to
+clone, 0.001 ms to rename. **The battle went green. Seventeen commands still copy the whole document.**
+
+```
+whole-project clone      0.725 ms
+updateNode, one label    0.697 ms   0.96x   ← the property, still broken
+renameProject            0.001 ms   0.00x   ← the witness that it is reachable
+```
+
+An S1 stopped blocking a merge while what it describes was untouched. **The command a battle measures
+is not an example of the claim, it is the claim's whole surface.**
+
+Widened: `updateNode` is now the assertion — one label on one leaf of a thousand, the cheapest edit
+there is, no index to rebuild and no sibling to renumber. `renameProject` stays as a **witness that
+the property is reachable**, which is worth more than a second statement of it.
+
+**A second defect in the same probe, and it is the one that would have hidden the first.** The header
+carried a five-row table across two shapes, and every row of it was measured on a project whose
+`children` was an **object keyed by name**. The model's type is `StudioSchemaNode[]`. An object of a
+thousand entries clones at about the cost of an array of a thousand, so the clone column was honest —
+but `findNode` walks an array, so no command that reaches a node could have found one. Every
+node-touching timing that probe could have taken would have been a timing of the clone with a failed
+walk on top.
+
+The battle now proves the walk before timing it: it applies the command, reads `n500.label` back out
+of the result, and refuses to measure if the node it names was not reached.
+
+Same family as 302's `\r` and as the `colors ' '` false red: **the instrument agreed with the
+conclusion for a reason that was not the conclusion.** Handed over by `esecutore3`, who repaired the
+command and said in the same message that the property it was supposed to guard was still broken —
+which is the report that made this finding possible.
+
 ## The register's own shape, measured
 
 ```

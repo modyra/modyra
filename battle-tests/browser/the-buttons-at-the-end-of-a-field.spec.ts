@@ -11,9 +11,21 @@
  * carries it or it does not.
  *
  * The shipped stylesheets carry **42 rules** for `.mdy-spin-btn` and seven each for its up and down
- * modifiers. A renderer that does not build the part leaves all of them dead, and a form's number
- * field with no steppers of its own falls back to whatever the browser draws — which is a different
- * size, a different weight, absent on touch, and not the thing the stylesheet describes.
+ * modifiers. A renderer that does not build the part leaves all of them dead — and leaves the field
+ * with no stepper at all, because the same stylesheet removes the browser's:
+ *
+ *     input[type=number]::-webkit-inner-spin-button,
+ *     input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0 }
+ *     input[type=number]                            { appearance: textfield; -moz-appearance: textfield }
+ *
+ * `appearance: textfield` is not a WebKit rule, so the removal holds on all three engines this suite
+ * runs. There is nothing to fall back to. A number field in a renderer that skips the part can be
+ * typed into and cannot be stepped — by pointer at all, and by touch at all — which is a control that
+ * is absent rather than a control that is unstyled.
+ *
+ * The suppression is right and is not what this spec attacks: ADR 0020 says a native control that is
+ * hidden is not painted, and the design wants ours. What it makes true is that the part is not
+ * decoration. Building it is the only way the affordance exists.
  *
  * A kind a renderer builds from a native control is excluded by name: the browser owns that widget's
  * furniture, its arrow is drawn by the platform, and no class of ours belongs on it.
