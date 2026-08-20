@@ -145,9 +145,23 @@ function severitiesFor(names) {
  */
 function assertPageIsCurrent() {
   const stale = [];
+  const missing = [];
   for (const name of ["core", "widgets", "plain"]) {
+    // Never built is not "unknown". On a fresh checkout `@modyra/core` has no `dist`, and this tier's
+    // build step used to start at `build:plain` — so the page was compiled against nothing and the
+    // job died 81 errors deep, every one of them the same missing module. Locally it passed, because
+    // a developer's disk keeps a `dist` from the last time anything built it.
+    if (!existsSync(join(REPO_ROOT, "packages", name, "dist"))) { missing.push(`@modyra/${name}`); continue; }
     const freshness = buildFreshness(name);
     if (freshness.known && !freshness.fresh) stale.push(`@modyra/${name} (${freshness.behindBySeconds}s behind its source)`);
+  }
+  if (missing.length > 0) {
+    console.error(
+      `browser baseline check: ${missing.join(", ")} ${missing.length === 1 ? "has" : "have"} never been ` +
+        "built, so the page under test was compiled against a package that is not there. " +
+        "Run `npm run battle:browser:ci`, which builds them first.",
+    );
+    process.exit(2);
   }
 
   const host = join(BATTLE_ROOT, ".tmp-browser", "host.js");
