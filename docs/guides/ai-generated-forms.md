@@ -288,6 +288,47 @@ and keep the parser in the path. `npm run test:contract-schema` holds the
 schema to the kinds and slots the parser accepts, so the two stay describable
 as one document.
 
+### Cross-field `validations` are parsed, and no renderer mounts them
+
+A v4 document may carry a top-level `validations` array — an expression, a
+message, and optionally the path that wears the error. It says what a single
+field cannot: an end that must follow a start, a confirmation that must match
+what it confirms, a total that has to add up.
+
+`parseDynamicForm` accepts and reports it, and `buildDynamicValidations`
+compiles it into form-level validators that fire. **No shipped renderer reads
+it** — the only consumer is Studio's live preview, which is not a published
+package. Mounting a document gives you its per-field rules as native constraints
+and drops its cross-field ones, silently: a document its author believes is
+invalid renders valid and submittable.
+
+Until a renderer takes them, apply them yourself. The parsed slot and the
+compiler are both public, so the rules travel with the document either way:
+
+```ts
+import {
+  parseDynamicForm, buildDynamicValidations, createForm, field,
+} from "@modyra/core";
+
+const parsed = parseDynamicForm(doc, { mode: "strict" });
+
+// The fields are the document's; the validators are the slot no renderer takes.
+const form = createForm(
+  { start: field(10), end: field(5) },
+  { validators: buildDynamicValidations(parsed.validations) },
+);
+
+form.f.end.errors(); // [{ message: "End must follow start", … }]
+```
+
+The expression vocabulary is closed: `equals`, `notEquals`, `isEmpty`,
+`isNotEmpty`, `lengthAtLeast`, `lengthAtMost`, `greaterThan`,
+`greaterThanOrEqual`, `lessThan`, `lessThanOrEqual`, `in`, `notIn`, `matches`,
+and `and`/`or`/`not` to combine them. An operand is a literal or a
+`{ "path": "…" }` reference to a declared field. A validation whose `when` is
+**true** is the failing case, and its `message` is what the reader sees;
+without `target` the message lands on every path the expression reads.
+
 For contracts written as TypeScript literals rather than JSON,
 `@modyra/eslint-plugin` reports the same parser diagnostics in the editor.
 

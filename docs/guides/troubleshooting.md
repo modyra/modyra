@@ -21,7 +21,11 @@ an overlay. See the [devtools guide](./devtools.md).
 `"valid-only"` mode). In the devtools check, in order:
 
 1. **valid: false** — filter "only invalid": some field has errors, or a
-   cross-field validator failed (form-level errors show on `errorsFor("")`).
+   cross-field validator failed. A cross-field error goes where its `path`
+   says, so look there first: `crossField(["a", "b"], …)` attributes the
+   message to `a` and `b`, and `errorsFor("")` is empty. Only a validator
+   that names no path — `crossField([], …)`, or one returning `path: null` —
+   shows on `errorsFor("")`.
 2. **pending: true** — an async validator is still in its debounce+run
    window; `canSubmit` waits for it by design.
 3. **submitting: true** — the previous submit's promise never resolved.
@@ -31,11 +35,19 @@ an overlay. See the [devtools guide](./devtools.md).
 
 ## Why is a field still `pending`?
 
-`pending` covers the whole debounce window **plus** the validator run. If it
-never settles: your async validator's promise never resolves — pass
-`timeoutMs` to `serverValidator()`/`upsertAsyncValidators()` so the run
-aborts and settles with a `kind: "async-timeout"` error instead of hanging
-forever — or the value keeps changing (every change restarts debounce).
+`pending` covers the whole debounce window **plus** the validator run. Three
+things keep it from settling:
+
+1. **The validator's promise never resolves.** Pass `timeoutMs` to
+   `serverValidator()`/`upsertAsyncValidators()` so the run aborts and settles
+   with a `kind: "async-timeout"` error instead of hanging forever.
+2. **The value keeps changing** — every change restarts the debounce.
+3. **The run was already in flight when the form was paused.** `deactivate()`
+   does not take the answer of a run that had already started, so `pending`
+   never reaches a terminal state and `activate()` does not clear it either.
+   The escape is a new write: that starts a new run, and the form frees itself
+   when that one settles. A run paused *during* its debounce window is not
+   affected — it runs after `activate()` and closes normally.
 
 ## Why was a server error cleared?
 
