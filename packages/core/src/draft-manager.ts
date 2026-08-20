@@ -221,8 +221,24 @@ function containsFile(value: unknown): boolean {
     if (typeof held !== "object") continue;
     if (seen.has(held)) continue;
     seen.add(held);
-    if (Array.isArray(held)) pending.push(...held);
-    else pending.push(...Object.values(held));
+    if (Array.isArray(held)) { pending.push(...held); continue; }
+    // Keys rather than values: `Object.values` *reads* every member, and a getter that throws would
+    // take the write down — and with it the form, from inside a debounce nobody is awaiting. This
+    // walk decides whether a value may be stored; a member it cannot read is a member it cannot
+    // store either, so an unreadable one answers the question the same way a File does.
+    let keys: string[];
+    try {
+      keys = Object.keys(held);
+    } catch {
+      return true;
+    }
+    for (const key of keys) {
+      try {
+        pending.push((held as Record<string, unknown>)[key]);
+      } catch {
+        return true;
+      }
+    }
   }
   return false;
 }
