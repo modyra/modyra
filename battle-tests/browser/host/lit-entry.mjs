@@ -116,9 +116,13 @@ window.battleLit = {
           const built = rulesFor(each.name);
           return [
             each.name,
-            field(each.initialValue === undefined ? blankFor(each.kind) : each.initialValue, built.validators ?? [], {
-              marksRequired: built.marksRequired,
-            }),
+            // `marksRequired` is not one of `field()`'s options — it is the fourth argument of
+            // `upsertValidators(name, key, validators, marksRequired)`, which is how `applyFlatValidators`
+            // hands it over for Plain. Passed here it was refused three times per mount with
+            // `field() was given "marksRequired", which it does not read` — noise on the console
+            // channel a spec now reads for warnings that matter. The required marker is derived from
+            // the validator regardless, so nothing is lost by not saying it twice.
+            field(each.initialValue === undefined ? blankFor(each.kind) : each.initialValue, built.validators ?? []),
           ];
         }),
       );

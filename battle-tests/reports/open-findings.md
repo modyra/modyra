@@ -17052,6 +17052,66 @@ Held by `battle-tests/adversarial/widgets/two-values-one-id.battle.test.mjs`, wh
 half beside it: every id still comes apart into exactly the widget, the part and the key. A repair
 that stopped encoding would satisfy injectivity and break that.
 
+## 291 — A mark without a reason, and no renderer of the three has the rule (S1, UI-008)
+
+`wrong-before-anybody-touched-it` defends one sentence: a control marked wrong carries a reason a
+person can read without acting. `projectFieldShellA11y` says the same — *the wrapper, the label,
+`aria-invalid` and whether the error text renders are four faces of one question, answered once*.
+
+Measured by `esecutore2` across two renderers and two scenes, and it is larger than the red suggested:
+
+```
+                              plain                              lit / angular
+fresh required, untouched     marked, "This field is required"   marked, no message
+a refused value on arrival    marked, "This field holds number"  marked, no message
+```
+
+**None of the three has the rule.** Lit and Angular mark without explaining. Plain explains *always* —
+including on a form nobody has started, which is exactly what `errorsVisible`'s own comment says it
+exists to prevent: *"painting those errors on arrival tells a user off for a form they have not
+started."* Plain satisfies the battle for the wrong reason; the battle was green there by accident.
+
+**And the gate that would separate the two scenes is not on the handle.** In the refused-value scene
+`touched` is `false` and `dirty` is **`false`** — `setValue` does not dirty. So `touched || dirty`
+cannot tell "wrong because empty and nobody has begun" from "wrong because a value arrived". The only
+thing that distinguishes them is the error itself: `MdyFieldError` carries `kind` and `origin`
+(`validation | async | cross-field | server | entry`), which is the datum that says whether the
+refusal is about a value that exists or one that is missing.
+
+Three ways, all in `@modyra/widgets` plus a record:
+
+- **(a)** `errorsVisible` shows, before a touch, the errors that speak about a value that **exists** —
+  entry, shape, server — and withholds those about emptiness. Keeps both documented rules true, uses
+  data the error already carries, and makes the battle green in all three renderers.
+- **(b)** `showsAsInvalid` takes the same gate as the message: no mark until a touch. Consistent, and
+  it kills the case this battle is about — a value that arrived wrong from a draft stays silent for
+  anyone who never visits that field.
+- **(c)** show everything always, as plain does. Contradicts the reasoning written in `errorsVisible`
+  and tells off every form the moment it opens.
+
+`esecutore2` recommends (a) and did not take it: it is not their package, it changes plain and
+angular, and repairing only lit would make **three** behaviours where there are two.
+
+**Put to the user**, because it is a published behaviour across three renderers and needs a record.
+
+## 292 — Three warnings a mount wrote on the channel a warning uses (harness)
+
+Every `mountFields` in the Lit host wrote, three times:
+
+```
+[modyra] field() was given "marksRequired", which it does not read.
+```
+
+`marksRequired` is not one of `field()`'s options — it is the fourth argument of
+`upsertValidators(name, key, validators, marksRequired)`, which is how `applyFlatValidators` hands it
+over for Plain. The host passed it to the wrong door and the engine said so, correctly, three times a
+mount.
+
+Nothing was lost — the required marker is derived from the validator either way — but it was noise on
+the console, and the console is now a channel a spec reads: `an-element-nobody-bound` asserts that an
+unbound element **says** something, and a page already talking about `marksRequired` is a page where
+that assertion is harder to trust. Found by `esecutore2` while repairing against that very channel.
+
 ## The register's own shape, measured
 
 ```
