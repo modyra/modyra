@@ -37,6 +37,7 @@ packages/angular/dist/
 !sdk/java/modyra-contract/.mvn/**
 .github/hooks
 .github/skills
+!.gitattributes
 
 # macOS system files
 .DS_Store
