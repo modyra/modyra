@@ -1,3 +1,4 @@
+import { breaksValueConversion } from "./path-utils.js";
 import { MDY_UNSUPPORTED_ADAPTER_OPTION, type MdyDiagnostics } from "./reactivity-diagnostics.js";
 import type { MdyValueShape } from "./value-contracts.js";
 import {
@@ -718,6 +719,17 @@ export abstract class MdyTypedFormBase<
     this._adapter = adapter;
 
     const paths = collectSchemaPaths(schema);
+    // A declared name that would break the value this form produces, refused where it is declared.
+    // The document door drops such a field with a diagnostic; this one throws, as it does for every
+    // other name a schema may not use — two doors answering the same question the same way.
+    for (const declared of [...paths.leafPaths, ...paths.groupPaths, ...paths.arrayPaths, ...paths.recordPaths]) {
+      if (!breaksValueConversion(declared)) continue;
+      throw new Error(
+        `[modyra] Invalid field name "${declared}": a form's value is an object, so a field named ` +
+          '"toString" shadows the method every string conversion of that value goes through — ' +
+          "`${value}` and `String(value)` then throw. Name the field something else.",
+      );
+    }
     this._leafPaths = paths.leafPaths;
     this._itemLeafPaths = paths.itemLeafPaths;
     this._leafPathSet = new Set(paths.leafPaths);
