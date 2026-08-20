@@ -16829,6 +16829,34 @@ hand is a *second implementation of the door*, and every shortcut in it is charg
 Plain host mounts through `mountMdyForm`, which is a published door; the Lit host had to write one,
 and wrote it differently.
 
+## 285 — A cross-field rule no renderer reads (S0, DYN-004) — a decision, not a repair
+
+`validations` is a top-level key of the Dynamic Form Contract: an expression, a message, and
+optionally the field that wears the error. It is what a document uses to say what a single field
+cannot — an end after a start, a confirmation matching what it confirms, a total that has to add up.
+
+The parser accepts it and reports it. `buildDynamicValidations` compiles it into form-level
+validators, and applied to a form they fire. **Nothing a renderer publishes has a place to put them.**
+Verified by reading rather than by trusting the spec's header:
+
+```
+grep validations  packages/{plain,react,vue,lit,angular}/src   →  nothing
+grep buildDynamicValidations  packages (outside core)          →  packages/studio-preview only
+```
+
+So a document's cross-field rules reach a Studio preview and no shipped renderer. A page built from a
+document holds every per-field rule it declared and none of its cross-field ones, and a form the
+document says is wrong is valid and submittable.
+
+The per-field rule from the same document, in the same mount, becomes a native constraint and produces
+the document's message. Document validation is wired; it is the cross-field kind that is dropped,
+silently and with nothing to read.
+
+**Why this is put rather than assigned.** Closing it means adding an option to the published mount
+surface of every adapter — eight of them — which is a cross-package migration and a public contract
+change. The narrow first step is `@modyra/plain`, which is the renderer the browser tier measures;
+the rest is a batch with its own sequencing. Both are the user's call.
+
 ## The register's own shape, measured
 
 ```
