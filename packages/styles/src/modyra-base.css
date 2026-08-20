@@ -283,7 +283,14 @@
         --mdy-comp-date-picker-cell-selected-bg: var(--mdy-sys-color-primary);
         --mdy-comp-date-picker-cell-selected-color: var(--mdy-sys-color-on-primary);
         --mdy-comp-date-picker-cell-disabled-opacity: 0.25;
-        --mdy-comp-date-picker-cell-outside-opacity: 0.5;
+        /* A day from the adjacent month is reading text and it is clickable, so it holds 4.5:1 like
+           any other text — "muted" is its weight in the hierarchy, not the standard it answers to.
+           Opacity composites against whatever is behind the cell, so this number is the one that
+           clears AA on the *worst* of those grounds rather than on the resting one: at 0.5 the day
+           measured 3.06:1 on the surface and 3.01:1 on a hovered cell. At 0.70 the tightest of the
+           four — light scheme, hovered — is 5.40:1, and a disabled day is exempt and keeps its own.
+           A lower value is not a lighter shade of the same promise; it is a day nobody can read. */
+        --mdy-comp-date-picker-cell-outside-opacity: 0.7;
         --mdy-comp-date-picker-cell-today-outline: 2px solid var(--mdy-sys-color-primary);
         --mdy-comp-date-picker-cell-focus-outline: 2px solid var(--mdy-sys-color-primary);
         /* Header */
