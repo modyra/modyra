@@ -17988,6 +17988,45 @@ deliberate.
 No battle: moving two managers to subpaths is a public surface change and a migration, not a repair.
 It goes to the user with the bundle-gate decision, which is the other half of 304.
 
+## 312 — A patch keeps what it did not name, unless the list sits in a positional row (S0, SUB-001 COL-002)
+
+`form.patch(body)` writes the cells the body names and leaves the rest. It does, in three of the four
+places a list can sit. **One inner list, one patch body, four containers:**
+
+```
+outer = array   [{"v":"NEW","w":"z"},  {"v":"V2","w":"z"}]     ← w reset to its declared initial
+outer = record  [{"v":"NEW","w":"W1"}, {"v":"V2","w":"W2"}]
+outer = group   [{"v":"NEW","w":"W1"}, {"v":"V2","w":"W2"}]
+no outer        [{"v":"NEW","w":"W1"}, {"v":"V2","w":"W2"}]
+```
+
+The body names `v` and never mentions `w`. Through a **positional row** the rows come back rebuilt
+from the schema's initials — `"z"` is `field("z")`, not anything the form ever held. `W1` and `W2`
+were the person's data and they are gone.
+
+**Not arrays in general.** A plain array of groups patches correctly and keeps its siblings, including
+one holding a nested group. It is specifically **a list inside an array row** — `array > … > array` —
+and `record > … > array` at the same depth is right.
+
+**The framing that does not need a winner**: whichever of the two behaviours is intended, the two
+containers disagree, so *which of a person's values survives an edit depends on what the list is
+nested in*. That is not a semantic a consumer can hold in their head, and nothing documents it.
+
+**Found by the same audit as 306, 307 and 308.** This battle's title is *"a patch names cells at every
+depth a list can sit at"* and it named two: a list at the top, and a list under a **keyed** row. The
+positional row is the route it never took, and it is the broken one. Four for four now — every time
+the scan has pointed at a battle stating a universal over one instance, widening it has found
+something.
+
+The battle now sends the same list and the same body down all four routes, so the difference reported
+is the route and not the patch.
+
+**S0, and here the severity is right**, unlike 310 where I moved it off a persistence claim: this is a
+public call discarding data it was not asked to touch. It does **not** block the staging workflow —
+`release.yml` does not run `battle:ci` — but it does stand against the release precondition
+`openReds == 0`, and the user should decide that with the finding in front of them rather than
+discover it after.
+
 ## The register's own shape, measured
 
 ```
