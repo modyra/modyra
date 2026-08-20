@@ -100,8 +100,20 @@ record `upsert`, an object-valued field with markup two levels down, a restored 
 `the-characters-the-profile-names.battle.test.mjs` holds the character ranges to the table in
 [injection prevention](security.md) — including which ranges it deliberately leaves alone.
 
-The profiles, when to choose each, and the per-field escape hatch are that page's subject. This one
-is about whether the policy can be walked around.
+**What it deliberately keeps, and why it matters here.** Both profiles keep `\t`, `\n` and `\r`,
+because a textarea legitimately holds them, and neither touches a leading `=`, `+`, `-` or `@`,
+because a formula is a legitimate value in a text field:
+
+```
+"ok\rINJECTED admin logged in"   kept by both profiles
+"=cmd|' /C calc'!A0"             kept by both profiles
+```
+
+So a sanitized value is safe to *render* and is not thereby safe to concatenate into a log line or a
+CSV cell. Those are encoding decisions, and they belong where the meaning exists — at the logger, at
+the CSV writer. The profiles, when to choose each, and the per-field escape hatch are
+[injection prevention](security.md)'s subject. This page is about whether the policy can be walked
+around, and on that: it cannot.
 
 ## A draft is untrusted input, and is treated as one
 

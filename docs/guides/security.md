@@ -42,7 +42,7 @@ changes nothing about what is enforced.
 | Profile | What it does |
 | :------ | :----------- |
 | `"off"` (default) | Values pass through untouched. |
-| `"text"` | Strips control characters (except `\t`/`\n`), DEL/C1, zero-width characters (`U+200B–200D`, `U+FEFF`), bidi overrides/isolates (`U+202A–202E`, `U+2066–2069`) and line/paragraph separators. Prevents UI spoofing and log/CSV injection; all legitimate text — accents, emoji, CJK, newlines — is preserved. |
+| `"text"` | Strips control characters **except tab (`\t`), line feed (`\n`) and carriage return (`\r`)**, plus DEL/C1, zero-width characters (`U+200B–200D`, `U+FEFF`), bidi overrides/isolates (`U+202A–202E`, `U+2066–2069`) and line/paragraph separators. Kills the invisible-character class of UI spoofing — `"admin\u202E"` becomes `admin`. All legitimate text — accents, emoji, CJK, newlines — is preserved. It does **not** make a value safe to concatenate into a log line or a CSV cell; see below. |
 | `"strict"` | Everything `"text"` does, plus removes `<`, `` ` `` and `>`. The value can never form markup. For names, labels and identifiers that must stay plain text everywhere. Quotes and `&` stay: `O'Brien & Co` is a legitimate name. |
 | function | Full control: receives the whole field value, returns the sanitized one. Must be **pure and idempotent** (it runs on every write). This is the DOMPurify/allow-list escape hatch — the core stays dependency-free on purpose. |
 
@@ -177,6 +177,13 @@ way via `@modyra/standard-schema`.
   table, which escapes the path, the value and every error message. That is a
   measurement, not a proof of absence — see
   [what has been attacked](hostile-input.md#what-has-not-been-proved).
+- **Not log or CSV safety.** Both profiles keep `\t`, `\n` **and `\r`**, because a textarea
+  legitimately holds them — so `"ok\rINJECTED admin logged in"` arrives at your logger intact and
+  can forge a line. Neither profile touches a leading `=`, `+`, `-` or `@`, so `=cmd|' /C calc'!A0`
+  survives into a spreadsheet cell, and that is deliberate: a formula is a legitimate value in a text
+  field and stripping it would corrupt the data. Line breaks and formula prefixes belong to whoever
+  writes the log line or encodes the CSV, at the boundary where the meaning exists. Measured on both
+  profiles.
 - **Not validation.** A sanitized value is silently modified, not rejected.
   To *reject* suspicious input instead, keep using validators
   (`pattern()`, custom `ValidatorFn`) — the two compose: sanitize first
