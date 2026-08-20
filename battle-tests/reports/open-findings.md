@@ -18194,6 +18194,46 @@ as stale. Same family, three instruments: **an artefact and its source disagree,
 loop says so.** `battle-tests/harness/fresh-probe.mjs` was written for the first. This entry is the
 third getting the same treatment.
 
+## 315 — A document cannot ask for a 24-hour clock (S2, DYN-003 UI-009)
+
+`renderTimepickerField` takes a `format` parameter and supports both clocks. The only caller passes
+nothing:
+
+```
+packages/plain/src/fields/index.ts:89
+  renderTimepickerField(container, f, handle, reactivity, undefined, widgetId, messages);
+                                                          ^^^^^^^^^ format
+```
+
+So the parameter's default is what **every document-driven plain timepicker** gets, and a document has
+no say. Checked for a member that would give it one — there is none:
+
+```
+spec/dynamic-form-v3.schema.json:287
+  "mode": { "enum": ["single", "multi"],
+            "description": "Multiselect only: a toggle set, or a bag …" }
+```
+
+`mode` is the multiselect's. Nothing in the field vocabulary names a clock format.
+
+**Editing library source is the only door**, and someone took it: an uncommitted change flipping that
+default from `"12h"` to `"24h"` was found in the tree, breaking four tests in
+`packages/plain/test/timepicker-bounds.test.mjs`. It read like a stray experiment and was not — it was
+someone hitting this wall. **The user has since chosen to keep 24-hour as the default**, so the common
+case now works without editing anything; the gap itself is untouched.
+
+Angular is the exception that shows the shape: `format = input<MdyTimeFormat>("12h")` is a template
+input, so an Angular consumer *can* choose. A Plain or Lit consumer building from a document cannot.
+**The framework-agnostic renderer is the one that cannot express what the framework-specific one
+can**, which inverts the direction the contract is supposed to run in.
+
+Not filed as a battle. The repair is a schema member threaded through the dispatcher — additive, and a
+contract change that deserves its own decision rather than being bundled into a release at 1am.
+
+**How it was found**: not by looking for it. Tracing why a 24-hour timepicker could not be mounted from
+the browser tier's host, which mounts documents. The host was not the problem; there was nothing to
+mount it with.
+
 ## The register's own shape, measured
 
 ```
