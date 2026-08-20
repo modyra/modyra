@@ -101,6 +101,14 @@ export async function collectStateMatrix(
           parts: fixture.parts(),
           control: fixture.control?.() ?? null,
         });
+        // Asked here too, and not only in the pass below. What a widget announces for a state its
+        // kind does not declare is a question about every state it can be *in*, and a projection
+        // conditioned on a declared one — `state.readonly ? "true" : null` — is absent from the
+        // default state and from every undeclared state the second pass reaches. The loop that
+        // drives the declared states is the only place it is ever visible.
+        if (inspectUnsupportedStateAria(fixture.root, kind).length > 0) {
+          if (!unsupportedAria.includes(kind)) unsupportedAria.push(kind);
+        }
         rows.push({
           kind,
           state,
@@ -112,7 +120,8 @@ export async function collectStateMatrix(
       }
     }
 
-    // Separate pass: this one is about the states a widget is *not* in.
+    // Separate pass: this one is about the states a widget is *not* in. The pass above covers the
+    // states it is in, so between them every state the kind can reach is inspected.
     //
     // Driven into each of them, not merely mounted. Inspecting the default state catches a
     // projection that emits the forbidden attribute unconditionally, and cannot catch the shape the
