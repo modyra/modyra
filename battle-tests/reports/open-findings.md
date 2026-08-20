@@ -17156,6 +17156,36 @@ visible at all.
 Held by `battle-tests/adversarial/widgets/a-promise-nine-renderers-write-themselves.battle.test.mjs`.
 `select-field.ts` is the model and it is one expression long.
 
+## Where the browser tier's remaining reds actually are
+
+Clustered from one full run rather than read spec by spec, so the next session starts from causes
+instead of from forty-five titles.
+
+**By renderer, from the spec titles:**
+
+```
+lit           28
+plain          8
+unattributed   9   (the spec does not name one — a contract or a shared projection)
+```
+
+**By kind, counting how many failure messages name each:**
+
+```
+datepicker  8    timepicker 7    segmented 6    colors 6    multiselect 6
+daterange   5    radio      5    text      4    select  3    number    3
+```
+
+The seven kinds with an overlay or a composite anatomy — datepicker, timepicker, daterange,
+multiselect, colors, segmented, radio — carry the weight. The plain-text kinds appear only where a
+spec sweeps every kind at once.
+
+**Two things this says that a list of forty-five does not.** Lit carries three and a half times what
+plain does, on a contract both derive from — so the question for that package is not forty-five
+defects but why one derivation drifts. And nine failures name no renderer at all: those are the ones
+where the contract, or a projection every renderer shares, is what is being measured — the family
+finding 293 belongs to.
+
 ## The register's own shape, measured
 
 ```
