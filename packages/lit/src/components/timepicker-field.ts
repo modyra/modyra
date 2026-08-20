@@ -617,7 +617,7 @@ export class MdyTimepickerFieldElement extends MdyFieldElement<string | null> {
             ?disabled=${handle.disabled()}
             ?readonly=${handle.readonly()}
             role="combobox"
-            aria-haspopup="dialog"
+            aria-haspopup=${this.popupPromise}
             aria-expanded=${this._open ? "true" : "false"}
             aria-controls=${this._open ? overlayControlledId("timepicker", this.fieldId) ?? nothing : nothing}
             ${mdyPart(this.controlPart(handle))}

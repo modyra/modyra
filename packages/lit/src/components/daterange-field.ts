@@ -614,7 +614,7 @@ export class MdyDaterangeFieldElement extends MdyFieldElement<MdyDateRange | nul
               class="mdy-datepicker__toggle"
               ?disabled=${handle.disabled()}
               aria-label=${this.messages.daterangeChooseRange}
-              aria-haspopup="grid"
+              aria-haspopup=${this.popupPromise}
               aria-expanded=${this._open ? "true" : "false"}
               aria-controls=${this._open ? overlayControlledId("daterange", this.fieldId) ?? nothing : nothing}
               @click=${(e: Event) => (this._open ? this.closePopup(handle) : this.openPopup(handle, e))}

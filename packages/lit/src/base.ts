@@ -1,5 +1,5 @@
 import { MdyFieldHandle, type MdyFieldConstraints } from "@modyra/core";
-import { MDY_ICONS, messagesForLocale, type MdyI18nMessages } from "@modyra/widgets";
+import { MDY_ICONS, MDY_POPUP_OPENERS, messagesForLocale, type MdyI18nMessages } from "@modyra/widgets";
 import { html, LitElement, nothing, PropertyDeclarations } from "lit";
 import { unsafeSVG } from "lit/directives/unsafe-svg.js";
 import {
@@ -115,6 +115,21 @@ export abstract class MdyFieldElement<T> extends LitElement {
   /** Root classes for this kind, straight from the catalog. */
   protected get rootClasses(): readonly string[] {
     return MDY_WIDGET_CONTRACTS[this.widgetKind].rootClasses;
+  }
+
+  /**
+   * What this widget's opener promises will appear, as `aria-haspopup` states it.
+   *
+   * Read from the catalogue rather than written here. A screen reader announces the promise with the
+   * control — "combobox, has popup listbox" — so a person acts on it before anything has opened, and
+   * the words are not interchangeable: a listbox is options with a selected state, a grid is walked
+   * with the arrow keys, a dialog is somewhere to go and come back from. Written as a literal at each
+   * opener, one renderer promised a dialog where another promised a grid over the same widget.
+   *
+   * `nothing` for a kind with no overlay, so an element that has no popup makes no promise.
+   */
+  protected get popupPromise(): string | typeof nothing {
+    return MDY_POPUP_OPENERS[this.widgetKind]?.promises ?? nothing;
   }
 
   /** Class list for one of this widget's contract parts. Adapters must not invent equivalents. */
