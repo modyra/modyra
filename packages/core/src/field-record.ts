@@ -184,11 +184,19 @@ export function createFieldRecord(
 
   const errors = rx.computed<ReadonlyArray<MdyFieldError>>(() => {
     const v = value();
+    // One sentence, once. Two rules that say the same thing are one thing for the person to fix, and
+    // a field can hold the same rule from two doors legitimately: the kind's own shape guard is
+    // attached by the schema a form is built from *and* by the call that applies a document's
+    // validators, and a consumer who does both — which is what the flat route documents — was shown
+    // "This field holds number" twice.
+    const said = new Set<string>();
     const syncErrors = Array.from(validators().values()).flatMap(fns =>
       fns.flatMap(fn =>
-        readMessages(runValidator(fn, v, warn), warn).map(
-          message => ({ kind: "validation", message, origin: "validation" }) as MdyFieldError,
-        ),
+        readMessages(runValidator(fn, v, warn), warn)
+          .filter((message) => !said.has(message) && said.add(message) !== undefined)
+          .map(
+            message => ({ kind: "validation", message, origin: "validation" }) as MdyFieldError,
+          ),
       ),
     );
     const entry = entryProblem();
