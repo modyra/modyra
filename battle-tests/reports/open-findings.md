@@ -17381,6 +17381,10 @@ left to a caller who did not read that comment.
 combinator and dropped — so refusing it costs nothing. `>` must stay: `.a > .b` is an ordinary child
 combinator, and a guard that took it would close the exit and the language with it.
 
+**`docs/guides/hostile-input.md` carries this as openly open**, with the boundary and the one-character
+repair named. Whoever closes this finding rewrites that section in the past tense — the line
+`selector … ACCEPTED` becomes false the moment the guard lands.
+
 Held by `battle-tests/adversarial/styles/a-selector-that-leaves-the-stylesheet.battle.test.mjs`, with
 six ordinary selectors asserted beside the four escapes — `:root`, `.theme-dark`, `[data-theme="brand"]`,
 `.a > .b`, a `:not()` and a selector list — so the cheapest way to satisfy it is not to refuse
@@ -17431,6 +17435,56 @@ Recorded because it is the third shared-tree hazard this campaign has produced, 
 probe measures work in flight rather than `HEAD` (268), a rebuild races an edit and the freshness gate
 fires (the same), and now a commit takes what a neighbour staged. **A shared working tree makes the
 index, the build output and `HEAD` three different answers to "what is the code right now".**
+
+## 300 — A name a document declares that breaks the value it produces (S0, SEC-001 DYN-001)
+
+Found by widening a payload set that had been too narrow. The prototype-pollution sweep used three
+names — `__proto__`, `constructor`, `prototype` — and read three refusals as a guard against the
+class. Ten other inherited names, never tried:
+
+```
+toString        `${form.getValue()}`  TypeError: Cannot convert object to primitive value
+valueOf         `${…}`  [object Object]     JSON fine
+hasOwnProperty  `${…}`  [object Object]     JSON fine
+then            `${…}`  [object Object]     JSON fine
+length, name, caller, arguments, isPrototypeOf, propertyIsEnumerable   all accepted, all harmless
+constructor     refused at parse
+```
+
+`MDY_FORBIDDEN_DYNAMIC_NAMES` refuses the three that reach the prototype chain, and it is right to
+allow the rest: `name`, `length`, `then` are ordinary words for a field.
+
+**`toString` is not like the others.** It is the method the *language* calls, and shadowing it with a
+string makes the value object refuse to become a primitive. Nothing is polluted and nothing is lost —
+`JSON.stringify` works, the payload is right — but every ordinary thing a consumer does with a value
+they were handed crashes: a template in a log line, a `String(value)` in telemetry, an error message
+quoting what was submitted. In code that has nothing to do with forms, on a document a CMS produced.
+
+**`valueOf` is the near miss that proves this is about one name and not about inherited names**: it is
+also consulted by the language, and shadowing it is harmless, because conversion falls through to
+`toString`. There is no fallback the other way.
+
+One more name on the list is the cheap answer. The other is a null-prototype value object, which is a
+larger change and would take `hasOwnProperty` on it away from consumers who call it.
+
+Held by `battle-tests/adversarial/dynamic-contract/a-name-that-breaks-its-own-value.battle.test.mjs`,
+with `constructor` asserted still-refused as a control so this cannot be read as the larger finding.
+
+## The rule these two share: a payload must be shown to reach its guard
+
+Two findings this hour came from the same defect in my own method, and `esecutore4` named it exactly:
+**a payload set has to be proved to reach the guard it is testing**, the same way a mutant has to be
+proved to mutate.
+
+- The theme selector (297): every payload I gave it carried a `}` or an `@`, so every one hit the
+  CSS-rule guard and was refused. Three refusals read as a guard against hostile input; `</style>`
+  carries neither character and walks through.
+- The field names (300): every payload was a prototype key, so every one hit the prototype-key list.
+  Three refusals read as a guard against dangerous names; `toString` is not on that list.
+
+It is the null-mutant shape from finding 225 — a check passes and nobody asks whether the input could
+have failed for a *different* reason than the one under test. **A control that passes for both the
+sound and the broken case is not a control**, and a payload that can only fail one way tests one way.
 
 ## The register's own shape, measured
 
