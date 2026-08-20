@@ -4,20 +4,27 @@ import {
   Component,
   computed,
   effect,
+  inject,
+  Injector,
   input,
   output,
+  Signal,
   untracked,
   viewChild,
 } from "@angular/core";
-import { applyFlatValidators } from "@modyra/core";
+import { applyDynamicRules, applyFlatValidators, parseDynamicForm } from "@modyra/core";
 import {
   mdyEmptyValueFor,
   MdyDynamicField,
+  MdyDynamicDiagnostic,
   MdyDynamicLayoutChild,
   MdyDynamicLayoutNode,
   MdyDynamicLayoutSlot,
+  MdyDynamicParseMode,
+  MdySignal,
 } from "@modyra/core";
 import { layoutNodeAttributes, layoutSlotStyle, MDY_LAYOUT_CLASSES } from "@modyra/widgets";
+import { angularReactivity } from "../core/reactivity-angular";
 import { MdyFormSubmitEvent } from "../core/types";
 import { MdyFormComponent } from "../form/mdy-form.component";
 import { MdyCheckboxComponent } from "../renderers/checkbox/checkbox-renderer.component";
@@ -80,15 +87,15 @@ import { MdyToggleComponent } from "../renderers/toggle/toggle-renderer.componen
     <mdy-form #form (submitted)="submitted.emit($event)">
       <!-- Declarative layout when the form declares one, otherwise the fields in order.
            Either way each field is rendered by one template, so the two paths cannot drift. -->
-      @if (layout().length > 0) {
-        @for (node of layout(); track node.id) {
+      @if (renderedLayout().length > 0) {
+        @for (node of renderedLayout(); track node.id) {
           <ng-container *ngTemplateOutlet="layoutNode; context: { $implicit: node }" />
         }
         @for (f of unplacedFields(); track f.name) {
           <ng-container *ngTemplateOutlet="fieldTemplate; context: { $implicit: f }" />
         }
       } @else {
-        @for (f of fields(); track f.name) {
+        @for (f of renderedFields(); track f.name) {
           <ng-container *ngTemplateOutlet="fieldTemplate; context: { $implicit: f }" />
         }
       }
@@ -258,8 +265,58 @@ import { MdyToggleComponent } from "../renderers/toggle/toggle-renderer.componen
   `,
 })
 export class MdyDynamicFormComponent {
-  /** Serializable field configs, rendered in order. */
-  readonly fields = input.required<ReadonlyArray<MdyDynamicField>>();
+  /**
+   * Serializable field configs, rendered in order.
+   *
+   * Optional because {@link MdyDynamicFormComponent.document} is the other way in. One of the two is
+   * given; a component handed neither renders nothing, which is what an empty list already meant.
+   */
+  readonly fields = input<ReadonlyArray<MdyDynamicField>>([]);
+
+  /**
+   * A document as it arrived — from a server, a CMS, a model — read by this component.
+   *
+   * The component is named for the dynamic contract and took only the *parsed* half of it, so a host
+   * rendering one server document on this adapter and another wrote the parse step twice, with the
+   * strict-mode diagnostics and the refusal of a partial form as the part most easily forgotten.
+   *
+   * Untrusted by construction: it is parsed here, and in strict mode a document carrying any error
+   * renders nothing rather than the part of itself that happened to be well formed. The diagnostics
+   * are emitted either way, so a host can show them.
+   */
+  readonly document = input<unknown>(null);
+
+  /** How the document is read. `strict` refuses a document with any error; `lenient` renders what parsed. */
+  readonly parseMode = input<MdyDynamicParseMode>("strict");
+
+  /** What reading {@link MdyDynamicFormComponent.document} found, emitted whenever the document changes. */
+  readonly diagnostics = output<ReadonlyArray<MdyDynamicDiagnostic>>();
+
+  /**
+   * The document, read — or `null` when none was given and the pre-parsed inputs are the source.
+   *
+   * A computed rather than an effect: the fields and the layout are two readings of one parse, and
+   * parsing once per read of each would answer two different documents for one input.
+   */
+  protected readonly parsed = computed(() => {
+    const document = this.document();
+    if (document === null || document === undefined) return null;
+    return parseDynamicForm(document, { mode: this.parseMode() });
+  });
+
+  /** What is rendered: the document's fields when there is one, the input's otherwise. */
+  protected readonly renderedFields = computed<ReadonlyArray<MdyDynamicField>>(() => {
+    const parsed = this.parsed();
+    if (parsed === null) return this.fields();
+    return parsed.ok || this.parseMode() === "lenient" ? parsed.fields : [];
+  });
+
+  /** The layout the same way, so a document that is refused arranges nothing either. */
+  protected readonly renderedLayout = computed<ReadonlyArray<MdyDynamicLayoutNode>>(() => {
+    const parsed = this.parsed();
+    if (parsed === null) return this.layout();
+    return parsed.ok || this.parseMode() === "lenient" ? parsed.layout : [];
+  });
 
   /**
    * What a field starts as when the config names no initial value.
@@ -290,8 +347,8 @@ export class MdyDynamicFormComponent {
       if (child.kind === "section") child.children.forEach(walk);
       else child.columns.forEach((column) => column.forEach(walk));
     };
-    this.layout().forEach(walk);
-    return this.fields().filter((field) => !claimed.has(field.name));
+    this.renderedLayout().forEach(walk);
+    return this.renderedFields().filter((field) => !claimed.has(field.name));
   });
 
   /**
@@ -322,7 +379,7 @@ export class MdyDynamicFormComponent {
   }
 
   protected fieldByName(name: string): MdyDynamicField | undefined {
-    return this.fields().find((field) => field.name === name);
+    return this.renderedFields().find((field) => field.name === name);
   }
 
   /** The track count the foundation divides a column row by. */
@@ -336,16 +393,46 @@ export class MdyDynamicFormComponent {
   /** Inner form — exposed so consumers can call getValue()/reset()/submit(). */
   readonly form = viewChild.required<MdyFormComponent<Record<string, unknown>>>("form");
 
+  private readonly _injector = inject(Injector);
+
   constructor() {
     // Register the config validators on the inner form's registry; keyed by
     // field so config changes replace the previous set.
     effect(() => {
-      const fields = this.fields();
+      const fields = this.renderedFields();
       const form = this.form();
       // The engine's own, under this binding's key. Written out here it was a fourth copy of a rule
       // that lives upstream — including the automatic option whitelist that stops a tampered
       // document from widening a select's accepted values.
       untracked(() => { applyFlatValidators(form, fields, "mdy-dynamic"); });
+    });
+
+    // The third step of the document path, and the one a host most easily forgets: a document's
+    // cross-field rules decide what is shown and what is out of play, and a form built from the
+    // fields alone renders every one of them always.
+    effect(() => {
+      const parsed = this.parsed();
+      const form = this.form();
+      if (parsed === null) return;
+      untracked(() => {
+        // The host the rules are written against, assembled from what the form component already
+        // publishes plus the runtime its signals are built with — a condition tracked by a different
+        // runtime is one that never re-evaluates.
+        applyDynamicRules({
+          reactivity: angularReactivity(this._injector),
+          value: form.value as MdySignal<Record<string, unknown>>,
+          setInactive: (name, inactive) => form.setInactive(name, inactive as Signal<boolean>),
+          setDisabled: (name, disabled) => form.setDisabled(name, disabled as Signal<boolean>),
+        }, parsed.rules);
+      });
+    });
+
+    // Emitted from an effect rather than computed into one: a diagnostic is something that happened
+    // to a document, and a host listening for it is told once per document rather than once per read.
+    effect(() => {
+      const parsed = this.parsed();
+      if (parsed === null) return;
+      untracked(() => { this.diagnostics.emit(parsed.diagnostics); });
     });
   }
 }
