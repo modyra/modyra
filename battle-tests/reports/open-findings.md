@@ -18145,6 +18145,55 @@ back (`timepicker-field-controller.ts:102` and `:157`), so a renderer cannot ope
 without fighting the controller. The user wants `"input"` to be the default. **Shipping that without
 the repair above opens the picker directly onto the broken path.**
 
+## 314 — The example app serves whatever was last built, and says nothing (S2, no battle)
+
+`node_modules/@modyra/angular` is a symlink to `packages/angular/dist`. `ng serve` watches the
+**app's** sources; nothing watches the `ng-packagr` output the symlink points at. So a library change
+made while the server is running is invisible until someone reruns `build:angular`, and the page keeps
+answering with the code from whenever that last happened.
+
+Two ways to run the example, and only one rebuilds:
+
+```
+npm run demo:angular                       ->  build:angular && ng serve      rebuilds
+npm --prefix examples/angular run start    ->  ng serve                       does not
+```
+
+Measured while the user was reporting that the timepicker "still does nothing":
+
+```
+newest source   23:31:13   timepicker-renderer.component.ts   ← the binding that makes the dial work
+newest dist     23:19:01   fesm2022/…
+```
+
+Twelve minutes apart, with the repair in the newer half. **From the browser this is indistinguishable
+from the repair not working**, and it cost a real round of hunting: a defect was fixed, the fix was
+green in the workspace, and the app went on showing the old behaviour to someone who reasonably
+concluded the fix had failed.
+
+**Repaired**: `examples/angular/prepare-styles.mjs` — already the `prestart`/`prebuild` hook, so no new
+wiring — compares the newest file under `packages/angular/src` against the newest under
+`packages/angular/dist` and exits `1` with the exact command when the build is behind.
+
+It **refuses** rather than rebuilding, deliberately: a rebuild hidden in a `prestart` puts a slow step
+behind a command that looks fast, and someone who means to serve an older build can still run the
+build themselves.
+
+Proven in both directions rather than asserted — fresh tree exits `0` and serves; `touch` one source
+file and it exits `1` with the message. **The first reading of that check said `exit=0` for both**,
+because `echo $?` after a pipe reads `tail`, not `node`. A guard that prints and exits zero still
+serves stale, which is the failure the guard exists to prevent, so it was worth measuring twice.
+
+**No battle.** This is a developer-loop defect: nothing a consumer of a published package can meet, and
+nothing a test tier is the right shape to hold. The guard is the artefact.
+
+**Third stale-artefact confusion of the night**, and the only one that reached the user. The other two
+were mine: a probe measuring a `dist` built before the fix it was checking, and — an hour later —
+`find src -newer dist`, which compares against the *directory's* mtime and reported three fresh builds
+as stale. Same family, three instruments: **an artefact and its source disagree, and nothing in the
+loop says so.** `battle-tests/harness/fresh-probe.mjs` was written for the first. This entry is the
+third getting the same treatment.
+
 ## The register's own shape, measured
 
 ```
