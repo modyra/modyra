@@ -341,13 +341,38 @@ function adrProblems() {
   if (records.length === 0) return problems;
   if (index === "") problems.push("docs/architecture/README.md is missing — the records have no index");
 
+  // Two records under one number, named before the contiguity check reaches them.
+  //
+  // Contiguity catches a duplicate by rebound — with two `0093` the count no longer lines up — but it
+  // reports the *innocent* record, saying `0093-a-field-…: expected number 0094`. Whoever reads that
+  // renames the right file to the wrong number and the collision survives. Two sessions writing an
+  // ADR at once is the ordinary way this happens, and the message has to name the pair.
+  const byNumber = new Map();
+  for (const name of records) {
+    const number = name.slice(0, 4);
+    if (!byNumber.has(number)) byNumber.set(number, []);
+    byNumber.get(number).push(name);
+  }
+  const collided = new Set();
+  for (const [number, names] of byNumber) {
+    if (names.length < 2) continue;
+    for (const name of names) collided.add(name);
+    problems.push(
+      `${number} is used by ${names.length} records — ${names.join(", ")}. ` +
+      "A number names one decision; renumber all but the earliest.",
+    );
+  }
+
   records.forEach((name, position) => {
     const source = readFileSync(join(dir, name), "utf8");
 
     // Contiguous from 0001: a gap means a record was deleted rather than superseded, and superseding
     // is the only honest way to retire a decision.
+    //
+    // Not asked of a record whose number is already reported as shared: the count is off by the
+    // duplicate, so every record after it would be blamed for a gap it did not make.
     const expected = String(position + 1).padStart(4, "0");
-    if (!name.startsWith(expected)) problems.push(`${name}: expected number ${expected} — records must be contiguous from 0001`);
+    if (collided.size === 0 && !name.startsWith(expected)) problems.push(`${name}: expected number ${expected} — records must be contiguous from 0001`);
 
     if (!/^Status:/m.test(source)) problems.push(`${name}: no "Status:" line`);
     for (const heading of required) {

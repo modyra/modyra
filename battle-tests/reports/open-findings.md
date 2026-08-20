@@ -16940,6 +16940,32 @@ Twenty-five did not resolve against the built packages, and every one checked is
 No finding, and the instrument is recorded as **not worth making a gate**: its false-positive rate
 comes from four different legitimate shapes, and a gate that cries four ways is one nobody keeps.
 
+## 288 — A gate that names the innocent record (tooling)
+
+`npm run test:docs` declares the architecture records contiguous from 0001. Two sessions wrote an ADR
+at once and both landed on `0093`; `esecutore2` reported that the gate said nothing. Measured rather
+than relayed — I copied a record onto a duplicate number and ran it:
+
+```
+0093-a-duplicate-number-nobody-notices.md: not listed in docs/architecture/README.md
+0093-a-field-that-leaves-play-takes-its-overlay-with-it.md: expected number 0094 —
+                                            records must be contiguous from 0001
+DOCUMENTATION CHECKS FAILED
+```
+
+It **does** fail — and it names the wrong file. The duplicate is caught by rebound, because two
+records under one number make the count come up short, and the record blamed is the **innocent** one:
+whoever reads that renames the right file to the wrong number and the collision survives.
+
+Repaired in `scripts/audit-docs.mjs`: numbers are grouped first, a shared one is reported as itself —
+*"0093 is used by 2 records — …; a number names one decision, renumber all but the earliest"* — and
+the contiguity check is not asked while a collision stands, because the count is off by the duplicate
+and every record after it would be blamed for a gap it did not make.
+
+**The shape, which is the reusable part**: a check that catches a fault *by side effect* reports the
+side effect. It fails, so nobody notices it is describing the wrong thing — and a wrong diagnosis in a
+green-or-red gate is worse than a missing one, because it is acted on.
+
 ## The register's own shape, measured
 
 ```
