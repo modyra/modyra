@@ -6,11 +6,11 @@
   "runs": "(default)",
   "openReds": 2,
   "bySeverity": {
-    "S0": 1,
+    "S1": 1,
     "S2": 1
   },
   "knownRed": [
-    "[S0][SEC-004] a pattern a document declares cannot stop the page",
+    "[S1][PER-004,PER-003] a draft is not overwritten by a form that never saw it",
     "[S2][DYN-001,DYN-003] every version one runtime accepts is one the others have a position on"
   ]
 }
