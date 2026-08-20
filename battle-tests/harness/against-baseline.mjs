@@ -130,7 +130,10 @@ function writeBaseline(names, file = BASELINE_FILE) {
     order:
       "Repair in severity order: every S0, then every S1, then S2 and below. `bySeverity` is the " +
       "count at each, and `knownRed` is sorted the same way, so the top of the list is the next work.",
-    recordedAt: new Date().toISOString().slice(0, 10),
+    // Date and time, to the second, in UTC. A date alone cannot tell one of a day's runs from
+    // another, and this file is read to decide what to repair next while three sessions are
+    // repairing: which run a count came from is half of what the count means.
+    recordedAt: new Date().toISOString().replace(/\.\d+Z$/, "Z"),
     // The generative battles draw from this, so which names are here depends on it. A baseline
     // recorded under one seed and checked under another reports a regression that is a different
     // random walk rather than a new defect.
@@ -157,7 +160,7 @@ export function writeRegisterSummary(body, file = join(BATTLE_ROOT, "reports", "
   // Every severity that has a row, however many there are: the block used to name S0, S1 and S2 and
   // nothing else, so the first S3 red raised the total without appearing in the list under it — the
   // rows and the total disagreed, and the section says the file is the one to believe.
-  const block = /```\nS0 +\d+ +the whole of it before any S1\n(?:S\d +\d+\n)* +--\n +\d+ +open reds, [\d-]+\n```/;
+  const block = /```\nS0 +\d+ +the whole of it before any S1\n(?:S\d +\d+\n)* +--\n +\d+ +open reds, [\d:\- ]+(?:UTC)?\n```/;
   if (!block.test(register)) return;
   const at = (key) => String(body.bySeverity[key] ?? 0).padStart(2);
   const rows = [...new Set(["S0", ...Object.keys(body.bySeverity)])].sort()
@@ -168,7 +171,7 @@ export function writeRegisterSummary(body, file = join(BATTLE_ROOT, "reports", "
     "```",
     ...rows,
     "      --",
-    `      ${String(body.openReds).padStart(2)}      open reds, ${body.recordedAt}`,
+    `      ${String(body.openReds).padStart(2)}      open reds, ${body.recordedAt.replace("T", " ").replace("Z", " UTC")}`,
     "```",
   ].join("\n");
   writeFileSync(file, register.replace(block, written), "utf8");

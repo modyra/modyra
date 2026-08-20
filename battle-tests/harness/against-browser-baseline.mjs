@@ -124,7 +124,10 @@ function writeBaselineFile(names, severities) {
     order:
       "Repair in severity order, as the node tier does. A spec's severity is the worst of the claims " +
       "its header names; `unknown` is a spec that names none, which is most of them.",
-    recordedAt: new Date().toISOString().slice(0, 10),
+    // Date and time, to the second, in UTC. A date alone cannot tell one of a day's runs from
+    // another, and this file is read to decide what to repair next while three sessions are
+    // repairing: which run a count came from is half of what the count means.
+    recordedAt: new Date().toISOString().replace(/\.\d+Z$/, "Z"),
     openReds: ordered.length,
     bySeverity: Object.fromEntries(Object.keys(counts).sort().map((key) => [key, counts[key]])),
     knownRed: ordered,
