@@ -10,6 +10,7 @@ import {
   viewChild,
 } from "@angular/core";
 import {
+  MDY_WIDGET_CONTRACTS,
   overlayStyleProperties,
   popupAlignmentClass,
   popupPlacementClass,
@@ -45,9 +46,9 @@ import {
       [ngStyle]="panelStyle()"
       (click)="$event.stopPropagation()"
       (keydown)="onPanelKeydown($event)"
-      [attr.role]="announcesDialog() ? 'dialog' : null"
+      [attr.role]="panelRole()"
       [attr.aria-modal]="announcesDialog() ? 'true' : null"
-      [attr.aria-label]="announcesDialog() ? dialogLabel() : null"
+      [attr.aria-label]="panelRole() !== null ? dialogLabel() : null"
     >
       <ng-content />
     </div>
@@ -137,6 +138,27 @@ export class MdyOverlayPanelComponent {
    * says the word "dialog".
    */
   protected readonly announcesDialog = computed(() => this.isModal() && this.dialogLabel() !== null);
+
+  /**
+   * The role this panel carries, asked of the catalogue for the widget it belongs to.
+   *
+   * `MDY_WIDGET_CONTRACTS[kind].parts.popup.role` is where a kind says what its popup *is*, and a
+   * renderer that decides for itself is a renderer that can disagree with the contract and with the
+   * other renderers about the same widget. The multiselect's popup is declared a dialog and this
+   * panel drew a bare `<div>`, so the contract test failed here and nowhere else.
+   *
+   * The modal rule below it stays as a fallback for the kinds the catalogue says nothing about: a
+   * panel with a backdrop *and* a name is announced as a dialog, which is what the palette and the
+   * clock have relied on since the nameless-dialog finding.
+   */
+  protected readonly panelRole = computed<string | null>(() => {
+    const kind = this.kind();
+    const declared = kind === null
+      ? undefined
+      : (MDY_WIDGET_CONTRACTS[kind].parts as Readonly<Record<string, { role?: string }>>)["popup"]?.role;
+    if (declared !== undefined) return declared;
+    return this.announcesDialog() ? "dialog" : null;
+  });
 
   constructor() {
     // Top Layer Management (Popover API)
