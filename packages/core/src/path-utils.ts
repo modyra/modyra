@@ -20,7 +20,7 @@ const MDY_FORBIDDEN_PATH_SEGMENTS = new Set([
  */
 export function isSafeFieldPath(name: string): boolean {
   if (name.length === 0) return false;
-  return !namesAPrototypeKey(name) && !breaksValueConversion(name) && name.split(".").every(isIdSegment);
+  return !namesAPrototypeKey(name) && name.split(".").every(isIdSegment);
 }
 
 /**
@@ -42,6 +42,11 @@ export function isSafeFieldPath(name: string): boolean {
  * repairs the object the engine hands over and not the copy a consumer makes of it — measured,
  * `String(structuredClone(value))` throws again — so the defect would reappear further from its
  * cause than it is now.
+ *
+ * Asked of a **declared name**, not of every path segment. A record's row key is data — a filename,
+ * a SKU, what the domain calls a row — and a person entitled to a row called `toString` is not
+ * declaring a schema. {@link isSafeFieldPath} therefore does not consult this; the two doors that
+ * declare names do.
  */
 export function breaksValueConversion(name: string): boolean {
   return name.split(".").some((part) => part === "toString");
