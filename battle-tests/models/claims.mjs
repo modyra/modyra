@@ -733,6 +733,17 @@ const CLAIMS = [
     ],
   },
   {
+    id: "DOC-002",
+    title: "A link a reader clicks lands on the section it names.",
+    area: "documentation",
+    severity: "S3",
+    publicEvidence: [
+      "docs/**/*.md and the package READMEs \u2014 the pages a reader is sent between",
+      "the heading ids the published site emits, which are what a fragment resolves against",
+      "scripts/audit-docs.mjs \u2014 the gate that checks a linked file exists",
+    ],
+  },
+  {
     id: "EXP-001",
     title: "A condition decides the same thing however it is spelled.",
     area: "dynamic-contract",

@@ -56,6 +56,9 @@ const WRAPPER = MDY_FIELD_STATE_CLASSES.control;
 const LABEL = MDY_FIELD_STATE_CLASSES.label;
 const OPTIONS = [{ value: "a", label: "A" }, { value: "b", label: "B" }];
 
+/** The tags a person can focus and then leave, which is what "the field was left" means here. */
+const FOCUSABLE = ["input", "textarea", "select", "button"];
+
 for (const host of HOSTS) {
   test(`${host.name}: a refused field wears the state class its kind declares`, async ({ page }) => {
     test.setTimeout(150_000);
@@ -82,7 +85,11 @@ for (const host of HOSTS) {
       );
       await page.waitForTimeout(130);
 
-      const first = page.locator(`[data-form="${id}"] input, [data-form="${id}"] select, [data-form="${id}"] button`).first();
+      // A `<textarea>` is not an input, a select or a button, and leaving it out meant the premise
+      // never touched a textarea field at all — so the kind reported as bare was a kind this spec had
+      // not reached. What is being asked here is "the field was left", and the tags that can be left
+      // are all four.
+      const first = page.locator(FOCUSABLE.map((tag) => `[data-form="${id}"] ${tag}`).join(", ")).first();
       if (await first.count() > 0) {
         await first.focus().catch(() => undefined);
         await first.blur().catch(() => undefined);
@@ -142,7 +149,11 @@ for (const host of HOSTS) {
       );
       await page.waitForTimeout(130);
 
-      const first = page.locator(`[data-form="${id}"] input, [data-form="${id}"] select, [data-form="${id}"] button`).first();
+      // A `<textarea>` is not an input, a select or a button, and leaving it out meant the premise
+      // never touched a textarea field at all — so the kind reported as bare was a kind this spec had
+      // not reached. What is being asked here is "the field was left", and the tags that can be left
+      // are all four.
+      const first = page.locator(FOCUSABLE.map((tag) => `[data-form="${id}"] ${tag}`).join(", ")).first();
       if (await first.count() > 0) {
         await first.focus().catch(() => undefined);
         await first.blur().catch(() => undefined);
