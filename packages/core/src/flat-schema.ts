@@ -19,6 +19,8 @@ import {
   type MdyFormSchema,
 } from "./typed-form.js";
 import { MDY_VALUE_CONTRACTS, type MdyValueShape } from "./value-contracts.js";
+import { valueShape } from "./validators.js";
+import type { ValidatorFn } from "./types.js";
 import type { MdyFormRegistry } from "./contracts/form-registry.js";
 import { collectSchemaPaths, numericKeysToArrays } from "./schema-utils.js";
 import {
@@ -51,9 +53,27 @@ function shapeOf(
     : { shape: contract.shape };
 }
 
+
 /**
- * Builds the (validator-free) schema for a flat field list — every field gets its default value;
- * validators come from {@link applyFieldValidators}.
+ * One leaf, as its kind declares it: the kind's empty value, its shape, its offered values, and the
+ * guard that says a value of another shape is wrong.
+ *
+ * The shape guard is not one of the document's validators — those are `applyFlatValidators`'s half,
+ * and this builder stays free of them. It is what the *kind* is, exactly as the `shape` option
+ * beside it already is: the tree builder attaches it to every leaf it makes, and without it here the
+ * same document read through the flat route stopped refusing values its kinds cannot hold. A
+ * datepicker held `"not a date at all"` with the form calling itself valid and submittable,
+ * depending only on which of the two published builders a consumer called.
+ */
+function leafFor(f: MdyDynamicField): unknown {
+  return field(mdyEmptyValueFor(f) as never, [valueShape(f.kind) as ValidatorFn<never>], {
+    sensitive: f.sensitive === true,
+    ...shapeOf(f),
+  });
+}
+/**
+ * Builds the schema for a flat field list — every field gets its default value and the guard its
+ * *kind* carries; the document's own validators come from {@link applyFlatValidators}.
  *
  * A name here is a path, and the engine turns a dotted key into the structure it describes
  * (ADR 0031). What a path cannot say is which **kind** of collection it passed through: `lines.0`
@@ -80,7 +100,7 @@ export function buildFlatFormSchema(
   assertSafeDynamicFieldNames(fields);
   if (collections.length === 0) {
     const flat: Record<string, unknown> = {};
-    for (const f of fields) flat[f.name] = field(mdyEmptyValueFor(f) as never, [], { sensitive: f.sensitive === true, ...shapeOf(f) });
+    for (const f of fields) flat[f.name] = leafFor(f);
     return flat as MdyFormSchema;
   }
 
@@ -122,9 +142,9 @@ export function buildFlatFormSchema(
       rows.add(key!);
       // Every row has the same shape, so the first one describes the item and the rest confirm it.
       const within = tail.join(".");
-      if (within.length === 0) { leaf = field(mdyEmptyValueFor(f) as never, [], { sensitive: f.sensitive === true, ...shapeOf(f) }); continue; }
+      if (within.length === 0) { leaf = leafFor(f); continue; }
       if (claimedByChild(within)) continue;
-      if (!(within in item)) item[within] = field(mdyEmptyValueFor(f) as never, [], { sensitive: f.sensitive === true, ...shapeOf(f) });
+      if (!(within in item)) item[within] = leafFor(f);
     }
     // A row may exist only because a child collection was declared under it.
     for (const c of direct) rows.add(c.path.slice(prefix.length + 1).split(".")[0]!);
