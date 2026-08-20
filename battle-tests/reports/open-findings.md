@@ -7,7 +7,7 @@ S0     0      the whole of it before any S1
 S1     1
 S2     1
       --
-       2      open reds, 2026-08-20
+       2      open reds, 2026-08-20 09:08:38 UTC
 ```
 
 Severity is the order of work: every S0, then every S1, then S2 and below. The same counts are in
@@ -16738,6 +16738,35 @@ payload is the real value, and whether it can be JSON-encoded is the caller's bu
 they send it. My first reading of this said all three threw; that was `JSON.stringify` in my own probe,
 called in the same expression as the call it was describing. **Call, then describe — never both in one
 expression, or the describing is what throws.**
+
+## 283 — Seven release blockers filed as the least urgent rows in the file (harness)
+
+`known-red-browser.json` is what the severity order is read from, and every one of its fifty-nine rows
+said `unknown`.
+
+A recorded name is `<file> › <title>`. The baseline on disk carried a plain `>` instead — written
+before that separator settled — and every read split on `›`, found nothing, and fell through to
+`unknown`. `unknown` sorts after `S2`, so the seven `S0` rows sat at the bottom of the file under a
+dozen styling differences.
+
+```
+before   { "unknown": 59 }
+after    { "S0": 7, "S1": 40, "S2": 12 }
+```
+
+The rule this is an instance of, and the reason it is written down rather than quietly fixed: **a
+default that means "I could not tell" must never sort as "least important".** The two are opposite
+statements and the file collapsed them into one row.
+
+Three repairs, all narrow:
+
+- one `specFileOf(name)` that accepts either separator, instead of the same split written in four
+  places — and the file is normalised the next time a run records it;
+- `assertRedsAreRanked` now also runs on `--recount`, which is the path that produced this; it existed
+  and was wired only to `--accept`, so the one command that could not measure was also the one that
+  could not check;
+- both baselines record the time as well as the day, because three sessions are repairing at once and
+  which run a count came from is half of what the count means.
 
 ## The register's own shape, measured
 

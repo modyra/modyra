@@ -94,20 +94,20 @@ function readBaselineFile() {
  */
 function assertRedsAreRanked(names, severities) {
   const unranked = [...names]
-    .filter((name) => (severities[name.split(" \u203a ")[0]] ?? "unknown") === "unknown")
+    .filter((name) => (severities[specFileOf(name)] ?? "unknown") === "unknown")
     .sort();
   if (unranked.length === 0) return;
   console.error(
     `browser baseline check: ${unranked.length} red spec(s) name no claim, so nothing can rank them ` +
       "against the rest. Add a `Claims under attack:` line to each file's header and run this again:\n  " +
-      unranked.map((name) => name.split(" \u203a ")[0]).filter((file, at, all) => all.indexOf(file) === at).join("\n  "),
+      unranked.map((name) => specFileOf(name)).filter((file, at, all) => all.indexOf(file) === at).join("\n  "),
   );
   process.exit(2);
 }
 
 function writeBaselineFile(names, severities) {
   // Severity first, then name: the file is read to decide what to repair next.
-  const severityOf = (name) => severities[name.split(" \u203a ")[0]] ?? "unknown";
+  const severityOf = (name) => severities[specFileOf(name)] ?? "unknown";
   const ordered = [...names].sort((left, right) => {
     const bySeverity = severityOf(left).localeCompare(severityOf(right));
     return bySeverity !== 0 ? bySeverity : left.localeCompare(right);
@@ -146,11 +146,26 @@ function runSuite(jsonPath) {
   return JSON.parse(readFileSync(jsonPath, "utf8"));
 }
 
+/**
+ * The spec file a recorded name begins with.
+ *
+ * A name is `<file> \u203a <title>`, and a baseline written before that separator settled carries a
+ * plain `>` instead. Splitting on one of the two turned every severity into `unknown` — which sorts
+ * after `S2`, so seven release blockers read as the least urgent rows in the file. Both are accepted
+ * here rather than in four places, and the file is normalised the next time a run records it.
+ */
+function specFileOf(name) {
+  const at = name.indexOf(" \u203a ");
+  if (at !== -1) return name.slice(0, at);
+  const ascii = name.indexOf(" > ");
+  return ascii === -1 ? name : name.slice(0, ascii);
+}
+
 /** Every failing spec's file, read once, so a severity can be taken from the claims it names. */
 function severitiesFor(names) {
   const files = {};
   for (const name of names) {
-    const file = name.split(" \u203a ")[0];
+    const file = specFileOf(name);
     if (files[file] !== undefined) continue;
     const path = join(BATTLE_ROOT, "browser", file);
     files[file] = existsSync(path) ? readFileSync(path, "utf8") : "";
@@ -262,7 +277,9 @@ function main() {
   // and the counts are derived from it, so a change to how severity is read costs nothing to apply.
   if (process.argv.includes("--recount")) {
     const names = readBaselineFile();
-    writeBaselineFile(names, severitiesFor(names));
+    const recounted = severitiesFor(names);
+    assertRedsAreRanked(names, recounted);
+    writeBaselineFile(names, recounted);
     console.log(`browser baseline check: re-counted ${names.length} known-red spec(s)`);
     return;
   }
