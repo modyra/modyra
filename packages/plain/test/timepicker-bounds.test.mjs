@@ -34,11 +34,14 @@ const type = (input, value) => {
 const press = (input, key) =>
   input.dispatchEvent(new window.KeyboardEvent("keydown", { key, bubbles: true }));
 
-test("an hour past 12 is marked invalid rather than silently dropped", async () => {
+test("an hour no clock has is marked invalid rather than silently dropped", async () => {
   const p = await picker();
-  type(p.hour, "13");
+  // A document-driven picker is a 24-hour one, so the hour past the end is 23 rather than 12. What
+  // the property says is the same either way: an entry the segment cannot hold is shown as wrong
+  // where it was typed, instead of vanishing.
+  type(p.hour, "24");
   assert.equal(p.hour.getAttribute("aria-invalid"), "true", "the box must say the entry is wrong");
-  type(p.hour, "11");
+  type(p.hour, "13");
   assert.equal(p.hour.getAttribute("aria-invalid"), null, "and stop saying so once it is right");
   p.dispose();
 });
@@ -54,7 +57,7 @@ test("a minute past 59 is marked invalid", async () => {
 
 test("clearing a segment is not an error", async () => {
   const p = await picker();
-  type(p.hour, "13");
+  type(p.hour, "24");
   assert.equal(p.hour.getAttribute("aria-invalid"), "true");
   type(p.hour, "");
   assert.equal(p.hour.getAttribute("aria-invalid"), null, "an empty box is being cleared, not asserted");
@@ -63,12 +66,12 @@ test("clearing a segment is not an error", async () => {
 
 test("the arrow keys wrap rather than stopping at the end", async () => {
   const p = await picker();
-  type(p.hour, "12");
+  type(p.hour, "23");
   press(p.hour, "ArrowUp");
-  assert.equal(p.hour.value, "1", "past the top of a 12-hour clock comes back to the bottom");
+  assert.equal(p.hour.value, "0", "past the end of a 24-hour clock comes back to midnight");
 
   press(p.hour, "ArrowDown");
-  assert.equal(p.hour.value, "12", "and back again");
+  assert.equal(p.hour.value, "23", "and back again");
 
   type(p.minute, "59");
   press(p.minute, "ArrowUp");
@@ -83,14 +86,14 @@ test("stepping rescues a segment that is already out of range", async () => {
 
   press(p.hour, "ArrowUp");
   assert.equal(p.hour.getAttribute("aria-invalid"), null, "stepping is how a user leaves a bad value");
-  assert.ok(Number(p.hour.value) >= 1 && Number(p.hour.value) <= 12, `got ${p.hour.value}`);
+  assert.ok(Number(p.hour.value) >= 0 && Number(p.hour.value) <= 23, `got ${p.hour.value}`);
   p.dispose();
 });
 
 test("the segments advertise their own range", async () => {
   const p = await picker();
-  assert.equal(p.hour.min, "1");
-  assert.equal(p.hour.max, "12");
+  assert.equal(p.hour.min, "0");
+  assert.equal(p.hour.max, "23");
   assert.equal(p.minute.min, "0");
   assert.equal(p.minute.max, "59");
   p.dispose();

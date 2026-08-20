@@ -156,7 +156,13 @@ export class MdyTimepickerComponent extends MdyOverlayControl<string | null> {
   protected readonly widgetHasRootClass = this.widgetContract.rootClasses.includes("mdy-renderer");
   protected readonly i18n = inject(MDY_I18N_MESSAGES);
   readonly placeholder = input<string>("");
-  readonly format = input<MdyTimeFormat>("12h");
+  /**
+   * Which clock this draws. Defaults to the 24-hour one, as every renderer does.
+   *
+   * A default that differs between adapters means one document renders a different clock in each of
+   * them, which is the divergence a shared contract exists to prevent. Pass `"12h"` for the other.
+   */
+  readonly format = input<MdyTimeFormat>("24h");
   protected override readonly minSpace = 450;
 
   protected readonly effectivePlaceholder = computed(() =>
