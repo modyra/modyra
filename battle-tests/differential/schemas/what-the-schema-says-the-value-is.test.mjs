@@ -76,9 +76,14 @@ function publishedLeafType() {
   const entry = fileURLToPath(import.meta.resolve("@modyra/zod"));
   const types = entry.replace(/\.js$/, ".d.ts");
   const text = readFileSync(types, "utf8");
+  // Inside the descriptor's argument, not immediately after the angle bracket. The leaf type is
+  // wrapped — `MdyFieldDescriptor<Exclude<z.input<Shape[K]>, undefined> | null>` — and a pattern
+  // anchored on the first token fixes a spelling where it means a decision: the package still says
+  // `input`, and a wrapper it gains is not the decision moving.
+  const inDescriptor = (word) => new RegExp(`MdyFieldDescriptor<[^;\n]{0,160}z\\.${word}<`).test(text);
   return {
-    saysOutput: /MdyFieldDescriptor<z\.output</.test(text),
-    saysInput: /MdyFieldDescriptor<z\.input</.test(text),
+    saysOutput: inDescriptor("output"),
+    saysInput: inDescriptor("input"),
   };
 }
 
