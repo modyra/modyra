@@ -183,7 +183,41 @@ function escapeLiteral(character: string): string {
 /** Top-level alternatives of a group body, given where each one starts. */
 function alternativesOf(source: string, group: Group, end: number): string[] {
   const bounds = [...group.alternatives, end];
-  return bounds.slice(0, -1).map((from, index) => source.slice(from, bounds[index + 1]! ));
+  // Each start is recorded *after* its `|`, so every alternative but the last ends one character
+  // before the next start — the `|` itself. Included, it made every alternative but the last
+  // unreadable to anything that looks at more than the first character.
+  return bounds.slice(0, -1).map((from, index) =>
+    source.slice(from, bounds[index + 1]! - (index + 2 < bounds.length ? 1 : 0)));
+}
+
+/**
+ * The literal string an alternative is, or `null` when it is not one.
+ *
+ * "Not one" is anything that makes the branch match more than the characters it is written with: a
+ * quantifier, a class, a group, an escape that stands for a set. An escaped literal is still a
+ * literal — `\.` is a full stop and nothing else.
+ */
+function plainWord(branch: string): string | null {
+  let word = "";
+  for (let at = 0; at < branch.length; at += 1) {
+    const character = branch[at]!;
+    if (character === "\\") {
+      const escaped = branch[at + 1];
+      if (escaped === undefined) return null;
+      if (CLASS_ESCAPES.has(escaped) || /[a-zA-Z0-9]/.test(escaped)) {
+        const literal = LITERAL_ESCAPES[escaped];
+        if (literal === undefined) return null;
+        word += literal;
+      } else {
+        word += escaped;
+      }
+      at += 1;
+      continue;
+    }
+    if ("[](){}|*+?.^$".includes(character)) return null;
+    word += character;
+  }
+  return word.length > 0 ? word : null;
 }
 
 /**
@@ -195,6 +229,16 @@ function alternativesOf(source: string, group: Group, end: number): string[] {
  * alone, because refusing them would delete a rule that is perfectly safe.
  */
 function overlap(branches: string[]): boolean {
+  // Plain words first, compared whole. Reading only the first character called `(foo|bar|baz)+`
+  // ambiguous because two of them start with `b` — a list of words is the ordinary way to write a
+  // closed set of values, and none of these can be mistaken for another once the second character is
+  // read. What makes literal alternatives ambiguous is one being a *prefix* of another, which is
+  // what leaves the engine a choice to revisit: `(a|ab)+`.
+  const words = branches.map(plainWord);
+  if (words.every((word) => word !== null)) {
+    return words.some((word, index) =>
+      words.some((other, at) => at !== index && other!.startsWith(word!)));
+  }
   const matchers = branches.map(firstMatcher);
   for (let i = 0; i < matchers.length; i += 1) {
     const a = matchers[i];
@@ -385,14 +429,44 @@ function bodyIsAmbiguous(branch: string): boolean {
   const atoms = atomsOf(branch);
   if (atoms === null || atoms.length === 0) return false;
   if (!atoms.some((atom) => atom.min !== atom.max)) return false;
-  const last = atoms[atoms.length - 1]!;
-  if (last.min !== last.max) return containedIn(atoms[0]!, last);
-  for (let index = atoms.length - 2; index >= 0; index -= 1) {
-    const atom = atoms[index]!;
-    if (atom.min === atom.max) continue;
-    return containedIn(last, atom);
+  // An ending that may be absent is not an ending. `([A-Za-z]+[0-9]*)+` looks pinned by its digits
+  // and is the classic blowup with none of them present: the `[0-9]*` vanishes, and the seam falls
+  // back inside the letters, where there is nothing to say where one repetition stops. So the
+  // trailing elements that can contribute nothing are dropped before the seam is read.
+  let end = atoms.length - 1;
+  while (end >= 0 && atoms[end]!.min === 0) end -= 1;
+  // Nothing that must be there at all: a body that can match empty and repeats is the loop that
+  // makes no progress, which is ambiguous by construction.
+  if (end < 0) return true;
+
+  const last = atoms[end]!;
+  if (last.min !== last.max) {
+    if (containedIn(atoms[0]!, last)) return true;
+    // Nothing ends the body, so an internal seam is free too: two stretchy elements side by side
+    // that can both take the same character divide the run between them wherever they like, and
+    // repeating that multiplies it. `([^x]+[^y]+)+z$` has no boundary anywhere and is minutes at
+    // thirty characters. A pair like `\s*[^,]+` inside a body that *does* end in a boundary is a
+    // different case: the comma pins each repetition, so the choice does not compound.
+    for (let index = 0; index < end; index += 1) {
+      const a = atoms[index]!;
+      const b = atoms[index + 1]!;
+      if (a.min === a.max || b.min === b.max) continue;
+      if (!a.matcher || !b.matcher) return true;
+      if (ALPHABET.some((character) => a.matcher!.test(character) && b.matcher!.test(character))) return true;
+    }
+    return false;
   }
-  return false;
+
+  // The boundary is anywhere in the fixed run after the last stretchy element, not only at its very
+  // end. `("[^"]*",)` ends in a comma the stretchy part *can* take, and is pinned all the same by
+  // the quote before it: `[^"]` cannot stand in for a quote, so the division falls in one place.
+  let stretchy = end;
+  while (stretchy >= 0 && atoms[stretchy]!.min === atoms[stretchy]!.max) stretchy -= 1;
+  if (stretchy < 0) return false;
+  for (let index = stretchy + 1; index <= end; index += 1) {
+    if (!containedIn(atoms[index]!, atoms[stretchy]!)) return false;
+  }
+  return true;
 }
 
 /**
