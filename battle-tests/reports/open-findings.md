@@ -18115,6 +18115,31 @@ the defect is the vocabulary, not the format handling.
 The arithmetic layer is sound — `to24Hour`, `parse24Time`, `parseAnyTime` and the four segment helpers
 all behave in both formats. **Only the writing seam is broken**, which is why the repair is narrow.
 
+**The adjacent surface was checked and is correct — Dismissed, and it sharpens the repair.** The same
+pattern exists in four other controllers: a guard, then a silent `return []`. Five of the six are
+right, because the control *shows* the value as unavailable — a disabled option is drawn disabled.
+The discriminator is not the silence, it is whether the face **offers** what the writer refuses.
+
+The datepicker is the case worth stating, because it refuses out-of-range dates the same way:
+
+```
+minDate 2026-08-10, maxDate 2026-08-20
+42 cells published, each { iso, day, inMonth, selected, focused, disabled }
+cells whose `disabled` disagrees with min/max:  0
+```
+
+**The calendar publishes the availability of every cell it draws**, so a renderer can paint what the
+controller will refuse, and the refusal is the second line of defence rather than the only one. That
+is the same delegation done properly, in the same package.
+
+`MdyTimepickerDialNumber` carries `value`, `label`, `index`, `ring` — **and nothing about
+availability**, correctly, because all twenty-four hours *should* be selectable. The timepicker is not
+missing a disabled flag; it is missing the ability to select what it offers.
+
+*(One correction on the way: my first cell filter read `x.date` where the key is `iso`, and reported
+"0 cells outside min/max" — an empty result from a wrong key, which is the shape that reads as a clean
+bill of health. Caught by the count being implausible rather than by the code.)*
+
 Second half, from the same report: `viewMode` initialises to `"dial"` and every `open()` forces it
 back (`timepicker-field-controller.ts:102` and `:157`), so a renderer cannot open on the number fields
 without fighting the controller. The user wants `"input"` to be the default. **Shipping that without
