@@ -1,8 +1,8 @@
 {
   "note": "Public names not yet asserted or not yet shown. The list may only get shorter.",
   "score": {
-    "published": 694,
-    "asserted": 436,
+    "published": 695,
+    "asserted": 437,
     "shown": 79
   },
   "uncovered": [
@@ -1898,6 +1898,12 @@
     },
     {
       "name": "MdySubmitMode",
+      "asserted": true,
+      "shown": false,
+      "reason": "published and never shown"
+    },
+    {
+      "name": "MdySubmittedItemValue",
       "asserted": true,
       "shown": false,
       "reason": "published and never shown"
