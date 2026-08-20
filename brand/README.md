@@ -17,7 +17,7 @@ The mark consists of three modules around a central negative space. The modules 
 
 ## Color
 
-- Indigo `#7067FF`: primary structure and core concepts
+- Indigo `#6458EF`: primary structure and core concepts
 - Violet `#A855F7`: reactivity and connection
 - Coral `#FF6577`: action and emphasis
 - Night `#0E0F16`: primary dark background

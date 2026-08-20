@@ -30,13 +30,13 @@
 }
 
 :root {
-  --studio-chrome-indigo: #7067ff;
+  --studio-chrome-indigo: #6458ef;
   --studio-chrome-violet: #a855f7;
   --studio-chrome-coral: #ff6577;
   --studio-chrome-night: #0e0f16;
   --studio-chrome-cloud: #f8fafc;
   --studio-chrome-slate: #94a3b8;
-  --studio-chrome-gradient-brand: linear-gradient(90deg, #7067ff 0%, #a855f7 50%, #ff6577 100%);
+  --studio-chrome-gradient-brand: linear-gradient(90deg, #6458ef 0%, #a855f7 50%, #ff6577 100%);
 
   /* Dark is the default because Studio's own docs site defaults to it; the light set below
      takes over from the system preference. Every surface reads these semantic tokens rather

@@ -50,7 +50,7 @@ theme, or restyle the classes directly:
 
 ```css
 :root {
-  --mdy-color-primary: #7067ff;
+  --mdy-color-primary: #6458ef;
   --mdy-radius-md: 10px;
 }
 ```

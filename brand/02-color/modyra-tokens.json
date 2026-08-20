@@ -2,7 +2,7 @@
   "color": {
     "brand": {
       "indigo": {
-        "value": "#7067FF",
+        "value": "#6458EF",
         "description": "Primary \u2014 logic, core"
       },
       "violet": {
@@ -30,16 +30,16 @@
     },
     "gradient": {
       "logo-top": {
-        "value": "linear-gradient(115deg, #6B61F2 0%, #A855F7 45%, #DC66A8 100%)"
+        "value": "linear-gradient(115deg, #5F52E2 0%, #A855F7 45%, #DC66A8 100%)"
       },
       "logo-left": {
-        "value": "linear-gradient(180deg, #7067FF 0%, #A855F7 100%)"
+        "value": "linear-gradient(180deg, #6458EF 0%, #A855F7 100%)"
       },
       "logo-right": {
         "value": "linear-gradient(180deg, #FF7A85 0%, #FF556F 100%)"
       },
       "brand": {
-        "value": "linear-gradient(90deg, #7067FF 0%, #A855F7 50%, #FF6577 100%)"
+        "value": "linear-gradient(90deg, #6458EF 0%, #A855F7 50%, #FF6577 100%)"
       }
     }
   },

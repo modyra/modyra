@@ -2383,8 +2383,8 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
       <span class="brand" aria-hidden="true">
         <svg class="brand-mark" viewBox="0 0 384 384" role="img">
           <defs>
-            <linearGradient id="studio-brand-top" x1="0" y1="222" x2="338" y2="118" gradientUnits="userSpaceOnUse"><stop stop-color="#6B61F2"/><stop offset=".45" stop-color="#A855F7"/><stop offset="1" stop-color="#DC66A8"/></linearGradient>
-            <linearGradient id="studio-brand-left" x1="0" y1="150" x2="60" y2="380" gradientUnits="userSpaceOnUse"><stop stop-color="#7067FF"/><stop offset="1" stop-color="#A855F7"/></linearGradient>
+            <linearGradient id="studio-brand-top" x1="0" y1="222" x2="338" y2="118" gradientUnits="userSpaceOnUse"><stop stop-color="#5F52E2"/><stop offset=".45" stop-color="#A855F7"/><stop offset="1" stop-color="#DC66A8"/></linearGradient>
+            <linearGradient id="studio-brand-left" x1="0" y1="150" x2="60" y2="380" gradientUnits="userSpaceOnUse"><stop stop-color="#6458EF"/><stop offset="1" stop-color="#A855F7"/></linearGradient>
             <linearGradient id="studio-brand-right" x1="338" y1="170" x2="250" y2="380" gradientUnits="userSpaceOnUse"><stop stop-color="#FF7A85"/><stop offset="1" stop-color="#FF556F"/></linearGradient>
           </defs>
           <g transform="translate(22)">

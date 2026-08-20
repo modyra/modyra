@@ -122,6 +122,7 @@ absent section reads as an oversight, and "no security impact" is a finding.
 - [ADR 0105: One handle registry per realm](0105-one-handle-registry-per-realm.md) — a module-level registry is per copy, so two copies of the engine in one tree turned the cross-runtime guard off
 - [ADR 0106: A door named for a contract reads it](0106-a-door-named-for-a-contract-reads-it.md) — the Angular component was named for the dynamic contract and took only the parsed half, so a document's rules vanished and each host wrote the parse step again
 - [ADR 0107: A draft is read by the form that wrote it](0107-a-draft-is-read-by-the-form-that-wrote-it.md) — the write side compared the recorded form shape and the read side did not, so the draft the writer refused to replace was the one the reader restored
+- [ADR 0108: A seed a theme can be read on](0108-a-seed-a-theme-can-be-read-on.md) — the default primary sat in the 13% of sRGB where the rule picks light text that cannot reach AA, so the filled button shipped at 4.09:1
 - [ADR 0092: A condition travels with the form](0092-a-condition-travels-with-the-form.md) — `when` and `asyncWhen` were closures, so a schema carrying one was not data and the document half could not say what the typed half said
 
 ## Security-relevant records
