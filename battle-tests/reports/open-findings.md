@@ -16574,13 +16574,18 @@ it by mixing:
 mix lands at 4.09, pure `#f8fafc` reaches 3.96, and pure white tops out at **4.14**. Black is 5.07 —
 the only choice on that background that clears WCAG AA for normal text.
 
-**This is not a bug, it is two of the project's own positions meeting.** ADR 0015 chose perception
-over ratio and set `MDY_ON_COLOR_FLOOR` to **3.5**, with an argument worth keeping: the luminance
-formula weights blue at a fourteenth of green, so it rates dark text on a saturated colour far higher
-than a reader does, and choosing by ratio alone puts dark text on a saturated mid tone. 4.09 clears
-3.5, so the palette keeps the promise `A11Y-003` makes. The browser tier runs axe and asserts **zero
-violations**, which enforces 4.5. Both are in this repository and they cannot both hold on the default
-theme's primary button.
+**Corrected: it is not two positions meeting, and the correction matters.** I wrote that ADR 0015's
+floor of 3.5 and the auditor's 4.5 were two of the project's own positions that could not both hold.
+`esecutore3` disproved it from `DESIGN.md` § Colour, which says the opposite in as many words: *"The
+floor chooses which colour; AA is what a pairing must reach… A derived `on-` colour that clears 3.5:1
+has satisfied the rule for choosing it and has not been excused from AA."* The floor picks light or
+dark; AA remains the acceptance threshold. There is one position, and the button violates it.
+
+Raising the floor is closed by ADR 0015's own measurement — at 4.5 white on `#7067FF` is 4.14, the
+rule falls through to the higher ratio and picks **black**, which is the defect 0015 exists to
+prevent, on the colour 0015 tabulates: *"4.5:1 flips one pair of 112 and fixes nothing."* Narrowing
+the specs is closed by `DESIGN.md`, whose only exemption is for a design system's **own** pairing —
+`modyra-ios` and Apple's HIG blue — and Modyra chose `#7067FF` itself.
 
 The project has already made the other choice once: `modyra-salience.theme.css` sets
 `--mdy-sys-color-on-primary: #000000` — 5.07, and no violation.
@@ -16787,6 +16792,42 @@ Three repairs, all narrow:
   could not check;
 - both baselines record the time as well as the day, because three sessions are repairing at once and
   which run a count came from is half of what the count means.
+
+## 284 — Four of the seven browser blockers were the harness (harness)
+
+`esecutore2` took the five `lit` blockers and sent back a diagnosis for four of them that was better
+than the assignment. Three were this suite's own doing, and one is a contract decision:
+
+**`a-control-for-a-field-that-was-dropped`** — the lit host called `parseDynamicFields` and then built
+the schema from the *raw* list, so `Object.fromEntries` collapsed a duplicate name and handed two
+elements the same handle. It read as the renderer choosing that binding; no renderer chose it.
+`@modyra/lit` publishes no door that mounts a document, so **this host is the door**, and a door that
+does not refuse what the contract refuses is measuring itself. It now runs
+`assertSafeDynamicFieldNames` first, as the Plain door does. Green, both renderers.
+
+**`a-name-that-became-a-path`** — a name is a path: `createForm({ "a.b": field("") })` nests, the
+handle lives at `f.a.b`, and `f["a.b"]` is `undefined`. The host did a flat lookup, the element got no
+handle and drew nothing. The Plain door walks the name; the host now does too. Green, both renderers.
+
+**`an-option-a-document-closed`** — the renderer was repaired (`?disabled` on the native option) and
+the spec could not see it: `selectOption({ label })` on a disabled option **never settles**, so
+Playwright retried until the test's own 120-second timeout and the run reported a timeout instead of
+what the page did. `.catch()` cannot help a call that does not reject. A three-second bound on each
+attempt, because refusing *is* the answer this battle looks for. Green, both renderers.
+
+**`an-option-with-a-space-in-it`** — the premise asserted the active id contains `New York` with a
+literal space. `idSafeKey` spells it `New%20York`, which is the repair this battle asked for and the
+reason the reference resolves. The premise was asserting the defect. Green.
+
+**`a-part-the-contract-requires` is neither**: `ADR 0018` (Accepted) says a native `<select>` satisfies
+the listbox model and that Lit is right to render one, while `MDY_WIDGET_CONTRACTS.select.structure`
+declares `trigger`, `placeholder` and `arrow` as `optional: false`. Two of our own documents, and one
+has to move. It is `@modyra/widgets` plus an ADR, so it is put to the user rather than taken.
+
+**Four of seven, and the pattern is worth more than the four.** A harness that mounts a document by
+hand is a *second implementation of the door*, and every shortcut in it is charged to the renderer. The
+Plain host mounts through `mountMdyForm`, which is a published door; the Lit host had to write one,
+and wrote it differently.
 
 ## The register's own shape, measured
 

@@ -29,14 +29,19 @@ const OPTIONS = [
 
 /** Choose `label` however this renderer offers it, and report the form's value afterwards. */
 async function choose(page: import("@playwright/test").Page, host: typeof HOSTS[number], id: string, label: string) {
+  // A short bound on every attempt, because refusing is the answer this battle is looking for. Without
+  // one, choosing a disabled option waits the whole test out — Playwright retries until the test's own
+  // timeout — and the run reports `Test timeout of 120000ms exceeded` instead of what the page did.
+  // `.catch()` cannot help: the call does not reject, it simply never settles.
+  const REFUSAL = { timeout: 3000 };
   const native = page.locator(`[data-form="${id}"] select`);
   if (await native.count() > 0) {
-    await native.selectOption({ label }).catch(() => undefined);
+    await native.selectOption({ label }, REFUSAL).catch(() => undefined);
   } else {
     const toggle = page.locator(`[data-form="${id}"] button`).first();
-    await toggle.click().catch(() => undefined);
+    await toggle.click(REFUSAL).catch(() => undefined);
     await page.waitForTimeout(240);
-    await page.locator("[role='option']", { hasText: label }).first().click({ force: true }).catch(() => undefined);
+    await page.locator("[role='option']", { hasText: label }).first().click({ force: true, ...REFUSAL }).catch(() => undefined);
   }
   await page.waitForTimeout(300);
   return page.evaluate(
