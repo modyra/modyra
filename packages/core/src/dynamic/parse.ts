@@ -1375,9 +1375,14 @@ export function parseDynamicForm(
    */
   const reportUnknownMembers = (value: unknown, at: string, what: string): void => {
     const members = at.startsWith("/layout")
+      // A slot is the third shape a layout position can take, beside the two node kinds: it names a
+      // field and says where it sits. `ref` is what separates it from a node, which always has a
+      // `kind`.
       ? (value as { kind?: unknown }).kind === "columns"
         ? MDY_DYNAMIC_MEMBERS.layoutColumns
-        : MDY_DYNAMIC_MEMBERS.layoutSection
+        : (value as { kind?: unknown }).kind === undefined && isRecordValue(value) && "ref" in value
+          ? MDY_DYNAMIC_MEMBERS.layoutSlot
+          : MDY_DYNAMIC_MEMBERS.layoutSection
       : at.startsWith("/rules")
         ? MDY_DYNAMIC_MEMBERS.rule
         : MDY_DYNAMIC_MEMBERS.validation;
@@ -1391,6 +1396,42 @@ export function parseDynamicForm(
         `${what} carries ${unknown.map((member) => JSON.stringify(member)).join(", ")}, which this ` +
         "contract does not declare, so nothing reads it.",
     });
+  };
+  /**
+   * Every layout node and every slot under one, each held to its own published list.
+   *
+   * Reported at every depth, not only at the top: a document's layout nests, and a member outside
+   * the list is a member nothing reads wherever it is written. A slot is where it costs the most —
+   * `at` is how a field says which column it takes at which size, so `att` is a placement that never
+   * happens, and the node parses clean with the misspelling kept and handed to whatever draws it.
+   *
+   * Over a stack rather than by recursion: the depth here is the document's own, and a document is
+   * untrusted input. The traversal is bounded by the same depth the validator enforces, so a layout
+   * deeper than the contract allows is refused there rather than walked here.
+   */
+  const reportLayoutMembers = (root: unknown, rootPath: string): void => {
+    const pending: Array<{ node: unknown; at: string; depth: number }> = [{ node: root, at: rootPath, depth: 1 }];
+    while (pending.length > 0) {
+      const { node, at, depth } = pending.pop()!;
+      if (!isRecordValue(node) || depth > MDY_LAYOUT_MAX_DEPTH) continue;
+      reportUnknownMembers(node, at, "kind" in node ? "a layout node" : "a layout slot");
+      // Read structurally: the two node kinds have incompatible `kind` literals, so the intersection
+      // of their declared types is uninhabited, and what this walk needs is only where children sit.
+      const shape = node as { children?: unknown; columns?: unknown };
+      if (Array.isArray(shape.children)) {
+        shape.children.forEach((child: unknown, index: number) => {
+          pending.push({ node: child, at: `${at}/children/${index}`, depth: depth + 1 });
+        });
+        continue;
+      }
+      if (!Array.isArray(shape.columns)) continue;
+      shape.columns.forEach((column: unknown, track: number) => {
+        if (!Array.isArray(column)) return;
+        column.forEach((child: unknown, index: number) => {
+          pending.push({ node: child, at: `${at}/columns/${track}/${index}`, depth: depth + 1 });
+        });
+      });
+    }
   };
   // A mode nobody declared is not lenient. `strict` is what a publishing gate asks for, and the
   // answer to a typo in it — or to the options object being a bare string, or `null` — was a lenient
@@ -1644,7 +1685,7 @@ export function parseDynamicForm(
         diagnostics.push({ code: "MDY_DYNAMIC_INVALID_LAYOUT", severity: "error", path: `/layout/${index}`, message: "a section at the top of the layout occupies no column and cannot be placed." });
         continue;
       }
-      reportUnknownMembers(raw, `/layout/${index}`, "a layout node");
+      reportLayoutMembers(raw, `/layout/${index}`);
       layoutRefusal = "reference";
       if (!validLayoutNode(raw, names, placed, 1, version === 3 || version === 4)) {
         diagnostics.push(layoutRefusalDiagnostic(layoutRefusal, `/layout/${index}`, version));
