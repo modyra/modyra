@@ -16695,6 +16695,50 @@ Held by `battle-tests/adversarial/lifecycle/a-panel-that-raises-on-what-it-descr
 with the descriptions that already work asserted first, so a repair that stopped describing anything
 fails there rather than emptying the assertions it has to satisfy.
 
+## 282 — A draft write that takes the page down (S1, PER-003)
+
+The draft manager's rule is that a draft is an optional convenience and its failure never becomes the
+form's. Reads are wrapped — *"a storage that refuses to be read is a draft that is not there"* — and a
+failed flush is documented as never thrown into the form.
+
+One step on the write path is outside that. `containsFile` walks the value to decide whether it can be
+persisted, and it walks with `Object.values`, which **invokes getters**:
+
+```
+setValue({ v: { get boom() { throw … } } })   returns normally
+the debounce fires                            Error: getter exploded
+  at containsFile → _serialize → _write → Timeout._onTimeout
+```
+
+On a timer the library owns, so no `try` a consumer writes can catch it. In a browser that is an
+uncaught error at the window; in node it ends the process. Confirmed with a process-level handler:
+`setValue` returns, three hundred milliseconds later the exception arrives from nowhere a caller can
+reach.
+
+**The same function already survived this once, from the other direction**, and its own comment
+records it: a recursive walk *"ran one frame per level until the stack ended — the guard failing on
+exactly the input it exists to check. The throw escaped `createForm`, so an application got no form at
+all, on every load, until someone cleared the key."* The depth was fixed by making the walk iterative.
+The reading of each property was not.
+
+A throwing getter is not exotic: a proxied model, a lazily computed property whose source is gone, an
+ORM entity that validates on read. A form holds whatever an application puts in it.
+
+The narrow repair is the one the read side already has: the walk in a `try`, the draft skipped, the
+form untouched.
+
+Held by `battle-tests/adversarial/persistence/a-draft-write-that-takes-the-page-down.battle.test.mjs`,
+which asserts an ordinary value writes a draft first — so a run where nothing was ever written fails
+there rather than passing for the wrong reason — and then asserts both halves: nothing uncaught, and
+the form still answering.
+
+**Measured beside it, and not findings.** `submitValue`, `getChanges` and `submit` were swept with the
+same shapes and are sound: a BigInt, a cycle and a value eight thousand deep are all *returned* — the
+payload is the real value, and whether it can be JSON-encoded is the caller's business at the moment
+they send it. My first reading of this said all three threw; that was `JSON.stringify` in my own probe,
+called in the same expression as the call it was describing. **Call, then describe — never both in one
+expression, or the describing is what throws.**
+
 ## The register's own shape, measured
 
 ```
