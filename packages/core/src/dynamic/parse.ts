@@ -953,25 +953,25 @@ export function parseDynamicFields(input: unknown): MdyDynamicField[] {
 export const MDY_DYNAMIC_DIAGNOSTICS: ReadonlyArray<{
   readonly code: string;
   readonly phrase: string;
-}> = [
-  { code: "MDY_DYNAMIC_UNSUPPORTED_VERSION", phrase: "Unsupported dynamic form config version" },
-  { code: "MDY_DYNAMIC_DUPLICATE_NAME", phrase: "duplicate dynamic field" },
-  { code: "MDY_DYNAMIC_UNSAFE_NAME", phrase: "reserved or contains forbidden" },
-  { code: "MDY_DYNAMIC_UNKNOWN_KIND", phrase: "unknown kind" },
-  { code: "MDY_DYNAMIC_OPTIONS_REQUIRED", phrase: "requires a valid options" },
-  { code: "MDY_DYNAMIC_DUPLICATE_OPTION", phrase: "duplicate option value" },
-  { code: "MDY_DYNAMIC_MISPLACED_VALIDATOR", phrase: "belongs in \"validators\"" },
-  { code: "MDY_DYNAMIC_CONSTRAINT_CANNOT_FAIL", phrase: "can never refuse anything" },
-  { code: "MDY_DYNAMIC_UNKNOWN_PARSE_MODE", phrase: "is not one this reader knows" },
-  { code: "MDY_DYNAMIC_INVALID_CONDITION", phrase: "expected an expression object" },
-  { code: "MDY_DYNAMIC_UNDECLARED_CONTEXT", phrase: "does not declare in" },
-  { code: "MDY_DYNAMIC_PATH_TOO_LONG", phrase: "a path may be" },
-  { code: "MDY_DYNAMIC_PATTERN_TOO_LONG", phrase: "pattern length" },
-  { code: "MDY_DYNAMIC_PATTERN_TOO_COSTLY", phrase: "backtracks exponentially" },
-  { code: "MDY_DYNAMIC_COUNT_INCOMPLETE", phrase: "a floor and not a total" },
-  { code: "MDY_DYNAMIC_UNKNOWN_MEMBER", phrase: "which this contract does not declare" },
-  { code: "MDY_DYNAMIC_DEPRECATED_VERSION", phrase: "Version 1 is deprecated" },
-];
+}> = Object.freeze([
+  Object.freeze({ code: "MDY_DYNAMIC_UNSUPPORTED_VERSION", phrase: "Unsupported dynamic form config version" }),
+  Object.freeze({ code: "MDY_DYNAMIC_DUPLICATE_NAME", phrase: "duplicate dynamic field" }),
+  Object.freeze({ code: "MDY_DYNAMIC_UNSAFE_NAME", phrase: "reserved or contains forbidden" }),
+  Object.freeze({ code: "MDY_DYNAMIC_UNKNOWN_KIND", phrase: "unknown kind" }),
+  Object.freeze({ code: "MDY_DYNAMIC_OPTIONS_REQUIRED", phrase: "requires a valid options" }),
+  Object.freeze({ code: "MDY_DYNAMIC_DUPLICATE_OPTION", phrase: "duplicate option value" }),
+  Object.freeze({ code: "MDY_DYNAMIC_MISPLACED_VALIDATOR", phrase: "belongs in \"validators\"" }),
+  Object.freeze({ code: "MDY_DYNAMIC_CONSTRAINT_CANNOT_FAIL", phrase: "can never refuse anything" }),
+  Object.freeze({ code: "MDY_DYNAMIC_UNKNOWN_PARSE_MODE", phrase: "is not one this reader knows" }),
+  Object.freeze({ code: "MDY_DYNAMIC_INVALID_CONDITION", phrase: "expected an expression object" }),
+  Object.freeze({ code: "MDY_DYNAMIC_UNDECLARED_CONTEXT", phrase: "does not declare in" }),
+  Object.freeze({ code: "MDY_DYNAMIC_PATH_TOO_LONG", phrase: "a path may be" }),
+  Object.freeze({ code: "MDY_DYNAMIC_PATTERN_TOO_LONG", phrase: "pattern length" }),
+  Object.freeze({ code: "MDY_DYNAMIC_PATTERN_TOO_COSTLY", phrase: "backtracks exponentially" }),
+  Object.freeze({ code: "MDY_DYNAMIC_COUNT_INCOMPLETE", phrase: "a floor and not a total" }),
+  Object.freeze({ code: "MDY_DYNAMIC_UNKNOWN_MEMBER", phrase: "which this contract does not declare" }),
+  Object.freeze({ code: "MDY_DYNAMIC_DEPRECATED_VERSION", phrase: "Version 1 is deprecated" }),
+]);
 
 /** What a refusal is called when none of the named ones fits. */
 export const MDY_DYNAMIC_INVALID_FIELD = "MDY_DYNAMIC_INVALID_FIELD";

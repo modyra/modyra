@@ -85,7 +85,7 @@ function namesInMessage(names: readonly string[] | string): string {
   return Array.isArray(names) ? names.join(", ") : String(names);
 }
 
-export const MDY_I18N_MESSAGES_DEFAULT: MdyI18nMessages = {
+export const MDY_I18N_MESSAGES_DEFAULT: MdyI18nMessages = Object.freeze({
   searchPlaceholder: "Search\u2026",
   entryUnreadable: "That could not be read. Leave it and correct it, or clear the field.",
   noResults: "No results",
@@ -131,7 +131,7 @@ export const MDY_I18N_MESSAGES_DEFAULT: MdyI18nMessages = {
   wizardFinish: "Finish",
   wizardStepStatus: (current: number, total: number): string =>
     `Step ${current} of ${total}`,
-} as const;
+} as const);
 
 /**
  * DI token for UI string overrides.
@@ -140,7 +140,7 @@ export const MDY_I18N_MESSAGES_DEFAULT: MdyI18nMessages = {
 
 export type MdyBuiltInLocale = "en" | "it" | "de" | "fr" | "es";
 
-export const MDY_I18N_MESSAGES_IT: MdyI18nMessages = {
+export const MDY_I18N_MESSAGES_IT: MdyI18nMessages = Object.freeze({
   searchPlaceholder: "Cerca…",
   entryUnreadable: "Non è stato possibile leggerlo. Correggilo, oppure svuota il campo.",
   noResults: "Nessun risultato",
@@ -186,9 +186,9 @@ export const MDY_I18N_MESSAGES_IT: MdyI18nMessages = {
   wizardFinish: "Fine",
   wizardStepStatus: (current: number, total: number): string =>
     `Passo ${current} di ${total}`,
-};
+});
 
-export const MDY_I18N_MESSAGES_DE: MdyI18nMessages = {
+export const MDY_I18N_MESSAGES_DE: MdyI18nMessages = Object.freeze({
   searchPlaceholder: "Suchen…",
   entryUnreadable: "Das konnte nicht gelesen werden. Korrigieren Sie es, oder leeren Sie das Feld.",
   noResults: "Keine Ergebnisse",
@@ -234,9 +234,9 @@ export const MDY_I18N_MESSAGES_DE: MdyI18nMessages = {
   wizardFinish: "Fertig",
   wizardStepStatus: (current: number, total: number): string =>
     `Schritt ${current} von ${total}`,
-};
+});
 
-export const MDY_I18N_MESSAGES_FR: MdyI18nMessages = {
+export const MDY_I18N_MESSAGES_FR: MdyI18nMessages = Object.freeze({
   searchPlaceholder: "Rechercher…",
   entryUnreadable: "Cette saisie n’a pas pu être lue. Corrigez-la, ou videz le champ.",
   noResults: "Aucun résultat",
@@ -282,9 +282,9 @@ export const MDY_I18N_MESSAGES_FR: MdyI18nMessages = {
   wizardFinish: "Terminer",
   wizardStepStatus: (current: number, total: number): string =>
     `Étape ${current} sur ${total}`,
-};
+});
 
-export const MDY_I18N_MESSAGES_ES: MdyI18nMessages = {
+export const MDY_I18N_MESSAGES_ES: MdyI18nMessages = Object.freeze({
   searchPlaceholder: "Buscar…",
   entryUnreadable: "No se ha podido leer. Corríjalo, o vacíe el campo.",
   noResults: "Sin resultados",
@@ -330,24 +330,24 @@ export const MDY_I18N_MESSAGES_ES: MdyI18nMessages = {
   wizardFinish: "Finalizar",
   wizardStepStatus: (current: number, total: number): string =>
     `Paso ${current} de ${total}`,
-};
+});
 
-export const MDY_I18N_PRESETS: Readonly<Record<MdyBuiltInLocale, MdyI18nMessages>> = {
+export const MDY_I18N_PRESETS: Readonly<Record<MdyBuiltInLocale, MdyI18nMessages>> = Object.freeze({
   en: MDY_I18N_MESSAGES_DEFAULT,
   it: MDY_I18N_MESSAGES_IT,
   de: MDY_I18N_MESSAGES_DE,
   fr: MDY_I18N_MESSAGES_FR,
   es: MDY_I18N_MESSAGES_ES,
-};
+});
 
 /** Default BCP 47 tag per built-in language preset. */
-export const MDY_I18N_DEFAULT_TAGS: Readonly<Record<MdyBuiltInLocale, string>> = {
+export const MDY_I18N_DEFAULT_TAGS: Readonly<Record<MdyBuiltInLocale, string>> = Object.freeze({
   en: "en-US",
   it: "it-IT",
   de: "de-DE",
   fr: "fr-FR",
   es: "es-ES",
-};
+});
 
 /**
  * The messages a locale tag asks for.

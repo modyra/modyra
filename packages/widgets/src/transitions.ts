@@ -78,7 +78,16 @@ function transitionsFor(kind: MdyWidgetKind): readonly MdyWidgetTransition[] {
 export const MDY_WIDGET_TRANSITIONS: Readonly<Record<MdyWidgetKind, readonly MdyWidgetTransition[]>> =
   Object.freeze(
     Object.fromEntries(
-      (Object.keys(MDY_WIDGET_CONTRACTS) as MdyWidgetKind[]).map((kind) => [kind, transitionsFor(kind)]),
+      (Object.keys(MDY_WIDGET_CONTRACTS) as MdyWidgetKind[]).map((kind) => [kind, Object.freeze(transitionsFor(kind).map((entry) => Object.freeze({
+        ...entry,
+        // One level deeper than the entry itself: a trigger and a list of parts are objects the
+        // caller holds a reference to, and an entry frozen around live members is not frozen.
+        ...Object.fromEntries(
+          Object.entries(entry)
+            .filter(([, member]) => member !== null && typeof member === "object")
+            .map(([key, member]) => [key, Object.freeze(member)]),
+        ),
+      })))]),
     ) as Record<MdyWidgetKind, readonly MdyWidgetTransition[]>,
   );
 
@@ -194,7 +203,16 @@ function keyboardFor(kind: MdyWidgetKind): readonly MdyKeyBinding[] {
 export const MDY_WIDGET_KEYBOARD: Readonly<Record<MdyWidgetKind, readonly MdyKeyBinding[]>> =
   Object.freeze(
     Object.fromEntries(
-      (Object.keys(MDY_WIDGET_CONTRACTS) as MdyWidgetKind[]).map((kind) => [kind, keyboardFor(kind)]),
+      (Object.keys(MDY_WIDGET_CONTRACTS) as MdyWidgetKind[]).map((kind) => [kind, Object.freeze(keyboardFor(kind).map((entry) => Object.freeze({
+        ...entry,
+        // One level deeper than the entry itself: a trigger and a list of parts are objects the
+        // caller holds a reference to, and an entry frozen around live members is not frozen.
+        ...Object.fromEntries(
+          Object.entries(entry)
+            .filter(([, member]) => member !== null && typeof member === "object")
+            .map(([key, member]) => [key, Object.freeze(member)]),
+        ),
+      })))]),
     ) as Record<MdyWidgetKind, readonly MdyKeyBinding[]>,
   );
 

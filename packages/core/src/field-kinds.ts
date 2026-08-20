@@ -9,14 +9,14 @@
  * A kind is what a field *is*. Where it came from — a typed schema, a document over a network — is
  * somebody else's question.
  */
-export const MDY_FIELD_KINDS = [
+export const MDY_FIELD_KINDS = Object.freeze([
   "text", "textarea", "email", "password",
   "number", "slider",
   "checkbox", "toggle",
   "select", "radio", "multiselect", "segmented",
   "datepicker", "daterange", "timepicker",
   "file", "colors",
-] as const;
+] as const);
 
 /** Every kind the library describes a value, a contract and a widget for. */
 export type MdyFieldKind = (typeof MDY_FIELD_KINDS)[number];

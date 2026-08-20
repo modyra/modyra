@@ -341,22 +341,22 @@ export const MDY_POPUP_OPENERS: Readonly<Partial<Record<MdyWidgetKind, MdyPopupO
   // `controls` is the part the relation names, and it is not always the popup: ARIA points at the
   // element carrying the role — a listbox, a grid, a dialog — which for some kinds sits inside the
   // popup rather than being it.
-  select: { opener: "trigger", controls: "listbox", role: "combobox" },
+  select: Object.freeze({ opener: "trigger", controls: "listbox", role: "combobox" }),
   // A combobox like its single-choice sibling: the opener holds the field's value, so it is what
   // carries `aria-invalid` and `aria-required`, and neither belongs on a role that has no value to
   // be wrong about. Declared nowhere, the states were being written onto a bare `<button>`, where
   // they say nothing an assistive technology may read.
-  multiselect: { opener: "searchButton", controls: "popup", role: "combobox" },
+  multiselect: Object.freeze({ opener: "searchButton", controls: "popup", role: "combobox" }),
   // The pickers follow the combobox pattern: the typeable control is what carries `role=combobox`,
   // `aria-expanded` and `aria-controls`, and the calendar/clock button beside it is a second
   // affordance for the same popup. The opener is therefore the control, not the button — naming the
   // button here would ask for the relation in a place the pattern does not put it.
-  datepicker: { opener: "control", controls: "grid", role: "combobox", typeable: true },
+  datepicker: Object.freeze({ opener: "control", controls: "grid", role: "combobox", typeable: true }),
   // Daterange wires its own toggle rather than following the combobox pattern its sibling does.
-  daterange: { opener: "toggle", controls: "popup" },
-  timepicker: { opener: "control", controls: "popup", role: "combobox", typeable: true },
+  daterange: Object.freeze({ opener: "toggle", controls: "popup" }),
+  timepicker: Object.freeze({ opener: "control", controls: "popup", role: "combobox", typeable: true }),
   // Colours is the exception: it has no combobox control, so its toggle really is the opener.
-  colors: { opener: "toggle", controls: "popup" },
+  colors: Object.freeze({ opener: "toggle", controls: "popup" }),
 });
 
 /** Anchoring per kind; widgets with no overlay have none. */
