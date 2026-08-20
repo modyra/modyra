@@ -18044,6 +18044,82 @@ public call discarding data it was not asked to touch. It does **not** block the
 `openReds == 0`, and the user should decide that with the finding in front of them rather than
 discover it after.
 
+## 313 — A 24-hour picker cannot be set to half the day (S1, UI-011 UI-009)
+
+Reported by the user against Angular: *no way to set a time before 13:00, as if pinned to PM.* It is
+not an Angular defect. It is a seam in `@modyra/widgets` and every renderer inherits it.
+
+**It is not "stuck on PM" — it is stuck wherever the draft started**, and the draft is seeded from the
+field, or from the system clock when the field is empty:
+
+```
+24h seeded "21:00"   ask 9,  want 09:00   ->   21:00        ← the user's report
+24h seeded "09:00"   ask 15, want 15:00   ->   03:00        ← the same defect, mirrored
+12h control          ask 9 + set-period AM ->  09:35        ← works: the period is reachable
+```
+
+So which half of the day a person can enter is decided by something they cannot see.
+
+**Three surfaces of the package speak 0–23. The one that writes speaks 1–12.**
+
+```
+timepickerDialNumbers("hour","24h")        draws 12 1..11 00 13..23      0–23
+timeFieldBounds("hour","24h")              {"min":0,"max":23}            0–23
+acceptTimeField("hour","24h","13")         accepted, value 13            0–23
+stepTimeField("hour","24h",23,+1)          0                             0–23
+timepickerDialKeyIntent(End,"hour","24h")  23   ·  Home -> 0             0–23
+
+set-hour                                   refuses outside 1–12, silently
+```
+
+End to end, 24-hour picker seeded at `09:00`, through the **typed segment** rather than the dial:
+
+```
+typed "13"  ->  acceptTimeField accepts 13  ->  set-hour 13  ->  draft unchanged
+typed "23"  ->  accepted as 23              ->  set-hour 23  ->  draft unchanged
+typed "0"   ->  accepted as 0               ->  set-hour 0   ->  draft unchanged
+typed "7"   ->  accepted as 7               ->  set-hour 7   ->  draft moves
+committed: "07:00"
+```
+
+**The design is written down, and it is a delegation nobody performs.**
+`packages/widgets/src/field/timepicker-dial.ts:130`: *"Hours are held 1–12 in the draft whatever the
+format; a 24-hour face names 0–23, and **the host converts at the boundary** exactly as it does for the
+typed input."*
+
+So `set-hour` taking 1–12 is not an oversight — the contract asks every renderer to convert, **and
+publishes no function to convert with, and no intent carrying the hour and the period together.**
+Three hosts were each asked to reinvent the same step. None did. A contract that can only be
+implemented correctly by remembering an undocumented step is not a design; it is a defect generator.
+
+**The silence is what let it live.** `set-hour` refuses out of range with `return []` — no diagnostic,
+no violation, nothing. Every layer above it believes the write happened.
+
+Two distinct failures, both in the battle's map:
+
+- **inner ring, 13–23 and 00** — refused outright; the seed survives untouched;
+- **outer ring, 1–12** — accepted and *meaning something else*: outer `12` is noon on a 24-hour face
+  and commits `00:00`, because the draft was in AM. Nothing was refused there. That one is invisible
+  to a reader and only a sweep finds it.
+
+Battle: `a-face-with-hours-nothing-can-choose.battle.test.mjs`, claim **UI-011** (new, *a control can
+be set to every value it offers*). **24 of 24 red.** Each hour is asked for from a picker seeded on the
+other side of noon, so an hour that appears to work by inheriting the draft's half is caught. Two
+controls: the face really is the two-ring one, and the 12-hour picker commits `09:00` correctly — so
+the defect is the vocabulary, not the format handling.
+
+**No existing test pins the defect**, checked before saying so: the one that looks like it
+(`timepicker-field-controller.spec.mjs:132`, *"set-hour/set-minute reject out-of-range values"*) uses a
+**12-hour** picker, where refusing `set-hour 13` is right. It needs a 24-hour sibling, not a change.
+
+The arithmetic layer is sound — `to24Hour`, `parse24Time`, `parseAnyTime` and the four segment helpers
+all behave in both formats. **Only the writing seam is broken**, which is why the repair is narrow.
+
+Second half, from the same report: `viewMode` initialises to `"dial"` and every `open()` forces it
+back (`timepicker-field-controller.ts:102` and `:157`), so a renderer cannot open on the number fields
+without fighting the controller. The user wants `"input"` to be the default. **Shipping that without
+the repair above opens the picker directly onto the broken path.**
+
 ## The register's own shape, measured
 
 ```
