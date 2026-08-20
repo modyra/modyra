@@ -3,7 +3,8 @@
 ## Open now, and in the order they are repaired
 
 ```
-S0     1      the whole of it before any S1
+S0     0      the whole of it before any S1
+S1     1
 S2     1
       --
        2      open reds, 2026-08-20
@@ -16577,6 +16578,42 @@ Distinct cause, one repair.
 So: seven of the fifty-nine are these two. The remaining fifty-two are still to be grouped, and this
 entry exists because "fifty-nine reds" is a number nobody can act on and "two causes behind seven of
 them" is.
+
+## 279 — A draft lost to a storage still waking up (S1, PER-004 PER-003)
+
+`createHydratedDraftStorage` caches a Promise-based store behind the synchronous `MdyDraftStorage` a
+form needs. Its documented rule is that a read before hydration finishes returns `null` — *"no draft",
+never a stale one* — and the React Native guide's example awaits `storage.ready` before building the
+form.
+
+A caller who does not await it loses more than the restore. Measured against a backend whose read
+takes 120 ms:
+
+```
+await storage.ready   restored "WORK THE PERSON DID"   storage holds { note: "a new thought" }
+no await              restored ""                      storage holds { note: "a new thought" }
+```
+
+The second row is the finding. The form restored nothing, the person typed, the debounce fired, and
+the write went through the cache to the backend **over the draft that was still in flight**. The
+saved work is gone from storage and was never shown.
+
+The guide names the read behaviour and stops: *"A read before `ready` resolves returns `null` — 'no
+draft', never a stale one."* Losing the restore is what that prepares a reader for. Losing the stored
+draft is not, and it is the half that cannot be undone.
+
+**The library has the signal and does not consult it.** `MdyAsyncDraftStorage` publishes `ready`, and
+the draft manager already feature-detects a storage's shape — it takes `{read, write, remove}` or the
+platform's `{getItem, setItem, removeItem}` and adapts. Asking the same object whether it is hydrated
+is the same kind of question.
+
+Two answers: the draft manager holding its first write until a storage that publishes `ready` has
+settled, or the cache refusing to flush a write for a key whose hydration has not landed. The second
+is narrower and lives entirely in the file that already knows.
+
+Held by `battle-tests/adversarial/persistence/a-draft-lost-to-a-storage-still-waking-up.battle.test.mjs`,
+with the guide's ordering asserted first as the control — so a run where the draft was never saved at
+all fails there rather than passing quietly.
 
 ## The register's own shape, measured
 
