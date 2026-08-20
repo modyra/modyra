@@ -17247,9 +17247,26 @@ geometry; `devtools` escapes through `escapeHtml`; Angular's two sites interpola
 and one binds through Angular's own sanitizer; `studio-ui` has an `escapeHtml` used 55 times, and the
 tree-node path — the one that carries an author's label — reads `escapeHtml(n.label || n.name)`. Every
 project-derived interpolation found outside it goes through `setAttribute` or `textContent`, which
-escape by construction. **What remains unproven is the absence of a single unescaped site in 4022
-lines**, and grep cannot settle that; an end-to-end probe that mounts Studio with a hostile label
-would, and this suite has no Studio host.
+escape by construction. **Settled since, end to end.** Studio has an e2e suite of its own, so the probe was possible after
+all: an author types a label into the inspector and the outline prints it through `innerHTML`. Four
+payloads, each closing a different construct the surrounding markup opens — an attribute, a
+`<summary>`, nothing at all, and an attribute that needs no closing tag:
+
+```
+"><img src=x onerror="window.__pwned=1">          executed: null  injected: 0  read back exactly
+</summary><img src=y onerror='window.__pwned=2'>  executed: null  injected: 0  read back exactly
+<script>window.__pwned=3</script>                 executed: null  injected: 0  read back exactly
+" autofocus onfocus="window.__pwned=4"            executed: null  injected: 0  read back exactly
+```
+
+Nothing ran, nothing became an element or an attribute, no page error, and the label **reads back
+character for character** — which is the half that says the escaping did not quietly mangle it
+either. A label arriving as `&lt;script&gt;` would be safe and wrong, and a person renaming a field
+would be looking at something they never typed.
+
+Held permanently by `apps/studio/e2e/a-label-that-tries-to-be-markup.spec.ts`, with an ordinary label
+asserted first so a payload that fails to appear reads as escaped rather than as an outline that never
+showed it.
 
 ## The register's own shape, measured
 
