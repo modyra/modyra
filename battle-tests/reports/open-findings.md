@@ -16386,7 +16386,14 @@ comment: refused, every combination, with a message naming the member.
 writes the package's own icon geometry — which is why finding 271 is about that constant being
 writable rather than about the assignment.
 
-## 274 — The repair for 272 deletes ten ordinary patterns (S0, SEC-004)
+## 274 — The repair for 272 deletes ten ordinary patterns (S0, SEC-004) — CLOSED
+
+**Closed, `f297a3c0`**, by implementing the distinction rather than declaring it as a price. The rule
+now reads the **seam**: whether anything fixes where the division between one repetition and the next
+falls. Thirty-four patterns correct out of thirty-four, and the corpus found a defect that was not the
+rule at all — `escapeLiteral` escaped `-`, which is an invalid escape under the `u` flag, so a hyphen
+became a character no comparison could read.
+
 
 `29044417` closed the ReDoS by reading two axes: a body is **variable** when it holds a quantifier
 whose minimum differs from its maximum, a group is **repeated** when what follows it can apply twice
@@ -16486,6 +16493,42 @@ The remediation is a `pnpm.overrides` block in the root `package.json` pinning t
 lockfile update. That is shared repository configuration and a lockfile CI validates with
 `--frozen-lockfile`, so it is a decision rather than a repair to take unasked — it is put to the user
 with the table above.
+
+## 277 — The seam rule, against thirty patterns it has never seen (S0, SEC-004)
+
+`f297a3c0` reports thirty-four of thirty-four correct. That set is the one the rule was written
+against, so it measures the rule's fit rather than its reach. A **hold-out** of thirty patterns —
+twenty ordinary, ten exponential, none shown to the rule while it was being written — reads
+**twenty-eight of thirty**, with one miss in each direction.
+
+**A pattern that hangs and is accepted.**
+
+```
+^([^x]+[^y]+)+z$    accepted    11:0.08  16:0.37  21:11  26:338 ms
+^(a+){15}b$         refused     11:0.05  16:0.20  21:5   26:150  31:3103 ms   ← the control
+```
+
+Two greedy negated classes side by side. Each accepts what the other accepts, so there is no seam
+between them to fix — the ambiguity is *inside* the body rather than at its edge, and a rule that asks
+only what pins the end of the body cannot see it.
+
+**A pattern that is refused and flat.**
+
+```
+^("[^"]*",)*"[^"]*"$    refused    41:0.02  61:0.03  81:0.00  101:0.00  121:0.00  161:0.00 ms
+```
+
+A quoted comma-separated list. The body ends `",` and the elastic `[^"]*` **can** eat a comma, so by
+the seam rule the end is not fixed. But the `"` between them cannot be eaten by `[^"]*`, and that is
+what pins the division. The rule looks at the elastic part immediately before the end and stops there;
+a fixed element further back can pin the seam just as well.
+
+Both are now in the battle for 272 — the accepted one in `COUNTED`, the refused one in
+`MUST_STAY_ALLOWED` — so the two directions keep failing against each other.
+
+**The method is the finding as much as the two patterns.** A repair verified against the corpus that
+produced it reports its own fit. Thirty patterns it had never seen cost one probe and found a hole in
+each direction, one of which is an `S0` that hangs a page.
 
 ## The register's own shape, measured
 

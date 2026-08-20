@@ -106,6 +106,9 @@ const MUST_STAY_ALLOWED = Object.freeze([
   ["^(ab?){3}$", "a variable body whose split points are forced"],
   ["^(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\\.)+[a-z]{2,}$", "a hostname"],
   ["^([A-Za-z0-9]+[.-_])*[A-Za-z0-9]+@[A-Za-z0-9-]+(\\.[A-Za-z]{2,})+$", "a hand-written email"],
+  // A hold-out: never shown to the rule while it was being written. The quote pins the boundary even
+  // though the elastic `[^"]*` can eat the comma after it, because it cannot eat a quote.
+  ["^(\"[^\"]*\",)*\"[^\"]*\"$", "a quoted comma-separated list"],
   ["(\\d{2}){3}", "a fixed-length body repeated"],
   ["^\\d{3}-\\d{4}$", "a phone number"],
   ["^[A-Z]{2}\\d{6}$", "a passport"],
@@ -131,6 +134,9 @@ function refusedForCost(pattern) {
 /** Each one a counted repetition of a group whose body matches a span of any length. */
 const COUNTED = Object.freeze([
   ["^(a+){15}b$", "a".repeat(32)],
+  // Also a hold-out. Two greedy negated classes side by side: each can take what the other can, so
+  // there is no boundary between them at all. 0.08 ms at 11 characters, 338 ms at 26.
+  ["^([^x]+[^y]+)+z$", "a".repeat(30)],
   ["^(a{1,10})+b$", "a".repeat(32)],
   ["^([a-z]+){12}!$", "a".repeat(32)],
   ["(.*a){20}$", `${"a".repeat(30)}b`],
