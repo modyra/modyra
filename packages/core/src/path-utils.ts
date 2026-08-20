@@ -20,7 +20,24 @@ const MDY_FORBIDDEN_PATH_SEGMENTS = new Set([
  */
 export function isSafeFieldPath(name: string): boolean {
   if (name.length === 0) return false;
-  return name.split(".").every((part) => !MDY_FORBIDDEN_PATH_SEGMENTS.has(part) && isIdSegment(part));
+  return !namesAPrototypeKey(name) && name.split(".").every(isIdSegment);
+}
+
+/**
+ * True when a segment of the path is empty or a key that would reach the prototype chain.
+ *
+ * The half of {@link isSafeFieldPath} that is about *pollution* rather than about what an id can be
+ * built from. Held apart so a caller with a more specific message for the other half can ask for
+ * this reason by name, instead of answering "must not be a prototype key" to a name whose defect is
+ * a space.
+ *
+ * Not exported from the package: it is one reading of a check whose public answer is
+ * {@link isSafeFieldPath}, and a second published predicate over the same rule is a second thing to
+ * keep in agreement.
+ */
+export function namesAPrototypeKey(name: string): boolean {
+  if (name.length === 0) return true;
+  return name.split(".").some((part) => MDY_FORBIDDEN_PATH_SEGMENTS.has(part));
 }
 
 /**

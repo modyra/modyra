@@ -5,7 +5,7 @@
  * predicate owned by either would make the other import it back.
  */
 
-import { isSafeFieldPath } from "../path-utils.js";
+import { isSafeFieldPath, namesAPrototypeKey } from "../path-utils.js";
 
 /**
  * What separates the segments of a generated DOM id (`@modyra/widgets`' id factory builds
@@ -162,13 +162,27 @@ export function assertSafeDynamicFieldNames(
         }.`,
       );
     }
-    if (!isSafeFieldPath(name)) {
+    // Each reason asked for by name, most specific first.
+    //
+    // `isSafeFieldPath` refuses everything below and more, so asking it first answered "must not be
+    // a prototype key" for a name whose defect is a space or the id delimiter — the right verdict
+    // with the wrong reason, sending the reader to look for a prototype key inside `"a b"`, and
+    // disagreeing with what the parser says about the same name. Pollution stays ahead of the rest,
+    // because `__proto__` also carries the id delimiter and the prototype chain is what matters
+    // about it.
+    if (namesAPrototypeKey(name)) {
       throw new Error(
         `[modyra] Invalid field name "${name}": every segment of a path must be present and must ` +
           `not be a prototype key, or the form would be keyed onto the prototype chain.`,
       );
     }
     assertSafeDynamicName(name);
+    if (!isSafeFieldPath(name)) {
+      throw new Error(
+        `[modyra] Invalid field name "${name}": every segment of a path must be present and must ` +
+          `not be a prototype key, or the form would be keyed onto the prototype chain.`,
+      );
+    }
     if (seen.has(name)) {
       throw new Error(`[modyra] Duplicate field name "${name}": every field needs its own identity.`);
     }
