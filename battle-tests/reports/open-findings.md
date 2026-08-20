@@ -4,8 +4,7 @@
 
 ```
 S0     0      the whole of it before any S1
-S1     1
-S2     1
+S2     2
       --
        2      open reds, 2026-08-20
 ```
@@ -16614,6 +16613,36 @@ is narrower and lives entirely in the file that already knows.
 Held by `battle-tests/adversarial/persistence/a-draft-lost-to-a-storage-still-waking-up.battle.test.mjs`,
 with the guide's ordering asserted first as the control — so a run where the draft was never saved at
 all fails there rather than passing quietly.
+
+## 280 — One rule, attached by both of the calls a consumer must make (S2, API-001)
+
+A flat document is built in two steps and the split is the contract: `buildFlatFormSchema` declares
+**what the kind is**, `applyFlatValidators` applies **what the document says**. The second is
+documented on the first.
+
+The kind's shape guard is in both. `leafFor` attaches `valueShape(kind)`; `buildDynamicFieldValidators`
+produces it again from the same kind. So the documented pairing reports the same message twice:
+
+```
+buildFlatFormSchema only                     1  ["This field holds number"]
+buildFlatFormSchema + applyFlatValidators    2  ["This field holds number", "This field holds number"]
+```
+
+**Found by a differential nobody had run**: the same field list driven through the Plain host and the
+Lit host, each asked what it holds, whether it can submit, and how many errors it carries. They
+disagree on **twelve kinds of twelve**, always by exactly this — two errors against one — because
+Lit's host builds its schema by hand and attaches the guard once.
+
+A duplicate is not a wrong verdict: the field is invalid either way and the submit is refused either
+way. What it costs is what a person reads — the same sentence printed under the field twice — and what
+a consumer counts when deciding how much of an error list to show.
+
+This is the seam 267's repair opened. `leafFor` gained `valueShape` because the flat route was taking
+values its kinds could not hold; the rule builder already had it, and nothing looked at the pair.
+
+Held twice: `battle-tests/adversarial/validation/one-rule-attached-twice.battle.test.mjs` over eight
+kinds in node, and `battle-tests/browser/two-renderers-one-document.spec.ts`, which compares the two
+renderers' answers for every kind and is the instrument that found it.
 
 ## The register's own shape, measured
 
