@@ -1,8 +1,14 @@
 import { mdyPart } from "../mdy-part.js";
-import { keyBindingFor, overlayControlledId, createPointerDrag, dragPointOf } from "@modyra/widgets";
+import {
+  createPointerDrag,
+  dragPointOf,
+  keyBindingFor,
+  overlayControlledId,
+  timepickerDialRing,
+} from "@modyra/widgets";
 import { html, nothing, type PropertyDeclarations } from "lit";
 import { observerFor, type MdyFieldHandle } from "@modyra/core";
-import { angleToHour, angleToMinute, buildTimeString, formatTimeAs, hourToAngle, minuteToAngle, parseAnyTime, parseTime, pointerAngle, to24Hour, type MdyTimeFormat } from "@modyra/core/datetime";
+import { buildTimeString, formatTimeAs, hourToAngle, minuteToAngle, parseAnyTime, parseTime, pointerAngle, to24Hour, type MdyTimeFormat } from "@modyra/core/datetime";
 import {
   acceptTimeField,
   createTimepickerFieldController,
@@ -98,6 +104,7 @@ export class MdyTimepickerFieldElement extends MdyFieldElement<string | null> {
     handle.reportEntry(this.view.entryUnreadable ? this.messages.entryUnreadable : null);
   }
 
+  private _dragRing: "outer" | "inner" = "outer";
   private dragField: TimeField = "hour";
   private switchTimer: ReturnType<typeof setTimeout> | null = null;
 
@@ -363,14 +370,9 @@ export class MdyTimepickerFieldElement extends MdyFieldElement<string | null> {
     this.updateAngle(event);
     const angle = this._dragAngle;
     if (angle === null) return;
-    const p = this.parsed();
-    let newTime: string;
-    if (this.dragField === "minute") {
-      newTime = buildTimeString(p?.hour ?? 12, angleToMinute(angle), p?.period ?? "AM");
-    } else {
-      newTime = buildTimeString(angleToHour(angle), p?.minute ?? 0, p?.period ?? "AM");
-    }
-    this.onTimePicked(newTime);
+    // The position, not a time read off it: what this control knows is where the pointer is, and
+    // what that means — which of the two hours in this direction — is the controller's to say.
+    this.send({ type: "set-from-angle", field: this.dragField, angle, ring: this._dragRing });
   }
 
   private onDragEnd(): void {
@@ -378,15 +380,8 @@ export class MdyTimepickerFieldElement extends MdyFieldElement<string | null> {
     this.drag.stop();
     const angle = this._dragAngle;
     if (angle !== null) {
-      const p = this.parsed();
-      let finalTime: string;
-      if (this.dragField === "minute") {
-        finalTime = buildTimeString(p?.hour ?? 12, angleToMinute(angle), p?.period ?? "AM");
-      } else {
-        finalTime = buildTimeString(angleToHour(angle), p?.minute ?? 0, p?.period ?? "AM");
-        this.scheduleMinuteSwitch(300);
-      }
-      this.onTimePicked(finalTime);
+      if (this.dragField === "hour") this.scheduleMinuteSwitch(300);
+      this.send({ type: "set-from-angle", field: this.dragField, angle, ring: this._dragRing });
     }
     this._isDragging = false;
     this._dragAngle = null;
@@ -397,7 +392,15 @@ export class MdyTimepickerFieldElement extends MdyFieldElement<string | null> {
     if (!el) return;
     const coords = dragPointOf(event);
     if (!coords) return;
-    this._dragAngle = pointerAngle(el.getBoundingClientRect(), coords.clientX, coords.clientY);
+    const face = el.getBoundingClientRect();
+    this._dragAngle = pointerAngle(face, coords.clientX, coords.clientY);
+    // A 24-hour face draws `00` and 13–23 on an inner ring at the same twelve positions, so `3` and
+    // `15` lie in exactly the same direction and the angle alone cannot say which is under the
+    // pointer. The hand's length comes from the stylesheet that draws the rings, so the hit cannot
+    // drift from the paint.
+    const declared = Number.parseFloat(getComputedStyle(el).getPropertyValue("--tp-hand-length"));
+    const handLength = Number.isFinite(declared) && declared > 0 ? declared : face.width / 2;
+    this._dragRing = timepickerDialRing(face, coords.clientX, coords.clientY, this.format, handLength);
   }
 
   // ── Rendering ───────────────────────────────────────────────────────────────
