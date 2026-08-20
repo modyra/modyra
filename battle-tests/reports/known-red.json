@@ -6,11 +6,10 @@
   "runs": "(default)",
   "openReds": 2,
   "bySeverity": {
-    "S1": 1,
-    "S2": 1
+    "S2": 2
   },
   "knownRed": [
-    "[S1][PER-004,PER-003] a draft is not overwritten by a form that never saw it",
+    "[S2][API-001] a value a kind cannot hold is refused once, not once per call",
     "[S2][DYN-001,DYN-003] every version one runtime accepts is one the others have a position on"
   ]
 }
