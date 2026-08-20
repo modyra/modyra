@@ -26,6 +26,8 @@ import { battle } from "../../harness/battle.mjs";
 import { expectClaim, expectEqual } from "../../harness/assertions.mjs";
 
 const FIELD = { name: "f", kind: "text", label: "L" };
+const DOCUMENT = { version: 3, fields: [FIELD] };
+const CONDITION = { op: "equals", operands: [{ path: "f" }, "x"] };
 
 /** A columns row holding one slot, which is where a slot's `at` is legal. */
 const withSlot = (slot, over = {}) => ({
@@ -76,6 +78,34 @@ battle(
     ctx.log.note("a placement spelled wrongly", {
       ok: typo.ok,
       kept: JSON.stringify(typo.layout?.[0]?.columns?.[0]?.[0]),
+    });
+
+    // The other eight lists, because the property is "whichever list it is outside" and a slot is one
+    // of nine. A list held by nothing is a slot a document can carry anything in, and which one that
+    // is cannot be read off the one that was checked.
+    const strayIn = (document) => unknownMembers(document).length > 0;
+    const everyList = {
+      document: strayIn({ ...DOCUMENT, zzStray: 1 }),
+      field: strayIn({ ...DOCUMENT, fields: [{ ...FIELD, zzStray: 1 }] }),
+      validators: strayIn({ ...DOCUMENT, fields: [{ ...FIELD, validators: { required: true, zzStray: 1 } }] }),
+      option: strayIn({ ...DOCUMENT, fields: [{ name: "s", kind: "select", label: "S", options: [{ value: "a", label: "A", zzStray: 1 }] }] }),
+      rule: strayIn({ ...DOCUMENT, rules: [{ target: "f", effect: "show", when: CONDITION, zzStray: 1 }] }),
+      validation: strayIn({ ...DOCUMENT, validations: [{ target: "f", message: "m", when: CONDITION, zzStray: 1 }] }),
+      layoutSection: strayIn({ ...DOCUMENT, layout: [{ kind: "section", id: "s", children: [{ ref: "f" }], zzStray: 1 }] }),
+      layoutColumns: strayIn(withSlot({ ref: "f" }, { zzStray: 1 })),
+      layoutSlot: strayIn(withSlot({ ref: "f", zzStray: 1 })),
+    };
+    ctx.log.note("a stray member in each published list", everyList);
+
+    // Every list the contract publishes has a position in this document, so a list added later and
+    // not held is a list this battle will name rather than one it will silently not reach.
+    expectEqual(Object.keys(everyList).sort(), Object.keys(MDY_DYNAMIC_MEMBERS).sort(), {
+      claimIds: ["DYN-003"],
+      what: "the contract publishes a member list this battle puts nothing into, so that list is held by nothing here",
+    });
+    expectEqual(Object.entries(everyList).filter(([, reported]) => !reported).map(([slot]) => slot), [], {
+      claimIds: ["DYN-003", "DYN-001"],
+      what: "a stray member in a published list goes unreported, so a document carries what nothing reads and parses clean",
     });
 
     expectClaim(inARow.length > 0 && inASection.length > 0, {
