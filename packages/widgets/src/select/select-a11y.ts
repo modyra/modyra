@@ -63,7 +63,6 @@ export function projectSelectA11y(
     role: "combobox",
     classes: buildTriggerClasses(open, disabled, readonly, invalid, loading),
     attributes: {
-      "aria-haspopup": "listbox",
       ...projectOverlayOpenerA11y("select", { widgetId, open, controlsRendered: options.popupRendered ?? true })?.attributes,
       "aria-activedescendant": activeKey ? idFactory.item(widgetId, "option", activeKey) : undefined,
       "aria-invalid": String(invalid),

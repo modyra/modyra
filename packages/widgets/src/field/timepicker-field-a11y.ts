@@ -77,7 +77,6 @@ export function projectTimepickerFieldA11y(
       classes: [...MDY_WIDGET_CONTRACTS.timepicker.parts.control.classes],
       attributes: {
         role: "combobox",
-        "aria-haspopup": "dialog",
         ...projectOverlayOpenerA11y("timepicker", { widgetId: options.widgetId, open: state.open })
           ?.attributes,
         "aria-labelledby": labelId,

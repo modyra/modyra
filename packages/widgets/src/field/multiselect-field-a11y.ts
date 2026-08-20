@@ -108,7 +108,6 @@ export function projectMultiselectFieldA11y<TValue>(
       // element cannot be in.
       ...(opener?.role ? { role: opener.role } : {}),
       attributes: {
-        "aria-haspopup": "listbox",
         ...opener?.attributes,
         "aria-labelledby": labelId,
         "aria-invalid": String(hasErrors),

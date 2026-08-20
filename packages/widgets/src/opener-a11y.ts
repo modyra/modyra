@@ -45,6 +45,11 @@ export function projectOverlayOpenerA11y(
     classes: [],
     ...(relation.role ? { role: relation.role } : {}),
     attributes: {
+      // The promise, from the same table that names what the opener controls. Written as a literal
+      // at each opener instead, it was five literals across two renderers, and two of them said
+      // different words about one widget — `aria-haspopup` is announced with the control, so a
+      // person acts on it before anything has opened.
+      ...(relation.promises ? { "aria-haspopup": relation.promises } : {}),
       // A property of the opener in both states: an opener that drops it while closed reads as a
       // control with no overlay at all.
       "aria-expanded": String(options.open),

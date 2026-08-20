@@ -73,7 +73,6 @@ export function projectDatepickerFieldA11y(
       classes: [...MDY_WIDGET_CONTRACTS.datepicker.parts.control.classes],
       attributes: {
         role: "combobox",
-        "aria-haspopup": "grid",
         ...projectOverlayOpenerA11y("datepicker", { widgetId: options.widgetId, open: state.open })
           ?.attributes,
         "aria-labelledby": labelId,

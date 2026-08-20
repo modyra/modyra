@@ -99,10 +99,20 @@ export const defaultWidgetIdFactory: MdyWidgetIdFactory = {
  *
  * Percent-encoded rather than replaced: `%` goes first so the encoding stays reversible, and the
  * delimiter is encoded because an id carrying it a second time cannot be taken apart again.
+ *
+ * **Each whitespace character carries its own code**, which is what makes the encoding injective as
+ * well as reversible. One sequence for all five maps `a b`, `a\tb` and `a\nb` onto a single id, and
+ * the browser accepts duplicate ids without complaint — so `getElementById`, `label[for]` and every
+ * ARIA IDREF resolve to whichever element the document reaches first. A tab or a newline inside an
+ * option's value is what a paste from a spreadsheet produces, so the colliding keys are the ordinary
+ * case rather than a hostile one.
+ *
+ * No code emitted here contains the delimiter or whitespace, so an id still splits into exactly its
+ * three segments — widget, part, key.
  */
 function idSafeKey(key: string): string {
   return key
     .replaceAll("%", "%25")
     .replaceAll(MDY_ID_DELIMITER, "%5F%5F")
-    .replace(/[\t\n\f\r ]/g, "%20");
+    .replace(/[\t\n\f\r ]/g, (ws) => `%${ws.charCodeAt(0).toString(16).toUpperCase().padStart(2, "0")}`);
 }
