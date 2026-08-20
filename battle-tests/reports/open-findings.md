@@ -18008,6 +18008,23 @@ were the person's data and they are gone.
 one holding a nested group. It is specifically **a list inside an array row** — `array > … > array` —
 and `record > … > array` at the same depth is right.
 
+**The mechanism, found by asking the same question of the neighbouring doors.** `setValue` is a
+whole-value write — hand it a partial body and it is *right* to reset the rest — so it is the control
+here, not a second defect:
+
+```
+patch    / positional row    [{"v":"NEW","w":"z"},  {"v":"V2","w":"z"}]
+setValue / positional row    [{"v":"NEW","w":"z"},  {"v":"V2","w":"z"}]   ← identical
+setValue / keyed row         [{"v":"NEW","w":"z"},  {"v":"V2","w":"z"}]   ← identical
+patch    / keyed row         [{"v":"NEW","w":"W1"}, {"v":"V2","w":"W2"}]  ← the only partial write
+getChanges / both rows       correct on both
+```
+
+**A patch routed through a positional row is applied as if it were `setValue`.** Three of the four
+cells above agree with each other and one does not, and the odd one out is the only genuine partial
+write in the table. That is the sentence to repair against: the difference is not "arrays lose cells",
+it is that the positional route never enters the partial-write path at all.
+
 **The framing that does not need a winner**: whichever of the two behaviours is intended, the two
 containers disagree, so *which of a person's values survives an edit depends on what the list is
 nested in*. That is not a semantic a consumer can hold in their head, and nothing documents it.
