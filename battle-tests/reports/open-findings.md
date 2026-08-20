@@ -17186,6 +17186,66 @@ defects but why one derivation drifts. And nine failures name no renderer at all
 where the contract, or a projection every renderer shares, is what is being measured — the family
 finding 293 belongs to.
 
+## 294 — Ninety seconds of sleep in this suite's own browser tier (harness)
+
+An outside audit of the repository counted "about 372 `waitForTimeout`" in the browser suite and called
+it a strong smell. Measured here rather than accepted:
+
+```
+334 calls across 81 of 97 specs
+90.3 seconds of sleep if every one runs once
+commonest values: 320ms ×47, 300ms ×40, 240ms ×22, 220ms ×23, 200ms ×23
+heaviest spec: what-a-page-actually-sends.spec.ts, 12.0s
+```
+
+The counts differ because the audit read an archive; the shape is the same and the shape is what
+matters. **A fixed wait is a guess about a machine, and this hunt has been caught by that guess three
+times tonight:**
+
+- a timing battle that passed because its *first* measurement ran cold, and went red on a shared
+  runner — the same number read 0.8 cold and 2.2 warm (263);
+- a `selectOption` on a disabled option that never settles, where Playwright retried to the test's own
+  120-second limit and the run reported a timeout instead of what the page did (284);
+- a per-order cost threshold sitting on a noise floor this file's own notes had already measured
+  (272's neighbour).
+
+Every one of those was a fixed interval standing in for an observable condition. Ninety seconds is
+also ninety seconds on every CI run, on a tier that already takes minutes.
+
+**Not a defect in the product, and not a battle.** It is this suite's own quality, and the repair is a
+change to how a spec waits — `waitForFunction` on the condition the spec is actually about, or the
+`settled(page)` double-`requestAnimationFrame` that most specs already define locally. It is recorded
+here so it is chosen deliberately rather than discovered by a flake, and so the next person to write a
+spec knows the house has 334 of these already.
+
+## Measured from the outside audit, and confirmed
+
+The same audit's other checkable claims, verified here:
+
+```
+root package.json scripts            99         ✓
+root packageManager / engines        absent     ✓  (already open as a decision)
+packages/studio-ui/src/index.ts      4022 lines ✓
+structuredClone in studio-editor     36 uses    ✓  in commands.ts alone
+form-scale budgets in CI             continue-on-error: true  ✓
+```
+
+The workflow says why the budget is advisory, and says it honestly: *"the figures it gates are counts
+rather than timings, so hardware is not the variable — what has not been established is whether they
+hold on a runner at all, and nothing here has ever observed one. Flipping it blind would gate merges
+on a number this repository has never seen produced."* That is a stated limit rather than an
+oversight, and the way to close it is one observed run, not a flag.
+
+**The `innerHTML` concern, checked and not borne out where it can be checked.** The audit named
+Angular, Plain, devtools and Studio as surfaces to watch. Measured: `plain` writes only its own icon
+geometry; `devtools` escapes through `escapeHtml`; Angular's two sites interpolate `MDY_ICONS` content
+and one binds through Angular's own sanitizer; `studio-ui` has an `escapeHtml` used 55 times, and the
+tree-node path — the one that carries an author's label — reads `escapeHtml(n.label || n.name)`. Every
+project-derived interpolation found outside it goes through `setAttribute` or `textContent`, which
+escape by construction. **What remains unproven is the absence of a single unescaped site in 4022
+lines**, and grep cannot settle that; an end-to-end probe that mounts Studio with a hostile label
+would, and this suite has no Studio host.
+
 ## The register's own shape, measured
 
 ```
