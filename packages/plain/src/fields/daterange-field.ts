@@ -6,6 +6,7 @@
  * bounds refuse — is `createDaterangeFieldController`'s. This renderer owns DOM and events, and
  * paints the cells the controller hands it.
  */
+import { applyOpenerPromise } from "../opener-promise.js";
 import { observerFor, type MdyFieldHandle, type MdyReactivity } from "@modyra/core";
 import type { MdyDynamicDaterangeField } from "@modyra/core";
 import { buildDateLocale, formatIsoDate, parseLocalizedDate } from "@modyra/core/datetime";
@@ -88,10 +89,11 @@ export function renderDaterangeField(
   setIcon(toggle, "CALENDAR");
   toggle.type = "button";
   toggle.setAttribute("aria-label", messages.daterangeChooseRange);
-  // What actually opens, which is what the field's own projection declares: a grid serving both
-  // ends of the range. `dialog` promised a different widget from the one that appears, and the
-  // promise is made before anything opens — a person decides whether to open it from that word.
-  toggle.setAttribute("aria-haspopup", "grid");
+  // Asked of the contract rather than written here. The word is announced with the control, before
+  // anything opens, and a person decides whether to open it from that word — so two renderers of one
+  // widget saying different words is two different widgets as far as a screen reader is concerned.
+  // Nineteen places wrote this attribute and one read the projection; this is the second.
+  applyOpenerPromise(toggle, "daterange");
 
   const popup = el("div", `${MDY_WIDGET_CONTRACTS.daterange.parts.popup.classes.join(" ")} mdy-overlay`) as HTMLDivElement;
   // The toggle said it had a dialog and whether it was open, and never said which one. Naming it
