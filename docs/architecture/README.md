@@ -125,6 +125,7 @@ absent section reads as an oversight, and "no security impact" is a finding.
 - [ADR 0108: A seed a theme can be read on](0108-a-seed-a-theme-can-be-read-on.md) — the default primary sat in the 13% of sRGB where the rule picks light text that cannot reach AA, so the filled button shipped at 4.09:1
 - [ADR 0109: An element nobody bound says so](0109-an-element-nobody-bound-says-so.md) — the element surface was the one published door that failed in silence: an empty custom element, no control, and nothing said
 - [ADR 0110: A promise is declared where the popup is](0110-a-promise-is-declared-where-the-popup-is.md) — `aria-haspopup` was a literal at fourteen openers with no common source, so two kinds promised a popup neither renderer opened
+- [ADR 0111: A selector cannot close the sheet it is written into](0111-a-selector-cannot-close-the-sheet.md) — the theme compiler guarded a selector against escaping its CSS rule and not against escaping the `<style>` block around it
 - [ADR 0092: A condition travels with the form](0092-a-condition-travels-with-the-form.md) — `when` and `asyncWhen` were closures, so a schema carrying one was not data and the document half could not say what the typed half said
 
 ## Security-relevant records
@@ -135,7 +136,8 @@ storage exposure), [0010](0010-every-claim-has-an-executable-check.md) (which of
 held by a test rather than by prose), [0024](0024-an-author-time-check-calls-the-parser.md) (the same
 refusal to execute a document, at the editor boundary),
 [0025](0025-a-tag-publishes-and-nothing-else-does.md) (the registry credential, and why no publish
-token is stored).
+token is stored), [0111](0111-a-selector-cannot-close-the-sheet.md) (the one place a caller's string
+reaches a stylesheet, and which container it is held inside).
 
 ## Changing a record
 

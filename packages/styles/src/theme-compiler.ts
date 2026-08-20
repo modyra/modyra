@@ -324,10 +324,17 @@ const resolveMode = (
  * them — `.acme`, `#app`, `:root`, `[data-tenant="acme"]`, a comma-separated list and every
  * combinator pass unchanged.
  *
- * This keeps interpolated text inside its position. It does not decide *which* selectors a theme
- * should accept: a caller compiling themes from someone else's data still owns that question.
+ * `<` is here for the other container. A stylesheet is often written inside a `<style>` block, and
+ * `</style>` ends that block wherever it appears — inside a string, inside a comment, inside a
+ * selector — so everything after it is markup rather than CSS. None of the characters above appear
+ * in it, and no valid selector contains `<`: it was proposed as a combinator and abandoned. `>` is
+ * not refused and must not be, because `.a > .b` is the ordinary child combinator.
+ *
+ * Two escapes, two questions. This keeps interpolated text inside its position **and** inside the
+ * sheet it is written into. It does not decide *which* selectors a theme should accept: a caller
+ * compiling themes from someone else's data still owns that question.
  */
-const SELECTOR_ESCAPES = /[{};@]|\/\*|\*\//;
+const SELECTOR_ESCAPES = /[{};@<]|\/\*|\*\//;
 
 export function compileMdyTheme(definition: MdyThemeDefinition): MdyResolvedTheme {
   const source = hexToOklch(definition.seed);
@@ -348,7 +355,9 @@ export function compileMdyTheme(definition: MdyThemeDefinition): MdyResolvedThem
     throw new Error(
       `Invalid theme selector: ${definition.selector}. A selector is written into a rule, so it ` +
         `cannot contain "{", "}", ";", "@" or a comment — each of those ends the rule and turns the ` +
-        `rest into a stylesheet of its own.`,
+        `rest into a stylesheet of its own. "<" is refused for the same reason one level out: a ` +
+        `sheet written into a <style> block ends at "</style>", wherever that appears. The child ` +
+        `combinator ">" is fine.`,
     );
   }
   const selector = definition.selector ?? `[data-mdy-theme="${definition.name}"]`;
