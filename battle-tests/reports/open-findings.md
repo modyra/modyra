@@ -4,10 +4,9 @@
 
 ```
 S0     0      the whole of it before any S1
-S1     1
-S2     4
+S2     2
       --
-       5      open reds, 2026-08-20
+       2      open reds, 2026-08-20
 ```
 
 Severity is the order of work: every S0, then every S1, then S2 and below. The same counts are in
@@ -15930,6 +15929,102 @@ the order.
 **The lesson is the method, not the defect.** 259 was filed against a flat list because that is where
 it was found; the same contract had a second door one level down that no battle in the tier touched.
 A finding about a collection is worth re-asking through a collection.
+
+## 265 — An overlay with no declared opener (S2, UI-010 UI-009)
+
+`capabilities.overlay: true` is how a kind says it has a popup, and it is the whole of what
+`MDY_WIDGET_CONTRACTS` says about opening one. What carries the popup relationship is said only
+indirectly, by a part declaring `role: "combobox"`. Two of the six kinds with an overlay say nothing:
+
+```
+kind         part the contract gives a combobox role   what the plain renderer opens with
+select       trigger                                   button.mdy-select__trigger, combobox
+multiselect  searchButton                              button.mdy-multiselect__search-btn, combobox
+datepicker   control                                   input.mdy-datepicker__input, combobox
+timepicker   control                                   input.mdy-timepicker__input, combobox
+daterange    —                                         button.mdy-datepicker__toggle, no role
+colors       —                                         button.mdy-colors__toggle-area, no role
+```
+
+Measured on the six mounted together in the browser tier. **The two the contract is silent about are
+the two whose renderer answers differently**, which is what makes it a hole rather than a preference:
+`@modyra/widgets` is published so a renderer nobody here has written can be held to it, and that
+renderer has nothing to read.
+
+Not an accessibility break today — both openers are real buttons carrying `aria-expanded` and
+`aria-haspopup="grid"`, so a person is told the popup is there, by the renderer that knows what the
+contract does not say.
+
+A daterange has two text inputs and no single control, so `control: combobox` is not its answer. That
+is why the hole exists and not a reason to keep it.
+
+Held by `battle-tests/adversarial/widgets/an-overlay-with-no-declared-opener.battle.test.mjs`.
+
+## 266 — A name refused for a reason that is not the reason (S3, DYN-003 API-001)
+
+`09944758` widened `isSafeFieldPath` to refuse whitespace and the id delimiter — correct, and it is
+what closed a real asymmetry. `assertSafeDynamicFieldNames` asks that first and raises its own message
+when it fails, so two of the three specific reasons underneath became unreachable:
+
+```
+name        the flat door now says                          what it is
+"a b"       must not be a prototype key                     whitespace: an ARIA reference splits in two
+"a__b"      must not be a prototype key                     the id delimiter: collides with a part id
+"a​b"  it carries a character that cannot be seen      correct
+"__proto__" must not be a prototype key                     correct
+""          must not be a prototype key                     correct
+```
+
+The verdict is right in every row; the reason is wrong in two. An author reading it goes looking for a
+prototype key in `"a b"`.
+
+**And the two doors now disagree about the same document**, which is the thing `guards.ts` says in its
+own words that holding these rules in one function exists to prevent:
+
+```
+             parser (a document)                        builder (a field list in code)
+"a b"        "a widget id is built from this name…"     "must not be a prototype key"
+"a__b"       ""__" separates the segments of a…"      "must not be a prototype key"
+```
+
+`assertSafeDynamicName` still holds both correct messages. They are simply asked too late.
+
+Caught by `battle-tests/browser/a-name-the-page-cannot-carry.spec.ts`, which asserts the message names
+a widget id — it was green before `09944758` and is red now. Left red.
+
+## 267 — A check only one of the two builders runs (S2, VAL-005 DYN-003)
+
+`MDY_VALUE_CONTRACTS` says what a value of a kind may be, `explainValueMismatch` is the published
+oracle for it, and `valueShape` turns it into a validator. `buildDynamicFormSchema` attaches one to
+every leaf. **`buildFlatFormSchema` attaches none** — the only call site of `valueShape` in the
+package is `dynamic/compile.ts:216`.
+
+Both builders are published, and the flat one is where `flattenDynamicForm`'s own output goes. So the
+same document, flattened and rebuilt, stops refusing values its kinds cannot hold. **Fourteen of the
+seventeen kinds disagree** — every kind whose contract condemns any of the probe values:
+
+```
+checkbox  colors  datepicker  daterange  email  file  multiselect
+number    password  slider  text  textarea  timepicker  toggle
+                          tree: invalid          flat: valid
+```
+
+The consequence is the one `valueShape`'s own comment describes: a form calling itself valid and
+submittable while a field holds what its kind cannot hold — *"a datepicker holding 'not a date at
+all' with the form calling itself valid and submittable"*. A value from outside the control is where
+that arrives: a tampered draft, a server response, a scripted write. On the far side it is `VAL-005`:
+the server is asked about a value the field's own rules would have refused, depending only on which
+builder the consumer called.
+
+**The differential beside it looks and does not see this.**
+`battle-tests/differential/schemas/two-ways-to-build-one-shape.test.mjs` builds both routes from the
+same document and compares `getValue()` — identical, green, and blind, because the difference is in
+what the two forms *refuse*, not in what they hold. A comparison of values cannot find a missing
+validator.
+
+Held by `battle-tests/adversarial/dynamic-contract/a-check-only-one-builder-runs.battle.test.mjs`,
+which picks each kind's probe value from `explainValueMismatch` itself rather than by hand, so a kind
+added later is covered without touching the file.
 
 ## The register's own shape, measured
 

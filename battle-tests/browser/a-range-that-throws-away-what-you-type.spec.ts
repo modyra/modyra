@@ -80,7 +80,11 @@ test("the calendar sets the range it was asked for", async ({ page }) => {
   // The control. Without it everything below would also be true of a control that holds no value at
   // all, which is a different and larger finding than the one being made.
   const { host } = await mountRange(page, "range-calendar");
-  await page.locator(`${host} .mdy-daterange__input`).first().click();
+  // Through the toggle, which is the range's opener. A datepicker's single input is a combobox and
+  // opens its calendar when clicked; a range's two inputs are text fields that take a typed date, so
+  // clicking one places a caret and opens nothing. The difference is real and is a finding of its
+  // own; here the calendar is the control, so it is reached by the door the control actually has.
+  await page.locator(`${host} .mdy-datepicker__toggle`).first().click();
   await page.waitForTimeout(250);
 
   const chosen = await page.evaluate((selector) => {
