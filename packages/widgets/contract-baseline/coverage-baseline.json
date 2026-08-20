@@ -1,8 +1,8 @@
 {
   "note": "Public names not yet asserted or not yet shown. The list may only get shorter.",
   "score": {
-    "published": 695,
-    "asserted": 439,
+    "published": 697,
+    "asserted": 441,
     "shown": 79
   },
   "uncovered": [
@@ -2713,6 +2713,12 @@
       "reason": "published and never shown"
     },
     {
+      "name": "dialHour",
+      "asserted": true,
+      "shown": false,
+      "reason": "published and never shown"
+    },
+    {
       "name": "draftShapeMatches",
       "asserted": true,
       "shown": false,
@@ -3608,6 +3614,12 @@
     },
     {
       "name": "timepickerDialNumbers",
+      "asserted": true,
+      "shown": false,
+      "reason": "published and never shown"
+    },
+    {
+      "name": "timepickerDialRing",
       "asserted": true,
       "shown": false,
       "reason": "published and never shown"

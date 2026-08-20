@@ -10,13 +10,11 @@
  * parsing maths lives in `@modyra/core/datetime` — a renderer drawing its own clock face needs the
  * same functions.
  */
-import { blocksValueChange } from "../interactivity.js";
-import { closeOverlayWhenOutOfPlay } from "./leaving-play.js";
 import type { MdyReactivity, MdySignal } from "@modyra/core";
 import { observerFor } from "@modyra/core";
 import {
-  angleToHour,
   angleToMinute,
+  dialHour,
   formatTimeAs,
   getCurrentTime,
   parseAnyTime,
@@ -24,17 +22,19 @@ import {
   type MdyTimeFormat,
   type ParsedTime,
 } from "@modyra/core/datetime";
+import { blocksValueChange } from "../interactivity.js";
+import { closeOverlayWhenOutOfPlay } from "./leaving-play.js";
 
 import type { MdyUiCommand } from "../commands.js";
 import type { MdyWidgetController, MdyWidgetViewContract } from "../contract.js";
 import { projectTimepickerFieldA11y } from "./timepicker-field-a11y.js";
-import { showsAsInvalid } from "./verdict.js";
 import type {
   MdyTimepickerFieldControllerOptions,
   MdyTimepickerFieldIntent,
   MdyTimepickerFieldState,
   MdyTimepickerViewMode,
 } from "./timepicker-field-types.js";
+import { showsAsInvalid } from "./verdict.js";
 
 export interface MdyTimepickerFieldController
   extends MdyWidgetController<MdyTimepickerFieldState, MdyTimepickerFieldIntent> {
@@ -89,7 +89,13 @@ export function createTimepickerFieldController(
   // defect this registry was added for, and it fails by rendering nothing rather than by
   // raising.
   reactivity = observerFor(options.handle, reactivity);
-  const { widgetId, handle, format = "12h" as MdyTimeFormat, readonly: initialReadonly = false } = options;
+  const {
+    widgetId,
+    handle,
+    format = "12h" as MdyTimeFormat,
+    readonly: initialReadonly = false,
+    viewMode: initialViewMode = "input",
+  } = options;
 
   const readonly = reactivity.signal(initialReadonly);
   const open = reactivity.signal(false);
@@ -97,9 +103,7 @@ export function createTimepickerFieldController(
   // `aria-expanded="true"` to a screen reader, and answered nothing.
   const stopWatchingPlay = closeOverlayWhenOutOfPlay(reactivity, () => handle.interactivity(), open);
   const focusedField = reactivity.signal<"hour" | "minute">("hour");
-  // The clock is the picker; the number fields are the alternative a user asks for. Starting on the
-  // dial is what makes "pick a time" mean the same gesture in every renderer.
-  const viewMode = reactivity.signal<MdyTimepickerViewMode>("dial");
+  const viewMode = reactivity.signal<MdyTimepickerViewMode>(initialViewMode);
   const draft = reactivity.signal<ParsedTime>(draftFor(handle.value(), format));
   // What the person typed while it is not a time. Held here for the same reason the datepicker holds
   // it: neither renderer held it, so an entry the control could not read was rewritten away by the
@@ -149,12 +153,48 @@ export function createTimepickerFieldController(
     };
   });
 
+  /**
+   * The hour a caller means, as the working copy holds it — or `null` when this clock has no such
+   * hour.
+   *
+   * The draft is canonically 12-hour and every *surface* of a 24-hour picker speaks 0–23: the face
+   * draws `00` and 13–23, `timeFieldBounds` answers `{min: 0, max: 23}`, `acceptTimeField` accepts
+   * `"13"`, `stepTimeField` wraps 23 to 0, and the keyboard's End key asks for 23. The one seam that
+   * *writes* took 1–12 and refused the rest in silence, so a 24-hour picker could not be moved off
+   * whichever half of the day it opened on — by dial, by typing, or by arrow key.
+   *
+   * The conversion is here rather than in each host. The design said the host converts at the
+   * boundary and published nothing to convert with; three renderers were each asked to reinvent it
+   * and none did, for the life of the feature. A contract that is only implementable by remembering
+   * an undocumented step is one that produces this defect again.
+   */
+  function hourFromFormat(hour: number): Pick<ParsedTime, "hour" | "period"> | null {
+    if (!Number.isInteger(hour)) return null;
+    if (format === "12h") {
+      return hour >= 1 && hour <= 12 ? { hour, period: draft().period } : null;
+    }
+    if (hour < 0 || hour > 23) return null;
+    // Midnight is `00` and noon is `12`, which is what the face's own labels say.
+    return { hour: hour % 12 === 0 ? 12 : hour % 12, period: hour < 12 ? "AM" : "PM" };
+  }
+
+  /**
+   * A refusal that reaches somebody.
+   *
+   * `return []` was the whole of what happened to an hour this clock does not have, and that silence
+   * is why the seam above survived the life of the feature: nothing failed, nothing was reported,
+   * and the draft simply did not move. ADR 0078 is the same sentence about a read-only field.
+   */
+  function refuse(message: string): readonly MdyUiCommand[] {
+    return [{ type: "announce", message }];
+  }
+
   function openPicker(): readonly MdyUiCommand[] {
     draft.set(draftFor(handle.value(), format));
     focusedField.set("hour");
-    // Every opening starts on the hours, on the clock: where the last session left the popup is
-    // not where the next one should resume.
-    viewMode.set("dial");
+    // Every opening starts on the hours, in the view the host configured: where the last session
+    // left the popup is not where the next one should resume.
+    viewMode.set(initialViewMode);
     open.set(true);
     return [{ type: "open-overlay", anchor: { part: "trigger" } }];
   }
@@ -235,12 +275,20 @@ export function createTimepickerFieldController(
       case "cancel":
         return closePicker(true);
       case "set-hour": {
-        if (intent.hour < 1 || intent.hour > 12) return [];
-        draft.set({ ...draft(), hour: intent.hour });
+        // The hour arrives in the picker's own format. A 24-hour picker draws `00` and 13–23 on its
+        // face, and the working copy is canonically 12-hour, so those twelve numbers had no word in
+        // this vocabulary: `set-hour` refused every one of them and refused them *silently*, which
+        // is why a 24-hour picker could not be moved off whichever half of the day it opened on.
+        //
+        // The half of the day now travels with the hour instead of only with `set-period`, which a
+        // 24-hour picker correctly has no control for.
+        const chosen = hourFromFormat(intent.hour);
+        if (chosen === null) return refuse(`${intent.hour} is not an hour this clock shows.`);
+        draft.set({ ...draft(), ...chosen });
         return [];
       }
       case "set-minute": {
-        if (intent.minute < 0 || intent.minute > 59) return [];
+        if (intent.minute < 0 || intent.minute > 59) return refuse(`${intent.minute} is not a minute.`);
         draft.set({ ...draft(), minute: intent.minute });
         return [];
       }
@@ -250,11 +298,16 @@ export function createTimepickerFieldController(
       }
       case "set-from-angle": {
         const current = draft();
-        draft.set(
-          intent.field === "hour"
-            ? { ...current, hour: angleToHour(intent.angle) }
-            : { ...current, minute: angleToMinute(intent.angle) },
-        );
+        if (intent.field !== "hour") {
+          draft.set({ ...current, minute: angleToMinute(intent.angle) });
+          return [];
+        }
+        // The ring is what tells 3 from 15: one direction, two numbers, and the arithmetic for it
+        // lives in `@modyra/core/datetime` with the rest of the dial's.
+        const shown = dialHour(intent.angle, format === "24h" ? intent.ring ?? "outer" : "outer");
+        const chosen = hourFromFormat(shown);
+        if (chosen === null) return refuse(`${shown} is not an hour this clock shows.`);
+        draft.set({ ...current, ...chosen });
         return [];
       }
       case "focus-field":

@@ -1825,6 +1825,7 @@
     "handle: MdyFieldHandle<string | null>",
     "parseEntry?: (text: string) => string | null",
     "readonly?: boolean",
+    "viewMode?: MdyTimepickerViewMode",
     "widgetId: string"
   ],
   "MdyTimepickerFieldIntent": [
@@ -2544,6 +2545,11 @@
   "defaultOptionKey": [
     "(0) value: unknown",
     "-> returns: string"
+  ],
+  "dialHour": [
+    "(0) angle: number",
+    "(1) ring?: \"outer\" | \"inner\"",
+    "-> returns: number"
   ],
   "draftShapeMatches": [
     "(0) initial: unknown",
@@ -3320,6 +3326,13 @@
     "(0) field: \"hour\" | \"minute\"",
     "(1) format?: MdyTimeFormat",
     "-> returns: readonly MdyTimepickerDialNumber[]"
+  ],
+  "timepickerDialRing": [
+    "(0) face: { readonly width: number; readonly height: number; readonly left: number; readonly top: number; }",
+    "(1) clientX: number",
+    "(2) clientY: number",
+    "(3) format: MdyTimeFormat",
+    "-> returns: \"outer\" | \"inner\""
   ],
   "timepickerFieldPartIds": [
     "(0) widgetId: string",

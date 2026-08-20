@@ -116,6 +116,23 @@ export function angleToHour(angle: number): number {
 }
 
 /**
+ * The hour a dial position names, on a face that has two rings.
+ *
+ * `angleToHour` answers for the outer ring alone — 1–12, the only face a 12-hour picker draws. A
+ * 24-hour face keeps those twelve outside and puts `00` and 13–23 on an inner ring at the same
+ * twelve positions, so the angle no longer decides the hour by itself: the same direction means 3
+ * on one ring and 15 on the other, and a caller that could not say which ring was touched could not
+ * name half the hours its own face was showing.
+ *
+ * Midnight sits where 12 sits, because that is where a 24-hour clock puts it.
+ */
+export function dialHour(angle: number, ring: "outer" | "inner" = "outer"): number {
+  const outer = angleToHour(angle);
+  if (ring === "outer") return outer;
+  return outer === 12 ? 0 : outer + 12;
+}
+
+/**
  * Snap an arbitrary angle to the nearest minute.
  * Returns minutes 0–59. Handles 360°/0° wrap gracefully.
  */

@@ -22,6 +22,15 @@ export interface MdyTimepickerFieldControllerOptions {
   readonly handle: MdyFieldHandle<string | null>;
   /** Display and value format. Defaults to "12h". */
   readonly format?: MdyTimeFormat;
+  /**
+   * What the popup shows when it opens. Defaults to the number fields.
+   *
+   * The dial is the slower way to reach a precise time and the faster way to reach an approximate
+   * one, and which of those a person is doing belongs to the host rather than to this controller.
+   * Whichever is configured, opening returns to it: where the last session left the popup is not
+   * where the next one should resume.
+   */
+  readonly viewMode?: MdyTimepickerViewMode;
   /** Whether the widget is visually/programmatically readonly. */
   readonly readonly?: boolean;
   /**
@@ -105,7 +114,19 @@ export type MdyTimepickerFieldIntent =
   | { readonly type: "set-hour"; readonly hour: number }
   | { readonly type: "set-minute"; readonly minute: number }
   | { readonly type: "set-period"; readonly period: "AM" | "PM" }
-  | { readonly type: "set-from-angle"; readonly field: "hour" | "minute"; readonly angle: number }
+  | {
+    readonly type: "set-from-angle";
+    readonly field: "hour" | "minute";
+    readonly angle: number;
+    /**
+     * Which ring of the face was touched. Absent means the outer one, which is the only ring a
+     * 12-hour face has — so a caller written before the 24-hour face existed keeps working.
+     *
+     * The angle alone cannot name the hour on a two-ring face: the same direction is 3 outside and
+     * 15 inside, and half the numbers the face draws had no way to be asked for.
+     */
+    readonly ring?: "outer" | "inner";
+  }
   | { readonly type: "focus-field"; readonly field: "hour" | "minute" }
   | { readonly type: "set-view-mode"; readonly mode: MdyTimepickerViewMode }
   /** The person typed something and left the control; the text is judged rather than parsed here. */

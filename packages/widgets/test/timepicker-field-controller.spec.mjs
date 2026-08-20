@@ -5,12 +5,14 @@
  * `"confirm"`. See timepicker-field-controller.ts for the behaviour these assert.
  */
 
+import { dialHour } from "@modyra/core/datetime";
 import assert from "node:assert";
 import test from "node:test";
 
 import { vanillaReactivity } from "@modyra/core";
 import {
   createTimepickerFieldController,
+  timepickerDialRing,
 } from "../dist/field/index.js";
 import { MDY_VALUE_CONTRACTS } from "../../core/dist/index.js";
 
@@ -80,7 +82,20 @@ test("24h format: value stored/committed as HH:mm, draft still canonical 12h", (
   const { controller, handle } = setup({ initialValue: "14:30", format: "24h" });
   assert.deepStrictEqual(controller.state().draft, { hour: 2, minute: 30, period: "PM" });
   controller.dispatch({ type: "open" });
+
+  // `3` on a 24-hour clock is three in the morning. It used to mean "the third hour of whichever
+  // half the draft was already in", which is what left a 24-hour picker unable to leave the half it
+  // opened on: there was no other word for the afternoon, because a 24-hour picker has no period
+  // control and `set-hour` refused 13–23 outright.
   controller.dispatch({ type: "set-hour", hour: 3 });
+  controller.dispatch({ type: "confirm" });
+  assert.strictEqual(handle.value(), "03:30");
+
+  // And the draft is still held 1–12 with a period, which is what "canonical 12h" means: the
+  // conversion happens at this seam rather than in each renderer.
+  controller.dispatch({ type: "open" });
+  controller.dispatch({ type: "set-hour", hour: 15 });
+  assert.deepStrictEqual(controller.state().draft, { hour: 3, minute: 30, period: "PM" });
   controller.dispatch({ type: "confirm" });
   assert.strictEqual(handle.value(), "15:30");
 });
@@ -135,6 +150,70 @@ test("set-hour/set-minute reject out-of-range values", () => {
   controller.dispatch({ type: "set-hour", hour: 13 });
   controller.dispatch({ type: "set-minute", minute: 60 });
   assert.deepStrictEqual(controller.state().draft, { hour: 2, minute: 30, period: "PM" });
+});
+
+test("the dial's two rings name two different hours from one direction", () => {
+  // `dialHour` and `timepickerDialRing` are the arithmetic and the hit test behind a 24-hour face:
+  // twelve positions, twenty-four numbers, and the same direction meaning 3 outside and 15 inside.
+  // Without the ring, half the numbers the face draws had no way to be asked for.
+  assert.equal(dialHour(90, "outer"), 3);
+  assert.equal(dialHour(90, "inner"), 15);
+  assert.equal(dialHour(0, "outer"), 12, "noon sits at the top of the outer ring");
+  assert.equal(dialHour(0, "inner"), 0, "and midnight at the top of the inner one");
+
+  const face = { left: 0, top: 0, width: 200, height: 200 };
+  const at = (radius, degrees) => {
+    const radians = ((degrees - 90) * Math.PI) / 180;
+    return [100 + Math.cos(radians) * radius, 100 + Math.sin(radians) * radius];
+  };
+  assert.equal(timepickerDialRing(face, ...at(88, 90), "24h"), "outer");
+  assert.equal(timepickerDialRing(face, ...at(60, 90), "24h"), "inner");
+  // A 12-hour face has one ring wherever the finger lands.
+  assert.equal(timepickerDialRing(face, ...at(60, 90), "12h"), "outer");
+});
+
+test("a 24-hour picker takes every hour its own face shows", () => {
+  // The seam the twelve inner numbers had no word for. A 24-hour face draws `00` and 13–23, and
+  // every other surface of the picker speaks 0–23 — the segment bounds, what a typed entry is
+  // accepted as, what the End key asks for — while the one that writes took 1–12 and refused the
+  // rest in silence. So a 24-hour picker could not be moved off the half of the day it opened on.
+  for (const [asked, expected] of [[0, { hour: 12, period: "AM" }], [9, { hour: 9, period: "AM" }],
+    [12, { hour: 12, period: "PM" }], [13, { hour: 1, period: "PM" }], [23, { hour: 11, period: "PM" }]]) {
+    const { controller } = setup({ initialValue: "21:00", format: "24h" });
+    controller.dispatch({ type: "open" });
+    controller.dispatch({ type: "set-hour", hour: asked });
+    assert.deepStrictEqual(
+      controller.state().draft,
+      { ...expected, minute: 0 },
+      `a 24-hour picker refused ${asked}, an hour its own face draws`,
+    );
+  }
+});
+
+test("an hour no clock has is refused, and the refusal is said out loud", () => {
+  // `return []` was the whole of what happened, and that silence is why the seam above survived:
+  // nothing failed, nothing was reported, and the draft simply did not move.
+  const { controller } = setup({ initialValue: "21:00", format: "24h" });
+  controller.dispatch({ type: "open" });
+  const commands = controller.dispatch({ type: "set-hour", hour: 24 });
+  assert.deepStrictEqual(controller.state().draft, { hour: 9, minute: 0, period: "PM" });
+  assert.equal(commands.length, 1, "an hour this clock does not have was refused in silence");
+  assert.equal(commands[0].type, "announce");
+});
+
+test("the popup opens on the view the host configured, and returns to it", () => {
+  const { controller } = setup({ initialValue: "02:30 PM" });
+  controller.dispatch({ type: "open" });
+  assert.equal(controller.state().viewMode, "input", "the number fields are the default view");
+  controller.dispatch({ type: "set-view-mode", mode: "dial" });
+  assert.equal(controller.state().viewMode, "dial", "the dial is still reachable");
+  controller.dispatch({ type: "close" });
+  controller.dispatch({ type: "open" });
+  assert.equal(controller.state().viewMode, "input", "where the last session left it is not where the next resumes");
+
+  const onDial = setup({ initialValue: "02:30 PM", viewMode: "dial" });
+  onDial.controller.dispatch({ type: "open" });
+  assert.equal(onDial.controller.state().viewMode, "dial", "a host that asks for the clock gets it");
 });
 
 test("set-from-angle snaps to the nearest hour/minute via the shared core angle helpers", () => {
