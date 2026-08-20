@@ -171,11 +171,20 @@ way via `@modyra/standard-schema`.
 
 - **Not a substitute for output encoding.** Sanitization reduces what a
   value can carry; whoever renders or stores it still owns correct
-  encoding/parameterization (Modyra's own renderers never use `innerHTML`).
+  encoding/parameterization. No renderer writes a field value through
+  `innerHTML`: the only HTML any of them writes is its own icon geometry,
+  from a frozen constant with no registration API, and the devtools panel's
+  table, which escapes the path, the value and every error message. That is a
+  measurement, not a proof of absence — see
+  [what has been attacked](hostile-input.md#what-has-not-been-proved).
 - **Not validation.** A sanitized value is silently modified, not rejected.
   To *reject* suspicious input instead, keep using validators
   (`pattern()`, custom `ValidatorFn`) — the two compose: sanitize first
   (write path), validate the result (error path).
-- **Not ReDoS protection.** `pattern()` executes the regex you give it;
-  pathological expressions are a known, documented risk of the validator
-  itself, independent of user input.
+- **Not ReDoS protection for the patterns you write.** `pattern()` executes
+  the regex you give it, and a pathological one is your own risk. A pattern
+  that *arrives* — `validators.pattern` in a document, or `matches` inside an
+  expression — is a different door and is analysed: an exponentially
+  backtracking shape is refused at parse with a diagnostic naming it, while
+  IPv4, hostname, slug and card-number patterns pass. Measured in
+  [what has been attacked](hostile-input.md#a-pattern-that-would-stop-the-page-is-refused-at-parse).
