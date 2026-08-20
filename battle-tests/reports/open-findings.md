@@ -16894,6 +16894,52 @@ question that never got asked — and both of these hid a real answer behind a p
 a record. **Before asserting a behaviour, look for the record that decided it**: `docs/architecture/`
 is searchable, and in both cases the reasoning was better than the assertion.
 
+## 287 — Four pages whose code is not the code that runs (S3, DOC-001)
+
+`npm run test:guides` runs `docs/examples/*/*.test.mjs`, and four guides have one:
+`docs/feature-tour.md`, `docs/guides/typed-forms.md`, and the two migration comparisons. Surfaced by
+`esecutore4` after it corrected my claim that only one page had any.
+
+**None of the tests reads its page.** `grep -l readFileSync docs/examples/*/*.test.mjs` returns
+nothing: the code is retyped, not extracted. So a page and its test drift apart in silence, and the
+green means the *test* works.
+
+Measured, block by block:
+
+```
+page                                       fenced blocks   whole block found   lines found
+docs/feature-tour.md                            18                0             34 / 81
+docs/guides/typed-forms.md                      20                1             31 / 97
+docs/guides/comparison-formik.md                 2                0              1 / 5
+docs/guides/comparison-react-hook-form.md        2                0              0 / 2
+```
+
+They are not transcriptions that drifted — they were **never** transcriptions. One whole block of
+forty-two matches; fewer than half the substantive lines appear in the test at all. So the pages are
+not covered by the tests beside them in any sense a reader would assume from `test:guides` being green.
+
+**Not held by a battle, and this is why.** Asserting "the test contains the page's blocks" would be red
+on all four for a reason that is not a defect. The property worth holding is that a page's code is
+*extracted* rather than retyped, and that is a change to how the examples are written, not an
+assertion about how they are today. `DOC-001` holds the floor beneath it — every name a page imports
+exists — and this entry records how far the floor is from the ceiling.
+
+## Measured clean: every Modyra name the docs use is a real one
+
+The natural next check after `DOC-001` — not just the imports, but every `MDY_*`, `Mdy*` and `mdy*`
+identifier a page names anywhere, in code or in prose. **408 of them across 153 tracked pages.**
+Twenty-five did not resolve against the built packages, and every one checked is real:
+
+- Angular **directive inputs** — `mdyFloatingLabels`, `mdyMinLength`, `mdyPattern` and a dozen more —
+  which are class members rather than exported identifiers, so a declaration sweep does not see them;
+- a recipe's **own helpers**, defined in the page itself: `mdyInputProps`, `mdyTouchedErrors`;
+- **diagnostic codes** — `MDY_DYNAMIC_PATTERN_TOO_COSTLY` and its family — which are string values
+  inside a published constant, not names;
+- `mdyCva`, `mdyRequired`, `mdyEmail`, `mdyDevtools`, all four present in `dist`.
+
+No finding, and the instrument is recorded as **not worth making a gate**: its false-positive rate
+comes from four different legitimate shapes, and a gate that cries four ways is one nobody keeps.
+
 ## The register's own shape, measured
 
 ```
