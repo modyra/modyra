@@ -82,6 +82,53 @@ battle(
     const deep = await patched(nested, { o: { k: { lines: [{ v: "NEW" }, { v: "V2" }] } } });
     ctx.log.note("the same list, reached through a keyed row", deep);
 
+    // Every container a list can sit in, not the two this file happened to name.
+    //
+    // A list is reached through a keyed row, a positional row, a group, or nothing — and "at every
+    // depth a list can sit at" is a claim about all four. The same inner list and the same patch body
+    // are sent down each route, so a difference between them is the route and not the patch.
+    const line = () => group({ v: field("q"), w: field("z") });
+    const body = { lines: [{ v: "NEW" }, { v: "V2" }] };
+    const throughEachContainer = {
+      "a positional row": (await patched(
+        () => createForm(
+          { o: array(group({ lines: array(line(), { initial: LINES }) }), { initial: [{ lines: LINES }] }) },
+          { devWarnings: false },
+        ),
+        { o: [body] },
+      )).o[0].lines,
+      "a keyed row": (await patched(
+        () => createForm(
+          { o: record(group({ lines: array(line(), { initial: LINES }) }), { initial: { k: { lines: LINES } } }) },
+          { devWarnings: false },
+        ),
+        { o: { k: body } },
+      )).o.k.lines,
+      "a group": (await patched(
+        () => createForm({ o: group({ lines: array(line(), { initial: LINES }) }) }, { devWarnings: false }),
+        { o: body },
+      )).o.lines,
+      "nothing": (await patched(
+        () => createForm({ lines: array(line(), { initial: LINES }) }, { devWarnings: false }),
+        body,
+      )).lines,
+    };
+    ctx.log.note("one list, four containers, one patch", throughEachContainer);
+
+    // `w` is named by no patch, so every route must leave it as the row held it. A route that resets
+    // it to the field's declared initial has rebuilt the row instead of patching it.
+    const expected = [{ v: "NEW", w: "W1" }, { v: "V2", w: "W2" }];
+    expectEqual(
+      Object.entries(throughEachContainer)
+        .filter(([, got]) => JSON.stringify(got) !== JSON.stringify(expected))
+        .map(([route, got]) => `${route}: ${JSON.stringify(got)}`),
+      [],
+      {
+        claimIds: ["SUB-001", "COL-002"],
+        what: "a patch routed through one kind of container discarded the cells it did not name, so which value survives an edit depends on what the list is nested in",
+      },
+    );
+
     expectEqual(deep.o.k.lines, top.list, {
       claimIds: ["SUB-001", "COL-001", "COL-002"],
       what: "a patch meant something different one collection deeper than it does at the top",
