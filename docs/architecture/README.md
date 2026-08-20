@@ -127,6 +127,7 @@ absent section reads as an oversight, and "no security impact" is a finding.
 - [ADR 0110: A promise is declared where the popup is](0110-a-promise-is-declared-where-the-popup-is.md) — `aria-haspopup` was a literal at fourteen openers with no common source, so two kinds promised a popup neither renderer opened
 - [ADR 0111: A selector cannot close the sheet it is written into](0111-a-selector-cannot-close-the-sheet.md) — the theme compiler guarded a selector against escaping its CSS rule and not against escaping the `<style>` block around it
 - [ADR 0112: A radio group has nowhere to jump](0112-a-radio-group-has-nowhere-to-jump.md) — `Home` and `End` were declared for every kind that navigates options, and three renderers independently declined to implement them on a radio group
+- [ADR 0113: A field name cannot break the value it is in](0113-a-field-name-cannot-break-the-value-it-is-in.md) — a field named `toString` shadowed the method every string conversion goes through, so `${value}` threw in the consumer's own code
 - [ADR 0092: A condition travels with the form](0092-a-condition-travels-with-the-form.md) — `when` and `asyncWhen` were closures, so a schema carrying one was not data and the document half could not say what the typed half said
 
 ## Security-relevant records
