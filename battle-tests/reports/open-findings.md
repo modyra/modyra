@@ -17008,7 +17008,13 @@ That is a gap in this instrument, not in the findings — and it is the second t
 recorded claim outlived what it described. The other was two battles asserting against records that
 had already decided the opposite (286).
 
-## 290 — Two option values, one generated id (S0, UI-003 A11Y-001)
+## 290 — Two option values, one generated id (S0, UI-003 A11Y-001) — CLOSED
+
+**Closed, `2cbfb3fa`**: each whitespace character is now spelled with its own code. Twenty-two values,
+**twenty-two ids** where there were twenty; every id decodes back; every id still splits into exactly
+three segments. Falsified by putting `%20` back for all of them — the battle goes red — and restoring
+it.
+
 
 An option's id is built from its **value**, and a value is data — a city, a plan name, something a CSV
 import produced. `idSafeKey` spells the characters an id may not carry, and says why it spells rather
@@ -17111,6 +17117,44 @@ Nothing was lost — the required marker is derived from the validator either wa
 the console, and the console is now a channel a spec reads: `an-element-nobody-bound` asserts that an
 unbound element **says** something, and a page already talking about `marksRequired` is a page where
 that assertion is harder to trust. Found by `esecutore2` while repairing against that very channel.
+
+## 293 — Nineteen places set a promise, one asks the contract (S1, UI-010 A11Y-004)
+
+`aria-haspopup` is a promise to whoever cannot see the page: it names the kind of thing that will
+appear. `esecutore3` gave the contract the answer — `MDY_POPUP_OPENERS.promises`, derived from the
+anatomy the catalogue already declares, emitted by `projectOverlayOpenerA11y` — and the browser spec
+stayed red, because the renderers do not ask.
+
+**Nineteen places set the attribute across plain, lit and angular. One reads the projection:**
+
+```
+lit/components/select-field.ts:395   aria-haspopup=${trigger.attributes["aria-haspopup"]}
+```
+
+The other eighteen write a literal, in three different spellings, and the literals have already
+drifted:
+
+```
+contract     datepicker "grid"
+plain        daterange "grid"    colors "listbox"
+lit          datepicker "dialog"   ← the contract and plain both say grid
+             multiselect "listbox"   daterange "grid"   dropdown "listbox"
+             colors "dialog" and "listbox"   timepicker "dialog"
+angular      timepicker "dialog" ×2   datepicker "dialog" ×2   colors "dialog" and "listbox"
+```
+
+Two renderers of one contract promise two different things about the same widget, and nothing in the
+repository compares them. A person on a screen reader is told to expect a dialog in one and a grid in
+the other.
+
+**Asserted structurally rather than on the page, and that is the point.** The browser tier can only
+compare a promise against what opens where it mounted; it cannot see that eighteen files hold their
+own copy of the answer waiting to diverge. "Where does this value come from" is a question only the
+source answers — the rendered disagreement is the symptom, and it took a contract change to make it
+visible at all.
+
+Held by `battle-tests/adversarial/widgets/a-promise-nine-renderers-write-themselves.battle.test.mjs`.
+`select-field.ts` is the model and it is one expression long.
 
 ## The register's own shape, measured
 
