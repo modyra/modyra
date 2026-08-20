@@ -40,6 +40,12 @@ export type {
   UseMdyDatepickerFieldOptions,
 } from "./datepicker-field.js";
 
+export { useMdyDaterangeField } from "./daterange-field.js";
+export type {
+  MdyReactDaterangeFieldApi,
+  UseMdyDaterangeFieldOptions,
+} from "./daterange-field.js";
+
 export { useMdyTimepickerField } from "./timepicker-field.js";
 export type {
   MdyReactTimepickerFieldApi,
