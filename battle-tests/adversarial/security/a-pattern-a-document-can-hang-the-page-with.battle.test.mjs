@@ -137,6 +137,12 @@ const COUNTED = Object.freeze([
   // Also a hold-out. Two greedy negated classes side by side: each can take what the other can, so
   // there is no boundary between them at all. 0.08 ms at 11 characters, 338 ms at 26.
   ["^([^x]+[^y]+)+z$", "a".repeat(30)],
+  // A third hold-out, aimed at the shapes the rule's own account never mentions: a lookahead around a
+  // quantified body, a quantified group inside another, and two alternatives where one is a prefix of
+  // the other. All three measured hot — 7 ms at 21 characters, 218 ms at 26 for the first.
+  ["^((?=a)a+)+b$", "a".repeat(30)],
+  ["^((ab?)+)+c$", "ab".repeat(26)],
+  ["^([a-z]+|[a-z]+[0-9])+!$", "a".repeat(30)],
   ["^(a{1,10})+b$", "a".repeat(32)],
   ["^([a-z]+){12}!$", "a".repeat(32)],
   ["(.*a){20}$", `${"a".repeat(30)}b`],

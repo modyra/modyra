@@ -16495,7 +16495,27 @@ lockfile update. That is shared repository configuration and a lockfile CI valid
 `--frozen-lockfile`, so it is a decision rather than a repair to take unasked — it is put to the user
 with the table above.
 
-## 277 — The seam rule, against thirty patterns it has never seen (S0, SEC-004)
+## 277 — The seam rule, against thirty patterns it has never seen (S0, SEC-004) — CLOSED
+
+**Closed, `7c299e22`**, and verified against a **third** hold-out aimed at what the rule's own account
+never mentions — a lookahead wrapping a quantified body, a quantified group inside another, prefix
+alternatives, a starred body, and five backreference shapes:
+
+```
+refused, and hot   ^((?=a)a+)+b$            11:0.06  16:0.31  21:7   26:218 ms
+refused, and hot   ^((ab?)+)+c$             21:0.13  31:0.44  41:13  51:411
+refused, and hot   ^(a*)+b$                 11:0.22  16:2     21:37  26:1243
+refused, and hot   ^([a-z]+|[a-z]+[0-9])+!$ 11:0.09  16:0.29  21:7   26:249
+refused            ^(a|ab)+c$   ^(\w+\s?)+x$
+accepted, cheap    ^(a+)\1+$  ^(\w+)\1+!$  ^(.+)\1+$  ^(a|b)+\1$  ^(\w+)\1\1\1$
+accepted           (foo|bar|baz)+  (ab|cd)+  (\d{3}-){2}\d{4}  (?:[A-Z]{2}\d{2}){1,4}
+                   ([a-z]+\.)+[a-z]{2,}  (\[[^\]]+\])+
+```
+
+Seven of eight exponential shapes refused, all six safe ones kept, and the five backreferences
+correctly left alone — non-regular, and flat in V8 at these lengths, so refusing them would delete
+rules for nothing. The eighteen are now in the battle.
+
 
 `f297a3c0` reports thirty-four of thirty-four correct. That set is the one the rule was written
 against, so it measures the rule's fit rather than its reach. A **hold-out** of thirty patterns —
