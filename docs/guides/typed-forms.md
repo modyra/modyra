@@ -94,6 +94,11 @@ form.f.kind.set("detailed");
 form.state.valid(); // false — now it is
 ```
 
+This `when` is a closure, which is the right tool inside your own code and the one thing that cannot
+be serialized: a document carrying it arrives with the condition silently missing. The contract mode
+writes the same condition as data instead — see
+[a condition in both modes](./usage-modes.md#a-condition-in-both-modes).
+
 ### A whole section
 
 Repeating one predicate on every leaf of a branch is exactly the work `when` exists to remove, so a
