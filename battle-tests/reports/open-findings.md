@@ -17403,6 +17403,35 @@ re-asks it.** 289 was four register entries that had outlived what they describe
 assertions arguing with records that had already decided the opposite; this is a header contradicting
 its own test's verdict. The counts at the top of the register are rewritten by a run. Prose is not.
 
+## 299 — `git add X && git commit` commits the index, not X (process)
+
+`501dbb25`, announced as *"test(battle): a command costs what it changes"*, carries a
+`feat(widgets)!` breaking change: `MDY_WIDGET_CONTRACT_VERSION` 2 → 3, a new declared role, two
+conformance manifests, a contract snapshot and an ADR amendment. None of it is mine. `esecutore3` had
+`git add`-ed that work and had not committed it yet.
+
+**The mechanism, and it is not `-A`.** I ran `git add battle-tests && git commit -m …`. `git add`
+adds to the index; `git commit` commits **the index**, all of it. Anything another session had staged
+went with mine. In a tree four sessions are working in, staging is shared state and a commit is a
+snapshot of it.
+
+The safe forms, either of which would have caught this:
+
+```
+git diff --cached --name-only     read the index before committing it
+git commit -- <paths>             commit a pathspec rather than the index
+```
+
+The release is unaffected — changesets decide versions, not commit messages — but the history is
+wrong in the way that matters most: **somebody looking for when the widget contract version moved
+will not find it.** `esecutore3` chose not to rewrite, correctly: `main` is pushed and shared by four
+sessions, and rewriting it to tidy a message would cost more than the message is worth.
+
+Recorded because it is the third shared-tree hazard this campaign has produced, and they rhyme: a
+probe measures work in flight rather than `HEAD` (268), a rebuild races an edit and the freshness gate
+fires (the same), and now a commit takes what a neighbour staged. **A shared working tree makes the
+index, the build output and `HEAD` three different answers to "what is the code right now".**
+
 ## The register's own shape, measured
 
 ```
