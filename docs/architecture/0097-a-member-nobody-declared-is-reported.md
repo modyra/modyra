@@ -50,6 +50,26 @@ readable at runtime. The audit compares them against the published schemas, so t
 surfaces cannot drift from each other, but neither is checked against the type. A member added to a
 field's interface and to neither list is still unreported.
 
+## Amendment: at every depth, and on a slot
+
+The rule was applied to the *top* of the layout only, and to the two node kinds. A layout nests — a
+row inside a section inside a row — and a stray member on a nested node was as unread as one on the
+outermost, with nothing said about it.
+
+The `layoutSlot` list had no reader at all. A slot is the third shape a layout position takes, beside
+the two node kinds: `{ref, at}`, a field name and where it sits. It is also where a stray member
+costs the most, because `at` is *how* a field says which column it takes at which size — a slot
+written `att` is a placement that never happens, and the document parsed clean in strict mode with
+the misspelling kept in the parsed layout and handed to whatever draws it.
+
+The parser now walks the whole layout tree, holding every node to its kind's list and every slot to
+`MDY_DYNAMIC_MEMBERS.layoutSlot`, and reports at the path where the member is written —
+`/layout/0/columns/1/0`, not `/layout/0`. A slot is told apart from a node by carrying `ref` and no
+`kind`.
+
+The walk is over a stack and bounded by the same depth the layout validator enforces: the depth here
+is the document's own, and a document is untrusted input.
+
 ## Alternatives rejected
 
 **Drop the member and the node with it.** It would make a reader refuse a document that a newer
