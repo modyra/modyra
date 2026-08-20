@@ -17486,6 +17486,45 @@ It is the null-mutant shape from finding 225 — a check passes and nobody asks 
 have failed for a *different* reason than the one under test. **A control that passes for both the
 sound and the broken case is not a control**, and a payload that can only fail one way tests one way.
 
+## 301 — The guides teach `when` as a closure and never mention the expression (S2, DOC-001)
+
+Reported by the user, measured here.
+
+**Every `when:` in the guides is a function.** Four of them, all in `docs/guides/typed-forms.md`:
+
+```
+typed-forms.md:88   when: (_value, form) => form["kind"] === "detailed",
+typed-forms.md:107  { when: (_section, form) => form.kind === "company" },
+typed-forms.md:146  { when: (_value, row) => row.kind === "detailed" }
+typed-forms.md:272  when: (v) => PHONE_RE.test(v),
+```
+
+**No guide mentions the other half.** `grep -rl 'MdyExpression\|operands' docs/guides/*.md` returns
+nothing, and the whole published expression API is unnamed by any guide:
+
+```
+evaluateExpression  validateExpression  expressionPaths  expressionContextKeys
+isExpression  evaluateRuleCondition  MDY_MAX_EXPRESSION_DEPTH
+                                                     named in 0 of 24 guides
+```
+
+`MdyExpression` and `operands` appear only in ADRs and one example page.
+
+**This is not a missing paragraph, it is the missing half of the premise.** ADR 0092 is called *a
+condition travels with the form*, and says the split in as many words: *"the typed schema expresses a
+condition as code; the document expresses it as data, through `MdyExpression` — a closed tree of
+sixteen enumerated operators over `{path}` operands and literals, depth-capped at 32, with a cost gate
+on patterns."* A closure cannot be sent over a wire. The expression is what makes a document carry its
+own behaviour — which is the thing this library is *for*, and the thing every comparison against
+another form library turns on.
+
+A reader of the guides learns that a condition is a closure, and comes away believing conditions do
+not travel. The register's own note on the campaign's most productive method applies to its own
+documentation: **two surfaces answer the same question and only one of them is written down.**
+
+Handed to the documentation lane with the reasoning already recorded in ADRs 0005, 0007, 0047, 0069
+and 0092 — the material exists, and none of it is in a guide.
+
 ## The register's own shape, measured
 
 ```
