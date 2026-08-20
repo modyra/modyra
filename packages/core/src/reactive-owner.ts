@@ -14,7 +14,40 @@ import { MDY_DEV } from "./dev-flags.js";
 import { MdyCrossRuntimeObservationError } from "./reactivity-errors.js";
 import { MDY_CROSS_RUNTIME_OBSERVATION, type MdyDiagnostics } from "./reactivity-diagnostics.js";
 
-const HANDLE_OWNERS = new WeakMap<object, MdyReactivity>();
+/**
+ * The two registries, shared across every copy of this package in one realm.
+ *
+ * A module-level `WeakMap` is per module *instance*. Two copies of `@modyra/core` in one dependency
+ * tree — what a package manager builds whenever two dependents need versions it cannot deduplicate,
+ * the ordinary state of a tree partway through an upgrade — are two registries, and a handle
+ * registered in one is unknown to the other. `observerFor` reports only when it can see an owner
+ * that differs from the runtime it was handed, so an unknown handle is a handle it says nothing
+ * about: the guard turns itself off in exactly the tree it exists for.
+ *
+ * A registry keyed by a global symbol is one registry however many copies are loaded. It is scoped
+ * to the realm, so a worker or a second document has its own — which is correct, since a handle
+ * cannot cross a realm either.
+ *
+ * Read defensively: another copy may be a version whose registry has a different shape, and one that
+ * does not carry both maps is not used rather than trusted.
+ */
+const REGISTRY = Symbol.for("modyra.handle-registry");
+
+interface HandleRegistry {
+  readonly owners: WeakMap<object, MdyReactivity>;
+  readonly forms: WeakMap<object, object>;
+}
+
+const registry = ((): HandleRegistry => {
+  const host = globalThis as Record<symbol, unknown>;
+  const held = host[REGISTRY] as Partial<HandleRegistry> | undefined;
+  if (held?.owners instanceof WeakMap && held.forms instanceof WeakMap) return held as HandleRegistry;
+  const fresh: HandleRegistry = { owners: new WeakMap(), forms: new WeakMap() };
+  host[REGISTRY] = fresh;
+  return fresh;
+})();
+
+const HANDLE_OWNERS = registry.owners;
 
 /**
  * Which form a handle came from.
@@ -24,7 +57,7 @@ const HANDLE_OWNERS = new WeakMap<object, MdyReactivity>();
  * handle belongs to, not the one whose element happens to enclose the control — otherwise what the
  * user types lands in the wrong form, and nothing says so.
  */
-const HANDLE_FORMS = new WeakMap<object, object>();
+const HANDLE_FORMS = registry.forms;
 
 /** Internal: called by handle factories right after building a handle. */
 export function registerHandleForm(handle: object, form: object): void {
