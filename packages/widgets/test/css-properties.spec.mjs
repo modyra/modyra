@@ -12,6 +12,7 @@ import { readdirSync, readFileSync } from "node:fs";
 import { test } from "node:test";
 import {
   MDY_CSS_PROPERTIES,
+  MDY_TIMEPICKER_INNER_RING,
 } from "../dist/index.js";
 import { MDY_CSS_PROPERTY_NAMES } from "../dist/vocabulary.js";
 
@@ -62,4 +63,30 @@ test("the dial index is the one property still outside the namespace", () => {
   // known one instead of becoming a precedent.
   const unnamespaced = MDY_CSS_PROPERTY_NAMES.filter((name) => !name.startsWith("--mdy-"));
   assert.deepEqual(unnamespaced, ["--index"]);
+});
+
+/**
+ * The one number the drawing and the hit test share.
+ *
+ * `MDY_TIMEPICKER_INNER_RING` decides which ring a pointer is read as being on; the stylesheet's
+ * `translateY(calc(var(--tp-hand-length) * -0.6))` decides where that ring is painted. They are the
+ * same fraction of the same length and nothing but this holds them together — change either and a
+ * click lands on the number beside the one under the finger, which no other test notices and a
+ * person experiences as the dial being haunted.
+ *
+ * Everything else about where the rings fall is measured from `--tp-hand-length` at run time, so
+ * this is the whole of the shared surface.
+ */
+test("the inner ring is hit where it is painted", () => {
+  // Inside the inner ring's own rule: the outer numbers are placed off the same property at `-1`,
+  // and a search of the whole sheet finds that one first.
+  const rule = /\.mdy-timepicker-dial__number--inner\s*\{([\s\S]*?)\}/.exec(css);
+  assert.ok(rule, "the stylesheet no longer has a rule placing the inner ring");
+  const painted = /--tp-hand-length\)\s*\*\s*-([\d.]+)\)/.exec(rule[1]);
+  assert.ok(painted, "the inner ring is no longer placed off --tp-hand-length");
+  assert.equal(
+    Number(painted[1]),
+    MDY_TIMEPICKER_INNER_RING,
+    `the face paints its inner ring at ${painted[1]} of the hand and the hit test reads ${MDY_TIMEPICKER_INNER_RING}`,
+  );
 });

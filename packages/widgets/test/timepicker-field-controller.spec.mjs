@@ -12,6 +12,7 @@ import test from "node:test";
 import { vanillaReactivity } from "@modyra/core";
 import {
   createTimepickerFieldController,
+  MDY_TIMEPICKER_INNER_RING,
   timepickerDialRing,
 } from "../dist/field/index.js";
 import { MDY_VALUE_CONTRACTS } from "../../core/dist/index.js";
@@ -161,15 +162,21 @@ test("the dial's two rings name two different hours from one direction", () => {
   assert.equal(dialHour(0, "outer"), 12, "noon sits at the top of the outer ring");
   assert.equal(dialHour(0, "inner"), 0, "and midnight at the top of the inner one");
 
-  const face = { left: 0, top: 0, width: 200, height: 200 };
+  // The geometry the stylesheet lays out: a 256px dial, 40px numbers, so the hand — the radius the
+  // outer digits sit at — is 128 − 20 − 8 = 100, and the inner digits sit at 0.6 of it.
+  const face = { left: 0, top: 0, width: 256, height: 256 };
+  const HAND = 100;
   const at = (radius, degrees) => {
     const radians = ((degrees - 90) * Math.PI) / 180;
-    return [100 + Math.cos(radians) * radius, 100 + Math.sin(radians) * radius];
+    return [128 + Math.cos(radians) * radius, 128 + Math.sin(radians) * radius];
   };
-  assert.equal(timepickerDialRing(face, ...at(88, 90), "24h"), "outer");
-  assert.equal(timepickerDialRing(face, ...at(60, 90), "24h"), "inner");
+  // Each ring claims the digits actually drawn on it, and the boundary is the midpoint between them.
+  assert.equal(timepickerDialRing(face, ...at(HAND, 90), "24h", HAND), "outer", "the outer digits are on the outer ring");
+  assert.equal(timepickerDialRing(face, ...at(127, 90), "24h", HAND), "outer", "and so is the rim beyond them");
+  assert.equal(timepickerDialRing(face, ...at(HAND * MDY_TIMEPICKER_INNER_RING, 90), "24h", HAND), "inner");
+  assert.equal(timepickerDialRing(face, ...at(10, 90), "24h", HAND), "inner", "as is everything inside them");
   // A 12-hour face has one ring wherever the finger lands.
-  assert.equal(timepickerDialRing(face, ...at(60, 90), "12h"), "outer");
+  assert.equal(timepickerDialRing(face, ...at(60, 90), "12h", HAND), "outer");
 });
 
 test("a 24-hour picker takes every hour its own face shows", () => {

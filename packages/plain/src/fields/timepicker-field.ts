@@ -243,6 +243,24 @@ export function renderTimepickerField(
    * Picking on the face. The angle-to-time arithmetic is the contract's `set-from-angle`, which
    * calls the shared snapping — this only reports where the pointer is.
    */
+  /**
+   * The radius the outer digits are drawn at, read from the stylesheet that draws them.
+   *
+   * `--tp-hand-length` is `dialSize / 2 − numSize / 2 − 8px`, and all three of those numbers belong
+   * to the drawing. Measured rather than recomputed here: a copy of them in this file is a copy that
+   * drifts from the paint, and the hit test then sends a pointer to the number beside the one under
+   * the finger.
+   */
+  function handLength(): number {
+    const declared = getComputedStyle(dialFace).getPropertyValue("--tp-hand-length").trim();
+    const measured = Number.parseFloat(declared);
+    // Falls back to the face's own radius when the stylesheet is not loaded — a face with no CSS has
+    // no rings drawn on it either, so the answer cannot be wrong about where they are.
+    return Number.isFinite(measured) && measured > 0
+      ? measured
+      : dialFace.getBoundingClientRect().width / 2;
+  }
+
   function pickFromPointer(event: PointerEvent): void {
     const state = controller.state();
     if (state.viewMode !== "dial") return;
@@ -252,7 +270,7 @@ export function renderTimepickerField(
     // say which hour is under the pointer. Which ring it is belongs to the contract, like which
     // numbers there are: a renderer deciding for itself is a renderer that can disagree with its own
     // drawing.
-    const ring = timepickerDialRing(face, event.clientX, event.clientY, state.format);
+    const ring = timepickerDialRing(face, event.clientX, event.clientY, state.format, handLength());
     dispatch({ type: "set-from-angle", field: state.focusedField, angle, ring });
   }
   let dragging = false;

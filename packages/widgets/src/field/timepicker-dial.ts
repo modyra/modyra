@@ -122,13 +122,14 @@ export interface MdyTimepickerDialKeyResult {
  * Returns `null` for a key the dial does not claim, so a host can let it through.
  */
 /**
- * How far in the inner ring sits, as a fraction of the outer one.
+ * How far in the inner ring sits, as a fraction of the **hand's length**.
  *
- * The stylesheet draws it at `0.6` of the hand's length and says why there; this is the same number
- * because the two have to agree — a hit test that disagrees with the drawing sends a person's touch
- * to a number their finger is not on. The boundary between the rings is the midpoint.
+ * The stylesheet draws it at `0.6` of `--tp-hand-length` and says why there; this is the same number
+ * because the two have to agree. `INNER_RING_RADIUS` is the one value shared between the drawing and
+ * the hit test, and a contract test holds it against the stylesheet — everything else about where
+ * the rings land is measured rather than assumed.
  */
-const INNER_RING_RADIUS = 0.6;
+export const MDY_TIMEPICKER_INNER_RING = 0.6;
 
 /**
  * Which ring of the face a pointer landed on.
@@ -137,23 +138,28 @@ const INNER_RING_RADIUS = 0.6;
  * positions, so the angle alone cannot name the hour — asked without this, half the numbers the face
  * draws had no way to be chosen.
  *
- * Here rather than in each renderer for the same reason `timepickerDialNumbers` is: a renderer that
- * works out which ring it drew is a renderer with its own clock, and three of them working it out
- * separately is three chances to disagree with the drawing.
+ * `handLength` is the radius the outer digits are drawn at, which the stylesheet computes as
+ * `dialSize / 2 − numSize / 2 − 8px` and publishes as `--tp-hand-length`. It is passed in rather
+ * than derived because those three numbers belong to the drawing: a copy of them here is a copy that
+ * drifts, and the first version of this function compared a fraction of the *hand* against a
+ * fraction of the *dial radius* — two different lengths — which put the boundary 2.4px outside the
+ * outer digits. Every point on the face read as `inner`, including the outer numbers themselves.
+ *
+ * The boundary is the midpoint between where the two rings are actually painted.
  */
 export function timepickerDialRing(
   face: { readonly width: number; readonly height: number; readonly left: number; readonly top: number },
   clientX: number,
   clientY: number,
   format: MdyTimeFormat,
+  handLength: number,
 ): "outer" | "inner" {
   if (format !== "24h") return "outer";
-  const radius = Math.min(face.width, face.height) / 2;
-  if (radius <= 0) return "outer";
+  if (!(handLength > 0)) return "outer";
   const dx = clientX - (face.left + face.width / 2);
   const dy = clientY - (face.top + face.height / 2);
-  const reach = Math.sqrt(dx * dx + dy * dy) / radius;
-  return reach < (1 + INNER_RING_RADIUS) / 2 ? "inner" : "outer";
+  const reach = Math.sqrt(dx * dx + dy * dy);
+  return reach < (handLength * (1 + MDY_TIMEPICKER_INNER_RING)) / 2 ? "inner" : "outer";
 }
 
 export function timepickerDialKeyIntent(

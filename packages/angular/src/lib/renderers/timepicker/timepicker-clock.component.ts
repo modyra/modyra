@@ -1,3 +1,4 @@
+import { handLengthOf } from "./hand-length";
 import {
   ChangeDetectionStrategy,
   Component,
@@ -344,6 +345,6 @@ export class MdyTimepickerClockComponent {
     if (!coords) return;
     const face = el.getBoundingClientRect();
     this.dragAngle.set(pointerAngle(face, coords.clientX, coords.clientY));
-    this.dragRing = timepickerDialRing(face, coords.clientX, coords.clientY, this.format());
+    this.dragRing = timepickerDialRing(face, coords.clientX, coords.clientY, this.format(), handLengthOf(el, face));
   }
 }

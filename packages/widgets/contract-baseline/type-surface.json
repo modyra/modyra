@@ -3332,6 +3332,7 @@
     "(1) clientX: number",
     "(2) clientY: number",
     "(3) format: MdyTimeFormat",
+    "(4) handLength: number",
     "-> returns: \"outer\" | \"inner\""
   ],
   "timepickerFieldPartIds": [
