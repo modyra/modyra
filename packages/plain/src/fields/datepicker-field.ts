@@ -243,8 +243,9 @@ export function renderDatepickerField(
     setErrors(shell.errorList, shownErrorsOf(handle).map((e) => e.message));
     control.setAttribute("aria-invalid", String(showsAsInvalid({ valid: handle.valid(), disabled: handle.disabled() })));
     shell.syncState({
+      open: state.open,
       touched: handle.touched(), disabled: handle.disabled(),
-      hasError: showsAsInvalid({ valid: handle.valid(), disabled: handle.disabled() }), filled: state.selectedDate !== "", required: handle.required(),
+      hasError: showsAsInvalid({ valid: handle.valid(), disabled: handle.disabled() }), filled: Boolean(state.selectedDate), required: handle.required(),
     });
 
     // The input mirrors the committed value, except while the person is typing — and except while it

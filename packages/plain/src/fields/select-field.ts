@@ -266,6 +266,9 @@ export function renderSelectField(
     // The shell's own state, which every other kind here reflects and this one did not: the themes
     // key the touched and error treatments off the renderer root and the wrapper.
     shell.syncState({
+      // Read from the controller rather than from `state` below: this call runs before that local is
+      // bound, and the controller is the same source either way.
+      open: controller.state().open,
       touched: handle.touched(),
       disabled: handle.disabled(),
       hasError: shownErrorsOf(handle).length > 0,
