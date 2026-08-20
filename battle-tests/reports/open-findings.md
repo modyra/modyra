@@ -17009,6 +17009,50 @@ That is a gap in this instrument, not in the findings — and it is the second t
 recorded claim outlived what it described. The other was two battles asserting against records that
 had already decided the opposite (286).
 
+## 290 — Two option values, one generated id (S0, UI-003 A11Y-001)
+
+An option's id is built from its **value**, and a value is data — a city, a plan name, something a CSV
+import produced. `idSafeKey` spells the characters an id may not carry, and says why it spells rather
+than replaces:
+
+> Percent-encoded rather than replaced: `%` goes first so the encoding stays reversible, and the
+> delimiter is encoded because an id carrying it a second time cannot be taken apart again.
+
+**Reversible is the word that does not hold.** Every whitespace character is written as the same
+escape:
+
+```js
+.replace(/[\t\n\f\r ]/g, "%20")
+```
+
+So three distinct values become one id:
+
+```
+"a b"    ->  w__option__a%20b
+"a\tb"   ->  w__option__a%20b
+"a\nb"   ->  w__option__a%20b
+```
+
+Measured over twenty-two values chosen where the encoding works hardest: **twenty-two values, twenty
+distinct ids.**
+
+This is the defect `an-option-that-never-appears` describes, reached from the other side. There it was
+two options declared with the *same* value; here it is two options with **different** values that the
+id factory makes the same. The browser holds two elements with one id happily, so `getElementById`,
+`label[for]` and every ARIA IDREF stop being deterministic, and `aria-activedescendant` points at
+whichever the document reaches first.
+
+A tab or a newline inside an option's value is what a paste from a spreadsheet produces. Nothing
+refuses it, and nothing should: an option's value is data, and refusing it would refuse the document —
+which is the reasoning that made this function spell rather than reject in the first place.
+
+**The repair is inside the sentence the function already wrote**: spell each character as its own code
+— `%09`, `%0A`, `%0C`, `%0D`, `%20` — and the encoding is reversible, as claimed.
+
+Held by `battle-tests/adversarial/widgets/two-values-one-id.battle.test.mjs`, which asserts the other
+half beside it: every id still comes apart into exactly the widget, the part and the key. A repair
+that stopped encoding would satisfy injectivity and break that.
+
 ## The register's own shape, measured
 
 ```
