@@ -266,6 +266,13 @@ allowances per theme and asserts them in both directions, so one that stops appl
 **Muted text is reading text.** Labels, placeholders, supporting text and weekday headers hold 4.5:1
 like anything else — "secondary" is their weight in the hierarchy, not the standard they answer to.
 
+**Opacity is a colour that has not been decided yet.** Muting text by fading it composites against
+whatever is behind, so one number is several contrasts: the adjacent-month days in a calendar were
+`opacity: 0.5` and measured 3.06:1 on the resting surface and 3.01:1 on a hovered cell. Where a
+faded value is the mechanism, the number is chosen against the **worst** ground the element can sit
+on and not the one it is usually seen against. A disabled control is the exception AA itself makes
+and keeps its own.
+
 **A stylesheet cannot check what it computed.** It has the colour in OKLCH and a ratio wants sRGB
 luminance, so every `on-` colour a theme derives live is an estimate of the rule rather than the
 rule. Where a palette can be generated ahead of time, `color-utils` applies it exactly.
