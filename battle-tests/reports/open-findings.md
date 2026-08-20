@@ -16434,6 +16434,59 @@ refuses half of what it is used for.
 Held by the same battle as 272 — the ten are now in `MUST_STAY_ALLOWED`, so the two directions fail
 against each other and neither can be satisfied by giving up on the other.
 
+## 275 — The browser tier still could not build in CI (harness, repository)
+
+`5422b86b` added `build:core` and `build:styles` to the browser scripts, which was the fix for the job
+dying at 81 TypeScript errors. It still could not build. The host page imports `@modyra/lit`, nothing
+built it, and on a fresh checkout esbuild stops before a single spec runs:
+
+```
+battle-tests/browser/host/lit-entry.mjs:12  ERROR: Could not resolve "@modyra/lit/adapter"
+battle-tests/browser/host/lit-entry.mjs:13  ERROR: Could not resolve "@modyra/lit/ui"
+  The module "./dist/ui.js" was not found on the file system
+```
+
+Third time in this campaign, and the same shape each time: a build step that names its packages by
+hand, and a package the thing under test imports that is not on the list. 261 was the node tier
+missing Studio; `5422b86b` was this tier missing core and styles; this is the same tier missing lit.
+
+**So the guard stops naming them.** `assertPageIsCurrent` now reads the packages off the host's own
+entry files — every `from "@modyra/x"` under `battle-tests/browser` — and adds `styles`, which the
+host copies rather than imports. It reports `core lit plain styles widgets`. Falsified by removing
+`packages/lit/dist`: it names the package and exits 2, where before it checked three packages and
+said nothing.
+
+`battle:browser` and `battle:browser:ci` build lit as well, with the same `scripts/tsc7.mjs`
+invocation the other build scripts use.
+
+## 276 — Twenty-three open Dependabot alerts, all of them dev-time (repository)
+
+```
+package             worst    open  patched in
+undici              high        6  7.29.0 / 6.28.0     installed 6.27.0, 7.28.0
+postcss             high        2  8.5.18 / 8.5.23     installed 8.5.12, 8.5.19
+js-yaml             high        2  3.15.1 / 4.3.1      installed 3.15.0, 4.3.0
+fast-uri            high        2  3.1.5               installed 3.1.3
+ip-address          high        3  10.3.1 / 10.2.2     installed 10.2.0
+hono                medium      3  4.12.34             installed 4.12.30, 4.12.31
+@hono/node-server   medium      1  1.19.15
+webpack-dev-server  medium      1  5.2.6               installed 5.2.5
+```
+
+**None of them reaches a consumer of a published package**, and that is the fact that decides how
+urgent this is. Every published package's runtime `dependencies` are workspace siblings and `tslib`;
+the alerts are all in `pnpm-lock.yaml` behind the root's devDependencies. `pnpm why undici` walks to
+`@angular/cli` and `jsdom` under `modyra-workspace (devDependencies)`, and the others sit in the same
+build-tooling trees.
+
+So they are real for contributors, CI runners and the docs site, and not for users of the library.
+Every one has a patched version and each is one minor or patch step away.
+
+The remediation is a `pnpm.overrides` block in the root `package.json` pinning the eight, then a
+lockfile update. That is shared repository configuration and a lockfile CI validates with
+`--frozen-lockfile`, so it is a decision rather than a repair to take unasked — it is put to the user
+with the table above.
+
 ## The register's own shape, measured
 
 ```

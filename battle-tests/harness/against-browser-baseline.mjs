@@ -143,10 +143,36 @@ function severitiesFor(names) {
  * `battle:browser:ci` builds both before calling this. Running it, or `playwright test`, by hand does
  * not, which is when the page is a week old and says so to nobody.
  */
+/**
+ * The packages the host page is built from, read off its own entry files.
+ *
+ * A fixed list is how this went wrong twice: the page imports `@modyra/lit` as well, and the tier's
+ * build step did not make it, so on a fresh checkout esbuild could not resolve `@modyra/lit/ui` and
+ * the job died before a single spec ran. A guard that names three packages cannot notice a fourth.
+ */
+function packagesTheHostImports() {
+  const found = new Set();
+  const roots = [join(BATTLE_ROOT, "browser", "host"), join(BATTLE_ROOT, "browser")];
+  for (const root of roots) {
+    if (!existsSync(root)) continue;
+    for (const entry of readdirSync(root, { withFileTypes: true })) {
+      if (!entry.isFile() || !/\.(mjs|ts)$/.test(entry.name)) continue;
+      const source = readFileSync(join(root, entry.name), "utf8");
+      for (const match of source.matchAll(/from\s*["']@modyra\/([a-z0-9-]+)/g)) {
+        if (existsSync(join(REPO_ROOT, "packages", match[1]))) found.add(match[1]);
+      }
+    }
+  }
+  // Styles is not imported by name — the host build copies its stylesheet — so it is named here.
+  found.add("styles");
+  return [...found].sort();
+}
+
 function assertPageIsCurrent() {
   const stale = [];
   const missing = [];
-  for (const name of ["core", "widgets", "plain"]) {
+  const measured = packagesTheHostImports();
+  for (const name of measured) {
     // Never built is not "unknown". On a fresh checkout `@modyra/core` has no `dist`, and this tier's
     // build step used to start at `build:plain` — so the page was compiled against nothing and the
     // job died 81 errors deep, every one of them the same missing module. Locally it passed, because
@@ -173,7 +199,7 @@ function assertPageIsCurrent() {
     process.exit(2);
   }
   const builtAt = statSync(host).mtimeMs;
-  for (const name of ["core", "widgets", "plain"]) {
+  for (const name of measured) {
     const dist = join(REPO_ROOT, "packages", name, "dist");
     if (!existsSync(dist)) continue;
     const distAt = newestUnder(dist);
