@@ -33,10 +33,15 @@ const type = (input, value) => {
 const press = (input, key) =>
   input.dispatchEvent(new window.KeyboardEvent("keydown", { key, bubbles: true }));
 
-test("an hour past 12 is marked invalid", async () => {
+test("an hour no clock has is marked invalid", async () => {
   const p = await picker();
-  type(p.hour, "13");
+  // The picker defaults to the 24-hour clock, as every renderer does, so the hour past the end is
+  // 23 rather than 12. The property is the same either way: an entry the segment cannot hold is
+  // shown as wrong where it was typed.
+  type(p.hour, "24");
   assert.equal(p.hour.getAttribute("aria-invalid"), "true");
+  type(p.hour, "13");
+  assert.equal(p.hour.getAttribute("aria-invalid"), null, "and stops saying so once it is right");
   p.dispose();
 });
 
@@ -51,7 +56,7 @@ test("a minute past 59 is marked invalid, and 59 is not", async () => {
 
 test("clearing a segment is not an error", async () => {
   const p = await picker();
-  type(p.hour, "13");
+  type(p.hour, "24");
   assert.equal(p.hour.getAttribute("aria-invalid"), "true");
   type(p.hour, "");
   assert.equal(p.hour.getAttribute("aria-invalid"), null);
@@ -60,11 +65,11 @@ test("clearing a segment is not an error", async () => {
 
 test("the arrow keys wrap at both ends", async () => {
   const p = await picker();
-  type(p.hour, "12");
+  type(p.hour, "23");
   press(p.hour, "ArrowUp");
-  assert.equal(p.hour.value, "1");
+  assert.equal(p.hour.value, "0", "past the end of a 24-hour clock comes back to midnight");
   press(p.hour, "ArrowDown");
-  assert.equal(p.hour.value, "12");
+  assert.equal(p.hour.value, "23");
 
   type(p.minute, "59");
   press(p.minute, "ArrowUp");
@@ -76,8 +81,8 @@ test("the segments advertise their own range", async () => {
   const p = await picker();
   type(p.hour, "1");
   type(p.minute, "0");
-  assert.equal(p.hour.min, "1");
-  assert.equal(p.hour.max, "12");
+  assert.equal(p.hour.min, "0");
+  assert.equal(p.hour.max, "23");
   assert.equal(p.minute.min, "0");
   assert.equal(p.minute.max, "59");
   p.dispose();

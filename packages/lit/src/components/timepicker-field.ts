@@ -112,7 +112,9 @@ export class MdyTimepickerFieldElement extends MdyFieldElement<string | null> {
   constructor() {
     super();
     this.placeholder = "";
-    this.format = "12h";
+    // The 24-hour clock, as every renderer defaults to: a default that differs between adapters
+    // means one document renders a different clock in each of them. Set `format="12h"` for the other.
+    this.format = "24h";
     this.compact = false;
     this._open = false;
     this._isDragging = false;

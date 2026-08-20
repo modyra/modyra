@@ -8,9 +8,11 @@
  * (`set-from-angle`, `timepickerDialNumbers`, `timepickerSelectedDialValue`), so the gesture means
  * the same thing here as it does anywhere else.
  */
-import { observerFor, type MdyFieldHandle, type MdyReactivity } from "@modyra/core";
 import type { MdyDynamicDateField } from "@modyra/core";
+import { observerFor, type MdyFieldHandle, type MdyReactivity } from "@modyra/core";
+import { formatTimeAs, hourToAngle, minuteToAngle, parseAnyTime, pointerAngle, type MdyTimeFormat } from "@modyra/core/datetime";
 import {
+  MDY_I18N_MESSAGES_DEFAULT,
   MDY_WIDGET_CONTRACTS,
   acceptTimeField,
   createTimepickerFieldController,
@@ -24,21 +26,19 @@ import {
   timepickerDialRing,
   timepickerSelectedDialValue,
   type MdyElementLookup,
-  MDY_I18N_MESSAGES_DEFAULT,
   type MdyI18nMessages,
 } from "@modyra/widgets";
-import { formatTimeAs, hourToAngle, minuteToAngle, parseAnyTime, pointerAngle, type MdyTimeFormat } from "@modyra/core/datetime";
+import { runCommands } from "../command-runtime.js";
 import { applyPart, el, setErrors, setIcon, setText } from "../dom.js";
 import { buildFieldShell, insertControl } from "../field-shell.js";
-import { runCommands } from "../command-runtime.js";
-import { dismissOnOutsidePointer, positionOverlay, releaseOverlayPlacement, reflectOverlayOpen, trackOverlay } from "../overlay.js";
+import { dismissOnOutsidePointer, positionOverlay, reflectOverlayOpen, releaseOverlayPlacement, trackOverlay } from "../overlay.js";
 
 export function renderTimepickerField(
   container: HTMLElement,
   f: MdyDynamicDateField,
   handle: MdyFieldHandle<string | null>,
   reactivity?: MdyReactivity,
-  format: MdyTimeFormat = "12h",
+  format: MdyTimeFormat = "24h",
   widgetId: string = f.name,
   /**
    * The words this control shows. The engine has no opinion about them, so they arrive from the
