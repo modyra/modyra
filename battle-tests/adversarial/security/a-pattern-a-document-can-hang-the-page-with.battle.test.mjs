@@ -5,10 +5,11 @@
  * exists because a pattern whose syntax is perfect can stop the field answering. It refuses two
  * shapes: nested **unbounded** repetition, and repeated alternatives that can match the same text.
  *
- * `UNBOUNDED` is `*`, `+` and `{n,}`. A counted repetition — `{15}`, `{1,10}`, `{20}` — is left
- * alone, deliberately: the file says bounded repetition is not refused. But a *counted* repetition of
- * a group whose body matches a **variable** span is the same exponential shape with the exponent
- * written as a number, and the analyser lets all of these through:
+ * **All of it is refused now**, and the table below is what it cost to find that out — kept because a
+ * defence is only legible beside the attack it answers. `UNBOUNDED` was `*`, `+` and `{n,}`; a counted
+ * repetition — `{15}`, `{1,10}`, `{20}` — was left alone on the grounds that bounded repetition does
+ * not explode. A *counted* repetition of a group whose body matches a **variable** span is the same
+ * exponential shape with the exponent written as a number, and every row here went through:
  *
  *     milliseconds by input length, one process per measurement
  *
@@ -20,8 +21,8 @@
  *     (.*a){20}$       408   1714   6592  >8000
  *     ^(a+)+b$          refused, which is the same class written with `+`
  *
- * About 3.2× for every two characters on the first two, so thirty-six characters is minutes and forty
- * is hours. `^(\w+){8}!$` grows more slowly and is the same shape; it is left out of the assertion
+ * About 3.2× for every two characters on the first two, so thirty-six characters was minutes and forty
+ * was hours. `^(\w+){8}!$` grows more slowly and is the same shape; it is left out of the assertion
  * below because at these lengths it is still cheap, not because it is safe.
  *
  * `(.*a){20}$` characterised across four near misses and eight lengths: `a`s followed by a failing
