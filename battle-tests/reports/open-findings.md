@@ -17769,6 +17769,54 @@ conclusion for a reason that was not the conclusion.** Handed over by `esecutore
 command and said in the same message that the property it was supposed to guard was still broken —
 which is the report that made this finding possible.
 
+## 307 — The fourth guard, not held to the rule the other three enforce (S1, EXP-001)
+
+`namesOneThing` exists in `packages/core/src/expression.ts:189` to enforce one rule, and its own
+comment names the record: *"One operand names one thing (ADR 0092)."* It holds all four markers:
+
+```
+const OPERAND_MARKERS = ["path", "self", "root", "context"];
+```
+
+`isSelfRef`, `isRootRef` and `isContextRef` call it. **`isPathRef` does not.** It asks
+`typeof operand.path === "string"` and nothing about what else the object carries. Measured across
+every operand holding more than one marker — eleven combinations, all four guards asked:
+
+```
+path+self                  guards=path   validated=false  parsed=false
+path+root                  guards=path   validated=false  parsed=false
+path+context               guards=path   validated=false  parsed=false
+path+self+root             guards=path   validated=false  parsed=false
+path+self+context          guards=path   validated=false  parsed=false
+path+root+context          guards=path   validated=false  parsed=false
+path+self+root+context     guards=path   validated=false  parsed=false
+
+self+root, self+context, root+context, self+root+context   guards=none   correctly refused
+```
+
+**Seven shapes a published guard claims and both doors turn away.** The split is exactly the four
+combinations carrying `path` against the four that do not.
+
+Not a hole a document walks through — `validateExpression` refuses all seven and the parser refuses
+the document. **The consumer is what breaks.** A guard is what a reader tells operand shapes apart
+*by*: `isPathRef` returns true, they read `operand.path`, and they have built on a document the
+contract will not accept. The same class as the `{ context: "" }` case already in this battle, whose
+repair added a length check to `isContextRef` — the author was working through this family and the
+fourth guard was not brought along.
+
+**Found by auditing the suite rather than the product**, and by the method finding 306 handed over:
+a scan for battles whose title states a universal and whose body exercises one instance. This battle
+said *"at every door that reads it"* and asked **three of four published guards** — so the property
+was stated over a set and held over a subset, and the shapes carrying `path` were never put to it.
+
+The scan's own first result was a false positive worth recording: `a-schema-nothing-audits` was
+flagged for having no loop, and it sweeps with `.filter()`. The detector was reading syntax where the
+question is whether the subject set is derived or written down.
+
+Widened: `doorsOn` now takes its guards from a table of all four, and the mixed shapes are generated
+from the marker list rather than named. The S0 half — no operand claimed by two guards — is **green**,
+so the ambiguity the battle was written for is closed. The S1 half is this finding.
+
 ## The register's own shape, measured
 
 ```

@@ -34,6 +34,7 @@ import {
   evaluateExpression,
   expressionContextKeys,
   isContextRef,
+  isPathRef,
   isRootRef,
   isSelfRef,
   parseDynamicForm,
@@ -55,14 +56,42 @@ const documentReading = (operand) => ({
   },
 });
 
+/**
+ * The four markers an operand can carry, and the guard published for each.
+ *
+ * Held as a table rather than written out at each call: an operand shape whose guard is not asked is
+ * a shape this file states a property about and never puts the property to. `isPathRef` was the
+ * fourth, and asking three of four is how the ambiguity below stayed unmeasured on the combinations
+ * that carry a path.
+ */
+const GUARDS = [
+  ["path", isPathRef],
+  ["self", isSelfRef],
+  ["root", isRootRef],
+  ["context", isContextRef],
+];
+
 /** What every published door says about one operand. */
 function doorsOn(operand) {
   const expression = { op: "equals", operands: [operand, "x"] };
   return {
-    guards: [isSelfRef(operand) && "self", isRootRef(operand) && "root", isContextRef(operand) && "context"].filter(Boolean),
+    guards: GUARDS.filter(([, claims]) => claims(operand)).map(([name]) => name),
     validated: validateExpression(expression, "when").length === 0,
     parsed: parseDynamicForm(documentReading(operand), { mode: "strict" }).ok,
   };
+}
+
+/** Every operand carrying two markers or more, which is what "names one thing" excludes. */
+function mixedShapes() {
+  const marked = { path: "a", self: true, root: true, context: "tier" };
+  const names = Object.keys(marked);
+  const shapes = [];
+  for (let mask = 0; mask < 1 << names.length; mask += 1) {
+    const carried = names.filter((_, index) => (mask & (1 << index)) !== 0);
+    if (carried.length < 2) continue;
+    shapes.push([carried.join("+"), Object.fromEntries(carried.map((name) => [name, marked[name]]))]);
+  }
+  return shapes;
 }
 
 battle(
@@ -75,12 +104,14 @@ battle(
     // The control: each shape on its own is claimed by exactly one guard and taken by both doors, so
     // what the ambiguous one finds is the combination rather than a guard that answers loosely.
     const settled = {
+      path: doorsOn({ path: "a" }),
       self: doorsOn({ self: true }),
       root: doorsOn({ root: true }),
       context: doorsOn({ context: "tier" }),
     };
-    ctx.log.note("the three shapes on their own", settled);
+    ctx.log.note("the four shapes on their own", settled);
     expectEqual(settled, {
+      path: { guards: ["path"], validated: true, parsed: true },
       self: { guards: ["self"], validated: true, parsed: true },
       root: { guards: ["root"], validated: true, parsed: true },
       context: { guards: ["context"], validated: true, parsed: false },
@@ -99,6 +130,24 @@ battle(
       what: "one operand is claimed by two guards, so a consumer told to read it by the published guards is told two different things",
       detail: JSON.stringify(both),
     });
+
+    // Every mixed shape, not the one this file happened to name.
+    //
+    // `namesOneThing` exists to enforce "one operand names one thing", it knows all four markers, and
+    // three guards call it. A guard that does not is the whole property for the shapes it claims — so
+    // asking the eleven combinations is the difference between stating the rule and holding it.
+    const mixed = mixedShapes().map(([name, operand]) => [name, doorsOn(operand)]);
+    ctx.log.note("every operand carrying more than one marker", Object.fromEntries(mixed));
+
+    expectEqual(
+      mixed.filter(([, doors]) => doors.guards.length > 1).map(([name]) => name),
+      [],
+      {
+        claimIds: ["EXP-001"],
+        what: "an operand carrying two markers is claimed by two guards, so which one a reader believes is the order it asks in",
+      },
+    );
+
 
     // And the door a document arrives through takes it, which is where it stops being a curiosity: the
     // same bytes reach three runtimes and nothing says which half to read.
@@ -133,5 +182,25 @@ battle(
       claimIds: ["EXP-001"],
       what: "a guard claims an operand the validator refuses, so a consumer telling the shapes apart handles one the contract will not take",
     });
+
+    // The same disagreement, asked of every operand carrying more than one marker rather than of the
+    // one shape that first showed it.
+    //
+    // `namesOneThing` is the helper written for this rule — it holds all four markers and refuses an
+    // operand reaching for a second. `isSelfRef`, `isRootRef` and `isContextRef` call it. `isPathRef`
+    // does not, so it answers on `path` alone and says nothing about what else the object carries.
+    // A consumer reading an operand by the published guards is handed a path reference for an operand
+    // the validator turns away.
+    const mixed = mixedShapes().map(([name, operand]) => [name, doorsOn(operand)]);
+    ctx.log.note("every operand carrying more than one marker", Object.fromEntries(mixed));
+    expectEqual(
+      mixed.filter(([, doors]) => doors.guards.length === 1 && !doors.validated)
+        .map(([name, doors]) => `${name} claimed by ${doors.guards[0]}`),
+      [],
+      {
+        claimIds: ["EXP-001"],
+        what: "a guard claims an operand the validator refuses, so a consumer telling the shapes apart handles one the contract will not take",
+      },
+    );
   },
 );
