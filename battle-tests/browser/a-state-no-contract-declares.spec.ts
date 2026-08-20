@@ -14,6 +14,8 @@
  * spec with it, and every kind is mounted with a disabled option where its kind takes options —
  * because the state most likely to be asserted without being declared is the one a document can ask
  * for.
+ *
+ * Claims under attack: A11Y-004.
  */
 
 import { expect, test } from "@playwright/test";

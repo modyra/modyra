@@ -17,6 +17,8 @@
  * The check is deliberately about *any* control inside another rather than about this one
  * construction: it is the rule that is worth keeping, and the same mistake in another kind should
  * fail the same test.
+ *
+ * Claims under attack: A11Y-004, A11Y-002.
  */
 
 import { expect, test } from "@playwright/test";
