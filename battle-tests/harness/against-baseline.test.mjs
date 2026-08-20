@@ -72,6 +72,24 @@ test("the baseline forgives what it lists and nothing else", () => {
   assert.deepEqual(vanished, ["[S1][D-001] a battle under a name the suite no longer has"]);
 });
 
+test("a name recorded with one separator matches a run that used the other", () => {
+  // A browser spec is `<file> \u203a <title>`; a baseline written before that settled carries a plain
+  // `>`. Compared raw the two never meet, and the gate reports every known red as a regression and
+  // every recorded row as vanished — which is what it did to fifty-nine of them while three sessions
+  // were repairing against it.
+  const baseline = ["a.spec.ts > still open", "b.spec.ts > now closed"];
+  const run = {
+    failed: new Set(["a.spec.ts \u203a still open"]),
+    passed: new Set(["b.spec.ts \u203a now closed"]),
+  };
+
+  const seen = compareWithBaseline(run, baseline);
+  assert.deepEqual(seen.regressions, []);
+  assert.deepEqual(seen.vanished, []);
+  assert.equal(seen.stillOpen.length, 1);
+  assert.equal(seen.closed.length, 1);
+});
+
 test("a run that reported nothing is not a green run", () => {
   const run = readTap("TAP version 13\n1..0\n");
   assert.equal(run.passed.size + run.failed.size, 0);
