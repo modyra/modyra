@@ -8,6 +8,7 @@
  * What belongs to this renderer is the last two lines: one reactivity graph shared with every field's
  * widget controller, and a form the caller owns.
  */
+import type { MdyDraftOptions } from "@modyra/core";
 import {
   applyFlatValidators,
   buildFlatFormSchema,
@@ -34,8 +35,19 @@ export function buildForm(
   fields: ReadonlyArray<MdyDynamicField>,
   reactivity: MdyReactivity,
   collections: ReadonlyArray<MdyDynamicCollection> = [],
+  /**
+   * What the form itself is asked to do beyond holding the fields — persistence, for now.
+   *
+   * Passed through rather than re-declared: a draft is the *form's* option, and this renderer's job
+   * is to hand it over, not to have an opinion about it.
+   */
+  formOptions: { readonly draft?: string | MdyDraftOptions } = {},
 ): MdyTypedForm<MdyFormSchema> {
-  const form = createForm(buildFlatFormSchema(fields, collections), { reactivity, autoActivate: false });
+  const form = createForm(buildFlatFormSchema(fields, collections), {
+    ...formOptions,
+    reactivity,
+    autoActivate: false,
+  });
   applyFieldValidators(form, fields);
   form.activate();
   return form;
