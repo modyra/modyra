@@ -116,14 +116,33 @@ A variable body that is repeated is the exponential shape. `(\d{2}){3}` is not �
 consumes two characters, so there is one way to divide the input and nothing to backtrack over — and
 neither is `(?:ab){3}`, once the `?` that names a group's kind is no longer read as a quantifier.
 
-**What this newly refuses, stated rather than discovered.** A variable body is a necessary condition
-for the blowup and not a sufficient one: variability creates the *opportunity* to divide the input
-several ways, ambiguity is what makes the engine try them. `(ab?){3}` is variable and repeated and
-is not ambiguous — the `b` is decided by the next character — and it is refused now. The check
-cannot tell the two apart cheaply, and it errs toward refusing, which reverses the direction this
-record's own "deliberately conservative" paragraph describes for this one shape. A refusal is a
-diagnostic naming the shape and an author can rewrite the rule; the failure in the other direction
-is a page that stops.
+**The second half, which is not optional.** A variable body is a necessary condition for the blowup
+and not a sufficient one: variability creates the *opportunity* to divide the input several ways,
+ambiguity is what makes the engine try them. Refusing on variability alone deleted **ten of twenty**
+patterns from a corpus of what form authors actually write — an IPv4 address, a hostname, a slug, a
+grouped card number, a person's name — each measured flat against its own near miss out to two
+hundred characters, beside `^(a+){15}b$` going 0.05 · 0.18 · 5 · 146 · 3106 ms over twenty
+characters. Half of what `validators.pattern` is for is not a declarable cost.
+
+What the cheap ones have is a **forced boundary**: something the stretchy part cannot stand in for
+sits between one repetition and the next, so the division falls in exactly one place. So the seam is
+read, in the only two shapes it has:
+
+- the body ends stretchy — pinned unless that ending accepts everything the body's *first* element
+  does, because the first element is what the next repetition starts with. `[A-Z][a-z]+ ?` is
+  pinned: a space is not a capital.
+- the body ends fixed — pinned unless the stretchy part before it accepts everything that ending
+  does. `\d{1,3}\.` is pinned, a dot is not a digit; `.*a` is not, because a dot *is* an `a`.
+
+Containment rather than overlap, deliberately. A boundary the stretchy part can only *sometimes*
+take still pins the division wherever it cannot — an author who writes `[A-Za-z0-9]+[.-_]` has
+written a class that overlaps digits and capitals by accident, and the `.` and the `_` in it remain
+boundaries no letter can stand in for.
+
+What cannot be read is still refused when it repeats: a body this cannot take apart into elements,
+or an element whose character set is undecidable, counts as ambiguous. That is the conservative
+direction this record's own paragraph describes, restored — it is the *known* shapes that are
+allowed through, not the unknown ones.
 
 ## Alternatives rejected
 

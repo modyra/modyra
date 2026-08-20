@@ -169,9 +169,15 @@ function optionalAfter(branch: string, at: number): boolean {
   return close !== -1 && /^0*,/.test(branch.slice(at + 1, close));
 }
 
-/** A literal character as a pattern body that matches only itself. */
+/**
+ * A literal character as a pattern body that matches only itself.
+ *
+ * `-` is not escaped: it is only special inside a character class, and `\-` is an *invalid* escape
+ * under the `u` flag — so escaping it threw, the matcher came back `null`, and a hyphen became a
+ * character nothing could be compared against. `([a-z]+-)*` was refused for that and nothing else.
+ */
 function escapeLiteral(character: string): string {
-  return character.replace(/[\\^$.*+?()[\]{}|\/-]/g, "\\$&");
+  return character.replace(/[\\^$.*+?()[\]{}|\/]/g, "\\$&");
 }
 
 /** Top-level alternatives of a group body, given where each one starts. */
@@ -198,6 +204,193 @@ function overlap(branches: string[]): boolean {
       if (!b) continue;
       if (ALPHABET.some((character) => a.test(character) && b.test(character))) return true;
     }
+  }
+  return false;
+}
+
+
+/** One element of a group's body: what it can match, and how many times it may repeat. */
+interface Atom {
+  /** What one occurrence accepts, or `null` when that cannot be decided cheaply. */
+  readonly matcher: RegExp | null;
+  /** The element's own source, without its quantifier — what a union of elements is built from. */
+  readonly source: string;
+  readonly min: number;
+  readonly max: number;
+}
+
+/**
+ * The body of one alternative, split into the elements it is a sequence of.
+ *
+ * `null` when the body holds something this cannot read as a sequence — a backreference, an assertion
+ * — which is the answer that keeps an unreadable pattern out of a refusal.
+ */
+function atomsOf(branch: string): Atom[] | null {
+  const atoms: Atom[] = [];
+  let at = 0;
+  while (at < branch.length) {
+    const character = branch[at]!;
+    if (character === "^" || character === "$") { at += 1; continue; }
+    let end = at;
+    let matcher: RegExp | null = null;
+    if (character === "\\") {
+      const escaped = branch[at + 1];
+      if (escaped === undefined) return null;
+      // A backreference repeats whatever another group took, so what it accepts is not a property of
+      // the source at all.
+      if (/\d/.test(escaped) || escaped === "b" || escaped === "B") return null;
+      end = at + 1;
+      matcher = CLASS_ESCAPES.has(escaped)
+        ? safeMatcher(`\\${escaped}`)
+        : /[a-zA-Z]/.test(escaped)
+          ? null
+          : safeMatcher(escapeLiteral(LITERAL_ESCAPES[escaped] ?? escaped));
+    } else if (character === "[") {
+      const close = classEnd(branch, at);
+      if (close === -1) return null;
+      end = close;
+      matcher = safeMatcher(branch.slice(at, close + 1));
+    } else if (character === ".") {
+      matcher = safeMatcher(".");
+    } else if (character === "(") {
+      // A nested group is one element, and what it accepts is everything its own elements accept.
+      // Left undecidable it took the whole seam with it: a hostname's `(?:[a-z0-9-]*[a-z0-9])?`
+      // sits between a letter and the dot that ends the repetition, and "cannot tell" there refused
+      // the pattern the check exists to allow.
+      const close = groupEnd(branch, at);
+      if (close === -1) return null;
+      end = close;
+      matcher = groupMatcher(branch.slice(at, close + 1));
+    } else if (character === ")" || character === "|") {
+      return null;
+    } else {
+      matcher = safeMatcher(escapeLiteral(character));
+    }
+    const repetition = repetitionAt(branch, end + 1);
+    atoms.push({
+      matcher,
+      source: branch.slice(at, end + 1),
+      min: repetition?.min ?? 1,
+      max: repetition?.max ?? 1,
+    });
+    at = (repetition?.end ?? end) + 1;
+  }
+  return atoms;
+}
+
+/**
+ * Everything a group accepts, as one matcher — the union of every element of every alternative.
+ *
+ * Not "what it starts with": the question a seam asks is whether the stretchy part can take the
+ * character that ends the repetition, and it can do that from anywhere inside itself.
+ */
+function groupMatcher(group: string): RegExp | null {
+  const inner = group.replace(/^\((\?(:|=|!|<=|<!|<[^>]*>))?/, "").replace(/\)$/, "");
+  const sources: string[] = [];
+  for (const branch of topLevelAlternatives(inner)) {
+    const atoms = atomsOf(branch);
+    if (atoms === null) return null;
+    for (const atom of atoms) {
+      if (atom.matcher === null) return null;
+      sources.push(atom.source);
+    }
+  }
+  if (sources.length === 0) return null;
+  return safeMatcher(sources.join("|"));
+}
+
+/** A body split on the `|` that belongs to it, skipping the ones inside groups and classes. */
+function topLevelAlternatives(body: string): string[] {
+  const out: string[] = [];
+  let from = 0;
+  let depth = 0;
+  for (let at = 0; at < body.length; at += 1) {
+    const character = body[at]!;
+    if (character === "\\") { at += 1; continue; }
+    if (character === "[") { const close = classEnd(body, at); if (close === -1) break; at = close; continue; }
+    if (character === "(") depth += 1;
+    else if (character === ")") depth -= 1;
+    else if (character === "|" && depth === 0) { out.push(body.slice(from, at)); from = at + 1; }
+  }
+  out.push(body.slice(from));
+  return out;
+}
+
+/** A pattern body compiled to something that answers for one character, or `null` when it will not. */
+function safeMatcher(body: string): RegExp | null {
+  try {
+    return new RegExp(`^(?:${body})$`, "u");
+  } catch {
+    return null;
+  }
+}
+
+/** Where the group opened at `at` closes, skipping classes and escapes. */
+function groupEnd(source: string, at: number): number {
+  let depth = 0;
+  for (let index = at; index < source.length; index += 1) {
+    const character = source[index]!;
+    if (character === "\\") { index += 1; continue; }
+    if (character === "[") { const close = classEnd(source, index); if (close === -1) return -1; index = close; continue; }
+    if (character === "(") depth += 1;
+    else if (character === ")") { depth -= 1; if (depth === 0) return index; }
+  }
+  return -1;
+}
+
+/**
+ * Whether everything `inner` accepts, the stretchy `outer` accepts too. Undecidable counts as yes.
+ *
+ * Containment rather than overlap, and the difference is the whole usable half of this check. What
+ * makes a seam undecidable is the stretchy part being able to *take the boundary itself* — `.` can
+ * take the `a` that ends `(.*a)`, so every position is a candidate. A boundary the stretchy part can
+ * only sometimes take still pins the division wherever it cannot: an author who writes
+ * `[A-Za-z0-9]+[.-_]` has written a class that overlaps digits and capitals by accident, and the `.`
+ * and the `_` in it are still boundaries no letter can stand in for.
+ */
+function containedIn(inner: Atom, outer: Atom): boolean {
+  if (!inner.matcher || !outer.matcher) return true;
+  return ALPHABET.every((character) => !inner.matcher!.test(character) || outer.matcher!.test(character));
+}
+
+/**
+ * Whether repeating this body gives the engine more than one way to divide the same input.
+ *
+ * A variable element creates the *opportunity* to divide the input several ways; only ambiguity makes
+ * the engine try all of them, and that is what separates a pattern that is flat at two hundred
+ * characters from one that takes minutes at forty. Measured against each pattern's own near miss —
+ * its repeated unit plus a character that breaks the anchor, which is what an attacker sends:
+ *
+ *     ^(\d{1,3}\.){3}\d{1,3}$   flat at 0.00ms from 41 characters to 201
+ *     ^([a-z]+-)*[a-z]+$         flat
+ *     ^(a+){15}b$                0.05 · 0.18 · 5 · 146 · 3106 at 11 · 16 · 21 · 26 · 31
+ *
+ * What the cheap ones have is a **forced boundary**: something the stretchy part cannot itself match
+ * sits between one repetition and the next, so there is exactly one place the division can fall. A
+ * dot after digits, a hyphen after letters, a comma after "anything but a comma". `(a+){15}` has
+ * fifteen stretchy spans and nothing between them; `(.*a){20}` has a boundary that `.` can eat.
+ *
+ * So the question is asked at the seam, in the only two shapes it has:
+ *
+ * - the body ends stretchy, and the next repetition starts with the body's first element — pinned
+ *   unless the stretchy ending accepts everything that first element does (`[A-Z][a-z]+ ?` — a
+ *   space is not a capital, so the capital says where the next repetition begins);
+ * - the body ends fixed, and what precedes that ending is stretchy — pinned unless the stretchy part
+ *   accepts everything the ending does (`\d{1,3}\.` — a dot is not a digit, so the dot says where
+ *   this repetition ends; `.*a` — a dot *is* an `a`, so nothing does).
+ *
+ * Undecidable is read as ambiguous, so a body this cannot take apart is still refused when it repeats.
+ */
+function bodyIsAmbiguous(branch: string): boolean {
+  const atoms = atomsOf(branch);
+  if (atoms === null || atoms.length === 0) return false;
+  if (!atoms.some((atom) => atom.min !== atom.max)) return false;
+  const last = atoms[atoms.length - 1]!;
+  if (last.min !== last.max) return containedIn(atoms[0]!, last);
+  for (let index = atoms.length - 2; index >= 0; index -= 1) {
+    const atom = atoms[index]!;
+    if (atom.min === atom.max) continue;
+    return containedIn(last, atom);
   }
   return false;
 }
@@ -254,9 +447,10 @@ export function dynamicPatternRefusal(source: string): string | null {
       // only writes the exponent as a number instead of leaving it as the length of the input.
       const repeats = repetition !== null && repetition.max >= 2;
       if (repeats) {
-        if (group.variable) {
-          refusal = "a repeated group whose body can match different lengths, which backtracks exponentially";
-        } else if (overlap(alternativesOf(source, group, at))) {
+        const branches = alternativesOf(source, group, at);
+        if (group.variable && branches.some(bodyIsAmbiguous)) {
+          refusal = "a repeated group whose body can be divided several ways, which backtracks exponentially";
+        } else if (overlap(branches)) {
           refusal = "repeated alternatives that can match the same text, which backtracks exponentially";
         }
       }
