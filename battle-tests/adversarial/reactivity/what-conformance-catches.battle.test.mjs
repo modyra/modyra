@@ -92,7 +92,11 @@ async function conformanceOf(make) {
   });
 
   await Promise.all(settling);
-  return { checks: results.length, failed: results.filter((entry) => !entry.ok).length };
+  return {
+    checks: results.length,
+    failed: results.filter((entry) => !entry.ok).length,
+    ran: results.map((entry) => entry.name.replace(/^probe: /, "")),
+  };
 }
 
 /** An effect that runs the first time and never again — the shape a stale build produces. */
@@ -111,6 +115,31 @@ const runsOnce = () => {
   };
 };
 
+/**
+ * The cases the conformance kit runs, by name.
+ *
+ * A floor rather than an inventory: the kit gaining a case is the kit doing its job, and this list
+ * says only that none of these has gone. Counting instead — which this battle did — cannot tell a
+ * case gained from another lost, and ages every time the kit grows.
+ */
+const KIT_CASES = Object.freeze([
+  "signal read, set, update and asReadonly",
+  "computed caches and invalidates",
+  "untracked read does not create a dependency",
+  "effect runs, reruns, cleans up and can be destroyed",
+  "capabilities never claim a fictitious guarantee",
+  "a computed refuses a write to a signal (if capable)",
+  "scope destroy is idempotent and cascades to children",
+  "change is decided the way the reference runtime decides it",
+  "a declared signalEquality is actually honoured",
+  "a declared computedEquality is actually honoured",
+  "a destroyed scope stops the effects it owns",
+  "registering on a destroyed scope throws a typed error",
+  "batch() coalesces effect runs (if capable)",
+  "flush() settles pending effects deterministically (if capable)",
+  "observe() only fires on an actual change, never on the initial run (if capable)",
+]);
+
 battle(
   {
     claims: ["REA-001", "REA-002"],
@@ -120,11 +149,21 @@ battle(
   async (ctx) => {
     // The control: a real one passes, so a failure below is the broken adapter rather than the kit.
     const real = await conformanceOf(() => vanillaReactivity());
-    ctx.log.note("the kit against a real reactivity", real);
-    expectEqual([real.failed, real.checks], [0, 14], {
+    ctx.log.note("the kit against a real reactivity", { checks: real.checks, failed: real.failed });
+    expectEqual(real.failed, 0, {
       claimIds: ["REA-001"],
-      what: "the kit either failed a conforming reactivity or ran a different number of checks than the fourteen it has — a subset counted as the whole is how a broken adapter looks conformant",
+      what: "the kit failed a conforming reactivity, so nothing it says about a broken one means anything",
       detail: JSON.stringify(real),
+    });
+
+    // Every case the kit had, by name, still runs. A subset counted as the whole is how a broken
+    // adapter looks conformant, and the count alone cannot tell one case gained from another lost.
+    // Named rather than counted so the assertion does not age: a kit that grows passes, a kit that
+    // drops a case fails and says which.
+    expectEqual(KIT_CASES.filter((each) => !real.ran.includes(each)), [], {
+      claimIds: ["REA-001"],
+      what: "a case the conformance kit used to run is no longer run",
+      detail: JSON.stringify(real.ran),
     });
 
     const broken = {
