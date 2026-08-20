@@ -16239,6 +16239,56 @@ Held by `battle-tests/adversarial/security/a-constant-anything-can-rewrite.battl
 walks every exported `MDY_` constant of both packages and requires it frozen all the way down — a
 frozen array of live objects is not frozen for this purpose.
 
+## 272 — A pattern a document can hang the page with (S0, SEC-004)
+
+`dynamicPatternRefusal` refuses two shapes: nested **unbounded** repetition, and repeated alternatives
+that can match the same text. `UNBOUNDED` is `*`, `+` and `{n,}` — a *counted* repetition is left
+alone, and the file says so deliberately: *"bounded repetition is left alone"*.
+
+A counted repetition of a group whose body matches a **variable-length** span is the same exponential
+shape with the exponent written as a number. Measured through a killable child process, one process
+per measurement, milliseconds by input length:
+
+```
+                  24     26     28     30      32
+^(a+){15}b$       85    284    960   3063   >8000
+^(a{1,10})+b$     85    339   1353   5385   >8000
+^([a-z]+){12}!$   56    146    388    959    2330
+^(\w+){8}!$        9     17     30     48      81
+(.*a){20}$       408   1714   6592  >8000
+^(a+)+b$         refused — the same class, written with `+`
+```
+
+About 3.2× per two characters on the first two: thirty-six characters is minutes, forty is hours. A
+synchronous match is the whole thread — no keystroke handled, nothing repainted.
+
+`(.*a){20}$` characterised across four near misses and eight lengths:
+
+```
+a's then a failing tail        20:32ms   30:killed >6000ms
+x-separated a's, failing tail  20:1ms  30:4ms  40:71ms  60:killed >6000ms
+one a short of twenty          20:21ms … 400:1126ms       — about linear
+a's with no tail at all        20:13ms … 400:14ms         — flat, it matches at once
+```
+
+So it is the **near miss** that costs, which is the shape an attacker sends: a string that almost
+matches, and fails at the very end.
+
+**The document is accepted with no diagnostic at all.** That is `SEC-004` — a document cannot make the
+form stop answering — and the pattern arrives from a CMS, a saved project or a POST.
+
+**What separates the refused from the accepted**, and what a widening has to read: a quantifier makes
+its group *variable* when its minimum and maximum differ (`+`, `*`, `?`, `{n,}`, `{n,m}` with n≠m); a
+`{n}` over a single character does not. The exponential shape is a **variable** group repeated by
+anything whose maximum is two or more, counted or not. `(\d{2}){3}` stays safe under that reading and
+must keep being allowed — its body is fixed-length.
+
+Held by `battle-tests/adversarial/security/a-pattern-a-document-can-hang-the-page-with.battle.test.mjs`
+with a 1500 ms budget, two controls — the analyser still refuses `^(a+)+b$`, and a safe pattern of the
+same shape returns well inside the budget with its rule live — and a killable child, because a budget
+cannot be enforced from inside the thing being budgeted and a battle that hangs the suite is worse
+than the defect it reports. Nothing in it depends on a `timeout` binary.
+
 ## The register's own shape, measured
 
 ```
