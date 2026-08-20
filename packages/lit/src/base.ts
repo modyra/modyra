@@ -4,6 +4,7 @@ import { html, LitElement, nothing, PropertyDeclarations } from "lit";
 import { unsafeSVG } from "lit/directives/unsafe-svg.js";
 import {
   MDY_FIELD_SHELL_CLASSES as SHELL,
+  MDY_FIELD_STATE_CLASSES,
   MDY_WIDGET_CONTRACTS,
   defaultWidgetIdFactory as ID,
   popupAlignmentClass,
@@ -149,6 +150,30 @@ export abstract class MdyFieldElement<T> extends LitElement {
   protected partRole(part: string): string | typeof nothing {
     const parts = MDY_WIDGET_CONTRACTS[this.widgetKind].parts as Readonly<Record<string, { role?: string }>>;
     return parts[part]?.role ?? nothing;
+  }
+
+  /**
+   * The input wrapper's classes, with the states the shell declares for it.
+   *
+   * `MDY_FIELD_STATE_CLASSES.controlStates` names them — `disabled` and `error` — and a state named
+   * there that nothing writes is a state a theme can style and no field ever wears. Composed here
+   * rather than at each control, because seven of them were composing it and every one of them wrote
+   * only half.
+   *
+   * `error` answers the same question the label answers, so the two faces of one verdict cannot
+   * disagree inside one control.
+   */
+  protected wrapperClass(handle: MdyFieldHandle<T>): string {
+    const on: Readonly<Record<string, boolean>> = {
+      disabled: handle.disabled(),
+      error: this.showErrors(handle),
+    };
+    return [
+      MDY_FIELD_STATE_CLASSES.control,
+      ...MDY_FIELD_STATE_CLASSES.controlStates
+        .filter((state) => on[state] === true)
+        .map((state) => `${MDY_FIELD_STATE_CLASSES.control}--${state}`),
+    ].join(" ");
   }
 
   /**
@@ -480,7 +505,7 @@ export abstract class MdyFieldElement<T> extends LitElement {
       ${this.renderLabel(handle)}
       ${this.useWrapper
         ? html`<div
-          class="${SHELL.inputWrapper} ${handle.disabled() ? `${SHELL.inputWrapper}--disabled` : ""}"
+          class="${this.wrapperClass(handle)}"
         >
           ${this.renderAffix("prefix")}
           ${control}

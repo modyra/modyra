@@ -269,7 +269,7 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
 
     return html`
       ${this.renderLabel(handle, triggerId)}
-      <div class="mdy-input-wrapper ${handle.disabled() ? "mdy-input-wrapper--disabled" : ""}">
+      <div class="${this.wrapperClass(handle)}">
         <div class="mdy-input-prefix"><slot name="prefix"></slot></div>
         <div
           class="mdy-multiselect ${this._open ? "mdy-multiselect--open" : ""}"
