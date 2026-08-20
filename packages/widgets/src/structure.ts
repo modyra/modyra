@@ -13,8 +13,12 @@ import { MDY_STATE_MODIFIERS, stateClass, type MdyStateName } from "./state.js";
  * turned `multiselect.searchButton` from a `button` into an `input` with `role="combobox"`. Two
  * renderers written against "contract version 1" would then have implemented two different
  * anatomies, and the number that exists to prevent exactly that said they were the same.
+ *
+ * 3 names an anatomy where `multiselect.popup` carries `role="dialog"`. A renderer built against 2
+ * emits that panel with no role, which is a conforming renderer under 2 and a non-conforming one
+ * here — the case this number exists to make visible rather than to let pass.
  */
-export const MDY_WIDGET_CONTRACT_VERSION = 2 as const;
+export const MDY_WIDGET_CONTRACT_VERSION = 3 as const;
 
 /** Semantic element categories that presenters can map to their native rendering API. */
 export type MdyWidgetSemanticElement =

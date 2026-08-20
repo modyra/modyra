@@ -47,6 +47,14 @@ Each value is read off the anatomy the same catalogue declares, not chosen:
 | `timepicker` | `dialog` | a clock face and its actions |
 | `colors` | `listbox` | `presets` with `role=listbox`, holding `swatch` with `role=option` |
 
+**Amendment — the part carries the role the promise names.** Declaring the promise was half the
+answer: `multiselect`'s `popup` part declared no role at all, so nothing on screen answered to
+`dialog` and the battle failed identically in both renderers, which is what said the contract was
+still silent. `roles: { popup: "dialog" }` is now on the kind, and its projection reads the role from
+the catalogue rather than restating it. Not modal — the panel is anchored to its field and the page
+behind it stays reachable, so `aria-modal` would contradict what dismissal does — and named by the
+field's label, because a dialog without a name is a region an assistive technology cannot introduce.
+
 **`multiselect` promises `dialog` rather than `listbox`**, which is the one value that changes rather
 than being written down. Its popup is a search field beside a grid of chips, and the contract already
 declares that grid as a `group` — deliberately, because what role a chip grid should carry is the mode
@@ -65,6 +73,10 @@ it.
 `trigger.attributes["aria-haspopup"]` — already takes the contract's answer. Until the other eight do,
 the table is the source only for the kinds whose openers project through `@modyra/widgets`, and the
 battle stays red for `colors` in both renderers.
+
+**A promise now costs a role.** Declaring what a popup is means the part has to carry it, and a role
+brings its own obligations — a `dialog` must be named. That is the point rather than a side effect: a
+promise nothing on screen answers to is the defect this record exists to remove.
 
 **`promises` is optional on the interface.** A kind with an overlay and no declared promise emits no
 attribute, which is the honest state for one whose popup has no ARIA word — better than a default that
@@ -93,7 +105,11 @@ derivation that needs a judgement is a table written indirectly.
 
 - `npx playwright test -c battle-tests/playwright.config.ts what-a-control-promises-will-open` — opens
   each declared popup and asserts the promised role is on screen, in both renderers. This is what
-  fails if a promise and its popup part company.
+  fails if a promise and its popup part company. Falsified rather than assumed: removing
+  `roles: { popup: "dialog" }` fails it on both hosts again.
+- `battle-tests/adversarial/widgets/a-promise-nine-renderers-write-themselves.battle.test.mjs` — reads
+  the three renderers' sources and fails a literal written where the projection has the answer. The
+  rendered attribute says what a renderer emits; only the source says where it got it.
 - `npm run test:widget-contract` — 544 contract tests over the projections that now read the table.
 - **Not guarded:** nothing fails when a renderer writes its own `aria-haspopup` literal instead of
   taking the projection's. The eight remaining literals are exactly that case, and an audit that

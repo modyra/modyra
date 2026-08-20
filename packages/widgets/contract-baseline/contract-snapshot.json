@@ -1,5 +1,5 @@
 {
-  "contractVersion": 2,
+  "contractVersion": 3,
   "kinds": {
     "text": {
       "parts": {
@@ -2025,7 +2025,7 @@
           "parent": "root",
           "optional": true,
           "repeated": false,
-          "role": null,
+          "role": "dialog",
           "classes": [
             "mdy-multiselect-overlay__panel",
             "mdy-multiselect__dropdown",
