@@ -17268,6 +17268,48 @@ Held permanently by `apps/studio/e2e/a-label-that-tries-to-be-markup.spec.ts`, w
 asserted first so a payload that fails to appear reads as escaped rather than as an outline that never
 showed it.
 
+## 295 — A day nobody could read, on a surface nobody had audited (S2, A11Y-003)
+
+`every-kind-under-an-auditor`'s fifth state exists to reach the surfaces the other four never do — its
+own header says so: *"the contrast pair this stylesheet fails on is declared on
+`.mdy-datepicker__cell--selected` as well as on a button, and only the button was ever in front of the
+auditor."*
+
+It had not been reaching them. The spec opened the datepicker, clicked a day, and called axe — and
+**choosing a day is what closes a datepicker**. A closed popup holds no cells at all, which
+`a-calendar-behind-a-closed-picker` established and the renderer keeps deliberately: forty-two
+gridcells announced inside a picker nobody opened are a control offered to a screen reader that is not
+there. So the premise `no day is marked selected` was true, and it was true because there was no grid,
+not because plain fails to mark one. Diagnosed by `esecutore`, measured here:
+
+```
+opened        cells 42   selected 0
+after choice  cells  0   selected 0
+reopened      cells 42   selected 1, aria-selected 1, class …--selected --focused
+```
+
+**Two corrections, both mine.** Reopen after choosing — and reopen **last**, because opening the
+select light-dismisses the calendar, so a reopen placed before it left the page exactly where it
+started.
+
+**And the first time that surface met the auditor, it failed.**
+
+```
+#datepicker__day__2026-07-26   #8b8b9d on #f4f5f6 — contrast 3.06, 10.5pt
+#datepicker__day__2026-07-27   the same
+#datepicker__day__2026-07-28   the same
+```
+
+The muted day cells — the adjacent-month days a calendar greys — sit at **3.06** where AA for normal
+text is 4.5. They are not decoration: they are dates a person reads and can click. Darkening the muted
+token to `#6f6f80` reaches 4.51 and `#66667a` reaches 5.13, measured with the package's own
+`contrastRatio`.
+
+**The finding behind the finding is the audit's reach.** Four of the five states in that file were
+green and one was failing on its premise, so *nobody was auditing a chosen state at all* — and the
+moment the surface appeared, it had a defect on it. A control that never establishes its premise
+reports nothing, and reporting nothing reads like agreement.
+
 ## The register's own shape, measured
 
 ```
