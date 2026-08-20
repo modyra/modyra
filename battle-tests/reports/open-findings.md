@@ -3,8 +3,8 @@
 ## Open now, and in the order they are repaired
 
 ```
-S0     0      the whole of it before any S1
-S2     2
+S0     1      the whole of it before any S1
+S2     1
       --
        2      open reds, 2026-08-20
 ```
@@ -16113,6 +16113,43 @@ Two guards, both falsified by making them fire:
 
 What remains true from 267's measurement, still to be checked on a fresh build: `min` and `max` on a
 number, and option membership on a select, read `tree invalid, flat valid`.
+
+## 269 — A draft that belongs to another form (S0, PER-004 PER-001)
+
+The draft envelope carries `shape`, a short stable name for the form that wrote it. It exists to tell
+one form's work from another's under a shared key — a component rendered twice, a route mounting two
+forms, a key copied along with the options it sits in.
+
+**The write side reads it.** `_foreignPaths` compares the stored shape with this form's and refuses to
+overwrite work that is not this form's, with `MDY_DRAFT_KEY_IN_USE` (finding 252, closed `6d31da65`).
+
+**The read side does not.** `_parse` checks `__mdyDraft` and `savedAt` against `ttlMs`, returns
+`parsed.value`, and never looks at `shape`. So the draft the writer refused to replace is one the
+reader restores. Measured, both directions, nothing tampered with:
+
+```
+form B writes  {"shape":"1xxig97","value":{"email":"victim@example.test"}}
+form A opens   → { email: "victim@example.test", password: "", note: "" }
+
+form A writes  {"shape":"1gqrgtk","value":{"email":"a@…","note":"a private note"}}
+form B opens   → { email: "a@…" }
+```
+
+Both envelopes were written by this library, the shapes are recorded, they differ, and they are
+available at the moment of the decision. What a person typed into one form appears filled into another
+and is submitted from there — a value crossing a boundary the library already knows how to see.
+
+**Not a tampering finding.** No storage was edited. It is the guard installed on one door of two, which
+is why it survived the work that added the other one.
+
+The rest of the restore path is sound, and was checked alongside it: an undeclared path is dropped, a
+`__proto__` key pollutes nothing, a value of the wrong shape for its kind is refused, a row index past
+the end is reported and ignored, and a field declared `sensitive` is **not** restored even when the
+stored draft carries it.
+
+Held by `battle-tests/adversarial/persistence/a-draft-that-belongs-to-another-form.battle.test.mjs`,
+which asserts both directions and carries two controls: a draft was actually written, and the envelope
+actually records a shape — without either, the battle would pass on a form that restored nothing.
 
 ## The register's own shape, measured
 
