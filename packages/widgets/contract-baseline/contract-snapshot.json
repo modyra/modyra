@@ -1371,8 +1371,6 @@
       "keyboard": [
         "ArrowDown:move",
         "ArrowUp:move",
-        "End:move",
-        "Home:move",
         "Space:toggle"
       ]
     },
@@ -1538,8 +1536,6 @@
       "keyboard": [
         "ArrowDown:move",
         "ArrowUp:move",
-        "End:move",
-        "Home:move",
         "Space:toggle"
       ]
     },

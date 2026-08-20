@@ -184,8 +184,27 @@ function keyboardFor(kind: MdyWidgetKind): readonly MdyKeyBinding[] {
     }
   }
   if (NAVIGATES_OPTIONS.includes(kind)) {
-    for (const key of ["ArrowDown", "ArrowUp", "Home", "End"]) {
+    for (const key of ["ArrowDown", "ArrowUp"]) {
       bindings.push({ key, ...(overlay ? { when: "open" as const } : {}), intent: "move" });
+    }
+    // Home and End jump to the first and last option, which is the listbox and grid patterns. A
+    // radio group is neither: APG gives it Tab, Space and the four arrows, and the arrows both move
+    // and select, so there is no separate reading position for a jump to land on.
+    //
+    // Declared for one anyway, it described a behaviour no renderer implements — plain, lit and
+    // Angular all omit it, independently, which is the evidence that reads as three oversights and
+    // is one rule applied where it does not belong. The same mistake `NAVIGATES_OPTIONS` invited
+    // once before, recorded in ADR 0021: a kind that walks its options with the arrows is not
+    // thereby a kind with a list to jump through.
+    //
+    // Asked of the catalogue rather than of a second list, so a kind that stops being a radio group
+    // moves this with it.
+    const isRadioGroup = Object.values(MDY_WIDGET_CONTRACTS[kind].parts)
+      .some((declared) => declared.role === "radiogroup");
+    if (!isRadioGroup) {
+      for (const key of ["Home", "End"]) {
+        bindings.push({ key, ...(overlay ? { when: "open" as const } : {}), intent: "move" });
+      }
     }
   }
   if (STEPS_A_RANGE.includes(kind)) {
