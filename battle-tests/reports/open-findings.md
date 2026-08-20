@@ -16289,6 +16289,50 @@ same shape returns well inside the budget with its rule live — and a killable 
 cannot be enforced from inside the thing being budgeted and a battle that hangs the suite is worse
 than the defect it reports. Nothing in it depends on a `timeout` binary.
 
+## 273 — A length only one door measures (S2, DYN-003 DYN-001)
+
+`MDY_MAX_DYNAMIC_PATH_LENGTH` is 512, and the reason it is a *length* rather than a depth is written
+where it is declared: a path is the payload key, the draft key, the widget id, and a string every
+renderer carries per field, so the cost of a name is paid on every read of every value.
+
+The **nested** door is held to it. The **flat** one is not:
+
+```
+nested, path ~510 characters       accepted
+nested, path ~600 characters       MDY_DYNAMIC_PATH_TOO_LONG, refused
+flat, name of 512 characters       accepted
+flat, name of 513 characters       accepted, no diagnostic
+flat, name of 1 000 characters     accepted, no diagnostic
+flat, name of 100 000 characters   accepted, no diagnostic
+```
+
+The flat door is the one a document over a wire arrives at — `fields: [{ name, kind, label }]` is the
+whole of version 1 and the field half of every version since — so the door with no cap is the one the
+untrusted document uses.
+
+**Not a parse-time cost**, measured: a thousand fields with twenty-thousand-character names parse in
+31 ms and build in 108 ms; two hundred with hundred-thousand-character names, 22 ms and 37 ms. The
+cost is the one the constant names, and it falls afterwards on every consumer of every name.
+
+Held by `battle-tests/adversarial/dynamic-contract/a-length-only-one-door-measures.battle.test.mjs`,
+which asserts the working half first — the nested door takes ~510 and refuses ~600 — so a run where
+the cap had been removed altogether fails there rather than passing quietly.
+
+**Measured beside it, and not findings:**
+
+```
+50 000 fields          parse 33ms, build 690ms, accepted
+150 000 fields         parse 80ms, accepted, no diagnostic
+200 000 fields         build killed past 5s — linear cost, not a cap
+one field, 200k options  parse 56ms, build 16ms
+a 1M-character label   parse 1ms, accepted
+10 000 layout rows     parse 13ms, build 5ms
+```
+
+`MDY_MAX_DECLARATION_WALK` is 100 000 and does not cap the flat field count: 150 000 fields parse
+clean. Whether a document may declare an unbounded number of fields is a question for the host's own
+limits rather than a defect, and is recorded here so the next reader does not re-measure it.
+
 ## The register's own shape, measured
 
 ```
