@@ -9,12 +9,29 @@
  * It exposes the same shape of operations as the Plain host where they mean the same thing, so a spec
  * can ask both renderers the same question.
  */
-import { buildDynamicFieldValidators, createLitForm, field, MDY_VALUE_CONTRACTS, parseDynamicFields } from "@modyra/lit/adapter";
+import { assertSafeDynamicFieldNames, buildDynamicFieldValidators, createLitForm, field, MDY_VALUE_CONTRACTS, parseDynamicFields } from "@modyra/lit/adapter";
 import { defineMdyElements } from "@modyra/lit/ui";
 
 defineMdyElements();
 
 const mounted = new Map();
+
+/**
+ * The handle for a name, walked rather than looked up.
+ *
+ * A name is a **path**: `createForm({ "a.b": field("") })` nests, so the value is `{ a: { b: "" } }`
+ * and the handle lives at `f.a.b` — `f["a.b"]` is `undefined`. A flat lookup leaves the element with
+ * no handle, drawing nothing and saying nothing, which reads as the renderer dropping a field. The
+ * Plain door walks the name for the same reason.
+ */
+function handleFor(form, name) {
+  let at = form.f;
+  for (const segment of String(name).split(".")) {
+    if (at === undefined || at === null) return undefined;
+    at = at[segment];
+  }
+  return at;
+}
 
 /** The element that renders each kind, as a consumer would write it. */
 const TAG = {
@@ -79,6 +96,13 @@ window.battleLit = {
     host.dataset.form = id;
     document.querySelector("#stage").append(host);
     try {
+      // The names first, through the same guard the Plain door runs before it builds anything. A host
+      // that skips it collapses a duplicate name into one schema key and hands two elements the same
+      // handle, which reads in a spec as the renderer choosing that binding — and no renderer chose
+      // it. `@modyra/lit` publishes no door that mounts a document, so this host *is* the door, and a
+      // door that does not refuse what the contract refuses is measuring itself.
+      assertSafeDynamicFieldNames(fields);
+
       // A field's rules come from the document the same way a consumer's would: the contract parser
       // reads them and the validator builder compiles them. Building the schema without that step
       // makes every field unconstrained, which looks like the renderer losing them.
@@ -123,7 +147,7 @@ window.battleLit = {
           if (value === undefined || value === null) continue;
           element[name] = value;
         }
-        element.field = form.f[declared.name];
+        element.field = handleFor(form, declared.name);
         host.append(element);
       }
       mounted.set(id, { form, host, submitted: [] });

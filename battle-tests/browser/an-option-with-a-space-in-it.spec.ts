@@ -79,11 +79,14 @@ test("an option whose value has a space is pointed at properly too", async ({ pa
   const opened = await pointing(page);
 
   // The premise: the list opens with the first option active, which is the one carrying the space.
-  expect(opened.active, "the list did not open on the option this battle is about").toContain("New York");
+  // The id is the encoded form — `idSafeKey` spells the space as `%20`, which is the repair this
+  // battle asked for and the reason the reference resolves at all. Asserting the raw space here would
+  // be asserting the defect.
+  expect(opened.active, "the list did not open on the option this battle is about").toContain("New%20York");
 
   // Every part of the reference names something. One reference, one element.
   expect(opened.parts, JSON.stringify(opened)).toEqual([
-    { id: "city__option__New York", resolves: true },
+    { id: "city__option__New%20York", resolves: true },
   ]);
   expect(opened.dangling, "the page's own check reports the broken halves").toEqual([]);
 });
