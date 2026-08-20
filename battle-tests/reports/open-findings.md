@@ -4,9 +4,10 @@
 
 ```
 S0     0      the whole of it before any S1
+S1     2
 S2     1
       --
-       1      open reds, 2026-08-20 09:39:25 UTC
+       3      open reds, 2026-08-20 12:20:37 UTC
 ```
 
 Severity is the order of work: every S0, then every S1, then S2 and below. The same counts are in
@@ -17348,6 +17349,59 @@ on a project too small to time, the ratio would be noise against noise.
 
 The repair is a shape change — copy the path from the root to the touched node rather than the
 document — so it wants a record and a plan, not a line. `packages/studio-editor` is in no lane.
+
+## 297 — A theme's selector can close the sheet it is written into (S0, SEC-003)
+
+Found by `esecutore4` re-measuring my own sweep instead of transcribing it. **I had reported the theme
+compiler as refusing hostile input on all three strings it takes, and it does not.**
+
+```
+seed      "</style><script>alert(1)</script>"   refused
+name      "</style><script>alert(1)</script>"   refused
+selector  "</style><script>alert(1)</script>"   accepted, and in the css character for character
+```
+
+**My sweep had a blind spot and it was mine to have.** Every payload I gave the selector carried a
+`}` or an `@` — a rule-breaker or an `@import` — so every one was refused, and I read three refusals
+as a guard. The guard is `/[{};@]|\/\*|\*\//`, and it says exactly what it is for where it is
+written: *"This keeps interpolated text inside its position. It does not decide **which** selectors a
+theme should accept."* `</style>` contains none of those characters.
+
+A stylesheet is written into a `<style>` block, and `</style>` ends that block wherever it appears —
+inside a string, inside a comment, inside a selector. Everything after it is markup.
+
+**What this is and is not, measured rather than assumed.** Nothing in this repository feeds it: Studio
+does not call `compileMdyTheme`, and `studio-model` has no theme selector. The value comes from
+whoever writes the build. It becomes a way *in* where an application compiles a theme per tenant, per
+brand, per anything a customer names — which is what a theme compiler is for, and is why a guard that
+is about **CSS** rather than about **the sheet's container** deserves saying out loud instead of being
+left to a caller who did not read that comment.
+
+**The repair is one character.** `<` is not valid anywhere in a CSS selector — it was proposed as a
+combinator and dropped — so refusing it costs nothing. `>` must stay: `.a > .b` is an ordinary child
+combinator, and a guard that took it would close the exit and the language with it.
+
+Held by `battle-tests/adversarial/styles/a-selector-that-leaves-the-stylesheet.battle.test.mjs`, with
+six ordinary selectors asserted beside the four escapes — `:root`, `.theme-dark`, `[data-theme="brand"]`,
+`.a > .b`, a `:not()` and a selector list — so the cheapest way to satisfy it is not to refuse
+everything.
+
+## 298 — A battle whose prose said the opposite of its own verdict (harness)
+
+`a-pattern-a-document-can-hang-the-page-with` has been green since `29044417`. Its header still read
+*"the analyser lets all of these through"*, with the table of milliseconds under it.
+
+The prose described the state at the moment it was written; the repair arrived after; nobody reread
+the file. **Anyone opening it to understand the defence read that there is none** — and this suite's
+headers are where the reasoning lives, so a stale one is not a cosmetic problem.
+
+Rewritten to say that all of it is refused now, keeping the table, because a defence is only legible
+beside the attack it answers.
+
+The rule, and it is the third time tonight in a different costume: **a record ages, and nothing
+re-asks it.** 289 was four register entries that had outlived what they described; 286 was two
+assertions arguing with records that had already decided the opposite; this is a header contradicting
+its own test's verdict. The counts at the top of the register are rewritten by a run. Prose is not.
 
 ## The register's own shape, measured
 
