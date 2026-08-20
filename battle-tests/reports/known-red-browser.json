@@ -1,12 +1,12 @@
 {
   "note": "Browser specs that are red because the defect they describe is open. A red listed here does not fail a build; a red that is not listed is a regression. Rewrite with `npm run battle:browser:ci -- --accept`.",
   "order": "Repair in severity order, as the node tier does. A spec's severity is the worst of the claims its header names; `unknown` is a spec that names none, which is most of them.",
-  "recordedAt": "2026-08-20T09:22:48Z",
-  "openReds": 50,
+  "recordedAt": "2026-08-20T09:36:52Z",
+  "openReds": 47,
   "bySeverity": {
     "S0": 1,
-    "S1": 37,
-    "S2": 12
+    "S1": 35,
+    "S2": 11
   },
   "knownRed": [
     "a-rule-the-preview-enforces.spec.ts › a document's cross-field rule reaches the page",
@@ -33,7 +33,6 @@
     "a-state-no-contract-declares.spec.ts › plain: a part asserts only the states its kind declares",
     "a-time-that-changed-when-nobody-changed-it.spec.ts › a time nobody changed is the time that was there, lit",
     "an-error-before-anyone-typed.spec.ts › a required field nobody has reached is not painted as failing",
-    "an-hour-the-clock-does-not-have.spec.ts › an hour the clock does not have, plain",
     "an-opener-that-names-what-it-opens.spec.ts › an opener names the overlay it opens, lit",
     "every-kind-in-lit-under-an-auditor.spec.ts › every declared kind is one the auditor has nothing to say about when it is required",
     "every-kind-in-lit-under-an-auditor.spec.ts › every declared kind renders a lit form the auditor has nothing to say about",
@@ -46,13 +45,11 @@
     "what-a-control-promises-will-open.spec.ts › what a control promises is what opens, lit",
     "what-a-control-promises-will-open.spec.ts › what a control promises is what opens, plain",
     "wrong-before-anybody-touched-it.spec.ts › a field wrong on arrival says why, lit",
-    "wrong-before-anybody-touched-it.spec.ts › a field wrong on arrival says why, plain",
     "a-part-the-contract-requires.spec.ts › every part the contract requires is built, lit",
     "a-state-class-that-never-arrives.spec.ts › lit: a refused field wears the state class its kind declares",
     "a-state-class-that-never-arrives.spec.ts › lit: a refused field's label says so",
     "a-state-class-that-never-arrives.spec.ts › plain: a refused field's label says so",
     "a-state-class-that-never-arrives.spec.ts › plain: an empty field's label is not lifted",
-    "a-state-class-that-never-arrives.spec.ts › plain: an open field says it is open",
     "every-key-a-kind-declares.spec.ts › lit: every key a kind declares does something",
     "every-key-a-kind-declares.spec.ts › plain: every key a kind declares does something",
     "the-buttons-at-the-end-of-a-field.spec.ts › a field carries the controls it is declared to have, lit",
