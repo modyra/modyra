@@ -88,6 +88,11 @@ Two behaviours worth knowing rather than discovering:
 
 - **A read before `ready` resolves returns `null`** — "no draft", never a stale one. A synchronous
   read cannot wait, and restoring the wrong draft is worse than restoring none. Await `ready` first.
+- **A write before the key has hydrated is kept in memory and not sent on.** It comes from a form
+  that read `null` and was never shown what the store holds, so flushing it would take the person's
+  earlier work out of the only place it was kept. The live form still sees what they are typing, the
+  stored draft survives, and the key writes through as normal once its value has arrived. Awaiting
+  `ready` is still the right thing to do — this is what happens when nobody did.
 - **A failed flush is never thrown into the form and never loses the draft.** The value stays in the
   cache, so the user keeps typing and the next write retries it. `onError` is how you find out;
   without it the failure is silent, exactly as the default `localStorage` storage treats quota errors.

@@ -80,6 +80,16 @@ export function createHydratedDraftStorage(
    * Without the distinction a draft the user discarded comes back when the backend answers.
    */
   const discarded = new Set<string>();
+  /**
+   * Keys whose stored value has not arrived yet.
+   *
+   * A write for one of these comes from a form that restored `null` — the documented answer for a
+   * read before hydration — so it is a form that has never seen what the store holds. Flushed, it
+   * replaces a draft nobody was shown: the person's earlier work is gone from the only place it was
+   * kept, and nothing said so. The write is kept in memory, where the live form needs it, and not
+   * sent on; once the value has arrived, the key writes through as normal.
+   */
+  const unhydrated = new Set<string>(keys);
   let inFlight: Promise<unknown> = Promise.resolve();
 
   const report = (key: string, error: unknown): void => {
@@ -97,6 +107,8 @@ export function createHydratedDraftStorage(
         if (value !== null && !cache.has(key) && !discarded.has(key)) cache.set(key, value);
       } catch (error) {
         report(key, error);
+      } finally {
+        unhydrated.delete(key);
       }
     }),
   ).then(() => undefined);
@@ -118,12 +130,18 @@ export function createHydratedDraftStorage(
       cache.set(key, value);
       // A write is newer than a removal that preceded it, so the key is a live one again.
       discarded.delete(key);
+      if (unhydrated.has(key)) return;
       enqueue(key, () => backend.setItem(key, value));
     },
 
     remove(key) {
       cache.delete(key);
       discarded.add(key);
+      // A removal, unlike a write, is a decision about the key itself rather than about a value the
+      // form was shown: someone asked for the draft to be gone, and a draft that arrives afterwards
+      // is the one they meant. It goes through whether the key has hydrated or not — and it leaves
+      // nothing for a later write to overwrite, so that write is no longer held back either.
+      unhydrated.delete(key);
       enqueue(key, () => backend.removeItem(key));
     },
   };
