@@ -17916,6 +17916,78 @@ that reads `MDY_POPUP_OPENERS[kind].promises`, then ten call sites. The three wr
 makes it a defect rather than a cleanup, and they are only visible once the literal is replaced by the
 lookup — which is the argument for doing it as one change rather than correcting three strings.
 
+## 310 — A draft the server moved out from under, dropped in silence (S2, API-001)
+
+An edit screen is built from server data, so its collection rows are not a constant: another user
+appends a line, a job adds one, tomorrow's data differs. When the shape moves, the draft is dropped
+whole and **nothing is said on either channel**:
+
+```
+same rows                    title restored     onViolation []   diagnostics []
+the server added a row       title lost         onViolation []   diagnostics []
+the server removed a row     title lost         onViolation []   diagnostics []
+a field added to the form    title lost         onViolation []   diagnostics []
+```
+
+`title` is a plain leaf with nothing to do with the collection. It is lost because the **form's**
+shape moved, not because anything about that field did.
+
+**The discard is defensible; the silence is the finding.** `hostile-input.md` documents the
+neighbouring path and documents it differently — a stored value of the wrong type for one field is
+refused **per field**, the rest of the draft is restored, and the interception arrives on
+`onViolation` as `draft-shape:<path>`. A shape the form no longer has takes everything and reports
+nothing. A consumer cannot tell *"there was no draft"* from *"there was a draft and it was dropped"*,
+so they cannot say the one sentence that matters to the person who typed it.
+
+The store is hostile ground and ADR 0009 calls the discard defence in depth. Being unable to notice it
+is the half with no argument behind it.
+
+**Cited as `API-001`, not `PER-001`.** Nothing is corrupted, resurrected or let through — the honest
+claim is *"a published call that cannot do what it was asked says so."* Citing a persistence claim
+would have put an **S0** on a defect that loses no integrity, and this register is being read against
+a release in flight.
+
+Two probe defects on the way, both mine, both caught by the engine or by a control:
+
+- `onViolation` passed at the top level of `createForm` instead of under `security` — reported as
+  `MDY_UNSUPPORTED_ADAPTER_OPTION`, which is `API-001` working correctly on my own mistake while I
+  was writing a battle about `API-001`.
+- an earlier reading walked `form.handle(path)` where the working battle beside it walks `form.f`,
+  and a `catch { return false }` turned the difference into "nothing was touched". **A catch that
+  returns a value is a catch that answers the question it was supposed to fail at.**
+
+Battle: `a-draft-the-server-moved-out-from-under.battle.test.mjs`, red on all three moves, with the
+unchanged shape as the control.
+
+## 311 — Twelve per cent of a form for two features it does not use (S2, no battle)
+
+Measured by `esecutore` while investigating 304. The realistic surface — what an ordinary consumer
+actually ships — is 23 modules, 93.5 KB min / 26.4 KB gzip:
+
+```
+21.1 KB  form-engine.js
+21.1 KB  typed-form.js
+ 8.7 KB  record-manager.js
+ 8.4 KB  array-manager.js
+ 7.5 KB  draft-manager.js
+ 5.1 KB  field-record.js
+ 3.8 KB  history-manager.js
+```
+
+**`draft-manager` + `history-manager` = 11.3 KB min, 12% of a form that uses neither.** Both are
+`createForm` **options**. i18n, datetime, icons and devtools were moved to subpaths precisely so a
+consumer who does not ask for them does not ship them; drafts and undo have the same shape — asked for
+or not — and are reachable unconditionally.
+
+**The good news came first and matters more**: the dynamic subtree is 40.2 KB min, **27% of the whole
+entry**, and is shaken away cleanly for anyone who does not import it. The hypothesis to kill first —
+a satellite module coming back in through the window — is dead. The rest of the growth is
+`form-engine` and `typed-form` roughly doubling with the engine itself, which is distributed and
+deliberate.
+
+No battle: moving two managers to subpaths is a public surface change and a migration, not a repair.
+It goes to the user with the bundle-gate decision, which is the other half of 304.
+
 ## The register's own shape, measured
 
 ```
