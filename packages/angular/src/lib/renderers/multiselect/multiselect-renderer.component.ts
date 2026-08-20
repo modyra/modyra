@@ -167,6 +167,7 @@ import { MdyDropdownBase } from "../dropdown-base";
       [hasBackdrop]="position() === 'overlay'"
       [widthMode]="'match-anchor'"
       [panelClass]="popupClass"
+      [dialogLabel]="i18n.searchOptionsLabel"
       [panelId]="popupId()"
       [kind]="'multiselect'"
       (close)="closeOverlay()"
