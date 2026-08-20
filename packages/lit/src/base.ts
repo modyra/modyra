@@ -139,6 +139,19 @@ export abstract class MdyFieldElement<T> extends LitElement {
   }
 
   /**
+   * The role the catalogue declares for one of this widget's parts, or `nothing`.
+   *
+   * A part that carries a role is a statement about the DOM rather than about styling — a dialog is
+   * somewhere to go and come back from, and an element that builds the part without it has built a
+   * `<div>`. Read here so an element cannot answer with a different word than the contract, or with
+   * none.
+   */
+  protected partRole(part: string): string | typeof nothing {
+    const parts = MDY_WIDGET_CONTRACTS[this.widgetKind].parts as Readonly<Record<string, { role?: string }>>;
+    return parts[part]?.role ?? nothing;
+  }
+
+  /**
    * The popup part's classes, with the state that says which side it ended up on.
    *
    * The placement cannot live on the overlay wrapper: that is a marker with `display: contents` and

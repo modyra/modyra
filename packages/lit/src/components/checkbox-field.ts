@@ -41,6 +41,7 @@ export class MdyCheckboxFieldElement extends MdyFieldElement<boolean> {
           id=${this.fieldId}
           class="${this.partClass("control")}"
           type="checkbox"
+          role=${this.partRole("control")}
           .checked=${handle.value() === true}
           ?disabled=${handle.disabled()}
           ${mdyPart(this.controlPart(handle))}
