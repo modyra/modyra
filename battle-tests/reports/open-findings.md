@@ -4,9 +4,10 @@
 
 ```
 S0     1      the whole of it before any S1
+S1     1
 S2     1
       --
-       2      open reds, 2026-08-20
+       3      open reds, 2026-08-20
 ```
 
 Severity is the order of work: every S0, then every S1, then S2 and below. The same counts are in
@@ -16192,6 +16193,51 @@ The value column and the error column of one row disagreeing about whether a val
 Held by `battle-tests/adversarial/security/a-secret-the-panel-quotes-back.battle.test.mjs`, over every
 shape a form value can take, with the masked value column asserted beside it so that a repair which
 simply stopped masking fails too.
+
+## 271 — A constant anything on the page can rewrite (S1, SEC-007)
+
+Twenty-two of the thirty-six exported `MDY_` object constants are frozen. **Fourteen are not**, and
+five more are frozen only at the top level:
+
+```
+not frozen at all   MDY_DYNAMIC_DIAGNOSTICS  MDY_DYNAMIC_FIELD_KINDS  MDY_FIELD_KINDS
+                    MDY_CALENDAR_VIEW_MODES  MDY_I18N_DEFAULT_TAGS    MDY_I18N_MESSAGES_DE
+                    MDY_I18N_MESSAGES_DEFAULT  MDY_I18N_MESSAGES_ES   MDY_I18N_MESSAGES_FR
+                    MDY_I18N_MESSAGES_IT     MDY_I18N_PRESETS         MDY_ICONS
+                    MDY_ICON_SPANS           MDY_WIDGET_KINDS
+frozen, shallowly   MDY_FORM_SHELL_STRUCTURE  MDY_POPUP_OPENERS  MDY_WIDGET_KEYBOARD
+                    MDY_WIDGET_RELATIONS      MDY_WIDGET_TRANSITIONS
+```
+
+Two of the loose ones carry decisions, and both were measured rather than argued.
+
+**The parser's allowlist.** `MDY_DYNAMIC_FIELD_KINDS` is the set of kinds an untrusted document may
+declare, and the parser reads the exported array itself:
+
+```
+before   parseDynamicForm(kind: "totallyMadeUp")   accepted 0, MDY_DYNAMIC_UNKNOWN_KIND
+push     MDY_DYNAMIC_FIELD_KINDS.push("totallyMadeUp")
+after    parseDynamicForm(kind: "totallyMadeUp")   accepted 1, no diagnostic
+```
+
+**Markup.** `mdyIcon` in `@modyra/plain` assigns `MDY_ICONS[name].content` to `innerHTML`, on stated
+grounds: *"the registry holds markup, and it is the package's own constant rather than anything a
+caller supplies — there is no untrusted string on this path."* That sentence is an invariant and
+nothing holds it. The registry takes a new entry and takes a replacement for an existing one.
+
+`MDY_I18N_MESSAGES_DEFAULT["searchPlaceholder"]` was rewritten to `"REPLACED"` in the same probe.
+
+**What this is and is not.** Not an escalation: whoever rewrites a constant is already running script
+in the page. It is a stated invariant the code does not keep, and the cheap half of defence in depth —
+a host rendering a document it does not control relies on the kind list to bound what that document
+can be, and a third-party snippet, a compromised dependency or a browser extension shares the realm
+with it. Freezing costs nothing documented: the published way to change UI strings is
+`provideModyraLocale(locale, { overrides })` or an `MDY_I18N_MESSAGES` object of your own, not writing
+into the exported table.
+
+Held by `battle-tests/adversarial/security/a-constant-anything-can-rewrite.battle.test.mjs`, which
+walks every exported `MDY_` constant of both packages and requires it frozen all the way down — a
+frozen array of live objects is not frozen for this purpose.
 
 ## The register's own shape, measured
 
