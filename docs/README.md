@@ -32,6 +32,7 @@ the [compatibility policy](contract-compatibility.md), the [known issues](known-
 - [Usage modes](guides/usage-modes.md) — typed, contract-driven and headless
 - [Schema adapters](guides/schemas.md) — Zod and Standard Schema
 - [Security](guides/security.md) — trust boundaries, persistence and sanitization
+- [What has been attacked](guides/hostile-input.md) — the adversarial measurements, with the commands that produce them
 - [Troubleshooting](guides/troubleshooting.md) — pending state, submission and integration problems
 
 ## The form engine

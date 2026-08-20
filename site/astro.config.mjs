@@ -88,6 +88,7 @@ export default defineConfig({
 						{ label: 'Server validation', slug: 'guides/server-validation' },
 						{ label: 'Internationalization', slug: 'guides/i18n' },
 						{ label: 'Injection prevention', slug: 'guides/security' },
+						{ label: 'What has been attacked', slug: 'guides/hostile-input' },
 						{ label: 'Forms as data', slug: 'guides/ai-generated-forms' },
 						{ label: 'DevTools', slug: 'guides/devtools' },
 						{ label: 'Troubleshooting', slug: 'guides/troubleshooting' },
