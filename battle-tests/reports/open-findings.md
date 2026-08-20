@@ -3,11 +3,10 @@
 ## Open now, and in the order they are repaired
 
 ```
-S0     1      the whole of it before any S1
-S1     1
-S2     1
+S0     0      the whole of it before any S1
+S2     2
       --
-       3      open reds, 2026-08-20
+       2      open reds, 2026-08-20
 ```
 
 Severity is the order of work: every S0, then every S1, then S2 and below. The same counts are in
@@ -16194,7 +16193,12 @@ Held by `battle-tests/adversarial/security/a-secret-the-panel-quotes-back.battle
 shape a form value can take, with the masked value column asserted beside it so that a repair which
 simply stopped masking fails too.
 
-## 271 — A constant anything on the page can rewrite (S1, SEC-007)
+## 271 — A constant anything on the page can rewrite (S1, SEC-007) — CLOSED
+
+**Closed.** All thirty-six exported `MDY_` constants are frozen through every level; the battle walks
+them and is green. Verified against a build made from the working tree, so it is the tree's state
+rather than a commit's until it lands.
+
 
 Twenty-two of the thirty-six exported `MDY_` object constants are frozen. **Fourteen are not**, and
 five more are frozen only at the top level:
