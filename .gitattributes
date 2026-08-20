@@ -1,0 +1,9 @@
+# Every `.mjs` in this repository is test or tooling — `packages/*/test`, `battle-tests`, `scripts`.
+# The library's source is TypeScript, so the language bar was reporting the suite instead of the
+# product.
+#
+# `-linguist-detectable` rather than `linguist-vendored`: both take a file out of the statistics, and
+# vendored also collapses it in a pull request's diff by default. `battle-tests` is where this
+# project's adversarial work is written and read, and hiding it from review to tidy a bar chart
+# trades the wrong thing. Nothing here is vendored either — it is all ours.
+*.mjs -linguist-detectable
