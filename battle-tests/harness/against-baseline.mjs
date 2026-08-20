@@ -75,15 +75,32 @@ export function readTap(tap) {
  *
  * `regressions` fail a build. `closed` never do — they are the thing the hunt is for.
  */
+/**
+ * How a recorded name is matched, so two spellings of one separator are one name.
+ *
+ * A browser spec is recorded as `<file> \u203a <title>`, and a baseline written before that settled
+ * carries a plain `>`. Compared as raw strings the two never meet: every red reads as a regression,
+ * every recorded row as vanished, and the gate can neither refuse a new break nor confirm a repair.
+ * Three sessions were repairing against it at the time.
+ *
+ * Normalised here rather than at each call site, because the comparison is the one place every path
+ * goes through — and a baseline written by hand, or by an older version, keeps working.
+ */
+function comparableName(name) {
+  return name.replace(" \u203a ", " > ");
+}
+
 export function compareWithBaseline(run, baseline) {
-  const known = new Set(baseline);
+  const known = new Map(baseline.map((name) => [comparableName(name), name]));
+  const failed = new Map([...run.failed].map((name) => [comparableName(name), name]));
+  const passed = new Map([...run.passed].map((name) => [comparableName(name), name]));
   return {
-    regressions: [...run.failed].filter((name) => !known.has(name)).sort(),
-    closed: [...known].filter((name) => run.passed.has(name)).sort(),
-    stillOpen: [...run.failed].filter((name) => known.has(name)).sort(),
+    regressions: [...failed].filter(([key]) => !known.has(key)).map(([, name]) => name).sort(),
+    closed: [...known].filter(([key]) => passed.has(key)).map(([, name]) => name).sort(),
+    stillOpen: [...failed].filter(([key]) => known.has(key)).map(([, name]) => name).sort(),
     // A baseline entry that neither passed nor failed is a battle that no longer exists under that
     // name — a rename, or a deletion. Not a regression, but the baseline is wrong about the world.
-    vanished: [...known].filter((name) => !run.passed.has(name) && !run.failed.has(name)).sort(),
+    vanished: [...known].filter(([key]) => !passed.has(key) && !failed.has(key)).map(([, name]) => name).sort(),
   };
 }
 
