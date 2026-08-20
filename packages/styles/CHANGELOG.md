@@ -1,5 +1,262 @@
 # @modyra/styles
 
+## 0.8.0
+
+### Minor Changes
+
+- 2d01ed6: The default primary is a colour its own text clears AA on
+
+  `.mdy-button` is a filled accent control — `background: var(--mdy-primary)` under
+  `color: var(--mdy-on-primary)` — and in the default theme that pair shipped at **4.09:1**, against the
+  4.5:1 WCAG AA asks of normal text. An auditor running axe over a page of every widget kind reported it
+  ten times.
+
+  Nothing was wrong with the derivation. A light `on-` colour is chosen while light clears
+  `MDY_ON_COLOR_FLOOR`, and on `#7067FF` it does. The floor decides _which_ colour; AA is what the pair
+  must then reach, and they are different numbers. The colour simply could not carry it: the derived
+  light `on-` colour gives 4.09, `#f8fafc` gives 3.96, and pure white — the ceiling for any light text
+  on that background — stops at 4.14. Only black reaches AA there, and black on a saturated indigo is
+  the defect ADR 0015 exists to refuse.
+
+  So the seed moved rather than the rule. `--mdy-ref-color-indigo` is now **`#6458EF`**: the same OKLCH
+  hue and chroma at a lightness of 0.561 instead of 0.607. The derived `on-` colour reaches **4.96:1**
+  and the pivot still selects light, so the rule governs the choice exactly as before.
+  `MDY_ON_COLOR_FLOOR` is unchanged, the stylesheet's pivot is unchanged, and a host supplying its own
+  primary is unaffected.
+
+  **Every filled accent surface is 4.5% darker.** The brand assets carry the same value, so the mark and
+  the product stay one colour. Against a dark ground the mark moves from 4.62:1 to 3.81:1 — still above
+  the 3:1 AA asks of a graphical object — and improves against light grounds, 3.96 to 4.80 on cloud.
+
+  `modyra-salience.theme.css` keeps `#7067ff` deliberately: it pins its own `on-` colour to black, which
+  reaches 5.07:1. A theme that answers this question itself is not answering it wrongly.
+
+  See ADR 0108.
+
+- e4182c0: The colour arithmetic ships with the themes it generates
+
+  `@modyra/core/color-utils` and `@modyra/core/theme-compiler` move to
+  `@modyra/styles`, which gains a JavaScript entry beside its stylesheets. Between
+  them they were 1065 lines — the second and sixth largest files in a package
+  described as a form engine — and nothing in that engine ever executed one of
+  them.
+
+  Measured before moving, because a move that grows a dependency edge is worse than
+  the misplacement it fixes: `color-utils` imports nothing, `theme-compiler` imports
+  only `color-utils`, no package imported either, and `@modyra/styles` had no
+  `@modyra` dependency at all. A leaf moving to a leaf; the graph cannot grow a
+  cycle from it.
+
+  Migration, for the thirty-one names that leave core:
+
+  ```diff
+  -import { MDY_PALETTE_MODELS } from "@modyra/core/color-utils";
+  -import { compileMdyTheme } from "@modyra/core/theme-compiler";
+  +import { MDY_PALETTE_MODELS, compileMdyTheme } from "@modyra/styles";
+  ```
+
+  Their tests move with them and run as `npm run test:styles`, which is part of
+  `npm run test` — a move that leaves its tests unreachable has deleted them
+  without saying so.
+
+  Recorded as ADR 0035, including the check it does not have: nothing enforces that
+  the two modules stay dependency-free, which is the property the move rests on.
+
+- 4678b59: Modal is where a popup sits, not when a field commits
+
+  `variant: "modal"` did four things at once: a backdrop, a modal header, reading a
+  **draft** instead of the value, and a Cancel/Confirm row. The first two are
+  presentation; the last two are commit semantics — and they contradicted the
+  kind's own value contract, which says `commit: "live"` for both the date picker
+  and the range picker. The anatomy even declared an `actions` part for them, so
+  the contract disagreed with itself in writing.
+
+  **The placement was already there.** ADR 0023 named it the modal placement
+  (`placement: "overlay"`) and it was reached only when neither side had room.
+  `anchorOverlay` now takes `forceModal`, so a host can _ask_ for it — one door,
+  consumed by all three renderers, which already call that function.
+
+  **`variant` keeps only its presentation meaning.** The draft, the confirmation
+  and the `actions` part go: choosing a date writes it, and the second pick of a
+  range closes and writes it, whatever the placement.
+
+  Migration: `variant="modal"` still covers the viewport and still draws the modal
+  header. A product that relied on Confirm to commit no longer has it — the value
+  is written when it is chosen, which is what `MDY_VALUE_CONTRACTS` said all along.
+  `MDY_WIDGET_CONTRACTS.datepicker.parts.actions` and its daterange twin are gone;
+  the timepicker keeps them, because it is the kind that confirms.
+
+  `scripts/audit-commit-affordance.mjs` is the check that would have caught this: a
+  kind declared `live` may not declare a confirmation part, and no renderer may
+  draw the classes of one for it. Both halves read from the source of truth, so a
+  kind that changes its commit mode carries the check with it.
+
+- 92b7f7b: One backdrop, drawn by the contract and painted by the theme
+
+  `.mdy-overlay-backdrop` is in `MDY_SHARED_UI_CLASSES` and no theme painted it, so
+  the token beside it — `--mdy-overlay-backdrop-bg`, with a dark ramp — was
+  declared and read by nothing. What the three renderers did instead was three
+  different things: Angular wrote `rgba(0,0,0,0.32)` inline, so no product could
+  change how its modals dim; Lit drew the element under _every_ open popup,
+  dropdowns included, which is why painting it would have dimmed the page behind a
+  select; and the framework-free renderer drew none at all, so its modals never
+  dimmed.
+
+  The theme paints the class now, and `setOverlayOpen` draws the element when the
+  placement is modal — `syncOverlayBackdrop` for a renderer that learns the
+  placement a moment after showing the popup, which is what measuring first means.
+  "A modal dims what is behind it" is not a rendering decision each adapter gets to
+  make differently.
+
+  `audit-contract-style-coverage` also reads `MDY_SHARED_UI_CLASSES` now. It
+  enumerated parts, popup, portal, shell, layout and chip and skipped the table of
+  classes belonging to no single kind, so nine classes the contract declares were
+  reported as outside it and sat in the allowlist for that reason alone.
+
+### Patch Changes
+
+- 439d615: A corner of sRGB is judged to be inside sRGB
+
+  `isInSrgb` is asked after a round trip through Oklch, so its tolerance exists to absorb that
+  transform's error. **The tolerance was smaller than the error it exists to tolerate:**
+
+  ```
+  #ff0000  overshoot 3.047e-8   in
+  #ffffff  overshoot 6.953e-8   in
+  #00ff00  overshoot 1.001e-7   OUT      ← against a tolerance of 1e-7
+  #ffff00  overshoot 1.303e-7   OUT
+  ```
+
+  Two of the eight corners of sRGB were outside sRGB, and a seed passes through a palette as its
+  `primary` — so `derivePalette("#ffff00")` emitted a colour this package's own predicate rejects.
+  White clearing the old threshold by a factor of one and a half was luck rather than a margin:
+  nothing about `#ffffff` at `6.95e-8` is safer in principle than `#00ff00` at `1.00e-7`.
+
+  `MDY_SRGB_EPSILON` is `1e-6`, **derived in both directions** rather than picked:
+
+  - **large enough** — the measured worst-case overshoot for a colour that _is_ in gamut is `1.303e-7`
+    over a 4096-colour grid plus the eight corners, leaving roughly seven times that as headroom;
+  - **small enough** — a colour one part in a million of chroma past the true boundary overshoots by
+    `7e-7` to `2e-6`, so this admits at most about `1.5e-6` of chroma beyond the edge. Chroma runs to
+    `0.45`: three orders of magnitude below anything a consumer could act on.
+
+  The premise is now **checked rather than trusted**: a test measures the worst in-gamut overshoot over
+  the same grid and fails if it ever exceeds the tolerance, so a change to the transform's coefficients
+  says the constant needs revisiting instead of putting a corner of sRGB back outside it. A colour
+  genuinely past the boundary is still refused.
+
+  Found by `battle-tests/adversarial/security/palette-contrast.battle.test.mjs`.
+
+- 85a7ad0: A calendar's adjacent-month days are readable
+
+  The days a calendar greys out — the ones belonging to the month either side — measured **3.06:1**
+  against the surface behind them, where AA asks 4.5:1 of normal text. They are not decoration: they
+  are dates a person reads and can click.
+
+  The mechanism was `opacity: 0.5` on the cell, not a muted colour, and that is why the defect was
+  invisible to the palette checks. A faded value composites against whatever is behind it, so one
+  number is several contrasts — 3.06:1 on the resting surface, 3.01:1 on a hovered cell, and different
+  again in the dark scheme.
+
+  `--mdy-comp-date-picker-cell-outside-opacity` is **0.7**, chosen against the worst of those grounds
+  rather than the resting one. Measured across light and dark, resting and hovered, the tightest is
+  5.40:1 and the day still reads as clearly muted — full-strength text on that surface is 14.05:1.
+  A disabled day is the exception AA itself makes and keeps its own 0.25.
+
+  A theme overriding the token takes the same obligation with it.
+
+- f00ead6: A file the field turned away is something the page says
+
+  `fileSelectionTransition` reports what a pick refused. Nothing showed it: a field declaring
+  `accept="image/*"` given a `.txt` left the page unchanged in `@modyra/plain` — same text, no message,
+  no live region — and `@modyra/angular` emitted `filesRejected` for a host to catch and said nothing
+  itself. `@modyra/lit` was not applying the policy at all: it wrote the raw pick, so a refused file
+  appeared in the list as though it had been taken, and `accept`, `maxFileSize` and `maxFiles` meant
+  nothing there.
+
+  **`MDY_WIDGET_CONTRACTS.file` gains an optional `rejected` part**, `role="status"`, beside the file
+  list rather than inside it — the list is the value, and a refused file is what did not become part of
+  it. **`MdyI18nMessages` gains `fileRejected(names)`**, which takes the list and returns the sentence,
+  in all five published tables: the join is a locale's decision, not a renderer's.
+
+  **`MdyFormAdapter` gains `reportEntry(name, problem)`.** The previous release put `reportEntry` on the
+  field handle; a handle is built over an adapter, and Angular's could not implement the handle contract
+  without this. Both additions are required members — an implementer of either interface adds one.
+  Spreading over `MDY_I18N_MESSAGES_DEFAULT` is unaffected.
+
+  `@modyra/lit` and `@modyra/angular` now write what the transition answers rather than rebuilding a
+  shape beside it, so a single-file field holds a list in every renderer. A page relying on lit ignoring
+  `accept` will find that it no longer does.
+
+- 0211979: A theme selector cannot close the stylesheet it is written into
+
+  `compileMdyTheme` guarded its `selector` against breaking out of the **CSS rule** — `}`, `;`, `@` and
+  comment sequences all end a rule and turn what follows into a stylesheet nobody wrote. It did not
+  guard the other container. A stylesheet is often written into a `<style>` block, and `</style>` ends
+  that block wherever it appears, including inside a selector:
+
+  ```js
+  compileMdyTheme({
+    name: "acme",
+    seed: "#6458ef",
+    selector: "</style><script>alert(1)</script>",
+  });
+  // compiled, character for character, into the CSS
+  ```
+
+  `seed` and `name` already refused it; `selector` did not, because none of the guarded characters
+  appear in `</style>`.
+
+  `<` is now refused. It is not valid anywhere in a CSS selector — proposed as a combinator and
+  abandoned — so nothing correct is taken away. **`>` is deliberately still allowed**: `.a > .b` is the
+  ordinary child combinator, and a guard that took the pair for symmetry would break every theme
+  scoping a rule to a direct child.
+
+  Nothing in Modyra feeds this: Studio does not call `compileMdyTheme`. It matters where an application
+  compiles a theme from a name a customer supplies — per tenant, per brand — which is what a theme
+  compiler is for.
+
+  **`serializeMdyThemeCss` now validates too, and that is the larger half.** The guard above is in
+  `compileMdyTheme` — the function that _builds_ the theme. The one that _writes the sheet_ is exported,
+  takes a plain frozen object, and checked nothing, so a caller holding its own tokens reached it
+  without passing the compiler at all. Measured: the same payload landed verbatim, and `seed` and
+  `model` escaped the header comment with `*/` before doing the same.
+
+  It refuses every field it interpolates now — the selector by the rule above, `seed` and `model` by
+  what they are rather than by characters they lack, and each token name and value by the same
+  containment. A theme this package compiles is unaffected, and `.a > .b:not(.c)` still serializes.
+
+  The guard still does not decide _which_ selectors a theme should accept. That remains the caller's.
+
+  See ADR 0111.
+
+- ea534af: A refusal that names no field now has somewhere to be shown
+
+  A failed network call, a service that is down, a cross-field rule only a server can check: they
+  arrive with no path, and the engine keeps them. No renderer had anywhere to put them — `@modyra/plain`
+  and `@modyra/lit` never read `lastSubmitErrors` at all, and `@modyra/angular` read it only in its
+  devtools panel. A person pressed Send, the answer was no, and they saw their fields exactly as they
+  had left them.
+
+  `@modyra/widgets` now declares the form's own parts — `MDY_FORM_SHELL_STRUCTURE`,
+  `MDY_FORM_SHELL_CLASSES`, `MdyFormShellPart` — and `formErrorsOf` is the one rule for what belongs in
+  them: the errors no field will show. The region is a `status`, it sits before the fields, and it is
+  rendered empty so that a screen reader already watching it announces what arrives.
+
+  `@modyra/plain` renders it from `mountMdyForm` and `@modyra/angular` from `MdyFormComponent`, both of
+  which own the form's own DOM. `@modyra/lit` has no form element, so it ships one to place:
+
+  ```html
+  <mdy-form-errors .form="${form}"></mdy-form-errors>
+  ```
+
+  `@modyra/styles` paints the region bordered rather than bare — a field's error is read next to the
+  field it is about, and this one has to say what it is about by itself.
+
+  `mountMdyForm` inserts the region as the container's first child, so anything counting a form
+  container's children sees one more. Recorded as
+  [ADR 0062](../docs/architecture/0062-the-form-says-what-no-field-can.md).
+
 ## 0.7.1
 
 ### Patch Changes

@@ -1,5 +1,59 @@
 # @modyra/plain-preview-app
 
+## 0.5.6
+
+### Patch Changes
+
+- Updated dependencies [c0b44a8]
+- Updated dependencies [ac052bc]
+- Updated dependencies [f76eeb3]
+- Updated dependencies [d03419c]
+- Updated dependencies [a300af5]
+- Updated dependencies [f00ead6]
+- Updated dependencies [28485d9]
+- Updated dependencies [833a5f6]
+- Updated dependencies [6e672c5]
+- Updated dependencies [5a95871]
+- Updated dependencies [a219a90]
+- Updated dependencies [0a96145]
+- Updated dependencies [117ecba]
+- Updated dependencies [0a6d296]
+- Updated dependencies [9191632]
+- Updated dependencies [9cd8dc2]
+- Updated dependencies [8c92015]
+- Updated dependencies [be91a76]
+- Updated dependencies [9fab18e]
+- Updated dependencies [1b26cac]
+- Updated dependencies [afb6d57]
+- Updated dependencies [7cd79cc]
+- Updated dependencies [9a7c524]
+- Updated dependencies [b75b5d3]
+- Updated dependencies [7cbcd34]
+- Updated dependencies [023d6c7]
+- Updated dependencies [1f91ae2]
+- Updated dependencies [178ddce]
+- Updated dependencies [c3b519f]
+- Updated dependencies [7e1b5a5]
+- Updated dependencies [4678b59]
+- Updated dependencies [000f195]
+- Updated dependencies [92b7f7b]
+- Updated dependencies [1e91463]
+- Updated dependencies [8514984]
+- Updated dependencies [89e7d14]
+- Updated dependencies [4af560a]
+- Updated dependencies [621866a]
+- Updated dependencies [483d9b7]
+- Updated dependencies [a9f1f37]
+- Updated dependencies [9116bde]
+- Updated dependencies [ea534af]
+- Updated dependencies [010fa6a]
+- Updated dependencies [009d7ad]
+- Updated dependencies [294ff44]
+- Updated dependencies [a629f50]
+  - @modyra/plain@0.9.0
+  - @modyra/studio-contract@0.6.0
+  - @modyra/studio-model@0.6.0
+
 ## 0.5.5
 
 ### Patch Changes

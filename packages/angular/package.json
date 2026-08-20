@@ -1,6 +1,6 @@
 {
   "name": "@modyra/angular",
-  "version": "0.8.0",
+  "version": "0.9.0",
   "description": "Type-safe Angular forms built entirely on native Signals.",
   "private": true,
   "funding": {
@@ -51,8 +51,8 @@
   ],
   "dependencies": {
     "tslib": ">=2.3.0",
-    "@modyra/core": "^2.1.2",
-    "@modyra/widgets": "^2.1.0"
+    "@modyra/core": "^2.2.0",
+    "@modyra/widgets": "^2.2.0"
   },
   "exports": {
     ".": {

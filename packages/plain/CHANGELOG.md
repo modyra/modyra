@@ -1,5 +1,996 @@
 # @modyra/plain
 
+## 0.9.0
+
+### Minor Changes
+
+- c0b44a8: A calendar has three views, and the contract now says so
+
+  Two renderers had grown a month picker and a year picker; one had not, and nobody
+  had decided that. The seven class names they used were identical and in no
+  catalogue, so they agreed by copying rather than by contract, and neither picker
+  carried a role, an `aria-selected` or anything else a screen reader could read —
+  the day grid is a `grid` of `gridcell`s and the views that replace it were a run
+  of bare buttons.
+
+  `MdyCalendarViewMode` (`days | months | years`) joins the state of both calendar
+  controllers, with `set-view-mode`, `select-month` and `select-year`, and
+  `calendarViewAfterPick` states where choosing lands: a year narrows to its months
+  and a month to its days. Every opening starts on the days, which is what the
+  timepicker's own view mode already did.
+
+  Eight parts join the catalogue — `monthPicker`, `monthCell`, `yearPicker`,
+  `yearCell` for each kind — carrying the classes the renderers already used, and
+  `projectCalendarViewA11y` / `projectCalendarPeriodCellA11y` project them.
+
+  **The framework-free renderer gains the views.** Paging a month at a time put a
+  birth date thirty clicks away.
+
+  Two things the gates caught rather than review: a `grid` with no accessible name,
+  which the conformance kit rejected — the label is a default now rather than an
+  option a renderer can forget — and four state classes no theme paints, so a cell
+  declares only `selected` and a refused period carries the native `disabled`.
+
+- d03419c: A control a document did not label is named by its field
+
+  A label is optional in a document — deliberately: the published corpus declares fields without one,
+  and refusing them would invalidate the material that documents the contract. But a control with no
+  accessible name is announced as its role and nothing else, and
+  `MDY_SEMANTICS_REQUIRING_NAME` already says some roles may not be.
+
+  `fieldAccessibleName({ ariaLabel, label, name })` is the order, in one place so every renderer answers
+  the same: what a host wrote for the control, then the visible label, then the **field's own name**.
+
+  The fallback is not a poor one. A document's field name is a single segment — a dotted path is refused
+  where the document is read — and in the published corpus the names _are_ the label's words: `city`,
+  `zip`, `email`, `first`, `last`, beside labels reading `City` and `ZIP`. Announcing `city` announces
+  the word the author would have written; announcing nothing announces "text box".
+
+  `@modyra/plain` names the element a person operates rather than the one it was handed — a slider
+  arrives wrapped in its track, and a name on the wrapper is a name the control does not carry — and
+  names a checkbox and a toggle, whose words sit beside the box rather than in a `<label for>`.
+  `@modyra/lit` takes the same order.
+
+  `nameIsAFallback` answers whether the name came from the field rather than from words for a person,
+  so a host that wants to report it can.
+
+- f00ead6: A file the field turned away is something the page says
+
+  `fileSelectionTransition` reports what a pick refused. Nothing showed it: a field declaring
+  `accept="image/*"` given a `.txt` left the page unchanged in `@modyra/plain` — same text, no message,
+  no live region — and `@modyra/angular` emitted `filesRejected` for a host to catch and said nothing
+  itself. `@modyra/lit` was not applying the policy at all: it wrote the raw pick, so a refused file
+  appeared in the list as though it had been taken, and `accept`, `maxFileSize` and `maxFiles` meant
+  nothing there.
+
+  **`MDY_WIDGET_CONTRACTS.file` gains an optional `rejected` part**, `role="status"`, beside the file
+  list rather than inside it — the list is the value, and a refused file is what did not become part of
+  it. **`MdyI18nMessages` gains `fileRejected(names)`**, which takes the list and returns the sentence,
+  in all five published tables: the join is a locale's decision, not a renderer's.
+
+  **`MdyFormAdapter` gains `reportEntry(name, problem)`.** The previous release put `reportEntry` on the
+  field handle; a handle is built over an adapter, and Angular's could not implement the handle contract
+  without this. Both additions are required members — an implementer of either interface adds one.
+  Spreading over `MDY_I18N_MESSAGES_DEFAULT` is unaffected.
+
+  `@modyra/lit` and `@modyra/angular` now write what the transition answers rather than rebuilding a
+  shape beside it, so a single-file field holds a list in every renderer. A page relying on lit ignoring
+  `accept` will find that it no longer does.
+
+- a219a90: `mountMdyForm` takes a `draft` option
+
+  Draft persistence is a headline of the engine — debounced autosave, restore on load, field exclusion,
+  four claims — and it is the _form's_ option. This renderer builds the form itself and had nowhere to
+  put it: `mountMdyForm(container, fields, { draft: { key } })` was accepted without a word and nothing
+  was ever written. The other renderer takes its options straight to the form, so the same call kept a
+  draft there, which is what made this a missing slot rather than a feature that does not work.
+
+  `draft` is now passed to the form this mount builds, as `createForm` takes it — a key or the whole
+  `MdyDraftOptions`.
+
+- 0a6d296: A popup that opens says so
+
+  `overlayLifecycleTransition` answers `announce: "opened" | "closed" | null` for every open and close,
+  and the words are published in five message tables. `@modyra/angular` read the field; `@modyra/plain`
+  and `@modyra/lit` read neither. In a page: the datepicker opens, `aria-expanded` becomes `"true"`, and
+  no live region receives anything. `aria-expanded` answers someone who asks the control — a popup drawn
+  in the top layer is exactly the case where nobody who was not asking is told it appeared.
+
+  Both renderers now announce where they show and hide the popup, in the element's own language, once
+  per edge. Neither announces during teardown: an element being disposed is not a popup a person closed.
+
+  **`setOverlayOpen` returns `boolean`** — whether this call is the moment the popup opened or closed —
+  so a renderer that reflects its open state on every render can tell a change from a repaint. The first
+  call for a popup is its initialisation and answers `false`. A caller ignoring the result is unaffected;
+  anything implementing that signature now returns the flag.
+
+  `MDY_SHARED_REGION_ATTRIBUTE` marks the renderer-wide live region. One region serves every widget and
+  has to outlive all of them — created and removed around a message, it is a region the screen reader
+  was not watching when the text arrived — so `inspectUnmount` no longer counts it as an element an
+  instance left behind.
+
+  `MdyFieldElement.messages` is public in `@modyra/lit`: the overlay controller speaks for the element
+  and reads the element's table rather than resolving a second one.
+
+- afb6d57: A rule a document writes is a rule the form keeps
+
+  The Dynamic Form Contract's `rules` array was read by the parser as behaviour — an undeclared effect,
+  an undeclared operator, a target that is not a field and a condition on a field that is not there are
+  each refused, and in strict mode the whole document goes with them — and then nothing applied one.
+  Every reference to a document's rules in the workspace was inside the parser.
+
+  The end of it is the payload. Same field, same value, same page, and the only difference is which path
+  disabled it: through the field handle the form sends `{"customerType":"person"}`; by the document's
+  rule it sends `{"customerType":"person","taxId":"SSN-123-45-6789"}`. A document saying "disable the tax
+  id for a private customer" produced a form that sent it.
+
+  **`applyDynamicRules(form, rules)`** is the sibling `buildDynamicValidations` already had.
+  `visible`/`hidden` take the field out of play — not asked for, not validated, not submitted;
+  `enabled`/`disabled` leave it in the form and stop it being answered. Two rules naming one field
+  compose rather than replace.
+
+  **`mountMdyForm` accepts `rules`** and applies them, so the documented path carries the whole document:
+  `mountMdyForm(container, result.fields, { layout: result.layout, rules: result.rules })`. A host that
+  does not pass them gets what it got before.
+
+  **`evaluateRuleCondition(when, value)`** is published beside `evaluateExpression`. The rule predicate is
+  flat and its vocabulary is wider than the expression tree's — `in`, `notIn` and the two "or equal"
+  comparisons exist only here — and a host rendering its own controls can now ask the question the
+  binding asks instead of reimplementing ten operators. An operator nobody declared answers `false`;
+  comparisons are between two numbers or two strings, so an ISO date rule works and nothing is coerced.
+
+  The generated-forms guide no longer says that no renderer applies rules.
+
+- b75b5d3: A date or time a control cannot read is kept where it can be corrected, and explained
+
+  Typing `14:30` into a timepicker erased it. The value went `null`, `aria-invalid` stayed `false`, and
+  nothing was said — in both browser renderers, for a date and for a time alike:
+
+  ```
+  typed        into         outcome
+  14:30        timepicker   text erased, value null, nothing said
+  banana       timepicker   idem
+  not a date   datepicker   idem
+  31/02/2026   datepicker   idem
+  ```
+
+  `14:30` is the case that decides it: it is how most of the world writes a time, the control's default
+  locale is 12-hour, and the only way to learn that was to guess. Nothing erased the text — an
+  unparseable entry committed nothing, and the next sync rewrote the input from a value that had not
+  changed.
+
+  A control now hands the text to its controller as text (`{ type: "type", text }`) and the controller
+  decides: empty clears, readable commits through the same door the calendar or the dial uses,
+  unreadable is **kept and explained**. Keeping without explaining would leave a field that looks
+  accepted holding a value it never took — which is what `acceptTimeField` already refuses one level
+  down.
+
+  **Breaking.** `MdyDatepickerFieldState` and `MdyTimepickerFieldState` gain `entryText` and
+  `entryUnreadable`; `MdyI18nMessages` gains `entryUnreadable`, shipped in all five locales. A renderer
+  that builds one of those state objects, or a host that supplies a complete message table instead of
+  spreading `MDY_I18N_MESSAGES_DEFAULT`, adds them:
+
+  ```ts
+  const messages = {
+    ...MDY_I18N_MESSAGES_DEFAULT,
+    noResults: "Nessun risultato",
+  };
+  ```
+
+  `parseEntry` is optional, so a controller built without one leaves typed entries alone as before.
+
+  The daterange is unchanged and has the same defect: its entry has two ends and needs a state shape of
+  its own. Recorded as
+  [ADR 0063](../docs/architecture/0063-a-value-a-control-cannot-read-stays-where-it-can-be-corrected.md).
+
+- 7cbcd34: A form does not send a field that says it cannot be read
+
+  A date or time a control cannot read is kept on screen and explained — and the value the field holds
+  is `null`, which no rule objects to unless the field is required. So the page and the form disagreed:
+
+  ```
+  type "not a date", leave the field
+    the page     aria-invalid="true", "That could not be read…", the text still there
+    the form     valid, submittable
+    the submit   { "when": null }
+  ```
+
+  A server received a field left empty while the person was looking at the opposite. The submit path
+  was not at fault — the same field marked `required` disables the button — it was an error the verdict
+  could not see.
+
+  **`MdyFieldHandle` gains `reportEntry(problem)`:** a control says that what it holds does not
+  represent what was entered, in the words a person reads, or `null` once the two agree again. The
+  engine folds it into the field's errors, so `valid()`, `canSubmit()` and every error list see it.
+
+  Anything implementing `MdyFieldHandle` implements one more member — a test double, an adapter
+  building its own handle. Handles produced by `createForm` are unaffected.
+
+  A form that used to submit `{ when: null }` while showing an error now reports itself unsubmittable
+  until the entry is corrected or cleared. Recorded as
+  [ADR 0073](../docs/architecture/0073-a-verdict-a-person-can-see-is-one-the-form-counts.md).
+
+- 023d6c7: A widget announces the refusal it makes
+
+  Twelve of the seventeen kinds refused every change while read-only and said nothing about it. The
+  control was focusable, submitted, counted for validity, looked exactly like an editable one, and the
+  only feedback was that nothing happened.
+
+  The previous decision — `readonly` declared only where a value is typed — was right when nothing
+  enforced it: an `aria-readonly` on a checkbox, next to a native attribute HTML ignores, is a claim the
+  DOM contradicts. Every kind's controller now asks `blocksValueChange` before carrying out an intent, so
+  the claim is true and the silence is the defect. `MDY_WIDGET_STATE_SUPPORT` declares `readonly` for
+  sixteen kinds and `ARIA_STATE_CARRIERS` names the carrier for each.
+
+  **The native attribute is bound only where the platform acts on it** — a text-entry input or a
+  textarea, never a range, a checkbox, a colour, a file input or a `<select>`. That half of the earlier
+  finding survives as a rule, and the conformance check no longer demands an attribute the browser drops.
+
+  `file` declares no read-only state: its picker is the browser's, its value is a `FileList` a page
+  cannot write, and its role has no `aria-readonly`. What is expressible there is that the affordance is
+  unavailable, so its browse control is disabled while the field stays in play.
+
+  Three controllers kept `readonly` in a local signal a host had to set, while reading `disabled` and
+  `interactivity` from the handle — a field the form had marked read-only refused through one path and
+  reported itself editable through the other. They derive it from the handle now.
+
+  `MdyFieldShellFlags` gains an optional `readonly`. A theme selecting on `[aria-readonly]` will match
+  kinds it did not before.
+
+- c3b519f: The three places one adapter still answered for itself
+
+  **Angular binds the shared light-dismiss listeners.** Two renderers had been
+  unified onto `bindLightDismiss` and the third kept its own six, which is how the
+  set drifted in the first place — one of them was deciding on `click` alone, which
+  the policy documents as the tail of a gesture rather than the gesture.
+
+  **Angular draws the contract's backdrop.** It had a `<div>` in its own template
+  with the colour written inline, so it was the one adapter not using the element
+  the contract draws and the theme paints. Dismissing it needs no handler of its
+  own: a click on the backdrop is a click outside, which the shared policy already
+  answers.
+
+  **The framework-free renderer can be told.** It returned a teardown and nothing
+  else, so `setOptions` and `setBounds` — which the controllers take, and which the
+  other two adapters pass through — had no door here at all: an option list
+  arriving from a fetch could not reach a mounted chooser, and a range narrowing
+  because a sibling was answered could not reach a mounted calendar. The teardown
+  now carries the updaters its kind supports, so every existing caller keeps
+  working and the result is still the function it always was.
+
+  Its option rows are rebuilt when the list is replaced. They were built once at
+  mount, so the DOM outlived the list it came from.
+
+- 4678b59: Modal is where a popup sits, not when a field commits
+
+  `variant: "modal"` did four things at once: a backdrop, a modal header, reading a
+  **draft** instead of the value, and a Cancel/Confirm row. The first two are
+  presentation; the last two are commit semantics — and they contradicted the
+  kind's own value contract, which says `commit: "live"` for both the date picker
+  and the range picker. The anatomy even declared an `actions` part for them, so
+  the contract disagreed with itself in writing.
+
+  **The placement was already there.** ADR 0023 named it the modal placement
+  (`placement: "overlay"`) and it was reached only when neither side had room.
+  `anchorOverlay` now takes `forceModal`, so a host can _ask_ for it — one door,
+  consumed by all three renderers, which already call that function.
+
+  **`variant` keeps only its presentation meaning.** The draft, the confirmation
+  and the `actions` part go: choosing a date writes it, and the second pick of a
+  range closes and writes it, whatever the placement.
+
+  Migration: `variant="modal"` still covers the viewport and still draws the modal
+  header. A product that relied on Confirm to commit no longer has it — the value
+  is written when it is chosen, which is what `MDY_VALUE_CONTRACTS` said all along.
+  `MDY_WIDGET_CONTRACTS.datepicker.parts.actions` and its daterange twin are gone;
+  the timepicker keeps them, because it is the kind that confirms.
+
+  `scripts/audit-commit-affordance.mjs` is the check that would have caught this: a
+  kind declared `live` may not declare a confirmation part, and no renderer may
+  draw the classes of one for it. Both halves read from the source of truth, so a
+  kind that changes its commit mode carries the check with it.
+
+- 621866a: A flattened path now rebuilds every collection it crossed.
+
+  `buildFlatFormSchema` turns a collection declared inside another collection's row
+  (`orders.o1.lines` inside `orders`) into a real nested descriptor — the first row
+  describes the child's item, and each row's leaves seed it through the parent's
+  initial. Plain's `mountMdyForm` walks such paths the way each collection is
+  addressed, so `orders.o1.lines.l1.sku` mounts a real control two collections deep.
+  One-level documents build exactly as before.
+
+- ea534af: A refusal that names no field now has somewhere to be shown
+
+  A failed network call, a service that is down, a cross-field rule only a server can check: they
+  arrive with no path, and the engine keeps them. No renderer had anywhere to put them — `@modyra/plain`
+  and `@modyra/lit` never read `lastSubmitErrors` at all, and `@modyra/angular` read it only in its
+  devtools panel. A person pressed Send, the answer was no, and they saw their fields exactly as they
+  had left them.
+
+  `@modyra/widgets` now declares the form's own parts — `MDY_FORM_SHELL_STRUCTURE`,
+  `MDY_FORM_SHELL_CLASSES`, `MdyFormShellPart` — and `formErrorsOf` is the one rule for what belongs in
+  them: the errors no field will show. The region is a `status`, it sits before the fields, and it is
+  rendered empty so that a screen reader already watching it announces what arrives.
+
+  `@modyra/plain` renders it from `mountMdyForm` and `@modyra/angular` from `MdyFormComponent`, both of
+  which own the form's own DOM. `@modyra/lit` has no form element, so it ships one to place:
+
+  ```html
+  <mdy-form-errors .form="${form}"></mdy-form-errors>
+  ```
+
+  `@modyra/styles` paints the region bordered rather than bare — a field's error is read next to the
+  field it is about, and this one has to say what it is about by itself.
+
+  `mountMdyForm` inserts the region as the container's first child, so anything counting a form
+  container's children sees one more. Recorded as
+  [ADR 0062](../docs/architecture/0062-the-form-says-what-no-field-can.md).
+
+- 294ff44: The framework-free and Lit renderers read the message tables
+
+  Both wrote their own English. The same control was "Open the calendar" in one,
+  "Open date picker" in the other, and "Toggle calendar" in the table neither of
+  them opened — forty-one strings and five locales with exactly one consumer.
+
+  **Framework-free**: every renderer that shows a word takes an optional trailing
+  `messages`, and `renderField` fills it in. A field that declares a `locale` now
+  speaks it without any extra wiring: the tag that formats a date and the tag that
+  names a button are the same tag.
+
+  **Lit**: `MdyFieldElement` gains a `locale` property and a `messages` getter, so
+  every element inherits both. The two calendars had a private `locale` getter of
+  their own; it is now the base's fallback rather than a third answer.
+
+  Some visible words change with this, because the table's wording wins:
+  "Confirm" becomes "OK", "Choose a file" becomes "Select file", "Clear" becomes
+  "Clear selection".
+
+### Patch Changes
+
+- ac052bc: A chip, a handle and a numeric kind, each named once
+
+  `MDY_CHIP_CLASSES` gains `removable`. The Material theme has styled
+  `.mdy-chip--removable` all along and the contract never named it, so the one
+  directive that applied it was deciding for itself what a removable chip is. The
+  Angular chip directive and the multiselect template now take every chip class
+  from the table; between them they spelled ten.
+
+  Angular stops restating `MdyArrayHandle` and `MdyRecordHandle` member by member.
+  Both are derived from the engine's handles the way `MdyFieldHandle` already was,
+  for the reason that file already gives: the copy drifted the moment the engine
+  gained a member, and satisfied the local idea of the type while throwing at
+  runtime. `cell` stays narrowed, because the handle it returns carries this
+  framework's signals.
+
+  The framework-free renderer asks the value contract which kinds hold a number
+  instead of listing them again, and takes its daterange and timepicker part
+  classes from the catalogue rather than from seven string literals.
+
+- f76eeb3: A closed calendar and a closed colour palette hold nothing. The popup element itself stays — built on
+  the first open and alive as long as the field, which is the lifecycle the renderers keep — but what
+  was inside it stayed too: six weeks of day buttons announced as a grid and eight swatches announced
+  as options in a listbox, all of them tabbable, in a widget nobody had opened. They are built again
+  when it opens, which is what a month change already did. The calendar grid is now named by the month
+  it shows rather than by the numbers inside it, which is a name that survives being empty.
+- a300af5: A field wears the state classes its kind declares
+
+  Three states the contract names and this renderer did not apply.
+
+  **Open.** `MDY_FIELD_STATE_CLASSES` lists `open` beside `touched` among a renderer root's states and
+  names the class it takes, and nothing applied it: a select, a datepicker, a timepicker and a colours
+  field with their popup showing looked exactly like ones with it closed, so a theme had nothing to
+  style. All six overlay kinds carry it now.
+
+  **A refused field's label.** The label's error class read `shownErrorsOf`, which waits for the field
+  to be touched, while the control's `aria-invalid` does not — so a control marked wrong sat beside a
+  label that said nothing. Both now answer the same question. A checkbox has no shared shell to apply
+  it, so it toggles the class itself.
+
+  **A lifted label.** A datepicker holding no date compared `selectedDate !== ""` against a value that
+  is `undefined` when nothing is selected, so an empty field's label was lifted as though it were full.
+
+- 833a5f6: A gesture is bound once, and Lit stops deciding on the tail of it
+
+  `bindLightDismiss` joins `createLightDismiss`: the policy decides whether an
+  interaction dismisses, and this is the six listeners that feed it. Written per
+  renderer, the set drifted — one bound `pointerup` and the other did not, leaving
+  that one to decide on `click` alone, which the policy's own documentation calls
+  the tail of the gesture rather than the gesture. A release outside that produced
+  no click never dismissed.
+
+  `createPointerDrag` returns to the package entry, taken up by the Angular and Lit
+  clock dials, whose document listeners were byte-identical. The framework-free
+  renderer keeps its own: it uses `setPointerCapture`, which retains the pointer
+  that leaves the dial without any document listener at all.
+
+  The Lit multiselect stops writing its own toggle, increment and decrement — a
+  third form matching neither of the other renderers — and the Lit datepicker stops
+  accepting a typed date outside its own bounds, which its grid already refused.
+
+- 0a96145: The contract says a password is not a text field: `MDY_WIDGET_CONTRACTS[kind].controlType` names the
+  native control a kind is drawn with, and `concealed` — on the widget contract and on
+  `MDY_VALUE_CONTRACTS` — says the control does not show what is typed into it. The one difference
+  between the two kinds was said nowhere a renderer could read it, so every adapter kept a private map
+  from kind to input type and the failure mode of one that does not is a password in clear text.
+  `@modyra/plain` reads the contract instead of its own map. Both members are optional; nothing an
+  adapter does today breaks. See ADR 0099.
+- 117ecba: `applyOverlayProperties` — a placement is written when it changes, not on every pass
+
+  A renderer re-applies an open popup's placement on every render pass, and most
+  of those writes set a custom property to the value it already holds. That is not
+  free: a custom property write invalidates style on the element and everything
+  inheriting from it, which for a popup holding a calendar is its whole subtree.
+
+  Measured on a calendar switching to its year view: **six writes per pass became
+  zero**, because the placement genuinely does not change — the contract holds the
+  decision it opened with.
+
+  The framework-free and Lit renderers consume it. Angular does not need it: it
+  binds a computed style object, and the framework already skips what has not
+  changed.
+
+- 9cd8dc2: The daterange and colours openers take their popup promise from the contract
+
+  `aria-haspopup` is announced _with_ the control, before anything opens, and a person decides whether
+  to open it from that word. Nineteen places across three adapters wrote it as a literal and one read
+  the contract's projection — so two renderers of one widget could say different words about it, and
+  nothing compared them.
+
+  These two now ask: `MDY_POPUP_OPENERS` carries `promises` per kind, and `applyOpenerPromise` reads it
+  through `projectOverlayOpenerA11y`. The colours field was promising a listbox where the contract says
+  listbox and the panel renders one, and the daterange a grid — both are now whatever the contract
+  says, wherever it changes.
+
+- 8c92015: A number field that is emptied holds nothing, not zero
+
+  `MDY_VALUE_CONTRACTS.number` declares the kind nullable: empty is a value a numeric field can hold and
+  the one it starts from. The renderer read the box through `Number(text)`, and `Number("")` is `0` — so
+  clearing the field supplied a quantity nobody typed, showed it in the box, and carried it to the wire:
+  typed 7, cleared, submitted `{"qty": 0}`.
+
+  For a quantity that is an order line of zero, for a price it is free, for a discount it is all of it.
+  And because the box _shows_ the zero, noticing means re-reading a field you have just emptied.
+
+  Empty is now nothing, text that is not a number is nothing, and a number is itself — which is what
+  `@modyra/lit` already did for the same kind through the same public call.
+
+  Read from the text rather than `valueAsNumber`: that property is unimplemented in some DOM
+  implementations this renderer runs in, where it answers `NaN` for a box that plainly holds a number.
+
+- be91a76: The framework-free range picker stops deciding what a range means
+
+  `createDaterangeFieldController` has existed since the controllers batch and no
+  renderer consumed it. The framework-free one now does: which pick starts a range
+  and which closes it, what the bounds refuse, and which cells fall between the
+  ends are its answers.
+
+  Two of those were wrong here. The cells were painted by comparing ISO strings —
+  a fourth opinion on a question three other places already answered — and they
+  were drawn from the committed value, so the highlight could not follow the
+  pointer before anything was decided. The controller paints from `previewed`,
+  which is what that distinction exists for.
+
+  Typing a range and clicking one now commit through the same two intents, so they
+  cannot diverge.
+
+- 9fab18e: A daterange keeps what is typed into it. Its two text inputs took keystrokes and discarded them: a
+  well-formed range typed into them left the value at `{ start: null, end: null }` and both boxes
+  empty, so a person who typed a range, tabbed away and saw nothing had no way to learn that the
+  calendar was the only door. Both renderers did it, so the repair is in the shared controller: a
+  `type` intent carries one end as **text**, `parseEntry` reads it in the host's locale, a half-written
+  range is held as a half-written range, and text the field cannot read stays on screen in
+  `state.entryText` where it can be corrected instead of being erased on the way out.
+
+  **Breaking for a consumer that builds `MdyDaterangeFieldState` itself**: `entryText` is a required
+  member, as it already is on the datepicker's state. Reading the state is unaffected. A renderer that
+  parses text itself and dispatches only on success should dispatch `{ type: "type", end, text }`
+  instead — that is what made an unreadable entry vanish.
+
+- 7cd79cc: A timepicker holds a time the form can hold. It committed the value in the notation it displays, so
+  a twelve-hour picker — the default — handed the form `"02:30 PM"`, which is not what
+  `MDY_VALUE_CONTRACTS.timepicker` declares a time is: the field was invalid the moment it was
+  answered, with "This field holds a time (HH:mm)" beside a value the user picked from its own dial,
+  and the payload carried a notation nothing downstream parses. The value is canonical `HH:mm`
+  wherever it is held; which notation a person reads is the field's own, projected as
+  `state.display`.
+
+  **Breaking for a consumer that builds `MdyTimepickerFieldState` itself**: `display` is a required
+  member. A renderer should paint `state.display` rather than `state.value`, which is what keeps a
+  twelve-hour control from showing a twenty-four-hour time.
+
+- 9a7c524: A slider's track spans the number the form holds
+
+  A slider spans something whether or not a document declares a range, and the default turned into a
+  misrepresentation:
+
+  ```jsonc
+  { "kind": "slider", "initialValue": 150 } // no bound declared
+  // the form holds 150, the page draws a track ending at 100 and puts the thumb there
+  ```
+
+  `step: 5` did the same to a value of 7 — the platform snaps a range input to a multiple — and neither
+  case said anything, because neither is a rule: no bound was declared, and the validator vocabulary
+  has no `step`. Both renderers had invented the same `?? 100` separately, so they agreed about a lie.
+
+  `sliderTrack(constraints, value)` is now the one place the range is decided. It widens to include the
+  value **only where nothing was declared** — a declared `max` is kept, because the attribute is the
+  native guard and a value past it is refused with a message since the bound became a rule. A `step`
+  that would move the thumb off the value is dropped.
+
+  The drawn range is no longer a constant: a slider with no declared bound and a large value draws a
+  track that reaches it. `nativeConstraintAttributes` and `MdyFieldShellA11yOptions` take an optional
+  `value`; omitting it keeps the previous behaviour, which is right for every kind that draws no track.
+
+  Recorded as [ADR 0067](../docs/architecture/0067-a-track-spans-what-the-field-holds.md), which also
+  states the ordering Lit now depends on: a range input clamps its value to the bounds it carries when
+  the value is assigned.
+
+- 1f91ae2: An entry a control cannot read is an error like any other
+
+  ADR 0073 made an unreadable date or time entry a real error of the field. The paint did not follow:
+  both renderers still asked the control's own state whether to look invalid, which is outside every
+  rule the form applies to its errors.
+
+  Two opposite halves of one hole. `@modyra/plain` kept announcing `aria-invalid` and kept the message
+  on the page after the field was **disabled** — a control nobody can touch, still reported as wrong to
+  a screen reader. `@modyra/lit` painted the message without ever reporting the entry, so the control
+  was never marked invalid at all: visible to whoever can see it, absent for whoever cannot.
+
+  Both now report the entry to the form and read the verdict back through `showsAsInvalid` and
+  `shownErrorsOf`, which is where "a field out of play has no verdict" lives. The same field made wrong
+  by an ordinary rule already obeyed that in both renderers; the entry error now does too.
+
+- 7e1b5a5: Every option a document declares is one a person can reach. An option's key — and the id built from
+  it — came from its value, so two options a document declares with the same value produced one key,
+  one element and one id: a list of three offered two, and the one that vanished was the second. The
+  controller now gives each painted option a key of its own and publishes them as
+  `MdySelectState.optionKeys`, in the order the options are painted. Selection still follows the value,
+  so two options that say the same thing remain one choice, and the parser still reports the duplicate
+  as the document defect it is.
+
+  An option value carrying whitespace or the id delimiter is percent-encoded where it becomes part of
+  an id: `aria-activedescendant` and its family are space-separated lists of ids, so an option valued
+  `New York` produced a reference to two elements that do not exist and pointed a screen reader at
+  nothing.
+
+  **Breaking for a consumer that builds `MdySelectState` itself**: `optionKeys` is a required member. A
+  renderer keying options by value should read it instead.
+
+- 000f195: A handle is observed by the runtime that owns it
+
+  The defect had been diagnosed, fixed and documented once already — and the fix reached two callers
+  out of roughly seventeen. `CHANGELOG.md` records what it costs: a binding that builds a fresh
+  `vanillaReactivity()` to observe a handle works only because vanilla's tracking is global to the
+  module, and silently never re-renders for a handle owned by another form.
+
+  `observerFor(handle, requested?)` is the one place that reads the ownership registry, so a caller no
+  longer has to know it should. Every field controller and every field renderer now resolves through
+  it; a runtime passed in explicitly is honoured rather than replaced, because a host with its own
+  scheduling has a right to be believed.
+
+  `MdyCrossRuntimeObservationError` and `MDY_CROSS_RUNTIME_OBSERVATION` were declared when the defect
+  was first found and constructed by nothing, which is why the other fifteen went unnoticed. They are
+  now raised when a caller observes a handle through a runtime that does not own it.
+
+  The select hooks keep their own runtime, and say why: that controller takes options and a callback
+  rather than a field, so there is no form whose runtime it could observe through.
+
+  Also in this release, for the suites rather than the library:
+
+  - `settleFor(beat, hostFlush?)` and `MDY_PAINT_BEATS` — when a renderer's DOM catches up with a
+    write, declared by the renderer instead of guessed per fixture. Plain's twenty milliseconds turn
+    out to have been one task all along.
+  - Lit and Angular drive the lifecycle contract, which one renderer had been carrying alone.
+
+- 92b7f7b: One backdrop, drawn by the contract and painted by the theme
+
+  `.mdy-overlay-backdrop` is in `MDY_SHARED_UI_CLASSES` and no theme painted it, so
+  the token beside it — `--mdy-overlay-backdrop-bg`, with a dark ramp — was
+  declared and read by nothing. What the three renderers did instead was three
+  different things: Angular wrote `rgba(0,0,0,0.32)` inline, so no product could
+  change how its modals dim; Lit drew the element under _every_ open popup,
+  dropdowns included, which is why painting it would have dimmed the page behind a
+  select; and the framework-free renderer drew none at all, so its modals never
+  dimmed.
+
+  The theme paints the class now, and `setOverlayOpen` draws the element when the
+  placement is modal — `syncOverlayBackdrop` for a renderer that learns the
+  placement a moment after showing the popup, which is what measuring first means.
+  "A modal dims what is behind it" is not a rendering decision each adapter gets to
+  make differently.
+
+  `audit-contract-style-coverage` also reads `MDY_SHARED_UI_CLASSES` now. It
+  enumerated parts, popup, portal, shell, layout and chip and skipped the table of
+  classes belonging to no single kind, so nine classes the contract declares were
+  reported as outside it and sat in the allowlist for that reason alone.
+
+- 8514984: Executing widget commands, written once
+
+  Eight adapters had the same command executor: collect focus and scroll into a queue, run everything
+  else now, drain the queue after the host has rendered. What differed was the id of a live region and
+  one call — `queueMicrotask`, `requestAnimationFrame`, `afterNextRender`, `host.updateComplete.then`.
+
+  `createCommandRuntime({ announcerId, defer })` in `@modyra/widgets` is that function. Each adapter
+  passes its own beat and writes nothing else, which is also where the difference becomes visible: the
+  framework-free renderer's `defer` runs immediately, because it writes to the document itself and has
+  nothing to wait for.
+
+  Two more shapes every binding was writing itself:
+
+  - `subscribeController(controller, reactivity, notify)` — watch a controller and hand back the
+    teardown for it and the subscription. Six of the eight hooks in the two hook-based adapters watched
+    `state` alone and were right by coincidence: every controller's view is currently a function of its
+    state, and the contract does not promise it.
+  - `fieldCommandHandlers(handle)` — what a control with no overlay gives a command executor. `setOpen`
+    is a no-op rather than absent, because one vocabulary means answering the question rather than
+    crashing on it.
+
+  `MdyAngularCommandHandlers` and `MdyLitCommandHandlers` are aliases of `MdyWidgetCommandHandlers`
+  instead of member-by-member copies, which is what the other five adapters always did.
+
+  A guard moved upstream with the code: the framework-free renderer checked for `scrollIntoView` before
+  calling it, because the DOM implementation every adapter's suite runs under does not have it. That
+  check now protects all of them.
+
+- 89e7d14: A form from a flat field list, built in one place
+
+  `buildDynamicFormSchema` meant two things. In `@modyra/core` it takes the nested node a document
+  declares; in the React binding it took the flat list a parse produces — a different function with the
+  same name. The framework-free renderer had a third under `buildFormSchema`, a **superset** that also
+  rebuilds collections, and the Angular one inlined a fourth. Three implementations of one rule can
+  differ, and the only way anyone would have found out is a user reporting that the same document
+  behaves differently in two renderers.
+
+  `buildFlatFormSchema(fields, collections?)` and `applyFlatValidators(form, fields, key?)` are that
+  rule, named for what they take. The superset behaviour is the one that survived: a path cannot say
+  whether `lines.0` came from an array or a record keyed by digits, so the collections are passed rather
+  than guessed. The nested builder keeps its name — renaming a working export to make room for a new
+  one is a break with no gain.
+
+  `applyFlatValidators` asks for the one method it uses rather than a whole `MdyTypedForm`: one of the
+  three callers passes a component that owns a form, and a signature wider than its use turns a working
+  call into a cast.
+
+  `useMdyField` now applies the verdict rule. `errors` is what the field **shows** — a field the form is
+  not asking about shows none — and `heldErrors` is what it still carries, for a debugging view.
+  `showsAsInvalid` and `errorsVisible` come with it. The rule landed in the renderers a while ago and
+  had never reached the hooks.
+
+- 4af560a: Where a calendar's header goes, decided once
+
+  `calendarViewOnToggle` states it: from the days the header opens the **years**,
+  because someone reaching for it wants a date far from the month on screen — a
+  birth date, a maturity — and walking through the months to get there is the
+  paging the views exist to avoid. From anywhere else it goes back to the days.
+
+  Two renderers had agreed on that by accident. A third, written later against the
+  same contract, chose the other order — which is the same defect this batch exists
+  to close, committed while closing it. All three ask now.
+
+  The renderers also stop keeping their own three strings for which view is
+  showing. `MdyCalendarViewMode` is the vocabulary, so the translation between it
+  and a local `"calendar" | "month" | "year"` — written four times, and the whole of
+  what those four copies were — is gone.
+
+- 483d9b7: A teardown releases what it was observing, and the check can see when it does not
+
+  `renderField` hands back a teardown and nothing asserted it. Only the whole-form entry point was
+  covered by the lifecycle suite, so the entry point a host uses when it composes its own layout — one
+  field at a time — had its most important obligation unchecked. It is now asserted for all seventeen
+  kinds.
+
+  `inspectUnmount` gained the case it could not see. It compared the document before and after a poke,
+  and swallowed every throw as "the handle refused, and refusing is correct". That is true of a handle
+  and false of an effect: an effect still subscribed after teardown does run, reads a form that is
+  gone, and raises — leaving nothing in the document, so the check read the leak as a clean teardown.
+  `MdyUnmountObservation.errorsAfterDispose` supplies what the runtime reported, and
+  `MDY_LIFECYCLE_ISSUE.effectThrewAfterUnmount` names it.
+
+  `renderField` also documents which runtime it observes on. The default builds a fresh one, which is
+  right for a field rendered alone and wrong for a field belonging to a form: two runtimes over one
+  handle are two schedulers with no ordering between them, and only one of them stops when the form
+  does. Pass `form.reactivity`.
+
+- 010fa6a: The lifecycle inspector has now rejected something
+
+  `mutation-suite.spec.mjs` held nineteen mutations and every one struck the DOM
+  inspector or the state inspector. The lifecycle inspector — the one that judges a
+  teardown — had never been put to the test, which is where the blind spot found in
+  the demo batch had lived: an effect still subscribed after dispose renders into a
+  document it no longer owns, and nothing in the document says so.
+
+  Five mutations join it, one per rule: a root left behind, an id still resolving, a
+  disposed instance that still writes, one whose effect ran and failed, and two live
+  instances minting the same id. Each names the rule it breaks, because asserting
+  only that _something_ was reported lets one rule cover for another — a leftover
+  element raises the DOM code too, and the id rule could stop looking with the suite
+  still green. Verified by turning each rule off in turn.
+
+  The states panel declares the eight controllers it drives. It mounts every kind
+  and pushes each into disabled, readonly, touched and out of play, so every kind's
+  controller runs and the projection it composes reaches the DOM; the panel had
+  been claiming four names for work it did across all of them.
+
+- 009d7ad: The opener a contract names is the one a keyboard reaches
+
+  `MDY_POPUP_OPENERS` names the part that opens each popup. `@modyra/lit` disagreed twice over, and each
+  half looked defensible alone: its daterange put `aria-expanded` and `aria-haspopup` on **both** date
+  inputs — two elements describing one popup, neither of them the declared opener, and a text input is a
+  textbox with nothing to expand — while the toggle that _is_ the opener carried `tabindex="-1"`.
+
+  Together they closed both doors. Measured across every kind with a popup, offering every key the
+  contract names to every part a keyboard can reach: plain opens all six, lit opened four. Its daterange
+  and timepicker could not be opened without a mouse at all.
+
+  Now the declared opener carries the state and nothing else does, the toggle is reachable, and lit's
+  timepicker control answers the keys `MDY_WIDGET_KEYBOARD` publishes — read through `keyBindingFor`
+  rather than written again in the element.
+
+  `aria-haspopup` names what opens: the daterange promises `grid` in both renderers, as its own
+  projection declares. `@modyra/plain` promised `dialog`; `@modyra/lit` promised it on the inputs.
+
+  The daterange projection no longer writes `role="combobox"` on its toggle. The opener table
+  deliberately declares no role for the kinds whose opener is a button, no renderer consumed the literal
+  one, and a button whose value lives in the two inputs beside it is not a combobox.
+
+- a629f50: Out of play, no verdict — completed, and asked in one place
+
+  `shownErrors` and `showsAsInvalid` reached six of the seven field kinds. The timepicker kept its own
+  answer, so a disabled timepicker painted as failing while a disabled datepicker did not. It does not
+  any more.
+
+  Two additions finish the rule:
+
+  - `errorsVisible(flags, errors)` answers _is the error text on screen_ — failing **and** touched.
+    Three renderers each had their own spelling of it; one of them applied it to a single kind.
+  - `shownErrorsOf(handle)` asks the question of a field handle. Two renderers had written the same
+    wrapper around `shownErrors` byte for byte; both now import this one.
+
+  `MdyFieldVerdictSource` names what a handle must offer to be asked.
+
+  Nothing about a form's model changes: a field out of play keeps its errors and its value, and both
+  come back the moment the form asks about it again.
+
+- Updated dependencies [435a31a]
+- Updated dependencies [76509d3]
+- Updated dependencies [d2cdcaa]
+- Updated dependencies [27224d8]
+- Updated dependencies [894699d]
+- Updated dependencies [f297a3c]
+- Updated dependencies [09b1c21]
+- Updated dependencies [c0b44a8]
+- Updated dependencies [6e53749]
+- Updated dependencies [25d004c]
+- Updated dependencies [57c68d8]
+- Updated dependencies [ac052bc]
+- Updated dependencies [61e814c]
+- Updated dependencies [de7e122]
+- Updated dependencies [3fa4c1a]
+- Updated dependencies [45eb775]
+- Updated dependencies [d2cdcaa]
+- Updated dependencies [039059c]
+- Updated dependencies [a76fc10]
+- Updated dependencies [3f0787e]
+- Updated dependencies [7ac08a7]
+- Updated dependencies [437bad1]
+- Updated dependencies [4892a49]
+- Updated dependencies [1a8138f]
+- Updated dependencies [d03419c]
+- Updated dependencies [d9203ee]
+- Updated dependencies [2904441]
+- Updated dependencies [ccde959]
+- Updated dependencies [1c164b7]
+- Updated dependencies [9b89cd2]
+- Updated dependencies [5440e08]
+- Updated dependencies [b9897fb]
+- Updated dependencies [a9dcdb4]
+- Updated dependencies [d95d4c4]
+- Updated dependencies [d470286]
+- Updated dependencies [f22d828]
+- Updated dependencies [f47ef54]
+- Updated dependencies [69b18ae]
+- Updated dependencies [6690972]
+- Updated dependencies [6d31da6]
+- Updated dependencies [a51d3db]
+- Updated dependencies [6bc3df5]
+- Updated dependencies [404109c]
+- Updated dependencies [5f8a35c]
+- Updated dependencies [d51b2fa]
+- Updated dependencies [8dde798]
+- Updated dependencies [cec751a]
+- Updated dependencies [3bd2d09]
+- Updated dependencies [111aa5b]
+- Updated dependencies [95bb48b]
+- Updated dependencies [f00ead6]
+- Updated dependencies [0c3a770]
+- Updated dependencies [1783afc]
+- Updated dependencies [f47ee5e]
+- Updated dependencies [b6a1325]
+- Updated dependencies [3ff02a3]
+- Updated dependencies [7f847da]
+- Updated dependencies [833a5f6]
+- Updated dependencies [3233dd4]
+- Updated dependencies [d89c221]
+- Updated dependencies [1b76a2c]
+- Updated dependencies [a2a2bda]
+- Updated dependencies [7c8e0b4]
+- Updated dependencies [aa09065]
+- Updated dependencies [eab4653]
+- Updated dependencies [a6dc4de]
+- Updated dependencies [1b24d8f]
+- Updated dependencies [c521845]
+- Updated dependencies [599695f]
+- Updated dependencies [d443319]
+- Updated dependencies [5b5b2df]
+- Updated dependencies [ade50ff]
+- Updated dependencies [a336b22]
+- Updated dependencies [0994475]
+- Updated dependencies [7c53545]
+- Updated dependencies [896f37b]
+- Updated dependencies [86bda68]
+- Updated dependencies [abb242d]
+- Updated dependencies [b1874dd]
+- Updated dependencies [bc1cc05]
+- Updated dependencies [1c8e529]
+- Updated dependencies [0a96145]
+- Updated dependencies [e59d37c]
+- Updated dependencies [ecca49f]
+- Updated dependencies [2e005a4]
+- Updated dependencies [ecee2fd]
+- Updated dependencies [117ecba]
+- Updated dependencies [501dbb2]
+- Updated dependencies [0a6d296]
+- Updated dependencies [892c01b]
+- Updated dependencies [551320a]
+- Updated dependencies [e6b35e4]
+- Updated dependencies [e35174d]
+- Updated dependencies [5e32e40]
+- Updated dependencies [4d4110b]
+- Updated dependencies [af002ed]
+- Updated dependencies [9fab18e]
+- Updated dependencies [29849b2]
+- Updated dependencies [626ec0a]
+- Updated dependencies [8ad9612]
+- Updated dependencies [a0f68a9]
+- Updated dependencies [c5f854a]
+- Updated dependencies [618a7d0]
+- Updated dependencies [906115b]
+- Updated dependencies [c395a2c]
+- Updated dependencies [df8db70]
+- Updated dependencies [9133c94]
+- Updated dependencies [e712ea0]
+- Updated dependencies [2066daa]
+- Updated dependencies [2882c66]
+- Updated dependencies [9133c94]
+- Updated dependencies [c8f3eb4]
+- Updated dependencies [2dd4cff]
+- Updated dependencies [fe06a63]
+- Updated dependencies [afb6d57]
+- Updated dependencies [7695d89]
+- Updated dependencies [7f739f7]
+- Updated dependencies [70ccff8]
+- Updated dependencies [02bbad2]
+- Updated dependencies [e2ad213]
+- Updated dependencies [7c299e2]
+- Updated dependencies [717a69e]
+- Updated dependencies [e7e15c7]
+- Updated dependencies [6712836]
+- Updated dependencies [2bf8290]
+- Updated dependencies [095e9ef]
+- Updated dependencies [9f45e15]
+- Updated dependencies [9fc24f7]
+- Updated dependencies [70220fc]
+- Updated dependencies [c7b25ce]
+- Updated dependencies [cfa1ec6]
+- Updated dependencies [7cd79cc]
+- Updated dependencies [9a7c524]
+- Updated dependencies [c228019]
+- Updated dependencies [b75b5d3]
+- Updated dependencies [0879e90]
+- Updated dependencies [44a23e5]
+- Updated dependencies [daf38f2]
+- Updated dependencies [d6a97f6]
+- Updated dependencies [7cbcd34]
+- Updated dependencies [ca1c6c3]
+- Updated dependencies [aa3574c]
+- Updated dependencies [b1a31dd]
+- Updated dependencies [023d6c7]
+- Updated dependencies [c464e35]
+- Updated dependencies [bbf6081]
+- Updated dependencies [4914abd]
+- Updated dependencies [b5c81b7]
+- Updated dependencies [315a533]
+- Updated dependencies [5165a7b]
+- Updated dependencies [30d8a97]
+- Updated dependencies [136fd3a]
+- Updated dependencies [c0e0348]
+- Updated dependencies [49cebaa]
+- Updated dependencies [7d5dc5b]
+- Updated dependencies [8802f09]
+- Updated dependencies [bf0c12e]
+- Updated dependencies [67aa107]
+- Updated dependencies [611fd20]
+- Updated dependencies [e30a985]
+- Updated dependencies [85ff99a]
+- Updated dependencies [9190e59]
+- Updated dependencies [ad86c08]
+- Updated dependencies [0f9cf08]
+- Updated dependencies [e4182c0]
+- Updated dependencies [cd62884]
+- Updated dependencies [59c70fe]
+- Updated dependencies [1b24d8f]
+- Updated dependencies [7e1b5a5]
+- Updated dependencies [d522e25]
+- Updated dependencies [211ee54]
+- Updated dependencies [4678b59]
+- Updated dependencies [3fa4c1a]
+- Updated dependencies [1aff75a]
+- Updated dependencies [000f195]
+- Updated dependencies [92b7f7b]
+- Updated dependencies [bd8a9ed]
+- Updated dependencies [357316c]
+- Updated dependencies [8514984]
+- Updated dependencies [7997644]
+- Updated dependencies [f207e5e]
+- Updated dependencies [5589197]
+- Updated dependencies [9f29b19]
+- Updated dependencies [89e7d14]
+- Updated dependencies [bda72f8]
+- Updated dependencies [d2e0d7f]
+- Updated dependencies [8d0cadf]
+- Updated dependencies [556517c]
+- Updated dependencies [4749edc]
+- Updated dependencies [eacc848]
+- Updated dependencies [83e94a5]
+- Updated dependencies [50e1211]
+- Updated dependencies [4af560a]
+- Updated dependencies [2707f44]
+- Updated dependencies [87ff0a4]
+- Updated dependencies [621866a]
+- Updated dependencies [483d9b7]
+- Updated dependencies [3c7f88f]
+- Updated dependencies [e2828ed]
+- Updated dependencies [d9583ff]
+- Updated dependencies [e6ca669]
+- Updated dependencies [d51b2fa]
+- Updated dependencies [8e5fef8]
+- Updated dependencies [c8c8470]
+- Updated dependencies [e712ea0]
+- Updated dependencies [ee8040c]
+- Updated dependencies [ea534af]
+- Updated dependencies [010fa6a]
+- Updated dependencies [1aff75a]
+- Updated dependencies [009d7ad]
+- Updated dependencies [5029184]
+- Updated dependencies [ca1c6c3]
+- Updated dependencies [07bea5d]
+- Updated dependencies [7f738dd]
+- Updated dependencies [c849c60]
+- Updated dependencies [e16ed4f]
+- Updated dependencies [b137ea2]
+- Updated dependencies [2b04e24]
+- Updated dependencies [55dd238]
+- Updated dependencies [4bc6e19]
+- Updated dependencies [0956768]
+- Updated dependencies [74dbda3]
+- Updated dependencies [3b6ecac]
+- Updated dependencies [8347116]
+- Updated dependencies [324d2aa]
+- Updated dependencies [bd05055]
+- Updated dependencies [2cbfb3f]
+- Updated dependencies [a629f50]
+- Updated dependencies [9133c94]
+- Updated dependencies [14d74cc]
+- Updated dependencies [e7b5f9c]
+- Updated dependencies [a64a7a3]
+- Updated dependencies [bb37b4e]
+- Updated dependencies [61b5b04]
+- Updated dependencies [d1733cb]
+- Updated dependencies [8478a18]
+- Updated dependencies [c48c9c1]
+  - @modyra/core@2.2.0
+  - @modyra/widgets@2.2.0
+
 ## 0.8.0
 
 ### Minor Changes

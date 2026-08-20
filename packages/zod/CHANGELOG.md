@@ -1,5 +1,321 @@
 # @modyra/zod
 
+## 0.7.0
+
+### Minor Changes
+
+- db89140: A derived form starts at an empty its own schema accepts
+
+  `createZodForm(z.object({ name: z.string() }))` seeded `null`, which `z.string()` refuses — so the
+  form was invalid on arrival in the schema's own type vocabulary, and valid once the user typed and
+  cleared the field, because `""` is a string. `required` made it a contradiction rather than an
+  asymmetry: it meant _the piece refuses `null`_, so the field drove `aria-required` while its own
+  validator accepted `""`.
+
+  A leaf now starts at an empty its piece accepts — a default, then `null`, then `""` or `false` where
+  the piece holds one — and `required` means _the piece refuses that empty_.
+
+  **Migration.** A form of plain `z.string()` fields is now valid and submittable on arrival, which is
+  what the schema says. Write `.min(1)` for a field that must be answered: it refuses the empty at
+  arrival and after the user clears it, in the same words.
+
+- b1874dd: A nested collection reaches every package that restates it
+
+  `@modyra/core` allows a collection inside a collection at any depth. Three packages a consumer
+  imports could not express that, and their suites were green throughout.
+
+  **`@modyra/angular`** re-declares `array()` and `record()` so their handles carry Angular signals, and
+  both still constrained a row to a field or a group:
+
+  ```ts
+  array(group({ lines: array(group({ sku: field("") })) })); // ok in @modyra/core, refused here
+  ```
+
+  They now take what the engine's take. The refusal bites when a row **is** a collection — a collection
+  inside a group inside a row was always legal, since a group's children have always been able to hold
+  one. `@modyra/studio-target-angular` generates code against these factories, so a project whose row
+  is a collection generated Angular code that did not compile.
+  `MdyAnyRowDescriptor`, `MdyAnyRecordDescriptor`, `MdyRecordDescriptor` and `MdyRecordHandle` are
+  exported too: the array half was nameable and the record half was not.
+
+  **`@modyra/zod`** mapped a collection's element to a group or a leaf, so `z.record(z.array(...))` and
+  `z.array(z.array(...))` became one opaque value where the schema declared a list. A row is now read
+  exactly like a schema key. Shapes the engine has no node for — tuple, set, map — still degrade to a
+  leaf.
+
+  **A document made of arrays** built a form whose nested collections held no rows. A row's value
+  arrives flat, so a collection inside it is keyed `"0"`, `"1"` — what a record holds and what an array
+  refuses — and `buildFlatFormSchema` seeded it unchanged. The value read as correct in structure and
+  was empty in fact: `@modyra/plain` mounted one control out of three for a three-level document.
+  Seeds are now shaped against the descriptor at every depth, so a list inside a keyed row and a keyed
+  row inside a list each keep their own shape.
+
+  **`MdyAnyRowDescriptor` is exported** from `@modyra/core`: it is the constraint of the public
+  `array()` and `record()` factories, and a consumer writing a helper over row descriptors could not
+  name it.
+
+  **A nested collection's value now has the same type as a top-level one.** `MdyArrayItemValue`
+  returned `ReadonlyArray` and `Readonly<Record>` for a collection directly inside a collection while
+  `MdyFormValue` returned mutable ones a level up — the same value, two types depending on the depth it
+  was read at. Nothing changes at runtime; a nested list is no longer typed readonly.
+
+  Recorded as [ADR 0046](https://github.com/modyra/modyra/blob/main/docs/architecture/0046-an-adapter-states-no-less-than-the-engine.md).
+
+- bc26268: A derived leaf is typed by what the form holds
+
+  A form holds what a person typed and what a server sent, and validates it against the schema. It does
+  not run the schema's transformations — `.trim()`, `.toLowerCase()`, `.transform()`, `z.coerce.*` —
+  and the published leaf type said otherwise: mapped over `z.output` / the Standard Schema output type,
+  `z.coerce.number()` declared `number | null` over a field holding `"42"`. The type promised the value
+  after a transformation nobody applied, which is wrong in the direction a consumer trusts.
+
+  Both trees now map over the **input** type, and the guide says so.
+
+  **Migration.** Where the two differ, a leaf's type changes: `z.coerce.number()` is now
+  `string | number | null` rather than `number | null`. Transform at the boundary you own — in the
+  submit action, or with `.transform()` applied to the value you send — rather than expecting the form
+  to have done it. Applying transformations on the way in was the alternative and it costs more than it
+  buys: `.trim()` on every keystroke takes the space out of `"a b"` while it is being typed.
+
+### Patch Changes
+
+- 69b18ae: A door that takes a schema refuses what is not one, by name
+
+  `createForm`, `buildFlatFormSchema`, `buildDynamicFormSchema` and the Zod bridge all took a schema and
+  none of them checked it. Sixteen ways of getting it wrong produced JavaScript internals:
+
+  ```
+  createForm("nope")                  TypeError: Cannot convert undefined or null to object
+  buildFlatFormSchema(42)             TypeError: fields is not iterable
+  buildDynamicFormSchema(null)        TypeError: Cannot read properties of null (reading 'children')
+  createZodForm(z.array(…))           TypeError: Cannot convert undefined or null to object
+  ```
+
+  Three different mistakes answered by one sentence naming neither the argument nor the call, which a
+  consumer cannot tell apart from a defect in the library.
+
+  Two were worse than an internal: `createForm(42)` and `createForm(true)` **built** — a form with no
+  fields that reported itself valid and submittable.
+
+  Each door now refuses by name and says what a schema is. A field list checks its entries too: an entry
+  that is not an object, or names nothing, is reported instead of reaching a path check that reads
+  `.length` off `undefined`. `createZodForm` and `buildZodTree` say that a form's schema has to name its
+  fields, and to wrap the shape in `z.object({ … })`.
+
+- 9a91beb: A derived leaf is not typed as possibly `undefined`
+
+  `MdyZodSchemaTree` types a leaf from `z.input`, which is the right half of the decision — a form
+  holds what a person typed, not what a transformation would produce. But a piece carrying a
+  `.default()` has `z.input` including `undefined`, because a _parse_ may omit the key, and a form leaf
+  is never omitted: it exists from the moment the form is built and holds `null` until someone fills it
+  in.
+
+  So `z.string().default("")` derived `MdyFieldHandle<string | null | undefined>` over a field that can
+  only ever hold `string | null`, and every control declared for the narrower type refused the handle —
+  `<mdy-control-text [field]="form.f.password">` did not compile against a schema with a default.
+
+  `undefined` is excluded from the leaf. Nothing about the input-not-output decision changes.
+
+- 2fa493c: A leaf derived from an optional piece starts at an empty that piece accepts. `z.string().optional()`
+  parses `undefined` into `undefined` — success with no `data` — and reading that as a default seeded
+  `null`, which every optional piece refuses. A form of optional fields therefore called itself valid
+  while holding four values its own schema rejects, and parsing what the form holds is the last thing a
+  consumer does before sending it. The seeds that already worked are unchanged: a default is its
+  value, a nullable is `null`, a string is `""`, a boolean is `false`. See ADR 0086.
+- 5ec4a99: How a rule was written does not decide where the field starts
+
+  A leaf's seed is the empty its own piece accepts, and the check for "accepts it" read only the
+  library's own length refusals. A `.refine()` — what an author reaches for whenever the rule is not
+  one of the built-ins: a consent to tick, a code with a checksum, a list that must contain a member —
+  answers `custom`, so `z.string().refine(…)` started at `null` where `z.string().min(2)` started at
+  `""`.
+
+  Two costs, and the second is the one a person meets: the seed moved with the _spelling_ of the rule
+  rather than with what it says, and the author's own message never appeared, because a value of the
+  wrong type never reaches the predicate carrying it — `z.boolean().refine(v => v === true, "must
+accept")` opened on _expected boolean, received null_.
+
+- Updated dependencies [435a31a]
+- Updated dependencies [76509d3]
+- Updated dependencies [d2cdcaa]
+- Updated dependencies [27224d8]
+- Updated dependencies [894699d]
+- Updated dependencies [f297a3c]
+- Updated dependencies [09b1c21]
+- Updated dependencies [6e53749]
+- Updated dependencies [25d004c]
+- Updated dependencies [57c68d8]
+- Updated dependencies [de7e122]
+- Updated dependencies [3fa4c1a]
+- Updated dependencies [45eb775]
+- Updated dependencies [d2cdcaa]
+- Updated dependencies [039059c]
+- Updated dependencies [3f0787e]
+- Updated dependencies [7ac08a7]
+- Updated dependencies [4892a49]
+- Updated dependencies [d9203ee]
+- Updated dependencies [2904441]
+- Updated dependencies [ccde959]
+- Updated dependencies [1c164b7]
+- Updated dependencies [5440e08]
+- Updated dependencies [b9897fb]
+- Updated dependencies [a9dcdb4]
+- Updated dependencies [d95d4c4]
+- Updated dependencies [d470286]
+- Updated dependencies [f22d828]
+- Updated dependencies [f47ef54]
+- Updated dependencies [69b18ae]
+- Updated dependencies [6690972]
+- Updated dependencies [6d31da6]
+- Updated dependencies [a51d3db]
+- Updated dependencies [6bc3df5]
+- Updated dependencies [404109c]
+- Updated dependencies [5f8a35c]
+- Updated dependencies [d51b2fa]
+- Updated dependencies [8dde798]
+- Updated dependencies [cec751a]
+- Updated dependencies [95bb48b]
+- Updated dependencies [f00ead6]
+- Updated dependencies [0c3a770]
+- Updated dependencies [1783afc]
+- Updated dependencies [f47ee5e]
+- Updated dependencies [b6a1325]
+- Updated dependencies [3ff02a3]
+- Updated dependencies [7f847da]
+- Updated dependencies [3233dd4]
+- Updated dependencies [d89c221]
+- Updated dependencies [1b76a2c]
+- Updated dependencies [a2a2bda]
+- Updated dependencies [7c8e0b4]
+- Updated dependencies [eab4653]
+- Updated dependencies [c521845]
+- Updated dependencies [599695f]
+- Updated dependencies [d443319]
+- Updated dependencies [5b5b2df]
+- Updated dependencies [ade50ff]
+- Updated dependencies [a336b22]
+- Updated dependencies [0994475]
+- Updated dependencies [7c53545]
+- Updated dependencies [896f37b]
+- Updated dependencies [86bda68]
+- Updated dependencies [abb242d]
+- Updated dependencies [b1874dd]
+- Updated dependencies [bc1cc05]
+- Updated dependencies [1c8e529]
+- Updated dependencies [0a96145]
+- Updated dependencies [e59d37c]
+- Updated dependencies [ecca49f]
+- Updated dependencies [2e005a4]
+- Updated dependencies [892c01b]
+- Updated dependencies [551320a]
+- Updated dependencies [e6b35e4]
+- Updated dependencies [e35174d]
+- Updated dependencies [5e32e40]
+- Updated dependencies [29849b2]
+- Updated dependencies [626ec0a]
+- Updated dependencies [8ad9612]
+- Updated dependencies [a0f68a9]
+- Updated dependencies [c5f854a]
+- Updated dependencies [618a7d0]
+- Updated dependencies [906115b]
+- Updated dependencies [c395a2c]
+- Updated dependencies [df8db70]
+- Updated dependencies [9133c94]
+- Updated dependencies [e712ea0]
+- Updated dependencies [2066daa]
+- Updated dependencies [2882c66]
+- Updated dependencies [9133c94]
+- Updated dependencies [c8f3eb4]
+- Updated dependencies [2dd4cff]
+- Updated dependencies [fe06a63]
+- Updated dependencies [afb6d57]
+- Updated dependencies [7695d89]
+- Updated dependencies [7f739f7]
+- Updated dependencies [70ccff8]
+- Updated dependencies [02bbad2]
+- Updated dependencies [e2ad213]
+- Updated dependencies [7c299e2]
+- Updated dependencies [717a69e]
+- Updated dependencies [e7e15c7]
+- Updated dependencies [6712836]
+- Updated dependencies [2bf8290]
+- Updated dependencies [095e9ef]
+- Updated dependencies [9f45e15]
+- Updated dependencies [c7b25ce]
+- Updated dependencies [cfa1ec6]
+- Updated dependencies [c228019]
+- Updated dependencies [0879e90]
+- Updated dependencies [44a23e5]
+- Updated dependencies [daf38f2]
+- Updated dependencies [d6a97f6]
+- Updated dependencies [7cbcd34]
+- Updated dependencies [ca1c6c3]
+- Updated dependencies [aa3574c]
+- Updated dependencies [c464e35]
+- Updated dependencies [bbf6081]
+- Updated dependencies [4914abd]
+- Updated dependencies [b5c81b7]
+- Updated dependencies [315a533]
+- Updated dependencies [30d8a97]
+- Updated dependencies [c0e0348]
+- Updated dependencies [49cebaa]
+- Updated dependencies [7d5dc5b]
+- Updated dependencies [8802f09]
+- Updated dependencies [bf0c12e]
+- Updated dependencies [67aa107]
+- Updated dependencies [e30a985]
+- Updated dependencies [85ff99a]
+- Updated dependencies [9190e59]
+- Updated dependencies [ad86c08]
+- Updated dependencies [0f9cf08]
+- Updated dependencies [e4182c0]
+- Updated dependencies [cd62884]
+- Updated dependencies [59c70fe]
+- Updated dependencies [211ee54]
+- Updated dependencies [3fa4c1a]
+- Updated dependencies [000f195]
+- Updated dependencies [bd8a9ed]
+- Updated dependencies [357316c]
+- Updated dependencies [7997644]
+- Updated dependencies [5589197]
+- Updated dependencies [9f29b19]
+- Updated dependencies [89e7d14]
+- Updated dependencies [bda72f8]
+- Updated dependencies [d2e0d7f]
+- Updated dependencies [556517c]
+- Updated dependencies [4749edc]
+- Updated dependencies [eacc848]
+- Updated dependencies [83e94a5]
+- Updated dependencies [50e1211]
+- Updated dependencies [2707f44]
+- Updated dependencies [87ff0a4]
+- Updated dependencies [621866a]
+- Updated dependencies [3c7f88f]
+- Updated dependencies [d9583ff]
+- Updated dependencies [d51b2fa]
+- Updated dependencies [8e5fef8]
+- Updated dependencies [c8c8470]
+- Updated dependencies [e712ea0]
+- Updated dependencies [5029184]
+- Updated dependencies [ca1c6c3]
+- Updated dependencies [07bea5d]
+- Updated dependencies [c849c60]
+- Updated dependencies [e16ed4f]
+- Updated dependencies [b137ea2]
+- Updated dependencies [2b04e24]
+- Updated dependencies [55dd238]
+- Updated dependencies [4bc6e19]
+- Updated dependencies [74dbda3]
+- Updated dependencies [3b6ecac]
+- Updated dependencies [8347116]
+- Updated dependencies [bd05055]
+- Updated dependencies [9133c94]
+- Updated dependencies [14d74cc]
+- Updated dependencies [e7b5f9c]
+- Updated dependencies [bb37b4e]
+- Updated dependencies [c48c9c1]
+  - @modyra/core@2.2.0
+
 ## 0.6.0
 
 ### Minor Changes
