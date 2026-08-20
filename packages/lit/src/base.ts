@@ -10,6 +10,7 @@ import {
   popupPlacementClass,
   projectFieldShellA11y,
   fieldAccessibleName,
+  errorsVisible,
   shownErrorsOf,
   type MdyOverlayAlignment,
   type MdyOverlayPlacement,
@@ -19,6 +20,17 @@ import {
 } from "@modyra/widgets";
 import { MdyFormController } from "./adapter.js";
 import { narrowConstraints } from "@modyra/widgets";
+
+/**
+ * The build-time development flag, read the way the engine's is: production bundles define
+ * `__MDY_DEV__ = false` and the warning below — its message string included — is dropped.
+ *
+ * Declared here because an element with no field has no form behind it either, so the form's
+ * `devWarnings` switch is not reachable from where this is said.
+ */
+declare const __MDY_DEV__: boolean | undefined;
+const MDY_DEV: boolean = typeof __MDY_DEV__ === "undefined" || __MDY_DEV__;
+
 
 /** Renders an icon from the shared library (same SVGs as every adapter). */
 export function mdyIcon(name: keyof typeof MDY_ICONS, className: string): unknown {
@@ -151,9 +163,58 @@ export abstract class MdyFieldElement<T> extends LitElement {
     this.applyControlName();
   }
 
+  /** Said once per element: a sentence repeated every frame is one a developer scrolls past. */
+  private _saidUnbound = false;
+  private _unboundFrame: number | null = null;
+
+  /**
+   * An element that painted with nothing to paint from says so.
+   *
+   * Binding after appending is legitimate and is what a host writes — create the element, append it,
+   * assign `.field` — so the question is asked a frame after the first paint rather than on
+   * connection. A warning rather than a refusal, for the same reason: throwing would reject that
+   * order. What is left otherwise is an empty custom element, which reads as a gap in the layout and
+   * gives nobody a word to search for.
+   */
+  private reportIfUnbound(): void {
+    if (this._saidUnbound || this._unboundFrame !== null) return;
+    if (typeof requestAnimationFrame !== "function") return;
+    // Three frames, because a host that appends and binds on the next one is doing nothing wrong and
+    // must not be told it is. Any deadline is a choice; this one leaves the whole create-append-bind
+    // order silent, its frame boundary included, and still speaks long before a developer starts
+    // looking for the element that is missing from the page.
+    let frames = 3;
+    const look = (): void => {
+      if (frames > 0) {
+        frames -= 1;
+        this._unboundFrame = requestAnimationFrame(look);
+        return;
+      }
+      this._unboundFrame = null;
+      if (this.field !== undefined || !this.isConnected) return;
+      this._saidUnbound = true;
+      const named = this.label ? ` labelled "${this.label}"` : "";
+      console.warn(
+        `[modyra] <${this.localName}>${named} rendered nothing: no field was bound to it. ` +
+        `A Modyra element paints from the handle on its \`field\` property — ` +
+        `element.field = form.f.<name>.`,
+      );
+    };
+    this._unboundFrame = requestAnimationFrame(look);
+  }
+
+  override disconnectedCallback(): void {
+    if (this._unboundFrame !== null) {
+      cancelAnimationFrame(this._unboundFrame);
+      this._unboundFrame = null;
+    }
+    super.disconnectedCallback();
+  }
+
   override connectedCallback(): void {
     super.connectedCallback();
     this.classList.add(...this.rootClasses);
+    if (MDY_DEV) this.reportIfUnbound();
     const handle = this.field;
     if (handle && !this._tracker) {
       // Every signal a subclass may read while rendering. A signal left off this list does not
@@ -200,9 +261,17 @@ export abstract class MdyFieldElement<T> extends LitElement {
     return [];
   }
 
+  /**
+   * Whether the error text is on screen — `errorsVisible`, asked rather than restated.
+   *
+   * The rule about *when* a verdict is readable is one every renderer of this contract answers the
+   * same way, so it is read from the one place that holds it. What belongs here is the exception
+   * beside it: an entry this control could not read is its own verdict, held by no rule the form
+   * ran, and there is nothing for the form to have been touched about.
+   */
   protected showErrors(handle: MdyFieldHandle<T>): boolean {
     if (this.controlErrors().length > 0) return true;
-    return handle.touched() && shownErrorsOf(handle).length > 0;
+    return errorsVisible({ disabled: handle.disabled(), touched: handle.touched() }, handle.errors());
   }
 
   /** Whether the field currently holds a value (drives label styling). */
