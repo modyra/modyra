@@ -1,5 +1,11 @@
 # @modyra/studio-target-react
 
+## 0.5.3
+
+### Patch Changes
+
+- @modyra/studio-contract@0.6.1
+
 ## 0.5.2
 
 ### Patch Changes

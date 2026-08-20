@@ -1,5 +1,91 @@
 # @modyra/angular
 
+## 0.10.0
+
+### Minor Changes
+
+- b30cd0d: Every renderer defaults to the 24-hour clock
+
+  The three renderers each wrote the default down for themselves — `"12h"` in all three, in three
+  places — which is what lets one document render a different clock in each adapter. And in Plain that
+  parameter default is the _only_ clock a document-driven form can get: `fields/index.ts` passes
+  `undefined` for the format, and a document cannot name one, because no member of the field contract
+  carries a clock format.
+
+  All three now default to `"24h"`. A host that wants the other passes `format: "12h"` — `[format]` in
+  Angular, the `format` attribute in Lit — which every renderer already accepted.
+
+  **This changes what an existing form shows**: `02:30 PM` becomes `14:30` unless the host asks
+  otherwise. Four tests in Plain and four in Lit moved with it, rewritten in 24-hour terms rather than
+  patched: an hour past 23 is marked invalid, the arrows wrap at 23 → 00, the segments advertise 0–23.
+
+  A document still cannot ask for either format; with 24-hour as the default the common case works, and
+  that gap is recorded separately. See ADR 0116.
+
+### Patch Changes
+
+- d9ac833: The dial reports where the pointer is, and an arrow key stops fighting the binding
+
+  Two defects a person met and neither test suite could: conformance asks whether a part is there with
+  the right role, not whether clicking it does anything.
+
+  **The dial could only name twelve of twenty-four hours.** The clock handed the renderer a formatted
+  time, which it read back with `parseTime` — the _12-hour_ parser, whatever the picker's format — so
+  every pointer landed on the outer ring by construction. It now reports the position it actually
+  knows: the angle and which ring, from `pointerAngle` and `timepickerDialRing`, dispatched as
+  `set-from-angle`. Dragging carries them too, so the hand follows a finger across both rings.
+
+  **The arrow keys were undone before the frame painted.** The segment's template binds
+  `[value]="value()"` and its arrow handler also assigned `input.value` and fired a synthetic `input`
+  event. One value with two owners: wherever the round trip did not return the stepped value, the
+  bound value was written back over it. The handler reports the value it asks for and the DOM follows
+  the model, the same way a typed character does.
+
+  The number fields and the period toggle also read their time with the picker's own format now, and
+  send the hour in it — `parseTime` could not read the `"15:30"` a 24-hour picker hands back.
+
+- 311575b: The overlay panel takes its role from the catalogue
+
+  `MDY_WIDGET_CONTRACTS.multiselect.parts.popup` declares `role="dialog"` — the contract version moved
+  2 → 3 for it — and this renderer drew a bare `<div>`. Plain and lit took the new contract; Angular
+  did not, so its multiselect popup carried no role at all and the shared DOM-contract check reported
+  `PART_ROLE:popup` in three specs.
+
+  The panel now asks the catalogue for the popup role of the kind it belongs to, rather than deciding
+  for itself. The modal rule stays underneath it as the fallback for kinds the catalogue says nothing
+  about: a panel with a backdrop _and_ a name is still announced as a dialog, which is what the palette
+  and the clock have relied on since the nameless-dialog finding. The multiselect passes a name for the
+  same reason — a dialog without one is an axe violation, and it was the last failure left after the
+  role landed.
+
+  Swept rather than patched: the shared check runs over all seventeen kinds with no excused
+  divergences, and the multiselect popup was the only role Angular was missing.
+
+- daab507: The dial's inner ring is hit where it is painted
+
+  `timepickerDialRing` compared a fraction of the **hand's length** against a fraction of the **dial's
+  radius** — two different lengths. With the shipped geometry (a 256px dial, 40px numbers, so a 100px
+  hand) the boundary landed at 102.4px, _2.4px beyond the outer digits_: every point on the face read
+  as `inner`, including the outer numbers themselves, so a person had to aim past a number to be read
+  as pointing at it.
+
+  The boundary is now the midpoint between where the two rings are actually drawn — 80px for that
+  geometry — and `handLength` is passed in rather than recomputed, because `dialSize / 2 − numSize / 2
+− 8px` are the drawing's numbers and a copy of them in TypeScript is a copy that drifts. Plain and
+  Angular read `--tp-hand-length` from the face.
+
+  `MDY_TIMEPICKER_INNER_RING` is published as the one value the drawing and the hit test share, and a
+  contract test holds it against the stylesheet's own `-0.6` — the drift that produced this defect
+  cannot happen silently again.
+
+  `timepickerDialRing` gains a required parameter, which the surface audit calls major. It was added
+  after the version commit and is in no released package, so there is nothing to migrate.
+
+- Updated dependencies [20c69d0]
+- Updated dependencies [daab507]
+  - @modyra/core@2.3.0
+  - @modyra/widgets@2.3.0
+
 ## 0.9.0
 
 ### Minor Changes

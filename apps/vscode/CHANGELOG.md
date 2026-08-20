@@ -1,5 +1,13 @@
 # modyra
 
+## 0.1.6
+
+### Patch Changes
+
+- Updated dependencies [20c69d0]
+- Updated dependencies [daab507]
+  - @modyra/widgets@2.3.0
+
 ## 0.1.5
 
 ### Patch Changes

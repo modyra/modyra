@@ -1,5 +1,59 @@
 # @modyra/widgets
 
+## 2.3.0
+
+### Minor Changes
+
+- 20c69d0: A 24-hour picker can be set to every hour its own face shows
+
+  Reported from use: _there is no way to set a time before 13:00, as if pinned to PM._ It was symmetric
+  — a picker seeded at `09:00` could not reach the afternoon either — because the working copy is
+  canonically 12-hour, `period` is the only route to the other half of the day, and a 24-hour picker
+  correctly has no period control. `set-hour` refused everything outside 1–12, and refused it by
+  returning nothing, which is why it survived the life of the feature.
+
+  Every other surface already spoke 0–23: the face draws `00` and 13–23, `timeFieldBounds` answers
+  `{min: 0, max: 23}`, `acceptTimeField` accepts `"13"`, the End key asks for 23. Only the seam that
+  writes took 1–12, so the typed segment was as stuck as the dial.
+
+  - `set-hour` takes the hour in the picker's own format — 1–12 for `12h`, **0–23 for `24h`** — and the
+    controller derives the half of the day. Midnight is `0`, noon is `12`.
+  - `set-from-angle` gains `ring?: "outer" | "inner"`, optional, because the same direction is 3 on the
+    outer ring and 15 on the inner one. `dialHour(angle, ring)` in `@modyra/core/datetime` is the
+    arithmetic; `timepickerDialRing(face, x, y, format)` in `@modyra/widgets` is the hit test.
+  - An hour or minute the clock does not have is refused with an `announce` rather than in silence.
+  - `viewMode` defaults to `"input"` and is a controller option; opening returns to what the host
+    configured instead of a hard-coded view. The dial is one toggle away.
+
+  `set-hour 3` on a 24-hour picker now means three in the morning rather than "the third hour of
+  whichever half the draft was in". A 12-hour picker is unchanged. Anatomy does not move, so
+  `MDY_WIDGET_CONTRACT_VERSION` does not either. See ADR 0115.
+
+- daab507: The dial's inner ring is hit where it is painted
+
+  `timepickerDialRing` compared a fraction of the **hand's length** against a fraction of the **dial's
+  radius** — two different lengths. With the shipped geometry (a 256px dial, 40px numbers, so a 100px
+  hand) the boundary landed at 102.4px, _2.4px beyond the outer digits_: every point on the face read
+  as `inner`, including the outer numbers themselves, so a person had to aim past a number to be read
+  as pointing at it.
+
+  The boundary is now the midpoint between where the two rings are actually drawn — 80px for that
+  geometry — and `handLength` is passed in rather than recomputed, because `dialSize / 2 − numSize / 2
+− 8px` are the drawing's numbers and a copy of them in TypeScript is a copy that drifts. Plain and
+  Angular read `--tp-hand-length` from the face.
+
+  `MDY_TIMEPICKER_INNER_RING` is published as the one value the drawing and the hit test share, and a
+  contract test holds it against the stylesheet's own `-0.6` — the drift that produced this defect
+  cannot happen silently again.
+
+  `timepickerDialRing` gains a required parameter, which the surface audit calls major. It was added
+  after the version commit and is in no released package, so there is nothing to migrate.
+
+### Patch Changes
+
+- Updated dependencies [20c69d0]
+  - @modyra/core@2.3.0
+
 ## 2.2.0
 
 ### Minor Changes
