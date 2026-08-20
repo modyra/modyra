@@ -108,6 +108,14 @@ export const MDY_WIDGET_CONTRACTS = Object.freeze({
       // declared unconstrained rather than asserting the half of it that a single-mode fixture
       // happens to show. A counter chip contains buttons, so it cannot itself be one.
       elements: { option: "presentation", listbox: "group" },
+      // The popup frames a search field beside the chip grid, which is a composite a user enters,
+      // works in and leaves — and the opener promises `dialog`. Declared here so the promise and
+      // the thing promised come from one place: without a role on the part, nothing on screen
+      // answered to what the opener announced.
+      //
+      // Not modal. The panel is anchored to its field and the page behind it stays reachable, so
+      // `aria-modal` would say the opposite of what dismissal does.
+      roles: { popup: "dialog" },
       states: { option: ["selected"], chip: ["selected", "removable"], popup: POPUP_PLACEMENT_STATES },
       classes: { inputWrapper: ["mdy-multiselect"], header: ["mdy-multiselect__header"], searchButton: ["mdy-multiselect__search-btn"], options: ["mdy-multiselect__options"], optionWrapper: [MDY_CHIP_CLASSES.wrapper], option: [MDY_CHIP_CLASSES.block], optionCheck: [MDY_CHIP_CLASSES.check], optionLabel: [MDY_CHIP_CLASSES.label], optionCount: [MDY_CHIP_CLASSES.count], optionStep: [MDY_CHIP_CLASSES.step], chips: ["mdy-multiselect__chips"], chip: [MDY_CHIP_CLASSES.block, MDY_CHIP_CLASSES.value], placeholder: ["mdy-multiselect__placeholder"], popup: ["mdy-multiselect__dropdown", MDY_POPUP_CLASS, MDY_POPUP_SURFACE_CLASS, "mdy-multiselect-overlay__panel"], search: ["mdy-multiselect-overlay__input"], listbox: ["mdy-multiselect__options", "mdy-multiselect-overlay__grid"], loading: ["mdy-select__loader"], empty: ["mdy-multiselect-overlay__empty"] } ,
       // The two mode markers a chip carries. `--centered` reserves the width its tick will need in

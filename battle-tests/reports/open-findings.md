@@ -17310,6 +17310,45 @@ green and one was failing on its premise, so *nobody was auditing a chosen state
 moment the surface appeared, it had a defect on it. A control that never establishes its premise
 reports nothing, and reporting nothing reads like agreement.
 
+## 296 — A command that costs the whole project (S1, STU-006)
+
+Every Studio editorial command starts by copying the project whole: `structuredClone(project)` appears
+**thirty-six times in `commands.ts` alone**. Raised by an outside audit as a performance risk; measured
+by `esecutore` rather than accepted, and the measurement is sharper than the claim.
+
+The number that decides it is not growth — growth is what an allocator does anyway. It is **a rename
+against a bare clone, in the same process, at the same size**:
+
+```
+shape            clone    rename   update   rename − clone
+flat 10          0.016    0.015    0.019    -0.001
+flat 100         0.078    0.077    0.080    -0.001
+flat 1000        0.699    0.687    0.695    -0.012
+10 groups × 10   0.081    0.081    0.086    -0.001
+40 groups × 25   0.713    0.708    0.716    -0.006
+```
+
+`createRenameProjectCommand` changes **one string** and costs, within noise, exactly
+`structuredClone(project)` at every size and in both shapes. `updateNode`, which touches one node,
+costs the same plus five microseconds. **The cost of a command is proportional to the project and
+independent of the edit.**
+
+From ten to a thousand fields — 96 KB of JSON — per-command cost goes 0.020 → 0.71 ms, linear in size.
+A twenty-step history on a thousand fields is 20.6 ms and twenty retained copies, about 1.9 MB.
+
+**The nuance belongs in the finding with the numbers**: in absolute terms this is not an interruption
+today. 0.7 ms per command is invisible and 1.9 MB of undo is nothing. It is a defect of **scale** with
+a memory multiplier, visible exactly where a small form never looks — which is the shape of risk a
+measurement on a small form cannot find.
+
+Held by `battle-tests/adversarial/studio/a-command-that-costs-the-whole-project.battle.test.mjs` as a
+**ratio between two calls in one process**, not a threshold: a slower machine moves both. Both paths
+are warmed before either is timed, and a control asserts the clone is expensive enough to measure —
+on a project too small to time, the ratio would be noise against noise.
+
+The repair is a shape change — copy the path from the root to the touched node rather than the
+document — so it wants a record and a plan, not a line. `packages/studio-editor` is in no lane.
+
 ## The register's own shape, measured
 
 ```

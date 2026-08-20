@@ -6,6 +6,7 @@
  * the user opens; these chips are all on screen at once and each is independently on or off, which
  * is what a pressed toggle already means.
  */
+import { MDY_WIDGET_CONTRACTS } from "../catalog.js";
 import { projectOverlayOpenerA11y } from "../opener-a11y.js";
 import { blocksFocus } from "../interactivity.js";
 import type { MdyFieldError } from "@modyra/core";
@@ -132,7 +133,15 @@ export function projectMultiselectFieldA11y<TValue>(
     popup: {
       id: popupId,
       classes: ["mdy-multiselect__dropdown"],
-      attributes: { hidden: !state.open },
+      attributes: {
+        // The role the catalogue declares for this part, read rather than restated: the opener
+        // announces what will open, and a second spelling here is how the two come apart.
+        role: MDY_WIDGET_CONTRACTS.multiselect.parts.popup.role ?? null,
+        // A dialog is named or it is a region an assistive technology cannot introduce. The field's
+        // label is what it is: the panel belongs to that field and to nothing else.
+        "aria-labelledby": labelId,
+        hidden: !state.open,
+      },
     },
     search: {
       id: searchId,

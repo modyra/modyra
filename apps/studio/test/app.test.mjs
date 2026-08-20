@@ -39,7 +39,17 @@ test("stylesheet ships the brand tokens and Satoshi @font-face, not a generic fo
   const css = readFileSync(new URL("studio.css", dist), "utf8");
   assert.match(css, /@font-face/);
   assert.match(css, /Satoshi/);
-  assert.match(css, /#7067ff/); // --studio-chrome-indigo
+  // The brand indigo, read from where it is declared rather than repeated here. What this asserts
+  // is that the build carries the token's value through — so pinning the spelling states the
+  // wrong thing: it fails whenever the brand moves, on a build that is correct, and says nothing
+  // about whether the value arrived.
+  const source = readFileSync(
+    new URL("../../../packages/studio-ui/src/studio.css", import.meta.url),
+    "utf8",
+  );
+  const indigo = /--studio-chrome-indigo:\s*(#[0-9a-fA-F]{3,8})\b/.exec(source);
+  assert.ok(indigo, "packages/studio-ui/src/studio.css no longer declares --studio-chrome-indigo");
+  assert.match(css, new RegExp(indigo[1], "i"));
   assert.doesNotMatch(css, /Inter/);
 });
 
