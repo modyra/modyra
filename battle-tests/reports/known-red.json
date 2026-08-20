@@ -4,15 +4,13 @@
   "recordedAt": "2026-08-20",
   "seed": "(none — the run drew a fresh seed, so this list is one walk of many)",
   "runs": "(default)",
-  "openReds": 7,
+  "openReds": 5,
   "bySeverity": {
-    "S1": 3,
+    "S1": 1,
     "S2": 4
   },
   "knownRed": [
     "[S1][A11Y-004] a widget announcing a state only when it is in it is still reported",
-    "[S1][PKG-001,REA-002] a second copy of the package does not turn the cross-runtime guard off",
-    "[S1][REA-001,REA-002] the conformance kit refuses the reactivities it is there to refuse",
     "[S2][ADP-001,DYN-001] an adapter that publishes a dynamic-form door reads the dynamic contract",
     "[S2][ADP-001] an adapter that wraps every controller wraps every controller",
     "[S2][DYN-001,DYN-003] every version one runtime accepts is one the others have a position on",
