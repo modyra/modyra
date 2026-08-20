@@ -139,6 +139,25 @@ take still pins the division wherever it cannot — an author who writes `[A-Za-
 written a class that overlaps digits and capitals by accident, and the `.` and the `_` in it remain
 boundaries no letter can stand in for.
 
+A seam is read in three more places than the two above, each found by a corpus the rule had not seen:
+
+- **an ending that may be absent is not an ending.** `([A-Za-z]+[0-9]*)+` looks pinned by its digits
+  and is the classic blowup with none of them present, so trailing elements that can contribute
+  nothing are dropped before the seam is read. A body left with nothing that must be there is a loop
+  that makes no progress, which is ambiguous by construction.
+- **the boundary is anywhere in the fixed run after the stretchy part**, not only at its very end.
+  `("[^"]*",)` ends in a comma that `[^"]` *can* take and is pinned all the same by the quote before
+  it.
+- **when nothing ends the body, an internal seam is free too.** Two stretchy elements side by side
+  that can both take the same character divide the run between them wherever they like:
+  `([^x]+[^y]+)+z$` has no boundary anywhere and holds the thread past a second and a half at thirty
+  characters. The same pair inside a body that *does* end in a boundary is a different case — the
+  boundary pins each repetition, so the choice does not compound, which is why `(\s*[^,]+,)` is flat.
+
+And a list of words is not ambiguous for sharing a letter. Comparing only the first character called
+`(foo|bar|baz)+` ambiguous because two of them start with `b`; alternatives that are plain literals
+are compared whole, and what makes them ambiguous is one being a *prefix* of another — `(a|ab)+`.
+
 What cannot be read is still refused when it repeats: a body this cannot take apart into elements,
 or an element whose character set is undecidable, counts as ambiguous. That is the conservative
 direction this record's own paragraph describes, restored — it is the *known* shapes that are

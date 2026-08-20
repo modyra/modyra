@@ -94,6 +94,35 @@ test("a repeated body with a boundary the stretchy part cannot take is left alon
   assert.ok(dynamicPatternRefusal("(.*a){20}$"));
 });
 
+test("a body with no boundary anywhere is refused, wherever the freedom is", () => {
+  // Three ways a repetition can be left with more than one division to try, each measured.
+  // The ending can be absent, so the seam falls back inside the run before it.
+  assert.ok(dynamicPatternRefusal("^([A-Za-z]+[0-9]*)+$"));
+  assert.ok(dynamicPatternRefusal("^([^\\s]+\\s?){1,10}$"));
+  // Nothing ends the body and two stretchy elements inside it can take the same characters, so the
+  // split between them is free as well as the split between repetitions.
+  assert.ok(dynamicPatternRefusal("^([^x]+[^y]+)+z$"));
+  assert.ok(dynamicPatternRefusal("^(x+x+)+y$"));
+  // A body that can match nothing at all repeats without making progress.
+  assert.ok(dynamicPatternRefusal("^(a?)+$"));
+
+  // And the boundary is anywhere in the fixed run after the stretchy part, not only at its end: a
+  // comma is something `[^"]` can take, and the quote before it is not.
+  assert.equal(dynamicPatternRefusal("^(\"[^\"]*\",)*\"[^\"]*\"$"), null);
+  // A pair that overlaps *inside* a body the boundary pins is a choice that does not compound.
+  assert.equal(dynamicPatternRefusal("^(\\s*[^,]+,)*\\s*[^,]+$"), null);
+});
+
+test("a list of words is not ambiguous for sharing a letter", () => {
+  // Reading only the first character called these ambiguous because two of them start the same. A
+  // closed set of values written as words is what an author reaches for, and none of them can be
+  // mistaken for another once the second character is read.
+  assert.equal(dynamicPatternRefusal("^(foo|bar|baz)+$"), null);
+  assert.equal(dynamicPatternRefusal("^(GET|POST|PUT)+$"), null);
+  // What makes literal alternatives ambiguous is one being a prefix of another.
+  assert.ok(dynamicPatternRefusal("^(a|ab)+c$"));
+});
+
 test("a fixed-length body repeated is left alone", () => {
   // The other half of the same line, and the one that keeps the check usable: a body that always
   // consumes the same number of characters gives the engine one way to divide the input and nothing
