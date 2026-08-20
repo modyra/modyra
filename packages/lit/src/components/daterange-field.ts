@@ -9,7 +9,7 @@ import { overlayControlledId, partClasses, calendarViewOnToggle,
 import { html, nothing, type PropertyDeclarations } from "lit";
 import { type MdyDateRange, type MdyFieldHandle, observerFor } from "@modyra/core";
 import { buildDateLocale, calendarYearRange, type MdyDateLocale, isMonthOutOfRange, isYearOutOfRange, type CalendarCell, type CalendarDate, compareDates, formatIsoDate, isDateBetween, isDateInRange, orderDates, parseIsoDate, parseLocalizedDate, today } from "@modyra/core/datetime";
-import { applyWidgetCommands, bindOutsidePointer } from "../widget-runtime/overlay-host.js";
+import { applyWidgetCommands, bindOutsidePointer, closeOverlayOutOfPlay } from "../widget-runtime/overlay-host.js";
 import { MdyFieldElement, mdyIcon } from "../base.js";
 import { calendarGridKey, calendarRows, renderMonthPicker, renderYearPicker } from "./calendar-pickers.js";
 import {
@@ -137,6 +137,14 @@ export class MdyDaterangeFieldElement extends MdyFieldElement<MdyDateRange | nul
       disabled: handle.disabled(),
       control: ".mdy-daterange__input",
     });
+  }
+
+  override willUpdate(changed: Map<string, unknown>): void {
+    super.willUpdate?.(changed);
+    // A field out of play keeps no popup over it: the overlay is torn down where every renderer
+    // tears it down, in answer to the field rather than to a gesture.
+    const handle = this.field;
+    if (handle) closeOverlayOutOfPlay(this, handle.interactivity(), () => this.overlay.close());
   }
 
   override connectedCallback(): void {

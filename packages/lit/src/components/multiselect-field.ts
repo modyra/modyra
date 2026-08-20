@@ -19,6 +19,7 @@ import {
   renderOverlayPanel,
 } from "./popup-styles.js";
 import { MdyDropdownFieldElement } from "./dropdown-field.js";
+import { closeOverlayOutOfPlay } from "../widget-runtime/overlay-host.js";
 
 export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly unknown[]> {
   static override properties: PropertyDeclarations = {
@@ -54,6 +55,10 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
 
   override willUpdate(changed: Map<string, unknown>): void {
     super.willUpdate?.(changed);
+    // A field out of play keeps no popup over it: the overlay is torn down where every renderer
+    // tears it down, in answer to the field rather than to a gesture.
+    const handle = this.field;
+    if (handle) closeOverlayOutOfPlay(this, handle.interactivity(), () => this.overlay.close());
     // The option list is a property and can be replaced; the controller is told rather than
     // rebuilt, so the query it is holding survives a list that changes beneath it.
     if (changed.has("options")) this.fieldController?.setOptions(this.options);

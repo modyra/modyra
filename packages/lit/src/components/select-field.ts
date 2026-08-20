@@ -286,7 +286,7 @@ export class MdySelectFieldElement extends MdyDropdownFieldElement<unknown | nul
       }}
       @blur=${() => handle.markAsTouched()}
     >
-      ${this.renderedOptions(handle.value()).map((option) => html`<option .value=${String(option.value)}>${option.label}</option>`)}
+      ${this.renderedOptions(handle.value()).map((option) => html`<option .value=${String(option.value)} ?disabled=${option.disabled === true}>${option.label}</option>`)}
     </select>`;
   }
 

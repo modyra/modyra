@@ -12,7 +12,7 @@ import {
 import { html, nothing, type PropertyDeclarations } from "lit";
 import { observerFor, type MdyFieldHandle } from "@modyra/core";
 import { buildDateLocale, calendarYearRange, type MdyDateLocale, isMonthOutOfRange, isYearOutOfRange, type CalendarCell, type CalendarDate, formatIsoDate, parseIsoDate, parseLocalizedDate, today } from "@modyra/core/datetime";
-import { applyWidgetCommands, bindOutsidePointer } from "../widget-runtime/overlay-host.js";
+import { applyWidgetCommands, bindOutsidePointer, closeOverlayOutOfPlay } from "../widget-runtime/overlay-host.js";
 import { MdyFieldElement, mdyIcon } from "../base.js";
 import { calendarGridKey, calendarRows, renderMonthPicker, renderYearPicker } from "./calendar-pickers.js";
 import {
@@ -276,6 +276,10 @@ export class MdyDatepickerFieldElement extends MdyFieldElement<string | null> {
 
   override willUpdate(changed: Map<string, unknown>): void {
     super.willUpdate?.(changed);
+    // A field out of play keeps no popup over it: the overlay is torn down where every renderer
+    // tears it down, in answer to the field rather than to a gesture.
+    const handle = this.field;
+    if (handle) closeOverlayOutOfPlay(this, handle.interactivity(), () => this.overlay.close());
     // The ends of the range are properties and can move; the controller is told rather than
     // rebuilt, which would forget the month on screen.
     if (changed.has("min") || changed.has("max")) {
