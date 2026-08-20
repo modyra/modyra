@@ -16530,6 +16530,54 @@ Both are now in the battle for 272 — the accepted one in `COUNTED`, the refuse
 produced it reports its own fit. Thirty patterns it had never seen cost one probe and found a hole in
 each direction, one of which is an `S0` that hangs a page.
 
+## 278 — Seven browser reds, two causes (S2, A11Y-003 / A11Y-004)
+
+Fifty-nine reds in the browser tier read as fifty-nine problems. Seven of them are two, and both are
+one line of CSS away from each other.
+
+**`color-contrast`, ten violations across six specs.** Every one is the same element:
+
+```
+.mdy-button   <button class="mdy-button" type="button">Select file</button>
+              foreground #fcfeff, background #7067ff, 10.5pt — contrast 4.09
+```
+
+`#7067ff` is `--mdy-ref-color-indigo`, the default theme's primary, and `on-primary` is derived from
+it by mixing:
+
+```css
+--mdy-sys-color-on-primary: color-mix(in srgb, var(--mdy-sys-color-primary), var(--mdy-ref-color-cloud) 95%)
+```
+
+**No light text on that indigo can reach 4.5.** Measured with the package's own `contrastRatio`: the
+mix lands at 4.09, pure `#f8fafc` reaches 3.96, and pure white tops out at **4.14**. Black is 5.07 —
+the only choice on that background that clears WCAG AA for normal text.
+
+**This is not a bug, it is two of the project's own positions meeting.** ADR 0015 chose perception
+over ratio and set `MDY_ON_COLOR_FLOOR` to **3.5**, with an argument worth keeping: the luminance
+formula weights blue at a fourteenth of green, so it rates dark text on a saturated colour far higher
+than a reader does, and choosing by ratio alone puts dark text on a saturated mid tone. 4.09 clears
+3.5, so the palette keeps the promise `A11Y-003` makes. The browser tier runs axe and asserts **zero
+violations**, which enforces 4.5. Both are in this repository and they cannot both hold on the default
+theme's primary button.
+
+The project has already made the other choice once: `modyra-salience.theme.css` sets
+`--mdy-sys-color-on-primary: #000000` — 5.07, and no violation.
+
+Three ways out, and the choice is not a hunter's to make: raise the floor for text that is not large
+and let the perception argument govern only large text and non-text contrast, which is the split WCAG
+itself draws; change the default primary to something light text can sit on; or state in
+`A11Y-003`'s own terms that the auditor specs assert a stricter standard than the palette promises,
+and narrow what those specs assert.
+
+**`nested-interactive`, four violations.** A colour field builds a native colour input **inside** a
+button. `a-control-inside-another-control.spec.ts` already describes it and is one of the seven.
+Distinct cause, one repair.
+
+So: seven of the fifty-nine are these two. The remaining fifty-two are still to be grouped, and this
+entry exists because "fifty-nine reds" is a number nobody can act on and "two causes behind seven of
+them" is.
+
 ## The register's own shape, measured
 
 ```
