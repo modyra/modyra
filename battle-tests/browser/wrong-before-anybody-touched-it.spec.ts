@@ -35,10 +35,22 @@ for (const host of HOSTS) {
     await page.goto(host.page);
     await page.waitForFunction((flag) => (window as never as Record<string, boolean>)[flag] === true, host.ready);
 
-    // A value the field's own shape refuses, present before anybody arrives.
+    // A value the field's own shape refuses, present before anybody arrives — arriving the way such a
+    // value actually arrives.
+    //
+    // Not as the document's `initialValue`: that door drops it and warns, deliberately and with the
+    // reasoning written where it is done — *"kept, it made a form that was invalid before anybody
+    // touched it, the field reporting 'holds string' about a value the user never entered and cannot
+    // see how to correct"*. A declaration that cannot hold its own value is a defect of the document,
+    // and the person reading the page cannot fix it.
+    //
+    // A value from a **draft, a server or a scripted write** is a fact of the world instead. It is
+    // kept and marked, which is what `valueShape` is for, and it is the case this battle is about:
+    // the header names all three doors and only this one leaves the value there to be explained.
     await page.evaluate(({ api }) => {
-      (window as never as Record<string, { mountFields(i: string, f: unknown[]): unknown }>)[api]
-        .mountFields("t", [{ name: "age", kind: "number", label: "Age", initialValue: "not a number" }]);
+      const host = (window as never as Record<string, Record<string, (...args: unknown[]) => unknown>>)[api];
+      host.mountFields("t", [{ name: "age", kind: "number", label: "Age" }] as never);
+      host.setValue("t", { age: "not a number" });
     }, { api: host.api });
     await page.waitForTimeout(420);
 
