@@ -18234,6 +18234,51 @@ contract change that deserves its own decision rather than being bundled into a 
 the browser tier's host, which mounts documents. The host was not the problem; there was nothing to
 mount it with.
 
+## 316 — The dial's hit boundary sits outside the digits it is meant to divide (S2, UI-011)
+
+Reported by the user as *"tra 00 e 13 il pointer dovrebbe essere praticamente sulla circonferenza
+delle cifre … sembra spostata troppo verso i 1-12 e crea confusione girando."* Measured, it is not a
+matter of degree.
+
+`timepickerDialRing` normalises the pointer by the **dial radius**. `INNER_RING_RADIUS = 0.6` is a
+fraction of the **hand length**. The comparison uses one against the other:
+
+```
+--mdy-comp-time-picker-clock-dial-size: 256px    ->  radius   128px
+--tp-num-size: 40px
+--tp-hand-length: radius - numSize/2 - 8px       ->  hand     100px
+
+outer digits sit at 100px    ->  reach 0.781
+inner digits sit at  60px    ->  reach 0.469
+code boundary  (1 + 0.6)/2   =   0.800   =  102.4px
+```
+
+**The boundary is 2.4px beyond the outer digits.** Everything inside the face down to the rim is
+classified `inner`, including the outer numbers themselves, which sit at exactly 100px. A person has
+to aim *past* a number to be read as pointing at it — which is why rotating feels wrong rather than
+merely imprecise.
+
+Correct midpoint, in dial-radius units: **0.625** (80px), halfway between 60 and 100.
+
+**The cause is the drift pair of finding 313 producing its first consequence.** `INNER_RING_RADIUS`
+in TypeScript and `-0.6` in the stylesheet were noted as "agreeing today with nothing keeping them
+agreeing". They do still agree — and the defect arrived anyway, from a **third** number nobody had
+counted: the hand length the CSS derives from `--tp-num-size` and an 8px inset, which the contract
+never knew about. Two copies were visible; the geometry needed three to be right.
+
+So the repair is not "write 0.625". That is a fourth copy. The boundary has to be derived from the
+same hand length the stylesheet lays out with — measured by the renderer, which is the only party
+that can see the computed value — so the hit area cannot drift from the paint at all.
+
+**What makes it invisible to every check we have**: the classification is never wrong in a way a test
+asserts. `timepickerDialRing` returns a valid ring for every input; the battle asks whether every hour
+can be *committed* and all 24 can; conformance asks whether the parts are present. Nothing asks
+whether the ring under the pointer is the ring the person is looking at. **It is a defect of
+correspondence between two coordinate systems, and both are internally consistent.**
+
+The contract test offered against 313 becomes the real check here: the boundary must land strictly
+between the two rendered rings, read from the stylesheet rather than restated.
+
 ## The register's own shape, measured
 
 ```
