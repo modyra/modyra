@@ -5,7 +5,8 @@
  * focus is restored — is `overlayLifecycleTransition` in `@modyra/widgets`. These helpers only
  * carry the element's `_open` flag in and out of it, so no element re-decides the policy locally.
  */
-import { createLightDismiss, MDY_WIDGET_CONTRACTS, overlayLifecycleTransition, type MdyOverlayLifecycleIntent, bindLightDismiss } from "@modyra/widgets";
+import { blocksFocus, createLightDismiss, MDY_WIDGET_CONTRACTS, overlayLifecycleTransition, type MdyOverlayLifecycleIntent, bindLightDismiss } from "@modyra/widgets";
+import type { MdyInteractivity } from "@modyra/core";
 
 /** A teardown for the case where nothing was bound. */
 const noop = (): void => undefined;
@@ -98,4 +99,25 @@ export function applyWidgetCommands(
       host.querySelector<HTMLInputElement>(options.control)?.focus();
     }
   }
+}
+
+/**
+ * Closes the popup this host paints when its field is out of play.
+ *
+ * A field leaves play without anybody clicking anything — a rule takes it out when another field
+ * changes — and an element that only writes `_open` in answer to a gesture goes on painting an
+ * overlay nothing can answer: every cell drawn, the opener still reporting `aria-expanded="true"`,
+ * and every click correctly landing nowhere.
+ *
+ * `blocksFocus` draws the line, so `readonly` keeps its popup: a value the user may read but not
+ * rewrite is one they are still allowed to look at.
+ */
+export function closeOverlayOutOfPlay(
+  host: OverlayHost,
+  interactivity: MdyInteractivity,
+  close: () => void,
+): void {
+  if (!host._open || !blocksFocus(interactivity)) return;
+  host._open = false;
+  close();
 }

@@ -15,7 +15,7 @@ import {
   type MdyTimepickerFieldIntent,
   type MdyTimepickerFieldState,
 } from "@modyra/widgets";
-import { applyWidgetCommands, bindOutsidePointer } from "../widget-runtime/overlay-host.js";
+import { applyWidgetCommands, bindOutsidePointer, closeOverlayOutOfPlay } from "../widget-runtime/overlay-host.js";
 import { MdyFieldElement, mdyIcon } from "../base.js";
 import {
   MdyLitOverlayController,
@@ -117,6 +117,14 @@ export class MdyTimepickerFieldElement extends MdyFieldElement<string | null> {
     this._open = false;
     this._isDragging = false;
     this._dragAngle = null;
+  }
+
+  override willUpdate(changed: Map<string, unknown>): void {
+    super.willUpdate?.(changed);
+    // A field out of play keeps no popup over it: the overlay is torn down where every renderer
+    // tears it down, in answer to the field rather than to a gesture.
+    const handle = this.field;
+    if (handle) closeOverlayOutOfPlay(this, handle.interactivity(), () => this.overlay.close());
   }
 
   override connectedCallback(): void {

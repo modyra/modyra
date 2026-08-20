@@ -54,6 +54,23 @@ The keyboard is a separate question and is not answered here: closing the overla
 where focus goes when the element under it disappears. That is finding 175 and needs the renderers,
 not the controllers.
 
+## Amendment: the half that paints
+
+A controller closing its own overlay is only half of it where the renderer keeps a second flag. The
+Lit elements paint from `_open`, written in answer to a gesture and to the commands a dispatched
+intent returns — and a field leaving play dispatches nothing, so the controller's `open` fell and the
+calendar stayed on the screen with every cell drawn and the opener still reporting
+`aria-expanded="true"`. Two of the five kinds do not even have a controller behind their popup there.
+
+So the renderer half is stated too: **an element that paints its own overlay flag closes it when the
+field is out of play**, through one helper for the whole package rather than a copy per element, and
+reading `blocksFocus` rather than restating what it decides. This does not reopen the alternative
+rejected below — the knowledge of *which* state closes an overlay stays in `@modyra/widgets`; what
+the element owns is tearing down the markup it alone put on the screen.
+
+The duplicated flag is the underlying defect and it survives this: an element still holds a second
+copy of a state a controller owns, and only the one behaviour they diverged on is now tied together.
+
 ## Alternatives rejected
 
 **Derive `open` as `open() && inPlay`.** One line and no effect, and it re-opens the popup the moment
