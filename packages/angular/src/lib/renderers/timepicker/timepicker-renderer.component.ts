@@ -9,12 +9,7 @@ import {
   Injector,
   input,
 } from "@angular/core";
-import {
-  formatTimeAs,
-  getCurrentTime,
-  MdyTimeFormat,
-  parseAnyTime,
-  parseTime, buildTimeString } from "@modyra/core/datetime";
+import { MdyTimeFormat, buildTimeString, formatTimeAs, getCurrentTime, parseAnyTime, to24Hour } from "@modyra/core/datetime";
 import {
   MDY_WIDGET_CONTRACTS,
   timeInputTransition,
@@ -132,6 +127,7 @@ import { MdyTimepickerClockComponent } from "./timepicker-clock.component";
           [format]="format()"
           [disabled]="isDisabled()"
           (timePicked)="onTimePicked($event)"
+          (dialPicked)="onDialPicked($event)"
           (cancelClicked)="cancelPicker()"
           (confirmClicked)="confirmPicker()"
         />
@@ -190,14 +186,32 @@ export class MdyTimepickerComponent extends MdyOverlayControl<string | null> {
     this.controller()?.dispatch({ type: "open" });
   }
 
-  /** A time chosen on the dial, sent as the parts the controller takes. */
+  /**
+   * A position on the face, sent as the position it is.
+   *
+   * The dial used to hand back a formatted time that this parsed with `parseTime` — the *12-hour*
+   * parser, whatever the picker's format — so a 24-hour face could only ever name the twelve numbers
+   * on its outer ring. The angle and the ring go to the controller, which owns what they mean.
+   */
+  protected onDialPicked(pick: { field: "hour" | "minute"; angle: number; ring: "outer" | "inner" }): void {
+    this.controller()?.dispatch({ type: "set-from-angle", ...pick });
+  }
+
+  /**
+   * A time chosen through the number fields or the period toggle.
+   *
+   * Read with the picker's own format: `parseTime` reads a 12-hour string and a 24-hour picker hands
+   * back `"15:30"`, which it cannot. The hour goes out in the picker's format too — 0–23 for a
+   * 24-hour clock — because that is the vocabulary `set-hour` speaks.
+   */
   protected onTimePicked(time: string): void {
-    const parsed = parseTime(time);
+    const format = this.format();
+    const parsed = parseAnyTime(time, format) ?? parseAnyTime(time, format === "12h" ? "24h" : "12h");
     const controller = this.controller();
     if (!parsed || !controller) return;
-    controller.dispatch({ type: "set-hour", hour: parsed.hour });
+    controller.dispatch({ type: "set-hour", hour: format === "24h" ? to24Hour(parsed) : parsed.hour });
     controller.dispatch({ type: "set-minute", minute: parsed.minute });
-    if (this.format() === "12h") controller.dispatch({ type: "set-period", period: parsed.period });
+    if (format === "12h") controller.dispatch({ type: "set-period", period: parsed.period });
   }
 
   protected confirmPicker(): void {

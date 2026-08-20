@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, ElementRef, computed, input, output, viewChild } from "@angular/core";
+import { ChangeDetectionStrategy, Component, computed, input, output } from "@angular/core";
 import { acceptTimeField, stepTimeField, timeFieldBounds } from "@modyra/widgets";
 import type { MdyTimeFormat } from "@modyra/core/datetime";
 
@@ -52,8 +52,6 @@ export class MdyTimepickerSegmentComponent {
   /** Which clock this segment belongs to. The hour's range depends on it; the minute's never does. */
   readonly format = input<MdyTimeFormat>("12h");
 
-  private readonly box = viewChild<ElementRef<HTMLInputElement>>("box");
-
   /** The range the contract states for this segment, rather than a literal beside the template. */
   protected readonly bounds = computed(() => timeFieldBounds(this.unit(), this.format()));
 
@@ -71,6 +69,8 @@ export class MdyTimepickerSegmentComponent {
   readonly clicked     = output<void>();
   readonly focused     = output<void>();
   readonly inputChange = output<Event>();
+  /** The value an arrow key asks for. A value rather than an event: nothing here writes the DOM. */
+  readonly stepped = output<number>();
 
   protected handleClick(): void {
     if (this.readonly()) {
@@ -95,11 +95,12 @@ export class MdyTimepickerSegmentComponent {
       event.preventDefault();
       const entry = acceptTimeField(this.unit(), this.format(), this.value());
       const from = entry.type === "accepted" ? entry.value : this.bounds().min;
-      const input = this.box()?.nativeElement;
-      if (!input) return;
-      input.value = String(stepTimeField(this.unit(), this.format(), from, delta));
-      // Through the same channel a keystroke uses, so the parent has one path to maintain.
-      input.dispatchEvent(new Event("input", { bubbles: true }));
+      // Reported, not written. The template binds `[value]="value()"`, so this DOM property has an
+      // owner; a handler that also assigns it gives one value two owners, and which of them wins is
+      // a matter of timing — the bound value was written back over the stepped one before the frame
+      // painted, which is what "the arrows do nothing" was. The step goes out as a value and comes
+      // back as a render, the same way a typed character does.
+      this.stepped.emit(stepTimeField(this.unit(), this.format(), from, delta));
       return;
     }
 
