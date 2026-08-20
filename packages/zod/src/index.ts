@@ -51,13 +51,13 @@ export type MdyZodItemDescriptor<Elem extends z.ZodType> =
     ? MdyArrayDescriptor<MdyZodItemDescriptor<Item>>
     : Elem extends z.ZodRecord<infer _K, infer Value extends z.ZodType>
     ? MdyRecordDescriptor<MdyZodItemDescriptor<Value>>
-    : MdyFieldDescriptor<z.input<Elem> | null>;
+    : MdyFieldDescriptor<Exclude<z.input<Elem>, undefined> | null>;
 
 /**
  * Maps a Zod object shape to a Modyra schema tree at the type level:
  * nested `z.object()`s become groups, `z.array()`s become typed field
  * arrays, `z.record()`s become keyed collections, every other schema
- * becomes a leaf field typed `z.input<Piece> | null` (`null` = not filled in
+ * becomes a leaf field typed `z.input<Piece> | null`, `undefined` excluded (`null` = not filled in
  * yet — the Zod validators reject it at submit time when the piece is required).
  *
  * **Input, not output.** A form holds what a person typed and what a server sent, and it validates
@@ -68,6 +68,12 @@ export type MdyZodItemDescriptor<Elem extends z.ZodType> =
  *
  * Transforming on the way in was the alternative and it costs more than it buys: `.trim()` applied
  * to every keystroke takes the space out of "a b" while it is being typed.
+ *
+ * `undefined` is dropped from the leaf. A piece with a `.default()` has `z.input` including
+ * `undefined`, because a *parse* may omit the key — but a form leaf is never omitted: it exists from
+ * the moment the form is built and holds `null` until someone fills it in. Left in, the leaf was
+ * typed `string | null | undefined` over a field that can only ever hold `string | null`, and every
+ * control declared for the narrower type refused the handle.
  */
 export type MdyZodSchemaTree<Shape extends z.ZodRawShape> = {
   [K in keyof Shape]: Shape[K] extends z.ZodObject<infer Inner>
@@ -76,7 +82,7 @@ export type MdyZodSchemaTree<Shape extends z.ZodRawShape> = {
     ? MdyArrayDescriptor<MdyZodItemDescriptor<Elem>>
     : Shape[K] extends z.ZodRecord<infer _Key, infer Value extends z.ZodType>
     ? MdyRecordDescriptor<MdyZodItemDescriptor<Value>>
-    : MdyFieldDescriptor<z.input<Shape[K]> | null>;
+    : MdyFieldDescriptor<Exclude<z.input<Shape[K]>, undefined> | null>;
 };
 
 export interface MdyZodFormOptions<
