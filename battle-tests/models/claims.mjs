@@ -733,6 +733,17 @@ const CLAIMS = [
     ],
   },
   {
+    id: "UI-011",
+    title: "A control can be set to every value it offers.",
+    area: "widgets",
+    severity: "S1",
+    publicEvidence: [
+      "@modyra/widgets timepickerDialNumbers — the face a picker draws, twenty-four numbers in its 24-hour form",
+      "@modyra/widgets MdyTimepickerFieldIntent — the whole vocabulary a renderer has for saying what was chosen",
+      "@modyra/widgets MDY_WIDGET_CONTRACTS — the framework-agnostic UI contract every adapter implements",
+    ],
+  },
+  {
     id: "DOC-002",
     title: "A link a reader clicks lands on the section it names.",
     area: "documentation",
