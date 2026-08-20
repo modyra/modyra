@@ -1,17 +1,16 @@
 {
   "note": "Browser specs that are red because the defect they describe is open. A red listed here does not fail a build; a red that is not listed is a regression. Rewrite with `npm run battle:browser:ci -- --accept`.",
   "order": "Repair in severity order, as the node tier does. A spec's severity is the worst of the claims its header names; `unknown` is a spec that names none, which is most of them.",
-  "recordedAt": "2026-08-19",
-  "openReds": 62,
+  "recordedAt": "2026-08-20",
+  "openReds": 60,
   "bySeverity": {
-    "S0": 8,
-    "S1": 40,
+    "S0": 7,
+    "S1": 38,
     "S2": 12,
-    "unknown": 2
+    "unknown": 3
   },
   "knownRed": [
     "a-calendar-that-outlived-its-field.spec.ts › a calendar that outlived its field, lit",
-    "a-calendar-that-outlived-its-field.spec.ts › a calendar that outlived its field, plain",
     "a-control-for-a-field-that-was-dropped.spec.ts › a control for a field that was dropped, lit",
     "a-name-that-became-a-path.spec.ts › a name that became a path, lit",
     "a-page-that-keeps-nothing.spec.ts › a form asked to keep a draft keeps one, plain",
@@ -19,7 +18,6 @@
     "an-option-a-document-closed.spec.ts › lit: an option the document disabled is one nobody can choose",
     "an-option-with-a-space-in-it.spec.ts › an option whose value has a space is pointed at properly too",
     "a-box-that-does-not-say-what-it-filters.spec.ts › the filter box says what it is and what it changes, lit",
-    "a-calendar-behind-a-closed-picker.spec.ts › plain: a closed popup is closed for everyone",
     "a-calendar-behind-a-closed-picker.spec.ts › plain: tabbing past a closed widget reaches the next field",
     "a-choice-shown-that-was-never-made.spec.ts › a select holding a value no option carries, lit",
     "a-dialog-nothing-can-point-at.spec.ts › the opener points at the dialog it opens, lit",
@@ -29,7 +27,6 @@
     "a-form-that-ended-under-the-controls.spec.ts › controls left on the page after the form ended are not still offering to edit it",
     "a-grid-that-names-a-label-nobody-wrote.spec.ts › every grid a calendar shows is named, lit",
     "a-grid-with-no-name.spec.ts › lit: a role that must be named has a name",
-    "a-grid-with-no-name.spec.ts › plain: a role that must be named has a name",
     "a-kind-nobody-declared-becomes-a-text-box.spec.ts › a kind nobody declared, lit",
     "a-mount-that-stopped-halfway.spec.ts › a mount that refuses a field leaves nothing of the fields it had already painted",
     "a-number-nobody-can-hear.spec.ts › a clock says what it is set to, lit",
@@ -71,6 +68,7 @@
     "the-part-a-pointer-opens-from.spec.ts › a pointer on the declared part opens the popup, lit",
     "the-way-down-a-calendar.spec.ts › a calendar goes where the moves say, plain",
     "a-control-inside-another-control.spec.ts › no control sits inside another control, lit",
-    "a-control-nobody-named.spec.ts › every control has a name even when the document declared none"
+    "a-control-nobody-named.spec.ts › every control has a name even when the document declared none",
+    "a-name-the-page-cannot-carry.spec.ts › a name the page refuses is one the document was told about"
   ]
 }

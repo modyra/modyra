@@ -4,16 +4,12 @@
   "recordedAt": "2026-08-20",
   "seed": "(none — the run drew a fresh seed, so this list is one walk of many)",
   "runs": "(default)",
-  "openReds": 5,
+  "openReds": 2,
   "bySeverity": {
-    "S1": 1,
-    "S2": 4
+    "S2": 2
   },
   "knownRed": [
-    "[S1][A11Y-004] a widget announcing a state only when it is in it is still reported",
-    "[S2][ADP-001,DYN-001] an adapter that publishes a dynamic-form door reads the dynamic contract",
-    "[S2][ADP-001] an adapter that wraps every controller wraps every controller",
     "[S2][DYN-001,DYN-003] every version one runtime accepts is one the others have a position on",
-    "[S2][DYN-003,DYN-001] a member outside a published list is reported, whichever list it is outside"
+    "[S2][UI-010,UI-009] a kind that declares an overlay declares what opens it"
   ]
 }
