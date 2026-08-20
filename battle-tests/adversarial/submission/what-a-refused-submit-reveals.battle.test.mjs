@@ -16,14 +16,27 @@
  * hold them, not because either is currently wrong.
  */
 
-import { createForm, field, group, record, required } from "@modyra/core";
+import { array, createForm, field, group, record, required } from "@modyra/core";
 
 import { battle } from "../../harness/battle.mjs";
 import { expectClaim, expectEqual } from "../../harness/assertions.mjs";
 
 const settled = () => new Promise((resolve) => setTimeout(resolve, 50));
 
-const PATHS = Object.freeze(["a", "b", "rows.r1.code"]);
+/**
+ * The leaves of a form, read from the value it holds.
+ *
+ * Written down rather than derived, this list is what the battle can see: `touchedPaths` filters by
+ * it, so a leaf the author did not name is one no assertion here reaches, and *"reveals every field"*
+ * becomes "reveals the three fields I listed". Deriving it means a kind added to the form below is a
+ * kind this battle asks about without being edited.
+ */
+function leavesOf(value, prefix = "") {
+  return Object.entries(value ?? {}).flatMap(([key, held]) => {
+    const path = prefix ? `${prefix}.${key}` : key;
+    return held !== null && typeof held === "object" ? leavesOf(held, path) : [path];
+  });
+}
 
 /** A form with a leaf, a required leaf and a collection cell, so touching is visible at each depth. */
 function formWithDepth() {
@@ -31,19 +44,31 @@ function formWithDepth() {
     {
       a: field(""),
       b: field("", [required()]),
+      // A leaf two groups down, a positional row and a keyed row: the containers index differently,
+      // and "every field" is a claim about the ones that are awkward to reach as much as the flat one.
+      secret: field("", [], { sensitive: true }),
+      nested: group({ inner: field(""), deeper: group({ leaf: field("") }) }),
       rows: record(group({ code: field("") }), { initial: { r1: { code: "" } } }),
+      list: array(group({ cell: field("") }), { initial: [{ cell: "" }] }),
     },
     { devWarnings: false },
   );
 }
 
-/** Which of the declared paths report themselves touched right now. */
+/** The handle a path names, through whichever of the three ways a container is indexed. */
+const handleAt = (form, path) =>
+  path.split(".").reduce(
+    (node, step) => node?.[step] ?? node?.row?.(step) ?? node?.at?.(Number(step)),
+    form.f,
+  );
+
+/** Which of the form's own leaves report themselves touched right now. */
 function touchedPaths(form) {
-  return PATHS.filter((path) => {
-    const handle = path.split(".").reduce((node, step) => node?.[step] ?? node?.row?.(step), form.f);
-    return handle?.touched?.() === true;
-  });
+  return leavesOf(form.getValue()).filter((path) => handleAt(form, path)?.touched?.() === true).sort();
 }
+
+/** Every leaf the form holds, in the order `touchedPaths` reports them. */
+const allPaths = (form) => leavesOf(form.getValue()).sort();
 
 battle(
   {
@@ -80,7 +105,7 @@ battle(
 
     // And every field is now touched, at every depth, so each one may paint what is wrong with it.
     // A collection cell is included deliberately: it is the depth a shallow implementation misses.
-    expectEqual(touchedPaths(refused), PATHS, {
+    expectEqual(touchedPaths(refused), allPaths(refused), {
       claimIds: ["VAL-003"],
       what: "a refused submit did not reveal every field, so a form can refuse without explaining",
     });
