@@ -4,13 +4,15 @@
   "recordedAt": "2026-08-20",
   "seed": "(none — the run drew a fresh seed, so this list is one walk of many)",
   "runs": "(default)",
-  "openReds": 2,
+  "openReds": 3,
   "bySeverity": {
     "S0": 1,
+    "S1": 1,
     "S2": 1
   },
   "knownRed": [
-    "[S0][PER-004,PER-001] a draft another form wrote is not restored into this one",
+    "[S0][SEC-002] a secret is masked in the message as well as in the value",
+    "[S1][SEC-007] a published constant cannot be rewritten by whatever else is on the page",
     "[S2][DYN-001,DYN-003] every version one runtime accepts is one the others have a position on"
   ]
 }

@@ -711,6 +711,17 @@ const CLAIMS = [
     ],
   },
   {
+    id: "SEC-007",
+    title: "A published constant a decision is read from cannot be rewritten by anything sharing the page.",
+    area: "security",
+    severity: "S1",
+    publicEvidence: [
+      "@modyra/core MDY_DYNAMIC_FIELD_KINDS — the kinds an untrusted document may declare",
+      "@modyra/widgets MDY_ICONS — markup this package assigns to innerHTML, on the stated grounds that it is the package's own constant",
+      "@modyra/core MDY_VALUE_CONTRACTS and the twenty-one others already frozen, which is the rule the rest are the exception to",
+    ],
+  },
+  {
     id: "DOC-001",
     title: "Every import a guide shows is one the package exports at runtime.",
     area: "documentation",
