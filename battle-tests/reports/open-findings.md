@@ -17817,6 +17817,56 @@ Widened: `doorsOn` now takes its guards from a table of all four, and the mixed 
 from the marker list rather than named. The S0 half — no operand claimed by two guards — is **green**,
 so the ambiguity the battle was written for is closed. The S1 half is this finding.
 
+## 308 — The options object handed to the parameter before it (S2, API-001)
+
+`field(initial, validators = [], options?)`. The third argument holds `sensitive`, `when`, `sanitize`
+and the async settings — and it is the argument a reader reaches for, so the mistake is putting it
+second, or passing one validator where a list belongs.
+
+**The third argument is guarded. The second is not.**
+
+```
+field("", [], { sanitize: "stict" })   [modyra] There is no sanitizer called "stict".
+                                       Name one of off, text, strict, or pass a function.
+
+field("", { sensitive: true })         ACCEPTED — validators is now { sensitive: true }
+  then createForm(...)                 node.validators.some is not a function
+field("", () => null)                  node.validators.some is not a function
+field("", "required")                  node.validators.some is not a function
+field("", null)                        Cannot read properties of null (reading 'some')
+```
+
+None of the four names `field`, names the argument, or mentions the options object the author meant.
+A reader looking for `validators` in their own code finds it where they put it, spelled correctly, and
+the message is about a member of a node they never wrote. The last one does not even name
+`validators`.
+
+**This is not a preference — it is a decision already recorded and unimplemented at one door.** ADR
+0057, *an argument is refused where it arrives*, names this exact case in its Decision section:
+
+> *"The list-taking setters refuse anything that is not an array of functions, by the same rule."*
+
+`field`'s second argument is a list-taking parameter. The rule reached the setters and not the
+constructor.
+
+And the shape of the miss is written three lines below the gap, in the comment on the sanitizer guard
+that *was* added: *"a repair that reached only the form leaves `field("", [], { sanitize: "stict" })`
+falling back to the profile that does nothing, which is the defect one level down."* Someone walked
+this door hardening the third argument and did not turn to the second.
+
+Battle: `battle-tests/adversarial/validation/an-argument-in-the-wrong-place.battle.test.mjs`, red on
+all four shapes. The control is the neighbouring argument, which refuses by name — so the battle is
+about a gap in this door rather than about a door with no habit of guarding.
+
+**Found while auditing the suite, not the product.** The scan for battles stating a universal over one
+instance flagged `what-a-refused-submit-reveals`, whose `PATHS` is hand-written *and* whose
+`touchedPaths` filters by it — so the battle cannot see a field the author did not write down. Trying
+to widen that probe to a form with more kinds is what put a wrong shape into `field`, and the wrong
+shape answered.
+
+The original narrowing stands and is still open: a battle claiming *"a refused submit reveals every
+field"* holds it over three paths it names rather than over the form's leaves.
+
 ## The register's own shape, measured
 
 ```
