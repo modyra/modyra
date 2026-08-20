@@ -16852,10 +16852,26 @@ The per-field rule from the same document, in the same mount, becomes a native c
 the document's message. Document validation is wired; it is the cross-field kind that is dropped,
 silently and with nothing to read.
 
-**Why this is put rather than assigned.** Closing it means adding an option to the published mount
-surface of every adapter — eight of them — which is a cross-package migration and a public contract
-change. The narrow first step is `@modyra/plain`, which is the renderer the browser tier measures;
-the rest is a batch with its own sequencing. Both are the user's call.
+**Corrected, twice, and both corrections matter.**
+
+I wrote that a page promising cross-field rules on a rendered form promises something that does not
+happen. `esecutore4` measured it: before their commit, `grep -rn validations docs --include='*.md'`
+found **two** occurrences, both inside ADRs. **No guide documented the slot at all.** So the defect was
+not a false promise — it was a *silence* about a key the contract publishes:
+`spec/dynamic-form-v4.schema.json` declares `validations` at the top level beside `fields`, `layout`
+and `rules`, and the guide sends the reader to that schema.
+
+And the one consumer is thinner than "a Studio preview": `@modyra/studio-preview` is `private: true`.
+Not "the only renderer that reads them is Studio" — **the only consumer is not a published package.**
+
+`docs/guides/ai-generated-forms.md` now carries the section that was missing, with the way out
+verified by running it rather than deduced: `buildDynamicValidations(parsed.validations)` handed to
+`createForm` as form-level validators produces the document's message on the document's target.
+
+**Why the repair is put rather than assigned.** Closing it means adding an option to the published
+mount surface of every adapter — eight of them — which is a cross-package migration and a public
+contract change. The narrow first step is `@modyra/plain`, which is the renderer the browser tier
+measures; the rest is a batch with its own sequencing. Both are the user's call.
 
 ## 286 — Two battles that asked for the behaviour a record removed (harness)
 
@@ -16965,6 +16981,33 @@ and every record after it would be blamed for a gap it did not make.
 **The shape, which is the reusable part**: a check that catches a fault *by side effect* reports the
 side effect. It fails, so nobody notices it is describing the wrong thing — and a wrong diagnosis in a
 green-or-red gate is worse than a missing one, because it is acted on.
+
+## 289 — Four entries this register was wrong about (harness)
+
+`esecutore4` took findings 216, 218, 220, 222 and 224 from this file and found that two were already
+closed and one had been closed by the product rather than by the prose. Verified here rather than
+relayed:
+
+```
+224  the AI prompt lists 14 of 17 kinds     — it lists all seventeen; MDY_FIELD_KINDS agrees
+220  setValue's absent field returns null   — the page says "declared initial", per ADR 0057
+222  maskFields is an exact match           — angular's devtools now matches a prefix too,
+                                              so the guide's sentence became true without an edit
+218  a cross-field error lands on ""        — repaired, and measured both ways:
+       crossField(["a","b"])  errorsFor("") []        errorsFor("a") ["nope"]
+       crossField([])         errorsFor("") ["nope"]  errorsFor("a") []
+216  pending has a third cause              — now written, with the boundary that a run paused
+                                              during its debounce restarts and closes normally
+```
+
+**A register is a claim about the world and ages like one.** These sat here as open while three of
+them were not, and the cost is real: another session read them, went to repair what was already
+repaired, and spent the time finding that out. The counts at the top of this file are rewritten by a
+run; the prose entries are not, and nothing re-asks them.
+
+That is a gap in this instrument, not in the findings — and it is the second time tonight that a
+recorded claim outlived what it described. The other was two battles asserting against records that
+had already decided the opposite (286).
 
 ## The register's own shape, measured
 
