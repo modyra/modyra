@@ -170,6 +170,19 @@ test("a form somebody has chosen things in is one the auditor has nothing to say
   await page.locator('[role="option"]').first().click();
   await settled(page);
 
+  // Reopened last, and both halves of that matter.
+  //
+  // Choosing a day is what closes a datepicker, and a closed popup holds no cells at all —
+  // `a-calendar-behind-a-closed-picker` established that and the renderer keeps it: forty-two
+  // gridcells announced inside a picker nobody opened are a control offered to a screen reader that
+  // is not there. So the chosen day exists and is off screen, and auditing it means looking while it
+  // is on screen, which is the only moment a person sees it either.
+  //
+  // Last, because opening anything else light-dismisses this one. Reopening before the select left
+  // the page with the calendar closed again and the audit back where it started.
+  await page.locator('[data-form="k-datepicker"] .mdy-datepicker__toggle').first().click();
+  await settled(page);
+
   // The control: the surfaces this state exists for are on the page. A clean audit of a form where
   // nothing was chosen would be clean for the wrong reason, which is exactly how the three states
   // above stayed green while this pair was failing.
