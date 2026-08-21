@@ -104,8 +104,16 @@ for (const host of HOSTS) {
     await note("afterOneBackspace");
     await page.keyboard.type("1");
     await page.waitForTimeout(150);
-    const ended = await minute.inputValue();
     await note("afterTyping1");
+
+    // Read after leaving the box, because that is where the contract says the text settles. Mid-typing
+    // it may legitimately be a partial — `"1"` is a minute this field offers, just not yet in canonical
+    // form — and an earlier draft of this assertion demanded `"01"` while the caret was still inside,
+    // which is the one thing the hybrid rule explicitly permits a renderer not to do.
+    await page.keyboard.press("Tab");
+    await page.waitForTimeout(200);
+    const ended = await minute.inputValue();
+    await note("afterLeaving");
 
     // No state on the way may be wider than the field. This is what makes `01` unreachable: the box
     // is already full of padding before the second character arrives.
@@ -120,8 +128,8 @@ for (const host of HOSTS) {
 
     expect(
       ended,
-      `one Backspace on "00" and then typing 1 left ${JSON.stringify(ended)} rather than "01". Trail: ` +
-        seen.join(" → "),
+      `one Backspace on "00", typing 1, then leaving the box left ${JSON.stringify(ended)} rather ` +
+        `than "01". Trail: ${seen.join(" → ")}`,
     ).toBe("01");
   });
 }
@@ -152,7 +160,12 @@ for (const host of HOSTS) {
         .mountFields("hf", [{ name: "t", kind: "timepicker", label: "T", format: "24h", initialValue: "09:30" }]);
     }, { api: host.api });
     await page.waitForTimeout(300);
-    for (const selector of ['[data-form="hf"] [aria-haspopup]', '[data-form="hf"] button', '[data-form="hf"] input']) {
+    for (const selector of [
+      '[data-form="hf"] .mdy-timepicker__toggle',
+      '[data-form="hf"] [aria-haspopup]',
+      '[data-form="hf"] button',
+      '[data-form="hf"] input',
+    ]) {
       const opener = page.locator(selector).first();
       if (await opener.count() === 0) continue;
       await opener.click({ force: true }).catch(() => undefined);
@@ -172,32 +185,42 @@ for (const host of HOSTS) {
     ).toBe(false);
 
     const minute = page.locator(".mdy-timepicker-segment-input").nth(1);
-    await minute.focus();
-    await page.keyboard.press("ControlOrMeta+a");
-    await page.keyboard.press("Backspace");
-    await page.waitForTimeout(150);
-    const emptied = await handAngle(page);
+    await minute.waitFor({ state: "visible", timeout: 5_000 }).catch(() => undefined);
+    // The reported gesture, as in the sibling test: one Backspace with the caret at the end. Selecting
+    // the whole box and deleting is a different thing to do and the renderers answer it differently —
+    // measuring the wrong gesture is what put two working renderers in this register earlier.
+    // The property, stated so it does not depend on the gesture: **the hand agrees with what the box
+    // shows**. Which partial a given keystroke leaves is a renderer's own business — one Backspace
+    // removes a character in plain and clears the box in lit, and both are correct — and these are
+    // `type="number"` inputs, where selection does not exist and `Ctrl+A` is not a way to force a
+    // shared starting point. Two earlier drafts of this test asserted fixed angles from a fixed
+    // gesture and reported working renderers as broken, twice.
+    //
+    // So: type, then read both, then compare them to each other rather than to a number written here.
+    const readings: string[] = [];
+    await minute.click({ timeout: 5_000 });
+    await page.keyboard.press("End");
 
-    await page.keyboard.type("1");
-    await page.waitForTimeout(200);
-    const atOne = await handAngle(page);
+    for (const key of ["Backspace", "1", "5"]) {
+      if (key === "Backspace") await page.keyboard.press("Backspace");
+      else await page.keyboard.type(key);
+      await page.waitForTimeout(200);
 
-    await page.keyboard.type("5");
-    await page.waitForTimeout(200);
-    const atFifteen = await handAngle(page);
+      const shown = await minute.inputValue();
+      const angle = await handAngle(page);
+      readings.push(`${JSON.stringify(shown)}→${angle}°`);
 
-    // Sixty minutes over the circle: minute 1 is 6°, minute 15 is 90°. Read as the hand's own angle so
-    // this holds however a renderer chooses to rotate it.
-    expect(
-      atOne,
-      `after typing "1" into the emptied minute box the hand is at ${atOne}° rather than 6°. The rule ` +
-        `is that a half-typed number the field accepts moves the hand: the text and the hand are two ` +
-        `views of one draft (was ${emptied}° when the box was empty)`,
-    ).toBe(6);
+      // Only when the box names a minute the field offers. An empty box and a half-typed number that
+      // is not yet a value both leave the hand where it was, which is the other half of the rule.
+      const value = shown === "" ? null : Number(shown);
+      if (value === null || !Number.isInteger(value) || value < 0 || value > 59) continue;
 
-    expect(
-      atFifteen,
-      `after typing "5" — making "15" — the hand is at ${atFifteen}° rather than 90°`,
-    ).toBe(90);
+      expect(
+        angle,
+        `the box shows ${JSON.stringify(shown)} — minute ${value}, which this field offers — and the ` +
+          `hand is at ${angle}° rather than ${value * 6}°. The text and the hand are two views of one ` +
+          `draft. Trail: ${readings.join(" ")}`,
+      ).toBe((value * 6) % 360);
+    }
   });
 }

@@ -47,7 +47,16 @@ async function openPicker(page: import("@playwright/test").Page, host: (typeof H
       .mountFields("dv", [{ name: "t", kind: "timepicker", label: "T", format: "24h" }]);
   }, { api: host.api });
   await page.waitForTimeout(300);
-  for (const selector of ['[data-form="dv"] [aria-haspopup]', '[data-form="dv"] button', '[data-form="dv"] input']) {
+  // The declared toggle first. A generic `[aria-haspopup]` sweep matches more than one control in
+  // some renderers, so the loop presses a second thing and leaves the popup half-open — which reads
+  // as the renderer never focusing anything. Found once and fixed in one file of three; this is the
+  // other two.
+  for (const selector of [
+    '[data-form="dv"] .mdy-timepicker__toggle',
+    '[data-form="dv"] [aria-haspopup]',
+    '[data-form="dv"] button',
+    '[data-form="dv"] input',
+  ]) {
     const opener = page.locator(selector).first();
     if (await opener.count() === 0) continue;
     await opener.click({ force: true }).catch(() => undefined);

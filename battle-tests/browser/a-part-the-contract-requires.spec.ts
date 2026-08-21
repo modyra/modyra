@@ -7,8 +7,8 @@ import { MDY_WIDGET_CONTRACTS, MDY_WIDGET_KINDS, overlayOnlyParts, staticParts }
  * `MDY_WIDGET_CONTRACTS` is not a list of kinds. A kind carries seven things — `kind`, `rootClasses`,
  * `parts`, `structure`, `presentationClasses`, `variants`, `capabilities` — and the anatomy is split
  * across two of them. `parts` says what a part is made of: its classes, its states, its attributes
- * and, for 31 of the 249, the ARIA role it answers to. `structure` says where it sits and whether it
- * has to be there: every one of the 249 nodes declares `optional`.
+ * and, for 32 of the 252, the ARIA role it answers to. `structure` says where it sits and whether it
+ * has to be there: every one of the 252 nodes declares `optional`.
  *
  * Read together they are unambiguous about `select.trigger`:
  *
@@ -72,7 +72,10 @@ test("the contract declares the trigger mandatory, in the half of it that says s
   expect(trigger.role, "the contract's select trigger declares no role").toBe("combobox");
 
   const nodes = Object.values(CONTRACTS).flatMap((kind) => kind.structure.nodes);
-  expect(nodes.length, "the contract shrank; the counts in this spec describe a surface that is gone").toBe(249);
+  // Pinned in both directions on purpose: a part removed and a part added are both reasons to
+  // re-read the two paragraphs above, which describe this anatomy by number. It moved 249 → 252
+  // when the timepicker declared its period option and its two dimming parts.
+  expect(nodes.length, "the contract moved; the counts in this spec describe a different surface").toBe(252);
 
   // Optionality is where the contract keeps it: on the structure node, not on the part record. Every
   // node has it, so a part that does not say `optional: true` is one the contract requires.
