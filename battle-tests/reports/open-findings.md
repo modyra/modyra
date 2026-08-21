@@ -18767,6 +18767,48 @@ renderer and not the other.
 answer a pointer-capture question, so 325's substance holds, but *"no Angular tier at all"* is too
 strong and should not reach the user in that form.
 
+## 329 — The dial omits what the calendar draws, and the contract cannot say "unavailable" at all (S2, UI-009)
+
+Two findings, and the second is why the first cannot be repaired yet.
+
+**a. Two widgets answer one question differently.** The calendar draws every day and marks the ones
+that cannot be chosen; the dial simply leaves them out.
+
+```
+datepicker cell    { iso, day, inMonth, selected, focused, disabled }    ← drawn, and marked
+dial number        { value, label, index, ring }                          ← no availability at all
+timepickerDialNumbers("minute","24h",{minuteStep:15})   →   4 of 12 positions
+```
+
+Verified earlier that the calendar's `disabled` agrees with `minDate`/`maxDate` on all 42 cells. So
+the pattern exists, is correct, and one widget follows it. **Omission loses what marking keeps**: a
+person seeing four numbers on a clock face cannot tell whether the field takes quarter hours or
+whether the widget is broken.
+
+**b. And the contract has no way to declare a stretch unavailable.**
+
+```ts
+MdyTimeGranularity   { minuteStep?, hourStep?, windows? }
+MdyTimeWindow        { from, to, minuteStep }      ← always offers something
+```
+
+`minuteStep` must divide 60, so every window offers at least the hour. **There is no shape for "no
+times here"** — not a periodic thinning, an actual closure. A field that takes appointments between
+09:00 and 17:00 cannot be declared today, and that is the ordinary case for a time picker.
+
+So the drawing the user asked for — dimming the unavailable arcs — is blocked on a concept the
+contract does not have, not on a renderer.
+
+**And the two exclusions want two different drawings**, which is the part most likely to be built
+wrong:
+
+- a **step** is periodic — 15 minutes is 4 of 12 positions, scattered. Drawing it as an arc produces
+  twelve slivers and says nothing;
+- a **closure** is contiguous — 09:00–17:00 is a span. That is an arc, and only on the **hour** face:
+  on the minute face a window decides which step applies at the current hour, which is thinning again.
+
+**Arcs belong to the hour face and to closures. Dimming belongs to both faces and to both.**
+
 ## The register's own shape, measured
 
 ```
