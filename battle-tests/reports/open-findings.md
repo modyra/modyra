@@ -19255,3 +19255,51 @@ deadband all satisfy it and a bare threshold satisfies none. Registered in `know
 
 **Blocks 2.4.0 in my judgement.** The fix is contained; shipping a dial that flickers under a resting
 finger is worse than a short delay, and this is the affordance the whole batch was about.
+
+## 339 — The hour changes while the finger holds still (S1, UI-011/A11Y-001 — RELEASE BLOCKER)
+
+338 was fixed on the radius and the user immediately reported the defect again: *"anche il tremolio
+del dito faccia mutare orario. sono molto confuso da quello che hai detto rispetto a quello che
+noto."* They are right, and the confusion is mine — I fixed one axis and reported it as the fix.
+
+`timepickerDialRing` was given memory. `timepickerDialPick` answers the same kind of question — which
+of several evenly spaced things is the pointer nearest — with the same bare comparison, and was left
+alone. Twelve hours 30° apart put the boundary at 15°, and at a hand of 100 one degree is 1.75px of
+arc:
+
+```
+13°:12  14°:12  15°:1  16°:1  15°:1  14°:12  15°:1  16°:1  17°:1  16°:1  15°:1
+→ the hour changed 3 times across a 7px tremor
+
+a one-degree wander, worst case anywhere on the face: 4 changes
+```
+
+**A one-degree wander is under two pixels.** The ring fix removed the half of the flicker a person
+notices least and left the half that changes the time.
+
+**The repair is the rule already proven on the radius, in the same words**: *you leave what you have
+selected when you pass the boundary by a quarter of the spacing.*
+
+```
+radius   edge 80  ± ringGap/4 (10)      → 70 / 90        shipped in c6fd3b4d
+hours    boundary 15° ± 30°/4 (7.5°)    → 7.5° / 22.5°   simulated: tremor 0 changes, deliberate 1
+minutes  boundary  3° ±  6°/4 (1.5°)    → 1.5° / 4.5°    simulated: tremor 0 changes, deliberate 1
+```
+
+The form is identical because the question is identical. Stating it once is what stops the next axis
+from being written without memory again — and there was a next axis, which is this finding.
+
+Scales with the face rather than being a number of degrees: a denser face gets a proportionally
+narrower deadband, still wider than a tremor and still narrower than an intention.
+
+**Battle**: `an-hour-that-changes-while-you-hold-still.battle.test.mjs`. Threads `previous` because a
+renderer already holds the value it is drawing — the draft is what the hand is drawn from — so, as
+with the ring, the argument is something the caller has in hand. It asserts the tremor at one angle,
+then at **every** degree of the face, then the same on a minute face, and — the assertion that keeps
+the fix honest — that a deliberate move to the next number still changes the value exactly once. A fix
+that stops the tremor by refusing to change at all passes everything except that one.
+
+**Process note worth keeping.** 338's battle asserted the ring and only the ring, so it went green on a
+dial that still flickered under the user's finger. The measurement was correct and the *claim* was too
+narrow — a green that answered a smaller question than the one asked. `esecutore` measured a real
+pointer on three hosts and got zero changes, which was true and still not the answer.
