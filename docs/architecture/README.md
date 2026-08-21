@@ -139,6 +139,8 @@ absent section reads as an oversight, and "no security impact" is a finding.
 - [ADR 0122: Tab moves inside a popup that has controls of its own](0122-a-picker-a-keyboard-can-commit.md) — Tab dismissed every overlay, so a timepicker's confirm button was unreachable and its only commit path was a pointer
 - [ADR 0123: A default is published, or it is copied](0123-a-default-is-published-or-it-is-copied.md) — four renderers each spelled the clock default out and two had already drifted, while the view a picker opens in was a capability no document could reach
 - [ADR 0124: The public pitch is a single claim set](0124-the-public-pitch-is-a-single-claim-set.md) — three surfaces answered "what is Modyra" three ways, and the positioning that could have stopped it lived in an untracked directory
+- [ADR 0125: A chip strip is one thing to a keyboard](0125-a-chip-strip-is-one-thing-to-a-keyboard.md) — twelve choices cost twenty-six tab stops, and reordering was being built on the strip that the fix for it has to rebuild
+- [ADR 0126: Focus is placed, not dropped](0126-focus-is-placed-not-dropped.md) — removing a chip returned a keyboard user to the top of the page, and the pin that found it asserted a threshold rather than a rule
 - [ADR 0092: A condition travels with the form](0092-a-condition-travels-with-the-form.md) — `when` and `asyncWhen` were closures, so a schema carrying one was not data and the document half could not say what the typed half said
 
 ## Security-relevant records
