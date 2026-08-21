@@ -258,7 +258,7 @@ export class MdyTimepickerClockComponent {
     const angle = this.dragAngle();
     if (angle === null) return null;
     const ring = this.dragRing();
-    const pick = timepickerDialPick(angle, this.dragField, this.format(), ring, this.steps());
+    const pick = timepickerDialPick(angle, this.dragField, this.format(), ring, this.steps(), this.faceValue());
     if (pick === null) return null;
     return timepickerDialGhost(angle, pick, {
       ring,

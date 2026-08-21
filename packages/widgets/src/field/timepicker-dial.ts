@@ -122,6 +122,7 @@ export function timepickerDialPick(
   format: MdyTimeFormat = "12h",
   ring: "outer" | "inner" = "outer",
   steps: MdyTimeSteps = MDY_EVERY_TIME,
+  previous?: number,
 ): MdyTimepickerDialPick | null {
   const candidates: MdyTimepickerDialPick[] = [];
   if (field === "hour") {
@@ -148,10 +149,26 @@ export function timepickerDialPick(
   if (candidates.length === 0) return null;
 
   const target = ((angle % 360) + 360) % 360;
+  const apartFrom = (at: number): number => Math.abs(((target - at + 540) % 360) - 180);
+
+  // The same rule the ring answers on the other axis, and for the same reason. Twelve hours 30°
+  // apart put the boundary halfway between two of them, and at a hand of 100 one degree is 1.75px
+  // of arc — so a finger that trembles crosses it repeatedly and the hour changes several times
+  // while the hand is, to its owner, still. Nearest-value is the right answer to *which number is
+  // this* and the wrong one to *should the number change*.
+  //
+  // Leaving the number in hand takes passing the boundary by a quarter of the spacing, which has to
+  // be a fraction of the spacing rather than a count of degrees: minutes sit 6° apart where hours
+  // sit 30°, and a margin that suits one is either nothing or everything on the other.
+  if (previous !== undefined) {
+    const held = candidates.find((candidate) => candidate.value === previous);
+    if (held && apartFrom(held.angle) <= (360 / candidates.length) * 0.75) return held;
+  }
+
   let best = candidates[0]!;
   let bestDistance = Number.POSITIVE_INFINITY;
   for (const candidate of candidates) {
-    const apart = Math.abs(((target - candidate.angle + 540) % 360) - 180);
+    const apart = apartFrom(candidate.angle);
     // `<=` rather than `<`, and the candidates run clockwise, so a tie takes the later one.
     if (apart <= bestDistance) {
       bestDistance = apart;

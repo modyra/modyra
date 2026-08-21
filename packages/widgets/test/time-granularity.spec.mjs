@@ -823,3 +823,59 @@ test("a face with one ring answers the same however it is asked", () => {
     }
   }
 });
+
+// ─── a number that does not change under a tremor ────────────────────────────
+
+/** Walks a wander and reports how many times the value changed. */
+function changesAcross(field, format, steps, angles) {
+  let previous = timepickerDialPick(angles[0], field, format, "outer", steps)?.value;
+  let changes = 0;
+  for (const angle of angles.slice(1)) {
+    const now = timepickerDialPick(angle, field, format, "outer", steps, previous)?.value;
+    if (now !== previous) changes += 1;
+    previous = now;
+  }
+  return { changes, previous };
+}
+
+test("a tremor at the boundary between two numbers does not change the value", () => {
+  // Twelve hours 30° apart put the boundary at 15°, and at a hand of 100 one degree is 1.75px of
+  // arc — so a finger that trembles crosses it repeatedly and the hour changes several times while
+  // the hand is, to its owner, still. Measured on the shipped build: three changes across 7px.
+  assert.equal(changesAcross("hour", "12h", undefined, [13, 14, 15, 16, 15, 14, 15, 16, 17, 16, 15]).changes, 0);
+});
+
+test("no one-degree wander changes the value twice, anywhere on either face", () => {
+  // Swept rather than sampled: the boundary is wherever two numbers meet, and on a minute face that
+  // is every 6°. The margin has to be a fraction of the spacing — a count of degrees that suits
+  // hours is either nothing or everything on minutes.
+  const worst = [];
+  for (const [field, format] of [["hour", "12h"], ["hour", "24h"], ["minute", "24h"]]) {
+    for (let centre = 0; centre < 360; centre += 1) {
+      const wander = [centre, centre + 1, centre - 1, centre + 0.5, centre - 1, centre + 1, centre];
+      const { changes } = changesAcross(field, format, undefined, wander);
+      if (changes > 1) worst.push(`${field}/${format} at ${centre}°: ${changes} changes`);
+    }
+  }
+  assert.deepEqual(worst.slice(0, 5), []);
+});
+
+test("a deliberate move to the next number still lands, in one change", () => {
+  // What a fix that eliminated flicker by refusing to change at all would fail, and the two above
+  // would not.
+  for (const [field, format, span] of [["hour", "12h", 30], ["hour", "24h", 30], ["minute", "24h", 6]]) {
+    const angles = [];
+    for (let a = 0; a <= span; a += 0.5) angles.push(a);
+    const { changes } = changesAcross(field, format, undefined, angles);
+    assert.equal(changes, 1, `${field}/${format} across ${span}°`);
+  }
+});
+
+test("a granulated face keeps the rule at its own spacing", () => {
+  // Four minutes 90° apart: the margin is a quarter of *that*, not of the ungranulated 6°.
+  const quarters = { minuteStep: 15 };
+  assert.equal(changesAcross("minute", "24h", quarters, [44, 45, 46, 45, 44, 46, 45]).changes, 0);
+  const angles = [];
+  for (let a = 0; a <= 90; a += 1) angles.push(a);
+  assert.equal(changesAcross("minute", "24h", quarters, angles).changes, 1, "and a deliberate move still lands");
+});

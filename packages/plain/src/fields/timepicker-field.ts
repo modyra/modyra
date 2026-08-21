@@ -318,7 +318,7 @@ export function renderTimepickerField(
    */
   function showGhost(angle: number, ring: "outer" | "inner", reach: number, state: { format: MdyTimeFormat; focusedField: "hour" | "minute"; draft: { hour: number; minute: number; period: "AM" | "PM" } }): void {
     const steps = timeStepsAt(f.granularity, to24Hour(state.draft));
-    const pick = timepickerDialPick(angle, state.focusedField, state.format, ring, steps);
+    const pick = timepickerDialPick(angle, state.focusedField, state.format, ring, steps, timepickerSelectedDialValue(state.focusedField, state.draft, state.format));
     const ghost = pick && timepickerDialGhost(angle, pick, {
       ring,
       within: timepickerDialTolerance(ring, handLength()),
