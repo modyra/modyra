@@ -18,7 +18,7 @@ import { MDY_STATE_MODIFIERS, stateClass, type MdyStateName } from "./state.js";
  * emits that panel with no role, which is a conforming renderer under 2 and a non-conforming one
  * here — the case this number exists to make visible rather than to let pass.
  */
-export const MDY_WIDGET_CONTRACT_VERSION = 3 as const;
+export const MDY_WIDGET_CONTRACT_VERSION = 4 as const;
 
 /** Semantic element categories that presenters can map to their native rendering API. */
 export type MdyWidgetSemanticElement =

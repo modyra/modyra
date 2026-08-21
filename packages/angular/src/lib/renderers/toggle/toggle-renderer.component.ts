@@ -17,7 +17,7 @@ import { MdyInlineErrorIconComponent } from "../../control/inline-error-icon.com
     "[class.mdy-renderer--touched]": "touched()",
   },
   template: `
-    <label class="mdy-toggle">
+    <div class="mdy-toggle">
       <input
         type="checkbox"
         role="switch"
@@ -31,11 +31,11 @@ import { MdyInlineErrorIconComponent } from "../../control/inline-error-icon.com
         [attr.aria-label]="controlAriaLabel()"
         [mdyPart]="controlPart()"
       />
-      <span class="mdy-toggle__track" aria-hidden="true">
-        <span class="mdy-toggle__thumb"></span>
-      </span>
       @if (label()) {
-        <span class="mdy-toggle__label">
+        <label class="mdy-toggle__label" [for]="fieldId">
+          <span class="mdy-toggle__track" aria-hidden="true">
+            <span class="mdy-toggle__thumb"></span>
+          </span>
           {{ label() }}
           @if (isRequired()) {
             <span class="mdy-label__required" aria-hidden="true">*</span>
@@ -43,9 +43,9 @@ import { MdyInlineErrorIconComponent } from "../../control/inline-error-icon.com
           @if (inlineErrorShown()) {
             <mdy-inline-error-icon [errorText]="inlineErrorText()" />
           }
-        </span>
+        </label>
       }
-    </label>
+    </div>
     @if (errorsRendered()) {
       <mdy-error-list [fieldId]="fieldId" [errors]="errors()" />
     } @else if (supportingText(); as st) {

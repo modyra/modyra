@@ -35,7 +35,7 @@ export class MdyToggleFieldElement extends MdyFieldElement<boolean> {
     this.syncStateClasses(handle);
     const inputAttrs = this.fieldController?.view().parts.input.attributes;
     return html`
-      <label class="${this.partClass("inputWrapper")}">
+      <div class="${this.partClass("inputWrapper")}">
         <input
           id=${this.fieldId}
           class="${this.partClass("control")}"
@@ -58,18 +58,18 @@ export class MdyToggleFieldElement extends MdyFieldElement<boolean> {
               ? this.fieldController.dispatch({ type: "blur" })
               : handle.markAsTouched()}
         />
-        <span class="${this.partClass("track")}" aria-hidden="true">
-          <span class="${this.partClass("thumb")}"></span>
-        </span>
         ${this.label
-          ? html`<span class="${this.partClass("label")}">
+          ? html`<label class="${this.partClass("label")}" for=${this.fieldId}>
+              <span class="${this.partClass("track")}" aria-hidden="true">
+                <span class="${this.partClass("thumb")}"></span>
+              </span>
               ${this.label}
               ${handle.required()
                 ? html`<span class="mdy-label__required" aria-hidden="true">*</span>`
                 : nothing}
-            </span>`
+            </label>`
           : nothing}
-      </label>
+      </div>
       ${this.renderErrors(handle)}
       ${this.renderSupportingText()}
     `;

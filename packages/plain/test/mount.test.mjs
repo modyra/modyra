@@ -454,10 +454,16 @@ test("toggle preserves the widget input and adds a visual track and thumb", () =
   const host = document.createElement("div");
   document.body.append(host);
   const mounted = mountMdyForm(host, [{ name: "enabled", kind: "toggle", label: "Enabled" }], { submitLabel: null });
-  // The anatomy the catalogue declares, so the shipped themes style both identically.
-  assert.ok(host.querySelector("label.mdy-toggle > input[type=checkbox]"));
-  assert.ok(host.querySelector("label.mdy-toggle > .mdy-toggle__track > .mdy-toggle__thumb"));
-  assert.ok(host.querySelector("label.mdy-toggle > .mdy-toggle__label"));
+  // The anatomy the catalogue declares, so the shipped themes style both identically. The wrapper is
+  // a container and not a `<label>`: a native label forwards a click from anywhere inside it, so the
+  // empty remainder of the row was a target too. The words carry the association instead.
+  assert.ok(host.querySelector("div.mdy-toggle > input[type=checkbox]"));
+  // The track sits inside the words' label, which is what keeps the drawn switch a pointer
+  // target once the wrapper is inert: the native input is visually hidden.
+  assert.ok(host.querySelector("div.mdy-toggle > label.mdy-toggle__label > .mdy-toggle__track > .mdy-toggle__thumb"));
+  const words = host.querySelector("div.mdy-toggle > label.mdy-toggle__label");
+  assert.ok(words, "the words beside the box are the label");
+  assert.equal(words.htmlFor, host.querySelector("input[type=checkbox]").id, "and they point at the control");
   mounted.dispose();
   host.remove();
 });
