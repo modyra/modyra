@@ -33,11 +33,24 @@ const settled = async (page: import("@playwright/test").Page) => {
   );
 };
 
-/** Type into a picker, leave it, and read back everything a person could notice. */
+/**
+ * Type into a picker, leave it, and read back everything a person could notice.
+ *
+ * A timepicker is mounted **asking for the twelve-hour clock**, because that is the notation every
+ * assertion in this file is about. It is not the default: ADR 0116 made every renderer default to
+ * 24-hour, and its Consequences say plainly that a form which showed `02:30 PM` now shows `14:30`.
+ * These mounts declared no format and asserted the twelve-hour answers, so they were pinning the
+ * premise 0116 reversed — a spec outliving its contract, the same shape as the Tab binding.
+ *
+ * They could not simply be corrected until now: 0116 recorded that a document had no way to ask for
+ * either clock, and deliberately left the slot for a later batch. `format` is that slot.
+ */
 async function typeAndLeave(page: import("@playwright/test").Page, kind: string, text: string, id: string) {
   await page.evaluate(
     ({ mountId, declared }) => window.battle.mountFields(mountId, [declared] as never),
-    { mountId: id, declared: { name: "f", kind, label: "F" } },
+    { mountId: id, declared: kind === "timepicker"
+        ? { name: "f", kind, label: "F", format: "12h" }
+        : { name: "f", kind, label: "F" } },
   );
   await settled(page);
 
