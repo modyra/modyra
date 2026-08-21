@@ -19907,3 +19907,57 @@ without a single test objecting. The cheapest fix is to extend the type-surface 
 **Reassuring half, and worth saying to the user**: their directives touch **no DOM at all**. The
 anatomy rebuild — options leaving the closed field, `searchButton` retiring, chips moving — cannot
 break them. Only a change to the component surface can, and that is now named rather than hoped for.
+
+## 352 — The chip is a caption where the contract declares a control (S1, UI-011/A11Y-001 — the UX perimeter)
+
+Asked for directly: *"deve esserci anche il counter nelle chips del multi. valuta il perimetro UIX a 360
+gradi."* So this is the perimeter, measured against the parts the contract already declares rather than
+against a picture invented here.
+
+**The count is there and it is right** — in plain, after the migration in flight:
+
+```html
+<span class="mdy-chip__label">Opzione A</span><span class="mdy-chip__count">3</span>
+```
+
+`optionCount` declares `mdy-chip__count`, so three of one option reads as one chip saying three rather
+than as three chips or as one that lies. Lit and Angular do not draw it yet: both answer `null`.
+
+**What the contract also declares and nobody draws:**
+
+```
+optionStep    mdy-chip__btn     the affordance that makes the 3 a 2      drawn nowhere
+optionCheck   mdy-chip__check                                           drawn nowhere
+chip states   selected, removable                                       no remove control
+```
+
+And the chip is a `<span>` with `tabIndex: -1` in all three. **A keyboard never arrives at it**, so it
+cannot be removed, cannot be stepped, and cannot be reordered — whatever affordances are eventually
+drawn on it. The reordering work assumes a chip a person can reach; there is none.
+
+**A control that shows a number and offers no way to change it** asks somebody to reopen the popup,
+find the row again among the others, and press a different button there — the journey the chips strip
+exists to remove.
+
+### The perimeter, as a list
+
+Measured across empty / filled / required / disabled / readonly:
+
+```
+count on the chip           plain ✓   lit ✗   angular ✗
+chip reachable by keyboard  none
+remove from the chip        none — `removable` is declared and has no affordance
+step a count from the chip  none — `optionStep` is declared and drawn nowhere
+accessible name on a chip   none — a reader hears "Opzione A 3" with nothing saying which is which
+readonly visible            none (finding 350)
+required marker             correct — present and hidden on optional fields
+aria-live region            present
+```
+
+**Battle**: `a-chip-that-is-only-a-label.spec.ts`, four assertions each failing a different half-answer
+— the count is drawn, the chip can be reached, a choice can be taken back from it, and a count can be
+changed from it. Classes read from `MDY_WIDGET_CONTRACTS` so they survive the rename in flight.
+
+**Nothing here is a new rule.** Every part named is already in the contract; what is missing is that
+anybody draws them. That is the whole of the perimeter answer: the redesign does not need to invent an
+anatomy, it needs to finish rendering the one that exists.
