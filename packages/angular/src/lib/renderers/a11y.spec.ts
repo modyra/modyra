@@ -119,7 +119,7 @@ describe("renderer accessibility (axe-core)", () => {
     ["timepicker", ".mdy-timepicker__toggle", ".mdy-timepicker__popup"],
     ["select", ".mdy-select__trigger", ".mdy-select__dropdown"],
     ["colors", ".mdy-colors__toggle-area", ".mdy-colors__dropdown"],
-    ["multiselect", ".mdy-multiselect__search-btn", ".mdy-multiselect__dropdown"],
+    ["multiselect", ".mdy-multiselect__trigger", ".mdy-multiselect__dropdown"],
   ];
 
   for (const [name, opener, popup] of POPUPS) {

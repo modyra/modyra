@@ -286,7 +286,7 @@ export function controlOf(root: Element): Element | null {
 
 /** The element that opens each composite's overlay, by the part the catalogue names. */
 export const OPENER = ".mdy-select__trigger, .mdy-datepicker__toggle, .mdy-timepicker__toggle,"
-  + " .mdy-colors__toggle-area, .mdy-multiselect__search-btn";
+  + " .mdy-colors__toggle-area, .mdy-multiselect__trigger";
 
 /**
  * Mount one widget of `kind` on the catalogue host, ready to drive into any declared state.

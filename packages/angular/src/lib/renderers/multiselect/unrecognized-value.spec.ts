@@ -47,12 +47,14 @@ describe("a multiselect holding a value its options do not contain", () => {
     expect(text(fixture)).not.toContain("imported-tag");
   });
 
-  it("adds nothing while the options have not loaded", () => {
+  it("still shows what is held while the options have not loaded", () => {
     const fixture = TestBed.createComponent(HostComponent);
     fixture.componentInstance.options.set([]);
     fixture.detectChanges();
 
-    expect(text(fixture)).not.toContain("imported-tag");
+    // An empty list is a list that has not arrived, not one that refuses the value. The strip shows
+    // what is held whether or not the catalogue can name it — which is what makes it removable.
+    expect(text(fixture)).toContain("imported-tag");
     expect(fixture.componentInstance.form.value().tags).toEqual(["food", "imported-tag"]);
   });
 });

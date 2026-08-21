@@ -63,13 +63,14 @@ describe("Angular renderers, against the widget DOM contract", () => {
  * measurement rather than a guess.
  */
 const OPENER = ".mdy-select__trigger, .mdy-datepicker__toggle, .mdy-timepicker__toggle,"
-  + " .mdy-colors__toggle-area, .mdy-multiselect__search-btn";
+  + " .mdy-colors__toggle-area, .mdy-multiselect__trigger";
 
 /** Parts that stay absent even with the overlay open. A state, not a waiver: `absentParts` asserts
  * they really are absent, so a renderer showing a no-results note over a populated list still fails. */
 const ABSENT_WHILE_OPEN: Partial<Record<MdyWidgetKind, string[]>> = {
   select: ["empty", "loading"],
-  multiselect: ["empty", "loading", "chips", "chip", "optionStep", "optionCount"],
+  // `chips` and `chip` are drawn now: the closed control shows what was chosen.
+  multiselect: ["empty", "loading", "optionStep", "optionCount"],
   datepicker: ["actions"],
   daterange: ["actions"],
 };

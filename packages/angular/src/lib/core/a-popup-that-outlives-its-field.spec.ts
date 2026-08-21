@@ -67,7 +67,7 @@ describe("a popup whose field leaves play", () => {
 
   it.each([
     ["timepicker", ".mdy-timepicker__toggle"],
-    ["multiselect", ".mdy-multiselect__search-btn"],
+    ["multiselect", ".mdy-multiselect__trigger"],
   ])("%s closes an open popup when the field leaves play", (_kind, opener) => {
     const { fixture, host } = mount(opener);
     expect(showing(host, opener)).toEqual({ panels: 1, announced: "true" });

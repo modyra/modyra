@@ -10,7 +10,7 @@ import { CATALOG_KINDS, CatalogHost, partsOf } from "./catalog-host.spec";
  * counts what an open widget really renders, so the sibling suite's green is a claim with a size.
  */
 const OPENER = ".mdy-select__trigger, .mdy-datepicker__toggle, .mdy-timepicker__toggle,"
-  + " .mdy-colors__toggle-area, .mdy-multiselect__search-btn";
+  + " .mdy-colors__toggle-area, .mdy-multiselect__trigger";
 
 describe("the open-state suite's reach", () => {
   it("resolves most of what only exists while open", () => {
@@ -58,7 +58,9 @@ describe("the open-state suite's reach", () => {
     const EXPECTED_ABSENT: Readonly<Record<string, readonly string[]>> = {
       // A note that appears when a search matches nothing, over a list that has results.
       select: ["empty"],
-      multiselect: ["empty"],
+      // The steppers and the count belong to counter mode, and this fixture is a toggle multiselect:
+      // an option is taken or not, so there is no quantity to show or to step.
+      multiselect: ["empty", "optionStep", "optionCount"],
       // This adapter's calendars navigate months and years through the header rather than through
       // their own pickers; the parts exist for renderers that draw them.
       datepicker: ["monthPicker", "monthCell", "yearPicker", "yearCell"],

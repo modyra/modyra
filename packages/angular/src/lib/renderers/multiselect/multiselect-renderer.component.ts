@@ -67,97 +67,69 @@ import type { MdyOverlayBranch, MdyOverlayOwner } from "../../core/overlay-contr
       [errorText]="inlineErrorText()"
     />
     <div class="mdy-multiselect" #wrapper [class.mdy-multiselect--open]="open()">
-
-    @if (label() || searchable()) {
-      <div class="mdy-multiselect__header">
-        @if (searchable()) {
-          <button
-            type="button"
-            class="mdy-multiselect__search-btn"
-            [id]="fieldId"
-            [mdyPart]="openerPart()"
-            [disabled]="isDisabled()"
-            (click)="toggleOverlay($event)"
-            (keydown)="onOverlayKeydown($event)"
-            [attr.aria-label]="i18n.searchOptionsLabel"
-            [attr.aria-invalid]="paintsAsInvalid()"
-            [attr.aria-disabled]="effectiveAriaDisabled()"
-            [attr.aria-readonly]="isReadonly() ? 'true' : null"
-            [attr.aria-describedby]="describedById(fieldId)"
-            [attr.aria-label]="controlAriaLabel()"
-          >
-            @if (effectiveLoading()) {
-              <mdy-icon name="LOADER" class="mdy-select__loader" style="font-size: 1rem;" />
-            } @else {
-              <mdy-icon name="SEARCH" />
-            }
-          </button>
-        }
-      </div>
-    }
-  </div>
-
-    <!-- The description belongs on the control the label names, which is the search button. A
-         reference on this group described the errors to a container the user never lands on. -->
-    <div
-      class="mdy-multiselect__options"
-      role="group"
-      [attr.aria-label]="controlAriaLabel()"
-      [attr.aria-disabled]="effectiveAriaDisabled()"
-    >
-      @for (opt of filteredOptions(); track opt.value) {
-        @if (optionTpl(); as tpl) {
-           <button
-            type="button"
-            [class]="chip.wrapper"
-            [disabled]="isDisabled()"
-            (click)="onToggle(opt.value)"
-          >
-            <ng-container
-              [ngTemplateOutlet]="tpl"
-              [ngTemplateOutletContext]="{ $implicit: opt, selected: isSelected(opt.value) }"
-            />
-          </button>
-        } @else {
-          @if (mode() === "multi") {
-            <div [class]="chipClasses(countOf(opt.value) > 0)" [title]="opt.label">
-              <button
-                type="button"
-                [class]="chip.step"
-                [disabled]="isDisabled() || countOf(opt.value) === 0"
-                (click)="decrement(opt.value)"
-                [attr.aria-label]="i18n.decrease"
-              >
-                <mdy-icon name="MINUS" />
-              </button>
-              <span [class]="chip.label">{{ opt.label }}</span>
-              <span [class]="chip.count">&times;{{ countOf(opt.value) }}</span>
-              <button
-                type="button"
-                [class]="chip.step"
-                [disabled]="isDisabled()"
-                (click)="increment(opt.value)"
-                [attr.aria-label]="i18n.increase"
-              >
-                <mdy-icon name="PLUS" />
-              </button>
-            </div>
-          } @else {
-            <button
-              type="button"
-              [class]="chipClasses(isSelected(opt.value))"
-              [disabled]="isDisabled()"
-              [title]="opt.label"
-              [attr.aria-pressed]="isSelected(opt.value)"
-              (click)="onToggle(opt.value)"
-              (blur)="markAsTouched()"
+      <!-- The control a person presses, holding what was chosen. The label names it and the
+           combobox role sits here, because this is what holds the field's value — a magnifier
+           beside the field carried the role and none of the value. -->
+      <button
+        type="button"
+        class="mdy-multiselect__trigger"
+        [id]="fieldId"
+        [mdyPart]="openerPart()"
+        [disabled]="isDisabled()"
+        (click)="toggleOverlay($event)"
+        (keydown)="onOverlayKeydown($event)"
+        [attr.aria-invalid]="paintsAsInvalid()"
+        [attr.aria-disabled]="effectiveAriaDisabled()"
+        [attr.aria-readonly]="isReadonly() ? 'true' : null"
+        [attr.aria-describedby]="describedById(fieldId)"
+        [attr.aria-label]="controlAriaLabel()"
+      >
+        <span class="mdy-multiselect__chips">
+          <!-- One chip per distinct value with how many, because a repeated value is a quantity:
+               incrementing takes one of something to three. One chip per entry would make undoing
+               one decision three separate removals. -->
+          @for (held of chosen(); track held.key) {
+            <span
+              [class]="chipClasses(true)"
+              tabindex="0"
+              role="group"
+              [attr.aria-label]="held.count > 1 ? held.label + ', ' + held.count : held.label"
             >
-              <mdy-icon name="CHECKMARK" [class]="chip.check" />
-              <span [class]="chip.label">{{ opt.label }}</span>
-            </button>
+              @if (mode() === "multi") {
+                <button
+                  type="button"
+                  [class]="chip.step"
+                  [attr.aria-label]="i18n.chipDecrementLabel"
+                  (click)="decrement(held.value); $event.stopPropagation()"
+                ><mdy-icon name="MINUS" /></button>
+              }
+              <span [class]="chip.label">{{ held.label }}</span>
+              <span [class]="chip.count" [hidden]="held.count <= 1">{{ held.count > 1 ? held.count : "" }}</span>
+              @if (mode() === "multi") {
+                <button
+                  type="button"
+                  [class]="chip.step"
+                  [attr.aria-label]="i18n.chipIncrementLabel"
+                  (click)="increment(held.value); $event.stopPropagation()"
+                ><mdy-icon name="PLUS" /></button>
+              }
+              <button
+                type="button"
+                [class]="chip.remove"
+                [attr.aria-label]="i18n.chipRemoveLabel"
+                (click)="onToggle(held.value); $event.stopPropagation()"
+              >&times;</button>
+            </span>
           }
+        </span>
+        @if (chosen().length === 0) {
+          <span class="mdy-multiselect__placeholder">{{ label() }}</span>
         }
-      }
+        @if (effectiveLoading()) {
+          <mdy-icon name="LOADER" class="mdy-select__loader" style="font-size: 1rem;" />
+        }
+        <span class="mdy-multiselect__arrow" aria-hidden="true"></span>
+      </button>
     </div>
 
     <mdy-overlay-panel
@@ -185,6 +157,7 @@ import type { MdyOverlayBranch, MdyOverlayOwner } from "../../core/overlay-contr
       />
       <div class="mdy-multiselect__options mdy-multiselect-overlay__grid">
         @for (opt of searchResults(); track opt.value; let i = $index) {
+          <div [class]="chip.wrapper">
           @if (mode() === "multi") {
             <div [class]="chipClasses(countOf(opt.value) > 0)">
               <button
@@ -213,9 +186,11 @@ import type { MdyOverlayBranch, MdyOverlayOwner } from "../../core/overlay-contr
             </div>
           } @else {
             <button type="button" [class]="chipClasses(isSelected(opt.value))" (click)="onOverlaySelect(opt.value)">
+              <mdy-icon name="CHECKMARK" [class]="chip.check" />
               <span [class]="chip.label">{{ opt.label }}</span>
             </button>
           }
+          </div>
         } @empty {
           <div class="mdy-multiselect-overlay__empty">
             @if (effectiveLoading()) {
@@ -324,7 +299,7 @@ export class MdyMultiselectComponent<TValue = string>
       // The action says whether focus comes back. Escape hands it to the button that opened the
       // list; Tab is already on its way elsewhere, and pulling it back traps the user in the field.
       if (action.restoreFocus) {
-        this.hostRef.nativeElement.querySelector(".mdy-multiselect__search-btn")?.focus();
+        this.hostRef.nativeElement.querySelector(".mdy-multiselect__trigger")?.focus();
       }
       return;
     }
@@ -401,6 +376,30 @@ export class MdyMultiselectComponent<TValue = string>
 
   protected onToggle(optValue: TValue): void {
     this.commitMultiselect({ type: "toggle", value: optValue });
+  }
+
+  /**
+   * What was chosen, one entry per distinct value with how many of it.
+   *
+   * Read from the value rather than from the option list, and never from the *filtered* one: the
+   * order the strip shows is the order the value has, and a strip reading what a search matches
+   * would empty itself as somebody typed.
+   */
+  protected readonly chosen = computed(() => {
+    const tally = new Map<string, { key: string; value: TValue; label: string; count: number }>();
+    for (const value of (this.value() ?? []) as readonly TValue[]) {
+      const key = this.optionKey(value);
+      const seen = tally.get(key);
+      if (seen) seen.count += 1;
+      else tally.set(key, { key, value, label: this.labelOf(value), count: 1 });
+    }
+    return [...tally.values()];
+  });
+
+  /** The words a chosen value is shown by, falling back to the value for one the options lost. */
+  private labelOf(value: TValue): string {
+    return this.effectiveOptions().find((o) => this.optionKey(o.value) === this.optionKey(value))?.label
+      ?? String(value);
   }
 
   protected countOf(optValue: TValue): number {
