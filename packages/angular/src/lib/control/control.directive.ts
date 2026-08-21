@@ -234,7 +234,21 @@ export abstract class MdyBaseControl<TValue = unknown> implements OnInit {
   protected readonly suffix = contentChild(MdySuffixDirective);
 
   /** Supporting text (helper text) provided via `mdySupportingText` directive. */
-  protected readonly supportingText = contentChild(MdySupportingTextDirective);
+  protected readonly projectedSupportingText = contentChild(MdySupportingTextDirective);
+
+  /**
+   * The line under the control, as a value rather than a projected template.
+   *
+   * Projection is how a hand-written host supplies it; this is how a **document** does. A field
+   * declaring `supportingText` had no route to the slot in this adapter, so the words existed in the
+   * contract and reached three renderers of four.
+   */
+  readonly supportingText = input<string | undefined>(undefined);
+
+  /** Whether anything at all wants the description slot — either route. */
+  protected readonly hasSupportingText = computed(
+    () => !!this.projectedSupportingText() || !!this.supportingText(),
+  );
 
   /**
    * Inert state served while `name`/`[field]` are still unresolved. Input
@@ -415,7 +429,7 @@ export abstract class MdyBaseControl<TValue = unknown> implements OnInit {
    */
   protected descriptionId(fieldId: string): string | null {
     // Rendered in the branch the error list does not occupy, so the two are never both present.
-    return !this.errorsRendered() && this.supportingText()
+    return !this.errorsRendered() && this.hasSupportingText()
       ? defaultWidgetIdFactory.part(fieldId, "description")
       : null;
   }
@@ -460,7 +474,7 @@ export abstract class MdyBaseControl<TValue = unknown> implements OnInit {
         constraints: narrowConstraints(this.fieldState().constraints(), this.narrowedConstraints()),
         errorsVisible: this.errorsRendered(),
         // Supporting text is only emitted when a host projects some.
-        descriptionVisible: !!this.supportingText(),
+        descriptionVisible: this.hasSupportingText(),
       },
     ).control,
   );

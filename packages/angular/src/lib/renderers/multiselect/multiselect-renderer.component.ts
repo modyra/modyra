@@ -267,7 +267,7 @@ import type { MdyOverlayBranch, MdyOverlayOwner } from "../../core/overlay-contr
       <!-- How many are chosen, in the field's own description: the state, asked for rather than
            announced, and one of the conditions ADR 0127 lets the scrolling row exist under. -->
       <div class="mdy-supporting-text" [id]="descriptionId(fieldId)">
-        @if (supportingText(); as st) {
+        @if (projectedSupportingText(); as st) {
           <ng-container [ngTemplateOutlet]="st.template" />
         }
         {{ describedState() }}
