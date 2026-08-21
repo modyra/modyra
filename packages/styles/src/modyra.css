@@ -1275,7 +1275,7 @@
         pointer-events: none;
     }
 
-    .mdy-toggle:hover input:not(:disabled)+.mdy-toggle__track .mdy-toggle__thumb::after,
+    .mdy-toggle:hover:has(input:not(:disabled)) .mdy-toggle__track .mdy-toggle__thumb::after,
     .mdy-toggle:has(input:focus-visible) .mdy-toggle__track .mdy-toggle__thumb::after {
         transform: translate(-50%, -50%) scale(1);
         opacity: var(--mdy-toggle-state-layer-opacity, 0.12);

@@ -22,7 +22,17 @@ import { installDomGlobals } from "./support/dom-env.mjs";
 installDomGlobals();
 const { mountMdyForm } = await import("../dist/index.js");
 
-const css = readFileSync(new URL("../../styles/src/modyra.css", import.meta.url), "utf8");
+/**
+ * The foundation and every theme, read together.
+ *
+ * A theme restates some of these rules in its own idiom, so a relationship the foundation gets right
+ * can still be orphaned one file over — which is what happened: six rules across three themes
+ * outlived the same move, in a sweep that had looked at the foundation alone.
+ */
+const SHEETS = ["modyra.css", "modyra-modern.css", "modyra-material.css", "modyra-ios.css", "modyra-ionic.css"];
+const css = SHEETS
+  .map((sheet) => readFileSync(new URL(`../../styles/src/${sheet}`, import.meta.url), "utf8"))
+  .join("\n");
 
 /**
  * The selectors in the stylesheet that decide how a state is drawn.
@@ -40,19 +50,31 @@ function stateSelectors(kind) {
     && !selector.includes(":focus-visible"));
 }
 
+/**
+ * Rules this host cannot reach, and why — an exact set, so a new one cannot join it in silence.
+ *
+ * `--horizontal` is a variant the catalogue declares for a radio group's own part. Angular and Lit
+ * emit it from a `layout` input; this renderer has no such input and never writes the class, so a
+ * rule scoped to it selects nothing here for a reason that is about the renderer rather than about
+ * the relationship this file measures.
+ */
+const UNREACHABLE_HERE = [".mdy-radio-group--horizontal input[type=\"radio\"]:checked+.mdy-radio-circle"];
+
 /** The selector with its pseudo-elements dropped — `::after` is not a node `matches` can find. */
 const asNodeSelector = (selector) => selector.replace(/::[a-z-]+/g, "").trim();
 
 function mountBoolean(kind, { checked, disabled }) {
   const host = document.createElement("div");
   document.body.appendChild(host);
-  const mounted = mountMdyForm(host, [{ name: "flag", kind, label: "Flag" }], { submitLabel: null });
-  if (checked) mounted.form.f.flag.set(true);
+  // A radio group needs options to have anything to check; the booleans take none.
+  const options = kind === "radio" ? { options: [{ value: "a", label: "A" }, { value: "b", label: "B" }] } : {};
+  const mounted = mountMdyForm(host, [{ name: "flag", kind, label: "Flag", ...options }], { submitLabel: null });
+  if (checked) mounted.form.f.flag.set(kind === "radio" ? "a" : true);
   if (disabled) mounted.form.setDisabled("flag", () => true);
   return { host, mounted };
 }
 
-for (const kind of ["checkbox", "toggle"]) {
+for (const kind of ["checkbox", "toggle", "radio"]) {
   test(`every state rule for a ${kind} reaches the part it names`, async () => {
     const selectors = stateSelectors(kind);
     // The control on the measurement: a run that found no rules would pass without checking one.
@@ -71,6 +93,17 @@ for (const kind of ["checkbox", "toggle"]) {
       host.remove();
     }
 
-    assert.deepEqual(unmatched, [], `state rules that select nothing in a rendered ${kind}`);
+    const [expected, unexplained] = [
+      unmatched.filter((selector) => UNREACHABLE_HERE.includes(selector)),
+      unmatched.filter((selector) => !UNREACHABLE_HERE.includes(selector)),
+    ];
+    assert.deepEqual(unexplained, [], `state rules that select nothing in a rendered ${kind}`);
+    // The recorded set is exact in both directions: a rule that starts matching is a renderer that
+    // grew the variant, and leaving it listed would keep a stale exemption alive.
+    assert.deepEqual(
+      expected,
+      UNREACHABLE_HERE.filter((selector) => selectors.includes(selector)),
+      `a recorded exemption for ${kind} now matches and should be removed`,
+    );
   });
 }
