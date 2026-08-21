@@ -20,7 +20,7 @@
  * @source-inspection — **when** a package's source was last written is a fact about the source and
  * nowhere else. No published entry point carries its own build time, and none should: a bundle that
  * could report its own staleness would already have solved the problem. So this reads mtimes under
- * `packages/*/src` and reads nothing in them — it never opens a file, only asks the filesystem when
+ * every package's own `src` and reads nothing in them — it never opens a file, only asks the filesystem when
  * each was touched. That is the narrowest form of the exemption this suite allows, and it is the
  * reason the exemption exists rather than a use of it for convenience.
  */
@@ -65,12 +65,26 @@ const ROOT = fileURLToPath(new URL("../../", import.meta.url));
 const HOST = join(ROOT, "battle-tests/.tmp-browser");
 
 /**
- * The packages whose source the hosts bundle. Widgets and core reach them through the adapters.
+ * The packages whose source the hosts bundle, and the artefact each is bundled from.
  *
- * `angular` builds to `dist/fesm2022` through ng-packagr rather than through `tsc7`, so it goes stale
- * on its own schedule — it was stale seven times in one session before this guard covered it.
+ * Most go straight into the host: the host is rebuilt from their `src` every run, so the host's own
+ * mtime answers for them. `angular` does not. It is bundled from `dist/fesm2022`, which ng-packagr
+ * writes on its own schedule and which the browser tier's build script never produces — so its chain
+ * is `src → dist → host`, and a run that rebuilds the host while `dist` stays behind wears a stale
+ * adapter under a fresh page.
+ *
+ * Both links are checked for it. Checking only `src` against the host makes the guard *look* like it
+ * covers Angular while passing exactly the case it exists to catch, because rebuilding the host is
+ * what every run does anyway.
  */
-const SOURCES = ["core", "widgets", "styles", "plain", "lit", "angular"];
+const SOURCES = [
+  { name: "core" },
+  { name: "widgets" },
+  { name: "styles" },
+  { name: "plain" },
+  { name: "lit" },
+  { name: "angular", via: "dist" },
+];
 
 const SOURCE_KINDS = [".ts", ".mjs", ".js", ".css"];
 const BUILT_KINDS = [".js", ".mjs", ".css", ".html"];
@@ -83,10 +97,24 @@ const builtAt = newestUnder(HOST, BUILT_KINDS);
 if (builtAt === 0) process.exit(0);
 
 const stale = [];
-for (const name of SOURCES) {
+for (const { name, via } of SOURCES) {
   const sourceAt = newestUnder(join(ROOT, "packages", name, "src"), SOURCE_KINDS);
   if (sourceAt === 0) continue;
-  if (sourceAt > builtAt) stale.push({ name, behindBy: Math.round((sourceAt - builtAt) / 1000) });
+
+  // The artefact the host actually bundles. Where a package has an intermediate build, that build is
+  // what must be newer than the source; the host being newer than both says nothing about it.
+  const bundledAt = via === undefined ? builtAt : newestUnder(join(ROOT, "packages", name, via), BUILT_KINDS);
+  if (via !== undefined && bundledAt === 0) {
+    stale.push({ name, behindBy: 0, why: `has no ${via}/ to bundle` });
+    continue;
+  }
+  if (sourceAt > bundledAt) {
+    stale.push({
+      name,
+      behindBy: Math.round((sourceAt - bundledAt) / 1000),
+      why: via === undefined ? undefined : `${via}/ is older than src/`,
+    });
+  }
 }
 
 if (stale.length === 0) process.exit(0);
@@ -99,7 +127,8 @@ process.stderr.write(
     `bundle that is not what is in the tree — a passing spec would prove nothing.\n\n` +
     `  host built   ${when(builtAt)}\n` +
     stale
-      .map(({ name, behindBy }) => `  @modyra/${name}`.padEnd(24) + `changed ${behindBy}s later\n`)
+      .map(({ name, behindBy, why }) =>
+        `  @modyra/${name}`.padEnd(24) + (why === undefined ? `changed ${behindBy}s later` : `${why}, by ${behindBy}s`) + "\n")
       .join("") +
     `\nRebuild it, then run the suite again:\n\n  npm run battle:browser\n\n` +
     `(that script builds the host first; \`npx playwright test\` on its own does not)\n\n`,

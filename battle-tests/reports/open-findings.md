@@ -20099,6 +20099,111 @@ Owned by `esecutore`. Not recorded as allowed — the audit offers `--write` for
 would be the ratchet from finding 333 all over again: the number that only ever goes up because the
 first person to see it wrote it down.
 
+## 359 — The freshness guard never ran, and it would not have caught Angular if it had (S1, mine)
+
+Two defects in one file, both mine, and the second is the one that matters.
+
+**It crashed on every invocation.** `assert-fresh.mjs` did not parse:
+
+```
+SyntaxError: Unexpected identifier 'scripts'
+```
+
+A block comment described the directories it walks as `` `packages/*/src` ``, and the `*/` inside those
+backticks closes the comment. Everything after it was parsed as code. The guard has never executed a
+single check since it was written.
+
+**Nothing noticed, because of how it is wired.** `playwright.config.ts` runs it as
+`node assert-fresh.mjs && node serve-static.mjs`, and `reuseExistingServer: !process.env.CI` skips the
+whole command whenever a server is already listening on 4399. A dev server left up from an earlier run
+means the guard is never invoked, so its crash is silent. On CI, where nothing is listening, it would
+have taken the run down on the first use — a file that fails loudly in one environment and is skipped
+in the other looks working in exactly the place it is used most.
+
+**And the check it performs was the wrong one for the package it was written for.** The guard compares
+each package's `src` against the *host bundle*. Most packages are fine that way: the host is rebuilt
+from their source every run. Angular is not — it is bundled from `dist/fesm2022`, which ng-packagr
+writes and which `npm run battle:browser:ci` never builds:
+
+```
+"battle:browser:ci": build:core && build:styles && build:plain && tsc7 lit && build.mjs && …
+```
+
+No `build:angular` anywhere in it. So Angular's chain is `src → dist → host`, and the guard checked the
+outer link only. Demonstrated on a copy of the tree rather than reasoned:
+
+```
+angular src 20:00 · dist 10:00 · host 21:00     before   exit 0   ten hours stale, allowed
+                                                 after   exit 1   "dist/ is older than src/, by 36000s"
+angular src 22:00 · host 21:00                    both   exit 1   the case it was written for
+angular src 20:00 · dist 20:30 · host 21:00      after   exit 0   does not fire falsely
+```
+
+Rebuilding the host is what every run does anyway, so the outer link is always satisfied. The guard
+listed `angular` among the packages it covered — with a comment saying it had been stale seven times in
+one session — and passed precisely the case that made it necessary.
+
+Both fixed. The guard now runs, and on first execution it caught something real: `@modyra/lit changed
+36s later`, another session mid-edit.
+
+**What this costs the evening's readings.** Every measurement taken before Angular's `dist` was last
+built at 21:58 came from a bundle of unknown vintage. Findings [356](#356), [357](#357) and
+[358](#358) were each re-measured after that build and each stayed red, so they stand — but they stand
+on the re-run, not on the reading that produced them, and that is worth writing down rather than
+quietly relying on. The general lesson is the one this suite keeps relearning: **a guard that has never
+been observed to refuse is not evidence that there is nothing to refuse.** 333 was the same shape, and
+the answer there was the same — make it fail on purpose once.
+
+## 358 — One stylesheet, three vertical rhythms (S1, UI-009 UI-011)
+
+Asked for directly: *"accertati sempre che gli allineamenti siano coerenti, gli spazi e gli allineamenti
+devono avere simmetria e coerenza."* The horizontal half is kept everywhere. The vertical half is not
+kept anywhere.
+
+The same four fields, the same stylesheet, the gap between consecutive controls:
+
+```
+                     plain   lit   angular
+modyra.css (default)    84    60        56
+modyra-modern           56    64        56
+modyra-material         84    60        56
+modyra-ios              82    58        50
+modyra-ionic            76    52        48
+```
+
+Five sheets, five disagreements. `modern` is the one where plain and Angular agree and lit is the
+outlier; on the other four lit sits between them. There is no sheet on which all three agree.
+
+**Every renderer is internally coherent, which is why nothing caught it.** The per-renderer half of
+this spec is green in all three: within one form the gaps are equal to each other, every control's box
+starts at the same left edge and ends at the same right edge, and the labels start on that line too —
+`left 8 · right 1272 · labels 8`, on every sheet. So each renderer draws a tidy form. They draw three
+different tidy forms.
+
+This is invisible to any check that measures one renderer at a time, and that is every spec in
+`battle-tests/browser/` written before this one, including the ones I wrote this session. A
+per-renderer check passes three times over and the project still ships three forms. The contract is
+the thing that is supposed to make them one — `@modyra/widgets` is named in the project instructions as the complete
+framework-agnostic UI contract, and *"Angular must migrate without unapproved visual or behavioural
+variation; Lit and Plain must consume the same contract rather than redefine it."* A 84-against-56 gap
+is variation, and nothing approved it.
+
+**What it is not.** It is not the control heights: those agree per sheet except where
+[356](#356) says they do not, and the height assertion in this spec is a separate one. The gap is
+measured from the bottom of one control's box to the top of the next, so it contains each renderer's
+own label markup and supporting-text slot. That is where to look, and it is also why the number differs
+by more than a token would explain — 84 against 56 is not a spacing scale, it is an extra element or a
+margin nobody meant to inherit.
+
+Pinned by
+[`../browser/a-rhythm-three-renderers-do-not-share.spec.ts`](../browser/a-rhythm-three-renderers-do-not-share.spec.ts),
+five specs, one per stylesheet. Each opens all three hosts in one test and reads
+`--mdy-sys-color-primary` back from each before measuring: three separate pages could disagree because
+a swap failed in one of them rather than because the renderers differ, and that would be a difference
+of sheet reported as a difference of renderer.
+
+Owned by `esecutore`.
+
 ## 357 — Angular's strip draws a chip per option, not per choice (S1, UI-011)
 
 Four offered, three taken:
