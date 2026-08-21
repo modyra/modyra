@@ -19362,3 +19362,45 @@ returns a hand of height 0 with every number at the face centre — and a spec t
 unlaid-out face is worse than one that omits it. The user has confirmed plain from the running demo.
 Angular reproduces cleanly and the cause is shared, so the fix is verifiable on all three by the same
 measurement once the host issue is solved. That host issue is mine.
+
+## 341 — Three renderers, three answers about the dial view, and one of them breaks a stated rule (S1, A11Y-001/UI-011)
+
+Surfaced while chasing a 150-second `fill()` timeout in the Angular host. `esecutore` guessed the
+segment was read-only and told me it was a guess; measuring it found the guess right and the reason
+wrong — it is not a badly-chosen fixture, it contradicts a requirement the user gave directly:
+
+> *"in modalità dial deve comunque continuare a funzionare la 'input' sui numeri e devono nel caso
+> muoversi con le frecce sugli steps"*
+
+A dial is a pointer affordance. If entering it makes the boxes read-only, the only way left to set a
+time is dragging — the one gesture a keyboard cannot make and a screen reader cannot describe.
+
+Measured on a `24h` picker with nothing else configured:
+
+```
+                       opens on      dial showing → readOnly     mode toggle changes view
+plain                  the face      false                       NO — draws one, ignores it
+lit                    the boxes     true                        yes
+angular                the face      false → true after toggle   yes
+```
+
+**Each renderer passes one of the two assertions and fails the other.** Nothing in
+`MDY_WIDGET_CONTRACTS.timepicker` says whether a segment is writable while the dial is up, or which
+view a picker opens in, so each decided — the local-settlement shape the brief forbids.
+
+Three distinct defects:
+
+- **lit and angular lock the boxes while the dial shows.** Against the stated rule, and it removes the
+  keyboard path from the affordance that most needs one.
+- **plain draws a mode toggle and never changes view.** A control offering a choice it does not honour.
+- **the opening view is undeclared** — lit opens on the boxes, the other two on the face. Not asserted
+  as a defect here since no rule names a winner, but it is a difference a person meets depending on
+  which adapter their team chose, and it belongs in the contract either way.
+
+`readOnly` is asserted rather than a typed character, deliberately. **A read-only input discards a
+keystroke silently rather than refusing it**: `fill()` against Angular's box did not fail, it hung for
+150 seconds. The property is what the renderer decided; the silence is why nothing noticed. That is
+the campaign's recurring shape once more — the wrong answer and a real answer wearing the same face.
+
+**Battle**: `a-box-the-dial-locked.spec.ts`, three of six red, measured on all three renderers through
+the Angular browser host added for finding 325.
