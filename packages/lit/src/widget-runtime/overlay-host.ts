@@ -48,13 +48,7 @@ export function bindOutsidePointer(
 
   const policy = createLightDismiss({
     isOpen: () => host._open,
-    // Duck-typed: `Node` is not a global in every host this package runs in.
-    isInside: (target: unknown) => {
-      const node = target as Node | null;
-      return node !== null && typeof node === "object"
-        && typeof (node as { nodeType?: unknown }).nodeType === "number"
-        && host.contains(node);
-    },
+    branch: { root: host },
     dismiss: () => {
       const transition = applyOverlayIntent(host, { type: "outside", outside: true });
       if (transition.effect === "teardown") onClose();

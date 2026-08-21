@@ -36,10 +36,11 @@
  *   the first finger's interaction.
  *
  * "Inside" is the **logical branch**, not the popup element: the invoker that opens it, the popup,
- * its descendants, any portalled content and any child popup all count as inside. A renderer supplies
- * that predicate because only it knows where its portal went; the rule itself is here, so no renderer
- * decides when a pointer dismisses.
+ * its descendants, any portalled content and any child popup all count as inside. A renderer names
+ * the branch's roots and {@link overlayBranchContains} decides membership, so neither the boundary
+ * nor the moment is a renderer's to define.
  */
+import { overlayBranchContains, type MdyOverlayBranch } from "./overlay-branch.js";
 
 /** What a widget declares. One name, because these invariants do not vary by kind. */
 export type MdyOutsideDismiss = false | "light-dismiss";
@@ -71,8 +72,8 @@ export function isPrimaryInteraction(origin: MdyPointerOrigin): boolean {
 }
 
 export interface MdyLightDismissOptions {
-  /** True when the target lies within the overlay's logical branch — invoker, popup, portal, child popups. */
-  readonly isInside: (target: unknown) => boolean;
+  /** The overlay's logical branch — invoker, popup, portal, child popups. */
+  readonly branch: MdyOverlayBranch | (() => MdyOverlayBranch);
   /** Called at most once per interaction, when one completes entirely outside. */
   readonly dismiss: () => void;
   /** Whether the overlay is open. An interaction beginning while closed decides nothing. */
@@ -117,6 +118,10 @@ export interface MdyLightDismiss {
  * *pointer* interaction and must not satisfy a capability that says it is.
  */
 export function createLightDismiss(options: MdyLightDismissOptions): MdyLightDismiss {
+  // Read per interaction rather than captured: a renderer's roots are view children that do not
+  // exist when the rule is built, and a branch resolved once would hold the nulls it saw then.
+  const inside = (target: unknown): boolean =>
+    overlayBranchContains(typeof options.branch === "function" ? options.branch() : options.branch, target);
   let phase: MdyDismissalPhase = "idle";
   let tracked: number | null = null;
 
@@ -135,7 +140,7 @@ export function createLightDismiss(options: MdyLightDismissOptions): MdyLightDis
     const from = phase;
     toIdle();
     if (from !== "tracking-outside") return;
-    if (!options.isOpen() || options.isInside(target)) return;
+    if (!options.isOpen() || inside(target)) return;
     phase = "dismissed";
     options.dismiss();
     phase = "idle";
@@ -150,7 +155,7 @@ export function createLightDismiss(options: MdyLightDismissOptions): MdyLightDis
         return;
       }
       tracked = origin.pointerId;
-      phase = options.isInside(target) ? "tracking-inside" : "tracking-outside";
+      phase = inside(target) ? "tracking-inside" : "tracking-outside";
     },
 
     pointerup: (target, pointerId) => {

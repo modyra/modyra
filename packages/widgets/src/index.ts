@@ -162,6 +162,7 @@ export { defaultOptionKey, filterOptionsByQuery } from "./options-utils.js";
 
 export { portalRootFor } from "./portal.js";
 export { createLightDismiss, isPrimaryInteraction } from "./dismissal.js";
+export { overlayBranchContains, type MdyOverlayBranch, type MdyOverlayRoot } from "./overlay-branch.js";
 export { bindLightDismiss } from "./dismissal-dom.js";
 export type { MdyDismissalBindingOptions } from "./dismissal-dom.js";
 export { affordanceClasses, kindsWithAffordances, trailingAffordances } from "./affordance.js";

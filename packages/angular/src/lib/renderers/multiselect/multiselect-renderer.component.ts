@@ -32,7 +32,7 @@ import { MdyOverlayPanelComponent } from "../../core/overlay-panel.component";
 import { MDY_OPTIONS_CONTROL } from "../../core/tokens";
 import { MdyOptionsControl } from "../../core/types";
 import { MdyDropdownBase } from "../dropdown-base";
-import type { MdyOverlayOwner } from "../../core/overlay-control.directive";
+import type { MdyOverlayBranch, MdyOverlayOwner } from "../../core/overlay-control.directive";
 
 @Component({
   selector: "mdy-control-multiselect",
@@ -357,8 +357,8 @@ export class MdyMultiselectComponent<TValue = string>
   }
 
   /** The chips and the search box sit outside the wrapper, so the whole host is the boundary. */
-  protected override overlayContains(target: Node): boolean {
-    return this.hostRef.nativeElement.contains(target);
+  protected override overlayBranch(): MdyOverlayBranch {
+    return { root: this.hostRef.nativeElement };
   }
 
   /** Closing here also clears the search query, which `applyLifecycle` alone does not do. */

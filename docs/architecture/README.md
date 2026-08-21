@@ -133,6 +133,7 @@ absent section reads as an oversight, and "no security impact" is a finding.
 - [ADR 0116: One clock in every renderer](0116-one-clock-in-every-renderer.md) — three renderers each wrote down their own default format, so one document could render a different clock in each adapter
 - [ADR 0117: A row is not a target](0117-a-row-is-not-a-target.md) — a boolean's wrapper was a `<label>`, so the empty remainder of the row toggled the field, and removing it left the drawn box unclickable
 - [ADR 0118: One cell says whether a popup is open](0118-one-cell-says-whether-a-popup-is-open.md) — the contract closes a popup whose field leaves play by writing the controller's `open`, and Angular painted a cell of its own
+- [ADR 0119: An overlay's boundary is the contract's, not the renderer's](0119-a-branch-is-declared-once.md) — four renderers each answered "is this press inside the popup" and three could get the portalled part wrong in silence
 - [ADR 0092: A condition travels with the form](0092-a-condition-travels-with-the-form.md) — `when` and `asyncWhen` were closures, so a schema carrying one was not data and the document half could not say what the typed half said
 
 ## Security-relevant records
