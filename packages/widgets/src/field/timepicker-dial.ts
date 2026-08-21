@@ -229,9 +229,16 @@ export function timepickerDialGhost(
   const apart = Math.abs(((at - pick.angle + 540) % 360) - 180);
   const within = options.within ?? 0;
   if (!(apart > within)) return null;
+  // Asked whether a measurement was *taken*, not whether it was non-zero. `pointerReach === 0` is a
+  // pointer at the exact centre — geometry known perfectly, whose answer is a hand of no length —
+  // and `undefined` is a face nobody measured, whose answer is the full hand because nothing better
+  // is available. Testing `> 0` put both in the same branch, so coming inward past 1px lengthened
+  // the hand to its full reach: a floor again, in a new place.
   const hand = options.handLength ?? 0;
-  const pointer = options.pointerReach ?? 0;
-  const reach = hand > 0 && pointer > 0 ? Math.min(pointer / hand, 1) : 1;
+  const pointer = options.pointerReach;
+  const reach = hand > 0 && pointer !== undefined
+    ? Math.min(Math.max(pointer, 0) / hand, 1)
+    : 1;
   return { angle: at, ring: options.ring ?? pick.ring, reach };
 }
 

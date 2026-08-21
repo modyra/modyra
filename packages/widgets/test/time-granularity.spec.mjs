@@ -672,3 +672,32 @@ test("two positions that were neighbours are one dead stretch, the seam included
   }
   assert.deepEqual(live, []);
 });
+
+test("coming inward never lengthens the ghost", () => {
+  // Monotonicity rather than the single point, because the defect was a *branch* and any later
+  // fallback that reintroduces one shows up here too. Coming toward the centre may only shorten the
+  // hand; the cap at the far end is the one exception the rule allows.
+  const HAND = 100;
+  const pick = timepickerDialPick(42, "minute", "24h", "outer", { minuteStep: 15 });
+  const reachAt = (pointerReach) =>
+    timepickerDialGhost(42, pick, { within: 0, pointerReach, handLength: HAND }).reach;
+
+  let previous = reachAt(0);
+  assert.equal(previous, 0, "a pointer at the centre draws no hand, because that is where it is");
+  for (let pointer = 0; pointer <= 200; pointer += 0.5) {
+    const here = reachAt(pointer);
+    assert.ok(here >= previous, `${pointer}px gives ${here} after ${previous}`);
+    previous = here;
+  }
+  assert.equal(previous, 1, "and it stops at the face rather than spilling past it");
+});
+
+test("a face nobody measured is a different question from a pointer at its centre", () => {
+  // The two used to share a branch. One is geometry known perfectly and answers 0; the other is no
+  // geometry at all, where the full hand is reasonable because nothing better is available — the
+  // branch kept deliberately for a face with no stylesheet loaded.
+  const pick = timepickerDialPick(42, "minute", "24h", "outer", { minuteStep: 15 });
+  assert.equal(timepickerDialGhost(42, pick, { within: 0 }).reach, 1, "nothing measured");
+  assert.equal(timepickerDialGhost(42, pick, { within: 0, handLength: 0, pointerReach: 40 }).reach, 1, "no hand to be a fraction of");
+  assert.equal(timepickerDialGhost(42, pick, { within: 0, handLength: 100, pointerReach: 0 }).reach, 0, "measured, and at the centre");
+});
