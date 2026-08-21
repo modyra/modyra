@@ -58,6 +58,7 @@ const RESTING: MdyTimepickerFieldState = Object.freeze({
   format: "12h",
   granularity: undefined,
   animateHand: false,
+  _handLength: 0,
   showUnavailable: false,
   invalid: false,
   disabled: false,
@@ -83,6 +84,7 @@ export class MdyTimepickerFieldElement extends MdyFieldElement<string | null> {
     _open: { state: true },
     _isDragging: { state: true },
     _dragAngle: { state: true },
+    _handLength: { state: true },
   };
   declare placeholder: string;
   /** `"12h"` or `"24h"`. */
@@ -104,6 +106,8 @@ export class MdyTimepickerFieldElement extends MdyFieldElement<string | null> {
   declare _open: boolean;
   declare _isDragging: boolean;
   declare _dragAngle: number | null;
+  /** The face's drawn hand length. State, so measuring it schedules the render that uses it. */
+  declare _handLength: number;
   private unbindOutside?: () => void;
   protected override readonly widgetKind = "timepicker" as const;
 
@@ -149,7 +153,7 @@ export class MdyTimepickerFieldElement extends MdyFieldElement<string | null> {
     const steps = draft ? timeStepsAt(this.granularity, to24Hour(draft)) : MDY_EVERY_TIME;
     const rings = this.format === "24h" && field === "hour" ? (["outer", "inner"] as const) : (["outer"] as const);
     return rings.flatMap((ring) =>
-      timepickerDialUnavailableArcs(field, this.format, steps, this.measuredHandLength(), ring)
+      timepickerDialUnavailableArcs(field, this.format, steps, this._handLength || this.measuredHandLength(), ring)
         .map((arc) => ({ from: arc.from, span: ((arc.to - arc.from) + 360) % 360, ring })));
   }
 
@@ -486,14 +490,28 @@ export class MdyTimepickerFieldElement extends MdyFieldElement<string | null> {
    * The dimmed stretches are angles at a radius, so unlike the ghost they need this before anybody
    * has touched the dial — a drag is the only thing that used to measure it.
    */
+  /**
+   * Measures the face after it has been drawn, and renders again if the answer moved.
+   *
+   * The arcs are angles at a radius, and the render that *creates* the dial cannot measure it — the
+   * face does not exist yet, so the length read as zero and `timepickerDialUnavailableArcs` answered
+   * `[]`, which is also the correct answer for a face with nothing to dim. Nothing scheduled a second
+   * pass, so the dimming was permanently absent and every unit test agreed with it.
+   */
+  protected override updated(changed: Map<string, unknown>): void {
+    super.updated?.(changed);
+    const measured = this.measuredHandLength();
+    if (measured > 0 && measured !== this._handLength) this._handLength = measured;
+  }
+
   private measuredHandLength(): number {
-    const el = this.querySelector<HTMLElement>(".mdy-timepicker-dial__face");
-    if (!el) return this._dragHandLength;
-    const declared = getComputedStyle(el).getPropertyValue("--tp-hand-length").trim();
-    const measured = Number.parseFloat(declared);
-    return Number.isFinite(measured) && measured > 0
-      ? measured
-      : el.getBoundingClientRect().width / 2;
+    const face = this.querySelector<HTMLElement>(".mdy-timepicker-dial__face");
+    if (!face) return this._dragHandLength;
+    // The hand's own height, not `--tp-hand-length`: a custom property resolves at use, so reading
+    // it back gives the token stream, which no `parseFloat` reads.
+    const hand = face.querySelector<HTMLElement>(".mdy-timepicker-dial__hand");
+    const drawn = hand ? Number.parseFloat(getComputedStyle(hand).height) : Number.NaN;
+    return Number.isFinite(drawn) && drawn > 0 ? drawn : face.getBoundingClientRect().width / 2;
   }
 
   private updateAngle(event: MouseEvent | TouchEvent): void {
@@ -620,12 +638,6 @@ export class MdyTimepickerFieldElement extends MdyFieldElement<string | null> {
           >
             <!-- The hand reaches only as far as the ring it points into: a 24-hour face puts two
                  hours at one direction, so one length leaves the two selections identical. -->
-            <div
-              class="mdy-timepicker-dial__hand ${timepickerSelectedRing(field, parsed, this.format) === "inner"
-                ? "mdy-timepicker-dial__hand--inner"
-                : ""}"
-              style="transform: rotate(${this.handRotation()}deg)"
-            ></div>
             <!-- Which stretches of the ring offer nothing, behind everything else on the face. -->
             ${this.showUnavailable
               ? html`<div class="mdy-timepicker-dial__unavailable-layer" aria-hidden="true">
@@ -637,6 +649,12 @@ export class MdyTimepickerFieldElement extends MdyFieldElement<string | null> {
                   ></div>`)}
                 </div>`
               : nothing}
+            <div
+              class="mdy-timepicker-dial__hand ${timepickerSelectedRing(field, parsed, this.format) === "inner"
+                ? "mdy-timepicker-dial__hand--inner"
+                : ""}"
+              style="transform: rotate(${this.handRotation()}deg)"
+            ></div>
             <!-- Where the pointer is, when that is not where the value went. Drawn only then. -->
             ${(() => {
               const under = this.ghost();
