@@ -37,14 +37,24 @@ const HOSTS = [
 
 const SHEETS = ["./modyra.css", "./modyra-modern.css", "./modyra-material.css", "./modyra-ios.css", "./modyra-ionic.css"];
 
-/** The kinds a form puts in a column together. Each names its own box; they need not share a class. */
+/** The kinds a form puts in a column together. */
 const KINDS = ["text", "number", "select", "multiselect"] as const;
-const wrapperClassOf = (kind: string) => {
-  const parts = MDY_WIDGET_CONTRACTS[kind as keyof typeof MDY_WIDGET_CONTRACTS]?.parts as
-    | Record<string, { classes: string[] }>
-    | undefined;
-  return parts?.inputWrapper?.classes[0] ?? "mdy-input-wrapper";
-};
+
+/**
+ * The shell every kind is drawn inside — the row a person sees, and the thing the height rule is about.
+ *
+ * **Not each kind's own `inputWrapper` part.** That part resolves to `.mdy-input-wrapper` for every
+ * kind except multiselect, where it is `.mdy-multiselect` — the widget's own box, nested *inside* the
+ * shell and 2px shorter because the shell is what carries the theme's border. Resolving the part per
+ * kind therefore compares a text field's shell against a multiselect's inner box and reports the border
+ * as a height difference. It did, and the two pixels were recorded as a defect before the comparison
+ * was checked.
+ *
+ * That the two names mean different things is a contract oddity worth its own finding. It is not this
+ * spec's to settle, and a spec that renamed a part to make itself green would be deciding a public
+ * contract from a test file.
+ */
+const SHELL = (MDY_WIDGET_CONTRACTS.text.parts as Record<string, { classes: string[] }>).inputWrapper.classes[0];
 
 const OPTIONS = Array.from({ length: 12 }, (_, index) => ({
   value: `v${index}`,
@@ -87,18 +97,20 @@ for (const host of HOSTS) {
         .mountFields(id, kinds.map(field) as never);
     }, { api: host.api, id, options: OPTIONS, chosen, kinds: [...KINDS] });
     await page.waitForTimeout(400);
-    return page.evaluate(({ id, wanted }) => {
+    return page.evaluate(({ id, shell, kinds }) => {
       const root = document.querySelector(`[data-form="${id}"]`);
       if (root === null) return null;
+      // In mount order, which is the order the kinds were declared: the shells carry no marker saying
+      // which kind is inside them, and reading them positionally is what makes a missing shell visible
+      // as a missing row rather than as a silently shorter list.
+      const shells = Array.from(root.querySelectorAll(`.${shell}`));
       const read: Record<string, number | null> = {};
-      for (const [kind, className] of Object.entries(wanted)) {
-        const own = root.querySelector(`.${className}`);
-        const shared = root.querySelector(".mdy-input-wrapper");
-        const box = own ?? shared;
-        read[kind] = box === null ? null : Math.round(box.getBoundingClientRect().height);
-      }
+      kinds.forEach((kind, at) => {
+        const box = shells[at];
+        read[kind] = box === undefined ? null : Math.round(box.getBoundingClientRect().height);
+      });
       return read;
-    }, { id, wanted: Object.fromEntries(KINDS.map((kind) => [kind, wrapperClassOf(kind)])) });
+    }, { id, shell: SHELL, kinds: [...KINDS] });
   };
 
   test(`every kind draws a box of the same height, ${host.name}`, async ({ page }) => {
@@ -118,7 +130,12 @@ for (const host of HOSTS) {
       // The premise: the kinds were drawn at all. A kind that renders no box is a different defect
       // and must not be read as a height that happens to agree.
       const missing = Object.entries(read!).filter(([, height]) => height === null).map(([kind]) => kind);
-      expect(missing, `${host.name} drew no box for ${missing.join(", ")} under ${sheet}`).toEqual([]);
+      expect(
+        missing,
+        `${host.name} drew ${4 - missing.length} shells for four fields under ${sheet} — a kind that ` +
+          `is not inside the shell every other kind sits in is not in the same row system at all, ` +
+          `whatever height it happens to have`,
+      ).toEqual([]);
 
       const distinct = new Set(drawn.map(([, height]) => height));
       if (distinct.size > 1) {

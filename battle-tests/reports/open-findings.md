@@ -20099,6 +20099,71 @@ Owned by `esecutore`. Not recorded as allowed — the audit offers `--write` for
 would be the ratchet from finding 333 all over again: the number that only ever goes up because the
 first person to see it wrote it down.
 
+### 356 — the remaining two pixels are withdrawn, and the instrument was mine
+
+Recorded as *"the multiselect is 36px where its siblings are 38px"*. It is not. Challenged by
+`esecutore` and the challenge is right:
+
+```
+plain / lit    .mdy-input-wrapper × 4   [38, 38, 38, 38]      the shells, all equal
+               .mdy-multiselect         36                    nested inside the fourth shell
+```
+
+The spec resolved each kind's `inputWrapper` part and measured that. For every kind but one the part is
+`.mdy-input-wrapper`, the shell the theme draws a 1px border on. For multiselect the part is
+`.mdy-multiselect` — the widget's own box, *inside* that shell, without the border. So it compared a
+text field's shell against a multiselect's inner box and reported the border as a defect.
+
+**The first half of 356 stands and is closed.** 52px against 38 was real and `max-height` plus the
+scrollbar fixed it; `a multiselect keeps its height whatever it holds` is green in all three. Only the
+two-pixel tail was mine.
+
+Deriving the selector from the contract is what caused it, which is worth saying because deriving from
+the contract is the rule this suite keeps insisting on. It is still the rule. The failure was deriving
+*a different part per kind* and treating the results as comparable — a contract can name two different
+boxes with one word, and it does.
+
+## 364 — `multiselect.parts.inputWrapper` is not the wrapper every other kind means (S2, API-001)
+
+```
+text, number, select, date, …   inputWrapper → .mdy-input-wrapper     the shell
+multiselect                     inputWrapper → .mdy-multiselect       the widget's own box
+```
+
+In plain and lit both exist and are nested, so the name resolves to the inner one for the one kind
+where the outer one also exists. `.mdy-multiselect` is analogous to the `<input>`, not to the wrapper,
+whatever the part is called.
+
+Anything that reads this part across kinds and compares the results is comparing two different things
+while looking correct — [356](#356) did exactly that, and it was written by someone who knew to derive
+from the contract rather than hardcode. The name is the trap, not the reader.
+
+Two ways out, and they are not equivalent: measure the shell for every kind, which is what the height
+spec now does; or rename the part, which is a breaking contract change and wants
+`npm run contract:diff` and a changeset rather than being a side effect of turning a spec green. The
+spec took the first because a test file must not decide a public contract; the second is still the
+honest repair and it is `esecutore`'s call.
+
+## 365 — Angular's multiselect is not inside the shell the other kinds are in (S1, UI-011)
+
+```
+                shells for four fields
+plain                              4
+lit                                4
+angular                            3
+```
+
+Angular renders `.mdy-multiselect` with no `.mdy-input-wrapper` around it; plain and lit render both,
+nested. So the control is not in the same row system as its siblings at all — not a different height
+within the system, outside it. Whatever a theme states about the shell reaches three kinds out of four
+in Angular and four out of four everywhere else.
+
+This is a plausible cause of Angular's column in [358](#358) — its gap is the odd one on four of the
+five stylesheets — and it is the reason the height spec is red on Angular alone after the fixture was
+corrected. It is a structural divergence rather than a styling one, which is the kind
+the project instructions name outright: Lit and Plain consume the same contract rather than redefine it, and
+Angular migrates without unapproved variation.
+
 ## 360–363 — Four holes in the multiselect, named from outside and then measured (A11Y-001, UI-011)
 
 Raised as design gaps rather than as defects, and the framing was right: none of these breaks a written
