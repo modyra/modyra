@@ -18438,6 +18438,57 @@ reading Angular-owned signals and never re-ran anyway is plausible and untested 
 fixture that settles it: `mdyForm(schema)` built in a plain function, a `select`, an option list that
 changes after construction.
 
+## 320 — The contract closes an overlay, and two renderers paint a different `open` (S1, UI-005 REA-002)
+
+`closeOverlayWhenOutOfPlay` (`widgets/src/field/leaving-play.ts:36`) is the contract's rule for a
+field that leaves play while its popup is open. It sets the controller's `open` signal to false. Five
+controllers call it — timepicker, datepicker, daterange, colors, multiselect — so it is **every
+overlay kind**.
+
+Verified in all three renderers rather than taken on report:
+
+```
+plain     controller.state().open           plain/src/fields/timepicker-field.ts:297     ← the contract's
+angular   open = signal(false)              angular/.../overlay-control.directive.ts:48  ← its own
+lit       open: () => this.overlay.open()   lit/src/components/timepicker-field.ts:95    ← its own
+```
+
+**The rule writes a state that one of three renderers renders.** In the other two the write lands in
+a signal nothing paints, so the popup stays on screen after the field is out of play.
+
+`aria-disabled="true"` **does** reach the dial face — interactivity propagates correctly — so the
+control is visibly out of play and still offering a dial whose clicks correctly do nothing. That is
+the situation `leaving-play.ts` opens by describing, in its own words: *"The click doing nothing is
+right. The calendar still being there offering it is not."*
+
+**Found by building a fixture for something else.** `esecutore` was settling 319's residual risk —
+whether the handle-owner fix regressed effects for `mdyForm()` outside an injection context. It did
+not: identical failures at `HEAD` and `HEAD~1`, so **319's concern is dismissed as a regression on
+evidence**. What settled it was the *control* they added — the same form built **with** an injector,
+the half that should have been green. It was red too, so the injector was never the variable, and the
+thing under test turned out not to be the thing that was broken.
+
+**Third instance tonight of one path implementing the contract while its sibling keeps a parallel
+copy**, and the reason to record it as a shape rather than three bugs:
+
+- `MdyTypedForm._buildHandle` registered the form and not the owner (319);
+- `control.directive.ts:616` registers the *synthetic* handle with Angular reactivity **with a comment
+  naming this exact failure**, and the bound-handle path beside it kept the defect;
+- and now `open`, where the contract writes one signal and two renderers read another.
+
+No tier can see any of them: conformance asks whether the part exists with the right role, never
+whether the state the contract wrote is the state the screen shows.
+
+**Repair is the overlay contractualisation, not a patch beside it.** Angular closing its own overlay
+on `isDisabled()` would be the local workaround the binding rule forbids — the rule belongs to the
+widget, and what Angular lacks is that its overlay's open state is not the contract's. So ownership of
+`open` and the dismissal boundary (`MdyOverlayBranch`) are one delivery, **ownership first**: the
+boundary decides *when* to close, and a correct boundary writing into a state nothing paints is a fix
+that cannot be observed in two of three renderers.
+
+The Angular fixture that proves it stays in `packages/angular`'s own suite once green. Baselining it
+here would put a red in a tier that cannot execute it, and a red nothing runs is worse than none.
+
 ## The register's own shape, measured
 
 ```
