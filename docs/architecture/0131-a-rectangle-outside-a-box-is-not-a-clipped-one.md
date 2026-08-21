@@ -75,6 +75,25 @@ popup, or a consumer container this suite does not model. The three ancestors he
 change what an overlay can do — `overflow` clips, `transform` makes a containing block that fixed
 cannot escape, `contain` does both — and a fourth would be a new case rather than a variation.
 
+## Amendment: the reason is stronger than the one recorded
+
+This record said every popup is `position: fixed`, which an ancestor's `overflow` does not clip. That
+is true and it is not the whole reason. Measured while mutation-testing the battle: the option list
+sits inside a `[popover]` or `<dialog>`, so **it is in the top layer**.
+
+The difference matters because the three ancestors this project models are not equally survivable by a
+fixed element. `overflow` does not clip a fixed box, but `transform`, `filter` and `contain` each make
+a containing block that a fixed descendant *cannot* escape — so "it is fixed" would predict that the
+transformed and contained cases fail, and they do not. The top layer is outside the ancestor chain
+entirely, which is why all nine cases pass rather than three of nine.
+
+The mutation that established it is worth keeping too, because two before it were invalid and looked
+conclusive: covering the popup with an opaque `position: fixed` sheet at `z-index: 99999` did **not**
+make the option unreachable, and neither did moving the popup back inside the field — the first
+because nothing in normal flow can cover the top layer, the second because moving the node made the
+renderer drop it. The mutation that bit was hiding the option itself, which is the only one of the
+three that changed what a press would get without changing anything else.
+
 ## Security and privacy
 
 No impact.
