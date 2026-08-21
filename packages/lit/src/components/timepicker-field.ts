@@ -145,6 +145,8 @@ export class MdyTimepickerFieldElement extends MdyFieldElement<string | null> {
   private _dragRing: "outer" | "inner" = "outer";
   /** Whether `_dragRing` is an answer from this gesture or the default it starts at. */
   private _ringDecided = false;
+  /** Which segment the user is inside, so a render does not write over what they are typing. */
+  private editing: "hour" | "minute" | null = null;
   private _dragHandLength = 0;
   /** How far the pointer is from the centre — the ghost ends there. */
   private _dragReach = 0;
@@ -369,44 +371,31 @@ export class MdyTimepickerFieldElement extends MdyFieldElement<string | null> {
     }
   }
 
-  private onHourInput(event: Event): void {
+  /**
+   * What a person typed into a box, reported as they typed it.
+   *
+   * This element used to read the box itself, refuse anything it could not take, and write the
+   * canonical value straight back — with `.value` bound to the draft, every keystroke triggered a
+   * render that overwrote what had just been typed. Backspacing an hour from `09` produced `12`.
+   *
+   * The contract decides what a half-typed number is; this reports the text and leaves the box
+   * alone until the person leaves it.
+   */
+  private onSegmentInput(event: Event, field: "hour" | "minute"): void {
     const target = event.target as HTMLInputElement;
-    this.markSegment(target, "hour");
-    const raw = target.value;
-    const h = parseInt(raw, 10);
-    const p = this.parsed();
-
-    if (this.format === "24h") {
-      if (isNaN(h) || h < 0 || h > 23) {
-        target.value = this.hourDisplay();
-        return;
-      }
-      this.send({ type: "focus-field", field: "hour" });
-      const hour12 = h % 12 === 0 ? 12 : h % 12;
-      this.onTimePicked(buildTimeString(hour12, p?.minute ?? 0, h >= 12 ? "PM" : "AM"));
-      return;
-    }
-
-    if (isNaN(h) || h < 1 || h > 12) {
-      target.value = this.hourDisplay();
-      return;
-    }
-    this.send({ type: "focus-field", field: "hour" });
-    this.onTimePicked(buildTimeString(h, p?.minute ?? 0, p?.period ?? "AM"));
+    this.editing = field;
+    this.markSegment(target, field);
+    this.send({ type: "focus-field", field });
+    this.send({ type: "type-segment", field, text: target.value });
   }
 
-  private onMinuteInput(event: Event): void {
-    const target = event.target as HTMLInputElement;
-    this.markSegment(target, "minute");
-    const raw = target.value;
-    const m = raw === "" ? 0 : parseInt(raw, 10);
-    if (isNaN(m) || m < 0 || m > 59) {
-      target.value = this.minuteDisplay();
-      return;
-    }
-    this.send({ type: "focus-field", field: "minute" });
-    const p = this.parsed();
-    this.onTimePicked(buildTimeString(p?.hour ?? 12, m, p?.period ?? "AM"));
+  /** What the box settles to when it stops being edited: the canonical form of what the draft holds. */
+  private onSegmentBlur(): void {
+    // Only the box settling. Leaving a segment is not leaving the *field* — the control owns that,
+    // and marking the field touched here made Escape leave a picker somebody had never answered
+    // looking as though they had.
+    this.editing = null;
+    this.requestUpdate();
   }
 
   private togglePeriod(period: "AM" | "PM"): void {
@@ -561,10 +550,11 @@ export class MdyTimepickerFieldElement extends MdyFieldElement<string | null> {
             <input
               type="number"
               class="${this.partClass("hourControl")} ${this.view.readonly ? stateClass(this.partClass("hourControl"), "readonly") : ""}"
-              .value=${this.hourDisplay()}
+              .value=${this.editing === "hour" ? nothing : this.hourDisplay()}
               ?readonly=${this.view.readonly}
               aria-label=${this.messages.timepickerHourLabel}
-              @input=${this.onHourInput}
+              @input=${(e: Event) => this.onSegmentInput(e, "hour")}
+              @blur=${() => this.onSegmentBlur()}
               @focus=${() => this.send({ type: "focus-field", field: "hour" })}
               @click=${() => {
                 if (this.view.viewMode === "dial") this.send({ type: "focus-field", field: "hour" });
@@ -585,10 +575,11 @@ export class MdyTimepickerFieldElement extends MdyFieldElement<string | null> {
             <input
               type="number"
               class="${this.partClass("minuteControl")} ${this.view.readonly ? stateClass(this.partClass("minuteControl"), "readonly") : ""}"
-              .value=${this.minuteDisplay()}
+              .value=${this.editing === "minute" ? nothing : this.minuteDisplay()}
               ?readonly=${this.view.readonly}
               aria-label=${this.messages.timepickerMinuteLabel}
-              @input=${this.onMinuteInput}
+              @input=${(e: Event) => this.onSegmentInput(e, "minute")}
+              @blur=${() => this.onSegmentBlur()}
               @focus=${() => this.send({ type: "focus-field", field: "minute" })}
               @click=${() => {
                 if (this.view.viewMode === "dial") this.send({ type: "focus-field", field: "minute" });

@@ -5,6 +5,7 @@ import {
   ChangeDetectionStrategy,
   Component,
   computed,
+  ElementRef,
   inject,
   Injector,
   input,
@@ -17,8 +18,11 @@ import {
   createTimepickerFieldController,
   overlayControlledId,
   projectOverlayOpenerA11y,
+  timepickerPartSelector,
+  timepickerTabOrder,
 } from "@modyra/widgets";
 import { MdyBaseControl } from "../../control/control.directive";
+import { MdyWidgetRuntime } from "../../widget-runtime";
 import { MdyErrorListComponent } from "../../control/error-list.component";
 import { MdyControlLabelComponent } from "../../control/mdy-control-label.component";
 import { MdyIconComponent } from "../../control/mdy-icon.component";
@@ -215,8 +219,50 @@ export class MdyTimepickerComponent extends MdyOverlayControl<string | null> {
     return this.controller() as MdyOverlayOwner | undefined;
   }
 
+  private readonly widgetRuntime = inject(MdyWidgetRuntime);
+
+  /**
+   * Dispatches, and carries out what the controller asks of the DOM.
+   *
+   * The return of `dispatch` was discarded at every call site here, so `focus`, `open-overlay` and
+   * `restore-focus` had never executed in this renderer — not wired wrongly, not wired at all. The
+   * runtime and its `afterNextRender` beat already existed and the select adapter already used them.
+   */
+  protected send(intent: Parameters<NonNullable<ReturnType<typeof this.controller>>["dispatch"]>[0]): void {
+    const controller = this.controller();
+    if (!controller) return;
+    this.widgetRuntime.execute(
+      controller.dispatch(intent),
+      this.commandElements(),
+      () => undefined,
+      {
+        setOpen: () => undefined,
+        onTouched: () => this.markAsTouched(),
+        onDirty: () => this.markAsDirty(),
+      },
+    );
+  }
+
+  /**
+   * The parts a command may name, resolved through the contract's own selectors.
+   *
+   * Queried rather than held as view children: the popup is projected into a panel that only exists
+   * while it is open, so a reference taken at construction is a reference to nothing.
+   */
+  private commandElements(): ReadonlyMap<string, ElementRef<HTMLElement> | undefined> {
+    const root: HTMLElement = this.hostElement.nativeElement;
+    const found = new Map<string, ElementRef<HTMLElement> | undefined>();
+    found.set("trigger", new ElementRef(root.querySelector<HTMLElement>(".mdy-timepicker__toggle") ?? root));
+    for (const part of timepickerTabOrder(this.format())) {
+      const selector = timepickerPartSelector(part);
+      const el = selector ? root.querySelector<HTMLElement>(selector) : null;
+      if (el) found.set(part, new ElementRef(el));
+    }
+    return found;
+  }
+
   protected override onBeforeOpen(): void {
-    this.controller()?.dispatch({ type: "open" });
+    this.send({ type: "open" });
   }
 
   /**
@@ -227,7 +273,7 @@ export class MdyTimepickerComponent extends MdyOverlayControl<string | null> {
    * on its outer ring. The angle and the ring go to the controller, which owns what they mean.
    */
   protected onDialPicked(pick: { field: "hour" | "minute"; angle: number; ring: "outer" | "inner" }): void {
-    this.controller()?.dispatch({ type: "set-from-angle", ...pick });
+    this.send({ type: "set-from-angle", ...pick });
   }
 
   /**
@@ -248,12 +294,12 @@ export class MdyTimepickerComponent extends MdyOverlayControl<string | null> {
   }
 
   protected confirmPicker(): void {
-    this.controller()?.dispatch({ type: "confirm" });
+    this.send({ type: "confirm" });
     this.closeOverlay();
   }
 
   protected cancelPicker(): void {
-    this.controller()?.dispatch({ type: "cancel" });
+    this.send({ type: "cancel" });
     this.closeOverlay();
   }
 

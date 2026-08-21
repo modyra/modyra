@@ -38,6 +38,10 @@ import {
   MDY_TIMEPICKER_INNER_RING,
   MDY_WIDGET_CONTRACTS,
   stateClass,
+  timepickerFocusPart,
+  timepickerPartSelector,
+  timepickerTabOrder,
+  timepickerTabTarget,
   timepickerSelectedRing,
   timeStepsAt,
   MDY_EVERY_TIME,
@@ -140,14 +144,12 @@ export class MdyTimepickerClockComponent {
   // Which ring the pointer is over is something the user is looking at while they move.
   private readonly dragRing = signal<"outer" | "inner">("outer");
 
-  private switchTimer: ReturnType<typeof setTimeout> | null = null;
 
   private readonly dialFaceRef = viewChild<ElementRef<HTMLElement>>("dialFace");
   private readonly injector = inject(Injector);
 
   constructor() {
     inject(DestroyRef).onDestroy(() => {
-      if (this.switchTimer !== null) clearTimeout(this.switchTimer);
       this.drag.stop();
     });
     // Opening is when the dial should take focus, and the clock is never destroyed — the panel
@@ -179,13 +181,7 @@ export class MdyTimepickerClockComponent {
     onEnd: () => this.onDragEnd(),
   });
 
-  private scheduleMinuteSwitch(delayMs: number): void {
-    if (this.switchTimer !== null) clearTimeout(this.switchTimer);
-    this.switchTimer = setTimeout(() => {
-      this.switchTimer = null;
-      this.focusedField.set("minute");
-    }, delayMs);
-  }
+
 
   protected readonly parsed = computed(() => parseTime(this.value()));
 
@@ -354,11 +350,21 @@ export class MdyTimepickerClockComponent {
    * control you can only reach by tabbing past Cancel and Confirm, with nothing saying so, is a
    * control most people will never find.
    */
+  /**
+   * Puts focus on the box for the field being edited.
+   *
+   * It used to take the face. The face is a slider a keyboard can operate, but it is not where a
+   * person types — and a picker that opens with focus on the dial leaves the two controls that
+   * accept typing unreached, which is what made Tab walk out of the popup without entering it.
+   */
   private focusDial(): void {
-    const face = this.dialFaceRef()?.nativeElement;
-    if (!face) return;
-    // After the view that renders it, not during: on the opening pass the face may not exist yet.
-    queueMicrotask(() => this.dialFaceRef()?.nativeElement?.focus());
+    const selector = timepickerPartSelector(timepickerFocusPart(this.focusedField()));
+    if (!selector) return;
+    // After the view that renders it, not during: on the opening pass the box may not exist yet.
+    queueMicrotask(() => {
+      const root = this.dialFaceRef()?.nativeElement?.closest(".mdy-timepicker-container");
+      root?.querySelector<HTMLElement>(selector)?.focus();
+    });
   }
 
   protected onDialNumberClick(value: number): void {
@@ -372,7 +378,6 @@ export class MdyTimepickerClockComponent {
         : { type: "minute", value },
     );
     if (next !== null) this.timePicked.emit(next);
-    if (field === "hour") this.scheduleMinuteSwitch(200);
   }
 
   /**
@@ -392,9 +397,34 @@ export class MdyTimepickerClockComponent {
    * taking their keys would make them impossible to correct.
    */
   protected onClockKeydown(event: KeyboardEvent): void {
+    // Tab walks the popup's own controls rather than leaving it: the popup holds a confirm button,
+    // and a Tab that dismissed left that button unreachable, so the widget's only way to commit was
+    // a pointer. The order is the contract's, and it wraps — `Escape` is the way out.
+    if (event.key === "Tab") {
+      event.preventDefault();
+      this.moveByTab(event.shiftKey ? -1 : 1);
+      return;
+    }
     const target = event.target as HTMLElement | null;
     if (target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement) return;
     this.onDialKeydown(event);
+  }
+
+  private moveByTab(direction: 1 | -1): void {
+    const root = this.dialFaceRef()?.nativeElement?.closest(".mdy-timepicker-container");
+    if (!root) return;
+    const active = root.ownerDocument.activeElement;
+    const from = timepickerTabOrder(this.format())
+      .find((part) => active?.matches(timepickerPartSelector(part) ?? "\0"));
+    const next = timepickerTabTarget(from ?? "", this.format(), direction);
+    if (next === "hourControl" || next === "minuteControl") {
+      // The clock holds its own `focusedField`; setting it moves the drawn state, and `focusDial`
+      // is what puts DOM focus where that state says. One state, two expressions.
+      this.focusedField.set(next === "hourControl" ? "hour" : "minute");
+      this.focusDial();
+      return;
+    }
+    root.querySelector<HTMLElement>(timepickerPartSelector(next) ?? "\0")?.focus();
   }
 
   protected onDialKeydown(event: KeyboardEvent): void {
@@ -443,7 +473,6 @@ export class MdyTimepickerClockComponent {
 
     const angle = this.dragAngle();
     if (angle !== null) {
-      if (this.dragField === "hour") this.scheduleMinuteSwitch(300);
       this.dialPicked.emit({ field: this.dragField, angle, ring: this.dragRing() });
     }
 

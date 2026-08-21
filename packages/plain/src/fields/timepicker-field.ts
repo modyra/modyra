@@ -195,7 +195,10 @@ export function renderTimepickerField(
     hourControl: hourInput,
     minuteControl: minuteInput,
     modeToggle,
-    action: confirmButton,
+    // `action` names two buttons and the order names both: a single stop reached whichever was drawn
+    // first, so tabbing to the end and pressing Enter discarded the draft instead of committing it.
+    action: cancelButton,
+    "action--confirm": confirmButton,
     periodOption: periodOptions[0]!,
   };
   const lookup: MdyElementLookup = (part) => (part === "trigger" ? control : focusable[part]);

@@ -113,11 +113,16 @@ describe("the clock face as a control", () => {
     expect(open("24h").host.querySelector(".mdy-timepicker-period-toggle")).toBeNull();
   });
 
-  it("gives the dial focus when the picker opens, so the first arrow lands", () => {
+  it("gives the hour box focus when the picker opens, so a keyboard can start", () => {
     const { host } = open("12h");
+    // It used to take the *face*. The face is a slider a keyboard can operate and it is not where a
+    // person types — a picker that opened with focus there left the two controls that accept typing
+    // unreached, and Tab walked out of the popup without ever entering it.
+    //
     // The clock is projected rather than created, so focus is taken on `open` becoming true.
     return Promise.resolve().then(() => {
-      expect(document.activeElement).toBe(face(host));
+      const hour = host.querySelector(".mdy-timepicker-segment--hour .mdy-timepicker-segment-input");
+      expect(document.activeElement).toBe(hour);
     });
   });
 

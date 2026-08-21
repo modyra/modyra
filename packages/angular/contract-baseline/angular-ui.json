@@ -1102,7 +1102,8 @@
     },
     "packages/angular/src/lib/renderers/timepicker/timepicker-clock.component.ts": {
       "classes": [
-        "mdy-timepicker-clock"
+        "mdy-timepicker-clock",
+        "mdy-timepicker-container"
       ],
       "aria": [],
       "selectors": [
