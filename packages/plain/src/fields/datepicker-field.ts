@@ -254,7 +254,7 @@ export function renderDatepickerField(
     control.setAttribute("aria-invalid", String(showsAsInvalid({ valid: handle.valid(), disabled: handle.disabled() })));
     shell.syncState({
       open: state.open,
-      touched: handle.touched(), disabled: handle.disabled(),
+      touched: handle.touched(), disabled: handle.disabled(), readonly: handle.readonly(),
       hasError: showsAsInvalid({ valid: handle.valid(), disabled: handle.disabled() }), filled: Boolean(state.selectedDate), required: handle.required(),
     });
 

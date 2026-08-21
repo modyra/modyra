@@ -52,21 +52,31 @@ export function renderMultiselectField(
 
   // ── the field: a header with the search button, and the options as chips ──────────────────
   const control = el("div", parts.inputWrapper.classes.join(" "));
-  const header = el("div", parts.header.classes.join(" "));
-  const searchButton = el("button", parts.searchButton.classes.join(" ")) as HTMLButtonElement;
-  searchButton.type = "button";
-  searchButton.setAttribute("aria-label", messages.searchOptionsLabel);
-  setIcon(searchButton, "SEARCH");
-  // Waiting on its options: the indicator goes on the search button, which is the control here, so
-  // the field says it is loading without being opened.
+
+  /**
+   * What a person presses to open the popup, and what holds what they chose.
+   *
+   * A button rather than the field's box: the box carries the field's state classes, and a node
+   * with both jobs is a node two rules write to. The chips strip lives inside it, so the strip can
+   * scroll within its own bounds while the box around it stays the height the host gives a control.
+   */
+  const trigger = el("button", parts.trigger.classes.join(" ")) as HTMLButtonElement;
+  trigger.type = "button";
+  const chipStrip = el("div", parts.chips.classes.join(" "));
+  const placeholder = el("span", parts.placeholder.classes.join(" "));
+  // The affordance at the trailing edge, as the single-choice sibling has. Decorative: the whole
+  // control opens the popup, so this says which way it opens rather than being the way.
+  const arrow = el("span", parts.arrow.classes.join(" "));
+  arrow.setAttribute("aria-hidden", "true");
+  // Waiting on its options: the indicator goes on the control, so the field says it is loading
+  // without being opened.
   if (f.loading) {
     const loading = el("span", parts.loading.classes.join(" "));
     loading.setAttribute("role", "status");
-    searchButton.replaceChildren();
-    searchButton.appendChild(loading);
+    trigger.appendChild(loading);
   }
-  header.appendChild(searchButton);
-  control.appendChild(header);
+  trigger.append(chipStrip, placeholder, arrow);
+  control.append(trigger);
 
   // ── popup: the filter box over the same grid ──────────────────────────────────────────────
   const popup = el("div", `${parts.popup.classes.join(" ")} mdy-overlay`) as HTMLDivElement;
@@ -124,13 +134,105 @@ export function renderMultiselectField(
     return { grid, chips: new Map<string, ChipHandle>() };
   }
 
-  const field = buildGrid([]);
-  // The popup's grid carries the overlay class on top of the shared one, as the contract declares.
-  const overlay = buildGrid(parts.listbox.classes.filter((cls) => !parts.options.classes.includes(cls)));
+  // One grid, in the popup. The closed control shows what was *chosen*, in the chips strip; the
+  // options are seen where there is room for them. A second copy in the field made every option
+  // reachable in two places and made the control's height follow the option count.
+  const overlay = buildGrid([]);
   popup.append(search, overlay.grid);
 
   /** Every chip standing for an option, in both grids: one option, two elements to keep in step. */
   const optionEls = new Map<string, readonly ChipHandle[]>();
+
+  /** A chip per chosen value, in the order they were chosen, drawn in the closed control. */
+  const chosenEls = new Map<string, HTMLElement>();
+
+  /**
+   * One chip in the strip: what was chosen, how many of it, and the controls for changing that.
+   *
+   * A container rather than a button, because it holds buttons. Focusable, because a chip a keyboard
+   * cannot reach is a chip only a pointer can act on — and it is what the reordering keys will
+   * address. Named as one thing, because a label and a count in two spans are read as one run of
+   * text with nothing saying which is which.
+   *
+   * In counter mode the two steppers are here, so making a three into a two does not send a person
+   * back into the popup to find the row among the others — the journey the strip exists to remove.
+   */
+  function buildValueChip(key: string): HTMLElement {
+    const chip = el("div", parts.chip.classes.join(" "));
+    chip.tabIndex = 0;
+    chip.setAttribute("role", "group");
+    const step = (delta: -1 | 1, label: string) => {
+      const button = el("button", parts.optionStep.classes.join(" ")) as HTMLButtonElement;
+      button.type = "button";
+      button.setAttribute("aria-label", label);
+      button.addEventListener("click", (event) => {
+        event.stopPropagation();
+        dispatch(delta === 1 ? { type: "increment", optionKey: key } : { type: "decrement", optionKey: key });
+      });
+      return button;
+    };
+    if (mode === "multi") chip.appendChild(step(-1, messages.chipDecrementLabel));
+    chip.appendChild(el("span", parts.optionLabel.classes.join(" ")));
+    chip.appendChild(el("span", parts.optionCount.classes.join(" ")));
+    if (mode === "multi") chip.appendChild(step(1, messages.chipIncrementLabel));
+    const remove = el("button", parts.chipRemove.classes.join(" ")) as HTMLButtonElement;
+    remove.type = "button";
+    remove.setAttribute("aria-label", messages.chipRemoveLabel);
+    remove.addEventListener("click", (event) => {
+      // The strip sits inside the trigger, which opens the popup. Taking a value off is not asking
+      // to see the options.
+      event.stopPropagation();
+      dispatch({ type: "toggle", optionKey: key });
+    });
+    chip.appendChild(remove);
+    return chip;
+  }
+
+  /**
+   * Brings the strip in line with what is chosen.
+   *
+   * Driven by `selectedValues` rather than by the option list, and never by the *filtered* list: the
+   * order the strip shows is the order the value has, and a strip reading what the search matches
+   * would empty itself as somebody typed.
+   *
+   * **A repeated value is a quantity, not a duplicate.** This kind carries counts — `increment`
+   * takes `["a"]` to `["a","a","a"]` — so one chip per distinct value with the count beside it,
+   * rather than one chip per entry. Three identical chips would be three things to remove one at a
+   * time to undo one decision, and a chip with no count at all answers the same for one of
+   * something as for three, which is the reading that loses the capability silently.
+   */
+  function syncChips(state: { readonly selectedValues: readonly unknown[]; readonly options: readonly MdySelectOption<unknown>[] }): void {
+    const tally = new Map<string, { readonly label: string; count: number }>();
+    for (const value of state.selectedValues) {
+      const option = state.options.find((o) => keyFor(o) === keyFor({ value } as MdySelectOption<unknown>));
+      const key = keyFor((option ?? { value, label: String(value) }) as MdySelectOption<unknown>);
+      const seen = tally.get(key);
+      if (seen) seen.count += 1;
+      else tally.set(key, { label: option?.label ?? String(value), count: 1 });
+    }
+    for (const [key, { label, count }] of tally) {
+      let chip = chosenEls.get(key);
+      if (!chip) {
+        chip = buildValueChip(key);
+        chosenEls.set(key, chip);
+      }
+      setText(chip.querySelector(`.${parts.optionLabel.classes[0]}`) as HTMLElement, label);
+      const counter = chip.querySelector(`.${parts.optionCount.classes[0]}`) as HTMLElement;
+      setText(counter, count > 1 ? String(count) : "");
+      counter.hidden = count <= 1;
+      // One name for the whole chip: a label and a count in two spans are read as one run of text,
+      // so "A 3" arrives with nothing saying which half is which.
+      chip.setAttribute("aria-label", count > 1 ? `${label}, ${count}` : label);
+      // Appending an element already in the strip moves it, which keeps the order the value's.
+      chipStrip.appendChild(chip);
+    }
+    for (const key of [...chosenEls.keys()]) {
+      if (tally.has(key)) continue;
+      chosenEls.get(key)?.remove();
+      chosenEls.delete(key);
+    }
+    placeholder.hidden = tally.size > 0;
+  }
 
   /**
    * Brings both grids in line with the list the controller says it paints.
@@ -145,7 +247,7 @@ export function renderMultiselectField(
       const key = keyFor(option);
       wanted.add(key);
       if (!optionEls.has(key)) {
-        const handles = [field, overlay].map((target) => {
+        const handles = [overlay].map((target) => {
           const handle = buildChip(option, key);
           const wrapper = el("div", parts.optionWrapper.classes.join(" "));
           wrapper.appendChild(handle.chip);
@@ -156,14 +258,14 @@ export function renderMultiselectField(
         optionEls.set(key, handles);
       }
       // Appending an element already in a grid moves it, which keeps the order the controller's.
-      for (const target of [field, overlay]) {
+      for (const target of [overlay]) {
         const chip = target.chips.get(key);
         if (chip?.chip.parentElement) target.grid.appendChild(chip.chip.parentElement);
       }
     }
     for (const key of [...optionEls.keys()]) {
       if (wanted.has(key)) continue;
-      for (const target of [field, overlay]) {
+      for (const target of [overlay]) {
         target.chips.get(key)?.chip.parentElement?.remove();
         target.chips.delete(key);
       }
@@ -173,9 +275,6 @@ export function renderMultiselectField(
   syncGrids(controller.state().options);
 
   insertControl(shell, control);
-  // The grid sits directly after the control and before the supporting text, which is the order the
-  // contract declares — appending it to the root would put the options below the error line.
-  shell.wrapper.after(field.grid);
   container.appendChild(shell.root);
   // Document-level so no scroll container or renderer frame can clip the popup, exactly as the
   // select renderer portals its own listbox.
@@ -183,7 +282,7 @@ export function renderMultiselectField(
 
   const lookup: MdyElementLookup = (part, key) => {
     // The search button is what opened the popup, so it is what focus goes back to.
-    if (part === "trigger") return searchButton;
+    if (part === "trigger") return trigger;
     if (part === "search") return search;
     if (part === "option" && key) return optionEls.get(key)?.[0]?.chip;
     return undefined;
@@ -196,7 +295,7 @@ export function renderMultiselectField(
     });
   }
 
-  searchButton.addEventListener("click", () => dispatch({ type: "toggleOpen" }));
+  trigger.addEventListener("click", () => dispatch({ type: "toggleOpen" }));
   search.addEventListener("input", () => dispatch({ type: "search", query: search.value }));
   /**
    * The keyboard policy is `multiselectOverlayAction`, not a handler here.
@@ -239,12 +338,19 @@ export function renderMultiselectField(
 
     applyPart(shell.root, view.root);
     applyPart(shell.label, view.parts.label);
+    // The label names the control that holds the value, which is the trigger — the same relation the
+    // single-choice sibling has. Left on the wrapper, the label named a box rather than a control.
+    shell.label.htmlFor = view.parts.trigger.id ?? "";
     // The projection's `trigger` describes the control *area* — its classes are the input wrapper's
     // — and its opener semantics. Here those live on two elements: the wrapper is the area, the
     // button is what opens the popup. Applying the whole part put `mdy-multiselect` on the button
     // as well, so one class named two elements and the catalogue's singular `inputWrapper` had two
     // candidates.
-    applyPart(searchButton, { ...view.parts.trigger, classes: [] });
+    // The projection's `trigger` describes what opens the popup, and here that is the button the
+    // chips sit in. Its classes come from the part; the wrapper around it keeps the field's box.
+    applyPart(trigger, view.parts.trigger);
+    syncChips(state);
+    setText(placeholder, f.placeholder ?? "");
     applyPart(popup, view.parts.popup);
     applyPart(search, view.parts.search);
     applyPart(overlay.grid, view.parts.group);
@@ -256,6 +362,7 @@ export function renderMultiselectField(
       open: state.open,
       touched: state.touched,
       disabled: state.disabled,
+      readonly: state.readonly,
       hasError: state.invalid,
       filled: state.selectedKeys.size > 0,
       required: state.required,
@@ -287,19 +394,10 @@ export function renderMultiselectField(
       // grids so the field and the popup can never disagree about what is taken.
       const classes = multiselectChipClasses({ mode, selected: count > 0 });
       const part = view.parts[key];
-      for (const [index, handle] of handles.entries()) {
-        // The part carries `hidden` when the query filters the option out, and an `id`. Only the
-        // popup's grid filters — the field shows every option, which is what makes it a picker
-        // rather than a list — and only one of the two grids can own the id.
-        //
-        // Taking nothing at all for the field grid was too blunt: everything else the part says is
-        // true of both chips, so a disabled multiselect left two operable buttons behind. The field
-        // grid now takes the part with the id and the filtering dropped.
-        if (part && index === 1) applyPart(handle.chip, part);
-        else if (part) {
-          const { id: _ownedByThePopup, ...shared } = part;
-          applyPart(handle.chip, { ...shared, attributes: { ...part.attributes, hidden: false } });
-        }
+      // One grid, in the popup, so it takes the part whole: the `hidden` that filtering writes and
+      // the id the opener names both belong to it. There is no second copy to withhold either from.
+      for (const handle of handles) {
+        if (part) applyPart(handle.chip, part);
         handle.chip.className = classes.join(" ");
         if (handle.count) setText(handle.count, `×${count}`);
       }

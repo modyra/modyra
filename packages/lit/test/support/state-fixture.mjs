@@ -26,7 +26,7 @@ const { MDY_CANONICAL_EMPTY, findPartElement, settleFor } = await import("../../
  * subscribed to the signal that changed is exactly what these suites are for.
  */
 const PAINT_BEAT = "host";
-const { MDY_WIDGET_CONTRACTS } = await import("../../../widgets/dist/index.js");
+const { MDY_POPUP_OPENERS, MDY_WIDGET_CONTRACTS } = await import("../../../widgets/dist/index.js");
 
 defineMdyElements();
 
@@ -91,8 +91,20 @@ export function emptyFor(kind) {
 }
 
 /** The element that opens each composite's overlay, by the part the catalogue names. */
-export const OPENER = ".mdy-select__trigger, .mdy-datepicker__toggle, .mdy-timepicker__toggle,"
-  + " .mdy-colors__toggle-area, .mdy-multiselect__search-btn";
+/**
+ * The element that opens a kind's overlay, resolved from the part the catalogue names.
+ *
+ * Per kind rather than one selector for all of them. Written out, this list went stale the moment an
+ * opener moved and `drive("open")` answered false; joined into one selector it was worse, because a
+ * daterange's start input carries the *datepicker's* opener class and `querySelector` returned an
+ * input that opens nothing.
+ */
+export function openerOf(root, kind) {
+  const opener = MDY_POPUP_OPENERS[kind]?.opener;
+  const classes = opener ? MDY_WIDGET_CONTRACTS[kind]?.parts?.[opener]?.classes ?? [] : [];
+  if (classes.length === 0) return null;
+  return root.querySelector(classes.map((cls) => `.${cls}`).join(""));
+}
 
 /**
  * Send a key where the user actually is.
@@ -100,11 +112,11 @@ export const OPENER = ".mdy-select__trigger, .mdy-datepicker__toggle, .mdy-timep
  * An overlay that moves focus into itself handles a key there; one that leaves focus on the opener
  * handles it there. Dispatching at a guessed element tests the guess rather than the widget.
  */
-export function pressKey(root, popup, key) {
+export function pressKey(root, popup, key, kind) {
   const active = root.ownerDocument.activeElement;
   const target = active && (root.contains(active) || popup?.contains(active))
     ? active
-    : root.querySelector(OPENER);
+    : openerOf(root, kind);
   if (!target) return false;
   target.dispatchEvent(new window.KeyboardEvent("keydown", { key, bubbles: true }));
   return true;
@@ -201,7 +213,7 @@ export async function mount(kind, { validators: withValidators = true, variant, 
     // element subscribed to the signal that changed is exactly what this matrix is for.
     settle: settleFor(PAINT_BEAT, () => element.updateComplete),
     dispose: () => element.remove(),
-    press: (key) => pressKey(element, partsOf(element, kind).popup, key),
+    press: (key) => pressKey(element, partsOf(element, kind).popup, key, kind),
     drive(state) {
       const handle = form.f.value;
       switch (state) {
@@ -215,7 +227,7 @@ export async function mount(kind, { validators: withValidators = true, variant, 
         case "disabled": form.setDisabled("value", () => true); return true;
         case "readonly": form.setReadonly("value", () => true); return true;
         case "open": {
-          const trigger = element.querySelector(OPENER);
+          const trigger = openerOf(element, kind);
           if (!trigger) return false;
           trigger.dispatchEvent(new window.MouseEvent("click", { bubbles: true }));
           return true;

@@ -23,7 +23,7 @@ export interface FieldShell {
   /** The field's own name — the last thing left to name a control with. */
   readonly fieldName?: string;
   /** Reflects state the themes key off: touched on the root, disabled/error on the wrapper. */
-  syncState(state: { touched?: boolean; disabled?: boolean; hasError?: boolean; filled?: boolean; required?: boolean; open?: boolean }): void;
+  syncState(state: { touched?: boolean; disabled?: boolean; hasError?: boolean; filled?: boolean; required?: boolean; open?: boolean; readonly?: boolean }): void;
 }
 
 export interface FieldShellAffixes {
@@ -79,7 +79,7 @@ export function buildFieldShell(
     wrapper,
     description,
     errorList,
-    syncState({ touched, disabled, hasError, filled, required, open }) {
+    syncState({ touched, disabled, hasError, filled, required, open, readonly }) {
       root.classList.toggle("mdy-renderer--touched", Boolean(touched));
       // The other state a renderer root carries, and the one nothing was applying. The contract
       // lists `open` beside `touched` in `MDY_FIELD_STATE_CLASSES.fieldStates` and names the class
@@ -87,6 +87,10 @@ export function buildFieldShell(
       // was open looked exactly like one whose popup was not.
       root.classList.toggle(MDY_FIELD_STATE_CLASSES.rendererOpen, Boolean(open));
       wrapper.classList.toggle("mdy-input-wrapper--disabled", Boolean(disabled));
+      // A different refusal from `disabled` and it has to look like one: the field is in play,
+      // focusable and submitted, and locked. Unpainted, a form held for review was indistinguishable
+      // from one waiting to be filled in.
+      wrapper.classList.toggle("mdy-input-wrapper--readonly", Boolean(readonly));
       wrapper.classList.toggle("mdy-input-wrapper--error", Boolean(hasError));
       label.classList.toggle("mdy-label--filled", Boolean(filled));
       label.classList.toggle("mdy-label--has-error", Boolean(hasError));

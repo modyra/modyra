@@ -96,7 +96,10 @@ export const MDY_FIELD_SHELL_CLASSES = Object.freeze({
 export const MDY_SHELL_PART_STATES: Readonly<Record<string, readonly MdyStateName[]>> =
   Object.freeze({
     root: ["open", "touched"],
-    inputWrapper: ["disabled", "error"],
+    // `readonly` beside `disabled` because they are different refusals a person has to be able to
+    // tell apart: a disabled field is out of play, a read-only one is in play and locked. Declared
+    // and unpainted, a form locked for review looked exactly like one waiting to be filled in.
+    inputWrapper: ["disabled", "error", "readonly"],
     label: ["filled", "hasError"],
     requiredMarker: ["filled"],
   });

@@ -50,6 +50,11 @@ export interface MdyI18nMessages {
   readonly increase: string;
   readonly decrease: string;
   readonly searchOptionsLabel: string;
+  /** The control that takes a chosen value off, named on the chip it belongs to. */
+  readonly chipRemoveLabel: string;
+  /** The two steppers on a counter chip: one fewer of this, one more of this. */
+  readonly chipDecrementLabel: string;
+  readonly chipIncrementLabel: string;
   readonly fileSelect: string;
   readonly fileSelectMultiple: string;
   readonly fileNoneSelected: string;
@@ -118,6 +123,9 @@ export const MDY_I18N_MESSAGES_DEFAULT: MdyI18nMessages = Object.freeze({
   increase: "Increase",
   decrease: "Decrease",
   searchOptionsLabel: "Search options",
+  chipRemoveLabel: "Remove",
+  chipDecrementLabel: "One fewer",
+  chipIncrementLabel: "One more",
   fileSelect: "Select file",
   fileSelectMultiple: "Select files",
   fileNoneSelected: "No file selected",
@@ -173,6 +181,9 @@ export const MDY_I18N_MESSAGES_IT: MdyI18nMessages = Object.freeze({
   increase: "Aumenta",
   decrease: "Diminuisci",
   searchOptionsLabel: "Cerca tra le opzioni",
+  chipRemoveLabel: "Rimuovi",
+  chipDecrementLabel: "Uno in meno",
+  chipIncrementLabel: "Uno in più",
   fileSelect: "Seleziona file",
   fileSelectMultiple: "Seleziona file",
   fileNoneSelected: "Nessun file selezionato",
@@ -221,6 +232,9 @@ export const MDY_I18N_MESSAGES_DE: MdyI18nMessages = Object.freeze({
   increase: "Erhöhen",
   decrease: "Verringern",
   searchOptionsLabel: "Optionen durchsuchen",
+  chipRemoveLabel: "Entfernen",
+  chipDecrementLabel: "Einer weniger",
+  chipIncrementLabel: "Einer mehr",
   fileSelect: "Datei auswählen",
   fileSelectMultiple: "Dateien auswählen",
   fileNoneSelected: "Keine Datei ausgewählt",
@@ -269,6 +283,9 @@ export const MDY_I18N_MESSAGES_FR: MdyI18nMessages = Object.freeze({
   increase: "Augmenter",
   decrease: "Diminuer",
   searchOptionsLabel: "Rechercher dans les options",
+  chipRemoveLabel: "Retirer",
+  chipDecrementLabel: "Un de moins",
+  chipIncrementLabel: "Un de plus",
   fileSelect: "Sélectionner un fichier",
   fileSelectMultiple: "Sélectionner des fichiers",
   fileNoneSelected: "Aucun fichier sélectionné",
@@ -317,6 +334,9 @@ export const MDY_I18N_MESSAGES_ES: MdyI18nMessages = Object.freeze({
   increase: "Aumentar",
   decrease: "Disminuir",
   searchOptionsLabel: "Buscar en las opciones",
+  chipRemoveLabel: "Quitar",
+  chipDecrementLabel: "Uno menos",
+  chipIncrementLabel: "Uno más",
   fileSelect: "Seleccionar archivo",
   fileSelectMultiple: "Seleccionar archivos",
   fileNoneSelected: "Ningún archivo seleccionado",

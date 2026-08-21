@@ -68,19 +68,20 @@ function partsOf(root, kind) {
       return { ...shell, trigger: q(".mdy-select__trigger"), value: q(".mdy-select__value"), arrow: q(".mdy-select__arrow"), popup: q(".mdy-select__dropdown"), listbox: q(".mdy-select__list"), option: Array.from(root.querySelectorAll(".mdy-select__option")) };
     case "multiselect":
       return {
-        ...shell, inputWrapper: q(".mdy-multiselect"), searchButton: q(".mdy-multiselect__search-btn"),
-        header: q(".mdy-multiselect__header"), popup: q(".mdy-multiselect__dropdown"),
-        // The popup's grid carries both `mdy-multiselect__options` and the overlay class, so the
-        // field's own grid has to be named by exclusion — resolving `options` by its single class
-        // finds two elements and reports the part as duplicated.
-        options: q(".mdy-multiselect__options:not(.mdy-multiselect-overlay__grid)"),
+        ...shell, inputWrapper: q(".mdy-multiselect"), trigger: q(".mdy-multiselect__trigger"),
+        chips: q(".mdy-multiselect__chips"), arrow: q(".mdy-multiselect__arrow"),
+        popup: q(".mdy-multiselect__dropdown"),
         placeholder: q(".mdy-multiselect__placeholder"),
-        // Both grids hold chips, so the field's own have to be named from its grid rather than by
-        // class across the whole widget — otherwise the first match is the popup's.
-        optionWrapper: Array.from(root.querySelectorAll(".mdy-multiselect__options:not(.mdy-multiselect-overlay__grid) .mdy-chip-wrapper")),
-        option: Array.from(root.querySelectorAll(".mdy-multiselect__options:not(.mdy-multiselect-overlay__grid) .mdy-chip")),
-        optionCheck: Array.from(root.querySelectorAll(".mdy-multiselect__options:not(.mdy-multiselect-overlay__grid) .mdy-chip__check")),
-        optionLabel: Array.from(root.querySelectorAll(".mdy-multiselect__options:not(.mdy-multiselect-overlay__grid) .mdy-chip__label")),
+        // One grid now, in the popup. The field's own copy is gone, so nothing has to be named by
+        // exclusion — and the chips in the strip are the *values*, which is a different part from
+        // the options in the grid.
+        options: q(".mdy-multiselect__options"),
+        optionWrapper: Array.from(root.querySelectorAll(".mdy-multiselect__options .mdy-chip-wrapper")),
+        option: Array.from(root.querySelectorAll(".mdy-multiselect__options .mdy-chip")),
+        optionCheck: Array.from(root.querySelectorAll(".mdy-multiselect__options .mdy-chip__check")),
+        optionLabel: Array.from(root.querySelectorAll(".mdy-multiselect__options .mdy-chip__label")),
+        chip: Array.from(root.querySelectorAll(".mdy-multiselect__chips .mdy-chip")),
+        chipRemove: Array.from(root.querySelectorAll(".mdy-multiselect__chips .mdy-chip__remove")),
       };
     case "datepicker":
       return { ...shell, control: q(".mdy-datepicker__input"), toggle: q(".mdy-datepicker__toggle"), popup: q(".mdy-datepicker__popup"), calendar: q(".mdy-datepicker__calendar"), grid: q(".mdy-datepicker__grid") };
@@ -251,7 +252,8 @@ for (const [tag, kind, initial, opener] of OVERLAY_ELEMENTS) {
  */
 const ABSENT_WHILE_OPEN = {
   select: ["empty", "loading"],
-  multiselect: ["empty", "loading", "chips", "chip", "optionStep", "optionCount"],
+  // `chips` and `chip` are drawn now: the closed control shows what was chosen.
+  multiselect: ["empty", "loading", "optionStep", "optionCount"],
   datepicker: ["actions"],
   daterange: ["actions"],
   timepicker: [],

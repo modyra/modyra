@@ -210,25 +210,40 @@ test("J1 — the contract names both halves of a choice", () => {
  * fixture keeps the subject to the chip. `absentParts` is how a renderer says the popup is not drawn.
  */
 function multiselectWithChip(chip, variant) {
-  const { root, label, parts, tail } = shell("multiselect", "mdy-renderer mdy-renderer--multiselect", { labelFor: "multiselect-control" });
+  // Open, and it says so on the root: the option chip this fixture is about lives in the popup, and
+  // what a popup contains is required only of a widget that has one showing.
+  const { root, label, parts, tail } = shell("multiselect", "mdy-renderer mdy-renderer--multiselect mdy-renderer--open", { labelFor: "multiselect-control" });
   const wrapper = el("div", "mdy-multiselect");
-  const header = el("div", "mdy-multiselect__header");
-  const searchButton = el("button", "mdy-multiselect__search-btn", {
+  // The control a person presses, which is what the label names and what holds the value. The
+  // options are in the popup — absent here, because this fixture is a closed control.
+  const trigger = el("button", "mdy-multiselect__trigger", {
     id: "multiselect-control", type: "button", role: "combobox",
     "aria-describedby": "multiselect-errors",
+    // The opener names what it opens: the popup, which this fixture draws because the option chip
+    // it is about lives inside one.
+    "aria-controls": "multiselect-popup", "aria-expanded": "true", "aria-haspopup": "dialog",
   });
-  header.append(searchButton);
-  wrapper.append(header);
+  const chips = el("div", "mdy-multiselect__chips");
+  const arrow = el("span", "mdy-multiselect__arrow", { "aria-hidden": "true" });
+  trigger.append(chips, arrow);
+  wrapper.append(trigger);
 
-  const options = el("div", "mdy-multiselect__options", { role: "group", "aria-label": "Chosen" });
+  // Open, because the subject is the option chip and options live in the popup. The grid is both
+  // `options` and `listbox`: one element, the shared class plus the overlay one, which is what lets
+  // a single rule lay it out.
+  const options = el("div", "mdy-multiselect__options mdy-multiselect-overlay__grid", { role: "group", "aria-label": "Chosen" });
   const optionWrapper = el("div", "mdy-chip-wrapper");
   const built = chip();
   optionWrapper.append(built.option);
   options.append(optionWrapper);
+  const popup = el("div", "mdy-multiselect__dropdown mdy-popup mdy-popup--surface mdy-multiselect-overlay__panel", {
+    id: "multiselect-popup", role: "dialog", "aria-label": "Options",
+  });
+  popup.append(options);
 
-  root.append(label, wrapper, options, ...tail);
+  root.append(label, wrapper, popup, ...tail);
   const named = {
-    ...parts, inputWrapper: wrapper, header, searchButton, options, optionWrapper,
+    ...parts, inputWrapper: wrapper, trigger, chips, arrow, popup, options, optionWrapper,
     option: built.option, optionLabel: built.optionLabel,
     ...(built.optionCheck ? { optionCheck: built.optionCheck } : {}),
     ...(built.optionStep ? { optionStep: built.optionStep } : {}),
@@ -237,7 +252,10 @@ function multiselectWithChip(chip, variant) {
   const issues = inspectWidgetDom(root, "multiselect", {
     parts: named,
     variant,
-    absentParts: ["popup", "listbox", "search", "empty"],
+    // The popup is drawn, so what it contains is required. Without this the fixture asserts a closed
+    // widget, where a missing stepper is not a defect because nothing inside a popup has to exist.
+    open: true,
+    absentParts: ["search", "empty", "chip", "chipRemove", "placeholder"],
   });
   root.remove();
   return issues;
@@ -437,7 +455,9 @@ test("J4b — every overlay kind requires its popup to frame something", () => {
   assert.deepEqual(emptyPopupIsLegal, [], "no overlay kind may frame nothing");
   assert.deepEqual(frames, {
     select: ["listbox"],
-    multiselect: ["listbox"],
+    // `options` joins it: the option grid moved into the popup, so the popup frames both the
+    // chooser and the grid it is drawn in.
+    multiselect: ["options"],
     datepicker: ["calendar"],
     daterange: ["calendar"],
     timepicker: ["container"],

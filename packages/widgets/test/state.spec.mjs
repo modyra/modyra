@@ -66,7 +66,9 @@ test("a widget that renames a shell part does not inherit the shell's states", (
   // wearing the same part name. Handing it `mdy-input-wrapper`'s states would mint
   // `mdy-multiselect--disabled`, which no theme styles and no renderer emits.
   assert.deepEqual(partStates("multiselect", "inputWrapper"), []);
-  assert.deepEqual(partStates("text", "inputWrapper"), ["disabled", "error"]);
+  // `readonly` beside them: a locked field is in play and a disabled one is not, and a person has
+  // to be able to tell which they are looking at.
+  assert.deepEqual(partStates("text", "inputWrapper"), ["disabled", "error", "readonly"]);
 });
 
 test("asking for a state a part never declared is refused, not silently emitted", () => {

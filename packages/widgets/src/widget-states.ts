@@ -114,7 +114,7 @@ const ARIA_STATE_CARRIERS: { readonly [K in MdyWidgetKind]: Partial<Record<"inva
   radio: { invalid: ["group"], disabled: ["group"], readonly: ["group"] },
   segmented: { invalid: ["group"], disabled: ["group"], readonly: ["group"] },
   select: { invalid: ["trigger"], disabled: ["trigger"], readonly: ["trigger"] },
-  multiselect: { invalid: ["searchButton"], disabled: ["searchButton"], readonly: ["searchButton"] },
+  multiselect: { invalid: ["trigger"], disabled: ["trigger"], readonly: ["trigger"] },
   datepicker: { invalid: ["control"], disabled: ["control"], readonly: ["control"] },
   daterange: { invalid: ["startControl", "endControl"], disabled: ["startControl", "endControl"], readonly: ["startControl", "endControl"] },
   timepicker: { invalid: ["control"], disabled: ["control"], readonly: ["control"] },

@@ -25,6 +25,7 @@ test("the chip vocabulary is fixed and namespaced", () => {
     label: "mdy-chip__label",
     count: "mdy-chip__count",
     step: "mdy-chip__btn",
+    remove: "mdy-chip__remove",
     wrapper: "mdy-chip-wrapper",
   });
 });
@@ -59,16 +60,22 @@ test("the multiselect's chip parts are the chip vocabulary, not names of their o
   assert.deepEqual(parts.chip.classes, [MDY_CHIP_CLASSES.block, MDY_CHIP_CLASSES.value]);
 });
 
-test("the field carries the options, and the popup the same grid with the overlay class", () => {
-  // The anatomy: the chips are in the field, and the search button opens a popup holding the
-  // same grid over a filter box. The shared class is what lets one rule lay out both.
+test("the closed control carries what was chosen, and the popup carries the options", () => {
+  // The anatomy: the field shows what was chosen, as chips in a strip inside the control a person
+  // presses; the options are seen in the popup, where there is room for them. A second copy of the
+  // options in the closed field put every one of them on the page twice and made the control's
+  // height follow the catalogue.
   const { parts, structure } = MDY_WIDGET_CONTRACTS.multiselect;
-  assert.deepEqual(parts.options.classes, ["mdy-multiselect__options"]);
-  assert.deepEqual(parts.listbox.classes, ["mdy-multiselect__options", "mdy-multiselect-overlay__grid"]);
+  // One grid, one part. `listbox` existed to name the popup's copy of a grid the field also drew;
+  // with the field's copy gone there is only one, and two names for it could only disagree.
+  assert.deepEqual(parts.options.classes, ["mdy-multiselect__options", "mdy-multiselect-overlay__grid"]);
+  assert.equal(parts.listbox, undefined);
   const parentOf = (part) => structure.nodes.find((node) => node.part === part)?.parent;
-  assert.equal(parentOf("options"), "root");
-  assert.equal(parentOf("searchButton"), "header");
-  assert.equal(parentOf("header"), "inputWrapper");
-  assert.equal(parentOf("listbox"), "popup");
+  assert.equal(parentOf("options"), "popup");
   assert.equal(parentOf("search"), "popup");
+  assert.equal(parentOf("trigger"), "inputWrapper");
+  assert.equal(parentOf("chips"), "trigger");
+  assert.equal(parentOf("chip"), "chips");
+  // The chip is where a value is changed, so the control that takes it off belongs to the chip.
+  assert.equal(parentOf("chipRemove"), "chip");
 });

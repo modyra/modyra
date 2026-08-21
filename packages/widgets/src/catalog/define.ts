@@ -59,7 +59,7 @@ export const PARENT_CANDIDATES: Readonly<Record<string, readonly string[]>> = Ob
   // The arrow may be drawn inside a button trigger or beside an input one; what the contract
   // requires is that it lives in the wrapper, and containment is transitive.
   arrow: ["inputWrapper", "trigger"], value: ["trigger", "inputWrapper"], placeholder: ["trigger", "inputWrapper"],
-  track: ["inputWrapper"], thumb: ["track"], chips: ["trigger"], chip: ["chips"], searchButton: ["trigger"],
+  track: ["inputWrapper"], thumb: ["track"], chips: ["trigger"], chip: ["chips"], chipRemove: ["chip"],
   group: [], option: ["optionWrapper", "listbox", "options", "group"], optionControl: ["option"], optionLabel: ["option"], optionCheck: ["option"], optionText: ["option"], optionCount: ["option"], optionStep: ["option"],
   search: ["popup"], listbox: ["popup"], optionWrapper: ["options", "listbox"], options: ["root"],
   // A field that is loading has to say so without being opened, so the indicator belongs to the
@@ -367,7 +367,10 @@ export const MDY_POPUP_OPENERS: Readonly<Partial<Record<MdyWidgetKind, MdyPopupO
   // Promises a dialog rather than a listbox. The popup frames a search field beside a grid of
   // chips, and this catalogue declares that grid as a `group` — so `listbox` was a promise of
   // options with a selected state and a listbox's keyboard, over a composite that has neither.
-  multiselect: Object.freeze({ opener: "searchButton", controls: "popup", role: "combobox", promises: "dialog" }),
+  // The whole control opens the popup, as the single-choice sibling's `trigger` does. A magnifier
+  // beside the field made the opener a decoration rather than the control, so the role that says
+  // "this is what holds the value" sat on a button holding none of it.
+  multiselect: Object.freeze({ opener: "trigger", controls: "popup", role: "combobox", promises: "dialog" }),
   // The pickers follow the combobox pattern: the typeable control is what carries `role=combobox`,
   // `aria-expanded` and `aria-controls`, and the calendar/clock button beside it is a second
   // affordance for the same popup. The opener is therefore the control, not the button — naming the

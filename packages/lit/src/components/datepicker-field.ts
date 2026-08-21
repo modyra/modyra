@@ -8,6 +8,7 @@ import {
   partClasses,
   calendarViewOnToggle,
   subscribeController,
+  keyBindingFor,
 } from "@modyra/widgets";
 import { html, nothing, type PropertyDeclarations } from "lit";
 import { observerFor, type MdyFieldHandle } from "@modyra/core";
@@ -470,6 +471,15 @@ export class MdyDatepickerFieldElement extends MdyFieldElement<string | null> {
             this.send({ type: "type", text: (e.target as HTMLInputElement).value });
           }}
           @blur=${() => handle.markAsTouched()}
+          @click=${(e: Event) => { if (!this._open) this.openPopup(handle, e); }}
+          @keydown=${(e: KeyboardEvent) => {
+            // The keys this kind declares, read from the table rather than listed here. The contract
+            // names the *control* as the opener, and a control that only opens under a pointer is
+            // one a keyboard cannot reach the calendar through at all.
+            if (this._open || keyBindingFor("datepicker", e.key, false)?.intent !== "open") return;
+            e.preventDefault();
+            this.openPopup(handle, e);
+          }}
         />
         <div class="mdy-input-suffix">
           <button

@@ -11,6 +11,7 @@
 const { mountMdyForm } = await import("../../dist/index.js");
 const { partsOf } = await import("../contract-parts.mjs");
 const { MDY_CANONICAL_EMPTY, settleFor } = await import("../../../widgets/dist/testing/index.js");
+const { MDY_POPUP_OPENERS, MDY_WIDGET_CONTRACTS } = await import("../../../widgets/dist/index.js");
 
 /** This renderer schedules onto a task: a signal write is not in the DOM until the turn ends. */
 const PAINT_BEAT = "task";
@@ -28,9 +29,25 @@ export const KINDS = [
   "file",
 ];
 
-/** The element that opens each composite's overlay, by the part the catalogue names. */
-export const OPENER = ".mdy-select__trigger, .mdy-datepicker__toggle, .mdy-timepicker__toggle,"
-  + " .mdy-colors__toggle-area, .mdy-multiselect__search-btn";
+/**
+ * The element that opens a kind's overlay, resolved from the part the catalogue names.
+ *
+ * Per kind rather than one selector for all of them, and both halves of that matter. Written out,
+ * the list said `.mdy-multiselect__search-btn` after the opener moved to the control, so
+ * `drive("open")` answered false — and the assertion that catches that throws *before* the fixture
+ * is disposed, leaking a mounted field whose ids collided with every kind tested after it, so three
+ * unrelated widgets read as broken. Derived but joined into one selector, it was worse: a daterange's
+ * start input carries `mdy-datepicker__input`, which is the *datepicker's* opener, so
+ * `querySelector` returned an input that opens nothing and the popup never appeared.
+ *
+ * One kind, one part, one element.
+ */
+export function openerOf(root, kind) {
+  const opener = MDY_POPUP_OPENERS[kind]?.opener;
+  const classes = opener ? MDY_WIDGET_CONTRACTS[kind]?.parts?.[opener]?.classes ?? [] : [];
+  if (classes.length === 0) return null;
+  return root.querySelector(classes.map((cls) => `.${cls}`).join(""));
+}
 
 /**
  * Send a key where the user actually is.
@@ -38,11 +55,11 @@ export const OPENER = ".mdy-select__trigger, .mdy-datepicker__toggle, .mdy-timep
  * An overlay that moves focus into itself handles a key there; one that leaves focus on the opener
  * handles it there. Dispatching at a guessed element tests the guess rather than the widget.
  */
-export function pressKey(root, popup, key) {
+export function pressKey(root, popup, key, kind) {
   const active = root.ownerDocument.activeElement;
   const target = active && (root.contains(active) || popup?.contains(active))
     ? active
-    : root.querySelector(OPENER);
+    : openerOf(root, kind);
   if (!target) return false;
   target.dispatchEvent(new window.KeyboardEvent("keydown", { key, bubbles: true }));
   return true;
@@ -138,7 +155,7 @@ export function mount(kind, { validators = true, variant, rules, value } = {}) {
     // Plain's effects land on a task rather than synchronously.
     settle: settleFor(PAINT_BEAT),
     dispose: () => { mounted.dispose(); host.remove(); },
-    press: (key) => pressKey(root, partsOf(root, kind).popup, key),
+    press: (key) => pressKey(root, partsOf(root, kind).popup, key, kind),
     drive(state) {
       switch (state) {
         case "pristine": return true;
@@ -153,7 +170,7 @@ export function mount(kind, { validators = true, variant, rules, value } = {}) {
         case "disabled": mounted.form.setDisabled("f", () => true); return true;
         case "readonly": mounted.form.setReadonly("f", () => true); return true;
         case "open": {
-          const trigger = root.querySelector(OPENER);
+          const trigger = openerOf(root, kind);
           if (!trigger) return false;
           trigger.dispatchEvent(new window.MouseEvent("click", { bubbles: true }));
           return true;

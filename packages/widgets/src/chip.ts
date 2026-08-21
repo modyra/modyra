@@ -38,6 +38,8 @@ export const MDY_CHIP_CLASSES = Object.freeze({
   count: "mdy-chip__count",
   /** A step button — one down, one up. */
   step: "mdy-chip__btn",
+  /** The control that takes a chosen value off, on the chip standing for it. */
+  remove: "mdy-chip__remove",
   /** Wraps a chip a renderer did not draw itself, so a custom option still sits in the grid. */
   wrapper: "mdy-chip-wrapper",
 });

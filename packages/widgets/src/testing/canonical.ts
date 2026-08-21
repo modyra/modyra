@@ -284,7 +284,7 @@ export function canonicalWidgetSnapshot(
    * is what the label names and what the user types in. Leaving it out reported a renderer that
    * exposes its state on the element a user actually reaches as exposing no state at all.
    */
-  const operable: readonly Element[] = ["control", "startControl", "endControl", "trigger", "searchButton", "group", "toggle", "hexInput"]
+  const operable: readonly Element[] = ["control", "startControl", "endControl", "trigger", "group", "toggle", "hexInput"]
     .flatMap((part) => [...(resolved.get(part) ?? [])]);
   const anyOperable = (test: (element: Element) => boolean): boolean => operable.some(test);
 
@@ -535,11 +535,15 @@ export const MDY_CANONICAL_AT_REST: Readonly<Partial<Record<MdyWidgetKind, MdyCa
       focusOwner: null,
     }),
     multiselect: Object.freeze({
-      parts: Object.freeze(["root", "label", "inputWrapper", "header", "searchButton", "options", "option", "optionCheck", "optionLabel"]),
-      optional: Object.freeze(["optionWrapper", "supportingText", "requiredMarker", "chips", "chip", "placeholder", "optionStep", "optionCount", "popup", "search", "listbox", "loading", "empty", "inlineError", "errors", "errorItem"]),
+      // The control opens the popup and holds the value, so it is what the label names and what
+      // announces the popup. `chips` is where what was chosen is drawn, inside the trigger.
+      // The options live in the popup now, so at rest they are absent by construction — the same
+      // reason every other overlay kind lists its popup's contents as optional.
+      parts: Object.freeze(["root", "label", "inputWrapper", "trigger", "chips", "arrow"]),
+      optional: Object.freeze(["options", "option", "optionCheck", "optionLabel", "optionWrapper", "supportingText", "requiredMarker", "chip", "chipRemove", "placeholder", "optionStep", "optionCount", "popup", "search", "loading", "empty", "inlineError", "errors", "errorItem"]),
       relationships: Object.freeze([
-        { from: "label", attribute: "for", to: "searchButton" },
-        { from: "searchButton", attribute: "aria-controls", to: null },
+        { from: "label", attribute: "for", to: "trigger" },
+        { from: "trigger", attribute: "aria-controls", to: null },
       ] as readonly MdyCanonicalRelationship[]),
       overlay: "closed" as const,
       state: AT_REST,
