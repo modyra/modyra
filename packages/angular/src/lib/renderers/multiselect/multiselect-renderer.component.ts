@@ -343,6 +343,21 @@ export class MdyMultiselectComponent<TValue = string>
   protected readonly counts = computed(() => this.controller()?.state().counts ?? new Map<string, number>());
   protected readonly selectedSet = computed(() => this.controller()?.state().selectedKeys ?? new Set<string>());
 
+  /** The controller's `open` is this kind's open state; see `MdyOverlayControl.isOverlayOpen`. */
+  protected override isOverlayOpen(): boolean {
+    const controller = this.controller();
+    return controller ? controller.state().open : super.isOverlayOpen();
+  }
+
+  protected override setOverlayOpen(open: boolean): void {
+    const controller = this.controller();
+    if (!controller) {
+      super.setOverlayOpen(open);
+      return;
+    }
+    controller.dispatch(open ? { type: "open" } : { type: "close" });
+  }
+
   protected override onBeforeOpen(): void {
     super.onBeforeOpen();
     this.activeOverlayIndex.set(-1);

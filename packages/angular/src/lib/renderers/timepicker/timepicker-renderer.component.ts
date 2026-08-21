@@ -188,6 +188,27 @@ export class MdyTimepickerComponent extends MdyOverlayControl<string | null> {
   });
   private readonly injector = inject(Injector);
 
+  /**
+   * The controller's own `open` is this picker's open state — there is no second one.
+   *
+   * The contract closes a popup whose field has left play by writing that cell, and a renderer
+   * painting from a cell of its own would leave a dial drawn and offering hours for a field whose
+   * clicks correctly no longer land.
+   */
+  protected override isOverlayOpen(): boolean {
+    const controller = this.controller();
+    return controller ? controller.state().open : super.isOverlayOpen();
+  }
+
+  protected override setOverlayOpen(open: boolean): void {
+    const controller = this.controller();
+    if (!controller) {
+      super.setOverlayOpen(open);
+      return;
+    }
+    controller.dispatch(open ? { type: "open" } : { type: "close" });
+  }
+
   protected override onBeforeOpen(): void {
     this.controller()?.dispatch({ type: "open" });
   }
