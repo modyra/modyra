@@ -1871,6 +1871,7 @@
     "handle: MdyFieldHandle<string | null>",
     "parseEntry?: (text: string) => string | null",
     "readonly?: boolean",
+    "schedule?: (run: () => void, afterMs: number) => () => void",
     "viewMode?: MdyTimepickerViewMode",
     "widgetId: string"
   ],

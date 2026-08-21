@@ -24,6 +24,7 @@ import {
 import { acceptTimeField } from "../time-bounds.js";
 import { timeStepsAt, type MdyTimeSteps } from "../time-granularity.js";
 import { timepickerDialPick, timepickerSelectedDialValue } from "./timepicker-dial.js";
+import { MDY_TIMEPICKER_ADVANCE_MS, timepickerFocusPart } from "./timepicker-focus.js";
 import { blocksValueChange } from "../interactivity.js";
 import { closeOverlayWhenOutOfPlay } from "./leaving-play.js";
 
@@ -98,6 +99,10 @@ export function createTimepickerFieldController(
     granularity,
     readonly: initialReadonly = false,
     viewMode: initialViewMode = "input",
+    schedule = (run: () => void, afterMs: number) => {
+      const id = setTimeout(run, afterMs);
+      return () => clearTimeout(id);
+    },
   } = options;
 
   const readonly = reactivity.signal(initialReadonly);
@@ -202,6 +207,32 @@ export function createTimepickerFieldController(
     return [{ type: "announce", message }];
   }
 
+  /** The handover in flight, if any. One at a time: a second press replaces the first. */
+  let cancelAdvance: (() => void) | null = null;
+  function stopAdvance(): void {
+    cancelAdvance?.();
+    cancelAdvance = null;
+  }
+
+  /**
+   * Hands the hour over to the minute, after a moment.
+   *
+   * The delay is deliberate and it is the contract's: the face redraws with twelve different numbers
+   * on it, and doing that in the same frame as the press takes the number the person just chose off
+   * the screen before they have seen it land.
+   *
+   * Sent to itself rather than returned as a command, because whoever owns the timing owns the
+   * transition — and `focusedField` is this controller's. A renderer scheduling it is a renderer
+   * deciding when the field changed.
+   */
+  function advanceToMinute(): void {
+    stopAdvance();
+    cancelAdvance = schedule(() => {
+      cancelAdvance = null;
+      if (open() && focusedField() === "hour") dispatch({ type: "focus-field", field: "minute" });
+    }, MDY_TIMEPICKER_ADVANCE_MS);
+  }
+
   function openPicker(): readonly MdyUiCommand[] {
     draft.set(draftFor(handle.value(), format));
     focusedField.set("hour");
@@ -209,7 +240,13 @@ export function createTimepickerFieldController(
     // left the popup is not where the next one should resume.
     viewMode.set(initialViewMode);
     open.set(true);
-    return [{ type: "open-overlay", anchor: { part: "trigger" } }];
+    // Focus goes into the popup with it. Without this a keyboard reached the opener and stopped:
+    // Tab walked twelve times without entering the dialog, and the key that was recorded as closing
+    // it never arrived, because the handler is on a thing focus was never in.
+    return [
+      { type: "open-overlay", anchor: { part: "trigger" } },
+      { type: "focus", target: { part: timepickerFocusPart("hour") } },
+    ];
   }
 
   function closePicker(restoreFocus: boolean): readonly MdyUiCommand[] {
@@ -339,11 +376,18 @@ export function createTimepickerFieldController(
         const chosen = hourFromFormat(shown);
         if (chosen === null) return refuse(`${shown} is not an hour this clock shows.`);
         draft.set({ ...current, ...chosen });
+        // An hour chosen on the face is the first half of a time. The face hands over to the minutes
+        // by itself so one gesture sets a whole time — a renderer that scheduled this instead was a
+        // renderer deciding when the field changed, and three of them answered differently.
+        if (intent.field === "hour") advanceToMinute();
         return [];
       }
       case "focus-field":
+        // A field asked for by name is a field arrived at: whatever moved it, DOM focus goes with
+        // it. One state, two expressions — the pair that can disagree is the one not to create.
+        stopAdvance();
         focusedField.set(intent.field);
-        return [];
+        return [{ type: "focus", target: { part: timepickerFocusPart(intent.field) } }];
       case "set-view-mode":
         viewMode.set(intent.mode);
         return [];
@@ -365,6 +409,7 @@ export function createTimepickerFieldController(
   }
 
   function destroy(): void {
+    stopAdvance();
     stopWatchingPlay();
     // No owned effects; the handle lifecycle belongs to the form engine.
   }

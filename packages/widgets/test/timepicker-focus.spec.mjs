@@ -77,3 +77,105 @@ test("the dial's handover has one declared timing", () => {
   assert.equal(typeof MDY_TIMEPICKER_ADVANCE_MS, "number");
   assert.ok(MDY_TIMEPICKER_ADVANCE_MS > 0 && MDY_TIMEPICKER_ADVANCE_MS < 1000);
 });
+
+// ─── the handover, on a clock the test holds ─────────────────────────────────
+
+const { createTimepickerFieldController, vanillaReactivity } = await import("../dist/index.js").then(
+  async (w) => ({ ...w, ...(await import("../../core/dist/index.js")) }));
+
+/** A controller whose waiting the test decides, with the pending runs it is holding. */
+function pickerWithClock(overrides = {}) {
+  const rx = vanillaReactivity();
+  const flag = () => rx.signal(false);
+  const value = rx.signal(overrides.initialValue ?? "09:00");
+  const disabled = flag();
+  const readonly = flag();
+  const handle = {
+    path: "t", value, errors: rx.signal([]), touched: flag(), dirty: flag(),
+    valid: rx.computed(() => true), pending: flag(), required: flag(), disabled, readonly,
+    interactivity: rx.computed(() => (disabled() ? "disabled" : readonly() ? "readonly" : "enabled")),
+    set: (v) => value.set(v), markAsTouched() {}, markAsDirty() {},
+  };
+  const pending = [];
+  const controller = createTimepickerFieldController({
+    widgetId: "t", handle, format: "24h", ...overrides,
+    schedule: (run, afterMs) => {
+      const entry = { run, afterMs, cancelled: false };
+      pending.push(entry);
+      return () => { entry.cancelled = true; };
+    },
+  }, rx);
+  return {
+    controller,
+    /** Runs every timer the controller is still waiting on. */
+    tick() { for (const entry of pending.splice(0)) if (!entry.cancelled) entry.run(); },
+    waitingFor: () => pending.filter((e) => !e.cancelled).map((e) => e.afterMs),
+  };
+}
+
+test("opening the picker asks for focus on the hour box", () => {
+  // The one upstream of everything else: without it a keyboard reached the opener and stopped, and
+  // the key recorded as closing the popup never arrived because focus was never in the thing that
+  // listens for it.
+  const { controller } = pickerWithClock();
+  const commands = controller.dispatch({ type: "open" });
+  assert.deepEqual(
+    commands.filter((c) => c.type === "focus"),
+    [{ type: "focus", target: { part: "hourControl" } }],
+  );
+});
+
+test("the dial holds the hour for the declared moment, then hands it to the minute", () => {
+  // Both sides, so a handover that never happens and one that happens instantly both fail.
+  const { controller, tick, waitingFor } = pickerWithClock();
+  controller.dispatch({ type: "open" });
+  controller.dispatch({ type: "set-from-angle", field: "hour", angle: 90 });
+
+  assert.equal(controller.state().focusedField, "hour", "still the hour, immediately after the press");
+  assert.deepEqual(waitingFor(), [MDY_TIMEPICKER_ADVANCE_MS], "and it is waiting the declared time");
+
+  tick();
+  assert.equal(controller.state().focusedField, "minute");
+});
+
+test("a minute chosen on the face hands over to nothing", () => {
+  const { controller, waitingFor } = pickerWithClock();
+  controller.dispatch({ type: "open" });
+  controller.dispatch({ type: "focus-field", field: "minute" });
+  controller.dispatch({ type: "set-from-angle", field: "minute", angle: 90 });
+  assert.deepEqual(waitingFor(), [], "there is no third field to advance to");
+});
+
+test("asking for a field by name moves focus with it, and cancels a handover in flight", () => {
+  const { controller, tick, waitingFor } = pickerWithClock();
+  controller.dispatch({ type: "open" });
+  controller.dispatch({ type: "set-from-angle", field: "hour", angle: 90 });
+
+  // The user reached for the hour box again before the face handed over. The pending advance must
+  // not arrive afterwards and take them somewhere they did not ask to be.
+  const commands = controller.dispatch({ type: "focus-field", field: "hour" });
+  assert.deepEqual(commands, [{ type: "focus", target: { part: "hourControl" } }]);
+  assert.deepEqual(waitingFor(), [], "the handover was cancelled, not merely superseded");
+  tick();
+  assert.equal(controller.state().focusedField, "hour");
+});
+
+test("a picker torn down mid-handover leaves nothing to arrive", () => {
+  const { controller, tick, waitingFor } = pickerWithClock();
+  controller.dispatch({ type: "open" });
+  controller.dispatch({ type: "set-from-angle", field: "hour", angle: 90 });
+  controller.destroy();
+  assert.deepEqual(waitingFor(), []);
+  tick();
+});
+
+test("a handover that arrives after the picker closed does nothing", () => {
+  // The timer outlives the popup by design — cancelling on close would be a second place that knows
+  // about it — so the arrival checks what it is arriving into.
+  const { controller, tick } = pickerWithClock();
+  controller.dispatch({ type: "open" });
+  controller.dispatch({ type: "set-from-angle", field: "hour", angle: 90 });
+  controller.dispatch({ type: "cancel" });
+  tick();
+  assert.equal(controller.state().focusedField, "hour");
+});

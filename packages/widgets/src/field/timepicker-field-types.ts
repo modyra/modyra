@@ -32,6 +32,17 @@ export interface MdyTimepickerFieldControllerOptions {
    */
   readonly granularity?: MdyTimeGranularity;
   /**
+   * How the controller waits, so a test can hold the clock and a host can own the timer.
+   *
+   * The dial hands the hour over to the minute after a moment, and *when* belongs to whoever owns
+   * `focusedField` — which is this controller. A renderer that scheduled it instead is a renderer
+   * deciding when the field changed, which is how three of them came to answer 0ms, 200ms and 300ms.
+   *
+   * A seam rather than a bare `setTimeout` for the same reason `reactivity` is one: a fake clock
+   * makes the handover assertable without sleeping, and teardown cancels through the same door.
+   */
+  readonly schedule?: (run: () => void, afterMs: number) => () => void;
+  /**
    * What the popup shows when it opens. Defaults to the number fields.
    *
    * The dial is the slower way to reach a precise time and the faster way to reach an approximate
