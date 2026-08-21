@@ -264,7 +264,16 @@ export const MDY_TIMEPICKER_INNER_RING = 0.6;
  * fraction of the *dial radius* — two different lengths — which put the boundary 2.4px outside the
  * outer digits. Every point on the face read as `inner`, including the outer numbers themselves.
  *
- * The boundary is the midpoint between where the two rings are actually painted.
+ * The inner ring is a **band around where its numbers are drawn**, not everything closer than the
+ * outer ones. Reading the whole disc below the midpoint as inner makes the empty middle of the face
+ * — most of its area — answer with an hour whose number is nowhere near the pointer, and the hand
+ * jumps short for a press the user aimed at the outer ring. The band is as wide as the gap between
+ * the two painted radii, centred on the inner one, so a press has to be near the digits to claim
+ * them and anything else belongs to the ring that is actually drawn out there.
+ *
+ * `field` is here because only the hour has two rings. A minute face draws one, and a rule that
+ * answered `"inner"` for a press near the centre of it shortened the hand for a ring that does not
+ * exist.
  */
 export function timepickerDialRing(
   face: { readonly width: number; readonly height: number; readonly left: number; readonly top: number },
@@ -272,13 +281,17 @@ export function timepickerDialRing(
   clientY: number,
   format: MdyTimeFormat,
   handLength: number,
+  field: "hour" | "minute" = "hour",
 ): "outer" | "inner" {
-  if (format !== "24h") return "outer";
+  if (field !== "hour" || format !== "24h") return "outer";
   if (!(handLength > 0)) return "outer";
   const dx = clientX - (face.left + face.width / 2);
   const dy = clientY - (face.top + face.height / 2);
   const reach = Math.sqrt(dx * dx + dy * dy);
-  return reach < (handLength * (1 + MDY_TIMEPICKER_INNER_RING)) / 2 ? "inner" : "outer";
+  // Where the two rings are painted, and how far from the inner one still counts as reaching for it.
+  const inner = handLength * MDY_TIMEPICKER_INNER_RING;
+  const reachOfBand = (handLength - inner) / 2;
+  return Math.abs(reach - inner) <= reachOfBand ? "inner" : "outer";
 }
 
 export function timepickerDialKeyIntent(

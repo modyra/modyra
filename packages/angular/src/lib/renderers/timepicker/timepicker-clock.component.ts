@@ -101,7 +101,10 @@ export class MdyTimepickerClockComponent {
    * belongs — a renderer working out which ring it drew is a renderer that can disagree with its
    * own drawing.
    */
-  private dragRing: "outer" | "inner" = "outer";
+  // A signal, because the hand's *length* follows it: a plain field changes without telling the
+  // view, so the hand kept the length it had when the gesture began and snapped only on release.
+  // Which ring the pointer is over is something the user is looking at while they move.
+  private readonly dragRing = signal<"outer" | "inner">("outer");
 
   private switchTimer: ReturnType<typeof setTimeout> | null = null;
 
@@ -196,7 +199,7 @@ export class MdyTimepickerClockComponent {
 
   /** Which ring the hand points into, from the contract's own predicate. */
   protected readonly handRing = computed(() => {
-    if (this.isDragging() && this.dragRing !== null) return this.dragRing;
+    if (this.isDragging()) return this.dragRing();
     const parsed = this.parsed();
     return parsed ? timepickerSelectedRing(this.focusedField(), parsed, this.format()) : "outer";
   });
@@ -347,7 +350,7 @@ export class MdyTimepickerClockComponent {
     const angle = this.dragAngle();
     if (angle === null) return;
 
-    this.dialPicked.emit({ field: this.dragField, angle, ring: this.dragRing });
+    this.dialPicked.emit({ field: this.dragField, angle, ring: this.dragRing() });
   }
 
   protected onDragEnd(): void {
@@ -356,7 +359,7 @@ export class MdyTimepickerClockComponent {
     const angle = this.dragAngle();
     if (angle !== null) {
       if (this.dragField === "hour") this.scheduleMinuteSwitch(300);
-      this.dialPicked.emit({ field: this.dragField, angle, ring: this.dragRing });
+      this.dialPicked.emit({ field: this.dragField, angle, ring: this.dragRing() });
     }
 
     this.isDragging.set(false);
@@ -370,6 +373,6 @@ export class MdyTimepickerClockComponent {
     if (!coords) return;
     const face = el.getBoundingClientRect();
     this.dragAngle.set(pointerAngle(face, coords.clientX, coords.clientY));
-    this.dragRing = timepickerDialRing(face, coords.clientX, coords.clientY, this.format(), handLengthOf(el, face));
+    this.dragRing.set(timepickerDialRing(face, coords.clientX, coords.clientY, this.format(), handLengthOf(el, face), this.dragField));
   }
 }

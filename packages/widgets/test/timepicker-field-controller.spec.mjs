@@ -170,13 +170,17 @@ test("the dial's two rings name two different hours from one direction", () => {
     const radians = ((degrees - 90) * Math.PI) / 180;
     return [128 + Math.cos(radians) * radius, 128 + Math.sin(radians) * radius];
   };
-  // Each ring claims the digits actually drawn on it, and the boundary is the midpoint between them.
+  // Each ring claims a band around the digits actually drawn on it.
   assert.equal(timepickerDialRing(face, ...at(HAND, 90), "24h", HAND), "outer", "the outer digits are on the outer ring");
   assert.equal(timepickerDialRing(face, ...at(127, 90), "24h", HAND), "outer", "and so is the rim beyond them");
   assert.equal(timepickerDialRing(face, ...at(HAND * MDY_TIMEPICKER_INNER_RING, 90), "24h", HAND), "inner");
-  assert.equal(timepickerDialRing(face, ...at(10, 90), "24h", HAND), "inner", "as is everything inside them");
-  // A 12-hour face has one ring wherever the finger lands.
+  // The empty middle of the face is most of its area, and it belongs to the ring that is drawn out
+  // there rather than to the one whose numbers are nowhere near. Read the other way, a press aimed
+  // at the outer ring picked an inner hour and the hand jumped short for it.
+  assert.equal(timepickerDialRing(face, ...at(10, 90), "24h", HAND), "outer", "the centre is not the inner ring");
+  // A 12-hour face has one ring wherever the finger lands, and so does a minute face.
   assert.equal(timepickerDialRing(face, ...at(60, 90), "12h", HAND), "outer");
+  assert.equal(timepickerDialRing(face, ...at(60, 90), "24h", HAND, "minute"), "outer", "minutes are drawn at one radius");
 });
 
 test("a 24-hour picker takes every hour its own face shows", () => {
