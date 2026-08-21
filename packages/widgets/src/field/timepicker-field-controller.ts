@@ -356,6 +356,15 @@ export function createTimepickerFieldController(
         draft.set({ ...draft(), period: intent.period });
         return [];
       }
+      case "set-time": {
+        // Read in the picker's format first, and in the other only as a fallback: a 24-hour picker
+        // is handed `"15:30"` and a 12-hour one `"03:30 PM"`, and the same string must not mean two
+        // times depending on which reader happens to accept it first.
+        const read = parseAnyTime(intent.time, format) ?? parseAnyTime(intent.time, format === "12h" ? "24h" : "12h");
+        if (!read) return refuse(`${intent.time} is not a time this clock reads.`);
+        draft.set({ ...draft(), hour: read.hour, minute: read.minute, period: read.period });
+        return [];
+      }
       case "set-from-angle": {
         const current = draft();
         const ring = format === "24h" ? intent.ring ?? "outer" : "outer";

@@ -149,6 +149,16 @@ export type MdyTimepickerFieldIntent =
   | { readonly type: "set-hour"; readonly hour: number }
   | { readonly type: "set-minute"; readonly minute: number }
   | { readonly type: "set-period"; readonly period: "AM" | "PM" }
+  /**
+   * A whole time, in whatever notation the caller has it.
+   *
+   * The three intents above each move one part of the draft, so a caller holding a complete time
+   * had to take it apart — read it in the picker's format, convert the hour into that format's
+   * vocabulary, and send the period only on a clock that has one. Every renderer doing that wrote
+   * the same three steps, and a renderer that wrote them slightly differently disagreed with the
+   * others about a time neither the contract nor the controller had an opinion on.
+   */
+  | { readonly type: "set-time"; readonly time: string }
   | {
     readonly type: "set-from-angle";
     readonly field: "hour" | "minute";

@@ -617,6 +617,7 @@
   ],
   "MdyDynamicDateField": [
     "animateHand?: boolean",
+    "format?: MdyTimeFormat",
     "granularity?: MdyTimeGranularity",
     "kind: \"datepicker\" | \"timepicker\"",
     "showUnavailable?: boolean"
