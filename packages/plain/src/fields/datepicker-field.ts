@@ -21,6 +21,7 @@ import {
   type MdyCalendarViewMode,
   MDY_I18N_MESSAGES_DEFAULT,
   type MdyI18nMessages,
+  keyBindingFor,
 } from "@modyra/widgets";
 import { applyPart, el, setErrors, setText, setIcon } from "../dom.js";
 import { buildFieldShell, insertControl } from "../field-shell.js";
@@ -172,6 +173,15 @@ export function renderDatepickerField(
   // click there is the caret being placed, not a switch being flipped. The toggle button is the
   // switch. `MDY_POPUP_OPENERS[kind].typeable` is where the contract says so.
   control.addEventListener("click", () => { if (!controller.state().open) dispatch({ type: "open" }); });
+  // And from the keyboard, on whichever keys the contract says open this kind. Asked of the table
+  // rather than listed here: a popup only a pointer can reach is closed to anyone who does not use
+  // one, and a renderer choosing its own keys is how the three of them come to answer differently.
+  control.addEventListener("keydown", (event) => {
+    const open = controller.state().open;
+    if (open || keyBindingFor("datepicker", event.key, open)?.intent !== "open") return;
+    event.preventDefault();
+    dispatch({ type: "open" });
+  });
   control.addEventListener("input", () => { typing = true; });
   control.addEventListener("blur", () => { typing = false; dispatch({ type: "blur" }); });
   // The text goes to the controller as text. Parsing here and dispatching only on success is what
