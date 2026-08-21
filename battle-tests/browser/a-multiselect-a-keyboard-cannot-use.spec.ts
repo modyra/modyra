@@ -99,10 +99,26 @@ for (const host of HOSTS) {
 
     expect(await held(), "the field did not start empty, so a choice would not be visible").toEqual([]);
 
-    // Reach the control the way a person does — Tab from the top of the page — rather than by focusing
-    // a selector this spec chose. What a keyboard reaches is the question.
-    await page.keyboard.press("Tab");
-    await page.keyboard.press("Tab");
+    // Tab until the declared opener has focus, rather than counting presses. Counting asserts a
+    // *position* in the tab order — this spec pressed Tab twice, which was right while the opener was a
+    // search button and wrong the moment the anatomy changed, so it went red on a renderer that had
+    // improved. Where the opener sits is the strip's business; that a keyboard can reach it is this
+    // spec's.
+    let reached = false;
+    for (let press = 0; press < 12 && !reached; press += 1) {
+      await page.keyboard.press("Tab");
+      await page.waitForTimeout(60);
+      reached = await page.evaluate(
+        (openerClass) => document.activeElement?.classList.contains(openerClass) ?? false,
+        OPENER_CLASS,
+      );
+    }
+    expect(
+      reached,
+      `twelve presses of Tab never reached the declared opener (.${OPENER_CLASS}), so a keyboard cannot ` +
+        `get to this control at all`,
+    ).toBe(true);
+
     await page.keyboard.press("Enter");
     await page.waitForTimeout(350);
     await page.keyboard.press("ArrowDown");
@@ -113,7 +129,8 @@ for (const host of HOSTS) {
     const chosen = await held();
     expect(
       Array.isArray(chosen) && chosen.length,
-      `after Tab, Tab, Enter, ArrowDown, Enter the field holds ${JSON.stringify(chosen)} — every one of ` +
+      `after tabbing to the opener and pressing Enter, ArrowDown, Enter the field holds ` +
+        `${JSON.stringify(chosen)} — every one of ` +
         `those keys is declared in MDY_WIDGET_KEYBOARD.multiselect, and none of them chose anything. ` +
         `A control only a pointer can operate fails WCAG 2.1.1`,
     ).toBeGreaterThan(0);
