@@ -108,3 +108,53 @@ for (const host of HOSTS) {
     });
   }
 }
+
+/**
+ * The same question asked of `:hover`, which is the half a jsdom check cannot reach.
+ *
+ * `packages/plain/test/state-rules-reach-their-part.test.mjs` excludes `:hover` and `:focus-visible`
+ * deliberately — jsdom cannot produce either, so a check on them would be reporting the harness. This
+ * tier can, which makes it the only place the question can be asked at all.
+ *
+ * It is worth asking because one rule survived the repair that converted its neighbours. These two
+ * are a single selector list and only the second was rewritten:
+ *
+ *     .mdy-toggle:hover input:not(:disabled) + .mdy-toggle__track .mdy-toggle__thumb::after,
+ *     .mdy-toggle:has(input:focus-visible)     .mdy-toggle__track .mdy-toggle__thumb::after
+ *
+ * The first still expects the track to be the input's next sibling, which it stopped being when the
+ * drawn part moved inside the label.
+ */
+for (const host of HOSTS) {
+  test(`a toggle answers the pointer resting on it, ${host.name}`, async ({ page }) => {
+    test.setTimeout(120_000);
+    await page.goto(host.page);
+    await page.waitForFunction((flag) => (window as never as Record<string, boolean>)[flag] === true, host.ready);
+
+    await page.evaluate(({ api }) => {
+      (window as never as Record<string, { mountFields(i: string, f: unknown[]): unknown }>)[api]
+        .mountFields("hov", [{ name: "b", kind: "toggle", label: "B" }]);
+    }, { api: host.api });
+    await page.waitForTimeout(250);
+
+    const thumb = page.locator(`[data-form="hov"] .${MDY_WIDGET_CONTRACTS.toggle.parts.thumb.classes[0]}`).first();
+    expect(await thumb.count(), "the toggle drew no thumb, so nothing could answer a hover").toBeGreaterThan(0);
+
+    const layer = async () =>
+      thumb.evaluate((element) => {
+        const computed = getComputedStyle(element as Element, "::after");
+        return { opacity: computed.opacity, transform: computed.transform };
+      });
+
+    const resting = await layer();
+    await thumb.hover();
+    await page.waitForTimeout(250);
+    const hovered = await layer();
+
+    expect(
+      hovered,
+      `the toggle's state layer is identical with the pointer on it and away from it — `
+        + `resting=${JSON.stringify(resting)} hovered=${JSON.stringify(hovered)}`,
+    ).not.toEqual(resting);
+  });
+}
