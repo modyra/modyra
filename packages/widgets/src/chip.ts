@@ -40,6 +40,15 @@ export const MDY_CHIP_CLASSES = Object.freeze({
   step: "mdy-chip__btn",
   /** The control that takes a chosen value off, on the chip standing for it. */
   remove: "mdy-chip__remove",
+  /**
+   * The controls that move a chosen value one place, on the chip standing for it.
+   *
+   * A pointer path that is **not** a drag. WCAG 2.5.7 asks for one independently of any keyboard
+   * path: somebody using a pointer who cannot hold and drag — a tremor, a head pointer, a switch —
+   * has no way to reorder otherwise, and a keyboard alternative does not discharge it. Drawn only
+   * where the field asked to be reorderable, so a set of filters gains no furniture.
+   */
+  move: "mdy-chip__move",
   /** Wraps a chip a renderer did not draw itself, so a custom option still sits in the grid. */
   wrapper: "mdy-chip-wrapper",
 });

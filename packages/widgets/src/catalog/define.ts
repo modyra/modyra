@@ -59,7 +59,7 @@ export const PARENT_CANDIDATES: Readonly<Record<string, readonly string[]>> = Ob
   // The arrow may be drawn inside a button trigger or beside an input one; what the contract
   // requires is that it lives in the wrapper, and containment is transitive.
   arrow: ["inputWrapper", "trigger"], value: ["trigger", "inputWrapper"], placeholder: ["trigger", "inputWrapper"],
-  track: ["inputWrapper"], thumb: ["track"], box: ["inputWrapper"], chips: ["trigger"], chip: ["chips"], chipRemove: ["chip"], announcement: ["box", "inputWrapper"],
+  track: ["inputWrapper"], thumb: ["track"], box: ["inputWrapper"], chips: ["trigger"], chip: ["chips"], chipRemove: ["chip"], chipMove: ["chip"], announcement: ["box", "inputWrapper"],
   group: [], option: ["optionWrapper", "listbox", "options", "group"], optionControl: ["option"], optionLabel: ["option"], optionCheck: ["option"], optionText: ["option"], optionCount: ["option"], optionStep: ["option"],
   search: ["popup"], listbox: ["popup"], optionWrapper: ["options", "listbox"], options: ["root"],
   // A field that is loading has to say so without being opened, so the indicator belongs to the

@@ -31,7 +31,7 @@ const PART_SEMANTICS: Readonly<Record<string, MdyWidgetSemanticElement>> = Objec
   box: "presentation",
   chip: "container",
   // What the chip is made of: a name, how many, and the control that takes it off.
-  chipRemove: "button",
+  chipRemove: "button", chipMove: "button",
   // Announcements.
   errors: "status", loading: "status", empty: "status", errorItem: "status",
   // What was chosen, said out loud. Nothing on screen: the strip is the sighted confirmation.

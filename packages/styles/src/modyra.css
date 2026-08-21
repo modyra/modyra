@@ -2068,7 +2068,25 @@
     .mdy-chip__remove::before { transform: rotate(45deg); }
     .mdy-chip__remove::after { transform: rotate(-45deg); }
 
+    /* The two marks the pointer's move controls show, drawn rather than written for the same reason
+       the remove is: a character in the button's text is picked up by an accessible name composed
+       from contents. */
+    .mdy-chip__move::after {
+        content: "";
+        position: absolute;
+        width: calc(var(--mdy-affordance-glyph) / 2.4);
+        height: calc(var(--mdy-affordance-glyph) / 2.4);
+        border-left: 1.5px solid currentcolor;
+        border-bottom: 1.5px solid currentcolor;
+        transform: rotate(45deg);
+    }
+
+    .mdy-chip__move:last-of-type::after {
+        transform: rotate(-135deg);
+    }
+
     .mdy-chip__btn,
+    .mdy-chip__move,
     .mdy-chip__remove {
         position: relative;
         display: inline-flex;
@@ -2093,6 +2111,7 @@
        instead, an engine that resolves `currentColor` inside `color-mix()` as transparent paints no
        hover at all — the affordance disappears rather than degrading. */
     .mdy-chip__btn:hover:not(:disabled)::after,
+    .mdy-chip__move:hover:not(:disabled)::after,
     .mdy-chip__remove:hover:not(:disabled)::after {
         content: "";
         position: absolute;
@@ -2104,6 +2123,7 @@
     }
 
     .mdy-chip__btn:disabled,
+    .mdy-chip__move:disabled,
     .mdy-chip__remove:disabled {
         cursor: not-allowed;
     }

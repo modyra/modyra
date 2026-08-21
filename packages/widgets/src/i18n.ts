@@ -55,6 +55,9 @@ export interface MdyI18nMessages {
   /** The two steppers on a counter chip: one fewer of this, one more of this. */
   readonly chipDecrementLabel: string;
   readonly chipIncrementLabel: string;
+  /** The two controls that move a chosen value one place, without a drag. */
+  readonly chipMoveEarlierLabel: string;
+  readonly chipMoveLaterLabel: string;
   /**
    * What a live region says when a choice lands or leaves: the change and the new total.
    *
@@ -144,6 +147,8 @@ export const MDY_I18N_MESSAGES_DEFAULT: MdyI18nMessages = Object.freeze({
   decrease: "Decrease",
   searchOptionsLabel: "Search options",
   chipRemoveLabel: "Remove",
+  chipMoveEarlierLabel: "Move earlier",
+  chipMoveLaterLabel: "Move later",
   selectionAdded: "{value} added, {count} selected",
   selectionRemoved: "{value} removed, {count} selected",
   selectionEmpty: "Nothing selected",
@@ -206,6 +211,8 @@ export const MDY_I18N_MESSAGES_IT: MdyI18nMessages = Object.freeze({
   decrease: "Diminuisci",
   searchOptionsLabel: "Cerca tra le opzioni",
   chipRemoveLabel: "Rimuovi",
+  chipMoveEarlierLabel: "Sposta prima",
+  chipMoveLaterLabel: "Sposta dopo",
   selectionAdded: "{value} aggiunto, {count} selezionati",
   selectionRemoved: "{value} rimosso, {count} selezionati",
   selectionEmpty: "Nessuna selezione",
@@ -261,6 +268,8 @@ export const MDY_I18N_MESSAGES_DE: MdyI18nMessages = Object.freeze({
   decrease: "Verringern",
   searchOptionsLabel: "Optionen durchsuchen",
   chipRemoveLabel: "Entfernen",
+  chipMoveEarlierLabel: "Nach vorne",
+  chipMoveLaterLabel: "Nach hinten",
   selectionAdded: "{value} hinzugefügt, {count} ausgewählt",
   selectionRemoved: "{value} entfernt, {count} ausgewählt",
   selectionEmpty: "Nichts ausgewählt",
@@ -316,6 +325,8 @@ export const MDY_I18N_MESSAGES_FR: MdyI18nMessages = Object.freeze({
   decrease: "Diminuer",
   searchOptionsLabel: "Rechercher dans les options",
   chipRemoveLabel: "Retirer",
+  chipMoveEarlierLabel: "Déplacer avant",
+  chipMoveLaterLabel: "Déplacer après",
   selectionAdded: "{value} ajouté, {count} sélectionnés",
   selectionRemoved: "{value} retiré, {count} sélectionnés",
   selectionEmpty: "Aucune sélection",
@@ -371,6 +382,8 @@ export const MDY_I18N_MESSAGES_ES: MdyI18nMessages = Object.freeze({
   decrease: "Disminuir",
   searchOptionsLabel: "Buscar en las opciones",
   chipRemoveLabel: "Quitar",
+  chipMoveEarlierLabel: "Mover antes",
+  chipMoveLaterLabel: "Mover después",
   selectionAdded: "{value} añadido, {count} seleccionados",
   selectionRemoved: "{value} quitado, {count} seleccionados",
   selectionEmpty: "Nada seleccionado",
