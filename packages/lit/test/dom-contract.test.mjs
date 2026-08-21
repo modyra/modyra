@@ -68,7 +68,10 @@ function partsOf(root, kind) {
       return { ...shell, trigger: q(".mdy-select__trigger"), value: q(".mdy-select__value"), arrow: q(".mdy-select__arrow"), popup: q(".mdy-select__dropdown"), listbox: q(".mdy-select__list"), option: Array.from(root.querySelectorAll(".mdy-select__option")) };
     case "multiselect":
       return {
-        ...shell, inputWrapper: q(".mdy-multiselect"), trigger: q(".mdy-multiselect__trigger"),
+        // `inputWrapper` is the shell's box, as it is for every kind; the widget's own layout box is
+        // `box`. One name for two different elements is what this rename removed.
+        ...shell, inputWrapper: q(".mdy-input-wrapper"), box: q(".mdy-multiselect"),
+        trigger: q(".mdy-multiselect__trigger"),
         chips: q(".mdy-multiselect__chips"), arrow: q(".mdy-multiselect__arrow"),
         popup: q(".mdy-multiselect__dropdown"),
         placeholder: q(".mdy-multiselect__placeholder"),

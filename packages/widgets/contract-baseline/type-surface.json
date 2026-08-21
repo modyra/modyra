@@ -947,6 +947,7 @@
     "form: Signal<MdyFormComponent<Record<string, unknown>, Partial<Record<string, unknown>>>>",
     "layout: _angular_core.InputSignal<readonly MdyDynamicLayoutNode[]>",
     "parseMode: _angular_core.InputSignal<MdyDynamicParseMode>",
+    "protected asOptions(0) field: MdyDynamicField,-> returns: { readonly searchable?: boolean; readonly reorderable?: boolean; }",
     "protected asTime(0) field: MdyDynamicField,-> returns: { readonly format?: MdyTimeFormat; readonly viewMode?: MdyTimepickerViewMode; readonly granularity?: MdyTimeGranularity; readonly animateHand?: boolean; readonly showUnavailable?: boolean; }",
     "protected columnRowStyle(0) node: MdyDynamicLayoutNode,-> returns: Record<string, string>",
     "protected columnStyle(0) column: ReadonlyArray<MdyDynamicLayoutChild>,-> returns: Record<string, string>",
@@ -1025,6 +1026,7 @@
     "loading?: boolean",
     "mode?: MdyMultiselectMode",
     "options: ReadonlyArray<MdySelectOption<unknown>>",
+    "reorderable?: boolean",
     "searchable?: boolean"
   ],
   "MdyDynamicParseMode": [
@@ -1647,7 +1649,8 @@
     "(opaque)"
   ],
   "MdyKeyBinding": [
-    "intent: \"move\" | \"step\" | \"toggle\" | \"open\" | \"commit\" | \"cancel\"",
+    "by?: -1 | 1",
+    "intent: \"move\" | \"step\" | \"toggle\" | \"open\" | \"commit\" | \"cancel\" | \"reorder\"",
     "key: string",
     "restoresFocus?: boolean",
     "when?: MdyOverlayPhase"
@@ -1730,8 +1733,10 @@
   "MdyMultiselectComponent": [
     "filterFn: _angular_core.InputSignal<((value: TValue) => boolean) | undefined>",
     "mode: _angular_core.InputSignal<MdyMultiselectMode>",
-    "protected chip: Readonly<{ block: \"mdy-chip\"; centered: \"mdy-chip--centered\"; counter: \"mdy-chip--counter\"; value: \"mdy-chip--value\"; selected: \"mdy-chip--selected\"; removable: \"mdy-chip--removable\"; check: \"mdy-chip__check\"; label: \"mdy-chip__label\"; count: \"mdy-chip__count\"; step: \"mdy-chip__btn\"; wrapper: \"mdy-chip-wrapper\"; }>",
+    "protected announcementText: _angular_core.Signal<string>",
+    "protected chip: Readonly<{ block: \"mdy-chip\"; centered: \"mdy-chip--centered\"; counter: \"mdy-chip--counter\"; value: \"mdy-chip--value\"; selected: \"mdy-chip--selected\"; removable: \"mdy-chip--removable\"; check: \"mdy-chip__check\"; label: \"mdy-chip__label\"; count: \"mdy-chip__count\"; step: \"mdy-chip__btn\"; remove: \"mdy-chip__remove\"; wrapper: \"mdy-chip-wrapper\"; }>",
     "protected chipClasses(0) selected: boolean,-> returns: string",
+    "protected chosen: _angular_core.Signal<{ key: string; value: TValue; label: string; count: number; }[]>",
     "protected countOf(0) optValue: TValue,-> returns: number",
     "protected counts: _angular_core.Signal<ReadonlyMap<string, number>>",
     "protected decrement(0) optValue: TValue,-> returns: void",
@@ -1741,6 +1746,7 @@
     "protected increment(0) optValue: TValue,-> returns: void",
     "protected isSelected(0) optValue: TValue,-> returns: boolean",
     "protected onBeforeOpen-> returns: void",
+    "protected onChipKeydown(0) event: KeyboardEvent,(1) optionKey: string,-> returns: void",
     "protected onOverlayKeydown(0) event: KeyboardEvent,-> returns: void",
     "protected onOverlaySelect(0) optValue: TValue,-> returns: void",
     "protected onToggle(0) optValue: TValue,-> returns: void",
@@ -1751,13 +1757,15 @@
     "protected paintedOptions: _angular_core.Signal<readonly _modyra_core.MdySelectOption<TValue>[]>",
     "protected popupClass: string",
     "protected popupId: _angular_core.Signal<string>",
+    "protected removeChip(0) optionKey: string,(1) value: TValue,-> returns: void",
     "protected searchResults: _angular_core.Signal<readonly _modyra_core.MdySelectOption<TValue>[]>",
     "protected selectedSet: _angular_core.Signal<ReadonlySet<string>>",
-    "protected widgetContract: _modyra_widgets.MdyWidgetDefinition<\"errorItem\" | \"errors\" | \"inlineError\" | \"inputWrapper\" | \"label\" | \"requiredMarker\" | \"root\" | \"supportingText\" | \"option\" | \"optionLabel\" | \"optionCheck\" | \"arrow\" | \"empty\" | \"listbox\" | \"loading\" | \"placeholder\" | \"popup\" | \"search\" | \"trigger\" | \"chip\" | \"chipCount\" | \"chipLabel\" | \"chipRemove\" | \"chips\" | \"optionCount\" | \"optionStep\" | \"optionWrapper\" | \"options\">",
+    "protected widgetContract: _modyra_widgets.MdyWidgetDefinition<\"errorItem\" | \"errors\" | \"inlineError\" | \"inputWrapper\" | \"label\" | \"requiredMarker\" | \"root\" | \"supportingText\" | \"option\" | \"optionLabel\" | \"optionCheck\" | \"arrow\" | \"empty\" | \"loading\" | \"placeholder\" | \"popup\" | \"search\" | \"trigger\" | \"announcement\" | \"box\" | \"chip\" | \"chipRemove\" | \"chips\" | \"optionCount\" | \"optionStep\" | \"optionWrapper\" | \"options\">",
     "protected widgetHasRootClass: boolean",
     "protected widgetKind: \"multiselect\"",
+    "reorderable: _angular_core.InputSignalWithTransform<boolean, unknown>",
     "resetSelection-> returns: void",
-    "ɵcmp: _angular_core.ɵɵComponentDeclaration<MdyMultiselectComponent<any>, \"mdy-control-multiselect\", never, { \"mode\": { \"alias\": \"mode\"; \"required\": false; \"isSignal\": true; }; \"filterFn\": { \"alias\": \"filterFn\"; \"required\": false; \"isSignal\": true; }; }, {}, never, never, true, never>",
+    "ɵcmp: _angular_core.ɵɵComponentDeclaration<MdyMultiselectComponent<any>, \"mdy-control-multiselect\", never, { \"reorderable\": { \"alias\": \"reorderable\"; \"required\": false; \"isSignal\": true; }; \"mode\": { \"alias\": \"mode\"; \"required\": false; \"isSignal\": true; }; \"filterFn\": { \"alias\": \"filterFn\"; \"required\": false; \"isSignal\": true; }; }, {}, never, never, true, never>",
     "ɵfac: _angular_core.ɵɵFactoryDeclaration<MdyMultiselectComponent<any>, never>"
   ],
   "MdyMultiselectFieldA11yOptions": [
@@ -3314,6 +3322,11 @@
     "(2) options?: MdyCanonicalOptions",
     "-> returns: MdyCanonicalSnapshot"
   ],
+  "chipFocusAfterRemoval": [
+    "(0) order: readonly string[]",
+    "(1) removed: string",
+    "-> returns: string | null"
+  ],
   "clearFileSelection": [
     "-> returns: MdyFileSelectionTransition<TFile>"
   ],
@@ -4097,7 +4110,7 @@
     "(0) state: MdyMultiselectFieldState<TValue>",
     "(1) errors: ReadonlyArray<MdyFieldError>",
     "(2) options: MdyMultiselectFieldA11yOptions",
-    "-> returns: { readonly root: MdyPartContract; readonly label: MdyPartContract; readonly trigger: MdyPartContract; readonly placeholder: MdyPartContract; readonly chips: MdyPartContract; readonly popup: MdyPartContract; readonly search: MdyPartContract; readonly group: MdyPartContract; readonly description: MdyPartContract; readonly error: MdyPartContract; }"
+    "-> returns: { readonly root: MdyPartContract; readonly label: MdyPartContract; readonly trigger: MdyPartContract; readonly placeholder: MdyPartContract; readonly chips: MdyPartContract; readonly popup: MdyPartContract; readonly search: MdyPartContract; readonly group: MdyPartContract; readonly description: MdyPartContract; readonly error: MdyPartContract; /** * What was chosen, said out loud, with the words to say it. * * A choice lands and the strip is the only confirmation — which is the one a screen reader user * does not get. The text is the whole selection rather than the last change, so it differs * whenever the selection does: a region written once announces the first choice and swallows * every one after it, which passes any check that makes only one. */ readonly announcement: MdyPartContract & { readonly text: string; }; }"
   ],
   "projectOptionFieldA11y": [
     "(0) state: MdyOptionFieldState<TValue>",

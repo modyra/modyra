@@ -61,14 +61,24 @@ test("a part that is the shell's takes the shell's class to hang its states on",
   assert.deepEqual(partClasses("text", "label", { filled: true }), ["mdy-label", "mdy-label--filled"]);
 });
 
-test("a widget that renames a shell part does not inherit the shell's states", () => {
-  // A multiselect's `inputWrapper` is `mdy-multiselect`, the grid of chips — a different thing
-  // wearing the same part name. Handing it `mdy-input-wrapper`'s states would mint
-  // `mdy-multiselect--disabled`, which no theme styles and no renderer emits.
-  assert.deepEqual(partStates("multiselect", "inputWrapper"), []);
-  // `readonly` beside them: a locked field is in play and a disabled one is not, and a person has
-  // to be able to tell which they are looking at.
-  assert.deepEqual(partStates("text", "inputWrapper"), ["disabled", "error", "readonly"]);
+test("no kind gives a shell part's name to something else", () => {
+  // `inputWrapper` is the shell's box, and it means the shell's box for every kind — including the
+  // multiselect, which used to give the name to its own layout box instead. One name for two
+  // different elements is not a naming inconvenience: a height comparison that resolved the part
+  // per kind read the shell for three kinds and the inner box for the fourth, and reported the
+  // border a theme draws on one of them as a two-pixel defect.
+  //
+  // The multiselect's own box is `box`, which is a part of its own and carries no shell state.
+  // `readonly` beside `disabled` and `error`: a locked field is in play and a disabled one is not,
+  // and a person has to be able to tell which they are looking at.
+  for (const kind of ["text", "multiselect", "select", "datepicker"]) {
+    assert.deepEqual(
+      partStates(kind, "inputWrapper"),
+      ["disabled", "error", "readonly"],
+      `${kind} does not take the shell's states on the shell's part`,
+    );
+  }
+  assert.deepEqual(partStates("multiselect", "box"), []);
 });
 
 test("asking for a state a part never declared is refused, not silently emitted", () => {

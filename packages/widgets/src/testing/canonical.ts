@@ -539,7 +539,7 @@ export const MDY_CANONICAL_AT_REST: Readonly<Partial<Record<MdyWidgetKind, MdyCa
       // announces the popup. `chips` is where what was chosen is drawn, inside the trigger.
       // The options live in the popup now, so at rest they are absent by construction — the same
       // reason every other overlay kind lists its popup's contents as optional.
-      parts: Object.freeze(["root", "label", "inputWrapper", "trigger", "chips", "arrow", "announcement"]),
+      parts: Object.freeze(["root", "label", "inputWrapper", "box", "trigger", "chips", "arrow", "announcement"]),
       optional: Object.freeze(["options", "option", "optionCheck", "optionLabel", "optionWrapper", "supportingText", "requiredMarker", "chip", "chipRemove", "placeholder", "optionStep", "optionCount", "popup", "search", "loading", "empty", "inlineError", "errors", "errorItem"]),
       relationships: Object.freeze([
         { from: "label", attribute: "for", to: "trigger" },

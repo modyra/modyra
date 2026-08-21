@@ -752,5 +752,17 @@
       "angular"
     ],
     "themes": []
+  },
+  "mdy-multiselect": {
+    "kind": "drift",
+    "adapters": [
+      "angular",
+      "lit",
+      "plain"
+    ],
+    "themes": [
+      "modyra-modern.css",
+      "modyra.css"
+    ]
   }
 }

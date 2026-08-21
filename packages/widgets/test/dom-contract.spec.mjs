@@ -276,7 +276,8 @@ test("no projection invents a class the contract does not know", async () => {
  */
 function buildCompactMultiselect({ chipClasses = "mdy-chip mdy-chip--value" } = {}) {
   const root = el("div", "mdy-renderer mdy-renderer--multiselect");
-  const wrapper = el("div", "mdy-multiselect");
+  const wrapper = el("div", "mdy-input-wrapper");
+  const box = el("div", "mdy-multiselect");
   // The control a person presses, which holds the field's value — so the contract gives it the
   // combobox role rather than leaving `aria-invalid` and `aria-required` on a bare button.
   const trigger = el("button", "mdy-multiselect__trigger", { role: "combobox" });
@@ -291,12 +292,13 @@ function buildCompactMultiselect({ chipClasses = "mdy-chip mdy-chip--value" } = 
   // Said rather than shown: the strip is the sighted confirmation that a choice landed, and this is
   // the same confirmation for somebody who cannot see it.
   const announcement = el("div", "mdy-multiselect__announcement", { role: "status", "aria-live": "polite" });
-  wrapper.append(trigger, announcement);
+  box.append(trigger, announcement);
+  wrapper.append(box);
   root.append(wrapper);
   document.body.append(root);
   return {
     root,
-    parts: { inputWrapper: wrapper, trigger, chips, chip, chipRemove, arrow, announcement },
+    parts: { inputWrapper: wrapper, box, trigger, chips, chip, chipRemove, arrow, announcement },
   };
 }
 
