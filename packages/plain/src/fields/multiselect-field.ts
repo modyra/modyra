@@ -25,6 +25,7 @@ import {
   chipMovedAnnouncement,
   chipDropIndex,
   stateClass,
+  chipStripWheelDelta,
 } from "@modyra/widgets";
 import { applyPart, el, setErrors, setText, setIcon } from "../dom.js";
 import { buildFieldShell, insertControl } from "../field-shell.js";
@@ -74,6 +75,16 @@ export function renderMultiselectField(
   const trigger = el("button", parts.trigger.classes.join(" ")) as HTMLButtonElement;
   trigger.type = "button";
   const chipStrip = el("div", parts.chips.classes.join(" "));
+  // A wheel reaches what has scrolled out of the strip. ADR 0127 allows the row to scroll only if
+  // there is a mechanism rather than a cue, and many desktop mice have no horizontal axis at all.
+  // Passive is wrong here: the point is to take the gesture, and a listener that cannot call
+  // `preventDefault` leaves the page scrolling underneath as well.
+  chipStrip.addEventListener("wheel", (event) => {
+    const delta = chipStripWheelDelta(event.deltaX, event.deltaY, chipStrip.scrollWidth, chipStrip.clientWidth);
+    if (delta === 0) return;
+    event.preventDefault();
+    chipStrip.scrollLeft += delta;
+  }, { passive: false });
   const placeholder = el("span", parts.placeholder.classes.join(" "));
   // The affordance at the trailing edge, as the single-choice sibling has. Decorative: the whole
   // control opens the popup, so this says which way it opens rather than being the way.
@@ -178,6 +189,8 @@ export function renderMultiselectField(
    * made.
    */
   /** A sentence to say once, for a change no selection delta describes — a move. */
+  /** How many distinct values are chosen, for the description to state. */
+  let tallyCount = 0;
   let saySoon: string | null = null;
   let saidLast: readonly string[] = [...new Set(
     (controller.state().selectedValues as readonly unknown[]).map((value) => keyFor({ value } as MdySelectOption<unknown>)),
@@ -461,6 +474,7 @@ export function renderMultiselectField(
       chosenEls.delete(key);
     }
     placeholder.hidden = tally.size > 0;
+    tallyCount = tally.size;
     syncRoving();
   }
 
@@ -634,6 +648,14 @@ export function renderMultiselectField(
     applyPart(overlay.grid, view.parts.group);
     syncGrids(state.options);
     applyPart(shell.description, view.parts.description);
+    // How many are chosen, in the field's own description — the state, asked for rather than
+    // announced. A person arriving at a field whose chips have scrolled out of sight has no other
+    // way to learn there are more, and ADR 0127 makes this one of the conditions the scrolling row
+    // is allowed under.
+    const counted = tallyCount === 0 ? "" : messages.selectionCount.replace("{count}", String(tallyCount));
+    const described = [f.supportingText ?? "", counted].filter((each) => each !== "").join(". ");
+    setText(shell.description, described);
+    shell.description.hidden = described === "";
     applyPart(shell.errorList, view.parts.error);
     setErrors(shell.errorList, shownErrorsOf(handle).map((e) => e.message));
     shell.syncState({

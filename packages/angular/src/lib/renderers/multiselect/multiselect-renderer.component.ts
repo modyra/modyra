@@ -1,4 +1,4 @@
-import { chipDropIndex, chipFocusAfterRemoval, chipMovedAnnouncement, stateClass, keyBindingFor, multiselectAnnouncement, optionsWithUnrecognizedValues, overlayControlledId, projectOverlayOpenerA11y } from "@modyra/widgets";
+import { chipDropIndex, chipFocusAfterRemoval, chipStripWheelDelta, chipMovedAnnouncement, stateClass, keyBindingFor, multiselectAnnouncement, optionsWithUnrecognizedValues, overlayControlledId, projectOverlayOpenerA11y } from "@modyra/widgets";
 import { MdyPartDirective } from "../../control/mdy-part.directive";
 import { NgTemplateOutlet } from "@angular/common";
 import {
@@ -93,7 +93,7 @@ import type { MdyOverlayBranch, MdyOverlayOwner } from "../../core/overlay-contr
         [attr.aria-describedby]="describedById(fieldId)"
         [attr.aria-label]="controlAriaLabel()"
       >
-        <span class="mdy-multiselect__chips">
+        <span class="mdy-multiselect__chips" (wheel)="onStripWheel($event)">
           <!-- One chip per distinct value with how many, because a repeated value is a quantity:
                incrementing takes one of something to three. One chip per entry would make undoing
                one decision three separate removals. -->
@@ -256,9 +256,14 @@ import type { MdyOverlayBranch, MdyOverlayOwner } from "../../core/overlay-contr
 
     @if (errorsRendered()) {
       <mdy-error-list [fieldId]="fieldId" [errors]="errors()" />
-    } @else if (supportingText(); as st) {
+    } @else if (supportingText() || describedState()) {
+      <!-- How many are chosen, in the field's own description: the state, asked for rather than
+           announced, and one of the conditions ADR 0127 lets the scrolling row exist under. -->
       <div class="mdy-supporting-text" [id]="descriptionId(fieldId)">
-        <ng-container [ngTemplateOutlet]="st.template" />
+        @if (supportingText(); as st) {
+          <ng-container [ngTemplateOutlet]="st.template" />
+        }
+        {{ describedState() }}
       </div>
     }
   `,
@@ -556,6 +561,26 @@ export class MdyMultiselectComponent<TValue = string>
     view.addEventListener("pointermove", onMove);
     view.addEventListener("pointerup", onUp);
     view.addEventListener("pointercancel", done);
+  }
+
+  /** How many are chosen, for the field's own description. */
+  protected readonly describedState = computed(() => {
+    const count = this.chosen().length;
+    return count === 0 ? "" : this.i18n.selectionCount.replace("{count}", String(count));
+  });
+
+  /**
+   * A wheel reaches what has scrolled out of the strip.
+   *
+   * ADR 0127 allows the row to scroll only if there is a mechanism rather than a cue, and many
+   * desktop mice have no horizontal axis at all.
+   */
+  protected onStripWheel(event: WheelEvent): void {
+    const strip = event.currentTarget as HTMLElement;
+    const delta = chipStripWheelDelta(event.deltaX, event.deltaY, strip.scrollWidth, strip.clientWidth);
+    if (delta === 0) return;
+    event.preventDefault();
+    strip.scrollLeft += delta;
   }
 
   /**

@@ -469,16 +469,24 @@ export abstract class MdyFieldElement<T> extends LitElement {
 
   /** Helper text slot rendered when no block errors are shown. It carries the id the widget
    * contract describes the control by — an unrendered id would leave that reference dangling. */
+  /** What this kind says about itself in its own description. Empty unless a kind has something. */
+  protected describedState(): string {
+    return "";
+  }
+
   protected renderSupportingText(): unknown {
     // No height when there is nothing to say, and still present: `aria-describedby` names this id
     // unconditionally, so removing the element leaves the reference pointing at nothing — which is
     // the defect one step worse than an empty description.
-    const empty = !this.supportingText && !this.querySelector('[slot="supporting-text"]');
+    // A kind may add a sentence of its own — the multiselect states how many are chosen, which is
+    // one of the conditions ADR 0127 lets its scrolling row exist under.
+    const own = this.describedState();
+    const empty = !this.supportingText && !own && !this.querySelector('[slot="supporting-text"]');
     return html`<div
       class="${SHELL.supportingText}"
       id=${this.descriptionId}
       ?hidden=${empty}
-    >${this.supportingText ?? nothing}<slot name="supporting-text"></slot></div>`;
+    >${[this.supportingText, own].filter(Boolean).join(". ")}<slot name="supporting-text"></slot></div>`;
   }
 
   /** Error list block (rendered only once the field was touched). */

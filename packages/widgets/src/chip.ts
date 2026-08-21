@@ -211,3 +211,25 @@ export function chipDropIndex(
   if (landed > from) landed -= 1;
   return Math.max(0, Math.min(midpoints.length - 1, landed));
 }
+
+/**
+ * How far a wheel turn should move a horizontal strip.
+ *
+ * ADR 0127 lets the chip row scroll on the condition that there is a **mechanism**, not only a cue,
+ * for reaching what has scrolled out — and many desktop mice have no horizontal axis at all, so a
+ * strip that only answers `deltaX` is a strip a large number of people cannot move. The larger of
+ * the two deltas is taken, so a vertical wheel drives it and a trackpad's horizontal gesture still
+ * behaves as its owner expects.
+ *
+ * Answers `0` when the strip has nothing hidden, so the page keeps its own scrolling: a wheel
+ * swallowed by a row that had nowhere to go is a page that will not move.
+ */
+export function chipStripWheelDelta(
+  deltaX: number,
+  deltaY: number,
+  scrollWidth: number,
+  clientWidth: number,
+): number {
+  if (scrollWidth <= clientWidth) return 0;
+  return Math.abs(deltaX) > Math.abs(deltaY) ? deltaX : deltaY;
+}
