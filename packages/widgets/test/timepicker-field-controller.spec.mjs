@@ -219,16 +219,18 @@ test("an hour no clock has is refused, and the refusal is said out loud", () => 
 test("the popup opens on the view the host configured, and returns to it", () => {
   const { controller } = setup({ initialValue: "02:30 PM" });
   controller.dispatch({ type: "open" });
-  assert.equal(controller.state().viewMode, "input", "the number fields are the default view");
-  controller.dispatch({ type: "set-view-mode", mode: "dial" });
-  assert.equal(controller.state().viewMode, "dial", "the dial is still reachable");
+  // The face is the default: it is the faster route to an approximate time and the only gesture
+  // where there is no keyboard. It was two answers across three renderers before it was declared.
+  assert.equal(controller.state().viewMode, "dial", "the clock is the default view");
+  controller.dispatch({ type: "set-view-mode", mode: "input" });
+  assert.equal(controller.state().viewMode, "input", "the number fields are one press away");
   controller.dispatch({ type: "close" });
   controller.dispatch({ type: "open" });
-  assert.equal(controller.state().viewMode, "input", "where the last session left it is not where the next resumes");
+  assert.equal(controller.state().viewMode, "dial", "where the last session left it is not where the next resumes");
 
-  const onDial = setup({ initialValue: "02:30 PM", viewMode: "dial" });
-  onDial.controller.dispatch({ type: "open" });
-  assert.equal(onDial.controller.state().viewMode, "dial", "a host that asks for the clock gets it");
+  const onInput = setup({ initialValue: "02:30 PM", viewMode: "input" });
+  onInput.controller.dispatch({ type: "open" });
+  assert.equal(onInput.controller.state().viewMode, "input", "a host that asks for the boxes gets them");
 });
 
 test("set-from-angle snaps to the nearest hour/minute via the shared core angle helpers", () => {

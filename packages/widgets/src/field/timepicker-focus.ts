@@ -26,6 +26,19 @@ import type { MdyTimeFormat } from "@modyra/core/datetime";
 export const MDY_TIMEPICKER_ADVANCE_MS = 250;
 
 /**
+ * The view an opening picker shows.
+ *
+ * The face rather than the boxes: it is the faster route to an approximate time, which is what most
+ * people are choosing, and it is the only gesture available where there is no keyboard at all. One
+ * press of the mode toggle reaches the boxes, and the boxes stay typeable while it is showing — so
+ * nothing is behind a door, and the quicker route is the one in front.
+ *
+ * Declared because it was three answers: two renderers opened on the face and one on the boxes, so a
+ * person met a different control depending on which adapter their team had chosen.
+ */
+export const MDY_TIMEPICKER_INITIAL_VIEW = "dial";
+
+/**
  * The part that carries DOM focus for a field.
  *
  * Named rather than selected: the parts already exist in the catalogue, and a renderer choosing its
