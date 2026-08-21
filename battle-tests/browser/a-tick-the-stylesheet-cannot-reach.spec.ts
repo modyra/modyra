@@ -158,3 +158,55 @@ for (const host of HOSTS) {
     ).not.toEqual(resting);
   });
 }
+
+/**
+ * The keyboard's half of the same question.
+ *
+ * `:focus-visible` is the other state a jsdom check cannot produce, and the foundation carries one
+ * rule for it on a checkbox:
+ *
+ *     .mdy-checkbox:has(.mdy-checkbox__control:focus-visible) .mdy-checkbox__indicator
+ *
+ * Focused through the keyboard rather than `.focus()`, because `:focus-visible` is the browser's own
+ * judgement about whether the focus was earned by a pointer or by a key — calling `focus()` in script
+ * does not always earn it, and a spec that used it would be asserting the harness's guess.
+ */
+for (const host of HOSTS) {
+  test(`a checkbox answers the keyboard reaching it, ${host.name}`, async ({ page }) => {
+    test.setTimeout(120_000);
+    await page.goto(host.page);
+    await page.waitForFunction((flag) => (window as never as Record<string, boolean>)[flag] === true, host.ready);
+
+    await page.evaluate(({ api }) => {
+      (window as never as Record<string, { mountFields(i: string, f: unknown[]): unknown }>)[api]
+        .mountFields("kbd", [{ name: "b", kind: "checkbox", label: "B" }]);
+    }, { api: host.api });
+    await page.waitForTimeout(250);
+
+    const drawn = page.locator(`[data-form="kbd"] .${MDY_WIDGET_CONTRACTS.checkbox.parts.indicator.classes[0]}`).first();
+    expect(await drawn.count(), "the checkbox drew no indicator, so nothing could answer focus").toBeGreaterThan(0);
+
+    const look = async () =>
+      drawn.evaluate((element) => {
+        const own = getComputedStyle(element as Element);
+        return { outline: own.outlineColor, shadow: own.boxShadow, border: own.borderColor, background: own.backgroundColor };
+      });
+
+    const resting = await look();
+    await page.keyboard.press("Tab");
+    await page.waitForTimeout(250);
+
+    // The premise: the key actually landed on this field's control. Tab reaching somewhere else would
+    // make "nothing changed" true about a control nobody focused.
+    const landed = await page.evaluate(() =>
+      document.activeElement?.classList.contains("mdy-checkbox__control") ?? false);
+    expect(landed, "Tab did not reach the checkbox's control, so its focus styling was never asked for").toBe(true);
+
+    const focused = await look();
+    expect(
+      focused,
+      `the checkbox's indicator looks identical focused and unfocused — resting=${JSON.stringify(resting)} `
+        + `focused=${JSON.stringify(focused)}`,
+    ).not.toEqual(resting);
+  });
+}
