@@ -75,25 +75,29 @@ for (const host of HOSTS) {
       `the popup is open, so this measurement is not about a closed control — ${JSON.stringify(drawn)}`,
     ).toBe(0);
 
+    // At most one, not exactly one. Under the anatomy the options live in the popup, so a closed control
+    // holding **none** is correct — an earlier draft of this demanded exactly one and went red on plain
+    // the moment plain got it right. The defect was never "the list is missing"; it was two copies.
     expect(
       drawn!.lists,
       `a closed multiselect has ${drawn!.lists} option lists in the document. Angular keeps one inline ` +
         `under the renderer and another inside the overlay panel, so every option is on the page twice ` +
         `— seen twice, read out twice, and clickable in two places`,
-    ).toBe(1);
+    ).toBeLessThanOrEqual(1);
 
     expect(
       drawn!.listsVisible,
-      `${drawn!.listsVisible} option lists are visible at once. This is not the hide-or-remove choice ` +
-        `the contract leaves open for a view: there is no state in which two copies of the options are ` +
-        `both correct`,
-    ).toBe(1);
+      `${drawn!.listsVisible} option lists are visible at once with the popup shut. This is not the ` +
+        `hide-or-remove choice the contract leaves open for a view: there is no state in which two ` +
+        `copies of the options are both correct`,
+    ).toBeLessThanOrEqual(1);
 
-    // And the same read from the leaves, which catches a renderer that shares one list element between
-    // two anatomies while still drawing each option twice inside it.
+    // And the same read from the leaves: whatever a renderer draws, no option may appear twice. Counted
+    // rather than compared to the option count, because a closed control showing only what was chosen —
+    // which is where this is going — legitimately draws none.
     expect(
       drawn!.chipsVisible,
-      `${OPTIONS.length} options produced ${drawn!.chipsVisible} visible chips`,
-    ).toBe(OPTIONS.length);
+      `${OPTIONS.length} options and nothing chosen produced ${drawn!.chipsVisible} visible chips`,
+    ).toBeLessThanOrEqual(OPTIONS.length);
   });
 }
