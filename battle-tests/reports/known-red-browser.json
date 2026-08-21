@@ -1,11 +1,11 @@
 {
   "note": "Browser specs that are red because the defect they describe is open. A red listed here does not fail a build; a red that is not listed is a regression. Rewrite with `npm run battle:browser:ci -- --accept`.",
   "order": "Repair in severity order, as the node tier does. A spec's severity is the worst of the claims its header names; `unknown` is a spec that names none, which is most of them.",
-  "recordedAt": "2026-08-21T12:47:41Z",
-  "openReds": 50,
+  "recordedAt": "2026-08-21T13:29:48Z",
+  "openReds": 54,
   "bySeverity": {
     "S0": 1,
-    "S1": 38,
+    "S1": 42,
     "S2": 11
   },
   "knownRed": [
@@ -18,6 +18,10 @@
     "a-dialog-the-page-can-be-walked-out-of.spec.ts › a time picker's dialog says the page behind it is not there, lit",
     "a-dimming-that-covers-the-hand.spec.ts › a face asked to dim its dead stretches has dimmed them, lit",
     "a-dimming-that-covers-the-hand.spec.ts › the dimmed stretches are painted behind the hand, lit",
+    "a-draft-a-keyboard-cannot-keep.spec.ts › a draft survives the key that moves between the boxes, angular",
+    "a-draft-a-keyboard-cannot-keep.spec.ts › a draft survives the key that moves between the boxes, plain",
+    "a-draft-a-keyboard-cannot-keep.spec.ts › the confirm button can be reached from the keyboard, angular",
+    "a-draft-a-keyboard-cannot-keep.spec.ts › the confirm button can be reached from the keyboard, plain",
     "a-field-marked-wrong-with-nothing-to-read.spec.ts › a field that says it is wrong says what is wrong, lit",
     "a-field-that-cannot-look-wrong.spec.ts › lit: a field the form refused is one the page can paint",
     "a-form-that-ended-under-the-controls.spec.ts › controls left on the page after the form ended are not still offering to edit it",
