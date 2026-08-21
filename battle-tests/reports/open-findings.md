@@ -21114,8 +21114,26 @@ The candidates I can name and have not eliminated: the focusable-parts list is c
 document order, and a multiselect's first four are the trigger and the first chip's own buttons; and
 the chips sit *inside* the trigger button, so what "focusing a part" means there is not obvious.
 
-I stopped after five attempts. Recording where the search reached is worth more than a sixth guess,
-and the four attempts before this one were each a wrong turn dressed as progress:
+I said I would stop after five attempts, recorded that, and then took two more. Both were wrong, and
+the fact that I continued after writing *stop* is the more useful thing here than either.
+
+**What the two extra attempts did establish**, so the next reader starts further along:
+
+- the sweep **reaches the chip and the key answers**. Replicating its own selector, its cap of four and
+  its gesture: part 1 is the first chip, and `ArrowRight` there moves the roving index
+  `0,-1,-1 → -1,0,-1`. So it is neither the selector nor the observation any more.
+- the sweep is **stateful across bindings** — one mount per kind, every binding pressed on it in
+  order — which made destructive keys eating the chips a good hypothesis. It is wrong: `Backspace` and
+  `Delete` are declared *after* the two move keys, not before.
+- the cap of four in document order means only the **first** chip is ever offered the key. `ArrowLeft`
+  there has no previous chip and is correctly a no-op; `ArrowRight` there is not, and is the one that
+  should answer and does not.
+
+That last line is where a seventh attempt should start: not with the spec's plumbing, which is now
+measured, but with what thirteen earlier bindings leave behind on the control before these two are
+tried.
+
+The five attempts before were each a wrong turn dressed as progress:
 
 ```
 the fixture mounted a bare multiselect          real, fixed
