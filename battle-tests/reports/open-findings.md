@@ -18929,3 +18929,72 @@ Satisfiable and discriminating, so this is a defect report rather than a wall.
 failing face. Dimming something choosable is the worse failure and it is not happening.
 `minuteStep 5 → []` and `hourStep 1 → []` both reproduce — a minute face only ever drew twelve
 positions, so a five-minute step removes nothing.
+
+## 332 — Lit never draws the dimmed stretches at all, and would draw them over the hand (S1, UI-009 — Modyra bug, handed to esecutore)
+
+Two defects in one feature, in one renderer. Measured on a freshly built host at `8a12c478`.
+
+### a. The dimming never appears
+
+```
+mountFields("dim", [{ kind: "timepicker", granularity: { hourStep: 5 }, showUnavailable: true }])
+
+plain   5 numbers of 24 drawn, 4 arcs, layer present
+lit     5 numbers of 24 drawn, 0 arcs, layer present
+```
+
+The property and the flag both arrive — `showUnavailableProp: true`, `granularityProp: {"hourStep":5}` —
+and the face applies the granularity, drawing 5 hours of 24. Only the arcs are missing.
+
+`unavailableArcs()` calls `measuredHandLength()`, which reads the DOM:
+
+```ts
+const el = this.querySelector<HTMLElement>(".mdy-timepicker-dial__face");
+if (!el) return this._dragHandLength;           // 0 when nothing is being dragged
+```
+
+**Lit evaluates the template before the face exists**, so the render that first draws the dial asks
+for the face it is about to create, gets `null`, and passes a hand length of 0.
+`timepickerDialUnavailableArcs` returns `[]` for that, correctly — with no geometry there are no
+angles to describe. Nothing schedules a second pass, so the empty result is permanent.
+
+Decisive measurement — forcing one more render with Lit's own API and changing nothing else:
+
+```
+before requestUpdate()   arcs: 0
+after  requestUpdate()   arcs: 5        face width 256
+```
+
+The empty answer is indistinguishable from "this face has nothing to dim", which is why every unit
+test agrees with it. Not a first-paint race: it does not recover on a pick or on two mode toggles,
+because none of those change what Lit is rendering.
+
+`--tp-hand-length` computes to the literal string `calc(256px/2 - 40px/2 - 8px)` — custom properties
+resolve at use, not in `getComputedStyle` — so the `parseFloat` path always fails and the
+`getBoundingClientRect().width / 2` fallback is what actually runs whenever the face does exist.
+Working as intended, but worth knowing the declared-value branch is dead.
+
+### b. The layer paints over the hand
+
+Child order of the face, read after forcing the arcs to appear:
+
+```
+lit      hand, unavailable-layer, number, number, …      arcs before hand: false
+plain    layer appended first, then hand, then ghost     arcs before hand: true
+angular  hand, then slices with no layer element at all  (source; unmeasured — no Angular host)
+```
+
+Neither `__hand` nor `__number` carries a `z-index`, and the slices carry `z-index: 0`, so positioned
+siblings paint in document order. The stylesheet says exactly this at `modyra.css:2828`: *"Behind the
+numbers, which is what `z-index: 0` on the slices does not achieve on its own once the hand is
+positioned."* All three renderers carry a comment saying the dimming goes behind; one puts it there.
+
+It shows whenever the hand points into a dimmed stretch — a value off the granularity, set before the
+steps narrowed or by a host that does not consult them. That is the moment a person most needs to see
+both the hand and that its position is not offered.
+
+**Battle**: `a-dimming-that-covers-the-hand.spec.ts` (`0c2cbc2f`), two tests per host so each red names
+one cause. Plain green on both, lit red on both. Registered in `known-red-browser.json`, openReds 49.
+
+**Angular is unmeasured**, and by source it fails both halves — no layer element, slices after the
+hand. Finding 325 (no Angular browser host) is what makes that a reading rather than a measurement.
