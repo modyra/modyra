@@ -36,6 +36,8 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
   declare searchable: boolean;
   /** Whether a person may rearrange what they chose. Off by default. */
   declare reorderable: boolean;
+  /** Which chip carries the strip's tab stop. */
+  private _activeChip: string | null = null;
   declare loading: boolean;
   declare mode: MdyMultiselectMode;
   declare filterFn?: (value: unknown) => boolean;
@@ -396,15 +398,52 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
    * rather than the binding would have to know that.
    */
   private onChipKeydown(event: KeyboardEvent, handle: MdyFieldHandle<readonly unknown[]>, optionKey: string): void {
-    if (!this.reorderable) return;
     const binding = keyBindingFor("multiselect", `${event.altKey ? "Alt+" : ""}${event.key}`, this._open);
-    if (binding?.intent !== "reorder") return;
-    event.preventDefault();
+    if (!binding) return;
+    // The chip's keys are the chip's. Left to bubble, the control's own handler answers the same
+    // keys a second time and its answer lands on top of this one.
+    event.stopPropagation();
     // The order the value has, not the order the options are in.
     const order = [...new Set(this.held(handle).map((v) => String(v)))];
+
+    if (binding.intent === "move") {
+      event.preventDefault();
+      const at = order.indexOf(optionKey);
+      const to = binding.toEnd
+        ? (binding.by === -1 ? 0 : order.length - 1)
+        : Math.max(0, Math.min(order.length - 1, at + (binding.by ?? 1)));
+      this.focusChip(order[to]);
+      return;
+    }
+    if (binding.intent === "remove") {
+      event.preventDefault();
+      this.removeAndPlaceFocus(handle, optionKey);
+      return;
+    }
+    if (binding.intent !== "reorder" || !this.reorderable) return;
+    event.preventDefault();
     this.fieldController?.dispatch({ type: "move-selected", optionKey, to: order.indexOf(optionKey) + (binding.by ?? 1) });
-    this.updateComplete.then(() => {
-      this.querySelector<HTMLElement>(`.${MDY_CHIP_CLASSES.value}[data-key="${optionKey}"]`)?.focus();
+    void this.updateComplete.then(() => this.focusChip(optionKey));
+  }
+
+  /**
+   * Which chip the strip's single tab stop is on.
+   *
+   * A roving index: one stop for the whole strip. One stop per chip made the cost of tabbing past
+   * the field grow with what it holds — twelve chosen values were twenty-six presses.
+   */
+  private activeChip(handle: MdyFieldHandle<readonly unknown[]>): string | null {
+    const order = [...new Set(this.held(handle).map((v) => String(v)))];
+    if (this._activeChip !== null && order.includes(this._activeChip)) return this._activeChip;
+    return order[0] ?? null;
+  }
+
+  private focusChip(key: string | undefined): void {
+    if (key === undefined) return;
+    this._activeChip = key;
+    this.requestUpdate();
+    void this.updateComplete.then(() => {
+      this.querySelector<HTMLElement>(`[data-key="${key}"]`)?.focus();
     });
   }
 
@@ -426,8 +465,9 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
     }
     return [...tally.values()].map(({ value, label, count }) => html`<span
       class=${multiselectChipClasses({ mode: this.mode, selected: true }).join(" ")}
-      tabindex="0"
+      tabindex=${this.activeChip(handle) === String(value) ? "0" : "-1"}
       role="group"
+      @focus=${() => { this._activeChip = String(value); }}
       @keydown=${(e: KeyboardEvent) => this.onChipKeydown(e, handle, String(value))}
       aria-label=${count > 1 ? `${label}, ${count}` : label}
       title=${label}
@@ -437,6 +477,7 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
         ? html`<button
             type="button"
             class=${MDY_CHIP_CLASSES.step}
+            tabindex="-1"
             aria-label=${this.messages.chipDecrementLabel}
             @click=${(e: Event) => { e.stopPropagation(); this.decrement(handle, value); }}
           ></button>`
@@ -447,6 +488,7 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
         ? html`<button
             type="button"
             class=${MDY_CHIP_CLASSES.step}
+            tabindex="-1"
             aria-label=${this.messages.chipIncrementLabel}
             @click=${(e: Event) => { e.stopPropagation(); this.increment(handle, value); }}
           ></button>`
@@ -454,6 +496,7 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
       <button
         type="button"
         class=${MDY_CHIP_CLASSES.remove}
+        tabindex="-1"
         aria-label=${this.messages.chipRemoveLabel}
         @click=${(e: Event) => { e.stopPropagation(); this.removeAndPlaceFocus(handle, value); }}
       ></button>

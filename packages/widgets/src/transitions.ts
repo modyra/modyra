@@ -115,7 +115,7 @@ export interface MdyKeyBinding {
   readonly key: string;
   /** Only when the overlay is showing, only when it is not, or either way. */
   readonly when?: MdyOverlayPhase;
-  readonly intent: "move" | "step" | "toggle" | "open" | "commit" | "cancel" | "reorder";
+  readonly intent: "move" | "step" | "toggle" | "open" | "commit" | "cancel" | "reorder" | "remove";
   /**
    * Which way a `reorder` goes: `-1` earlier in the value, `1` later.
    *
@@ -124,6 +124,8 @@ export interface MdyKeyBinding {
    * renderer that read the key would have to know that; reading the direction, it does not.
    */
   readonly by?: -1 | 1;
+  /** Whether a `move` goes as far as it can rather than one place — `Home` and `End`. */
+  readonly toEnd?: boolean;
   /**
    * Whether dismissing on this key returns focus to the opener. Only a `cancel` dismisses, so only a
    * `cancel` answers it, and the default is to restore.
@@ -242,6 +244,21 @@ function keyboardFor(kind: MdyWidgetKind): readonly MdyKeyBinding[] {
   if ("chips" in MDY_WIDGET_CONTRACTS[kind].parts) {
     bindings.push({ key: "Alt+ArrowLeft", intent: "reorder", by: -1 });
     bindings.push({ key: "Alt+ArrowRight", intent: "reorder", by: 1 });
+    // Moving *between* chips, and removing the one you are on. Declared `when: "closed"`, because
+    // while the popup is showing the arrows belong to the list a person is choosing from — the same
+    // key in two places is what the phase exists to separate.
+    //
+    // The strip is one tab stop with a roving index, not one stop per chip. Twelve chosen values
+    // were twenty-six presses to get past the field, and the cost of leaving a control must not
+    // grow with what it holds.
+    bindings.push({ key: "ArrowLeft", when: "closed", intent: "move", by: -1 });
+    bindings.push({ key: "ArrowRight", when: "closed", intent: "move", by: 1 });
+    bindings.push({ key: "Home", when: "closed", intent: "move", by: -1, toEnd: true });
+    bindings.push({ key: "End", when: "closed", intent: "move", by: 1, toEnd: true });
+    // Taking one off from the keyboard, both spellings: `Backspace` is what a person reaches for
+    // and `Delete` is what the platform's own lists answer to.
+    bindings.push({ key: "Backspace", when: "closed", intent: "remove" });
+    bindings.push({ key: "Delete", when: "closed", intent: "remove" });
   }
   if (TOGGLES.includes(kind)) bindings.push({ key: " ", intent: "toggle" });
 
