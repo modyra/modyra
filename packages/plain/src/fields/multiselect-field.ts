@@ -710,7 +710,6 @@ export function renderMultiselectField(
       saidLast, nowChosen,
       { added: messages.selectionAdded, removed: messages.selectionRemoved, empty: messages.selectionEmpty },
       (key) => state.options.find((option) => keyFor(option) === key)?.label ?? key,
-      state.open,
     );
     if (said !== "") setText(announcement, said);
     saidLast = nowChosen;

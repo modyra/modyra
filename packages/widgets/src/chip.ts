@@ -158,14 +158,24 @@ export function wayBackSentence(
   return (way.act === "move" ? templates.moved : templates.removed).replace("{value}", label);
 }
 
+/**
+ * What a live region says when a choice lands: the change, and the new total.
+ *
+ * The **change**, not the list — a polite region queues rather than replaces, so announcing the whole
+ * selection builds a backlog of stale lists and a person hears a selection several acts out of date.
+ *
+ * Said whether or not the popup is open. It used to be suppressed while open, on the reasoning that
+ * the options there announce themselves and a region firing too would speak twice — which holds only
+ * for somebody choosing with the keyboard, where focus is on the option. A choice made with a pointer
+ * moves no focus and announces nothing at all, so the suppression was silence for exactly the person
+ * with no other confirmation. The count is not in the native announcement either way.
+ */
 export function multiselectAnnouncement(
   previous: readonly string[],
   next: readonly string[],
   words: { readonly added: string; readonly removed: string; readonly empty: string },
   labelOf: (key: string) => string,
-  open = false,
 ): string {
-  if (open) return "";
   const before = new Set(previous);
   const after = new Set(next);
   const added = next.find((key) => !before.has(key));

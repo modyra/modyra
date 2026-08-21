@@ -760,7 +760,6 @@ export class MdyMultiselectComponent<TValue = string>
       this.saidLast, now,
       { added: this.i18n.selectionAdded, removed: this.i18n.selectionRemoved, empty: this.i18n.selectionEmpty },
       (key) => this.chosen().find((c) => c.key === key)?.label ?? this.labelOf(key as unknown as TValue),
-      this.open(),
     );
     this.saidLast = now;
     return said;
