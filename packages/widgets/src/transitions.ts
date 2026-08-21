@@ -192,7 +192,15 @@ function keyboardFor(kind: MdyWidgetKind): readonly MdyKeyBinding[] {
     // the wrong question here and reads like the right one: a calendar *is* walked with the arrow
     // keys, inside its grid, which is a different statement from the arrows reaching a list that is
     // not on screen yet.
-    if ("listbox" in MDY_WIDGET_CONTRACTS[kind].parts) {
+    // The test is whether the popup holds *options* — the catalogue already saying which overlays
+    // hold a list. It used to ask for a `listbox` part, and the multiselect lost its arrows the day
+    // that part was retired: its popup still held the same options under a different part name, so
+    // a person who learned `ArrowDown` on one combobox no longer had it on the other.
+    //
+    // A calendar, a clock face and a colour palette are dialogs a button opens: the reasoning is
+    // about reaching the first or last *option*, and there is no such list to arrive in. None of
+    // them declares one, so this asks the right question of them too.
+    if ("option" in MDY_WIDGET_CONTRACTS[kind].parts) {
       bindings.push({ key: "ArrowDown", when: "closed", intent: "open" });
       bindings.push({ key: "ArrowUp", when: "closed", intent: "open" });
     }
