@@ -37,6 +37,7 @@
 
 import { MDY_POPUP_OPENERS, widgetKeyIntent } from "@modyra/widgets";
 
+import { MDY_WIDGET_CONTRACTS as CONTRACTS } from "@modyra/widgets";
 import { battle } from "../../harness/battle.mjs";
 import { expectClaim, expectEqual } from "../../harness/assertions.mjs";
 
@@ -120,6 +121,22 @@ battle(
         what: `${kind} does not cancel and restore focus on Escape`,
       });
 
+      // Tab is a departure **for an overlay holding a list**: it closes and focus is left where the
+      // browser is taking it. It is not a departure for an overlay holding controls of its own —
+      // ADR 0122 withdrew that binding for those, because Tab was the only key that reached their
+      // confirm button and it closed the popup before arriving.
+      //
+      // Derived from the anatomy rather than named, so a second kind growing an action bar moves to
+      // the other branch by itself: an `actions` bar means a confirm button inside the overlay.
+      if (CONTRACTS[kind]?.parts?.actions !== undefined) {
+        // `target: "last"` because Shift is not in this call — the plain Tab walks to the end of the
+        // order and wraps, and the pair of them is what makes the ring closed rather than a corridor.
+        expectEqual(tab, { type: "move", target: "last" }, {
+          claimIds: ["A11Y-002", "UI-002"],
+          what: `${kind} holds its own confirm button, so Tab must move within it rather than leave — a popup Tab cannot walk is one only a pointer can commit`,
+        });
+        continue;
+      }
       // Tab is a departure: the overlay closes and focus is left where the browser is taking it.
       // Pulling it back is the defect this pins against.
       expectEqual(tab, { type: "cancel", restoreFocus: false }, {
