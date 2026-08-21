@@ -1069,13 +1069,6 @@
         "mdy-control-textarea"
       ]
     },
-    "packages/angular/src/lib/renderers/timepicker/hand-length.ts": {
-      "classes": [
-        "mdy-timepicker-dial__hand"
-      ],
-      "aria": [],
-      "selectors": []
-    },
     "packages/angular/src/lib/renderers/timepicker/timepicker-clock.component.html": {
       "classes": [
         "mdy-timepicker--dial",

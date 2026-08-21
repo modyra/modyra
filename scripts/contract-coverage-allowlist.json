@@ -36,7 +36,6 @@
     "mdy-timepicker__popup--above": "derived by popupPlacementClass/popupAlignmentClass and emitted by the renderers; no theme reacts to it yet. A placement class only earns a rule where the popup has a top/bottom or left/right asymmetry to answer — the select and multiselect flip their search box, a calendar has nothing to flip.",
     "mdy-timepicker__popup--right": "derived by popupPlacementClass/popupAlignmentClass and emitted by the renderers; no theme reacts to it yet. A placement class only earns a rule where the popup has a top/bottom or left/right asymmetry to answer — the select and multiselect flip their search box, a calendar has nothing to flip.",
     "mdy-toggle__control": "the themes reach the input by descendant selector (.mdy-toggle input:disabled), not by its part class",
-    "mdy-toggle__label": "unreviewed",
     "mdy-glass-effect": "an Angular directive a product opts into; no theme ships the material yet, so the class is declared and the treatment is the host's",
     "mdy-glass-effect--medium": "the intensity variants of the same directive; they select a material no theme defines"
   },
@@ -627,26 +626,6 @@
       "angular",
       "lit",
       "plain"
-    ],
-    "themes": [
-      "modyra.css"
-    ]
-  },
-  "mdy-timepicker-period-btn": {
-    "kind": "drift",
-    "adapters": [
-      "angular",
-      "lit",
-      "plain"
-    ],
-    "themes": [
-      "modyra.css"
-    ]
-  },
-  "mdy-timepicker-period-btn--selected": {
-    "kind": "drift",
-    "adapters": [
-      "angular"
     ],
     "themes": [
       "modyra.css"

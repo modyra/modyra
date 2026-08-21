@@ -1,8 +1,8 @@
 {
   "note": "Public names not yet asserted or not yet shown. The list may only get shorter.",
   "score": {
-    "published": 725,
-    "asserted": 468,
+    "published": 729,
+    "asserted": 472,
     "shown": 79
   },
   "uncovered": [
@@ -212,6 +212,12 @@
     },
     {
       "name": "MDY_STATE_EXPRESSION",
+      "asserted": true,
+      "shown": false,
+      "reason": "published and never shown"
+    },
+    {
+      "name": "MDY_TIMEPICKER_ADVANCE_MS",
       "asserted": true,
       "shown": false,
       "reason": "published and never shown"
@@ -3793,6 +3799,12 @@
       "reason": "published, neither asserted nor shown"
     },
     {
+      "name": "timepickerFocusPart",
+      "asserted": true,
+      "shown": false,
+      "reason": "published and never shown"
+    },
+    {
       "name": "timepickerSelectedDialValue",
       "asserted": true,
       "shown": false,
@@ -3800,6 +3812,18 @@
     },
     {
       "name": "timepickerSelectedRing",
+      "asserted": true,
+      "shown": false,
+      "reason": "published and never shown"
+    },
+    {
+      "name": "timepickerTabOrder",
+      "asserted": true,
+      "shown": false,
+      "reason": "published and never shown"
+    },
+    {
+      "name": "timepickerTabTarget",
       "asserted": true,
       "shown": false,
       "reason": "published and never shown"

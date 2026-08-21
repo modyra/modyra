@@ -146,7 +146,19 @@ function keyboardFor(kind: MdyWidgetKind): readonly MdyKeyBinding[] {
     // Tab dismisses without taking focus back. Leaving it undeclared did not make the list stay
     // open — it made the *table* disagree with the policy the renderers actually call, so a renderer
     // built from the declared bindings alone left a popup floating over a form the user had left.
-    bindings.push({ key: "Tab", when: "open", intent: "cancel", restoresFocus: false });
+    //
+    // Unless the popup has controls of its own to move between. A kind that declares an `actions`
+    // bar has a confirm button in its overlay, and a Tab that dismisses makes that button
+    // unreachable from a keyboard — so the widget's only way to commit is a pointer, which is
+    // WCAG 2.1.1 and not a preference. There the key moves within the popup and the popup keeps it.
+    //
+    // Asked of the catalogue rather than of a list beside it: a kind that grows an action bar grows
+    // this with it, and one that loses it loses this. `Escape` still cancels, in both shapes, and is
+    // what a keyboard user leaves with.
+    const keepsFocus = "actions" in MDY_WIDGET_CONTRACTS[kind].parts;
+    bindings.push(keepsFocus
+      ? { key: "Tab", when: "open", intent: "move" }
+      : { key: "Tab", when: "open", intent: "cancel", restoresFocus: false });
     bindings.push({ key: "Enter", when: "closed", intent: "open" });
     bindings.push({ key: "Enter", when: "open", intent: "commit" });
     // The combobox pattern, and only for a kind that is one: pressing an arrow on a closed control

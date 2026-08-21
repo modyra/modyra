@@ -3461,6 +3461,10 @@
     "(0) state: MdyTimepickerFieldState",
     "-> returns: readonly string[]"
   ],
+  "timepickerFocusPart": [
+    "(0) field: \"hour\" | \"minute\"",
+    "-> returns: \"hourControl\" | \"minuteControl\""
+  ],
   "timepickerSelectedDialValue": [
     "(0) field: \"hour\" | \"minute\"",
     "(1) draft: ParsedTime",
@@ -3472,6 +3476,16 @@
     "(1) draft: ParsedTime",
     "(2) format?: MdyTimeFormat",
     "-> returns: \"outer\" | \"inner\""
+  ],
+  "timepickerTabOrder": [
+    "(0) format: MdyTimeFormat",
+    "-> returns: readonly string[]"
+  ],
+  "timepickerTabTarget": [
+    "(0) from: string",
+    "(1) format: MdyTimeFormat",
+    "(2) direction?: 1 | -1",
+    "-> returns: string"
   ],
   "to24Hour": [
     "(0) t: ParsedTime",

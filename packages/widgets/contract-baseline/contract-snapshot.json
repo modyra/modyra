@@ -1,5 +1,5 @@
 {
-  "contractVersion": 4,
+  "contractVersion": 5,
   "kinds": {
     "text": {
       "parts": {
@@ -3071,6 +3071,19 @@
             "compact"
           ]
         },
+        "periodOption": {
+          "element": "button",
+          "parent": "period",
+          "optional": true,
+          "repeated": false,
+          "role": null,
+          "classes": [
+            "mdy-timepicker-period-btn"
+          ],
+          "states": [
+            "selected"
+          ]
+        },
         "clock": {
           "element": "popup",
           "parent": "content",
@@ -3080,7 +3093,9 @@
           "classes": [
             "mdy-timepicker-dial"
           ],
-          "states": []
+          "states": [
+            "animated"
+          ]
         },
         "dialFace": {
           "element": "presentation",
@@ -3093,6 +3108,28 @@
           ],
           "states": []
         },
+        "dialUnavailable": {
+          "element": "presentation",
+          "parent": "dialFace",
+          "optional": true,
+          "repeated": false,
+          "role": null,
+          "classes": [
+            "mdy-timepicker-dial__unavailable-layer"
+          ],
+          "states": []
+        },
+        "dialUnavailableArc": {
+          "element": "presentation",
+          "parent": "dialUnavailable",
+          "optional": true,
+          "repeated": false,
+          "role": null,
+          "classes": [
+            "mdy-timepicker-dial__unavailable"
+          ],
+          "states": []
+        },
         "dialHand": {
           "element": "presentation",
           "parent": "dialFace",
@@ -3102,7 +3139,10 @@
           "classes": [
             "mdy-timepicker-dial__hand"
           ],
-          "states": []
+          "states": [
+            "ghost",
+            "inner"
+          ]
         },
         "dialNumber": {
           "element": "presentation",
@@ -3242,7 +3282,7 @@
         "Enter@open:commit",
         "Escape@open:cancel",
         "Home@open:move",
-        "Tab@open:cancel"
+        "Tab@open:move"
       ]
     },
     "file": {
