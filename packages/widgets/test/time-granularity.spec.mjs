@@ -374,16 +374,33 @@ const HAND = 100;
 const at = (reach, field = "hour") =>
   timepickerDialRing(FACE, 128 + reach, 128, "24h", HAND, field);
 
-test("the inner ring is a band around its own numbers, not everything inside the outer", () => {
-  // The empty middle of the face is most of its area. Reading it as `inner` answers with an hour
-  // whose number is nowhere near the pointer, and shortens the hand for a press aimed further out.
+test("the answer changes exactly once across the radius", () => {
+  // One edge, because there is only one place it can change. A pointer moving inward that crossed
+  // outer → inner → outer would put the hand on the far ring for a press near the centre, which is
+  // where its own numbers are furthest away.
+  const answers = [];
+  for (let reach = 0; reach <= 130; reach += 1) answers.push(at(reach));
+  const crossings = answers.filter((answer, index) => index > 0 && answer !== answers[index - 1]);
+  assert.equal(crossings.length, 1, `the answer changes ${crossings.length} times`);
+  assert.equal(answers[0], "inner", "the centre belongs to the ring nearest it");
+});
+
+test("the inner ring claims its own digits and stops before the outer ones", () => {
   assert.equal(at(60), "inner", "on the inner numbers");
-  assert.equal(at(45), "inner", "just inside them");
-  assert.equal(at(78), "inner", "just outside them");
+  assert.equal(at(10), "inner", "and everything closer, which is nearer them than anything else");
+  assert.equal(at(0), "inner", "the centre included");
+  assert.equal(at(70), "inner", "just outside them");
   assert.equal(at(100), "outer", "on the outer numbers");
-  assert.equal(at(10), "outer", "the empty middle belongs to the ring that is drawn");
-  assert.equal(at(0), "outer", "and so does the centre itself");
-  assert.equal(at(130), "outer", "and anything past the outer numbers");
+  assert.equal(at(130), "outer", "and anything past them");
+});
+
+test("a pointer just inside the outer digit reads as the outer ring", () => {
+  // The user's own case: *"non posso essere con il puntatore appena fuori dal 9 e vedere già 21
+  // comparire"*. The outer digits are drawn at 100 and their boxes reach down to 80, so 79 is a
+  // press aimed at the 9 — and the band has to end before it.
+  assert.equal(at(79), "outer", "just inside the outer digit's own box");
+  assert.equal(at(76), "outer");
+  assert.equal(at(60), "inner", "and the inner digit still answers for itself");
 });
 
 test("a minute face has one ring, whatever the press is near", () => {
@@ -479,22 +496,18 @@ test("a ring's tolerance follows the radius its numbers are drawn at", () => {
   }
 });
 
-test("the face has two zones, and the band is one published number wide", async () => {
-  // The band is centred on the inner ring's own radius, so a finger moving in crosses outer → inner
-  // and, below the digits, outer again. That third zone is deliberate: the empty middle carries no
-  // numbers, and the user asked for the inner ring only "in un intorno molto vicino
-  // dell'occupazione delle cifre, altrimenti deve stare sul quadrante maggiore".
-  //
-  // Recorded rather than argued, because it is the half of the rule most likely to be read as a
-  // defect by someone who did not hear the request.
+test("the boundary is one published number, above the inner ring only", async () => {
+  // The constant sets the only edge there is. As a symmetric band it set two, and neither could move
+  // without the other — lowering it to keep the inner ring off the outer digits pushed the centre
+  // onto the far ring, which is the defect this shape removes rather than trades.
   const { MDY_TIMEPICKER_RING_BAND } = await import("../dist/index.js");
   const HAND = 100;
   const innerRadius = HAND * 0.6;
-  const half = (HAND - innerRadius) * MDY_TIMEPICKER_RING_BAND;
-  assert.equal(at(Math.round(innerRadius - half) + 1), "inner", "the near edge of the band");
-  assert.equal(at(Math.round(innerRadius + half) - 1), "inner", "and the far edge");
-  assert.equal(at(Math.round(innerRadius - half) - 1), "outer", "below it the major dial resumes");
-  assert.equal(at(Math.round(innerRadius + half) + 1), "outer", "and above it too");
+  const edge = innerRadius + (HAND - innerRadius) * MDY_TIMEPICKER_RING_BAND;
+  assert.equal(at(Math.floor(edge)), "inner", "the last radius that reaches the inner ring");
+  assert.equal(at(Math.ceil(edge) + 1), "outer", "and the first that does not");
+  // Below it there is nothing to cross: the inner ring is the nearest thing all the way down.
+  for (const reach of [0, 20, 40, 59]) assert.equal(at(reach), "inner", `${reach}px from the centre`);
 });
 
 // ─── the dial's own keyboard ─────────────────────────────────────────────────

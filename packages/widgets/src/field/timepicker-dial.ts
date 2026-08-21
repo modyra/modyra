@@ -316,15 +316,30 @@ export const MDY_TIMEPICKER_INNER_RING = 0.6;
 export const MDY_TIMEPICKER_NUMBER_SIZE = 40;
 
 /**
- * How far either side of the inner ring's radius still counts as reaching for it, as a fraction of
- * the gap between the two painted radii.
+ * How far **above** the inner ring's radius still counts as reaching for it, as a fraction of the
+ * gap between the two painted radii.
  *
- * A fraction rather than an expression so that tightening it is one number. At `0.5` the band is the
- * whole gap — inner from the midpoint inwards to as far below the inner radius — which is where the
- * two rings' digits abut, and where a person feels the inner ring beginning too early has nothing
- * left to tune. Lower it and the band closes around the inner digits.
+ * A fraction rather than an expression, so tightening it is one number rather than an edit to the
+ * rule — which is what happened: `0.5` puts the band's edge exactly where the two rings' digit boxes
+ * abut, so a pointer just inside the outer digit already answered with the inner hour. *"Non posso
+ * essere con il puntatore appena fuori dal 9 e vedere già 21 comparire."*
+ *
+ * The geometric construction — midway between the facing ends of the two boxes — cannot help here:
+ * the boxes are `MDY_TIMEPICKER_NUMBER_SIZE` wide and the rings are exactly that far apart, so they
+ * touch, and the midpoint of a zero gap is the edge itself whatever the box size. What the complaint
+ * needs is a band **narrower** than the gap it sits in, which is a judgement rather than a
+ * derivation, and so a number a person can move.
+ *
+ * One-sided, and it will look asymmetric to whoever reads it next: **below the inner ring there is no
+ * other ring to belong to.** The outer ring is outside the inner one, so everything beneath the inner
+ * digits has exactly one plausible answer, and giving that region to the far ring is how the hand
+ * ends up pointing where the finger is not — *"se il puntatore va troppo verso il centro si riscala
+ * alla circonferenza maggiore, questo è un grossissimo errore"*.
+ *
+ * At `0.35` the edge is 74 against digits drawn at 60 and 100: the centre and the inner digits answer
+ * inner, a press just inside the outer digit answers outer.
  */
-export const MDY_TIMEPICKER_RING_BAND = 0.5;
+export const MDY_TIMEPICKER_RING_BAND = 0.35;
 
 /**
  * Which ring of the face a pointer landed on.
@@ -366,8 +381,9 @@ export function timepickerDialRing(
   const reach = Math.sqrt(dx * dx + dy * dy);
   // Where the two rings are painted, and how far from the inner one still counts as reaching for it.
   const inner = handLength * MDY_TIMEPICKER_INNER_RING;
-  const reachOfBand = (handLength - inner) * MDY_TIMEPICKER_RING_BAND;
-  return Math.abs(reach - inner) <= reachOfBand ? "inner" : "outer";
+  // One edge, because there is only one place the answer can change: everything closer than the
+  // inner digits is still nearer them than anything else on the face.
+  return reach <= inner + (handLength - inner) * MDY_TIMEPICKER_RING_BAND ? "inner" : "outer";
 }
 
 export function timepickerDialKeyIntent(
