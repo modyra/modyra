@@ -19047,3 +19047,47 @@ is now stale (it names five, and there are six).
 → 5 tonight; plain and lit demanded a re-read each time and Angular said nothing. Two of three
 renderers are pinned to the contract's version, and the third is pinned to a snapshot of its own past
 output — which cannot, by construction, notice something the contract gained.
+
+## 334 — With the hand measured correctly, the ring band no longer implements the rule it was written for (S2, UI-011)
+
+Consequence of `66b5ba14`, which fixed the hand length from 128 to 100. `MDY_TIMEPICKER_RING_BAND`
+was tuned while the measurement was wrong, so the number that compensated for it is now the number
+that is wrong.
+
+The user's rule, given verbatim: *"deve essere il puntatore al centro tra la fine del box del
+carattere 9 e la fine del box del carattere 21… penso che tutte le cifre abbiano un box e che la
+circonferenza del quadrante passi per il centro di questi box."*
+
+Those boxes, from the published constants at a hand length of 100:
+
+```
+inner numbers centred at 60    box spans 40 .. 80      (MDY_TIMEPICKER_INNER_RING 0.6)
+outer numbers centred at 100   box spans 80 .. 120     (MDY_TIMEPICKER_NUMBER_SIZE 40)
+                                        ↑ they meet exactly at 80
+```
+
+The two boxes touch, so the point "between the end of one and the end of the other" is 80. Solving
+the boundary for it gives **0.5**, measured rather than assumed:
+
+```
+BAND that puts the boundary where the boxes meet:   0.5
+boundary with MDY_TIMEPICKER_RING_BAND = 0.35:      74
+flip radius measured through timepickerDialRing:    74.25
+```
+
+So radii **74.25 to 80** are visually inside the 21's box and answer `outer`: a person pointing at the
+21 is given the 9. That is the original complaint — *"appena fuori dal 9 e vedere già 21 comparire"* —
+mirrored, and now 5.75px wide instead of the 20.7px the broken measurement produced in the other
+direction.
+
+**Not a new defect so much as a stale compensation.** 0.35 was chosen against a circle 28% too large,
+where it happened to land near the right place. With the measurement corrected it lands 6px short, and
+the arithmetic that produces 0.5 is the user's own stated rule rather than a preference.
+
+**Also affects ADR 0120**, which records the one-sided boundary and 0.35 together. The decision — one
+edge, not a symmetric band — survives; the constant's justification does not, since it rests on a
+measurement that has since been shown wrong. That is an amendment on the record, not a silent edit:
+the reasoning that was correct under the old constraint is what makes the new number legible.
+
+Owned by `esecutore` — reported with the arithmetic rather than fixed here, since it is a widgets
+constant and an ADR.
