@@ -628,3 +628,40 @@ test("each ring answers for its own radius", () => {
 test("nothing measured yet dims nothing", () => {
   assert.deepEqual(timepickerDialUnavailableArcs("minute", "24h", { minuteStep: 15 }, 0), []);
 });
+
+test("two positions that were neighbours are one dead stretch, the seam included", () => {
+  // Asked generically rather than at twelve o'clock, because the defect was not about that angle: it
+  // was two places asking different questions. The loop asked whether two removed positions were
+  // neighbours on the full face; the seam asked whether their paint happened to collide, which for
+  // neighbours 30° apart under an 11.3° half-width it never does. So the ring stayed live at the top.
+  const covers = (arc, at) => {
+    const span = ((arc.to - arc.from) + 360) % 360;
+    const into = ((at - arc.from) + 360) % 360;
+    return into > 0 && into < span;
+  };
+
+  const live = [];
+  for (const steps of [{ hourStep: 5 }, { hourStep: 7 }, { hourStep: 3 }, { minuteStep: 15 }, { minuteStep: 30 }]) {
+    for (const [field, format] of [["hour", "24h"], ["hour", "12h"], ["minute", "24h"]]) {
+      for (const ring of ["outer", "inner"]) {
+        const everything = timepickerDialNumbers(field, format)
+          .filter((n) => n.ring === ring).map((n) => dialNumberAngle(n)).sort((a, b) => a - b);
+        const offered = new Set(timepickerDialNumbers(field, format, steps)
+          .filter((n) => n.ring === ring).map((n) => dialNumberAngle(n)));
+        const arcs = timepickerDialUnavailableArcs(field, format, steps, 100, ring);
+
+        for (let index = 0; index < everything.length; index += 1) {
+          const here = everything[index];
+          const next = everything[(index + 1) % everything.length];
+          if (offered.has(here) || offered.has(next)) continue;
+          // Both gone and adjacent, so the ring between them carries nothing either.
+          const between = ((here + next) / 2 + (next < here ? 180 : 0)) % 360;
+          if (!arcs.some((arc) => covers(arc, between))) {
+            live.push(`${field}/${format}/${ring} ${JSON.stringify(steps)}: ${Math.round(between)}° is live between two removed positions`);
+          }
+        }
+      }
+    }
+  }
+  assert.deepEqual(live, []);
+});
