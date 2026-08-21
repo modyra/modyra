@@ -213,6 +213,10 @@ function packagesTheHostImports() {
 function assertPageIsCurrent() {
   const stale = [];
   const missing = [];
+  // What the tier's own build step covers. A package outside it is stale until somebody builds it by
+  // hand, and the message has to say so or the reader repeats the run that failed.
+  const BUILT_BY_THIS_TIER = new Set(["core", "styles", "widgets", "plain", "lit"]);
+  const needsOwnBuild = new Set();
   const measured = packagesTheHostImports();
   for (const name of measured) {
     // Never built is not "unknown". On a fresh checkout `@modyra/core` has no `dist`, and this tier's
@@ -221,7 +225,13 @@ function assertPageIsCurrent() {
     // a developer's disk keeps a `dist` from the last time anything built it.
     if (!existsSync(join(REPO_ROOT, "packages", name, "dist"))) { missing.push(`@modyra/${name}`); continue; }
     const freshness = buildFreshness(name);
-    if (freshness.known && !freshness.fresh) stale.push(`@modyra/${name} (${freshness.behindBySeconds}s behind its source)`);
+    if (freshness.known && !freshness.fresh) {
+      stale.push(`@modyra/${name} (${freshness.behindBySeconds}s behind its source)`);
+      // `battle:browser:ci` builds core, styles, plain and lit and stops there — `@modyra/angular`
+      // goes through ng-packagr and is built by nothing this tier runs. Telling a reader to run the
+      // script that just failed them sends them round the loop that produced the message.
+      if (!BUILT_BY_THIS_TIER.has(name)) needsOwnBuild.add(name);
+    }
   }
   if (missing.length > 0) {
     console.error(
@@ -251,9 +261,14 @@ function assertPageIsCurrent() {
   }
 
   if (stale.length === 0) return;
+  const remedy = needsOwnBuild.size === 0
+    ? "Run `npm run battle:browser:ci`, which builds first."
+    : `Run \`npm run ${[...needsOwnBuild].sort().map((name) => `build:${name}`).join("` and `npm run ")}\` first — ` +
+      "`battle:browser:ci` does not build " +
+      `${needsOwnBuild.size === 1 ? "it" : "them"} — then \`npm run battle:browser:ci\`.`;
   console.error(
     `browser baseline check: ${stale.join(", ")}. What this measured would be an older version, and a ` +
-      "red from it names a defect the code may no longer have. Run `npm run battle:browser:ci`, which builds first.",
+      `red from it names a defect the code may no longer have. ${remedy}`,
   );
   process.exit(2);
 }

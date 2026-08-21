@@ -20793,3 +20793,28 @@ seven seconds, not seven hours. **A thing that runs on every invocation gets fou
 runs when something else fails does not.** That is a better argument for the shared bench than any of
 the fixture defects it was written for.
 
+
+### 359b — the freshness message sent the reader back round the loop
+
+The harness's own build check is sound and it caught something real: `@modyra/angular` 937 seconds
+behind its source. Its remedy was `Run npm run battle:browser:ci, which builds first` — and that
+script builds core, styles, plain and lit and **stops**. Angular goes through ng-packagr and is built
+by nothing this tier runs.
+
+So a reader who followed the instruction ran the command that had just failed them, watched it fail
+the same way, and had no further advice. The check was right, the number was right, and the sentence
+after them undid both.
+
+Fixed: a stale package outside the tier's own build step is named with the command that builds it.
+
+```
+none stale outside the tier   Run `npm run battle:browser:ci`, which builds first.
+angular                       Run `npm run build:angular` first — `battle:browser:ci` does not build
+                              it — then `npm run battle:browser:ci`.
+```
+
+Worth recording beside [359](#359) rather than as its own defect, because it is the same lesson in a
+quieter form. That guard did not parse; this one parsed, ran, measured correctly and then said the
+wrong thing. **An instrument can be right and still be useless**, and the part that fails is the part
+nobody checks — nobody writes a test for the text of an error message.
+
