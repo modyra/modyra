@@ -2846,6 +2846,11 @@
     .mdy-timepicker-dial__hand--ghost {
         opacity: 0.35;
         pointer-events: none;
+        /* Its end is under the pointer, so its length is the pointer's own distance from the centre
+         * rather than either ring's radius. `--tp-ghost-reach` is that distance as a fraction of the
+         * hand, written by the renderer from the contract's `reach`; `1` is the fallback for a face
+         * that has not measured yet, which is the same length the real hand has. */
+        height: calc(var(--tp-hand-length) * var(--tp-ghost-reach, 1));
     }
 
     .mdy-timepicker-dial__hand--ghost::after {

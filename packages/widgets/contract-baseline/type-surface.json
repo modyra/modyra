@@ -1831,8 +1831,13 @@
     "minuteStep: number",
     "to: string"
   ],
+  "MdyTimepickerDialArc": [
+    "from: number",
+    "to: number"
+  ],
   "MdyTimepickerDialGhost": [
     "angle: number",
+    "reach: number",
     "ring: \"outer\" | \"inner\""
   ],
   "MdyTimepickerDialKeyResult": [
@@ -3397,7 +3402,7 @@
   "timepickerDialGhost": [
     "(0) pointerAngle: number",
     "(1) pick: MdyTimepickerDialPick",
-    "(2) options?: { readonly ring?: \"outer\" | \"inner\"; readonly within?: number; }",
+    "(2) options?: { readonly ring?: \"outer\" | \"inner\"; readonly within?: number; /** How far the pointer is from the centre, and how long the hand is, in the same units. */ readonly pointerReach?: number; readonly handLength?: number; }",
     "-> returns: MdyTimepickerDialGhost | null"
   ],
   "timepickerDialKeyIntent": [
@@ -3435,6 +3440,14 @@
     "(0) ring?: \"outer\" | \"inner\"",
     "(1) handLength?: number",
     "-> returns: number"
+  ],
+  "timepickerDialUnavailableArcs": [
+    "(0) field: \"hour\" | \"minute\"",
+    "(1) format?: MdyTimeFormat",
+    "(2) steps?: MdyTimeSteps",
+    "(3) handLength?: number",
+    "(4) ring?: \"outer\" | \"inner\"",
+    "-> returns: readonly MdyTimepickerDialArc[]"
   ],
   "timepickerFieldPartIds": [
     "(0) widgetId: string",

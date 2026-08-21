@@ -58,7 +58,7 @@
             @if (ghost(); as under) {
               <div
                 class="mdy-timepicker-dial__hand mdy-timepicker-dial__hand--ghost"
-                [class.mdy-timepicker-dial__hand--inner]="under.ring === 'inner'"
+                [style.--tp-ghost-reach]="under.reach"
                 [style.transform]="'rotate(' + under.angle + 'deg)'"
                 aria-hidden="true"
               ></div>
