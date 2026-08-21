@@ -62,6 +62,8 @@ export const MDY_STATE_MODIFIERS = Object.freeze({
   rangeEnd: "range-end",
   /** Can be taken off — a value chip with a dismiss affordance. */
   removable: "removable",
+  /** Held and travelling: a chip a pointer has picked up and not yet put down. */
+  dragging: "dragging",
   /** Laid out along the row rather than down the column. */
   horizontal: "horizontal",
   /** The dense form of a control that has one. */

@@ -124,7 +124,7 @@ export const MDY_WIDGET_CONTRACTS = Object.freeze({
       // Not modal. The panel is anchored to its field and the page behind it stays reachable, so
       // `aria-modal` would say the opposite of what dismissal does.
       roles: { popup: "dialog" },
-      states: { trigger: ["open", "disabled", "readonly", "invalid", "loading"], option: ["selected"], chip: ["selected", "removable"], popup: POPUP_PLACEMENT_STATES },
+      states: { trigger: ["open", "disabled", "readonly", "invalid", "loading"], option: ["selected"], chip: ["selected", "removable", "dragging"], popup: POPUP_PLACEMENT_STATES },
       classes: { box: ["mdy-multiselect"], trigger: ["mdy-multiselect__trigger"], arrow: ["mdy-multiselect__arrow"], options: ["mdy-multiselect__options", "mdy-multiselect-overlay__grid"], optionWrapper: [MDY_CHIP_CLASSES.wrapper], option: [MDY_CHIP_CLASSES.block], optionCheck: [MDY_CHIP_CLASSES.check], optionLabel: [MDY_CHIP_CLASSES.label], optionCount: [MDY_CHIP_CLASSES.count], optionStep: [MDY_CHIP_CLASSES.step], chips: ["mdy-multiselect__chips"], chip: [MDY_CHIP_CLASSES.block, MDY_CHIP_CLASSES.value], chipRemove: [MDY_CHIP_CLASSES.remove], chipMove: [MDY_CHIP_CLASSES.move], announcement: ["mdy-multiselect__announcement"], placeholder: ["mdy-multiselect__placeholder"], popup: ["mdy-multiselect__dropdown", MDY_POPUP_CLASS, MDY_POPUP_SURFACE_CLASS, "mdy-multiselect-overlay__panel"], search: ["mdy-multiselect-overlay__input"], loading: ["mdy-select__loader"], empty: ["mdy-multiselect-overlay__empty"] } ,
       // The two mode markers a chip carries. `--centered` reserves the width its tick will need in
       // toggle mode; `--counter` is the bag mode, whose chip has step buttons instead of a tick.

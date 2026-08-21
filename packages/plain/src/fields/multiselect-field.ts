@@ -23,6 +23,8 @@ import {
   chipFocusAfterRemoval,
   multiselectAnnouncement,
   chipMovedAnnouncement,
+  chipDropIndex,
+  stateClass,
 } from "@modyra/widgets";
 import { applyPart, el, setErrors, setText, setIcon } from "../dom.js";
 import { buildFieldShell, insertControl } from "../field-shell.js";
@@ -299,10 +301,67 @@ export function renderMultiselectField(
         const to = Math.max(0, Math.min(order.length - 1, order.indexOf(key) + by));
         saySoon = chipMovedAnnouncement(messages.selectionMoved, labelOfChip(key), to + 1, order.length);
         dispatch({ type: "move-selected", optionKey: key, to });
+        // The subject stays the chip that moved, decided rather than inherited from the DOM. The
+        // keyboard has this for free — focus travels with the chip — and a pointer does not: after
+        // one press the chip a person was aiming at has slid out from under their finger, so a
+        // second press on the same spot moves a different value back. Naming the subject at least
+        // keeps everything downstream of it pointing at the right thing.
+        activeChip = key;
+        syncRoving();
       });
       return button;
     };
-    if (reorderable) chip.appendChild(move(-1, messages.chipMoveEarlierLabel));
+    if (reorderable) {
+      /**
+       * Dragging a chip to a new place — the door the brief named, on the same intent as the other
+       * two so the three cannot answer differently.
+       *
+       * A threshold before it becomes a drag: a press that never travels is a press, and treating
+       * every one as the beginning of a drag takes the chip's own controls away from anybody whose
+       * finger moves a pixel. Pointer capture so leaving the strip does not drop the gesture, and
+       * `pointercancel` puts it back untouched — the browser taking the gesture is not a decision
+       * the person made.
+       */
+      chip.addEventListener("pointerdown", (event) => {
+        if (event.button !== 0) return;
+        const startX = event.clientX;
+        let dragging = false;
+        const onMove = (moveEvent: PointerEvent) => {
+          if (!dragging && Math.abs(moveEvent.clientX - startX) < 6) return;
+          dragging = true;
+          chip.classList.add(stateClass(parts.chip.classes[0]!, "dragging"));
+        };
+        const onUp = (upEvent: PointerEvent) => {
+          chip.removeEventListener("pointermove", onMove);
+          chip.removeEventListener("pointerup", onUp);
+          chip.removeEventListener("pointercancel", onCancel);
+          chip.classList.remove(stateClass(parts.chip.classes[0]!, "dragging"));
+          if (!dragging) return;
+          const order = stripOrder();
+          const midpoints = order.map((each) => {
+            const box = chosenEls.get(each)?.getBoundingClientRect();
+            return box ? box.left + box.width / 2 : 0;
+          });
+          const to = chipDropIndex(midpoints, upEvent.clientX, order.indexOf(key));
+          if (to === order.indexOf(key)) return;
+          saySoon = chipMovedAnnouncement(messages.selectionMoved, labelOfChip(key), to + 1, order.length);
+          dispatch({ type: "move-selected", optionKey: key, to });
+          activeChip = key;
+          syncRoving();
+        };
+        const onCancel = () => {
+          chip.removeEventListener("pointermove", onMove);
+          chip.removeEventListener("pointerup", onUp);
+          chip.removeEventListener("pointercancel", onCancel);
+          chip.classList.remove(stateClass(parts.chip.classes[0]!, "dragging"));
+        };
+        chip.setPointerCapture(event.pointerId);
+        chip.addEventListener("pointermove", onMove);
+        chip.addEventListener("pointerup", onUp);
+        chip.addEventListener("pointercancel", onCancel);
+      });
+      chip.appendChild(move(-1, messages.chipMoveEarlierLabel));
+    }
     if (stepsFor(count)) chip.appendChild(step(-1, messages.chipDecrementLabel));
     chip.appendChild(el("span", parts.optionLabel.classes.join(" ")));
     chip.appendChild(el("span", parts.optionCount.classes.join(" ")));

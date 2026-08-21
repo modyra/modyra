@@ -180,3 +180,34 @@ export function chipMovedAnnouncement(
     .replace("{position}", String(position))
     .replace("{count}", String(count));
 }
+
+/**
+ * Where a dragged chip would land, from where the pointer is.
+ *
+ * Takes the horizontal midpoints of the chips as they are drawn, in order, and answers the index the
+ * dragged one would occupy on release. Shared rather than written per renderer for the same reason
+ * the dial's angle arithmetic is: three implementations of "which one is the pointer over" is three
+ * answers, and the one a person sees is whichever renderer they happen to be using.
+ *
+ * Reads midpoints rather than edges so the drop follows what the eye does — a chip is "passed" when
+ * the pointer is more than halfway across it, not when it clears the far edge.
+ *
+ * Direction-agnostic: the midpoints arrive in drawing order, so a right-to-left strip answers with
+ * the same arithmetic and no renderer has to know which way its own text runs.
+ */
+export function chipDropIndex(
+  midpoints: readonly number[],
+  clientX: number,
+  from: number,
+): number {
+  if (midpoints.length === 0) return from;
+  const ascending = (midpoints[midpoints.length - 1] ?? 0) >= (midpoints[0] ?? 0);
+  let landed = 0;
+  for (const midpoint of midpoints) {
+    if (ascending ? clientX > midpoint : clientX < midpoint) landed += 1;
+  }
+  // A chip dragged rightwards passes its own midpoint on the way, which would count it as one place
+  // further than the eye reads. Its own slot is not a place it can land on.
+  if (landed > from) landed -= 1;
+  return Math.max(0, Math.min(midpoints.length - 1, landed));
+}
