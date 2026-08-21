@@ -22,6 +22,7 @@ import {
   showsAsInvalid,
   stepTimeField,
   timeFieldBounds,
+  dialHandLength,
   timepickerDialGhost,
   timepickerDialNumbers,
   timepickerDialPick,
@@ -299,16 +300,10 @@ export function renderTimepickerField(
    * drifts from the paint, and the hit test then sends a pointer to the number beside the one under
    * the finger.
    */
-  function handLength(): number {
-    // The hand's own height, not `--tp-hand-length`: a custom property resolves at use, so reading it
-    // back gives the token stream — `calc(256px/2 - 40px/2 - 8px)` — which no `parseFloat` reads.
-    // That branch never succeeded and the fallback ran instead: half the *face*, 128 where the hand
-    // is 100, so every angle-at-a-radius here was computed against a circle 28% too large.
-    const drawn = Number.parseFloat(getComputedStyle(dialHand).height);
-    // Falls back to the face's own radius when the stylesheet is not loaded — a face with no CSS has
-    // no rings drawn on it either, so the answer cannot be wrong about where they are.
-    return Number.isFinite(drawn) && drawn > 0 ? drawn : dialFace.getBoundingClientRect().width / 2;
-  }
+  /** The rule is the contract's: measuring this went wrong twice, both times in three copies. */
+  const handLength = (): number => dialHandLength(dialFace);
+
+
 
   /**
    * Draws the faint hand where the pointer is, when the value went somewhere else.
@@ -441,7 +436,10 @@ export function renderTimepickerField(
     // coordinates are `anchorOverlay`'s, and this only measures and applies them.
     if (state.open) positionOverlay(dialog, shell.wrapper, anchoring);
     else releaseOverlayPlacement(dialog);
-    const hourString = String(state.draft.hour);
+    // In the picker's own notation. The draft holds the hour canonically as 1–12 with a period
+    // beside it whatever the format, so printing it raw showed `2` on a 24-hour picker holding
+    // 14:00 — the one number on screen that says what is selected, saying something else.
+    const hourString = String(timepickerSelectedDialValue("hour", state.draft, format));
     if (hourInput.value !== hourString) hourInput.value = hourString;
     const minuteString = String(state.draft.minute).padStart(2, "0");
     if (minuteInput.value !== minuteString) minuteInput.value = minuteString;

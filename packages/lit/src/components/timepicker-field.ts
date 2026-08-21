@@ -16,6 +16,7 @@ import {
   timeFieldBounds,
   timepickerDialNumbers,
   timepickerDialRing,
+  dialHandLength,
   timepickerDialGhost,
   timepickerDialPick,
   timepickerDialTolerance,
@@ -499,15 +500,13 @@ export class MdyTimepickerFieldElement extends MdyFieldElement<string | null> {
     if (measured > 0 && measured !== this._handLength) this._handLength = measured;
   }
 
+  /** The rule is the contract's: measuring this went wrong twice, both times in three copies. */
   private measuredHandLength(): number {
     const face = this.querySelector<HTMLElement>(".mdy-timepicker-dial__face");
-    if (!face) return this._dragHandLength;
-    // The hand's own height, not `--tp-hand-length`: a custom property resolves at use, so reading
-    // it back gives the token stream, which no `parseFloat` reads.
-    const hand = face.querySelector<HTMLElement>(".mdy-timepicker-dial__hand");
-    const drawn = hand ? Number.parseFloat(getComputedStyle(hand).height) : Number.NaN;
-    return Number.isFinite(drawn) && drawn > 0 ? drawn : face.getBoundingClientRect().width / 2;
+    return face ? dialHandLength(face) : this._dragHandLength;
   }
+
+
 
   private updateAngle(event: MouseEvent | TouchEvent): void {
     const el = this.querySelector<HTMLElement>(".mdy-timepicker-dial__face");

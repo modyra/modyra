@@ -9,6 +9,8 @@
 import { to24Hour } from "@modyra/core/datetime";
 import type { MdyTimeFormat, ParsedTime } from "@modyra/core/datetime";
 import { isOnStep, MDY_EVERY_TIME, type MdyTimeSteps } from "../time-granularity.js";
+import { MDY_WIDGET_CONTRACTS } from "../catalog.js";
+import { stateClass } from "../state.js";
 import { stepTimeField, timeFieldBounds } from "../time-bounds.js";
 export interface MdyTimepickerDialNumber {
   readonly value: number;
@@ -517,6 +519,44 @@ export const MDY_TIMEPICKER_RING_BAND = 0.5;
  * answered `"inner"` for a press near the centre of it shortened the hand for a ring that does not
  * exist.
  */
+/**
+ * How long this face's hand is at full reach, in pixels, measured from the drawing.
+ *
+ * Every angle-at-a-radius on the dial is a fraction of this, so it has to come from the paint rather
+ * than from a copy of the stylesheet's arithmetic in TypeScript. Two ways of reading it have already
+ * been wrong:
+ *
+ * - **`--tp-hand-length` off the face.** A custom property resolves at *use*, so reading it back
+ *   gives the token stream — `calc(256px/2 - 40px/2 - 8px)` — and the fallback beside it ran instead:
+ *   half the face, 128 where the hand is 100.
+ * - **The hand's own height, taken as it is.** The hand is drawn shorter when it points into the
+ *   inner ring, and which ring it points into is *the answer this measurement produces*. Each state
+ *   became the other's cause: on the inner ring it measured 60, whose thresholds put the same
+ *   position on the outer ring, whose hand measures 100, whose thresholds put it back. It alternated
+ *   on every pointer event — not a tremor, a feedback loop, and no amount of hysteresis damps it
+ *   because what moves is the thresholds themselves.
+ *
+ * So the shortened state is divided back out. The modifier the element carries says which state it is
+ * in, and `MDY_TIMEPICKER_INNER_RING` is the fraction the sheet drew it at — the same constant, held
+ * against the stylesheet by `css-properties.spec.mjs`.
+ *
+ * One helper rather than the same line in three renderers: the identical line in three files is how
+ * this arrived, and the next adapter would copy whatever it found.
+ */
+export function dialHandLength(face: Element): number {
+  const base = MDY_WIDGET_CONTRACTS.timepicker.parts.dialHand.classes[0]!;
+  const ghost = stateClass(base, "ghost");
+  // The ghost is a hand too, and its length follows the pointer — a worse ruler than the real one.
+  const hand = Array.from(face.querySelectorAll(`.${base}`)).find((el) => !el.classList.contains(ghost));
+  const drawn = hand ? Number.parseFloat(getComputedStyle(hand).height) : Number.NaN;
+  if (!Number.isFinite(drawn) || drawn <= 0) {
+    // Nothing drawn to measure: the face's own radius is the only thing left, and a face with no
+    // stylesheet has no rings for the answer to be wrong about.
+    return face.getBoundingClientRect().width / 2;
+  }
+  return hand!.classList.contains(stateClass(base, "inner")) ? drawn / MDY_TIMEPICKER_INNER_RING : drawn;
+}
+
 export function timepickerDialRing(
   face: { readonly width: number; readonly height: number; readonly left: number; readonly top: number },
   clientX: number,
