@@ -1763,30 +1763,94 @@
 
     /* ─── Multiselect (Chips + Overlay) ────────────────────────────────────────── */
 
-    .mdy-multiselect__header {
-        display: flex;
-        align-items: center;
-        flex: 1;
-        justify-content: end;
+    /* What a person presses. The box around it carries the field's state; this carries the value,
+       so it is a control and looks like the rest of the field rather than like a button. */
+    /* The field's box may not grow to fit its chips. A flex or grid item's automatic minimum size is
+       its content, so without this the wrapper widens until every chip fits — the strip then never
+       overflows, `overflow-x` has nothing to do, and the control is as wide as the value is long.
+       That is the same expansion the inline option list used to cause, one axis over. */
+    .mdy-renderer .mdy-multiselect {
+        min-width: 0;
+        max-width: 100%;
     }
 
-    .mdy-multiselect__search-btn {
+    .mdy-multiselect__trigger {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        width: 100%;
+        min-width: 0;
+        border: none;
+        background: transparent;
+        padding: 0;
+        margin: 0;
+        color: inherit;
+        font: inherit;
+        text-align: start;
+        cursor: pointer;
+    }
+
+    /* One line that scrolls, which is the whole reason the option list left the closed control.
+       `min-width: 0` on a flex child is what lets it be narrower than its content — without it the
+       strip grows to fit and the control's width follows the number of chips. */
+    .mdy-multiselect__chips {
+        display: flex;
+        align-items: center;
+        gap: 0.25rem;
+        flex: 1;
+        min-width: 0;
+        overflow-x: auto;
+        overflow-y: hidden;
+        scrollbar-width: thin;
+        /* A chip scrolled out of view is still Tab-reachable, and focusing it brings it back — the
+           browser does that for any scroll container. Deliberately *not* `scroll-behavior: smooth`:
+           it makes the arrival happen over ~500ms, so for that half-second the focused chip is
+           still off screen and anything reading the scroll position sees the old one. A focus ring
+           nobody can see yet is the same defect as a focus ring nowhere. */
+    }
+
+    /* The floor. Without it the truncation absorbs the overflow — chips shrink until they fit, the
+       strip never exceeds its box, and "scroll to see the rest" never happens: they just get
+       narrower until nothing is legible. A floor makes the overflow real, and the ellipsis then
+       means "this one is clipped" rather than "everything is". */
+    .mdy-multiselect__chips .mdy-chip {
+        flex: 0 0 auto;
+        min-width: 4rem;
+        max-width: 12rem;
+    }
+
+    .mdy-multiselect__arrow {
+        flex: 0 0 auto;
+        width: var(--mdy-affordance-target);
+        height: var(--mdy-affordance-target);
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        width: var(--mdy-affordance-box);
-        height: var(--mdy-affordance-box);
-        border: none;
-        background: transparent;
-        cursor: pointer;
-        padding: 0;
-        color: inherit;
-        border-radius: 50%;
-        transition: background var(--mdy-sys-motion-duration-base);
+        /* The control behind it is the target; this says which way it opens and nothing else. */
+        pointer-events: none;
     }
 
-    .mdy-multiselect__search-btn:hover:not(:disabled) {
-        background: var(--mdy-surface-container);
+    /* The caret itself, drawn rather than written: a character in the element's text is read out as
+       part of whatever names it, and a mark that is never text cannot be announced by accident.
+       A rotated square stands on its diagonal, so its side is the glyph over √2 — the same
+       derivation the select's caret uses, and the same size as an icon a renderer supplies. */
+    .mdy-multiselect__arrow:empty::after {
+        content: "";
+        width: calc(var(--mdy-affordance-glyph) / 1.414);
+        height: calc(var(--mdy-affordance-glyph) / 1.414);
+        border-right: 1.5px solid currentcolor;
+        border-bottom: 1.5px solid currentcolor;
+        transform: translateY(-25%) rotate(45deg);
+        opacity: 0.6;
+    }
+
+    .mdy-multiselect__placeholder {
+        flex: 1;
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        opacity: 0.6;
     }
 
     .mdy-multiselect__search-btn:disabled {
@@ -1954,6 +2018,22 @@
        person is looking when they change their mind — the alternative is reopening the popup and
        finding the row again among the others. Sized and laid out with the steppers because it is
        the same kind of thing: a small control at the edge of a chip. */
+    /* The mark the remove control shows, drawn rather than written.
+       A `×` in the button's text is read out as part of whatever composes an accessible name from
+       its contents — the chip's name is built that way, so the character arrived as "Opzione A 2 ×"
+       unless somebody remembered to exclude it. A mark that is never text cannot be. */
+    .mdy-chip__remove::before,
+    .mdy-chip__remove::after {
+        content: "";
+        position: absolute;
+        width: calc(var(--mdy-affordance-glyph) / 2);
+        height: 1.5px;
+        background: currentcolor;
+    }
+
+    .mdy-chip__remove::before { transform: rotate(45deg); }
+    .mdy-chip__remove::after { transform: rotate(-45deg); }
+
     .mdy-chip__btn,
     .mdy-chip__remove {
         position: relative;

@@ -249,13 +249,15 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
         id=${overlayControlledId("multiselect", this.fieldId) ?? nothing}
         role=${this.partRole("popup")}
       >
-      <input
-        type="text"
-        class="mdy-multiselect-overlay__input"
-        .value=${this._query}
-        @input=${this.onSearchInput}
-        placeholder=${this.messages.searchPlaceholder}
-      />
+      ${this.searchable
+        ? html`<input
+            type="text"
+            class="mdy-multiselect-overlay__input"
+            .value=${this._query}
+            @input=${this.onSearchInput}
+            placeholder=${this.messages.searchPlaceholder}
+          />`
+        : nothing}
       ${this.optionTemplate
         ? html`<button type="button" class=${MDY_CHIP_CLASSES.wrapper}>Custom option</button>`
         : nothing}
@@ -363,6 +365,7 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
       tabindex="0"
       role="group"
       aria-label=${count > 1 ? `${label}, ${count}` : label}
+      title=${label}
     >
       ${this.mode === "multi"
         ? html`<button
@@ -370,7 +373,7 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
             class=${MDY_CHIP_CLASSES.step}
             aria-label=${this.messages.chipDecrementLabel}
             @click=${(e: Event) => { e.stopPropagation(); this.decrement(handle, value); }}
-          >−</button>`
+          ></button>`
         : nothing}
       <span class=${MDY_CHIP_CLASSES.label}>${label}</span>
       <span class=${MDY_CHIP_CLASSES.count} ?hidden=${count <= 1}>${count > 1 ? String(count) : ""}</span>
@@ -380,14 +383,14 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
             class=${MDY_CHIP_CLASSES.step}
             aria-label=${this.messages.chipIncrementLabel}
             @click=${(e: Event) => { e.stopPropagation(); this.increment(handle, value); }}
-          >+</button>`
+          ></button>`
         : nothing}
       <button
         type="button"
         class=${MDY_CHIP_CLASSES.remove}
         aria-label=${this.messages.chipRemoveLabel}
         @click=${(e: Event) => { e.stopPropagation(); this.removeValue(handle, value); }}
-      >×</button>
+      ></button>
     </span>`);
   }
 

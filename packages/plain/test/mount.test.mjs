@@ -679,7 +679,9 @@ test("filtering hides the options that do not match, in the select and the multi
   const { reactivity, dispose } = mountMdyForm(host, [
     // Filtering is the combobox model, and the contract now says which model a select is.
     { name: "country", kind: "select", label: "Country", searchable: true, options: [{ value: "it", label: "Italy" }, { value: "fr", label: "France" }, { value: "de", label: "Germany" }] },
-    { name: "palette", kind: "multiselect", label: "Palette", options: [{ value: "indigo", label: "Indigo" }, { value: "cloud", label: "Cloud" }] },
+    // `searchable` asked for, because this test filters. The flag was ignored and every multiselect
+    // got a search box whether or not it wanted one, which made the flag look like it worked.
+    { name: "palette", kind: "multiselect", label: "Palette", searchable: true, options: [{ value: "indigo", label: "Indigo" }, { value: "cloud", label: "Cloud" }] },
   ], { submitLabel: null });
 
   const trigger = host.querySelector(".mdy-select__trigger");
