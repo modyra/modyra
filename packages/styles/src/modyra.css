@@ -2818,6 +2818,40 @@
         height: calc(var(--tp-hand-length) * var(--tp-inner-ring));
     }
 
+    /* A hand that moves rather than jumps, when the host asks for it.
+     *
+     * Off by default, because a hand that animates is a hand that is briefly not where the value is
+     * — on a face that snaps, the two would disagree for the length of the transition. A host that
+     * wants the motion says so, and the duration is the system's own rather than a figure of this
+     * widget's. Nobody who has asked not to be moved gets it. */
+    .mdy-timepicker-dial--animated .mdy-timepicker-dial__hand {
+        transition:
+            height var(--mdy-sys-motion-duration-fast) ease,
+            transform var(--mdy-sys-motion-duration-fast) ease;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .mdy-timepicker-dial--animated .mdy-timepicker-dial__hand {
+            transition: none;
+        }
+    }
+
+    /* The hand the pointer is on, when that is not the hand the value is on.
+     *
+     * A dial that offers only some times has to snap, and snapping alone hides what it is doing:
+     * the hand jumps to a number the finger is not on, and whether that was the rule or a missed
+     * press is not something the screen says. The gap between the two hands is the explanation, so
+     * this one is drawn faintly and never carries the knob — it shows where the pointer is, not
+     * what has been chosen. */
+    .mdy-timepicker-dial__hand--ghost {
+        opacity: 0.35;
+        pointer-events: none;
+    }
+
+    .mdy-timepicker-dial__hand--ghost::after {
+        display: none;
+    }
+
     .mdy-timepicker-dial__hand::after {
         content: "";
         position: absolute;

@@ -478,3 +478,21 @@ test("a ring's tolerance follows the radius its numbers are drawn at", () => {
     assert.ok(timepickerDialTolerance("inner", hand) > outer, "a smaller circle is more forgiving");
   }
 });
+
+test("the face has two zones, and the band is one published number wide", async () => {
+  // The band is centred on the inner ring's own radius, so a finger moving in crosses outer → inner
+  // and, below the digits, outer again. That third zone is deliberate: the empty middle carries no
+  // numbers, and the user asked for the inner ring only "in un intorno molto vicino
+  // dell'occupazione delle cifre, altrimenti deve stare sul quadrante maggiore".
+  //
+  // Recorded rather than argued, because it is the half of the rule most likely to be read as a
+  // defect by someone who did not hear the request.
+  const { MDY_TIMEPICKER_RING_BAND } = await import("../dist/index.js");
+  const HAND = 100;
+  const innerRadius = HAND * 0.6;
+  const half = (HAND - innerRadius) * MDY_TIMEPICKER_RING_BAND;
+  assert.equal(at(Math.round(innerRadius - half) + 1), "inner", "the near edge of the band");
+  assert.equal(at(Math.round(innerRadius + half) - 1), "inner", "and the far edge");
+  assert.equal(at(Math.round(innerRadius - half) - 1), "outer", "below it the major dial resumes");
+  assert.equal(at(Math.round(innerRadius + half) + 1), "outer", "and above it too");
+});

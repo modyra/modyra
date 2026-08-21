@@ -125,6 +125,7 @@ import { MdyTimepickerClockComponent } from "./timepicker-clock.component";
         <mdy-timepicker-clock
           [value]="draftValue()"
           [granularity]="granularity()"
+          [animateHand]="animateHand()"
           [open]="open()"
           [format]="format()"
           [disabled]="isDisabled()"
@@ -172,6 +173,8 @@ export class MdyTimepickerComponent extends MdyOverlayControl<string | null> {
    * not silently rebuild the draft the user is editing.
    */
   readonly granularity = input<MdyTimeGranularity | undefined>(undefined);
+  /** Whether the dial's hand moves rather than jumps. Off by default. */
+  readonly animateHand = input<boolean>(false);
   protected override readonly minSpace = 450;
 
   protected readonly effectivePlaceholder = computed(() =>
