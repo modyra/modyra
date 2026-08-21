@@ -21046,3 +21046,50 @@ Its second assertion carries its premise as a sentence — *a property the libra
 a renderer dropping it* — because an earlier probe of mine could not tell those apart and reported this
 as broken in all three renderers at once, which is nearly always the instrument rather than the code.
 
+
+## 378 — the keyboard table promises keys a default control does not answer (S2, A11Y-001)
+
+```
+MDY_WIDGET_KEYBOARD.multiselect
+  Alt+ArrowLeft   intent reorder    when: (none)
+  Alt+ArrowRight  intent reorder    when: (none)
+  ArrowLeft       intent move       when: closed
+  ArrowRight      intent move       when: closed
+```
+
+All four are declared unconditionally, and a multiselect as a document declares it answers none of
+them: the two `move` keys walk between chips and there are none until something is chosen, and the two
+`reorder` keys need `reorderable`, which is **opt-in and off by default**.
+
+`when` already exists in the table and already carries `"open"` and `"closed"`, so the table can
+express a precondition — it just has no way to say *"when the field asked for it"* or *"when there is
+more than one chip"*. A consumer reading the table to build a help panel, or a renderer reading it to
+decide what to bind, is told about four keys that a default control will not honour.
+
+**It is the mirror of the defect `esecutore` fixed earlier tonight**, where plain gated *every* chip key
+behind `reorderable` and six declared keys went quiet. That was the renderer being stricter than the
+table; this is the table being looser than the renderer. Both come from the same gap: the reorder
+capability is a field-level flag and the keyboard contract has no vocabulary for it.
+
+Surfaced by `every-key-a-kind-declares.spec.ts`, whose fixture mounted a bare multiselect — which was
+the honest reading of "what a document gets by default". The fixture now gives the multiselect chips
+and `reorderable`, because the spec's question is *does a declared key do anything*, not *is the
+declaration conditional*; the second question is this finding and belongs in the contract rather than
+in a fixture.
+
+Owned by `esecutore`.
+
+### And three tries spent on the wrong thing
+
+The first repair I wrote primed the reorder keys the way `move` keys are primed. It made the spec hang
+— not slow, hang — and I read the hang as slowness twice, once by shortening the priming and once by
+doubling the budget from five minutes to ten. It timed out at ten exactly as it had at five.
+
+**A budget that doubles without changing the outcome is not a cost, it is a block**, and I had that
+evidence at the second attempt. Worse, raising the budget made the block indistinguishable from
+slowness — [ADR 0121](../../docs/architecture/0121-a-value-indistinguishable-from-its-own-absence.md)'s
+shape, applied to my own instrument rather than to the code.
+
+Reverting to the version before my repair produced a run that finished, and the failing assertion
+underneath had been hidden for three attempts. The original red was never read until the fourth.
+
