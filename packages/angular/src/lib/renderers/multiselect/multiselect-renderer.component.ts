@@ -110,6 +110,15 @@ import type { MdyOverlayBranch, MdyOverlayOwner } from "../../core/overlay-contr
               [attr.aria-posinset]="i + 1"
               [attr.aria-setsize]="chosen().length"
             >
+              @if (reorderable()) {
+                <button
+                  type="button"
+                  [class]="chip.move"
+                  tabindex="-1"
+                  [attr.aria-label]="i18n.chipMoveEarlierLabel"
+                  (click)="moveByPointer(held.key, -1); $event.stopPropagation()"
+                ></button>
+              }
               @if (mode() === "multi") {
                 <button
                   type="button"
@@ -129,6 +138,15 @@ import type { MdyOverlayBranch, MdyOverlayOwner } from "../../core/overlay-contr
                   [attr.aria-label]="i18n.chipIncrementLabel"
                   (click)="increment(held.value); $event.stopPropagation()"
                 ><mdy-icon name="PLUS" /></button>
+              }
+              @if (reorderable()) {
+                <button
+                  type="button"
+                  [class]="chip.move"
+                  tabindex="-1"
+                  [attr.aria-label]="i18n.chipMoveLaterLabel"
+                  (click)="moveByPointer(held.key, 1); $event.stopPropagation()"
+                ></button>
               }
               <button
                 type="button"
@@ -474,6 +492,23 @@ export class MdyMultiselectComponent<TValue = string>
     );
     this.controller()?.dispatch({ type: "move-selected", optionKey, to });
     this.focusChip(optionKey);
+  }
+
+  /**
+   * The pointer's way to move a chip, which is not a drag.
+   *
+   * WCAG 2.5.7 asks for a single-pointer path independently of the keyboard's: somebody who cannot
+   * hold and drag has no way to reorder otherwise, and Alt plus the arrows does not discharge it.
+   */
+  protected moveByPointer(optionKey: string, by: -1 | 1): void {
+    const order = this.chosen().map((c) => c.key);
+    const to = Math.max(0, Math.min(order.length - 1, order.indexOf(optionKey) + by));
+    this.saySoon = chipMovedAnnouncement(
+      this.i18n.selectionMoved,
+      this.chosen().find((c) => c.key === optionKey)?.label ?? optionKey,
+      to + 1, order.length,
+    );
+    this.controller()?.dispatch({ type: "move-selected", optionKey, to });
   }
 
   /**

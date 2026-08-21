@@ -39,6 +39,19 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
   declare searchable: boolean;
   /** Whether a person may rearrange what they chose. Off by default. */
   declare reorderable: boolean;
+  /**
+   * The pointer's way to move a chip, which is not a drag.
+   *
+   * WCAG 2.5.7 asks for a single-pointer path independently of the keyboard's: somebody who cannot
+   * hold and drag has no way to reorder otherwise, and `Alt`+arrows does not discharge it.
+   */
+  private moveByPointer(handle: MdyFieldHandle<readonly unknown[]>, optionKey: string, by: -1 | 1): void {
+    const order = [...new Set(this.held(handle).map((v) => String(v)))];
+    const to = Math.max(0, Math.min(order.length - 1, order.indexOf(optionKey) + by));
+    this._saySoon = chipMovedAnnouncement(this.messages.selectionMoved, this.labelFor(optionKey), to + 1, order.length);
+    this.fieldController?.dispatch({ type: "move-selected", optionKey, to });
+  }
+
   /** Which chip carries the strip's tab stop. */
   private _activeChip: string | null = null;
   /** What the live region last spoke about; `null` until the first paint has been taken as given. */
@@ -519,6 +532,15 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
       aria-posinset=${index + 1}
       aria-setsize=${size}
     >
+      ${this.reorderable
+        ? html`<button
+            type="button"
+            class=${MDY_CHIP_CLASSES.move}
+            tabindex="-1"
+            aria-label=${this.messages.chipMoveEarlierLabel}
+            @click=${(e: Event) => { e.stopPropagation(); this.moveByPointer(handle, String(value), -1); }}
+          ></button>`
+        : nothing}
       ${this.mode === "multi"
         ? html`<button
             type="button"
@@ -537,6 +559,15 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
             tabindex="-1"
             aria-label=${this.messages.chipIncrementLabel}
             @click=${(e: Event) => { e.stopPropagation(); this.increment(handle, value); }}
+          ></button>`
+        : nothing}
+      ${this.reorderable
+        ? html`<button
+            type="button"
+            class=${MDY_CHIP_CLASSES.move}
+            tabindex="-1"
+            aria-label=${this.messages.chipMoveLaterLabel}
+            @click=${(e: Event) => { e.stopPropagation(); this.moveByPointer(handle, String(value), 1); }}
           ></button>`
         : nothing}
       <button

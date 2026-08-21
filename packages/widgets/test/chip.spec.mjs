@@ -26,6 +26,7 @@ test("the chip vocabulary is fixed and namespaced", () => {
     count: "mdy-chip__count",
     step: "mdy-chip__btn",
     remove: "mdy-chip__remove",
+    move: "mdy-chip__move",
     wrapper: "mdy-chip-wrapper",
   });
 });

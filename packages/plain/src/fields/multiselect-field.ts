@@ -259,7 +259,7 @@ export function renderMultiselectField(
       const to = Math.max(0, Math.min(order.length - 1, order.indexOf(key) + (binding.by ?? 1)));
       saySoon = chipMovedAnnouncement(
         messages.selectionMoved,
-        chosenEls.get(key)?.querySelector(`.${parts.optionLabel.classes[0]}`)?.textContent ?? key,
+        labelOfChip(key),
         to + 1,
         order.length,
       );
@@ -280,10 +280,34 @@ export function renderMultiselectField(
       });
       return button;
     };
+    /**
+     * The pointer's way to move a chip, which is not a drag.
+     *
+     * WCAG 2.5.7 asks for a single-pointer path independently of the keyboard's: somebody who
+     * cannot hold and drag — a tremor, a head pointer, a switch — has no way to reorder otherwise,
+     * and `Alt`+arrows does not discharge it. Not focusable, like every other control on the chip:
+     * the chip is one tab stop and these are reached through it.
+     */
+    const move = (by: -1 | 1, label: string) => {
+      const button = el("button", parts.chipMove.classes.join(" ")) as HTMLButtonElement;
+      button.type = "button";
+      button.tabIndex = -1;
+      button.setAttribute("aria-label", label);
+      button.addEventListener("click", (event) => {
+        event.stopPropagation();
+        const order = stripOrder();
+        const to = Math.max(0, Math.min(order.length - 1, order.indexOf(key) + by));
+        saySoon = chipMovedAnnouncement(messages.selectionMoved, labelOfChip(key), to + 1, order.length);
+        dispatch({ type: "move-selected", optionKey: key, to });
+      });
+      return button;
+    };
+    if (reorderable) chip.appendChild(move(-1, messages.chipMoveEarlierLabel));
     if (stepsFor(count)) chip.appendChild(step(-1, messages.chipDecrementLabel));
     chip.appendChild(el("span", parts.optionLabel.classes.join(" ")));
     chip.appendChild(el("span", parts.optionCount.classes.join(" ")));
     if (stepsFor(count)) chip.appendChild(step(1, messages.chipIncrementLabel));
+    if (reorderable) chip.appendChild(move(1, messages.chipMoveLaterLabel));
     const remove = el("button", parts.chipRemove.classes.join(" ")) as HTMLButtonElement;
     remove.type = "button";
     remove.tabIndex = -1;
@@ -366,6 +390,11 @@ export function renderMultiselectField(
     }
     placeholder.hidden = tally.size > 0;
     syncRoving();
+  }
+
+  /** What a chip is called, for a sentence about it. */
+  function labelOfChip(key: string): string {
+    return chosenEls.get(key)?.querySelector(`.${parts.optionLabel.classes[0]}`)?.textContent ?? key;
   }
 
   /** The chips in the order the value has them, which is the order the strip draws. */
@@ -511,12 +540,16 @@ export function renderMultiselectField(
       saidLast = nowChosen;
       return;
     }
-    setText(announcement, multiselectAnnouncement(
+    // A render that describes no change leaves the region alone. Writing "" over a sentence is what
+    // takes it back before a reader has reached it — and a second pass over the same state is an
+    // ordinary thing for a renderer to do.
+    const said = multiselectAnnouncement(
       saidLast, nowChosen,
       { added: messages.selectionAdded, removed: messages.selectionRemoved, empty: messages.selectionEmpty },
       (key) => state.options.find((option) => keyFor(option) === key)?.label ?? key,
       state.open,
-    ));
+    );
+    if (said !== "") setText(announcement, said);
     saidLast = nowChosen;
     syncChips(state);
     setText(placeholder, f.placeholder ?? "");
