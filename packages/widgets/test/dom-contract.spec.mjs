@@ -283,7 +283,8 @@ function buildCompactMultiselect({ chipClasses = "mdy-chip mdy-chip--value" } = 
   const trigger = el("button", "mdy-multiselect__trigger", { role: "combobox" });
   const chips = el("div", "mdy-multiselect__chips");
   // A container, because it holds controls: the label, how many, and what takes the value off.
-  const chip = el("div", chipClasses);
+  // A toggle chip announces as a group; the counter variant makes it a spinbutton.
+  const chip = el("div", chipClasses, { role: "group" });
   const chipRemove = el("button", "mdy-chip__remove", { type: "button" });
   chip.append(chipRemove);
   chips.append(chip);

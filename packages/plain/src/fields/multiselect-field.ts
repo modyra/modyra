@@ -25,7 +25,7 @@ import {
   chipMovedAnnouncement,
   chipDropIndex,
   stateClass,
-  chipStripWheelDelta,
+  scrollChipStripByWheel,
   isTypeaheadCharacter,
 } from "@modyra/widgets";
 import { applyPart, el, setErrors, setText, setIcon } from "../dom.js";
@@ -80,12 +80,7 @@ export function renderMultiselectField(
   // there is a mechanism rather than a cue, and many desktop mice have no horizontal axis at all.
   // Passive is wrong here: the point is to take the gesture, and a listener that cannot call
   // `preventDefault` leaves the page scrolling underneath as well.
-  chipStrip.addEventListener("wheel", (event) => {
-    const delta = chipStripWheelDelta(event.deltaX, event.deltaY, chipStrip.scrollWidth, chipStrip.clientWidth);
-    if (delta === 0) return;
-    event.preventDefault();
-    chipStrip.scrollLeft += delta;
-  }, { passive: false });
+  chipStrip.addEventListener("wheel", scrollChipStripByWheel, { passive: false });
   const placeholder = el("span", parts.placeholder.classes.join(" "));
   // The affordance at the trailing edge, as the single-choice sibling has. Decorative: the whole
   // control opens the popup, so this says which way it opens rather than being the way.
@@ -227,7 +222,12 @@ export function renderMultiselectField(
   function buildValueChip(key: string, count: number): HTMLElement {
     const chip = el("div", parts.chip.classes.join(" "));
     chip.tabIndex = -1;
-    chip.setAttribute("role", "group");
+    // A counter chip *is* the spinbutton — the chip carries the role, not a focusable child of it,
+    // which is what ADR 0128 leaves room for: one tab stop, and the quantity announced natively as
+    // it changes rather than through a live region firing beside two buttons.
+    //
+    // `group` where there is no quantity: a chip holding one of something has no value to spin.
+    chip.setAttribute("role", stepsFor(count) ? "spinbutton" : "group");
     chip.addEventListener("focus", () => { activeChip = key; syncRoving(); });
     // Rearranging what was chosen, from the chip a person is looking at. The keys are the
     // contract's — a renderer choosing its own is how three of them come to answer differently —
@@ -235,10 +235,11 @@ export function renderMultiselectField(
     // the writing direction and `ArrowLeft` moves a chip *later* in a right-to-left document.
     chip.addEventListener("keydown", (event) => {
       const combo = `${event.altKey ? "Alt+" : ""}${event.key}`;
-      const binding = keyBindingFor("multiselect", combo, controller.state().open);
-      // Only the intents this chip answers. A key the chip does not handle — `ArrowDown` opening the
-      // popup, say — must reach the control, and swallowing it here left it doing nothing at all.
-      if (!binding || !["move", "remove", "reorder"].includes(binding.intent)) return;
+      // Asked as the chip. A key with no binding here belongs to the control and must reach it —
+      // `ArrowDown` opens the popup from the trigger and steps the quantity from a counter chip, and
+      // the table now says which is which rather than answering whichever was declared first.
+      const binding = keyBindingFor("multiselect", combo, controller.state().open, "chip");
+      if (!binding) return;
       // The chip's keys are the chip's. Left to bubble, the control's own overlay handler answered
       // the same keys a second time — so `End` moved focus and then had the popup's answer applied
       // over it, and `Backspace` removed nothing because the second handler won.
@@ -251,6 +252,15 @@ export function renderMultiselectField(
           ? (binding.by === -1 ? 0 : order.length - 1)
           : Math.max(0, Math.min(order.length - 1, at + (binding.by ?? 1)));
         focusChip(order[to]);
+        return;
+      }
+      if (binding.intent === "step") {
+        event.preventDefault();
+        // A counter chip announces itself as a spinbutton; these are the keys that make that true.
+        dispatch(event.key === "ArrowUp" ? { type: "increment", optionKey: key } : { type: "decrement", optionKey: key });
+        // The chip is rebuilt when its steppers come or go, so focus has to be put back on the one
+        // that replaced it — otherwise the second press of a spin goes to the document.
+        queueMicrotask(() => chosenEls.get(key)?.focus());
         return;
       }
       if (binding.intent === "remove") {
@@ -464,6 +474,13 @@ export function renderMultiselectField(
       // Where this chip sits and how many there are, stated on the chip itself. Independent of the
       // live region and of anything drawn: it survives a stripped stylesheet and a dropped
       // announcement, which the other two do not.
+      if (stepsFor(count)) {
+        // The value a spinbutton holds, and its floor. No ceiling: nothing in the contract limits
+        // how many of one option a person may take, and stating one would invent a rule.
+        chip.setAttribute("aria-valuenow", String(count));
+        chip.setAttribute("aria-valuemin", "0");
+        chip.setAttribute("aria-valuetext", count > 1 ? `${label}, ${count}` : label);
+      }
       chip.setAttribute("aria-posinset", String(wanted.length));
       chip.setAttribute("aria-setsize", String(tally.size));
       // The full name, for a chip the strip has narrowed to an ellipsis. `title` is the pointer's

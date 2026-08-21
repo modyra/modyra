@@ -176,12 +176,18 @@ interface MdyWidgetShape<TPart extends string = string> {
    * The key is the value the public config already carries, never a vocabulary invented here. A
    * variant that has to teach a consumer a new word is a variant that belongs in the config first.
    *
-   * What a variant may say is deliberately small: which elements its parts are, and which of them
-   * it requires. Anything wider — different parents, different relations — would be a second
-   * catalogue rather than a qualification of this one.
+   * What a variant may say is deliberately small: which elements its parts are, what they announce
+   * as, and which of them it requires. Anything wider — different parents, different relations —
+   * would be a second catalogue rather than a qualification of this one.
+   *
+   * `roles` is here for the same reason `elements` is, and arrived when a counter chip needed to be
+   * a `spinbutton` while a toggle chip stays a `group`: both statements answer *what this part is*,
+   * and both genuinely differ between two modes of one widget. Declaring the stronger role for both
+   * would promise a value to spin on a chip that holds membership.
    */
   readonly variants?: Readonly<Partial<Record<MdyWidgetVariant, {
     readonly elements?: Readonly<Partial<Record<TPart, MdyWidgetSemanticElement>>>;
+    readonly roles?: Readonly<Partial<Record<TPart, string>>>;
     readonly required?: readonly TPart[];
   }>>>;
   /**
@@ -424,6 +430,7 @@ export function define<const TPart extends string>(kind: MdyWidgetKind, rootClas
   const variants = Object.freeze(Object.fromEntries(
     Object.entries(shape.variants ?? {}).map(([name, variant]) => [name, Object.freeze({
       elements: Object.freeze({ ...(variant.elements ?? {}) }),
+      roles: Object.freeze({ ...(variant.roles ?? {}) }),
       required: Object.freeze([...(variant.required ?? [])]),
     })]),
   ));

@@ -127,6 +127,15 @@ export interface MdyKeyBinding {
   /** Whether a `move` goes as far as it can rather than one place — `Home` and `End`. */
   readonly toEnd?: boolean;
   /**
+   * Which part answers this key, where it is not the control.
+   *
+   * `ArrowDown` opens a closed multiselect and steps the quantity on a focused counter chip: one
+   * key, two meanings, decided by where a person is rather than by which binding was declared first.
+   * Without this the table could only say *this kind answers this key*, and the second declaration
+   * was unreachable — a binding that exists and can never be resolved.
+   */
+  readonly on?: string;
+  /**
    * Whether dismissing on this key returns focus to the opener. Only a `cancel` dismisses, so only a
    * `cancel` answers it, and the default is to restore.
    *
@@ -250,8 +259,8 @@ function keyboardFor(kind: MdyWidgetKind): readonly MdyKeyBinding[] {
   // Declared for a kind whose value is a list a person arranges, which the catalogue says by
   // holding a `chips` part: a set of filters has an order nobody chose and nothing to reorder.
   if ("chips" in MDY_WIDGET_CONTRACTS[kind].parts) {
-    bindings.push({ key: "Alt+ArrowLeft", intent: "reorder", by: -1 });
-    bindings.push({ key: "Alt+ArrowRight", intent: "reorder", by: 1 });
+    bindings.push({ key: "Alt+ArrowLeft", intent: "reorder", by: -1, on: "chip" });
+    bindings.push({ key: "Alt+ArrowRight", intent: "reorder", by: 1, on: "chip" });
     // Moving *between* chips, and removing the one you are on. Declared `when: "closed"`, because
     // while the popup is showing the arrows belong to the list a person is choosing from — the same
     // key in two places is what the phase exists to separate.
@@ -259,14 +268,19 @@ function keyboardFor(kind: MdyWidgetKind): readonly MdyKeyBinding[] {
     // The strip is one tab stop with a roving index, not one stop per chip. Twelve chosen values
     // were twenty-six presses to get past the field, and the cost of leaving a control must not
     // grow with what it holds.
-    bindings.push({ key: "ArrowLeft", when: "closed", intent: "move", by: -1 });
-    bindings.push({ key: "ArrowRight", when: "closed", intent: "move", by: 1 });
-    bindings.push({ key: "Home", when: "closed", intent: "move", by: -1, toEnd: true });
-    bindings.push({ key: "End", when: "closed", intent: "move", by: 1, toEnd: true });
+    bindings.push({ key: "ArrowLeft", when: "closed", intent: "move", by: -1, on: "chip" });
+    bindings.push({ key: "ArrowRight", when: "closed", intent: "move", by: 1, on: "chip" });
+    bindings.push({ key: "Home", when: "closed", intent: "move", by: -1, toEnd: true, on: "chip" });
+    bindings.push({ key: "End", when: "closed", intent: "move", by: 1, toEnd: true, on: "chip" });
     // Taking one off from the keyboard, both spellings: `Backspace` is what a person reaches for
     // and `Delete` is what the platform's own lists answer to.
-    bindings.push({ key: "Backspace", when: "closed", intent: "remove" });
-    bindings.push({ key: "Delete", when: "closed", intent: "remove" });
+    // The quantity, on a chip that has one. A counter chip announces itself as a `spinbutton`, and a
+    // spinbutton whose arrows do nothing is a claim the control does not keep — these are the keys
+    // that make the role true.
+    bindings.push({ key: "ArrowUp", when: "closed", intent: "step", on: "chip" });
+    bindings.push({ key: "ArrowDown", when: "closed", intent: "step", on: "chip" });
+    bindings.push({ key: "Backspace", when: "closed", intent: "remove", on: "chip" });
+    bindings.push({ key: "Delete", when: "closed", intent: "remove", on: "chip" });
   }
   if (TOGGLES.includes(kind)) bindings.push({ key: " ", intent: "toggle" });
 
@@ -295,9 +309,18 @@ export function keyBindingFor(
   kind: MdyWidgetKind,
   key: string,
   open: boolean,
+  /**
+   * Where the person is. Absent means the control, which is what answers a key by default.
+   *
+   * A binding declared `on` another part is invisible from the control and the only answer from
+   * that part, so one key can mean two things without either declaration shadowing the other.
+   */
+  on?: string,
 ): MdyKeyBinding | null {
   const phase: MdyOverlayPhase = open ? "open" : "closed";
   return MDY_WIDGET_KEYBOARD[kind].find(
-    (binding) => binding.key === key && (binding.when === undefined || binding.when === phase),
+    (binding) => binding.key === key
+      && (binding.when === undefined || binding.when === phase)
+      && (binding.on ?? undefined) === on,
   ) ?? null;
 }
