@@ -178,7 +178,10 @@ test("the dial's two rings name two different hours from one direction", () => {
   // other ring further in to claim it. The boundary sits below the outer digits rather than at the
   // midpoint, so a press aimed at the 9 does not answer 21.
   assert.equal(timepickerDialRing(face, ...at(10, 90), "24h", HAND), "inner", "the centre is nearest the inner ring");
-  assert.equal(timepickerDialRing(face, ...at(79, 90), "24h", HAND), "outer", "and a press just inside the 9 is the 9");
+  // The two digit boxes touch at 80 — 40px wide, drawn 40px apart — so that meeting point is the
+  // edge, and a press either side of it belongs to the digit whose box it is in.
+  assert.equal(timepickerDialRing(face, ...at(80, 90), "24h", HAND), "inner", "inside the 21's box");
+  assert.equal(timepickerDialRing(face, ...at(81, 90), "24h", HAND), "outer", "inside the 9's");
   // A 12-hour face has one ring wherever the finger lands, and so does a minute face.
   assert.equal(timepickerDialRing(face, ...at(60, 90), "12h", HAND), "outer");
   assert.equal(timepickerDialRing(face, ...at(60, 90), "24h", HAND, "minute"), "outer", "minutes are drawn at one radius");
