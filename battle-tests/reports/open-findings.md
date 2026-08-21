@@ -19213,3 +19213,45 @@ first thing a new adapter will call.
 malformed call earlier tonight returned `"outer"` at every radius — a broken call wearing a plausible
 answer. It is the safer direction of the same gap, and it is the reason the positional-parameter split
 in ADR 0121 is worth keeping.
+
+## 338 — The dial changes ring four times while the finger holds still (S1, UI-011/A11Y-001 — Modyra bug, RELEASE BLOCKER)
+
+Reported by the user: *"stando sopra un numero del quadrante interno e muovendosi appena c'è un salto
+che flickera tra quadrante interno ed esterno che è insopportabile."* Reproduced and measured.
+
+`timepickerDialRing` is a pure function of the pointer's distance, re-evaluated on every
+`pointermove`. The edge is where the two number boxes meet:
+
+```
+inner numbers centred at 60, box 40..80        outer at 100, box 80..120
+                                   ↑ 80 — one half-box from either centre
+```
+
+That is correct as a *boundary* and is exactly the wrong place for a decision with no memory. A hand
+is never still:
+
+```
+76:inner 77:inner 78:inner 79:inner 80:inner 81:outer 80:inner 79:inner
+80:inner 81:outer 82:outer 81:outer 80:inner
+→ 4 ring changes across a 6px wander
+```
+
+Every crossing is a full answer: the hand jumps its own length, and the face swaps which twelve numbers
+it is choosing from — several times a second, while the person believes they are holding still.
+
+**A threshold is the right shape for *where* the rings divide and the wrong shape for *whether to
+change*.** Those are two questions and the contract answers both with one comparison. What is missing
+is memory: having chosen a ring, leaving it should take a deliberate move rather than a tremor.
+
+**Not a tuning error.** Finding 334 moved the edge from 74 to 80 and that derivation stands — 80 is
+where the boxes meet and where the user's own rule puts it. Any edge has this defect while the answer
+is recomputed from scratch, because a person can rest a finger on any edge. Moving the number again
+would relocate the flicker, not remove it.
+
+**Battle**: `a-ring-that-cannot-make-up-its-mind.battle.test.mjs`. It asserts the property rather than
+a mechanism — *a wander smaller than half a number's box cannot change the answer more than once* —
+swept at every radius, so a previous-ring argument, a latch held for the length of a drag, and a
+deadband all satisfy it and a bare threshold satisfies none. Registered in `known-red.json`.
+
+**Blocks 2.4.0 in my judgement.** The fix is contained; shipping a dial that flickers under a resting
+finger is worse than a short delay, and this is the affordance the whole batch was about.
