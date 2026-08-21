@@ -5,7 +5,7 @@
  * browser and `aria-valuemax="12"` for a reader — and both are the truth about what an hour on a
  * twelve-hour clock can be.
  *
- * Typing three digits into it leaves `129` on screen. Nothing objects while the popup is open: the
+ * Typing an hour the clock does not have leaves `29` on screen. Nothing objects while the popup is open: the
  * number is shown, the dial is drawn, and the field looks like it holds an hour of one hundred and
  * twenty-nine. Confirming commits `12`.
  *
@@ -82,7 +82,11 @@ test("an hour the clock does not have, plain", async ({ page }) => {
   // And an hour it does not have, typed into the same box.
   expect(await openTimePopup(page, "t"), "the popup did not open a second time").toBe(true);
   await page.locator(HOUR).first().fill("");
-  await page.locator(HOUR).first().type("129");
+  // Two digits, not three. A third character is refused at the box now — the width property — so a
+  // three-digit probe can no longer reach an out-of-range state on any renderer: it leaves "12",
+  // which is a perfectly good hour, and the assertion below then measures nothing. `29` is out of
+  // range on both clocks and is what this spec was always about.
+  await page.locator(HOUR).first().type("29");
   await page.waitForTimeout(320);
 
   const shown = await shownHour(page);

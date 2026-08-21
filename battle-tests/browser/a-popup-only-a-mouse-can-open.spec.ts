@@ -102,8 +102,14 @@ test("a value can still be typed into the pickers whose popup will not open", as
     ["timepicker", "2:30 PM", "14:30"],
   ] as const).entries()) {
     const id = `typed-${index}`;
+    // The timepicker row types twelve-hour notation, so it asks for the twelve-hour clock. 24-hour is
+    // the default (ADR 0116) and a picker on it correctly refuses `2:30 PM` — this row was asserting
+    // the answer of a premise that record reversed, and `format` is the slot 0116 left for saying so.
     await page.evaluate(
-      ({ mountId, k }) => window.battle.mountFields(mountId, [{ name: "f", kind: k, label: "F" }] as never),
+      ({ mountId, k }) => window.battle.mountFields(
+        mountId,
+        [k === "timepicker" ? { name: "f", kind: k, label: "F", format: "12h" } : { name: "f", kind: k, label: "F" }] as never,
+      ),
       { mountId: id, k: kind },
     );
     await settled(page);
