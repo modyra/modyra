@@ -60,6 +60,21 @@ export interface MdyTimepickerFieldControllerOptions {
    * one, a typed entry is left alone.
    */
   readonly parseEntry?: (text: string) => string | null;
+  /**
+   * Reads one number a person typed into a segment, or answers null when the text is not one.
+   *
+   * A second reading rather than a second answer: `parseEntry` reads a whole time in the host's
+   * notation — separator, ordering, AM/PM — and a segment is one bare numeral with none of that
+   * around it. A host that localises supplies both, in one place.
+   *
+   * It exists because the box was reading `[0-9]` itself while the field beside it went through a
+   * host-supplied reader, so the same numerals were accepted when the whole time was typed and
+   * refused when typed into a box. This package cannot know what a numeral is anywhere, which is why
+   * the reading is a dependency — and a second door that decides for itself defeats that silently.
+   *
+   * Without one, the segments read the digits every locale shares.
+   */
+  readonly parseSegment?: (text: string) => number | null;
 }
 
 /** The clock face, or the pair of number fields. */
@@ -151,6 +166,15 @@ export type MdyTimepickerFieldIntent =
   | { readonly type: "set-view-mode"; readonly mode: MdyTimepickerViewMode }
   /** The person typed something and left the control; the text is judged rather than parsed here. */
   | { readonly type: "type"; readonly text: string }
+  /**
+   * What a person has typed into one of the number boxes, as they typed it.
+   *
+   * Reported rather than parsed. Each renderer used to read its own box and hand over a number, so
+   * each one decided what a half-typed value was — one padded after every keystroke and two
+   * reformatted the character away — and each read `[0-9]` while the field beside it went through a
+   * host-supplied reader.
+   */
+  | { readonly type: "type-segment"; readonly field: "hour" | "minute"; readonly text: string }
   | { readonly type: "clear" }
   | { readonly type: "focus" }
   | { readonly type: "blur" };

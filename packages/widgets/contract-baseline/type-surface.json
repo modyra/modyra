@@ -1874,6 +1874,7 @@
     "granularity?: MdyTimeGranularity",
     "handle: MdyFieldHandle<string | null>",
     "parseEntry?: (text: string) => string | null",
+    "parseSegment?: (text: string) => number | null",
     "readonly?: boolean",
     "schedule?: (run: () => void, afterMs: number) => () => void",
     "viewMode?: MdyTimepickerViewMode",
@@ -3463,6 +3464,7 @@
     "(1) format: MdyTimeFormat",
     "(2) text: string",
     "(3) steps?: MdyTimeSteps",
+    "(4) parseSegment?: (candidate: string) => number | null",
     "-> returns: MdyTimepickerEntry | null"
   ],
   "timepickerEntryText": [
