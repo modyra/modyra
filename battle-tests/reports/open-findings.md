@@ -19811,3 +19811,52 @@ is the spec behaving correctly mid-batch and **not** three renderers failing a c
 by Tab from the top of the page — which is the question — plain works. Reported here because I had
 already said the opposite in a message: the sequence a spec drives *is* a claim about what a person
 does, and picking a convenient one quietly changes the subject.
+
+## 350 — A read-only multiselect looks exactly like an editable one (S1, A11Y-001/UI-009)
+
+Written as a net under the multiselect redesign rather than as a complaint about it. The risk in a
+rebuild is never the thing somebody decides to remove — it is the thing the new picture never included,
+which nobody notices because nothing reported it. So: measured today, pinned today, red where today is
+already wrong.
+
+```
+                plain                                          lit
+normal          mdy-chip--value  mdy-chip--selected            mdy-chip--selected
+                mdy-label--filled                              mdy-label--filled
+disabled        mdy-input-wrapper--disabled                    mdy-input-wrapper--disabled
+readonly        nothing at all                                 nothing at all
+```
+
+**Read-only reaches the page in neither renderer.** The field supports the state, the contract declares
+`readonly` on the trigger, and no class arrives — so a form locked for review is indistinguishable from
+one waiting to be filled in, and the only way to find out is to try. `disabled` works, which is what
+makes this an omission rather than a missing feature.
+
+**Lit omits `mdy-chip--value`**, which the contract lists beside `mdy-chip` as what a chip *is*. Plain
+emits both. A theme keying on it styles one renderer's chips and skips the other's — finding 323 read
+from the other side: not a rule nobody emits, a class one renderer forgets.
+
+**Battle**: `a-state-a-multiselect-does-not-show.spec.ts`. Both assertions read the class list from
+`MDY_WIDGET_CONTRACTS` rather than from literals, so they keep meaning the same thing across the rename
+in flight.
+
+### The functional half of the same net
+
+`a-count-a-redesign-can-lose.battle.test.mjs`, green, pinning what the control does today:
+
+```
+toggle a, increment ×2  →  ["a","a","a"]     the value carries repeats
+decrement               →  ["a","a"]
+decrement ×2            →  []                and down to none, not to a stuck one
+clear                   →  []
+search matching nothing →  what was chosen is untouched
+```
+
+**Quantities are the capability most at risk.** The value repeats a key rather than carrying a number
+beside it, so a chips strip built as *one chip per chosen value* answers identically for `["a"]` and
+`["a","a","a"]` — somebody who asked for three would see one, and nothing would report a defect. The
+contract has `optionStep` and `optionCount` for exactly this and they are as easy to leave out of a new
+picture as they were to put in the old one.
+
+The user's instruction, verbatim: *"pianifica bene la UI, non dobbiamo perdere la funzionalità e la
+presentazione grafica in questo redesign."*
