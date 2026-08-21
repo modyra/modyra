@@ -56,8 +56,24 @@ battle(
       // The keys the controller published for its own options, read the way a renderer reads them
       // rather than re-derived here — the derivation is what was wrong, so a copy of it in this
       // file could only confirm what the battle already assumed.
-      const structural = ["label", "trigger", "placeholder", "chips", "popup", "search", "group", "description", "error"];
-      const keys = Object.keys(controller.view().parts).filter((part) => !structural.includes(part));
+      // **What is structural is whatever a controller with no options still publishes.** Asked of the
+      // widget itself rather than listed here or taken from the contract: a hand-written list is a
+      // second copy of the anatomy and goes stale the moment the widget grows a part, and the
+      // contract's part names are not the same names the view publishes. Both were tried; the first
+      // counted a newly added part as a fourth option under a duplicate key and reported it as an S0
+      // about two options colliding, and the second was worse.
+      //
+      // An empty controller cannot be wrong about this, because whatever it has is by definition not
+      // an option.
+      const emptyController = createMultiselectFieldController({
+        widgetId: "w-empty",
+        handle: createForm({ picks: field([]) }, { devWarnings: false }).f.picks,
+        options: [],
+        mode: "multiple",
+      });
+      const structural = new Set(Object.keys(emptyController.view().parts));
+      emptyController.destroy?.();
+      const keys = Object.keys(controller.view().parts).filter((part) => !structural.has(part));
       ctx.log.note("the key a multiselect binds each option under", { keys });
 
       expectEqual(new Set(keys).size, options.length, {

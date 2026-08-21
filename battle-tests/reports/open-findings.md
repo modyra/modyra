@@ -20850,3 +20850,69 @@ The first repair also traded one door for the other — refusing to start a drag
 controls made the tap work and the drag stop, because those controls cover most of the chip. What
 separates a press from a drag is *travel*, not where it landed.
 
+
+## The node tier, run for the first time since the redesign
+
+`npm run battle:ci` — **585 green, 8 red: 5 known, 3 new, 1 closed.** The closure is
+`the order a person chose in is the order the form holds`, which the reordering work settled. The three
+new ones are below, and the first was mine.
+
+### An S0 that was a hand-written list
+
+```
+[S0][UI-003] a multiselect binds two different options under the same key: expected 3, got 4
+```
+
+Three options, four keys — which reads as two options colliding, and an S0 outranks every other thing
+on the board. It was the battle. It separated option keys from structural parts by filtering against a
+list of part names typed into the file, and the widget grew `announcement` when the live region
+landed. A part the list did not know became a fourth option.
+
+**Two fixes were tried and the first was worse.** Deriving the structural set from
+`MDY_WIDGET_CONTRACTS.multiselect.parts` took it from four to six: the contract's part names are not
+the names the controller's view publishes — `supportingText`, `errors` and `optionWrapper` against
+`description`, `error` and `group` — so subtracting one from the other leaves parts on both sides.
+
+What holds is asking the widget: **whatever a controller built with no options publishes is
+structural**, because whatever it has cannot be an option. It cannot go stale, it needs no list, and it
+is right the day a part is added. Green.
+
+The lesson is the evening's, once more and at the highest severity it has reached: a check that keeps
+its own copy of the shape fails when the shape moves, and it fails *as a defect report about the
+code*.
+
+### 375 — the option list declares no role at all (S1, A11Y-004)
+
+```
+multiselect   options role    null      optionWrapper null   option null
+select        options role    null
+```
+
+The battle expected `group` and pinned the old defect — a list declaring listbox semantics its chips
+did not have. The redesign removed the role instead of correcting it, so the container of options is
+now an unlabelled `div` and its options are buttons with `aria-pressed`. A screen reader is told
+nothing about the set at all.
+
+Published practice for a multi-select popup is `role="listbox"` with `aria-multiselectable` and
+`aria-selected` options, or checkbox semantics — the outside review called the latter the most
+reliably announced of the two. `null` is neither, and it is the one reading that tells a person
+nothing. Owned by `esecutore`.
+
+### 376 — a multiselect no longer opens on an arrow; a select still does (S2, UI-002)
+
+```
+select        open on   Enter · ArrowDown · ArrowUp · Space
+multiselect   open on   Enter · Space
+datepicker    open on   Enter
+timepicker    open on   Enter
+colors        open on   Enter · Space
+```
+
+Two kinds with a list of options behind a trigger, and one of them opens on `ArrowDown` while the
+other does not. `ArrowDown` opening a closed combobox is the APG's own behaviour and `select` has it.
+
+Plausibly lost when the strip's keyboard map was written: the arrows acquired a meaning on the closed
+control — moving between chips — and the binding that opened the popup went with them. If so it is a
+real trade and it needs recording either way, because a person who learns `ArrowDown` on one control
+of this project is entitled to it on the other. Owned by `esecutore`.
+
