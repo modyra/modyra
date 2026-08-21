@@ -26,7 +26,7 @@
       <div class="mdy-timepicker-dial-variant">
         <div
           class="mdy-timepicker-dial"
-          [class.mdy-timepicker-dial--animated]="animateHand()"
+          [class]="animateHand() ? animatedClass : ''"
         >
           <!-- A dial is a slider around a circle. It had no role, no value and no keyboard: every
                number on it was reachable only by dragging, which is the one gesture a keyboard
@@ -64,7 +64,7 @@
             }
             <div
               class="mdy-timepicker-dial__hand"
-              [class.mdy-timepicker-dial__hand--inner]="handRing() === 'inner'"
+              [class]="handRing() === 'inner' ? innerHandClass : ''"
               [style.transform]="'rotate(' + handRotation() + 'deg)'"
             ></div>
             <!-- Where the pointer is, when that is not where the value went. Drawn only then: a
@@ -72,7 +72,8 @@
                  means anything. -->
             @if (ghost(); as under) {
               <div
-                class="mdy-timepicker-dial__hand mdy-timepicker-dial__hand--ghost"
+                class="mdy-timepicker-dial__hand"
+                [class]="ghostClass"
                 [style.--tp-ghost-reach]="under.reach"
                 [style.transform]="'rotate(' + under.angle + 'deg)'"
                 aria-hidden="true"

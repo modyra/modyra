@@ -66,6 +66,10 @@ export const MDY_STATE_MODIFIERS = Object.freeze({
   horizontal: "horizontal",
   /** The dense form of a control that has one. */
   compact: "compact",
+  /** Drawn where the pointer is rather than where the value is — a second hand, faintly. */
+  ghost: "ghost",
+  /** Moves rather than jumps. Asked for by the host: a thing in motion is briefly not where it is. */
+  animated: "animated",
   /** The action that commits, as against the one that dismisses. */
   confirm: "confirm",
   /** The overlay sits above its anchor. */

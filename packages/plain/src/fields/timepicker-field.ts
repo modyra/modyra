@@ -28,9 +28,10 @@ import {
   timepickerDialTolerance,
   timepickerDialUnavailableArcs,
   MDY_TIMEPICKER_INNER_RING,
+  timepickerDialRing,
   timepickerSelectedRing,
   timeStepsAt,
-  timepickerDialRing,
+  stateClass,
   timepickerSelectedDialValue,
   type MdyElementLookup,
   type MdyI18nMessages,
@@ -134,7 +135,7 @@ export function renderTimepickerField(
   // A hand that moves rather than jumps, when the document asks for it. Off by default: a hand that
   // animates is briefly not where the value is, and on a face that snaps the two would disagree for
   // the length of the transition.
-  if (f.animateHand === true) clock.classList.add("mdy-timepicker-dial--animated");
+  if (f.animateHand === true) clock.classList.add(stateClass(parts.clock.classes[0]!, "animated"));
   const dialFace = el("div", parts.dialFace.classes.join(" "));
   // The stretches of the ring that offer nothing, when the document asks to show them. Rebuilt with
   // the face, because which they are depends on the field being picked and on the hour the draft is
@@ -147,7 +148,7 @@ export function renderTimepickerField(
   dialFace.appendChild(dialHand);
   // Where the pointer is, when that is not where the value went. Hidden unless a gesture is putting
   // the two in different places, because a second hand permanently under the first says nothing.
-  const ghostHand = el("div", `${parts.dialHand.classes.join(" ")} mdy-timepicker-dial__hand--ghost`);
+  const ghostHand = el("div", `${parts.dialHand.classes.join(" ")} ${stateClass(parts.dialHand.classes[0]!, "ghost")}`);
   ghostHand.setAttribute("aria-hidden", "true");
   ghostHand.hidden = true;
   dialFace.appendChild(ghostHand);
@@ -337,15 +338,12 @@ export function renderTimepickerField(
     unavailableLayer.replaceChildren();
     if (f.showUnavailable !== true) return;
     const steps = timeStepsAt(f.granularity, to24Hour(state.draft));
-    const rings = state.format === "24h" && field === "hour" ? (["outer", "inner"] as const) : (["outer"] as const);
-    for (const ring of rings) {
-      for (const arc of timepickerDialUnavailableArcs(field, state.format, steps, handLength(), ring)) {
-        const slice = el("div", parts.dialUnavailableArc.classes.join(" "));
-        slice.style.setProperty("--tp-arc-from", `${arc.from}deg`);
-        slice.style.setProperty("--tp-arc-span", `${((arc.to - arc.from) + 360) % 360}deg`);
-        if (ring === "inner") slice.style.scale = String(MDY_TIMEPICKER_INNER_RING);
-        unavailableLayer.appendChild(slice);
-      }
+    for (const arc of timepickerDialUnavailableArcs(field, state.format, steps, handLength())) {
+      const slice = el("div", parts.dialUnavailableArc.classes.join(" "));
+      slice.style.setProperty("--tp-arc-from", `${arc.from}deg`);
+      slice.style.setProperty("--tp-arc-span", `${arc.span}deg`);
+      if (arc.ring === "inner") slice.style.scale = String(MDY_TIMEPICKER_INNER_RING);
+      unavailableLayer.appendChild(slice);
     }
   }
 
@@ -358,13 +356,18 @@ export function renderTimepickerField(
     // say which hour is under the pointer. Which ring it is belongs to the contract, like which
     // numbers there are: a renderer deciding for itself is a renderer that can disagree with its own
     // drawing.
-    const ring = timepickerDialRing(face, event.clientX, event.clientY, state.format, handLength(), state.focusedField);
+    // The ring it last answered goes back in: from position alone, a finger resting on the edge
+    // changed the ring four times in a 6px wander, and the edge is where a finger naturally rests.
+    const ring = timepickerDialRing(face, event.clientX, event.clientY, state.format, handLength(), state.focusedField, lastRing);
+    lastRing = ring;
     const dx = event.clientX - (face.left + face.width / 2);
     const dy = event.clientY - (face.top + face.height / 2);
     showGhost(angle, ring, Math.sqrt(dx * dx + dy * dy), state);
     dispatch({ type: "set-from-angle", field: state.focusedField, angle, ring });
   }
   let dragging = false;
+  /** What the ring last answered, so a wander at the edge does not keep changing it. */
+  let lastRing: "outer" | "inner" | undefined;
   dialFace.addEventListener("pointerdown", (event) => {
     if (controller.state().viewMode !== "dial") return;
     event.preventDefault();
@@ -377,6 +380,8 @@ export function renderTimepickerField(
     if (!dragging) return;
     dragging = false;
     pickFromPointer(event);
+    // The gesture is over: the next one decides from where it lands.
+    lastRing = undefined;
     // The gesture is over, so there is no pointer to be somewhere else than the value.
     ghostHand.hidden = true;
     // Hours hand over to minutes once picked, so one gesture sets a whole time.
@@ -465,7 +470,7 @@ export function renderTimepickerField(
     // And reaches only as far as the ring it points into. A 24-hour face puts two hours at one
     // direction, so a hand of one length leaves the two selections identical on screen.
     dialHand.classList.toggle(
-      "mdy-timepicker-dial__hand--inner",
+      stateClass(parts.dialHand.classes[0]!, "inner"),
       timepickerSelectedRing(field, state.draft, state.format) === "inner",
     );
 

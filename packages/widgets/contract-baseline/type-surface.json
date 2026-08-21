@@ -1834,6 +1834,8 @@
   ],
   "MdyTimepickerDialArc": [
     "from: number",
+    "ring: \"outer\" | \"inner\"",
+    "span: number",
     "to: number"
   ],
   "MdyTimepickerDialGhost": [
@@ -3430,6 +3432,7 @@
     "(3) format: MdyTimeFormat",
     "(4) handLength: number",
     "(5) field?: \"hour\" | \"minute\"",
+    "(6) previous?: \"outer\" | \"inner\"",
     "-> returns: \"outer\" | \"inner\""
   ],
   "timepickerDialTolerance": [

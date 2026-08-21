@@ -4,7 +4,6 @@ import {
   dragPointOf,
   keyBindingFor,
   overlayControlledId,
-  timepickerDialRing,
 } from "@modyra/widgets";
 import { html, nothing, type PropertyDeclarations } from "lit";
 import { observerFor, type MdyFieldHandle } from "@modyra/core";
@@ -16,6 +15,7 @@ import {
   subscribeController,
   timeFieldBounds,
   timepickerDialNumbers,
+  timepickerDialRing,
   timepickerDialGhost,
   timepickerDialPick,
   timepickerDialTolerance,
@@ -23,6 +23,7 @@ import {
   MDY_TIMEPICKER_INNER_RING,
   timepickerSelectedRing,
   timeStepsAt,
+  stateClass,
   MDY_EVERY_TIME,
   type MdyTimeSteps,
   timepickerSelectedDialValue,
@@ -137,6 +138,8 @@ export class MdyTimepickerFieldElement extends MdyFieldElement<string | null> {
   }
 
   private _dragRing: "outer" | "inner" = "outer";
+  /** Whether `_dragRing` is an answer from this gesture or the default it starts at. */
+  private _ringDecided = false;
   private _dragHandLength = 0;
   /** How far the pointer is from the centre — the ghost ends there. */
   private _dragReach = 0;
@@ -147,16 +150,6 @@ export class MdyTimepickerFieldElement extends MdyFieldElement<string | null> {
    * Both members are the pointer's: it answers "what happens if I release now", while the real hand
    * answers "what is chosen". A picker offering every time never draws one.
    */
-  /** The stretches this face offers nothing in, per ring — the inner one's are wider. */
-  private unavailableArcs(field: "hour" | "minute"): ReadonlyArray<{ from: number; span: number; ring: "outer" | "inner" }> {
-    const draft = this.fieldController?.state().draft;
-    const steps = draft ? timeStepsAt(this.granularity, to24Hour(draft)) : MDY_EVERY_TIME;
-    const rings = this.format === "24h" && field === "hour" ? (["outer", "inner"] as const) : (["outer"] as const);
-    return rings.flatMap((ring) =>
-      timepickerDialUnavailableArcs(field, this.format, steps, this._handLength || this.measuredHandLength(), ring)
-        .map((arc) => ({ from: arc.from, span: ((arc.to - arc.from) + 360) % 360, ring })));
-  }
-
   private ghost(): { angle: number; ring: "outer" | "inner"; reach: number } | null {
     if (!this._isDragging || this._dragAngle === null) return null;
     const draft = this.fieldController?.state().draft;
@@ -482,6 +475,8 @@ export class MdyTimepickerFieldElement extends MdyFieldElement<string | null> {
     }
     this._isDragging = false;
     this._dragAngle = null;
+    // The gesture is over: the next one decides from where it lands.
+    this._ringDecided = false;
   }
 
   /**
@@ -531,7 +526,10 @@ export class MdyTimepickerFieldElement extends MdyFieldElement<string | null> {
     const dy = coords.clientY - (face.top + face.height / 2);
     this._dragReach = Math.sqrt(dx * dx + dy * dy);
     this._dragHandLength = handLength;
-    this._dragRing = timepickerDialRing(face, coords.clientX, coords.clientY, this.format, handLength, this.view.focusedField);
+    // The ring it last answered goes back in: from position alone, a finger resting on the edge
+    // changed the ring four times in a 6px wander, and the edge is where a finger naturally rests.
+    this._dragRing = timepickerDialRing(face, coords.clientX, coords.clientY, this.format, handLength, this.view.focusedField, this._ringDecided ? this._dragRing : undefined);
+    this._ringDecided = true;
   }
 
   // ── Rendering ───────────────────────────────────────────────────────────────
@@ -630,7 +628,7 @@ export class MdyTimepickerFieldElement extends MdyFieldElement<string | null> {
     const selected = timepickerSelectedDialValue(field, parsed, this.format);
     return html`
       <div class="mdy-timepicker-dial-variant">
-        <div class="mdy-timepicker-dial ${this.animateHand ? "mdy-timepicker-dial--animated" : ""}">
+        <div class="${this.partClass("clock")} ${this.animateHand ? stateClass(this.partClass("clock"), "animated") : ""}">
           <div
             class="mdy-timepicker-dial__face"
             @mousedown=${this.onDragStart}
@@ -641,7 +639,7 @@ export class MdyTimepickerFieldElement extends MdyFieldElement<string | null> {
             <!-- Which stretches of the ring offer nothing, behind everything else on the face. -->
             ${this.showUnavailable
               ? html`<div class="mdy-timepicker-dial__unavailable-layer" aria-hidden="true">
-                  ${this.unavailableArcs(field).map((arc) => html`<div
+                  ${(this.showUnavailable ? timepickerDialUnavailableArcs(field, this.format, this.stepsNow(), this.measuredHandLength()) : []).map((arc) => html`<div
                     class="mdy-timepicker-dial__unavailable"
                     style="--tp-arc-from: ${arc.from}deg; --tp-arc-span: ${arc.span}deg${arc.ring === "inner"
                       ? `; scale: ${MDY_TIMEPICKER_INNER_RING}`
@@ -650,8 +648,8 @@ export class MdyTimepickerFieldElement extends MdyFieldElement<string | null> {
                 </div>`
               : nothing}
             <div
-              class="mdy-timepicker-dial__hand ${timepickerSelectedRing(field, parsed, this.format) === "inner"
-                ? "mdy-timepicker-dial__hand--inner"
+              class="${this.partClass("dialHand")} ${timepickerSelectedRing(field, parsed, this.format) === "inner"
+                ? stateClass(this.partClass("dialHand"), "inner")
                 : ""}"
               style="transform: rotate(${this.handRotation()}deg)"
             ></div>
@@ -660,7 +658,7 @@ export class MdyTimepickerFieldElement extends MdyFieldElement<string | null> {
               const under = this.ghost();
               return under
                 ? html`<div
-                    class="mdy-timepicker-dial__hand mdy-timepicker-dial__hand--ghost"
+                    class="${this.partClass("dialHand")} ${stateClass(this.partClass("dialHand"), "ghost")}"
                     style="transform: rotate(${under.angle}deg); --tp-ghost-reach: ${under.reach}"
                     aria-hidden="true"
                   ></div>`
