@@ -20818,3 +20818,35 @@ quieter form. That guard did not parse; this one parsed, ran, measured correctly
 wrong thing. **An instrument can be right and still be useless**, and the part that fails is the part
 nobody checks — nobody writes a test for the text of an error message.
 
+
+### The reordering doors — closed at `bd78bccc`, and the cause was neither of my guesses
+
+```
+                keystroke        tap x2           drag last to front
+plain           ["c","a","b"]    ["c","a","b"]    ["c","a","b"]
+lit             ["c","a","b"]    ["c","a","b"]    ["c","a","b"]
+angular         ["c","a","b"]    ["c","a","b"]    ["c","a","b"]
+```
+
+Twelve green, three consecutive runs, on a host built by hand with the freshness guard verified.
+
+**`setPointerCapture` on the press retargets every later pointer event to the capturing element,
+including the one the browser turns into a `click`.** So beginning a drag on a chip silently took the
+`click` away from that chip's own buttons — the tap path was found, pressed, and never delivered. One
+mechanism, two doors, and taking it for one took it from the other.
+
+I guessed the wrong cause twice. First that a handler was choosing *which chip to move* from the
+active one rather than from the button's own chip — right shape, wrong mechanism. Then, when three
+re-runs disagreed with my first reading, that my own reading had been the unreliable one and I
+withdrew it. **The first reading was accurate.** What was unreliable was the second set of three,
+because `esecutore` was repairing the defect while I re-ran — a clean process still reads a shared
+tree, and repeating a measurement does not make it repeatable when the disk moves underneath.
+
+The rule that would have caught it is the one already written and applied too slowly on both sides:
+**measure at hashes, and commit at the rate the other side measures.** Reproducibility in a clean
+process is not enough between two sessions working the same checkout.
+
+The first repair also traded one door for the other — refusing to start a drag from a chip's own
+controls made the tap work and the drag stop, because those controls cover most of the chip. What
+separates a press from a drag is *travel*, not where it landed.
+

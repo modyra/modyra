@@ -74,7 +74,7 @@ test("the contract declares the trigger mandatory, in the half of it that says s
   const nodes = Object.values(CONTRACTS).flatMap((kind) => kind.structure.nodes);
   // Pinned in both directions on purpose: a part removed and a part added are both reasons to
   // re-read the two paragraphs above, which describe this anatomy by number.
-  expect(nodes.length, "the contract moved; the counts in this spec describe a different surface").toBe(254);
+  expect(nodes.length, "the contract moved; the counts in this spec describe a different surface").toBe(255);
 
   // Optionality is where the contract keeps it: on the structure node, not on the part record. Every
   // node has it, so a part that does not say `optional: true` is one the contract requires.
