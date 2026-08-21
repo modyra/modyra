@@ -58,17 +58,18 @@ export class MdyToggleFieldElement extends MdyFieldElement<boolean> {
               ? this.fieldController.dispatch({ type: "blur" })
               : handle.markAsTouched()}
         />
-        ${this.label
-          ? html`<label class="${this.partClass("label")}" for=${this.fieldId}>
-              <span class="${this.partClass("track")}" aria-hidden="true">
-                <span class="${this.partClass("thumb")}"></span>
-              </span>
-              ${this.label}
-              ${handle.required()
-                ? html`<span class="mdy-label__required" aria-hidden="true">*</span>`
-                : nothing}
-            </label>`
-          : nothing}
+        <!-- The track is anatomy and renders whether or not the field was given a label. It sits
+             inside the label because the native input is hidden and the label forwards a press to
+             it: a track outside one draws a switch nothing can operate. -->
+        <label class="${this.partClass("label")}" for=${this.fieldId}>
+          <span class="${this.partClass("track")}" aria-hidden="true">
+            <span class="${this.partClass("thumb")}"></span>
+          </span>
+          ${this.label ?? nothing}
+          ${this.label && handle.required()
+            ? html`<span class="mdy-label__required" aria-hidden="true">*</span>`
+            : nothing}
+        </label>
       </div>
       ${this.renderErrors(handle)}
       ${this.renderSupportingText()}

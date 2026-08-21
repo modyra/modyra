@@ -31,11 +31,16 @@ import { MdyInlineErrorIconComponent } from "../../control/inline-error-icon.com
         [attr.aria-label]="controlAriaLabel()"
         [mdyPart]="controlPart()"
       />
-      @if (label()) {
-        <label class="mdy-toggle__label" [for]="fieldId">
-          <span class="mdy-toggle__track" aria-hidden="true">
-            <span class="mdy-toggle__thumb"></span>
-          </span>
+      <!-- The track is anatomy: the catalogue declares it a part of every toggle, so it renders
+           whether or not the field was given a label. It sits inside the label element because the
+           native input is hidden and the label is what forwards a press to it — a track outside one
+           draws a switch nothing can operate. A toggle with no label still gets the element,
+           carrying the track and nothing else. -->
+      <label class="mdy-toggle__label" [for]="fieldId">
+        <span class="mdy-toggle__track" aria-hidden="true">
+          <span class="mdy-toggle__thumb"></span>
+        </span>
+        @if (label()) {
           {{ label() }}
           @if (isRequired()) {
             <span class="mdy-label__required" aria-hidden="true">*</span>
@@ -43,8 +48,8 @@ import { MdyInlineErrorIconComponent } from "../../control/inline-error-icon.com
           @if (inlineErrorShown()) {
             <mdy-inline-error-icon [errorText]="inlineErrorText()" />
           }
-        </label>
-      }
+        }
+      </label>
     </div>
     @if (errorsRendered()) {
       <mdy-error-list [fieldId]="fieldId" [errors]="errors()" />
