@@ -20328,6 +20328,38 @@ framework-agnostic UI contract, and *"Angular must migrate without unapproved vi
 variation; Lit and Plain must consume the same contract rather than redefine it."* A 84-against-56 gap
 is variation, and nothing approved it.
 
+### 358's cause, decomposed — three different sets of slots under a control
+
+The first guess was [365](#365), Angular's missing shell. **Dismissed**: after 365 was fixed the five
+rows came back identical to the pixel, so the shell was not it. What is:
+
+```
+                    laid out strictly between one control's box and the next
+angular    56       label 20
+lit        60       supporting-text 4 · label 20
+plain      84       supporting-text 4 with 12px margins above and below · errors 24 · label 20
+```
+
+Three renderers, three different answers to *what sits under a field*.
+
+- **plain renders `.mdy-control__errors` at 24px with no errors in it** — `hidden` absent, zero
+  children, full height. lit and Angular render no such element at all. That is the 24px, and it is the
+  largest single piece of the difference.
+- **plain gives the supporting-text slot `margin: 12px 0`** where lit gives it none: 28px against 4.
+- **Angular renders no supporting-text slot at all**, which is why it is the shortest of the three.
+
+Reserving space for an error before there is one is defensible — it stops the form jumping when a
+message appears. Reserving it in one renderer of three is not, and that is the finding rather than the
+choice. Whichever way it is settled, all three owe the same answer.
+
+**Not established, and I stopped rather than guess:** whether a field can declare supporting text at
+all, and what each renderer does with it when it can. The probe passed `supportingText` on the field
+and all three rendered an empty slot — which looked like a defect in all three at once, and a defect
+that appears everywhere simultaneously is usually a statement about the instrument. `@modyra/core`'s
+field types do not carry that property; the shell's slot is fed from `view.parts.description` in
+widgets. So the *content* path is untested here and the measurements above are about the empty slots,
+which exist either way.
+
 **What it is not.** It is not the control heights: those agree per sheet except where
 [356](#356) says they do not, and the height assertion in this spec is a separate one. The gap is
 measured from the bottom of one control's box to the top of the next, so it contains each renderer's
