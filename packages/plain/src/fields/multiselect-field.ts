@@ -21,6 +21,7 @@ import {
   type MdyI18nMessages,
   keyBindingFor,
   chipFocusAfterRemoval,
+  multiselectAnnouncement,
 } from "@modyra/widgets";
 import { applyPart, el, setErrors, setText, setIcon } from "../dom.js";
 import { buildFieldShell, insertControl } from "../field-shell.js";
@@ -166,6 +167,16 @@ export function renderMultiselectField(
    * twenty-six presses — and what a control holds must not decide how long it takes to leave.
    */
   let activeChip: string | null = null;
+  /**
+   * What the live region last spoke about, so the next change can be described as a change.
+   *
+   * Seeded from what the field already holds: a value that arrived with the form is not something
+   * the person just did, and announcing it on the first paint tells them about a choice they never
+   * made.
+   */
+  let saidLast: readonly string[] = [...new Set(
+    (controller.state().selectedValues as readonly unknown[]).map((value) => keyFor({ value } as MdySelectOption<unknown>)),
+  )];
 
   /**
    * One chip in the strip: what was chosen, how many of it, and the controls for changing that.
@@ -188,7 +199,6 @@ export function renderMultiselectField(
     // and the direction comes from the binding rather than from the key, because the strip runs in
     // the writing direction and `ArrowLeft` moves a chip *later* in a right-to-left document.
     chip.addEventListener("keydown", (event) => {
-      if (!reorderable) return;
       const combo = `${event.altKey ? "Alt+" : ""}${event.key}`;
       const binding = keyBindingFor("multiselect", combo, controller.state().open);
       if (!binding) return;
@@ -208,12 +218,17 @@ export function renderMultiselectField(
       }
       if (binding.intent === "remove") {
         event.preventDefault();
-        const next = chipFocusAfterRemoval(order, key);
+        // Backspace goes back, Delete goes on — the convention every text field on every platform
+        // has, and a strip of chips is close enough to a line of text that people bring it with them.
+        const next = chipFocusAfterRemoval(order, key, event.key === "Backspace" ? "backward" : "forward");
         dispatch({ type: "toggle", optionKey: key });
         queueMicrotask(() => (next === null ? trigger : chosenEls.get(next) ?? trigger).focus());
         return;
       }
-      if (binding.intent !== "reorder") return;
+      // Only *reordering* is opt-in. Moving between chips and taking one off are how a keyboard
+      // uses the strip at all, and gating them on `reorderable` made six declared keys do nothing
+      // in the default configuration — which is every field that never asked to be rearranged.
+      if (binding.intent !== "reorder" || !reorderable) return;
       event.preventDefault();
       // The order the *value* has, not the order these elements were created in: the map is keyed
       // by option and its insertion order never changes, so reading it moved the chip once and then
@@ -448,7 +463,16 @@ export function renderMultiselectField(
     // chips sit in. Its classes come from the part; the wrapper around it keeps the field's box.
     applyPart(trigger, view.parts.trigger);
     applyPart(announcement, view.parts.announcement);
-    setText(announcement, (view.parts.announcement as { readonly text?: string }).text ?? "");
+    // The change, not the list, and nothing while the popup is open — the options there announce
+    // themselves natively, so a region firing too makes every toggle speak twice.
+    const nowChosen = stripOrder();
+    setText(announcement, multiselectAnnouncement(
+      saidLast, nowChosen,
+      { added: messages.selectionAdded, removed: messages.selectionRemoved, empty: messages.selectionEmpty },
+      (key) => state.options.find((option) => keyFor(option) === key)?.label ?? key,
+      state.open,
+    ));
+    saidLast = nowChosen;
     syncChips(state);
     setText(placeholder, f.placeholder ?? "");
     applyPart(popup, view.parts.popup);

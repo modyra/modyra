@@ -61,21 +61,6 @@ export function multiselectFieldRootClasses<TValue>(state: MdyMultiselectFieldSt
  * the user sees and operates, `popup` is the panel it controls, and `group` is the chip group
  * inside it. Laying the group out inline instead would reflow the page on every open.
  */
-/**
- * The sentence a live region carries when the selection changes.
- *
- * The whole selection, not the last change: two announcements have to differ for the second to be
- * read at all, and "removed" after "removed" is the same string. Counting says what changed even
- * when the same value is taken twice.
- */
-function announcementFor<TValue>(state: MdyMultiselectFieldState<TValue>): string {
-  const chosen = state.selectedKeys.size;
-  if (chosen === 0) return "";
-  const names = [...state.selectedKeys]
-    .map((key) => state.options.find((option) => String(option.value) === key)?.label ?? key);
-  return `${state.selectedValues.length} selected: ${names.join(", ")}`;
-}
-
 export function projectMultiselectFieldA11y<TValue>(
   state: MdyMultiselectFieldState<TValue>,
   errors: ReadonlyArray<MdyFieldError>,
@@ -210,7 +195,9 @@ export function projectMultiselectFieldA11y<TValue>(
     announcement: {
       classes: [...MDY_WIDGET_CONTRACTS.multiselect.parts.announcement.classes],
       attributes: { role: "status", "aria-live": "polite", "aria-atomic": "true" },
-      text: announcementFor(state),
+      // The words are the renderer's, because the sentence is a *delta* and a projection sees only
+      // the present state. `multiselectAnnouncement` composes it from what changed.
+      text: "",
     },
     error: {
       id: errorId,

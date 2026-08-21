@@ -101,10 +101,53 @@ export function multiselectChipClasses(appearance: MdyChipAppearance = {}): read
 export function chipFocusAfterRemoval(
   order: readonly string[],
   removed: string,
+  /**
+   * Which way the removal was going.
+   *
+   * `"backward"` — `Backspace` — lands on the chip *before* the one removed, `"forward"` —
+   * `Delete` — on the one after. That is what every text field on every platform does, and a strip
+   * of chips is close enough to a line of text that a person brings the expectation with them.
+   * Absent is forward, which is what a pointer on the chip's own remove control means: there was no
+   * direction in the gesture.
+   */
+  direction: "forward" | "backward" = "forward",
 ): string | null {
   const at = order.indexOf(removed);
   if (at === -1) return null;
   const left = order.filter((key) => key !== removed);
   if (left.length === 0) return null;
-  return left[Math.min(at, left.length - 1)] ?? null;
+  const wanted = direction === "backward" ? at - 1 : at;
+  return left[Math.max(0, Math.min(wanted, left.length - 1))] ?? null;
+}
+
+/**
+ * What a live region says when a selection changes: the change, and the new total.
+ *
+ * **The delta, never the list.** A polite region queues rather than replaces, so a full selection
+ * announced on every click builds a backlog of stale lists and the person hears a selection several
+ * actions out of date. At any size, not only at twelve. The list itself is an on-demand fact and
+ * belongs in the field's description, where a reader can ask for it.
+ *
+ * Empty while the popup is open: the options there carry `aria-selected` and announce natively, so
+ * a region firing at the same time makes every toggle speak twice. The row's own removals are the
+ * case nothing else speaks for.
+ */
+export function multiselectAnnouncement(
+  previous: readonly string[],
+  next: readonly string[],
+  words: { readonly added: string; readonly removed: string; readonly empty: string },
+  labelOf: (key: string) => string,
+  open = false,
+): string {
+  if (open) return "";
+  const before = new Set(previous);
+  const after = new Set(next);
+  const added = next.find((key) => !before.has(key));
+  const removed = previous.find((key) => !after.has(key));
+  if (added === undefined && removed === undefined) return "";
+  if (after.size === 0) return words.empty;
+  const template = added !== undefined ? words.added : words.removed;
+  return template
+    .replace("{value}", labelOf((added ?? removed)!))
+    .replace("{count}", String(after.size));
 }

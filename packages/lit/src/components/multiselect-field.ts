@@ -4,6 +4,7 @@ import {
   shownErrorsOf,
   keyBindingFor,
   chipFocusAfterRemoval,
+  multiselectAnnouncement,
 } from "@modyra/widgets";
 import { type MdyFieldHandle, type MdyMultiselectMode, type MdySelectOption } from "@modyra/core";
 import { filterOptionsByQuery } from "@modyra/widgets";
@@ -38,6 +39,8 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
   declare reorderable: boolean;
   /** Which chip carries the strip's tab stop. */
   private _activeChip: string | null = null;
+  /** What the live region last spoke about; `null` until the first paint has been taken as given. */
+  private _saidLast: readonly string[] | null = null;
   declare loading: boolean;
   declare mode: MdyMultiselectMode;
   declare filterFn?: (value: unknown) => boolean;
@@ -180,9 +183,13 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
    * one exists, and the document at the end of the strip. So removing from the middle looks
    * deliberate and removing the last drops focus off the control entirely.
    */
-  private removeAndPlaceFocus(handle: MdyFieldHandle<readonly unknown[]>, value: unknown): void {
+  private removeAndPlaceFocus(
+    handle: MdyFieldHandle<readonly unknown[]>,
+    value: unknown,
+    direction: "forward" | "backward" = "forward",
+  ): void {
     const order = [...new Set(this.held(handle).map((v) => String(v)))];
-    const next = chipFocusAfterRemoval(order, String(value));
+    const next = chipFocusAfterRemoval(order, String(value), direction);
     this.removeValue(handle, value);
     // Twice: the first `updateComplete` can settle for a render that was already scheduled when the
     // value changed, so the strip is still the old one and focus lands on whatever sat at that
@@ -417,7 +424,8 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
     }
     if (binding.intent === "remove") {
       event.preventDefault();
-      this.removeAndPlaceFocus(handle, optionKey);
+      // Backspace goes back, Delete goes on — the convention every text field has.
+      this.removeAndPlaceFocus(handle, optionKey, event.key === "Backspace" ? "backward" : "forward");
       return;
     }
     if (binding.intent !== "reorder" || !this.reorderable) return;
@@ -447,12 +455,23 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
     });
   }
 
-  /** The whole selection, so two announcements differ whenever the selection does. */
+  /**
+   * The change, not the list, and nothing while the popup is open.
+   *
+   * Seeded from what the field already holds, because a value that arrived with the form is not
+   * something the person just did.
+   */
   private announcementText(handle: MdyFieldHandle<readonly unknown[]>): string {
-    const held = this.held(handle);
-    if (held.length === 0) return "";
-    const names = [...new Set(held.map((value) => String(value)))].map((key) => this.labelFor(key));
-    return `${held.length} selected: ${names.join(", ")}`;
+    const now = [...new Set(this.held(handle).map((value) => String(value)))];
+    if (this._saidLast === null) { this._saidLast = now; return ""; }
+    const said = multiselectAnnouncement(
+      this._saidLast, now,
+      { added: this.messages.selectionAdded, removed: this.messages.selectionRemoved, empty: this.messages.selectionEmpty },
+      (key) => this.labelFor(key),
+      this._open,
+    );
+    this._saidLast = now;
+    return said;
   }
 
   private renderValueChips(handle: MdyFieldHandle<readonly unknown[]>): unknown {
