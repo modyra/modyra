@@ -1152,12 +1152,12 @@
         transition: transform var(--mdy-checkbox-transition);
     }
 
-    .mdy-checkbox__control:checked+.mdy-checkbox__indicator {
+    .mdy-checkbox:has(.mdy-checkbox__control:checked) .mdy-checkbox__indicator {
         background: var(--mdy-checkbox-accent);
         border-color: var(--mdy-checkbox-accent);
     }
 
-    .mdy-checkbox__control:checked+.mdy-checkbox__indicator::after {
+    .mdy-checkbox:has(.mdy-checkbox__control:checked) .mdy-checkbox__indicator::after {
         transform: translate(-6%, -8%) rotate(45deg) scale(1);
     }
 
@@ -1165,12 +1165,12 @@
         box-shadow: 0 0 0 11px color-mix(in srgb, var(--mdy-checkbox-accent), transparent 92%);
     }
 
-    .mdy-checkbox__control:focus-visible+.mdy-checkbox__indicator {
+    .mdy-checkbox:has(.mdy-checkbox__control:focus-visible) .mdy-checkbox__indicator {
         outline: 2px solid var(--mdy-checkbox-accent);
         outline-offset: 2px;
     }
 
-    .mdy-checkbox__control:disabled+.mdy-checkbox__indicator {
+    .mdy-checkbox:has(.mdy-checkbox__control:disabled) .mdy-checkbox__indicator {
         opacity: 0.4;
         cursor: not-allowed;
     }
@@ -1276,17 +1276,17 @@
     }
 
     .mdy-toggle:hover input:not(:disabled)+.mdy-toggle__track .mdy-toggle__thumb::after,
-    .mdy-toggle input:focus-visible+.mdy-toggle__track .mdy-toggle__thumb::after {
+    .mdy-toggle:has(input:focus-visible) .mdy-toggle__track .mdy-toggle__thumb::after {
         transform: translate(-50%, -50%) scale(1);
         opacity: var(--mdy-toggle-state-layer-opacity, 0.12);
     }
 
-    .mdy-toggle input:checked+.mdy-toggle__track {
+    .mdy-toggle:has(input:checked) .mdy-toggle__track {
         background: var(--mdy-toggle-bg-checked);
         border: var(--mdy-toggle-border-checked);
     }
 
-    .mdy-toggle input:checked+.mdy-toggle__track .mdy-toggle__thumb {
+    .mdy-toggle:has(input:checked) .mdy-toggle__track .mdy-toggle__thumb {
         background: var(--mdy-toggle-thumb-color-checked);
         /* One travel distance, derived from the track: width minus the thumb and both insets. */
         transform: translateY(-50%)
@@ -1299,12 +1299,12 @@
     }
 
 
-    .mdy-toggle input:focus-visible+.mdy-toggle__track {
+    .mdy-toggle:has(input:focus-visible) .mdy-toggle__track {
         outline: 2px solid var(--mdy-input-focus-color);
         outline-offset: 2px;
     }
 
-    .mdy-toggle input:disabled+.mdy-toggle__track {
+    .mdy-toggle:has(input:disabled) .mdy-toggle__track {
         opacity: 0.5;
         cursor: not-allowed;
     }
