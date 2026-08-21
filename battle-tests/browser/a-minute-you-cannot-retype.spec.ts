@@ -4,9 +4,9 @@
  * Reported directly: *"in plain quando cancello sui minuti 00 resta 00 e non riesco a mettere 01"*.
  * Measured, keystroke by keystroke, on a `24h` picker holding `09:00`:
  *
- *     plain     "00" → Backspace → ""   → type 0 → "00"  → type 1 → "001"
- *     lit       "00" → Backspace → "00" → type 0 → "00"  → type 1 → "00"
- *     angular   "00" → Backspace → "00" → type 0 → "00"  → type 1 → "00"
+ *     plain     "00" → Backspace → "00" → type 1 → "001"
+ *     lit       "00" → Backspace → "0"  → type 1 → "01"
+ *     angular   "00" → Backspace → "0"  → type 1 → "01"
  *
  * **Plain pads to two digits on every keystroke.** Type `0` into an empty box and it becomes `00`
  * with the caret after it, so the `1` lands third and the box holds `001` — three characters in a
@@ -50,7 +50,15 @@ for (const host of HOSTS) {
     }, { api: host.api });
     await page.waitForTimeout(300);
 
-    for (const selector of ['[data-form="re"] [aria-haspopup]', '[data-form="re"] button', '[data-form="re"] input']) {
+    // The declared toggle first. The generic `[aria-haspopup]` sweep matches more than one thing in
+    // some renderers and the loop then presses a second control, which in Angular left the boxes
+    // rendered but never visible — a hang that read as a renderer defect and was this list's ordering.
+    for (const selector of [
+      '[data-form="re"] .mdy-timepicker__toggle',
+      '[data-form="re"] [aria-haspopup]',
+      '[data-form="re"] button',
+      '[data-form="re"] input',
+    ]) {
       const opener = page.locator(selector).first();
       if (await opener.count() === 0) continue;
       await opener.click({ force: true }).catch(() => undefined);
@@ -62,7 +70,11 @@ for (const host of HOSTS) {
     // get to a view where typing is allowed rather than asserting 341 again from a second place.
     if (await page.evaluate(() => (document.querySelector(".mdy-timepicker-segment-input") as HTMLInputElement | null)?.readOnly === true)) {
       await page.evaluate(() => (document.querySelector(".mdy-timepicker-mode-toggle") as HTMLElement | null)?.click());
-      await page.waitForTimeout(250);
+      // Waited for rather than slept through. A fixed pause is a guess about someone else's animation:
+      // 250ms left Angular's boxes still invisible and the click hung for the whole test timeout, while
+      // 350ms in a hand-run probe happened to be enough. The renderer was never the difference.
+      await page.locator(".mdy-timepicker-segment-input").nth(1)
+        .waitFor({ state: "visible", timeout: 5_000 }).catch(() => undefined);
     }
 
     const minute = page.locator(".mdy-timepicker-segment-input").nth(1);
@@ -75,19 +87,25 @@ for (const host of HOSTS) {
     const seen: string[] = [];
     const note = async (label: string) => { seen.push(`${label}=${JSON.stringify(await minute.inputValue())}`); };
 
-    await minute.focus();
+    // The gesture as it was reported, which is not the same as clearing the box: *"io ho 00, uso tasto
+    // back del mac per cancellare e ho solo 0, a quel punto scrivo 1 e ottengo 01"*. One Backspace with
+    // the caret at the end removes one character and leaves a one-digit partial.
+    //
+    // An earlier draft of this spec selected all and deleted, which is a different thing to do and gets
+    // a different answer: it made lit and Angular look like they refused every edit when in fact both
+    // handle the reported gesture correctly. The renderer was not what changed between the two runs.
+    // Bounded, because an element that never becomes actionable hangs for the whole test timeout and
+    // reports nothing useful: two and a half minutes of a suite waiting, then "test timeout exceeded".
+    await minute.click({ timeout: 5_000 });
+    await page.keyboard.press("End");
     await note("start");
-    await page.keyboard.press("ControlOrMeta+a");
     await page.keyboard.press("Backspace");
     await page.waitForTimeout(120);
-    await note("cleared");
-    await page.keyboard.type("0");
-    await page.waitForTimeout(120);
-    await note("after0");
+    await note("afterOneBackspace");
     await page.keyboard.type("1");
     await page.waitForTimeout(150);
     const ended = await minute.inputValue();
-    await note("after01");
+    await note("afterTyping1");
 
     // No state on the way may be wider than the field. This is what makes `01` unreachable: the box
     // is already full of padding before the second character arrives.
@@ -102,7 +120,7 @@ for (const host of HOSTS) {
 
     expect(
       ended,
-      `clearing the box and typing 0 then 1 left ${JSON.stringify(ended)} rather than "01". Trail: ` +
+      `one Backspace on "00" and then typing 1 left ${JSON.stringify(ended)} rather than "01". Trail: ` +
         seen.join(" → "),
     ).toBe("01");
   });
