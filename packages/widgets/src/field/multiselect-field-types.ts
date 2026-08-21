@@ -85,6 +85,18 @@ export type MdyMultiselectFieldIntent =
    * hands back what it landed on; a caller that has not is welcome to leave it out.
    */
   | { readonly type: "select"; readonly optionKey?: string }
+  /**
+   * A character typed at the open list, which moves the cursor to the first option that matches.
+   *
+   * The APG asks for this of any listbox a person can open, and a popup without it is one where
+   * finding the twentieth option means twenty presses. The buffer and its idle window belong to the
+   * controller — a renderer holding them decides when two keystrokes are one word, which is how
+   * three adapters come to answer differently.
+   *
+   * A searchable popup has its own filter box and does not need this; the two would compete for the
+   * same keystrokes.
+   */
+  | { readonly type: "typeahead"; readonly character: string }
   | { readonly type: "open" }
   | { readonly type: "close"; readonly restoreFocus?: boolean }
   | { readonly type: "toggleOpen" }

@@ -10,6 +10,7 @@ import {
   chipDropIndex,
   stateClass,
   chipStripWheelDelta,
+  isTypeaheadCharacter,
 } from "@modyra/widgets";
 import { type MdyFieldHandle, type MdyMultiselectMode, type MdySelectOption } from "@modyra/core";
 import { filterOptionsByQuery } from "@modyra/widgets";
@@ -360,9 +361,53 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
       query: this._query,
       activeKey: this.fieldController?.state().activeKey ?? null,
     });
+    // A letter typed at an open list without a filter box moves the cursor to the first match. Only
+    // without one: a searchable popup already answers typing by narrowing the list, and the two
+    // would compete for the same keystrokes.
+    if (!action && !this.searchable && this._open && isTypeaheadCharacter(e.key, e)) {
+      e.preventDefault();
+      this.fieldController?.dispatch({ type: "typeahead", character: e.key });
+      // The cursor lives in the controller and this element renders from a snapshot, so a move that
+      // changes nothing else on screen would not repaint the reference that names it.
+      this.requestUpdate();
+      this.followCursor();
+      return;
+    }
     if (!action || action.type === "close" || action.type === "open") return;
     e.preventDefault();
     this.fieldController?.dispatch(action as never);
+    if (action.type === "move") { this.requestUpdate(); this.followCursor(); }
+  }
+
+  /**
+   * Puts DOM focus on the option the cursor is on, where there is no filter box to name it.
+   *
+   * With a search box the cursor is announced through `aria-activedescendant` and focus stays where
+   * a person is typing. Without one there is no element to carry that reference, so the cursor and
+   * focus have to be the same thing.
+   */
+  /**
+   * Which option the cursor is on, named from wherever focus actually is.
+   *
+   * Focus stays on the control while the list is open here, so the cursor has no element of its own
+   * to be announced from: without this it moves and nothing says so. `aria-activedescendant` is how
+   * a control points at something it does not contain focus for.
+   */
+  private activeDescendant(): string | null {
+    // The controller's `open`, not this element's copy of it: the two settle on different renders,
+    // and reading the copy left the reference absent on exactly the pass that first had a cursor.
+    const state = this.fieldController?.state();
+    if (!state?.open || !state.activeKey) return null;
+    return this.fieldController?.view().parts[state.activeKey]?.id ?? null;
+  }
+
+  private followCursor(): void {
+    if (this.searchable) return;
+    const key = this.fieldController?.state().activeKey;
+    if (!key) return;
+    void this.updateComplete.then(() => {
+      this.querySelector<HTMLElement>(`[data-option-key="${key}"] button, [data-option-key="${key}"]`)?.focus();
+    });
   }
 
   override render(): unknown {
@@ -449,6 +494,7 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
             aria-required=${String(handle.required())}
             aria-readonly=${handle.readonly() ? "true" : nothing}
             aria-controls=${this._open ? overlayControlledId("multiselect", this.fieldId) ?? nothing : nothing}
+            aria-activedescendant=${this.activeDescendant() ?? nothing}
             aria-describedby=${this.showErrors(handle) && !this.inlineErrors ? this.errorsId : this.descriptionId}
             aria-invalid=${String(shownErrorsOf(handle).length > 0)}
             aria-disabled=${String(handle.disabled())}
@@ -681,7 +727,7 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
   ): unknown {
     return html`<div class="${this.partClass("options")} ${extraClass}" role="group">
       ${options.map(
-        (option) => html`<div class=${MDY_CHIP_CLASSES.wrapper}>${this.renderOptionChip(handle, option)}</div>`,
+        (option) => html`<div class=${MDY_CHIP_CLASSES.wrapper} data-option-key=${String(option.value)}>${this.renderOptionChip(handle, option)}</div>`,
       )}
     </div>`;
   }

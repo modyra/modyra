@@ -26,6 +26,7 @@ import {
   chipDropIndex,
   stateClass,
   chipStripWheelDelta,
+  isTypeaheadCharacter,
 } from "@modyra/widgets";
 import { applyPart, el, setErrors, setText, setIcon } from "../dom.js";
 import { buildFieldShell, insertControl } from "../field-shell.js";
@@ -190,6 +191,8 @@ export function renderMultiselectField(
    */
   /** A sentence to say once, for a change no selection delta describes — a move. */
   /** How many distinct values are chosen, for the description to state. */
+  /** Whether the popup was already showing on the previous pass, so focus is placed once. */
+  let wasOpen = false;
   let tallyCount = 0;
   let saySoon: string | null = null;
   let saidLast: readonly string[] = [...new Set(
@@ -586,11 +589,36 @@ export function renderMultiselectField(
       query: search.value,
       activeKey: state.activeKey,
     });
+    // A letter typed at an open list without a filter box moves the cursor to the first match. Only
+    // without one: the two would compete for the same keystrokes, and a searchable popup already
+    // answers typing by narrowing the list.
+    if (!action && !searchable && state.open && isTypeaheadCharacter(event.key, event)) {
+      event.preventDefault();
+      dispatch({ type: "typeahead", character: event.key });
+      followCursor();
+      return;
+    }
     if (!action) return;
     // Tab keeps its native meaning: the list closes and focus carries on to the next control.
     if (event.key !== "Tab") event.preventDefault();
     dispatch(action);
+    if (action.type === "move") followCursor();
   };
+
+  /**
+   * Puts DOM focus on the option the cursor is on, where there is no filter box to name it.
+   *
+   * With a search box the cursor is announced through `aria-activedescendant` and focus stays where
+   * a person is typing. Without one there is no element to carry that reference, so the cursor and
+   * focus have to be the same thing — otherwise it moves and nothing on screen or in the
+   * accessibility tree says so.
+   */
+  function followCursor(): void {
+    if (searchable) return;
+    const key = controller.state().activeKey;
+    if (key === null) return;
+    queueMicrotask(() => optionEls.get(key)?.[0]?.chip.focus());
+  }
   control.addEventListener("keydown", onKeydown);
   popup.addEventListener("keydown", onKeydown);
 
@@ -682,8 +710,16 @@ export function renderMultiselectField(
       // silently does nothing.
       // Where the person is about to work: the filter box when there is one, otherwise the first
       // option — a popup that opens with focus nowhere is one a keyboard cannot reach into.
-      queueMicrotask(() => (searchable ? search : overlay.grid.querySelector<HTMLElement>(".mdy-chip") ?? overlay.grid).focus());
+      //
+      // On the *opening* only. This effect runs on every change while the popup is showing, and
+      // placing focus each time put it back on the first option after every keystroke: the cursor
+      // moved and focus was dragged home behind it, so the arrows appeared to do nothing at all.
+      if (!wasOpen) {
+        queueMicrotask(() => (searchable ? search : overlay.grid.querySelector<HTMLElement>(".mdy-chip") ?? overlay.grid).focus());
+      }
+      wasOpen = true;
     } else {
+      wasOpen = false;
       // The next opening decides its own side and height rather than inheriting this one's.
       releaseOverlayPlacement(popup);
       if (search.value) search.value = "";

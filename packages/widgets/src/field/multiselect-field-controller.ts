@@ -15,6 +15,7 @@ import type { MdyReactivity, MdySelectOption, MdySignal } from "@modyra/core";
 import { observerFor } from "@modyra/core";
 import { filterOptionsByQuery, defaultOptionKey } from "../options-utils.js";
 import { listboxNextIndex } from "../keyboard.js";
+import { createTypeahead, typeaheadMatch } from "../typeahead.js";
 
 import { multiselectValueTransition, overlayLifecycleTransition } from "../behavior.js";
 import { optionsWithUnrecognizedValues } from "../options-reconciliation.js";
@@ -99,6 +100,8 @@ export function createMultiselectFieldController<TValue>(
   const query = reactivity.signal("");
   /** Where the keyboard is inside the open popup. A cursor, not a selection. */
   const activeKey = reactivity.signal<string | null>(null);
+  /** The letters typed at the open list, and the idle window that ends a word. */
+  const typeahead = createTypeahead();
   const open = reactivity.signal(false);
   // A field taken out of play does not keep an overlay open over it: the popup looked live, said
   // `aria-expanded="true"` to a screen reader, and answered nothing.
@@ -341,6 +344,7 @@ export function createMultiselectFieldController<TValue>(
       // clamped: "the first match" is a guess about what somebody typing meant, and the next arrow
       // asks for it plainly.
       activeKey.set(null);
+      typeahead.clear();
       return [];
     }
     if (intent.type === "move") {
@@ -356,6 +360,13 @@ export function createMultiselectFieldController<TValue>(
       if (landed) activeKey.set(keyFor(landed));
       return [];
     }
+    if (intent.type === "typeahead") {
+      // The buffer is the controller's, and so is the window that decides whether two keystrokes are
+      // one word. Walked over the options a person can see, for the same reason the cursor is.
+      const landed = typeaheadMatch(filteredOptions(), typeahead.push(intent.character));
+      if (landed) activeKey.set(keyFor(landed));
+      return [];
+    }
     if (intent.type === "select") {
       const key = intent.optionKey ?? activeKey();
       return key === null || key === undefined ? [] : toggle(key);
@@ -366,7 +377,10 @@ export function createMultiselectFieldController<TValue>(
     const disabled = blocksValueChange(state().interactivity);
     // A cursor belongs to one showing of the list. Carried over, the next opening starts wherever
     // the last one was left, which is a position this person never chose.
-    if (intent.type === "open" || intent.type === "toggleOpen" || intent.type === "close") activeKey.set(null);
+    if (intent.type === "open" || intent.type === "toggleOpen" || intent.type === "close") {
+      activeKey.set(null);
+      typeahead.clear();
+    }
     if (intent.type === "open") return overlay({ type: "open", disabled, available: true });
     if (intent.type === "toggleOpen") return overlay({ type: "toggle", disabled, available: true });
     if (intent.type === "close") return overlay({ type: "close", restoreFocus: intent.restoreFocus });
