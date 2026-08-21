@@ -334,6 +334,10 @@
           "type": "boolean",
           "description": "timepicker only: whether the dial's hand moves rather than jumps. Absent is a hand that jumps, which never shows a value where it is not."
         },
+        "showUnavailable": {
+          "type": "boolean",
+          "description": "timepicker only: whether the dial shows which stretches of its ring carry no selectable time. Absent draws a ring that looks the same all the way round."
+        },
         "accept": {
           "type": "string",
           "description": "File only: mirrors the native input attribute."

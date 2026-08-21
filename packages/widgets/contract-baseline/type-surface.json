@@ -618,7 +618,8 @@
   "MdyDynamicDateField": [
     "animateHand?: boolean",
     "granularity?: MdyTimeGranularity",
-    "kind: \"datepicker\" | \"timepicker\""
+    "kind: \"datepicker\" | \"timepicker\"",
+    "showUnavailable?: boolean"
   ],
   "MdyDynamicDaterangeField": [
     "kind: \"daterange\""

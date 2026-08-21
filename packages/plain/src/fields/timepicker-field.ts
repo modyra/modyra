@@ -26,6 +26,8 @@ import {
   timepickerDialNumbers,
   timepickerDialPick,
   timepickerDialTolerance,
+  timepickerDialUnavailableArcs,
+  MDY_TIMEPICKER_INNER_RING,
   timepickerSelectedRing,
   timeStepsAt,
   timepickerDialRing,
@@ -124,6 +126,13 @@ export function renderTimepickerField(
   // the length of the transition.
   if (f.animateHand === true) clock.classList.add("mdy-timepicker-dial--animated");
   const dialFace = el("div", parts.dialFace.classes.join(" "));
+  // The stretches of the ring that offer nothing, when the document asks to show them. Rebuilt with
+  // the face, because which they are depends on the field being picked and on the hour the draft is
+  // on — and drawn behind everything, since it is the surface the numbers sit on.
+  const unavailableLayer = el("div", parts.dialUnavailable.classes.join(" "));
+  unavailableLayer.setAttribute("aria-hidden", "true");
+  dialFace.appendChild(unavailableLayer);
+
   const dialHand = el("div", parts.dialHand.classes.join(" "));
   dialFace.appendChild(dialHand);
   // Where the pointer is, when that is not where the value went. Hidden unless a gesture is putting
@@ -308,6 +317,23 @@ export function renderTimepickerField(
     ghostHand.style.setProperty("--tp-ghost-reach", String(ghost.reach));
   }
 
+  /** Redraws the dimmed stretches for the field and the hour the draft is on. */
+  function drawUnavailable(field: "hour" | "minute", state: { format: MdyTimeFormat; draft: { hour: number; minute: number; period: "AM" | "PM" } }): void {
+    unavailableLayer.replaceChildren();
+    if (f.showUnavailable !== true) return;
+    const steps = timeStepsAt(f.granularity, to24Hour(state.draft));
+    const rings = state.format === "24h" && field === "hour" ? (["outer", "inner"] as const) : (["outer"] as const);
+    for (const ring of rings) {
+      for (const arc of timepickerDialUnavailableArcs(field, state.format, steps, handLength(), ring)) {
+        const slice = el("div", parts.dialUnavailableArc.classes.join(" "));
+        slice.style.setProperty("--tp-arc-from", `${arc.from}deg`);
+        slice.style.setProperty("--tp-arc-span", `${((arc.to - arc.from) + 360) % 360}deg`);
+        if (ring === "inner") slice.style.scale = String(MDY_TIMEPICKER_INNER_RING);
+        unavailableLayer.appendChild(slice);
+      }
+    }
+  }
+
   function pickFromPointer(event: PointerEvent): void {
     const state = controller.state();
     if (state.viewMode !== "dial") return;
@@ -422,6 +448,8 @@ export function renderTimepickerField(
       "mdy-timepicker-dial__hand--inner",
       timepickerSelectedRing(field, state.draft, state.format) === "inner",
     );
+
+    drawUnavailable(field, state);
 
     // The face the format has, so a 24-hour picker can be pointed at its afternoon hours.
     const numbers = timepickerDialNumbers(field, state.format, timeStepsAt(f.granularity, to24Hour(state.draft)));

@@ -126,6 +126,7 @@ import { MdyTimepickerClockComponent } from "./timepicker-clock.component";
           [value]="draftValue()"
           [granularity]="granularity()"
           [animateHand]="animateHand()"
+          [showUnavailable]="showUnavailable()"
           [open]="open()"
           [format]="format()"
           [disabled]="isDisabled()"
@@ -175,6 +176,8 @@ export class MdyTimepickerComponent extends MdyOverlayControl<string | null> {
   readonly granularity = input<MdyTimeGranularity | undefined>(undefined);
   /** Whether the dial's hand moves rather than jumps. Off by default. */
   readonly animateHand = input<boolean>(false);
+  /** Whether the dial shows which stretches of its ring carry no selectable time. Off by default. */
+  readonly showUnavailable = input<boolean>(false);
   protected override readonly minSpace = 450;
 
   protected readonly effectivePlaceholder = computed(() =>

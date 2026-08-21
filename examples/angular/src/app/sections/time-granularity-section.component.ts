@@ -91,6 +91,49 @@ import { MdyFormComponent, MdySupportingTextDirective, MdyTimepickerComponent } 
         </div>
 
         <div class="form-row">
+          <!-- Le fette spente: quello che il passo toglie, mostrato invece che da scoprire provando. -->
+          <mdy-control-timepicker
+            [field]="form.f.dimmed"
+            label="Fette spente (15 min)"
+            format="24h"
+            [granularity]="{ minuteStep: 15 }"
+            [showUnavailable]="true"
+          >
+            <div *mdySupportingText>
+              Il quadrante dei minuti ha dodici posizioni e questo ne offre quattro: le altre otto
+              sono spente. Senza, l'anello sembra uguale tutto intorno.
+            </div>
+          </mdy-control-timepicker>
+
+          <mdy-control-timepicker
+            [field]="form.f.dimmedHours"
+            label="Fette spente su due anelli (24h)"
+            format="24h"
+            [granularity]="{ hourStep: 3 }"
+            [showUnavailable]="true"
+          >
+            <div *mdySupportingText>
+              Ogni anello ha le sue: quello interno è disegnato su un cerchio più piccolo, quindi una
+              cifra della stessa larghezza ne copre una fetta più ampia.
+            </div>
+          </mdy-control-timepicker>
+
+          <mdy-control-timepicker
+            [field]="form.f.moving"
+            label="Lancetta che si muove"
+            format="24h"
+            [granularity]="{ minuteStep: 15 }"
+            [animateHand]="true"
+            [showUnavailable]="true"
+          >
+            <div *mdySupportingText>
+              La stessa faccia con la lancetta animata invece che a scatti. Spenta di default: una
+              lancetta in movimento per un istante non è dove sta il valore.
+            </div>
+          </mdy-control-timepicker>
+        </div>
+
+        <div class="form-row">
           <mdy-control-timepicker
             [field]="form.f.byBand"
             label="Passi per fascia"
@@ -155,5 +198,8 @@ export class TimeGranularitySectionComponent {
     byBand: field<string | null>("09:05"),
     alreadyOff: field<string | null>("09:07"),
     byName: field<string | null>("09:30"),
+    dimmed: field<string | null>("09:15"),
+    dimmedHours: field<string | null>("15:00"),
+    moving: field<string | null>("09:30"),
   });
 }

@@ -49,6 +49,7 @@ const FIELD_BY_KIND = [
   "maxDate",
   "granularity",
   "animateHand",
+  "showUnavailable",
   // file
   "accept",
   "multiple",

@@ -274,6 +274,7 @@
     "mdy-timepicker-dial__number",
     "mdy-timepicker-dial__number--inner",
     "mdy-timepicker-dial__number--selected",
+    "mdy-timepicker-dial__unavailable",
     "mdy-timepicker-fields",
     "mdy-timepicker-header",
     "mdy-timepicker-mode-toggle",
@@ -1089,6 +1090,7 @@
         "mdy-timepicker-dial__number",
         "mdy-timepicker-dial__number--inner",
         "mdy-timepicker-dial__number--selected",
+        "mdy-timepicker-dial__unavailable",
         "mdy-timepicker-header",
         "mdy-timepicker-mode-toggle",
         "mdy-timepicker-spacer"

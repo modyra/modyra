@@ -17,8 +17,12 @@ import { MDY_STATE_MODIFIERS, stateClass, type MdyStateName } from "./state.js";
  * 3 names an anatomy where `multiselect.popup` carries `role="dialog"`. A renderer built against 2
  * emits that panel with no role, which is a conforming renderer under 2 and a non-conforming one
  * here — the case this number exists to make visible rather than to let pass.
+ *
+ * 4 moved a boolean's indicator and a toggle's track under the label. 5 gives a timepicker's dial
+ * two more parts — the layer of stretches that carry no selectable time, and each stretch in it —
+ * which sit between the face and the hand, so a renderer built against 4 draws them nowhere.
  */
-export const MDY_WIDGET_CONTRACT_VERSION = 4 as const;
+export const MDY_WIDGET_CONTRACT_VERSION = 5 as const;
 
 /** Semantic element categories that presenters can map to their native rendering API. */
 export type MdyWidgetSemanticElement =
