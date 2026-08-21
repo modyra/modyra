@@ -19726,3 +19726,45 @@ restored                     PASS
 verified by declaring a `phantom` part nothing draws and watching it fail. Both directions: a part
 listed as expected-absent that starts being drawn asks to be removed from the list, so the exemptions
 cannot rot.
+
+## 348 — Under `material`, a slider is painted the seed colour and not the theme's accent (S2, UI-009)
+
+Brief point 4, and the answer needed the browser tier to load more than one stylesheet — so **325 is
+closed on the way**: `build.mjs` copies all five sheets and a spec swaps the `<link>`, which is the
+first time four of the five have been rendered anywhere a measurement could reach.
+
+Resolved colours — painted onto a probe and read back, not compared as token text:
+
+```
+theme      --mdy-primary            slider active
+modern     rgb(100, 88, 239)        rgb(100, 88, 239)     ✓
+ios        rgb(0, 122, 255)         rgb(0, 122, 255)      ✓
+ionic      rgb(100, 88, 239)        rgb(100, 88, 239)     ✓
+material   oklch(0.4 0.12 285.987)  rgb(24, 24, 27)       ✗
+```
+
+Under `material` the slider is near-black where the theme's own accent is a derived purple. The cause
+is a token that stopped agreeing with itself: **material declares no `--mdy-slider-active-color`**, so
+the slider falls through to the foundation's `--mdy-comp-slider-active-track-color`, which is the raw
+seed `#18181b`. Material's `--mdy-primary` is *derived* from that seed rather than equal to it, so the
+two parted and nothing noticed.
+
+`ios` is the only theme that declares the token (`var(--mdy-ios-blue)`); `modern` and `ionic` also
+inherit it and are correct because their primary happens to equal the seed.
+
+### Two corrections to my own earlier reading, both worth keeping
+
+**Counting rules per control measured the wrong thing.** Finding 347's table says `ionic` styles the
+slider with *nothing*, which reads as an omission — and rendered, ionic's slider is correct, because
+inheriting the foundation is what layering is for. A rule count cannot tell a choice from a gap; only
+a rendered page can.
+
+**Comparing tokens as text is not comparing colours.** The first draft of this spec failed on `material`
+for the wrong reason: `#18181b` and `oklch(from #18181b …)` are different strings that can paint the
+same pixel. It resolves both through a probe element now. The defect survived that correction, which
+is the only reason it is filed.
+
+**Battle**: `a-control-that-wears-its-theme.spec.ts`. It asserts the narrow property rather than "every
+theme styles every control" — a theme inheriting the foundation is legitimate, and forbidding it would
+invent a contract nobody agreed. What must hold is that **whatever a control wears, it is this theme's
+colour and not another theme's.**

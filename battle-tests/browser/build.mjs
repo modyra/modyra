@@ -36,6 +36,24 @@ copyFileSync(
   join(OUT_DIR, "modyra.css"),
 );
 
+// The other four, beside the default rather than instead of it.
+//
+// `@modyra/styles` ships five sheets and this tier loaded one, so four of them were never rendered
+// anywhere a measurement could reach — a theme could stop styling a control and every check would stay
+// green, because the only thing that reads a theme is a person looking at it. Copying them costs one
+// `copyFileSync` each and lets a spec ask what a control looks like under the theme a team actually
+// ships.
+//
+// Not linked from the host pages: a page loading two themes is measuring their cascade rather than
+// either of them. A spec swaps the sheet at runtime through `<link>`, so the page it measures is the
+// page a consumer would have.
+for (const theme of ["modern", "material", "ios", "ionic"]) {
+  copyFileSync(
+    join(REPO_ROOT, "packages", "styles", "dist", `modyra-${theme}.css`),
+    join(OUT_DIR, `modyra-${theme}.css`),
+  );
+}
+
 await build({
   entryPoints: [join(BATTLE_ROOT, "browser", "host", "entry.mjs")],
   outfile: join(OUT_DIR, "host.js"),
