@@ -31,6 +31,16 @@ export const MDY_ADAPTER_CONTRACT_VIOLATION = "MDY_ADAPTER_CONTRACT_VIOLATION";
 /** A second live form asked to persist under a draft key another form already holds. */
 export const MDY_DRAFT_KEY_IN_USE = "MDY_DRAFT_KEY_IN_USE";
 
+/**
+ * A stored draft was left where it was rather than restored, because it records a different form.
+ *
+ * The shape is a short name for the paths a form declares, so it moves when the form's own shape
+ * moves — a server returning one more collection row is enough. Without this, a consumer cannot tell
+ * a key that holds nothing from a key that holds work this form declined to read, and the two need
+ * different answers: the first is a fresh start, the second is somebody's typing still on disk.
+ */
+export const MDY_DRAFT_NOT_RESTORED = "MDY_DRAFT_NOT_RESTORED";
+
 /** Reports every diagnostic to `console` (mapped by severity). Suitable as a dev-mode default. */
 export function createConsoleDiagnostics(): MdyDiagnostics {
   return {

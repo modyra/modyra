@@ -16,7 +16,7 @@ import { reactivityRunsEffects } from "./reactivity-contract.js";
 import { isSafeFieldPath } from "./path-utils.js";
 import { MDY_DEV } from "./dev-flags.js";
 import { isRecord } from "./record-utils.js";
-import { MDY_DRAFT_KEY_IN_USE } from "./reactivity-diagnostics.js";
+import { MDY_DRAFT_KEY_IN_USE, MDY_DRAFT_NOT_RESTORED } from "./reactivity-diagnostics.js";
 
 /** Pluggable storage for {@link MdyDraftManager.enableDraft}. */
 export interface MdyDraftStorage {
@@ -463,7 +463,19 @@ export class MdyDraftManager {
     // Another form's work is neither restored nor removed. `_parse` answering `null` means the entry
     // is unusable — corrupt, superseded, expired — and the caller drops it; an envelope belonging to
     // another form is perfectly usable, by that form, and this one has no standing to delete it.
-    if (stored !== null && this._belongsToAnotherForm(stored)) stored = null;
+    if (stored !== null && this._belongsToAnotherForm(stored)) {
+      // Said out loud. Skipping in silence left a consumer unable to tell a key holding nothing from
+      // a key holding work this form declined to read — and the second is somebody's typing, still
+      // on disk, that nothing will ever offer them again unless the form that wrote it comes back.
+      this._warn(
+        `A draft under "${this._key}" was written by a form of a different shape and has not been ` +
+        "restored. It is left where it is: the form that wrote it can still read it. A form whose " +
+        "own shape moved — a field added, a collection row arriving from a server — is a different " +
+        "form by this measure, so bump `version` in the draft options when that is intended.",
+        MDY_DRAFT_NOT_RESTORED,
+      );
+      stored = null;
+    }
     if (stored !== null) {
       const value = this._parse(stored, options.ttlMs);
       if (value !== null) {

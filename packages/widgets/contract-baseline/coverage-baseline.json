@@ -1,8 +1,8 @@
 {
   "note": "Public names not yet asserted or not yet shown. The list may only get shorter.",
   "score": {
-    "published": 698,
-    "asserted": 442,
+    "published": 699,
+    "asserted": 443,
     "shown": 79
   },
   "uncovered": [
@@ -56,6 +56,12 @@
     },
     {
       "name": "MDY_DRAFT_KEY_IN_USE",
+      "asserted": true,
+      "shown": false,
+      "reason": "published and never shown"
+    },
+    {
+      "name": "MDY_DRAFT_NOT_RESTORED",
       "asserted": true,
       "shown": false,
       "reason": "published and never shown"
