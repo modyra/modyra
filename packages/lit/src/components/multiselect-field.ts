@@ -2,6 +2,7 @@ import {
   MDY_POPUP_OPENERS,
   overlayControlledId,
   shownErrorsOf,
+  keyBindingFor,
 } from "@modyra/widgets";
 import { type MdyFieldHandle, type MdyMultiselectMode, type MdySelectOption } from "@modyra/core";
 import { filterOptionsByQuery } from "@modyra/widgets";
@@ -24,6 +25,7 @@ import { closeOverlayOutOfPlay } from "../widget-runtime/overlay-host.js";
 export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly unknown[]> {
   static override properties: PropertyDeclarations = {
     searchable: { type: Boolean },
+    reorderable: { type: Boolean },
     loading: { type: Boolean },
     mode: { type: String },
     filterFn: { attribute: false },
@@ -31,6 +33,8 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
     _query: { state: true },
   };
   declare searchable: boolean;
+  /** Whether a person may rearrange what they chose. Off by default. */
+  declare reorderable: boolean;
   declare loading: boolean;
   declare mode: MdyMultiselectMode;
   declare filterFn?: (value: unknown) => boolean;
@@ -67,6 +71,7 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
   constructor() {
     super();
     this.searchable = false;
+    this.reorderable = false;
     this.loading = false;
     this.mode = "single";
     this._query = "";
@@ -360,6 +365,26 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
    * would make undoing one decision three separate removals; a chip with no count answers the same
    * for one of something as for three.
    */
+  /**
+   * Rearranging what was chosen, from the chip a person is looking at.
+   *
+   * The keys are the contract's, and so is the direction: the strip runs in the writing direction,
+   * so `ArrowLeft` moves a chip *later* in a right-to-left document and a renderer reading the key
+   * rather than the binding would have to know that.
+   */
+  private onChipKeydown(event: KeyboardEvent, handle: MdyFieldHandle<readonly unknown[]>, optionKey: string): void {
+    if (!this.reorderable) return;
+    const binding = keyBindingFor("multiselect", `${event.altKey ? "Alt+" : ""}${event.key}`, this._open);
+    if (binding?.intent !== "reorder") return;
+    event.preventDefault();
+    // The order the value has, not the order the options are in.
+    const order = [...new Set(this.held(handle).map((v) => String(v)))];
+    this.fieldController?.dispatch({ type: "move-selected", optionKey, to: order.indexOf(optionKey) + (binding.by ?? 1) });
+    this.updateComplete.then(() => {
+      this.querySelector<HTMLElement>(`.${MDY_CHIP_CLASSES.value}[data-key="${optionKey}"]`)?.focus();
+    });
+  }
+
   /** The whole selection, so two announcements differ whenever the selection does. */
   private announcementText(handle: MdyFieldHandle<readonly unknown[]>): string {
     const held = this.held(handle);
@@ -380,8 +405,10 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
       class=${multiselectChipClasses({ mode: this.mode, selected: true }).join(" ")}
       tabindex="0"
       role="group"
+      @keydown=${(e: KeyboardEvent) => this.onChipKeydown(e, handle, String(value))}
       aria-label=${count > 1 ? `${label}, ${count}` : label}
       title=${label}
+      data-key=${String(value)}
     >
       ${this.mode === "multi"
         ? html`<button

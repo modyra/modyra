@@ -19,6 +19,7 @@ import {
   type MdyElementLookup,
   MDY_I18N_MESSAGES_DEFAULT,
   type MdyI18nMessages,
+  keyBindingFor,
 } from "@modyra/widgets";
 import { applyPart, el, setErrors, setText, setIcon } from "../dom.js";
 import { buildFieldShell, insertControl } from "../field-shell.js";
@@ -46,6 +47,7 @@ export function renderMultiselectField(
   const options = f.options as ReadonlyArray<MdySelectOption<unknown>>;
   const keyFor = (option: MdySelectOption<unknown>) => String(option.value);
   const searchable = (f as { readonly searchable?: boolean }).searchable === true;
+  const reorderable = (f as { readonly reorderable?: boolean }).reorderable === true;
   const controller = createMultiselectFieldController({ widgetId: widgetId, handle, options, keyFor, mode }, reactivity);
 
   const parts = MDY_WIDGET_CONTRACTS.multiselect.parts;
@@ -168,6 +170,25 @@ export function renderMultiselectField(
     const chip = el("div", parts.chip.classes.join(" "));
     chip.tabIndex = 0;
     chip.setAttribute("role", "group");
+    // Rearranging what was chosen, from the chip a person is looking at. The keys are the
+    // contract's — a renderer choosing its own is how three of them come to answer differently —
+    // and the direction comes from the binding rather than from the key, because the strip runs in
+    // the writing direction and `ArrowLeft` moves a chip *later* in a right-to-left document.
+    chip.addEventListener("keydown", (event) => {
+      if (!reorderable) return;
+      const combo = `${event.altKey ? "Alt+" : ""}${event.key}`;
+      const binding = keyBindingFor("multiselect", combo, controller.state().open);
+      if (binding?.intent !== "reorder") return;
+      event.preventDefault();
+      // The order the *value* has, not the order these elements were created in: the map is keyed
+      // by option and its insertion order never changes, so reading it moved the chip once and then
+      // asked for the position it already had.
+      const order = [...new Set(controller.state().selectedValues.map((value) =>
+        keyFor({ value } as MdySelectOption<unknown>)))];
+      dispatch({ type: "move-selected", optionKey: key, to: order.indexOf(key) + (binding.by ?? 1) });
+      // The chip moved; focus goes with it, or the next key acts on whatever happens to be here.
+      queueMicrotask(() => chosenEls.get(key)?.focus());
+    });
     const step = (delta: -1 | 1, label: string) => {
       const button = el("button", parts.optionStep.classes.join(" ")) as HTMLButtonElement;
       button.type = "button";

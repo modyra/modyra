@@ -15,7 +15,9 @@ export type MdyWidgetKeyIntent =
   | { readonly type: "cancel"; readonly restoreFocus: boolean }
   | { readonly type: "toggle" }
   | { readonly type: "increment" }
-  | { readonly type: "decrement" };
+  | { readonly type: "decrement" }
+  /** Move whatever holds focus one place earlier or later in the value. */
+  | { readonly type: "reorder"; readonly by: -1 | 1 };
 
 /**
  * How close to the viewport edge a popup may sit. Exported because it is part of the placement
@@ -42,6 +44,9 @@ export function widgetKeyIntent(kind: MdyWidgetKind, key: string, open: boolean)
         type: "move",
         target: key === "ArrowDown" ? "next" : key === "ArrowUp" ? "previous" : key === "Home" ? "first" : "last",
       };
+    // The direction is the binding's, not the key's: the strip runs in the writing direction, so in
+    // a right-to-left document `ArrowLeft` moves a chip later rather than earlier.
+    case "reorder": return { type: "reorder", by: binding.by ?? 1 };
   }
 }
 

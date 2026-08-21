@@ -148,6 +148,16 @@ export interface MdyDynamicOptionsField extends MdyDynamicFieldBase {
    */
   readonly searchable?: boolean;
   /**
+   * Whether a person may rearrange what they chose — `multiselect` only. Absent means they may not.
+   *
+   * Off by default because most lists have an order nobody chose: a set of filters, a set of tags.
+   * Where the order *is* the value — priorities, a playlist, the columns of a report — the field
+   * says so, and both doors open: the keys `MDY_WIDGET_KEYBOARD` declares on a focused chip, and
+   * dragging that same chip. A control whose only way to reorder is a pointer is one a keyboard
+   * cannot reorder at all.
+   */
+  readonly reorderable?: boolean;
+  /**
    * The options are being fetched. Select and multiselect show it on the control, so a field waiting
    * on its list says so without being opened.
    *

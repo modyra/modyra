@@ -41,6 +41,7 @@ const FIELD_BY_KIND = [
   "options",
   "mode",
   "searchable",
+  "reorderable",
   "loading",
   // datepicker, timepicker, daterange
   "locale",

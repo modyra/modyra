@@ -115,7 +115,15 @@ export interface MdyKeyBinding {
   readonly key: string;
   /** Only when the overlay is showing, only when it is not, or either way. */
   readonly when?: MdyOverlayPhase;
-  readonly intent: "move" | "step" | "toggle" | "open" | "commit" | "cancel";
+  readonly intent: "move" | "step" | "toggle" | "open" | "commit" | "cancel" | "reorder";
+  /**
+   * Which way a `reorder` goes: `-1` earlier in the value, `1` later.
+   *
+   * Declared rather than derived from the key, because "earlier" is not "left": the strip runs in
+   * the writing direction, so in a right-to-left document `ArrowLeft` moves a chip *later*. A
+   * renderer that read the key would have to know that; reading the direction, it does not.
+   */
+  readonly by?: -1 | 1;
   /**
    * Whether dismissing on this key returns focus to the opener. Only a `cancel` dismisses, so only a
    * `cancel` answers it, and the default is to restore.
@@ -224,6 +232,16 @@ function keyboardFor(kind: MdyWidgetKind): readonly MdyKeyBinding[] {
     // the intent vocabulary has no word for that — declaring them as `step` would say something
     // untrue rather than leave a gap on the record.
     bindings.push({ key: "ArrowUp", intent: "step" }, { key: "ArrowDown", intent: "step" });
+  }
+  // Moving a chosen value, on the chip that stands for it. `Alt` because the bare arrows already
+  // belong to whatever the focus is in — a strip is scrolled with them, a list is walked with them —
+  // and a key that means two things depending on where you are is a key nobody trusts.
+  //
+  // Declared for a kind whose value is a list a person arranges, which the catalogue says by
+  // holding a `chips` part: a set of filters has an order nobody chose and nothing to reorder.
+  if ("chips" in MDY_WIDGET_CONTRACTS[kind].parts) {
+    bindings.push({ key: "Alt+ArrowLeft", intent: "reorder", by: -1 });
+    bindings.push({ key: "Alt+ArrowRight", intent: "reorder", by: 1 });
   }
   if (TOGGLES.includes(kind)) bindings.push({ key: " ", intent: "toggle" });
 

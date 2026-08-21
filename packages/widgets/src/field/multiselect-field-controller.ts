@@ -266,6 +266,38 @@ export function createMultiselectFieldController<TValue>(
     return [{ type: "mark-dirty" }, { type: "mark-touched" }];
   }
 
+  /**
+   * Moves one chosen value to another position, carrying its quantity with it.
+   *
+   * Operates on the *distinct* values in the order they were chosen, which is the order the strip
+   * draws, so `to` is an index a person can point at. A value taken three times is one chip and
+   * moves as one thing — splitting its occurrences would move a thing nobody is looking at.
+   *
+   * `to` is clamped rather than refused: a control asking for one past either end means "as far as
+   * it goes", which is what holding an arrow down does.
+   */
+  function moveSelected(optionKey: string, to: number): readonly MdyUiCommand[] {
+    const held = heldValues();
+    const key = indexOf(effectiveOptions());
+    const order: string[] = [];
+    const groups = new Map<string, TValue[]>();
+    for (const value of held) {
+      const k = keysOf([value], key)[0]!;
+      if (!groups.has(k)) { groups.set(k, []); order.push(k); }
+      groups.get(k)!.push(value);
+    }
+    const from = order.indexOf(optionKey);
+    if (from === -1) return [];
+    const target = Math.max(0, Math.min(order.length - 1, to));
+    if (target === from) return [];
+    order.splice(from, 1);
+    order.splice(target, 0, optionKey);
+    handle.set(order.flatMap((k) => groups.get(k) ?? []));
+    handle.markAsDirty();
+    handle.markAsTouched();
+    return [{ type: "mark-dirty" }, { type: "mark-touched" }];
+  }
+
   function clear(): readonly MdyUiCommand[] {
     handle.set([]);
     handle.markAsDirty();
@@ -324,6 +356,8 @@ export function createMultiselectFieldController<TValue>(
         return decrement(intent.optionKey);
       case "clear":
         return clear();
+      case "move-selected":
+        return moveSelected(intent.optionKey, intent.to);
     }
   }
 

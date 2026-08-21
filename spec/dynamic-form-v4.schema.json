@@ -299,6 +299,10 @@
           ],
           "description": "Multiselect only: a toggle set, or a bag the same option can be taken into more than once."
         },
+        "reorderable": {
+          "type": "boolean",
+          "description": "multiselect only: whether a person may rearrange what they chose, with the keyboard on a focused chip or by dragging it. Absent means they may not — most lists have an order nobody chose."
+        },
         "searchable": {
           "type": "boolean",
           "description": "Select and multiselect only: whether the list filters as the user types, which decides whether the widget is a listbox or a combobox."
