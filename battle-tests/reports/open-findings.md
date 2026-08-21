@@ -20099,6 +20099,65 @@ Owned by `esecutore`. Not recorded as allowed — the audit offers `--write` for
 would be the ratchet from finding 333 all over again: the number that only ever goes up because the
 first person to see it wrote it down.
 
+## 360–363 — Four holes in the multiselect, named from outside and then measured (A11Y-001, UI-011)
+
+Raised as design gaps rather than as defects, and the framing was right: none of these breaks a written
+promise, and each is a decision nobody has taken. All four are red in all three renderers, pinned by
+[`../browser/four-holes-in-a-control-that-holds-many.spec.ts`](../browser/four-holes-in-a-control-that-holds-many.spec.ts).
+Each asserts the property and not the repair — every one of them has more than one defensible answer,
+and picking one in a test file decides the design by the back door.
+
+### 360 — the overflow says nothing (S2)
+
+```
+plain     7 of 12 chips in view     scrollWidth > clientWidth     no mask · no count · no control · no aria
+lit       6 of 12                   same                          same
+angular   6 of 12                   same                          same
+```
+
+Half the selection is off the edge and nothing on the strip mentions it. Scroll was chosen over a
+counter, deliberately — but many desktop mice have no horizontal axis at all, so for a large share of
+users the chips out of view are not scrolled away, they are gone. A capability nobody can find is not a
+capability. Any of an edge hint, a count, or a control would satisfy the pin.
+
+### 361 — the cost of leaving the field grows with what is in it (S1)
+
+```
+two chosen      6 tab stops to reach the next field
+twelve chosen   26
+```
+
+Every chip is a stop and so is its remove button, so twelve choices cost twenty-six presses to get
+past. In counter mode each chip also carries two steppers, which puts the same twelve at roughly four
+stops each. **This is the largest accessibility gap in the control and it was not in this register
+before tonight.** A roving tabindex makes the strip a single stop; the pin asserts that the count does
+not grow, not that a roving tabindex is how.
+
+### 362 — nothing clears the selection (S2)
+
+No control matching clear, svuota, reset, remove all, deselect, in any renderer. Twelve choices come
+off one at a time, so undoing a filter is twelve deliberate acts and there is no way back to empty.
+
+### 363 — removing a chip drops focus to the document body (S1)
+
+```
+           removing the middle chip   removing the last chip
+plain      the document body          the document body
+lit        the next remove button     the document body
+angular    the document body          (no remove button on the last chip — 357)
+```
+
+The focused element leaves the DOM and nothing catches it, so a person navigating by keyboard is
+returned to the top of the page and has to travel back to where they were — after every single
+removal. Lit catches the middle case and drops the last one, which is the tell: focus is landing on
+whatever happens to occupy that index afterwards rather than being placed, so it works while there is a
+next chip and fails at the end of the strip.
+
+This is the classic defect of this control, and it was flagged from outside as *worth a probe before
+believing it is fine* — which is exactly right, because it is invisible to anyone testing with a
+pointer and invisible to a spec that removes a chip and then asserts on the value. Both of those pass
+today.
+
 ## 359 — The freshness guard never ran, and it would not have caught Angular if it had (S1, mine)
 
 Two defects in one file, both mine, and the second is the one that matters.
