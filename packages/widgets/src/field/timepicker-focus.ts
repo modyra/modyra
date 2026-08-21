@@ -61,6 +61,14 @@ export function timepickerFocusPart(field: "hour" | "minute"): "hourControl" | "
  */
 export function timepickerPartSelector(part: string): string | null {
   const contract = MDY_WIDGET_CONTRACTS.timepicker;
+  // A part with a state after it — `action--confirm` — is that part narrowed to one of its states,
+  // which is how two buttons drawn from one part are told apart.
+  const [base, state] = part.split("--");
+  if (state) {
+    const own = (contract.parts as Readonly<Record<string, { readonly classes: readonly string[] } | undefined>>)[base!];
+    const name = own?.classes[0];
+    return name ? `.${name}--${state}` : null;
+  }
   const own = (contract.parts as Readonly<Record<string, { readonly classes: readonly string[] } | undefined>>)[part];
   const name = own?.classes[0];
   if (!name) return null;
@@ -89,8 +97,12 @@ export function timepickerTabOrder(format: MdyTimeFormat): readonly string[] {
   const parts = MDY_WIDGET_CONTRACTS.timepicker.parts;
   const order = ["hourControl", "minuteControl"];
   if (format === "12h" && "periodOption" in parts) order.push("periodOption");
-  order.push("modeToggle", "action");
-  return Object.freeze(order.filter((part) => part in parts));
+  // Both actions, not "the actions". `action` names two buttons — cancel and confirm — and a stop
+  // that named the part reached whichever the renderer drew first, which is cancel: Tab to the end
+  // of the dialog and press Enter, and the draft is discarded rather than committed. The confirm
+  // state the catalogue already declares is what tells them apart.
+  order.push("modeToggle", "action", "action--confirm");
+  return Object.freeze(order.filter((part) => part === "action--confirm" || part in parts));
 }
 
 /**

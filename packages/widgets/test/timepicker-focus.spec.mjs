@@ -53,22 +53,25 @@ test("each field names the control that carries its focus", () => {
 });
 
 test("the tab order is the contract's, and a 24-hour picker has no period to reach", () => {
-  assert.deepEqual(timepickerTabOrder("12h"), ["hourControl", "minuteControl", "periodOption", "modeToggle", "action"]);
-  assert.deepEqual(timepickerTabOrder("24h"), ["hourControl", "minuteControl", "modeToggle", "action"]);
+  assert.deepEqual(timepickerTabOrder("12h"), ["hourControl", "minuteControl", "periodOption", "modeToggle", "action", "action--confirm"]);
+  assert.deepEqual(timepickerTabOrder("24h"), ["hourControl", "minuteControl", "modeToggle", "action", "action--confirm"]);
 });
 
 test("Tab wraps at both ends, because the popup is a dialog", () => {
   // A picker whose Tab walked out of it left a confirm button behind and a draft nobody could commit.
   assert.equal(timepickerTabTarget("hourControl", "24h"), "minuteControl");
-  assert.equal(timepickerTabTarget("action", "24h"), "hourControl", "the last returns to the first");
-  assert.equal(timepickerTabTarget("hourControl", "24h", -1), "action", "and Shift+Tab the other way");
+  // Both actions, because `action` names two buttons: a stop that named the part reached whichever
+  // was drawn first — cancel — so tabbing to the end and pressing Enter discarded the draft.
+  assert.equal(timepickerTabTarget("action", "24h"), "action--confirm");
+  assert.equal(timepickerTabTarget("action--confirm", "24h"), "hourControl", "the last returns to the first");
+  assert.equal(timepickerTabTarget("hourControl", "24h", -1), "action--confirm", "and Shift+Tab the other way");
   assert.equal(timepickerTabTarget("minuteControl", "12h"), "periodOption");
   assert.equal(timepickerTabTarget("minuteControl", "24h"), "modeToggle", "which a 24-hour picker skips");
 });
 
 test("a press that arrives before focus was placed starts at an end", () => {
   assert.equal(timepickerTabTarget("nowhere", "24h"), "hourControl");
-  assert.equal(timepickerTabTarget("nowhere", "24h", -1), "action");
+  assert.equal(timepickerTabTarget("nowhere", "24h", -1), "action--confirm");
 });
 
 test("the dial's handover has one declared timing", () => {
