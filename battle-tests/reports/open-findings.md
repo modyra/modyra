@@ -20638,3 +20638,73 @@ search, and before `76c08654` every multiselect got one regardless — so the sp
 not requested. With `searchable: true` it reaches its real assertion and fails there instead: the
 filter box is named only by its placeholder, which stops naming it the moment somebody types.
 
+
+## 368–373 — What the outside review said that nobody wrote down
+
+An accessibility specialist was consulted with no access to this repository and asked to answer in
+absolutes from published practice. Four points were adopted the same hour — the delta-plus-count
+announcement, directional `Backspace`/`Delete`, no type-ahead on the strip, silence while the popup is
+open. **The rest was left in a mailbox**, which is the same failure as a decision living only in a
+chat, one level further out. These are the numbers it should have had.
+
+### 368 — `aria-setsize` and `aria-posinset` are on no chip (S1, A11Y-001)
+
+Named as one of three things to hold hardest, explicitly *independent of any visual affordance and of
+any live region*: it is what survives when an edge gradient is stripped by forced-colors and a polite
+announcement is dropped by the screen reader. A chip should announce "Roma, 3 of 12". None does, and
+the count is in no field description either. This is the programmatic half of
+[ADR 0127](../../docs/architecture/0127-a-strip-that-scrolls-against-the-practice.md)'s conditions, and
+that record says the scroll departure is unpaid for until it exists.
+
+### 369 — type-ahead is missing from the popup, and both sides think it is settled (S2, A11Y-001)
+
+`esecutore` proposed leaving type-ahead out, reasoning about the **strip**. The review answered: none
+on the strip, and **mandatory in the popup**, where the APG specifies it for a listbox. It was told it
+was right — about the strip. The popup has none, and the question was closed by two parties answering
+two different questions and agreeing.
+
+This is recorded with its history because the history is the finding: an agreement reached across a
+scope mismatch reads exactly like an agreement.
+
+### 370 — a drag reorder owes a non-drag pointer path (S1, A11Y-001)
+
+WCAG 2.2 **2.5.7 Dragging Movements (AA)** independently requires a single-pointer alternative that is
+not a drag. **A keyboard path does not discharge it.** The pointer door is the next thing to be built
+and would fail this on the day it ships unless pointer-operable move controls come with it.
+
+### 371 — the reorder camp that was built has an unpaid price (S1, A11Y-001)
+
+`Alt`+arrow is the modifier-plus-arrow camp. That camp has no explicit "grabbed" state, so the review's
+judgement is that **every move must be announced** — "Roma, moved to position 3 of 12" — or the
+movement is invisible to a screen reader user. The keys are built; the announcement is not.
+
+The alternative camp — `Space` grabs, arrows move, `Space` drops, `Escape` cancels and restores — is
+strictly better for screen reader users because there is a state to announce and a cancel to offer, and
+it costs `Space`. Either is defensible; neither is defensible unannounced.
+
+### 372 — the roving tabindex was built without the role its pattern assumes (S2, A11Y-001)
+
+`role="grid"` was the **declared premise of every answer** the review gave: the APG has one composite
+pattern for "one tab stop, items with several operable children", and that is grid — one row, each chip
+a `gridcell`, `Enter`/`F2` to enter a cell whose contents are themselves operable.
+[ADR 0125](../../docs/architecture/0125-a-chip-strip-is-one-thing-to-a-keyboard.md) took the roving
+tabindex without that semantics. It may be the right call; it was not made as one.
+
+### 373 — a counter chip should be a spinbutton (S2, A11Y-001)
+
+Two buttons around a static number plus a live region is what exists. The review's answer is
+`role="spinbutton"` or a real number input, so `Up`/`Down` adjust it and the new value is announced
+natively rather than by a region that has to be kept in step. It also requires each stepper's
+accessible name to name the item — "Increase quantity of Roma", never "+". This contradicts the current
+design directly and nobody recorded the contradiction.
+
+### And one question the whole evening assumed away
+
+The review ranked **a summary in place of the chips** — "12 selected", chips on demand — *above* scroll
+arrows, and called it "the honest admission that twelve chips do not fit". Every hour of this work
+assumed the strip. If making the strip work needs a counter, `setsize`, `posinset`, a roving tabindex, a
+grid role, a tooltip, an overflow button and an AA departure, the strip's suitability is worth asking
+once rather than building over. Recorded in
+[ADR 0127](../../docs/architecture/0127-a-strip-that-scrolls-against-the-practice.md) as the likeliest
+successor to the decision, so the next person to raise it finds it was considered.
+
