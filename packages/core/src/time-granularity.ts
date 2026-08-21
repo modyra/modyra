@@ -30,8 +30,14 @@ export interface MdyTimeSteps {
   readonly minuteStep: number;
 }
 
-/** Every time is on offer. */
-export const MDY_EVERY_TIME: MdyTimeSteps = { hourStep: 1, minuteStep: 1 };
+/**
+ * Every time is on offer.
+ *
+ * Frozen because it is the default every route falls back to: one shared object reached from a
+ * dozen call sites, so a single write to it would change what "no granularity" means everywhere at
+ * once, in a way nothing local to any of them could explain.
+ */
+export const MDY_EVERY_TIME: MdyTimeSteps = Object.freeze({ hourStep: 1, minuteStep: 1 });
 
 /** Minutes since midnight, or `null` when the text is not an `HH:MM` this can read. */
 export function minutesOfDay(text: string): number | null {
