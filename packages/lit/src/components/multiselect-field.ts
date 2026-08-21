@@ -9,6 +9,7 @@ import {
   chipMovedAnnouncement,
   chipDropIndex,
   stateClass,
+  chipStripWheelDelta,
 } from "@modyra/widgets";
 import { type MdyFieldHandle, type MdyMultiselectMode, type MdySelectOption } from "@modyra/core";
 import { filterOptionsByQuery } from "@modyra/widgets";
@@ -452,7 +453,10 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
             aria-invalid=${String(shownErrorsOf(handle).length > 0)}
             aria-disabled=${String(handle.disabled())}
           >
-            <span class="${this.partClass("chips")}">${this.renderValueChips(handle)}</span>
+            <span
+              class="${this.partClass("chips")}"
+              @wheel=${(e: WheelEvent) => this.onStripWheel(e)}
+            >${this.renderValueChips(handle)}</span>
             ${this.held(handle).length === 0
               ? html`<span class="${this.partClass("placeholder")}">${this.label ? `Select ${this.label.toLowerCase()}…` : "Select…"}</span>`
               : nothing}
@@ -554,6 +558,28 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
     void this.updateComplete.then(() => {
       this.querySelector<HTMLElement>(`[data-key="${key}"]`)?.focus();
     });
+  }
+
+  /** How many are chosen, in the field's own description: the state, asked for rather than announced. */
+  protected override describedState(): string {
+    const handle = this.field;
+    if (!handle) return "";
+    const count = new Set(this.held(handle).map((value) => String(value))).size;
+    return count === 0 ? "" : this.messages.selectionCount.replace("{count}", String(count));
+  }
+
+  /**
+   * A wheel reaches what has scrolled out of the strip.
+   *
+   * ADR 0127 allows the row to scroll only if there is a mechanism rather than a cue, and many
+   * desktop mice have no horizontal axis at all.
+   */
+  private onStripWheel(event: WheelEvent): void {
+    const strip = event.currentTarget as HTMLElement;
+    const delta = chipStripWheelDelta(event.deltaX, event.deltaY, strip.scrollWidth, strip.clientWidth);
+    if (delta === 0) return;
+    event.preventDefault();
+    strip.scrollLeft += delta;
   }
 
   /**
