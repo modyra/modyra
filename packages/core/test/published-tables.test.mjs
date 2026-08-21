@@ -3,6 +3,7 @@ import test from "node:test";
 
 import {
   MDY_DRAFT_KEY_IN_USE,
+  MDY_DRAFT_NOT_RESTORED,
   MDY_DYNAMIC_MEMBERS,
   MDY_VALIDATION_MESSAGES,
   MDY_VALIDATION_MESSAGES_DEFAULT,
@@ -124,5 +125,56 @@ test("a draft key another form is using is refused under a published code", asyn
   );
   third.destroy();
   assert.equal(JSON.parse(written.get("shared")).value.a, "mine", "the other form's draft was replaced");
+  second.destroy();
+});
+
+
+/**
+ * A draft left unread is said out loud, and under a code a sink can filter on.
+ *
+ * A key holding nothing and a key holding work this form declined to read need different answers
+ * from a host: the first is a fresh start, the second is somebody's typing still on disk. Skipped in
+ * silence, the two were indistinguishable — and the shape moves for ordinary reasons, a field added
+ * or a collection row arriving from a server.
+ */
+test("a draft written by a form of another shape is reported, not skipped in silence", async () => {
+  const written = new Map();
+  const storage = {
+    read: (key) => written.get(key) ?? null,
+    write: (key, value) => written.set(key, value),
+    remove: (key) => written.delete(key),
+  };
+  const first = createForm({ a: field(""), b: field("") }, { draft: { key: "shape", storage, debounceMs: 0 }, devWarnings: false });
+  first.f.a.set("typed");
+  await new Promise((resolve) => setTimeout(resolve, 40));
+  first.destroy();
+
+  // The console line carries the sentence, a sink carries the code — the same division the refusal
+  // above uses, because a host filtering on a code should not have to match prose.
+  const reported = [];
+  const heard = [];
+  const realWarn = console.warn;
+  console.warn = (...parts) => heard.push(parts.map(String).join(" "));
+  let second;
+  try {
+    // One field more than the form that wrote it: a different shape by the only measure a draft has.
+    second = createForm(
+      { a: field(""), b: field(""), c: field("") },
+      { draft: { key: "shape", storage, debounceMs: 0 }, diagnostics: { report: (entry) => reported.push(entry.code) } },
+    );
+    await new Promise((resolve) => setTimeout(resolve, 40));
+  } finally {
+    console.warn = realWarn;
+  }
+
+  assert.equal(second.f.a.value(), "", "a draft of another shape must not be restored");
+  assert.ok(
+    reported.includes(MDY_DRAFT_NOT_RESTORED),
+    `the draft was left unread and no sink was told: ${JSON.stringify(reported)}`,
+  );
+  // Not also on the console: a supplied sink takes the diagnostic instead of it, which is the
+  // existing division and the reason this asserts the code rather than the prose.
+  assert.deepEqual(heard, [], "a sink was given, so the console is not the channel");
+  assert.ok(written.has("shape"), "and it is left where it is, for the form that wrote it");
   second.destroy();
 });
