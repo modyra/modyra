@@ -43,6 +43,8 @@ const PART_SEMANTICS: Readonly<Record<string, MdyWidgetSemanticElement>> = Objec
   // Decoration: it carries meaning for the eye, and none for assistive technology.
   arrow: "presentation", indicator: "presentation", thumb: "presentation", preview: "presentation",
   optionCheck: "presentation", optionControl: "presentation", dialHand: "presentation",
+  // Drawn surfaces with nothing to operate: the layer of dimmed stretches and each stretch in it.
+  dialUnavailable: "presentation", dialUnavailableArc: "presentation",
   dialFace: "presentation",
   // The numbers are painted on the face; the face takes the pointer, so they announce nothing.
   dialNumber: "presentation",

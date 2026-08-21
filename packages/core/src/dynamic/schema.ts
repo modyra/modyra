@@ -194,6 +194,14 @@ export interface MdyDynamicDateField extends MdyDynamicFieldBase, MdyDynamicCale
    * jumps, which is today's behaviour and the one that never shows a value where it is not.
    */
   readonly animateHand?: boolean;
+  /**
+   * Whether the dial shows which stretches of its ring carry no selectable time — `timepicker` only.
+   *
+   * Named for what it shows rather than for how it looks: a theme may express it as a dimmed arc or
+   * as something else. Absent draws a ring that looks the same all the way round, which is what a
+   * face with no declared granularity honestly is.
+   */
+  readonly showUnavailable?: boolean;
 }
 
 /** A stretch of the day with a minute step of its own. Half-open: `from` inclusive, `to` exclusive. */

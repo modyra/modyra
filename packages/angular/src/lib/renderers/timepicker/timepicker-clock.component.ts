@@ -1,9 +1,11 @@
 import { handLengthOf } from "./hand-length";
 import {
+  afterNextRender,
   ChangeDetectionStrategy,
   Component,
   computed,
   effect,
+  Injector,
   DestroyRef,
   ElementRef,
   inject,
@@ -32,6 +34,8 @@ import {
   timepickerDialPick,
   timepickerDialRing,
   timepickerDialTolerance,
+  timepickerDialUnavailableArcs,
+  MDY_TIMEPICKER_INNER_RING,
   timepickerSelectedRing,
   timeStepsAt,
   MDY_EVERY_TIME,
@@ -58,6 +62,25 @@ export class MdyTimepickerClockComponent {
   readonly granularity = input<MdyTimeGranularity | undefined>(undefined);
   /** Whether the hand moves rather than jumps. Off by default: today's behaviour exactly. */
   readonly animateHand = input<boolean>(false);
+  /**
+   * Whether the ring shows which of its stretches carry no selectable time. Off by default.
+   *
+   * Named for what it shows rather than for how it looks: a theme may express it as a dimmed arc or
+   * as something else entirely.
+   */
+  readonly showUnavailable = input<boolean>(false);
+
+  /** The stretches this face offers nothing in, per ring — the inner one's are wider. */
+  protected readonly unavailable = computed(() => {
+    if (!this.showUnavailable()) return [];
+    const hand = this.dragHandLength();
+    const rings = this.format() === "24h" && this.focusedField() === "hour"
+      ? (["outer", "inner"] as const)
+      : (["outer"] as const);
+    return rings.flatMap((ring) =>
+      timepickerDialUnavailableArcs(this.focusedField(), this.format(), this.steps(), hand, ring)
+        .map((arc) => ({ ...arc, ring, span: ((arc.to - arc.from) + 360) % 360 })));
+  });
 
   /**
    * The steps in force for the time on screen.
@@ -91,6 +114,9 @@ export class MdyTimepickerClockComponent {
 
   // The clock is the picker: `MdyTimepickerFieldState.viewMode` in @modyra/widgets says a timepicker
   // opens on it, and the mode toggle is how a user asks for the number fields instead.
+  /** The inner ring's arcs are drawn on a smaller circle — the contract's fraction, not a guess. */
+  protected readonly innerRingScale = MDY_TIMEPICKER_INNER_RING;
+
   protected readonly viewMode = signal<"input" | "dial">("dial");
   protected readonly focusedField = signal<"hour" | "minute">("hour");
   protected readonly isDragging = signal(false);
@@ -114,6 +140,7 @@ export class MdyTimepickerClockComponent {
   private switchTimer: ReturnType<typeof setTimeout> | null = null;
 
   private readonly dialFaceRef = viewChild<ElementRef<HTMLElement>>("dialFace");
+  private readonly injector = inject(Injector);
 
   constructor() {
     inject(DestroyRef).onDestroy(() => {
@@ -125,6 +152,15 @@ export class MdyTimepickerClockComponent {
     // shown" looks like here.
     effect(() => {
       if (this.open() && this.viewMode() === "dial") this.focusDial();
+    });
+    // The dimmed stretches are angles at a radius, so the face has to have been measured before any
+    // of them can be drawn — and unlike the ghost they are on screen before anybody touches it.
+    effect(() => {
+      if (!this.open() || this.viewMode() !== "dial") return;
+      afterNextRender(() => {
+        const el = this.dialFaceRef()?.nativeElement;
+        if (el) this.dragHandLength.set(handLengthOf(el, el.getBoundingClientRect()));
+      }, { injector: this.injector });
     });
   }
 

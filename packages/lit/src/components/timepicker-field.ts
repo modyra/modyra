@@ -19,6 +19,8 @@ import {
   timepickerDialGhost,
   timepickerDialPick,
   timepickerDialTolerance,
+  timepickerDialUnavailableArcs,
+  MDY_TIMEPICKER_INNER_RING,
   timepickerSelectedRing,
   timeStepsAt,
   MDY_EVERY_TIME,
@@ -56,6 +58,7 @@ const RESTING: MdyTimepickerFieldState = Object.freeze({
   format: "12h",
   granularity: undefined,
   animateHand: false,
+  showUnavailable: false,
   invalid: false,
   disabled: false,
   interactivity: "enabled",
@@ -75,6 +78,7 @@ export class MdyTimepickerFieldElement extends MdyFieldElement<string | null> {
     format: { type: String },
     granularity: { type: Object },
     animateHand: { type: Boolean },
+    showUnavailable: { type: Boolean },
     compact: { type: Boolean },
     _open: { state: true },
     _isDragging: { state: true },
@@ -93,6 +97,8 @@ export class MdyTimepickerFieldElement extends MdyFieldElement<string | null> {
   declare granularity: MdyTimeGranularity | undefined;
   /** Whether the hand moves rather than jumps. Off by default: today's behaviour exactly. */
   declare animateHand: boolean;
+  /** Whether the dial shows which stretches of its ring carry no selectable time. Off by default. */
+  declare showUnavailable: boolean;
   /** Compact period-toggle layout. */
   declare compact: boolean;
   declare _open: boolean;
@@ -137,6 +143,16 @@ export class MdyTimepickerFieldElement extends MdyFieldElement<string | null> {
    * Both members are the pointer's: it answers "what happens if I release now", while the real hand
    * answers "what is chosen". A picker offering every time never draws one.
    */
+  /** The stretches this face offers nothing in, per ring — the inner one's are wider. */
+  private unavailableArcs(field: "hour" | "minute"): ReadonlyArray<{ from: number; span: number; ring: "outer" | "inner" }> {
+    const draft = this.fieldController?.state().draft;
+    const steps = draft ? timeStepsAt(this.granularity, to24Hour(draft)) : MDY_EVERY_TIME;
+    const rings = this.format === "24h" && field === "hour" ? (["outer", "inner"] as const) : (["outer"] as const);
+    return rings.flatMap((ring) =>
+      timepickerDialUnavailableArcs(field, this.format, steps, this.measuredHandLength(), ring)
+        .map((arc) => ({ from: arc.from, span: ((arc.to - arc.from) + 360) % 360, ring })));
+  }
+
   private ghost(): { angle: number; ring: "outer" | "inner"; reach: number } | null {
     if (!this._isDragging || this._dragAngle === null) return null;
     const draft = this.fieldController?.state().draft;
@@ -464,6 +480,22 @@ export class MdyTimepickerFieldElement extends MdyFieldElement<string | null> {
     this._dragAngle = null;
   }
 
+  /**
+   * The face's own hand length, measured from the drawn element.
+   *
+   * The dimmed stretches are angles at a radius, so unlike the ghost they need this before anybody
+   * has touched the dial — a drag is the only thing that used to measure it.
+   */
+  private measuredHandLength(): number {
+    const el = this.querySelector<HTMLElement>(".mdy-timepicker-dial__face");
+    if (!el) return this._dragHandLength;
+    const declared = getComputedStyle(el).getPropertyValue("--tp-hand-length").trim();
+    const measured = Number.parseFloat(declared);
+    return Number.isFinite(measured) && measured > 0
+      ? measured
+      : el.getBoundingClientRect().width / 2;
+  }
+
   private updateAngle(event: MouseEvent | TouchEvent): void {
     const el = this.querySelector<HTMLElement>(".mdy-timepicker-dial__face");
     if (!el) return;
@@ -594,6 +626,17 @@ export class MdyTimepickerFieldElement extends MdyFieldElement<string | null> {
                 : ""}"
               style="transform: rotate(${this.handRotation()}deg)"
             ></div>
+            <!-- Which stretches of the ring offer nothing, behind everything else on the face. -->
+            ${this.showUnavailable
+              ? html`<div class="mdy-timepicker-dial__unavailable-layer" aria-hidden="true">
+                  ${this.unavailableArcs(field).map((arc) => html`<div
+                    class="mdy-timepicker-dial__unavailable"
+                    style="--tp-arc-from: ${arc.from}deg; --tp-arc-span: ${arc.span}deg${arc.ring === "inner"
+                      ? `; scale: ${MDY_TIMEPICKER_INNER_RING}`
+                      : ""}"
+                  ></div>`)}
+                </div>`
+              : nothing}
             <!-- Where the pointer is, when that is not where the value went. Drawn only then. -->
             ${(() => {
               const under = this.ghost();

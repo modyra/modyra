@@ -2818,6 +2818,33 @@
         height: calc(var(--tp-hand-length) * var(--tp-inner-ring));
     }
 
+    /* The stretches of the ring that carry no time anybody can land on.
+     *
+     * A face declared with a step draws a few numbers and the rest of the circle looks exactly like
+     * them — continuous, uniform, offering nothing. Which arcs those are is the contract's
+     * (`timepickerDialUnavailableArcs`); this only says what they look like, and a theme may say
+     * something else. Behind the numbers and behind the hand, because it is the surface they sit on
+     * rather than a thing in front of them. */
+    /* The layer the dimmed stretches sit in. Behind the numbers, which is what `z-index: 0` on the
+     * slices does not achieve on its own once the hand is positioned. */
+    .mdy-timepicker-dial__unavailable-layer {
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+    }
+
+    .mdy-timepicker-dial__unavailable {
+        position: absolute;
+        inset: 0;
+        border-radius: 50%;
+        pointer-events: none;
+        z-index: 0;
+        background: conic-gradient(from var(--tp-arc-from, 0deg),
+            var(--tp-unavailable-color, color-mix(in srgb, var(--mdy-on-surface), transparent 94%)) 0deg,
+            var(--tp-unavailable-color, color-mix(in srgb, var(--mdy-on-surface), transparent 94%)) var(--tp-arc-span, 0deg),
+            transparent var(--tp-arc-span, 0deg));
+    }
+
     /* A hand that moves rather than jumps, when the host asks for it.
      *
      * Off by default, because a hand that animates is a hand that is briefly not where the value is

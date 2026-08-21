@@ -12,9 +12,11 @@ test("the published contract version names the anatomy this suite checks", () =>
   // number describes", and a test that took whatever it found would agree with any anatomy. It moved
   // to 2 for the release that removed `datepicker.actions` and `daterange.actions` and turned
   // `multiselect.searchButton` into an `input` with `role="combobox"`, to 3 for the multiselect
-  // popup becoming a dialog, and to 4 when a boolean's drawn box moved inside its label: the wrapper
-  // stopped being a `<label>`, so the box needed a parent that still forwards a click.
-  assert.equal(MDY_WIDGET_CONTRACT_VERSION, 4);
+  // popup becoming a dialog, to 4 when a boolean's drawn box moved inside its label — the wrapper
+  // stopped being a `<label>`, so the box needed a parent that still forwards a click — and to 5
+  // when a timepicker's dial gained the layer of stretches that carry no selectable time, which
+  // sits between the face and the hand, so a renderer built against 4 draws it nowhere.
+  assert.equal(MDY_WIDGET_CONTRACT_VERSION, 5);
   assert.deepEqual(inspectWidgetStructure(MDY_FIELD_SHELL_STRUCTURE), []);
   assert.deepEqual(Object.keys(MDY_FIELD_SHELL_CLASSES), [
     "root", "label", "requiredMarker", "inputWrapper", "prefix", "control",
