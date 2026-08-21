@@ -19961,3 +19961,47 @@ changed from it. Classes read from `MDY_WIDGET_CONTRACTS` so they survive the re
 **Nothing here is a new rule.** Every part named is already in the contract; what is missing is that
 anybody draws them. That is the whole of the perimeter answer: the redesign does not need to invent an
 anatomy, it needs to finish rendering the one that exists.
+
+## 353 — A choice lands and nobody is told (S1, A11Y-001/A11Y-004)
+
+Asked for directly: *"UIX deve essere anche chiara l'usabilità e l'accessibilità."* This is the half of
+the perimeter no screenshot shows.
+
+A multiselect exists to accumulate choices, and the chips strip is the feedback that they accumulated.
+Somebody using a screen reader does not get the strip — they get whatever the control says out loud.
+Measured: open, choose, close.
+
+```
+plain     region present, aria-live="polite", text "" throughout · value became ["a"]
+lit       no live region at all
+angular   no live region at all
+```
+
+**Plain's region exists, is polite, and is never written to.** That is worse than having none: an empty
+`aria-live` reads to a reviewer as the problem already being handled. Somebody put it there, which
+means somebody meant to announce and stopped.
+
+**What plain does say is good**, and it is worth recording beside the gap so the fix does not undo it:
+
+```
+trigger    aria-label "Ingredienti" · role combobox · aria-expanded false · aria-describedby
+chip       aria-label "Opzione A, 2"      the comma separates the label from the count
+```
+
+That chip name closes the ambiguity I filed under 352 — *"a reader hears 'Opzione A 3' with nothing
+saying which is which"* — and it was fixed between that finding and this one.
+
+**The battle asserts three things and not the wording**, which is a design decision belonging to
+whoever writes it: that something is said, that it is about the choice, and **that it changes when the
+choice changes again**. The last one because a region written once announces the first choice and
+silently swallows every one after — which passes any test that only makes one choice.
+
+### Two fixture faults of mine, fixed on the way
+
+- **The option selector was written by hand.** It looked for `[role="option"]` and
+  `.mdy-multiselect__option`; this popup renders options as chips, so the spec found nothing and blamed
+  the control for choosing nothing. It derives the selector from `MDY_WIDGET_CONTRACTS` now — the same
+  correction I have now made four times, and the rule is simple enough that I should stop needing it:
+  **a spec that names the DOM it expects goes red on an anatomy change rather than on a defect.**
+- **The clicks were unbounded**, so a control that never became actionable hung for the full 150-second
+  timeout and reported *"the browser was closed"* instead of what it was waiting for.
