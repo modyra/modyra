@@ -19165,3 +19165,51 @@ in `known-red.json`.
 **Reachability**: needs the pointer at the exact centre pixel, so it is rare with a mouse and less rare
 with integer touch coordinates. Filed at S1 for the discontinuity rather than the frequency — a
 function that inverts at a value in its own domain is wrong regardless of how often it is asked.
+
+## 337 — The fix for 336 hands CSS a length it will not take (S1, UI-011 — regression, handed to esecutore)
+
+Found by probing `1b9ad897` rather than by accepting it green. The guard moved from magnitude to
+presence, which is right and is what ADR 0121 asks for:
+
+```ts
+const reach = hand > 0 && pointer !== undefined ? Math.min(Math.max(pointer, 0) / hand, 1) : 1;
+```
+
+`pointer !== undefined` is **true of `NaN`**, so `NaN` now flows through the arithmetic and out:
+
+```
+pointerReach NaN         reach = NaN     finite: false
+pointerReach undefined   reach = 1
+pointerReach 0           reach = 0       ← 336, correctly fixed
+pointerReach -5          reach = 0
+pointerReach Infinity    reach = 1
+```
+
+The previous guard, `pointer > 0`, was false for `NaN` and answered `1` — the wrong length, but a
+finite one the sheet would accept.
+
+**Why non-finite is worse than wrong.** `reach` is written into `--tp-ghost-reach` and multiplied by
+`--tp-hand-length`. A declaration whose value does not parse is **dropped**, and a dropped declaration
+leaves the property at its previous value. So the hand does not draw a wrong length — it draws the
+*last* length and stops responding. A frozen hand reads as a hand that is tracking something.
+
+**This is ADR 0121 read from the other end.** The record says a legitimate value must not be
+indistinguishable from its own absence. The dual: an **illegitimate** value must not be
+indistinguishable from a legitimate one. A presence check answers the first question and not the
+second, and `NaN` is precisely the value that is present without being a number. Worth an amendment to
+0121 rather than a separate rule — it is the same guard, failing the other way.
+
+**Battle**: `a-length-css-will-not-take.battle.test.mjs`, asserted as *the result is a finite fraction
+in [0,1]* over every input the signature admits, so it also covers `Infinity` and whatever the next
+caller passes. `known-red.json` updated — 336's battle dropped, this one added.
+
+**Reachability, honestly**: the shipped renderers derive `pointerReach` from a rect whose fields are
+always defined, so `NaN` is not reproducible from the current adapters. Filed as a contract defect, not
+as a reproduction — a function that feeds CSS owes CSS a usable number, and this arithmetic is the
+first thing a new adapter will call.
+
+**Related, not fixed here**: `timepickerDialRing` and `timepickerDialTolerance` guard with
+`!(handLength > 0)`, which swallows `NaN` as "absent" and answers `"outer"` and `0`. That is how my own
+malformed call earlier tonight returned `"outer"` at every radius — a broken call wearing a plausible
+answer. It is the safer direction of the same gap, and it is the reason the positional-parameter split
+in ADR 0121 is worth keeping.
