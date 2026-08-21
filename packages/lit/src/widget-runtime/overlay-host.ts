@@ -5,7 +5,7 @@
  * focus is restored — is `overlayLifecycleTransition` in `@modyra/widgets`. These helpers only
  * carry the element's `_open` flag in and out of it, so no element re-decides the policy locally.
  */
-import { blocksFocus, createLightDismiss, MDY_WIDGET_CONTRACTS, overlayLifecycleTransition, type MdyOverlayLifecycleIntent, bindLightDismiss } from "@modyra/widgets";
+import { blocksFocus, createLightDismiss, MDY_WIDGET_CONTRACTS, overlayLifecycleTransition, type MdyOverlayLifecycleIntent, type MdyWidgetKind, timepickerPartSelector, bindLightDismiss } from "@modyra/widgets";
 import type { MdyInteractivity } from "@modyra/core";
 
 /** A teardown for the case where nothing was bound. */
@@ -78,6 +78,14 @@ export function applyWidgetCommands(
     readonly disabled: boolean;
     /** The selector focus returns to, which is the control the popup hangs off. */
     readonly control: string;
+    /**
+     * Which kind's parts a `focus` command names.
+     *
+     * Given rather than looked up from the host, because the class that carries a part is the
+     * catalogue's answer and a component reading its own template for it is a component that can
+     * disagree with the contract about where focus went.
+     */
+    readonly kind?: MdyWidgetKind;
   },
 ): void {
   for (const command of commands) {
@@ -91,6 +99,32 @@ export function applyWidgetCommands(
     }
     if (command.type === "restore-focus") {
       host.querySelector<HTMLInputElement>(options.control)?.focus();
+    }
+    // A controller that says where focus belongs is answered here for the same reason the other
+    // three are: what a popup does when told is not a per-kind question, and three components each
+    // resolving a part to a selector is three chances to resolve it differently.
+    if (command.type === "focus" && options.kind) {
+      const part = (command as { readonly target?: { readonly part?: string } }).target?.part;
+      // The contract's selector, not the part's own class: two parts of a timepicker carry the same
+      // class, so a class alone resolves the minute box to the hour one.
+      const selector = part && options.kind === "timepicker"
+        ? timepickerPartSelector(part)
+        : part
+          ? `.${(MDY_WIDGET_CONTRACTS[options.kind].parts as Readonly<Record<string, { readonly classes: readonly string[] } | undefined>>)[part]?.classes[0] ?? ""}`
+          : null;
+      // After the host has rendered, not before it. A popup that is being opened by this same batch
+      // of commands does not exist yet, and focusing an element that is not there is a silent no-op
+      // — no error, no warning, and a keyboard user left on the body.
+      if (selector) {
+        // After the host has rendered, not before it. `updateComplete` is the promise for the update
+        // *already* in flight, and this command arrives before the one that draws the popup is even
+        // requested — so awaiting it once lands before the element exists. Awaiting it twice waits
+        // for the render this batch causes.
+        const focusWhenDrawn = () => host.querySelector<HTMLElement>(selector)?.focus();
+        const pending = (host as { readonly updateComplete?: Promise<unknown> }).updateComplete;
+        if (pending) void pending.then(() => (host as { readonly updateComplete?: Promise<unknown> }).updateComplete).then(focusWhenDrawn);
+        else queueMicrotask(focusWhenDrawn);
+      }
     }
   }
 }

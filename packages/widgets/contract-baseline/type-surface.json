@@ -3466,6 +3466,10 @@
     "(0) field: \"hour\" | \"minute\"",
     "-> returns: \"hourControl\" | \"minuteControl\""
   ],
+  "timepickerPartSelector": [
+    "(0) part: string",
+    "-> returns: string | null"
+  ],
   "timepickerSelectedDialValue": [
     "(0) field: \"hour\" | \"minute\"",
     "(1) draft: ParsedTime",
