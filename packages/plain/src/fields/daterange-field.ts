@@ -161,6 +161,10 @@ export function renderDaterangeField(
     if (event.key === "Escape" || event.key === "Tab") dispatch({ type: "cancel" });
   };
   popup.addEventListener("keydown", onEscape);
+  // Leaving the calendar ends the preview: the highlight belongs to where the pointer is, and a
+  // pointer that has left is nowhere. The committed range comes back on its own, because it is what
+  // `previewed` falls back to.
+  grid.addEventListener("pointerleave", () => dispatch({ type: "preview", iso: null }));
   wrapper.addEventListener("keydown", onEscape);
 
   const undismiss = dismissOnOutsidePointer([wrapper], () => controller.state().open, () => dispatch({ type: "cancel" }));
@@ -170,6 +174,26 @@ export function renderDaterangeField(
 
   const untrack = trackOverlay(popup, shell.wrapper, () => controller.state().open, anchoring);
 
+  /**
+   * The range a second pick would produce, while the pointer is still deciding.
+   *
+   * The contract has carried this since the kind existed: `{ type: "preview", iso }` is an intent,
+   * the controller publishes `previewed`, and the `gridcell` part declares `inRange`, `rangeStart`
+   * and `rangeEnd`. This renderer already painted all three — from `state.previewed` — and never
+   * told the controller where the pointer was, so the highlight could only ever show a range that
+   * was already committed.
+   *
+   * Rebound with the cells: `fillCalendar` replaces them on a month change, and a listener on a
+   * button that is no longer in the document tells nobody anything.
+   */
+  function trackPreview(): void {
+    for (const [iso, button] of cellEls) {
+      button.addEventListener("pointerenter", () => dispatch({ type: "preview", iso }));
+      // A keyboard moves the range the same way a pointer does: the focused cell is where the
+      // person is deciding, whichever device put them there.
+      button.addEventListener("focus", () => dispatch({ type: "preview", iso }));
+    }
+  }
   const effectRef = reactivity.effect(() => {
     const state = controller.state();
     const anchor = { year: state.viewYear, month: state.viewMonth, day: 1 };
@@ -241,6 +265,7 @@ export function renderDaterangeField(
         dispatch({ type: "select-date", iso: cell.iso }),
       );
       renderedMonth = monthKey;
+      trackPreview();
     }
     // Which cell is an endpoint and which falls between them is the controller's answer. Comparing
     // ISO strings here was a fourth opinion, and it could not see a preview at all.
