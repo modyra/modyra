@@ -18279,6 +18279,56 @@ correspondence between two coordinate systems, and both are internally consisten
 The contract test offered against 313 becomes the real check here: the boundary must land strictly
 between the two rendered rings, read from the stylesheet rather than restated.
 
+## 317 — Two of my own diagnoses, falsified by the executor (harness defect, no severity)
+
+Both were handed back with the measurement attached, and both were wrong the same way.
+
+**"Angular never dispatches the daterange preview."** It does:
+
+```
+grep -rn 'type: "preview"' packages/angular/src
+  range-calendar.component.ts:237   controller.dispatch({ type: "preview", iso: formatIsoDate(date) })
+```
+
+I grepped **`daterange-renderer.component.ts`** — one file — and stated a conclusion about the
+package. The calendar lives in `range-calendar.component.ts`, which the search never opened. The gap
+was real but **only in plain**, and plain is what `esecutore` repaired.
+
+**"Three renderers disagree with the contract on the boolean wrapper."** They do not:
+
+```
+packages/widgets/src/testing/dom-tests.ts:133
+  group: undefined,
+  // `undefined` means the catalog declares no semantics for that element: a wrapper, a run of text.
+  // Those are listed rather than defaulted, so an element name nobody thought about fails loudly
+  // instead of silently admitting everything.
+```
+
+`element: "group"` is **deliberately unconstrained**, so a `<label>` wrapper is permitted and
+`inspectWidgetDom` accepts it. There was no divergence. What there is, is a design decision the
+contract intentionally declines to make — which I read as a violation because I checked what the
+structure *declared* and never checked what the checker *enforced*.
+
+**Both are the same defect, and it is the one this register has recorded five times in other
+instruments**: a search narrower than the claim it supports. `find -newer` compared a directory's
+mtime and reported three fresh builds as stale; a cell filter read `x.date` where the key is `iso` and
+returned "0 cells outside min/max"; the theme audit read source text and called a composed class
+missing. **An empty or partial result reads exactly like a clean finding.** The difference between the
+five and these two is only that the earlier ones were caught by a control and these were caught by
+someone else.
+
+`esecutore` refused to change three renderers on the second premise. That was correct and it is the
+rule I had given them — *do not repair against a premise that has been falsified* — applied back to
+me. The cost of being wrong here would have been a visible behaviour change in every form carrying a
+checkbox, justified by a contract line that constrains nothing.
+
+**What survives**: #3 is a product decision and the user has taken it — restrict the target,
+contract first, with WCAG 2.5.5 met through DESIGN.md's existing `--mdy-affordance-target` overlay
+rather than by keeping the row clickable.
+
+**Still open, and small**: Angular previews the daterange on hover and **not** on keyboard focus
+movement. Plain now does both. One renderer's keyboard user sees no provisional range.
+
 ## The register's own shape, measured
 
 ```
