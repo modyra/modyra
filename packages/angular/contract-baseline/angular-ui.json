@@ -284,7 +284,6 @@
     "mdy-timepicker-segment--hour",
     "mdy-timepicker-segment--minute",
     "mdy-timepicker-segment-input",
-    "mdy-timepicker-segment-input--readonly",
     "mdy-timepicker-segment-label",
     "mdy-timepicker-separator",
     "mdy-timepicker-spacer",
@@ -1180,7 +1179,6 @@
         "mdy-timepicker-segment--hour",
         "mdy-timepicker-segment--minute",
         "mdy-timepicker-segment-input",
-        "mdy-timepicker-segment-input--readonly",
         "mdy-timepicker-segment-label"
       ],
       "aria": [

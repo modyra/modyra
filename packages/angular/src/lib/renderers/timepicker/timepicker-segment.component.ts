@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, input, output } from "@angular/core";
-import { acceptTimeField, MDY_EVERY_TIME, stepTimeField, timeFieldBounds, type MdyTimeSteps } from "@modyra/widgets";
+import { acceptTimeField, MDY_EVERY_TIME, MDY_WIDGET_CONTRACTS, stateClass, stepTimeField, timeFieldBounds, type MdyTimeSteps } from "@modyra/widgets";
 import type { MdyTimeFormat } from "@modyra/core/datetime";
 
 @Component({
@@ -21,7 +21,7 @@ import type { MdyTimeFormat } from "@modyra/core/datetime";
         [step]="bounds().step"
         [attr.aria-invalid]="outOfRange() ? 'true' : null"
         [attr.title]="outOfRange() ? bounds().min + '–' + bounds().max : null"
-        [class.mdy-timepicker-segment-input--readonly]="readonly()"
+        [class]="readonly() ? readonlyClass : ''"
         [value]="value()"
         [disabled]="disabled()"
         [readonly]="readonly()"
@@ -60,6 +60,12 @@ export class MdyTimepickerSegmentComponent {
    * second answer to a question the controller already answers.
    */
   readonly steps = input<MdyTimeSteps>(MDY_EVERY_TIME);
+
+  /** The state class the catalogue declares for a segment that refuses edits. */
+  protected readonly readonlyClass = stateClass(
+    MDY_WIDGET_CONTRACTS.timepicker.parts.hourControl.classes[0]!,
+    "readonly",
+  );
 
   /** The range the contract states for this segment, rather than a literal beside the template. */
   protected readonly bounds = computed(() => timeFieldBounds(this.unit(), this.format(), this.steps()));

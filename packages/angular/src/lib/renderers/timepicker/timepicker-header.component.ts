@@ -15,6 +15,7 @@ import { MdyTimepickerPeriodToggleComponent } from "./timepicker-period-toggle.c
           unit="hour"
           [format]="format()"
           [steps]="steps()"
+          [readonly]="readonly()"
           [value]="hour()"
           [label]="i18n.timepickerHourLabel"
           [active]="focusedField() === 'hour'"
@@ -32,6 +33,7 @@ import { MdyTimepickerPeriodToggleComponent } from "./timepicker-period-toggle.c
           unit="minute"
           [format]="format()"
           [steps]="steps()"
+          [readonly]="readonly()"
           [value]="minute()"
           [label]="i18n.timepickerMinuteLabel"
           [active]="focusedField() === 'minute'"
@@ -58,6 +60,14 @@ import { MdyTimepickerPeriodToggleComponent } from "./timepicker-period-toggle.c
 })
 export class MdyTimepickerHeaderComponent {
   protected readonly i18n = inject(MDY_I18N_MESSAGES);
+  /**
+   * Whether the field itself refuses edits.
+   *
+   * The *view* used to decide this — the boxes were locked whenever the clock was showing, which is
+   * the one state they most need to be usable in. A read-only field is a different claim and the
+   * one the class was always meant to carry.
+   */
+  readonly readonly = input<boolean>(false);
   readonly hour = input.required<string>();
   readonly minute = input.required<string>();
   readonly period = input.required<'AM' | 'PM'>();

@@ -3030,7 +3030,9 @@
           "classes": [
             "mdy-timepicker-segment-input"
           ],
-          "states": []
+          "states": [
+            "readonly"
+          ]
         },
         "minute": {
           "element": "group",
@@ -3056,7 +3058,9 @@
           "classes": [
             "mdy-timepicker-segment-input"
           ],
-          "states": []
+          "states": [
+            "readonly"
+          ]
         },
         "period": {
           "element": "group",
