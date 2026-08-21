@@ -21012,6 +21012,17 @@ differing is right; the part's name differing is the finding.**
 Owned by `esecutore`. It wants `contract:diff` and a changeset if the name changes, so it is its own
 commit rather than a rider.
 
+Pinned by
+[`../adversarial/widgets/a-part-two-kinds-spell-differently.battle.test.mjs`](../adversarial/widgets/a-part-two-kinds-spell-differently.battle.test.mjs),
+which derives the comparison rather than listing the kinds: any kind declaring an `option` is asked
+what it calls the thing its options sit in.
+
+**A calendar is deliberately outside the comparison.** A datepicker and a daterange both call their
+popup's contents `grid`, and the first version of this battle counted that as a third spelling. A grid
+of days is not a list of options — it declares no `option`, its cells are addressed by two axes, and
+naming it the way a select names its list would be this same defect in reverse. The catalogue's own
+`option` part is what separates them, so nothing about calendars is written into the file.
+
 
 ### 366 — half landed, and the half that is left is the one worth having
 
