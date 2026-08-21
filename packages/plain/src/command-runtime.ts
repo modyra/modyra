@@ -1,9 +1,15 @@
 /**
- * Executing widget commands with no host to wait for.
+ * Executing widget commands, and the beat this renderer waits for.
  *
- * The execution is `@modyra/widgets`'. What this renderer contributes is the beat: it writes to the
- * document itself, so there is nothing scheduled between a command and its effect and focus can be
- * taken immediately. Every other adapter has to wait for its host to render first.
+ * The execution is `@modyra/widgets`'. What this renderer contributes is *when*: it writes to the
+ * document itself, so it has no framework render to wait for — but it does have its own. Its parts
+ * are synced from a reactive effect that runs after the dispatch returns, and until that effect has
+ * run the popup is still `hidden`.
+ *
+ * Focus was taken immediately on the strength of "there is nothing scheduled between a command and
+ * its effect", and that is true of everything except the thing the effect does. Focusing an element
+ * inside a hidden popup is a silent no-op — no error, no warning, and a keyboard user left on the
+ * body — which is what an opening picker did.
  */
 import {
   createCommandRuntime,
@@ -15,7 +21,7 @@ import {
 
 const runtime = createCommandRuntime({
   announcerId: "mdy-plain-announcer",
-  defer: (run) => { run(); },
+  defer: (run) => queueMicrotask(run),
 });
 
 /** This renderer's live region, so anything that has to be said reaches the same place. */

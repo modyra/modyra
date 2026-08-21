@@ -34,6 +34,7 @@ import {
   timeStepsAt,
   stateClass,
   timepickerSelectedDialValue,
+  timepickerTabTarget,
   type MdyElementLookup,
   type MdyI18nMessages,
 } from "@modyra/widgets";
@@ -181,7 +182,17 @@ export function renderTimepickerField(
   insertControl(shell, wrapper);
   container.appendChild(shell.root);
 
-  const lookup: MdyElementLookup = (part) => (part === "trigger" ? control : undefined);
+  // Every part the contract can name in a command. `hourControl` and `minuteControl` are here
+  // because focus is now the contract's to place: a renderer choosing its own selector is a renderer
+  // that can disagree with the state about where focus went.
+  const focusable: Readonly<Record<string, HTMLElement>> = {
+    hourControl: hourInput,
+    minuteControl: minuteInput,
+    modeToggle,
+    action: confirmButton,
+    periodOption: periodOptions[0]!,
+  };
+  const lookup: MdyElementLookup = (part) => (part === "trigger" ? control : focusable[part]);
   function dispatch(intent: Parameters<typeof controller.dispatch>[0]): void {
     const commands = controller.dispatch(intent);
     runCommands(commands, lookup, {
@@ -281,7 +292,22 @@ export function renderTimepickerField(
   // panel floating over a control the user has already left. Both dismiss, and they differ in where
   // focus lands — Escape hands it back to the opener, Tab leaves it where the key was taking it.
   const onEscape = (event: KeyboardEvent) => {
-    if (event.key === "Escape" || event.key === "Tab") dispatch({ type: "cancel" });
+    if (event.key === "Escape") dispatch({ type: "cancel" });
+    // The dialog sits inside the wrapper and this handler is on both, so a key pressed in the popup
+    // arrives twice. Escape does not care — cancelling twice cancels once — but a Tab handled twice
+    // moves two stops and silently skips the minute box.
+    if (event.key !== "Tab" || event.defaultPrevented || !controller.state().open) return;
+    // Tab moves inside the dialog rather than dismissing it. The popup holds a confirm button, and
+    // a Tab that closed the picker left that button unreachable — so the widget's only way to
+    // commit was a pointer. The order is the contract's, and it wraps: `Escape` is the way out.
+    event.preventDefault();
+    const from = Object.keys(focusable).find((part) => focusable[part] === document.activeElement);
+    const next = timepickerTabTarget(from ?? "", format, event.shiftKey ? -1 : 1);
+    if (next === "hourControl" || next === "minuteControl") {
+      dispatch({ type: "focus-field", field: next === "hourControl" ? "hour" : "minute" });
+    } else {
+      focusable[next]?.focus();
+    }
   };
   wrapper.addEventListener("keydown", onEscape);
   dialog.addEventListener("keydown", onEscape);
@@ -379,8 +405,8 @@ export function renderTimepickerField(
     lastRing = undefined;
     // The gesture is over, so there is no pointer to be somewhere else than the value.
     ghostHand.hidden = true;
-    // Hours hand over to minutes once picked, so one gesture sets a whole time.
-    if (controller.state().focusedField === "hour") dispatch({ type: "focus-field", field: "minute" });
+    // The hour hands over to the minute by itself, after the moment the contract declares. This
+    // renderer used to do it here, immediately, where the other two waited 200ms and 300ms.
   };
   dialFace.addEventListener("pointerup", endDrag);
   dialFace.addEventListener("pointercancel", endDrag);
