@@ -54,15 +54,9 @@ const DECLARED = Object.entries(MDY_WIDGET_KEYBOARD)
 
 for (const host of HOSTS) {
   test(`${host.name}: every key a kind declares does something`, async ({ page }) => {
-    // Every binding the table declares, each mounted, primed, pressed and read at every part of the
-    // widget that can take focus. The default budget is for a spec that asks one question; this one
-    // asks the whole keyboard.
-    //
-    // **The number tracks the contract, not the machine.** It was set when the table held seventy-two
-    // bindings; the chip strip's map took the multiselect from nine to eleven and the spec ran out of
-    // budget mid-priming, which surfaced as an error inside the setup rather than as a failing
-    // assertion — a shape that reads as a broken fixture and is a spec that did not get to finish.
-    test.setTimeout(600_000);
+    // Seventy-two bindings, each mounted, primed, pressed and read. The default budget is for a
+    // spec that asks one question.
+    test.setTimeout(300_000);
     await page.goto(host.page);
     await page.waitForFunction((flag) => (window as never as Record<string, boolean>)[flag] === true, host.ready);
 
@@ -80,6 +74,11 @@ for (const host of HOSTS) {
         element.getAttribute("aria-selected"),
         (element as HTMLInputElement).value ?? null,
         (element as HTMLInputElement).checked ?? null,
+        // The roving index. A composite that moves the reading position between identical siblings
+        // moves this and nothing else — no attribute below changes, and the focused element's
+        // tag, id and classes are the same before and after because the siblings are the same. Four
+        // chip keys read as dead for three runs against an observation that could not see them move.
+        element.getAttribute("tabindex"),
         element.className,
       ].join("|"));
       // Where the reading position is, which for a group of radios is the only thing a `move`
@@ -103,6 +102,15 @@ for (const host of HOSTS) {
           const battle = (window as never as Record<string, { mountFields(id: string, f: unknown[]): unknown }>)[api];
           const field: Record<string, unknown> = { name: "f", kind: k, label: `L ${k}` };
           if (/select|radio|segmented/.test(k)) field.options = options;
+          // A key needs the state it acts on. A multiselect's strip keys move between chips and move
+          // a chip along the strip, so a control with nothing chosen answers none of them — not
+          // because they are missing, but because there is nothing there. `reorderable` is opt-in and
+          // its keys are declared unconditionally, which is finding 378: the table promises a key
+          // that a default control does not answer, and this fixture is the only place that shows it.
+          if (k === "multiselect") {
+            field.initialValue = options.slice(0, 3).map((option: { value: unknown }) => option.value);
+            field.reorderable = true;
+          }
           battle.mountFields(mountId, [field]);
         },
         { api: host.api, k: kind, mountId: id, options: OPTIONS },
@@ -164,17 +172,8 @@ for (const host of HOSTS) {
 
           // A move needs somewhere to move from: at the first option, `ArrowUp` and `Home` are
           // no-ops that mean the binding works, not that it is missing.
-          //
-          // **A reorder needs the same, and for the same reason.** `Alt+ArrowLeft` on the first chip of
-          // a strip moves it before itself; `ArrowLeft` there has no previous chip to reach. Both are
-          // correct implementations doing nothing, and both read as a missing binding — which is what
-          // this spec reported for three runs after the strip's keyboard map landed. The priming was
-          // written for `move` and the new intent inherited the trap rather than the remedy.
-          // One press, not two. Priming both directions for every binding doubled the presses across
-          // seventy-two of them and pushed a five-minute spec past its budget — the remedy has to cost
-          // what the thing it replaces cost.
-          if (binding.intent === "move" || binding.intent === "reorder") {
-            await page.keyboard.press(binding.intent === "reorder" ? "ArrowRight" : "ArrowDown");
+          if (binding.intent === "move") {
+            await page.keyboard.press("ArrowDown");
             await page.waitForTimeout(100);
           }
 

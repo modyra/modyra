@@ -21093,3 +21093,42 @@ shape, applied to my own instrument rather than to the code.
 Reverting to the version before my repair produced a run that finished, and the failing assertion
 underneath had been hidden for three attempts. The original red was never read until the fourth.
 
+
+### `every-key-a-kind-declares` on plain — two of four closed, two recorded rather than chased
+
+Four multiselect keys read as dead. Two of them are now answered and two are not, and the difference
+is worth more than either.
+
+```
+Alt+ArrowLeft · Alt+ArrowRight   answered once the fixture gave the field chips and `reorderable`
+ArrowLeft · ArrowRight           still read as dead, and they are not
+```
+
+**They work.** Probed directly on plain: focus chip 0, press `ArrowRight`, and the roving index moves
+`["0","-1","-1"] → ["-1","0","-1"]` with focus following it. What the spec could not see was that
+move — its observation records the focused element as `tag#id.class`, and two chips have no id and the
+same classes, so the string is identical before and after. `tabindex` is now sampled for exactly this
+reason, and it closed neither of the two, so **there is a second cause I have not found.**
+
+The candidates I can name and have not eliminated: the focusable-parts list is capped at four in
+document order, and a multiselect's first four are the trigger and the first chip's own buttons; and
+the chips sit *inside* the trigger button, so what "focusing a part" means there is not obvious.
+
+I stopped after five attempts. Recording where the search reached is worth more than a sixth guess,
+and the four attempts before this one were each a wrong turn dressed as progress:
+
+```
+the fixture mounted a bare multiselect          real, fixed
+priming the reorder keys                         made it hang, reverted
+doubling the budget from five minutes to ten     it timed out at ten as it had at five
+the observation could not see a roving index     real, fixed, and not the whole cause
+```
+
+**A budget that doubles without changing the outcome is not a cost, it is a block** — evidence I had
+at the second attempt and read at the fourth. Raising it made the block indistinguishable from
+slowness, which is [ADR 0121](../../docs/architecture/0121-a-value-indistinguishable-from-its-own-absence.md)'s
+shape turned on my own instrument.
+
+Pinned so the tier is honest about it. It is a spec-side gap and not a defect in plain, and [378](#378)
+is the contract question underneath it.
+
