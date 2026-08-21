@@ -57,7 +57,10 @@ for (const host of HOSTS) {
     await page.evaluate(({ api }) => {
       (window as never as Record<string, { mountFields(id: string, fields: unknown[]): unknown }>)[api]
         .mountFields("m", [{
-          name: "x", kind: "multiselect", label: "Tags",
+          // The filter box exists because this field asked for it. It is not drawn otherwise, and a
+          // spec that omitted the flag would be measuring a control that was never offered one —
+          // which is what this file did while every multiselect got a box whether it asked or not.
+          name: "x", kind: "multiselect", label: "Tags", searchable: true,
           options: [{ value: "a", label: "Alpha" }, { value: "b", label: "Beta" }],
         }]);
     }, { api: host.api });
