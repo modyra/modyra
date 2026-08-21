@@ -1772,6 +1772,16 @@
     .mdy-renderer .mdy-multiselect {
         min-width: 0;
         max-width: 100%;
+        /* `height`, not `min-height`. Every other control takes the field height as a floor and
+           holds one line of text, so the floor is also the ceiling for them; a multiselect holds
+           chips, and a floor alone let it grow — 38px beside its siblings became 54 empty and 62
+           with twelve chips, so a form's rows no longer lined up. What it holds may not decide how
+           tall it is; that is what the strip scrolling is for.
+
+           A ceiling rather than a fixed height: the floor is already the shared rule's, and stating
+           `height` here made the box exactly the token where its siblings are the token *plus their
+           border* — two pixels short in a renderer that draws one. */
+        max-height: var(--mdy-input-height);
     }
 
     .mdy-multiselect__trigger {
@@ -1801,7 +1811,11 @@
         min-width: 0;
         overflow-x: auto;
         overflow-y: hidden;
-        scrollbar-width: thin;
+        /* No scrollbar drawn. A horizontal one is laid out *inside* the strip and adds its
+           thickness to the height, so the control grew by the width of a scrollbar the moment its
+           chips overflowed — the same defect one property over. The chips visibly running past the
+           edge is the affordance; the bar was never the only one. */
+        scrollbar-width: none;
         /* A chip scrolled out of view is still Tab-reachable, and focusing it brings it back — the
            browser does that for any scroll container. Deliberately *not* `scroll-behavior: smooth`:
            it makes the arrival happen over ~500ms, so for that half-second the focused chip is
@@ -1817,6 +1831,10 @@
         flex: 0 0 auto;
         min-width: 4rem;
         max-width: 12rem;
+    }
+
+    .mdy-multiselect__chips::-webkit-scrollbar {
+        display: none;
     }
 
     .mdy-multiselect__arrow {
@@ -1842,6 +1860,22 @@
         border-bottom: 1.5px solid currentcolor;
         transform: translateY(-25%) rotate(45deg);
         opacity: 0.6;
+    }
+
+    /* Said, not shown. The strip is the sighted confirmation that a choice landed; this is the same
+       confirmation for somebody who cannot see it, and it must occupy no space to avoid being two
+       answers to one question. `clip-path` rather than `display: none`, which removes it from the
+       accessibility tree along with the announcement. */
+    .mdy-multiselect__announcement {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        overflow: hidden;
+        clip-path: inset(50%);
+        white-space: nowrap;
+        border: 0;
+        padding: 0;
+        margin: -1px;
     }
 
     .mdy-multiselect__placeholder {

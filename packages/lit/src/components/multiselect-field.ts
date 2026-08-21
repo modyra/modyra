@@ -325,6 +325,14 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
             ${this.loading ? mdyIcon("LOADER", "mdy-select__loader") : nothing}
             <span class="${this.partClass("arrow")}" aria-hidden="true"></span>
           </button>
+          <!-- Said rather than shown: a choice lands and the strip is the only confirmation, which
+               is the one a person using a screen reader does not get. -->
+          <div
+            class="${this.partClass("announcement")}"
+            role="status"
+            aria-live="polite"
+            aria-atomic="true"
+          >${this.announcementText(handle)}</div>
         </div>
         <div class="mdy-input-suffix"><slot name="suffix"></slot></div>
       </div>
@@ -352,6 +360,14 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
    * would make undoing one decision three separate removals; a chip with no count answers the same
    * for one of something as for three.
    */
+  /** The whole selection, so two announcements differ whenever the selection does. */
+  private announcementText(handle: MdyFieldHandle<readonly unknown[]>): string {
+    const held = this.held(handle);
+    if (held.length === 0) return "";
+    const names = [...new Set(held.map((value) => String(value)))].map((key) => this.labelFor(key));
+    return `${held.length} selected: ${names.join(", ")}`;
+  }
+
   private renderValueChips(handle: MdyFieldHandle<readonly unknown[]>): unknown {
     const tally = new Map<string, { readonly value: unknown; readonly label: string; count: number }>();
     for (const value of this.held(handle)) {

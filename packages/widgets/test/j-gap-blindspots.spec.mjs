@@ -226,7 +226,8 @@ function multiselectWithChip(chip, variant) {
   const chips = el("div", "mdy-multiselect__chips");
   const arrow = el("span", "mdy-multiselect__arrow", { "aria-hidden": "true" });
   trigger.append(chips, arrow);
-  wrapper.append(trigger);
+  const announcement = el("div", "mdy-multiselect__announcement", { role: "status", "aria-live": "polite" });
+  wrapper.append(trigger, announcement);
 
   // Open, because the subject is the option chip and options live in the popup. The grid is both
   // `options` and `listbox`: one element, the shared class plus the overlay one, which is what lets
@@ -243,7 +244,7 @@ function multiselectWithChip(chip, variant) {
 
   root.append(label, wrapper, popup, ...tail);
   const named = {
-    ...parts, inputWrapper: wrapper, trigger, chips, arrow, popup, options, optionWrapper,
+    ...parts, inputWrapper: wrapper, trigger, chips, arrow, announcement, popup, options, optionWrapper,
     option: built.option, optionLabel: built.optionLabel,
     ...(built.optionCheck ? { optionCheck: built.optionCheck } : {}),
     ...(built.optionStep ? { optionStep: built.optionStep } : {}),

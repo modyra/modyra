@@ -77,7 +77,10 @@ export function renderMultiselectField(
     trigger.appendChild(loading);
   }
   trigger.append(chipStrip, placeholder, arrow);
-  control.append(trigger);
+  // Said rather than shown: a choice lands and the strip is the only confirmation, which is the one
+  // a person using a screen reader does not get.
+  const announcement = el("div", parts.announcement.classes.join(" "));
+  control.append(trigger, announcement);
 
   // ── popup: the filter box over the same grid ──────────────────────────────────────────────
   const popup = el("div", `${parts.popup.classes.join(" ")} mdy-overlay`) as HTMLDivElement;
@@ -357,6 +360,8 @@ export function renderMultiselectField(
     // The projection's `trigger` describes what opens the popup, and here that is the button the
     // chips sit in. Its classes come from the part; the wrapper around it keeps the field's box.
     applyPart(trigger, view.parts.trigger);
+    applyPart(announcement, view.parts.announcement);
+    setText(announcement, (view.parts.announcement as { readonly text?: string }).text ?? "");
     syncChips(state);
     setText(placeholder, f.placeholder ?? "");
     applyPart(popup, view.parts.popup);

@@ -131,6 +131,14 @@ import type { MdyOverlayBranch, MdyOverlayOwner } from "../../core/overlay-contr
         }
         <span class="mdy-multiselect__arrow" aria-hidden="true"></span>
       </button>
+      <!-- Said rather than shown: a choice lands and the strip is the only confirmation, which is
+           the one a person using a screen reader does not get. -->
+      <div
+        class="mdy-multiselect__announcement"
+        role="status"
+        aria-live="polite"
+        aria-atomic="true"
+      >{{ announcementText() }}</div>
     </div>
 
     <mdy-overlay-panel
@@ -397,6 +405,13 @@ export class MdyMultiselectComponent<TValue = string>
       else tally.set(key, { key, value, label: this.labelOf(value), count: 1 });
     }
     return [...tally.values()];
+  });
+
+  /** The whole selection, so two announcements differ whenever the selection does. */
+  protected readonly announcementText = computed(() => {
+    const held = (this.value() ?? []) as readonly TValue[];
+    if (held.length === 0) return "";
+    return `${held.length} selected: ${this.chosen().map((c) => c.label).join(", ")}`;
   });
 
   /** The words a chosen value is shown by, falling back to the value for one the options lost. */
