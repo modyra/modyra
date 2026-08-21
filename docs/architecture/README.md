@@ -131,6 +131,7 @@ absent section reads as an oversight, and "no security impact" is a finding.
 - [ADR 0114: A dev-time advisory is pinned, not waived](0114-a-dev-time-advisory-is-pinned-not-waived.md) — twenty-three alerts across eight packages that no published tarball carries, pinned inside their own majors because an unbounded override took `fast-uri` across one
 - [ADR 0115: An hour carries the half of the day it is in](0115-an-hour-carries-the-half-of-the-day-it-is-in.md) — a 24-hour picker could not be moved off the half of the day it opened on, because the one seam that writes took 1–12 while every other surface spoke 0–23
 - [ADR 0116: One clock in every renderer](0116-one-clock-in-every-renderer.md) — three renderers each wrote down their own default format, so one document could render a different clock in each adapter
+- [ADR 0117: A row is not a target](0117-a-row-is-not-a-target.md) — a boolean's wrapper was a `<label>`, so the empty remainder of the row toggled the field, and removing it left the drawn box unclickable
 - [ADR 0092: A condition travels with the form](0092-a-condition-travels-with-the-form.md) — `when` and `asyncWhen` were closures, so a schema carrying one was not data and the document half could not say what the typed half said
 
 ## Security-relevant records

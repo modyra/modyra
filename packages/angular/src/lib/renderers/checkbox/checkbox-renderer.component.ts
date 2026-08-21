@@ -16,7 +16,7 @@ import { MdyErrorListComponent } from "../../control/error-list.component";
     "[class.mdy-renderer--touched]": "touched()",
   },
   template: `
-    <label class="mdy-checkbox">
+    <div class="mdy-checkbox">
       <input
         type="checkbox"
         [class]="widgetContract.parts.control.classes.join(' ')"
@@ -28,17 +28,18 @@ import { MdyErrorListComponent } from "../../control/error-list.component";
         [attr.aria-label]="controlAriaLabel()"
         [mdyPart]="controlPart()"
       />
-      <span [class]="widgetContract.parts.indicator.classes.join(' ')" aria-hidden="true"></span>
-      <span
+      <label
         class="mdy-label"
+        [for]="fieldId"
         [title]="inlineErrorShown() ? inlineErrorText() : null"
       >
+        <span [class]="widgetContract.parts.indicator.classes.join(' ')" aria-hidden="true"></span>
         {{ label() }}
         @if (label() && isRequired()) {
           <span class="mdy-label__required" aria-hidden="true">*</span>
         }
-      </span>
-    </label>
+      </label>
+    </div>
     @if (errorsRendered()) {
       <mdy-error-list [fieldId]="fieldId" [errors]="errors()" />
     } @else if (supportingText(); as st) {

@@ -36,7 +36,7 @@ export class MdyCheckboxFieldElement extends MdyFieldElement<boolean> {
     if (!handle) return nothing;
     this.syncStateClasses(handle);
     return html`
-      <label class="${this.partClass("inputWrapper")}">
+      <div class="${this.partClass("inputWrapper")}">
         <input
           id=${this.fieldId}
           class="${this.partClass("control")}"
@@ -58,14 +58,14 @@ export class MdyCheckboxFieldElement extends MdyFieldElement<boolean> {
               ? this.fieldController.dispatch({ type: "blur" })
               : handle.markAsTouched()}
         />
-        <span class="${this.partClass("indicator")}" aria-hidden="true"></span>
-        <span class="mdy-label">
+        <label class="mdy-label" for=${this.fieldId}>
+          <span class="${this.partClass("indicator")}" aria-hidden="true"></span>
           ${this.label}
           ${this.label && handle.required()
             ? html`<span class="mdy-label__required" aria-hidden="true">*</span>`
             : nothing}
-        </span>
-      </label>
+        </label>
+      </div>
       ${this.renderErrors(handle)}
       ${this.renderSupportingText()}
     `;

@@ -25,14 +25,22 @@ export function renderBooleanField(
 
   const root = el("div") as HTMLDivElement;
   root.classList.add(...definition.rootClasses);
-  const wrapper = el("label") as HTMLLabelElement;
+  // A container, not a `<label>`. A native label forwards a click from anywhere inside it, so the
+  // whole row — including its empty remainder — was a target, and a person aiming at nothing toggled
+  // the field. The contract says `container` for this part on this kind, and the words beside the
+  // box carry the association instead.
+  const wrapper = el("div") as HTMLDivElement;
   applyPart(wrapper, definition.parts.inputWrapper);
   const input = el("input") as HTMLInputElement;
   input.type = "checkbox";
+  // The id the words point at. A boolean's control had no id while its wrapper was the label and
+  // forwarded the click; naming it is what lets the association survive the wrapper becoming inert.
+
   // Set as the element's own class rather than through applyPart: the controller applies its input
   // part to this same element later, and applyPart replaces everything but the base class.
   input.className = definition.parts.control.classes.join(" ");
-  const labelText = el("span") as HTMLSpanElement;
+  // The words are the label, which is what makes them part of the target without the row being one.
+  const labelText = el("label") as HTMLLabelElement;
   if (f.label) setText(labelText, f.label);
   const requiredMark = el("span", definition.parts.requiredMarker.classes.join(" "));
   setText(requiredMark, "*");
@@ -46,17 +54,21 @@ export function renderBooleanField(
   if (accessibleName) input.setAttribute("aria-label", accessibleName);
 
   wrapper.append(input);
+  // The drawn box goes *inside* the words' label, and that is what keeps it a pointer target: the
+  // native input is visually hidden, so with the wrapper inert the only thing forwarding a click is
+  // the `<label>`. Left outside it, the box a person actually aims at stopped working — measured,
+  // and worse than the row being a target in the first place.
   if (isToggle) {
     const track = el("span", MDY_WIDGET_CONTRACTS.toggle.parts.track.classes.join(" "));
     const thumb = el("span", MDY_WIDGET_CONTRACTS.toggle.parts.thumb.classes.join(" "));
     track.setAttribute("aria-hidden", "true");
     track.appendChild(thumb);
-    wrapper.append(track);
+    labelText.prepend(track);
   } else {
     // The drawn box: a real element so the theme centres the tick inside it.
     const indicator = el("span", MDY_WIDGET_CONTRACTS.checkbox.parts.indicator.classes.join(" "));
     indicator.setAttribute("aria-hidden", "true");
-    wrapper.append(indicator);
+    labelText.prepend(indicator);
   }
   wrapper.append(labelText);
 
@@ -83,6 +95,10 @@ export function renderBooleanField(
       showsAsInvalid({ valid: handle.valid(), disabled: handle.disabled() }),
     );
     applyPart(input, view.parts.input);
+    // After the control has been named, not before: the id is the contract's, minted from the widget
+    // id by `applyPart`, and reading it back is what keeps the words and the box associated now that
+    // the wrapper is inert.
+    if (input.id) labelText.htmlFor = input.id;
     applyPart(description, view.parts.description);
     applyPart(errorList, view.parts.error);
     setErrors(errorList, shownErrorsOf(handle).map((e) => e.message));

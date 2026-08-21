@@ -1100,16 +1100,23 @@
         display: inline-flex;
         align-items: center;
         gap: var(--mdy-checkbox-gap);
-        cursor: pointer;
         user-select: none;
         -webkit-user-select: none;
     }
 
-    .mdy-checkbox>span {
+    /* The words and the box, together.
+     *
+     * The wrapper is a container and not a `<label>`: a native label forwards a click from anywhere
+     * inside it, so the empty remainder of the row was a target. The `<label>` is now the words —
+     * and the drawn box sits inside it, because the native input is visually hidden and the label is
+     * the only thing left that forwards a click. Outside it, the box a person actually aims at is
+     * inert. */
+    .mdy-checkbox>label {
         display: inline-flex;
         align-items: center;
         gap: var(--mdy-checkbox-gap);
         position: relative;
+        cursor: pointer;
     }
 
     /* ── Checkbox indicator ──────────────────────────────────────────────────────
@@ -1202,8 +1209,16 @@
 
     /* ─── Toggle (switch) ─────────────────────────────────────────────────────── */
 
+    /* The row is not a target — see the note on `.mdy-checkbox>label`. The pointer belongs to the
+     * label, which holds the switch and the words. */
     .mdy-toggle {
         display: flex;
+        align-items: center;
+        gap: var(--mdy-toggle-gap);
+    }
+
+    .mdy-toggle__label {
+        display: inline-flex;
         align-items: center;
         gap: var(--mdy-toggle-gap);
         cursor: pointer;
