@@ -20005,3 +20005,43 @@ silently swallows every one after — which passes any test that only makes one 
   **a spec that names the DOM it expects goes red on an anatomy change rather than on a defect.**
 - **The clicks were unbounded**, so a control that never became actionable hung for the full 150-second
   timeout and reported *"the browser was closed"* instead of what it was waiting for.
+
+### 353 — the rest of the accessibility sweep, including what was examined and found sound
+
+The live region is the only defect the sweep turned up. Recorded here is what else was driven, because
+"nothing was found" is only worth reading when it says what was looked at.
+
+**The error path is correct, in both renderers.** A required multiselect left empty:
+
+```
+canSubmit           false
+errors              1
+aria-invalid        "true"
+error text          "This field is required", visible
+required marker     visible
+submit              refused — nothing reached the action
+```
+
+**It took four wrong declarations to establish that**, and the wrongness was mine each time:
+
+```
+required: true                     the library warned: "belongs in validators — nothing reads it here"
+validators: [{ kind: "required" }] the type is an object, not an array
+validators: [{ type: "required" }]
+validators: ["required"]
+validators: { required: true }     correct
+```
+
+Every wrong form "built 2 validators" — the same answer regardless of input, which was the signal that
+nothing I passed was being read. I saw that number three times before it meant anything to me. **A
+function that answers identically to four different inputs is not validating them**, and noticing that
+is cheaper than noticing the fifth measurement disagrees with the first four.
+
+Had I filed on the third reading it would have been an S1 against every kind — text, checkbox and
+multiselect all reported `canSubmit: true` — and the discriminating test that stopped it was the one
+that showed *all three* behaving the same. **A defect that appears in every kind at once is usually a
+statement about the instrument.**
+
+**Also examined and sound**: the trigger's accessible name is the field's label; `aria-expanded`
+tracks the popup; `aria-describedby` points at a description; the required marker is present and hidden
+on optional fields; the chip's accessible name separates label from count with a comma.
