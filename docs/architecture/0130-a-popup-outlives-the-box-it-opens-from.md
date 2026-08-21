@@ -1,6 +1,6 @@
 # ADR 0130: A popup outlives the box it opens from
 
-Status: Accepted
+Status: Superseded by [ADR 0131](0131-a-rectangle-outside-a-box-is-not-a-clipped-one.md)
 
 ## Context
 

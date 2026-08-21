@@ -144,7 +144,8 @@ absent section reads as an oversight, and "no security impact" is a finding.
 - [ADR 0127: A strip that scrolls, against the published practice](0127-a-strip-that-scrolls-against-the-practice.md) — an outside review ranked the scrolling row last but one and called it a deliberate 1.4.10 departure, and the one-row-per-control rule is why it was taken anyway
 - [ADR 0128: A chip is one thing, not a cell](0128-a-chip-is-one-thing-not-a-cell.md) — the APG's composite pattern is grid, and the design had already removed the children grid exists to reach
 - [ADR 0129: One way back, not three](0129-one-way-back-not-three.md) — a clear-all with no undo is worse than no clear-all, and an undo that covers the loudest action and not the quiet ones is worse than none
-- [ADR 0130: A popup outlives the box it opens from](0130-a-popup-outlives-the-box-it-opens-from.md) — two renderers of three draw their options inside the field, so an ordinary scrolling container cuts the list in half
+- [ADR 0130: A popup outlives the box it opens from](0130-a-popup-outlives-the-box-it-opens-from.md) — superseded: the clipping it was built on was a rectangle compared against a rectangle, and every popup is `position: fixed`
+- [ADR 0131: A rectangle outside a box is not a clipped one](0131-a-rectangle-outside-a-box-is-not-a-clipped-one.md) — the defect did not exist; the battle written to prove it now pins the property instead
 - [ADR 0092: A condition travels with the form](0092-a-condition-travels-with-the-form.md) — `when` and `asyncWhen` were closures, so a schema carrying one was not data and the document half could not say what the typed half said
 
 ## Security-relevant records

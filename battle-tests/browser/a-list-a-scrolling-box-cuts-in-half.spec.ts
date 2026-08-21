@@ -22,63 +22,76 @@
  */
 
 import { expect, test } from "@playwright/test";
-import { HOSTS, bench, open } from "./bench";
+import { ANCESTORS, HOSTS, bench, inside, open } from "./bench";
 
 const OPTIONS = ["Roma", "Milano", "Napoli", "Torino", "Palermo"]
   .map((label) => ({ value: label.toLowerCase(), label }));
 
 for (const host of HOSTS) {
-  test(`an option list is not cut off by a scrolling ancestor, ${host.name}`, async ({ page }) => {
+ for (const ancestor of Object.keys(ANCESTORS) as (keyof typeof ANCESTORS)[]) {
+  test(`an option list survives a ${ancestor} ancestor, ${host.name}`, async ({ page }) => {
     test.setTimeout(150_000);
     await page.goto(host.page);
     await page.waitForFunction((flag) => (window as never as Record<string, boolean>)[flag] === true, host.ready);
 
     const { root } = await bench(page, host, "empty", { options: OPTIONS });
 
-    // The ancestor a bare page never has. 120px is smaller than the list, on purpose: a scroller
-    // taller than what it holds clips nothing and would make this spec green everywhere.
-    await page.evaluate((sel) => {
-      const field = document.querySelector(sel) as HTMLElement;
-      const scroller = document.createElement("div");
-      scroller.dataset.scroller = "yes";
-      scroller.style.cssText = "height:120px;overflow:auto;width:420px";
-      field.parentElement?.insertBefore(scroller, field);
-      scroller.appendChild(field);
-    }, root);
-    await page.waitForTimeout(200);
+    // The ancestor a bare page never has, from the bench so the next spec that needs one does not
+    // build its own. 120px is smaller than the list on purpose: a scroller taller than what it holds
+    // clips nothing and would make this spec green everywhere.
+    const scroller = await inside(page, root, ancestor);
 
     await open(page, root);
 
-    const seen = await page.evaluate(() => {
-      const scroller = document.querySelector('[data-scroller="yes"]');
+    const seen = await page.evaluate((sel) => {
+      const ancestorBox = document.querySelector(sel);
       const lists = Array.from(document.querySelectorAll(".mdy-multiselect__options, .mdy-multiselect-overlay__grid"))
         .filter((list) => list.getBoundingClientRect().height > 0);
-      if (scroller === null || lists.length === 0) return null;
+      if (ancestorBox === null || lists.length === 0) return null;
       const list = lists[0]!;
-      const box = list.getBoundingClientRect();
-      const bounds = scroller.getBoundingClientRect();
       const options = Array.from(list.querySelectorAll(".mdy-chip"));
-      const last = options[options.length - 1]?.getBoundingClientRect();
-      return {
-        inside: scroller.contains(list),
-        options: options.length,
-        // How much of the list is below the box that would clip it, when the box is its ancestor.
-        hiddenBelow: scroller.contains(list) ? Math.round(Math.max(0, box.bottom - bounds.bottom)) : 0,
-        lastOptionReachable: last === undefined ? false
-          : !scroller.contains(list) || last.bottom <= bounds.bottom + 1,
-      };
-    });
+      const last = options[options.length - 1];
+      if (last === undefined) return null;
+      const at = last.getBoundingClientRect();
 
-    expect(seen, "the popup did not open inside a scrolling container").not.toBeNull();
+      // **Whether a person can reach it, not where its rectangle is.** A `transform` ancestor does not
+      // clip anything — it only changes what `position: fixed` is fixed to — so a list whose rectangle
+      // extends past that box is perfectly visible. Measuring geometry called that a defect in four
+      // cases out of six, all of them mine.
+      //
+      // `elementFromPoint` answers the question a person asks: press here, and what gets it? A clipped
+      // option is not there to be hit; an option merely hanging outside its parent's rectangle is.
+      // **Brought into view first, the way a keyboard brings it.** An option list may be its own
+      // scrollport — one renderer's is, 104px of 200 — and an option that has simply not been
+      // scrolled to is not an option that has been taken away. Measuring before this called that a
+      // clipped list, which it is not.
+      last.scrollIntoView({ block: "nearest" });
+      const settled = last.getBoundingClientRect();
+      const centre = { x: settled.left + settled.width / 2, y: settled.top + settled.height / 2 };
+      const hit = document.elementFromPoint(centre.x, centre.y);
+      return {
+        inside: ancestorBox.contains(list),
+        options: options.length,
+        onScreen: at.bottom > 0 && at.top < window.innerHeight,
+        reachable: hit !== null && (hit === last || last.contains(hit) || hit.closest(".mdy-chip") === last),
+        hitInstead: hit === null ? "nothing" : `${hit.tagName.toLowerCase()}.${(hit.className || "").toString().split(" ")[0]}`,
+      };
+    }, scroller);
+
+    expect(seen, "the popup did not open inside the ancestor").not.toBeNull();
     // The premise: there is more list than box. Without it a renderer passes by having little to show.
-    expect(seen!.options, "the list is showing too few options for the box to clip anything").toBeGreaterThan(2);
+    expect(seen!.options, "the list is showing too few options for anything to be cut off").toBeGreaterThan(2);
+    expect(seen!.onScreen, "the last option is off the viewport, which this fixture is not about").toBe(true);
 
     expect(
-      seen!.lastOptionReachable,
-      `the option list is drawn inside the field, and the field's scrolling ancestor cuts ` +
-        `${seen!.hiddenBelow}px off the bottom of it — the last of ${seen!.options} options cannot be ` +
-        `reached. A form inside a scrolling dialog or a card is the ordinary case, and a control that ` +
-        `fails there passes every check written on a bare page`,
+      seen!.reachable,
+      `pressing where the last of ${seen!.options} options is drawn hits ${seen!.hitInstead} instead — ` +
+        `the list is drawn inside the field and a \`${ancestor}\` ancestor takes it away. A form inside ` +
+        `a scrolling dialog, a card or an animated panel is the ordinary case, and a control that ` +
+        `fails there passes every check written on a bare page. The three ancestors are not ` +
+        `interchangeable: \`overflow\` clips, \`transform\` makes a containing block that ` +
+        `\`position: fixed\` cannot escape, and \`contain\` does both`,
     ).toBe(true);
   });
+ }
 }

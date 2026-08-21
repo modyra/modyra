@@ -66,6 +66,55 @@ export const STATES = {
 export type StateName = keyof typeof STATES;
 
 /**
+ * The container a page puts a control in, which every fixture in this suite forgot to have.
+ *
+ * Every spec here mounted on a bare page, and on a bare page a popup drawn inside its field looks
+ * correct in all three renderers. Put the same field in a 120px scroller and two of them cut their own
+ * option list in half — a defect that reached a release-candidate anatomy without going red once,
+ * because no fixture ever supplied an ancestor and a consumer always does.
+ *
+ * These are the ancestors that change what an overlay can do, and they are not interchangeable:
+ * `overflow` clips, `transform` and `filter` create a containing block that even `position: fixed`
+ * cannot escape, and `contain` does both. A control that escapes one may be caught by another, so a
+ * fixture that offers only the scroller would find the first defect of this shape and none of the
+ * others.
+ */
+export const ANCESTORS = {
+  /** A form inside a dialog, a card, a side panel. Clips by `overflow`. */
+  scroller: "height:120px;overflow:auto;width:420px",
+  /** An animated or offset panel. Becomes the containing block for fixed descendants. */
+  transformed: "transform:translateZ(0);width:420px",
+  /** A pane that promises the browser it is self-contained. Clips and contains. */
+  contained: "contain:paint;height:120px;width:420px",
+} as const;
+
+export type AncestorName = keyof typeof ANCESTORS;
+
+/**
+ * Wrap a mounted field in one of the containers above.
+ *
+ * Called after `bench`, because the field has to exist to be wrapped, and returns the selector for the
+ * container so a spec can measure against it rather than re-finding it.
+ */
+export async function inside(page: Page, root: string, ancestor: AncestorName) {
+  const marker = `${ancestor}_${(wrapped += 1)}`;
+  const applied = await page.evaluate(({ root, style, marker }) => {
+    const field = document.querySelector(root) as HTMLElement | null;
+    if (field === null) return false;
+    const box = document.createElement("div");
+    box.dataset.ancestor = marker;
+    box.style.cssText = style;
+    field.parentElement?.insertBefore(box, field);
+    box.appendChild(field);
+    return true;
+  }, { root, style: ANCESTORS[ancestor], marker });
+  expect(applied, `${root} was not on the page to wrap in a ${ancestor}`).toBe(true);
+  await page.waitForTimeout(200);
+  return `[data-ancestor="${marker}"]`;
+}
+let wrapped = 0;
+
+/**
  * Mount one multiselect in a named state and refuse to continue if it did not appear.
  *
  * **Each call takes a fresh id.** Mounting twice into the same id appends a second form rather than
