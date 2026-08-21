@@ -18642,6 +18642,80 @@ strip the control class, and Angular's rendered DOM is structurally identical to
 the right observation to draw from, it just pointed the other way: same DOM and same stylesheet means
 both were broken, not that neither was."*
 
+## 325 — The browser tier loads one stylesheet of five (S2, UI-009)
+
+`esecutore` asked for one measurement I cannot make: a focused checkbox under `modyra-ios.css`. They
+had repaired six theme rules **by pattern rather than by measurement** and wanted the two
+`:focus-visible` ones checked where `:focus-visible` can exist.
+
+It cannot be done today:
+
+```
+battle-tests/.tmp-browser/     modyra.css        ← the only sheet built
+index.html                     <link rel="stylesheet" href="./modyra.css" />
+battle-tests/browser/build.mjs no reference to modyra-ios / modyra-material / modyra-ionic
+```
+
+**The tier ships and links the foundation and nothing else.** Four of the five stylesheets are outside
+it, so every theme-specific rule is unmeasured by the only tier that can produce a pointer or a
+keyboard focus.
+
+That is the same shape as the defect that prompted it, one level up: `esecutore`'s first sweep read the
+foundation and stopped, and six theme rules survived. My tier loads the foundation and stops, and
+every theme rule survives. **A check scoped to one file lets the next one through** — they wrote that
+about their sweep, and it is true of my host.
+
+Closing it means the host builds all five sheets and a spec can switch between them, which is real
+work and not tonight's.
+
+## 326 — Two of three renderers implement a declared variant (S2, UI-009)
+
+Handed over by `esecutore` while extending their check to `radio`, and not fixed by them:
+
+```
+contracts.ts:64          states: { group: ["horizontal"] }        the catalogue declares it
+angular                  [class.mdy-radio-group--horizontal]="layout() === 'horizontal'"
+lit                      the same, from this.layout
+plain                    no `layout` input at all — the class is never emitted
+```
+
+`.mdy-radio-group--horizontal input[type="radio"]:checked + .mdy-radio-circle` selects nothing in
+plain, and **not because of a relationship**: the wrapper class is absent because the variant is
+absent. A declared variant that two renderers implement and the third does not.
+
+Fourth instance tonight of one path implementing the contract while a sibling does not — after the
+handle-owner registry, the synthetic-versus-bound handle, and `open`.
+
+Recorded in their test as an exemption **asserted in both directions**: a renderer that grows the
+variant fails until the exemption is removed, so it cannot rot into a permanent excuse. That is the
+right shape for a known gap and worth copying.
+
+## 327 — Six of eight cases proven sensitive; two are not (harness limit, recorded not fixed)
+
+`a-tick-the-stylesheet-cannot-reach.spec.ts` now covers checked, hover and keyboard focus across plain
+and lit — eight cases, all green on a freshly built host after `554f4d86`.
+
+Mutation, neutralising every `.mdy-checkbox:has(` and `.mdy-toggle:has(` in the built sheet:
+
+```
+6 failed, 2 passed
+```
+
+**Six are sensitive to the rules they exist to watch. Two are not**, and they are getting their
+before/after difference from a rule the mutation did not touch — most likely the native control's own
+focus ring rather than the indicator's theme rule. So for those two the spec proves *something*
+changes and not that **this** rule reaches the part.
+
+Not repaired: narrowing them means asserting a specific declaration won the cascade rather than that
+the appearance moved, which is a different and more brittle instrument. Recorded so the two are not
+read as evidence they have not earned.
+
+**And the tier was stale twice more while this was being written** — the host predated `769fd6ec`,
+then predated `554f4d86`. Both times the first run said something false and a rebuild changed the
+answer. Third and fourth occurrences of the same trap in one session, against a guard I wrote for
+exactly it, which is now a standing argument for the browser build refusing to run stale rather than
+reminding me to rebuild.
+
 ## The register's own shape, measured
 
 ```
