@@ -21102,7 +21102,29 @@ Reverting to the version before my repair produced a run that finished, and the 
 underneath had been hidden for three attempts. The original red was never read until the fourth.
 
 
-### `every-key-a-kind-declares` on plain — two of four closed, two recorded rather than chased
+### `every-key-a-kind-declares` on plain — there was never a second cause
+
+**Withdrawn, all of it.** What follows was written across six attempts and is kept because the shape of
+the mistake is worth more than the conclusion was.
+
+The four keys are [378](#378) and nothing else. The spec reports them because a multiselect as a
+document declares it has no chips to move between and has not asked for `reorderable` — which is the
+finding, correctly measured, by a fixture that was right before I touched it.
+
+Everything below about *two of four closed* and *a second cause I have not found* was produced by my
+own change to that fixture. Giving the field chips and `reorderable` silenced two of the four, and I
+then spent two more attempts hunting the "remaining" two — which were the same finding, still being
+reported, by the half of the spec my change had not reached.
+
+**I was tuning a fixture until a red went away and calling the leftovers a mystery.** The tell was
+there at the time and I wrote past it: a repair that closes two of four identical cases has not
+repaired anything.
+
+One improvement from the six attempts survives and is kept: the observation samples `tabindex`, so a
+composite moving its reading position between identical siblings is visible at all. That was a real
+blindness and it would have hidden a real defect one day.
+
+### The six attempts, as written at the time
 
 Four multiselect keys read as dead. Two of them are now answered and two are not, and the difference
 is worth more than either.
