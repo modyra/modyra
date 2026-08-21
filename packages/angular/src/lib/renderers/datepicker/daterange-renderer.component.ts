@@ -167,10 +167,14 @@ import { inputText, isoDateText } from "../renderer-projection";
       </mdy-overlay-panel>
     </div>
 
-    @if (supportingText(); as st) {
+    @if (projectedSupportingText(); as st) {
       <div class="mdy-supporting-text" [id]="descriptionId(fieldId)">
         <ng-container [ngTemplateOutlet]="st.template" />
       </div>
+    } @else if (supportingText(); as text) {
+      <!-- The value route, for a field that declared its own words rather than
+           projecting them. A document has no template to project. -->
+      <div class="mdy-supporting-text" [id]="descriptionId(fieldId)">{{ text }}</div>
     }
     @if (errorsRendered()) {
       <mdy-error-list [fieldId]="fieldId" [errors]="errors()" />

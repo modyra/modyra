@@ -149,6 +149,7 @@ import { MdyToggleComponent } from "../renderers/toggle/toggle-renderer.componen
               <mdy-control-text
                 [name]="f.name"
                 [label]="f.label ?? ''"
+                [supportingText]="f.supportingText"
                 [placeholder]="f.placeholder ?? ''"
                 [initialValue]="emptyFor(f)"
               />
@@ -158,6 +159,7 @@ import { MdyToggleComponent } from "../renderers/toggle/toggle-renderer.componen
                 type="email"
                 [name]="f.name"
                 [label]="f.label ?? ''"
+                [supportingText]="f.supportingText"
                 [placeholder]="f.placeholder ?? ''"
                 [initialValue]="emptyFor(f)"
               />
@@ -167,6 +169,7 @@ import { MdyToggleComponent } from "../renderers/toggle/toggle-renderer.componen
                 type="password"
                 [name]="f.name"
                 [label]="f.label ?? ''"
+                [supportingText]="f.supportingText"
                 [placeholder]="f.placeholder ?? ''"
                 [initialValue]="emptyFor(f)"
               />
@@ -175,6 +178,7 @@ import { MdyToggleComponent } from "../renderers/toggle/toggle-renderer.componen
               <mdy-control-textarea
                 [name]="f.name"
                 [label]="f.label ?? ''"
+                [supportingText]="f.supportingText"
                 [placeholder]="f.placeholder ?? ''"
                 [initialValue]="emptyFor(f)"
               />
@@ -183,6 +187,7 @@ import { MdyToggleComponent } from "../renderers/toggle/toggle-renderer.componen
               <mdy-control-number
                 [name]="f.name"
                 [label]="f.label ?? ''"
+                [supportingText]="f.supportingText"
                 [placeholder]="f.placeholder ?? ''"
                 [minValue]="f.min ?? null"
                 [maxValue]="f.max ?? null"
@@ -194,6 +199,7 @@ import { MdyToggleComponent } from "../renderers/toggle/toggle-renderer.componen
               <mdy-control-slider
                 [name]="f.name"
                 [label]="f.label ?? ''"
+                [supportingText]="f.supportingText"
                 [min]="f.min ?? 0"
                 [max]="f.max ?? 100"
                 [step]="f.step ?? 1"
@@ -204,6 +210,7 @@ import { MdyToggleComponent } from "../renderers/toggle/toggle-renderer.componen
               <mdy-control-checkbox
                 [name]="f.name"
                 [label]="f.label ?? ''"
+                [supportingText]="f.supportingText"
                 [initialValue]="emptyFor(f)"
               />
             }
@@ -211,6 +218,7 @@ import { MdyToggleComponent } from "../renderers/toggle/toggle-renderer.componen
               <mdy-control-toggle
                 [name]="f.name"
                 [label]="f.label ?? ''"
+                [supportingText]="f.supportingText"
                 [initialValue]="emptyFor(f)"
               />
             }
@@ -218,6 +226,7 @@ import { MdyToggleComponent } from "../renderers/toggle/toggle-renderer.componen
               <mdy-control-select
                 [name]="f.name"
                 [label]="f.label ?? ''"
+                [supportingText]="f.supportingText"
                 [placeholder]="f.placeholder ?? ''"
                 [options]="f.options"
                 [initialValue]="emptyFor(f)"
@@ -227,6 +236,7 @@ import { MdyToggleComponent } from "../renderers/toggle/toggle-renderer.componen
               <mdy-control-radio
                 [name]="f.name"
                 [label]="f.label ?? ''"
+                [supportingText]="f.supportingText"
                 [options]="f.options"
                 [initialValue]="emptyFor(f)"
               />
@@ -237,6 +247,7 @@ import { MdyToggleComponent } from "../renderers/toggle/toggle-renderer.componen
               <mdy-control-multiselect
                 [name]="f.name"
                 [label]="f.label ?? ''"
+                [supportingText]="f.supportingText"
                 [options]="f.options"
                 [initialValue]="emptyFor(f)"
                 [searchable]="asOptions(f).searchable ?? false"
@@ -247,6 +258,7 @@ import { MdyToggleComponent } from "../renderers/toggle/toggle-renderer.componen
               <mdy-control-segmented
                 [name]="f.name"
                 [label]="f.label ?? ''"
+                [supportingText]="f.supportingText"
                 [options]="f.options"
                 [initialValue]="emptyFor(f)"
               />
@@ -255,6 +267,7 @@ import { MdyToggleComponent } from "../renderers/toggle/toggle-renderer.componen
               <mdy-control-datepicker
                 [name]="f.name"
                 [label]="f.label ?? ''"
+                [supportingText]="f.supportingText"
                 [initialValue]="emptyFor(f)"
               />
             }
@@ -265,6 +278,7 @@ import { MdyToggleComponent } from "../renderers/toggle/toggle-renderer.componen
               <mdy-control-timepicker
                 [name]="f.name"
                 [label]="f.label ?? ''"
+                [supportingText]="f.supportingText"
                 [initialValue]="emptyFor(f)"
                 [format]="asTime(f).format ?? defaultFormat"
                 [viewMode]="asTime(f).viewMode ?? initialView"
