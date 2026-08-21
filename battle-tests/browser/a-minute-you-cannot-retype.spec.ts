@@ -107,3 +107,79 @@ for (const host of HOSTS) {
     ).toBe("01");
   });
 }
+
+/** The real hand's angle in degrees, from whatever the renderer used to rotate it. */
+const handAngle = (page: import("@playwright/test").Page) =>
+  page.evaluate(() => {
+    const hand = Array.from(document.querySelectorAll(".mdy-timepicker-dial__hand")).find(
+      (element) => !element.className.includes("--ghost"),
+    ) as HTMLElement | undefined;
+    if (!hand) return null;
+    // The inline transform first — it is what every renderer writes — falling back to the matrix the
+    // browser computed, so this reads a hand however it was turned.
+    const inline = /rotate\(([-0-9.]+)deg\)/.exec(hand.style.transform ?? "");
+    if (inline) return Math.round(((Number(inline[1]) % 360) + 360) % 360);
+    const matrix = new DOMMatrixReadOnly(getComputedStyle(hand).transform);
+    const degrees = (Math.atan2(matrix.b, matrix.a) * 180) / Math.PI;
+    return Math.round(((degrees % 360) + 360) % 360);
+  });
+
+for (const host of HOSTS) {
+  test(`the hand follows a half-typed number that the field accepts, ${host.name}`, async ({ page }) => {
+    test.setTimeout(150_000);
+    await page.goto(host.page);
+    await page.waitForFunction((flag) => (window as never as Record<string, boolean>)[flag] === true, host.ready);
+    await page.evaluate(async ({ api }) => {
+      await (window as never as Record<string, { mountFields(i: string, f: unknown[]): unknown }>)[api]
+        .mountFields("hf", [{ name: "t", kind: "timepicker", label: "T", format: "24h", initialValue: "09:30" }]);
+    }, { api: host.api });
+    await page.waitForTimeout(300);
+    for (const selector of ['[data-form="hf"] [aria-haspopup]', '[data-form="hf"] button', '[data-form="hf"] input']) {
+      const opener = page.locator(selector).first();
+      if (await opener.count() === 0) continue;
+      await opener.click({ force: true }).catch(() => undefined);
+      await page.waitForTimeout(250);
+      if (await page.locator(".mdy-timepicker-segment-input").count() > 0) break;
+    }
+
+    // The whole point is that the two are visible together: the box being typed into and the hand that
+    // answers it. A renderer that hides one while the other is in use cannot satisfy this at all.
+    expect(
+      await page.locator(".mdy-timepicker-dial__face").count(),
+      "the dial is not showing, so there is no hand to follow the typing",
+    ).toBeGreaterThan(0);
+    expect(
+      await page.evaluate(() => (document.querySelector(".mdy-timepicker-segment-input") as HTMLInputElement | null)?.readOnly),
+      "the boxes are locked while the dial shows, so a half-typed number cannot exist to be followed — finding 341",
+    ).toBe(false);
+
+    const minute = page.locator(".mdy-timepicker-segment-input").nth(1);
+    await minute.focus();
+    await page.keyboard.press("ControlOrMeta+a");
+    await page.keyboard.press("Backspace");
+    await page.waitForTimeout(150);
+    const emptied = await handAngle(page);
+
+    await page.keyboard.type("1");
+    await page.waitForTimeout(200);
+    const atOne = await handAngle(page);
+
+    await page.keyboard.type("5");
+    await page.waitForTimeout(200);
+    const atFifteen = await handAngle(page);
+
+    // Sixty minutes over the circle: minute 1 is 6°, minute 15 is 90°. Read as the hand's own angle so
+    // this holds however a renderer chooses to rotate it.
+    expect(
+      atOne,
+      `after typing "1" into the emptied minute box the hand is at ${atOne}° rather than 6°. The rule ` +
+        `is that a half-typed number the field accepts moves the hand: the text and the hand are two ` +
+        `views of one draft (was ${emptied}° when the box was empty)`,
+    ).toBe(6);
+
+    expect(
+      atFifteen,
+      `after typing "5" — making "15" — the hand is at ${atFifteen}° rather than 90°`,
+    ).toBe(90);
+  });
+}
