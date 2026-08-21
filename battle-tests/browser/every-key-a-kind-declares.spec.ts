@@ -158,7 +158,14 @@ for (const host of HOSTS) {
 
           // A move needs somewhere to move from: at the first option, `ArrowUp` and `Home` are
           // no-ops that mean the binding works, not that it is missing.
-          if (binding.intent === "move") {
+          //
+          // **A reorder needs the same, and for the same reason.** `Alt+ArrowLeft` on the first chip of
+          // a strip moves it before itself; `ArrowLeft` there has no previous chip to reach. Both are
+          // correct implementations doing nothing, and both read as a missing binding — which is what
+          // this spec reported for three runs after the strip's keyboard map landed. The priming was
+          // written for `move` and the new intent inherited the trap rather than the remedy.
+          if (binding.intent === "move" || binding.intent === "reorder") {
+            await page.keyboard.press("ArrowRight");
             await page.keyboard.press("ArrowDown");
             await page.waitForTimeout(100);
           }
