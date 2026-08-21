@@ -32,12 +32,31 @@ import { expectClaim, expectEqual } from "../../harness/assertions.mjs";
 /** A press that begins an interaction, unless told otherwise. */
 const press = (over = {}) => ({ pointerId: 1, button: 0, isPrimary: true, ...over });
 
-/** A dismisser over a branch where the string "in" is inside and everything else is out. */
+/**
+ * The two places an interaction can be, as **nodes**.
+ *
+ * `overlayBranchContains` treats a target that is not a node as outside, deliberately: an interaction
+ * the renderer could not locate is not one that happened inside, and answering "inside" would be the
+ * safer-looking mistake — a popup that never dismisses. So a bare string cannot stand in for a target
+ * here, and `nodeType` is the whole of what these need to carry.
+ */
+const IN = { nodeType: 1, toString: () => "in" };
+const OUT = { nodeType: 1, toString: () => "out" };
+
+/**
+ * A dismisser over a branch containing {@link IN} and nothing else.
+ *
+ * This built the machine with `isInside` until ADR 0119 replaced it with `branch` — the renderer used
+ * to be asked *where from*, and four renderers answered four ways. An option that no longer exists is
+ * silently ignored, so the machine ran with **no branch at all**: every target read as outside, a press
+ * that began inside looked like one that began outside, and the fixture reported a dismissal on every
+ * release. A spec outliving its contract, and it imitated the exact defect the contract change removed.
+ */
 function dismisser(open = { value: true }) {
   const closed = [];
   const machine = createLightDismiss({
     isOpen: () => open.value,
-    isInside: (target) => target === "in",
+    branch: { root: { contains: (node) => node === IN } },
     dismiss: () => closed.push(true),
   });
   return { machine, open, dismissals: () => closed.length };
@@ -111,7 +130,7 @@ battle(
 
       for (let step = 0; step < 10; step += 1) {
         const inside = random() < 0.5;
-        const target = inside ? "in" : "out";
+        const target = inside ? IN : OUT;
         const pointerId = pick([1, 1, 1, 2]);
         const before = state.dismissals();
         let expected = false;
@@ -187,8 +206,8 @@ battle(
     // A gesture that starts inside and ends outside: selecting text in a popup and releasing past
     // its edge. Closing here takes the popup away mid-drag.
     const drag = dismisser();
-    drag.machine.pointerdown("in", press());
-    drag.machine.pointerup("out", 1);
+    drag.machine.pointerdown(IN, press());
+    drag.machine.pointerup(OUT, 1);
     ctx.log.note("a drag out of the popup", { dismissals: drag.dismissals() });
 
     expectEqual(drag.dismissals(), 0, {
@@ -198,8 +217,8 @@ battle(
 
     // The control for that one: the same release, from a press that began outside, does close it.
     const outside = dismisser();
-    outside.machine.pointerdown("out", press());
-    outside.machine.pointerup("out", 1);
+    outside.machine.pointerdown(OUT, press());
+    outside.machine.pointerup(OUT, 1);
     ctx.log.note("a press and release both outside", { dismissals: outside.dismissals() });
 
     expectEqual(outside.dismissals(), 1, {
@@ -211,8 +230,8 @@ battle(
     // menu the user just asked for.
     for (const button of [1, 2]) {
       const secondary = dismisser();
-      secondary.machine.pointerdown("out", press({ button }));
-      secondary.machine.pointerup("out", 1);
+      secondary.machine.pointerdown(OUT, press({ button }));
+      secondary.machine.pointerup(OUT, 1);
       ctx.log.note("a non-primary button outside", { button, dismissals: secondary.dismissals() });
 
       expectEqual(secondary.dismissals(), 0, {
@@ -223,8 +242,8 @@ battle(
 
     // A second finger lifting is not the first one's answer.
     const twoFingers = dismisser();
-    twoFingers.machine.pointerdown("out", press({ pointerId: 1 }));
-    twoFingers.machine.pointerup("out", 2);
+    twoFingers.machine.pointerdown(OUT, press({ pointerId: 1 }));
+    twoFingers.machine.pointerup(OUT, 2);
     ctx.log.note("a second pointer releasing", { dismissals: twoFingers.dismissals() });
 
     expectEqual(twoFingers.dismissals(), 0, {
@@ -234,7 +253,7 @@ battle(
 
     // A click with no press observed is a keyboard activation or a scripted `.click()`.
     const scripted = dismisser();
-    scripted.machine.click("out");
+    scripted.machine.click(OUT);
     ctx.log.note("a click with no press before it", { dismissals: scripted.dismissals() });
 
     expectEqual(scripted.dismissals(), 0, {
@@ -244,9 +263,9 @@ battle(
 
     // The browser taking the gesture decides nothing, and leaves nothing armed behind it.
     const cancelled = dismisser();
-    cancelled.machine.pointerdown("out", press());
+    cancelled.machine.pointerdown(OUT, press());
     cancelled.machine.pointercancel(1);
-    cancelled.machine.click("out");
+    cancelled.machine.click(OUT);
     ctx.log.note("a cancelled gesture followed by a click", { dismissals: cancelled.dismissals() });
 
     expectEqual(cancelled.dismissals(), 0, {
@@ -257,7 +276,7 @@ battle(
     // And the precedence rule the focus path depends on: while a press that began inside is
     // unresolved, focus leaving must not be read as a dismissal.
     const holding = dismisser();
-    holding.machine.pointerdown("in", press());
+    holding.machine.pointerdown(IN, press());
     ctx.log.note("an unresolved press that began inside", {
       fromInside: holding.machine.interactionFromInside(),
     });
@@ -267,7 +286,7 @@ battle(
       what: "an unresolved press that began inside is not reported as such, so the focus path may close the overlay",
     });
 
-    holding.machine.pointerup("in", 1);
+    holding.machine.pointerup(IN, 1);
     expectClaim(holding.machine.interactionFromInside() === false, {
       claimIds: ["UI-005"],
       what: "a resolved interaction is still reported as unresolved, which blocks the focus path forever",
