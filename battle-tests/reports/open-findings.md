@@ -19491,3 +19491,36 @@ does not, and reported "no defect — display and input speak the same alphabet"
 irrelevant: the question was never what this widget shows, it was whether two widgets in one library
 answer one question the same way. **A single-widget check cannot see a cross-widget inconsistency**,
 and I ran one and concluded from it.
+
+### 342 — correction: it is plain alone, and the other two rows were my fixture
+
+The user gave the gesture: *"io ho 00, uso tasto back del mac per cancellare e ho solo 0, a quel punto
+scrivo 1 e ottengo 01."* One Backspace with the caret at the end, removing one character. My fixture
+selected the whole box and deleted it, which is a different thing to do and gets a different answer.
+
+Re-measured with the reported gesture:
+
+```
+plain     "00" → Backspace → "00" → type 1 → "001"    ← the defect, unchanged
+lit       "00" → Backspace → "0"  → type 1 → "01"     ← correct
+angular   "00" → Backspace → "0"  → type 1 → "01"     ← correct
+```
+
+**Lit and Angular were never broken here.** The original entry said they "refuse the edit outright";
+they refuse *clearing the whole box in one stroke*, which is a separate question the new partial-entry
+rule now covers. The user said Angular worked and was right; I recorded the opposite from a gesture
+they had not described, and left it in the register for four hours under "unexplained rather than
+damning" when the cheaper move was to ask what they pressed.
+
+Two harness defects surfaced fixing it, both mine and both worth naming because each one read as a
+renderer fault:
+
+- **a fixed `waitForTimeout` after switching view.** 250ms left Angular's boxes rendered but invisible
+  and the click hung for the whole 150-second test timeout; a hand-run probe used 350ms and passed. The
+  spec waits for the element to be visible now. A fixed pause is a guess about someone else's
+  animation.
+- **the opener list started with `[aria-haspopup]`**, which matches more than one control in some
+  renderers, so the loop pressed a second thing and left Angular's popup half-open. `.mdy-timepicker__toggle`
+  — the class the contract declares — goes first now.
+
+`known-red-browser.json` corrected: the lit and angular rows for this spec are gone.
