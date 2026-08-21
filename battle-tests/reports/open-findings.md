@@ -21260,3 +21260,26 @@ A second assertion now asks for a control — anything pressable that reveals th
 deliberately **not** satisfied by the strip being scrollable, because scrolling is the thing that
 person cannot do. Red in all three.
 
+
+### The fixture audit, since three of tonight's defects were fixtures declaring a state wrongly
+
+Twelve browser specs mount a multiselect. Seven use the shared bench; eleven build their own. Every
+one of the eleven was read for the three declarations that bit tonight:
+
+```
+a-chip-that-is-only-a-label            mode: "multi"        correct — it was a repeated value until tonight
+a-box-that-does-not-say-what-it-filters searchable: true    correct — it was absent until tonight
+a-multiselect-a-keyboard-cannot-use     searchable: true    correct
+two-doors-to-one-order                  reorderable         correct, and parameterised so both states are covered
+the other seven                         no state declared   correct: they measure a default control
+```
+
+**Nothing lies any more.** The two that did were repaired when they surfaced, and the audit is here
+because "I fixed the ones I tripped over" is not the same claim as "none of the others has the same
+fault", and only the second one is worth anything.
+
+It also right-sizes the bench. Its value is stopping the *next* divergence, not correcting a present
+one — so converting the remaining eleven is a slow improvement rather than a repair, and doing it in
+bulk tonight would risk eleven green specs to fix nothing that is currently broken. The three states a
+fixture can get wrong are named in `bench.ts` where the next person will meet them.
+
