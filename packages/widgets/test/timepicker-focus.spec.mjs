@@ -128,17 +128,37 @@ test("opening the picker asks for focus on the hour box", () => {
   );
 });
 
-test("the dial holds the hour for the declared moment, then hands it to the minute", () => {
+test("a drag that ends holds the hour for the declared moment, then hands it to the minute", () => {
   // Both sides, so a handover that never happens and one that happens instantly both fail.
   const { controller, tick, waitingFor } = pickerWithClock();
   controller.dispatch({ type: "open" });
-  controller.dispatch({ type: "set-from-angle", field: "hour", angle: 90 });
+  controller.dispatch({ type: "set-from-angle", field: "hour", angle: 90, phase: "move" });
+  controller.dispatch({ type: "set-from-angle", field: "hour", angle: 120, phase: "end" });
 
-  assert.equal(controller.state().focusedField, "hour", "still the hour, immediately after the press");
+  assert.equal(controller.state().focusedField, "hour", "still the hour, immediately after the release");
   assert.deepEqual(waitingFor(), [MDY_TIMEPICKER_ADVANCE_MS], "and it is waiting the declared time");
 
   tick();
   assert.equal(controller.state().focusedField, "minute");
+});
+
+test("a tap on the hour stays on the hour", () => {
+  // The counterpart, and the reason the phase exists: a tap is where a person starts. They touch
+  // roughly the right number and drag to the one they meant, and a face that advanced on the touch
+  // took the dial away mid-gesture. Nothing is waiting, so nothing arrives later either.
+  const { controller, tick, waitingFor } = pickerWithClock();
+  controller.dispatch({ type: "open" });
+  controller.dispatch({ type: "set-from-angle", field: "hour", angle: 90 });
+  assert.deepEqual(waitingFor(), [], "a press with no gesture around it hands over to nothing");
+  tick();
+  assert.equal(controller.state().focusedField, "hour");
+
+  // And a press released without travelling is the same thing reported by a renderer that tracks
+  // its gestures: the end alone is not movement.
+  controller.dispatch({ type: "set-from-angle", field: "hour", angle: 90, phase: "end" });
+  assert.deepEqual(waitingFor(), []);
+  tick();
+  assert.equal(controller.state().focusedField, "hour");
 });
 
 test("a minute chosen on the face hands over to nothing", () => {

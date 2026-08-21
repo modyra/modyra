@@ -444,7 +444,7 @@ export function renderTimepickerField(
     }
   }
 
-  function pickFromPointer(event: PointerEvent): void {
+  function pickFromPointer(event: PointerEvent, phase?: "move" | "end"): void {
     const state = controller.state();
     if (state.viewMode !== "dial") return;
     const face = dialFace.getBoundingClientRect();
@@ -460,7 +460,7 @@ export function renderTimepickerField(
     const dx = event.clientX - (face.left + face.width / 2);
     const dy = event.clientY - (face.top + face.height / 2);
     showGhost(angle, ring, Math.sqrt(dx * dx + dy * dy), state);
-    dispatch({ type: "set-from-angle", field: state.focusedField, angle, ring });
+    dispatch({ type: "set-from-angle", field: state.focusedField, angle, ring, ...(phase && { phase }) });
   }
   let dragging = false;
   /** What the ring last answered, so a wander at the edge does not keep changing it. */
@@ -472,17 +472,18 @@ export function renderTimepickerField(
     dialFace.setPointerCapture(event.pointerId);
     pickFromPointer(event);
   });
-  dialFace.addEventListener("pointermove", (event) => { if (dragging) pickFromPointer(event); });
+  dialFace.addEventListener("pointermove", (event) => { if (dragging) pickFromPointer(event, "move"); });
   const endDrag = (event: PointerEvent): void => {
     if (!dragging) return;
     dragging = false;
-    pickFromPointer(event);
+    pickFromPointer(event, "end");
     // The gesture is over: the next one decides from where it lands.
     lastRing = undefined;
     // The gesture is over, so there is no pointer to be somewhere else than the value.
     ghostHand.hidden = true;
-    // The hour hands over to the minute by itself, after the moment the contract declares. This
-    // renderer used to do it here, immediately, where the other two waited 200ms and 300ms.
+    // Whether the hour hands over to the minute is the contract's, and it turns on whether this
+    // gesture travelled — which is why the release reports itself as the end rather than as one more
+    // position.
   };
   dialFace.addEventListener("pointerup", endDrag);
   dialFace.addEventListener("pointercancel", endDrag);

@@ -113,7 +113,7 @@ export class MdyTimepickerClockComponent {
    * 24-hour picker could only ever name twelve of the twenty-four numbers it draws. What this
    * control knows is where the pointer is; what that means is the controller's to say.
    */
-  readonly dialPicked = output<{ readonly field: "hour" | "minute"; readonly angle: number; readonly ring: "outer" | "inner" }>();
+  readonly dialPicked = output<{ readonly field: "hour" | "minute"; readonly angle: number; readonly ring: "outer" | "inner"; readonly phase?: "move" | "end" }>();
   readonly cancelClicked = output<void>();
   readonly confirmClicked = output<void>();
 
@@ -137,7 +137,15 @@ export class MdyTimepickerClockComponent {
   readonly viewMode = input<MdyTimepickerViewMode>(MDY_TIMEPICKER_INITIAL_VIEW);
   /** The person asked for the other view; the controller decides what that means. */
   readonly viewModeChange = output<MdyTimepickerViewMode>();
-  protected readonly focusedField = signal<"hour" | "minute">("hour");
+  /**
+   * Which of the two numbers the face is editing — the controller's, given rather than held.
+   *
+   * The controller hands the hour over to the minute when a gesture ends after moving, and a copy
+   * kept here never hears it: the face went on drawing hours while the contract had moved on.
+   */
+  readonly focusedField = input<"hour" | "minute">("hour");
+  /** The person reached for the other number; the controller decides what that means. */
+  readonly focusedFieldChange = output<"hour" | "minute">();
   protected readonly isDragging = signal(false);
   protected readonly dragAngle = signal<number | null>(null);
 
@@ -306,7 +314,7 @@ export class MdyTimepickerClockComponent {
       if (box) box.value = field === "hour" ? this.hourDisplay() : this.minuteDisplay();
       return;
     }
-    this.focusedField.set(field);
+    this.focusedFieldChange.emit(field);
     this.timePicked.emit(next);
   }
 
@@ -396,10 +404,9 @@ export class MdyTimepickerClockComponent {
       .find((part) => active?.matches(timepickerPartSelector(part) ?? "\0"));
     const next = timepickerTabTarget(from ?? "", this.format(), direction);
     if (next === "hourControl" || next === "minuteControl") {
-      // The clock holds its own `focusedField`; setting it moves the drawn state, and `focusDial`
-      // is what puts DOM focus where that state says. One state, two expressions.
-      this.focusedField.set(next === "hourControl" ? "hour" : "minute");
-      this.focusDial();
+      // The field is the controller's; asking for it is what moves the drawn state, and the
+      // `focus` command that answers is what puts DOM focus there. One state, two expressions.
+      this.focusedFieldChange.emit(next === "hourControl" ? "hour" : "minute");
       return;
     }
     root.querySelector<HTMLElement>(timepickerPartSelector(next) ?? "\0")?.focus();
@@ -428,22 +435,22 @@ export class MdyTimepickerClockComponent {
   }
 
   /** Where the pointer is, as the position it is. Shared so a press and a drag cannot differ. */
-  private emitPick(): void {
+  private emitPick(phase?: "move" | "end"): void {
     const angle = this.dragAngle();
     if (angle === null) return;
-    this.dialPicked.emit({ field: this.dragField, angle, ring: this.dragRing() });
+    this.dialPicked.emit({ field: this.dragField, angle, ring: this.dragRing(), ...(phase && { phase }) });
   }
 
   protected onDragMove(event: MouseEvent | TouchEvent): void {
     if (!this.isDragging() || this.viewMode() !== "dial") return;
     if (event.cancelable) event.preventDefault();
     this.updateAngle(event);
-    this.emitPick();
+    this.emitPick("move");
   }
 
   protected onDragEnd(): void {
     if (!this.isDragging()) return;
-    this.emitPick();
+    this.emitPick("end");
     this.isDragging.set(false);
     // The gesture is over: the next one decides from where it lands.
     this.ringDecided = false;

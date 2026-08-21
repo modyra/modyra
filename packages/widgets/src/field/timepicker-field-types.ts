@@ -185,6 +185,18 @@ export type MdyTimepickerFieldIntent =
      * 15 inside, and half the numbers the face draws had no way to be asked for.
      */
     readonly ring?: "outer" | "inner";
+    /**
+     * Where this position falls in the gesture that produced it.
+     *
+     * `"move"` while a pointer is travelling, `"end"` when it is released. Absent is a position with
+     * no gesture around it — a tap, or a host that reports only the result.
+     *
+     * The hour hands over to the minute when a gesture **ends after moving**, and never on a tap.
+     * A tap is where a person starts: they touch roughly the right number and then drag to the one
+     * they meant, and a face that advanced on the touch took the dial away mid-gesture and left them
+     * adjusting minutes they had not asked for. A release after movement is where they stop.
+     */
+    readonly phase?: "move" | "end";
   }
   | { readonly type: "focus-field"; readonly field: "hour" | "minute" }
   | { readonly type: "set-view-mode"; readonly mode: MdyTimepickerViewMode }

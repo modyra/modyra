@@ -230,6 +230,9 @@ export function createTimepickerFieldController(
    * transition — and `focusedField` is this controller's. A renderer scheduling it is a renderer
    * deciding when the field changed.
    */
+  /** Whether the gesture in flight has travelled, which is what tells a drag from a tap. */
+  let gestureMoved = false;
+
   function advanceToMinute(): void {
     stopAdvance();
     cancelAdvance = schedule(() => {
@@ -373,6 +376,10 @@ export function createTimepickerFieldController(
         return [];
       }
       case "set-from-angle": {
+        // A gesture that reports movement has moved; one that reports only its end, or nothing at
+        // all, is a tap. Reset on the end so the next gesture is judged on its own.
+        if (intent.phase === "move") gestureMoved = true;
+        else if (intent.phase !== "end") gestureMoved = false;
         const current = draft();
         const ring = format === "24h" ? intent.ring ?? "outer" : "outer";
         // The number the face drew, not arithmetic on the angle. Two roundings of one rule is how a
@@ -393,10 +400,14 @@ export function createTimepickerFieldController(
         const chosen = hourFromFormat(shown);
         if (chosen === null) return refuse(`${shown} is not an hour this clock shows.`);
         draft.set({ ...current, ...chosen });
-        // An hour chosen on the face is the first half of a time. The face hands over to the minutes
-        // by itself so one gesture sets a whole time — a renderer that scheduled this instead was a
-        // renderer deciding when the field changed, and three of them answered differently.
-        if (intent.field === "hour") advanceToMinute();
+        // An hour chosen on the face is the first half of a time, and the face hands over to the
+        // minutes so one gesture sets a whole time. Only when the gesture *ended after moving*: a
+        // tap is where a person starts, and advancing on it took the dial away before they could
+        // drag to the number they meant. When it happens is this controller's — a renderer that
+        // scheduled it instead was a renderer deciding when the field changed, and three of them
+        // answered differently.
+        if (intent.field === "hour" && intent.phase === "end" && gestureMoved) advanceToMinute();
+        if (intent.phase === "end") gestureMoved = false;
         return [];
       }
       case "type-segment": {
