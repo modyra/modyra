@@ -268,9 +268,26 @@ export function createMultiselectFieldController<TValue>(
     });
   }
 
+  /**
+   * One more of a value, beside the ones already held.
+   *
+   * Inserted after the **last occurrence of the same value**, not at the end of the array. A
+   * quantity is one chip in one place, and appending split its occurrences: `["a","b"]` incremented
+   * on `a` became `["a","b","a"]`, so the value a form submits had an order nothing on screen ever
+   * showed — the strip draws each value once, at its first position, and stayed where it was while
+   * the array behind it did not. A value not held yet starts its own group at the end, which is
+   * where a first choice goes.
+   */
   function increment(key: string): readonly MdyUiCommand[] {
     return withOption(key, (option) => {
-      handle.set([...heldValues(), option.value]);
+      const values = [...heldValues()];
+      const last = values.reduce(
+        (found, value, index) => (keysOf([value], indexOf(effectiveOptions()))[0] === key ? index : found),
+        -1,
+      );
+      if (last === -1) values.push(option.value);
+      else values.splice(last + 1, 0, option.value);
+      handle.set(values);
       return [{ type: "mark-dirty" }, { type: "mark-touched" }];
     });
   }
@@ -278,8 +295,15 @@ export function createMultiselectFieldController<TValue>(
   function decrement(key: string): readonly MdyUiCommand[] {
     const option = indexOf(effectiveOptions()).get(key);
     if (!option) return [];
+    // The last of the group, so the ones that remain keep the positions they had. Taking the first
+    // moves every later occurrence up by one, which is the same silent reordering incrementing at the
+    // end used to cause.
     const values = [...heldValues()];
-    const index = values.findIndex((v) => v === option.value);
+    const key_ = indexOf(effectiveOptions());
+    const index = values.reduce(
+      (found, value, at) => (keysOf([value], key_)[0] === key ? at : found),
+      -1,
+    );
     if (index === -1) return [];
     values.splice(index, 1);
     handle.set(values);

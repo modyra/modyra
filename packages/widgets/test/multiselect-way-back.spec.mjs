@@ -119,3 +119,39 @@ test("a field out of play has no way back to offer", () => {
   assert.equal(controller.state().wayBack, null);
   controller.destroy(); form.destroy();
 });
+
+test("a quantity stays where it is: stepping does not reorder the value", () => {
+  const { form, controller, value } = open(["a", "b"], "multi");
+
+  // One more of the first value belongs beside the ones already held. Appended, the value a form
+  // submits reads ["a","b","a"] — an order nothing on screen ever showed, because the strip draws
+  // each value once at its first position and does not move when the array behind it does.
+  controller.dispatch({ type: "increment", optionKey: "a" });
+  assert.deepEqual(value(), ["a", "a", "b"]);
+  controller.dispatch({ type: "increment", optionKey: "a" });
+  assert.deepEqual(value(), ["a", "a", "a", "b"]);
+
+  // One that is not held yet starts its own group at the end, where a first choice goes.
+  controller.dispatch({ type: "increment", optionKey: "c" });
+  assert.deepEqual(value(), ["a", "a", "a", "b", "c"]);
+
+  // And one fewer takes the last of the group, so what remains keeps the positions it had.
+  controller.dispatch({ type: "decrement", optionKey: "a" });
+  assert.deepEqual(value(), ["a", "a", "b", "c"]);
+  controller.destroy(); form.destroy();
+});
+
+test("the strip's order and the value's order are the same order", () => {
+  const { form, controller, value } = open(["a", "b"], "multi");
+  controller.dispatch({ type: "increment", optionKey: "a" });
+
+  // What the strip draws: each distinct value once, in the order first taken. What the form sends:
+  // the array. A quantity that splits its group makes these two disagree without either looking
+  // wrong on its own, which is why this compares them rather than checking one.
+  const strip = [...new Set(value().map(String))];
+  const grouped = [];
+  for (const held of value().map(String)) if (!grouped.includes(held)) grouped.push(held);
+  assert.deepEqual(strip, grouped);
+  assert.deepEqual(value(), ["a", "a", "b"], "the value is not grouped the way the strip shows it");
+  controller.destroy(); form.destroy();
+});
