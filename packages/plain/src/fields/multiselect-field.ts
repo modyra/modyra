@@ -233,7 +233,9 @@ export function renderMultiselectField(
     chip.addEventListener("keydown", (event) => {
       const combo = `${event.altKey ? "Alt+" : ""}${event.key}`;
       const binding = keyBindingFor("multiselect", combo, controller.state().open);
-      if (!binding) return;
+      // Only the intents this chip answers. A key the chip does not handle — `ArrowDown` opening the
+      // popup, say — must reach the control, and swallowing it here left it doing nothing at all.
+      if (!binding || !["move", "remove", "reorder"].includes(binding.intent)) return;
       // The chip's keys are the chip's. Left to bubble, the control's own overlay handler answered
       // the same keys a second time — so `End` moved focus and then had the popup's answer applied
       // over it, and `Backspace` removed nothing because the second handler won.

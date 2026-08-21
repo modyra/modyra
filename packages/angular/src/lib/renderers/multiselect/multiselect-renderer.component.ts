@@ -203,7 +203,13 @@ import type { MdyOverlayBranch, MdyOverlayOwner } from "../../core/overlay-contr
         (keydown)="onOverlayKeydown($event)"
       />
       }
-      <div class="mdy-multiselect__options mdy-multiselect-overlay__grid">
+      <!-- The chip grid says what it is. The contract declares the role; a container left bare told
+           a screen reader nothing about the set at all. -->
+      <div
+        class="mdy-multiselect__options mdy-multiselect-overlay__grid"
+        [attr.role]="optionsRole"
+        [attr.aria-label]="controlAriaLabel()"
+      >
         @for (opt of searchResults(); track opt.value; let i = $index) {
           <div [class]="chip.wrapper">
           @if (mode() === "multi") {
@@ -277,6 +283,9 @@ export class MdyMultiselectComponent<TValue = string>
   /** The chip vocabulary, so no class for one is spelled in this template. */
   /** Whether a person may rearrange what they chose. Off by default: most lists have an order nobody chose. */
   readonly reorderable = input(false, { transform: booleanAttribute });
+
+  /** What the option grid announces itself as — the contract's answer, not this renderer's. */
+  protected readonly optionsRole = MDY_WIDGET_CONTRACTS.multiselect.parts.options.role ?? null;
 
   protected readonly chip = MDY_CHIP_CLASSES;
   /** The widget this draws: its popup's room, width and edge come from the catalog. */
@@ -464,7 +473,9 @@ export class MdyMultiselectComponent<TValue = string>
    */
   protected onChipKeydown(event: KeyboardEvent, optionKey: string): void {
     const binding = keyBindingFor("multiselect", `${event.altKey ? "Alt+" : ""}${event.key}`, this.open());
-    if (!binding) return;
+    // Only the intents this chip answers. A key the chip does not handle — `ArrowDown` opening the
+    // popup, say — must reach the control, and swallowing it here left it doing nothing at all.
+    if (!binding || !["move", "remove", "reorder"].includes(binding.intent)) return;
     // The chip's keys are the chip's. Left to bubble, the control's own handler answers the same
     // keys a second time and its answer lands on top of this one.
     event.stopPropagation();

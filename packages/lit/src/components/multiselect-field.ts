@@ -507,7 +507,9 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
    */
   private onChipKeydown(event: KeyboardEvent, handle: MdyFieldHandle<readonly unknown[]>, optionKey: string): void {
     const binding = keyBindingFor("multiselect", `${event.altKey ? "Alt+" : ""}${event.key}`, this._open);
-    if (!binding) return;
+    // Only the intents this chip answers. A key the chip does not handle — `ArrowDown` opening the
+    // popup, say — must reach the control, and swallowing it here left it doing nothing at all.
+    if (!binding || !["move", "remove", "reorder"].includes(binding.intent)) return;
     // The chip's keys are the chip's. Left to bubble, the control's own handler answers the same
     // keys a second time and its answer lands on top of this one.
     event.stopPropagation();
