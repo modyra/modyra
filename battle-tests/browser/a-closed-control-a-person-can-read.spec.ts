@@ -78,12 +78,19 @@ for (const host of HOSTS) {
     }, { api: host.api });
     await page.waitForTimeout(400);
 
-    const drawn = await page.evaluate(({ chipClass }) => {
+    const drawn = await page.evaluate(({ chipClass, stripClass }) => {
       const root = document.querySelector('[data-form="perChoice"]');
-      if (root === null) return null;
-      return Array.from(root.querySelectorAll(`.${chipClass}`))
+      // **Scoped to the strip, not to the control.** `chip` and `option` both resolve to `.mdy-chip`,
+      // and Angular keeps its popup inside the component where plain and lit portal theirs to the
+      // body — so counting chips under the control counts the popup's options in one renderer and
+      // nothing extra in the other two. The scope was equivalent while the options were drawn inline;
+      // it stopped being equivalent when they moved, and the spec kept the old one and read the
+      // difference as a defect in the renderer that had not changed.
+      const strip = root?.querySelector(`.${stripClass}`);
+      if (strip === null || strip === undefined) return null;
+      return Array.from(strip.querySelectorAll(`.${chipClass}`))
         .map((chip) => (chip.getAttribute("aria-label") ?? chip.textContent ?? "").trim());
-    }, { chipClass: CHIP });
+    }, { chipClass: CHIP, stripClass: STRIP });
 
     expect(drawn, "nothing was mounted").not.toBeNull();
     expect(
