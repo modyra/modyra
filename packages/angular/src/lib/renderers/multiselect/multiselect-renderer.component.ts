@@ -1,8 +1,9 @@
-import { optionsWithUnrecognizedValues, overlayControlledId, projectOverlayOpenerA11y } from "@modyra/widgets";
+import { keyBindingFor, optionsWithUnrecognizedValues, overlayControlledId, projectOverlayOpenerA11y } from "@modyra/widgets";
 import { MdyPartDirective } from "../../control/mdy-part.directive";
 import { NgTemplateOutlet } from "@angular/common";
 import {
   afterNextRender,
+  booleanAttribute,
   ChangeDetectionStrategy,
   Component,
   computed,
@@ -93,6 +94,8 @@ import type { MdyOverlayBranch, MdyOverlayOwner } from "../../core/overlay-contr
               [class]="chipClasses(true)"
               tabindex="0"
               role="group"
+              [attr.data-key]="held.key"
+              (keydown)="onChipKeydown($event, held.key)"
               [attr.aria-label]="held.count > 1 ? held.label + ', ' + held.count : held.label"
               [title]="held.label"
             >
@@ -233,6 +236,9 @@ export class MdyMultiselectComponent<TValue = string>
      to the contract reached the renderers that derive and stopped at this one. */
   protected readonly popupClass = MDY_WIDGET_CONTRACTS.multiselect.parts.popup.classes.join(" ");
   /** The chip vocabulary, so no class for one is spelled in this template. */
+  /** Whether a person may rearrange what they chose. Off by default: most lists have an order nobody chose. */
+  readonly reorderable = input(false, { transform: booleanAttribute });
+
   protected readonly chip = MDY_CHIP_CLASSES;
   /** The widget this draws: its popup's room, width and edge come from the catalog. */
   protected override readonly overlayKind = "multiselect" as const;
@@ -406,6 +412,28 @@ export class MdyMultiselectComponent<TValue = string>
     }
     return [...tally.values()];
   });
+
+  /**
+   * Rearranging what was chosen, from the chip a person is looking at.
+   *
+   * The keys are the contract's, and so is the direction: the strip runs in the writing direction,
+   * so `ArrowLeft` moves a chip *later* in a right-to-left document, and a renderer reading the key
+   * rather than the binding would have to know that.
+   */
+  protected onChipKeydown(event: KeyboardEvent, optionKey: string): void {
+    if (!this.reorderable()) return;
+    const binding = keyBindingFor("multiselect", `${event.altKey ? "Alt+" : ""}${event.key}`, this.open());
+    if (binding?.intent !== "reorder") return;
+    event.preventDefault();
+    const order = this.chosen().map((c) => c.key);
+    this.controller()?.dispatch({
+      type: "move-selected", optionKey, to: order.indexOf(optionKey) + (binding.by ?? 1),
+    });
+    afterNextRender(
+      () => (this.hostRef.nativeElement.querySelector(`[data-key="${optionKey}"]`) as HTMLElement | null)?.focus(),
+      { injector: this.injector },
+    );
+  }
 
   /** The whole selection, so two announcements differ whenever the selection does. */
   protected readonly announcementText = computed(() => {

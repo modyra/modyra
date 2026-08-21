@@ -232,11 +232,15 @@ import { MdyToggleComponent } from "../renderers/toggle/toggle-renderer.componen
               />
             }
             @case ("multiselect") {
+              <!-- What the document says about this field, forwarded. A member the document
+                   declares and this template drops is a capability nobody can reach. -->
               <mdy-control-multiselect
                 [name]="f.name"
                 [label]="f.label ?? ''"
                 [options]="f.options"
                 [initialValue]="emptyFor(f)"
+                [searchable]="asOptions(f).searchable ?? false"
+                [reorderable]="asOptions(f).reorderable ?? false"
               />
             }
             @case ("segmented") {
@@ -281,6 +285,11 @@ export class MdyDynamicFormComponent {
      owns, and the one furthest from anything that would notice it drifting. */
   protected readonly defaultFormat = MDY_TIMEPICKER_DEFAULT_FORMAT;
   protected readonly initialView = MDY_TIMEPICKER_INITIAL_VIEW;
+
+  /** An options field's own members, read from the union the template narrows by `kind`. */
+  protected asOptions(field: MdyDynamicField): { readonly searchable?: boolean; readonly reorderable?: boolean } {
+    return field as { searchable?: boolean; reorderable?: boolean };
+  }
 
   /** A timepicker's own members, read from the union the template narrows by `kind`. */
   protected asTime(field: MdyDynamicField): {

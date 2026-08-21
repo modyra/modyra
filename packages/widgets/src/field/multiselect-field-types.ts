@@ -66,5 +66,21 @@ export type MdyMultiselectFieldIntent =
   | { readonly type: "close"; readonly restoreFocus?: boolean }
   | { readonly type: "toggleOpen" }
   | { readonly type: "clear" }
+  /**
+   * Moves a chosen value to another position in the value.
+   *
+   * The **only** thing that moves one. Until this existed, reordering meant removing and re-adding,
+   * which can put a value last and nowhere else — and only from the option list, rather than from
+   * the chip in front of the person. A keyboard reaches it through `MDY_WIDGET_KEYBOARD`; a drag is
+   * a second door onto the same intent rather than a mechanism of its own, so the two cannot come
+   * to disagree about what an order is.
+   *
+   * `to` is an index into the distinct chosen values, clamped rather than refused: a control asking
+   * for one past either end means "as far as it goes", which is what holding an arrow down does.
+   *
+   * A value taken more than once moves as one thing — the quantity travels with it, because the
+   * chip a person is moving is the quantity.
+   */
+  | { readonly type: "move-selected"; readonly optionKey: string; readonly to: number }
   | { readonly type: "focus" }
   | { readonly type: "blur" };
