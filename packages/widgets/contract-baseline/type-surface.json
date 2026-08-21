@@ -9,6 +9,13 @@
     "month: number",
     "year: number"
   ],
+  "MdyA11yAnnouncer": [
+    "announce(0) message: string,-> returns: void",
+    "constructor-> returns: (inferred)",
+    "ngOnDestroy-> returns: void",
+    "ɵfac: _angular_core.ɵɵFactoryDeclaration<MdyA11yAnnouncer, never>",
+    "ɵprov: _angular_core.ɵɵInjectableDeclaration<MdyA11yAnnouncer>"
+  ],
   "MdyAccessibleNameSource": [
     "\"label\"",
     "\"labelledby\"",
@@ -43,65 +50,56 @@
     "reflow?: void",
     "reposition: void"
   ],
+  "MdyAngularCommandHandlers": [
+    "-> MdyWidgetCommandHandlers"
+  ],
+  "MdyAngularSelectAdapter": [
+    "connectHandlers(0) handlers: MdyAngularCommandHandlers,-> returns: void",
+    "constructor(0) options: MdyAngularSelectAdapterOptions<TValue>,(1) runtime: MdyWidgetRuntime,(2) injector: Injector,-> returns: (inferred)",
+    "destroy-> returns: void",
+    "dispatch(0) intent: MdySelectIntent,-> returns: void",
+    "open: Signal<boolean>",
+    "registerItem(0) part: string,(1) key: string,(2) ref: ElementRef<HTMLElement>,-> returns: void",
+    "registerPart(0) name: string,(1) ref: ElementRef<HTMLElement>,-> returns: void",
+    "setDisabled(0) disabled: boolean,-> returns: void",
+    "setInvalid(0) invalid: boolean,-> returns: void",
+    "setLoading(0) loading: boolean,-> returns: void",
+    "setOpen(0) open: boolean,-> returns: void",
+    "setOptions(0) options: readonly MdySelectOption<TValue>[],-> returns: void",
+    "setReadonly(0) readonly: boolean,-> returns: void",
+    "setValue(0) value: TValue | null,-> returns: void",
+    "state: Signal<MdySelectState<TValue>>",
+    "view: Signal<ReturnType<MdySelectController<TValue>[\"view\"]>>"
+  ],
+  "MdyAngularSelectAdapterOptions": [
+    "onChange?: (value: TValue | null) => void"
+  ],
   "MdyAnnouncer": [
     "announce: void"
   ],
   "MdyAnyArrayDescriptor": [
-    "initial: ReadonlyArray<unknown>",
-    "item: MdyAnyRowDescriptor",
-    "kind: \"array\"",
-    "validators: ReadonlyArray<ValidatorFn<never>>"
+    "-> MdyAnyArrayDescriptor$1"
   ],
   "MdyAnyFieldDescriptor": [
-    "asyncDebounceMs: number",
-    "asyncDependsOn: ReadonlyArray<string>",
-    "asyncTimeoutMs: number",
-    "asyncValidators: ReadonlyArray<MdyAsyncValidatorFn<never>>",
-    "asyncWhen: ((value: unknown, formValue: Record<string, unknown>) => boolean) | null",
-    "initial: unknown",
-    "kind: \"field\"",
-    "options: readonly unknown[] | null",
-    "sanitize: MdySanitizer | null",
-    "sensitive: boolean",
-    "shape: MdyValueShape | null",
-    "validators: ReadonlyArray<ValidatorFn<never>>",
-    "when: ((value: unknown, formValue: Record<string, unknown>) => boolean) | null"
+    "-> MdyAnyFieldDescriptor$1"
   ],
   "MdyAnyGroupDescriptor": [
-    "children: MdyFormSchema",
-    "kind: \"group\"",
-    "when: ((value: unknown, enclosing: Record<string, unknown>) => boolean) | null"
+    "-> MdyAnyGroupDescriptor$1"
   ],
   "MdyAnyRecordDescriptor": [
-    "initial: Readonly<Record<string, unknown>>",
-    "item: MdyAnyRowDescriptor",
-    "kind: \"record\"",
-    "validators: ReadonlyArray<ValidatorFn<never>>"
+    "-> MdyAnyRecordDescriptor$1"
   ],
   "MdyAnyRowDescriptor": [
-    "(opaque)"
+    "-> MdyAnyRowDescriptor$1"
   ],
   "MdyArrayDescriptor": [
-    "initial: ReadonlyArray<unknown>",
-    "item: TItem",
-    "kind: \"array\"",
-    "validators: ReadonlyArray<ValidatorFn<readonly unknown[]>>"
+    "-> MdyArrayDescriptor$1"
   ],
   "MdyArrayHandle": [
-    "at: TItemHandle | null",
-    "errors: MdySignal<ReadonlyArray<MdyFieldError>>",
-    "insert: void",
-    "length: MdySignal<number>",
-    "move: void",
-    "path: string",
-    "push: void",
-    "remove: void",
-    "rows: MdySignal<ReadonlyArray<TItemHandle>>",
-    "setAll: void",
-    "valid: MdySignal<boolean>"
+    "(opaque)"
   ],
   "MdyArrayItemValue": [
-    "(opaque)"
+    "-> MdyArrayItemValue$1"
   ],
   "MdyAsyncDraftStorage": [
     "flushed: Promise<void>",
@@ -130,6 +128,59 @@
     "dependsOn?: ReadonlyArray<string>",
     "timeoutMs?: number",
     "when?: (value: unknown, formValue: Record<string, unknown>) => boolean"
+  ],
+  "MdyBaseControl": [
+    "ariaDisabled: InputSignal<boolean | undefined>",
+    "ariaLabel: InputSignal<string | null>",
+    "ariaRequired: InputSignal<boolean>",
+    "constructor-> returns: (inferred)",
+    "field: InputSignal<MdyFieldHandle<TValue | null> | MdyFieldHandle<TValue> | undefined>",
+    "floatingLabel: InputSignal<boolean | undefined>",
+    "initialValue: InputSignal<unknown>",
+    "label: InputSignal<string>",
+    "name: InputSignal<string>",
+    "ngOnInit-> returns: void",
+    "protected adoptFieldController(0) create: (handle: MdyFieldHandle<TValue | null>, widgetId: string) => TController,(1) sync?: (controller: TController) => void,-> returns: () => TController | undefined",
+    "protected controlAriaLabel: Signal<string | null>",
+    "protected controlPart: Signal<MdyPartContract>",
+    "protected describedById(0) fieldId: string,-> returns: string | null",
+    "protected descriptionId(0) fieldId: string,-> returns: string | null",
+    "protected dirty: Signal<boolean>",
+    "protected dispatchValueBlur(0) kind: MdyWidgetKind,-> returns: void",
+    "protected dispatchValueIntent(0) kind: MdyWidgetKind,(1) intent: MdyValueWidgetIntent<T>,-> returns: void",
+    "protected effectiveAriaDisabled: Signal<boolean>",
+    "protected effectiveName: Signal<string>",
+    "protected errors: Signal<ReadonlyArray<MdyFieldError>>",
+    "protected errorsRendered: Signal<boolean>",
+    "protected fieldId: string",
+    "protected fieldState: Signal<MdyFieldState<TValue>>",
+    "protected hasErrors: Signal<boolean>",
+    "protected hostElement: ElementRef<any>",
+    "protected inlineErrorShown: Signal<boolean>",
+    "protected inlineErrorText: Signal<string>",
+    "protected inlineErrors: boolean",
+    "protected isDisabled: Signal<boolean>",
+    "protected isFloatingLabel: Signal<boolean>",
+    "protected isReadonly: Signal<boolean>",
+    "protected isRequired: Signal<boolean>",
+    "protected isValid: Signal<boolean>",
+    "protected markAsDirty-> returns: void",
+    "protected markAsTouched-> returns: void",
+    "protected narrowedConstraints-> returns: Partial<MdyFieldConstraints>",
+    "protected nextId-> returns: number",
+    "protected paintsAsInvalid: Signal<boolean>",
+    "protected prefix: Signal<MdyPrefixDirective | undefined>",
+    "protected reportEntry(0) problem: string | null,-> returns: void",
+    "protected suffix: Signal<MdySuffixDirective | undefined>",
+    "protected supportingText: Signal<MdySupportingTextDirective | undefined>",
+    "protected synchronizeValue(0) value: TValue,-> returns: void",
+    "protected touched: Signal<boolean>",
+    "protected valueOwnerCallbacks-> returns: { readonly onTouched: () => void; readonly onDirty: () => void; }",
+    "protected widgetKind: MdyWidgetKind",
+    "setValue(0) newValue: TValue,-> returns: void",
+    "value: Signal<TValue>",
+    "ɵdir: _angular_core.ɵɵDirectiveDeclaration<MdyBaseControl<any>, never, never, { \"name\": { \"alias\": \"name\"; \"required\": false; \"isSignal\": true; }; \"field\": { \"alias\": \"field\"; \"required\": false; \"isSignal\": true; }; \"label\": { \"alias\": \"label\"; \"required\": false; \"isSignal\": true; }; \"ariaLabel\": { \"alias\": \"ariaLabel\"; \"required\": false; \"isSignal\": true; }; \"floatingLabel\": { \"alias\": \"floatingLabel\"; \"required\": false; \"isSignal\": true; }; \"initialValue\": { \"alias\": \"initialValue\"; \"required\": false; \"isSignal\": true; }; \"ariaRequired\": { \"alias\": \"ariaRequired\"; \"required\": false; \"isSignal\": true; }; \"ariaDisabled\": { \"alias\": \"ariaDisabled\"; \"required\": false; \"isSignal\": true; }; }, {}, [\"prefix\", \"suffix\", \"supportingText\"], never, true, never>",
+    "ɵfac: _angular_core.ɵɵFactoryDeclaration<MdyBaseControl<any>, never>"
   ],
   "MdyBatchingCapability": [
     "batch: T"
@@ -172,6 +223,76 @@
     "\"es\"",
     "\"fr\"",
     "\"it\""
+  ],
+  "MdyCalendarCellComponent": [
+    "cell: _angular_core.InputSignal<CalendarCell>",
+    "focus-> returns: void",
+    "isDisabled: _angular_core.InputSignal<boolean>",
+    "isFocused: _angular_core.InputSignal<boolean>",
+    "isSelected: _angular_core.InputSignal<boolean>",
+    "isToday: _angular_core.InputSignal<boolean>",
+    "picked: _angular_core.OutputEmitterRef<CalendarDate>",
+    "protected onSelect-> returns: void",
+    "ɵcmp: _angular_core.ɵɵComponentDeclaration<MdyCalendarCellComponent, \"mdy-calendar-cell\", never, { \"cell\": { \"alias\": \"cell\"; \"required\": true; \"isSignal\": true; }; \"isSelected\": { \"alias\": \"isSelected\"; \"required\": false; \"isSignal\": true; }; \"isToday\": { \"alias\": \"isToday\"; \"required\": false; \"isSignal\": true; }; \"isFocused\": { \"alias\": \"isFocused\"; \"required\": false; \"isSignal\": true; }; \"isDisabled\": { \"alias\": \"isDisabled\"; \"required\": false; \"isSignal\": true; }; }, { \"picked\": \"picked\"; }, never, never, true, never>",
+    "ɵfac: _angular_core.ɵɵFactoryDeclaration<MdyCalendarCellComponent, never>"
+  ],
+  "MdyCalendarComponent": [
+    "ariaLabel: _angular_core.InputSignal<string>",
+    "closed: _angular_core.OutputEmitterRef<void>",
+    "constructor-> returns: (inferred)",
+    "controller: _angular_core.InputSignal<MdyDatepickerFieldController | undefined>",
+    "datePicked: _angular_core.OutputEmitterRef<CalendarDate>",
+    "focusFocusedDate-> returns: void",
+    "gridId: _angular_core.InputSignal<string>",
+    "maxDate: _angular_core.InputSignal<CalendarDate | null>",
+    "minDate: _angular_core.InputSignal<CalendarDate | null>",
+    "protected effectiveAriaLabel: _angular_core.Signal<string>",
+    "protected focusedDate: _angular_core.Signal<CalendarDate>",
+    "protected goToNextMonth-> returns: void",
+    "protected goToPreviousMonth-> returns: void",
+    "protected onDatePicked(0) date: CalendarDate,-> returns: void",
+    "protected onKeydown(0) event: KeyboardEvent,-> returns: void",
+    "protected onMonthSelected(0) month: number,-> returns: void",
+    "protected onToggleView-> returns: void",
+    "protected onYearSelected(0) year: number,-> returns: void",
+    "protected view: _angular_core.Signal<\"days\" | \"months\" | \"years\">",
+    "protected viewMonth: _angular_core.Signal<number>",
+    "protected viewYear: _angular_core.Signal<number>",
+    "selectedDate: _angular_core.InputSignal<CalendarDate | null>",
+    "syncView(0) date: CalendarDate | null,-> returns: void",
+    "ɵcmp: _angular_core.ɵɵComponentDeclaration<MdyCalendarComponent, \"mdy-calendar\", never, { \"gridId\": { \"alias\": \"gridId\"; \"required\": false; \"isSignal\": true; }; \"selectedDate\": { \"alias\": \"selectedDate\"; \"required\": false; \"isSignal\": true; }; \"minDate\": { \"alias\": \"minDate\"; \"required\": false; \"isSignal\": true; }; \"maxDate\": { \"alias\": \"maxDate\"; \"required\": false; \"isSignal\": true; }; \"controller\": { \"alias\": \"controller\"; \"required\": false; \"isSignal\": true; }; \"ariaLabel\": { \"alias\": \"ariaLabel\"; \"required\": false; \"isSignal\": true; }; }, { \"datePicked\": \"datePicked\"; \"closed\": \"closed\"; }, never, never, true, never>",
+    "ɵfac: _angular_core.ɵɵFactoryDeclaration<MdyCalendarComponent, never>"
+  ],
+  "MdyCalendarGridComponent": [
+    "datePicked: _angular_core.OutputEmitterRef<CalendarDate>",
+    "focusDate(0) date: CalendarDate,-> returns: void",
+    "focusedDate: _angular_core.InputSignal<CalendarDate | null>",
+    "gridId: _angular_core.InputSignal<string>",
+    "maxDate: _angular_core.InputSignal<CalendarDate | null>",
+    "minDate: _angular_core.InputSignal<CalendarDate | null>",
+    "month: _angular_core.InputSignal<number>",
+    "protected isCellDisabled(0) cell: CalendarCell,-> returns: boolean",
+    "protected isCellFocused(0) cell: CalendarCell,-> returns: boolean",
+    "protected isCellSelected(0) cell: CalendarCell,-> returns: boolean",
+    "protected isCellToday(0) cell: CalendarCell,-> returns: boolean",
+    "protected orderedDayNames: _angular_core.Signal<readonly string[]>",
+    "protected orderedDayNamesShort: _angular_core.Signal<readonly string[]>",
+    "protected rows: _angular_core.Signal<readonly (readonly CalendarCell[])[]>",
+    "selectedDate: _angular_core.InputSignal<CalendarDate | null>",
+    "year: _angular_core.InputSignal<number>",
+    "ɵcmp: _angular_core.ɵɵComponentDeclaration<MdyCalendarGridComponent, \"mdy-calendar-grid\", never, { \"year\": { \"alias\": \"year\"; \"required\": true; \"isSignal\": true; }; \"month\": { \"alias\": \"month\"; \"required\": true; \"isSignal\": true; }; \"gridId\": { \"alias\": \"gridId\"; \"required\": false; \"isSignal\": true; }; \"selectedDate\": { \"alias\": \"selectedDate\"; \"required\": false; \"isSignal\": true; }; \"focusedDate\": { \"alias\": \"focusedDate\"; \"required\": false; \"isSignal\": true; }; \"minDate\": { \"alias\": \"minDate\"; \"required\": false; \"isSignal\": true; }; \"maxDate\": { \"alias\": \"maxDate\"; \"required\": false; \"isSignal\": true; }; }, { \"datePicked\": \"datePicked\"; }, never, never, true, never>",
+    "ɵfac: _angular_core.ɵɵFactoryDeclaration<MdyCalendarGridComponent, never>"
+  ],
+  "MdyCalendarHeaderComponent": [
+    "month: _angular_core.InputSignal<number>",
+    "nextMonth: _angular_core.OutputEmitterRef<void>",
+    "previousMonth: _angular_core.OutputEmitterRef<void>",
+    "protected i18n: _modyra_widgets.MdyI18nMessages",
+    "protected monthLabel: _angular_core.Signal<string>",
+    "toggleView: _angular_core.OutputEmitterRef<void>",
+    "year: _angular_core.InputSignal<number>",
+    "ɵcmp: _angular_core.ɵɵComponentDeclaration<MdyCalendarHeaderComponent, \"mdy-calendar-header\", never, { \"year\": { \"alias\": \"year\"; \"required\": true; \"isSignal\": true; }; \"month\": { \"alias\": \"month\"; \"required\": true; \"isSignal\": true; }; }, { \"previousMonth\": \"previousMonth\"; \"nextMonth\": \"nextMonth\"; \"toggleView\": \"toggleView\"; }, never, never, true, never>",
+    "ɵfac: _angular_core.ɵɵFactoryDeclaration<MdyCalendarHeaderComponent, never>"
   ],
   "MdyCalendarIssue": [
     "code: MdyCalendarIssueCode",
@@ -241,6 +362,16 @@
     "disabled: boolean",
     "open: boolean"
   ],
+  "MdyCheckboxComponent": [
+    "protected fieldId: string",
+    "protected onBlur-> returns: void",
+    "protected onChange(0) event: Event,-> returns: void",
+    "protected widgetContract: _modyra_widgets.MdyWidgetDefinition<\"control\" | \"errorItem\" | \"errors\" | \"inputWrapper\" | \"label\" | \"requiredMarker\" | \"root\" | \"supportingText\" | \"indicator\">",
+    "protected widgetHasRootClass: boolean",
+    "protected widgetKind: (inferred)",
+    "ɵcmp: _angular_core.ɵɵComponentDeclaration<MdyCheckboxComponent, \"mdy-control-checkbox\", never, {}, {}, never, never, true, never>",
+    "ɵfac: _angular_core.ɵɵFactoryDeclaration<MdyCheckboxComponent, never>"
+  ],
   "MdyChipAppearance": [
     "mode?: MdyChipMode",
     "removable?: boolean",
@@ -257,6 +388,13 @@
     "\"option\"",
     "\"value\""
   ],
+  "MdyChipsDirective": [
+    "protected classes: _angular_core.Signal<string>",
+    "removable: _angular_core.InputSignal<boolean>",
+    "selected: _angular_core.InputSignal<boolean>",
+    "ɵdir: _angular_core.ɵɵDirectiveDeclaration<MdyChipsDirective, \"[mdyChips]\", never, { \"selected\": { \"alias\": \"selected\"; \"required\": false; \"isSignal\": true; }; \"removable\": { \"alias\": \"removable\"; \"required\": false; \"isSignal\": true; }; }, {}, never, never, true, never>",
+    "ɵfac: _angular_core.ɵɵFactoryDeclaration<MdyChipsDirective, never>"
+  ],
   "MdyColorValueIntent": [
     "(opaque)"
   ],
@@ -264,6 +402,30 @@
     "close: boolean",
     "touched: boolean",
     "value: string | undefined"
+  ],
+  "MdyColorsComponent": [
+    "placeholder: _angular_core.InputSignal<string>",
+    "presets: _angular_core.InputSignal<readonly string[]>",
+    "protected fieldId: string",
+    "protected hexInputId: string",
+    "protected i18n: _modyra_widgets.MdyI18nMessages",
+    "protected isActiveColor(0) color: string,-> returns: boolean",
+    "protected onBeforeOpen-> returns: void",
+    "protected onBlur(0) event: FocusEvent,-> returns: void",
+    "protected onHexBlur(0) event: FocusEvent,-> returns: void",
+    "protected onInput(0) event: Event,-> returns: void",
+    "protected onTextInput(0) event: Event,-> returns: void",
+    "protected openerPart: _angular_core.Signal<_modyra_widgets.MdyPartContract>",
+    "protected overlayKind: \"colors\"",
+    "protected placementClass: _angular_core.Signal<string>",
+    "protected popupClass: string",
+    "protected popupId: _angular_core.Signal<string>",
+    "protected selectColor(0) color: string,-> returns: void",
+    "protected widgetContract: _modyra_widgets.MdyWidgetDefinition<\"control\" | \"errorItem\" | \"errors\" | \"inlineError\" | \"inputWrapper\" | \"label\" | \"requiredMarker\" | \"root\" | \"supportingText\" | \"popup\" | \"toggle\" | \"hexInput\" | \"nativePicker\" | \"presets\" | \"preview\" | \"swatch\">",
+    "protected widgetHasRootClass: boolean",
+    "protected widgetKind: \"colors\"",
+    "ɵcmp: _angular_core.ɵɵComponentDeclaration<MdyColorsComponent, \"mdy-control-colors\", never, { \"placeholder\": { \"alias\": \"placeholder\"; \"required\": false; \"isSignal\": true; }; \"presets\": { \"alias\": \"presets\"; \"required\": false; \"isSignal\": true; }; }, {}, never, never, true, never>",
+    "ɵfac: _angular_core.ɵɵFactoryDeclaration<MdyColorsComponent, never>"
   ],
   "MdyColorsFieldController": [
     "setReadonly: void",
@@ -314,13 +476,42 @@
     "debugName?: string",
     "equal?: MdyEqualityFn<T>"
   ],
+  "MdyConditionalOptionsDirective": [
+    "constructor-> returns: (inferred)",
+    "mdyDependsOn: _angular_core.InputSignal<string>",
+    "mdyOptionsMap: _angular_core.InputSignal<Record<string | number, readonly MdySelectOption<TValue>[]> | ((val: unknown) => readonly MdySelectOption<TValue>[])>",
+    "ɵdir: _angular_core.ɵɵDirectiveDeclaration<MdyConditionalOptionsDirective<any>, \"[mdyDependsOn]\", never, { \"mdyDependsOn\": { \"alias\": \"mdyDependsOn\"; \"required\": true; \"isSignal\": true; }; \"mdyOptionsMap\": { \"alias\": \"mdyOptionsMap\"; \"required\": true; \"isSignal\": true; }; }, {}, never, never, true, never>",
+    "ɵfac: _angular_core.ɵɵFactoryDeclaration<MdyConditionalOptionsDirective<any>, never>"
+  ],
   "MdyContextRef": [
     "context: string"
+  ],
+  "MdyControlComponent": [
+    "name: _angular_core.InputSignal<string>",
+    "ɵcmp: _angular_core.ɵɵComponentDeclaration<MdyControlComponent, \"mdy-control\", never, { \"name\": { \"alias\": \"name\"; \"required\": true; \"isSignal\": true; }; }, {}, never, [\"*\"], true, never>",
+    "ɵfac: _angular_core.ɵɵFactoryDeclaration<MdyControlComponent, never>"
+  ],
+  "MdyControlLabelComponent": [
+    "errorText: _angular_core.InputSignal<string>",
+    "filled: _angular_core.InputSignal<boolean>",
+    "forId: _angular_core.InputSignal<string>",
+    "label: _angular_core.InputSignal<string>",
+    "labelId: _angular_core.InputSignal<string>",
+    "required: _angular_core.InputSignal<boolean>",
+    "showInlineError: _angular_core.InputSignal<boolean>",
+    "ɵcmp: _angular_core.ɵɵComponentDeclaration<MdyControlLabelComponent, \"mdy-control-label\", never, { \"label\": { \"alias\": \"label\"; \"required\": false; \"isSignal\": true; }; \"forId\": { \"alias\": \"forId\"; \"required\": false; \"isSignal\": true; }; \"labelId\": { \"alias\": \"labelId\"; \"required\": false; \"isSignal\": true; }; \"showInlineError\": { \"alias\": \"showInlineError\"; \"required\": false; \"isSignal\": true; }; \"errorText\": { \"alias\": \"errorText\"; \"required\": false; \"isSignal\": true; }; \"required\": { \"alias\": \"required\"; \"required\": false; \"isSignal\": true; }; \"filled\": { \"alias\": \"filled\"; \"required\": false; \"isSignal\": true; }; }, {}, never, never, true, never>",
+    "ɵfac: _angular_core.ɵɵFactoryDeclaration<MdyControlLabelComponent, never>"
   ],
   "MdyControlOption": [
     "disabled?: boolean",
     "label: string",
     "value: TValue"
+  ],
+  "MdyControlRendererConfig": [
+    "hint?: string",
+    "label?: string",
+    "options?: ReadonlyArray<MdyControlOption<unknown>>",
+    "placeholder?: string"
   ],
   "MdyControllerNotify": [
     "(opaque)"
@@ -340,6 +531,15 @@
     "constructor(0) observerKind: string,(1) ownerKind?: string | undefined,-> returns: (inferred)",
     "observerKind: string",
     "ownerKind?: string | undefined"
+  ],
+  "MdyCvaDirective": [
+    "constructor-> returns: (inferred)",
+    "registerOnChange(0) fn: (value: unknown) => void,-> returns: void",
+    "registerOnTouched(0) fn: () => void,-> returns: void",
+    "setDisabledState(0) isDisabled: boolean,-> returns: void",
+    "writeValue(0) value: unknown,-> returns: void",
+    "ɵdir: i0.ɵɵDirectiveDeclaration<MdyCvaDirective, \"[mdyCva]\", never, {}, {}, never, never, true, never>",
+    "ɵfac: i0.ɵɵFactoryDeclaration<MdyCvaDirective, never>"
   ],
   "MdyDateDraftIntent": [
     "(opaque)"
@@ -362,6 +562,35 @@
     "monthNamesLong: readonly string[]",
     "monthNamesShort: readonly string[]"
   ],
+  "MdyDatePickerComponent": [
+    "displayFormat: _angular_core.InputSignal<\"iso\" | \"localized\">",
+    "maxDate: _angular_core.InputSignal<string | null>",
+    "minDate: _angular_core.InputSignal<string | null>",
+    "placeholder: _angular_core.InputSignal<string>",
+    "protected controller: () => _modyra_widgets.MdyDatepickerFieldController | undefined",
+    "protected displayValue: _angular_core.Signal<string>",
+    "protected fieldId: string",
+    "protected forceModalPlacement-> returns: boolean",
+    "protected i18n: _modyra_widgets.MdyI18nMessages",
+    "protected minSpace: (inferred)",
+    "protected modalDisplayValue: _angular_core.Signal<string>",
+    "protected onBeforeOpen-> returns: void",
+    "protected onDatePicked(0) date: CalendarDate,-> returns: void",
+    "protected onInputBlur(0) event: FocusEvent,-> returns: void",
+    "protected onInputChange(0) event: Event,-> returns: void",
+    "protected openerPart: _angular_core.Signal<_modyra_widgets.MdyPartContract>",
+    "protected overlayKind: \"datepicker\"",
+    "protected parsedMaxDate: _angular_core.Signal<CalendarDate | null>",
+    "protected parsedMinDate: _angular_core.Signal<CalendarDate | null>",
+    "protected parsedSelectedDate: _angular_core.Signal<CalendarDate | null>",
+    "protected popupClass: string",
+    "protected popupId: _angular_core.Signal<string>",
+    "protected widgetContract: _modyra_widgets.MdyWidgetDefinition<\"control\" | \"errorItem\" | \"errors\" | \"inlineError\" | \"inputWrapper\" | \"label\" | \"requiredMarker\" | \"root\" | \"supportingText\" | \"popup\" | \"calendar\" | \"dialogHeader\" | \"grid\" | \"gridcell\" | \"monthCell\" | \"monthPicker\" | \"row\" | \"toggle\" | \"weekday\" | \"weekdays\" | \"yearCell\" | \"yearPicker\">",
+    "protected widgetHasRootClass: boolean",
+    "variant: _angular_core.InputSignal<\"docked\" | \"modal\">",
+    "ɵcmp: _angular_core.ɵɵComponentDeclaration<MdyDatePickerComponent, \"mdy-control-datepicker\", never, { \"placeholder\": { \"alias\": \"placeholder\"; \"required\": false; \"isSignal\": true; }; \"minDate\": { \"alias\": \"minDate\"; \"required\": false; \"isSignal\": true; }; \"maxDate\": { \"alias\": \"maxDate\"; \"required\": false; \"isSignal\": true; }; \"variant\": { \"alias\": \"variant\"; \"required\": false; \"isSignal\": true; }; \"displayFormat\": { \"alias\": \"displayFormat\"; \"required\": false; \"isSignal\": true; }; }, {}, never, never, true, never>",
+    "ɵfac: _angular_core.ɵɵFactoryDeclaration<MdyDatePickerComponent, never>"
+  ],
   "MdyDateRange": [
     "end: string | null",
     "start: string | null"
@@ -378,6 +607,40 @@
     "commit: MdyDateRangeValue | undefined",
     "restoreFocus: boolean",
     "state: MdyDateRangeDraftState"
+  ],
+  "MdyDateRangePickerComponent": [
+    "dateFilter: _angular_core.InputSignal<((date: string) => boolean) | null>",
+    "endPlaceholder: _angular_core.InputSignal<string>",
+    "maxDate: _angular_core.InputSignal<string | null>",
+    "minDate: _angular_core.InputSignal<string | null>",
+    "protected controller: () => _modyra_widgets.MdyDaterangeFieldController | undefined",
+    "protected displayEnd: _angular_core.Signal<string>",
+    "protected displayStart: _angular_core.Signal<string>",
+    "protected fieldId: string",
+    "protected forceModalPlacement-> returns: boolean",
+    "protected i18n: _modyra_widgets.MdyI18nMessages",
+    "protected lastFocused: _angular_core.WritableSignal<\"start\" | \"end\">",
+    "protected minSpace: (inferred)",
+    "protected modalDisplayValue: _angular_core.Signal<string>",
+    "protected onBeforeOpen-> returns: void",
+    "protected onEndpointBlur(0) event: FocusEvent,(1) endpoint: \"start\" | \"end\",-> returns: void",
+    "protected onEndpointInput(0) event: Event,(1) endpoint: \"start\" | \"end\",-> returns: void",
+    "protected onRangePicked(0) range: { readonly start: CalendarDate; readonly end: CalendarDate; },-> returns: void",
+    "protected openerPart: _angular_core.Signal<_modyra_widgets.MdyPartContract>",
+    "protected overlayKind: \"daterange\"",
+    "protected parsedEnd: _angular_core.Signal<CalendarDate | null>",
+    "protected parsedMaxDate: _angular_core.Signal<CalendarDate | null>",
+    "protected parsedMinDate: _angular_core.Signal<CalendarDate | null>",
+    "protected parsedStart: _angular_core.Signal<CalendarDate | null>",
+    "protected popupClass: string",
+    "protected popupId: _angular_core.Signal<string>",
+    "protected widgetContract: _modyra_widgets.MdyWidgetDefinition<\"errorItem\" | \"errors\" | \"inlineError\" | \"inputWrapper\" | \"label\" | \"requiredMarker\" | \"root\" | \"supportingText\" | \"popup\" | \"calendar\" | \"dialogHeader\" | \"grid\" | \"gridcell\" | \"monthCell\" | \"monthPicker\" | \"row\" | \"toggle\" | \"weekday\" | \"weekdays\" | \"yearCell\" | \"yearPicker\" | \"endControl\" | \"separator\" | \"startControl\">",
+    "protected widgetHasRootClass: boolean",
+    "protected widgetKind: \"daterange\"",
+    "startPlaceholder: _angular_core.InputSignal<string>",
+    "variant: _angular_core.InputSignal<\"docked\" | \"modal\">",
+    "ɵcmp: _angular_core.ɵɵComponentDeclaration<MdyDateRangePickerComponent, \"mdy-control-daterange\", never, { \"startPlaceholder\": { \"alias\": \"startPlaceholder\"; \"required\": false; \"isSignal\": true; }; \"endPlaceholder\": { \"alias\": \"endPlaceholder\"; \"required\": false; \"isSignal\": true; }; \"minDate\": { \"alias\": \"minDate\"; \"required\": false; \"isSignal\": true; }; \"maxDate\": { \"alias\": \"maxDate\"; \"required\": false; \"isSignal\": true; }; \"variant\": { \"alias\": \"variant\"; \"required\": false; \"isSignal\": true; }; \"dateFilter\": { \"alias\": \"dateFilter\"; \"required\": false; \"isSignal\": true; }; }, {}, never, never, true, never>",
+    "ɵfac: _angular_core.ɵɵFactoryDeclaration<MdyDateRangePickerComponent, never>"
   ],
   "MdyDateRangeValue": [
     "end: string | null",
@@ -486,9 +749,28 @@
     "viewMonth: number",
     "viewYear: number"
   ],
+  "MdyDeclarativeAdapter": [
+    "canRedo: Signal<boolean>",
+    "canUndo: Signal<boolean>",
+    "constructor(0) formValue: Signal<Record<string, unknown> | undefined>,(1) submitMode?: Signal<MdySubmitMode>,(2) injector?: Injector,(3) security?: MdySecurityPolicy,-> returns: (inferred)",
+    "errorsFor(0) path: string,-> returns: Signal<ReadonlyArray<MdyFormError>>",
+    "fieldNames: Signal<readonly string[]>",
+    "getField(0) name: string,-> returns: MdyFieldRef<unknown> | null",
+    "hasDraft: Signal<boolean>",
+    "state: MdyFormState",
+    "value: Signal<Record<string, unknown>>"
+  ],
+  "MdyDeclarativeRegistry": [
+    "-> MdyFormRegistry"
+  ],
   "MdyDestroyedScopeError": [
     "constructor(0) scopeId?: symbol | undefined,-> returns: (inferred)",
     "scopeId?: symbol | undefined"
+  ],
+  "MdyDevtoolsDirective": [
+    "constructor-> returns: (inferred)",
+    "ɵdir: _angular_core.ɵɵDirectiveDeclaration<MdyDevtoolsDirective, \"mdy-form[mdyDevtools]\", never, {}, {}, never, never, true, never>",
+    "ɵfac: _angular_core.ɵɵFactoryDeclaration<MdyDevtoolsDirective, never>"
   ],
   "MdyDiagnostic": [
     "adapter?: string | undefined",
@@ -505,6 +787,13 @@
   ],
   "MdyDiagnostics": [
     "report: void"
+  ],
+  "MdyDisabledDirective": [
+    "constructor-> returns: (inferred)",
+    "mdyDisabled: _angular_core.InputSignalWithTransform<boolean, unknown>",
+    "name: _angular_core.InputSignal<string>",
+    "ɵdir: _angular_core.ɵɵDirectiveDeclaration<MdyDisabledDirective, \"[mdyDisabled]\", never, { \"name\": { \"alias\": \"name\"; \"required\": false; \"isSignal\": true; }; \"mdyDisabled\": { \"alias\": \"mdyDisabled\"; \"required\": false; \"isSignal\": true; }; }, {}, never, never, true, never>",
+    "ɵfac: _angular_core.ɵɵFactoryDeclaration<MdyDisabledDirective, never>"
   ],
   "MdyDismissalBindingOptions": [
     "document?: Document",
@@ -650,6 +939,31 @@
     "collections: readonly MdyDynamicCollection[]",
     "fields: readonly MdyDynamicField[]"
   ],
+  "MdyDynamicFormComponent": [
+    "constructor-> returns: (inferred)",
+    "diagnostics: _angular_core.OutputEmitterRef<readonly MdyDynamicDiagnostic[]>",
+    "document: _angular_core.InputSignal<unknown>",
+    "fields: _angular_core.InputSignal<readonly MdyDynamicField[]>",
+    "form: Signal<MdyFormComponent<Record<string, unknown>, Partial<Record<string, unknown>>>>",
+    "layout: _angular_core.InputSignal<readonly MdyDynamicLayoutNode[]>",
+    "parseMode: _angular_core.InputSignal<MdyDynamicParseMode>",
+    "protected asTime(0) field: MdyDynamicField,-> returns: { readonly format?: MdyTimeFormat; readonly viewMode?: MdyTimepickerViewMode; readonly granularity?: MdyTimeGranularity; readonly animateHand?: boolean; readonly showUnavailable?: boolean; }",
+    "protected columnRowStyle(0) node: MdyDynamicLayoutNode,-> returns: Record<string, string>",
+    "protected columnStyle(0) column: ReadonlyArray<MdyDynamicLayoutChild>,-> returns: Record<string, string>",
+    "protected defaultFormat: MdyTimeFormat",
+    "protected emptyFor(0) field: MdyDynamicField,-> returns: unknown",
+    "protected fieldByName(0) name: string,-> returns: MdyDynamicField | undefined",
+    "protected fieldNameOf(0) child: MdyDynamicLayoutChild,-> returns: string | null",
+    "protected initialView: (inferred)",
+    "protected layoutClasses: Readonly<{ section: \"mdy-layout-section\"; sectionLabel: \"mdy-layout-legend\"; columns: \"mdy-layout-columns\"; column: \"mdy-layout-column\"; }>",
+    "protected parsed: Signal<_modyra_core.MdyDynamicFormParseResult | null>",
+    "protected renderedFields: Signal<readonly MdyDynamicField[]>",
+    "protected renderedLayout: Signal<readonly MdyDynamicLayoutNode[]>",
+    "protected unplacedFields: Signal<MdyDynamicField[]>",
+    "submitted: _angular_core.OutputEmitterRef<MdyFormSubmitEvent<Record<string, unknown>, Partial<Record<string, unknown>>>>",
+    "ɵcmp: _angular_core.ɵɵComponentDeclaration<MdyDynamicFormComponent, \"mdy-dynamic-form\", never, { \"fields\": { \"alias\": \"fields\"; \"required\": false; \"isSignal\": true; }; \"document\": { \"alias\": \"document\"; \"required\": false; \"isSignal\": true; }; \"parseMode\": { \"alias\": \"parseMode\"; \"required\": false; \"isSignal\": true; }; \"layout\": { \"alias\": \"layout\"; \"required\": false; \"isSignal\": true; }; }, { \"diagnostics\": \"diagnostics\"; \"submitted\": \"submitted\"; }, never, [\"*\"], true, never>",
+    "ɵfac: _angular_core.ɵɵFactoryDeclaration<MdyDynamicFormComponent, never>"
+  ],
   "MdyDynamicFormConfig": [
     "fields: ReadonlyArray<MdyDynamicField>",
     "version: 1"
@@ -781,12 +1095,28 @@
   "MdyElementLookup": [
     "(opaque)"
   ],
+  "MdyElementRefMap": [
+    "-> ReadonlyMap"
+  ],
   "MdyElementTarget": [
     "key?: string",
     "part: string"
   ],
+  "MdyEmailDirective": [
+    "mdyEmail: _angular_core.InputSignal<string | undefined>",
+    "protected buildValidators-> returns: { validators: _modyra_core.ValidatorFn<string | null>[]; }",
+    "ɵdir: _angular_core.ɵɵDirectiveDeclaration<MdyEmailDirective, \"[mdyEmail]\", never, { \"mdyEmail\": { \"alias\": \"mdyEmail\"; \"required\": false; \"isSignal\": true; }; }, {}, never, never, true, never>",
+    "ɵfac: _angular_core.ɵɵFactoryDeclaration<MdyEmailDirective, never>"
+  ],
   "MdyEqualityFn": [
     "(opaque)"
+  ],
+  "MdyErrorListComponent": [
+    "errors: _angular_core.InputSignal<readonly MdyFieldError[]>",
+    "fieldId: _angular_core.InputSignal<string>",
+    "protected errorsId: _angular_core.Signal<string>",
+    "ɵcmp: _angular_core.ɵɵComponentDeclaration<MdyErrorListComponent, \"mdy-error-list\", never, { \"fieldId\": { \"alias\": \"fieldId\"; \"required\": true; \"isSignal\": true; }; \"errors\": { \"alias\": \"errors\"; \"required\": true; \"isSignal\": true; }; }, {}, never, never, true, never>",
+    "ɵfac: _angular_core.ɵɵFactoryDeclaration<MdyErrorListComponent, never>"
   ],
   "MdyExpression": [
     "op: MdyExpressionOp",
@@ -816,6 +1146,12 @@
     "root?: unknown",
     "self?: unknown"
   ],
+  "MdyFieldConfig": [
+    "disabled?: boolean",
+    "initialValue?: TValue",
+    "name: string",
+    "validators?: ReadonlyArray<ValidatorFn<TValue>>"
+  ],
   "MdyFieldConstraints": [
     "inputMode: string | null",
     "max: number | null",
@@ -826,19 +1162,7 @@
     "step: number | null"
   ],
   "MdyFieldDescriptor": [
-    "asyncDebounceMs: number",
-    "asyncDependsOn: ReadonlyArray<string>",
-    "asyncTimeoutMs: number",
-    "asyncValidators: ReadonlyArray<MdyAsyncValidatorFn<TValue>>",
-    "asyncWhen: ((value: unknown, formValue: Record<string, unknown>) => boolean) | null",
-    "initial: TValue",
-    "kind: \"field\"",
-    "options: readonly unknown[] | null",
-    "sanitize: MdySanitizer | null",
-    "sensitive: boolean",
-    "shape: MdyValueShape | null",
-    "validators: ReadonlyArray<ValidatorFn<TValue>>",
-    "when: ((value: unknown, formValue: Record<string, unknown>) => boolean) | null"
+    "-> MdyFieldDescriptor$1"
   ],
   "MdyFieldError": [
     "kind: string",
@@ -847,22 +1171,7 @@
     "payload?: unknown"
   ],
   "MdyFieldHandle": [
-    "constraints: MdySignal<MdyFieldConstraints>",
-    "dirty: MdySignal<boolean>",
-    "disabled: MdySignal<boolean>",
-    "errors: MdySignal<ReadonlyArray<MdyFieldError>>",
-    "interactivity: MdySignal<MdyInteractivity>",
-    "markAsDirty: void",
-    "markAsTouched: void",
-    "path: string",
-    "pending: MdySignal<boolean>",
-    "readonly: MdySignal<boolean>",
-    "reportEntry: void",
-    "required: MdySignal<boolean>",
-    "set: void",
-    "touched: MdySignal<boolean>",
-    "valid: MdySignal<boolean>",
-    "value: MdySignal<TValue>"
+    "(opaque)"
   ],
   "MdyFieldHandleTree": [
     "(opaque)"
@@ -871,16 +1180,7 @@
     "(opaque)"
   ],
   "MdyFieldOptions": [
-    "asyncDebounceMs?: number",
-    "asyncDependsOn?: ReadonlyArray<string>",
-    "asyncTimeoutMs?: number",
-    "asyncValidators?: ReadonlyArray<MdyAsyncValidatorFn<TValue>>",
-    "asyncWhen?: (value: TValue, formValue: Record<string, unknown>) => boolean",
-    "options?: readonly unknown[]",
-    "sanitize?: MdySanitizer",
-    "sensitive?: boolean",
-    "shape?: MdyValueShape",
-    "when?: (value: TValue, formValue: Record<string, unknown>) => boolean"
+    "-> MdyFieldOptions$1"
   ],
   "MdyFieldRef": [
     "(opaque)"
@@ -913,15 +1213,10 @@
     "\"supportingText\""
   ],
   "MdyFieldState": [
-    "dirty: boolean",
-    "disabled: boolean",
-    "interactivity: MdyInteractivity",
-    "invalid: boolean",
-    "pending: boolean",
-    "readonly: boolean",
-    "required: boolean",
-    "touched: boolean",
-    "value: TValue"
+    "-> AsAngularSignals"
+  ],
+  "MdyFieldTree": [
+    "(opaque)"
   ],
   "MdyFieldVerdictSource": [
     "disabled: boolean",
@@ -931,6 +1226,28 @@
     "name: string",
     "size: number",
     "type: string"
+  ],
+  "MdyFileComponent": [
+    "accept: _angular_core.InputSignal<string>",
+    "fileSelected: _angular_core.OutputEmitterRef<readonly File[] | null>",
+    "filesRejected: _angular_core.OutputEmitterRef<readonly File[]>",
+    "maxFileSize: _angular_core.InputSignal<number>",
+    "maxFiles: _angular_core.InputSignal<number>",
+    "multiple: _angular_core.InputSignal<boolean>",
+    "protected chosen: _angular_core.Signal<readonly File[]>",
+    "protected clear-> returns: void",
+    "protected dragOver: _angular_core.WritableSignal<boolean>",
+    "protected fieldId: string",
+    "protected i18n: _modyra_widgets.MdyI18nMessages",
+    "protected onDragOver(0) event: DragEvent,-> returns: void",
+    "protected onDrop(0) event: DragEvent,-> returns: void",
+    "protected onFileChange(0) event: Event,-> returns: void",
+    "protected rejectedNames: _angular_core.WritableSignal<readonly string[]>",
+    "protected widgetContract: _modyra_widgets.MdyWidgetDefinition<\"control\" | \"errorItem\" | \"errors\" | \"label\" | \"requiredMarker\" | \"root\" | \"supportingText\" | \"content\" | \"clear\" | \"dropzone\" | \"fileItem\" | \"fileList\" | \"rejected\">",
+    "protected widgetHasRootClass: boolean",
+    "protected widgetKind: \"file\"",
+    "ɵcmp: _angular_core.ɵɵComponentDeclaration<MdyFileComponent, \"mdy-control-file\", never, { \"accept\": { \"alias\": \"accept\"; \"required\": false; \"isSignal\": true; }; \"multiple\": { \"alias\": \"multiple\"; \"required\": false; \"isSignal\": true; }; \"maxFileSize\": { \"alias\": \"maxFileSize\"; \"required\": false; \"isSignal\": true; }; \"maxFiles\": { \"alias\": \"maxFiles\"; \"required\": false; \"isSignal\": true; }; }, { \"fileSelected\": \"fileSelected\"; \"filesRejected\": \"filesRejected\"; }, never, never, true, never>",
+    "ɵfac: _angular_core.ɵɵFactoryDeclaration<MdyFileComponent, never>"
   ],
   "MdyFileFieldController": [
     "setReadonly: void",
@@ -973,6 +1290,13 @@
     "touched: boolean",
     "value: readonly TFile[] | null | undefined"
   ],
+  "MdyFloatingLabelsDirective": [
+    "constructor-> returns: (inferred)",
+    "mdyFloatingLabels: _angular_core.InputSignal<boolean>",
+    "mdyFloatingLabelsDensity: _angular_core.InputSignal<number>",
+    "ɵdir: _angular_core.ɵɵDirectiveDeclaration<MdyFloatingLabelsDirective, \"mdy-form[mdyFloatingLabels], form[mdyFloatingLabels]\", never, { \"mdyFloatingLabels\": { \"alias\": \"mdyFloatingLabels\"; \"required\": false; \"isSignal\": true; }; \"mdyFloatingLabelsDensity\": { \"alias\": \"mdyFloatingLabelsDensity\"; \"required\": false; \"isSignal\": true; }; }, {}, never, never, true, never>",
+    "ɵfac: _angular_core.ɵɵFactoryDeclaration<MdyFloatingLabelsDirective, never>"
+  ],
   "MdyFlushCapability": [
     "flush: void | Promise<void>"
   ],
@@ -982,20 +1306,69 @@
     "restore: HTMLElement | null"
   ],
   "MdyFormAdapter": [
-    "buildSubmitEvent: MdyFormSubmitEvent<T, TSubmit>",
-    "errorsFor: MdySignal<ReadonlyArray<MdyFormError>>",
-    "fieldNames?: MdySignal<readonly string[]>",
+    "errorsFor: Signal<ReadonlyArray<MdyFormError>>",
     "getField: MdyFieldRef<T[K]> | null",
-    "getValue: T",
-    "markAllTouched: void",
-    "patchValue: void",
-    "reportEntry: void",
-    "reset: void",
-    "setValue: void",
     "state: MdyFormState",
-    "submit: Promise<void>",
-    "submitValue: TSubmit",
-    "value: MdySignal<T>"
+    "value: Signal<T>"
+  ],
+  "MdyFormArrayComponent": [
+    "add(0) value?: Partial<T>,-> returns: void",
+    "getValue-> returns: Array<Partial<T>>",
+    "initialItems: _angular_core.InputSignal<readonly T[]>",
+    "isValid-> returns: boolean",
+    "items: WritableSignal<Array<{ _id: number; value: Partial<T>; }>>",
+    "remove(0) index: number,-> returns: void",
+    "state: Signal<{ valid: boolean; }>",
+    "ɵcmp: _angular_core.ɵɵComponentDeclaration<MdyFormArrayComponent<any>, \"mdy-form-array\", never, { \"initialItems\": { \"alias\": \"initialItems\"; \"required\": false; \"isSignal\": true; }; }, {}, [\"_forms\"], [\"*\"], true, never>",
+    "ɵfac: _angular_core.ɵɵFactoryDeclaration<MdyFormArrayComponent<any>, never>"
+  ],
+  "MdyFormComponent": [
+    "action: _angular_core.InputSignal<((value: TSubmit) => Promise<MdyFormError[] | void> | MdyFormError[] | void) | undefined>",
+    "adapter: _angular_core.InputSignal<MdyFormAdapter<T, TSubmit> | undefined>",
+    "addValidators(0) name: string,(1) validators: ReadonlyArray<ValidatorFn<V>>,(2) isRequired?: boolean,-> returns: void",
+    "buildSubmitEvent(0) value: TSubmit,-> returns: MdyFormSubmitEvent<T, TSubmit>",
+    "claimField(0) name: string,-> returns: void",
+    "constructor-> returns: (inferred)",
+    "draftKey: _angular_core.InputSignal<string | undefined>",
+    "errorsFor(0) path: keyof T | string,-> returns: Signal<ReadonlyArray<MdyFormError>>",
+    "fieldNames: Signal<readonly string[]>",
+    "form: _angular_core.InputSignal<(MdyFormAdapter<T, TSubmit> & MdyDeclarativeRegistry) | undefined>",
+    "formValidators: _angular_core.InputSignal<readonly MdyFormValidatorFn<Record<string, unknown>>[]>",
+    "formValue: _angular_core.InputSignal<Partial<Record<string, unknown>> | undefined>",
+    "getField(0) name: K,-> returns: MdyFieldRef<T[K]> | null",
+    "getValue-> returns: T",
+    "markAllTouched-> returns: void",
+    "patchValue(0) partial: Partial<T>,-> returns: void",
+    "protected formErrorItemClass: string",
+    "protected formErrors-> returns: ReadonlyArray<MdyFormError>",
+    "protected formErrorsClass: string",
+    "protected handleSubmit-> returns: Promise<void>",
+    "removeField(0) name: string,-> returns: void",
+    "removeValidators(0) name: string,(1) key: string,-> returns: void",
+    "reportEntry(0) name: string,(1) problem: string | null,-> returns: void",
+    "reset-> returns: void",
+    "setDisabled(0) name: string,(1) disabled: Signal<boolean>,-> returns: void",
+    "setInactive(0) name: string,(1) inactive: Signal<boolean>,-> returns: void",
+    "setInitialValue(0) name: string,(1) value: unknown,-> returns: void",
+    "setReadonly(0) name: string,(1) readonly: Signal<boolean>,-> returns: void",
+    "setSanitizer(0) name: string,(1) sanitizer: MdySanitizer,-> returns: void",
+    "setValue(0) value: T,-> returns: void",
+    "state: MdyFormState",
+    "submit(0) action: (value: TSubmit) => Promise<MdyFormError[] | void> | MdyFormError[] | void,-> returns: Promise<void>",
+    "submitMode: _angular_core.InputSignal<MdySubmitMode>",
+    "submitValue-> returns: TSubmit",
+    "submitted: _angular_core.OutputEmitterRef<MdyFormSubmitEvent<T, TSubmit>>",
+    "upsertAsyncValidators(0) name: string,(1) key: string,(2) validators: ReadonlyArray<MdyAsyncValidatorFn<V>>,(3) options?: MdyAsyncValidatorOptions,-> returns: void",
+    "upsertValidators(0) name: string,(1) key: string,(2) validators: ReadonlyArray<ValidatorFn<V>>,(3) marksRequired?: boolean,-> returns: void",
+    "value: Signal<T>",
+    "ɵcmp: _angular_core.ɵɵComponentDeclaration<MdyFormComponent<any, any>, \"mdy-form\", never, { \"adapter\": { \"alias\": \"adapter\"; \"required\": false; \"isSignal\": true; }; \"form\": { \"alias\": \"form\"; \"required\": false; \"isSignal\": true; }; \"action\": { \"alias\": \"action\"; \"required\": false; \"isSignal\": true; }; \"formValue\": { \"alias\": \"formValue\"; \"required\": false; \"isSignal\": true; }; \"submitMode\": { \"alias\": \"submitMode\"; \"required\": false; \"isSignal\": true; }; \"formValidators\": { \"alias\": \"formValidators\"; \"required\": false; \"isSignal\": true; }; \"draftKey\": { \"alias\": \"draftKey\"; \"required\": false; \"isSignal\": true; }; }, { \"submitted\": \"submitted\"; }, never, [\"*\"], true, never>",
+    "ɵfac: _angular_core.ɵɵFactoryDeclaration<MdyFormComponent<any, any>, never>"
+  ],
+  "MdyFormContext": [
+    "lastSubmitErrors: Signal<ReadonlyArray<MdyFormError>>",
+    "submitCount: Signal<number>",
+    "submitting: Signal<boolean>",
+    "valid: Signal<boolean>"
   ],
   "MdyFormEngine": [
     "activate-> returns: void",
@@ -1076,8 +1449,12 @@
     "path: string | null",
     "payload?: unknown"
   ],
+  "MdyFormOptions": [
+    "injector?: Injector",
+    "submitMode?: MdySubmitMode"
+  ],
   "MdyFormPatch": [
-    "(opaque)"
+    "-> MdyFormPatch$1"
   ],
   "MdyFormRegistry": [
     "addValidators: void",
@@ -1097,19 +1474,14 @@
     "upsertValidators: void"
   ],
   "MdyFormSchema": [
-    "-> Readonly"
+    "-> MdyFormSchema$1"
   ],
   "MdyFormShellPart": [
     "\"formErrorItem\"",
     "\"formErrors\""
   ],
   "MdyFormState": [
-    "canSubmit: MdySignal<boolean>",
-    "lastSubmitErrors: MdySignal<ReadonlyArray<MdyFormError>>",
-    "pending: MdySignal<boolean>",
-    "submitCount: MdySignal<number>",
-    "submitting: MdySignal<boolean>",
-    "valid: MdySignal<boolean>"
+    "-> AsAngularSignals"
   ],
   "MdyFormSubmitEvent": [
     "errors: ReadonlyArray<MdyFormError>",
@@ -1120,20 +1492,85 @@
     "(opaque)"
   ],
   "MdyFormValue": [
-    "(opaque)"
+    "-> MdyFormValue$1"
+  ],
+  "MdyFormWizardComponent": [
+    "activeIndex: Signal<number>",
+    "activeStepValid: Signal<boolean>",
+    "constructor-> returns: (inferred)",
+    "finished: _angular_core.OutputEmitterRef<void>",
+    "goTo(0) index: number,-> returns: void",
+    "isLast: Signal<boolean>",
+    "next-> returns: void",
+    "previous-> returns: void",
+    "progress: Signal<number>",
+    "protected canJumpTo(0) index: number,-> returns: boolean",
+    "protected i18n: _modyra_widgets.MdyI18nMessages",
+    "protected steps: Signal<readonly MdyWizardStepComponent[]>",
+    "stepChange: _angular_core.OutputEmitterRef<number>",
+    "ɵcmp: _angular_core.ɵɵComponentDeclaration<MdyFormWizardComponent, \"mdy-form-wizard\", never, {}, { \"stepChange\": \"stepChange\"; \"finished\": \"finished\"; }, [\"steps\"], [\"*\"], true, never>",
+    "ɵfac: _angular_core.ɵɵFactoryDeclaration<MdyFormWizardComponent, never>"
+  ],
+  "MdyFormsDevtoolsComponent": [
+    "excludeFields: _angular_core.InputSignal<readonly string[]>",
+    "expanded: _angular_core.InputSignalWithTransform<boolean, unknown>",
+    "fields: _angular_core.InputSignal<readonly MdyFieldHandle<unknown>[]>",
+    "form: _angular_core.InputSignal<MdyTypedFormLike>",
+    "maskFields: _angular_core.InputSignal<readonly string[]>",
+    "protected copyText(0) text: string,-> returns: void",
+    "protected filteredRows: Signal<DevtoolsFieldRow[]>",
+    "protected nameFilter: _angular_core.WritableSignal<string>",
+    "protected onlyDirty: _angular_core.WritableSignal<boolean>",
+    "protected onlyInvalid: _angular_core.WritableSignal<boolean>",
+    "protected onlyPending: _angular_core.WritableSignal<boolean>",
+    "protected onlyTouched: _angular_core.WritableSignal<boolean>",
+    "protected open: _angular_core.WritableSignal<boolean>",
+    "protected rows: Signal<readonly DevtoolsFieldRow[]>",
+    "protected state: Signal<{ valid: boolean; pending: boolean; submitting: boolean; submitCount: number; canSubmit: boolean; }>",
+    "protected submitErrors: Signal<string[]>",
+    "protected valueJson: Signal<string>",
+    "ɵcmp: _angular_core.ɵɵComponentDeclaration<MdyFormsDevtoolsComponent, \"mdy-forms-devtools\", never, { \"form\": { \"alias\": \"form\"; \"required\": true; \"isSignal\": true; }; \"fields\": { \"alias\": \"fields\"; \"required\": false; \"isSignal\": true; }; \"expanded\": { \"alias\": \"expanded\"; \"required\": false; \"isSignal\": true; }; \"maskFields\": { \"alias\": \"maskFields\"; \"required\": false; \"isSignal\": true; }; \"excludeFields\": { \"alias\": \"excludeFields\"; \"required\": false; \"isSignal\": true; }; }, {}, never, never, true, never>",
+    "ɵfac: _angular_core.ɵɵFactoryDeclaration<MdyFormsDevtoolsComponent, never>"
+  ],
+  "MdyFormsDevtoolsOverlayComponent": [
+    "closed: _angular_core.OutputEmitterRef<void>",
+    "form: _angular_core.InputSignal<MdyTypedFormLike>",
+    "protected onDragEnd(0) event: PointerEvent,-> returns: void",
+    "protected onDragMove(0) event: PointerEvent,-> returns: void",
+    "protected onDragStart(0) event: PointerEvent,-> returns: void",
+    "protected translate: _angular_core.WritableSignal<string>",
+    "ɵcmp: _angular_core.ɵɵComponentDeclaration<MdyFormsDevtoolsOverlayComponent, \"mdy-forms-devtools-overlay\", never, { \"form\": { \"alias\": \"form\"; \"required\": true; \"isSignal\": true; }; }, { \"closed\": \"closed\"; }, never, never, true, never>",
+    "ɵfac: _angular_core.ɵɵFactoryDeclaration<MdyFormsDevtoolsOverlayComponent, never>"
+  ],
+  "MdyFormsDevtoolsService": [
+    "close-> returns: void",
+    "open(0) form: MdyTypedFormLike,-> returns: void",
+    "register(0) element: HTMLElement,(1) form: MdyTypedFormLike,-> returns: void",
+    "toggle(0) form?: MdyTypedFormLike,-> returns: void",
+    "unregister(0) element: HTMLElement,-> returns: void",
+    "ɵfac: _angular_core.ɵɵFactoryDeclaration<MdyFormsDevtoolsService, never>",
+    "ɵprov: _angular_core.ɵɵInjectableDeclaration<MdyFormsDevtoolsService>"
+  ],
+  "MdyGlassDirective": [
+    "blur: _angular_core.InputSignal<string | undefined>",
+    "glassColor: _angular_core.InputSignal<string | undefined>",
+    "intensity: _angular_core.InputSignal<\"low\" | \"medium\" | \"high\">",
+    "ɵdir: _angular_core.ɵɵDirectiveDeclaration<MdyGlassDirective, \"[mdyGlass]\", never, { \"blur\": { \"alias\": \"blur\"; \"required\": false; \"isSignal\": true; }; \"intensity\": { \"alias\": \"intensity\"; \"required\": false; \"isSignal\": true; }; \"glassColor\": { \"alias\": \"glassColor\"; \"required\": false; \"isSignal\": true; }; }, {}, never, never, true, never>",
+    "ɵfac: _angular_core.ɵɵFactoryDeclaration<MdyGlassDirective, never>"
   ],
   "MdyGranularityProblem": [
     "(opaque)"
   ],
   "MdyGroupDescriptor": [
-    "children: TChildren",
-    "kind: \"group\"",
-    "when: ((value: unknown, enclosing: Record<string, unknown>) => boolean) | null"
+    "-> MdyGroupDescriptor$1"
   ],
   "MdyGroupOptions": [
     "when?: (value: Record<string, unknown>, enclosing: Record<string, unknown>) => boolean"
   ],
   "MdyI18nMessages": [
+    "chipDecrementLabel: string",
+    "chipIncrementLabel: string",
+    "chipRemoveLabel: string",
     "colorHexLabel: string",
     "colorPresetsHeader: string",
     "datepickerCancel: string",
@@ -1178,8 +1615,25 @@
     "wizardPrevious: string",
     "wizardStepStatus: (current: number, total: number) => string"
   ],
+  "MdyIconComponent": [
+    "name: _angular_core.InputSignal<\"CALENDAR\" | \"CLOCK\" | \"ERROR\" | \"LOADER\" | \"KEYBOARD\" | \"SEARCH\" | \"CHECKMARK\" | \"CLOSE\" | \"PLUS\" | \"MINUS\" | \"CHEVRON_DOWN\" | \"CHEVRON_LEFT\" | \"CHEVRON_RIGHT\" | \"SPIN_UP\" | \"SPIN_DOWN\">",
+    "protected iconData: _angular_core.Signal<Readonly<{ viewBox: \"0 0 24 24\"; span: \"full\"; content: \"<rect x=\\\"2\\\" y=\\\"4\\\" width=\\\"20\\\" height=\\\"18\\\" rx=\\\"2\\\" fill=\\\"none\\\" stroke=\\\"currentColor\\\" stroke-width=\\\"2\\\" stroke-linecap=\\\"round\\\" stroke-linejoin=\\\"round\\\"/><path d=\\\"M8 2v4M16 2v4M2 10h20\\\" fill=\\\"none\\\" stroke=\\\"currentColor\\\" stroke-width=\\\"2\\\" stroke-linecap=\\\"round\\\" stroke-linejoin=\\\"round\\\"/>\"; }> | Readonly<{ viewBox: \"0 0 24 24\"; span: \"full\"; content: \"<circle cx=\\\"12\\\" cy=\\\"12\\\" r=\\\"10\\\" fill=\\\"none\\\" stroke=\\\"currentColor\\\" stroke-width=\\\"2\\\" stroke-linecap=\\\"round\\\" stroke-linejoin=\\\"round\\\"/><path d=\\\"M12 7v5l3.5 2\\\" fill=\\\"none\\\" stroke=\\\"currentColor\\\" stroke-width=\\\"2\\\" stroke-linecap=\\\"round\\\" stroke-linejoin=\\\"round\\\"/>\"; }> | Readonly<{ viewBox: \"0 0 24 24\"; span: \"full\"; content: \"<circle cx=\\\"12\\\" cy=\\\"12\\\" r=\\\"10\\\" fill=\\\"none\\\" stroke=\\\"currentColor\\\" stroke-width=\\\"2\\\" stroke-linecap=\\\"round\\\" stroke-linejoin=\\\"round\\\"/><path d=\\\"M12 7v6M12 17h0\\\" fill=\\\"none\\\" stroke=\\\"currentColor\\\" stroke-width=\\\"2\\\" stroke-linecap=\\\"round\\\" stroke-linejoin=\\\"round\\\"/>\"; }> | Readonly<{ viewBox: \"0 0 24 24\"; span: \"full\"; content: \"<path d=\\\"M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83\\\" fill=\\\"none\\\" stroke=\\\"currentColor\\\" stroke-width=\\\"2\\\" stroke-linecap=\\\"round\\\" stroke-linejoin=\\\"round\\\"/>\"; }> | Readonly<{ viewBox: \"0 0 24 24\"; span: \"full\"; content: \"<rect x=\\\"2\\\" y=\\\"6\\\" width=\\\"20\\\" height=\\\"12\\\" rx=\\\"2\\\" fill=\\\"none\\\" stroke=\\\"currentColor\\\" stroke-width=\\\"2\\\" stroke-linecap=\\\"round\\\" stroke-linejoin=\\\"round\\\"/><path d=\\\"M6 10h0M10 10h0M14 10h0M18 10h0M6 14h0M9 14h6M18 14h0\\\" fill=\\\"none\\\" stroke=\\\"currentColor\\\" stroke-width=\\\"2\\\" stroke-linecap=\\\"round\\\" stroke-linejoin=\\\"round\\\"/>\"; }> | Readonly<{ viewBox: \"0 0 24 24\"; span: \"compact\"; content: \"<circle cx=\\\"10.5\\\" cy=\\\"10.5\\\" r=\\\"5.5\\\" fill=\\\"none\\\" stroke=\\\"currentColor\\\" stroke-width=\\\"2\\\" stroke-linecap=\\\"round\\\" stroke-linejoin=\\\"round\\\"/><path d=\\\"M14.4 14.4 19 19\\\" fill=\\\"none\\\" stroke=\\\"currentColor\\\" stroke-width=\\\"2\\\" stroke-linecap=\\\"round\\\" stroke-linejoin=\\\"round\\\"/>\"; }> | Readonly<{ viewBox: \"0 0 24 24\"; span: \"compact\"; content: \"<path d=\\\"M5 13l4 4L19 7\\\" fill=\\\"none\\\" stroke=\\\"currentColor\\\" stroke-width=\\\"2\\\" stroke-linecap=\\\"round\\\" stroke-linejoin=\\\"round\\\"/>\"; }> | Readonly<{ viewBox: \"0 0 24 24\"; span: \"compact\"; content: \"<path d=\\\"M5 5l14 14M19 5L5 19\\\" fill=\\\"none\\\" stroke=\\\"currentColor\\\" stroke-width=\\\"2\\\" stroke-linecap=\\\"round\\\" stroke-linejoin=\\\"round\\\"/>\"; }> | Readonly<{ viewBox: \"0 0 24 24\"; span: \"compact\"; content: \"<path d=\\\"M5 12h14M12 5v14\\\" fill=\\\"none\\\" stroke=\\\"currentColor\\\" stroke-width=\\\"2\\\" stroke-linecap=\\\"round\\\" stroke-linejoin=\\\"round\\\"/>\"; }> | Readonly<{ viewBox: \"0 0 24 24\"; span: \"compact\"; content: \"<path d=\\\"M5 12h14\\\" fill=\\\"none\\\" stroke=\\\"currentColor\\\" stroke-width=\\\"2\\\" stroke-linecap=\\\"round\\\" stroke-linejoin=\\\"round\\\"/>\"; }> | Readonly<{ viewBox: \"0 0 24 24\"; span: \"directional\"; content: \"<path d=\\\"M6 9l6 6 6-6\\\" fill=\\\"none\\\" stroke=\\\"currentColor\\\" stroke-width=\\\"2\\\" stroke-linecap=\\\"round\\\" stroke-linejoin=\\\"round\\\"/>\"; }> | Readonly<{ viewBox: \"0 0 24 24\"; span: \"directional\"; content: \"<path d=\\\"M15 18l-6-6 6-6\\\" fill=\\\"none\\\" stroke=\\\"currentColor\\\" stroke-width=\\\"2\\\" stroke-linecap=\\\"round\\\" stroke-linejoin=\\\"round\\\"/>\"; }> | Readonly<{ viewBox: \"0 0 24 24\"; span: \"directional\"; content: \"<path d=\\\"M9 18l6-6-6-6\\\" fill=\\\"none\\\" stroke=\\\"currentColor\\\" stroke-width=\\\"2\\\" stroke-linecap=\\\"round\\\" stroke-linejoin=\\\"round\\\"/>\"; }> | Readonly<{ viewBox: \"0 0 24 24\"; span: \"directional\"; content: \"<path d=\\\"M6 15l6-6 6 6\\\" fill=\\\"none\\\" stroke=\\\"currentColor\\\" stroke-width=\\\"2\\\" stroke-linecap=\\\"round\\\" stroke-linejoin=\\\"round\\\"/>\"; }> | Readonly<{ viewBox: \"0 0 24 24\"; span: \"directional\"; content: \"<path d=\\\"M6 9l6 6 6-6\\\" fill=\\\"none\\\" stroke=\\\"currentColor\\\" stroke-width=\\\"2\\\" stroke-linecap=\\\"round\\\" stroke-linejoin=\\\"round\\\"/>\"; }>>",
+    "protected safeContent: _angular_core.Signal<SafeHtml>",
+    "strokeWidth: _angular_core.InputSignal<number>",
+    "ɵcmp: _angular_core.ɵɵComponentDeclaration<MdyIconComponent, \"mdy-icon\", never, { \"name\": { \"alias\": \"name\"; \"required\": true; \"isSignal\": true; }; \"strokeWidth\": { \"alias\": \"strokeWidth\"; \"required\": false; \"isSignal\": true; }; }, {}, never, never, true, never>",
+    "ɵfac: _angular_core.ɵɵFactoryDeclaration<MdyIconComponent, never>"
+  ],
   "MdyIconName": [
     "(opaque)"
+  ],
+  "MdyInlineErrorIconComponent": [
+    "errorText: _angular_core.InputSignal<string>",
+    "ɵcmp: _angular_core.ɵɵComponentDeclaration<MdyInlineErrorIconComponent, \"mdy-inline-error-icon\", never, { \"errorText\": { \"alias\": \"errorText\"; \"required\": true; \"isSignal\": true; }; }, {}, never, never, true, never>",
+    "ɵfac: _angular_core.ɵɵFactoryDeclaration<MdyInlineErrorIconComponent, never>"
+  ],
+  "MdyInlineErrorsDirective": [
+    "ɵdir: _angular_core.ɵɵDirectiveDeclaration<MdyInlineErrorsDirective, \"[mdyInlineErrors]\", never, {}, {}, never, never, true, never>",
+    "ɵfac: _angular_core.ɵɵFactoryDeclaration<MdyInlineErrorsDirective, never>"
   ],
   "MdyInteractivity": [
     "\"disabled\"",
@@ -1187,6 +1641,9 @@
     "\"readonly\""
   ],
   "MdyItemHandleTree": [
+    "(opaque)"
+  ],
+  "MdyItemRefLookup": [
     "(opaque)"
   ],
   "MdyKeyBinding": [
@@ -1230,6 +1687,78 @@
     "branch: MdyOverlayBranch | (() => MdyOverlayBranch)",
     "dismiss: () => void",
     "isOpen: () => boolean"
+  ],
+  "MdyLoadOptionsDirective": [
+    "constructor-> returns: (inferred)",
+    "mdyLoadOptions: _angular_core.InputSignal<MdyOptionsLoader<unknown>>",
+    "mdyLoadOptionsDebounce: _angular_core.InputSignal<number>",
+    "ɵdir: _angular_core.ɵɵDirectiveDeclaration<MdyLoadOptionsDirective, \"[mdyLoadOptions]\", never, { \"mdyLoadOptions\": { \"alias\": \"mdyLoadOptions\"; \"required\": true; \"isSignal\": true; }; \"mdyLoadOptionsDebounce\": { \"alias\": \"mdyLoadOptionsDebounce\"; \"required\": false; \"isSignal\": true; }; }, {}, never, never, true, never>",
+    "ɵfac: _angular_core.ɵɵFactoryDeclaration<MdyLoadOptionsDirective, never>"
+  ],
+  "MdyLocaleOptions": [
+    "dateLocale?: string",
+    "overrides?: Partial<MdyI18nMessages>"
+  ],
+  "MdyMaxDirective": [
+    "mdyMax: _angular_core.InputSignal<string | number>",
+    "mdyMaxMessage: _angular_core.InputSignal<string | undefined>",
+    "protected buildValidators-> returns: { validators: _modyra_core.ValidatorFn<number | null>[]; }",
+    "ɵdir: _angular_core.ɵɵDirectiveDeclaration<MdyMaxDirective, \"[mdyMax]\", never, { \"mdyMax\": { \"alias\": \"mdyMax\"; \"required\": true; \"isSignal\": true; }; \"mdyMaxMessage\": { \"alias\": \"mdyMaxMessage\"; \"required\": false; \"isSignal\": true; }; }, {}, never, never, true, never>",
+    "ɵfac: _angular_core.ɵɵFactoryDeclaration<MdyMaxDirective, never>"
+  ],
+  "MdyMaxLengthDirective": [
+    "mdyMaxLength: _angular_core.InputSignal<string | number>",
+    "mdyMaxLengthMessage: _angular_core.InputSignal<string | undefined>",
+    "protected buildValidators-> returns: { validators: _modyra_core.ValidatorFn<string | readonly unknown[] | null>[]; }",
+    "ɵdir: _angular_core.ɵɵDirectiveDeclaration<MdyMaxLengthDirective, \"[mdyMaxLength]\", never, { \"mdyMaxLength\": { \"alias\": \"mdyMaxLength\"; \"required\": true; \"isSignal\": true; }; \"mdyMaxLengthMessage\": { \"alias\": \"mdyMaxLengthMessage\"; \"required\": false; \"isSignal\": true; }; }, {}, never, never, true, never>",
+    "ɵfac: _angular_core.ɵɵFactoryDeclaration<MdyMaxLengthDirective, never>"
+  ],
+  "MdyMinDirective": [
+    "mdyMin: _angular_core.InputSignal<string | number>",
+    "mdyMinMessage: _angular_core.InputSignal<string | undefined>",
+    "protected buildValidators-> returns: { validators: _modyra_core.ValidatorFn<number | null>[]; }",
+    "ɵdir: _angular_core.ɵɵDirectiveDeclaration<MdyMinDirective, \"[mdyMin]\", never, { \"mdyMin\": { \"alias\": \"mdyMin\"; \"required\": true; \"isSignal\": true; }; \"mdyMinMessage\": { \"alias\": \"mdyMinMessage\"; \"required\": false; \"isSignal\": true; }; }, {}, never, never, true, never>",
+    "ɵfac: _angular_core.ɵɵFactoryDeclaration<MdyMinDirective, never>"
+  ],
+  "MdyMinLengthDirective": [
+    "mdyMinLength: _angular_core.InputSignal<string | number>",
+    "mdyMinLengthMessage: _angular_core.InputSignal<string | undefined>",
+    "protected buildValidators-> returns: { validators: _modyra_core.ValidatorFn<string | readonly unknown[] | null>[]; }",
+    "ɵdir: _angular_core.ɵɵDirectiveDeclaration<MdyMinLengthDirective, \"[mdyMinLength]\", never, { \"mdyMinLength\": { \"alias\": \"mdyMinLength\"; \"required\": true; \"isSignal\": true; }; \"mdyMinLengthMessage\": { \"alias\": \"mdyMinLengthMessage\"; \"required\": false; \"isSignal\": true; }; }, {}, never, never, true, never>",
+    "ɵfac: _angular_core.ɵɵFactoryDeclaration<MdyMinLengthDirective, never>"
+  ],
+  "MdyMultiselectComponent": [
+    "filterFn: _angular_core.InputSignal<((value: TValue) => boolean) | undefined>",
+    "mode: _angular_core.InputSignal<MdyMultiselectMode>",
+    "protected chip: Readonly<{ block: \"mdy-chip\"; centered: \"mdy-chip--centered\"; counter: \"mdy-chip--counter\"; value: \"mdy-chip--value\"; selected: \"mdy-chip--selected\"; removable: \"mdy-chip--removable\"; check: \"mdy-chip__check\"; label: \"mdy-chip__label\"; count: \"mdy-chip__count\"; step: \"mdy-chip__btn\"; wrapper: \"mdy-chip-wrapper\"; }>",
+    "protected chipClasses(0) selected: boolean,-> returns: string",
+    "protected countOf(0) optValue: TValue,-> returns: number",
+    "protected counts: _angular_core.Signal<ReadonlyMap<string, number>>",
+    "protected decrement(0) optValue: TValue,-> returns: void",
+    "protected dismissFromOutside-> returns: void",
+    "protected fieldId: string",
+    "protected filteredOptions: _angular_core.Signal<readonly _modyra_core.MdySelectOption<TValue>[]>",
+    "protected increment(0) optValue: TValue,-> returns: void",
+    "protected isSelected(0) optValue: TValue,-> returns: boolean",
+    "protected onBeforeOpen-> returns: void",
+    "protected onOverlayKeydown(0) event: KeyboardEvent,-> returns: void",
+    "protected onOverlaySelect(0) optValue: TValue,-> returns: void",
+    "protected onToggle(0) optValue: TValue,-> returns: void",
+    "protected openerPart: _angular_core.Signal<_modyra_widgets.MdyPartContract>",
+    "protected overlayBranch-> returns: MdyOverlayBranch",
+    "protected overlayKind: \"multiselect\"",
+    "protected overlayOwner-> returns: MdyOverlayOwner | undefined",
+    "protected paintedOptions: _angular_core.Signal<readonly _modyra_core.MdySelectOption<TValue>[]>",
+    "protected popupClass: string",
+    "protected popupId: _angular_core.Signal<string>",
+    "protected searchResults: _angular_core.Signal<readonly _modyra_core.MdySelectOption<TValue>[]>",
+    "protected selectedSet: _angular_core.Signal<ReadonlySet<string>>",
+    "protected widgetContract: _modyra_widgets.MdyWidgetDefinition<\"errorItem\" | \"errors\" | \"inlineError\" | \"inputWrapper\" | \"label\" | \"requiredMarker\" | \"root\" | \"supportingText\" | \"option\" | \"optionLabel\" | \"optionCheck\" | \"arrow\" | \"empty\" | \"listbox\" | \"loading\" | \"placeholder\" | \"popup\" | \"search\" | \"trigger\" | \"chip\" | \"chipCount\" | \"chipLabel\" | \"chipRemove\" | \"chips\" | \"optionCount\" | \"optionStep\" | \"optionWrapper\" | \"options\">",
+    "protected widgetHasRootClass: boolean",
+    "protected widgetKind: \"multiselect\"",
+    "resetSelection-> returns: void",
+    "ɵcmp: _angular_core.ɵɵComponentDeclaration<MdyMultiselectComponent<any>, \"mdy-control-multiselect\", never, { \"mode\": { \"alias\": \"mode\"; \"required\": false; \"isSignal\": true; }; \"filterFn\": { \"alias\": \"filterFn\"; \"required\": false; \"isSignal\": true; }; }, {}, never, never, true, never>",
+    "ɵfac: _angular_core.ɵɵFactoryDeclaration<MdyMultiselectComponent<any>, never>"
   ],
   "MdyMultiselectFieldA11yOptions": [
     "widgetId: string"
@@ -1280,6 +1809,21 @@
   "MdyNativeAttributes": [
     "-> Readonly"
   ],
+  "MdyNumberComponent": [
+    "maxValue: _angular_core.InputSignal<number | null>",
+    "minValue: _angular_core.InputSignal<number | null>",
+    "placeholder: _angular_core.InputSignal<string>",
+    "protected fieldId: string",
+    "protected narrowedConstraints-> returns: Partial<MdyFieldConstraints>",
+    "protected onInput(0) event: Event,-> returns: void",
+    "protected widgetContract: _modyra_widgets.MdyWidgetDefinition<\"control\" | \"errorItem\" | \"errors\" | \"inlineError\" | \"inputWrapper\" | \"label\" | \"requiredMarker\" | \"root\" | \"supportingText\" | \"decrement\" | \"increment\">",
+    "protected widgetHasRootClass: boolean",
+    "protected widgetKind: (inferred)",
+    "showSpinButtons: _angular_core.InputSignal<boolean>",
+    "step: _angular_core.InputSignal<number | null>",
+    "ɵcmp: _angular_core.ɵɵComponentDeclaration<MdyNumberComponent, \"mdy-control-number\", never, { \"placeholder\": { \"alias\": \"placeholder\"; \"required\": false; \"isSignal\": true; }; \"minValue\": { \"alias\": \"minValue\"; \"required\": false; \"isSignal\": true; }; \"maxValue\": { \"alias\": \"maxValue\"; \"required\": false; \"isSignal\": true; }; \"step\": { \"alias\": \"step\"; \"required\": false; \"isSignal\": true; }; \"showSpinButtons\": { \"alias\": \"showSpinButtons\"; \"required\": false; \"isSignal\": true; }; }, {}, never, never, true, never>",
+    "ɵfac: _angular_core.ɵɵFactoryDeclaration<MdyNumberComponent, never>"
+  ],
   "MdyObserveCapability": [
     "observe: MdyEffectRef"
   ],
@@ -1292,6 +1836,10 @@
   ],
   "MdyOperand": [
     "(opaque)"
+  ],
+  "MdyOptionDirective": [
+    "ɵdir: _angular_core.ɵɵDirectiveDeclaration<MdyOptionDirective, \"[mdyOption]\", never, {}, {}, never, never, true, never>",
+    "ɵfac: _angular_core.ɵɵFactoryDeclaration<MdyOptionDirective, never>"
   ],
   "MdyOptionFieldA11yOptions": [
     "errorsVisible?: boolean",
@@ -1338,6 +1886,40 @@
     "\"next\"",
     "\"previous\""
   ],
+  "MdyOptionsAutoLoadingDirective": [
+    "constructor-> returns: (inferred)",
+    "mdyOptionsAutoLoadingTimeout: _angular_core.InputSignalWithTransform<number, unknown>",
+    "ɵdir: _angular_core.ɵɵDirectiveDeclaration<MdyOptionsAutoLoadingDirective, \"[mdyOptionsAutoLoading]\", never, { \"mdyOptionsAutoLoadingTimeout\": { \"alias\": \"mdyOptionsAutoLoadingTimeout\"; \"required\": false; \"isSignal\": true; }; }, {}, never, never, true, never>",
+    "ɵfac: _angular_core.ɵɵFactoryDeclaration<MdyOptionsAutoLoadingDirective, never>"
+  ],
+  "MdyOptionsControl": [
+    "loading: Signal<boolean>",
+    "loadingOverride: WritableSignal<boolean | null>",
+    "options: Signal<readonly MdySelectOption<TValue>[]>",
+    "overrideOptions: WritableSignal<readonly MdySelectOption<TValue>[] | null>",
+    "resetSelection: void",
+    "searchQuery: Signal<string>"
+  ],
+  "MdyOptionsLoader": [
+    "(opaque)"
+  ],
+  "MdyOptionsOverlayControl": [
+    "closeOverlay-> returns: void",
+    "effectiveLoading: _angular_core.Signal<boolean>",
+    "loading: _angular_core.InputSignalWithTransform<boolean, unknown>",
+    "loadingOverride: _angular_core.WritableSignal<boolean | null>",
+    "loadingText: _angular_core.InputSignal<string | null>",
+    "options: _angular_core.InputSignal<readonly MdySelectOption<TOptionValue>[]>",
+    "overrideOptions: _angular_core.WritableSignal<readonly MdySelectOption<TOptionValue>[] | null>",
+    "protected effectiveOptions: _angular_core.Signal<readonly MdySelectOption<TOptionValue>[]>",
+    "protected onSearchInput(0) event: Event,-> returns: void",
+    "resetSelection-> returns: void",
+    "searchChanged: _angular_core.OutputEmitterRef<string>",
+    "searchQuery: _angular_core.WritableSignal<string>",
+    "searchable: _angular_core.InputSignalWithTransform<boolean, unknown>",
+    "ɵdir: _angular_core.ɵɵDirectiveDeclaration<MdyOptionsOverlayControl<any, any>, never, never, { \"options\": { \"alias\": \"options\"; \"required\": false; \"isSignal\": true; }; \"loading\": { \"alias\": \"loading\"; \"required\": false; \"isSignal\": true; }; \"loadingText\": { \"alias\": \"loadingText\"; \"required\": false; \"isSignal\": true; }; \"searchable\": { \"alias\": \"searchable\"; \"required\": false; \"isSignal\": true; }; }, { \"searchChanged\": \"searchChanged\"; }, never, never, true, never>",
+    "ɵfac: _angular_core.ɵɵFactoryDeclaration<MdyOptionsOverlayControl<any, any>, never>"
+  ],
   "MdyOutsideDismiss": [
     "\"light-dismiss\"",
     "false"
@@ -1370,6 +1952,38 @@
   "MdyOverlayBranch": [
     "also?: ReadonlyArray<MdyOverlayRoot | null | undefined>",
     "root: MdyOverlayRoot | null | undefined"
+  ],
+  "MdyOverlayControl": [
+    "constructor-> returns: (inferred)",
+    "minWidth: _angular_core.InputSignal<number>",
+    "protected alignment: _angular_core.WritableSignal<\"left\" | \"right\">",
+    "protected announcer: MdyA11yAnnouncer",
+    "protected closeOverlay(0) restoreFocus?: boolean,-> returns: void",
+    "protected coords: _angular_core.WritableSignal<MdyOverlayCoords>",
+    "protected dismissFromOutside-> returns: void",
+    "protected forceModalPlacement-> returns: boolean",
+    "protected hostRef: ElementRef<any>",
+    "protected interactionFromInside-> returns: boolean",
+    "protected isOverlayOpen-> returns: boolean",
+    "protected maxHeight: _angular_core.WritableSignal<number>",
+    "protected minSpace: number",
+    "protected onBeforeOpen-> returns: void",
+    "protected open-> returns: boolean",
+    "protected openOverlay(0) event?: Event,-> returns: void",
+    "protected overlayAnchor-> returns: HTMLElement | DOMRect | null",
+    "protected overlayBranch-> returns: MdyOverlayBranch",
+    "protected overlayKind: MdyWidgetKind | null",
+    "protected overlayOwner-> returns: MdyOverlayOwner | undefined",
+    "protected position: _angular_core.WritableSignal<\"above\" | \"below\" | \"overlay\">",
+    "protected preferredPosition: \"above\" | \"below\"",
+    "protected restoreOverlayTriggerFocus-> returns: void",
+    "protected setOverlayOpen(0) open: boolean,-> returns: void",
+    "protected toggleOverlay(0) event?: Event,-> returns: void",
+    "protected updatePosition-> returns: void",
+    "protected wrapperRef: _angular_core.Signal<ElementRef<HTMLElement> | undefined>",
+    "widthMode: _angular_core.InputSignal<\"match-anchor\" | \"auto-content\">",
+    "ɵdir: _angular_core.ɵɵDirectiveDeclaration<MdyOverlayControl<any>, never, never, { \"widthMode\": { \"alias\": \"widthMode\"; \"required\": false; \"isSignal\": true; }; \"minWidth\": { \"alias\": \"minWidth\"; \"required\": false; \"isSignal\": true; }; }, {}, never, never, true, never>",
+    "ɵfac: _angular_core.ɵɵFactoryDeclaration<MdyOverlayControl<any>, never>"
   ],
   "MdyOverlayCoords": [
     "bottom?: number | undefined",
@@ -1466,6 +2080,13 @@
   "MdyPathRef": [
     "path: string"
   ],
+  "MdyPatternDirective": [
+    "mdyPattern: _angular_core.InputSignal<string | RegExp>",
+    "mdyPatternMessage: _angular_core.InputSignal<string | undefined>",
+    "protected buildValidators-> returns: { validators: _modyra_core.ValidatorFn<string | null>[]; }",
+    "ɵdir: _angular_core.ɵɵDirectiveDeclaration<MdyPatternDirective, \"[mdyPattern]\", never, { \"mdyPattern\": { \"alias\": \"mdyPattern\"; \"required\": true; \"isSignal\": true; }; \"mdyPatternMessage\": { \"alias\": \"mdyPatternMessage\"; \"required\": false; \"isSignal\": true; }; }, {}, never, never, true, never>",
+    "ɵfac: _angular_core.ɵɵFactoryDeclaration<MdyPatternDirective, never>"
+  ],
   "MdyPointerDrag": [
     "dragging: boolean",
     "start: void",
@@ -1483,6 +2104,84 @@
   ],
   "MdyPopupWidgetKind": [
     "(opaque)"
+  ],
+  "MdyPrefixDirective": [
+    "template: TemplateRef<unknown>",
+    "ɵdir: _angular_core.ɵɵDirectiveDeclaration<MdyPrefixDirective, \"[mdyPrefix]\", never, {}, {}, never, never, true, never>",
+    "ɵfac: _angular_core.ɵɵFactoryDeclaration<MdyPrefixDirective, never>"
+  ],
+  "MdyRadioGroupComponent": [
+    "layout: _angular_core.InputSignal<\"horizontal\" | \"vertical\">",
+    "options: _angular_core.InputSignal<readonly MdySelectOption<TValue>[]>",
+    "protected fieldId: string",
+    "protected onBlur-> returns: void",
+    "protected onSelectionChange(0) value: TValue,-> returns: void",
+    "protected widgetContract: _modyra_widgets.MdyWidgetDefinition<\"errorItem\" | \"errors\" | \"label\" | \"requiredMarker\" | \"root\" | \"supportingText\" | \"group\" | \"option\" | \"optionControl\" | \"optionLabel\">",
+    "protected widgetHasRootClass: boolean",
+    "protected widgetKind: \"radio\"",
+    "ɵcmp: _angular_core.ɵɵComponentDeclaration<MdyRadioGroupComponent<any>, \"mdy-control-radio\", never, { \"options\": { \"alias\": \"options\"; \"required\": false; \"isSignal\": true; }; \"layout\": { \"alias\": \"layout\"; \"required\": false; \"isSignal\": true; }; }, {}, never, never, true, never>",
+    "ɵfac: _angular_core.ɵɵFactoryDeclaration<MdyRadioGroupComponent<any>, never>"
+  ],
+  "MdyRangeCalendarComponent": [
+    "ariaLabel: _angular_core.InputSignal<string>",
+    "closed: _angular_core.OutputEmitterRef<void>",
+    "constructor-> returns: (inferred)",
+    "controller: _angular_core.InputSignal<MdyDaterangeFieldController | undefined>",
+    "dateFilter: _angular_core.InputSignal<((date: string) => boolean) | null>",
+    "focusFocusedDate-> returns: void",
+    "maxDate: _angular_core.InputSignal<CalendarDate | null>",
+    "minDate: _angular_core.InputSignal<CalendarDate | null>",
+    "protected effectiveAriaLabel: _angular_core.Signal<string>",
+    "protected focusedDate: _angular_core.Signal<CalendarDate>",
+    "protected goToNextMonth-> returns: void",
+    "protected goToPreviousMonth-> returns: void",
+    "protected hoverDate: _angular_core.Signal<CalendarDate | null>",
+    "protected onDateHovered(0) date: CalendarDate,-> returns: void",
+    "protected onDatePicked(0) date: CalendarDate,-> returns: void",
+    "protected onKeydown(0) event: KeyboardEvent,-> returns: void",
+    "protected onMonthSelected(0) month: number,-> returns: void",
+    "protected onToggleView-> returns: void",
+    "protected onYearSelected(0) year: number,-> returns: void",
+    "protected pendingEnd: _angular_core.Signal<CalendarDate | null>",
+    "protected pendingStart: _angular_core.Signal<CalendarDate | null>",
+    "protected phase: _angular_core.Signal<RangePhase>",
+    "protected phaseHint: _angular_core.Signal<string>",
+    "protected view: _angular_core.Signal<\"days\" | \"months\" | \"years\">",
+    "protected viewMonth: _angular_core.Signal<number>",
+    "protected viewYear: _angular_core.Signal<number>",
+    "rangeEnd: _angular_core.InputSignal<CalendarDate | null>",
+    "rangePicked: _angular_core.OutputEmitterRef<{ readonly start: CalendarDate; readonly end: CalendarDate; }>",
+    "rangeStart: _angular_core.InputSignal<CalendarDate | null>",
+    "syncView(0) start: CalendarDate | null,(1) end: CalendarDate | null,-> returns: void",
+    "ɵcmp: _angular_core.ɵɵComponentDeclaration<MdyRangeCalendarComponent, \"mdy-range-calendar\", never, { \"controller\": { \"alias\": \"controller\"; \"required\": false; \"isSignal\": true; }; \"rangeStart\": { \"alias\": \"rangeStart\"; \"required\": false; \"isSignal\": true; }; \"rangeEnd\": { \"alias\": \"rangeEnd\"; \"required\": false; \"isSignal\": true; }; \"minDate\": { \"alias\": \"minDate\"; \"required\": false; \"isSignal\": true; }; \"maxDate\": { \"alias\": \"maxDate\"; \"required\": false; \"isSignal\": true; }; \"dateFilter\": { \"alias\": \"dateFilter\"; \"required\": false; \"isSignal\": true; }; \"ariaLabel\": { \"alias\": \"ariaLabel\"; \"required\": false; \"isSignal\": true; }; }, { \"rangePicked\": \"rangePicked\"; \"closed\": \"closed\"; }, never, never, true, never>",
+    "ɵfac: _angular_core.ɵɵFactoryDeclaration<MdyRangeCalendarComponent, never>"
+  ],
+  "MdyRangeCalendarGridComponent": [
+    "dateFilter: _angular_core.InputSignal<((date: string) => boolean) | null>",
+    "dateHovered: _angular_core.OutputEmitterRef<CalendarDate>",
+    "datePicked: _angular_core.OutputEmitterRef<CalendarDate>",
+    "focusDate(0) date: CalendarDate,-> returns: void",
+    "focusedDate: _angular_core.InputSignal<CalendarDate | null>",
+    "hoverDate: _angular_core.InputSignal<CalendarDate | null>",
+    "maxDate: _angular_core.InputSignal<CalendarDate | null>",
+    "minDate: _angular_core.InputSignal<CalendarDate | null>",
+    "month: _angular_core.InputSignal<number>",
+    "protected isCellDisabled(0) cell: CalendarCell,-> returns: boolean",
+    "protected isCellFocused(0) cell: CalendarCell,-> returns: boolean",
+    "protected isCellInRange(0) cell: CalendarCell,-> returns: boolean",
+    "protected isCellRangeEnd(0) cell: CalendarCell,-> returns: boolean",
+    "protected isCellRangeEndpoint(0) cell: CalendarCell,-> returns: boolean",
+    "protected isCellRangeStart(0) cell: CalendarCell,-> returns: boolean",
+    "protected isCellToday(0) cell: CalendarCell,-> returns: boolean",
+    "protected onCellClick(0) cell: CalendarCell,-> returns: void",
+    "protected orderedDayNames: _angular_core.Signal<readonly string[]>",
+    "protected orderedDayNamesShort: _angular_core.Signal<readonly string[]>",
+    "protected rows: _angular_core.Signal<readonly (readonly CalendarCell[])[]>",
+    "rangeEnd: _angular_core.InputSignal<CalendarDate | null>",
+    "rangeStart: _angular_core.InputSignal<CalendarDate | null>",
+    "year: _angular_core.InputSignal<number>",
+    "ɵcmp: _angular_core.ɵɵComponentDeclaration<MdyRangeCalendarGridComponent, \"mdy-range-calendar-grid\", never, { \"year\": { \"alias\": \"year\"; \"required\": true; \"isSignal\": true; }; \"month\": { \"alias\": \"month\"; \"required\": true; \"isSignal\": true; }; \"rangeStart\": { \"alias\": \"rangeStart\"; \"required\": false; \"isSignal\": true; }; \"rangeEnd\": { \"alias\": \"rangeEnd\"; \"required\": false; \"isSignal\": true; }; \"hoverDate\": { \"alias\": \"hoverDate\"; \"required\": false; \"isSignal\": true; }; \"focusedDate\": { \"alias\": \"focusedDate\"; \"required\": false; \"isSignal\": true; }; \"minDate\": { \"alias\": \"minDate\"; \"required\": false; \"isSignal\": true; }; \"maxDate\": { \"alias\": \"maxDate\"; \"required\": false; \"isSignal\": true; }; \"dateFilter\": { \"alias\": \"dateFilter\"; \"required\": false; \"isSignal\": true; }; }, { \"datePicked\": \"datePicked\"; \"dateHovered\": \"dateHovered\"; }, never, never, true, never>",
+    "ɵfac: _angular_core.ɵɵFactoryDeclaration<MdyRangeCalendarGridComponent, never>"
   ],
   "MdyReactiveScope": [
     "destroy: void",
@@ -1519,26 +2218,10 @@
     "reactivity: MdyReactivity"
   ],
   "MdyRecordDescriptor": [
-    "initial: Readonly<Record<string, unknown>>",
-    "item: TItem",
-    "kind: \"record\"",
-    "validators: ReadonlyArray<ValidatorFn<Readonly<Record<string, unknown>>>>"
+    "-> MdyRecordDescriptor$1"
   ],
   "MdyRecordHandle": [
-    "cell: MdyFieldHandle<TCell>",
-    "errors: MdySignal<ReadonlyArray<MdyFieldError>>",
-    "has: boolean",
-    "keys: MdySignal<ReadonlyArray<string>>",
-    "patch: void",
-    "path: string",
-    "remove: void",
-    "rename: void",
-    "row: TItemHandle",
-    "setAll: void",
-    "upsert: void",
-    "valid: MdySignal<boolean>",
-    "validOf: boolean",
-    "value: MdySignal<Readonly<Record<string, TItemValue>>>"
+    "(opaque)"
   ],
   "MdyRelationAttribute": [
     "\"aria-activedescendant\"",
@@ -1546,6 +2229,12 @@
     "\"aria-describedby\"",
     "\"aria-labelledby\"",
     "\"for\""
+  ],
+  "MdyRequiredDirective": [
+    "mdyRequired: _angular_core.InputSignal<string | undefined>",
+    "protected buildValidators-> returns: { validators: _modyra_core.ValidatorFn<unknown>[]; marksRequired: boolean; }",
+    "ɵdir: _angular_core.ɵɵDirectiveDeclaration<MdyRequiredDirective, \"[mdyRequired]\", never, { \"mdyRequired\": { \"alias\": \"mdyRequired\"; \"required\": false; \"isSignal\": true; }; }, {}, never, never, true, never>",
+    "ɵfac: _angular_core.ɵɵFactoryDeclaration<MdyRequiredDirective, never>"
   ],
   "MdyRootRef": [
     "root: true"
@@ -1579,6 +2268,23 @@
     "\"sanitized\"",
     "\"sanitizer-error\""
   ],
+  "MdySegmentedButtonComponent": [
+    "fullWidth: InputSignalWithTransform<boolean, unknown>",
+    "options: _angular_core.InputSignal<readonly MdySelectOption<TValue>[]>",
+    "protected fieldId: string",
+    "protected onKeydown(0) event: KeyboardEvent,-> returns: void",
+    "protected onSelect(0) value: TValue,-> returns: void",
+    "protected onTrackPointerDown(0) event: PointerEvent,-> returns: void",
+    "protected onTrackPointerMove(0) event: PointerEvent,-> returns: void",
+    "protected onTrackPointerUp-> returns: void",
+    "protected segmentsCount: _angular_core.Signal<number>",
+    "protected tabIndexFor(0) index: number,-> returns: number",
+    "protected widgetContract: _modyra_widgets.MdyWidgetDefinition<\"errorItem\" | \"errors\" | \"label\" | \"requiredMarker\" | \"root\" | \"supportingText\" | \"group\" | \"option\" | \"optionControl\" | \"optionCheck\" | \"optionText\">",
+    "protected widgetHasRootClass: boolean",
+    "protected widgetKind: \"segmented\"",
+    "ɵcmp: _angular_core.ɵɵComponentDeclaration<MdySegmentedButtonComponent<any>, \"mdy-control-segmented\", never, { \"options\": { \"alias\": \"options\"; \"required\": false; \"isSignal\": true; }; \"fullWidth\": { \"alias\": \"fullWidth\"; \"required\": false; \"isSignal\": true; }; }, {}, never, never, true, never>",
+    "ɵfac: _angular_core.ɵɵFactoryDeclaration<MdySegmentedButtonComponent<any>, never>"
+  ],
   "MdySelectA11yOptions": [
     "activeKey: string | null",
     "descriptionVisible?: boolean",
@@ -1599,6 +2305,42 @@
     "option: (key: string) => MdyPartContract",
     "search: MdyPartContract",
     "trigger: MdyPartContract"
+  ],
+  "MdySelectComponent": [
+    "allowCreate: _angular_core.InputSignalWithTransform<boolean, unknown>",
+    "closeOverlay-> returns: void",
+    "constructor-> returns: (inferred)",
+    "disabled: _angular_core.InputSignal<boolean>",
+    "isDisabled: _angular_core.Signal<boolean>",
+    "optionCreated: _angular_core.OutputEmitterRef<string>",
+    "placeholder: _angular_core.InputSignal<string>",
+    "protected activeIndex: _angular_core.Signal<number>",
+    "protected dropUp: _angular_core.Signal<boolean>",
+    "protected fieldId: string",
+    "protected filteredOptions: _angular_core.Signal<readonly MdySelectOption<TValue>[]>",
+    "protected onBeforeOpen-> returns: void",
+    "protected onBlur(0) event: FocusEvent,-> returns: void",
+    "protected onCreateOption-> returns: void",
+    "protected onKeydown(0) event: KeyboardEvent,-> returns: void",
+    "protected onNativeChange(0) event: Event,-> returns: void",
+    "protected onSearchInput(0) event: Event,-> returns: void",
+    "protected openOverlay(0) event?: Event,-> returns: void",
+    "protected openerPart: _angular_core.Signal<_modyra_widgets.MdyPartContract>",
+    "protected overlayKind: \"select\"",
+    "protected overlayMode: _angular_core.Signal<boolean>",
+    "protected placementClass: _angular_core.Signal<string>",
+    "protected popupClass: string",
+    "protected popupId: _angular_core.Signal<string>",
+    "protected renderedOptions: _angular_core.Signal<readonly MdySelectOption<TValue>[]>",
+    "protected selectOption(0) opt: MdySelectOption<TValue>,-> returns: void",
+    "protected selectedOption: _angular_core.Signal<MdySelectOption<TValue> | null>",
+    "protected showCreateOption: _angular_core.Signal<boolean>",
+    "protected widgetContract: _modyra_widgets.MdyWidgetDefinition<\"errorItem\" | \"errors\" | \"inlineError\" | \"inputWrapper\" | \"label\" | \"requiredMarker\" | \"root\" | \"supportingText\" | \"value\" | \"option\" | \"arrow\" | \"empty\" | \"listbox\" | \"loading\" | \"placeholder\" | \"popup\" | \"search\" | \"trigger\">",
+    "protected widgetHasRootClass: boolean",
+    "protected widgetKind: \"select\"",
+    "resetSelection-> returns: void",
+    "ɵcmp: _angular_core.ɵɵComponentDeclaration<MdySelectComponent<any>, \"mdy-control-select\", never, { \"placeholder\": { \"alias\": \"placeholder\"; \"required\": false; \"isSignal\": true; }; \"disabled\": { \"alias\": \"disabled\"; \"required\": false; \"isSignal\": true; }; \"allowCreate\": { \"alias\": \"allowCreate\"; \"required\": false; \"isSignal\": true; }; }, { \"optionCreated\": \"optionCreated\"; }, never, never, true, never>",
+    "ɵfac: _angular_core.ɵɵFactoryDeclaration<MdySelectComponent<any>, never>"
   ],
   "MdySelectController": [
     "setDescribedBy: void",
@@ -1689,6 +2431,24 @@
     "debugName?: string",
     "equal?: MdyEqualityFn<T>"
   ],
+  "MdySliderComponent": [
+    "constructor-> returns: (inferred)",
+    "max: _angular_core.InputSignal<number | null>",
+    "min: _angular_core.InputSignal<number | null>",
+    "protected effectiveMax: _angular_core.Signal<number>",
+    "protected effectiveMin: _angular_core.Signal<number>",
+    "protected fieldId: string",
+    "protected narrowedConstraints-> returns: Partial<MdyFieldConstraints>",
+    "protected onChange(0) _event: Event,-> returns: void",
+    "protected onInput(0) event: Event,-> returns: void",
+    "protected widgetContract: _modyra_widgets.MdyWidgetDefinition<\"control\" | \"errorItem\" | \"errors\" | \"inlineError\" | \"label\" | \"requiredMarker\" | \"root\" | \"supportingText\" | \"track\" | \"value\">",
+    "protected widgetHasRootClass: boolean",
+    "protected widgetKind: \"slider\"",
+    "showValue: _angular_core.InputSignal<boolean>",
+    "step: _angular_core.InputSignal<number>",
+    "ɵcmp: _angular_core.ɵɵComponentDeclaration<MdySliderComponent, \"mdy-control-slider\", never, { \"min\": { \"alias\": \"min\"; \"required\": false; \"isSignal\": true; }; \"max\": { \"alias\": \"max\"; \"required\": false; \"isSignal\": true; }; \"step\": { \"alias\": \"step\"; \"required\": false; \"isSignal\": true; }; \"showValue\": { \"alias\": \"showValue\"; \"required\": false; \"isSignal\": true; }; }, {}, never, never, true, never>",
+    "ɵfac: _angular_core.ɵɵFactoryDeclaration<MdySliderComponent, never>"
+  ],
   "MdySnapshotOptions": [
     "sensitive?: (path: string) => boolean | undefined"
   ],
@@ -1758,6 +2518,30 @@
   "MdySubmittedValue": [
     "(opaque)"
   ],
+  "MdySuffixDirective": [
+    "template: TemplateRef<unknown>",
+    "ɵdir: _angular_core.ɵɵDirectiveDeclaration<MdySuffixDirective, \"[mdySuffix]\", never, {}, {}, never, never, true, never>",
+    "ɵfac: _angular_core.ɵɵFactoryDeclaration<MdySuffixDirective, never>"
+  ],
+  "MdySupportingTextDirective": [
+    "template: TemplateRef<unknown>",
+    "ɵdir: _angular_core.ɵɵDirectiveDeclaration<MdySupportingTextDirective, \"[mdySupportingText]\", never, {}, {}, never, never, true, never>",
+    "ɵfac: _angular_core.ɵɵFactoryDeclaration<MdySupportingTextDirective, never>"
+  ],
+  "MdyTextComponent": [
+    "autocomplete: _angular_core.InputSignal<string | null>",
+    "ngOnInit-> returns: void",
+    "placeholder: _angular_core.InputSignal<string>",
+    "protected fieldId: string",
+    "protected onBlur-> returns: void",
+    "protected onInput(0) event: Event,-> returns: void",
+    "protected widgetContract: _modyra_widgets.MdyWidgetDefinition<\"control\" | \"errorItem\" | \"errors\" | \"inlineError\" | \"inputWrapper\" | \"label\" | \"prefix\" | \"requiredMarker\" | \"root\" | \"suffix\" | \"supportingText\">",
+    "protected widgetHasRootClass: boolean",
+    "protected widgetKind: (inferred)",
+    "type: _angular_core.InputSignal<string>",
+    "ɵcmp: _angular_core.ɵɵComponentDeclaration<MdyTextComponent, \"mdy-control-text\", never, { \"placeholder\": { \"alias\": \"placeholder\"; \"required\": false; \"isSignal\": true; }; \"type\": { \"alias\": \"type\"; \"required\": false; \"isSignal\": true; }; \"autocomplete\": { \"alias\": \"autocomplete\"; \"required\": false; \"isSignal\": true; }; }, {}, never, never, true, never>",
+    "ɵfac: _angular_core.ɵɵFactoryDeclaration<MdyTextComponent, never>"
+  ],
   "MdyTextFieldA11yOptions": [
     "autocomplete?: string",
     "constraints?: MdyFieldConstraints",
@@ -1782,6 +2566,17 @@
   ],
   "MdyTextFieldIntent": [
     "(opaque)"
+  ],
+  "MdyTextareaComponent": [
+    "placeholder: _angular_core.InputSignal<string>",
+    "protected fieldId: string",
+    "protected onInput(0) event: Event,-> returns: void",
+    "protected widgetContract: _modyra_widgets.MdyWidgetDefinition<\"control\" | \"errorItem\" | \"errors\" | \"inlineError\" | \"inputWrapper\" | \"label\" | \"requiredMarker\" | \"root\" | \"supportingText\">",
+    "protected widgetHasRootClass: boolean",
+    "protected widgetKind: (inferred)",
+    "rows: _angular_core.InputSignal<number>",
+    "ɵcmp: _angular_core.ɵɵComponentDeclaration<MdyTextareaComponent, \"mdy-control-textarea\", never, { \"placeholder\": { \"alias\": \"placeholder\"; \"required\": false; \"isSignal\": true; }; \"rows\": { \"alias\": \"rows\"; \"required\": false; \"isSignal\": true; }; }, {}, never, never, true, never>",
+    "ɵfac: _angular_core.ɵɵFactoryDeclaration<MdyTextareaComponent, never>"
   ],
   "MdyTimeClockIntent": [
     "(opaque)"
@@ -1833,6 +2628,41 @@
     "from: string",
     "minuteStep: number",
     "to: string"
+  ],
+  "MdyTimepickerComponent": [
+    "animateHand: _angular_core.InputSignal<boolean>",
+    "format: _angular_core.InputSignal<MdyTimeFormat>",
+    "granularity: _angular_core.InputSignal<MdyTimeGranularity | undefined>",
+    "placeholder: _angular_core.InputSignal<string>",
+    "protected cancelPicker-> returns: void",
+    "protected confirmPicker-> returns: void",
+    "protected controller: () => _modyra_widgets.MdyTimepickerFieldController | undefined",
+    "protected draftValue: _angular_core.Signal<string>",
+    "protected effectivePlaceholder: _angular_core.Signal<string>",
+    "protected fieldId: string",
+    "protected i18n: _modyra_widgets.MdyI18nMessages",
+    "protected minSpace: (inferred)",
+    "protected onBeforeOpen-> returns: void",
+    "protected onDialPicked(0) pick: { field: \"hour\" | \"minute\"; angle: number; ring: \"outer\" | \"inner\"; phase?: \"move\" | \"end\"; },-> returns: void",
+    "protected onInputBlur(0) event: FocusEvent,-> returns: void",
+    "protected onInputChange(0) event: Event,-> returns: void",
+    "protected onInputFocus(0) event: FocusEvent,-> returns: void",
+    "protected onTimePicked(0) time: string,-> returns: void",
+    "protected openerPart: _angular_core.Signal<_modyra_widgets.MdyPartContract>",
+    "protected overlayKind: \"timepicker\"",
+    "protected overlayOwner-> returns: MdyOverlayOwner | undefined",
+    "protected popupClass: string",
+    "protected popupId: _angular_core.Signal<string>",
+    "protected send(0) intent: MdyTimepickerFieldIntent,-> returns: void",
+    "protected shownField: _angular_core.Signal<\"hour\" | \"minute\">",
+    "protected shownViewMode: _angular_core.Signal<MdyTimepickerViewMode$1>",
+    "protected widgetContract: _modyra_widgets.MdyWidgetDefinition<\"control\" | \"errorItem\" | \"errors\" | \"inlineError\" | \"inputWrapper\" | \"label\" | \"requiredMarker\" | \"root\" | \"supportingText\" | \"popup\" | \"toggle\" | \"action\" | \"actions\" | \"clock\" | \"container\" | \"content\" | \"dialFace\" | \"dialHand\" | \"dialNumber\" | \"dialUnavailable\" | \"dialUnavailableArc\" | \"dialog\" | \"header\" | \"hour\" | \"hourControl\" | \"minute\" | \"minuteControl\" | \"modeToggle\" | \"period\" | \"periodOption\">",
+    "protected widgetHasRootClass: boolean",
+    "protected widgetKind: \"timepicker\"",
+    "showUnavailable: _angular_core.InputSignal<boolean>",
+    "viewMode: _angular_core.InputSignal<MdyTimepickerViewMode$1>",
+    "ɵcmp: _angular_core.ɵɵComponentDeclaration<MdyTimepickerComponent, \"mdy-control-timepicker\", never, { \"placeholder\": { \"alias\": \"placeholder\"; \"required\": false; \"isSignal\": true; }; \"format\": { \"alias\": \"format\"; \"required\": false; \"isSignal\": true; }; \"viewMode\": { \"alias\": \"viewMode\"; \"required\": false; \"isSignal\": true; }; \"granularity\": { \"alias\": \"granularity\"; \"required\": false; \"isSignal\": true; }; \"animateHand\": { \"alias\": \"animateHand\"; \"required\": false; \"isSignal\": true; }; \"showUnavailable\": { \"alias\": \"showUnavailable\"; \"required\": false; \"isSignal\": true; }; }, {}, never, never, true, never>",
+    "ɵfac: _angular_core.ɵɵFactoryDeclaration<MdyTimepickerComponent, never>"
   ],
   "MdyTimepickerDialArc": [
     "from: number",
@@ -1909,6 +2739,16 @@
     "\"dial\"",
     "\"input\""
   ],
+  "MdyToggleComponent": [
+    "protected fieldId: string",
+    "protected onBlur-> returns: void",
+    "protected onChange(0) event: Event,-> returns: void",
+    "protected widgetContract: _modyra_widgets.MdyWidgetDefinition<\"control\" | \"errorItem\" | \"errors\" | \"inlineError\" | \"inputWrapper\" | \"label\" | \"requiredMarker\" | \"root\" | \"supportingText\" | \"track\" | \"thumb\">",
+    "protected widgetHasRootClass: boolean",
+    "protected widgetKind: (inferred)",
+    "ɵcmp: _angular_core.ɵɵComponentDeclaration<MdyToggleComponent, \"mdy-control-toggle\", never, {}, {}, never, never, true, never>",
+    "ɵfac: _angular_core.ɵɵFactoryDeclaration<MdyToggleComponent, never>"
+  ],
   "MdyTransitionTrigger": [
     "(opaque)"
   ],
@@ -1922,13 +2762,19 @@
     "now?: () => number"
   ],
   "MdyTypedForm": [
-    "constructor(0) schema: S,(1) options?: MdyCoreFormOptions<MdyFormValue<S>>,-> returns: (inferred)",
+    "canRedo: Signal<boolean>",
+    "canUndo: Signal<boolean>",
+    "constructor(0) schema: S,(1) options?: MdyFormOptions<MdyFormValue<S>>,-> returns: (inferred)",
+    "errorsFor(0) path: keyof MdyFormValue<S> | string,-> returns: Signal<ReadonlyArray<MdyFormError>>",
     "f: MdyFieldHandleTree<S>",
+    "fieldNames: Signal<readonly string[]>",
+    "getField(0) name: K,-> returns: MdyFieldRef<MdyFormValue<S>[K]> | null",
+    "getField(0) name: string,-> returns: MdyFieldRef<unknown> | null",
+    "hasDraft: Signal<boolean>",
+    "protected _adapter: MdyDeclarativeAdapter",
     "protected _buildHandle(0) path: string,-> returns: MdyFieldHandle<unknown>",
-    "protected _flatToPatch(0) flat: Record<string, unknown>,-> returns: MdyFormPatch<S>",
-    "protected _flatToValue(0) flat: Record<string, unknown>,-> returns: MdyFormValue<S>",
     "state: MdyFormState",
-    "value: MdySignal<MdyFormValue<S>>"
+    "value: Signal<MdyFormValue<S>>"
   ],
   "MdyTypedFormBase": [
     "activate-> returns: void",
@@ -2008,6 +2854,20 @@
     "security?: MdySecurityPolicy",
     "validators?: ReadonlyArray<MdyFormValidatorFn<TValue>>"
   ],
+  "MdyTypedFormLike": [
+    "buildSubmitEvent: MdyFormSubmitEvent<Record<string, unknown>, Partial<Record<string, unknown>>>",
+    "errorsFor: Signal<ReadonlyArray<MdyFormError>>",
+    "getField: MdyFieldRef<unknown> | null",
+    "getValue: Record<string, unknown>",
+    "markAllTouched: void",
+    "patchValue: void",
+    "reset: void",
+    "setValue: void",
+    "state: MdyFormState",
+    "submit: Promise<void>",
+    "submitValue: Partial<Record<string, unknown>>",
+    "value: Signal<Record<string, unknown>>"
+  ],
   "MdyTypedWidgetViewContract": [
     "parts: Readonly<Record<TPart, MdyPartContract>>"
   ],
@@ -2036,6 +2896,13 @@
     "minLength: string",
     "pattern: string",
     "required: string"
+  ],
+  "MdyValidatorBaseDirective": [
+    "constructor-> returns: (inferred)",
+    "name: _angular_core.InputSignal<string>",
+    "protected buildValidators-> returns: { readonly validators: ReadonlyArray<ValidatorFn<never>>; readonly marksRequired?: boolean; }",
+    "ɵdir: _angular_core.ɵɵDirectiveDeclaration<MdyValidatorBaseDirective, never, never, { \"name\": { \"alias\": \"name\"; \"required\": false; \"isSignal\": true; }; }, {}, never, never, true, never>",
+    "ɵfac: _angular_core.ɵɵFactoryDeclaration<MdyValidatorBaseDirective, never>"
   ],
   "MdyValidatorFacts": [
     "inputMode?: string",
@@ -2164,6 +3031,11 @@
     "from: string",
     "to: readonly string[]"
   ],
+  "MdyWidgetRuntime": [
+    "execute(0) commands: readonly MdyUiCommand[],(1) elements: MdyElementRefMap,(2) itemLookup: MdyItemRefLookup,(3) handlers: MdyAngularCommandHandlers,-> returns: void",
+    "ɵfac: _angular_core.ɵɵFactoryDeclaration<MdyWidgetRuntime, never>",
+    "ɵprov: _angular_core.ɵɵInjectableDeclaration<MdyWidgetRuntime>"
+  ],
   "MdyWidgetRuntimeCapabilities": [
     "dom: boolean",
     "hydrated: boolean",
@@ -2228,10 +3100,23 @@
     "root: MdyPartContract",
     "structure?: MdyWidgetStructure<TPart | \"root\">"
   ],
+  "MdyWizardStepComponent": [
+    "fieldNames: Signal<readonly string[]>",
+    "fields: _angular_core.InputSignal<readonly (string | MdyFieldHandle<unknown>)[]>",
+    "isActive: _angular_core.WritableSignal<boolean>",
+    "label: _angular_core.InputSignal<string>",
+    "ɵcmp: _angular_core.ɵɵComponentDeclaration<MdyWizardStepComponent, \"mdy-wizard-step\", never, { \"label\": { \"alias\": \"label\"; \"required\": false; \"isSignal\": true; }; \"fields\": { \"alias\": \"fields\"; \"required\": false; \"isSignal\": true; }; }, {}, never, [\"*\"], true, never>",
+    "ɵfac: _angular_core.ɵɵFactoryDeclaration<MdyWizardStepComponent, never>"
+  ],
   "MdyWritableSignal": [
     "asReadonly: MdySignal<T>",
     "set: void",
     "update: void"
+  ],
+  "MdyZodFormOptions": [
+    "injector?: Injector",
+    "submitMode?: \"valid-only\" | \"always\" | \"manual\"",
+    "validators?: ReadonlyArray<MdyFormValidatorFn<TValue>>"
   ],
   "ParsedTime": [
     "hour: number",
@@ -2280,6 +3165,10 @@
   "angleToMinute": [
     "(0) angle: number",
     "-> returns: number"
+  ],
+  "angularReactivity": [
+    "(0) injectorOrOptions?: Injector | AngularReactivityOptions",
+    "-> returns: MdyReactivity"
   ],
   "applyDynamicRules": [
     "(0) form: MdyDynamicRuleHost",
@@ -2939,6 +3828,16 @@
     "(0) field: MdyDynamicField",
     "-> returns: unknown"
   ],
+  "mdyForm": [
+    "(0) schema: S",
+    "(1) options?: MdyFormOptions<MdyFormValue<S>>",
+    "-> returns: MdyTypedForm<S>"
+  ],
+  "mdyFormFromSchema": [
+    "(0) schema: T",
+    "(1) options?: MdyZodFormOptions<MdyFormValue<MdyZodSchemaTree<T[\"shape\"]>>>",
+    "-> returns: MdyTypedForm<MdyZodSchemaTree<T[\"shape\"]>>"
+  ],
   "mdyFormSerialize": [
     "(0) value: unknown",
     "-> returns: unknown"
@@ -3226,6 +4125,11 @@
     "(1) errors: ReadonlyArray<MdyFieldError>",
     "(2) options: MdyTimepickerFieldA11yOptions",
     "-> returns: { readonly root: MdyPartContract; readonly label: MdyPartContract; readonly trigger: MdyPartContract; readonly dialog: MdyPartContract; readonly hour: MdyPartContract; readonly hourControl: MdyPartContract; readonly minute: MdyPartContract; readonly minuteControl: MdyPartContract; readonly description: MdyPartContract; readonly error: MdyPartContract; }"
+  ],
+  "provideModyraLocale": [
+    "(0) locale: MdyBuiltInLocale",
+    "(1) options?: MdyLocaleOptions",
+    "-> returns: Provider[]"
   ],
   "reactivityRunsEffects": [
     "(0) rx: Pick<MdyReactivity, \"capabilities\">",
