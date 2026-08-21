@@ -19,22 +19,8 @@
     {
       "id": "plain:dispatch@datepicker-field.ts ≡ plain:dispatch@select-field.ts",
       "score": 1,
-      "left": "packages/plain/src/fields/datepicker-field.ts:144",
+      "left": "packages/plain/src/fields/datepicker-field.ts:145",
       "right": "packages/plain/src/fields/select-field.ts:156",
-      "reason": "recorded, not yet accounted for"
-    },
-    {
-      "id": "plain:dispatch@datepicker-field.ts ≡ plain:dispatch@timepicker-field.ts",
-      "score": 1,
-      "left": "packages/plain/src/fields/datepicker-field.ts:144",
-      "right": "packages/plain/src/fields/timepicker-field.ts:188",
-      "reason": "recorded, not yet accounted for"
-    },
-    {
-      "id": "plain:dispatch@select-field.ts ≡ plain:dispatch@timepicker-field.ts",
-      "score": 1,
-      "left": "packages/plain/src/fields/select-field.ts:156",
-      "right": "packages/plain/src/fields/timepicker-field.ts:188",
       "reason": "recorded, not yet accounted for"
     },
     {

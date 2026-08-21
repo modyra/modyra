@@ -1872,6 +1872,7 @@
     "setValue: void"
   ],
   "MdyTimepickerFieldControllerOptions": [
+    "emit?: (commands: readonly MdyUiCommand[]) => void",
     "format?: MdyTimeFormat",
     "granularity?: MdyTimeGranularity",
     "handle: MdyFieldHandle<string | null>",
