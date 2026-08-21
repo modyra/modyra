@@ -19524,3 +19524,41 @@ renderer fault:
   — the class the contract declares — goes first now.
 
 `known-red-browser.json` corrected: the lit and angular rows for this spec are gone.
+
+## 344 — Lit's 24-hour face has twelve hours a pointer cannot reach (S1, UI-011/A11Y-001)
+
+Found looking for something else: the user reported *"plain sul timepicker non funziona bene come su
+angular, credo che abbia implementato male il contratto"*. Driving the same sequence through all three
+found plain matching Angular on every operation tested, and **lit** diverging on the one that matters
+most.
+
+Pressing straight up at four radii on a 24-hour face and releasing without moving. The outer numbers
+are centred at 100 and the inner at 60, so the edge is 80:
+
+```
+plain     r100→12  r85→12  r75→00  r60→00
+angular   r100→12  r85→12  r75→00  r60→00
+lit       r100→00  r85→00  r75→00  r60→00
+```
+
+**Lit answers the inner ring everywhere**, including at 100 — the outer numbers' own centre. On that
+renderer a 24-hour face has twelve hours no pointer can select: tapping the 3 gives 15, tapping the 12
+gives midnight. Only typing or the arrows reach them.
+
+**The contract is not at fault.** `timepickerDialRing` is battled as arithmetic and answers correctly,
+`a-ring-that-cannot-make-up-its-mind` holds it steady under a tremor, and the geometry is identical in
+all three renderers — face 256, hand `100px` by computed style, outer numbers at 100, inner at 60. The
+decision is right and the press does not arrive at it with the geometry it has.
+
+Same shape as three findings already in this batch: **a contract that decides and a renderer that
+decides again.** It is invisible to every tier but the browser — a unit test hands the radius in, and
+only a real press measures whether the renderer knew what the radius was.
+
+**Battle**: `a-face-with-one-ring-you-can-reach.spec.ts`, four radii rather than one. A renderer wrong
+*everywhere* and one wrong *near the edge* are different defects and the readings at 100 and 60 tell
+them apart; the two inner assertions are the control, since a renderer answering "outer" everywhere
+would pass an outer-only check.
+
+**Still unexplained**: what the user saw on plain. Everything measured — the view it opens in, the
+period buttons, tapping a number, dragging the hand, the arrows, typing, the committed value — matches
+Angular. Their symptom is real and not yet reproduced, and this finding is not it.
