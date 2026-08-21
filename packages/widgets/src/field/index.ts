@@ -84,6 +84,7 @@ export type {
   MdyMultiselectFieldControllerOptions,
   MdyMultiselectFieldIntent,
   MdyMultiselectFieldState,
+  MdyMultiselectWayBack,
 } from "./multiselect-field-types.js";
 
 export { createDatepickerFieldController } from "./datepicker-field-controller.js";

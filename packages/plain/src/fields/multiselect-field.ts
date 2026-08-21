@@ -26,6 +26,8 @@ import {
   chipDropIndex,
   stateClass,
   scrollChipStripByWheel,
+  wayBackSentence,
+  blocksValueChange,
   isTypeaheadCharacter,
 } from "@modyra/widgets";
 import { applyPart, el, setErrors, setText, setIcon } from "../dom.js";
@@ -97,7 +99,30 @@ export function renderMultiselectField(
   // Said rather than shown: a choice lands and the strip is the only confirmation, which is the one
   // a person using a screen reader does not get.
   const announcement = el("div", parts.announcement.classes.join(" "));
-  control.append(trigger, announcement);
+  /**
+   * Every choice off at once, at the trailing edge where the other controls of its column sit.
+   *
+   * Beside the trigger rather than inside it: the trigger is a button, and a button inside a button
+   * is neither valid nor reachable. It is drawn only while there is something to clear.
+   */
+  const clearAll = el("button", parts.clearAll.classes.join(" ")) as HTMLButtonElement;
+  clearAll.type = "button";
+  clearAll.setAttribute("aria-label", messages.clearSelection);
+  setIcon(clearAll, "CLOSE");
+  /**
+   * The one way back, under the control.
+   *
+   * Untimed and in the page rather than in a toast: a message that disappears after five seconds is
+   * a time limit under 2.2.1, and an undo has no exception under it. It stands until it is used or
+   * another act replaces it.
+   */
+  const wayBack = el("div", parts.wayBack.classes.join(" "));
+  const wayBackText = el("span", "");
+  const wayBackAction = el("button", parts.wayBackAction.classes.join(" ")) as HTMLButtonElement;
+  wayBackAction.type = "button";
+  setText(wayBackAction, messages.wayBackLabel);
+  wayBack.append(wayBackText, wayBackAction);
+  control.append(trigger, clearAll, announcement);
 
   // ── popup: the filter box over the same grid ──────────────────────────────────────────────
   const popup = el("div", `${parts.popup.classes.join(" ")} mdy-overlay`) as HTMLDivElement;
@@ -566,6 +591,9 @@ export function renderMultiselectField(
   syncGrids(controller.state().options);
 
   insertControl(shell, control);
+  // Directly under the control and before its description: the offer is about what just happened,
+  // and the description is a standing fact about the field.
+  shell.wrapper.after(wayBack);
   container.appendChild(shell.root);
   // Document-level so no scroll container or renderer frame can clip the popup, exactly as the
   // select renderer portals its own listbox.
@@ -587,6 +615,8 @@ export function renderMultiselectField(
   }
 
   trigger.addEventListener("click", () => dispatch({ type: "toggleOpen" }));
+  clearAll.addEventListener("click", () => dispatch({ type: "clear" }));
+  wayBackAction.addEventListener("click", () => dispatch({ type: "undo" }));
   search.addEventListener("input", () => dispatch({ type: "search", query: search.value }));
   /**
    * The keyboard policy is `multiselectOverlayAction`, not a handler here.
@@ -686,6 +716,23 @@ export function renderMultiselectField(
     saidLast = nowChosen;
     syncChips(state);
     setText(placeholder, f.placeholder ?? "");
+    // Nothing chosen, nothing to clear: a control offering to empty an empty field is one more thing
+    // in the column that does not answer.
+    // Out of play is out of play for these two as well: hidden is a drawing decision, and a field
+    // whose ARIA says disabled while a button beside it still answers is disabled in appearance only.
+    const blocked = blocksValueChange(state.interactivity);
+    clearAll.hidden = nowChosen.length === 0 || blocked;
+    clearAll.disabled = blocked;
+    const back = state.wayBack;
+    wayBack.hidden = back === null;
+    wayBackAction.disabled = blocked;
+    if (back !== null) {
+      setText(wayBackText, wayBackSentence(
+        back,
+        { removed: messages.wayBackRemoved, moved: messages.wayBackMoved, cleared: messages.wayBackCleared },
+        (key) => state.options.find((option) => keyFor(option) === key)?.label ?? key,
+      ));
+    }
     applyPart(popup, view.parts.popup);
     applyPart(search, view.parts.search);
     // Where the keyboard is in the list, said to a reader. The cursor is not focus — focus stays in

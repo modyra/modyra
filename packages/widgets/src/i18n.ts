@@ -86,6 +86,20 @@ export interface MdyI18nMessages {
    * more. ADR 0127 makes the count one of the conditions the scrolling row is allowed under.
    */
   readonly selectionCount: string;
+  /** The control that takes every choice off at once. */
+  readonly clearSelection: string;
+  /**
+   * The one way back, and what it says it is putting back.
+   *
+   * A single reversal covers the last destructive change whatever produced it, so "Undo" alone is
+   * ambiguous and the affordance names the act: `{value}` for a removal or a move, `{count}` for a
+   * clear, which is about all of them and can name none. It is untimed — a message that disappears
+   * after five seconds is a time limit under 2.2.1, and an undo has no exception under it.
+   */
+  readonly wayBackLabel: string;
+  readonly wayBackRemoved: string;
+  readonly wayBackMoved: string;
+  readonly wayBackCleared: string;
   readonly fileSelect: string;
   readonly fileSelectMultiple: string;
   readonly fileNoneSelected: string;
@@ -162,6 +176,11 @@ export const MDY_I18N_MESSAGES_DEFAULT: MdyI18nMessages = Object.freeze({
   selectionEmpty: "Nothing selected",
   selectionMoved: "{value}, moved to position {position} of {count}",
   selectionCount: "{count} selected",
+  clearSelection: "Clear selection",
+  wayBackLabel: "Undo",
+  wayBackRemoved: "{value} removed",
+  wayBackMoved: "{value} moved",
+  wayBackCleared: "{count} items cleared",
   chipDecrementLabel: "One fewer",
   chipIncrementLabel: "One more",
   fileSelect: "Select file",
@@ -227,6 +246,11 @@ export const MDY_I18N_MESSAGES_IT: MdyI18nMessages = Object.freeze({
   selectionEmpty: "Nessuna selezione",
   selectionMoved: "{value}, spostato in posizione {position} di {count}",
   selectionCount: "{count} selezionati",
+  clearSelection: "Svuota la selezione",
+  wayBackLabel: "Annulla",
+  wayBackRemoved: "{value} rimosso",
+  wayBackMoved: "{value} spostato",
+  wayBackCleared: "{count} elementi rimossi",
   chipDecrementLabel: "Uno in meno",
   chipIncrementLabel: "Uno in più",
   fileSelect: "Seleziona file",
@@ -285,6 +309,11 @@ export const MDY_I18N_MESSAGES_DE: MdyI18nMessages = Object.freeze({
   selectionEmpty: "Nichts ausgewählt",
   selectionMoved: "{value}, verschoben auf Position {position} von {count}",
   selectionCount: "{count} ausgewählt",
+  clearSelection: "Auswahl leeren",
+  wayBackLabel: "Rückgängig",
+  wayBackRemoved: "{value} entfernt",
+  wayBackMoved: "{value} verschoben",
+  wayBackCleared: "{count} Einträge entfernt",
   chipDecrementLabel: "Einer weniger",
   chipIncrementLabel: "Einer mehr",
   fileSelect: "Datei auswählen",
@@ -343,6 +372,11 @@ export const MDY_I18N_MESSAGES_FR: MdyI18nMessages = Object.freeze({
   selectionEmpty: "Aucune sélection",
   selectionMoved: "{value}, déplacé en position {position} sur {count}",
   selectionCount: "{count} sélectionnés",
+  clearSelection: "Effacer la sélection",
+  wayBackLabel: "Annuler",
+  wayBackRemoved: "{value} retiré",
+  wayBackMoved: "{value} déplacé",
+  wayBackCleared: "{count} éléments effacés",
   chipDecrementLabel: "Un de moins",
   chipIncrementLabel: "Un de plus",
   fileSelect: "Sélectionner un fichier",
@@ -401,6 +435,11 @@ export const MDY_I18N_MESSAGES_ES: MdyI18nMessages = Object.freeze({
   selectionEmpty: "Nada seleccionado",
   selectionMoved: "{value}, movido a la posición {position} de {count}",
   selectionCount: "{count} seleccionados",
+  clearSelection: "Vaciar la selección",
+  wayBackLabel: "Deshacer",
+  wayBackRemoved: "{value} eliminado",
+  wayBackMoved: "{value} movido",
+  wayBackCleared: "{count} elementos eliminados",
   chipDecrementLabel: "Uno menos",
   chipIncrementLabel: "Uno más",
   fileSelect: "Seleccionar archivo",

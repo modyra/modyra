@@ -1782,6 +1782,16 @@
            `height` here made the box exactly the token where its siblings are the token *plus their
            border* — two pixels short in a renderer that draws one. */
         max-height: var(--mdy-input-height);
+        /* A row: the trigger takes what is left and the clear-all sits at the trailing edge beside
+           it. As a block, the button had nowhere to go but under the control, where it overflowed
+           the field's box and the text below painted over it — drawn, and not pressable. */
+        display: flex;
+        align-items: center;
+    }
+
+    .mdy-renderer .mdy-multiselect > .mdy-multiselect__trigger {
+        flex: 1 1 auto;
+        min-width: 0;
     }
 
     .mdy-multiselect__trigger {
@@ -1876,6 +1886,54 @@
         border: 0;
         padding: 0;
         margin: -1px;
+    }
+
+    /* The clear-all, in the column of trailing controls. It is a button, so it carries the target
+       size the rest of that column has rather than the size of the glyph inside it. */
+    .mdy-multiselect__clear-all {
+        display: inline-flex;
+        align-self: center;
+        align-items: center;
+        justify-content: center;
+        flex: 0 0 auto;
+        width: var(--mdy-affordance-size, 2.75rem);
+        height: var(--mdy-affordance-size, 2.75rem);
+        padding: 0;
+        border: 0;
+        background: none;
+        color: var(--mdy-color-text-muted, inherit);
+        cursor: pointer;
+    }
+
+    .mdy-multiselect__clear-all:hover { color: var(--mdy-color-text, inherit); }
+    .mdy-multiselect__clear-all[hidden] { display: none; }
+
+    /* The one way back. In the page and untimed: a message that takes itself away after five
+       seconds is a time limit under WCAG 2.2.1, and an undo has no exception under it. */
+    .mdy-multiselect__way-back {
+        /* Positioned, and not for placement: the input wrapper above it is `position: relative`, so
+           it paints over the in-flow content that follows and takes the pointer with it. A row of
+           controls under a control has to join the same painting step to be pressable at all. */
+        position: relative;
+        z-index: 1;
+        display: flex;
+        align-items: center;
+        gap: var(--mdy-space-2, 0.5rem);
+        margin-top: var(--mdy-space-1, 0.25rem);
+        font-size: var(--mdy-font-size-sm, 0.875rem);
+        color: var(--mdy-color-text-muted, inherit);
+    }
+
+    .mdy-multiselect__way-back[hidden] { display: none; }
+
+    .mdy-multiselect__way-back-action {
+        border: 0;
+        background: none;
+        padding: 0;
+        font: inherit;
+        color: var(--mdy-color-primary, inherit);
+        text-decoration: underline;
+        cursor: pointer;
     }
 
     .mdy-multiselect__placeholder {

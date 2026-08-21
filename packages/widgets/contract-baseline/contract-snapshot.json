@@ -1634,7 +1634,7 @@
         "placeholder": {
           "element": "text",
           "parent": "trigger",
-          "optional": false,
+          "optional": true,
           "repeated": false,
           "role": null,
           "classes": [
@@ -1645,7 +1645,7 @@
         "arrow": {
           "element": "presentation",
           "parent": "inputWrapper",
-          "optional": false,
+          "optional": true,
           "repeated": false,
           "role": null,
           "classes": [
@@ -1932,12 +1932,13 @@
           "parent": "chips",
           "optional": true,
           "repeated": true,
-          "role": null,
+          "role": "group",
           "classes": [
             "mdy-chip",
             "mdy-chip--value"
           ],
           "states": [
+            "dragging",
             "removable",
             "selected"
           ]
@@ -1953,6 +1954,17 @@
           ],
           "states": []
         },
+        "chipMove": {
+          "element": "button",
+          "parent": "chip",
+          "optional": true,
+          "repeated": false,
+          "role": null,
+          "classes": [
+            "mdy-chip__move"
+          ],
+          "states": []
+        },
         "placeholder": {
           "element": "text",
           "parent": "trigger",
@@ -1961,6 +1973,17 @@
           "role": null,
           "classes": [
             "mdy-multiselect__placeholder"
+          ],
+          "states": []
+        },
+        "clearAll": {
+          "element": "button",
+          "parent": "inputWrapper",
+          "optional": true,
+          "repeated": false,
+          "role": null,
+          "classes": [
+            "mdy-multiselect__clear-all"
           ],
           "states": []
         },
@@ -1983,6 +2006,28 @@
           "role": null,
           "classes": [
             "mdy-multiselect__announcement"
+          ],
+          "states": []
+        },
+        "wayBack": {
+          "element": "container",
+          "parent": "root",
+          "optional": true,
+          "repeated": false,
+          "role": null,
+          "classes": [
+            "mdy-multiselect__way-back"
+          ],
+          "states": []
+        },
+        "wayBackAction": {
+          "element": "button",
+          "parent": "wayBack",
+          "optional": true,
+          "repeated": false,
+          "role": null,
+          "classes": [
+            "mdy-multiselect__way-back-action"
           ],
           "states": []
         },
@@ -2020,7 +2065,7 @@
           "parent": "popup",
           "optional": false,
           "repeated": false,
-          "role": null,
+          "role": "group",
           "classes": [
             "mdy-multiselect-overlay__grid",
             "mdy-multiselect__options"
@@ -2220,12 +2265,22 @@
       "keyboard": [
         "Alt+ArrowLeft:reorder",
         "Alt+ArrowRight:reorder",
+        "ArrowDown@closed:open",
+        "ArrowDown@closed:step",
         "ArrowDown@open:move",
+        "ArrowLeft@closed:move",
+        "ArrowRight@closed:move",
+        "ArrowUp@closed:open",
+        "ArrowUp@closed:step",
         "ArrowUp@open:move",
+        "Backspace@closed:remove",
+        "Delete@closed:remove",
+        "End@closed:move",
         "End@open:move",
         "Enter@closed:open",
         "Enter@open:commit",
         "Escape@open:cancel",
+        "Home@closed:move",
         "Home@open:move",
         "Space@closed:open",
         "Tab@open:cancel"

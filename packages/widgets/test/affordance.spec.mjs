@@ -24,7 +24,9 @@ test("each kind's affordances are the ones at its trailing edge", () => {
   assert.deepEqual(partsOf("colors"), ["toggle"]);
   // The magnifier is gone: the control opens the popup, and what sits at the trailing edge is the
   // arrow that says which way it opens — the same affordance the single-choice sibling has.
-  assert.deepEqual(partsOf("multiselect"), ["arrow"]);
+  // The arrow, and the button that takes every choice off: a clear-all sits in the same column as
+  // every other trailing control and is pressed, so it needs the hit target the others get.
+  assert.deepEqual(partsOf("multiselect"), ["arrow", "clearAll"]);
   assert.deepEqual(partsOf("number"), ["decrement", "increment"]);
 });
 

@@ -10,6 +10,7 @@ import {
   chipDropIndex,
   stateClass,
   scrollChipStripByWheel,
+  wayBackSentence,
   isTypeaheadCharacter,
 } from "@modyra/widgets";
 import { type MdyFieldHandle, type MdyMultiselectMode, type MdySelectOption } from "@modyra/core";
@@ -509,6 +510,16 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
             ${this.loading ? mdyIcon("LOADER", "mdy-select__loader") : nothing}
             <span class="${this.partClass("arrow")}" aria-hidden="true"></span>
           </button>
+          <!-- Every choice off at once, beside the trigger rather than inside it: the trigger is a
+               button, and a button inside a button is neither valid nor reachable. -->
+          ${this.held(handle).length > 0 && !handle.disabled() && !handle.readonly()
+            ? html`<button
+                type="button"
+                class="${this.partClass("clearAll")}"
+                aria-label=${this.messages.clearSelection}
+                @click=${() => this.fieldController?.dispatch({ type: "clear" })}
+              >${mdyIcon("CLOSE", "")}</button>`
+            : nothing}
           <!-- Said rather than shown: a choice lands and the strip is the only confirmation, which
                is the one a person using a screen reader does not get. -->
           <div
@@ -520,6 +531,7 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
         </div>
         <div class="mdy-input-suffix"><slot name="suffix"></slot></div>
       </div>
+      ${this.renderWayBack(handle)}
       ${renderOverlayPanel(overlay, this._open, {
         modal: position === "overlay",
         alignment,
@@ -625,6 +637,36 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
   }
 
   /** The strip's wheel behaviour is the contract's; see `scrollChipStripByWheel`. */
+  /**
+   * The one way back, under the control.
+   *
+   * Untimed and in the page rather than in a toast: a message that disappears after five seconds is
+   * a time limit under WCAG 2.2.1, and an undo has no exception under it. It stands until it is used
+   * or another act replaces it, and it names the act because one reversal covers three.
+   */
+  private renderWayBack(handle: MdyFieldHandle<readonly unknown[]>) {
+    const offer = this.fieldController?.state().wayBack ?? null;
+    if (offer === null) return nothing;
+    const said = wayBackSentence(
+      offer,
+      {
+        removed: this.messages.wayBackRemoved,
+        moved: this.messages.wayBackMoved,
+        cleared: this.messages.wayBackCleared,
+      },
+      (key) => this.labelFor(key),
+    );
+    return html`<div class="${this.partClass("wayBack")}">
+      <span>${said}</span>
+      <button
+        type="button"
+        class="${this.partClass("wayBackAction")}"
+        ?disabled=${handle.disabled() || handle.readonly()}
+        @click=${() => this.fieldController?.dispatch({ type: "undo" })}
+      >${this.messages.wayBackLabel}</button>
+    </div>`;
+  }
+
   private readonly onStripWheel = scrollChipStripByWheel;
 
   /**

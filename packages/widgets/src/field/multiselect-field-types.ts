@@ -63,6 +63,32 @@ export interface MdyMultiselectFieldState<TValue> {
   readonly touched: boolean;
   readonly dirty: boolean;
   readonly pending: boolean;
+  /**
+   * What the last destructive act was, and therefore what a single reversal would put back.
+   *
+   * `null` when there is nothing to go back to. Depth is one: a second destructive act replaces this
+   * rather than stacking on it, and a *constructive* one — choosing, incrementing — withdraws it, so
+   * the offer never reverses something the person did not just lose.
+   *
+   * The value it would restore is the controller's and is not published: an offer whose payload a
+   * host can read is one a host can apply out of order.
+   */
+  readonly wayBack: MdyMultiselectWayBack | null;
+}
+
+/**
+ * The last destructive act, named so a renderer can say what it is offering to undo.
+ *
+ * "Undo" alone is ambiguous once one control covers three acts, which is the cost ADR 0129 accepts
+ * in exchange for a single reversal: the affordance names the act — *"Roma removed"*, *"Roma moved"*,
+ * *"12 items cleared"*.
+ */
+export interface MdyMultiselectWayBack {
+  readonly act: "remove" | "move" | "clear";
+  /** The value the act was about, or `null` for a clear, which is about all of them. */
+  readonly optionKey: string | null;
+  /** How many values the act took, which is what a clear has to say instead of a name. */
+  readonly count: number;
 }
 
 /** User/host intent for a multiselect field widget. */
@@ -101,6 +127,14 @@ export type MdyMultiselectFieldIntent =
   | { readonly type: "close"; readonly restoreFocus?: boolean }
   | { readonly type: "toggleOpen" }
   | { readonly type: "clear" }
+  /**
+   * Puts back what the last destructive act took, and offers nothing when there was none.
+   *
+   * One reversal for the whole control rather than one per act: an undo covering the loudest action
+   * and not the quiet ones teaches a person that this control has a way back and then does not have
+   * one the next time.
+   */
+  | { readonly type: "undo" }
   /**
    * Moves a chosen value to another position in the value.
    *

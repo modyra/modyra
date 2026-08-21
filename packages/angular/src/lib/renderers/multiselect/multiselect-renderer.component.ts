@@ -1,4 +1,4 @@
-import { chipDropIndex, chipFocusAfterRemoval, scrollChipStripByWheel, isTypeaheadCharacter, chipMovedAnnouncement, stateClass, keyBindingFor, multiselectAnnouncement, optionsWithUnrecognizedValues, overlayControlledId, projectOverlayOpenerA11y } from "@modyra/widgets";
+import { wayBackSentence, chipDropIndex, chipFocusAfterRemoval, scrollChipStripByWheel, isTypeaheadCharacter, chipMovedAnnouncement, stateClass, keyBindingFor, multiselectAnnouncement, optionsWithUnrecognizedValues, overlayControlledId, projectOverlayOpenerA11y } from "@modyra/widgets";
 import { MdyPartDirective } from "../../control/mdy-part.directive";
 import { NgTemplateOutlet } from "@angular/common";
 import {
@@ -171,6 +171,17 @@ import type { MdyOverlayBranch, MdyOverlayOwner } from "../../core/overlay-contr
         }
         <span class="mdy-multiselect__arrow" aria-hidden="true"></span>
       </button>
+      <!-- Every choice off at once, beside the trigger rather than inside it: the trigger is a
+           button, and a button inside a button is neither valid nor reachable. -->
+      @if (chosen().length > 0 && !isDisabled() && !isReadonly()) {
+        <button
+          type="button"
+          class="mdy-multiselect__clear-all"
+          [attr.aria-label]="i18n.clearSelection"
+          [disabled]="isDisabled()"
+          (click)="onClearAll($event)"
+        ><mdy-icon name="CLOSE" /></button>
+      }
       <!-- Said rather than shown: a choice lands and the strip is the only confirmation, which is
            the one a person using a screen reader does not get. -->
       <div
@@ -263,6 +274,21 @@ import type { MdyOverlayBranch, MdyOverlayOwner } from "../../core/overlay-contr
         }
       </div>
     </mdy-overlay-panel>
+
+    <!-- The one way back, under the control. Untimed and in the page rather than in a toast: a
+         message that takes itself away after five seconds is a time limit under WCAG 2.2.1, and an
+         undo has no exception under it. It names the act, because one reversal covers three. -->
+    @if (wayBack(); as offer) {
+      <div class="mdy-multiselect__way-back">
+        <span>{{ wayBackText() }}</span>
+        <button
+          type="button"
+          class="mdy-multiselect__way-back-action"
+          [disabled]="isDisabled() || isReadonly()"
+          (click)="onWayBack()"
+        >{{ i18n.wayBackLabel }}</button>
+      </div>
+    }
 
     @if (errorsRendered()) {
       <mdy-error-list [fieldId]="fieldId" [errors]="errors()" />
@@ -453,6 +479,17 @@ export class MdyMultiselectComponent<TValue = string>
 
   protected isSelected(optValue: TValue): boolean {
     return this.selectedSet().has(this.optionKey(optValue));
+  }
+
+  /** Every choice off at once. The press must not reach the trigger behind it and reopen the popup. */
+  protected onClearAll(event: Event): void {
+    event.stopPropagation();
+    this.controller()?.dispatch({ type: "clear" });
+  }
+
+  /** The one way back: it puts back what the last destructive act took, whichever act that was. */
+  protected onWayBack(): void {
+    this.controller()?.dispatch({ type: "undo" });
   }
 
   protected onToggle(optValue: TValue): void {
@@ -701,6 +738,20 @@ export class MdyMultiselectComponent<TValue = string>
   private saidLast: readonly string[] | null = null;
   /** A sentence to say once, for a change no selection delta describes — a move. */
   private saySoon: string | null = null;
+  /** The last destructive act, or `null` when there is nothing to go back to. */
+  protected readonly wayBack = computed(() => this.controller()?.state().wayBack ?? null);
+
+  /** What the way back says it is putting back — the act named, because one reversal covers three. */
+  protected readonly wayBackText = computed(() => {
+    const offer = this.wayBack();
+    if (offer === null) return "";
+    return wayBackSentence(
+      offer,
+      { removed: this.i18n.wayBackRemoved, moved: this.i18n.wayBackMoved, cleared: this.i18n.wayBackCleared },
+      (key) => this.chosen().find((held) => held.key === key)?.label ?? key,
+    );
+  });
+
   protected readonly announcementText = computed(() => {
     const now = this.chosen().map((c) => c.key);
     if (this.saidLast === null) { this.saidLast = now; return ""; }
