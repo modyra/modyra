@@ -2593,6 +2593,10 @@
     "(0) value: unknown",
     "-> returns: string"
   ],
+  "dialHandLength": [
+    "(0) face: Element",
+    "-> returns: number"
+  ],
   "dialHour": [
     "(0) angle: number",
     "(1) ring?: \"outer\" | \"inner\"",

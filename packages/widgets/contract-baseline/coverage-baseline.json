@@ -1,8 +1,8 @@
 {
   "note": "Public names not yet asserted or not yet shown. The list may only get shorter.",
   "score": {
-    "published": 724,
-    "asserted": 467,
+    "published": 725,
+    "asserted": 468,
     "shown": 79
   },
   "uncovered": [
@@ -2792,6 +2792,12 @@
     },
     {
       "name": "defaultWidgetIdFactory",
+      "asserted": true,
+      "shown": false,
+      "reason": "published and never shown"
+    },
+    {
+      "name": "dialHandLength",
       "asserted": true,
       "shown": false,
       "reason": "published and never shown"
