@@ -21230,3 +21230,33 @@ before the feature rather than after it.
 Measured on the way in: removing a chip takes `["a","b","c"]` to `["b","c"]` and the affordance is
 offered once, not once per action.
 
+
+### 360 — half closed at `50ffc709`, and my battle was more permissive than my own record
+
+The strip says there is more now: a gradient at the edge, in all three renderers, `backgroundImage`
+where there was `none`. The assertion I wrote accepted an edge hint, a count **or** a control — any of
+the three, because naming one would have decided the design from a test file — and it went green on
+the weakest of them.
+
+[ADR 0127](../../docs/architecture/0127-a-strip-that-scrolls-against-the-practice.md), which I also
+wrote, says a gradient is not enough: the scroll departure is conditional on **a mechanism, not only a
+cue**. My battle and my record disagreed, and the battle was the lenient one.
+
+```
+edge gradient            yes, all three
+count in a description   no
+control to reach them    no
+aria on the strip        none
+```
+
+The programmatic half is kept elsewhere and is green — every chip states its position and set size,
+which is [368](#368) — so what remains is the half for **a pointer with no horizontal axis**, which is
+most desktop mice. The gradient tells that person there is more and offers nothing to act on; a
+keyboard user has the roving index and a chip that scrolls into view on focus. And forced-colors mode
+strips background images, so the readers most likely to be zoomed and clipped are the ones for whom
+the only cue does not render at all.
+
+A second assertion now asks for a control — anything pressable that reveals the rest — and is
+deliberately **not** satisfied by the strip being scrollable, because scrolling is the thing that
+person cannot do. Red in all three.
+

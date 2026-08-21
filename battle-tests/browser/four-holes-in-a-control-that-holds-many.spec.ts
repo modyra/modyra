@@ -24,6 +24,7 @@
  */
 
 import { expect, test } from "@playwright/test";
+import { bench } from "./bench";
 
 const HOSTS = [
   { name: "plain", page: "/index.html", ready: "battleReady", api: "battle" },
@@ -92,6 +93,66 @@ for (const host of HOSTS) {
         `${state!.chips - state!.visible} exist — no edge hint, no count, no control, nothing on the ` +
         `strip for a reader. Many desktop mice cannot scroll horizontally, so those chips are gone`,
     ).toBe(true);
+  });
+
+  /**
+   * A cue is not a mechanism, and the strip currently has only the cue.
+   *
+   * The assertion above accepts an edge gradient, a count or a control — any of the three — because
+   * naming one would have decided the design. It went green on the gradient alone, which is the
+   * weakest of the three and the one
+   * [ADR 0127](../../docs/architecture/0127-a-strip-that-scrolls-against-the-practice.md) says is not
+   * enough: that record makes the scroll departure conditional on **a mechanism, not only a cue**, and
+   * on the overflow being announced independently of anything visual.
+   *
+   * The programmatic half is now kept elsewhere — every chip states its position and set size, which
+   * `a-chip-that-does-not-say-where-it-is.spec.ts` holds. What is still missing is the half for a
+   * person using a pointer with no horizontal axis, which is most desktop mice: the gradient tells
+   * them there is more and offers them no way to reach it. A keyboard user has the roving index and a
+   * chip that scrolls into view on focus; they have nothing.
+   *
+   * So this asks for a *control* — anything pressable that reveals the rest — and it is deliberately
+   * not satisfied by the strip being scrollable, because being scrollable is the thing they cannot do.
+   */
+  test(`there is a way to reach what the strip is hiding, ${host.name}`, async ({ page }) => {
+    test.setTimeout(150_000);
+    await open(page);
+    const { root } = await bench(page, host, "full");
+
+    const reach = await page.evaluate((sel) => {
+      const field = document.querySelector(sel);
+      const strip = field?.querySelector(".mdy-multiselect__chips");
+      if (field === null || strip === null || strip === undefined) return null;
+      const box = strip.getBoundingClientRect();
+      const chips = Array.from(strip.querySelectorAll(".mdy-chip"));
+      const hidden = chips.filter((chip) => {
+        const at = chip.getBoundingClientRect();
+        return at.left < box.left - 1 || at.right > box.right + 1;
+      }).length;
+      const named = (element: Element) =>
+        `${element.getAttribute("aria-label") ?? (element.textContent ?? "").trim()}`;
+      return {
+        hidden,
+        chips: chips.length,
+        // Anything pressable that would bring the rest into view: a "+6", a scroll arrow, a control
+        // that opens the whole set. Not the strip itself — scrolling is what they cannot do.
+        controls: Array.from(field.querySelectorAll("button, [role=button]"))
+          .map(named)
+          .filter((name) => /\+\s*\d|more|altre|show all|scroll|avanti|indietro|next|prev/i.test(name)),
+      };
+    }, root);
+
+    expect(reach, "nothing was mounted").not.toBeNull();
+    // The premise: something really is out of reach. A strip that fits owes no mechanism.
+    expect(reach!.hidden, `all ${reach!.chips} chips are in view, so this fixture hides nothing`).toBeGreaterThan(0);
+
+    expect(
+      reach!.controls,
+      `${reach!.hidden} of ${reach!.chips} chips are outside the strip and nothing can be pressed to ` +
+        `reach them. The edge gradient says there is more; a person whose mouse has no horizontal ` +
+        `axis is told so and given no way to act on it, and forced-colors mode removes the gradient ` +
+        `entirely — so the readers most likely to be clipped are the ones the only cue does not reach`,
+    ).not.toEqual([]);
   });
 
   test(`leaving the field does not cost more as it fills, ${host.name}`, async ({ page }) => {
