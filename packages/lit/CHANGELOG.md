@@ -1,5 +1,488 @@
 # @modyra/lit
 
+## 0.11.0
+
+### Minor Changes
+
+- 841f0f9: A granularity a document can actually ask for
+
+  The contract, the controller and the dial all honoured a declared granularity and nothing could
+  declare one. A capability no consumer can reach is a capability nobody has.
+
+  - **A document**: `granularity` on a `timepicker` field, in the v2, v3 and v4 JSON schemas. The
+    parser refuses one it cannot honour, names the member at fault, and keeps the field — taking the
+    form away over a refinement removes something the user can see, over a rule they cannot. The
+    refusal reaches a diagnostics sink as `MDY_DYNAMIC_UNHONOURABLE_GRANULARITY`.
+  - **Angular**: `[granularity]` on `<mdy-control-timepicker>`, carried down to the segments so the
+    hour and minute boxes announce their own `step`, `min` and `max` — the platform's own spinner then
+    offers what the field offers.
+  - **Lit**: a `granularity` property.
+  - **Plain**: read from the field descriptor, so a mounted document carries it.
+
+  The validation moved from `@modyra/widgets` to `@modyra/core`, because a document is parsed before
+  anything renders it and two copies of "does this step divide its unit" is the shape a contract exists
+  to prevent. `@modyra/widgets` re-exports the same names, so nothing importing them moves.
+
+  Also fixed while it was found: the parser **deleted** an unhonourable granularity from the document
+  it was given. The document belongs to the caller, and a parser that edits it leaves a second read of
+  the same object answering differently from the first — the rule the file already stated about
+  duplicate options, broken one function away from where it was written.
+
+- 53ecc1a: A hand you can see thinking
+
+  A dial that offers only some times has to snap, and snapping alone hides what it is doing: the hand
+  jumps to a number the finger is not on, and whether that was the rule or a missed press is not
+  something the screen says.
+
+  So there are two hands. **The real one points at the value, including while a finger is moving** — it
+  used to follow the pointer, which on a face offering every time is the same thing and on one that
+  snaps is not: the hand sat between two numbers and jumped on release, so the one thing saying what is
+  chosen spent the whole gesture saying something else. **A faint one follows the pointer** whenever the
+  two are apart, carrying both its angle and its ring, because it answers "what happens if I release
+  now" while the real hand answers "what is chosen".
+
+  A picker that offers every time never draws one: its numbers are 6° apart, so the finger is never off
+  them. `timepickerDialGhost` decides; no renderer does.
+
+  `animateHand` — on the field in a document, an input on Angular, a property on Lit — makes the hand
+  move rather than jump. **Off by default**, because a hand in motion is briefly not where the value is,
+  and on a face that snaps the two would disagree for the length of the transition. The duration is
+  `--mdy-sys-motion-duration-fast`, the system's own, and `prefers-reduced-motion` turns it off.
+
+  `MDY_TIMEPICKER_RING_BAND` is published: how far either side of the inner ring's radius still counts
+  as reaching for it, as a fraction of the gap between the two painted radii. A fraction rather than an
+  expression so that tightening it is one guarded number rather than an edit to the rule.
+
+- 91f9715: A checkbox or toggle row is no longer a pointer target
+
+  **Read this before upgrading: it is a breaking change released under a minor.** The anatomy below
+  changes, and a stylesheet that reaches the box through the input's _sibling_ stops matching. The
+  shipped themes move with it; a stylesheet outside this repository does not. Selecting by state
+  rather than by position survives the change:
+
+  ```scss
+  // before — the track was the input's next sibling
+  .mdy-toggle input:checked + .mdy-toggle__track .mdy-toggle__thumb {
+  }
+  // after — the track is inside the label; ask for the state, not the position
+  .mdy-toggle:has(input:checked) .mdy-toggle__thumb {
+  }
+  ```
+
+  All three renderers built the wrapper as a `<label>`, and a native label forwards a click from
+  anywhere inside it — so the empty space to the right of the words toggled the field. The wrapper is
+  now a container, and the words are the `<label for>`.
+
+  **The drawn box moved inside the words**, and that is the part worth reading. The native input is
+  visually hidden in every renderer, so once the wrapper stops being a label the `<label>` is the only
+  element left that forwards a click: a box outside it is decoration nobody can press. Measured before
+  and after — the box went inert, then came back:
+
+      before   row toggles · box toggles · words toggle
+      interim  row inert   · box INERT   · words toggle
+      after    row inert   · box toggles · words toggle
+
+  `MDY_WIDGET_CONTRACT_VERSION` moves **3 → 4**: `inputWrapper` is a `container` on these two kinds,
+  `label` is a `label`, and `indicator`/`track` are parented to it.
+
+  **Migration.** A stylesheet or test selecting `label.mdy-checkbox`, `label.mdy-toggle` or
+  `.mdy-toggle > .mdy-toggle__track` selects nothing now — the wrapper is a `div` and the box is inside
+  the label. Anyone relying on the whole row being clickable loses it deliberately. The shipped
+  stylesheet moves with the anatomy: `cursor: pointer` leaves the row for the label.
+
+  WCAG 2.5.5 is met as DESIGN.md § _the target is not the box_ already meets it elsewhere — the target
+  is a centred overlay, so the visible box keeps its size. See ADR 0117.
+
+- 2aa3ce8: An overlay's boundary is the contract's, not the renderer's
+
+  `createLightDismiss` decided _when_ an interaction dismisses and asked the renderer _where from_,
+  through an `isInside` predicate. Four renderers answered four ways, three of them carrying their own
+  duck-typed node guard, and the reason given was that only a renderer knows where its portal went.
+
+  It is not true. A widget that portals a popup declares the relationship — its opener names the popup
+  through `aria-controls` — and `portalRootFor` follows that declaration out of the widget root. So the
+  branch is derivable, and the three renderers that answered by containment alone would have dismissed
+  their own portalled popup under the user's own press.
+
+  **Migration.** `MdyLightDismissOptions.isInside` is removed; `branch` replaces it:
+
+  ```ts
+  // before
+  createLightDismiss({
+    isOpen,
+    dismiss,
+    isInside: (t) => t instanceof Node && wrapper.contains(t),
+  });
+
+  // after
+  createLightDismiss({ isOpen, dismiss, branch: { root: wrapper } });
+  ```
+
+  `branch` takes `{ root, also? }`, or a function returning one when the roots are view children that
+  do not exist yet. `root`'s descendants are inside, and so is whatever it portalled — found from the
+  root, not supplied, so forgetting is no longer possible. `also` is for what containment cannot reach
+  and `aria-controls` does not name, such as a multiselect's chips outside the wrapper. A target that
+  is not a node is outside.
+
+  `overlayBranchContains`, `MdyOverlayBranch` and `MdyOverlayRoot` are exported for a renderer that
+  needs to ask the question directly. Angular's `overlayContains` override becomes `overlayBranch`.
+
+  ADR 0119 records the decision and what it forecloses: a branch is roots and containment, so an
+  arbitrary boundary can no longer be expressed — which is the constraint that stops four renderers
+  diverging again.
+
+- 6d90b06: A dial that shows which of its stretches carry nothing
+
+  A face declared with `minuteStep: 15` draws four numbers and the other 356° of the ring look exactly
+  like them — continuous, uniform, and offering nothing. The granularity is real and invisible, and the
+  only way to find it is to try.
+
+  `showUnavailable` — on the field in a document, an input on Angular, a property on Lit — dims the
+  stretches the granularity took away. **Off by default**, so a face that declares nothing is unchanged.
+  Named for what it shows rather than for how it looks, because a theme may express it as an arc, an
+  opacity, or something else.
+
+  `MDY_WIDGET_CONTRACT_VERSION` moves to **5**: a timepicker's dial gains `dialUnavailable` and
+  `dialUnavailableArc`, which sit between the face and the hand — so a renderer built against 4 draws
+  them nowhere. The plain and lit contract audits were re-read against the change rather than having
+  their pins widened, and neither asks about parts, so both pass unchanged.
+
+  Each ring answers for its own radius: the inner one is drawn on a smaller circle, so a same-sized
+  digit covers more of it and its dead stretches are wider. A single set of arcs drawn for both would
+  be wrong on one of them.
+
+  The Angular demo gains three cases — a quarter-hour face with its dead slices shown, a three-hour
+  face where both rings have their own, and one with the hand animated. Those are the cases no
+  automated tier can ask about: no host renders Angular in a browser, and a drag under real pointer
+  capture is not something jsdom produces.
+
+### Patch Changes
+
+- 1980005: The number boxes stay typeable while the dial is showing
+
+  Both renderers marked the hour and minute boxes `readonly` whenever the clock face was the view — so
+  the picker opened on the face, and the two controls a keyboard can use were locked in the state it
+  opened in.
+
+  The rule the user gave for the hand settles it: a hand that follows a half-typed number needs the box
+  and the hand usable at the same time. Locking the box while the hand is visible makes that rule
+  unstatable, and it removes the keyboard from the affordance that most needs one — a dial is the one
+  gesture a keyboard cannot make.
+
+  Typing is unchanged in both: neither had a defect there, and the reported case works in both as it
+  always did.
+
+- 5262ad2: A timepicker in a document can name its clock
+
+  `MdyDynamicDateField` gains `format?: MdyTimeFormat` — `"12h"` or `"24h"`, `timepicker` only, absent
+  meaning the 24-hour clock ADR 0116 made every renderer's default. Until now the format was reachable
+  only as a renderer parameter, so a document-driven form had one clock available and no way to ask for
+  the other; the stored value is `HH:mm` either way, and this decides what is drawn and how typing is
+  read.
+
+  Plain's field dispatcher and Angular's dynamic form both forward it. A `format` on a kind that draws
+  no clock, or a value that is neither of the two, is reported as
+  `MDY_DYNAMIC_UNHONOURABLE_FORMAT` and dropped, leaving the field drawing the default.
+
+  Migration: none. A document that says nothing behaves exactly as before.
+
+  Two fixes travel with it. The hour segment's announced range is now taken from `timeFieldBounds`,
+  the same source its native `min`/`max` come from — a 24-hour face had been declaring `max="23"` to
+  the browser and `aria-valuemax="12"` to a screen reader. And a two-digit segment box no longer keeps
+  a third character: text wider than the field it holds is refused, while a two-digit value outside the
+  clock's range is still kept and marked, which is what ADR 0063 asks for.
+
+- ef53275: A ghost that ends under the pointer, and the slices that carry nothing
+
+  The ghost had two lengths, chosen by which ring the pointer was over, so it snapped between them. Its
+  end is the whole of what it says — _this is where your finger is_ — and a hand that stops somewhere
+  else is reporting a position nobody is at. It now reaches exactly as far as the pointer does, capped
+  at the hand's length because past that the face runs out and a longer hand would spill over its own
+  numbers.
+
+  **No floor.** A finger 15px from the centre gets a 15px stub, which looks like nothing much and is
+  exactly right.
+
+  `MdyTimepickerDialGhost` gains `reach`; the renderers write it as `--tp-ghost-reach` and the `--inner`
+  modifier stops applying to the ghost, since `reach` supersedes it for length. `timepickerDialGhost`
+  takes two more options — **breaking** for a caller passing the options object positionally, additive
+  for everyone else.
+
+  `timepickerDialUnavailableArcs` answers which stretches of a ring carry no time anybody can land on.
+  A face declared with `minuteStep: 15` draws four numbers, and the other 356° look exactly like them:
+  continuous, uniform, and offering nothing. The arcs are the positions the granularity **took away** —
+  the ones an undeclared face would draw and this one does not — each covered by the knob's own angular
+  half-width, with neighbours run together so a dead stretch reads as one.
+
+  Not the space between the numbers that remain. An hour face has visible gaps between its knobs and
+  every hour in it is selectable; the first version of this dimmed those and would have said a picker
+  was constrained when it was not.
+
+  Two widths, deliberately: snapping is still nearest-value, so every angle resolves to a number
+  including inside these arcs. What is dimmed is where you can land on **the number you are pointing
+  at**, which is the narrower question and a display one.
+
+- a53b93f: The hand says which ring it is pointing into
+
+  A 24-hour face carries two numbers at every position: 3 outside and 15 inside share a direction. The
+  contract has always told them apart by how far from the centre the pointer was, and a granularity
+  makes the ambiguity ordinary rather than rare — with a three-hour step, 3 and 15 are the two hours
+  that position offers. **Drawn with a hand of one length, the two selections are identical**, and a
+  person cannot tell which they chose until they read the header.
+
+  The hand now stops at the ring it points into. `timepickerSelectedRing` says which that is, from the
+  same predicate that decides where a number is drawn, so the face and the hand cannot disagree; all
+  three renderers read it and none derives it.
+
+  Its length is `--tp-hand-length × var(--tp-inner-ring)`, and `--tp-inner-ring` is where the
+  stylesheet's own figure for the ring now lives — one number for the numbers and the hand that points
+  at them. It was two: a literal beside the inner numbers, and `MDY_TIMEPICKER_INNER_RING` in the
+  contract. A shortened hand written as a third would have made the hand point at one ring while the
+  hit test picked the other, with every number still exactly where it should be.
+
+  `css-properties.spec.mjs` now fails if the hand takes a figure of its own, if the sheet stops
+  declaring `--tp-inner-ring`, or if it stops matching the contract.
+
+- 8a12c47: A period the contract names, and the same one in every renderer
+
+  AM and PM were `presentation` — the catalogue's own word for a class a renderer may use that carries
+  no semantics. So there was no part, no `selected` state, no conformance check, and nothing holding
+  the three renderers to one anatomy. They diverged exactly where you would expect: Angular and Lit
+  drew a two-button segmented control with one marked, and **plain drew a single button whose text was
+  the current period and which toggled on click**.
+
+  That is the weaker form in three ways. The value was only readable as the label of the control that
+  changes it; nothing was ever marked selected, so a screen reader had no state to announce; and the
+  target was half the size. It is also a control that says "AM" and means "switch to PM" — a label
+  describing what it is not.
+
+  `periodOption` is now a declared part with `states: ["selected"]`, and both classes have left
+  `presentation`. Plain draws two buttons, each asking for its own half. Angular and Lit take the class
+  from the catalogue rather than writing the literal, so the anatomy is decided in one place.
+
+- 1a6797d: A picker a keyboard can finish
+
+  All three renderers now do the same thing from open to commit, without a pointer:
+
+  ```
+  open → focus on the hour box → type → Tab → type → Tab → Tab → Enter → 14:30
+  ```
+
+  **Angular had never executed a widget command.** `dispatch(...)` was called and its return discarded
+  at every call site, so `focus`, `open-overlay` and `restore-focus` had no route to the DOM at all —
+  not wired wrongly, not wired. It goes through the `MdyWidgetRuntime` the select adapter already used,
+  with the same `afterNextRender` beat. Its local `scheduleMinuteSwitch` and the two different delays
+  are gone; the controller owns the handover.
+
+  **Angular focused the dial face on open.** The face is a slider a keyboard can operate and it is not
+  where a person types, so the two controls that accept typing were never reached — which is why Tab
+  walked out of the popup without entering it. It focuses the box the contract names.
+
+  **`action` named two buttons.** Cancel and confirm carry one part between them, so a tab order that
+  named the part reached whichever was drawn first — cancel. Tab to the end of the dialog, press Enter,
+  and the draft was discarded instead of committed. The order names both, told apart by the `confirm`
+  state the catalogue already declares.
+
+  **Lit rewrote the box on every keystroke.** With `.value` bound to the draft, each input triggered a
+  render that wrote the canonical form back over what had just been typed: backspacing an hour from `09`
+  produced `12`, and `14` could not be typed at all. It reports what was typed and leaves the box alone
+  until the person leaves it — the same rule plain took, from the same contract.
+
+- 5e31f89: A press is already a choice, and the dial's arrows obey the step
+
+  **A tap on the dial set nothing, in Angular and in Lit.** Both emitted only on move and on release,
+  so a pointer that lands and lifts without travelling produced no intent at all. On a mouse the jitter
+  between press and release hides it; on a touch screen there is no movement, and that is the entire
+  interaction on a phone. Plain was already correct and is what both now do: a press emits where the
+  pointer is, through the same call the move uses, so the two cannot differ.
+
+  **The dial's own keyboard restated the bounds and ignored the granularity.** `timepickerDialKeyIntent`
+  carried its own `min`, `max` and wrap, so on a field offering only some times the arrows walked
+  through values the face does not draw and the field would refuse — the keyboard being the one route
+  that reached them. It goes through `timeFieldBounds` and `stepTimeField` now, like a segment's arrows
+  and everything else. `End` answers the last value **on offer**, which is not the range's end when the
+  step does not divide it: a 12-hour clock stepping by five ends at 11, not 12.
+
+  That matters beyond tidiness. A dial is a pointer affordance, and the header's inputs are what make
+  the popup usable without one — WCAG 2.1.1. If its arrows disagreed with its face, the two ways in
+  would answer differently about the same field.
+
+- 66b5ba1: The radius every hit test was computed against was wrong
+
+  `--tp-hand-length` is a custom property, and a custom property resolves at _use_. Reading it back
+  gives the token stream — `calc(256px/2 - 40px/2 - 8px)` — which no `parseFloat` reads. So that branch
+  never succeeded in any renderer, and what ran every time was the fallback beside it: **half the face,
+  128 where the hand is drawn at 100.**
+
+  Every angle-at-a-radius in the dial was computed against a circle 28% too large: which ring a press
+  claims, how far off a number counts as being on it, and where the dimmed stretches fall. The inner
+  ring's edge landed near 95 instead of 74, which is a press just inside the outer digits reading as the
+  inner ring — the complaint that started this, answered until now by tuning a constant that was
+  compensating for a measurement.
+
+  All three renderers now measure the **hand's own drawn height**, which is the length itself rather
+  than an expression describing it.
+
+  Two more, both Lit and both in the dimming shipped an hour ago:
+
+  - **it never drew.** The arcs are angles at a radius, and the render that _creates_ the dial cannot
+    measure it — the face does not exist yet, the length read as zero, and the contract correctly
+    answered `[]`, which is also the right answer for a face with nothing to dim. Nothing scheduled a
+    second pass, so it was permanently absent and every unit test agreed. Lit measures in `updated()`
+    now and re-renders when the answer moves.
+  - **the layer painted over the hand.** All three renderers carried a comment saying the dimming goes
+    behind; one put it there. Lit emitted it after the hand, and Angular emitted the arcs with no layer
+    element at all — which also meant Angular never drew a `dialUnavailable`, a part the contract
+    declares.
+
+  `open-coverage.spec.ts` is why that last one could ship. It asserted `rendered >= 40` against a total
+  the contract supplies, so when the contract grew the denominator moved and the floor did not: three
+  parts were declared, this adapter drew one, and 42 of 48 still cleared 40. It called itself a ratchet
+  and nothing ever raised it. Each exemption is now named with its reason, so a part that enters the
+  contract and appears nowhere in the adapter fails on the day it is declared — verified by declaring
+  one that nothing draws and watching it fail.
+
+- b331412: A read-only segment means a read-only field, not a visible clock
+
+  The number boxes carried `readonly` whenever the dial was the view — so a picker that opens on the
+  face opened with its two keyboard-usable controls locked. That is also what produced the state class,
+  which Angular emitted and Lit did not: one renderer painting a state the other never entered.
+
+  `readonly` is a declared state of `hourControl` and `minuteControl` now, and it means what it says —
+  **the field refuses edits** — rather than "the clock is showing". Both renderers derive the class
+  through `stateClass` from the part that declares it, so neither writes the literal and the two cannot
+  drift apart again.
+
+- c6fd3b4: A ring that does not change its mind while the finger holds still
+
+  Resting a finger on the outer part of an inner number put it exactly on the edge between the two
+  rings — and a hand is never still. Measured, a 6px wander changed the ring **four times**: each one
+  the hand jumping its own length and the face swapping which twelve numbers it picks from, several
+  times a second.
+
+  The edge is not wrong and moving it does not help: any edge has this, because a finger can rest on
+  any edge. _Where the rings divide_ and _whether to change_ are two questions, and one comparison was
+  answering both. What was missing is memory.
+
+  `timepickerDialRing` takes the ring it last answered — state every renderer already held and handed
+  to the two neighbouring functions on the next line — and leaving a ring now takes reaching **halfway
+  from the edge to the other ring's own numbers**, derived from where they are drawn rather than
+  picked. Without a previous ring, the first answer of a gesture, it falls through to the edge
+  unchanged, so ADR 0120's derivation still decides where the rings divide.
+
+  Asserted as four properties, and the fourth is the one a fix that simply refused to change ring would
+  fail: the rings still divide once across the radius, a wander at the edge changes nothing, no wander
+  of half a box changes the answer twice anywhere on the face, and a deliberate move from one ring to
+  the other still arrives — in exactly one change.
+
+  `timepickerDialUnavailableArcs` also answers for **every ring a face has** when asked without one,
+  and each arc carries its own `span` and `ring`. Three renderers were each deciding "does this face
+  have an inner ring", which is a question about the face.
+
+- af2d59b: A ring you have to reach for, and a rule every renderer follows
+
+  Three defects the user found by using it, all in the same place.
+
+  **The inner ring claimed most of the face.** It was everything closer to the centre than the midpoint
+  between the two rings — so the empty middle, which is most of a dial's area, answered with an hour
+  whose number was nowhere near the pointer, and the hand jumped short for a press aimed at the outer
+  ring. It is now a band as wide as the gap between the two painted radii, centred on the inner one:
+  near the digits to claim them, and anything else belongs to the ring drawn out there.
+
+  **A minute face has one ring, and was being asked about two.** `timepickerDialRing` did not know
+  which field was being picked, so a press near the middle of a minute dial read as `inner` and
+  shortened the hand for a ring that does not exist. It takes the field now.
+
+  **The hand's length changed only at the ends of a gesture.** In Angular the ring was a plain field,
+  so the view was never told it had changed: the hand kept the length it began with and snapped on
+  release. It is a signal, and the length follows the pointer.
+
+  And the part that mattered most: **the granularity was enforced in one renderer of three.** Angular
+  passed the steps down; plain and lit called the same contract functions without them, so a document
+  declaring quarter-hour minutes still took `07` by typing, still stepped by one on the arrows, and
+  still drew twelve numbers on its minute face. All three now resolve the steps per interaction — a
+  windowed granularity depends on the hour the draft is on — and all three set the native `step` on
+  their segments, so the platform's own spinner offers what the field offers.
+
+- 769fd6e: A checked box is drawn checked again
+
+  Moving a boolean's drawn part inside its label — so the empty remainder of the row would stop
+  toggling the field — broke every rule that paints its state. Those rules name a _relationship_:
+  `.mdy-checkbox__control:checked + .mdy-checkbox__indicator` is the input and the box **beside** it,
+  and the box is no longer beside it. The state changed, the class stayed, and nothing repainted.
+
+  Nine rules across checkbox and toggle now ask the wrapper instead —
+  `.mdy-checkbox:has(.mdy-checkbox__control:checked) .mdy-checkbox__indicator` — which holds wherever
+  inside the field the drawn part sits. All three renderers share the stylesheet and all three were
+  affected.
+
+  A toggle given no label also drew no track: the Angular and Lit templates built it inside their
+  `@if (label())`. The track is anatomy — the catalogue declares it a part of every toggle — so it now
+  renders either way, still inside the label element, because the native input is hidden and the label
+  is what forwards a press to it.
+
+  `packages/plain/test/state-rules-reach-their-part.test.mjs` is the check that was missing: it reads
+  the shipped stylesheet, takes every selector that decides a boolean's state, and asserts each one
+  still selects something in the rendered field. The theme audit compares class names on both sides and
+  stayed green throughout, because both sides still named the class.
+
+- 2eb1112: A ruler that was one of the things it measured
+
+  Reading the hand's own height fixed one defect and created a worse one. The hand is drawn **shorter
+  when it points into the inner ring**, and which ring it points into is the answer that measurement
+  produces:
+
+  ```
+  hand on 14 (inner)  → measures 60  → thresholds from 60 → the same position reads outer → 2
+  hand on 2  (outer)  → measures 100 → thresholds 70/90   → the same position reads inner → 14
+  ```
+
+  Each state is the other's cause. Resting on the centre of a 14 and moving two pixels alternated
+  `02 14 02 14 02 14 02 14` — **seven changes in eight events**, on every renderer. Not a tremor: a
+  feedback loop, which no amount of hysteresis damps because what moves is the thresholds themselves.
+
+  `dialHandLength` is one helper in `@modyra/widgets` and divides the shortened state back out, using
+  `MDY_TIMEPICKER_INNER_RING` — the constant already held against the stylesheet. The same line had been
+  copied into three renderers twice now, and both times it was wrong in all three; the contract owns the
+  question so a fourth adapter cannot copy a fourth version of it.
+
+  Found while verifying: **plain printed a 24-hour picker's hour in the canonical 12-hour form**, so a
+  field holding 14:00 showed `2` in its header while the face and the value said 14. The one number on
+  screen that says what is selected, saying something else. It reads the picker's own notation now, as
+  the other two do.
+
+- Updated dependencies [45720b9]
+- Updated dependencies [5262ad2]
+- Updated dependencies [2dfa37b]
+- Updated dependencies [ef53275]
+- Updated dependencies [841f0f9]
+- Updated dependencies [a53b93f]
+- Updated dependencies [53ecc1a]
+- Updated dependencies [f0044c2]
+- Updated dependencies [771ea00]
+- Updated dependencies [a0ab5de]
+- Updated dependencies [8a12c47]
+- Updated dependencies [37ccb9b]
+- Updated dependencies [1a6797d]
+- Updated dependencies [56b9361]
+- Updated dependencies [1b9ad89]
+- Updated dependencies [5e31f89]
+- Updated dependencies [66b5ba1]
+- Updated dependencies [b331412]
+- Updated dependencies [c6fd3b4]
+- Updated dependencies [af2d59b]
+- Updated dependencies [91f9715]
+- Updated dependencies [2eb1112]
+- Updated dependencies [df918e6]
+- Updated dependencies [9862d2f]
+- Updated dependencies [22f79b3]
+- Updated dependencies [2aa3ce8]
+- Updated dependencies [638acb6]
+- Updated dependencies [6d90b06]
+- Updated dependencies [8020123]
+  - @modyra/widgets@2.4.0
+  - @modyra/core@2.4.0
+
 ## 0.10.0
 
 ### Minor Changes
