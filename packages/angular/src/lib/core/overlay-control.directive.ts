@@ -12,6 +12,7 @@ import {
   createFocusCustodian,
   createLightDismiss,
   portalRootFor,
+  type MdyOverlayBranch,
   overlayAnchoringFor,
   overlayLifecycleTransition,
   MDY_CSS_PROPERTIES,
@@ -25,6 +26,8 @@ import {
   bindLightDismiss,
 } from "@modyra/widgets";
 import { MdyBaseControl } from "../control/control.directive";
+
+export type { MdyOverlayBranch };
 
 /**
  * The half of a widget controller that owns whether its popup is open.
@@ -516,7 +519,7 @@ export abstract class MdyOverlayControl<TValue> extends MdyBaseControl<TValue> {
    */
   private readonly outsideDismissal = createLightDismiss({
     isOpen: () => this.open(),
-    isInside: (target: unknown) => target instanceof Node && this.overlayContains(target),
+    branch: () => this.overlayBranch(),
     dismiss: () => this.dismissFromOutside(),
   });
 
@@ -527,15 +530,14 @@ export abstract class MdyOverlayControl<TValue> extends MdyBaseControl<TValue> {
   };
 
   /**
-   * What counts as "inside" for the dismissal gesture.
+   * The roots this widget's overlay interaction may land on.
    *
-   * The wrapper by default. A renderer whose overlay content lives outside the wrapper — a
-   * projected panel, a portalled popup — widens this rather than binding its own listener, so the
-   * gesture rule stays in one place and only the boundary differs.
+   * The wrapper by default. A kind with a part outside it — chips beside a search box — names that
+   * element in `also`; it does not name its portal, which the contract follows out of the root
+   * through the widget's own `aria-controls`.
    */
-  protected overlayContains(target: Node): boolean {
-    const el = this.wrapperRef()?.nativeElement;
-    return Boolean(el?.contains(target));
+  protected overlayBranch(): MdyOverlayBranch {
+    return { root: this.wrapperRef()?.nativeElement ?? null };
   }
 
   /** Runs when an interaction completes entirely outside. Overridden where closing needs more than the lifecycle. */

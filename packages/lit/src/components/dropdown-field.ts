@@ -63,12 +63,7 @@ export abstract class MdyDropdownFieldElement<T> extends MdyOptionsFieldElement<
    */
   private readonly dismissal = createLightDismiss({
     isOpen: () => this._open,
-    isInside: (target: unknown) => {
-      const node = target as Node | null;
-      return node !== null && typeof node === "object"
-        && typeof (node as { nodeType?: unknown }).nodeType === "number"
-        && this.contains(node);
-    },
+    branch: () => ({ root: this }),
     dismiss: () => {
       const handle = this.field;
       if (!handle) return;

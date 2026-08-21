@@ -16,14 +16,19 @@ import {
   isPrimaryInteraction,
 } from "../dist/index.js";
 
-const IN = "inside";
-const OUT = "outside";
+// Node-shaped, because the branch answers containment about nodes: a target the rule cannot locate
+// in the document is outside, and a bare string is exactly that.
+const IN = { nodeType: 1, name: "inside" };
+const OUT = { nodeType: 1, name: "outside" };
+const TRIGGER = { nodeType: 1, name: "trigger" };
+/** A root that owns whichever of these nodes it was given. */
+const rootOf = (...owned) => ({ contains: (node) => owned.includes(node) });
 const PRIMARY = { pointerId: 1, isPrimary: true, button: 0 };
 
 function overlay({ open = true } = {}) {
   let dismissed = 0;
   const policy = createLightDismiss({
-    isInside: (target) => target === IN,
+    branch: { root: rootOf(IN) },
     dismiss: () => { dismissed += 1; },
     isOpen: () => open,
   });
@@ -233,15 +238,15 @@ test("§13 — a cancelled inside interaction releases the suppression", () => {
 });
 
 test("§21.8 — the trigger is inside the branch, so activating it is not an outside interaction", () => {
-  // The renderer's `isInside` is what carries this; the rule only has to honour it.
+  // The branch is what carries this; the rule only has to honour it.
   let dismissed = 0;
   const policy = createLightDismiss({
-    isInside: (target) => target === IN || target === "trigger",
+    branch: { root: rootOf(IN, TRIGGER) },
     dismiss: () => { dismissed += 1; },
     isOpen: () => true,
   });
-  policy.pointerdown("trigger", PRIMARY);
-  policy.click("trigger");
+  policy.pointerdown(TRIGGER, PRIMARY);
+  policy.click(TRIGGER);
   assert.equal(dismissed, 0);
 });
 

@@ -1219,8 +1219,8 @@
     "reset: () => void"
   ],
   "MdyLightDismissOptions": [
+    "branch: MdyOverlayBranch | (() => MdyOverlayBranch)",
     "dismiss: () => void",
-    "isInside: (target: unknown) => boolean",
     "isOpen: () => boolean"
   ],
   "MdyMultiselectFieldA11yOptions": [
@@ -1359,6 +1359,10 @@
     "placement: MdyOverlayDecision[\"placement\"]",
     "properties: Readonly<Record<string, string>>"
   ],
+  "MdyOverlayBranch": [
+    "also?: ReadonlyArray<MdyOverlayRoot | null | undefined>",
+    "root: MdyOverlayRoot | null | undefined"
+  ],
   "MdyOverlayCoords": [
     "bottom?: number | undefined",
     "left?: number | undefined",
@@ -1425,6 +1429,9 @@
   ],
   "MdyOverlayProperty": [
     "(opaque)"
+  ],
+  "MdyOverlayRoot": [
+    "contains: boolean"
   ],
   "MdyPaintBeat": [
     "(opaque)"
@@ -2972,6 +2979,11 @@
   "overlayAnchoringFor": [
     "(0) kind: MdyWidgetKind",
     "-> returns: MdyOverlayAnchorOptions"
+  ],
+  "overlayBranchContains": [
+    "(0) branch: MdyOverlayBranch",
+    "(1) target: unknown",
+    "-> returns: boolean"
   ],
   "overlayCloseCommands": [
     "(0) restoreFocus: boolean",

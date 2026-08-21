@@ -202,12 +202,6 @@ export function trackOverlay(
 /** A teardown for the case where nothing was bound. */
 const noop = (): void => undefined;
 
-function asNode(value: unknown): Node | null {
-  return value !== null && typeof value === "object" && typeof (value as { nodeType?: unknown }).nodeType === "number"
-    ? (value as Node)
-    : null;
-}
-
 /**
  * The teardown, with the one question a field may need to ask of the interaction in flight.
  *
@@ -232,14 +226,11 @@ export function dismissOnOutsidePointer(
 
   const policy = createLightDismiss({
     isOpen,
-    // Duck-typed rather than `instanceof Node`: the constructor is not a global in every host this
-    // renderer runs in (a jsdom harness without it, an SSR shim), and a missed check would silently
-    // stop dismissing. `parts` carries the whole logical branch — trigger, popup and any portalled
-    // content — because only this renderer knows where its portal went.
-    isInside: (target: unknown) => {
-      const node = asNode(target);
-      return node !== null && parts.some((part) => part?.contains(node));
-    },
+    // The first part is the widget's root and the rest are what containment cannot reach. The
+    // portalled popup is not among them: the contract follows the widget's own `aria-controls` out
+    // to it, so a renderer that forgets to list its portal is no longer a renderer that stops
+    // dismissing correctly.
+    branch: { root: parts[0] ?? null, also: parts.slice(1) },
     dismiss: () => {
       // The policy still decides; this only reports that the interaction completed outside.
       const transition = overlayLifecycleTransition({ open: true }, { type: "outside", outside: true });
