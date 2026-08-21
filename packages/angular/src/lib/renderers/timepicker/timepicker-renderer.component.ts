@@ -5,24 +5,22 @@ import {
   ChangeDetectionStrategy,
   Component,
   computed,
-  ElementRef,
   inject,
   Injector,
   input,
 } from "@angular/core";
 import type { MdyTimeGranularity } from "@modyra/core";
-import { MdyTimeFormat, buildTimeString, formatTimeAs, getCurrentTime, parseAnyTime, to24Hour } from "@modyra/core/datetime";
+import { MdyTimeFormat, buildTimeString, formatTimeAs, getCurrentTime, parseAnyTime } from "@modyra/core/datetime";
 import {
   MDY_WIDGET_CONTRACTS,
   timeInputTransition,
   createTimepickerFieldController,
+  type MdyTimepickerFieldIntent,
   overlayControlledId,
   projectOverlayOpenerA11y,
-  timepickerPartSelector,
-  timepickerTabOrder,
 } from "@modyra/widgets";
 import { MdyBaseControl } from "../../control/control.directive";
-import { MdyWidgetRuntime } from "../../widget-runtime";
+import { MdyWidgetRuntime, timepickerCommandElements } from "../../widget-runtime";
 import { MdyErrorListComponent } from "../../control/error-list.component";
 import { MdyControlLabelComponent } from "../../control/mdy-control-label.component";
 import { MdyIconComponent } from "../../control/mdy-icon.component";
@@ -154,8 +152,7 @@ import { MdyTimepickerClockComponent } from "./timepicker-clock.component";
   `,
 })
 export class MdyTimepickerComponent extends MdyOverlayControl<string | null> {
-  /* The popup wears what the catalogue says it wears. Restated in the template, a class added
-     to the contract reached the renderers that derive and stopped at this one. */
+  /* The popup wears what the catalogue says it wears, derived rather than restated. */
   protected readonly popupClass = MDY_WIDGET_CONTRACTS.timepicker.parts.popup.classes.join(" ");
   /** The widget this draws: its popup's room, width and edge come from the catalog. */
   protected override readonly overlayKind = "timepicker" as const;
@@ -224,41 +221,22 @@ export class MdyTimepickerComponent extends MdyOverlayControl<string | null> {
   /**
    * Dispatches, and carries out what the controller asks of the DOM.
    *
-   * The return of `dispatch` was discarded at every call site here, so `focus`, `open-overlay` and
-   * `restore-focus` had never executed in this renderer — not wired wrongly, not wired at all. The
-   * runtime and its `afterNextRender` beat already existed and the select adapter already used them.
+   * `dispatch` returns commands — `focus`, `open-overlay`, `restore-focus` — and discarding them
+   * leaves the controller's decisions unexecuted with nothing failing. The runtime applies them on
+   * its own render beat.
    */
-  protected send(intent: Parameters<NonNullable<ReturnType<typeof this.controller>>["dispatch"]>[0]): void {
+  protected send(intent: MdyTimepickerFieldIntent): void {
     const controller = this.controller();
     if (!controller) return;
     this.widgetRuntime.execute(
       controller.dispatch(intent),
-      this.commandElements(),
+      timepickerCommandElements(this.hostElement.nativeElement, this.format()),
       () => undefined,
       {
         setOpen: () => undefined,
-        onTouched: () => this.markAsTouched(),
-        onDirty: () => this.markAsDirty(),
+        ...this.valueOwnerCallbacks(),
       },
     );
-  }
-
-  /**
-   * The parts a command may name, resolved through the contract's own selectors.
-   *
-   * Queried rather than held as view children: the popup is projected into a panel that only exists
-   * while it is open, so a reference taken at construction is a reference to nothing.
-   */
-  private commandElements(): ReadonlyMap<string, ElementRef<HTMLElement> | undefined> {
-    const root: HTMLElement = this.hostElement.nativeElement;
-    const found = new Map<string, ElementRef<HTMLElement> | undefined>();
-    found.set("trigger", new ElementRef(root.querySelector<HTMLElement>(".mdy-timepicker__toggle") ?? root));
-    for (const part of timepickerTabOrder(this.format())) {
-      const selector = timepickerPartSelector(part);
-      const el = selector ? root.querySelector<HTMLElement>(selector) : null;
-      if (el) found.set(part, new ElementRef(el));
-    }
-    return found;
   }
 
   protected override onBeforeOpen(): void {
@@ -268,38 +246,26 @@ export class MdyTimepickerComponent extends MdyOverlayControl<string | null> {
   /**
    * A position on the face, sent as the position it is.
    *
-   * The dial used to hand back a formatted time that this parsed with `parseTime` — the *12-hour*
-   * parser, whatever the picker's format — so a 24-hour face could only ever name the twelve numbers
-   * on its outer ring. The angle and the ring go to the controller, which owns what they mean.
+   * The angle and the ring travel; the controller owns what they mean. A face that reported a
+   * formatted time instead would have to name it in some format, and only one of the two rings of a
+   * 24-hour face has names the twelve-hour notation can write.
    */
   protected onDialPicked(pick: { field: "hour" | "minute"; angle: number; ring: "outer" | "inner" }): void {
     this.send({ type: "set-from-angle", ...pick });
   }
 
-  /**
-   * A time chosen through the number fields or the period toggle.
-   *
-   * Read with the picker's own format: `parseTime` reads a 12-hour string and a 24-hour picker hands
-   * back `"15:30"`, which it cannot. The hour goes out in the picker's format too — 0–23 for a
-   * 24-hour clock — because that is the vocabulary `set-hour` speaks.
-   */
+  /** A time chosen through the number fields or the period toggle — the controller reads it. */
   protected onTimePicked(time: string): void {
-    const format = this.format();
-    const parsed = parseAnyTime(time, format) ?? parseAnyTime(time, format === "12h" ? "24h" : "12h");
-    const controller = this.controller();
-    if (!parsed || !controller) return;
-    controller.dispatch({ type: "set-hour", hour: format === "24h" ? to24Hour(parsed) : parsed.hour });
-    controller.dispatch({ type: "set-minute", minute: parsed.minute });
-    if (format === "12h") controller.dispatch({ type: "set-period", period: parsed.period });
+    this.send({ type: "set-time", time });
   }
 
-  protected confirmPicker(): void {
-    this.send({ type: "confirm" });
-    this.closeOverlay();
-  }
+  protected confirmPicker(): void { this.finishPicker("confirm"); }
 
-  protected cancelPicker(): void {
-    this.send({ type: "cancel" });
+  protected cancelPicker(): void { this.finishPicker("cancel"); }
+
+  /** Both ways out of the popup: the controller decides what the draft becomes, the panel closes. */
+  private finishPicker(how: "confirm" | "cancel"): void {
+    this.send({ type: how });
     this.closeOverlay();
   }
 
@@ -314,15 +280,16 @@ export class MdyTimepickerComponent extends MdyOverlayControl<string | null> {
     }
   }
 
+  /**
+   * Selects the text when there is nothing a person chose, so the first keystroke replaces it.
+   *
+   * Asked of the value rather than of the text: the resting display is whatever the format writes
+   * midnight as, and a list of the strings it might be was a list of the twelve-hour ones — so on
+   * the 24-hour clock, which is the default, the resting field was never selected.
+   */
   protected onInputFocus(event: FocusEvent): void {
     const input = event.target as HTMLInputElement;
-    if (
-      !input.value ||
-      input.value === "00:00 AM" ||
-      input.value === "00:00 PM"
-    ) {
-      afterNextRender(() => input.select(), { injector: this.injector });
-    }
+    if (!this.value()) afterNextRender(() => input.select(), { injector: this.injector });
   }
 
   protected onInputBlur(event: FocusEvent): void {

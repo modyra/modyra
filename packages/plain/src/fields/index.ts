@@ -86,6 +86,6 @@ export function renderField(
     case "colors":
       return renderColorsField(container, f, handle as unknown as MdyFieldHandle<unknown>, reactivity, widgetId, messages);
     case "timepicker":
-      return renderTimepickerField(container, f, handle as unknown as MdyFieldHandle<string | null>, reactivity, undefined, widgetId, messages);
+      return renderTimepickerField(container, f, handle as unknown as MdyFieldHandle<string | null>, reactivity, f.format, widgetId, messages);
   }
 }

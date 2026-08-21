@@ -1,6 +1,6 @@
 # ADR 0116: One clock in every renderer
 
-Status: Accepted
+Status: Accepted — amended, see [Amendment](#amendment-2026-08-21-a-document-can-name-its-clock)
 
 ## Context
 
@@ -71,3 +71,41 @@ answer a question most of them do not care about.
 
 None. No boundary moves and no value leaves the process differently; a clock format is what a person
 reads.
+
+## Amendment, 2026-08-21: a document can name its clock
+
+The gap this record left open — *a document still cannot ask for either format* — is closed.
+`MdyDynamicDateField` gains `format?: MdyTimeFormat`, `timepicker` only, absent meaning the 24-hour
+clock the decision above chose. Nothing about that decision changes: the default is still 24-hour in
+all three renderers, and a host that passes nothing still gets it.
+
+What the slot removes is a class of form that could not be expressed at all. A document-driven form
+had exactly one clock available, so a schema meaning half past two in the afternoon could be written
+only where a hand-written host was there to pass the parameter — which is to say, not in Studio, not
+in a document from a server, and not in the dynamic renderer of any adapter.
+
+Refused where it is written, following the granularity: a `format` on a kind that draws no clock, or
+a value that is neither `"12h"` nor `"24h"`, is reported and dropped, and the field stays and draws
+the default. Dropping the refinement rather than the field keeps a control the person can see for the
+sake of a rule they cannot.
+
+**The range follows the clock.** The same amendment folds `hourControl`'s announced range onto
+`timeFieldBounds`, which the native `min`/`max` already came from. It had been written twice, and the
+copy in the accessibility projection was still the 12-hour one: a 24-hour face declared `max="23"` to
+the browser and `aria-valuemax="12"` to a reader, so a screen reader was told the wrong bound on the
+clock this record made the default. Two declarations of one range is the shape that lets the second
+one go stale, and one of them was silent about it.
+
+### Verification
+
+- `packages/core/test/dynamic-diagnostics.test.mjs` — `MDY_DYNAMIC_UNHONOURABLE_FORMAT`, a clock that
+  is not one of the two.
+- `npm run test:type-surface` — `MdyDynamicDateField.format was added (optional)`, classified minor.
+- Measured in the browser across the three renderers: a picker declaring `format: "12h"` reads
+  `2:30 PM` and holds `14:30`, refuses `14:30`; a picker declaring nothing does the reverse. The hour
+  box declares `max`/`aria-valuemax` as `23`/`23` on the default clock and `12`/`12` on the other.
+
+### Security and privacy
+
+None, for the reason the record already gives: a clock format is what a person reads, and the stored
+value is `HH:mm` either way.

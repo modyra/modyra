@@ -707,6 +707,8 @@ export function parseDynamicFields(input: unknown): MdyDynamicField[] {
   const dedupedOptions = new Map<unknown, ReadonlyArray<MdySelectOption<unknown>>>();
   /** Fields whose declared granularity cannot be honoured, stripped on the way out rather than in place. */
   const droppedGranularity = new Set<unknown>();
+  /** Fields whose declared clock is not one this contract draws, dropped on the way out rather than in place. */
+  const droppedFormat = new Set<unknown>();
   const accepted: MdyDynamicField[] = items.filter((item, index): item is MdyDynamicField => {
     // Where this entry is written, so a finding underlines the entry rather than the array. A
     // duplicate names the *second* occurrence: the first is legitimate until the second exists, and
@@ -949,6 +951,27 @@ export function parseDynamicFields(input: unknown): MdyDynamicField[] {
       }
     }
 
+    // A format is one of two clocks, and a field that is not a picker of times has no clock at all.
+    // Dropped rather than corrected for the same reason the granularity is: the field stays, and the
+    // refinement nobody can honour goes, so what is drawn is the documented default rather than a
+    // guess at what the author meant.
+    const declaredFormat = (f as { format?: unknown }).format;
+    if (declaredFormat !== undefined) {
+      const said = f.kind !== "timepicker"
+        ? `a "${String(f.kind)}" draws no clock, which this contract does not declare`
+        : declaredFormat === "12h" || declaredFormat === "24h"
+          ? ""
+          : `${JSON.stringify(declaredFormat)} is neither "12h" nor "24h"`;
+      if (said.length > 0) {
+        warnDev(
+          `Dynamic field "${f.name}" declares a format this reader cannot honour: ${said}. ` +
+          "The field draws the 24-hour clock instead.",
+          at,
+        );
+        droppedFormat.add(item);
+      }
+    }
+
     const needsOptions = ["select", "radio", "multiselect", "segmented"];
     if (needsOptions.includes(f.kind as string)) {
       const options = (f as { options?: unknown }).options;
@@ -985,12 +1008,16 @@ export function parseDynamicFields(input: unknown): MdyDynamicField[] {
     }
     return true;
   });
-  if (dedupedOptions.size === 0 && droppedGranularity.size === 0) return accepted;
+  if (dedupedOptions.size === 0 && droppedGranularity.size === 0 && droppedFormat.size === 0) return accepted;
   return accepted.map((declared) => {
     const kept = dedupedOptions.get(declared);
     let out = kept === undefined ? declared : { ...declared, options: kept } as MdyDynamicField;
     if (droppedGranularity.has(declared)) {
       const { granularity: _dropped, ...rest } = out as MdyDynamicField & { granularity?: unknown };
+      out = rest as MdyDynamicField;
+    }
+    if (droppedFormat.has(declared)) {
+      const { format: _dropped, ...rest } = out as MdyDynamicField & { format?: unknown };
       out = rest as MdyDynamicField;
     }
     return out;
@@ -1031,6 +1058,7 @@ export const MDY_DYNAMIC_DIAGNOSTICS: ReadonlyArray<{
   Object.freeze({ code: "MDY_DYNAMIC_UNKNOWN_MEMBER", phrase: "which this contract does not declare" }),
   Object.freeze({ code: "MDY_DYNAMIC_DEPRECATED_VERSION", phrase: "Version 1 is deprecated" }),
   Object.freeze({ code: "MDY_DYNAMIC_UNHONOURABLE_GRANULARITY", phrase: "granularity this reader cannot honour" }),
+  Object.freeze({ code: "MDY_DYNAMIC_UNHONOURABLE_FORMAT", phrase: "format this reader cannot honour" }),
 ]);
 
 /** What a refusal is called when none of the named ones fits. */

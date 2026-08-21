@@ -7,7 +7,7 @@ import {
 } from "@modyra/widgets";
 import { html, nothing, type PropertyDeclarations } from "lit";
 import { observerFor, type MdyFieldHandle } from "@modyra/core";
-import { buildTimeString, formatTimeAs, hourToAngle, minuteToAngle, parseAnyTime, parseTime, pointerAngle, to24Hour, type MdyTimeFormat } from "@modyra/core/datetime";
+import { buildTimeString, formatTimeAs, hourToAngle, minuteToAngle, parseAnyTime, pointerAngle, to24Hour, type MdyTimeFormat } from "@modyra/core/datetime";
 import {
   acceptTimeField,
   createTimepickerFieldController,
@@ -60,7 +60,7 @@ const RESTING: MdyTimepickerFieldState = Object.freeze({
   open: false,
   focusedField: "hour",
   viewMode: "dial",
-  format: "12h",
+  format: "24h",
   granularity: undefined,
   animateHand: false,
   _handLength: 0,
@@ -260,18 +260,14 @@ export class MdyTimepickerFieldElement extends MdyFieldElement<string | null> {
   }
 
   /**
-   * A time chosen on the dial, sent as the parts the controller takes.
+   * A time chosen on the dial, handed over whole.
    *
-   * The dial builds a string because that is what a clock face reads back; the draft it edits is the
-   * controller's, and it holds hours, minutes and the period separately so the two never disagree
-   * about what "half past" means at noon.
+   * The dial builds a string because that is what a clock face reads back, and the controller reads
+   * it in the picker's own format — taking it apart here read every string with the twelve-hour
+   * parser, so a 24-hour face could not report an afternoon hour at all.
    */
   private onTimePicked(time: string): void {
-    const parsed = parseTime(time);
-    if (!parsed) return;
-    this.send({ type: "set-hour", hour: parsed.hour });
-    this.send({ type: "set-minute", minute: parsed.minute });
-    if (this.format === "12h") this.send({ type: "set-period", period: parsed.period });
+    this.send({ type: "set-time", time });
   }
 
   /** The draft the controller is editing, which is what the dial draws. */

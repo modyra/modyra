@@ -9,6 +9,7 @@ import { assertUsableWidgetId } from "../ids.js";
 import type { MdyPartContract } from "../contract.js";
 import { MDY_FIELD_SHELL_CLASSES } from "../structure.js";
 import type { MdyTimepickerFieldState } from "./timepicker-field-types.js";
+import { timeFieldBounds } from "../time-bounds.js";
 import { shownErrors } from "./verdict.js";
 import { fieldShellRootClasses } from "./shell-a11y.js";
 
@@ -121,8 +122,11 @@ export function projectTimepickerFieldA11y(
       attributes: {
         role: "spinbutton",
         "aria-label": "Hour",
-        "aria-valuemin": 1,
-        "aria-valuemax": 12,
+        // Taken from the same bounds the native `min`/`max` come from rather than written again: an
+        // hour's range is the clock's, so a 24-hour face whose reader is told the maximum is 12
+        // states one of the two ranges falsely, and a reader has no way to see which.
+        "aria-valuemin": timeFieldBounds("hour", state.format).min,
+        "aria-valuemax": timeFieldBounds("hour", state.format).max,
         "aria-valuenow": state.draft.hour,
       },
     },
@@ -136,8 +140,8 @@ export function projectTimepickerFieldA11y(
       attributes: {
         role: "spinbutton",
         "aria-label": "Minute",
-        "aria-valuemin": 0,
-        "aria-valuemax": 59,
+        "aria-valuemin": timeFieldBounds("minute", state.format).min,
+        "aria-valuemax": timeFieldBounds("minute", state.format).max,
         "aria-valuenow": state.draft.minute,
       },
     },

@@ -317,6 +317,10 @@
           "type": "string",
           "description": "Calendar kinds: latest selectable date, ISO yyyy-MM-dd."
         },
+        "format": {
+          "enum": ["12h", "24h"],
+          "description": "timepicker only: which clock the field draws and reads. Absent draws the 24-hour clock. The stored value is the same either way."
+        },
         "granularity": {
           "type": "object",
           "additionalProperties": false,

@@ -24,6 +24,7 @@ import {
   MdyTimeGranularity,
   MdySignal,
 } from "@modyra/core";
+import type { MdyTimeFormat } from "@modyra/core/datetime";
 import { layoutNodeAttributes, layoutSlotStyle, MDY_LAYOUT_CLASSES } from "@modyra/widgets";
 import { angularReactivity } from "../core/reactivity-angular";
 import { MdyFormSubmitEvent } from "../core/types";
@@ -253,13 +254,14 @@ import { MdyToggleComponent } from "../renderers/toggle/toggle-renderer.componen
               />
             }
             @case ("timepicker") {
-              <!-- A document declaring which times it offers, and how the dial says so. Without
-                   these three the properties parse, validate and reach no control: a capability a
-                   document can ask for and no renderer hears. -->
+              <!-- A document declaring which clock it draws, which times it offers, and how the
+                   dial says so. Without these the properties parse, validate and reach no control:
+                   a capability a document can ask for and no renderer hears. -->
               <mdy-control-timepicker
                 [name]="f.name"
                 [label]="f.label ?? ''"
                 [initialValue]="emptyFor(f)"
+                [format]="asTime(f).format ?? '24h'"
                 [granularity]="asTime(f).granularity"
                 [animateHand]="asTime(f).animateHand ?? false"
                 [showUnavailable]="asTime(f).showUnavailable ?? false"
@@ -274,11 +276,12 @@ import { MdyToggleComponent } from "../renderers/toggle/toggle-renderer.componen
 export class MdyDynamicFormComponent {
   /** A timepicker's own members, read from the union the template narrows by `kind`. */
   protected asTime(field: MdyDynamicField): {
+    readonly format?: MdyTimeFormat;
     readonly granularity?: MdyTimeGranularity;
     readonly animateHand?: boolean;
     readonly showUnavailable?: boolean;
   } {
-    return field as { granularity?: MdyTimeGranularity; animateHand?: boolean; showUnavailable?: boolean };
+    return field as { format?: MdyTimeFormat; granularity?: MdyTimeGranularity; animateHand?: boolean; showUnavailable?: boolean };
   }
 
   /**

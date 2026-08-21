@@ -9,3 +9,4 @@ export { MdyAngularSelectAdapter } from "./select-adapter";
 export type {
   MdyAngularSelectAdapterOptions,
 } from "./select-adapter";
+export { timepickerCommandElements } from "./timepicker-parts";

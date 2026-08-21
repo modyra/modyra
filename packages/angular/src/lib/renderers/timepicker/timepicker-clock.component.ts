@@ -46,6 +46,7 @@ import {
   timeStepsAt,
   MDY_EVERY_TIME,
   type MdyTimeGranularity,
+  timepickerEntryText,
   timepickerSelectedDialValue,
 } from "@modyra/widgets";
 import { MDY_I18N_MESSAGES } from "../../core/i18n";
@@ -63,7 +64,7 @@ export class MdyTimepickerClockComponent {
   protected readonly i18n = inject(MDY_I18N_MESSAGES);
   readonly value = input<string | null>(null);
   readonly disabled = input<boolean>(false);
-  readonly format = input<MdyTimeFormat>("12h");
+  readonly format = input<MdyTimeFormat>("24h");
   /** Which times the field offers. Absent offers every one. */
   readonly granularity = input<MdyTimeGranularity | undefined>(undefined);
   /** Whether the field itself refuses edits — not whether the clock is the view. */
@@ -185,33 +186,24 @@ export class MdyTimepickerClockComponent {
 
   protected readonly parsed = computed(() => parseTime(this.value()));
 
-  protected readonly numericHour = computed(() => {
+  /**
+   * The draft this face is showing, in the shape every reader of it takes: twelve-hour with a
+   * period, whatever the format drawn. A value that does not parse rests on the hour, which is what
+   * a clock with nothing on it shows.
+   */
+  protected readonly draft = computed(() => {
     const p = this.parsed();
-    return p ? p.hour : 12;
+    return { hour: p?.hour ?? 12, minute: p?.minute ?? 0, period: p?.period ?? ("AM" as const) };
   });
 
-  protected readonly numericMinute = computed(() => {
-    const p = this.parsed();
-    return p ? p.minute : 0;
-  });
+  protected readonly numericMinute = computed(() => this.draft().minute);
+  protected readonly periodDisplay = computed(() => this.draft().period);
 
-  protected readonly hourDisplay = computed(() => {
-    if (this.format() === "24h") {
-      const p = this.parsed();
-      const hour24 = p ? to24Hour(p) : 0;
-      return String(hour24).padStart(2, "0");
-    }
-    return String(this.numericHour()).padStart(2, "0");
-  });
-
-  protected readonly minuteDisplay = computed(() =>
-    String(this.numericMinute()).padStart(2, "0"),
+  /** What each box shows: the value the face is on, in the digits the contract writes it with. */
+  protected readonly hourDisplay = computed(() =>
+    timepickerEntryText(timepickerSelectedDialValue("hour", this.draft(), this.format())),
   );
-
-  protected readonly periodDisplay = computed(() => {
-    const p = this.parsed();
-    return p ? p.period : "AM";
-  });
+  protected readonly minuteDisplay = computed(() => timepickerEntryText(this.draft().minute));
 
   protected readonly timeString = computed(() => {
     const p = this.parsed();
@@ -227,9 +219,7 @@ export class MdyTimepickerClockComponent {
    * place that converts — the keyboard and the announced value both read it.
    */
   protected readonly faceValue = computed(() =>
-    timepickerSelectedDialValue(this.focusedField(), {
-      hour: this.numericHour(), minute: this.numericMinute(), period: this.periodDisplay(),
-    }, this.format()),
+    timepickerSelectedDialValue(this.focusedField(), this.draft(), this.format()),
   );
 
   /** What a screen reader is told the hand is pointing at — the contract's, with the format's bounds. */
@@ -276,10 +266,9 @@ export class MdyTimepickerClockComponent {
   /**
    * The real hand points at the value, including while a finger is moving.
    *
-   * It used to follow the pointer, which on a face that offers every time is the same thing — the
-   * chosen value is always under the finger. On a face that snaps it is not: the hand would sit
-   * between two numbers and jump on release, so the one thing on screen that says what is chosen
-   * spent the whole gesture saying something else. The pointer gets its own hand instead.
+   * On a face that snaps, the pointer and the chosen value are not the same place: a hand following
+   * the pointer sits between two numbers and jumps on release, so the one thing on screen that says
+   * what is chosen spends the gesture saying something else. The pointer has its own hand.
    */
   protected readonly handRotation = computed(() => {
     const p = this.parsed();
@@ -289,47 +278,40 @@ export class MdyTimepickerClockComponent {
       : hourToAngle(p.hour);
   });
 
-  protected onHourInput(event: Event): void {
-    const target = event.target as HTMLInputElement;
-    const next = timeClockTransition(this.value(), {
-      type: "hour", value: Number.parseInt(target.value, 10), format: this.format(),
-    });
-    if (next === null) { target.value = this.hourDisplay(); return; }
-    this.focusedField.set("hour");
-    this.timePicked.emit(next);
-  }
-
   /**
-   * An arrow key on a segment, which reports the value it asks for rather than writing it.
+   * A value asked for on one of the two boxes, from typing or from an arrow.
    *
-   * The segment's input has an owner — the template binds `[value]` — and a handler that also
-   * assigned it gave one value two owners: the bound value was written back over the stepped one
-   * before the frame painted, so the arrows appeared to do nothing. The step travels the same way a
-   * typed character does, and the DOM follows the model rather than racing it.
+   * An arrow reports the value it asks for rather than writing it: the segment's input is owned by
+   * the template's `[value]`, and a handler that assigns it too gives one value two owners, the
+   * bound one overwriting the stepped one before the frame paints. A refused value is put back only
+   * where the DOM already holds it, which is typing; a refused step leaves the binding to redraw.
    */
-  protected onHourStep(value: number): void {
-    const next = timeClockTransition(this.value(), { type: "hour", value, format: this.format() });
-    if (next === null) return;
-    this.focusedField.set("hour");
+  private askFor(field: "hour" | "minute", value: number, box?: HTMLInputElement): void {
+    const next = timeClockTransition(
+      this.value(),
+      field === "hour" ? { type: "hour", value, format: this.format() } : { type: "minute", value },
+    );
+    if (next === null) {
+      if (box) box.value = field === "hour" ? this.hourDisplay() : this.minuteDisplay();
+      return;
+    }
+    this.focusedField.set(field);
     this.timePicked.emit(next);
   }
 
-  protected onMinuteStep(value: number): void {
-    const next = timeClockTransition(this.value(), { type: "minute", value });
-    if (next === null) return;
-    this.focusedField.set("minute");
-    this.timePicked.emit(next);
+  protected onHourInput(event: Event): void {
+    const box = event.target as HTMLInputElement;
+    this.askFor("hour", Number.parseInt(box.value, 10), box);
   }
 
   protected onMinuteInput(event: Event): void {
-    const target = event.target as HTMLInputElement;
-    const next = timeClockTransition(this.value(), {
-      type: "minute", value: target.value === "" ? 0 : Number.parseInt(target.value, 10),
-    });
-    if (next === null) { target.value = this.minuteDisplay(); return; }
-    this.focusedField.set("minute");
-    this.timePicked.emit(next);
+    const box = event.target as HTMLInputElement;
+    this.askFor("minute", box.value === "" ? 0 : Number.parseInt(box.value, 10), box);
   }
+
+  protected onHourStep(value: number): void { this.askFor("hour", value); }
+
+  protected onMinuteStep(value: number): void { this.askFor("minute", value); }
 
   protected togglePeriod(period: "AM" | "PM"): void {
     if (this.disabled()) return;
@@ -343,19 +325,11 @@ export class MdyTimepickerClockComponent {
   }
 
   /**
-   * Puts focus on the face, so the arrows have somewhere to arrive.
+   * Puts focus on the box for the field being edited, not on the face.
    *
-   * The face has been focusable since it became a slider, and nothing ever focused it: opening the
-   * picker left focus on the toggle, outside the popup, so the first arrow went to the page. A
-   * control you can only reach by tabbing past Cancel and Confirm, with nothing saying so, is a
-   * control most people will never find.
-   */
-  /**
-   * Puts focus on the box for the field being edited.
-   *
-   * It used to take the face. The face is a slider a keyboard can operate, but it is not where a
-   * person types — and a picker that opens with focus on the dial leaves the two controls that
-   * accept typing unreached, which is what made Tab walk out of the popup without entering it.
+   * The face is a slider a keyboard can operate, but it is not where a person types: focus landing
+   * there leaves the two controls that accept typing unreached, and Tab walks out of the popup
+   * without ever entering it.
    */
   private focusDial(): void {
     const selector = timepickerPartSelector(timepickerFocusPart(this.focusedField()));
@@ -368,16 +342,9 @@ export class MdyTimepickerClockComponent {
   }
 
   protected onDialNumberClick(value: number): void {
-    if (this.disabled()) return;
-    const field = this.focusedField();
-    const next = timeClockTransition(this.value(),
-      field === "hour"
-        // The face's own format: on a 24-hour face this number is 0–23, and calling it 12h turned
-        // every afternoon hour into a morning one.
-        ? { type: "hour", value, format: this.format() }
-        : { type: "minute", value },
-    );
-    if (next !== null) this.timePicked.emit(next);
+    // The face's own format: on a 24-hour face this number is 0–23, and reading it as 12h turned
+    // every afternoon hour into a morning one. `askFor` carries the format for the same reason.
+    if (!this.disabled()) this.askFor(this.focusedField(), value);
   }
 
   /**
@@ -433,12 +400,7 @@ export class MdyTimepickerClockComponent {
     const intent = timepickerDialKeyIntent(event.key, field, this.format(), this.faceValue(), this.steps());
     if (!intent) return;
     event.preventDefault();
-    const next = timeClockTransition(this.value(),
-      intent.field === "hour"
-        ? { type: "hour", value: intent.value, format: this.format() }
-        : { type: "minute", value: intent.value },
-    );
-    if (next !== null) this.timePicked.emit(next);
+    this.askFor(intent.field, intent.value);
   }
 
   protected onDragStart(event: MouseEvent | TouchEvent): void {
@@ -470,12 +432,7 @@ export class MdyTimepickerClockComponent {
 
   protected onDragEnd(): void {
     if (!this.isDragging()) return;
-
-    const angle = this.dragAngle();
-    if (angle !== null) {
-      this.dialPicked.emit({ field: this.dragField, angle, ring: this.dragRing() });
-    }
-
+    this.emitPick();
     this.isDragging.set(false);
     // The gesture is over: the next one decides from where it lands.
     this.ringDecided = false;

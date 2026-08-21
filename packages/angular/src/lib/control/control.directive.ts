@@ -623,6 +623,16 @@ export abstract class MdyBaseControl<TValue = unknown> implements OnInit {
     this.dispatchValueIntent(kind, { type: "blur" });
   }
 
+  /**
+   * The touched and dirty callbacks a widget runtime takes, answered by the owner of the value.
+   *
+   * A renderer that answers them itself has taken a decision the controller exists to make, and the
+   * next renderer will not take it the same way. The runtime asks; this is who it reaches.
+   */
+  protected valueOwnerCallbacks(): { readonly onTouched: () => void; readonly onDirty: () => void } {
+    return { onTouched: () => this.markAsTouched(), onDirty: () => this.markAsDirty() };
+  }
+
   /** Applies non-user synchronization without dirty/touched side effects. */
   protected synchronizeValue(value: TValue): void {
     this.setValue(value);

@@ -11,6 +11,7 @@ import type { MdyExpression } from "../expression.js";
 import { explainValueMismatch, type MdyValueKind } from "../value-contracts.js";
 import { warnDev } from "./guards.js";
 import type { MdySelectOption } from "../types.js";
+import type { MdyTimeFormat } from "../time-utils.js";
 
 /**
  * Serializable validator set for dynamic fields — safe to store as JSON in
@@ -189,6 +190,15 @@ export interface MdyDynamicDateField extends MdyDynamicFieldBase, MdyDynamicCale
    * minutes are refused where the document declares them rather than behaving oddly later.
    */
   readonly granularity?: MdyTimeGranularity;
+  /**
+   * Which clock this field draws and reads — `timepicker` only. Absent is the 24-hour clock.
+   *
+   * The document carries it because the format is the field's own property and not the host's
+   * taste: a form that means half past two in the afternoon means it in every renderer, and a
+   * slot only a hand-written host can fill leaves a document-driven form with one clock available.
+   * The stored value is the same either way; this decides what is drawn and what typing is read as.
+   */
+  readonly format?: MdyTimeFormat;
   /**
    * Whether the dial's hand moves rather than jumps — `timepicker` only. Absent is a hand that
    * jumps, which is today's behaviour and the one that never shows a value where it is not.

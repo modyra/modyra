@@ -216,6 +216,8 @@ export function renderTimepickerField(
   let typing = false;
   /** Which segment the user is inside, so the sync does not write over what they are typing. */
   let editing: "hour" | "minute" | null = null;
+  /** The last text each box was allowed to show, so a refused keystroke has somewhere to go back to. */
+  const lastText: Record<"hour" | "minute", string> = { hour: "", minute: "" };
   const toggleOverlay = () => dispatch(controller.state().open ? { type: "close", restoreFocus: false } : { type: "open" });
   toggle.addEventListener("click", toggleOverlay);
   // The control opens the overlay and never closes it: it is the field the user types into, so a
@@ -258,13 +260,21 @@ export function renderTimepickerField(
       // a number, so the draft moved and the sync below wrote the canonical form straight back —
       // `0` became `00` with the caret after it, and the next key landed third: `001` in a
       // two-digit field, with `01` unreachable by the route a person takes.
-      editing = field;
-      dispatch({ type: "type-segment", field, text: input.value });
       // The same reading the controller does, with the same reader — this renderer supplies none,
       // so both are the digits every locale shares. A host that localises supplies one to the
       // controller and this call has to take it from the same place, or the box would mark as
       // unusable a numeral the draft had just accepted.
       const read = timepickerEntry(field, format, input.value, stepsNow(), parseSegment);
+      if (read === null) {
+        // Refused outright — a third character in a two-digit box, or something no further typing
+        // rescues. The rule allows a box *narrower* than canonical and never wider, so the keystroke
+        // is undone rather than left showing what the field could not hold.
+        input.value = lastText[field];
+        return;
+      }
+      lastText[field] = read.text;
+      editing = field;
+      dispatch({ type: "type-segment", field, text: input.value });
       // Marked while it is being edited, not judged: a partial the field cannot take yet is a
       // half-typed number, and an empty box is being cleared rather than asserted.
       const unusable = read !== null && read.value === null && input.value.trim().length > 0;
@@ -280,6 +290,7 @@ export function renderTimepickerField(
     // holds, which is the contract's answer rather than this renderer's padding.
     input.addEventListener("blur", () => {
       editing = null;
+      lastText[field] = "";
       input.value = timepickerEntryText(
         field === "hour"
           ? timepickerSelectedDialValue("hour", controller.state().draft, format)
