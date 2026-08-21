@@ -1,6 +1,6 @@
 {
   "renderer": "@modyra/lit",
-  "contractVersion": "3",
+  "contractVersion": "5",
   "generatedBy": "scripts/conformance-manifest.mjs — do not edit by hand",
   "supportedKinds": [
     "text",

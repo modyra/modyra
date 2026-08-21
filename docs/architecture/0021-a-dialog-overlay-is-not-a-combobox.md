@@ -50,7 +50,7 @@ pickers, correctly: a calendar *is* walked with the arrow keys, inside its grid.
 statement from the arrows reaching a list that is not on screen yet, and conflating them is what put
 the rule where it does not belong.
 
-**Escape and Tab still dismiss every overlay.** Both are declared for any kind with an overlay and
+**Escape and Tab still dismiss every overlay.** *(Amended by [ADR 0122](0122-a-picker-a-keyboard-can-commit.md): a popup that declares an `actions` bar keeps Tab, because a confirm button Tab cannot reach leaves the widget with no keyboard commit path. Escape is unchanged.)* Both are declared for any kind with an overlay and
 both are now implemented by every picker in `@modyra/plain`. A dialog that ignores Escape is the one
 unambiguous keyboard defect, and a panel still floating over a field the user has tabbed away from is
 the same defect a moment later.
