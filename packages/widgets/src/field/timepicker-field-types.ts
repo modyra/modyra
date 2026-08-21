@@ -15,6 +15,8 @@
 import type { MdyInteractivity } from "@modyra/core";
 import type { MdyFieldHandle } from "@modyra/core";
 import type { MdyTimeFormat, ParsedTime } from "@modyra/core/datetime";
+import type { MdyTimeGranularity } from "../time-granularity.js";
+
 export interface MdyTimepickerFieldControllerOptions {
   /** Stable identity for the widget instance. */
   readonly widgetId: string;
@@ -22,6 +24,13 @@ export interface MdyTimepickerFieldControllerOptions {
   readonly handle: MdyFieldHandle<string | null>;
   /** Display and value format. Defaults to "12h". */
   readonly format?: MdyTimeFormat;
+  /**
+   * Which times this field offers. Absent means every one.
+   *
+   * Every route into the value obeys it — the face, the arrows, typing and a dragged pointer — and
+   * a value already off it is kept and reported rather than rounded.
+   */
+  readonly granularity?: MdyTimeGranularity;
   /**
    * What the popup shows when it opens. Defaults to the number fields.
    *

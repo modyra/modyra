@@ -36,6 +36,11 @@ the arrows move by the step, typing an off-step value is refused, and `timepicke
 dragged pointer on a number the face actually drew rather than on arithmetic of its own — so the face
 and the drag cannot disagree.
 
+`timepickerDialPick` answers with the value, **the number's own angle** — so a renderer rests the
+hand on what was chosen rather than under the finger — and **which ring it is on**, which is what
+lets a 24-hour face draw the difference between the outer 3 and the inner 15 when a step puts them
+at one position.
+
 **Breaking, both additive:** `MdyTimeFieldBounds` gains a required `step`, and `MdyTimeRejection`
 gains `"off-step"` beside `"not-a-number"` and `"out-of-range"`. A caller that constructs bounds or
 switches exhaustively on the rejection needs the new member; a caller that reads them does not.

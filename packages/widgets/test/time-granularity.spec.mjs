@@ -208,7 +208,7 @@ test("the face draws only the hours the field offers", () => {
 
 const { timepickerDialPick, dialNumberAngle } = await import("../dist/index.js");
 
-test("a dragged angle lands on a number the face drew, and only on one", () => {
+test("a dragged angle lands on a minute the field offers, and only on one", () => {
   const quarters = { hourStep: 1, minuteStep: 15 };
   // Every degree of the circle, so nothing between the offered numbers can be reached.
   const landed = new Set();
@@ -229,7 +229,7 @@ test("both rings of a 24-hour face land on their own hours", () => {
   assert.deepEqual([...inner].sort((a, b) => a - b), [0, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23]);
 });
 
-test("a step that does not divide twelve still lands only on what is drawn", () => {
+test("a step that does not divide twelve still lands only on offered hours", () => {
   // Five does not divide twelve, so the offered hours are unevenly spaced around the face — where a
   // nearest-position rule is most likely to be wrong.
   const byFive = { hourStep: 5, minuteStep: 1 };
@@ -301,4 +301,65 @@ test("no face ever draws a number the field would refuse, at any step", () => {
     }
   }
   assert.deepEqual(dead, []);
+});
+
+test("no angle, at any step, reaches a value the field would refuse", () => {
+  // The property the drag exists under. It is not "lands on a drawn number" — a minute face has
+  // twelve positions and a minute field has sixty values, so an ungranulated picker draws every
+  // fifth minute and still accepts all of them, with the hand between two labels. Conflating the
+  // two sets would silently turn every picker in the library into a five-minute one.
+  const unreachable = [];
+  for (const steps of [undefined, { minuteStep: 15 }, { minuteStep: 30 }, { hourStep: 6 }, { hourStep: 5 }]) {
+    for (const format of ["12h", "24h"]) {
+      for (const field of ["hour", "minute"]) {
+        for (const ring of ["outer", "inner"]) {
+          for (let angle = 0; angle < 360; angle += 1) {
+            const picked = timepickerDialPick(angle, field, format, ring, steps);
+            if (picked === null) continue;
+            const entry = acceptTimeField(field, format, String(picked.value), steps);
+            if (entry.type !== "accepted") {
+              unreachable.push(`${field}/${format}/${ring} at ${angle}° → ${picked.value} (${entry.reason})`);
+            }
+          }
+        }
+      }
+    }
+  }
+  assert.deepEqual(unreachable.slice(0, 5), []);
+});
+
+test("an ungranulated minute dial still reaches every minute", () => {
+  // The regression this property was written after: landing only on drawn numbers coarsened every
+  // picker in the library from sixty minutes to twelve.
+  const reached = new Set();
+  for (let angle = 0; angle < 360; angle += 1) reached.add(timepickerDialPick(angle, "minute", "24h").value);
+  assert.equal(reached.size, 60);
+});
+
+test("a thinned ring still has somewhere to land", () => {
+  // `hourStep: 7` leaves one hour on the whole outer ring. A pointer anywhere else on that ring has
+  // nothing of its own to reach, and answering `null` would make most of the face inert.
+  const bySeven = { hourStep: 7 };
+  for (let angle = 0; angle < 360; angle += 15) {
+    const picked = timepickerDialPick(angle, "hour", "24h", "outer", bySeven);
+    assert.ok(picked, `${angle}° must land somewhere`);
+    assert.equal(acceptTimeField("hour", "24h", String(picked.value), bySeven).type, "accepted");
+  }
+});
+
+test("the ring travels with the pick, so the same angle names two hours", () => {
+  // At `hourStep: 3` the outer 3 and the inner 15 sit at the same position. Without the ring the
+  // drag is a twelve-hour error that looks correct — the hand points exactly where it should.
+  const byThree = { hourStep: 3 };
+  const outer = timepickerDialPick(90, "hour", "24h", "outer", byThree);
+  const inner = timepickerDialPick(90, "hour", "24h", "inner", byThree);
+  assert.deepEqual([outer.value, outer.ring], [3, "outer"]);
+  assert.deepEqual([inner.value, inner.ring], [15, "inner"]);
+  assert.equal(outer.angle, inner.angle, "and they really are at one angle");
+});
+
+test("the angle returned is the number's, not the pointer's", () => {
+  // What lets a renderer rest the hand on what was chosen rather than under the finger.
+  const picked = timepickerDialPick(97, "hour", "12h", "outer");
+  assert.deepEqual([picked.value, picked.angle], [3, 90]);
 });

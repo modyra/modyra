@@ -13,8 +13,7 @@
 import type { MdyReactivity, MdySignal } from "@modyra/core";
 import { observerFor } from "@modyra/core";
 import {
-  angleToMinute,
-  dialHour,
+  to24Hour,
   formatTimeAs,
   getCurrentTime,
   parseAnyTime,
@@ -22,6 +21,9 @@ import {
   type MdyTimeFormat,
   type ParsedTime,
 } from "@modyra/core/datetime";
+import { acceptTimeField } from "../time-bounds.js";
+import { timeStepsAt, type MdyTimeSteps } from "../time-granularity.js";
+import { timepickerDialPick } from "./timepicker-dial.js";
 import { blocksValueChange } from "../interactivity.js";
 import { closeOverlayWhenOutOfPlay } from "./leaving-play.js";
 
@@ -93,6 +95,7 @@ export function createTimepickerFieldController(
     widgetId,
     handle,
     format = "12h" as MdyTimeFormat,
+    granularity,
     readonly: initialReadonly = false,
     viewMode: initialViewMode = "input",
   } = options;
@@ -109,6 +112,16 @@ export function createTimepickerFieldController(
   // it: neither renderer held it, so an entry the control could not read was rewritten away by the
   // next sync and nobody had decided that it should be.
   const entryText = reactivity.signal<string | null>(null);
+
+  /**
+   * The steps in force for the draft as it currently stands.
+   *
+   * Read per intent rather than captured, because a windowed granularity's minute step depends on
+   * the hour the draft is on — moving the hour into a window changes what its minutes offer, and a
+   * step resolved once would answer for the hour the popup opened at.
+   */
+  const stepsNow = (at: ParsedTime = draft()): MdyTimeSteps =>
+    timeStepsAt(granularity, to24Hour(at));
 
   const state: MdySignal<MdyTimepickerFieldState> = reactivity.computed(() => ({
     value: handle.value(),
@@ -282,13 +295,22 @@ export function createTimepickerFieldController(
         //
         // The half of the day now travels with the hour instead of only with `set-period`, which a
         // 24-hour picker correctly has no control for.
+        const entry = acceptTimeField("hour", format, intent.hour, stepsNow());
+        if (entry.type === "rejected" && entry.reason === "off-step") {
+          return refuse(`${intent.hour} is not an hour this clock offers.`);
+        }
         const chosen = hourFromFormat(intent.hour);
         if (chosen === null) return refuse(`${intent.hour} is not an hour this clock shows.`);
         draft.set({ ...draft(), ...chosen });
         return [];
       }
       case "set-minute": {
-        if (intent.minute < 0 || intent.minute > 59) return refuse(`${intent.minute} is not a minute.`);
+        const accepted = acceptTimeField("minute", format, intent.minute, stepsNow());
+        if (accepted.type === "rejected") {
+          return refuse(accepted.reason === "off-step"
+            ? `${intent.minute} is not a minute this clock offers.`
+            : `${intent.minute} is not a minute.`);
+        }
         draft.set({ ...draft(), minute: intent.minute });
         return [];
       }
@@ -298,13 +320,18 @@ export function createTimepickerFieldController(
       }
       case "set-from-angle": {
         const current = draft();
+        const ring = format === "24h" ? intent.ring ?? "outer" : "outer";
+        // The number the face drew, not arithmetic on the angle. Two roundings of one rule is how a
+        // hand comes to stop between the numbers beside it, with each half correct on its own terms.
+        const landed = timepickerDialPick(intent.angle, intent.field, format, ring, stepsNow(current));
+        if (landed === null) return refuse("this clock offers no value to land on.");
         if (intent.field !== "hour") {
-          draft.set({ ...current, minute: angleToMinute(intent.angle) });
+          draft.set({ ...current, minute: landed.value });
           return [];
         }
         // The ring is what tells 3 from 15: one direction, two numbers, and the arithmetic for it
         // lives in `@modyra/core/datetime` with the rest of the dial's.
-        const shown = dialHour(intent.angle, format === "24h" ? intent.ring ?? "outer" : "outer");
+        const shown = landed.value;
         const chosen = hourFromFormat(shown);
         if (chosen === null) return refuse(`${shown} is not an hour this clock shows.`);
         draft.set({ ...current, ...chosen });
