@@ -6,6 +6,8 @@
  * one states the invariant it demonstrates, so a reader knows what would be wrong if the panel
  * looked wrong.
  */
+import { MDY_WIDGET_CONTRACTS, MDY_WIDGET_KEYBOARD } from "@modyra/widgets";
+import { legend } from "./panels/shell.js";
 import { statesPanel } from "./panels/states.js";
 import { validationPanel } from "./panels/validation.js";
 import { collectionsPanel } from "./panels/collections.js";
@@ -56,6 +58,10 @@ function show(id, { push = true } = {}) {
   disposeCurrent?.();
   const { work, readout } = frame(panel);
   disposeCurrent = panel.mount(work, readout) ?? null;
+  // After the mount, because the legend reads the controls off the page rather than off a list a
+  // panel would have to keep in step with what it actually renders. One call here covers every panel,
+  // including the ones that build their fields some other way.
+  legend(work, { contracts: MDY_WIDGET_CONTRACTS, keyboard: MDY_WIDGET_KEYBOARD, title: "What is on this panel" });
   for (const button of nav.querySelectorAll("button")) {
     button.toggleAttribute("aria-current", button.dataset.panelId === panel.id);
     if (button.dataset.panelId === panel.id) button.setAttribute("aria-current", "page");

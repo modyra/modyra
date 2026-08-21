@@ -20,6 +20,8 @@ import {
 } from "@modyra/lit/adapter";
 import { defineMdyElements } from "@modyra/lit/ui";
 import { html, LitElement, nothing } from "lit";
+import { MDY_WIDGET_CONTRACTS, MDY_WIDGET_KEYBOARD } from "@modyra/widgets";
+import { legendWhenReady } from "../shared/legend.js";
 
 // Simulated availability endpoint. The abort signal cancels the request
 // when a newer keystroke supersedes the run (last-wins), so stale replies
@@ -417,3 +419,9 @@ class ConditionalSection extends LitElement {
   }
 }
 customElements.define("conditional-section", ConditionalSection);
+
+
+// The legend that says what each control on this page is, which keys it claims and which parts it
+// draws. Shared with every other example. The host is the app element rather than `#app`: this page
+// mounts a custom element, and its light DOM is where the fields land.
+legendWhenReady("signup-app", { contracts: MDY_WIDGET_CONTRACTS, keyboard: MDY_WIDGET_KEYBOARD });
