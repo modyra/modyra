@@ -47,22 +47,26 @@
           >
             <!-- The hand reaches only as far as the ring it points into: a 24-hour face puts two
                  hours at one direction, so one length leaves the two selections identical. -->
+            <!-- Which stretches of the ring offer nothing. Its own element, because the catalogue
+                 declares `dialUnavailable` as the parent of each arc — and before the hand, because
+                 positioned siblings paint in document order and this is the surface they sit on. -->
+            @if (unavailable().length > 0) {
+              <div class="mdy-timepicker-dial__unavailable-layer" aria-hidden="true">
+                @for (arc of unavailable(); track arc.ring + '-' + arc.from) {
+                  <div
+                    class="mdy-timepicker-dial__unavailable"
+                    [style.--tp-arc-from]="arc.from + 'deg'"
+                    [style.--tp-arc-span]="arc.span + 'deg'"
+                    [style.scale]="arc.ring === 'inner' ? innerRingScale : null"
+                  ></div>
+                }
+              </div>
+            }
             <div
               class="mdy-timepicker-dial__hand"
               [class.mdy-timepicker-dial__hand--inner]="handRing() === 'inner'"
               [style.transform]="'rotate(' + handRotation() + 'deg)'"
             ></div>
-            <!-- Which stretches of the ring offer nothing. Behind the numbers and the hand, because
-                 it is the surface they sit on rather than something in front of them. -->
-            @for (arc of unavailable(); track arc.ring + '-' + arc.from) {
-              <div
-                class="mdy-timepicker-dial__unavailable"
-                [style.--tp-arc-from]="arc.from + 'deg'"
-                [style.--tp-arc-span]="arc.span + 'deg'"
-                [style.scale]="arc.ring === 'inner' ? innerRingScale : null"
-                aria-hidden="true"
-              ></div>
-            }
             <!-- Where the pointer is, when that is not where the value went. Drawn only then: a
                  second hand permanently under the first would be a thing to look at that never
                  means anything. -->

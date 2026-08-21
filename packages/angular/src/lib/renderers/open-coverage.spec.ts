@@ -45,13 +45,45 @@ describe("the open-state suite's reach", () => {
       report.push(`${kind}: absent while open — ${missing.join(", ") || "none"}`);
     }
 
-    // Pinned rather than logged: the number is the claim the sibling suite's green is worth, so a
-    // renderer that quietly stops rendering half its popup fails here instead of passing there.
-    // A ratchet, not a target. 40 of the 45 are rendered by an open widget today; the five that are
-    // not are the two "no results" notes over populated lists, the two action bars this adapter does
-    // not draw, and the timepicker's inner dialog. A renderer that quietly stops rendering part of
-    // its popup fails here rather than passing the conformance run next door on a smaller subject.
-    expect(`${rendered >= 40 ? "ok" : "dropped"} ${rendered}/${total} — ${report.join(" | ")}`)
+    // Named rather than counted, and this is the second shape of this check.
+    //
+    // It was `rendered >= 40` against a total the contract supplies — so when the contract *grew*,
+    // the denominator moved and the floor did not. Three parts were declared, this adapter drew one
+    // of them, and 42 of 48 still cleared 40: a part entered the public contract, a renderer ignored
+    // it, and the gate built to catch exactly that stayed green. It called itself a ratchet and
+    // nothing ever raised it.
+    //
+    // Each exemption is now a decision with a reason, so a part that appears in the contract and
+    // nowhere in this adapter fails here on the day it is declared.
+    const EXPECTED_ABSENT: Readonly<Record<string, readonly string[]>> = {
+      // A note that appears when a search matches nothing, over a list that has results.
+      select: ["empty"],
+      multiselect: ["empty"],
+      // This adapter's calendars navigate months and years through the header rather than through
+      // their own pickers; the parts exist for renderers that draw them.
+      datepicker: ["monthPicker", "monthCell", "yearPicker", "yearCell"],
+      daterange: ["monthPicker", "monthCell", "yearPicker", "yearCell"],
+      // `dialog` is the timepicker's inner dialog, which the overlay panel is here. The period
+      // toggle is drawn only on a 12-hour picker and this fixture is 24-hour; the dimmed stretches
+      // only when `showUnavailable` asks for them, and it is off by default.
+      timepicker: ["dialog", "period", "periodOption", "dialUnavailable", "dialUnavailableArc"],
+    };
+
+    const unexpected = report
+      .map((line) => {
+        const [kind, absent] = line.split(": absent while open — ");
+        const parts = (absent ?? "").trim() === "none" ? [] : (absent ?? "").trim().split(", ");
+        const allowed = EXPECTED_ABSENT[kind!] ?? [];
+        const surprises = parts.filter((part) => !allowed.includes(part));
+        const returned = allowed.filter((part) => !parts.includes(part));
+        return [
+          ...surprises.map((part) => `${kind}: ${part} is in the contract and this adapter draws it nowhere`),
+          ...returned.map((part) => `${kind}: ${part} is drawn now — remove it from EXPECTED_ABSENT`),
+        ];
+      })
+      .flat();
+
+    expect(`${unexpected.length === 0 ? "ok" : "dropped"} ${rendered}/${total} — ${unexpected.join(" | ") || report.join(" | ")}`)
       .toMatch(/^ok /);
   });
 });

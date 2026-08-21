@@ -299,13 +299,14 @@ export function renderTimepickerField(
    * the finger.
    */
   function handLength(): number {
-    const declared = getComputedStyle(dialFace).getPropertyValue("--tp-hand-length").trim();
-    const measured = Number.parseFloat(declared);
+    // The hand's own height, not `--tp-hand-length`: a custom property resolves at use, so reading it
+    // back gives the token stream — `calc(256px/2 - 40px/2 - 8px)` — which no `parseFloat` reads.
+    // That branch never succeeded and the fallback ran instead: half the *face*, 128 where the hand
+    // is 100, so every angle-at-a-radius here was computed against a circle 28% too large.
+    const drawn = Number.parseFloat(getComputedStyle(dialHand).height);
     // Falls back to the face's own radius when the stylesheet is not loaded — a face with no CSS has
     // no rings drawn on it either, so the answer cannot be wrong about where they are.
-    return Number.isFinite(measured) && measured > 0
-      ? measured
-      : dialFace.getBoundingClientRect().width / 2;
+    return Number.isFinite(drawn) && drawn > 0 ? drawn : dialFace.getBoundingClientRect().width / 2;
   }
 
   /**
