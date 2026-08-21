@@ -43,6 +43,8 @@ export interface MdyWidgetDefinition<TPart extends string = string> {
    */
   readonly variants: Readonly<Partial<Record<MdyWidgetVariant, {
     readonly elements: Readonly<Record<string, MdyWidgetSemanticElement>>;
+    /** What a part announces as in this variant, where it differs from the kind's own answer. */
+    readonly roles: Readonly<Record<string, string>>;
     readonly required: readonly string[];
   }>>>;
   /**

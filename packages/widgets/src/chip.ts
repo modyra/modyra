@@ -224,6 +224,22 @@ export function chipDropIndex(
  * Answers `0` when the strip has nothing hidden, so the page keeps its own scrolling: a wheel
  * swallowed by a row that had nowhere to go is a page that will not move.
  */
+/**
+ * A wheel reaches what has scrolled out of a chip strip.
+ *
+ * ADR 0127 allows the row to scroll only where a mechanism reaches what leaves the viewport, and
+ * many desktop mice have no horizontal axis at all — so a vertical wheel over the strip has to move
+ * it sideways. The event is cancelled only when the strip actually has something hidden, or the
+ * gesture stops scrolling the page for no result.
+ */
+export function scrollChipStripByWheel(event: WheelEvent): void {
+  const strip = event.currentTarget as HTMLElement;
+  const delta = chipStripWheelDelta(event.deltaX, event.deltaY, strip.scrollWidth, strip.clientWidth);
+  if (delta === 0) return;
+  event.preventDefault();
+  strip.scrollLeft += delta;
+}
+
 export function chipStripWheelDelta(
   deltaX: number,
   deltaY: number,

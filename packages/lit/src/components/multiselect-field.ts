@@ -9,7 +9,7 @@ import {
   chipMovedAnnouncement,
   chipDropIndex,
   stateClass,
-  chipStripWheelDelta,
+  scrollChipStripByWheel,
   isTypeaheadCharacter,
 } from "@modyra/widgets";
 import { type MdyFieldHandle, type MdyMultiselectMode, type MdySelectOption } from "@modyra/core";
@@ -552,10 +552,10 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
    * rather than the binding would have to know that.
    */
   private onChipKeydown(event: KeyboardEvent, handle: MdyFieldHandle<readonly unknown[]>, optionKey: string): void {
-    const binding = keyBindingFor("multiselect", `${event.altKey ? "Alt+" : ""}${event.key}`, this._open);
-    // Only the intents this chip answers. A key the chip does not handle — `ArrowDown` opening the
-    // popup, say — must reach the control, and swallowing it here left it doing nothing at all.
-    if (!binding || !["move", "remove", "reorder"].includes(binding.intent)) return;
+    // Asked as the chip. A key with no binding here belongs to the control and must reach it —
+    // `ArrowDown` opens the popup from the trigger and steps the quantity from a counter chip.
+    const binding = keyBindingFor("multiselect", `${event.altKey ? "Alt+" : ""}${event.key}`, this._open, "chip");
+    if (!binding) return;
     // The chip's keys are the chip's. Left to bubble, the control's own handler answers the same
     // keys a second time and its answer lands on top of this one.
     event.stopPropagation();
@@ -569,6 +569,14 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
         ? (binding.by === -1 ? 0 : order.length - 1)
         : Math.max(0, Math.min(order.length - 1, at + (binding.by ?? 1)));
       this.focusChip(order[to]);
+      return;
+    }
+    if (binding.intent === "step") {
+      event.preventDefault();
+      // A counter chip announces itself as a spinbutton; these are the keys that make that true.
+      this.fieldController?.dispatch(
+        event.key === "ArrowUp" ? { type: "increment", optionKey } : { type: "decrement", optionKey },
+      );
       return;
     }
     if (binding.intent === "remove") {
@@ -616,19 +624,8 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
     return count === 0 ? "" : this.messages.selectionCount.replace("{count}", String(count));
   }
 
-  /**
-   * A wheel reaches what has scrolled out of the strip.
-   *
-   * ADR 0127 allows the row to scroll only if there is a mechanism rather than a cue, and many
-   * desktop mice have no horizontal axis at all.
-   */
-  private onStripWheel(event: WheelEvent): void {
-    const strip = event.currentTarget as HTMLElement;
-    const delta = chipStripWheelDelta(event.deltaX, event.deltaY, strip.scrollWidth, strip.clientWidth);
-    if (delta === 0) return;
-    event.preventDefault();
-    strip.scrollLeft += delta;
-  }
+  /** The strip's wheel behaviour is the contract's; see `scrollChipStripByWheel`. */
+  private readonly onStripWheel = scrollChipStripByWheel;
 
   /**
    * The change, not the list, and nothing while the popup is open.
@@ -662,7 +659,10 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
     return [...tally.values()].map(({ value, label, count }, index) => html`<span
       class=${multiselectChipClasses({ mode: this.mode, selected: true }).join(" ")}
       tabindex=${this.activeChip(handle) === String(value) ? "0" : "-1"}
-      role="group"
+      role=${this.mode === "multi" ? "spinbutton" : "group"}
+      aria-valuenow=${this.mode === "multi" ? count : nothing}
+      aria-valuemin=${this.mode === "multi" ? 0 : nothing}
+      aria-valuetext=${this.mode === "multi" ? (count > 1 ? `${label}, ${count}` : label) : nothing}
       @focus=${() => { this._activeChip = String(value); }}
       @pointerdown=${(e: PointerEvent) => this.startChipDrag(e, handle, String(value))}
       @keydown=${(e: KeyboardEvent) => this.onChipKeydown(e, handle, String(value))}

@@ -1,4 +1,4 @@
-import { chipDropIndex, chipFocusAfterRemoval, chipStripWheelDelta, isTypeaheadCharacter, chipMovedAnnouncement, stateClass, keyBindingFor, multiselectAnnouncement, optionsWithUnrecognizedValues, overlayControlledId, projectOverlayOpenerA11y } from "@modyra/widgets";
+import { chipDropIndex, chipFocusAfterRemoval, scrollChipStripByWheel, isTypeaheadCharacter, chipMovedAnnouncement, stateClass, keyBindingFor, multiselectAnnouncement, optionsWithUnrecognizedValues, overlayControlledId, projectOverlayOpenerA11y } from "@modyra/widgets";
 import { MdyPartDirective } from "../../control/mdy-part.directive";
 import { NgTemplateOutlet } from "@angular/common";
 import {
@@ -102,7 +102,10 @@ import type { MdyOverlayBranch, MdyOverlayOwner } from "../../core/overlay-contr
             <span
               [class]="chipClasses(true)"
               [attr.tabindex]="activeChip() === held.key ? 0 : -1"
-              role="group"
+              [attr.role]="mode() === 'multi' ? 'spinbutton' : 'group'"
+              [attr.aria-valuenow]="mode() === 'multi' ? held.count : null"
+              [attr.aria-valuemin]="mode() === 'multi' ? 0 : null"
+              [attr.aria-valuetext]="mode() === 'multi' ? (held.count > 1 ? held.label + ', ' + held.count : held.label) : null"
               [attr.data-key]="held.key"
               (focus)="activeChipKey.set(held.key)"
               (pointerdown)="startChipDrag($event, held.key)"
@@ -482,10 +485,10 @@ export class MdyMultiselectComponent<TValue = string>
    * rather than the binding would have to know that.
    */
   protected onChipKeydown(event: KeyboardEvent, optionKey: string): void {
-    const binding = keyBindingFor("multiselect", `${event.altKey ? "Alt+" : ""}${event.key}`, this.open());
-    // Only the intents this chip answers. A key the chip does not handle — `ArrowDown` opening the
-    // popup, say — must reach the control, and swallowing it here left it doing nothing at all.
-    if (!binding || !["move", "remove", "reorder"].includes(binding.intent)) return;
+    // Asked as the chip. A key with no binding here belongs to the control and must reach it —
+    // `ArrowDown` opens the popup from the trigger and steps the quantity from a counter chip.
+    const binding = keyBindingFor("multiselect", `${event.altKey ? "Alt+" : ""}${event.key}`, this.open(), "chip");
+    if (!binding) return;
     // The chip's keys are the chip's. Left to bubble, the control's own handler answers the same
     // keys a second time and its answer lands on top of this one.
     event.stopPropagation();
@@ -498,6 +501,14 @@ export class MdyMultiselectComponent<TValue = string>
         ? (binding.by === -1 ? 0 : order.length - 1)
         : Math.max(0, Math.min(order.length - 1, at + (binding.by ?? 1)));
       this.focusChip(order[to]);
+      return;
+    }
+    if (binding.intent === "step") {
+      event.preventDefault();
+      // A counter chip announces itself as a spinbutton; these are the keys that make that true.
+      this.controller()?.dispatch(
+        event.key === "ArrowUp" ? { type: "increment", optionKey } : { type: "decrement", optionKey },
+      );
       return;
     }
     if (binding.intent === "remove") {
@@ -618,19 +629,8 @@ export class MdyMultiselectComponent<TValue = string>
     return count === 0 ? "" : this.i18n.selectionCount.replace("{count}", String(count));
   });
 
-  /**
-   * A wheel reaches what has scrolled out of the strip.
-   *
-   * ADR 0127 allows the row to scroll only if there is a mechanism rather than a cue, and many
-   * desktop mice have no horizontal axis at all.
-   */
-  protected onStripWheel(event: WheelEvent): void {
-    const strip = event.currentTarget as HTMLElement;
-    const delta = chipStripWheelDelta(event.deltaX, event.deltaY, strip.scrollWidth, strip.clientWidth);
-    if (delta === 0) return;
-    event.preventDefault();
-    strip.scrollLeft += delta;
-  }
+  /** The strip's wheel behaviour is the contract's; see `scrollChipStripByWheel`. */
+  protected readonly onStripWheel = scrollChipStripByWheel;
 
   /**
    * The pointer's way to move a chip, which is not a drag.

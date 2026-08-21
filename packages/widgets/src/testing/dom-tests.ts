@@ -197,9 +197,13 @@ export function partsSharingClassesWith(kind: MdyWidgetKind, part: string): read
 }
 
 /** An `input[type=button]` is a button; a bare `input` is a control. Tags alone cannot say so. */
-function satisfiesSemanticElement(element: Element, semantic: string): boolean {
+function satisfiesSemanticElement(element: Element, semantic: string, declaredRole?: string): boolean {
   const allowed = MDY_SEMANTIC_ELEMENTS[semantic];
   if (!allowed) return true;
+  // A role the contract itself asks for is not a claim the element made up. `container` admits no
+  // roles by construction — it is the word for a box that announces nothing — so a part the contract
+  // gives a role to would otherwise fail its own requirement.
+  if (declaredRole && element.getAttribute("role") === declaredRole) return true;
   const tag = element.tagName.toLowerCase();
   const role = element.getAttribute("role");
   if (role && allowed.roles.includes(role)) return true;
@@ -471,14 +475,18 @@ export function inspectWidgetDom(
     // A part the contract gives a role must carry it. `element` says what a part may be — the
     // semantic lists the roles it admits — and this says which one it has to have, so the contract
     // can require a listbox rather than merely permit one.
-    if (contract?.role) {
+    // The variant's role wins where it states one: a counter chip is a `spinbutton` and a toggle
+    // chip a `group`, which is one part answering differently in two modes of one widget rather than
+    // two parts.
+    const wantedRole = (variant?.roles as Record<string, string> | undefined)?.[node.part] ?? contract?.role;
+    if (wantedRole) {
       for (const element of elements) {
         const actual = element.getAttribute("role") ?? implicitRole(element);
-        if (actual !== contract.role) {
+        if (actual !== wantedRole) {
           issues.push({
             code: "PART_ROLE",
             part: node.part,
-            message: `${node.part} must carry role="${contract.role}", got ${actual ? `role="${actual}"` : `<${element.tagName.toLowerCase()}> with none`}`,
+            message: `${node.part} must carry role="${wantedRole}", got ${actual ? `role="${actual}"` : `<${element.tagName.toLowerCase()}> with none`}`,
           });
         }
       }
@@ -518,7 +526,9 @@ export function inspectWidgetDom(
       // A varianted kind states its element per configuration; the shared declaration is what the
       // variants agree on, which for a part that genuinely differs is nothing useful.
       const expectedElement = variant?.elements[node.part] ?? (node.element as string);
-      if (!satisfiesSemanticElement(element, expectedElement)) {
+      const declaredRole = (variant?.roles as Record<string, string> | undefined)?.[node.part]
+        ?? (definition.parts[node.part as keyof typeof definition.parts] as MdyPartContract | undefined)?.role;
+      if (!satisfiesSemanticElement(element, expectedElement, declaredRole)) {
         issues.push({
           code: "PART_ELEMENT",
           part: node.part,

@@ -132,7 +132,7 @@ export const MDY_WIDGET_CONTRACTS = Object.freeze({
       // `group` and not `listbox`: a listbox's children are options a person moves through with the
       // arrows, and these are chips that toggle. Naming the stronger role would promise a keyboard
       // model the grid does not have.
-      roles: { options: "group", popup: "dialog" },
+      roles: { options: "group", chip: "group", popup: "dialog" },
       states: { trigger: ["open", "disabled", "readonly", "invalid", "loading"], option: ["selected"], chip: ["selected", "removable", "dragging"], popup: POPUP_PLACEMENT_STATES },
       classes: { box: ["mdy-multiselect"], trigger: ["mdy-multiselect__trigger"], arrow: ["mdy-multiselect__arrow"], options: ["mdy-multiselect__options", "mdy-multiselect-overlay__grid"], optionWrapper: [MDY_CHIP_CLASSES.wrapper], option: [MDY_CHIP_CLASSES.block], optionCheck: [MDY_CHIP_CLASSES.check], optionLabel: [MDY_CHIP_CLASSES.label], optionCount: [MDY_CHIP_CLASSES.count], optionStep: [MDY_CHIP_CLASSES.step], chips: ["mdy-multiselect__chips"], chip: [MDY_CHIP_CLASSES.block, MDY_CHIP_CLASSES.value], chipRemove: [MDY_CHIP_CLASSES.remove], chipMove: [MDY_CHIP_CLASSES.move], announcement: ["mdy-multiselect__announcement"], placeholder: ["mdy-multiselect__placeholder"], popup: ["mdy-multiselect__dropdown", MDY_POPUP_CLASS, MDY_POPUP_SURFACE_CLASS, "mdy-multiselect-overlay__panel"], search: ["mdy-multiselect-overlay__input"], loading: ["mdy-select__loader"], empty: ["mdy-multiselect-overlay__empty"] } ,
       // The two mode markers a chip carries. `--centered` reserves the width its tick will need in
@@ -147,7 +147,14 @@ export const MDY_WIDGET_CONTRACTS = Object.freeze({
       // a button inside a button, which is neither valid nor what any renderer emits.
       variants: {
         single: { elements: { option: "button" }, required: ["optionCheck"] },
-        multi: { elements: { option: "container" }, required: ["optionStep", "optionCount"] },
+        // A counter chip *is* the spinbutton: the chip carries the role rather than a focusable child
+        // of it, which is what ADR 0128 leaves room for — one tab stop, and the quantity announced
+        // natively as it changes rather than through a live region firing beside two buttons.
+        multi: {
+          elements: { option: "container" },
+          roles: { chip: "spinbutton" },
+          required: ["optionStep", "optionCount"],
+        },
       } ,
       required: ["trigger", "chips", "announcement", "option", "optionLabel", "options"] }),
   datepicker: define("datepicker", ["mdy-renderer", "mdy-renderer--datepicker"], ["root", "label", "requiredMarker", "inputWrapper", "control", "toggle", "popup", "dialogHeader", "calendar", "grid", "weekdays", "weekday", "row", "gridcell", "monthPicker", "monthCell", "yearPicker", "yearCell", "inlineError", "supportingText", "errors", "errorItem"] as const, true,

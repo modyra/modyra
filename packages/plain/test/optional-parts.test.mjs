@@ -127,7 +127,10 @@ test("a counter-mode multiselect renders its steppers and count, and conforms", 
       // A repeated part is mapped with every element it rendered: mapping one of several makes each
       // of the others' children look mis-parented.
       optionWrapper: Array.from(root.querySelectorAll(".mdy-chip-wrapper")),
-      option: Array.from(root.querySelectorAll(".mdy-chip")),
+      // An option is a chip in the *list*; a chip in the strip stands for a value. They share
+      // `mdy-chip`, so an unscoped sweep maps one part onto both and reports the value chip's
+      // spinbutton role as an option's.
+      option: Array.from(root.querySelectorAll(".mdy-chip:not(.mdy-chip--value)")),
       optionLabel: Array.from(root.querySelectorAll(".mdy-chip__label")),
       optionStep: Array.from(root.querySelectorAll(".mdy-chip__btn")),
       optionCount: Array.from(root.querySelectorAll(".mdy-chip__count")),
@@ -139,6 +142,9 @@ test("a counter-mode multiselect renders its steppers and count, and conforms", 
     // `chip` is present now: the value chosen above put one in the strip, which is the whole point
     // of choosing it. `optionCheck` is toggle mode's tick, which a counter chip has no room for.
     absentParts: ["loading", "empty", "optionCheck"],
+    // Counter mode, which this fixture mounts. Left unsaid, the anatomy is checked against what the
+    // two modes agree on — and they no longer agree about what a chip announces as.
+    variant: "multi",
     strictClasses: true,
     adapterPrefix: "mdy-plain-",
   });

@@ -250,6 +250,7 @@ import { MdyToggleComponent } from "../renderers/toggle/toggle-renderer.componen
                 [supportingText]="f.supportingText"
                 [options]="f.options"
                 [initialValue]="emptyFor(f)"
+                [mode]="asOptions(f).mode ?? 'single'"
                 [searchable]="asOptions(f).searchable ?? false"
                 [reorderable]="asOptions(f).reorderable ?? false"
               />
@@ -301,8 +302,12 @@ export class MdyDynamicFormComponent {
   protected readonly initialView = MDY_TIMEPICKER_INITIAL_VIEW;
 
   /** An options field's own members, read from the union the template narrows by `kind`. */
-  protected asOptions(field: MdyDynamicField): { readonly searchable?: boolean; readonly reorderable?: boolean } {
-    return field as { searchable?: boolean; reorderable?: boolean };
+  protected asOptions(field: MdyDynamicField): {
+    readonly searchable?: boolean;
+    readonly reorderable?: boolean;
+    readonly mode?: "single" | "multi";
+  } {
+    return field as { searchable?: boolean; reorderable?: boolean; mode?: "single" | "multi" };
   }
 
   /** A timepicker's own members, read from the union the template narrows by `kind`. */
