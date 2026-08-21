@@ -64,6 +64,7 @@ export abstract class MdyFieldElement<T> extends LitElement {
   static properties: PropertyDeclarations = {
     field: { attribute: false },
     label: { type: String },
+    supportingText: { type: String, attribute: "supporting-text" },
     inlineErrors: { type: Boolean, attribute: "inline-errors" },
     floatingLabel: { type: Boolean, attribute: "floating-label" },
     locale: { type: String },
@@ -71,6 +72,8 @@ export abstract class MdyFieldElement<T> extends LitElement {
 
   declare field: MdyFieldHandle<T> | undefined;
   declare label: string;
+  /** The line under the control: a format, a limit, why the field is there. */
+  declare supportingText: string | undefined;
   declare inlineErrors: boolean;
   declare floatingLabel: boolean;
   /**
@@ -467,7 +470,15 @@ export abstract class MdyFieldElement<T> extends LitElement {
   /** Helper text slot rendered when no block errors are shown. It carries the id the widget
    * contract describes the control by — an unrendered id would leave that reference dangling. */
   protected renderSupportingText(): unknown {
-    return html`<div class="${SHELL.supportingText}" id=${this.descriptionId}><slot name="supporting-text"></slot></div>`;
+    // No height when there is nothing to say, and still present: `aria-describedby` names this id
+    // unconditionally, so removing the element leaves the reference pointing at nothing — which is
+    // the defect one step worse than an empty description.
+    const empty = !this.supportingText && !this.querySelector('[slot="supporting-text"]');
+    return html`<div
+      class="${SHELL.supportingText}"
+      id=${this.descriptionId}
+      ?hidden=${empty}
+    >${this.supportingText ?? nothing}<slot name="supporting-text"></slot></div>`;
   }
 
   /** Error list block (rendered only once the field was touched). */

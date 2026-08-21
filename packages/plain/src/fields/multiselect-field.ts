@@ -52,7 +52,7 @@ export function renderMultiselectField(
   const controller = createMultiselectFieldController({ widgetId: widgetId, handle, options, keyFor, mode }, reactivity);
 
   const parts = MDY_WIDGET_CONTRACTS.multiselect.parts;
-  const shell = buildFieldShell(f.label, "multiselect", {}, f.ariaLabel, f.name);
+  const shell = buildFieldShell(f.label, "multiselect", {}, f.ariaLabel, f.name, f.supportingText);
 
   // ── the field: a header with the search button, and the options as chips ──────────────────
   // The widget's own layout box, as the single-choice sibling has one. Not the `inputWrapper` part:

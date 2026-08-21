@@ -65,6 +65,18 @@ interface MdyDynamicFieldBase {
    * user asks for "Item" and the machine is listening for something else.
    */
   readonly ariaLabel?: string;
+  /**
+   * The line under the control: a format, a limit, why the field is there.
+   *
+   * Every renderer already draws this slot and names it with `aria-describedby`, and until now
+   * nothing could put words in it — so a screen reader following the reference arrived at an empty
+   * element, which is worse than no reference at all. The slot was the promise; this is the half
+   * that lets it be kept.
+   *
+   * Not an error. An error is a verdict on the value and comes and goes with it; this is a property
+   * of the field and does not change when the value does.
+   */
+  readonly supportingText?: string;
   readonly placeholder?: string;
   readonly initialValue?: unknown;
   readonly validators?: MdyDynamicValidators;

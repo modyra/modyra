@@ -38,6 +38,8 @@ export function buildFieldShell(
   ariaLabel?: string,
   /** The field's own name, which names the control when nothing written for a person does. */
   fieldName?: string,
+  /** The line under the control, when the field declares one. */
+  supportingText?: string,
 ): FieldShell {
   const root = el("div") as HTMLDivElement;
   root.classList.add(...MDY_WIDGET_CONTRACTS[kind].rootClasses);
@@ -66,6 +68,11 @@ export function buildFieldShell(
     wrapper.appendChild(suffix);
   }
   const description = el("p", MDY_FIELD_SHELL_CLASSES.supportingText) as HTMLParagraphElement;
+  // Empty until a field declares words for it. Hidden while it is, because a slot with nothing in it
+  // is height a person cannot read, and `aria-describedby` naming an empty element sends a screen
+  // reader somewhere and gives it nothing to say.
+  if (supportingText) setText(description, supportingText);
+  description.hidden = !supportingText;
   const errorList = el("ul", MDY_FIELD_SHELL_CLASSES.errors) as HTMLUListElement;
 
   root.append(label, wrapper, description, errorList);

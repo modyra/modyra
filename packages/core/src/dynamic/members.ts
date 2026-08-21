@@ -24,6 +24,7 @@ const FIELD_BASE = [
   "label",
   "ariaLabel",
   "placeholder",
+  "supportingText",
   "initialValue",
   "validators",
   "sensitive",
