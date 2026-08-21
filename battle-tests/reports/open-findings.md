@@ -19303,3 +19303,62 @@ that stops the tremor by refusing to change at all passes everything except that
 dial that still flickered under the user's finger. The measurement was correct and the *claim* was too
 narrow — a green that answered a smaller question than the one asked. `esecutore` measured a real
 pointer on three hosts and got zero changes, which was true and still not the answer.
+
+## 340 — The hand's length is measured from the hand, and the hand is shorter on the inner ring (S1, UI-011 — RELEASE BLOCKER, all three renderers)
+
+Reported by the user: *"tenendo il mouse sul 14 e se mi muovo appena scatta sul 2 anche se sono sul
+14"*, then *"anche plain ha lo stesso errore di angular"*. 14 and 2 sit at the **same angle**, one ring
+apart, so this is a ring flip — after 338 had supposedly fixed ring flips.
+
+Measured on the Angular host, pointer on the **centre** of the 14, moving at most two pixels:
+
+```
+reach 60 (the exact centre of the inner numbers)
+02 14 02 14 02 14 02 14      →  7 changes in 8 events
+```
+
+Not a tremor. It alternates on **every** event, which is a feedback loop.
+
+**The cause.** Every angle-at-a-radius is computed against `handLength`, and all three renderers obtain
+it the same way — introduced together in `66b5ba14` when the unresolved `calc()` was fixed:
+
+```
+plain    Number.parseFloat(getComputedStyle(dialHand).height)
+lit      Number.parseFloat(getComputedStyle(hand).height)
+angular  Number.parseFloat(getComputedStyle(hand).height)
+```
+
+The real hand carries `--inner` when it points inward, and the sheet draws that one at
+`handLength × MDY_TIMEPICKER_INNER_RING`. **The measurement is taken from an element whose size is a
+function of the answer the measurement produces:**
+
+```
+hand on inner (14)  → drawn 60  → thresholds from 60 → r=60 reads outer → value 2
+hand on outer (2)   → drawn 100 → thresholds 70/90   → r=60 reads inner → value 14
+```
+
+Each state causes the other.
+
+**338's hysteresis cannot damp this.** Hysteresis compares a distance against thresholds; here the
+thresholds are what moves. That is why the ring fix measured zero changes and the user still saw the
+value flip — the fix was correct and aimed at a different mechanism.
+
+**Not an Angular defect.** All three implementations are the same line, so this is one wrong idea in
+three places rather than three bugs — and the user found it on plain before I could reproduce it there.
+
+**The shape of the fix.** The reference length must not be read from something that scales with the
+answer. The drawn hand is `full × (inner ? MDY_TIMEPICKER_INNER_RING : 1)`, so normalising by the
+modifier the element carries recovers `full` from either state using a published constant and no new
+geometry. Better still as one shared helper in the contract, since the identical line in three files
+is exactly how this arrived.
+
+**Battle**: `a-ruler-that-is-one-of-the-things-measured.spec.ts`. Rests the pointer on the *centre* of
+an inner number — 20px inside the nearest boundary, as unambiguous as the face gets — and reads **the
+hour the header shows**, not an internal. 338's battle asserted the ring and went green while the
+displayed hour still flipped; this one asserts what the person sees.
+
+**Plain and Lit are not in the spec yet**: my probe cannot lay their dial out in this host — plain
+returns a hand of height 0 with every number at the face centre — and a spec that green-lights an
+unlaid-out face is worse than one that omits it. The user has confirmed plain from the running demo.
+Angular reproduces cleanly and the cause is shared, so the fix is verifiable on all three by the same
+measurement once the host issue is solved. That host issue is mine.
