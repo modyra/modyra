@@ -23,7 +23,7 @@ import {
 } from "@modyra/core/datetime";
 import { acceptTimeField } from "../time-bounds.js";
 import { timeStepsAt, type MdyTimeSteps } from "../time-granularity.js";
-import { timepickerDialPick } from "./timepicker-dial.js";
+import { timepickerDialPick, timepickerSelectedDialValue } from "./timepicker-dial.js";
 import { blocksValueChange } from "../interactivity.js";
 import { closeOverlayWhenOutOfPlay } from "./leaving-play.js";
 
@@ -323,7 +323,11 @@ export function createTimepickerFieldController(
         const ring = format === "24h" ? intent.ring ?? "outer" : "outer";
         // The number the face drew, not arithmetic on the angle. Two roundings of one rule is how a
         // hand comes to stop between the numbers beside it, with each half correct on its own terms.
-        const landed = timepickerDialPick(intent.angle, intent.field, format, ring, stepsNow(current));
+        // The number in hand goes back in, so a tremor at the boundary between two of them does not
+        // keep swapping the value: at a hand of 100 one degree is 1.75px of arc, and the hour was
+        // changing several times while the hand was, to its owner, still.
+        const held = timepickerSelectedDialValue(intent.field, current, format);
+        const landed = timepickerDialPick(intent.angle, intent.field, format, ring, stepsNow(current), held);
         if (landed === null) return refuse("this clock offers no value to land on.");
         if (intent.field !== "hour") {
           draft.set({ ...current, minute: landed.value });

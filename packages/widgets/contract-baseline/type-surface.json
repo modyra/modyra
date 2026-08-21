@@ -3423,6 +3423,7 @@
     "(2) format?: MdyTimeFormat",
     "(3) ring?: \"outer\" | \"inner\"",
     "(4) steps?: MdyTimeSteps",
+    "(5) previous?: number",
     "-> returns: MdyTimepickerDialPick | null"
   ],
   "timepickerDialRing": [

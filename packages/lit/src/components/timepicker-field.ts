@@ -154,7 +154,7 @@ export class MdyTimepickerFieldElement extends MdyFieldElement<string | null> {
     if (!this._isDragging || this._dragAngle === null) return null;
     const draft = this.fieldController?.state().draft;
     const steps = draft ? timeStepsAt(this.granularity, to24Hour(draft)) : MDY_EVERY_TIME;
-    const pick = timepickerDialPick(this._dragAngle, this.dragField, this.format, this._dragRing, steps);
+    const pick = timepickerDialPick(this._dragAngle, this.dragField, this.format, this._dragRing, steps, draft ? timepickerSelectedDialValue(this.dragField, draft, this.format) : undefined);
     if (!pick) return null;
     return timepickerDialGhost(this._dragAngle, pick, {
       ring: this._dragRing,
