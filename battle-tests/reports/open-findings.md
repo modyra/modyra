@@ -19122,3 +19122,46 @@ drawing every declared part; this one holds the evidence to being current.
 
 Raised with `esecutore`, who agreed the pin belongs there and asked that it not be copied without
 deciding what a re-read means for a baseline. This is that decision, recorded rather than assumed.
+
+## 336 — The ghost hand is longest where the pointer is nearest the centre (S1, UI-011 — Modyra bug, handed to esecutore)
+
+The floor that was specified for the ghost and then removed — because it lies at exactly the radius a
+person is checking whether the hand tracks them — is back as a fallback:
+
+```ts
+const reach = hand > 0 && pointer > 0 ? Math.min(pointer / hand, 1) : 1;
+```
+
+`pointer > 0` puts a pointer **at the centre** in the same branch as a pointer nobody measured, and
+that branch answers `1`. Measured through the public entry at a hand length of 100:
+
+```
+pointer   0    → reach 1        the full hand
+pointer   2.5  → reach 0.025    a 2.5px stub
+pointer  50    → reach 0.5
+pointer 100    → reach 1
+pointer 180    → reach 1        capped, correct
+```
+
+The function is **discontinuous at a point it can be handed**: 1px out draws a stub, dead centre draws
+the whole hand. The rule it was built to is *"la fine sempre sotto il mio puntatore tranne quando la
+lunghezza eccede la circonferenza massima"*, and the centre is not the exception — the cap is.
+
+**Two situations collapsed into one branch.** `handLength <= 0` is *no geometry known*, where `1` is a
+reasonable thing to say because nothing better is available. `pointerReach === 0` is geometry known
+perfectly, describing a pointer at the middle, and its answer is 0. The fix separates them; the
+unmeasured-face fallback is asserted separately so it is not lost in the repair.
+
+The night's recurring shape, a fourth time: **a legitimate value indistinguishable from its own
+absence.** `[]` for a face with nothing to dim (332a), `outer` from a rect that was never read (my own
+broken call), `NaN` from a `calc()` that never resolved (`66b5ba14`), and now `0` for a pointer that
+really is at the centre.
+
+**Battle**: `a-ghost-that-grows-as-you-come-in.battle.test.mjs`, asserted as **monotonicity** rather
+than as the single point — coming inward must never lengthen the hand. That is what the rule means,
+and it catches any later fallback that reintroduces the same thing elsewhere on the radius. Registered
+in `known-red.json`.
+
+**Reachability**: needs the pointer at the exact centre pixel, so it is rare with a mouse and less rare
+with integer touch coordinates. Filed at S1 for the discontinuity rather than the frequency — a
+function that inverts at a value in its own domain is wrong regardless of how often it is asked.
