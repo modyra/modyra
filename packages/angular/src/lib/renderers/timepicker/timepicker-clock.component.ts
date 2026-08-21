@@ -28,7 +28,10 @@ import {
   timepickerDialAria,
   timepickerDialKeyIntent,
   timepickerDialNumbers,
+  timepickerDialGhost,
+  timepickerDialPick,
   timepickerDialRing,
+  timepickerDialTolerance,
   timepickerSelectedRing,
   timeStepsAt,
   MDY_EVERY_TIME,
@@ -53,6 +56,8 @@ export class MdyTimepickerClockComponent {
   readonly format = input<MdyTimeFormat>("12h");
   /** Which times the field offers. Absent offers every one. */
   readonly granularity = input<MdyTimeGranularity | undefined>(undefined);
+  /** Whether the hand moves rather than jumps. Off by default: today's behaviour exactly. */
+  readonly animateHand = input<boolean>(false);
 
   /**
    * The steps in force for the time on screen.
@@ -197,6 +202,29 @@ export class MdyTimepickerClockComponent {
     timepickerDialAria(this.focusedField(), this.format(), this.faceValue()),
   );
 
+  /** How long the hand is, measured when a gesture starts — the tolerance is an angle at a radius. */
+  private readonly dragHandLength = signal(0);
+
+  /**
+   * The faint hand under the pointer, when the pointer is not on the number that was chosen.
+   *
+   * Both its angle and its ring are the pointer's, because it answers "what happens if I release
+   * now" — the real hand answers "what is chosen". A picker that offers every time never draws one:
+   * its numbers are 6° apart, so the finger is never off them.
+   */
+  protected readonly ghost = computed(() => {
+    if (!this.isDragging()) return null;
+    const angle = this.dragAngle();
+    if (angle === null) return null;
+    const ring = this.dragRing();
+    const pick = timepickerDialPick(angle, this.dragField, this.format(), ring, this.steps());
+    if (pick === null) return null;
+    return timepickerDialGhost(angle, pick, {
+      ring,
+      within: timepickerDialTolerance(ring, this.dragHandLength()),
+    });
+  });
+
   /** Which ring the hand points into, from the contract's own predicate. */
   protected readonly handRing = computed(() => {
     if (this.isDragging()) return this.dragRing();
@@ -204,10 +232,15 @@ export class MdyTimepickerClockComponent {
     return parsed ? timepickerSelectedRing(this.focusedField(), parsed, this.format()) : "outer";
   });
 
+  /**
+   * The real hand points at the value, including while a finger is moving.
+   *
+   * It used to follow the pointer, which on a face that offers every time is the same thing — the
+   * chosen value is always under the finger. On a face that snaps it is not: the hand would sit
+   * between two numbers and jump on release, so the one thing on screen that says what is chosen
+   * spent the whole gesture saying something else. The pointer gets its own hand instead.
+   */
   protected readonly handRotation = computed(() => {
-    if (this.isDragging() && this.dragAngle() !== null) {
-      return this.dragAngle()!;
-    }
     const p = this.parsed();
     if (!p) return 0;
     return this.focusedField() === "minute"
@@ -373,6 +406,8 @@ export class MdyTimepickerClockComponent {
     if (!coords) return;
     const face = el.getBoundingClientRect();
     this.dragAngle.set(pointerAngle(face, coords.clientX, coords.clientY));
-    this.dragRing.set(timepickerDialRing(face, coords.clientX, coords.clientY, this.format(), handLengthOf(el, face), this.dragField));
+    const handLength = handLengthOf(el, face);
+    this.dragHandLength.set(handLength);
+    this.dragRing.set(timepickerDialRing(face, coords.clientX, coords.clientY, this.format(), handLength, this.dragField));
   }
 }

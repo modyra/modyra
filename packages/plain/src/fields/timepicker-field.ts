@@ -22,7 +22,10 @@ import {
   showsAsInvalid,
   stepTimeField,
   timeFieldBounds,
+  timepickerDialGhost,
   timepickerDialNumbers,
+  timepickerDialPick,
+  timepickerDialTolerance,
   timepickerSelectedRing,
   timeStepsAt,
   timepickerDialRing,
@@ -116,9 +119,19 @@ export function renderTimepickerField(
   // and which numbers those are is `timepickerDialNumbers` — the hours, or the minutes in fives with
   // 0 at the top. A renderer working that out for itself is a renderer with its own clock.
   const clock = el("div", parts.clock.classes.join(" "));
+  // A hand that moves rather than jumps, when the document asks for it. Off by default: a hand that
+  // animates is briefly not where the value is, and on a face that snaps the two would disagree for
+  // the length of the transition.
+  if (f.animateHand === true) clock.classList.add("mdy-timepicker-dial--animated");
   const dialFace = el("div", parts.dialFace.classes.join(" "));
   const dialHand = el("div", parts.dialHand.classes.join(" "));
   dialFace.appendChild(dialHand);
+  // Where the pointer is, when that is not where the value went. Hidden unless a gesture is putting
+  // the two in different places, because a second hand permanently under the first says nothing.
+  const ghostHand = el("div", `${parts.dialHand.classes.join(" ")} mdy-timepicker-dial__hand--ghost`);
+  ghostHand.setAttribute("aria-hidden", "true");
+  ghostHand.hidden = true;
+  dialFace.appendChild(ghostHand);
   clock.appendChild(dialFace);
 
   const content = el("div", parts.content.classes.join(" "));
@@ -272,6 +285,25 @@ export function renderTimepickerField(
       : dialFace.getBoundingClientRect().width / 2;
   }
 
+  /**
+   * Draws the faint hand where the pointer is, when the value went somewhere else.
+   *
+   * Both its angle and its ring are the pointer's: it answers "what happens if I release now", while
+   * the real hand answers "what is chosen". The two agreeing is the ordinary case and draws nothing.
+   */
+  function showGhost(angle: number, ring: "outer" | "inner", state: { format: MdyTimeFormat; focusedField: "hour" | "minute"; draft: { hour: number; minute: number; period: "AM" | "PM" } }): void {
+    const steps = timeStepsAt(f.granularity, to24Hour(state.draft));
+    const pick = timepickerDialPick(angle, state.focusedField, state.format, ring, steps);
+    const ghost = pick && timepickerDialGhost(angle, pick, {
+      ring,
+      within: timepickerDialTolerance(ring, handLength()),
+    });
+    ghostHand.hidden = ghost === null;
+    if (!ghost) return;
+    ghostHand.style.transform = `rotate(${ghost.angle}deg)`;
+    ghostHand.classList.toggle("mdy-timepicker-dial__hand--inner", ghost.ring === "inner");
+  }
+
   function pickFromPointer(event: PointerEvent): void {
     const state = controller.state();
     if (state.viewMode !== "dial") return;
@@ -282,6 +314,7 @@ export function renderTimepickerField(
     // numbers there are: a renderer deciding for itself is a renderer that can disagree with its own
     // drawing.
     const ring = timepickerDialRing(face, event.clientX, event.clientY, state.format, handLength(), state.focusedField);
+    showGhost(angle, ring, state);
     dispatch({ type: "set-from-angle", field: state.focusedField, angle, ring });
   }
   let dragging = false;
@@ -297,6 +330,8 @@ export function renderTimepickerField(
     if (!dragging) return;
     dragging = false;
     pickFromPointer(event);
+    // The gesture is over, so there is no pointer to be somewhere else than the value.
+    ghostHand.hidden = true;
     // Hours hand over to minutes once picked, so one gesture sets a whole time.
     if (controller.state().focusedField === "hour") dispatch({ type: "focus-field", field: "minute" });
   };

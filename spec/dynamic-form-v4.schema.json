@@ -374,6 +374,10 @@
             }
           }
         },
+        "animateHand": {
+          "type": "boolean",
+          "description": "timepicker only: whether the dial's hand moves rather than jumps. Absent is a hand that jumps, which never shows a value where it is not."
+        },
         "accept": {
           "type": "string",
           "description": "File only: mirrors the native input attribute."

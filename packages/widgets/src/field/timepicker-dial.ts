@@ -316,6 +316,17 @@ export const MDY_TIMEPICKER_INNER_RING = 0.6;
 export const MDY_TIMEPICKER_NUMBER_SIZE = 40;
 
 /**
+ * How far either side of the inner ring's radius still counts as reaching for it, as a fraction of
+ * the gap between the two painted radii.
+ *
+ * A fraction rather than an expression so that tightening it is one number. At `0.5` the band is the
+ * whole gap — inner from the midpoint inwards to as far below the inner radius — which is where the
+ * two rings' digits abut, and where a person feels the inner ring beginning too early has nothing
+ * left to tune. Lower it and the band closes around the inner digits.
+ */
+export const MDY_TIMEPICKER_RING_BAND = 0.5;
+
+/**
  * Which ring of the face a pointer landed on.
  *
  * A 12-hour face has one ring and always answers `"outer"`. A 24-hour face has two at the same twelve
@@ -355,7 +366,7 @@ export function timepickerDialRing(
   const reach = Math.sqrt(dx * dx + dy * dy);
   // Where the two rings are painted, and how far from the inner one still counts as reaching for it.
   const inner = handLength * MDY_TIMEPICKER_INNER_RING;
-  const reachOfBand = (handLength - inner) / 2;
+  const reachOfBand = (handLength - inner) * MDY_TIMEPICKER_RING_BAND;
   return Math.abs(reach - inner) <= reachOfBand ? "inner" : "outer";
 }
 

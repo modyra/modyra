@@ -16,6 +16,9 @@ import {
   subscribeController,
   timeFieldBounds,
   timepickerDialNumbers,
+  timepickerDialGhost,
+  timepickerDialPick,
+  timepickerDialTolerance,
   timepickerSelectedRing,
   timeStepsAt,
   MDY_EVERY_TIME,
@@ -52,6 +55,7 @@ const RESTING: MdyTimepickerFieldState = Object.freeze({
   viewMode: "dial",
   format: "12h",
   granularity: undefined,
+  animateHand: false,
   invalid: false,
   disabled: false,
   interactivity: "enabled",
@@ -70,6 +74,7 @@ export class MdyTimepickerFieldElement extends MdyFieldElement<string | null> {
     placeholder: { type: String },
     format: { type: String },
     granularity: { type: Object },
+    animateHand: { type: Boolean },
     compact: { type: Boolean },
     _open: { state: true },
     _isDragging: { state: true },
@@ -86,6 +91,8 @@ export class MdyTimepickerFieldElement extends MdyFieldElement<string | null> {
    * second answer to what the engine already validates.
    */
   declare granularity: MdyTimeGranularity | undefined;
+  /** Whether the hand moves rather than jumps. Off by default: today's behaviour exactly. */
+  declare animateHand: boolean;
   /** Compact period-toggle layout. */
   declare compact: boolean;
   declare _open: boolean;
@@ -120,6 +127,25 @@ export class MdyTimepickerFieldElement extends MdyFieldElement<string | null> {
   }
 
   private _dragRing: "outer" | "inner" = "outer";
+  private _dragHandLength = 0;
+
+  /**
+   * The faint hand under the pointer, when the pointer is not on the number that was chosen.
+   *
+   * Both members are the pointer's: it answers "what happens if I release now", while the real hand
+   * answers "what is chosen". A picker offering every time never draws one.
+   */
+  private ghost(): { angle: number; ring: "outer" | "inner" } | null {
+    if (!this._isDragging || this._dragAngle === null) return null;
+    const draft = this.fieldController?.state().draft;
+    const steps = draft ? timeStepsAt(this.granularity, to24Hour(draft)) : MDY_EVERY_TIME;
+    const pick = timepickerDialPick(this._dragAngle, this.dragField, this.format, this._dragRing, steps);
+    if (!pick) return null;
+    return timepickerDialGhost(this._dragAngle, pick, {
+      ring: this._dragRing,
+      within: timepickerDialTolerance(this._dragRing, this._dragHandLength),
+    });
+  }
   private dragField: TimeField = "hour";
   private switchTimer: ReturnType<typeof setTimeout> | null = null;
 
@@ -255,8 +281,14 @@ export class MdyTimepickerFieldElement extends MdyFieldElement<string | null> {
     return this.parsed()?.period ?? "AM";
   }
 
+  /**
+   * The real hand points at the value, including while a finger is moving.
+   *
+   * It used to follow the pointer, which on a face offering every time is the same thing. On one
+   * that snaps it is not: the hand sat between two numbers and jumped on release, so the one thing
+   * saying what is chosen spent the gesture saying something else. The pointer gets its own hand.
+   */
   private handRotation(): number {
-    if (this._isDragging && this._dragAngle !== null) return this._dragAngle;
     const p = this.parsed();
     if (!p) return 0;
     return this.view.focusedField === "minute" ? minuteToAngle(p.minute) : hourToAngle(p.hour);
@@ -432,6 +464,7 @@ export class MdyTimepickerFieldElement extends MdyFieldElement<string | null> {
     // drift from the paint.
     const declared = Number.parseFloat(getComputedStyle(el).getPropertyValue("--tp-hand-length"));
     const handLength = Number.isFinite(declared) && declared > 0 ? declared : face.width / 2;
+    this._dragHandLength = handLength;
     this._dragRing = timepickerDialRing(face, coords.clientX, coords.clientY, this.format, handLength, this.view.focusedField);
   }
 
@@ -531,7 +564,7 @@ export class MdyTimepickerFieldElement extends MdyFieldElement<string | null> {
     const selected = timepickerSelectedDialValue(field, parsed, this.format);
     return html`
       <div class="mdy-timepicker-dial-variant">
-        <div class="mdy-timepicker-dial">
+        <div class="mdy-timepicker-dial ${this.animateHand ? "mdy-timepicker-dial--animated" : ""}">
           <div
             class="mdy-timepicker-dial__face"
             @mousedown=${this.onDragStart}
@@ -545,6 +578,19 @@ export class MdyTimepickerFieldElement extends MdyFieldElement<string | null> {
                 : ""}"
               style="transform: rotate(${this.handRotation()}deg)"
             ></div>
+            <!-- Where the pointer is, when that is not where the value went. Drawn only then. -->
+            ${(() => {
+              const under = this.ghost();
+              return under
+                ? html`<div
+                    class="mdy-timepicker-dial__hand mdy-timepicker-dial__hand--ghost ${under.ring === "inner"
+                      ? "mdy-timepicker-dial__hand--inner"
+                      : ""}"
+                    style="transform: rotate(${under.angle}deg)"
+                    aria-hidden="true"
+                  ></div>`
+                : nothing;
+            })()}
             ${numbers.map(
               (number) => html`
                 <div

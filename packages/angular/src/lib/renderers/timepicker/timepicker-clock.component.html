@@ -24,7 +24,10 @@
     @if (viewMode() === 'dial') {
       <!-- M3 Dial Variant (Only shows the clock below the header) -->
       <div class="mdy-timepicker-dial-variant">
-        <div class="mdy-timepicker-dial">
+        <div
+          class="mdy-timepicker-dial"
+          [class.mdy-timepicker-dial--animated]="animateHand()"
+        >
           <!-- A dial is a slider around a circle. It had no role, no value and no keyboard: every
                number on it was reachable only by dragging, which is the one gesture a keyboard
                cannot make and a screen reader cannot describe. -->
@@ -49,6 +52,17 @@
               [class.mdy-timepicker-dial__hand--inner]="handRing() === 'inner'"
               [style.transform]="'rotate(' + handRotation() + 'deg)'"
             ></div>
+            <!-- Where the pointer is, when that is not where the value went. Drawn only then: a
+                 second hand permanently under the first would be a thing to look at that never
+                 means anything. -->
+            @if (ghost(); as under) {
+              <div
+                class="mdy-timepicker-dial__hand mdy-timepicker-dial__hand--ghost"
+                [class.mdy-timepicker-dial__hand--inner]="under.ring === 'inner'"
+                [style.transform]="'rotate(' + under.angle + 'deg)'"
+                aria-hidden="true"
+              ></div>
+            }
             @for (number of dialNumbers(); track number.value) {
               <div class="mdy-timepicker-dial__number"
                    [class.mdy-timepicker-dial__number--selected]="number.value === faceValue()"

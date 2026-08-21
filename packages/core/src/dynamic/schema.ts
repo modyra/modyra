@@ -189,6 +189,11 @@ export interface MdyDynamicDateField extends MdyDynamicFieldBase, MdyDynamicCale
    * minutes are refused where the document declares them rather than behaving oddly later.
    */
   readonly granularity?: MdyTimeGranularity;
+  /**
+   * Whether the dial's hand moves rather than jumps — `timepicker` only. Absent is a hand that
+   * jumps, which is today's behaviour and the one that never shows a value where it is not.
+   */
+  readonly animateHand?: boolean;
 }
 
 /** A stretch of the day with a minute step of its own. Half-open: `from` inclusive, `to` exclusive. */
