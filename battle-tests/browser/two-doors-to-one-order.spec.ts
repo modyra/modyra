@@ -50,7 +50,12 @@ for (const host of HOSTS) {
       (window as never as Record<string, { valueOf(i: string): Record<string, unknown> }>)[api].valueOf(id)?.s ?? null,
       { api: host.api, id });
   const chips = (page: import("@playwright/test").Page, id: string) =>
-    page.locator(`[data-form="${id}"] .mdy-chip`);
+    // Scoped to the chips strip, not to the control. `chip` and `option` both resolve to `.mdy-chip`,
+    // and one renderer keeps its popup inside the component where the others portal theirs to the
+    // body — so a count scoped to the control picks up the popup's options in that one alone. The two
+    // scopes were equivalent until the options moved out of the closed control, and this spec kept the
+    // old one and read the difference as a defect in the renderer that had not changed.
+    page.locator(`[data-form="${id}"] .mdy-multiselect__chips .mdy-chip`);
 
   test(`a keystroke and a drag that mean the same thing land on the same order, ${host.name}`, async ({ page }) => {
     test.setTimeout(150_000);
