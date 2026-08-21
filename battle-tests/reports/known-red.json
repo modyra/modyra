@@ -1,20 +1,18 @@
 {
   "note": "Battles that are red because the defect they describe is open. A red listed here does not fail a build; a red that is not listed is a regression. Rewrite with `npm run battle:ci -- --accept`.",
   "order": "Repair in severity order: every S0, then every S1, then S2 and below. `bySeverity` is the count at each, and `knownRed` is sorted the same way, so the top of the list is the next work.",
-  "recordedAt": "2026-08-21T12:37:50Z",
+  "recordedAt": "2026-08-21T12:56:44Z",
   "seed": "20260820",
   "runs": "(default)",
-  "openReds": 7,
+  "openReds": 5,
   "bySeverity": {
-    "S1": 5,
+    "S1": 3,
     "S2": 2
   },
   "knownRed": [
     "[S1][EXP-001] a guard claims only what the validator will take",
     "[S1][STU-006] a command costs what it changes, not what the project holds",
     "[S1][UI-010,A11Y-004] a renderer takes its popup promise from the contract",
-    "[S1][UI-011,A11Y-001] a finger held still keeps the time it is pointing at",
-    "[S1][UI-011] the ghost's length is a number a stylesheet can use",
     "[S2][API-001] a constructor refuses an argument of the wrong shape where it arrives",
     "[S2][DYN-001,DYN-003] every version one runtime accepts is one the others have a position on"
   ]

@@ -34,7 +34,10 @@ battle(
 
     expectEqual(
       [timeFieldBounds("hour", "12h"), timeFieldBounds("hour", "24h"), timeFieldBounds("minute", "24h")],
-      [{ min: 1, max: 12 }, { min: 0, max: 23 }, { min: 0, max: 59 }],
+      // Compared whole rather than field by field, so a member appearing here has to be looked at
+      // rather than absorbed. `step` is one that was: the granularity work added it, and it belongs —
+      // a box's range and the increments it accepts within that range are the same declaration.
+      [{ min: 1, max: 12, step: 1 }, { min: 0, max: 23, step: 1 }, { min: 0, max: 59, step: 1 }],
       {
         claimIds: ["LOC-001"],
         what: "a box no longer holds the range its format gives it",
@@ -110,7 +113,7 @@ battle(
     // Out of range is a different answer from not a number, and the box says so: a person who typed
     // 13 is told the hours run to 12, and a person who typed nothing is not told that.
     for (const raw of ["0", "13", "99"]) {
-      expectEqual(answer(raw), { type: "rejected", reason: "out-of-range", bounds: { min: 1, max: 12 } }, {
+      expectEqual(answer(raw), { type: "rejected", reason: "out-of-range", bounds: { min: 1, max: 12, step: 1 } }, {
         claimIds: ["UI-006"],
         what: `${JSON.stringify(raw)} was not refused as out of range`,
       });
