@@ -20294,7 +20294,21 @@ quietly relying on. The general lesson is the one this suite keeps relearning: *
 been observed to refuse is not evidence that there is nothing to refuse.** 333 was the same shape, and
 the answer there was the same — make it fail on purpose once.
 
-## 358 — One stylesheet, three vertical rhythms (S1, UI-009 UI-011)
+### 358 — closed at `4e7ba99a`
+
+All five sheets green in all three renderers. The repair was the two empty boxes below a control, and
+the finding that came out of it was larger than the rhythm: **every field named a supporting-text slot
+with `aria-describedby` and nothing could put words in it** — the slot was the promise and the half
+that keeps it had never been built. A screen reader following the reference arrived at an empty
+element, which is worse than no reference, because it spends the user's attention to say nothing. That
+half is [366](#366).
+
+Angular was right and the other two were wrong, which is worth stating plainly after an evening in
+which Angular was the one at fault: it omits the element **and** the reference, which is the correct
+pair. Plain and Lit hid rather than omitted, because `aria-describedby` named the id unconditionally
+and removing the element left the reference dangling — one step worse than the empty description.
+
+### 358 — as found (S1, UI-009 UI-011)
 
 Asked for directly: *"accertati sempre che gli allineamenti siano coerenti, gli spazi e gli allineamenti
 devono avere simmetria e coerenza."* The horizontal half is kept everywhere. The vertical half is not
