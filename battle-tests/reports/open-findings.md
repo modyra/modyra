@@ -18329,6 +18329,56 @@ rather than by keeping the row clickable.
 **Still open, and small**: Angular previews the daterange on hover and **not** on keyboard focus
 movement. Plain now does both. One renderer's keyboard user sees no provisional range.
 
+## 318 — Nothing in the repository runs zoneless, so a missed subscription cannot be seen (S1, REA-002)
+
+A consumer running Angular **zoneless** reports the timepicker's popup selecting correctly while the
+header and hand stay on the old hour: the draft moves, `OK` commits the right value, and the display
+does not follow. Forcing change detection does not help, which means the computed was never
+invalidated rather than never re-run.
+
+**The diagnosis they arrived at is wrong on mechanism, and it is worth recording why.** It said
+`createTimepickerFieldController` should *"expose state on the adapter's reactivity, as the other
+controllers do"*. Measured:
+
+```
+handle owner            : probe          ← a marked runtime handed to createForm
+signals made on it      : 6              ← by the timepicker controller
+draft after set-hour 15 : {"hour":3,"minute":0,"period":"PM"}
+```
+
+The controller creates its signals **on the form's own runtime**, and all four field controllers
+resolve reactivity identically — `reactivity?: MdyReactivity` resolved through `observerFor`. There is
+no asymmetry between the timepicker and the widgets that work.
+
+**The asymmetry is elsewhere, and it is the abstraction worth keeping.** Every other widget's visible
+state moves the **form handle** as it changes, and a renderer watches the handle for a dozen other
+reasons. So a subscription that was never established is masked: something else redraws.
+**The timepicker's open popup is the only surface in the library whose display depends on state that
+never touches the handle until `confirm`.** Draft-only state has no second watcher.
+
+Two maskings stacked, which is why this survived:
+
+- **Zone.js redraws on every event**, so a missing subscription is invisible in any app that uses it —
+  including every demo;
+- **where state also moves the handle**, the missing subscription is invisible even without Zone.
+
+Only their intersection shows the defect: zoneless **and** draft-only state.
+
+**The systemic half, which is the finding.** `packages/angular/jest.config.cjs` uses
+`jest-preset-angular`, which installs Zone.js, and `provideZonelessChangeDetection` appears **nowhere**
+in `packages/angular/src` or `examples/`. So **all 373 Angular specs and every demo run with Zone.js**,
+and the entire class — *a binding that never subscribed* — cannot be observed by anything in this
+repository. A consumer found it because a consumer was the first to run without Zone.
+
+Same shape as finding 309's neighbour and as the sixth instrument defect of the night: conformance can
+say *the part is there with the right element*; it cannot say *pressing it changes what you see*. Here
+there is not even a tier that could ask.
+
+**Not repaired, and not claimed as understood.** What is proven is what the controller does; what is
+unexplained is where the chain from an Angular signal to the rendered header loses its dependency. The
+instrument that would answer it does not exist yet, and building it — one zoneless Angular fixture —
+is worth more than a guess at the fix.
+
 ## The register's own shape, measured
 
 ```
