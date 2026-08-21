@@ -160,7 +160,7 @@ export type {
   MdyTimepickerFieldA11yOptions,
 } from "./timepicker-field-a11y.js";
 
-export { dialNumberAngle, timepickerDialAria, timepickerDialKeyIntent, timepickerDialNumbers, timepickerDialPick, MDY_TIMEPICKER_INNER_RING, timepickerDialRing, timepickerSelectedDialValue, type MdyTimepickerDialKeyResult } from "./timepicker-dial.js";
+export { dialNumberAngle, dialRingOf, timepickerSelectedRing, timepickerDialAria, timepickerDialKeyIntent, timepickerDialNumbers, timepickerDialPick, MDY_TIMEPICKER_INNER_RING, timepickerDialRing, timepickerSelectedDialValue, type MdyTimepickerDialKeyResult } from "./timepicker-dial.js";
 export type { MdyTimepickerDialNumber, MdyTimepickerDialPick } from "./timepicker-dial.js";
 export type {
   MdyTimepickerFieldControllerOptions,

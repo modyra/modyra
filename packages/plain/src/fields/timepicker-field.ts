@@ -23,6 +23,7 @@ import {
   stepTimeField,
   timeFieldBounds,
   timepickerDialNumbers,
+  timepickerSelectedRing,
   timepickerDialRing,
   timepickerSelectedDialValue,
   type MdyElementLookup,
@@ -364,6 +365,12 @@ export function renderTimepickerField(
     minuteSegment.classList.toggle("mdy-timepicker-segment--active", field === "minute");
     // The hand points at the draft, through the same angle helpers the numbers are placed by.
     dialHand.style.transform = `rotate(${field === "minute" ? minuteToAngle(state.draft.minute) : hourToAngle(state.draft.hour)}deg)`;
+    // And reaches only as far as the ring it points into. A 24-hour face puts two hours at one
+    // direction, so a hand of one length leaves the two selections identical on screen.
+    dialHand.classList.toggle(
+      "mdy-timepicker-dial__hand--inner",
+      timepickerSelectedRing(field, state.draft, state.format) === "inner",
+    );
 
     // The face the format has, so a 24-hour picker can be pointed at its afternoon hours.
     const numbers = timepickerDialNumbers(field, state.format);

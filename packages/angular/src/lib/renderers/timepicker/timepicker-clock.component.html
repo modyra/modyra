@@ -41,7 +41,13 @@
             (mousedown)="onDragStart($event)"
             (touchstart)="onDragStart($event)"
           >
-            <div class="mdy-timepicker-dial__hand" [style.transform]="'rotate(' + handRotation() + 'deg)'"></div>
+            <!-- The hand reaches only as far as the ring it points into: a 24-hour face puts two
+                 hours at one direction, so one length leaves the two selections identical. -->
+            <div
+              class="mdy-timepicker-dial__hand"
+              [class.mdy-timepicker-dial__hand--inner]="handRing() === 'inner'"
+              [style.transform]="'rotate(' + handRotation() + 'deg)'"
+            ></div>
             @for (number of dialNumbers(); track number.value) {
               <div class="mdy-timepicker-dial__number"
                    [class.mdy-timepicker-dial__number--selected]="number.value === faceValue()"

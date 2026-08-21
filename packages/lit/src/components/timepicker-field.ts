@@ -16,6 +16,7 @@ import {
   subscribeController,
   timeFieldBounds,
   timepickerDialNumbers,
+  timepickerSelectedRing,
   timepickerSelectedDialValue,
   type MdyTimepickerFieldController,
   type MdyTimepickerFieldIntent,
@@ -505,8 +506,12 @@ export class MdyTimepickerFieldElement extends MdyFieldElement<string | null> {
             @mousedown=${this.onDragStart}
             @touchstart=${this.onDragStart}
           >
+            <!-- The hand reaches only as far as the ring it points into: a 24-hour face puts two
+                 hours at one direction, so one length leaves the two selections identical. -->
             <div
-              class="mdy-timepicker-dial__hand"
+              class="mdy-timepicker-dial__hand ${timepickerSelectedRing(field, parsed, this.format) === "inner"
+                ? "mdy-timepicker-dial__hand--inner"
+                : ""}"
               style="transform: rotate(${this.handRotation()}deg)"
             ></div>
             ${numbers.map(

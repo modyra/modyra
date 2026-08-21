@@ -77,16 +77,38 @@ test("the dial index is the one property still outside the namespace", () => {
  * Everything else about where the rings fall is measured from `--tp-hand-length` at run time, so
  * this is the whole of the shared surface.
  */
+test("the hand into the inner ring is drawn at the ring's own fraction, not its own", () => {
+  // 316's shape: two numbers agreed and a third nobody had counted produced the defect. The hand
+  // must take the ring's fraction rather than restate it, so a fourth number is unrepresentable.
+  const rule = /\.mdy-timepicker-dial__hand--inner\s*\{([\s\S]*?)\}/.exec(css);
+  assert.ok(rule, "nothing draws a shorter hand for the inner ring");
+  assert.match(
+    rule[1],
+    /height:\s*calc\(var\(--tp-hand-length\)\s*\*\s*var\(--tp-inner-ring\)\)/,
+    `the shortened hand carries a length of its own: ${rule[1].trim()}`,
+  );
+});
+
+test("the sheet holds one figure for the inner ring, and it is the contract's", () => {
+  const declared = /--tp-inner-ring:\s*([\d.]+)/.exec(css);
+  assert.ok(declared, "the stylesheet no longer declares --tp-inner-ring");
+  assert.equal(Number(declared[1]), MDY_TIMEPICKER_INNER_RING);
+  // And nothing paints the ring off a literal beside it.
+  const literals = css.match(/--tp-hand-length\)\s*\*\s*-?0\.\d+/g) ?? [];
+  assert.deepEqual(literals, [], "a rule places something off the hand with a fraction of its own");
+});
+
 test("the inner ring is hit where it is painted", () => {
   // Inside the inner ring's own rule: the outer numbers are placed off the same property at `-1`,
   // and a search of the whole sheet finds that one first.
   const rule = /\.mdy-timepicker-dial__number--inner\s*\{([\s\S]*?)\}/.exec(css);
   assert.ok(rule, "the stylesheet no longer has a rule placing the inner ring");
-  const painted = /--tp-hand-length\)\s*\*\s*-([\d.]+)\)/.exec(rule[1]);
+  const painted = /--tp-hand-length\)\s*\*\s*var\(--tp-inner-ring\)/.exec(rule[1]);
   assert.ok(painted, "the inner ring is no longer placed off --tp-hand-length");
+  const declared = /--tp-inner-ring:\s*([\d.]+)/.exec(css);
   assert.equal(
-    Number(painted[1]),
+    Number(declared[1]),
     MDY_TIMEPICKER_INNER_RING,
-    `the face paints its inner ring at ${painted[1]} of the hand and the hit test reads ${MDY_TIMEPICKER_INNER_RING}`,
+    `the face paints its inner ring at ${declared[1]} of the hand and the hit test reads ${MDY_TIMEPICKER_INNER_RING}`,
   );
 });
