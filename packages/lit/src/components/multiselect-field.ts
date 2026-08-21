@@ -683,7 +683,6 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
       this._saidLast, now,
       { added: this.messages.selectionAdded, removed: this.messages.selectionRemoved, empty: this.messages.selectionEmpty },
       (key) => this.labelFor(key),
-      this._open,
     );
     this._saidLast = now;
     return said;
