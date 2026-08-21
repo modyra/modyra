@@ -19643,3 +19643,53 @@ control height, three options, popup closed:   plain 209px   lit 148px   angular
 form. That is not a defect against any current contract — it is the design the user decided to change:
 chips for what is chosen in the control, the search on click, the overflow summarised. This finding is
 the defect found on the way; the height is the work.
+
+## 347 — Theme coverage is uneven and nothing measures it (S2, UI-009 — measurement, decision needed)
+
+Opened for brief point 4, *stili Slider*. The slider is identical in all three renderers — same
+anatomy, same `min`/`max`/`step`, same computed `appearance: none`, same 56px track — so the point is
+not a cross-renderer divergence. It is what the themes do with it, and that turned out to be a wider
+gap than one control.
+
+Rules mentioning each control's classes, per theme:
+
+```
+control       modern    material  ios       ionic
+slider          25         9        10        —
+checkbox         1         —         9        8
+toggle           1         8        25       13
+select          19        29        38       10
+multiselect      7        13        17        1
+datepicker       4        49        52       11
+daterange        —         9        11        —
+timepicker      10         4        18        —
+radio            3        13        36        —
+segmented        1        11        43        —
+colors           3        13         7        —
+file             —         6         1        —
+```
+
+```
+modern     styles nothing for: daterange, file
+material   styles nothing for: checkbox
+ionic      styles nothing for: slider, daterange, timepicker, radio, segmented, colors, file
+```
+
+`text`, `textarea` and `number` are absent from every theme by design — they are styled through
+`.mdy-input-wrapper` rather than by kind, and that is the layering working.
+
+**The uneven part is not obviously wrong and that is the problem.** A theme inheriting the foundation
+for a control is legitimate layering; a theme that *forgot* one looks identical from here. Nothing in
+the repository records which of the two each blank is: `test:themes` compares class parity **between
+renderers**, not coverage **between themes**, and the browser tier loads one stylesheet of five
+(finding 325) so no rendered measurement sees four of them at all.
+
+**Not filed as a defect and no battle written.** A coverage table is not a rule, and inventing one —
+"a theme must style every kind" — would be manufacturing a contract nobody agreed. What is needed
+first is the decision brief point 4 was actually asking for: what a slider should look like, and
+whether a theme leaving a control to the foundation is a choice or an omission. Put to the user with
+this table.
+
+**One thing worth doing whatever they decide**: `modern` has a single rule for `checkbox` and a single
+one for `toggle` where `ios` has 9 and 25. One rule is the shape of a token override, not of a look —
+either it is deliberate and worth a comment, or it is a control someone started and left.
