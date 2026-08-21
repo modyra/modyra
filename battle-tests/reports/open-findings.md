@@ -20575,3 +20575,52 @@ Two lessons, and the second is the one worth keeping:
 
 `a-tick-the-stylesheet-cannot-reach.spec.ts` is unchanged. It was correct all along; what was recorded
 against it was not.
+
+## 367 — lit's select does not build the trigger, placeholder and arrow the contract requires (S1, UI-011)
+
+```
+lit    select.trigger   select.placeholder   select.arrow      not built
+plain  all three                                               built
+angular all three                                              built
+```
+
+Surfaced by `a-part-the-contract-requires.spec.ts`, which sweeps every kind for parts the contract
+declares required and not overlay-only. The count of structure nodes moved 252 → 254 in the same
+batch — the `box` part from [364](#364) and one more — and re-deriving that number is what let the
+sweep run again and reach these three.
+
+Not a spec that drifted: the two failures in that file were different in kind and only one was mine.
+The count describes the anatomy by number and had to be re-read; the gap is lit's.
+
+Owned by `esecutore`.
+
+## Two disagreements, with the exact fixtures
+
+`esecutore` measures both of these as working; the built browser host measures them as failing. Rather
+than trade verdicts, the fixtures:
+
+**`.mdy-chip__btn` is drawn nowhere** — counter mode, one option chosen three times:
+
+```js
+mountFields("c", [{ name: "s", kind: "multiselect", label: "S", options,
+                    initialValue: ["a", "a", "a", "b"] }]);
+```
+
+Red in all three renderers. The chip says 3 and offers no way to make it 2. The declaration that puts
+a multiselect in counter mode is a repeated value in `initialValue`, not a flag — if `esecutore`'s probe
+sets a flag instead, the two of us are driving different controls.
+
+**Keyboard choice yields nothing** — `searchable: true`, nothing chosen:
+
+```js
+mountFields("k", [{ name: "s", kind: "multiselect", label: "S", options, searchable: true }]);
+// tab to the opener · Enter · ArrowDown · Enter  →  value stays []
+```
+
+Red in plain and angular. Every one of those keys is declared in `MDY_WIDGET_KEYBOARD.multiselect`.
+
+**`a-box-that-does-not-say-what-it-filters` was mine and is repaired.** The field never asked for a
+search, and before `76c08654` every multiselect got one regardless — so the spec passed on a box it had
+not requested. With `searchable: true` it reaches its real assertion and fails there instead: the
+filter box is named only by its placeholder, which stops naming it the moment somebody types.
+
