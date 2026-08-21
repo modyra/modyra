@@ -21012,3 +21012,26 @@ differing is right; the part's name differing is the finding.**
 Owned by `esecutore`. It wants `contract:diff` and a changeset if the name changes, so it is its own
 commit rather than a rider.
 
+
+### 366 — half landed, and the half that is left is the one worth having
+
+Supporting text reaches its slot now: a field that declares it says those words, green in all three.
+The other half is open in two:
+
+```
+plain     names a description with nothing in it
+lit       names a description with nothing in it
+angular   names no description when there is nothing to describe
+```
+
+**A reference to an empty element is worse than no reference.** A reader is told there is more to
+hear, goes, and hears silence — which costs them the move and teaches them not to follow the next one.
+Angular omits the element *and* the reference, which is the pair; hiding the element while keeping the
+reference is one step worse still, because the id then names nothing at all.
+
+Pinned by
+[`../browser/a-reference-that-names-an-empty-room.spec.ts`](../browser/a-reference-that-names-an-empty-room.spec.ts).
+Its second assertion carries its premise as a sentence — *a property the library does not carry is not
+a renderer dropping it* — because an earlier probe of mine could not tell those apart and reported this
+as broken in all three renderers at once, which is nearly always the instrument rather than the code.
+
