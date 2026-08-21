@@ -1,11 +1,11 @@
 {
   "note": "Browser specs that are red because the defect they describe is open. A red listed here does not fail a build; a red that is not listed is a regression. Rewrite with `npm run battle:browser:ci -- --accept`.",
   "order": "Repair in severity order, as the node tier does. A spec's severity is the worst of the claims its header names; `unknown` is a spec that names none, which is most of them.",
-  "recordedAt": "2026-08-21T22:17:09Z",
-  "openReds": 68,
+  "recordedAt": "2026-08-21T22:20:24Z",
+  "openReds": 70,
   "bySeverity": {
     "S0": 1,
-    "S1": 60,
+    "S1": 62,
     "S2": 7
   },
   "knownRed": [
@@ -33,6 +33,8 @@
     "a-grid-that-names-a-label-nobody-wrote.spec.ts › every grid a calendar shows is named, lit",
     "a-grid-with-no-name.spec.ts › lit: a role that must be named has a name",
     "a-kind-nobody-declared-becomes-a-text-box.spec.ts › a kind nobody declared, lit",
+    "a-list-a-scrolling-box-cuts-in-half.spec.ts › an option list is not cut off by a scrolling ancestor, angular",
+    "a-list-a-scrolling-box-cuts-in-half.spec.ts › an option list is not cut off by a scrolling ancestor, lit",
     "a-list-you-cannot-type-your-way-into.spec.ts › typing a letter reaches the option that starts with it, angular",
     "a-list-you-cannot-type-your-way-into.spec.ts › typing a letter reaches the option that starts with it, lit",
     "a-list-you-cannot-type-your-way-into.spec.ts › typing a letter reaches the option that starts with it, plain",

@@ -20756,7 +20756,35 @@ once rather than building over. Recorded in
 successor to the decision, so the next person to raise it finds it was considered.
 
 
-## 374 — Angular keeps its popup inside the component; plain and lit portal theirs out (S2, UI-011)
+### 374 — raised to S1, and the record of it was wrong
+
+Filed as an asymmetry worth settling. Measured inside an ordinary 120px scrolling container — a form in
+a dialog, a card, a side panel — it is a control that cannot be used there:
+
+```
+            popup inside the field   cut off the bottom   last option reachable
+plain       no                                       0    yes
+lit         yes                                     55px  no
+angular     yes                                     73px  no
+```
+
+**Two renderers of three, not one.** The original entry said Angular kept its popup inside while plain
+and lit portalled theirs out; lit keeps its inside too. I took that from a peer's measurement and
+recorded it without running it, which is the same mistake in the opposite direction from the three
+fixtures that were mine.
+
+Settled by [ADR 0130](../../docs/architecture/0130-a-popup-outlives-the-box-it-opens-from.md): a popup
+is rendered outside the field, positioned against its trigger, in every renderer. Pinned by
+[`../browser/a-list-a-scrolling-box-cuts-in-half.spec.ts`](../browser/a-list-a-scrolling-box-cuts-in-half.spec.ts),
+which asserts the last option is reachable rather than naming where the popup should live — a renderer
+may satisfy the decision another way.
+
+**The gap that let it through is worth more than the defect.** Every spec in `battle-tests/browser/`
+mounts a field on a bare page, so no fixture ever had an ancestor. On a bare page all three renderers
+are correct. A control that fails only inside a container that a consumer supplies is invisible to a
+suite that never supplies one, and this reached a release-candidate anatomy without going red once.
+
+## 374 — as filed (S2, UI-011)
 
 ```
                 popup in the control's subtree
