@@ -19444,3 +19444,50 @@ does not reproduce that — driven this way Angular refuses the edit too. Either
 the fixture does. The Angular row is **unexplained rather than damning** and is left visible rather
 than removed: convicting a renderer on a sequence that may be the wrong one is how three findings
 tonight nearly went out wrong.
+
+## 343 — A timepicker has two doors and only one speaks the host's language (S0, LOC-001 — Modyra bug)
+
+Found because the user said, in five words, *"date picker però accettano internazionalizzation"* — after
+I had checked the timepicker alone, found no locale seam in its display, and concluded there was no
+defect. There was. The comparison I did not make is the one that mattered.
+
+Both pickers declare the same seam, in the same words — *"the reading is locale-aware and the locale
+belongs to the host"*:
+
+```
+datepicker-field-controller.ts:209   options.parseEntry?.(trimmed)
+timepicker-field-controller.ts:272   options.parseEntry?.(trimmed)
+```
+
+The per-segment door added today with the partial-entry rule does not consult it:
+
+```
+timepicker-entry.ts:56
+  if (typed.length > WIDTH || (typed.length > 0 && !/^\d+$/.test(typed))) return null;
+```
+
+`\d` is `[0-9]`. So a host that supplies a locale-aware `parseEntry` — the thing the type exists to
+receive — has its numerals read when the whole time is typed and **refused when the same numerals are
+typed into a box**:
+
+```
+parseEntry("١٤:٣٠")                              → "14:30"
+timepickerEntry("hour", "24h", "١٤", …)          → null
+```
+
+**The datepicker has no such split**: every typed entry goes through the seam. This is the
+timepicker's newer door, written a few lines from the older one.
+
+**The fix is not "accept Eastern Arabic digits here".** This package cannot know what a numeral is
+anywhere, which is exactly why the reading was made a dependency in the first place. A segment must be
+able to reach the reader the field already has, so a host answers the question once.
+
+**Battle**: `two-doors-and-one-speaks-the-language.battle.test.mjs`, asserting that the function takes
+a reader at all — it has three parameters and none is one.
+
+**My own error is the interesting part.** I probed `timepickerEntry` against fifteen hostile inputs,
+found Eastern Arabic digits refused, checked whether the timepicker localises its *display*, found it
+does not, and reported "no defect — display and input speak the same alphabet". That was true and
+irrelevant: the question was never what this widget shows, it was whether two widgets in one library
+answer one question the same way. **A single-widget check cannot see a cross-widget inconsistency**,
+and I ran one and concluded from it.
