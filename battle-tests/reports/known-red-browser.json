@@ -1,11 +1,11 @@
 {
   "note": "Browser specs that are red because the defect they describe is open. A red listed here does not fail a build; a red that is not listed is a regression. Rewrite with `npm run battle:browser:ci -- --accept`.",
   "order": "Repair in severity order, as the node tier does. A spec's severity is the worst of the claims its header names; `unknown` is a spec that names none, which is most of them.",
-  "recordedAt": "2026-08-21T11:15:13Z",
-  "openReds": 49,
+  "recordedAt": "2026-08-21T12:47:41Z",
+  "openReds": 50,
   "bySeverity": {
     "S0": 1,
-    "S1": 37,
+    "S1": 38,
     "S2": 11
   },
   "knownRed": [
@@ -32,6 +32,7 @@
     "a-popup-only-a-mouse-can-open.spec.ts › every control that declares a popup opens it from the keyboard",
     "a-refusal-the-page-keeps-to-itself.spec.ts › a refusal about a field reaches that field, lit",
     "a-rule-the-preview-enforces.spec.ts › a document's cross-field rule reaches the page",
+    "a-ruler-that-is-one-of-the-things-measured.spec.ts › the hour does not change while the pointer rests on a number, angular",
     "a-star-on-a-field-nobody-must-fill.spec.ts › plain: a required marker and aria-required say the same thing",
     "a-state-class-that-never-arrives.spec.ts › lit: a refused field wears the state class its kind declares",
     "a-state-class-that-never-arrives.spec.ts › lit: a refused field's label says so",
