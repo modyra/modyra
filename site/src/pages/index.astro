@@ -3,23 +3,75 @@ import SiteLayout from '../components/SiteLayout.astro';
 
 const based = (path: string) =>
   `${import.meta.env.BASE_URL.replace(/\/+$/, '')}/${path.replace(/^\/+/, '')}`;
+
+const contractSnippet = `// contract.json — from a service, a CMS, Studio, or a model
+[
+  { "name": "email", "kind": "text", "label": "Email",
+    "validators": { "required": true, "email": true } },
+  { "name": "country", "kind": "select", "label": "Country",
+    "options": [{ "value": "IT", "label": "Italy" }] }
+]
+
+import { parseDynamicForm } from "@modyra/core";
+
+const doc = parseDynamicForm(contract, { mode: "strict" });
+if (!doc.ok) return report(doc.diagnostics);
+
+mountMdyForm(host, doc.fields, doc);        // framework-free
+const form = useMdyDynamicForm(doc.fields); // React
+// <mdy-dynamic-form [fields]="doc.fields" />  — Angular`;
 ---
 
 <SiteLayout
-  title="Modyra — typed forms, independent of the UI"
-  description="A typed form engine for TypeScript applications, with optional framework adapters and a framework-free renderer."
+  title="Modyra — one form contract, every framework, any backend"
+  description="A typed form engine for TypeScript: one validated contract drives forms in any framework, from any backend — including ones you do not control."
   eyebrow="Typed form engine for TypeScript"
 >
   <section class="hero">
-    <h1>Form behavior that does not belong to a framework.</h1>
+    <h1>One form contract. Every framework. Any backend.</h1>
     <p class="lede">
-      Modyra keeps state, validation, lifecycle and form operations in a
-      framework-independent engine. Render with <code>@modyra/plain</code>,
-      connect an adapter, or use the engine without a UI.
+      The typed contract between your backend and every frontend form. State,
+      validation, drafts and submission live in a framework-independent engine;
+      the form itself can travel as data.
     </p>
     <div class="actions">
-      <a class="primary" href={based('start-here/')}>Read the documentation</a>
-      <a href={based('studio/')}>Open Studio</a>
+      <a class="primary" href={based('studio/')}>Open Studio</a>
+      <a href={based('start-here/')}>Read the documentation</a>
+    </div>
+  </section>
+
+  <section class="contract" aria-labelledby="contract-heading">
+    <div>
+      <p class="section-label">Not another form state hook</p>
+      <h2 id="contract-heading">A form <em>contract</em></h2>
+      <p>
+        A hook keeps form logic in your components. A contract takes it out:
+        one validated document any renderer can run, and any backend — Rust,
+        Java, or a visual builder — can produce.
+      </p>
+    </div>
+    <pre><code>{contractSnippet}</code></pre>
+    <div class="actions">
+      <a class="primary" href={based('guides/quickstart/')}>Quickstart</a>
+      <a href={based('guides/usage-modes/')}>Typed, contract and headless modes</a>
+    </div>
+  </section>
+
+  <section class="agents" aria-labelledby="agents-heading">
+    <div>
+      <p class="section-label">Forms as data</p>
+      <h2 id="agents-heading">Safe enough for strangers — and agents</h2>
+      <p>
+        A contract that arrives over a network is untrusted input, and Modyra
+        parses it that way: a bounded set of kinds, validators, layout nodes and
+        rule operators, rejected or reported before anything renders. That is
+        the boundary an LLM or an agent runtime needs when the form it emits
+        must validate, cancel safely and never execute.
+      </p>
+    </div>
+    <div class="actions">
+      <a href={based('guides/ai-generated-forms/')}>The trust boundary</a>
+      <a href={based('guides/security/')}>Injection prevention</a>
     </div>
   </section>
 
@@ -44,20 +96,26 @@ const based = (path: string) =>
     </div>
   </section>
 
-  <section class="try" aria-labelledby="try-heading">
+  <section class="honest" aria-labelledby="honest-heading">
     <div>
-      <p class="section-label">Try the rendering boundary</p>
-      <h2 id="try-heading"><code>@modyra/plain</code></h2>
+      <p class="section-label">The honest part</p>
+      <h2 id="honest-heading">When Modyra is the wrong tool</h2>
       <p>
-        The framework-free renderer is the shortest path from a validated
-        field contract to interactive DOM. It is also the renderer used by
-        Studio's live canvas.
+        One login form in one React app? react-hook-form is the lighter, safer
+        pick. Modyra pays off when the same form must live in more than one
+        application — or arrive from somewhere you do not control.
+      </p>
+      <p>
+        The engine measures <strong>26.7 KB gzipped</strong> on a realistic typed
+        form with arrays, validation, drafts and undo (core 2.4.0, measured
+        2026-08-21; reproduce with <code>npm run test:core-bundle</code>). That
+        is the heaviest entry in our own comparison — it is what drafts,
+        cancellation and undo cost when you stop maintaining them yourself.
       </p>
     </div>
-    <pre><code>npm install @modyra/core @modyra/plain</code></pre>
     <div class="actions">
-      <a class="primary" href={based('guides/usage-modes/')}>Choose a usage mode</a>
-      <a href={based('studio/app/')}>Try it in Studio</a>
+      <a href={based('guides/comparison-form-libraries/')}>The dated, measured comparison</a>
+      <a href={based('known-issues/')}>Published known issues</a>
     </div>
   </section>
 
@@ -82,26 +140,29 @@ const based = (path: string) =>
 </SiteLayout>
 
 <style>
-  .hero, .principles, .try, .paths { padding: 0 clamp(1.25rem, 7vw, 6rem) clamp(3.5rem, 7vw, 6rem); }
+  .hero, .contract, .agents, .principles, .honest, .paths { padding: 0 clamp(1.25rem, 7vw, 6rem) clamp(3.5rem, 7vw, 6rem); }
   .hero { padding-top: 0; }
-  .hero h1 { max-width: 14ch; font-size: clamp(2.7rem, 7vw, 5.4rem); line-height: 1.02; letter-spacing: -.025em; }
+  .hero h1 { max-width: 16ch; font-size: clamp(2.7rem, 7vw, 5.4rem); line-height: 1.02; letter-spacing: -.025em; }
   .lede { max-width: 58ch; margin: 1.5rem 0 0; color: var(--page-muted); font-size: clamp(1.08rem, 1.8vw, 1.35rem); line-height: 1.55; }
   .actions { display: flex; flex-wrap: wrap; gap: .8rem; margin-top: 2rem; }
   .actions a { padding: .72rem 1rem; border: 1px solid var(--page-border); border-radius: .55rem; text-decoration: none; }
   /* The ink gradient, not the bright one: white text on the bright stops measures as low as
      2.85:1, and the coral end made the primary action look mis-coloured. */
   .actions .primary { border-color: transparent; background: var(--mdy-gradient-brand-ink); color: #fff; font-weight: 700; }
-  .principles, .try, .paths { border-top: 1px solid var(--page-border); padding-top: clamp(2.5rem, 6vw, 4.5rem); }
+  .contract, .agents, .principles, .honest, .paths { border-top: 1px solid var(--page-border); padding-top: clamp(2.5rem, 6vw, 4.5rem); }
   .section-label { margin: 0 0 .8rem; color: var(--page-muted); font-family: var(--page-mono); font-size: .78rem; letter-spacing: .1em; text-transform: uppercase; }
-  h2 { max-width: 22ch; font-size: clamp(1.7rem, 3.5vw, 2.6rem); }
+  h2 { max-width: 26ch; font-size: clamp(1.7rem, 3.5vw, 2.6rem); }
+  h2 em { font-style: normal; color: var(--mdy-indigo); }
   .principle-grid, .path-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin-top: 2rem; }
   article, .path-grid a { padding: 1.3rem; border: 1px solid var(--page-border); border-radius: .7rem; background: var(--page-card); }
   article h3 { font-size: 1.05rem; }
-  article p, .try p, .path-grid span { color: var(--page-muted); line-height: 1.55; }
-  .try { display: grid; grid-template-columns: 1.2fr .8fr; gap: 2rem; align-items: start; }
-  .try .actions { grid-column: 1 / -1; margin-top: 0; }
-  pre { margin: 0; overflow: auto; padding: 1.1rem; border: 1px solid var(--page-border); border-radius: .7rem; background: var(--page-card); }
+  article p, .contract p, .agents p, .honest p, .path-grid span { color: var(--page-muted); line-height: 1.55; }
+  .contract, .agents, .honest { display: grid; grid-template-columns: 1.2fr .8fr; gap: 2rem; align-items: start; }
+  .contract .actions, .agents .actions, .honest .actions { grid-column: 1 / -1; margin-top: 0; }
+  .agents, .honest { grid-template-columns: 1fr; }
+  .agents p, .honest p { max-width: 68ch; }
+  pre { margin: 0; overflow: auto; padding: 1.1rem; border: 1px solid var(--page-border); border-radius: .7rem; background: var(--page-card); font-size: .82rem; line-height: 1.5; }
   .path-grid a { display: grid; gap: .5rem; text-decoration: none; }
   .path-grid a:hover, .path-grid a:focus-visible { border-color: var(--mdy-indigo); }
-  @media (max-width: 48rem) { .principle-grid, .path-grid, .try { grid-template-columns: 1fr; } }
+  @media (max-width: 48rem) { .principle-grid, .path-grid, .contract { grid-template-columns: 1fr; } }
 </style>
