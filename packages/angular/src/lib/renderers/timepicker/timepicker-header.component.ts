@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component, inject, input, output } from "@angular/core";
+import { MDY_EVERY_TIME, type MdyTimeSteps } from "@modyra/widgets";
 import { MDY_I18N_MESSAGES } from "../../core/i18n";
 import { MdyTimepickerSegmentComponent } from "./timepicker-segment.component";
 import { MdyTimepickerPeriodToggleComponent } from "./timepicker-period-toggle.component";
@@ -13,6 +14,7 @@ import { MdyTimepickerPeriodToggleComponent } from "./timepicker-period-toggle.c
         <mdy-timepicker-segment
           unit="hour"
           [format]="format()"
+          [steps]="steps()"
           [value]="hour()"
           [label]="i18n.timepickerHourLabel"
           [active]="focusedField() === 'hour'"
@@ -30,6 +32,7 @@ import { MdyTimepickerPeriodToggleComponent } from "./timepicker-period-toggle.c
         <mdy-timepicker-segment
           unit="minute"
           [format]="format()"
+          [steps]="steps()"
           [value]="minute()"
           [label]="i18n.timepickerMinuteLabel"
           [active]="focusedField() === 'minute'"
@@ -61,6 +64,8 @@ export class MdyTimepickerHeaderComponent {
   readonly minute = input.required<string>();
   readonly period = input.required<'AM' | 'PM'>();
   readonly format = input<'12h' | '24h'>('12h');
+  /** Which values the segments offer, resolved once by the renderer for the time being edited. */
+  readonly steps = input<MdyTimeSteps>(MDY_EVERY_TIME);
   readonly focusedField = input.required<'hour' | 'minute'>();
   readonly viewMode = input.required<'input' | 'dial'>();
   readonly disabled = input<boolean>(false);

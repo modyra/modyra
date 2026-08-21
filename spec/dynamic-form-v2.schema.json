@@ -242,7 +242,7 @@
         },
         "prefix": {
           "type": "string",
-          "description": "Short content set against the control \u2014 a currency mark, a unit, a domain."
+          "description": "Short content set against the control — a currency mark, a unit, a domain."
         },
         "suffix": {
           "type": "string",
@@ -271,15 +271,64 @@
           "type": "integer",
           "minimum": 0,
           "maximum": 6,
-          "description": "Calendar kinds: 0 = Sunday \u2026 6 = Saturday. Unset follows the locale."
+          "description": "Calendar kinds: 0 = Sunday … 6 = Saturday. Unset follows the locale."
         },
         "minDate": {
           "type": "string",
-          "description": "Calendar kinds: earliest selectable date, ISO yyyy-MM-dd. Presentation only \u2014 bounds are enforced by validators."
+          "description": "Calendar kinds: earliest selectable date, ISO yyyy-MM-dd. Presentation only — bounds are enforced by validators."
         },
         "maxDate": {
           "type": "string",
           "description": "Calendar kinds: latest selectable date, ISO yyyy-MM-dd."
+        },
+        "granularity": {
+          "type": "object",
+          "additionalProperties": false,
+          "description": "timepicker only: which times the field offers. Absent offers every one. A step that does not divide its unit, a window covering no time, or two windows claiming the same minutes are refused where they are declared.",
+          "properties": {
+            "minuteStep": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 60,
+              "description": "Minutes between offered times. Must divide 60."
+            },
+            "hourStep": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 24,
+              "description": "Hours between offered hours. Must divide 24."
+            },
+            "windows": {
+              "type": "array",
+              "description": "Stretches of the day whose minute step differs from the field's. Half-open: from inclusive, to exclusive, so adjacent windows tile without overlapping. A window's step overrides the field's rather than composing with it.",
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "from",
+                  "to",
+                  "minuteStep"
+                ],
+                "properties": {
+                  "from": {
+                    "type": "string",
+                    "pattern": "^([01]?\\d|2[0-3]):[0-5]\\d$",
+                    "description": "HH:MM, 24-hour, inclusive."
+                  },
+                  "to": {
+                    "type": "string",
+                    "pattern": "^([01]?\\d|2[0-3]):[0-5]\\d$",
+                    "description": "HH:MM, 24-hour, exclusive."
+                  },
+                  "minuteStep": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 60
+                  }
+                }
+              }
+            }
+          }
         },
         "accept": {
           "type": "string",

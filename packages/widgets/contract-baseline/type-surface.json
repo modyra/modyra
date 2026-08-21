@@ -616,6 +616,7 @@
     "kind: \"columns\""
   ],
   "MdyDynamicDateField": [
+    "granularity?: MdyTimeGranularity",
     "kind: \"datepicker\" | \"timepicker\""
   ],
   "MdyDynamicDaterangeField": [

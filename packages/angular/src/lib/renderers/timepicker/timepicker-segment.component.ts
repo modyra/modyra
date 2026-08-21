@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, input, output } from "@angular/core";
-import { acceptTimeField, stepTimeField, timeFieldBounds } from "@modyra/widgets";
+import { acceptTimeField, MDY_EVERY_TIME, stepTimeField, timeFieldBounds, type MdyTimeSteps } from "@modyra/widgets";
 import type { MdyTimeFormat } from "@modyra/core/datetime";
 
 @Component({
@@ -18,6 +18,7 @@ import type { MdyTimeFormat } from "@modyra/core/datetime";
         class="mdy-timepicker-segment-input"
         [min]="bounds().min"
         [max]="bounds().max"
+        [step]="bounds().step"
         [attr.aria-invalid]="outOfRange() ? 'true' : null"
         [attr.title]="outOfRange() ? bounds().min + '–' + bounds().max : null"
         [class.mdy-timepicker-segment-input--readonly]="readonly()"
@@ -51,9 +52,17 @@ export class MdyTimepickerSegmentComponent {
   readonly showLabel = input<boolean>(false);
   /** Which clock this segment belongs to. The hour's range depends on it; the minute's never does. */
   readonly format = input<MdyTimeFormat>("12h");
+  /**
+   * Which values this segment offers, resolved by the renderer for the time being edited.
+   *
+   * Given rather than derived: a windowed granularity's minute step depends on the hour the draft is
+   * on, and a segment that resolved it here would need the whole draft to do it — and would be a
+   * second answer to a question the controller already answers.
+   */
+  readonly steps = input<MdyTimeSteps>(MDY_EVERY_TIME);
 
   /** The range the contract states for this segment, rather than a literal beside the template. */
-  protected readonly bounds = computed(() => timeFieldBounds(this.unit(), this.format()));
+  protected readonly bounds = computed(() => timeFieldBounds(this.unit(), this.format(), this.steps()));
 
   /**
    * Whether what is in the box is outside that range.
@@ -63,7 +72,7 @@ export class MdyTimepickerSegmentComponent {
   protected readonly outOfRange = computed(() => {
     const raw = this.value();
     if (raw.trim().length === 0) return false;
-    return acceptTimeField(this.unit(), this.format(), raw).type === "rejected";
+    return acceptTimeField(this.unit(), this.format(), raw, this.steps()).type === "rejected";
   });
 
   readonly clicked     = output<void>();
@@ -93,14 +102,14 @@ export class MdyTimepickerSegmentComponent {
     const delta = event.key === "ArrowUp" ? 1 : event.key === "ArrowDown" ? -1 : 0;
     if (delta !== 0) {
       event.preventDefault();
-      const entry = acceptTimeField(this.unit(), this.format(), this.value());
+      const entry = acceptTimeField(this.unit(), this.format(), this.value(), this.steps());
       const from = entry.type === "accepted" ? entry.value : this.bounds().min;
       // Reported, not written. The template binds `[value]="value()"`, so this DOM property has an
       // owner; a handler that also assigns it gives one value two owners, and which of them wins is
       // a matter of timing — the bound value was written back over the stepped one before the frame
       // painted, which is what "the arrows do nothing" was. The step goes out as a value and comes
       // back as a render, the same way a typed character does.
-      this.stepped.emit(stepTimeField(this.unit(), this.format(), from, delta));
+      this.stepped.emit(stepTimeField(this.unit(), this.format(), from, delta, this.steps()));
       return;
     }
 

@@ -30,6 +30,9 @@ import {
   timepickerDialNumbers,
   timepickerDialRing,
   timepickerSelectedRing,
+  timeStepsAt,
+  MDY_EVERY_TIME,
+  type MdyTimeGranularity,
   timepickerSelectedDialValue,
 } from "@modyra/widgets";
 import { MDY_I18N_MESSAGES } from "../../core/i18n";
@@ -48,6 +51,20 @@ export class MdyTimepickerClockComponent {
   readonly value = input<string | null>(null);
   readonly disabled = input<boolean>(false);
   readonly format = input<MdyTimeFormat>("12h");
+  /** Which times the field offers. Absent offers every one. */
+  readonly granularity = input<MdyTimeGranularity | undefined>(undefined);
+
+  /**
+   * The steps in force for the time on screen.
+   *
+   * Resolved once here and handed down, because a windowed granularity's minute step depends on the
+   * hour the draft is on — and because two components resolving it separately is two answers to one
+   * question.
+   */
+  protected readonly steps = computed(() => {
+    const parsed = this.parsed();
+    return parsed ? timeStepsAt(this.granularity(), to24Hour(parsed)) : MDY_EVERY_TIME;
+  });
   /**
    * Whether the picker is showing. The clock is always in the DOM — the panel projects it rather
    * than creating it — so this is the only way it can know it has just been opened, and the dial
@@ -159,7 +176,7 @@ export class MdyTimepickerClockComponent {
   });
 
   /** The numbers on the face, and which one is selected — the contract's, not this component's. */
-  protected readonly dialNumbers = computed(() => timepickerDialNumbers(this.focusedField(), this.format()));
+  protected readonly dialNumbers = computed(() => timepickerDialNumbers(this.focusedField(), this.format(), this.steps()));
 
   /**
    * The number the hand is on, in the units the face shows: 0–23 on a 24-hour face, 1–12 on a

@@ -9,6 +9,7 @@ import {
   Injector,
   input,
 } from "@angular/core";
+import type { MdyTimeGranularity } from "@modyra/core";
 import { MdyTimeFormat, buildTimeString, formatTimeAs, getCurrentTime, parseAnyTime, to24Hour } from "@modyra/core/datetime";
 import {
   MDY_WIDGET_CONTRACTS,
@@ -123,6 +124,7 @@ import { MdyTimepickerClockComponent } from "./timepicker-clock.component";
       >
         <mdy-timepicker-clock
           [value]="draftValue()"
+          [granularity]="granularity()"
           [open]="open()"
           [format]="format()"
           [disabled]="isDisabled()"
@@ -163,6 +165,13 @@ export class MdyTimepickerComponent extends MdyOverlayControl<string | null> {
    * them, which is the divergence a shared contract exists to prevent. Pass `"12h"` for the other.
    */
   readonly format = input<MdyTimeFormat>("24h");
+  /**
+   * Which times this field offers. Absent offers every one.
+   *
+   * The controller is told once, at construction, so a granularity that changes after the fact does
+   * not silently rebuild the draft the user is editing.
+   */
+  readonly granularity = input<MdyTimeGranularity | undefined>(undefined);
   protected override readonly minSpace = 450;
 
   protected readonly effectivePlaceholder = computed(() =>
@@ -180,7 +189,12 @@ export class MdyTimepickerComponent extends MdyOverlayControl<string | null> {
   );
   /** The clock's draft, which the controller owns — this kind's value contract says `confirm`. */
   protected readonly controller = this.adoptFieldController((handle, widgetId) =>
-    createTimepickerFieldController({ widgetId, handle: handle as never, format: this.format() }),
+    createTimepickerFieldController({
+      widgetId,
+      handle: handle as never,
+      format: this.format(),
+      ...(this.granularity() !== undefined && { granularity: this.granularity()! }),
+    }),
   );
   protected readonly draftValue = computed(() => {
     const draft = this.controller()?.state().draft;

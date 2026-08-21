@@ -29,6 +29,8 @@ import { MDY_DYNAMIC_MEMBERS, unknownMembers } from "./members.js";
 import { dynamicPatternRefusal } from "./pattern-cost.js";
 import { explainValueMismatch, type MdyValueKind } from "../value-contracts.js";
 import { MDY_FIELD_KINDS } from "../field-kinds.js";
+import { explainGranularityProblem, validateTimeGranularity } from "../time-granularity.js";
+import type { MdyTimeGranularity } from "./schema.js";
 import { breaksValueConversion } from "../path-utils.js";
 import { required } from "../validators.js";
 import { mdyEmptyValueFor } from "./schema.js";
@@ -703,6 +705,8 @@ export function parseDynamicFields(input: unknown): MdyDynamicField[] {
   const seenNames = new Set<string>();
   /** Option lists this read shortened, by the entry they belong to. */
   const dedupedOptions = new Map<unknown, ReadonlyArray<MdySelectOption<unknown>>>();
+  /** Fields whose declared granularity cannot be honoured, stripped on the way out rather than in place. */
+  const droppedGranularity = new Set<unknown>();
   const accepted: MdyDynamicField[] = items.filter((item, index): item is MdyDynamicField => {
     // Where this entry is written, so a finding underlines the entry rather than the array. A
     // duplicate names the *second* occurrence: the first is legitimate until the second exists, and
@@ -922,6 +926,29 @@ export function parseDynamicFields(input: unknown): MdyDynamicField[] {
         at,
       );
     }
+    // A granularity that cannot be honoured is refused where it is written. A step that does not
+    // divide its unit produces a rule its author did not write — `minuteStep: 7` offers 0, 7 … 56
+    // and then jumps four minutes — and a picker merely behaving oddly at 56 past sends whoever
+    // declared it looking in the wrong place. The field is kept and the granularity dropped: taking
+    // the field away over a refinement removes something the user can see, over a rule they cannot.
+    const declaredGranularity = (f as { granularity?: unknown }).granularity;
+    if (declaredGranularity !== undefined) {
+      const said = f.kind === "timepicker"
+        ? validateTimeGranularity(declaredGranularity as MdyTimeGranularity)
+          .map((problem) => explainGranularityProblem(problem)).join("; ")
+        : `a "${String(f.kind)}" has no times to offer, which this contract does not declare`;
+      if (said.length > 0) {
+        warnDev(
+          `Dynamic field "${f.name}" declares a granularity this reader cannot honour: ${said}. ` +
+          "The field offers every time instead.",
+          at,
+        );
+        // Recorded, not deleted: the document belongs to the caller, and a parser that edits it
+        // leaves a second read of the same object answering differently from the first.
+        droppedGranularity.add(item);
+      }
+    }
+
     const needsOptions = ["select", "radio", "multiselect", "segmented"];
     if (needsOptions.includes(f.kind as string)) {
       const options = (f as { options?: unknown }).options;
@@ -958,12 +985,16 @@ export function parseDynamicFields(input: unknown): MdyDynamicField[] {
     }
     return true;
   });
-  return dedupedOptions.size === 0
-    ? accepted
-    : accepted.map((declared) => {
-      const kept = dedupedOptions.get(declared);
-      return kept === undefined ? declared : { ...declared, options: kept } as MdyDynamicField;
-    });
+  if (dedupedOptions.size === 0 && droppedGranularity.size === 0) return accepted;
+  return accepted.map((declared) => {
+    const kept = dedupedOptions.get(declared);
+    let out = kept === undefined ? declared : { ...declared, options: kept } as MdyDynamicField;
+    if (droppedGranularity.has(declared)) {
+      const { granularity: _dropped, ...rest } = out as MdyDynamicField & { granularity?: unknown };
+      out = rest as MdyDynamicField;
+    }
+    return out;
+  });
 }
 
 /**
@@ -999,6 +1030,7 @@ export const MDY_DYNAMIC_DIAGNOSTICS: ReadonlyArray<{
   Object.freeze({ code: "MDY_DYNAMIC_COUNT_INCOMPLETE", phrase: "a floor and not a total" }),
   Object.freeze({ code: "MDY_DYNAMIC_UNKNOWN_MEMBER", phrase: "which this contract does not declare" }),
   Object.freeze({ code: "MDY_DYNAMIC_DEPRECATED_VERSION", phrase: "Version 1 is deprecated" }),
+  Object.freeze({ code: "MDY_DYNAMIC_UNHONOURABLE_GRANULARITY", phrase: "granularity this reader cannot honour" }),
 ]);
 
 /** What a refusal is called when none of the named ones fits. */

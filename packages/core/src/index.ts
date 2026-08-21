@@ -35,6 +35,21 @@ export type {
 // and `observerFor` then falls back to a vanilla runtime whose signals that adapter cannot see —
 // state changes and nothing re-renders, silently, which is the defect this registry exists to stop.
 export {
+  explainGranularityProblem,
+  isOnStep,
+  MDY_EVERY_TIME,
+  minutesOfDay,
+  stepValues,
+  timeStepsAt,
+  validateTimeGranularity,
+} from "./time-granularity.js";
+export type {
+  MdyGranularityProblem,
+  MdyTimeGranularity,
+  MdyTimeSteps,
+  MdyTimeWindow,
+} from "./time-granularity.js";
+export {
   getFieldHandleOwner,
   handleFormOf,
   observerFor,
