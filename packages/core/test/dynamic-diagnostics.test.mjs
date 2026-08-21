@@ -35,6 +35,8 @@ const REFUSALS = {
   MDY_DYNAMIC_UNHONOURABLE_GRANULARITY: [{ name: "a", kind: "timepicker", granularity: { minuteStep: 7 } }],
   // A clock is one of two, and a third name is not a clock this contract draws.
   MDY_DYNAMIC_UNHONOURABLE_FORMAT: [{ name: "a", kind: "timepicker", format: "36h" }],
+  // A picker has two views and a third name is not one of them.
+  MDY_DYNAMIC_UNOPENABLE_VIEW: [{ name: "a", kind: "timepicker", viewMode: "sundial" }],
   // A path is the payload key and the widget id, and a document can grow one without limit.
   MDY_DYNAMIC_PATH_TOO_LONG: (() => {
     let node = { node: "field", field: { kind: "text", label: "L" } };

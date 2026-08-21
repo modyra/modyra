@@ -329,6 +329,10 @@
           "enum": ["12h", "24h"],
           "description": "timepicker only: which clock the field draws and reads. Absent draws the 24-hour clock. The stored value is the same either way."
         },
+        "viewMode": {
+          "enum": ["dial", "input"],
+          "description": "timepicker only: which of the two views the picker opens in. Absent opens on the dial. Closing the picker returns it here, so this is the view the field has rather than the one it started with."
+        },
         "granularity": {
           "type": "object",
           "additionalProperties": false,

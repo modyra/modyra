@@ -40,6 +40,8 @@ import {
   type MdyElementLookup,
   type MdyI18nMessages,
   keyBindingFor,
+  MDY_TIMEPICKER_DEFAULT_FORMAT,
+  timepickerPlaceholder,
 } from "@modyra/widgets";
 import { runCommands } from "../command-runtime.js";
 import { applyPart, el, setErrors, setIcon, setText } from "../dom.js";
@@ -51,7 +53,7 @@ export function renderTimepickerField(
   f: MdyDynamicDateField,
   handle: MdyFieldHandle<string | null>,
   reactivity?: MdyReactivity,
-  format: MdyTimeFormat = "24h",
+  format: MdyTimeFormat = MDY_TIMEPICKER_DEFAULT_FORMAT,
   widgetId: string = f.name,
   /**
    * The words this control shows. The engine has no opinion about them, so they arrive from the
@@ -74,6 +76,9 @@ export function renderTimepickerField(
     // Declared on the field, so a document can ask for it. A capability no document can reach is a
     // capability nobody has.
     ...(f.granularity !== undefined && { granularity: f.granularity }),
+    // Which view it opens in, declared the same way and restored on close, so the document names
+    // the view the field *has* rather than the one it happened to start on.
+    ...(f.viewMode !== undefined && { viewMode: f.viewMode }),
     // The reading is this renderer's — it knows the notation on screen; the judgement is the
     // controller's, so both renderers answer a typed entry the same way.
     parseEntry: (text) => {
@@ -92,7 +97,9 @@ export function renderTimepickerField(
   // dialog, rather than one button doing both jobs.
   const control = el("input", parts.control.classes.join(" ")) as HTMLInputElement;
   control.type = "text";
-  if (f.placeholder) control.placeholder = f.placeholder;
+  // The notation this control reads, when the field does not name its own. Absent here entirely,
+  // the same document told a person what to type in two adapters and nothing in the third.
+  control.placeholder = f.placeholder || timepickerPlaceholder(format);
   const toggle = el("button", parts.toggle.classes.join(" ")) as HTMLButtonElement;
   setIcon(toggle, "CLOCK");
   toggle.type = "button";

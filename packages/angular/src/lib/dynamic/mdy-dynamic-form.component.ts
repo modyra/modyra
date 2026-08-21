@@ -22,10 +22,11 @@ import {
   MdyDynamicLayoutSlot,
   MdyDynamicParseMode,
   MdyTimeGranularity,
+  MdyTimepickerViewMode,
   MdySignal,
 } from "@modyra/core";
 import type { MdyTimeFormat } from "@modyra/core/datetime";
-import { layoutNodeAttributes, layoutSlotStyle, MDY_LAYOUT_CLASSES } from "@modyra/widgets";
+import { layoutNodeAttributes, layoutSlotStyle, MDY_LAYOUT_CLASSES, MDY_TIMEPICKER_DEFAULT_FORMAT, MDY_TIMEPICKER_INITIAL_VIEW } from "@modyra/widgets";
 import { angularReactivity } from "../core/reactivity-angular";
 import { MdyFormSubmitEvent } from "../core/types";
 import { MdyFormComponent } from "../form/mdy-form.component";
@@ -261,7 +262,8 @@ import { MdyToggleComponent } from "../renderers/toggle/toggle-renderer.componen
                 [name]="f.name"
                 [label]="f.label ?? ''"
                 [initialValue]="emptyFor(f)"
-                [format]="asTime(f).format ?? '24h'"
+                [format]="asTime(f).format ?? defaultFormat"
+                [viewMode]="asTime(f).viewMode ?? initialView"
                 [granularity]="asTime(f).granularity"
                 [animateHand]="asTime(f).animateHand ?? false"
                 [showUnavailable]="asTime(f).showUnavailable ?? false"
@@ -274,14 +276,21 @@ import { MdyToggleComponent } from "../renderers/toggle/toggle-renderer.componen
   `,
 })
 export class MdyDynamicFormComponent {
+  /* What a timepicker draws when the document says nothing — the contract's answers, not this
+     component's. A fallback written as a literal here is a fifth copy of a default the contract
+     owns, and the one furthest from anything that would notice it drifting. */
+  protected readonly defaultFormat = MDY_TIMEPICKER_DEFAULT_FORMAT;
+  protected readonly initialView = MDY_TIMEPICKER_INITIAL_VIEW;
+
   /** A timepicker's own members, read from the union the template narrows by `kind`. */
   protected asTime(field: MdyDynamicField): {
     readonly format?: MdyTimeFormat;
+    readonly viewMode?: MdyTimepickerViewMode;
     readonly granularity?: MdyTimeGranularity;
     readonly animateHand?: boolean;
     readonly showUnavailable?: boolean;
   } {
-    return field as { format?: MdyTimeFormat; granularity?: MdyTimeGranularity; animateHand?: boolean; showUnavailable?: boolean };
+    return field as { format?: MdyTimeFormat; viewMode?: MdyTimepickerViewMode; granularity?: MdyTimeGranularity; animateHand?: boolean; showUnavailable?: boolean };
   }
 
   /**

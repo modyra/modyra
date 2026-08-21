@@ -48,6 +48,9 @@ import {
   type MdyTimeGranularity,
   timepickerEntryText,
   timepickerSelectedDialValue,
+  MDY_TIMEPICKER_DEFAULT_FORMAT,
+  MDY_TIMEPICKER_INITIAL_VIEW,
+  type MdyTimepickerViewMode,
 } from "@modyra/widgets";
 import { MDY_I18N_MESSAGES } from "../../core/i18n";
 import { MdyTimepickerHeaderComponent } from "./timepicker-header.component";
@@ -64,7 +67,7 @@ export class MdyTimepickerClockComponent {
   protected readonly i18n = inject(MDY_I18N_MESSAGES);
   readonly value = input<string | null>(null);
   readonly disabled = input<boolean>(false);
-  readonly format = input<MdyTimeFormat>("24h");
+  readonly format = input<MdyTimeFormat>(MDY_TIMEPICKER_DEFAULT_FORMAT);
   /** Which times the field offers. Absent offers every one. */
   readonly granularity = input<MdyTimeGranularity | undefined>(undefined);
   /** Whether the field itself refuses edits — not whether the clock is the view. */
@@ -125,7 +128,15 @@ export class MdyTimepickerClockComponent {
   protected readonly innerHandClass = stateClass(this.p.dialHand.classes[0]!, "inner");
   protected readonly animatedClass = stateClass(this.p.clock.classes[0]!, "animated");
 
-  protected readonly viewMode = signal<"input" | "dial">("dial");
+  /**
+   * Which view is showing — the controller's, given rather than held.
+   *
+   * A copy kept here answers the toggle and nothing else: the controller restores the declared view
+   * on close, so a second copy disagrees the moment either moves.
+   */
+  readonly viewMode = input<MdyTimepickerViewMode>(MDY_TIMEPICKER_INITIAL_VIEW);
+  /** The person asked for the other view; the controller decides what that means. */
+  readonly viewModeChange = output<MdyTimepickerViewMode>();
   protected readonly focusedField = signal<"hour" | "minute">("hour");
   protected readonly isDragging = signal(false);
   protected readonly dragAngle = signal<number | null>(null);
@@ -319,8 +330,8 @@ export class MdyTimepickerClockComponent {
     if (next !== null) this.timePicked.emit(next);
   }
 
-  protected setViewMode(mode: "input" | "dial"): void {
-    this.viewMode.set(mode);
+  protected setViewMode(mode: MdyTimepickerViewMode): void {
+    this.viewModeChange.emit(mode);
     if (mode === "dial") this.focusDial();
   }
 

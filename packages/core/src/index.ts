@@ -45,6 +45,7 @@ export {
 export type {
   MdyGranularityProblem,
   MdyTimeGranularity,
+  MdyTimepickerViewMode,
   MdyTimeSteps,
   MdyTimeWindow,
 } from "./time-granularity.js";

@@ -21,7 +21,7 @@
  * invalid. Snapping it would silently answer a different question from the one that was asked.
  */
 
-export type { MdyTimeGranularity, MdyTimeWindow } from "./dynamic/schema.js";
+export type { MdyTimeGranularity, MdyTimepickerViewMode, MdyTimeWindow } from "./dynamic/schema.js";
 import type { MdyTimeGranularity } from "./dynamic/schema.js";
 
 /** The steps in force. Always concrete: 1 is "every one", which is what no declaration means. */
