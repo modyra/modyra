@@ -736,7 +736,7 @@ test("the shapes these functions answer with are the ones they publish", () => {
 
   /** @type {readonly import("../dist/index.js").MdyTimepickerDialArc[]} */
   const arcs = timepickerDialUnavailableArcs("minute", "24h", { minuteStep: 15 }, 100);
-  assert.deepEqual(Object.keys(arcs[0]).sort(), ["from", "to"]);
+  assert.deepEqual(Object.keys(arcs[0]).sort(), ["from", "ring", "span", "to"]);
 
   /** @type {readonly import("../dist/index.js").MdyGranularityProblem[]} */
   const problems = validateTimeGranularity({ minuteStep: 7 });
@@ -751,4 +751,75 @@ test("the shapes these functions answer with are the ones they publish", () => {
   assert.equal(dialRingOf("hour", 15, "24h"), "inner");
   assert.equal(dialRingOf("hour", 3, "24h"), "outer");
   assert.equal(dialRingOf("minute", 15, "24h"), "outer", "a minute face has one ring");
+});
+
+// ─── a ring that does not change its mind ────────────────────────────────────
+
+const { MDY_TIMEPICKER_NUMBER_SIZE } = await import("../dist/index.js");
+
+/** A pointer at `reach` px from the centre, straight out to the right, given what was last answered. */
+const ringAt = (reach, previous) => timepickerDialRing(FACE, 128 + reach, 128, "24h", HAND, "hour", previous);
+
+test("a wander at the edge cannot change the ring at all", () => {
+  // Measured on the shipped build before this existed: a 6px wander around the edge produced four
+  // ring changes, each one the hand jumping its own length and the face swapping which twelve
+  // numbers it picks from. A person resting a finger on the outer part of an inner number is sitting
+  // exactly on the edge, and a hand is never still.
+  let previous = ringAt(79);
+  let changes = 0;
+  for (const reach of [76, 82, 77, 81, 78, 80, 82, 76, 79]) {
+    const now = ringAt(reach, previous);
+    if (now !== previous) changes += 1;
+    previous = now;
+  }
+  assert.equal(changes, 0, "the finger never left the number it was resting on");
+});
+
+test("no wander of half a box changes the ring twice, anywhere on the face", () => {
+  const wander = MDY_TIMEPICKER_NUMBER_SIZE / 4;
+  const worst = [];
+  for (let centre = 20; centre <= 98; centre += 1) {
+    let previous = ringAt(centre);
+    let changes = 0;
+    for (const offset of [0.3, -0.9, 0.6, -1, 0.2, 1, -0.7, 0.5, -0.4, 0.8]) {
+      const now = ringAt(Math.min(Math.max(centre + offset * wander, 0), 128), previous);
+      if (now !== previous) changes += 1;
+      previous = now;
+    }
+    if (changes > 1) worst.push(`${centre}px: ${changes} changes`);
+  }
+  assert.deepEqual(worst, []);
+});
+
+test("a deliberate move to the other ring still lands, and costs one gesture", () => {
+  // The check a fix that simply refuses to change ring would fail, and the three above would not.
+  let previous = ringAt(60);
+  assert.equal(previous, "inner", "starting on the inner digits");
+  let changes = 0;
+  for (let reach = 60; reach <= 100; reach += 1) {
+    const now = ringAt(reach, previous);
+    if (now !== previous) changes += 1;
+    previous = now;
+  }
+  assert.equal(previous, "outer", "and it arrives");
+  assert.equal(changes, 1, "once");
+});
+
+test("the first answer of a gesture is the edge, unchanged", () => {
+  // No previous ring, so where the rings divide is 334's derivation and nothing else. Hysteresis
+  // governs changes; it does not move the boundary.
+  assert.equal(ringAt(80), "inner", "the boxes meet here");
+  assert.equal(ringAt(81), "outer");
+  assert.equal(ringAt(0), "inner");
+  assert.equal(ringAt(127), "outer");
+});
+
+test("a face with one ring answers the same however it is asked", () => {
+  for (const [format, field] of [["12h", "hour"], ["24h", "minute"]]) {
+    for (const reach of [0, 60, 80, 100, 127]) {
+      for (const previous of [undefined, "inner", "outer"]) {
+        assert.equal(timepickerDialRing(FACE, 128 + reach, 128, format, HAND, field, previous), "outer", `${format}/${field} at ${reach}`);
+      }
+    }
+  }
 });

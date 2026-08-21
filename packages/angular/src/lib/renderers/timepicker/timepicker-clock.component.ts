@@ -36,6 +36,8 @@ import {
   timepickerDialTolerance,
   timepickerDialUnavailableArcs,
   MDY_TIMEPICKER_INNER_RING,
+  MDY_WIDGET_CONTRACTS,
+  stateClass,
   timepickerSelectedRing,
   timeStepsAt,
   MDY_EVERY_TIME,
@@ -71,16 +73,9 @@ export class MdyTimepickerClockComponent {
   readonly showUnavailable = input<boolean>(false);
 
   /** The stretches this face offers nothing in, per ring — the inner one's are wider. */
-  protected readonly unavailable = computed(() => {
-    if (!this.showUnavailable()) return [];
-    const hand = this.dragHandLength();
-    const rings = this.format() === "24h" && this.focusedField() === "hour"
-      ? (["outer", "inner"] as const)
-      : (["outer"] as const);
-    return rings.flatMap((ring) =>
-      timepickerDialUnavailableArcs(this.focusedField(), this.format(), this.steps(), hand, ring)
-        .map((arc) => ({ ...arc, ring, span: ((arc.to - arc.from) + 360) % 360 })));
-  });
+  protected readonly unavailable = computed(() => this.showUnavailable()
+    ? timepickerDialUnavailableArcs(this.focusedField(), this.format(), this.steps(), this.dragHandLength())
+    : []);
 
   /**
    * The steps in force for the time on screen.
@@ -116,6 +111,12 @@ export class MdyTimepickerClockComponent {
   // opens on it, and the mode toggle is how a user asks for the number fields instead.
   /** The inner ring's arcs are drawn on a smaller circle — the contract's fraction, not a guess. */
   protected readonly innerRingScale = MDY_TIMEPICKER_INNER_RING;
+
+  /** State classes derived from the parts that declare them, rather than written out here. */
+  private readonly p = MDY_WIDGET_CONTRACTS.timepicker.parts;
+  protected readonly ghostClass = stateClass(this.p.dialHand.classes[0]!, "ghost");
+  protected readonly innerHandClass = stateClass(this.p.dialHand.classes[0]!, "inner");
+  protected readonly animatedClass = stateClass(this.p.clock.classes[0]!, "animated");
 
   protected readonly viewMode = signal<"input" | "dial">("dial");
   protected readonly focusedField = signal<"hour" | "minute">("hour");
@@ -242,6 +243,8 @@ export class MdyTimepickerClockComponent {
   private readonly dragHandLength = signal(0);
   /** How far the pointer is from the centre — the ghost ends there. */
   private readonly dragReach = signal(0);
+  /** Whether `dragRing` holds an answer from this gesture or the default it starts at. */
+  private ringDecided = false;
 
   /**
    * The faint hand under the pointer, when the pointer is not on the number that was chosen.
@@ -443,6 +446,8 @@ export class MdyTimepickerClockComponent {
     }
 
     this.isDragging.set(false);
+    // The gesture is over: the next one decides from where it lands.
+    this.ringDecided = false;
     this.dragAngle.set(null);
   }
 
@@ -458,6 +463,9 @@ export class MdyTimepickerClockComponent {
     const dx = coords.clientX - (face.left + face.width / 2);
     const dy = coords.clientY - (face.top + face.height / 2);
     this.dragReach.set(Math.sqrt(dx * dx + dy * dy));
-    this.dragRing.set(timepickerDialRing(face, coords.clientX, coords.clientY, this.format(), handLength, this.dragField));
+    // The ring it last answered goes back in: from position alone, a finger resting on the edge
+    // changed the ring four times in a 6px wander, and the edge is where a finger naturally rests.
+    this.dragRing.set(timepickerDialRing(face, coords.clientX, coords.clientY, this.format(), handLength, this.dragField, this.ringDecided ? this.dragRing() : undefined));
+    this.ringDecided = true;
   }
 }

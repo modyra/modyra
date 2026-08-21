@@ -21,6 +21,7 @@ import {
   MdyDynamicLayoutNode,
   MdyDynamicLayoutSlot,
   MdyDynamicParseMode,
+  MdyTimeGranularity,
   MdySignal,
 } from "@modyra/core";
 import { layoutNodeAttributes, layoutSlotStyle, MDY_LAYOUT_CLASSES } from "@modyra/widgets";
@@ -252,10 +253,16 @@ import { MdyToggleComponent } from "../renderers/toggle/toggle-renderer.componen
               />
             }
             @case ("timepicker") {
+              <!-- A document declaring which times it offers, and how the dial says so. Without
+                   these three the properties parse, validate and reach no control: a capability a
+                   document can ask for and no renderer hears. -->
               <mdy-control-timepicker
                 [name]="f.name"
                 [label]="f.label ?? ''"
                 [initialValue]="emptyFor(f)"
+                [granularity]="asTime(f).granularity"
+                [animateHand]="asTime(f).animateHand ?? false"
+                [showUnavailable]="asTime(f).showUnavailable ?? false"
               />
             }
           }
@@ -265,6 +272,15 @@ import { MdyToggleComponent } from "../renderers/toggle/toggle-renderer.componen
   `,
 })
 export class MdyDynamicFormComponent {
+  /** A timepicker's own members, read from the union the template narrows by `kind`. */
+  protected asTime(field: MdyDynamicField): {
+    readonly granularity?: MdyTimeGranularity;
+    readonly animateHand?: boolean;
+    readonly showUnavailable?: boolean;
+  } {
+    return field as { granularity?: MdyTimeGranularity; animateHand?: boolean; showUnavailable?: boolean };
+  }
+
   /**
    * Serializable field configs, rendered in order.
    *

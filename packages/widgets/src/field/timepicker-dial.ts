@@ -271,10 +271,13 @@ export function timepickerDialTolerance(
   return (Math.atan((MDY_TIMEPICKER_NUMBER_SIZE / 2) / radius) * 180) / Math.PI;
 }
 
-/** A stretch of the circle, clockwise from `from` to `to`, in degrees. */
+/** A stretch of the circle, clockwise from `from` for `span` degrees, on one of the face's rings. */
 export interface MdyTimepickerDialArc {
   readonly from: number;
   readonly to: number;
+  /** How far it runs, so a renderer does not do modular arithmetic to draw a wedge. */
+  readonly span: number;
+  readonly ring: "outer" | "inner";
 }
 
 /**
@@ -303,8 +306,15 @@ export function timepickerDialUnavailableArcs(
   format: MdyTimeFormat = "12h",
   steps: MdyTimeSteps = MDY_EVERY_TIME,
   handLength = 0,
-  ring: "outer" | "inner" = "outer",
+  ring?: "outer" | "inner",
 ): readonly MdyTimepickerDialArc[] {
+  // Asked without a ring, it answers for every ring this face has — which is a question about the
+  // face, so the face answers it. Three renderers each deciding "does this one have an inner ring"
+  // is three places to get a 24-hour hour face wrong.
+  if (ring === undefined) {
+    const rings = format === "24h" && field === "hour" ? (["outer", "inner"] as const) : (["outer"] as const);
+    return rings.flatMap((each) => timepickerDialUnavailableArcs(field, format, steps, handLength, each));
+  }
   if (!(handLength > 0)) return [];
   const onRing = (from: MdyTimeSteps): number[] =>
     timepickerDialNumbers(field, format, from)
@@ -322,7 +332,7 @@ export function timepickerDialUnavailableArcs(
 
   const half = timepickerDialTolerance(ring, handLength);
   const gone = new Set(missing);
-  const arcs: MdyTimepickerDialArc[] = [];
+  const arcs: Array<{ from: number; to: number }> = [];
   for (const angle of missing) {
     const from = angle - half;
     const to = angle + half;
@@ -351,7 +361,12 @@ export function timepickerDialUnavailableArcs(
     const last = arcs.pop()!;
     arcs[0] = { from: last.from - 360, to: first.to };
   }
-  return arcs.map((arc) => ({ from: ((arc.from % 360) + 360) % 360, to: ((arc.to % 360) + 360) % 360 }));
+  return arcs.map((arc) => ({
+    from: ((arc.from % 360) + 360) % 360,
+    to: ((arc.to % 360) + 360) % 360,
+    span: ((arc.to - arc.from) % 360 + 360) % 360,
+    ring,
+  }));
 }
 
 /**
@@ -492,17 +507,32 @@ export function timepickerDialRing(
   format: MdyTimeFormat,
   handLength: number,
   field: "hour" | "minute" = "hour",
+  previous?: "outer" | "inner",
 ): "outer" | "inner" {
   if (field !== "hour" || format !== "24h") return "outer";
   if (!(handLength > 0)) return "outer";
   const dx = clientX - (face.left + face.width / 2);
   const dy = clientY - (face.top + face.height / 2);
   const reach = Math.sqrt(dx * dx + dy * dy);
-  // Where the two rings are painted, and how far from the inner one still counts as reaching for it.
   const inner = handLength * MDY_TIMEPICKER_INNER_RING;
   // One edge, because there is only one place the answer can change: everything closer than the
   // inner digits is still nearer them than anything else on the face.
-  return reach <= inner + (handLength - inner) * MDY_TIMEPICKER_RING_BAND ? "inner" : "outer";
+  const edge = inner + (handLength - inner) * MDY_TIMEPICKER_RING_BAND;
+  if (previous === undefined) return reach <= edge ? "inner" : "outer";
+
+  // Where the rings divide and whether to change are two questions, and one comparison was answering
+  // both. A person resting a finger on the outer part of an inner number is sitting exactly on the
+  // edge, and a hand is never still: measured, a 6px wander changed the ring four times, each one the
+  // hand jumping its own length and the face swapping which twelve numbers it picks from.
+  //
+  // So leaving a ring takes reaching halfway from the edge to the *other* ring's numbers — derived
+  // from where they are drawn rather than picked, and about half a digit box either side. A
+  // deliberate move still costs one gesture; drift costs nothing. The first answer of a gesture has
+  // no previous ring and falls through to the edge above, so where the rings divide is unchanged.
+  const leaveInner = (edge + handLength) / 2;
+  const leaveOuter = (edge + inner) / 2;
+  if (previous === "inner") return reach > leaveInner ? "outer" : "inner";
+  return reach < leaveOuter ? "inner" : "outer";
 }
 
 export function timepickerDialKeyIntent(
