@@ -39,6 +39,15 @@ export interface MdyMultiselectFieldState<TValue> {
   /** Occurrence count per option key — always populated, mainly meaningful in `"multi"` mode. */
   readonly counts: ReadonlyMap<string, number>;
   readonly query: string;
+  /**
+   * Which option the keyboard is on inside the open popup, or `null` when it is on none.
+   *
+   * A cursor, not a selection: moving it changes nothing about the value, and `select` is what
+   * commits whatever it is on. Without it the popup's own keyboard policy — which has always
+   * returned `move` and `select` — had nothing to move and nothing to commit, so a person who
+   * opened the list with a keyboard could not choose from it.
+   */
+  readonly activeKey: string | null;
   /** Whether the option popup is showing. Multiselect picks from an overlay like every other
    *  popup widget: laying the options out inline would reflow the page on every open. */
   readonly open: boolean;
@@ -62,6 +71,20 @@ export type MdyMultiselectFieldIntent =
   | { readonly type: "increment"; readonly optionKey: string }
   | { readonly type: "decrement"; readonly optionKey: string }
   | { readonly type: "search"; readonly query: string }
+  /**
+   * Moves the cursor through the options a person can currently see.
+   *
+   * Through the *filtered* list, because a cursor that walked the declared one would stop on rows
+   * the search has hidden. It changes nothing about the value: `select` is what commits.
+   */
+  | { readonly type: "move"; readonly target: "next" | "previous" | "first" | "last" }
+  /**
+   * Takes whatever the cursor is on, or the option named. Nothing when it is on nothing.
+   *
+   * `optionKey` is optional because the popup's own keyboard policy already resolves the cursor and
+   * hands back what it landed on; a caller that has not is welcome to leave it out.
+   */
+  | { readonly type: "select"; readonly optionKey?: string }
   | { readonly type: "open" }
   | { readonly type: "close"; readonly restoreFocus?: boolean }
   | { readonly type: "toggleOpen" }

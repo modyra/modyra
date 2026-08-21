@@ -67,6 +67,14 @@ export interface MdyI18nMessages {
   readonly selectionRemoved: string;
   /** What is said when the last choice is taken off and there is nothing left to name. */
   readonly selectionEmpty: string;
+  /**
+   * What a live region says when a chosen value is moved.
+   *
+   * The modifier-plus-arrow way of reordering has no "grabbed" state to announce, so the *movement*
+   * is the only thing there is to say — unannounced, a reorder is invisible to somebody who cannot
+   * see the strip. `{value}` moved, `{position}` of `{count}`.
+   */
+  readonly selectionMoved: string;
   readonly fileSelect: string;
   readonly fileSelectMultiple: string;
   readonly fileNoneSelected: string;
@@ -139,6 +147,7 @@ export const MDY_I18N_MESSAGES_DEFAULT: MdyI18nMessages = Object.freeze({
   selectionAdded: "{value} added, {count} selected",
   selectionRemoved: "{value} removed, {count} selected",
   selectionEmpty: "Nothing selected",
+  selectionMoved: "{value}, moved to position {position} of {count}",
   chipDecrementLabel: "One fewer",
   chipIncrementLabel: "One more",
   fileSelect: "Select file",
@@ -200,6 +209,7 @@ export const MDY_I18N_MESSAGES_IT: MdyI18nMessages = Object.freeze({
   selectionAdded: "{value} aggiunto, {count} selezionati",
   selectionRemoved: "{value} rimosso, {count} selezionati",
   selectionEmpty: "Nessuna selezione",
+  selectionMoved: "{value}, spostato in posizione {position} di {count}",
   chipDecrementLabel: "Uno in meno",
   chipIncrementLabel: "Uno in più",
   fileSelect: "Seleziona file",
@@ -254,6 +264,7 @@ export const MDY_I18N_MESSAGES_DE: MdyI18nMessages = Object.freeze({
   selectionAdded: "{value} hinzugefügt, {count} ausgewählt",
   selectionRemoved: "{value} entfernt, {count} ausgewählt",
   selectionEmpty: "Nichts ausgewählt",
+  selectionMoved: "{value}, verschoben auf Position {position} von {count}",
   chipDecrementLabel: "Einer weniger",
   chipIncrementLabel: "Einer mehr",
   fileSelect: "Datei auswählen",
@@ -308,6 +319,7 @@ export const MDY_I18N_MESSAGES_FR: MdyI18nMessages = Object.freeze({
   selectionAdded: "{value} ajouté, {count} sélectionnés",
   selectionRemoved: "{value} retiré, {count} sélectionnés",
   selectionEmpty: "Aucune sélection",
+  selectionMoved: "{value}, déplacé en position {position} sur {count}",
   chipDecrementLabel: "Un de moins",
   chipIncrementLabel: "Un de plus",
   fileSelect: "Sélectionner un fichier",
@@ -362,6 +374,7 @@ export const MDY_I18N_MESSAGES_ES: MdyI18nMessages = Object.freeze({
   selectionAdded: "{value} añadido, {count} seleccionados",
   selectionRemoved: "{value} quitado, {count} seleccionados",
   selectionEmpty: "Nada seleccionado",
+  selectionMoved: "{value}, movido a la posición {position} de {count}",
   chipDecrementLabel: "Uno menos",
   chipIncrementLabel: "Uno más",
   fileSelect: "Seleccionar archivo",

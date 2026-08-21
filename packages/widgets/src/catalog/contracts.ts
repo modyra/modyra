@@ -87,7 +87,15 @@ export const MDY_WIDGET_CONTRACTS = Object.freeze({
       // `listbox` is what the popup is for. A positioning box framing nothing is a coherent-looking
       // widget with nothing in it to choose from, and `empty` is a message *inside* the list rather
       // than a substitute for it.
-      required: ["arrow", "placeholder", "listbox"] }),
+      // Not `arrow` and not `placeholder`. A select that does not filter renders the **native**
+      // chooser — deliberately, for the platform's typeahead and its mobile picker — and a native
+      // `<select>` has no separate element for either: the arrow is the platform's own and the
+      // placeholder is an `<option>`. Requiring them made a correct rendering fail, which is the
+      // contract describing one of two presentations and calling the other broken.
+      //
+      // `listbox` stays required *of an open control*, which is the combobox path by construction:
+      // a native chooser opens nothing this contract can see.
+      required: ["listbox"] }),
   // Part order is the reading order, so it is decided here rather than inherited from the sequence
   // these names happen to be written in. What the control shows for the current selection comes
   // before the affordance that changes it: the chips, or the placeholder standing in for them while

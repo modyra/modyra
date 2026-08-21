@@ -1,4 +1,4 @@
-import { chipFocusAfterRemoval, keyBindingFor, multiselectAnnouncement, optionsWithUnrecognizedValues, overlayControlledId, projectOverlayOpenerA11y } from "@modyra/widgets";
+import { chipFocusAfterRemoval, chipMovedAnnouncement, keyBindingFor, multiselectAnnouncement, optionsWithUnrecognizedValues, overlayControlledId, projectOverlayOpenerA11y } from "@modyra/widgets";
 import { MdyPartDirective } from "../../control/mdy-part.directive";
 import { NgTemplateOutlet } from "@angular/common";
 import {
@@ -20,7 +20,6 @@ import {
   multiselectOverlayAction,
   multiselectChipClasses,
   multiselectValueTransition,
-  optionNavigationIndex,
   shouldCloseMultiselectOverlay,
   createMultiselectFieldController,
   MDY_CHIP_CLASSES,
@@ -98,7 +97,7 @@ import type { MdyOverlayBranch, MdyOverlayOwner } from "../../core/overlay-contr
           <!-- One chip per distinct value with how many, because a repeated value is a quantity:
                incrementing takes one of something to three. One chip per entry would make undoing
                one decision three separate removals. -->
-          @for (held of chosen(); track held.key) {
+          @for (held of chosen(); track held.key; let i = $index) {
             <span
               [class]="chipClasses(true)"
               [attr.tabindex]="activeChip() === held.key ? 0 : -1"
@@ -108,6 +107,8 @@ import type { MdyOverlayBranch, MdyOverlayOwner } from "../../core/overlay-contr
               (keydown)="onChipKeydown($event, held.key)"
               [attr.aria-label]="held.count > 1 ? held.label + ', ' + held.count : held.label"
               [title]="held.label"
+              [attr.aria-posinset]="i + 1"
+              [attr.aria-setsize]="chosen().length"
             >
               @if (mode() === "multi") {
                 <button
@@ -310,16 +311,21 @@ export class MdyMultiselectComponent<TValue = string>
 
   private readonly overlayInputRef =
     viewChild<ElementRef<HTMLInputElement>>("overlayInput");
-  private readonly activeOverlayIndex = signal(-1);
+  /**
+   * Where the keyboard is in the open list — the controller's, given rather than held.
+   *
+   * This component kept its own index and moved it *before* asking what to take, so one ArrowDown
+   * landed on the second option. A cursor is state the contract owns, and it is the third piece of
+   * state this component kept a second copy of.
+   */
+  protected readonly activeOverlayKey = computed(() => this.controller()?.state().activeKey ?? null);
 
   protected onOverlayKeydown(event: KeyboardEvent): void {
-    const results = this.searchResults();
-    const active = results[this.activeOverlayIndex()];
     const action = multiselectOverlayAction({
       key: event.key,
       open: this.open(),
       query: this.searchQuery(),
-      activeKey: active ? this.optionKey(active.value) : null,
+      activeKey: this.activeOverlayKey(),
     });
     if (!action) return;
     // Tab keeps its native meaning: the list closes and the browser carries focus onward. Cancelling
@@ -338,12 +344,10 @@ export class MdyMultiselectComponent<TValue = string>
       this.openOverlay();
       return;
     }
-    if (action.type === "move") {
-      const next = optionNavigationIndex(event.key, Math.max(0, this.activeOverlayIndex()), results.length);
-      if (next !== null) this.activeOverlayIndex.set(next);
+    if (action.type === "move" || action.type === "select") {
+      this.controller()?.dispatch(action as never);
       return;
     }
-    if (action.type === "select" && active) this.onOverlaySelect(active.value);
   }
 
   // What is selected and how many of each: the controller's own state, not counted twice here.
@@ -358,7 +362,7 @@ export class MdyMultiselectComponent<TValue = string>
 
   protected override onBeforeOpen(): void {
     super.onBeforeOpen();
-    this.activeOverlayIndex.set(-1);
+
     afterNextRender(() => this.overlayInputRef()?.nativeElement.focus(), { injector: this.injector });
   }
 
@@ -460,9 +464,15 @@ export class MdyMultiselectComponent<TValue = string>
     }
     if (binding.intent !== "reorder" || !this.reorderable()) return;
     event.preventDefault();
-    this.controller()?.dispatch({
-      type: "move-selected", optionKey, to: order.indexOf(optionKey) + (binding.by ?? 1),
-    });
+    // Said out loud, and set before dispatching. This way of reordering has no *grabbed* state to
+    // announce, so the movement itself is the only thing there is to say.
+    const to = Math.max(0, Math.min(order.length - 1, order.indexOf(optionKey) + (binding.by ?? 1)));
+    this.saySoon = chipMovedAnnouncement(
+      this.i18n.selectionMoved,
+      this.chosen().find((c) => c.key === optionKey)?.label ?? optionKey,
+      to + 1, order.length,
+    );
+    this.controller()?.dispatch({ type: "move-selected", optionKey, to });
     this.focusChip(optionKey);
   }
 
@@ -513,9 +523,12 @@ export class MdyMultiselectComponent<TValue = string>
    * something the person just did.
    */
   private saidLast: readonly string[] | null = null;
+  /** A sentence to say once, for a change no selection delta describes — a move. */
+  private saySoon: string | null = null;
   protected readonly announcementText = computed(() => {
     const now = this.chosen().map((c) => c.key);
     if (this.saidLast === null) { this.saidLast = now; return ""; }
+    if (this.saySoon !== null) { const once = this.saySoon; this.saySoon = null; this.saidLast = now; return once; }
     const said = multiselectAnnouncement(
       this.saidLast, now,
       { added: this.i18n.selectionAdded, removed: this.i18n.selectionRemoved, empty: this.i18n.selectionEmpty },

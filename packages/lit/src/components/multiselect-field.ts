@@ -5,6 +5,8 @@ import {
   keyBindingFor,
   chipFocusAfterRemoval,
   multiselectAnnouncement,
+  multiselectOverlayAction,
+  chipMovedAnnouncement,
 } from "@modyra/widgets";
 import { type MdyFieldHandle, type MdyMultiselectMode, type MdySelectOption } from "@modyra/core";
 import { filterOptionsByQuery } from "@modyra/widgets";
@@ -41,6 +43,8 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
   private _activeChip: string | null = null;
   /** What the live region last spoke about; `null` until the first paint has been taken as given. */
   private _saidLast: readonly string[] | null = null;
+  /** A sentence to say once, for a change no selection delta describes — a move. */
+  private _saySoon: string | null = null;
   declare loading: boolean;
   declare mode: MdyMultiselectMode;
   declare filterFn?: (value: unknown) => boolean;
@@ -264,7 +268,22 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
       e.preventDefault();
       this.overlay.open();
       this._open = true;
+      this.fieldController?.dispatch({ type: "open" });
+      return;
     }
+    // Moving through the options and taking one, from wherever the keyboard is — which with a
+    // filter box is the filter box. The policy has always returned both; until the controller had a
+    // cursor there was nowhere to send them, so a person who opened the list could reach the search
+    // and nothing else.
+    const action = multiselectOverlayAction({
+      key: e.key,
+      open: this._open,
+      query: this._query,
+      activeKey: this.fieldController?.state().activeKey ?? null,
+    });
+    if (!action || action.type === "close" || action.type === "open") return;
+    e.preventDefault();
+    this.fieldController?.dispatch(action as never);
   }
 
   override render(): unknown {
@@ -430,7 +449,11 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
     }
     if (binding.intent !== "reorder" || !this.reorderable) return;
     event.preventDefault();
-    this.fieldController?.dispatch({ type: "move-selected", optionKey, to: order.indexOf(optionKey) + (binding.by ?? 1) });
+    // Said out loud, and set before dispatching. This way of reordering has no *grabbed* state to
+    // announce, so the movement itself is the only thing there is to say.
+    const to = Math.max(0, Math.min(order.length - 1, order.indexOf(optionKey) + (binding.by ?? 1)));
+    this._saySoon = chipMovedAnnouncement(this.messages.selectionMoved, this.labelFor(optionKey), to + 1, order.length);
+    this.fieldController?.dispatch({ type: "move-selected", optionKey, to });
     void this.updateComplete.then(() => this.focusChip(optionKey));
   }
 
@@ -464,6 +487,7 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
   private announcementText(handle: MdyFieldHandle<readonly unknown[]>): string {
     const now = [...new Set(this.held(handle).map((value) => String(value)))];
     if (this._saidLast === null) { this._saidLast = now; return ""; }
+    if (this._saySoon !== null) { const once = this._saySoon; this._saySoon = null; this._saidLast = now; return once; }
     const said = multiselectAnnouncement(
       this._saidLast, now,
       { added: this.messages.selectionAdded, removed: this.messages.selectionRemoved, empty: this.messages.selectionEmpty },
@@ -482,7 +506,8 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
       if (seen) seen.count += 1;
       else tally.set(key, { value, label: this.labelFor(value), count: 1 });
     }
-    return [...tally.values()].map(({ value, label, count }) => html`<span
+    const size = tally.size;
+    return [...tally.values()].map(({ value, label, count }, index) => html`<span
       class=${multiselectChipClasses({ mode: this.mode, selected: true }).join(" ")}
       tabindex=${this.activeChip(handle) === String(value) ? "0" : "-1"}
       role="group"
@@ -491,6 +516,8 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
       aria-label=${count > 1 ? `${label}, ${count}` : label}
       title=${label}
       data-key=${String(value)}
+      aria-posinset=${index + 1}
+      aria-setsize=${size}
     >
       ${this.mode === "multi"
         ? html`<button

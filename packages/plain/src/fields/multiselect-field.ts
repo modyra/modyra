@@ -22,6 +22,7 @@ import {
   keyBindingFor,
   chipFocusAfterRemoval,
   multiselectAnnouncement,
+  chipMovedAnnouncement,
 } from "@modyra/widgets";
 import { applyPart, el, setErrors, setText, setIcon } from "../dom.js";
 import { buildFieldShell, insertControl } from "../field-shell.js";
@@ -174,6 +175,8 @@ export function renderMultiselectField(
    * the person just did, and announcing it on the first paint tells them about a choice they never
    * made.
    */
+  /** A sentence to say once, for a change no selection delta describes — a move. */
+  let saySoon: string | null = null;
   let saidLast: readonly string[] = [...new Set(
     (controller.state().selectedValues as readonly unknown[]).map((value) => keyFor({ value } as MdySelectOption<unknown>)),
   )];
@@ -189,7 +192,21 @@ export function renderMultiselectField(
    * In counter mode the two steppers are here, so making a three into a two does not send a person
    * back into the popup to find the row among the others — the journey the strip exists to remove.
    */
-  function buildValueChip(key: string): HTMLElement {
+  /**
+   * Whether this chip offers the two steppers.
+   *
+   * Counter mode and nothing else. A repeated value can also arrive from a document —
+   * `["a","a","a"]` on a field that declared no mode — and it is tempting to offer the steppers
+   * there too, since the chip does say three. It is the wrong reading: a toggle-set holds membership,
+   * so a repeat is a malformed value rather than a quantity, and steppers would invite making it
+   * four. The chip states what is held and can be taken off whole, which is the correction that
+   * mode admits.
+   */
+  function stepsFor(_count: number): boolean {
+    return mode === "multi";
+  }
+
+  function buildValueChip(key: string, count: number): HTMLElement {
     const chip = el("div", parts.chip.classes.join(" "));
     chip.tabIndex = -1;
     chip.setAttribute("role", "group");
@@ -233,7 +250,20 @@ export function renderMultiselectField(
       // The order the *value* has, not the order these elements were created in: the map is keyed
       // by option and its insertion order never changes, so reading it moved the chip once and then
       // asked for the position it already had.
-      dispatch({ type: "move-selected", optionKey: key, to: order.indexOf(key) + (binding.by ?? 1) });
+      // Said out loud, and set *before* dispatching: the dispatch runs the effect that reads this,
+      // so a sentence written afterwards is a sentence the render has already been past.
+      //
+      // This way of reordering has no *grabbed* state to announce — nothing is picked up and nothing
+      // put down — so the movement itself is the only thing there is to say, and unannounced a
+      // reorder is invisible to somebody who cannot see the strip.
+      const to = Math.max(0, Math.min(order.length - 1, order.indexOf(key) + (binding.by ?? 1)));
+      saySoon = chipMovedAnnouncement(
+        messages.selectionMoved,
+        chosenEls.get(key)?.querySelector(`.${parts.optionLabel.classes[0]}`)?.textContent ?? key,
+        to + 1,
+        order.length,
+      );
+      dispatch({ type: "move-selected", optionKey: key, to });
       // The chip moved; focus goes with it, or the next key acts on whatever happens to be here.
       queueMicrotask(() => chosenEls.get(key)?.focus());
     });
@@ -250,10 +280,10 @@ export function renderMultiselectField(
       });
       return button;
     };
-    if (mode === "multi") chip.appendChild(step(-1, messages.chipDecrementLabel));
+    if (stepsFor(count)) chip.appendChild(step(-1, messages.chipDecrementLabel));
     chip.appendChild(el("span", parts.optionLabel.classes.join(" ")));
     chip.appendChild(el("span", parts.optionCount.classes.join(" ")));
-    if (mode === "multi") chip.appendChild(step(1, messages.chipIncrementLabel));
+    if (stepsFor(count)) chip.appendChild(step(1, messages.chipIncrementLabel));
     const remove = el("button", parts.chipRemove.classes.join(" ")) as HTMLButtonElement;
     remove.type = "button";
     remove.tabIndex = -1;
@@ -298,10 +328,16 @@ export function renderMultiselectField(
       if (seen) seen.count += 1;
       else tally.set(key, { label: option?.label ?? String(value), count: 1 });
     }
+    const wanted: string[] = [];
     for (const [key, { label, count }] of tally) {
+      wanted.push(key);
       let chip = chosenEls.get(key);
+      // Rebuilt when the steppers come or go: the chip's controls depend on how many it stands for,
+      // and a chip built at one is not the chip a person needs at three.
+      if (chip && chip.dataset.stepped !== String(stepsFor(count))) { chip.remove(); chosenEls.delete(key); chip = undefined; }
       if (!chip) {
-        chip = buildValueChip(key);
+        chip = buildValueChip(key, count);
+        chip.dataset.stepped = String(stepsFor(count));
         chosenEls.set(key, chip);
       }
       setText(chip.querySelector(`.${parts.optionLabel.classes[0]}`) as HTMLElement, label);
@@ -311,6 +347,11 @@ export function renderMultiselectField(
       // One name for the whole chip: a label and a count in two spans are read as one run of text,
       // so "A 3" arrives with nothing saying which half is which.
       chip.setAttribute("aria-label", count > 1 ? `${label}, ${count}` : label);
+      // Where this chip sits and how many there are, stated on the chip itself. Independent of the
+      // live region and of anything drawn: it survives a stripped stylesheet and a dropped
+      // announcement, which the other two do not.
+      chip.setAttribute("aria-posinset", String(wanted.length));
+      chip.setAttribute("aria-setsize", String(tally.size));
       // The full name, for a chip the strip has narrowed to an ellipsis. `title` is the pointer's
       // half of that; a theme draws the other on focus and long press, which is what reaches a
       // keyboard and a touch.
@@ -416,11 +457,9 @@ export function renderMultiselectField(
    * This renderer answered **only Escape**: no opening, no Tab, no navigation. A list opened with a
    * pointer could not be left with the keyboard except by Escape.
    *
-   * `move` and `select` are **not** dispatched, and that is a real gap rather than an oversight:
-   * this renderer's controller has no active option to move — its intents are `toggle`,
-   * `increment` and `decrement` over the chips, with no cursor. Arrow-key navigation needs that
-   * cursor first, which is a controller change and its own batch. Opening, dismissing and yielding
-   * focus are wired now because they map exactly.
+   * `move` and `select` are dispatched now. They used to be dropped because the controller had no
+   * cursor to move, so a person who opened the list with a keyboard could reach the filter box and
+   * nothing else — the policy had returned both all along with nowhere to send them.
    */
   const onKeydown = (event: KeyboardEvent): void => {
     const state = controller.state();
@@ -428,9 +467,9 @@ export function renderMultiselectField(
       key: event.key,
       open: state.open,
       query: search.value,
-      activeKey: null,
+      activeKey: state.activeKey,
     });
-    if (!action || action.type === "move" || action.type === "select") return;
+    if (!action) return;
     // Tab keeps its native meaning: the list closes and focus carries on to the next control.
     if (event.key !== "Tab") event.preventDefault();
     dispatch(action);
@@ -466,6 +505,12 @@ export function renderMultiselectField(
     // The change, not the list, and nothing while the popup is open — the options there announce
     // themselves natively, so a region firing too makes every toggle speak twice.
     const nowChosen = stripOrder();
+    if (saySoon !== null) {
+      setText(announcement, saySoon);
+      saySoon = null;
+      saidLast = nowChosen;
+      return;
+    }
     setText(announcement, multiselectAnnouncement(
       saidLast, nowChosen,
       { added: messages.selectionAdded, removed: messages.selectionRemoved, empty: messages.selectionEmpty },
@@ -477,6 +522,10 @@ export function renderMultiselectField(
     setText(placeholder, f.placeholder ?? "");
     applyPart(popup, view.parts.popup);
     applyPart(search, view.parts.search);
+    // Where the keyboard is in the list, said to a reader. The cursor is not focus — focus stays in
+    // the box a person is typing into — so the only way to announce it is to name it.
+    if (state.activeKey === null) search.removeAttribute("aria-activedescendant");
+    else search.setAttribute("aria-activedescendant", view.parts[state.activeKey]?.id ?? "");
     applyPart(overlay.grid, view.parts.group);
     syncGrids(state.options);
     applyPart(shell.description, view.parts.description);
