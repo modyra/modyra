@@ -20756,7 +20756,42 @@ once rather than building over. Recorded in
 successor to the decision, so the next person to raise it finds it was considered.
 
 
-### 374 — raised to S1, and the record of it was wrong
+### 374 — the raise to S1 is withdrawn, and so is the reasoning that produced it
+
+Twice wrong in one hour, both times mine.
+
+**The clipping does not exist.** I compared the option list's rectangle against the ancestor's and
+called the difference "cut off". Two things I never checked undo it: every renderer's popup is
+`position: fixed`, which is not clipped by an ancestor's `overflow` at all; and Angular's option list
+is its own scrollport, 104 pixels of 200, so its last option sits below the list's own edge because
+nobody has scrolled to it.
+
+Asked properly — press where the last option is drawn, having first brought it into view the way a
+keyboard does — all three renderers hand back the option, under a scroller, a transformed ancestor and
+a `contain: paint` one alike. Nine cases, nine green.
+
+[ADR 0130](../../docs/architecture/0130-a-popup-outlives-the-box-it-opens-from.md) was written on that
+false measurement and is superseded by
+[0131](../../docs/architecture/0131-a-rectangle-outside-a-box-is-not-a-clipped-one.md). An
+architecture record reached from geometry that nobody hit-tested, inside an hour, and a battle built on
+top of it.
+
+**What survives is the original entry, at its original severity.** The DOM asymmetry is real: Angular
+keeps its popup in the component's subtree, plain portals to the body, lit places it in an overlay
+panel inside the field. It changes what "scope a query to the control" means and it cost three
+arguments across two sessions. It is not a conformance defect, it is not S1, and no renderer has to
+change for correctness.
+
+The battle keeps its place and changes its meaning — nine green cases pinning that a popup survives
+three kinds of container a consumer supplies. Written to prove a defect, it documents a property, which
+is the better of the two outcomes and the only one still available.
+
+**The lesson is the evening's, at the level of a decision rather than a test.** Every instrument defect
+before this one cost a wrong finding. This one cost a wrong *architecture record*, and it was wrong for
+the same reason all the others were: it measured the shape of a thing instead of asking what a person
+gets.
+
+### 374 — the raise, kept because the reasoning is the finding
 
 Filed as an asymmetry worth settling. Measured inside an ordinary 120px scrolling container — a form in
 a dialog, a card, a side panel — it is a control that cannot be used there:
