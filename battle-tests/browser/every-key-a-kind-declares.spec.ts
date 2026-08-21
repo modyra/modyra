@@ -164,9 +164,11 @@ for (const host of HOSTS) {
           // correct implementations doing nothing, and both read as a missing binding — which is what
           // this spec reported for three runs after the strip's keyboard map landed. The priming was
           // written for `move` and the new intent inherited the trap rather than the remedy.
+          // One press, not two. Priming both directions for every binding doubled the presses across
+          // seventy-two of them and pushed a five-minute spec past its budget — the remedy has to cost
+          // what the thing it replaces cost.
           if (binding.intent === "move" || binding.intent === "reorder") {
-            await page.keyboard.press("ArrowRight");
-            await page.keyboard.press("ArrowDown");
+            await page.keyboard.press(binding.intent === "reorder" ? "ArrowRight" : "ArrowDown");
             await page.waitForTimeout(100);
           }
 

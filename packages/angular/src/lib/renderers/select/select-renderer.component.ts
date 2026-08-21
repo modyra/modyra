@@ -81,8 +81,6 @@ import { MdyDropdownBase } from "../dropdown-base";
             [mdyPart]="openerPart()"
             [id]="fieldId"
             [disabled]="isDisabled()"
-            [attr.aria-expanded]="open()"
-            [attr.aria-haspopup]="'listbox'"
             [attr.aria-activedescendant]="
               activeIndex() >= 0 ? fieldId + '-opt-' + activeIndex() : null
             "

@@ -90,7 +90,6 @@ import { MdyTimepickerClockComponent } from "./timepicker-clock.component";
           [attr.aria-required]="ariaRequired() || isRequired()"
           [attr.aria-disabled]="effectiveAriaDisabled()"
           [attr.aria-readonly]="isReadonly() ? 'true' : null"
-            [attr.aria-haspopup]="'dialog'"
           autocomplete="off"
         />
         <div class="mdy-input-suffix">
@@ -102,8 +101,7 @@ import { MdyTimepickerClockComponent } from "./timepicker-clock.component";
               class="mdy-timepicker__toggle"
               [disabled]="isDisabled()"
               [attr.aria-label]="i18n.timepickerOpenLabel"
-              [attr.aria-expanded]="open()"
-              [attr.aria-haspopup]="'dialog'"
+              [mdyPart]="openerButtonPart()"
               tabindex="-1"
               (click)="toggleOverlay($event)"
             >

@@ -57,7 +57,7 @@ import { MdyOverlayPanelComponent } from "../../core/overlay-panel.component";
             type="button"
             class="mdy-colors__primary-picker"
             [disabled]="isDisabled()"
-            aria-haspopup="dialog"
+            [mdyPart]="openerButtonPart()"
             [attr.aria-label]="i18n.colorPresetsHeader"
             (click)="toggleOverlay($event); $event.stopPropagation()"
           >
@@ -114,8 +114,6 @@ import { MdyOverlayPanelComponent } from "../../core/overlay-panel.component";
             class="mdy-input-suffix mdy-colors__toggle-area"
             [mdyPart]="openerPart()"
             [disabled]="isDisabled()"
-            [attr.aria-expanded]="open()"
-            aria-haspopup="listbox"
             [attr.aria-label]="i18n.colorPresetsHeader"
             (click)="toggleOverlay($event); $event.stopPropagation()"
           >
