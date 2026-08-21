@@ -1,5 +1,11 @@
 # @modyra/studio-target-core
 
+## 0.5.4
+
+### Patch Changes
+
+- @modyra/studio-contract@0.6.2
+
 ## 0.5.3
 
 ### Patch Changes

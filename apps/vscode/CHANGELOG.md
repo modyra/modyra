@@ -1,5 +1,38 @@
 # modyra
 
+## 0.1.7
+
+### Patch Changes
+
+- Updated dependencies [45720b9]
+- Updated dependencies [5262ad2]
+- Updated dependencies [ef53275]
+- Updated dependencies [841f0f9]
+- Updated dependencies [a53b93f]
+- Updated dependencies [53ecc1a]
+- Updated dependencies [f0044c2]
+- Updated dependencies [771ea00]
+- Updated dependencies [8a12c47]
+- Updated dependencies [37ccb9b]
+- Updated dependencies [1a6797d]
+- Updated dependencies [56b9361]
+- Updated dependencies [1b9ad89]
+- Updated dependencies [5e31f89]
+- Updated dependencies [66b5ba1]
+- Updated dependencies [b331412]
+- Updated dependencies [c6fd3b4]
+- Updated dependencies [af2d59b]
+- Updated dependencies [91f9715]
+- Updated dependencies [2eb1112]
+- Updated dependencies [df918e6]
+- Updated dependencies [9862d2f]
+- Updated dependencies [22f79b3]
+- Updated dependencies [2aa3ce8]
+- Updated dependencies [638acb6]
+- Updated dependencies [6d90b06]
+- Updated dependencies [8020123]
+  - @modyra/widgets@2.4.0
+
 ## 0.1.6
 
 ### Patch Changes

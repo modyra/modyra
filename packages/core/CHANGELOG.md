@@ -1,5 +1,141 @@
 # @modyra/core
 
+## 2.4.0
+
+### Minor Changes
+
+- 5262ad2: A timepicker in a document can name its clock
+
+  `MdyDynamicDateField` gains `format?: MdyTimeFormat` — `"12h"` or `"24h"`, `timepicker` only, absent
+  meaning the 24-hour clock ADR 0116 made every renderer's default. Until now the format was reachable
+  only as a renderer parameter, so a document-driven form had one clock available and no way to ask for
+  the other; the stored value is `HH:mm` either way, and this decides what is drawn and how typing is
+  read.
+
+  Plain's field dispatcher and Angular's dynamic form both forward it. A `format` on a kind that draws
+  no clock, or a value that is neither of the two, is reported as
+  `MDY_DYNAMIC_UNHONOURABLE_FORMAT` and dropped, leaving the field drawing the default.
+
+  Migration: none. A document that says nothing behaves exactly as before.
+
+  Two fixes travel with it. The hour segment's announced range is now taken from `timeFieldBounds`,
+  the same source its native `min`/`max` come from — a 24-hour face had been declaring `max="23"` to
+  the browser and `aria-valuemax="12"` to a screen reader. And a two-digit segment box no longer keeps
+  a third character: text wider than the field it holds is refused, while a two-digit value outside the
+  clock's range is still kept and marked, which is what ADR 0063 asks for.
+
+- 2dfa37b: A draft left unread says so, under `MDY_DRAFT_NOT_RESTORED`
+
+  A stored draft whose recorded form shape is not this form's is left where it is rather than restored
+  — that is ADR 0107, and it is right: the form that wrote it can still read it. What was missing is
+  that nothing said so. A consumer could not tell a key holding **nothing** from a key holding work
+  this form declined to read, and the two need different answers: the first is a fresh start, the
+  second is somebody's typing still on disk that nothing will offer them again.
+
+  The shape moves for ordinary reasons — a field added, a collection row arriving from a server — so
+  this is not a tampering path. The neighbouring case already reports per field: a draft entry the form
+  cannot hold arrives on `onViolation` as `draft-shape` with the path, and the rest is restored. A whole
+  draft going unread was the quieter half of the same story.
+
+  `MDY_DRAFT_NOT_RESTORED` is published beside `MDY_DRAFT_KEY_IN_USE`, and reaches a `diagnostics` sink
+  by code and the console by sentence, as the other draft diagnostics do. The message names `version` in
+  the draft options, which is the deliberate spelling of "this shape change was intended".
+
+- 841f0f9: A granularity a document can actually ask for
+
+  The contract, the controller and the dial all honoured a declared granularity and nothing could
+  declare one. A capability no consumer can reach is a capability nobody has.
+
+  - **A document**: `granularity` on a `timepicker` field, in the v2, v3 and v4 JSON schemas. The
+    parser refuses one it cannot honour, names the member at fault, and keeps the field — taking the
+    form away over a refinement removes something the user can see, over a rule they cannot. The
+    refusal reaches a diagnostics sink as `MDY_DYNAMIC_UNHONOURABLE_GRANULARITY`.
+  - **Angular**: `[granularity]` on `<mdy-control-timepicker>`, carried down to the segments so the
+    hour and minute boxes announce their own `step`, `min` and `max` — the platform's own spinner then
+    offers what the field offers.
+  - **Lit**: a `granularity` property.
+  - **Plain**: read from the field descriptor, so a mounted document carries it.
+
+  The validation moved from `@modyra/widgets` to `@modyra/core`, because a document is parsed before
+  anything renders it and two copies of "does this step divide its unit" is the shape a contract exists
+  to prevent. `@modyra/widgets` re-exports the same names, so nothing importing them moves.
+
+  Also fixed while it was found: the parser **deleted** an unhonourable granularity from the document
+  it was given. The document belongs to the caller, and a parser that edits it leaves a second read of
+  the same object answering differently from the first — the rule the file already stated about
+  duplicate options, broken one function away from where it was written.
+
+- 53ecc1a: A hand you can see thinking
+
+  A dial that offers only some times has to snap, and snapping alone hides what it is doing: the hand
+  jumps to a number the finger is not on, and whether that was the rule or a missed press is not
+  something the screen says.
+
+  So there are two hands. **The real one points at the value, including while a finger is moving** — it
+  used to follow the pointer, which on a face offering every time is the same thing and on one that
+  snaps is not: the hand sat between two numbers and jumped on release, so the one thing saying what is
+  chosen spent the whole gesture saying something else. **A faint one follows the pointer** whenever the
+  two are apart, carrying both its angle and its ring, because it answers "what happens if I release
+  now" while the real hand answers "what is chosen".
+
+  A picker that offers every time never draws one: its numbers are 6° apart, so the finger is never off
+  them. `timepickerDialGhost` decides; no renderer does.
+
+  `animateHand` — on the field in a document, an input on Angular, a property on Lit — makes the hand
+  move rather than jump. **Off by default**, because a hand in motion is briefly not where the value is,
+  and on a face that snaps the two would disagree for the length of the transition. The duration is
+  `--mdy-sys-motion-duration-fast`, the system's own, and `prefers-reduced-motion` turns it off.
+
+  `MDY_TIMEPICKER_RING_BAND` is published: how far either side of the inner ring's radius still counts
+  as reaching for it, as a fraction of the gap between the two painted radii. A fraction rather than an
+  expression so that tightening it is one guarded number rather than an edit to the rule.
+
+- 6d90b06: A dial that shows which of its stretches carry nothing
+
+  A face declared with `minuteStep: 15` draws four numbers and the other 356° of the ring look exactly
+  like them — continuous, uniform, and offering nothing. The granularity is real and invisible, and the
+  only way to find it is to try.
+
+  `showUnavailable` — on the field in a document, an input on Angular, a property on Lit — dims the
+  stretches the granularity took away. **Off by default**, so a face that declares nothing is unchanged.
+  Named for what it shows rather than for how it looks, because a theme may express it as an arc, an
+  opacity, or something else.
+
+  `MDY_WIDGET_CONTRACT_VERSION` moves to **5**: a timepicker's dial gains `dialUnavailable` and
+  `dialUnavailableArc`, which sit between the face and the hand — so a renderer built against 4 draws
+  them nowhere. The plain and lit contract audits were re-read against the change rather than having
+  their pins widened, and neither asks about parts, so both pass unchanged.
+
+  Each ring answers for its own radius: the inner one is drawn on a smaller circle, so a same-sized
+  digit covers more of it and its dead stretches are wider. A single set of arcs drawn for both would
+  be wrong on one of them.
+
+  The Angular demo gains three cases — a quarter-hour face with its dead slices shown, a three-hour
+  face where both rings have their own, and one with the hand animated. Those are the cases no
+  automated tier can ask about: no host renders Angular in a browser, and a drag under real pointer
+  capture is not something jsdom produces.
+
+### Patch Changes
+
+- a0ab5de: A patch through a list inside a list keeps the cells it did not name
+
+  `patch()` names cells, and a list nested inside an **array** row was the one place that stopped being
+  true: every cell the body left out came back as its declared initial, replacing what the person had
+  entered. One body naming only `v`, the same inner list under four containers:
+
+      outer = array    [{"v":"NEW","w":"z"},  {"v":"V2","w":"z"}]     ← w lost
+      outer = record   [{"v":"NEW","w":"W1"}, {"v":"V2","w":"W2"}]
+      outer = group    [{"v":"NEW","w":"W1"}, {"v":"V2","w":"W2"}]
+      no outer         [{"v":"NEW","w":"W1"}, {"v":"V2","w":"W2"}]
+
+  The cause is the order things happen in. Writing an array row goes through `setAll`, which rebuilds
+  the subtree — so by the time the inner collection's own manager is asked to merge, it has no rows
+  left to merge against and every unnamed cell is a new row's initial. The value handed to `setAll` has
+  to be complete already, so the row merge now walks into nested collections instead of replacing them:
+  a list merges its rows by index, a record by key, and a row past the end is new and taken as it came.
+
+  `W1` and `W2` were the person's data and `"z"` was a value the form had never held.
+
 ## 2.3.0
 
 ### Minor Changes
