@@ -53,6 +53,10 @@ export function setText(node: HTMLElement, text: string): void {
 
 export function setErrors(container: HTMLElement, messages: ReadonlyArray<string>): void {
   container.replaceChildren();
+  // An empty list occupies no room. Reserved height stops a form jumping when a message appears —
+  // a defensible choice, and one this renderer was making alone: 24 empty pixels under every field
+  // where the other two had none, which is a form that lays out differently per adapter.
+  container.hidden = messages.length === 0;
   for (const message of messages) {
     // `mdy-control__error` is the class the shipped themes style, whichever renderer emits itrers.
     const li = el("li", "mdy-control__error");

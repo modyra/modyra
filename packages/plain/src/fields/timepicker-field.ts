@@ -96,7 +96,7 @@ export function renderTimepickerField(
 
   const parts = MDY_WIDGET_CONTRACTS.timepicker.parts;
 
-  const shell = buildFieldShell(f.label, "timepicker", {}, f.ariaLabel, f.name);
+  const shell = buildFieldShell(f.label, "timepicker", {}, f.ariaLabel, f.name, f.supportingText);
   // The catalogue's timepicker anatomy: a typeable input plus a toggle button opening the
   // dialog, rather than one button doing both jobs.
   const control = el("input", parts.control.classes.join(" ")) as HTMLInputElement;

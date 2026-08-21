@@ -47,7 +47,7 @@ export function renderColorsField(
   const presets = f.presets && f.presets.length > 0 ? f.presets : DEFAULT_PRESETS;
   const open = reactivity.signal(false);
 
-  const shell = buildFieldShell(f.label, "colors", {}, f.ariaLabel, f.name);
+  const shell = buildFieldShell(f.label, "colors", {}, f.ariaLabel, f.name, f.supportingText);
   // The themes lay this control out from the outside in — `.mdy-colors` *contains* the input
   // wrapper (`.mdy-colors .mdy-input-wrapper` is a flex row with no padding), which is how the
   // contract nests it that way too. Building it the other way round collapses the row to nothing.

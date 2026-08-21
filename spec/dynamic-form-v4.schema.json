@@ -258,6 +258,10 @@
         "ariaLabel": {
           "type": "string"
         },
+        "supportingText": {
+          "type": "string",
+          "description": "The line under the control: a format, a limit, why the field is there. Named by aria-describedby, so a field that declares nothing leaves the reference pointing at an empty element."
+        },
         "placeholder": {
           "type": "string"
         },
