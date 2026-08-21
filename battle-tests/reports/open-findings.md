@@ -20045,3 +20045,56 @@ statement about the instrument.**
 **Also examined and sound**: the trigger's accessible name is the field's label; `aria-expanded`
 tracks the popup; `aria-describedby` points at a description; the required marker is present and hidden
 on optional fields; the chip's accessible name separates label from count with a comma.
+
+### 351 — closed, and it uncovered a second thing
+
+`audit-type-surface.mjs` now reads `@modyra/angular`. Two defects were keeping it out, and neither was
+a decision:
+
+- **`.mjs` was skipped.** The entry filter was `endsWith(".js")`, written for packages that emit `.js`,
+  and it excluded every Angular subpath in silence.
+- **Grouped exports were invisible.** ng-packagr writes `declare class X {}` and one
+  `export { X, Y, Z }` at the end of the file, and the walker looked for an `export` *modifier* on the
+  declaration. So no Angular declaration ever looked exported.
+
+The second is why the count read `839 public names, 638 shapes` — the 201 it could not shape were the
+Angular surface, found and dropped, and the number looked like coverage.
+
+```
+before   638 shapes · Angular invisible
+after    720 shapes · MdyMultiselectComponent, MdyFormComponent, MdyOptionsControl,
+                      MdyOptionsOverlayControl (carrying overrideOptions and searchQuery) all watched
+```
+
+**Shown to refuse**, because a gate nobody has watched fail is a gate with no evidence: removing one
+member of `MdyMultiselectComponent` from the baseline → refused; restored → passes.
+
+`selectionChange` is still unwatched — it is declared on `dropdown-base.ts`, which no entry exports, so
+it is not public surface by this audit's definition even though a consumer reaches it through a
+component that is. Five of the six names easy-sagra depends on are now covered; that one is not, and
+saying so is better than implying six.
+
+## 354 — Five Angular types restate what they should derive (S2, API-001)
+
+Surfaced by 351's fix rather than caused by it. `audit-type-mirroring.mjs` reads the type surface, and
+with the upstream count going 183 → 238 it can finally see the adapter:
+
+```
+angular:MdyControlRendererConfig restates MdyControlRendererConfig    4 members
+angular:MdyFieldConfig           restates MdyFieldConfig              4 members
+angular:MdyFormContext           restates MdyFormContext              4 members
+angular:MdyOptionsControl        restates MdyOptionsControl           6 members
+angular:MdyTypedFormLike         restates MdyTypedFormLike           12 members
+```
+
+Thirty members re-declared rather than derived or aliased. `CLAUDE.md` names this directly — *"an
+adapter does not re-declare what it derives… a mirrored declaration drifts silently the moment the
+source gains a member"* — and the audit exists to catch it. It could not, because the thing being
+mirrored was not in the surface it compares against.
+
+**Pre-existing, not a regression.** Nothing changed in `packages/angular`; what changed is that the
+audit can see it. `packages/angular/src/lib/core/types.ts` and `core/typed-form.ts` are where they live.
+
+Owned by `esecutore`. Not recorded as allowed — the audit offers `--write` for that and using it here
+would be the ratchet from finding 333 all over again: the number that only ever goes up because the
+first person to see it wrote it down.

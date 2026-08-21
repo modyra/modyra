@@ -38,7 +38,7 @@ const BASELINE = resolve(ROOT, "packages/widgets/contract-baseline/type-surface.
  *
  * So: shapes from everywhere, filtered by the names the declared `exports` map actually publishes.
  */
-const PACKAGES = ["core", "widgets"];
+const PACKAGES = ["core", "widgets", "angular"];
 const PACKAGE_DIRS = PACKAGES.map((name) => `packages/${name}/dist`);
 
 /**
@@ -50,13 +50,29 @@ const PACKAGE_DIRS = PACKAGES.map((name) => `packages/${name}/dist`);
 function publicNames() {
   const reachable = new Set();
   for (const pkg of PACKAGES) {
-    const manifest = JSON.parse(readFileSync(resolve(ROOT, `packages/${pkg}/package.json`), "utf8"));
+    // A package that builds into `dist/` publishes a manifest there, and that one is the truth about
+    // what a consumer imports: the source manifest's paths are relative to the package root and the
+    // built files are not. `@modyra/angular` is built by ng-packagr and is the reason this matters —
+    // its every entry was skipped in silence, so nothing Angular exports was ever compared against
+    // anything, and a rename of a component member no gate could see was a consumer's build breaking.
+    const builtManifest = resolve(ROOT, `packages/${pkg}/dist/package.json`);
+    const usingDist = existsSync(builtManifest);
+    const base = usingDist ? `packages/${pkg}/dist` : `packages/${pkg}`;
+    const manifest = JSON.parse(readFileSync(usingDist ? builtManifest : resolve(ROOT, `packages/${pkg}/package.json`), "utf8"));
     const entries = [];
     for (const target of Object.values(manifest.exports ?? {})) {
+      // `types` first where a manifest states it, because a declaration is what this audit reads and a
+      // package is entitled to put it somewhere its runtime entry does not imply.
+      const declared = typeof target === "object" && target !== null ? target.types : undefined;
       const js = typeof target === "string" ? target : (target.import ?? target.default ?? "");
-      if (!String(js).endsWith(".js")) continue;
-      const declaration = resolve(ROOT, `packages/${pkg}`, String(js).replace(/\.js$/, ".d.ts"));
-      if (existsSync(declaration)) entries.push(declaration);
+      // `.mjs` as well as `.js`. Skipping it was not a decision: the check was written for packages
+      // that emit `.js` and quietly excluded every one that does not.
+      const guess = /\.m?js$/.test(String(js)) ? String(js).replace(/\.m?js$/, ".d.ts") : "";
+      for (const candidate of [declared, guess]) {
+        if (!candidate) continue;
+        const declaration = resolve(ROOT, base, String(candidate));
+        if (existsSync(declaration)) { entries.push(declaration); break; }
+      }
     }
     if (entries.length === 0) continue;
     const program = ts.createProgram(entries, { allowJs: false, noResolve: false });
@@ -234,8 +250,25 @@ for (const entry of ENTRIES) {
     process.exit(2);
   }
   const source = ts.createSourceFile(file, readFileSync(file, "utf8"), ts.ScriptTarget.Latest, true);
+
+  // Names a file exports through a grouped statement rather than a modifier.
+  //
+  // A bundler that flattens a package writes `declare class X {}` and then one `export { X, Y, Z }` at
+  // the end — ng-packagr does, so every `@modyra/angular` declaration carries no `export` keyword and
+  // this audit saw none of them. The count said "839 public names, 638 shapes", and the 201 it could
+  // not shape were the whole Angular surface: found, dropped, and reported as a number that looked
+  // like coverage.
+  const grouped = new Set();
+  ts.forEachChild(source, (node) => {
+    if (!ts.isExportDeclaration(node) || node.moduleSpecifier !== undefined) return;
+    const clause = node.exportClause;
+    if (clause === undefined || !ts.isNamedExports(clause)) return;
+    for (const element of clause.elements) grouped.add((element.propertyName ?? element.name).text);
+  });
+
   const visit = (node) => {
-    const exported = node.modifiers?.some((m) => m.kind === ts.SyntaxKind.ExportKeyword)
+    const exported = (node.modifiers?.some((m) => m.kind === ts.SyntaxKind.ExportKeyword)
+      || grouped.has(node.name?.text ?? "\u0000"))
       // Exported from its module *and* published by an entry. A module's own `export` keyword says
       // the package can use it across files; the `exports` map says a consumer can have it.
       && PUBLIC.has(node.name?.text ?? "");
