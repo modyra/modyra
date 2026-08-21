@@ -1,10 +1,16 @@
 /**
  * Two forms given one draft key, and which of them the protection is for.
  *
- * The draft manager refuses to write over work that is not its own, and says so once with
- * `MDY_DRAFT_KEY_IN_USE`: *"a draft under this key holds paths this form does not declare, so it
- * belongs to another form. This form keeps no draft: saving would replace work nothing could read
- * back. Give each form its own key."*
+ * The draft manager refuses to write over work that is not its own, and says so twice, in the order
+ * the two refusals happen:
+ *
+ *     MDY_DRAFT_NOT_RESTORED   on opening — it declines to restore a draft that is not its own
+ *     MDY_DRAFT_KEY_IN_USE     on saving  — *"a draft under this key holds paths this form does not
+ *                              declare, so it belongs to another form. This form keeps no draft:
+ *                              saving would replace work nothing could read back. Give each form its
+ *                              own key."*
+ *
+ * The first arrives before anybody has typed, which is the moment a consumer can still act on it.
  *
  * The detection is **foreign paths** — what is in the stored draft that the writing form does not
  * declare. That catches the case where the other form is larger, and cannot catch the case where it
@@ -26,7 +32,7 @@
  * when the one that is stopped is not stopped either.
  */
 
-import { createForm, field, MDY_DRAFT_KEY_IN_USE } from "@modyra/core";
+import { createForm, field, MDY_DRAFT_KEY_IN_USE, MDY_DRAFT_NOT_RESTORED } from "@modyra/core";
 
 import { battle } from "../../harness/battle.mjs";
 import { expectClaim, expectEqual } from "../../harness/assertions.mjs";
@@ -83,10 +89,21 @@ battle(
     // draft holds, so the draft is visibly not its own.
     const secondIsSmaller = await twoFormsOneKey(large, small);
     ctx.log.note("the second form declares less than the draft holds", secondIsSmaller);
-    expectEqual([secondIsSmaller.replaced, secondIsSmaller.told], [false, [MDY_DRAFT_KEY_IN_USE]], {
-      claimIds: ["PER-004"],
-      what: "a form did not refuse a draft holding paths it does not declare, so the protection this battle is about is not there at all",
-    });
+    // Two codes, and the order is the substance rather than an implementation detail: the form
+    // declines to *restore* another form's draft when it opens, and declines to *write* over it when
+    // it would save. The first arrives before anybody has typed, which is the moment a consumer can
+    // still do something about it — so it is not noise to be suppressed because the second is coming.
+    //
+    // Held as an exact ordered list rather than a `contains`, because a third code appearing here
+    // would be a form saying something nobody decided it should say, and that is worth failing on.
+    expectEqual(
+      [secondIsSmaller.replaced, secondIsSmaller.told],
+      [false, [MDY_DRAFT_NOT_RESTORED, MDY_DRAFT_KEY_IN_USE]],
+      {
+        claimIds: ["PER-004"],
+        what: "a form did not refuse a draft holding paths it does not declare, so the protection this battle is about is not there at all",
+      },
+    );
 
     // The same mistake, the other way round. Nothing about the situation has changed except which
     // form typed second.
