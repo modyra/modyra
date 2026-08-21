@@ -25,8 +25,10 @@
  * Asserted as document order rather than as a screenshot, because paint order is the property and a
  * pixel diff would also go red for a colour change.
  *
- * Angular is not here — the browser tier has no Angular host (finding 325) — so its half is read from
- * source and stays unmeasured: it emits the slices with no layer element at all, after the hand.
+ * Angular has a browser host now (finding 325), but it is not driven here yet: its picker opens on the
+ * dial where the other two open on the segments, so the shared opening sequence puts it in the view
+ * this spec is not about. Adding it needs that sequence to ask what state it is in rather than assume
+ * one, which is a change to how every spec opens a picker and not a line in this file.
  *
  * Claims under attack: UI-009.
  */
@@ -47,8 +49,10 @@ async function openDimmedDial(page: import("@playwright/test").Page, host: (type
   await page.waitForFunction((flag) => (window as never as Record<string, boolean>)[flag] === true, host.ready);
 
   // `showUnavailable` is off by default; the flag is the whole point of the feature.
-  await page.evaluate(({ api }) => {
-    (window as never as Record<string, { mountFields(i: string, f: unknown[]): unknown }>)[api]
+  // Awaited, because the Angular host renders through a scheduled zoneless pass and returns a promise
+  // where the other two return a value. `await` on a non-promise is a no-op, so one call fits all three.
+  await page.evaluate(async ({ api }) => {
+    await (window as never as Record<string, { mountFields(i: string, f: unknown[]): unknown }>)[api]
       .mountFields("dim", [
         { name: "t", kind: "timepicker", label: "T", granularity: { hourStep: 5 }, showUnavailable: true },
       ]);
