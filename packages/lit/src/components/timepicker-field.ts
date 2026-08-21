@@ -426,17 +426,26 @@ export class MdyTimepickerFieldElement extends MdyFieldElement<string | null> {
     this._isDragging = true;
     this.drag.start();
     this.updateAngle(event);
+    // A press is already a choice. Without this a tap sets nothing — on a mouse the pointer jitters
+    // and a move arrives to cover it, but a finger that lands and lifts produces no movement at all,
+    // which is the entire interaction on a phone.
+    this.sendPick();
+  }
+
+  /** Where the pointer is, as the position it is. Shared so a press and a drag cannot differ. */
+  private sendPick(): void {
+    const angle = this._dragAngle;
+    if (angle === null) return;
+    // The position, not a time read off it: what this control knows is where the pointer is, and
+    // what that means — which of the two hours in this direction — is the controller's to say.
+    this.send({ type: "set-from-angle", field: this.dragField, angle, ring: this._dragRing });
   }
 
   private onDragMove(event: MouseEvent | TouchEvent): void {
     if (!this._isDragging || this.view.viewMode !== "dial") return;
     if (event.cancelable) event.preventDefault();
     this.updateAngle(event);
-    const angle = this._dragAngle;
-    if (angle === null) return;
-    // The position, not a time read off it: what this control knows is where the pointer is, and
-    // what that means — which of the two hours in this direction — is the controller's to say.
-    this.send({ type: "set-from-angle", field: this.dragField, angle, ring: this._dragRing });
+    this.sendPick();
   }
 
   private onDragEnd(): void {

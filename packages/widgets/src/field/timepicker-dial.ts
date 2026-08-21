@@ -9,7 +9,7 @@
 import { to24Hour } from "@modyra/core/datetime";
 import type { MdyTimeFormat, ParsedTime } from "@modyra/core/datetime";
 import { isOnStep, MDY_EVERY_TIME, type MdyTimeSteps } from "../time-granularity.js";
-import { timeFieldBounds } from "../time-bounds.js";
+import { stepTimeField, timeFieldBounds } from "../time-bounds.js";
 export interface MdyTimepickerDialNumber {
   readonly value: number;
   readonly label: string;
@@ -375,40 +375,47 @@ export function timepickerDialKeyIntent(
   field: "hour" | "minute",
   format: MdyTimeFormat,
   current: number,
+  steps: MdyTimeSteps = MDY_EVERY_TIME,
 ): MdyTimepickerDialKeyResult | null {
   // Every surface of a 24-hour picker speaks 0–23 — this one, the face, the segment bounds, what a
   // typed entry is accepted as — and the working copy is canonically 1–12. The controller converts:
   // `set-hour` and `set-from-angle` take the hour in the picker's own format and derive the half of
   // the day from it. A host sends what its face shows and nothing else.
-  const min = field === "minute" ? 0 : format === "24h" ? 0 : 1;
-  const max = field === "minute" ? 59 : format === "24h" ? 23 : 12;
-  const span = max - min + 1;
+  //
+  // The bounds and the stepping are `timeFieldBounds` and `stepTimeField` rather than literals: a
+  // dial's arrows are the same movement as a segment's, and written twice they answered differently
+  // the moment a field offered only some of its values — the keyboard walking through times the face
+  // did not draw and the field would refuse.
+  const { min } = timeFieldBounds(field, format, steps);
+  // A page is a bigger jump of the same kind, so it is whole steps rather than a fixed distance: on
+  // a quarter-hour face, five single steps is more than an hour.
   const page = field === "minute" ? 5 : 3;
-
-  const wrap = (value: number): MdyTimepickerDialKeyResult => ({
+  const by = (delta: number): MdyTimepickerDialKeyResult => ({
     field,
-    value: ((((value - min) % span) + span) % span) + min,
+    value: stepTimeField(field, format, current, delta, steps),
   });
 
   switch (key) {
     case "ArrowRight":
     case "ArrowUp":
-      return wrap(current + 1);
+      return by(1);
     case "ArrowLeft":
     case "ArrowDown":
-      return wrap(current - 1);
+      return by(-1);
     case "PageUp":
-      return wrap(current + page);
+      return by(page);
     case "PageDown":
-      return wrap(current - page);
+      return by(-page);
     case "Home":
       return { field, value: min };
     case "End":
-      return { field, value: max };
+      // The last value on offer, which is not the range's end when the step does not divide it.
+      return { field, value: stepTimeField(field, format, min, -1, steps) };
     default:
       return null;
   }
 }
+
 
 /**
  * What a screen reader is told about the hand's current position.

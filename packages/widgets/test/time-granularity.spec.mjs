@@ -496,3 +496,33 @@ test("the face has two zones, and the band is one published number wide", async 
   assert.equal(at(Math.round(innerRadius - half) - 1), "outer", "below it the major dial resumes");
   assert.equal(at(Math.round(innerRadius + half) + 1), "outer", "and above it too");
 });
+
+// ─── the dial's own keyboard ─────────────────────────────────────────────────
+
+const { timepickerDialKeyIntent } = await import("../dist/index.js");
+
+test("the dial's arrows move by the step, like every other way in", () => {
+  // A dial is a pointer affordance, and if its arrows walked through times the face does not draw,
+  // the keyboard would be the one route that reaches values the field refuses.
+  const quarters = { minuteStep: 15 };
+  assert.deepEqual(timepickerDialKeyIntent("ArrowUp", "minute", "24h", 0, quarters), { field: "minute", value: 15 });
+  assert.deepEqual(timepickerDialKeyIntent("ArrowDown", "minute", "24h", 0, quarters), { field: "minute", value: 45 });
+  // And unchanged where nothing is declared.
+  assert.deepEqual(timepickerDialKeyIntent("ArrowUp", "minute", "24h", 0), { field: "minute", value: 1 });
+});
+
+test("Home and End land on values the field offers", () => {
+  const byFive = { hourStep: 5 };
+  // A 12-hour clock counting from 1 by fives offers 1, 6, 11 — so the end of the range is not the
+  // last value on offer, and answering 12 would be a key that sets something the face refuses.
+  assert.deepEqual(timepickerDialKeyIntent("Home", "hour", "12h", 6, byFive), { field: "hour", value: 1 });
+  assert.deepEqual(timepickerDialKeyIntent("End", "hour", "12h", 6, byFive), { field: "hour", value: 11 });
+  assert.deepEqual(timepickerDialKeyIntent("End", "hour", "12h", 6), { field: "hour", value: 12 });
+});
+
+test("a page is whole steps rather than a fixed distance", () => {
+  // Five single steps on a quarter-hour face is more than an hour, so a page that moved five
+  // *minutes* would be smaller than one arrow press.
+  const quarters = { minuteStep: 15 };
+  assert.deepEqual(timepickerDialKeyIntent("PageUp", "minute", "24h", 0, quarters), { field: "minute", value: 15 });
+});

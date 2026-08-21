@@ -355,7 +355,7 @@ export class MdyTimepickerClockComponent {
   protected onDialKeydown(event: KeyboardEvent): void {
     if (this.disabled() || this.viewMode() !== "dial") return;
     const field = this.focusedField();
-    const intent = timepickerDialKeyIntent(event.key, field, this.format(), this.faceValue());
+    const intent = timepickerDialKeyIntent(event.key, field, this.format(), this.faceValue(), this.steps());
     if (!intent) return;
     event.preventDefault();
     const next = timeClockTransition(this.value(),
@@ -373,17 +373,24 @@ export class MdyTimepickerClockComponent {
     this.isDragging.set(true);
     this.drag.start();
     this.updateAngle(event);
+    // A press is already a choice. Without this a tap sets nothing — on a mouse the pointer jitters
+    // and a move arrives to cover it, but a finger that lands and lifts produces no movement at all,
+    // which is the entire interaction on a phone.
+    this.emitPick();
+  }
+
+  /** Where the pointer is, as the position it is. Shared so a press and a drag cannot differ. */
+  private emitPick(): void {
+    const angle = this.dragAngle();
+    if (angle === null) return;
+    this.dialPicked.emit({ field: this.dragField, angle, ring: this.dragRing() });
   }
 
   protected onDragMove(event: MouseEvent | TouchEvent): void {
     if (!this.isDragging() || this.viewMode() !== "dial") return;
     if (event.cancelable) event.preventDefault();
     this.updateAngle(event);
-
-    const angle = this.dragAngle();
-    if (angle === null) return;
-
-    this.dialPicked.emit({ field: this.dragField, angle, ring: this.dragRing() });
+    this.emitPick();
   }
 
   protected onDragEnd(): void {
