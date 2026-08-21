@@ -324,6 +324,9 @@ export function renderMultiselectField(
        */
       chip.addEventListener("pointerdown", (event) => {
         if (event.button !== 0) return;
+        // A drag may start anywhere on the chip, its own controls included: they cover most of it,
+        // and a chip draggable only by its bare edges is a chip nobody can drag. What separates the
+        // two is travel — a press that stays put is the button's, and one that moves is the strip's.
         const startX = event.clientX;
         let dragging = false;
         const onMove = (moveEvent: PointerEvent) => {
@@ -332,11 +335,12 @@ export function renderMultiselectField(
           chip.classList.add(stateClass(parts.chip.classes[0]!, "dragging"));
         };
         const onUp = (upEvent: PointerEvent) => {
-          chip.removeEventListener("pointermove", onMove);
-          chip.removeEventListener("pointerup", onUp);
-          chip.removeEventListener("pointercancel", onCancel);
-          chip.classList.remove(stateClass(parts.chip.classes[0]!, "dragging"));
+          detach();
           if (!dragging) return;
+          // The press began on a control and ended as a gesture, so the click it is about to
+          // produce is not one anybody asked for. Swallowed once, in the capture phase, before it
+          // reaches the button underneath.
+          view.addEventListener("click", (click) => { click.stopPropagation(); click.preventDefault(); }, { capture: true, once: true });
           const order = stripOrder();
           const midpoints = order.map((each) => {
             const box = chosenEls.get(each)?.getBoundingClientRect();
@@ -349,16 +353,25 @@ export function renderMultiselectField(
           activeChip = key;
           syncRoving();
         };
-        const onCancel = () => {
-          chip.removeEventListener("pointermove", onMove);
-          chip.removeEventListener("pointerup", onUp);
-          chip.removeEventListener("pointercancel", onCancel);
+        const onCancel = () => detach();
+        /**
+         * Tracked on the document rather than by capturing the pointer.
+         *
+         * `setPointerCapture` would follow the gesture anywhere — and retarget every later pointer
+         * event, including the one that becomes a `click`, to the capturing element. The chip's own
+         * buttons then stopped receiving their clicks entirely: found, pressed, nothing happened.
+         * Listening on the document follows the gesture just as far and leaves the buttons alone.
+         */
+        const view = chip.ownerDocument;
+        function detach(): void {
+          view.removeEventListener("pointermove", onMove);
+          view.removeEventListener("pointerup", onUp);
+          view.removeEventListener("pointercancel", onCancel);
           chip.classList.remove(stateClass(parts.chip.classes[0]!, "dragging"));
-        };
-        chip.setPointerCapture(event.pointerId);
-        chip.addEventListener("pointermove", onMove);
-        chip.addEventListener("pointerup", onUp);
-        chip.addEventListener("pointercancel", onCancel);
+        }
+        view.addEventListener("pointermove", onMove);
+        view.addEventListener("pointerup", onUp);
+        view.addEventListener("pointercancel", onCancel);
       });
       chip.appendChild(move(-1, messages.chipMoveEarlierLabel));
     }

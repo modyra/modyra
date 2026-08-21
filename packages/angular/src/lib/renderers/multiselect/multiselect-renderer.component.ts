@@ -504,6 +504,9 @@ export class MdyMultiselectComponent<TValue = string>
    */
   protected startChipDrag(event: PointerEvent, optionKey: string): void {
     if (!this.reorderable() || event.button !== 0) return;
+    // A drag may start anywhere on the chip, its own controls included: they cover most of it, and
+    // a chip draggable only by its bare edges is a chip nobody can drag. What separates the two is
+    // travel — a press that stays put is the button's, and one that moves is the strip's.
     const chip = event.currentTarget as HTMLElement;
     const startX = event.clientX;
     let dragging = false;
@@ -513,16 +516,28 @@ export class MdyMultiselectComponent<TValue = string>
       dragging = true;
       chip.classList.add(dragClass);
     };
+    /**
+     * Tracked on the document rather than by capturing the pointer.
+     *
+     * `setPointerCapture` follows the gesture anywhere — and retargets every later pointer event,
+     * including the one that becomes a `click`, to the capturing element. The chip's own buttons
+     * then stop receiving their clicks entirely. Listening on the document follows it just as far
+     * and leaves the buttons alone.
+     */
+    const view = chip.ownerDocument;
     const done = () => {
-      chip.removeEventListener("pointermove", onMove);
-      chip.removeEventListener("pointerup", onUp);
-      chip.removeEventListener("pointercancel", done);
+      view.removeEventListener("pointermove", onMove);
+      view.removeEventListener("pointerup", onUp);
+      view.removeEventListener("pointercancel", done);
       chip.classList.remove(dragClass);
     };
     const onUp = (upEvent: PointerEvent) => {
       const wasDragging = dragging;
       done();
       if (!wasDragging) return;
+      // The press began on a control and ended as a gesture, so the click it is about to produce is
+      // not one anybody asked for. Swallowed once, in the capture phase.
+      view.addEventListener("click", (click) => { click.stopPropagation(); click.preventDefault(); }, { capture: true, once: true });
       const order = this.chosen().map((c) => c.key);
       const midpoints = order.map((each) => {
         const box = this.hostRef.nativeElement.querySelector(`[data-key="${each}"]`)?.getBoundingClientRect();
@@ -538,10 +553,9 @@ export class MdyMultiselectComponent<TValue = string>
       this.controller()?.dispatch({ type: "move-selected", optionKey, to });
       this.activeChipKey.set(optionKey);
     };
-    chip.setPointerCapture(event.pointerId);
-    chip.addEventListener("pointermove", onMove);
-    chip.addEventListener("pointerup", onUp);
-    chip.addEventListener("pointercancel", done);
+    view.addEventListener("pointermove", onMove);
+    view.addEventListener("pointerup", onUp);
+    view.addEventListener("pointercancel", done);
   }
 
   /**
