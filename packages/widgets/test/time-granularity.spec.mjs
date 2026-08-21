@@ -701,3 +701,24 @@ test("a face nobody measured is a different question from a pointer at its centr
   assert.equal(timepickerDialGhost(42, pick, { within: 0, handLength: 0, pointerReach: 40 }).reach, 1, "no hand to be a fraction of");
   assert.equal(timepickerDialGhost(42, pick, { within: 0, handLength: 100, pointerReach: 0 }).reach, 0, "measured, and at the centre");
 });
+
+test("the ghost's reach is always a length CSS will take", () => {
+  // `reach` becomes `--tp-ghost-reach`, and CSS drops a declaration whose value does not parse
+  // rather than falling back — so the property keeps what it had and the hand freezes where it was,
+  // which looks exactly like a hand that is tracking something. Non-finite is worse than wrong here.
+  //
+  // Asserted over every input the signature admits rather than at the values that broke: the guard
+  // has now failed twice in two different directions, and a case-by-case check would have passed the
+  // second time.
+  const pick = timepickerDialPick(42, "minute", "24h", "outer", { minuteStep: 15 });
+  const bad = [];
+  for (const pointerReach of [Number.NaN, Infinity, -Infinity, -5, 0, 0.5, 50, 100, 1e9, undefined]) {
+    for (const handLength of [Number.NaN, Infinity, 0, -1, 1, 100, undefined]) {
+      const { reach } = timepickerDialGhost(42, pick, { within: 0, pointerReach, handLength });
+      if (!Number.isFinite(reach) || reach < 0 || reach > 1) {
+        bad.push(`pointer ${String(pointerReach)} / hand ${String(handLength)} → ${String(reach)}`);
+      }
+    }
+  }
+  assert.deepEqual(bad, []);
+});

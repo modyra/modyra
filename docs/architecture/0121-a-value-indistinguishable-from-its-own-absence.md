@@ -65,21 +65,60 @@ something is.
 and refusing to answer would take the widget away over a condition nobody can act on. The fallback is
 right; sharing a branch with a real value is not.
 
-**Make the sentinel explicit everywhere — `null` for "not measured".** Better in principle and it
-would have prevented three of the four. It also means every geometry function grows a nullable
-parameter and every caller a conversion, for a distinction that `undefined` already expresses in the
-options objects these functions take. Where a function takes positional numbers rather than options,
-this is still worth doing.
+**Make the sentinel explicit everywhere — `null` for "not measured".** It reads well and it does not
+work: `NaN` is neither `null` nor `undefined`, so a sentinel closes none of the cases in the amendment
+below. Only a finiteness test does. Recommending it would leave a reader who followed the advice with
+every one of these still open.
 
 **Treat it as four bugs.** They were four bugs. Recording them as one shape is what stops the fifth,
 and the fifth is coming — the idiom is not going to stop looking natural.
+
+## Amendment: the other end of the same guard
+
+The rule above answers *is a value present*. It does not answer *is a present value usable*, and the
+first repair made under it opened the second defect: `pointerReach !== undefined` is **true of
+`NaN`**, so a malformed measurement stopped being treated as absent and started being treated as a
+number.
+
+**Non-finite was worse than the wrong number it replaced.** The value becomes a CSS custom property,
+and CSS **drops** a declaration whose value does not parse rather than falling back — so the property
+keeps what it had, and the hand freezes where it was. A frozen hand looks exactly like a hand that is
+tracking something. The old guard's answer was the wrong length; the new one's was no answer at all,
+delivered as if it were one.
+
+So the full rule is two-sided:
+
+> A legitimate value must not be indistinguishable from its own absence, **and an illegitimate value
+> must not be indistinguishable from a legitimate one.**
+
+A presence check answers the first. Only a **finiteness check** answers the second, and the useful
+line is not positional-versus-options — it is **whether the guard can absorb `NaN`**:
+
+```
+timepickerDialRing, rect with no fields (NaN)   → "outer"    fails closed: a plausible default
+timepickerDialTolerance, NaN handLength         → 0          fails closed
+timepickerDialGhost, NaN pointerReach           → NaN        failed open: straight into CSS
+```
+
+`!(handLength > 0)` swallows `NaN` as "absent", which is how a malformed call returned `"outer"` at
+every radius including the centre and read as a measurement rather than as a broken call. Neither of
+those two has a live defect and neither is changed here; they are named so the next reader does not
+take `"outer"` for an answer.
+
+Where a value leaves the type system — into CSS, into an attribute, into a serialised document —
+**check finiteness at the boundary**, and prefer a wrong-but-parseable value to a correct-looking
+absence of one.
 
 ## Verification
 
 There is no single check for a shape. What is enforced instead, per instance:
 
 - `packages/widgets/test/time-granularity.spec.mjs` asserts the ghost's reach is monotonic across the
-  whole radius and that an unmeasured face is a separate case with its own answer;
+  whole radius, that an unmeasured face is a separate case with its own answer, and that the reach is
+  a **finite** fraction in `[0, 1]` for every combination of inputs the signature admits — including
+  `NaN` and both infinities, on both parameters. Over the domain rather than at the values that
+  broke: this guard has now failed twice in two directions, and a case-by-case check would have
+  passed the second time;
 - the same file asserts the arcs two-sidedly — none for a face that removes nothing, some but not all
   for one that does;
 - `packages/widgets/test/css-properties.spec.mjs` holds `MDY_TIMEPICKER_NUMBER_SIZE` and the ring
