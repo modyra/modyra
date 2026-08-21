@@ -20979,3 +20979,36 @@ control — moving between chips — and the binding that opened the popup went 
 real trade and it needs recording either way, because a person who learns `ArrowDown` on one control
 of this project is entitled to it on the other. Owned by `esecutore`.
 
+
+### 375 — closed, and it was the part's name
+
+Recorded as *the option list declares no role at all*, S1, on a reading of `null`. The role is `group`,
+and has been. The battle asked the **multiselect** for a part called `listbox`, which the redesign
+retired; the list is `options` now. A part that no longer exists answers `null`, and `null` read as
+*declares nothing*.
+
+Same shape as the S0 earlier tonight and as [364](#364): a check that keeps its own name for a thing
+reports a rename as a defect in the code.
+
+## 377 — two kinds name the same anatomical thing differently (S2, API-001)
+
+```
+select        parts.listbox    element listbox     parts.options   absent
+multiselect   parts.options    element group       parts.listbox   absent
+```
+
+One is a list of options behind a trigger and so is the other. A consumer reading a part by name across
+kinds — which is what the contract is for — finds it under one name here and another there, and gets
+`null` for the kind that spells it the other way. **`null` is indistinguishable from "declares
+nothing"**, which is ADR 0121's shape and is exactly how this cost an S1 tonight.
+
+Not the same as [364](#364), which was one name meaning two different boxes; this is two names meaning
+one box. Both come from the same place: a part's name is public surface, and it was chosen twice.
+
+The semantics are correctly different — a select's list is a `listbox` and a multiselect's chips are a
+group of toggles, which [ADR 0112](../../docs/architecture/) and the battle both hold. **The element
+differing is right; the part's name differing is the finding.**
+
+Owned by `esecutore`. It wants `contract:diff` and a changeset if the name changes, so it is its own
+commit rather than a rider.
+
