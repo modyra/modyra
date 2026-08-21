@@ -3728,6 +3728,19 @@
         display: none;
     }
 
+    /* The same rule one layer out, for the panel rather than the popup, and for the same reason.
+       A closed popover is hidden by the UA, but any author rule that states `display` on the panel
+       beats it — and a panel class that lays its contents out with `display: flex` is exactly such a
+       rule. Left to the cascade, the options inside a shut popup were drawn in the page: every
+       option seen twice, announced twice, and clickable in two places.
+
+       Stated here rather than by scoping each panel class to `:popover-open`, because the property
+       being defended belongs to the popover and not to any one widget: a class added later would
+       have to remember, and this does not ask it to. */
+    [popover]:not(:popover-open) {
+        display: none;
+    }
+
     /* Feedback never covers an open popup: the ladder in the token block puts it below. */
     .mdy-control__errors,
     .mdy-supporting-text {
