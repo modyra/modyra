@@ -18884,3 +18884,48 @@ Both directions exercised. Freshness only: whether the bundle is correct stays t
 **Residual**: the guard compares mtimes, so it cannot see a source edited and reverted, and it says
 nothing about `@modyra/angular` because the browser tier still has no Angular host (finding 325).
 While a peer is editing `packages/**` the guard fires constantly — correct, and the reason it exists.
+
+## 331 — The dial leaves a live-looking gap across the top of the clock face (S1, UI-009 — Modyra bug, handed to esecutore)
+
+`timepickerDialUnavailableArcs` runs neighbouring removed positions together, and its own comment
+gives the reason: *"drawing two slices with a live-looking sliver between them would say there is
+something there."* The merge is right everywhere except at the seam.
+
+```
+timepickerDialUnavailableArcs("hour", "24h", { hourStep: 5 }, 100, "outer")
+  → [[348.7, 131.3], [168.7, 281.3], [318.7, 341.3]]
+
+drawn: 5, 10        removed: 12, 1, 2, 3, 4, 6, 7, 8, 9, 11
+```
+
+Hour 11 (330°) and hour 12 (0°) are neighbours on the full face and both removed, yet they are drawn
+as two arcs with **7.4° of undimmed ring between them, at twelve o'clock** — the most looked-at point
+on a clock face.
+
+**Two places ask adjacency and they ask different questions.** The loop asks it correctly via
+`everything[indexOf(angle) - 1]`, which is `undefined` at 0°, so the first arc never merges backwards.
+The post-loop repair then tests `last.to - 360 >= first.from`, which is **geometric overlap**.
+Neighbours on an hour face are 30° apart with an 11.3° half-width, so two adjacent removed positions
+can never overlap: the repair fires only when the arcs were already touching. At the seam the code
+asks whether the paint collides; everywhere else it asks whether the positions were neighbours.
+
+A minute face hides it — 6° spacing against an 11.3° half-width overlaps regardless — which is why
+`minuteStep 15` is right and why a sweep across granularities did not surface it.
+
+**Battle**: `a-live-sliver-at-twelve-oclock.battle.test.mjs` (`f7888d18`), red at 345°. It walks every
+removed pair one full-face step apart on whatever ring it is handed, so it is not built around the
+seam and survives the arcs changing shape.
+
+**Simulated the fix before filing** — join when the first and last positions of `everything` are both
+removed, which is the question the loop already asks:
+
+```
+[[318.7, 131.3], [168.7, 281.3]]      345° dead, 150° and 300° still live
+```
+
+Satisfiable and discriminating, so this is a defect report rather than a wall.
+
+**Checked and not found**: no arc covers a number the face drew, asserted per drawn number on the
+failing face. Dimming something choosable is the worse failure and it is not happening.
+`minuteStep 5 → []` and `hourStep 1 → []` both reproduce — a minute face only ever drew twelve
+positions, so a five-minute step removes nothing.
