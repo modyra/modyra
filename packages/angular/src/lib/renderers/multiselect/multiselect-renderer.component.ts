@@ -1,4 +1,4 @@
-import { chipFocusAfterRemoval, keyBindingFor, optionsWithUnrecognizedValues, overlayControlledId, projectOverlayOpenerA11y } from "@modyra/widgets";
+import { chipFocusAfterRemoval, keyBindingFor, multiselectAnnouncement, optionsWithUnrecognizedValues, overlayControlledId, projectOverlayOpenerA11y } from "@modyra/widgets";
 import { MdyPartDirective } from "../../control/mdy-part.directive";
 import { NgTemplateOutlet } from "@angular/common";
 import {
@@ -454,7 +454,8 @@ export class MdyMultiselectComponent<TValue = string>
     if (binding.intent === "remove") {
       event.preventDefault();
       const held = this.chosen().find((c) => c.key === optionKey);
-      if (held) this.removeChip(optionKey, held.value);
+      // Backspace goes back, Delete goes on — the convention every text field has.
+      if (held) this.removeChip(optionKey, held.value, event.key === "Backspace" ? "backward" : "forward");
       return;
     }
     if (binding.intent !== "reorder" || !this.reorderable()) return;
@@ -493,8 +494,8 @@ export class MdyMultiselectComponent<TValue = string>
    * Left to the browser, focus lands on whatever now occupies that position — the next chip while
    * one exists, and the document at the end of the strip.
    */
-  protected removeChip(optionKey: string, value: TValue): void {
-    const next = chipFocusAfterRemoval(this.chosen().map((c) => c.key), optionKey);
+  protected removeChip(optionKey: string, value: TValue, direction: "forward" | "backward" = "forward"): void {
+    const next = chipFocusAfterRemoval(this.chosen().map((c) => c.key), optionKey, direction);
     this.onToggle(value);
     afterNextRender(() => {
       const host = this.hostRef.nativeElement;
@@ -505,11 +506,24 @@ export class MdyMultiselectComponent<TValue = string>
     }, { injector: this.injector });
   }
 
-  /** The whole selection, so two announcements differ whenever the selection does. */
+  /**
+   * The change, not the list, and nothing while the popup is open.
+   *
+   * Seeded from what the field already holds, because a value that arrived with the form is not
+   * something the person just did.
+   */
+  private saidLast: readonly string[] | null = null;
   protected readonly announcementText = computed(() => {
-    const held = (this.value() ?? []) as readonly TValue[];
-    if (held.length === 0) return "";
-    return `${held.length} selected: ${this.chosen().map((c) => c.label).join(", ")}`;
+    const now = this.chosen().map((c) => c.key);
+    if (this.saidLast === null) { this.saidLast = now; return ""; }
+    const said = multiselectAnnouncement(
+      this.saidLast, now,
+      { added: this.i18n.selectionAdded, removed: this.i18n.selectionRemoved, empty: this.i18n.selectionEmpty },
+      (key) => this.chosen().find((c) => c.key === key)?.label ?? this.labelOf(key as unknown as TValue),
+      this.open(),
+    );
+    this.saidLast = now;
+    return said;
   });
 
   /** The words a chosen value is shown by, falling back to the value for one the options lost. */

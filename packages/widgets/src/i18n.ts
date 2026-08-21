@@ -55,6 +55,18 @@ export interface MdyI18nMessages {
   /** The two steppers on a counter chip: one fewer of this, one more of this. */
   readonly chipDecrementLabel: string;
   readonly chipIncrementLabel: string;
+  /**
+   * What a live region says when a choice lands or leaves: the change and the new total.
+   *
+   * `{value}` is the label that moved, `{count}` how many are chosen after it. The **change**, not
+   * the list — a polite region queues rather than replaces, so announcing the whole selection builds
+   * a backlog of stale lists and a person hears a selection several actions out of date. The list
+   * itself is an on-demand fact and belongs in the field's description.
+   */
+  readonly selectionAdded: string;
+  readonly selectionRemoved: string;
+  /** What is said when the last choice is taken off and there is nothing left to name. */
+  readonly selectionEmpty: string;
   readonly fileSelect: string;
   readonly fileSelectMultiple: string;
   readonly fileNoneSelected: string;
@@ -124,6 +136,9 @@ export const MDY_I18N_MESSAGES_DEFAULT: MdyI18nMessages = Object.freeze({
   decrease: "Decrease",
   searchOptionsLabel: "Search options",
   chipRemoveLabel: "Remove",
+  selectionAdded: "{value} added, {count} selected",
+  selectionRemoved: "{value} removed, {count} selected",
+  selectionEmpty: "Nothing selected",
   chipDecrementLabel: "One fewer",
   chipIncrementLabel: "One more",
   fileSelect: "Select file",
@@ -182,6 +197,9 @@ export const MDY_I18N_MESSAGES_IT: MdyI18nMessages = Object.freeze({
   decrease: "Diminuisci",
   searchOptionsLabel: "Cerca tra le opzioni",
   chipRemoveLabel: "Rimuovi",
+  selectionAdded: "{value} aggiunto, {count} selezionati",
+  selectionRemoved: "{value} rimosso, {count} selezionati",
+  selectionEmpty: "Nessuna selezione",
   chipDecrementLabel: "Uno in meno",
   chipIncrementLabel: "Uno in più",
   fileSelect: "Seleziona file",
@@ -233,6 +251,9 @@ export const MDY_I18N_MESSAGES_DE: MdyI18nMessages = Object.freeze({
   decrease: "Verringern",
   searchOptionsLabel: "Optionen durchsuchen",
   chipRemoveLabel: "Entfernen",
+  selectionAdded: "{value} hinzugefügt, {count} ausgewählt",
+  selectionRemoved: "{value} entfernt, {count} ausgewählt",
+  selectionEmpty: "Nichts ausgewählt",
   chipDecrementLabel: "Einer weniger",
   chipIncrementLabel: "Einer mehr",
   fileSelect: "Datei auswählen",
@@ -284,6 +305,9 @@ export const MDY_I18N_MESSAGES_FR: MdyI18nMessages = Object.freeze({
   decrease: "Diminuer",
   searchOptionsLabel: "Rechercher dans les options",
   chipRemoveLabel: "Retirer",
+  selectionAdded: "{value} ajouté, {count} sélectionnés",
+  selectionRemoved: "{value} retiré, {count} sélectionnés",
+  selectionEmpty: "Aucune sélection",
   chipDecrementLabel: "Un de moins",
   chipIncrementLabel: "Un de plus",
   fileSelect: "Sélectionner un fichier",
@@ -335,6 +359,9 @@ export const MDY_I18N_MESSAGES_ES: MdyI18nMessages = Object.freeze({
   decrease: "Disminuir",
   searchOptionsLabel: "Buscar en las opciones",
   chipRemoveLabel: "Quitar",
+  selectionAdded: "{value} añadido, {count} seleccionados",
+  selectionRemoved: "{value} quitado, {count} seleccionados",
+  selectionEmpty: "Nada seleccionado",
   chipDecrementLabel: "Uno menos",
   chipIncrementLabel: "Uno más",
   fileSelect: "Seleccionar archivo",
