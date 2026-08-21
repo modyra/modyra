@@ -20390,7 +20390,29 @@ of sheet reported as a difference of renderer.
 
 Owned by `esecutore`.
 
-## 357 — Angular's strip draws a chip per option, not per choice (S1, UI-011)
+### 357 — reopened, and this time the instrument is not the explanation
+
+Dropped as contested: the reading came from a window between the freshness guard running and the host
+being read, on a shared tree where an edit can arrive in between. That account was right about the
+mechanism and is the reason to measure at hashes.
+
+**It is red again on a host the repaired guard passed.** Built from `build:core`, `build:styles`,
+`build:plain`, lit through `tsc7` and then `battle-tests/browser/build.mjs`, with
+`assert-fresh.mjs` exiting 0 immediately before the run — and that guard now compares
+`packages/angular/dist` against `packages/angular/src`, which is the link that was never checked when
+this was first argued. Angular's `dist` was written after every source under it.
+
+```
+two-doors-to-one-order   angular   "the control is drawing a chip per option rather than per choice,
+                                    so there is no chosen order to move"
+                                   "…so `reorderable: false` cannot be read here"
+```
+
+So either it regressed after being fixed, or it was never fixed and both earlier readings were
+measuring something else. The distinction matters to whoever repairs it and neither of us can settle it
+from here; what can be said is that the staleness explanation is spent.
+
+## 357 — as found (S1, UI-011)
 
 Four offered, three taken:
 
