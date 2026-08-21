@@ -31,17 +31,32 @@ import { expectClaim } from "../../harness/assertions.mjs";
 
 const widgets = await import("@modyra/widgets");
 
-/** Every angle of the circle, and whether a ghost is offered there. */
+/**
+ * Every angle of the circle, and whether a ghost is offered there.
+ *
+ * `timepickerDialTolerance` takes the **ring and the hand's length** — it is the angular half-width of
+ * the drawn knob, geometry rather than a fraction of the gap. It used to take the field, the format
+ * and the steps, and this helper went on calling it that way after the signature changed: `"24h"`
+ * arrived where a hand length goes, `parseFloat` made it `NaN`, the `> 0` guard read that as absent
+ * and answered `0°`. A tolerance of zero lights a ghost at every angle that is not exactly on a
+ * number, so the battle reported 300 of 360 and looked like a product defect.
+ *
+ * A stale call wearing a plausible answer — the same shape as the defects this file exists to catch,
+ * which is why the number is spelled out in the failure detail rather than just compared.
+ */
+const HAND = 100;
+
 function ghostsAcross(field, format, granularity) {
-  const steps = widgets.timeStepsAt(granularity, 10);
-  const within = widgets.timepickerDialTolerance(field, format, steps);
+  const within = widgets.timepickerDialTolerance("outer", HAND);
   let shown = 0;
   for (let angle = 0; angle < 360; angle += 1) {
     const pick = widgets.timepickerDialPick(angle, field, format, "outer", granularity);
     if (!pick) continue;
-    if (widgets.timepickerDialGhost(angle, pick, { within })) shown += 1;
+    if (widgets.timepickerDialGhost(angle, pick, { within, ring: "outer", pointerReach: HAND, handLength: HAND })) {
+      shown += 1;
+    }
   }
-  return { within, shown };
+  return { within: Number(within.toFixed(2)), shown };
 }
 
 battle(
