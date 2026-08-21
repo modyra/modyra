@@ -17,6 +17,9 @@ import {
   timeFieldBounds,
   timepickerDialNumbers,
   timepickerSelectedRing,
+  timeStepsAt,
+  MDY_EVERY_TIME,
+  type MdyTimeSteps,
   timepickerSelectedDialValue,
   type MdyTimeGranularity,
   type MdyTimepickerFieldController,
@@ -274,14 +277,26 @@ export class MdyTimepickerFieldElement extends MdyFieldElement<string | null> {
    * variants are easy to keep straight and the minute's 0–59 is the one that gets lost. A step also
    * pulls an out-of-range segment back inside, because stepping is how a user leaves a bad value.
    */
+  /**
+   * The steps in force for the time being edited.
+   *
+   * Read per interaction, not captured: a windowed granularity's minute step depends on the hour the
+   * draft is on, so a step resolved once would answer for the hour the popup opened at.
+   */
+  private stepsNow(): MdyTimeSteps {
+    const draft = this.fieldController?.state().draft;
+    return draft ? timeStepsAt(this.granularity, to24Hour(draft)) : MDY_EVERY_TIME;
+  }
+
   private stepSegment(event: KeyboardEvent, field: "hour" | "minute"): boolean {
     const delta = event.key === "ArrowUp" ? 1 : event.key === "ArrowDown" ? -1 : 0;
     if (delta === 0) return false;
     event.preventDefault();
     const input = event.target as HTMLInputElement;
-    const entry = acceptTimeField(field, this.format, input.value);
-    const from = entry.type === "accepted" ? entry.value : timeFieldBounds(field, this.format).min;
-    input.value = String(stepTimeField(field, this.format, from, delta));
+    const steps = this.stepsNow();
+    const entry = acceptTimeField(field, this.format, input.value, steps);
+    const from = entry.type === "accepted" ? entry.value : timeFieldBounds(field, this.format, steps).min;
+    input.value = String(stepTimeField(field, this.format, from, delta, steps));
     input.removeAttribute("aria-invalid");
     input.dispatchEvent(new Event("input", { bubbles: true }));
     return true;
@@ -289,12 +304,16 @@ export class MdyTimepickerFieldElement extends MdyFieldElement<string | null> {
 
   /** Mark a segment whose contents are outside the range it advertises. */
   private markSegment(input: HTMLInputElement, field: "hour" | "minute"): void {
-    const bounds = timeFieldBounds(field, this.format);
+    const steps = this.stepsNow();
+    const bounds = timeFieldBounds(field, this.format, steps);
     input.min = String(bounds.min);
     input.max = String(bounds.max);
+    // The native attribute for exactly this, so the platform's own spinner offers what the field
+    // offers rather than every value between.
+    input.step = String(bounds.step);
     // An empty box is being cleared, not asserted.
     const bad = input.value.trim().length > 0
-      && acceptTimeField(field, this.format, input.value).type === "rejected";
+      && acceptTimeField(field, this.format, input.value, steps).type === "rejected";
     if (bad) {
       input.setAttribute("aria-invalid", "true");
       input.title = `${bounds.min}–${bounds.max}`;
@@ -413,7 +432,7 @@ export class MdyTimepickerFieldElement extends MdyFieldElement<string | null> {
     // drift from the paint.
     const declared = Number.parseFloat(getComputedStyle(el).getPropertyValue("--tp-hand-length"));
     const handLength = Number.isFinite(declared) && declared > 0 ? declared : face.width / 2;
-    this._dragRing = timepickerDialRing(face, coords.clientX, coords.clientY, this.format, handLength);
+    this._dragRing = timepickerDialRing(face, coords.clientX, coords.clientY, this.format, handLength, this.view.focusedField);
   }
 
   // ── Rendering ───────────────────────────────────────────────────────────────
@@ -506,7 +525,7 @@ export class MdyTimepickerFieldElement extends MdyFieldElement<string | null> {
     // minute 0 belongs at the top of the face and a draft of 07 marks the 05 nearest it, and those
     // are exactly the details three renderers would each get slightly differently.
     // The face the format has: 1–12 with a period beside them, or 0–23 with none.
-    const numbers = timepickerDialNumbers(field, this.format);
+    const numbers = timepickerDialNumbers(field, this.format, this.stepsNow());
     const parsed = this.parsed() ?? { hour: this.numericHour(), minute: this.numericMinute(), period: this.periodDisplay() };
     // In the units the face shows: on a 24-hour face this marks 14, not the 2 the draft holds.
     const selected = timepickerSelectedDialValue(field, parsed, this.format);

@@ -10,7 +10,7 @@
  */
 import type { MdyDynamicDateField } from "@modyra/core";
 import { observerFor, type MdyFieldHandle, type MdyReactivity } from "@modyra/core";
-import { formatTimeAs, hourToAngle, minuteToAngle, parseAnyTime, pointerAngle, type MdyTimeFormat } from "@modyra/core/datetime";
+import { formatTimeAs, hourToAngle, minuteToAngle, parseAnyTime, pointerAngle, to24Hour, type MdyTimeFormat } from "@modyra/core/datetime";
 import {
   MDY_I18N_MESSAGES_DEFAULT,
   MDY_WIDGET_CONTRACTS,
@@ -24,6 +24,7 @@ import {
   timeFieldBounds,
   timepickerDialNumbers,
   timepickerSelectedRing,
+  timeStepsAt,
   timepickerDialRing,
   timepickerSelectedDialValue,
   type MdyElementLookup,
@@ -186,12 +187,18 @@ export function renderTimepickerField(
     field: "hour" | "minute",
     apply: (value: number) => void,
   ): void => {
-    const bounds = () => timeFieldBounds(field, format);
+    // Read per interaction, not captured: a windowed granularity's minute step depends on the hour
+    // the draft is on, so a step resolved once would answer for the hour the popup opened at.
+    const stepsNow = () => timeStepsAt(f.granularity, to24Hour(controller.state().draft));
+    const bounds = () => timeFieldBounds(field, format, stepsNow());
     input.min = String(bounds().min);
     input.max = String(bounds().max);
+    // The native attribute for exactly this, so the platform's own spinner offers what the field
+    // offers rather than every value between.
+    input.step = String(bounds().step);
 
     input.addEventListener("input", () => {
-      const entry = acceptTimeField(field, format, input.value);
+      const entry = acceptTimeField(field, format, input.value, stepsNow());
       if (entry.type === "accepted") {
         input.removeAttribute("aria-invalid");
         input.removeAttribute("title");
@@ -213,9 +220,9 @@ export function renderTimepickerField(
       const delta = event.key === "ArrowUp" ? 1 : event.key === "ArrowDown" ? -1 : 0;
       if (delta === 0) return;
       event.preventDefault();
-      const current = acceptTimeField(field, format, input.value);
+      const current = acceptTimeField(field, format, input.value, stepsNow());
       const from = current.type === "accepted" ? current.value : bounds().min;
-      const next = stepTimeField(field, format, from, delta);
+      const next = stepTimeField(field, format, from, delta, stepsNow());
       input.value = String(next);
       input.removeAttribute("aria-invalid");
       apply(next);
@@ -274,7 +281,7 @@ export function renderTimepickerField(
     // say which hour is under the pointer. Which ring it is belongs to the contract, like which
     // numbers there are: a renderer deciding for itself is a renderer that can disagree with its own
     // drawing.
-    const ring = timepickerDialRing(face, event.clientX, event.clientY, state.format, handLength());
+    const ring = timepickerDialRing(face, event.clientX, event.clientY, state.format, handLength(), state.focusedField);
     dispatch({ type: "set-from-angle", field: state.focusedField, angle, ring });
   }
   let dragging = false;
@@ -376,7 +383,7 @@ export function renderTimepickerField(
     );
 
     // The face the format has, so a 24-hour picker can be pointed at its afternoon hours.
-    const numbers = timepickerDialNumbers(field, state.format);
+    const numbers = timepickerDialNumbers(field, state.format, timeStepsAt(f.granularity, to24Hour(state.draft)));
     // Same units as the numbers above, so the mark cannot land on a different hour than the face.
     const selected = timepickerSelectedDialValue(field, state.draft, state.format);
     // The face is rebuilt only when it changes hands: hours and minutes are different numbers, but

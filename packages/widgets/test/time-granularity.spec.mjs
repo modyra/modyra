@@ -363,3 +363,39 @@ test("the angle returned is the number's, not the pointer's", () => {
   const picked = timepickerDialPick(97, "hour", "12h", "outer");
   assert.deepEqual([picked.value, picked.angle], [3, 90]);
 });
+
+// ─── which ring a press claims ───────────────────────────────────────────────
+
+const { timepickerDialRing } = await import("../dist/index.js");
+
+/** A 256px face whose outer digits sit at 100px and inner at 60px, as the stylesheet draws them. */
+const FACE = { left: 0, top: 0, width: 256, height: 256 };
+const HAND = 100;
+const at = (reach, field = "hour") =>
+  timepickerDialRing(FACE, 128 + reach, 128, "24h", HAND, field);
+
+test("the inner ring is a band around its own numbers, not everything inside the outer", () => {
+  // The empty middle of the face is most of its area. Reading it as `inner` answers with an hour
+  // whose number is nowhere near the pointer, and shortens the hand for a press aimed further out.
+  assert.equal(at(60), "inner", "on the inner numbers");
+  assert.equal(at(45), "inner", "just inside them");
+  assert.equal(at(78), "inner", "just outside them");
+  assert.equal(at(100), "outer", "on the outer numbers");
+  assert.equal(at(10), "outer", "the empty middle belongs to the ring that is drawn");
+  assert.equal(at(0), "outer", "and so does the centre itself");
+  assert.equal(at(130), "outer", "and anything past the outer numbers");
+});
+
+test("a minute face has one ring, whatever the press is near", () => {
+  // Minutes are drawn at one radius. A press near the centre of that face used to read `inner` and
+  // shorten the hand for a ring that does not exist.
+  for (const reach of [0, 30, 60, 78, 100]) {
+    assert.equal(at(reach, "minute"), "outer", `${reach}px from the centre`);
+  }
+});
+
+test("a twelve-hour face has one ring too", () => {
+  for (const reach of [0, 60, 100]) {
+    assert.equal(timepickerDialRing(FACE, 128 + reach, 128, "12h", HAND, "hour"), "outer");
+  }
+});

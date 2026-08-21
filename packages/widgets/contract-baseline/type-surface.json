@@ -3416,6 +3416,7 @@
     "(2) clientY: number",
     "(3) format: MdyTimeFormat",
     "(4) handLength: number",
+    "(5) field?: \"hour\" | \"minute\"",
     "-> returns: \"outer\" | \"inner\""
   ],
   "timepickerFieldPartIds": [
