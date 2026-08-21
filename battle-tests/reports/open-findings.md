@@ -18833,3 +18833,54 @@ naming convention is an assumption about the repository**, and this one was thre
 **191 is marked closed here after checking rather than after being told**: `MDY_WIDGET_CONTRACT_VERSION`
 reads `2`, `docs/architecture/0084-a-contract-version-names-the-anatomy.md` exists, and `1a8138f9`
 carries both.
+
+## 330 — The browser suite served a host older than the code, in both directions (S1, harness defect — FIXED)
+
+Classified **harness defect**, not a Modyra bug. Filed because it silently corrupted two results
+tonight and would have corrupted a third.
+
+`battle-tests/.tmp-browser` is a bundle handed out verbatim by `scripts/serve-static.mjs`. Nothing in
+the serving path consults the sources, and `npx playwright test` does not build — only the
+`battle:browser` script does. So a host built before a fix is served without complaint.
+
+**Both directions are wrong and neither announces itself.**
+
+```
+an-arrow-that-moves-only-the-box.spec.ts   FAIL against a host from 11:50
+                                           PASS against the same spec, host rebuilt at 12:53
+```
+
+The red was reported to me as a live defect; I nearly filed it against `plain` and `lit`. Reasoning
+from the source said it was impossible — the action buttons the spec could not find are built
+unconditionally, in the same subtree as the segments it *did* find — and that contradiction is the
+only reason I rebuilt instead of filing.
+
+**The green is the dangerous half.** A spec covering fixed behaviour passes against the *old* bundle
+and reads as verification, because nobody investigates a green. My first re-run was exactly that: I
+declared the red stale on the strength of a pass that was itself measured against a stale host, and
+only caught it by checking the host's own freshness afterwards.
+
+**Fix**: `battle-tests/browser/assert-fresh.mjs`, wired into `playwright.config.ts`'s `webServer`
+command so it runs before the server and the suite cannot start on a stale host. `newestUnder` moved
+to `scripts/newest-under.mjs` and shared with the Angular demo's guard, which had its own copy.
+
+```
+stale →  Error: Process from config.webServer was not able to start. Exit code: 1
+fresh →  2 passed (3.7s)
+```
+
+Both directions exercised. Freshness only: whether the bundle is correct stays the suite's business.
+
+**Two traps inside the fix**, both of which I fell into while building it:
+
+- a *directory's* mtime records entries added or removed, not files rewritten in place, so
+  `find src -newer dist` calls a fresh build stale — `newestUnder` walks the tree instead, and the
+  module's doc comment says why;
+- the first error message printed `toLocaleTimeString()`, and `12:49` today against `23:09` yesterday
+  reads as older to a person and sorts as older with `sort -r`. That cost a detour before the
+  comparison — which was always on milliseconds and always right — was believed. Dates are printed
+  in full now.
+
+**Residual**: the guard compares mtimes, so it cannot see a source edited and reverted, and it says
+nothing about `@modyra/angular` because the browser tier still has no Angular host (finding 325).
+While a peer is editing `packages/**` the guard fires constantly — correct, and the reason it exists.
