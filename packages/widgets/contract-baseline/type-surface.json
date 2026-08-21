@@ -3344,11 +3344,6 @@
     "(4) steps?: MdyTimeSteps",
     "-> returns: number"
   ],
-  "stepValues": [
-    "(0) size: number",
-    "(1) step: number",
-    "-> returns: readonly number[]"
-  ],
   "subscribeController": [
     "(0) controller: MdyWidgetController<unknown, unknown>",
     "(1) reactivity: MdyReactivity",

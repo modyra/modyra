@@ -1,8 +1,8 @@
 {
   "note": "Public names not yet asserted or not yet shown. The list may only get shorter.",
   "score": {
-    "published": 699,
-    "asserted": 443,
+    "published": 724,
+    "asserted": 467,
     "shown": 79
   },
   "uncovered": [
@@ -80,6 +80,12 @@
     },
     {
       "name": "MDY_EFFECTS_UNAVAILABLE",
+      "asserted": true,
+      "shown": false,
+      "reason": "published and never shown"
+    },
+    {
+      "name": "MDY_EVERY_TIME",
       "asserted": true,
       "shown": false,
       "reason": "published and never shown"
@@ -212,6 +218,18 @@
     },
     {
       "name": "MDY_TIMEPICKER_INNER_RING",
+      "asserted": true,
+      "shown": false,
+      "reason": "published and never shown"
+    },
+    {
+      "name": "MDY_TIMEPICKER_NUMBER_SIZE",
+      "asserted": true,
+      "shown": false,
+      "reason": "published and never shown"
+    },
+    {
+      "name": "MDY_TIMEPICKER_RING_BAND",
       "asserted": true,
       "shown": false,
       "reason": "published and never shown"
@@ -1315,6 +1333,12 @@
       "reason": "published and never shown"
     },
     {
+      "name": "MdyGranularityProblem",
+      "asserted": true,
+      "shown": false,
+      "reason": "published and never shown"
+    },
+    {
       "name": "MdyGroupDescriptor",
       "asserted": true,
       "shown": false,
@@ -1555,6 +1579,12 @@
       "reason": "published, neither asserted nor shown"
     },
     {
+      "name": "MdyOverlayBranch",
+      "asserted": true,
+      "shown": false,
+      "reason": "published and never shown"
+    },
+    {
       "name": "MdyOverlayCoords",
       "asserted": true,
       "shown": false,
@@ -1616,6 +1646,12 @@
     },
     {
       "name": "MdyOverlayProperty",
+      "asserted": true,
+      "shown": false,
+      "reason": "published and never shown"
+    },
+    {
+      "name": "MdyOverlayRoot",
       "asserted": true,
       "shown": false,
       "reason": "published and never shown"
@@ -1993,10 +2029,40 @@
       "reason": "published and never shown"
     },
     {
+      "name": "MdyTimeGranularity",
+      "asserted": true,
+      "shown": false,
+      "reason": "published and never shown"
+    },
+    {
       "name": "MdyTimeRejection",
       "asserted": false,
       "shown": false,
       "reason": "published, neither asserted nor shown"
+    },
+    {
+      "name": "MdyTimeSteps",
+      "asserted": true,
+      "shown": false,
+      "reason": "published and never shown"
+    },
+    {
+      "name": "MdyTimeWindow",
+      "asserted": true,
+      "shown": false,
+      "reason": "published and never shown"
+    },
+    {
+      "name": "MdyTimepickerDialArc",
+      "asserted": true,
+      "shown": false,
+      "reason": "published and never shown"
+    },
+    {
+      "name": "MdyTimepickerDialGhost",
+      "asserted": true,
+      "shown": false,
+      "reason": "published and never shown"
     },
     {
       "name": "MdyTimepickerDialKeyResult",
@@ -2009,6 +2075,12 @@
       "asserted": false,
       "shown": false,
       "reason": "published, neither asserted nor shown"
+    },
+    {
+      "name": "MdyTimepickerDialPick",
+      "asserted": true,
+      "shown": false,
+      "reason": "published and never shown"
     },
     {
       "name": "MdyTimepickerFieldA11yOptions",
@@ -2731,6 +2803,18 @@
       "reason": "published and never shown"
     },
     {
+      "name": "dialNumberAngle",
+      "asserted": true,
+      "shown": false,
+      "reason": "published and never shown"
+    },
+    {
+      "name": "dialRingOf",
+      "asserted": true,
+      "shown": false,
+      "reason": "published and never shown"
+    },
+    {
       "name": "draftShapeMatches",
       "asserted": true,
       "shown": false,
@@ -2765,6 +2849,12 @@
       "asserted": false,
       "shown": false,
       "reason": "published, neither asserted nor shown"
+    },
+    {
+      "name": "explainGranularityProblem",
+      "asserted": true,
+      "shown": false,
+      "reason": "published and never shown"
     },
     {
       "name": "explainValueMismatch",
@@ -2989,6 +3079,12 @@
       "reason": "published and never shown"
     },
     {
+      "name": "isOnStep",
+      "asserted": true,
+      "shown": false,
+      "reason": "published and never shown"
+    },
+    {
       "name": "isPathRef",
       "asserted": false,
       "shown": false,
@@ -3127,6 +3223,12 @@
       "reason": "published and never shown"
     },
     {
+      "name": "minutesOfDay",
+      "asserted": true,
+      "shown": false,
+      "reason": "published and never shown"
+    },
+    {
       "name": "mountMdyDevtools",
       "asserted": true,
       "shown": false,
@@ -3230,6 +3332,12 @@
     },
     {
       "name": "overlayAnchoringFor",
+      "asserted": true,
+      "shown": false,
+      "reason": "published and never shown"
+    },
+    {
+      "name": "overlayBranchContains",
       "asserted": true,
       "shown": false,
       "reason": "published and never shown"
@@ -3422,9 +3530,9 @@
     },
     {
       "name": "registerHandleForm",
-      "asserted": true,
+      "asserted": false,
       "shown": false,
-      "reason": "published and never shown"
+      "reason": "published, neither asserted nor shown"
     },
     {
       "name": "registerHandleOwner",
@@ -3613,7 +3721,19 @@
       "reason": "published and never shown"
     },
     {
+      "name": "timeStepsAt",
+      "asserted": true,
+      "shown": false,
+      "reason": "published and never shown"
+    },
+    {
       "name": "timepickerDialAria",
+      "asserted": true,
+      "shown": false,
+      "reason": "published and never shown"
+    },
+    {
+      "name": "timepickerDialGhost",
       "asserted": true,
       "shown": false,
       "reason": "published and never shown"
@@ -3631,7 +3751,25 @@
       "reason": "published and never shown"
     },
     {
+      "name": "timepickerDialPick",
+      "asserted": true,
+      "shown": false,
+      "reason": "published and never shown"
+    },
+    {
       "name": "timepickerDialRing",
+      "asserted": true,
+      "shown": false,
+      "reason": "published and never shown"
+    },
+    {
+      "name": "timepickerDialTolerance",
+      "asserted": true,
+      "shown": false,
+      "reason": "published and never shown"
+    },
+    {
+      "name": "timepickerDialUnavailableArcs",
       "asserted": true,
       "shown": false,
       "reason": "published and never shown"
@@ -3650,6 +3788,12 @@
     },
     {
       "name": "timepickerSelectedDialValue",
+      "asserted": true,
+      "shown": false,
+      "reason": "published and never shown"
+    },
+    {
+      "name": "timepickerSelectedRing",
       "asserted": true,
       "shown": false,
       "reason": "published and never shown"
@@ -3692,6 +3836,12 @@
     },
     {
       "name": "validateExpression",
+      "asserted": true,
+      "shown": false,
+      "reason": "published and never shown"
+    },
+    {
+      "name": "validateTimeGranularity",
       "asserted": true,
       "shown": false,
       "reason": "published and never shown"

@@ -83,13 +83,6 @@ export function isOnStep(value: number, step: number): boolean {
   return value % step === 0;
 }
 
-/** Every value a unit offers under `step`, from 0 up. */
-export function stepValues(size: number, step: number): readonly number[] {
-  const by = Number.isFinite(step) && step >= 1 ? Math.trunc(step) : 1;
-  const values: number[] = [];
-  for (let value = 0; value < size; value += by) values.push(value);
-  return values;
-}
 
 /** Why a declared granularity was refused. Each names the member at fault. */
 export type MdyGranularityProblem =
