@@ -19693,3 +19693,36 @@ this table.
 **One thing worth doing whatever they decide**: `modern` has a single rule for `checkbox` and a single
 one for `toggle` where `ios` has 9 and 25. One rule is the shape of a token override, not of a look —
 either it is deliberate and worth a comment, or it is a control someone started and left.
+
+### 335 — closed
+
+`scripts/audit-angular-widget-contract.mjs` now records `contractVersion` in the baseline and refuses
+a snapshot taken against a different one.
+
+**Not the pin plain and lit use, deliberately.** Those two read the contract and must be re-read when
+it changes. This one compares Angular's surface against a record of *Angular's own past surface*, so
+by construction it can only notice what Angular changed, never what the contract gained — which is how
+`dialUnavailable` shipped declared and undrawn with this gate green. The honest requirement for a
+snapshot audit is weaker and different: **the snapshot may not predate the contract it is offered as
+evidence for.** What holds Angular to drawing every declared part is `open-coverage.spec.ts`, rebuilt
+under finding 333.
+
+The failure is reported separately from the surface diff, because the two mean different things: a
+surface that moved is a change to review, a stale version is a record that can no longer be trusted to
+be about the current contract at all.
+
+**Shown to fail**, which is what 333 taught: a gate nobody has watched refuse is a gate with no
+evidence behind it.
+
+```
+fresh baseline (version 5)   PASS
+version forced to 4          refused
+restored                     PASS
+```
+
+### 333 — closed by esecutore
+
+`open-coverage.spec.ts` names each exemption with its reason instead of counting to a floor, and was
+verified by declaring a `phantom` part nothing draws and watching it fail. Both directions: a part
+listed as expected-absent that starts being drawn asks to be removed from the list, so the exemptions
+cannot rot.

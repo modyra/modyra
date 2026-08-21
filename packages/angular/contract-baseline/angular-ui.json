@@ -1,5 +1,6 @@
 {
   "schemaVersion": 1,
+  "contractVersion": 5,
   "source": "packages/angular/src/lib/{control,renderers}",
   "note": "Semantic surface referenced by Angular renderer source. Text scan, not rendered DOM — see dom-contract.spec.ts and the state matrices for what the widgets actually render.",
   "selectors": [
