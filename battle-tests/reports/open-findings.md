@@ -19562,3 +19562,41 @@ would pass an outer-only check.
 **Still unexplained**: what the user saw on plain. Everything measured — the view it opens in, the
 period buttons, tapping a number, dragging the hand, the arrows, typing, the committed value — matches
 Angular. Their symptom is real and not yet reproduced, and this finding is not it.
+
+## 345 — The handover moves the dial and the contract's mark, and leaves the keyboard behind (S1, A11Y-001/UI-002)
+
+Reported: *"in plain quando si clicca su un'ora, non si riesce a draggare la lancetta perché passa
+subito ai minuti e ci sono problemi di passaggio di focus tra le view del dialer."* Both halves are
+real and they are two defects.
+
+Tapping the 3 on a 24-hour face and waiting past the handover:
+
+```
+plain     face=minutes  marked=minute  DOM focus=hour   ArrowUp → 04:30   moved the HOUR
+lit       face=minutes  marked=minute  DOM focus=hour   ArrowUp → :30     emptied the hour
+angular   face=hours    marked=hour    DOM focus=hour   ArrowUp → 04:30   agrees with itself
+```
+
+**One state, three expressions, and they disagree.** The dial draws the minutes, the contract marks the
+minute segment, and the browser's focus is still in the hour box — so an arrow or a digit edits the
+field the person is not looking at, and nothing on screen says which one will move. Exactly the pair
+this batch refused everywhere else: `focusedField` and `document.activeElement` are two views of one
+thing.
+
+**Second defect, in the same reading: the three do not agree with each other about advancing at all.**
+Plain and lit hand over to the minute face ~250–350ms after the tap; **Angular does not hand over**.
+Angular is self-consistent, which is why it passes — but a person moving between adapters meets two
+different controls, and nothing declares which is right. That is the half the user compared against.
+
+**Third, lit only**: `ArrowUp` on the hour box emptied it (`:30`). Separate from the handover and worth
+its own look.
+
+**Battle**: `a-field-the-dial-is-not-showing.spec.ts`. Asserted as **agreement rather than as a value**
+— whichever field the handover lands on, all three expressions must name it. A renderer that advances
+and one that does not both pass; neither may advance halfway. The keystroke is the last assertion
+because it is the consequence and the other three are its reasons.
+
+**Not reproduced**: the user also said the drag is prevented. Measured, a single press-drag-release
+gesture works in all three and does *not* jump to minutes mid-drag — the face changes only after a
+**tap**. So what blocks the drag is having tapped first, which is the handover above rather than a
+drag defect.
