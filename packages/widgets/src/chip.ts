@@ -86,3 +86,25 @@ export function multiselectChipClasses(appearance: MdyChipAppearance = {}): read
   if (removable) classes.push(stateClass(MDY_CHIP_CLASSES.block, "removable"));
   return Object.freeze(classes);
 }
+
+/**
+ * Where focus goes when a chip is taken off, named as the chip it should land on.
+ *
+ * `null` means the strip has nothing left and focus belongs on the control itself.
+ *
+ * The next chip, or the previous one when the last was removed. Stated rather than left to the
+ * browser, because the browser's answer is *whatever now occupies that position in the DOM* — which
+ * is the next chip while one exists and nothing at all at the end of the strip, so removing from the
+ * middle looked deliberate and removing the last dropped focus to the document. Somebody clearing a
+ * strip from the right loses their place on the first press.
+ */
+export function chipFocusAfterRemoval(
+  order: readonly string[],
+  removed: string,
+): string | null {
+  const at = order.indexOf(removed);
+  if (at === -1) return null;
+  const left = order.filter((key) => key !== removed);
+  if (left.length === 0) return null;
+  return left[Math.min(at, left.length - 1)] ?? null;
+}

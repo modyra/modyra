@@ -3,6 +3,7 @@ import {
   overlayControlledId,
   shownErrorsOf,
   keyBindingFor,
+  chipFocusAfterRemoval,
 } from "@modyra/widgets";
 import { type MdyFieldHandle, type MdyMultiselectMode, type MdySelectOption } from "@modyra/core";
 import { filterOptionsByQuery } from "@modyra/widgets";
@@ -168,6 +169,28 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
 
   private decrement(_handle: MdyFieldHandle<readonly unknown[]>, value: unknown): void {
     this.fieldController?.dispatch({ type: "decrement", optionKey: String(value) });
+  }
+
+  /**
+   * Takes a value off and puts focus where the contract says it goes.
+   *
+   * Left to the browser, focus lands on whatever now occupies that position — the next chip while
+   * one exists, and the document at the end of the strip. So removing from the middle looks
+   * deliberate and removing the last drops focus off the control entirely.
+   */
+  private removeAndPlaceFocus(handle: MdyFieldHandle<readonly unknown[]>, value: unknown): void {
+    const order = [...new Set(this.held(handle).map((v) => String(v)))];
+    const next = chipFocusAfterRemoval(order, String(value));
+    this.removeValue(handle, value);
+    // Twice: the first `updateComplete` can settle for a render that was already scheduled when the
+    // value changed, so the strip is still the old one and focus lands on whatever sat at that
+    // index before. The second waits for the render the removal caused.
+    void this.updateComplete.then(() => this.updateComplete).then(() => {
+      const landing = next === null
+        ? this.querySelector<HTMLElement>(`.${this.partClass("trigger")}`)
+        : this.querySelector<HTMLElement>(`[data-key="${next}"] .${MDY_CHIP_CLASSES.remove}`);
+      (landing ?? this.querySelector<HTMLElement>(`.${this.partClass("trigger")}`))?.focus();
+    });
   }
 
   /** Takes a chosen value off entirely, whatever its count — the chip's own control. */
@@ -432,7 +455,7 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
         type="button"
         class=${MDY_CHIP_CLASSES.remove}
         aria-label=${this.messages.chipRemoveLabel}
-        @click=${(e: Event) => { e.stopPropagation(); this.removeValue(handle, value); }}
+        @click=${(e: Event) => { e.stopPropagation(); this.removeAndPlaceFocus(handle, value); }}
       ></button>
     </span>`);
   }

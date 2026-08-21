@@ -1,4 +1,4 @@
-import { keyBindingFor, optionsWithUnrecognizedValues, overlayControlledId, projectOverlayOpenerA11y } from "@modyra/widgets";
+import { chipFocusAfterRemoval, keyBindingFor, optionsWithUnrecognizedValues, overlayControlledId, projectOverlayOpenerA11y } from "@modyra/widgets";
 import { MdyPartDirective } from "../../control/mdy-part.directive";
 import { NgTemplateOutlet } from "@angular/common";
 import {
@@ -121,7 +121,7 @@ import type { MdyOverlayBranch, MdyOverlayOwner } from "../../core/overlay-contr
                 type="button"
                 [class]="chip.remove"
                 [attr.aria-label]="i18n.chipRemoveLabel"
-                (click)="onToggle(held.value); $event.stopPropagation()"
+                (click)="removeChip(held.key, held.value); $event.stopPropagation()"
               ></button>
             </span>
           }
@@ -433,6 +433,24 @@ export class MdyMultiselectComponent<TValue = string>
       () => (this.hostRef.nativeElement.querySelector(`[data-key="${optionKey}"]`) as HTMLElement | null)?.focus(),
       { injector: this.injector },
     );
+  }
+
+  /**
+   * Takes a value off and puts focus where the contract says it goes.
+   *
+   * Left to the browser, focus lands on whatever now occupies that position — the next chip while
+   * one exists, and the document at the end of the strip.
+   */
+  protected removeChip(optionKey: string, value: TValue): void {
+    const next = chipFocusAfterRemoval(this.chosen().map((c) => c.key), optionKey);
+    this.onToggle(value);
+    afterNextRender(() => {
+      const host = this.hostRef.nativeElement;
+      const landing = next === null
+        ? host.querySelector(".mdy-multiselect__trigger")
+        : host.querySelector(`[data-key="${next}"] .${MDY_CHIP_CLASSES.remove}`);
+      ((landing ?? host.querySelector(".mdy-multiselect__trigger")) as HTMLElement | null)?.focus();
+    }, { injector: this.injector });
   }
 
   /** The whole selection, so two announcements differ whenever the selection does. */
