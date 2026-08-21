@@ -84,19 +84,33 @@ export function dialNumberAngle(number: MdyTimepickerDialNumber): number {
 }
 
 /**
- * The number a dragged pointer lands on.
+ * Where a dragged pointer landed: the value, the angle it sits at, and which ring it is on.
  *
- * Taken from the numbers the face **drew**, rather than from arithmetic on the angle. Those are two
- * implementations of one rule, and a face that draws every quarter hour beside a drag that rounds to
- * the nearest minute is a widget whose hand stops between its own numbers — with nothing able to
- * notice, because each half is correct on its own terms. Deriving the pick from the drawn list makes
- * that disagreement unrepresentable.
+ * The angle is the **number's** angle, not the pointer's, so a renderer rests the hand on what was
+ * chosen rather than under the finger. The ring is what lets it draw a shorter hand for the inner
+ * one — at `hourStep: 3` the outer 3 and the inner 15 share a position, and without that difference
+ * the two selections are indistinguishable on screen.
+ */
+export interface MdyTimepickerDialPick {
+  readonly value: number;
+  readonly angle: number;
+  readonly ring: "outer" | "inner";
+}
+
+/**
+ * The value a dragged pointer lands on: the nearest one the field **offers**.
  *
- * It also settles the 24-hour face's two rings without solving them twice: the drawn numbers carry
- * their own ring, so the ring the pointer is over selects among them.
+ * Offered is not the same set as drawn, and conflating them coarsens the dial. A minute face has
+ * twelve positions and a minute field has sixty values, so an ungranulated picker draws 0, 5, 10 …
+ * and still accepts every minute — the hand sits between two labels, which is what a clock does.
+ * Landing only on drawn numbers would silently turn every picker in the library into a five-minute
+ * one.
  *
- * A tie — an angle exactly between two offered numbers — goes **clockwise**, to the later of the
- * two. Arbitrary, but stated: an unstated tie-break is one the face and the keyboard can resolve
+ * What must hold instead is that a drag can only reach a value the field would accept, at any step.
+ * Hours have as many values as positions, so for them the two sets coincide; minutes do not.
+ *
+ * A tie — an angle exactly between two offered values — goes **clockwise**, to the later of the two.
+ * Arbitrary, but stated: an unstated tie-break is one the face and the keyboard can resolve
  * differently.
  *
  * Returns `null` only when the granularity offers this field nothing at all, which a validated one
@@ -108,24 +122,40 @@ export function timepickerDialPick(
   format: MdyTimeFormat = "12h",
   ring: "outer" | "inner" = "outer",
   steps: MdyTimeSteps = MDY_EVERY_TIME,
-): MdyTimepickerDialNumber | null {
-  const drawn = timepickerDialNumbers(field, format, steps);
-  const onRing = drawn.filter((number) => number.ring === ring);
-  // A 12-hour face has no inner ring, and a granularity can empty one; either way the pointer is
-  // over the face and has to land somewhere it can see.
-  const candidates = onRing.length > 0 ? onRing : drawn;
+): MdyTimepickerDialPick | null {
+  const candidates: MdyTimepickerDialPick[] = [];
+  if (field === "hour") {
+    // Twelve positions, and which hour each names depends on the ring — the same direction is 3
+    // outside and 15 inside. The drawn numbers already carry that, so they are the candidates.
+    for (const number of timepickerDialNumbers("hour", format, steps)) {
+      if (number.ring === ring || format !== "24h") {
+        candidates.push({ value: number.value, angle: dialNumberAngle(number), ring: number.ring });
+      }
+    }
+    // A granularity can thin a ring to nothing — `hourStep: 7` leaves one hour on the whole outer
+    // ring — and a pointer over an empty ring still has to land somewhere it can see.
+    if (candidates.length === 0) {
+      for (const number of timepickerDialNumbers("hour", format, steps)) {
+        candidates.push({ value: number.value, angle: dialNumberAngle(number), ring: number.ring });
+      }
+    }
+  } else {
+    const { min, max, step } = timeFieldBounds("minute", format, steps);
+    for (let minute = min; minute <= max; minute += 1) {
+      if (isOnStep(minute - min, step)) candidates.push({ value: minute, angle: minute * 6, ring: "outer" });
+    }
+  }
   if (candidates.length === 0) return null;
 
   const target = ((angle % 360) + 360) % 360;
   let best = candidates[0]!;
   let bestDistance = Number.POSITIVE_INFINITY;
-  for (const number of candidates) {
-    const at = dialNumberAngle(number);
-    const apart = Math.abs(((target - at + 540) % 360) - 180);
-    // `<=` rather than `<`, and the list runs clockwise from the top, so a tie takes the later one.
+  for (const candidate of candidates) {
+    const apart = Math.abs(((target - candidate.angle + 540) % 360) - 180);
+    // `<=` rather than `<`, and the candidates run clockwise, so a tie takes the later one.
     if (apart <= bestDistance) {
       bestDistance = apart;
-      best = number;
+      best = candidate;
     }
   }
   return best;
