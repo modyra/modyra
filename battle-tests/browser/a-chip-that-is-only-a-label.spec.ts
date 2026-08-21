@@ -57,10 +57,14 @@ for (const host of HOSTS) {
 
     // Three of one option and one of another: the value carries repeats, so a chip per distinct value
     // has to say how many or lose what the person asked for.
+    //
+    // **`mode: "multi"` is what asks for that.** A repeated value on a toggle-set control is not a
+    // quantity — the default mode holds a set, and handing it duplicates describes a control that was
+    // never offered a counter. This file spent its life measuring one and reporting on the other.
     await page.evaluate(async ({ api, options }) => {
       (window as never as Record<string, Record<string, (...args: never[]) => unknown>>)[api]
         .mountFields("c", [{
-          name: "s", kind: "multiselect", label: "S", options,
+          name: "s", kind: "multiselect", label: "S", options, mode: "multi",
           initialValue: ["a", "a", "a", "b"],
         }]);
     }, { api: host.api, options: OPTIONS });

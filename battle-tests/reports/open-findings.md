@@ -20390,7 +20390,32 @@ of sheet reported as a difference of renderer.
 
 Owned by `esecutore`.
 
-### 357 — reopened, and this time the instrument is not the explanation
+### 357 — withdrawn. It was the selector, and the third explanation was the right one
+
+Neither a regression nor a staleness window. **The fixture is portable and the DOM is not.**
+
+`chip` and `option` both resolve to `.mdy-chip`, and Angular keeps its popup inside the component
+where plain and lit portal theirs to the body. So a `.mdy-chip` count scoped to the *control* picks up
+the popup's option chips in Angular and nothing extra in the other two — one spec, three DOMs, and only
+Angular over-counts:
+
+```
+                 .mdy-chip under the control   in the strip
+plain                                      3              3
+lit                                        3              3
+angular                                    4              3
+```
+
+The scope was equivalent while the options were drawn inline, which is what makes this worth writing
+down: nothing about the spec changed, and it stopped meaning what it had meant. Scoped to the chips
+strip it is green in all three.
+
+I argued this one twice, the second time on a host I had built by hand with the freshness guard
+verified — and being right about the instrument being fresh is not the same as being right about what
+the instrument was pointed at. See [374](#374) for the asymmetry underneath it, which will keep
+producing this shape.
+
+### 357 — the reopening, kept because the reasoning was wrong in a useful way
 
 Dropped as contested: the reading came from a window between the freshness guard running and the host
 being read, on a shared tree where an edit can arrive in between. That account was right about the
@@ -20729,4 +20754,23 @@ grid role, a tooltip, an overflow button and an AA departure, the strip's suitab
 once rather than building over. Recorded in
 [ADR 0127](../../docs/architecture/0127-a-strip-that-scrolls-against-the-practice.md) as the likeliest
 successor to the decision, so the next person to raise it finds it was considered.
+
+
+## 374 — Angular keeps its popup inside the component; plain and lit portal theirs out (S2, UI-011)
+
+```
+                popup in the control's subtree
+plain                                       no
+lit                                         no
+angular                                    yes
+```
+
+Not a defect on its own — an overlay may legitimately live either place — but it is an asymmetry
+between three renderers of one contract, and it silently changes what *scoping a query to the control*
+means. It produced [357](#357), which was argued three times across two sessions and cost more than the
+difference is worth. It is also why Angular alone reports a `.mdy-multiselect__options` inside the host
+with the popup closed.
+
+Filed rather than fixed quietly, at `esecutore`'s request. Whichever way it is settled, all three owe
+the same answer, because a spec written against one is written against all three.
 
