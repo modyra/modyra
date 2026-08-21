@@ -77,6 +77,18 @@ for (const host of HOSTS) {
     expect(await segments.count(), "the picker built no segment boxes, so nothing could be typed").toBeGreaterThan(0);
 
     const hour = segments.first();
+
+    // Whether the box can be typed into at all is finding 341, not this spec's subject — and it has to
+    // be said before the typing, or a locked box reads as a draft that Tab destroyed. It did exactly
+    // that once: lit adopted the contract's dial-first default, its boxes are read-only on the dial, my
+    // `fill` swallowed its own failure, and the assertion below blamed Tab for a value that was never
+    // typed.
+    expect(
+      await page.evaluate(() => (document.querySelector(".mdy-timepicker-segment-input") as HTMLInputElement | null)?.readOnly),
+      "the boxes are locked in the view this picker opens in, so nothing can be typed and this spec " +
+        "cannot say anything about Tab — that is finding 341",
+    ).toBe(false);
+
     await hour.focus();
     // Short, because a read-only input *discards* a keystroke rather than refusing it: `fill` waits
     // for a value that will never arrive and the default timeout is 150 seconds of a suite doing
