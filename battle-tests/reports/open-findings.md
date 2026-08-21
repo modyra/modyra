@@ -19091,3 +19091,34 @@ the reasoning that was correct under the old constraint is what makes the new nu
 
 Owned by `esecutore` — reported with the arithmetic rather than fixed here, since it is a widgets
 constant and an ADR.
+
+## 335 — Angular's contract audit is pinned to its own past output, not to the contract (S2, gate defect)
+
+Two of three renderers fail hard on a contract version they do not recognise:
+
+```
+scripts/audit-plain-widget-contract.mjs:21   if (MDY_WIDGET_CONTRACT_VERSION !== 5) failures.push(…)
+scripts/audit-lit-widget-contract.mjs:28     if (MDY_WIDGET_CONTRACT_VERSION !== 5) failures.push(…)
+scripts/audit-angular-widget-contract.mjs    no reference to the version at all
+```
+
+The version moved 3 → 4 → 5 in one night. Each move made plain and lit demand a re-read; Angular said
+nothing, because it compares Angular's serialized UI surface against
+`packages/angular/contract-baseline/angular-ui.json` — a snapshot of Angular's own past output. **By
+construction that cannot notice something the contract gained**, only something Angular changed.
+`dialUnavailable` is the proof: declared at version 5, drawn by plain and lit, absent from Angular,
+audit green.
+
+**Do not copy the pin across.** Failing on an unrecognised version is right for an audit that reads
+the contract and must be re-read when it changes. A baseline-comparison audit has a different honest
+requirement: **the snapshot must be regenerated when the contract version moves**, so a baseline
+cannot silently predate the contract it is offered as evidence for. Recording the version *inside*
+`angular-ui.json` and failing when it differs from `MDY_WIDGET_CONTRACT_VERSION` states that directly
+and fails for the right reason.
+
+That is a weaker guarantee than plain's and lit's, and it should be, because the audit is answering a
+weaker question. The completeness gate rebuilt under finding 333 is what actually holds Angular to
+drawing every declared part; this one holds the evidence to being current.
+
+Raised with `esecutore`, who agreed the pin belongs there and asked that it not be copied without
+deciding what a re-read means for a baseline. This is that decision, recorded rather than assumed.
