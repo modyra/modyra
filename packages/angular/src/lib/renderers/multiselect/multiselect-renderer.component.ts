@@ -1,4 +1,4 @@
-import { chipFocusAfterRemoval, chipMovedAnnouncement, keyBindingFor, multiselectAnnouncement, optionsWithUnrecognizedValues, overlayControlledId, projectOverlayOpenerA11y } from "@modyra/widgets";
+import { chipDropIndex, chipFocusAfterRemoval, chipMovedAnnouncement, stateClass, keyBindingFor, multiselectAnnouncement, optionsWithUnrecognizedValues, overlayControlledId, projectOverlayOpenerA11y } from "@modyra/widgets";
 import { MdyPartDirective } from "../../control/mdy-part.directive";
 import { NgTemplateOutlet } from "@angular/common";
 import {
@@ -104,6 +104,7 @@ import type { MdyOverlayBranch, MdyOverlayOwner } from "../../core/overlay-contr
               role="group"
               [attr.data-key]="held.key"
               (focus)="activeChipKey.set(held.key)"
+              (pointerdown)="startChipDrag($event, held.key)"
               (keydown)="onChipKeydown($event, held.key)"
               [attr.aria-label]="held.count > 1 ? held.label + ', ' + held.count : held.label"
               [title]="held.label"
@@ -495,6 +496,55 @@ export class MdyMultiselectComponent<TValue = string>
   }
 
   /**
+   * Dragging a chip to a new place — the door the brief named, on the same intent as the other two.
+   *
+   * A threshold before it becomes a drag: a press that never travels is a press, and treating every
+   * one as the beginning of a drag takes the chip's own controls away from anybody whose finger
+   * moves a pixel. `pointercancel` puts it back untouched.
+   */
+  protected startChipDrag(event: PointerEvent, optionKey: string): void {
+    if (!this.reorderable() || event.button !== 0) return;
+    const chip = event.currentTarget as HTMLElement;
+    const startX = event.clientX;
+    let dragging = false;
+    const dragClass = stateClass(MDY_CHIP_CLASSES.block, "dragging");
+    const onMove = (moveEvent: PointerEvent) => {
+      if (!dragging && Math.abs(moveEvent.clientX - startX) < 6) return;
+      dragging = true;
+      chip.classList.add(dragClass);
+    };
+    const done = () => {
+      chip.removeEventListener("pointermove", onMove);
+      chip.removeEventListener("pointerup", onUp);
+      chip.removeEventListener("pointercancel", done);
+      chip.classList.remove(dragClass);
+    };
+    const onUp = (upEvent: PointerEvent) => {
+      const wasDragging = dragging;
+      done();
+      if (!wasDragging) return;
+      const order = this.chosen().map((c) => c.key);
+      const midpoints = order.map((each) => {
+        const box = this.hostRef.nativeElement.querySelector(`[data-key="${each}"]`)?.getBoundingClientRect();
+        return box ? box.left + box.width / 2 : 0;
+      });
+      const to = chipDropIndex(midpoints, upEvent.clientX, order.indexOf(optionKey));
+      if (to === order.indexOf(optionKey)) return;
+      this.saySoon = chipMovedAnnouncement(
+        this.i18n.selectionMoved,
+        this.chosen().find((c) => c.key === optionKey)?.label ?? optionKey,
+        to + 1, order.length,
+      );
+      this.controller()?.dispatch({ type: "move-selected", optionKey, to });
+      this.activeChipKey.set(optionKey);
+    };
+    chip.setPointerCapture(event.pointerId);
+    chip.addEventListener("pointermove", onMove);
+    chip.addEventListener("pointerup", onUp);
+    chip.addEventListener("pointercancel", done);
+  }
+
+  /**
    * The pointer's way to move a chip, which is not a drag.
    *
    * WCAG 2.5.7 asks for a single-pointer path independently of the keyboard's: somebody who cannot
@@ -509,6 +559,9 @@ export class MdyMultiselectComponent<TValue = string>
       to + 1, order.length,
     );
     this.controller()?.dispatch({ type: "move-selected", optionKey, to });
+    // The subject stays the chip that moved, decided rather than inherited: a pointer has no
+    // continuity of its own, since after one press the chip is no longer under the finger.
+    this.activeChipKey.set(optionKey);
   }
 
   /**

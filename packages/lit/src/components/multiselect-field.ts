@@ -7,6 +7,8 @@ import {
   multiselectAnnouncement,
   multiselectOverlayAction,
   chipMovedAnnouncement,
+  chipDropIndex,
+  stateClass,
 } from "@modyra/widgets";
 import { type MdyFieldHandle, type MdyMultiselectMode, type MdySelectOption } from "@modyra/core";
 import { filterOptionsByQuery } from "@modyra/widgets";
@@ -40,6 +42,52 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
   /** Whether a person may rearrange what they chose. Off by default. */
   declare reorderable: boolean;
   /**
+   * Dragging a chip to a new place — the door the brief named, on the same intent as the other two.
+   *
+   * A threshold before it becomes a drag: a press that never travels is a press, and treating every
+   * one as the beginning of a drag takes the chip's own controls away from anybody whose finger
+   * moves a pixel. `pointercancel` puts it back untouched — the browser taking the gesture is not a
+   * decision the person made.
+   */
+  private startChipDrag(event: PointerEvent, handle: MdyFieldHandle<readonly unknown[]>, optionKey: string): void {
+    if (!this.reorderable || event.button !== 0) return;
+    const chip = event.currentTarget as HTMLElement;
+    const startX = event.clientX;
+    let dragging = false;
+    const dragClass = stateClass(MDY_CHIP_CLASSES.block, "dragging");
+    const onMove = (moveEvent: PointerEvent) => {
+      if (!dragging && Math.abs(moveEvent.clientX - startX) < 6) return;
+      dragging = true;
+      chip.classList.add(dragClass);
+    };
+    const done = () => {
+      chip.removeEventListener("pointermove", onMove);
+      chip.removeEventListener("pointerup", onUp);
+      chip.removeEventListener("pointercancel", done);
+      chip.classList.remove(dragClass);
+    };
+    const onUp = (upEvent: PointerEvent) => {
+      const wasDragging = dragging;
+      done();
+      if (!wasDragging) return;
+      const order = [...new Set(this.held(handle).map((v) => String(v)))];
+      const midpoints = order.map((each) => {
+        const box = this.querySelector(`[data-key="${each}"]`)?.getBoundingClientRect();
+        return box ? box.left + box.width / 2 : 0;
+      });
+      const to = chipDropIndex(midpoints, upEvent.clientX, order.indexOf(optionKey));
+      if (to === order.indexOf(optionKey)) return;
+      this._saySoon = chipMovedAnnouncement(this.messages.selectionMoved, this.labelFor(optionKey), to + 1, order.length);
+      this.fieldController?.dispatch({ type: "move-selected", optionKey, to });
+      this._activeChip = optionKey;
+    };
+    chip.setPointerCapture(event.pointerId);
+    chip.addEventListener("pointermove", onMove);
+    chip.addEventListener("pointerup", onUp);
+    chip.addEventListener("pointercancel", done);
+  }
+
+  /**
    * The pointer's way to move a chip, which is not a drag.
    *
    * WCAG 2.5.7 asks for a single-pointer path independently of the keyboard's: somebody who cannot
@@ -50,6 +98,9 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
     const to = Math.max(0, Math.min(order.length - 1, order.indexOf(optionKey) + by));
     this._saySoon = chipMovedAnnouncement(this.messages.selectionMoved, this.labelFor(optionKey), to + 1, order.length);
     this.fieldController?.dispatch({ type: "move-selected", optionKey, to });
+    // The subject stays the chip that moved, decided rather than inherited: a pointer has no
+    // continuity of its own, since after one press the chip is no longer under the finger.
+    this._activeChip = optionKey;
   }
 
   /** Which chip carries the strip's tab stop. */
@@ -525,6 +576,7 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
       tabindex=${this.activeChip(handle) === String(value) ? "0" : "-1"}
       role="group"
       @focus=${() => { this._activeChip = String(value); }}
+      @pointerdown=${(e: PointerEvent) => this.startChipDrag(e, handle, String(value))}
       @keydown=${(e: KeyboardEvent) => this.onChipKeydown(e, handle, String(value))}
       aria-label=${count > 1 ? `${label}, ${count}` : label}
       title=${label}
