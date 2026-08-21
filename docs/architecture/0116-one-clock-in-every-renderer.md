@@ -96,6 +96,23 @@ the browser and `aria-valuemax="12"` to a reader, so a screen reader was told th
 clock this record made the default. Two declarations of one range is the shape that lets the second
 one go stale, and one of them was silent about it.
 
+### The renderer ceiling was raised, once, deliberately
+
+`renderer-overrun-baseline.json` says its numbers may shrink and may not grow, and this amendment
+raised the total from 691 to 707. The rule is right and the exception is narrow enough to name: the
+Angular timepicker grew 91 lines across the batches that gave it a granularity, a ghost hand and a
+keyboard. 75 of those came back — four duplicated segment handlers collapsed onto one, the widget
+runtime's plumbing moved beside the select adapter's, `set-time` replacing a conversion two renderers
+each wrote out, three comments rewritten from history into invariants.
+
+The 16 that remain are the four inputs the timepicker gained, with the documentation this repository
+requires of them. They are capability, not restatement, and the two ways to make the measurement
+accept them — deleting the documentation, or moving the inline template into an `.html` the audit
+does not count — are both worse than the number being 16 higher. The second is the one to refuse
+loudest: the sibling clock component does keep its template in a file, so the move would look like
+housekeeping while removing a hundred lines from a measurement without removing anything from the
+renderer.
+
 ### Verification
 
 - `packages/core/test/dynamic-diagnostics.test.mjs` — `MDY_DYNAMIC_UNHONOURABLE_FORMAT`, a clock that

@@ -47,6 +47,7 @@ const FIELD_BY_KIND = [
   "firstDayOfWeek",
   "minDate",
   "maxDate",
+  "format",
   "granularity",
   "animateHand",
   "showUnavailable",
