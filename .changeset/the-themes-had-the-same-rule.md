@@ -21,5 +21,8 @@ covers `radio` beside the two booleans. It records one rule it cannot reach —
 class, where Angular and Lit do. The exemption is asserted in both directions, so a renderer that
 grows the variant fails until the exemption is removed.
 
-Still outside it: `:hover` and `:focus-visible` cannot be produced in jsdom, so the two theme
-checkbox rules repaired here are covered only by the browser tier.
+Two of the seven are **repaired by pattern and not measured anywhere.** The checkbox
+`:focus-visible` rules in `modyra-ios.css` and `modyra-ionic.css` need a pointer or a keyboard focus,
+which jsdom cannot produce, and the browser tier builds and links the foundation sheet alone — so no
+tier loads a theme at all. They were changed because they carried the same orphaned combinator as
+the five that were measured, which is a good reason and not evidence.
