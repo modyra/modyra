@@ -33,6 +33,8 @@ import {
   timepickerSelectedRing,
   timeStepsAt,
   stateClass,
+  timepickerEntry,
+  timepickerEntryText,
   timepickerSelectedDialValue,
   timepickerTabTarget,
   type MdyElementLookup,
@@ -60,10 +62,14 @@ export function renderTimepickerField(
   reactivity = observerFor(handle, reactivity);
   // How this popup attaches is the contract's, not this renderer's.
   const anchoring = overlayAnchoringFor("timepicker");
+  // Not supplied by this renderer today, and named once so the box and the controller cannot end up
+  // reading a typed numeral differently.
+  const parseSegment: ((text: string) => number | null) | undefined = undefined;
   const controller = createTimepickerFieldController({
     widgetId: widgetId,
     handle,
     format,
+    ...(parseSegment !== undefined && { parseSegment }),
     // Declared on the field, so a document can ask for it. A capability no document can reach is a
     // capability nobody has.
     ...(f.granularity !== undefined && { granularity: f.granularity }),
@@ -205,6 +211,8 @@ export function renderTimepickerField(
   // Same reasoning as the datepicker: confirming restores focus to the input, so the sync is
   // guarded by whether the user is typing, not by where focus happens to be.
   let typing = false;
+  /** Which segment the user is inside, so the sync does not write over what they are typing. */
+  let editing: "hour" | "minute" | null = null;
   const toggleOverlay = () => dispatch(controller.state().open ? { type: "close", restoreFocus: false } : { type: "open" });
   toggle.addEventListener("click", toggleOverlay);
   // The control opens the overlay and never closes it: it is the field the user types into, so a
@@ -243,20 +251,38 @@ export function renderTimepickerField(
     input.step = String(bounds().step);
 
     input.addEventListener("input", () => {
-      const entry = acceptTimeField(field, format, input.value, stepsNow());
-      if (entry.type === "accepted") {
-        input.removeAttribute("aria-invalid");
-        input.removeAttribute("title");
-        apply(entry.value);
-        return;
-      }
-      // An empty box is being cleared, not asserted: it is not an error until it is left.
-      if (input.value.trim().length === 0) {
-        input.removeAttribute("aria-invalid");
-        return;
-      }
-      input.setAttribute("aria-invalid", "true");
-      input.title = `${bounds().min}–${bounds().max}`;
+      // Reported as typed, not parsed here. This renderer used to read the box itself and hand over
+      // a number, so the draft moved and the sync below wrote the canonical form straight back —
+      // `0` became `00` with the caret after it, and the next key landed third: `001` in a
+      // two-digit field, with `01` unreachable by the route a person takes.
+      editing = field;
+      dispatch({ type: "type-segment", field, text: input.value });
+      // The same reading the controller does, with the same reader — this renderer supplies none,
+      // so both are the digits every locale shares. A host that localises supplies one to the
+      // controller and this call has to take it from the same place, or the box would mark as
+      // unusable a numeral the draft had just accepted.
+      const read = timepickerEntry(field, format, input.value, stepsNow(), parseSegment);
+      // Marked while it is being edited, not judged: a partial the field cannot take yet is a
+      // half-typed number, and an empty box is being cleared rather than asserted.
+      const unusable = read !== null && read.value === null && input.value.trim().length > 0;
+      if (unusable) input.title = `${bounds().min}–${bounds().max}`;
+      else input.removeAttribute("title");
+      // `"true"`, not a bare attribute: `aria-invalid` is an enumerated value and an empty one is
+      // not the same claim.
+      if (unusable) input.setAttribute("aria-invalid", "true");
+      else input.removeAttribute("aria-invalid");
+    });
+
+    // What the box settles to when it stops being edited: the canonical form of what the draft
+    // holds, which is the contract's answer rather than this renderer's padding.
+    input.addEventListener("blur", () => {
+      editing = null;
+      input.value = timepickerEntryText(
+        field === "hour"
+          ? timepickerSelectedDialValue("hour", controller.state().draft, format)
+          : controller.state().draft.minute,
+      );
+      input.removeAttribute("aria-invalid");
     });
 
     // Stepping wraps, which is the other half of the same contract: an arrow key scans the range
@@ -472,10 +498,16 @@ export function renderTimepickerField(
     // In the picker's own notation. The draft holds the hour canonically as 1–12 with a period
     // beside it whatever the format, so printing it raw showed `2` on a 24-hour picker holding
     // 14:00 — the one number on screen that says what is selected, saying something else.
-    const hourString = String(timepickerSelectedDialValue("hour", state.draft, format));
-    if (hourInput.value !== hourString) hourInput.value = hourString;
-    const minuteString = String(state.draft.minute).padStart(2, "0");
-    if (minuteInput.value !== minuteString) minuteInput.value = minuteString;
+    // In the picker's own notation, and never over what somebody is typing. Writing the canonical
+    // form back after every keystroke is what made a half-typed minute unreachable.
+    if (editing !== "hour") {
+      const hourString = timepickerEntryText(timepickerSelectedDialValue("hour", state.draft, format));
+      if (hourInput.value !== hourString) hourInput.value = hourString;
+    }
+    if (editing !== "minute") {
+      const minuteString = timepickerEntryText(state.draft.minute);
+      if (minuteInput.value !== minuteString) minuteInput.value = minuteString;
+    }
     for (const button of periodOptions) {
       button.classList.toggle(
         `${parts.periodOption.classes[0]}--selected`,
