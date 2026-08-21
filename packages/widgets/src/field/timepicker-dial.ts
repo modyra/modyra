@@ -324,12 +324,18 @@ export function timepickerDialUnavailableArcs(
     }
   }
 
-  // The first and last can be one stretch across the top of the face.
-  const first = arcs[0]!;
-  const last = arcs[arcs.length - 1]!;
-  if (arcs.length > 1 && last.to - 360 >= first.from - 0.0001) {
+  // The seam across the top of the face, asked the same way the loop asks it. The loop cannot see it:
+  // the position at 0° has no predecessor in the list, so the first arc never merges backwards.
+  //
+  // Asking whether the two arcs *overlap* instead is a different question with a different answer —
+  // neighbours on an hour face are 30° apart under an 11.3° half-width and can never touch, so an
+  // overlap test only ever fires where nothing needed joining. That left 7.4° of undimmed ring at
+  // twelve o'clock, which is the most looked-at point on a clock and reads as somewhere you can land.
+  const seamIsDead = missing.includes(everything[0]!) && missing.includes(everything[everything.length - 1]!);
+  if (arcs.length > 1 && seamIsDead) {
+    const first = arcs[0]!;
+    const last = arcs.pop()!;
     arcs[0] = { from: last.from - 360, to: first.to };
-    arcs.pop();
   }
   return arcs.map((arc) => ({ from: ((arc.from % 360) + 360) % 360, to: ((arc.to % 360) + 360) % 360 }));
 }
