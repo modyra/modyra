@@ -63,6 +63,9 @@ const PART_SEMANTICS: Readonly<Record<string, MdyWidgetSemanticElement>> = Objec
   // contract have no opinion about a widget every renderer had already agreed on.
   presets: "listbox",
   fileItem: "group", weekdays: "group", row: "group", track: "group", period: "group",
+  // Two buttons showing both halves of the day, one of them marked. A `radiogroup` in ARIA terms:
+  // the value is visible rather than inferred from the label of a control that toggles it.
+  periodOption: "button",
 });
 
 export function semanticElement(partName: string): MdyWidgetSemanticElement {

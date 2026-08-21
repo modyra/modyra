@@ -581,14 +581,14 @@ export class MdyTimepickerFieldElement extends MdyFieldElement<string | null> {
               >
                 <button
                   type="button"
-                  class="mdy-timepicker-period-btn ${this.periodDisplay() === "AM" ? "mdy-timepicker-period-btn--selected" : ""}"
+                  class="${this.partClass("periodOption")} ${this.periodDisplay() === "AM" ? "mdy-timepicker-period-btn--selected" : ""}"
                   @click=${() => this.togglePeriod("AM")}
                 >
                   AM
                 </button>
                 <button
                   type="button"
-                  class="mdy-timepicker-period-btn ${this.periodDisplay() === "PM" ? "mdy-timepicker-period-btn--selected" : ""}"
+                  class="${this.partClass("periodOption")} ${this.periodDisplay() === "PM" ? "mdy-timepicker-period-btn--selected" : ""}"
                   @click=${() => this.togglePeriod("PM")}
                 >
                   PM
