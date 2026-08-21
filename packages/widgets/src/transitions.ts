@@ -191,11 +191,11 @@ function keyboardFor(kind: MdyWidgetKind): readonly MdyKeyBinding[] {
     // radio group is neither: APG gives it Tab, Space and the four arrows, and the arrows both move
     // and select, so there is no separate reading position for a jump to land on.
     //
-    // Declared for one anyway, it described a behaviour no renderer implements — plain, lit and
-    // Angular all omit it, independently, which is the evidence that reads as three oversights and
-    // is one rule applied where it does not belong. The same mistake `NAVIGATES_OPTIONS` invited
-    // once before, recorded in ADR 0021: a kind that walks its options with the arrows is not
-    // thereby a kind with a list to jump through.
+    // Declared for one anyway, it describes a behaviour no renderer implements. That every
+    // independent implementation of the same declaration omits the same binding is evidence about
+    // the declaration, not about the implementations: one rule applied where it does not belong,
+    // which is the mistake `NAVIGATES_OPTIONS` invited once before and ADR 0021 records — a kind
+    // that walks its options with the arrows is not thereby a kind with a list to jump through.
     //
     // Asked of the catalogue rather than of a second list, so a kind that stops being a radio group
     // moves this with it.
