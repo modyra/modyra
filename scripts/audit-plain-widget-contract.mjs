@@ -12,7 +12,12 @@ const failures = [];
 // The anatomy this audit was written against. A bump means parts moved, so the audit is re-read
 // rather than the number widened: accepting a range would make this line pass through exactly the
 // change it exists to catch.
-if (MDY_WIDGET_CONTRACT_VERSION !== 3) failures.push(`unsupported Widgets contract version: ${MDY_WIDGET_CONTRACT_VERSION}`);
+//
+// Version 4 moved a boolean's indicator and a toggle's track under the label, and named the label
+// and the input wrapper as elements. Re-read against that: nothing below asks about parentage — the
+// checks here are which controller a renderer consumes and which classes it must not emit, and the
+// rendered anatomy is what `inspectWidgetDom` measures in the runtime suites.
+if (MDY_WIDGET_CONTRACT_VERSION !== 4) failures.push(`unsupported Widgets contract version: ${MDY_WIDGET_CONTRACT_VERSION}`);
 
 const shell = read("field-shell.ts");
 if (!shell.includes("MDY_WIDGET_CONTRACTS[kind]")) failures.push("field-shell.ts does not take its root classes from the widget definition");

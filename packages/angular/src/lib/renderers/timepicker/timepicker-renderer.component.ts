@@ -22,7 +22,7 @@ import { MdyErrorListComponent } from "../../control/error-list.component";
 import { MdyControlLabelComponent } from "../../control/mdy-control-label.component";
 import { MdyIconComponent } from "../../control/mdy-icon.component";
 import { MDY_I18N_MESSAGES } from "../../core/i18n";
-import { MdyOverlayControl } from "../../core/overlay-control.directive";
+import { MdyOverlayControl, type MdyOverlayOwner } from "../../core/overlay-control.directive";
 import { MdyOverlayPanelComponent } from "../../core/overlay-panel.component";
 import { MdyTimepickerClockComponent } from "./timepicker-clock.component";
 
@@ -188,25 +188,10 @@ export class MdyTimepickerComponent extends MdyOverlayControl<string | null> {
   });
   private readonly injector = inject(Injector);
 
-  /**
-   * The controller's own `open` is this picker's open state — there is no second one.
-   *
-   * The contract closes a popup whose field has left play by writing that cell, and a renderer
-   * painting from a cell of its own would leave a dial drawn and offering hours for a field whose
-   * clicks correctly no longer land.
-   */
-  protected override isOverlayOpen(): boolean {
-    const controller = this.controller();
-    return controller ? controller.state().open : super.isOverlayOpen();
-  }
 
-  protected override setOverlayOpen(open: boolean): void {
-    const controller = this.controller();
-    if (!controller) {
-      super.setOverlayOpen(open);
-      return;
-    }
-    controller.dispatch(open ? { type: "open" } : { type: "close" });
+  /** The controller's `open` is this kind's open state; see `MdyOverlayControl.overlayOwner`. */
+  protected override overlayOwner(): MdyOverlayOwner | undefined {
+    return this.controller() as MdyOverlayOwner | undefined;
   }
 
   protected override onBeforeOpen(): void {

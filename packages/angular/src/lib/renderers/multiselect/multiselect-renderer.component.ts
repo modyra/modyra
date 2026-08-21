@@ -32,6 +32,7 @@ import { MdyOverlayPanelComponent } from "../../core/overlay-panel.component";
 import { MDY_OPTIONS_CONTROL } from "../../core/tokens";
 import { MdyOptionsControl } from "../../core/types";
 import { MdyDropdownBase } from "../dropdown-base";
+import type { MdyOverlayOwner } from "../../core/overlay-control.directive";
 
 @Component({
   selector: "mdy-control-multiselect",
@@ -343,19 +344,10 @@ export class MdyMultiselectComponent<TValue = string>
   protected readonly counts = computed(() => this.controller()?.state().counts ?? new Map<string, number>());
   protected readonly selectedSet = computed(() => this.controller()?.state().selectedKeys ?? new Set<string>());
 
-  /** The controller's `open` is this kind's open state; see `MdyOverlayControl.isOverlayOpen`. */
-  protected override isOverlayOpen(): boolean {
-    const controller = this.controller();
-    return controller ? controller.state().open : super.isOverlayOpen();
-  }
 
-  protected override setOverlayOpen(open: boolean): void {
-    const controller = this.controller();
-    if (!controller) {
-      super.setOverlayOpen(open);
-      return;
-    }
-    controller.dispatch(open ? { type: "open" } : { type: "close" });
+  /** The controller's `open` is this kind's open state; see `MdyOverlayControl.overlayOwner`. */
+  protected override overlayOwner(): MdyOverlayOwner | undefined {
+    return this.controller() as MdyOverlayOwner | undefined;
   }
 
   protected override onBeforeOpen(): void {

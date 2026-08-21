@@ -25,6 +25,17 @@ import {
   bindLightDismiss,
 } from "@modyra/widgets";
 import { MdyBaseControl } from "../control/control.directive";
+
+/**
+ * The half of a widget controller that owns whether its popup is open.
+ *
+ * Structural rather than the controller's own type: five kinds answer this with five different
+ * intent unions, and what the overlay needs from all of them is the same two members.
+ */
+export interface MdyOverlayOwner {
+  state(): { readonly open: boolean };
+  dispatch(intent: { readonly type: "open" } | { readonly type: "close" }): unknown;
+}
 import { MdyA11yAnnouncer } from "./a11y-announcer";
 import { MDY_I18N_MESSAGES } from "./i18n";
 
@@ -67,20 +78,29 @@ export abstract class MdyOverlayControl<TValue> extends MdyBaseControl<TValue> {
   }
 
   /**
-   * The state's reader and its writer, as one pair.
+   * The controller that owns this kind's open state, when one does.
    *
    * The widget contract owns the rule that a field leaving play closes its popup, and it expresses
    * that rule by writing the controller's own `open`. A renderer that keeps a second cell and
    * paints from it does not disobey the rule so much as never hear it: the contract's write lands
-   * somewhere nothing renders. Overriding both is how a kind says the controller's state is the
-   * state.
+   * somewhere nothing renders. Naming the controller here is how a kind says that cell is the
+   * state; a kind with no controller says nothing and keeps the local one.
    */
+  protected overlayOwner(): MdyOverlayOwner | undefined {
+    return undefined;
+  }
+
   protected isOverlayOpen(): boolean {
-    return this.localOpen();
+    return this.overlayOwner()?.state().open ?? this.localOpen();
   }
 
   protected setOverlayOpen(open: boolean): void {
-    this.localOpen.set(open);
+    const owner = this.overlayOwner();
+    if (!owner) {
+      this.localOpen.set(open);
+      return;
+    }
+    owner.dispatch(open ? { type: "open" } : { type: "close" });
   }
 
   /** Computed position of the overlay (below, above, or fixed overlay for mobile). */
