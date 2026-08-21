@@ -88,18 +88,25 @@ for (const host of HOSTS) {
         .filter((label) => label !== "");
     }, { sel: { strip: STRIP, chip: CHIP }, root: `[data-form="${id}"]` });
 
-    /** One press on the option, the way a person reaches it: open the control, press it in the list. */
-    const pressOption = async (id: string, label: string) => {
-      await page.locator(`[data-form="${id}"] .mdy-multiselect__trigger, [data-form="${id}"] [aria-haspopup]`)
-        .first().click({ timeout: 5_000 });
-      await page.waitForTimeout(250);
-      // The option inside the list the contract names, not a chip anywhere on the page. The popup is
-      // portalled out of the field, so this is scoped by the list rather than by the form.
-      await page.locator(optionIn(`[title="${label}"]`)).first().click({ timeout: 5_000 });
+    /**
+     * One press to undo a choice, through the door a person uses on a closed control: the chip's own
+     * remove button.
+     *
+     * Not the option in the popup. Both would be the same intent, but the popup is portalled out of
+     * the field and this page holds two mounted fields, so a popup cannot be scoped by the form *or*
+     * by document order — the plain reading finds the other field's closed list, which resolves to an
+     * element that is never visible and waits out the timeout looking like a page that will not
+     * respond. It did, twice, before this was written the simple way.
+     */
+    const undoChoice = async (id: string, label: string) => {
+      await page.locator(`[data-form="${id}"] .${STRIP} .${CHIP}`)
+        .filter({ hasText: label })
+        .first()
+        .locator("button[aria-label='Remove']")
+        .click({ timeout: 5_000 });
       await page.waitForTimeout(300);
-      await page.keyboard.press("Escape");
-      await page.waitForTimeout(200);
     };
+
     const valueOf = (id: string) => page.evaluate(({ api, mountId }) =>
       (window as never as Record<string, { valueOf(i: string): Record<string, unknown> }>)[api].valueOf(mountId),
       { api: host.api, mountId: id });
@@ -108,7 +115,7 @@ for (const host of HOSTS) {
     // below is about the repeat rather than about a toggle that never works.
     await mount("once", ["a"]);
     expect(await chosenChips("once"), "one chosen value draws no chip").toEqual(["A"]);
-    await pressOption("once", "A");
+    await undoChoice("once", "A");
     expect(await chosenChips("once")).toEqual([]);
     expect((await valueOf("once")).picks).toEqual([]);
 
@@ -116,8 +123,8 @@ for (const host of HOSTS) {
     await mount("thrice", ["a", "a", "a"]);
     expect(await chosenChips("thrice"), "three occurrences of one option draw more than one chip").toEqual(["A"]);
 
-    // One press, on the one option the user can see, asking for the one selection they can see.
-    await pressOption("thrice", "A");
+    // One press, on the one chip the user can see, asking for the one selection they can see.
+    await undoChoice("thrice", "A");
 
     expect(await chosenChips("thrice"), "the chip is still there after the option was unselected").toEqual([]);
     expect((await valueOf("thrice")).picks, "the form still holds the option the user unselected").toEqual([]);
