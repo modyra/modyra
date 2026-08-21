@@ -1,11 +1,11 @@
 {
   "note": "Browser specs that are red because the defect they describe is open. A red listed here does not fail a build; a red that is not listed is a regression. Rewrite with `npm run battle:browser:ci -- --accept`.",
   "order": "Repair in severity order, as the node tier does. A spec's severity is the worst of the claims its header names; `unknown` is a spec that names none, which is most of them.",
-  "recordedAt": "2026-08-21T18:16:38Z",
-  "openReds": 44,
+  "recordedAt": "2026-08-21T18:18:02Z",
+  "openReds": 47,
   "bySeverity": {
     "S0": 1,
-    "S1": 34,
+    "S1": 37,
     "S2": 9
   },
   "knownRed": [
@@ -14,6 +14,9 @@
     "a-choice-shown-that-was-never-made.spec.ts › a select holding a value no option carries, lit",
     "a-control-inside-another-control.spec.ts › no control sits inside another control, lit",
     "a-control-nobody-named.spec.ts › every control has a name even when the document declared none",
+    "a-control-that-shows-what-was-chosen.spec.ts › a closed multiselect answers to what was chosen, angular",
+    "a-control-that-shows-what-was-chosen.spec.ts › a closed multiselect answers to what was chosen, lit",
+    "a-control-that-shows-what-was-chosen.spec.ts › a closed multiselect answers to what was chosen, plain",
     "a-control-that-wears-its-theme.spec.ts › a slider is painted in the theme's own accent, whichever theme is loaded",
     "a-dialog-nothing-can-point-at.spec.ts › the opener points at the dialog it opens, lit",
     "a-dialog-the-page-can-be-walked-out-of.spec.ts › a time picker's dialog says the page behind it is not there, lit",
