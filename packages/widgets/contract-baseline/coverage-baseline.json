@@ -1,7 +1,7 @@
 {
   "note": "Public names not yet asserted or not yet shown. The list may only get shorter.",
   "score": {
-    "published": 729,
+    "published": 730,
     "asserted": 472,
     "shown": 79
   },
@@ -3803,6 +3803,12 @@
       "asserted": true,
       "shown": false,
       "reason": "published and never shown"
+    },
+    {
+      "name": "timepickerPartSelector",
+      "asserted": false,
+      "shown": false,
+      "reason": "published, neither asserted nor shown"
     },
     {
       "name": "timepickerSelectedDialValue",

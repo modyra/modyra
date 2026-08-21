@@ -36,6 +36,32 @@ export function timepickerFocusPart(field: "hour" | "minute"): "hourControl" | "
 }
 
 /**
+ * A CSS selector that reaches exactly one part of an open picker.
+ *
+ * A part's own class is not always enough to find it: `hourControl` and `minuteControl` carry the
+ * *same* class — `mdy-timepicker-segment-input` — because they are the same kind of control twice.
+ * Asked by class alone, both resolve to the hour, so a focus command naming the minute box put focus
+ * on the hour and a Tab that looked like it did nothing was in fact arriving somewhere.
+ *
+ * What tells them apart is the parent the anatomy already declares, so the selector is composed from
+ * it rather than from a second table: the wrapper's own class, then the control's.
+ */
+export function timepickerPartSelector(part: string): string | null {
+  const contract = MDY_WIDGET_CONTRACTS.timepicker;
+  const own = (contract.parts as Readonly<Record<string, { readonly classes: readonly string[] } | undefined>>)[part];
+  const name = own?.classes[0];
+  if (!name) return null;
+  const parent = contract.structure.nodes.find((node) => node.part === part)?.parent;
+  const above = parent
+    ? (contract.parts as Readonly<Record<string, { readonly classes: readonly string[] } | undefined>>)[parent]
+    : undefined;
+  // The parent's *last* class, which is the one that distinguishes it — `mdy-timepicker-segment` is
+  // shared by both segments and `--hour` is not.
+  const scope = above?.classes[above.classes.length - 1];
+  return scope ? `.${scope} .${name}` : `.${name}`;
+}
+
+/**
  * The controls a `Tab` walks inside an open picker, in order, as part names.
  *
  * Declared rather than left to DOM order, because the three renderers do not build the dialog in the

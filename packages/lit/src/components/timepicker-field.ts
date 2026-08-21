@@ -23,6 +23,9 @@ import {
   timepickerDialUnavailableArcs,
   MDY_TIMEPICKER_INNER_RING,
   timepickerSelectedRing,
+  timepickerPartSelector,
+  timepickerTabOrder,
+  timepickerTabTarget,
   timeStepsAt,
   stateClass,
   MDY_EVERY_TIME,
@@ -130,6 +133,7 @@ export class MdyTimepickerFieldElement extends MdyFieldElement<string | null> {
       close: () => this.overlay.close(),
       disabled: handle.disabled(),
       control: ".mdy-timepicker__input",
+      kind: "timepicker",
     });
     // Said to the form rather than kept here: an entry this control could not read leaves the form
     // holding nothing while the person looks at text they believe was taken, and a message the
@@ -165,7 +169,6 @@ export class MdyTimepickerFieldElement extends MdyFieldElement<string | null> {
     });
   }
   private dragField: TimeField = "hour";
-  private switchTimer: ReturnType<typeof setTimeout> | null = null;
 
   private readonly overlay = new MdyLitOverlayController(
     this,
@@ -232,7 +235,6 @@ export class MdyTimepickerFieldElement extends MdyFieldElement<string | null> {
     this.unbindOutside?.();
     this.overlay.close();
     super.disconnectedCallback();
-    if (this.switchTimer !== null) clearTimeout(this.switchTimer);
     this.drag.stop();
   }
 
@@ -312,13 +314,7 @@ export class MdyTimepickerFieldElement extends MdyFieldElement<string | null> {
     return this.view.focusedField === "minute" ? minuteToAngle(p.minute) : hourToAngle(p.hour);
   }
 
-  private scheduleMinuteSwitch(delayMs: number): void {
-    if (this.switchTimer !== null) clearTimeout(this.switchTimer);
-    this.switchTimer = setTimeout(() => {
-      this.switchTimer = null;
-      this.send({ type: "focus-field", field: "minute" });
-    }, delayMs);
-  }
+
 
   /**
    * Arrow keys step the segment, wrapping at the range's ends.
@@ -451,6 +447,29 @@ export class MdyTimepickerFieldElement extends MdyFieldElement<string | null> {
   }
 
   /** Where the pointer is, as the position it is. Shared so a press and a drag cannot differ. */
+  /**
+   * Tab walks the popup's own controls instead of leaving it.
+   *
+   * The popup holds a confirm button, and a Tab that dismissed left it unreachable — so the widget's
+   * only way to commit was a pointer. The order is the contract's rather than DOM order, because the
+   * three renderers do not build this dialog in the same order; it wraps, and `Escape` is the exit.
+   */
+  private moveByTab(event: KeyboardEvent): void {
+    if (!this._open) return;
+    event.preventDefault();
+    // The part's *first* class names it; `partClass` answers with every class the part carries, and
+    // a part with two of them matched nothing when asked as a single token.
+    const active = this.querySelector(":focus");
+    const from = timepickerTabOrder(this.format)
+      .find((part) => active?.matches(timepickerPartSelector(part) ?? "\0"));
+    const next = timepickerTabTarget(from ?? "", this.format, event.shiftKey ? -1 : 1);
+    if (next === "hourControl" || next === "minuteControl") {
+      this.send({ type: "focus-field", field: next === "hourControl" ? "hour" : "minute" });
+      return;
+    }
+    this.querySelector<HTMLElement>(timepickerPartSelector(next) ?? "\0")?.focus();
+  }
+
   private sendPick(): void {
     const angle = this._dragAngle;
     if (angle === null) return;
@@ -471,7 +490,6 @@ export class MdyTimepickerFieldElement extends MdyFieldElement<string | null> {
     this.drag.stop();
     const angle = this._dragAngle;
     if (angle !== null) {
-      if (this.dragField === "hour") this.scheduleMinuteSwitch(300);
       this.send({ type: "set-from-angle", field: this.dragField, angle, ring: this._dragRing });
     }
     this._isDragging = false;
@@ -691,7 +709,9 @@ export class MdyTimepickerFieldElement extends MdyFieldElement<string | null> {
           if (e.key === "Escape") {
             e.preventDefault();
             this.closePopup(handle);
+            return;
           }
+          if (e.key === "Tab") this.moveByTab(e);
         }}
       >
         <div class="mdy-timepicker-content">

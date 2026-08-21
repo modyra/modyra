@@ -179,3 +179,18 @@ test("a handover that arrives after the picker closed does nothing", () => {
   tick();
   assert.equal(controller.state().focusedField, "hour");
 });
+
+test("a selector reaches exactly one part, including the two that share a class", async () => {
+  // `hourControl` and `minuteControl` carry the same class — they are the same kind of control twice
+  // — so asked by class alone both resolve to the hour. A focus command naming the minute box put
+  // focus on the hour, and a Tab that looked like it did nothing was in fact arriving somewhere.
+  const { timepickerPartSelector } = await import("../dist/index.js");
+  assert.notEqual(timepickerPartSelector("hourControl"), timepickerPartSelector("minuteControl"));
+  assert.match(timepickerPartSelector("hourControl"), /--hour/);
+  assert.match(timepickerPartSelector("minuteControl"), /--minute/);
+  // Composed from the parent the anatomy already declares, rather than from a second table.
+  for (const part of timepickerTabOrder("12h")) {
+    assert.ok(timepickerPartSelector(part), part);
+  }
+  assert.equal(timepickerPartSelector("nowhere"), null);
+});
