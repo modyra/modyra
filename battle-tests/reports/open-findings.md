@@ -19404,3 +19404,43 @@ the campaign's recurring shape once more — the wrong answer and a real answer 
 
 **Battle**: `a-box-the-dial-locked.spec.ts`, three of six red, measured on all three renderers through
 the Angular browser host added for finding 325.
+
+## 342 — A number box cannot be cleared and typed back (S1, UI-011 — all three renderers, two ways)
+
+Reported: *"in plain quando cancello sui minuti 00 resta 00 e non riesco a mettere 01. su angular
+funziona perfettamente. credo vadano contrattualizzati anche tutti questi comportamenti."*
+
+Measured keystroke by keystroke on a `24h` picker holding `09:00`:
+
+```
+plain     "00" → Backspace → ""   → type 0 → "00"  → type 1 → "001"
+lit       "00" → Backspace → "00" → type 0 → "00"  → type 1 → "00"
+angular   "00" → Backspace → "00" → type 0 → "00"  → type 1 → "00"
+```
+
+**Plain pads to two digits on every keystroke.** Typing `0` into a cleared box makes it `00` with the
+caret after it, so the `1` lands third and the box holds `001` — three characters in a two-digit
+field, and `01` unreachable by the route a person actually takes. That is the reported defect, and the
+mechanism explains it exactly.
+
+**Lit and Angular refuse the edit outright**: Backspace does not clear, and neither typed character
+lands. Different answer, same underlying gap.
+
+**Nothing declares what a segment may show while it is being edited.** A half-typed number is a real
+state that every date and time field has, and the contract is silent, so one renderer reformats after
+every character and two reformat away every character. This is precisely what the user means by
+"contrattualizzare": not a bug list, a missing declaration.
+
+**Asserted as two properties**, both independent of whichever editing model is chosen — reformat on
+blur, on commit, or accept digits as they arrive:
+
+- no intermediate state is wider than the field;
+- the box can be cleared and typed back to a value the field offers.
+
+`a-minute-you-cannot-retype.spec.ts`, red on all three, each for its own reason.
+
+**Honest limit.** The user reports Angular behaving correctly in their own application and this spec
+does not reproduce that — driven this way Angular refuses the edit too. Either the gesture differs or
+the fixture does. The Angular row is **unexplained rather than damning** and is left visible rather
+than removed: convicting a renderer on a sequence that may be the wrong one is how three findings
+tonight nearly went out wrong.
