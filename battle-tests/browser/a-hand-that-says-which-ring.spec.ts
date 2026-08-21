@@ -7,12 +7,15 @@
  * selections are drawn identically**, and a person cannot tell which they picked until they read the
  * header. The discrimination exists and is invisible.
  *
- * Two properties, and the second is the one most likely to be right in one renderer and forgotten in
- * the others:
+ * The property is not "shorter for the inner ring", which any two different lengths satisfy. It is
+ * the one a person actually sees: **the knob at the end of the hand sits on the circumference of the
+ * numbers being considered.** So the hand's length is compared against the distance from the dial's
+ * centre to the *selected number itself* — the same circle the face drew — and the two must agree on
+ * whichever ring is in play.
  *
- *   - the hand is **shorter** when the value is on the inner ring than when it is on the outer;
- *   - the hand rests at **the number's angle, not the pointer's** — release between two numbers and
- *     it sits on one of them.
+ * Stated that way it needs no second mount to compare against, and it fails for a hand given a length
+ * of its own rather than the ring's fraction: a wrong number puts the knob off the circle, on either
+ * ring, and `inner < outer` would not have noticed.
  *
  * The length is read from the rendered geometry rather than from a class, because the defect this
  * guards against is a third copy of the inner-ring ratio. `MDY_TIMEPICKER_INNER_RING` and the
@@ -60,21 +63,33 @@ for (const host of HOSTS) {
       // The picker opens on its number fields — `viewMode` defaults to `"input"` — so the dial is not
       // drawn until someone asks for it. A spec that read the hand without this measured a view that
       // was never on screen, which is what the premise guard below caught the first time.
-      const toDial = page.locator(".mdy-timepicker-mode-toggle").first();
-      if (await toDial.count() > 0) {
-        await toDial.click({ force: true }).catch(() => undefined);
-        await page.waitForTimeout(250);
-      }
-
-      const hand = page.locator(HAND).first();
-      if (await hand.count() === 0) return null;
-      const drawn = await hand.evaluate((element) => {
-        const box = (element as HTMLElement).getBoundingClientRect();
-        return Math.round(Math.max(box.width, box.height));
+      // Clicked through the element rather than through the page's hit test. `force: true` sends the
+      // press to whatever is under the point, and a renderer whose popup is in the top layer puts
+      // something else there — so the toggle was never pressed and the dial never appeared, on one
+      // host and not the other.
+      await page.evaluate(() => {
+        (document.querySelector(".mdy-timepicker-mode-toggle") as HTMLElement | null)?.click();
       });
-      // A hand of no size is a hand nobody can see, and reporting it as a length would let "both are
-      // zero" satisfy "both are equal" — a pass, or a failure, about a view that is not on screen.
-      return drawn > 0 ? drawn : null;
+      await page.waitForTimeout(250);
+
+      return page.evaluate(() => {
+        const face = document.querySelector(".mdy-timepicker-dial__face");
+        const hand = document.querySelector(".mdy-timepicker-dial__hand");
+        const picked = document.querySelector(".mdy-timepicker-dial__number--selected");
+        if (!face || !hand || !picked) return null;
+
+        const middle = (element: Element) => {
+          const box = element.getBoundingClientRect();
+          return { x: box.left + box.width / 2, y: box.top + box.height / 2, h: Math.max(box.width, box.height) };
+        };
+        const centre = middle(face);
+        const number = middle(picked);
+        const reach = Math.hypot(number.x - centre.x, number.y - centre.y);
+        // A hand of no size is a hand nobody can see, and two zeros satisfy any comparison.
+        return middle(hand).h > 0 && reach > 0
+          ? { hand: Math.round(middle(hand).h), toNumber: Math.round(reach) }
+          : null;
+      });
     };
 
     // 15:00 is on the inner ring of a 24-hour face; 03:00 is at the same angle on the outer.
@@ -88,11 +103,21 @@ for (const host of HOSTS) {
       "the picker drew no hand, so its length could not be read",
     ).toEqual({ inner: true, outer: true });
 
+    // Two pixels of slack: the knob is centred on the hand's end and both boxes are rounded.
+    const offCircle = ([where, seen]: [string, { hand: number; toNumber: number }]) =>
+      Math.abs(seen.hand - seen.toNumber) > 2 ? `${where}: hand ${seen.hand}px, numbers at ${seen.toNumber}px` : null;
+
     expect(
-      inner!,
-      `the hand is the same length for 15:00 on the inner ring as for 03:00 on the outer `
-        + `(${inner}px vs ${outer}px) — the two selections sit at one angle, so nothing drawn `
-        + `distinguishes them and a person cannot see which they chose`,
-    ).toBeLessThan(outer!);
+      [["15:00 inner", inner!], ["03:00 outer", outer!]].map(offCircle).filter(Boolean),
+      "the hand does not reach the circle the numbers are drawn on, so its knob sits off the ring the "
+        + "person is choosing from",
+    ).toEqual([]);
+
+    // And the two rings really are different circles, or the comparison above is one measurement
+    // made twice and says nothing about the shortening.
+    expect(
+      inner!.toNumber,
+      `both rings report the same radius (${inner!.toNumber}px), so this face is not the two-ring one`,
+    ).toBeLessThan(outer!.toNumber);
   });
 }
