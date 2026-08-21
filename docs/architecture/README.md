@@ -142,6 +142,7 @@ absent section reads as an oversight, and "no security impact" is a finding.
 - [ADR 0125: A chip strip is one thing to a keyboard](0125-a-chip-strip-is-one-thing-to-a-keyboard.md) — twelve choices cost twenty-six tab stops, and reordering was being built on the strip that the fix for it has to rebuild
 - [ADR 0126: Focus is placed, not dropped](0126-focus-is-placed-not-dropped.md) — removing a chip returned a keyboard user to the top of the page, and the pin that found it asserted a threshold rather than a rule
 - [ADR 0127: A strip that scrolls, against the published practice](0127-a-strip-that-scrolls-against-the-practice.md) — an outside review ranked the scrolling row last but one and called it a deliberate 1.4.10 departure, and the one-row-per-control rule is why it was taken anyway
+- [ADR 0128: A chip is one thing, not a cell](0128-a-chip-is-one-thing-not-a-cell.md) — the APG's composite pattern is grid, and the design had already removed the children grid exists to reach
 - [ADR 0092: A condition travels with the form](0092-a-condition-travels-with-the-form.md) — `when` and `asyncWhen` were closures, so a schema carrying one was not data and the document half could not say what the typed half said
 
 ## Security-relevant records
