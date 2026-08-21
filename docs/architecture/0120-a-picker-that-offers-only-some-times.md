@@ -124,11 +124,36 @@ to.** The outer ring is outside the inner one, so everything beneath the inner d
 than anything else on the face and has exactly one plausible answer.
 
 The geometric construction that looks obvious — midway between the facing ends of the two digit
-boxes — cannot decide it. A box is `MDY_TIMEPICKER_NUMBER_SIZE` wide and the rings are exactly that
-far apart, so the boxes touch: the gap is zero and its midpoint is the edge itself, whatever the box
-size. Where the edge belongs *inside* that touching pair is a judgement, which is why the constant is
-a published fraction rather than an expression — one number a person can move without touching the
-rule.
+boxes — was first dismissed as unable to decide it. A box is `MDY_TIMEPICKER_NUMBER_SIZE` wide and the
+rings are exactly that far apart, so the boxes touch, and it seemed that a zero gap had no midpoint to
+offer.
+
+**That was the wrong conclusion from the right observation.** Touching boxes do not leave the question
+open: they meet at exactly one point, and "between the end of one and the end of the other" names it.
+At a hand of 100 the inner box spans 40–80 and the outer 80–120, so the edge is 80 — which is half the
+gap between the two radii. `MDY_TIMEPICKER_RING_BAND = 0.5` is the closed form of the sentence rather
+than a value anybody chose.
+
+### Amendment: why it read 0.35 for a while
+
+The constant sat at `0.35` between two commits, and the reason is worth keeping because the number
+looked like a judgement and was not.
+
+`--tp-hand-length` is a CSS custom property, and a custom property resolves at *use*. Reading it back
+with `getComputedStyle` returns the token stream — `calc(256px/2 - 40px/2 - 8px)` — which no
+`parseFloat` parses, so every renderer fell through to the fallback beside it: **half the face, 128,
+where the hand is drawn at 100**. Every angle-at-a-radius in the dial was computed against a circle
+28% too large.
+
+Against that circle the edge landed near 95, which is a press well inside the outer digits reading as
+the inner ring — and the fraction was tightened by hand until the felt behaviour was right. It was
+compensating for a measurement, and with the hand measured properly `0.35` puts the edge at 74, so
+radii 74–80 sit inside the *inner* digit's own box while answering `outer`: the same complaint
+mirrored, 6px wide.
+
+The renderers now measure the hand's own drawn height. The constant stays a published fraction, not
+because the edge is arbitrary — it is not — but because it is the one place a future change to either
+radius shows up as a number rather than as an expression to re-derive.
 
 ## Security and privacy
 

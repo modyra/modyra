@@ -394,13 +394,20 @@ test("the inner ring claims its own digits and stops before the outer ones", () 
   assert.equal(at(130), "outer", "and anything past them");
 });
 
-test("a pointer just inside the outer digit reads as the outer ring", () => {
-  // The user's own case: *"non posso essere con il puntatore appena fuori dal 9 e vedere già 21
-  // comparire"*. The outer digits are drawn at 100 and their boxes reach down to 80, so 79 is a
-  // press aimed at the 9 — and the band has to end before it.
-  assert.equal(at(79), "outer", "just inside the outer digit's own box");
-  assert.equal(at(76), "outer");
-  assert.equal(at(60), "inner", "and the inner digit still answers for itself");
+test("the edge is where the two digit boxes meet", () => {
+  // A digit box is 40px wide and the rings are 40px apart, so the boxes touch: the inner spans
+  // 40-80 and the outer 80-120 at a hand of 100. The pointer midway between the end of the 21's box
+  // and the end of the 9's box has one answer — the point where they meet — and half the gap between
+  // the radii is its closed form.
+  //
+  // The edge was 74 while the hand length was being read as 128 instead of 100. At 74 the radii
+  // between it and 80 sit inside the inner digit's own box and answer `outer`: point at the 21 and
+  // get the 9, which is the original complaint mirrored.
+  assert.equal(at(79), "inner", "still inside the 21's box");
+  assert.equal(at(80), "inner", "the boxes meet here");
+  assert.equal(at(81), "outer", "and the 9's box has begun");
+  assert.equal(at(100), "outer", "on the 9 itself");
+  assert.equal(at(60), "inner", "and on the 21");
 });
 
 test("a minute face has one ring, whatever the press is near", () => {

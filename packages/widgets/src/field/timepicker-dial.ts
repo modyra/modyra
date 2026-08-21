@@ -423,27 +423,28 @@ export const MDY_TIMEPICKER_NUMBER_SIZE = 40;
  * How far **above** the inner ring's radius still counts as reaching for it, as a fraction of the
  * gap between the two painted radii.
  *
- * A fraction rather than an expression, so tightening it is one number rather than an edit to the
- * rule — which is what happened: `0.5` puts the band's edge exactly where the two rings' digit boxes
- * abut, so a pointer just inside the outer digit already answered with the inner hour. *"Non posso
- * essere con il puntatore appena fuori dal 9 e vedere già 21 comparire."*
+ * `0.5` is not a tuning. A digit box is `MDY_TIMEPICKER_NUMBER_SIZE` wide and the two rings are
+ * exactly that far apart, so the boxes touch: the inner one spans 40–80 and the outer 80–120 at a
+ * hand of 100. *"Il puntatore al centro tra la fine del box del carattere 9 e la fine del box del
+ * carattere 21"* has one answer, the single point where they meet, and half the gap is its closed
+ * form.
  *
- * The geometric construction — midway between the facing ends of the two boxes — cannot help here:
- * the boxes are `MDY_TIMEPICKER_NUMBER_SIZE` wide and the rings are exactly that far apart, so they
- * touch, and the midpoint of a zero gap is the edge itself whatever the box size. What the complaint
- * needs is a band **narrower** than the gap it sits in, which is a judgement rather than a
- * derivation, and so a number a person can move.
+ * It was `0.35` for a while, and that number was compensating for a measurement: `--tp-hand-length`
+ * was being read back as an unresolved `calc()` and every renderer fell through to half the *face*,
+ * 128 where the hand is 100. Against that circle the edge landed near 95 — a press just inside the
+ * outer digits read as the inner ring — and tightening the fraction moved it back by hand. With the
+ * hand measured properly the construction gives 80 on its own, and 0.35 would leave 74–80 answering
+ * `outer` while the pointer is inside the inner digit's own box: the same complaint mirrored.
  *
- * One-sided, and it will look asymmetric to whoever reads it next: **below the inner ring there is no
- * other ring to belong to.** The outer ring is outside the inner one, so everything beneath the inner
- * digits has exactly one plausible answer, and giving that region to the far ring is how the hand
- * ends up pointing where the finger is not — *"se il puntatore va troppo verso il centro si riscala
- * alla circonferenza maggiore, questo è un grossissimo errore"*.
+ * A fraction rather than an expression, still, because where the edge belongs inside a *touching*
+ * pair is a judgement — this one happens to have been made by the person using it.
  *
- * At `0.35` the edge is 74 against digits drawn at 60 and 100: the centre and the inner digits answer
- * inner, a press just inside the outer digit answers outer.
+ * One-sided, and it will look asymmetric: **below the inner ring there is no other ring to belong
+ * to.** The outer ring is outside the inner one, so everything beneath the inner digits is nearer
+ * them than anything else on the face and has exactly one plausible answer — *"se il puntatore va
+ * troppo verso il centro si riscala alla circonferenza maggiore, questo è un grossissimo errore"*.
  */
-export const MDY_TIMEPICKER_RING_BAND = 0.35;
+export const MDY_TIMEPICKER_RING_BAND = 0.5;
 
 /**
  * Which ring of the face a pointer landed on.
