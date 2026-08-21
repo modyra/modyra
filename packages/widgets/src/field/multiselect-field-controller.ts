@@ -182,6 +182,7 @@ export function createMultiselectFieldController<TValue>(
         group: a11y.group,
         description: a11y.description,
         error: a11y.error,
+        announcement: a11y.announcement,
         ...parts,
       },
     };

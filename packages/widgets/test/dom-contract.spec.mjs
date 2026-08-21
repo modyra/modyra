@@ -288,12 +288,15 @@ function buildCompactMultiselect({ chipClasses = "mdy-chip mdy-chip--value" } = 
   chips.append(chip);
   const arrow = el("span", "mdy-multiselect__arrow", { "aria-hidden": "true" });
   trigger.append(chips, arrow);
-  wrapper.append(trigger);
+  // Said rather than shown: the strip is the sighted confirmation that a choice landed, and this is
+  // the same confirmation for somebody who cannot see it.
+  const announcement = el("div", "mdy-multiselect__announcement", { role: "status", "aria-live": "polite" });
+  wrapper.append(trigger, announcement);
   root.append(wrapper);
   document.body.append(root);
   return {
     root,
-    parts: { inputWrapper: wrapper, trigger, chips, chip, chipRemove, arrow },
+    parts: { inputWrapper: wrapper, trigger, chips, chip, chipRemove, arrow, announcement },
   };
 }
 

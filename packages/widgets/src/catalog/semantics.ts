@@ -30,6 +30,8 @@ const PART_SEMANTICS: Readonly<Record<string, MdyWidgetSemanticElement>> = Objec
   chipRemove: "button",
   // Announcements.
   errors: "status", loading: "status", empty: "status", errorItem: "status",
+  // What was chosen, said out loud. Nothing on screen: the strip is the sighted confirmation.
+  announcement: "status",
   // A file the field turned away is not an error of the value — the field holds what it accepted and
   // is valid — but it is an answer to something the person just did, so it announces itself.
   rejected: "status",

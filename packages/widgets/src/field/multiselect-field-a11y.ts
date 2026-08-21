@@ -61,6 +61,21 @@ export function multiselectFieldRootClasses<TValue>(state: MdyMultiselectFieldSt
  * the user sees and operates, `popup` is the panel it controls, and `group` is the chip group
  * inside it. Laying the group out inline instead would reflow the page on every open.
  */
+/**
+ * The sentence a live region carries when the selection changes.
+ *
+ * The whole selection, not the last change: two announcements have to differ for the second to be
+ * read at all, and "removed" after "removed" is the same string. Counting says what changed even
+ * when the same value is taken twice.
+ */
+function announcementFor<TValue>(state: MdyMultiselectFieldState<TValue>): string {
+  const chosen = state.selectedKeys.size;
+  if (chosen === 0) return "";
+  const names = [...state.selectedKeys]
+    .map((key) => state.options.find((option) => String(option.value) === key)?.label ?? key);
+  return `${state.selectedValues.length} selected: ${names.join(", ")}`;
+}
+
 export function projectMultiselectFieldA11y<TValue>(
   state: MdyMultiselectFieldState<TValue>,
   errors: ReadonlyArray<MdyFieldError>,
@@ -76,6 +91,15 @@ export function projectMultiselectFieldA11y<TValue>(
   readonly group: MdyPartContract;
   readonly description: MdyPartContract;
   readonly error: MdyPartContract;
+  /**
+   * What was chosen, said out loud, with the words to say it.
+   *
+   * A choice lands and the strip is the only confirmation — which is the one a screen reader user
+   * does not get. The text is the whole selection rather than the last change, so it differs
+   * whenever the selection does: a region written once announces the first choice and swallows
+   * every one after it, which passes any check that makes only one.
+   */
+  readonly announcement: MdyPartContract & { readonly text: string };
 } {
   const { labelId, groupId, triggerId, popupId, searchId, descriptionId, errorId } =
     multiselectFieldPartIds(options.widgetId);
@@ -182,6 +206,11 @@ export function projectMultiselectFieldA11y<TValue>(
       id: descriptionId,
       classes: [MDY_FIELD_SHELL_CLASSES.supportingText],
       attributes: {},
+    },
+    announcement: {
+      classes: [...MDY_WIDGET_CONTRACTS.multiselect.parts.announcement.classes],
+      attributes: { role: "status", "aria-live": "polite", "aria-atomic": "true" },
+      text: announcementFor(state),
     },
     error: {
       id: errorId,
