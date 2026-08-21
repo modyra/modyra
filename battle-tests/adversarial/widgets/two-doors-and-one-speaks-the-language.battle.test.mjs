@@ -66,23 +66,43 @@ battle(
       detail: JSON.stringify(latin),
     });
 
+    // The host's reader for one bare numeral. A segment carries no separator, no ordering and no
+    // AM/PM, so it is a narrower reading than `parseEntry` and not the same function.
+    const readSegment = (text) => {
+      const asLatin = toLatin(text.trim());
+      return /^\d{1,2}$/.test(asLatin) ? Number(asLatin) : null;
+    };
+
+    const offered = timepickerEntry("hour", "24h", "١٤", MDY_EVERY_TIME, readSegment);
+    const refused = timepickerEntry("hour", "24h", "٢٩", MDY_EVERY_TIME, readSegment);
+
     ctx.log.note("what each door says about the same hour", {
       wholeFieldViaSeam: wholeField,
       segmentLatin: latin,
-      segmentEastern: timepickerEntry("hour", "24h", "١٤", MDY_EVERY_TIME),
-      seamReachableFromSegment: timepickerEntry.length > 4,
+      segmentEasternWithoutReader: timepickerEntry("hour", "24h", "١٤", MDY_EVERY_TIME),
+      segmentEasternWithReader: offered,
     });
 
-    // The defect: the same host, the same hour, two doors, two answers. `timepickerEntry` takes four
-    // parameters and none of them is the reader, so a renderer holding a locale-aware `parseEntry` has
-    // nowhere to hand it over.
-    expectClaim(timepickerEntry.length > 4, {
+    // The property, asserted as behaviour rather than as arity. An earlier draft of this checked
+    // `timepickerEntry.length > 4`, which can never become true: `Function.length` counts only the
+    // parameters before the first default, so a reader added after one is invisible to it. The
+    // assertion was unsatisfiable and would have stayed red against a correct fix — a wall rather
+    // than a test, and the third time tonight an assertion of mine measured something adjacent to
+    // its own claim.
+    expectClaim(offered !== null && offered.value === 14, {
       claimIds: ["LOC-001"],
-      what: "the segment entry function accepts no reader, so a host that supplied one for the field cannot reach it from a box — the same numerals are read when the whole time is typed and refused when a segment is",
+      what: "a host that supplies its own reader still cannot get a segment read in its numerals, so the same digits are accepted when the whole time is typed and refused when a box is",
       detail:
-        `timepickerEntry(field, format, text, steps) has ${timepickerEntry.length} parameters; ` +
-        `"١٤" → ${JSON.stringify(timepickerEntry("hour", "24h", "١٤", MDY_EVERY_TIME))} ` +
-        `while the field's own parseEntry reads "١٤:٣٠" as "14:30"`,
+        `"١٤" with a reader → ${JSON.stringify(offered)}; ` +
+        `the field's own parseEntry reads "١٤:٣٠" as ${JSON.stringify(wholeField)}`,
+    });
+
+    // And the reader must not become a way past the field's own rules: once read, a numeral is judged
+    // the way any other is. 29 is not an hour in any alphabet.
+    expectClaim(refused !== null && refused.value === null, {
+      claimIds: ["LOC-001", "UI-011"],
+      what: "a numeral read through the host's reader escaped the range the field enforces on every other entry",
+      detail: `"٢٩" with a reader → ${JSON.stringify(refused)}`,
     });
   },
 );
