@@ -20,7 +20,9 @@
  * each is a person meeting a different control depending on which adapter their team chose:
  *
  *   - **which view a picker opens in** — lit opens on the boxes, plain and angular on the face;
- *   - **whether the mode toggle changes the view at all** — plain draws one and stays on the face.
+ *   - **whether the mode toggle changes the view at all**, read as *visible* rather than *present*:
+ *     plain hides the face and keeps it in the document where the other two remove it, and both are
+ *     conforming, so presence is a strategy and visibility is the behaviour.
  *
  * `readOnly` is asserted rather than a typed character, because a read-only input silently discards
  * input rather than refusing it: `fill()` against Angular's box did not fail, it hung for 150 seconds.
@@ -60,7 +62,14 @@ const readState = (page: import("@playwright/test").Page) =>
     const segment = document.querySelector(".mdy-timepicker-segment-input") as HTMLInputElement | null;
     return {
       boxes: document.querySelectorAll(".mdy-timepicker-segment-input").length,
-      dialShowing: document.querySelector(".mdy-timepicker-dial__face") !== null,
+      // Visible, not merely present. Plain keeps the face in the DOM and hides it; lit and angular
+      // remove it. `structure.ts` declares both conforming, so asking "is it in the document" asserts
+      // a strategy the contract does not choose between — and reported plain as ignoring its own
+      // toggle when the view was changing correctly.
+      dialShowing: (() => {
+        const face = document.querySelector(".mdy-timepicker-dial__face");
+        return face !== null && face.getBoundingClientRect().width > 0;
+      })(),
       readOnly: segment === null ? null : segment.readOnly,
       hasModeToggle: document.querySelectorAll(".mdy-timepicker-mode-toggle").length > 0,
     };
