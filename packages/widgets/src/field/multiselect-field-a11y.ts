@@ -140,7 +140,13 @@ export function projectMultiselectFieldA11y<TValue>(
     },
     chips: {
       classes: ["mdy-multiselect__chips"],
-      attributes: {},
+      attributes: {
+        // The strip is one line that scrolls, so a chip past its trailing edge is off screen with
+        // nothing to say it exists. The field's description carries how many were chosen, which is
+        // the fact that makes the hidden ones findable — pointed at from the strip itself, because a
+        // reader on the strip is exactly the person who cannot see that it runs on.
+        "aria-describedby": state.selectedKeys.size > 0 ? descriptionId : null,
+      },
     },
     popup: {
       id: popupId,

@@ -1826,6 +1826,18 @@
            chips overflowed — the same defect one property over. The chips visibly running past the
            edge is the affordance; the bar was never the only one. */
         scrollbar-width: none;
+        /* The strip says there is more, and stops saying it at the end it has reached.
+           ADR 0127 lets this row scroll only where something reaches what leaves the viewport; the
+           wheel and the roving focus are that mechanism, and this is how a person learns there is
+           anything to reach. Two pairs of gradients: the `local` ones scroll with the content and
+           paint the field's own surface over the shadow at whichever end is exhausted, so the cue
+           appears only while chips really are hidden that way. It costs no measurement and no class
+           a renderer would have to keep in step with the scroll position. */
+        background:
+            linear-gradient(to right, var(--mdy-surface) 40%, transparent) left center / 2rem 100% no-repeat local,
+            linear-gradient(to left, var(--mdy-surface) 40%, transparent) right center / 2rem 100% no-repeat local,
+            radial-gradient(farthest-side at 0 50%, rgb(0 0 0 / 18%), transparent) left center / 0.75rem 100% no-repeat scroll,
+            radial-gradient(farthest-side at 100% 50%, rgb(0 0 0 / 18%), transparent) right center / 0.75rem 100% no-repeat scroll;
         /* A chip scrolled out of view is still Tab-reachable, and focusing it brings it back — the
            browser does that for any scroll container. Deliberately *not* `scroll-behavior: smooth`:
            it makes the arrival happen over ~500ms, so for that half-second the focused chip is
