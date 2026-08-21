@@ -21214,3 +21214,19 @@ number.
 
 Owned by `esecutore`.
 
+
+### 362 — closed at `7df6f000`, and the assertion that mattered was the one about the quiet actions
+
+Nine green: removal, move and clear, each undoable through the same affordance, in all three
+renderers.
+
+[ADR 0129](../../docs/architecture/0129-one-way-back-not-three.md) exists because the tempting build
+was a clear-all with an undo, shipped while removal and reordering kept none — which satisfies *a
+selection can be cleared*, satisfies any check written against clearing, and leaves a control that
+teaches a person it has a way back and then does not have one the next time. The battle exercises all
+three through one affordance for exactly that, and it is why the record and the check were written
+before the feature rather than after it.
+
+Measured on the way in: removing a chip takes `["a","b","c"]` to `["b","c"]` and the affordance is
+offered once, not once per action.
+
