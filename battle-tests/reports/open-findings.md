@@ -18489,6 +18489,92 @@ that cannot be observed in two of three renderers.
 The Angular fixture that proves it stays in `packages/angular`'s own suite once green. Baselining it
 here would put a red in a tier that cannot execute it, and a red nothing runs is worse than none.
 
+## 321 — Three ways a controller's decision reaches nobody (S1, UI-005 REA-002)
+
+Found by `esecutore` while converting the five overlay kinds to read `open` from the controller
+(finding 320). Two converted; three did not, and each refusal is its own defect.
+
+**a. `datepicker` and `daterange` drop the commands their controller returns.** `closePicker()`
+returns `[{close-overlay}, {restore-focus, target: trigger}]`. Both renderers execute **neither** —
+they call `closeOverlay()` and let the directive handle focus. So routing the write through the
+controller correctly hands them a command they discard: focus is stranded, the input blurs, and the
+`blur` marks the field touched. Both renderers, identically:
+
+```
+equivalence.spec.ts, canonical after-Escape comparison
+  state is [touched], expected []
+  focus rests on nothing, expected somewhere in the widget
+```
+
+**This is the "output with no consumer" family for the third time tonight** — after `dialPicked`
+emitting into a void and `registerHandleOwner` never being called. A function returns instructions and
+the caller throws them away, and nothing in any tier compares what was returned against what was done.
+
+**b. Angular's `colors` adopts no controller at all.**
+
+```
+grep -c 'controller' packages/angular/src/lib/renderers/colors/colors-renderer.component.ts   →  0
+```
+
+It reimplements the kind. So `closeOverlayWhenOutOfPlay` in the colors controller has **no consumer in
+Angular whatsoever**, and neither does anything else that controller decides. This is not the same
+defect as (a): it is a renderer standing outside the contract rather than one dropping part of it, and
+it makes every rule the colors controller states unenforceable in one of three renderers.
+
+**c. A contract rule that is silently absent where effects are unavailable.** `leaving-play.ts:35`:
+
+```ts
+if (!reactivityRunsEffects(reactivity)) return () => undefined;
+const ref = reactivity.effect(() => { … });
+```
+
+The guard returns **before** `.effect()` is called, so no `MDY_EFFECTS_UNAVAILABLE` is ever reported.
+On a form built outside an injection context there are no effects, and the rule "close an open popup
+when the field leaves play" simply does not exist — with nothing said. Same shape as `set-hour`
+returning `[]` for an out-of-range hour: **the refusal is correct and the silence is not.**
+
+This is the part of 319 that survives. The *regression* question there is closed on evidence —
+identical failures at `HEAD` and `HEAD~1` — but this is a defect independent of that fix.
+
+---
+
+**And the instrument nearly took 320 with it.** `esecutore`'s first fixture asserted the **presence**
+of `.mdy-timepicker-dial__face` after the field left play. The renderer keeps its panel in the DOM and
+toggles visibility, so that element is present whether or not anyone can see or reach it: **the
+assertion was red before the change and would have stayed red after a perfect fix.** Rebuilt on the
+panel's visible class and the opener's `aria-expanded`:
+
+```
+before the seam:  2 failed          ← 320 is real
+after the seam:   1 failed, 1 pass  ← and the injector case is what the seam repairs
+```
+
+320 survives its own correction. It is the **third** probe tonight built narrower than its claim —
+after `initial: [{}]` and my own two — and the only one that would have credited a repair for a
+measurement that could not fail either way.
+
+## 322 — A dependency-direction violation in prose, blocking CI and not the release (S3, no battle)
+
+```
+packages/widgets/src/transitions.ts:195
+  // Angular all omit it, independently, which is the evidence that reads
+```
+
+`@modyra/widgets` naming a dependent in a comment. The project instructions § *Dependency direction is a
+documentation rule too*: **a package must not name its dependents, in code or in prose.** Arrived in
+`4d4110b8`, the radio-group withdrawal, so it is pre-existing and not the overlay work.
+
+**Correcting a claim rather than relaying it**: `esecutore` reported it *"will block the release
+gate"*. It will not. `audit-package-independence.mjs` runs only under `test:contracts`, and
+`release.yml`'s eleven steps are `install --frozen-lockfile`, `build:packages`, `test:core`,
+`test:adapters`, `test:widgets`, `build:angular`, `test:angular`, `test:bundle`, `test:core-bundle`,
+`test:themes`, `audit --prod` — none of which reaches it. **I checked whether another step covers it
+under a different name**, because that is the exact error I made in reverse earlier tonight; none does.
+
+It blocks **CI**, which has been red on this step all night, and the user's stated release
+precondition is green CI. So it still needs an owner before the tag — through the precondition, not
+through the gate. The repair is to state the rule rather than who omits it.
+
 ## The register's own shape, measured
 
 ```
