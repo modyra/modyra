@@ -204,6 +204,8 @@ export class MdyTimepickerClockComponent {
 
   /** How long the hand is, measured when a gesture starts — the tolerance is an angle at a radius. */
   private readonly dragHandLength = signal(0);
+  /** How far the pointer is from the centre — the ghost ends there. */
+  private readonly dragReach = signal(0);
 
   /**
    * The faint hand under the pointer, when the pointer is not on the number that was chosen.
@@ -222,6 +224,8 @@ export class MdyTimepickerClockComponent {
     return timepickerDialGhost(angle, pick, {
       ring,
       within: timepickerDialTolerance(ring, this.dragHandLength()),
+      pointerReach: this.dragReach(),
+      handLength: this.dragHandLength(),
     });
   });
 
@@ -415,6 +419,9 @@ export class MdyTimepickerClockComponent {
     this.dragAngle.set(pointerAngle(face, coords.clientX, coords.clientY));
     const handLength = handLengthOf(el, face);
     this.dragHandLength.set(handLength);
+    const dx = coords.clientX - (face.left + face.width / 2);
+    const dy = coords.clientY - (face.top + face.height / 2);
+    this.dragReach.set(Math.sqrt(dx * dx + dy * dy));
     this.dragRing.set(timepickerDialRing(face, coords.clientX, coords.clientY, this.format(), handLength, this.dragField));
   }
 }

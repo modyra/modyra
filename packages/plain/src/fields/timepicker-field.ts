@@ -291,17 +291,21 @@ export function renderTimepickerField(
    * Both its angle and its ring are the pointer's: it answers "what happens if I release now", while
    * the real hand answers "what is chosen". The two agreeing is the ordinary case and draws nothing.
    */
-  function showGhost(angle: number, ring: "outer" | "inner", state: { format: MdyTimeFormat; focusedField: "hour" | "minute"; draft: { hour: number; minute: number; period: "AM" | "PM" } }): void {
+  function showGhost(angle: number, ring: "outer" | "inner", reach: number, state: { format: MdyTimeFormat; focusedField: "hour" | "minute"; draft: { hour: number; minute: number; period: "AM" | "PM" } }): void {
     const steps = timeStepsAt(f.granularity, to24Hour(state.draft));
     const pick = timepickerDialPick(angle, state.focusedField, state.format, ring, steps);
     const ghost = pick && timepickerDialGhost(angle, pick, {
       ring,
       within: timepickerDialTolerance(ring, handLength()),
+      pointerReach: reach,
+      handLength: handLength(),
     });
     ghostHand.hidden = ghost === null;
     if (!ghost) return;
     ghostHand.style.transform = `rotate(${ghost.angle}deg)`;
-    ghostHand.classList.toggle("mdy-timepicker-dial__hand--inner", ghost.ring === "inner");
+    // Its length is the pointer's own distance from the centre, not either ring's radius: the end
+    // of it is under the finger, which is the whole of what it says.
+    ghostHand.style.setProperty("--tp-ghost-reach", String(ghost.reach));
   }
 
   function pickFromPointer(event: PointerEvent): void {
@@ -314,7 +318,9 @@ export function renderTimepickerField(
     // numbers there are: a renderer deciding for itself is a renderer that can disagree with its own
     // drawing.
     const ring = timepickerDialRing(face, event.clientX, event.clientY, state.format, handLength(), state.focusedField);
-    showGhost(angle, ring, state);
+    const dx = event.clientX - (face.left + face.width / 2);
+    const dy = event.clientY - (face.top + face.height / 2);
+    showGhost(angle, ring, Math.sqrt(dx * dx + dy * dy), state);
     dispatch({ type: "set-from-angle", field: state.focusedField, angle, ring });
   }
   let dragging = false;

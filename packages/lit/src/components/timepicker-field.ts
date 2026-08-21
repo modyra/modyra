@@ -128,6 +128,8 @@ export class MdyTimepickerFieldElement extends MdyFieldElement<string | null> {
 
   private _dragRing: "outer" | "inner" = "outer";
   private _dragHandLength = 0;
+  /** How far the pointer is from the centre — the ghost ends there. */
+  private _dragReach = 0;
 
   /**
    * The faint hand under the pointer, when the pointer is not on the number that was chosen.
@@ -135,7 +137,7 @@ export class MdyTimepickerFieldElement extends MdyFieldElement<string | null> {
    * Both members are the pointer's: it answers "what happens if I release now", while the real hand
    * answers "what is chosen". A picker offering every time never draws one.
    */
-  private ghost(): { angle: number; ring: "outer" | "inner" } | null {
+  private ghost(): { angle: number; ring: "outer" | "inner"; reach: number } | null {
     if (!this._isDragging || this._dragAngle === null) return null;
     const draft = this.fieldController?.state().draft;
     const steps = draft ? timeStepsAt(this.granularity, to24Hour(draft)) : MDY_EVERY_TIME;
@@ -144,6 +146,8 @@ export class MdyTimepickerFieldElement extends MdyFieldElement<string | null> {
     return timepickerDialGhost(this._dragAngle, pick, {
       ring: this._dragRing,
       within: timepickerDialTolerance(this._dragRing, this._dragHandLength),
+      pointerReach: this._dragReach,
+      handLength: this._dragHandLength,
     });
   }
   private dragField: TimeField = "hour";
@@ -473,6 +477,9 @@ export class MdyTimepickerFieldElement extends MdyFieldElement<string | null> {
     // drift from the paint.
     const declared = Number.parseFloat(getComputedStyle(el).getPropertyValue("--tp-hand-length"));
     const handLength = Number.isFinite(declared) && declared > 0 ? declared : face.width / 2;
+    const dx = coords.clientX - (face.left + face.width / 2);
+    const dy = coords.clientY - (face.top + face.height / 2);
+    this._dragReach = Math.sqrt(dx * dx + dy * dy);
     this._dragHandLength = handLength;
     this._dragRing = timepickerDialRing(face, coords.clientX, coords.clientY, this.format, handLength, this.view.focusedField);
   }
@@ -592,10 +599,8 @@ export class MdyTimepickerFieldElement extends MdyFieldElement<string | null> {
               const under = this.ghost();
               return under
                 ? html`<div
-                    class="mdy-timepicker-dial__hand mdy-timepicker-dial__hand--ghost ${under.ring === "inner"
-                      ? "mdy-timepicker-dial__hand--inner"
-                      : ""}"
-                    style="transform: rotate(${under.angle}deg)"
+                    class="mdy-timepicker-dial__hand mdy-timepicker-dial__hand--ghost"
+                    style="transform: rotate(${under.angle}deg); --tp-ghost-reach: ${under.reach}"
                     aria-hidden="true"
                   ></div>`
                 : nothing;

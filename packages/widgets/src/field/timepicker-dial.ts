@@ -200,18 +200,39 @@ export function timepickerSelectedDialValue(
 export interface MdyTimepickerDialGhost {
   readonly angle: number;
   readonly ring: "outer" | "inner";
+  /**
+   * How long to draw it, as a fraction of the hand.
+   *
+   * **The end is under the pointer**, which is the whole of its meaning — a ghost that stopped short
+   * would be reporting a position nobody is at. So this is the pointer's own distance from the
+   * centre, with one exception: it is capped at the hand's length, because past that the face runs
+   * out and a longer hand would spill over its own numbers.
+   *
+   * There is deliberately **no floor**. A finger 15px from the centre gets a 15px stub, which looks
+   * like nothing much and is exactly right: that is where the finger is.
+   */
+  readonly reach: number;
 }
 
 export function timepickerDialGhost(
   pointerAngle: number,
   pick: MdyTimepickerDialPick,
-  options: { readonly ring?: "outer" | "inner"; readonly within?: number } = {},
+  options: {
+    readonly ring?: "outer" | "inner";
+    readonly within?: number;
+    /** How far the pointer is from the centre, and how long the hand is, in the same units. */
+    readonly pointerReach?: number;
+    readonly handLength?: number;
+  } = {},
 ): MdyTimepickerDialGhost | null {
   const at = ((pointerAngle % 360) + 360) % 360;
   const apart = Math.abs(((at - pick.angle + 540) % 360) - 180);
   const within = options.within ?? 0;
   if (!(apart > within)) return null;
-  return { angle: at, ring: options.ring ?? pick.ring };
+  const hand = options.handLength ?? 0;
+  const pointer = options.pointerReach ?? 0;
+  const reach = hand > 0 && pointer > 0 ? Math.min(pointer / hand, 1) : 1;
+  return { angle: at, ring: options.ring ?? pick.ring, reach };
 }
 
 /**
@@ -234,6 +255,83 @@ export function timepickerDialTolerance(
   if (!(handLength > 0)) return 0;
   const radius = ring === "inner" ? handLength * MDY_TIMEPICKER_INNER_RING : handLength;
   return (Math.atan((MDY_TIMEPICKER_NUMBER_SIZE / 2) / radius) * 180) / Math.PI;
+}
+
+/** A stretch of the circle, clockwise from `from` to `to`, in degrees. */
+export interface MdyTimepickerDialArc {
+  readonly from: number;
+  readonly to: number;
+}
+
+/**
+ * The stretches of a ring that carry no time anybody can land on.
+ *
+ * A face declared with `minuteStep: 15` draws four numbers, and the other 356° of the ring look
+ * exactly like the four — continuous, uniform, and offering nothing. The granularity is real and
+ * invisible, discoverable only by trying, which is the state a dimmed arc is meant to end.
+ *
+ * The arcs are the positions the granularity **took away** — the ones a face with no declaration
+ * would draw and this one does not — each covered by the knob's own angular half-width, which is
+ * already the tolerance for whether a pointer is on a number. Not the space between the numbers that
+ * remain: a face offering every hour has gaps between its knobs and nothing unavailable in them.
+ *
+ * **Two widths, deliberately.** Snapping is still nearest-value: every angle resolves to some number,
+ * including the ones inside these arcs. What is dimmed is where you can *land on the number you are
+ * pointing at*, which is a narrower question and a display one. The next reader will want to make the
+ * two agree; they are different questions and the answer is no.
+ *
+ * A face whose knobs already overlap has nothing to dim and answers `[]` — sixty minutes 6° apart
+ * under an 11° half-width is the ordinary case, so a ring of slivers there would be noise on every
+ * picker that declares nothing.
+ */
+export function timepickerDialUnavailableArcs(
+  field: "hour" | "minute",
+  format: MdyTimeFormat = "12h",
+  steps: MdyTimeSteps = MDY_EVERY_TIME,
+  handLength = 0,
+  ring: "outer" | "inner" = "outer",
+): readonly MdyTimepickerDialArc[] {
+  if (!(handLength > 0)) return [];
+  const onRing = (from: MdyTimeSteps): number[] =>
+    timepickerDialNumbers(field, format, from)
+      .filter((number) => number.ring === ring)
+      .map((number) => dialNumberAngle(number));
+
+  // Against what the face would draw with no granularity at all, because that is what "carries no
+  // selectable time" means: a position this field took away, not the ordinary space between labels.
+  // A face offering every hour has gaps between its knobs and nothing unavailable in them.
+  const everything = onRing(MDY_EVERY_TIME);
+  const offered = new Set(onRing(steps));
+  everything.sort((a, b) => a - b);
+  const missing = everything.filter((angle) => !offered.has(angle));
+  if (missing.length === 0) return [];
+
+  const half = timepickerDialTolerance(ring, handLength);
+  const gone = new Set(missing);
+  const arcs: MdyTimepickerDialArc[] = [];
+  for (const angle of missing) {
+    const from = angle - half;
+    const to = angle + half;
+    const previous = arcs[arcs.length - 1];
+    // Positions that were neighbours on the full face run together, including the space between
+    // them: nothing selectable lies in it either, and drawing two slices with a live-looking sliver
+    // between them would say there is something there.
+    const before = everything[everything.indexOf(angle) - 1];
+    if (previous && before !== undefined && gone.has(before)) {
+      arcs[arcs.length - 1] = { from: previous.from, to };
+    } else {
+      arcs.push({ from, to });
+    }
+  }
+
+  // The first and last can be one stretch across the top of the face.
+  const first = arcs[0]!;
+  const last = arcs[arcs.length - 1]!;
+  if (arcs.length > 1 && last.to - 360 >= first.from - 0.0001) {
+    arcs[0] = { from: last.from - 360, to: first.to };
+    arcs.pop();
+  }
+  return arcs.map((arc) => ({ from: ((arc.from % 360) + 360) % 360, to: ((arc.to % 360) + 360) % 360 }));
 }
 
 /**

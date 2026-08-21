@@ -160,8 +160,8 @@ export type {
   MdyTimepickerFieldA11yOptions,
 } from "./timepicker-field-a11y.js";
 
-export { dialNumberAngle, dialRingOf, timepickerDialGhost, timepickerDialTolerance, timepickerSelectedRing, timepickerDialAria, timepickerDialKeyIntent, timepickerDialNumbers, timepickerDialPick, MDY_TIMEPICKER_INNER_RING, MDY_TIMEPICKER_NUMBER_SIZE, MDY_TIMEPICKER_RING_BAND, timepickerDialRing, timepickerSelectedDialValue, type MdyTimepickerDialKeyResult } from "./timepicker-dial.js";
-export type { MdyTimepickerDialGhost, MdyTimepickerDialNumber, MdyTimepickerDialPick } from "./timepicker-dial.js";
+export { dialNumberAngle, dialRingOf, timepickerDialGhost, timepickerDialTolerance, timepickerDialUnavailableArcs, timepickerSelectedRing, timepickerDialAria, timepickerDialKeyIntent, timepickerDialNumbers, timepickerDialPick, MDY_TIMEPICKER_INNER_RING, MDY_TIMEPICKER_NUMBER_SIZE, MDY_TIMEPICKER_RING_BAND, timepickerDialRing, timepickerSelectedDialValue, type MdyTimepickerDialKeyResult } from "./timepicker-dial.js";
+export type { MdyTimepickerDialArc, MdyTimepickerDialGhost, MdyTimepickerDialNumber, MdyTimepickerDialPick } from "./timepicker-dial.js";
 export type {
   MdyTimepickerFieldControllerOptions,
   MdyTimepickerFieldIntent,

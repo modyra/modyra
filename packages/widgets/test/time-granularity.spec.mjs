@@ -539,3 +539,92 @@ test("a page is whole steps rather than a fixed distance", () => {
   const quarters = { minuteStep: 15 };
   assert.deepEqual(timepickerDialKeyIntent("PageUp", "minute", "24h", 0, quarters), { field: "minute", value: 15 });
 });
+
+test("the ghost's end is under the pointer, capped at the face", () => {
+  const quarters = { minuteStep: 15 };
+  const HAND = 100;
+  const pick = timepickerDialPick(42, "minute", "24h", "outer", quarters);
+  const reachAt = (pointerReach) =>
+    timepickerDialGhost(42, pick, { within: 0, pointerReach, handLength: HAND }).reach;
+
+  // No floor: a finger 15px from the centre gets a 15px stub, which is where the finger is. A floor
+  // would make it lie by a few pixels at exactly the place someone is checking whether it tracks.
+  assert.equal(reachAt(15), 0.15);
+  assert.equal(reachAt(60), 0.6);
+  assert.equal(reachAt(100), 1);
+  // The one exception: past the hand's length the face runs out, and a longer hand would spill over
+  // its own numbers — the dial's radius is 128 against a hand of 100.
+  assert.equal(reachAt(128), 1);
+  // Nothing measured yet reads as a full hand rather than as a hand of no length at all.
+  assert.equal(timepickerDialGhost(42, pick, { within: 0 }).reach, 1);
+});
+
+// ─── the slices that carry nothing ───────────────────────────────────────────
+
+const { timepickerDialUnavailableArcs } = await import("../dist/index.js");
+
+test("a face that offers every minute has nothing to dim", () => {
+  // Sixty knobs 6° apart under an 11° half-width already overlap. A ring of slivers here would be
+  // noise on every picker that declares no granularity at all — which is most of them.
+  assert.deepEqual(timepickerDialUnavailableArcs("minute", "24h", undefined, 100), []);
+  assert.deepEqual(timepickerDialUnavailableArcs("hour", "12h", undefined, 100), [], "twelve at 30° apart");
+});
+
+test("a quarter-hour face dims the eight positions it took away", () => {
+  // A minute face has twelve positions and a quarter-hour one keeps four, so eight are gone. They
+  // sit in runs of two, which are drawn as one dead stretch each rather than as pairs of slices with
+  // a hairline between them.
+  const arcs = timepickerDialUnavailableArcs("minute", "24h", { minuteStep: 15 }, 100);
+  assert.equal(arcs.length, 4, JSON.stringify(arcs));
+  const half = timepickerDialTolerance("outer", 100);
+  for (const arc of arcs) {
+    const span = ((arc.to - arc.from) + 360) % 360;
+    // Two adjacent missing positions 30° apart, each half-width either side.
+    assert.ok(Math.abs(span - (30 + 2 * half)) < 0.001, `${span}° over two missing positions`);
+  }
+});
+
+test("a face that took nothing away dims nothing, whatever its spacing", () => {
+  // The distinction the first version of this got wrong: an hour face has visible space between its
+  // knobs, and every hour in it is selectable. Gaps between labels are not unavailability.
+  assert.deepEqual(timepickerDialUnavailableArcs("hour", "12h", { hourStep: 1 }, 100), []);
+  assert.deepEqual(timepickerDialUnavailableArcs("minute", "24h", { minuteStep: 5 }, 100), [],
+    "a minute face draws every fifth minute already, so a five-minute step removes none of them");
+});
+
+test("no arc covers a number the face actually drew", () => {
+  // The property that matters: a dimmed slice saying "nothing here" over a number somebody can land
+  // on would be the display contradicting the rule it exists to explain.
+  const covered = [];
+  for (const steps of [{ minuteStep: 15 }, { minuteStep: 30 }, { hourStep: 3 }, { hourStep: 7 }]) {
+    for (const [field, format] of [["minute", "24h"], ["hour", "24h"], ["hour", "12h"]]) {
+      for (const ring of ["outer", "inner"]) {
+        const arcs = timepickerDialUnavailableArcs(field, format, steps, 100, ring);
+        for (const number of timepickerDialNumbers(field, format, steps).filter((n) => n.ring === ring)) {
+          const at = dialNumberAngle(number);
+          for (const arc of arcs) {
+            const from = arc.from;
+            const span = ((arc.to - from) + 360) % 360;
+            const into = ((at - from) + 360) % 360;
+            if (into > 0 && into < span) covered.push(`${field}/${format}/${ring}: ${number.value} at ${at}° is inside ${JSON.stringify(arc)}`);
+          }
+        }
+      }
+    }
+  }
+  assert.deepEqual(covered, []);
+});
+
+test("each ring answers for its own radius", () => {
+  // The inner ring is drawn on a smaller circle, so a same-sized knob covers more of it and the dead
+  // stretch around a missing position is wider. One set of arcs drawn for both would be wrong on one.
+  const outer = timepickerDialUnavailableArcs("hour", "24h", { hourStep: 3 }, 100, "outer");
+  const inner = timepickerDialUnavailableArcs("hour", "24h", { hourStep: 3 }, 100, "inner");
+  assert.ok(outer.length > 0 && inner.length > 0, JSON.stringify({ outer, inner }));
+  const span = (arc) => ((arc.to - arc.from) + 360) % 360;
+  assert.ok(span(inner[0]) > span(outer[0]), `inner ${span(inner[0])}° vs outer ${span(outer[0])}°`);
+});
+
+test("nothing measured yet dims nothing", () => {
+  assert.deepEqual(timepickerDialUnavailableArcs("minute", "24h", { minuteStep: 15 }, 0), []);
+});
