@@ -8,7 +8,6 @@ import {
 } from "@angular/core";
 import {
   array as coreArray,
-  registerHandleForm,
   record as coreRecord,
   field as coreField,
   group as coreGroup,
@@ -384,7 +383,10 @@ export class MdyTypedForm<S extends MdyFormSchema>
       // count.
       reportEntry: (problem: string | null): void => this._adapter.reportEntry(path, problem),
     };
-    registerHandleForm(handle, this);
-    return handle;
+    // Owner as well as form. A widget controller resolves the runtime that owns its handle, and an
+    // unregistered one resolves to a fresh vanilla runtime whose signals an Angular computed cannot
+    // read — so the controller's state moves and nothing re-renders. Zone.js hides it by redrawing
+    // on every event; without Zone.js the display simply freezes.
+    return this._own(handle);
   }
 }
