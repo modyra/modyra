@@ -78,7 +78,10 @@ for (const host of HOSTS) {
 
     const hour = segments.first();
     await hour.focus();
-    await hour.fill("07");
+    // Short, because a read-only input *discards* a keystroke rather than refusing it: `fill` waits
+    // for a value that will never arrive and the default timeout is 150 seconds of a suite doing
+    // nothing. Whether the box is writable at all is finding 341 and is asserted there.
+    await hour.fill("07", { timeout: 3_000 }).catch(() => undefined);
     await page.waitForTimeout(150);
 
     await page.keyboard.press("Tab");
@@ -94,10 +97,15 @@ for (const host of HOSTS) {
     ).toBe(true);
 
     if (open) {
+      const kept = await hour.inputValue();
+      // The number, not its padding. This assertion once demanded "07" and failed on plain's "7",
+      // which is a different question — whether a box pads when it loses focus belongs to finding 342,
+      // "what a segment may hold", and reporting it here would have read as a lost draft.
       expect(
-        await hour.inputValue(),
-        "the picker stayed open but the hour that was typed did not survive Tab",
-      ).toBe("07");
+        kept === "" ? Number.NaN : Number(kept),
+        `the picker stayed open but the hour typed into it did not survive Tab — the box holds ` +
+          `${JSON.stringify(kept)}`,
+      ).toBe(7);
     }
   });
 
