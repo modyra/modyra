@@ -19768,3 +19768,46 @@ is the only reason it is filed.
 theme styles every control" — a theme inheriting the foundation is legitimate, and forbidding it would
 invent a contract nobody agreed. What must hold is that **whatever a control wears, it is this theme's
 colour and not another theme's.**
+
+## 349 — Lit and Angular's multiselect cannot be operated from a keyboard (S1, A11Y-001/A11Y-004)
+
+Measured while checking the ground the reordering batch is about to be built on. Driven with keys only
+— Tab to the control, `Enter`, `ArrowDown`, `Enter` — on a field with four options and nothing chosen:
+
+```
+plain     chooses a value          ✓
+lit       holds []                 ✗
+angular   holds []                 ✗
+```
+
+Every one of those keys is declared: `MDY_WIDGET_KEYBOARD.multiselect` carries `Enter@closed:open`,
+`ArrowDown@open:move`, `Home`/`End@open:move` and `Enter@open:commit`. Lit opens the popup and leaves
+focus on the opener, so the arrows reach nothing; Angular has no opener to reach.
+
+**Angular's is the wider one.** With the popup closed it renders no `[aria-haspopup]`, no
+`[role="combobox"]` and no opener part at all — so nothing announces a popup exists — while the
+overlay's search box *and* every option chip sit in the tab order. A screen reader is walked through
+the whole catalogue before anything has been opened. That is 346's duplicate list seen from the
+keyboard rather than from the page.
+
+**Worth having before the reorder batch, not after**: moving a chosen value by keyboard has no meaning
+in a control where choosing one by keyboard does not. And it is not a design question — every key here
+is already declared.
+
+**Battle**: `a-multiselect-a-keyboard-cannot-use.spec.ts`, two halves because they fail differently —
+the declared opener is rendered and carries its declared role, read from `MDY_POPUP_OPENERS` rather
+than from a class written here; and keys alone move the value.
+
+### Two things this finding is careful about
+
+**The opener half is entangled with work in flight.** `esecutore` is moving the opener from
+`searchButton` to a new `trigger` part as I write, and it is in their working tree rather than
+committed — `git show HEAD:` says zero. My spec derives the opener from the contract, so it reads
+whatever is on disk and currently goes red on all three because the renderers have not caught up. That
+is the spec behaving correctly mid-batch and **not** three renderers failing a committed contract.
+
+**A probe of mine said plain was broken too and it was wrong.** Focusing the opener through
+`locator.focus()` put focus somewhere a person's Tab would not, and the arrows then did nothing. Driven
+by Tab from the top of the page — which is the question — plain works. Reported here because I had
+already said the opposite in a message: the sequence a spec drives *is* a claim about what a person
+does, and picking a convenient one quietly changes the subject.

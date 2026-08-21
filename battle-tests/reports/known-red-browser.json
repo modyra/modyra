@@ -1,11 +1,11 @@
 {
   "note": "Browser specs that are red because the defect they describe is open. A red listed here does not fail a build; a red that is not listed is a regression. Rewrite with `npm run battle:browser:ci -- --accept`.",
   "order": "Repair in severity order, as the node tier does. A spec's severity is the worst of the claims its header names; `unknown` is a spec that names none, which is most of them.",
-  "recordedAt": "2026-08-21T18:29:30Z",
-  "openReds": 56,
+  "recordedAt": "2026-08-21T18:34:24Z",
+  "openReds": 61,
   "bySeverity": {
     "S0": 1,
-    "S1": 46,
+    "S1": 51,
     "S2": 9
   },
   "knownRed": [
@@ -29,6 +29,11 @@
     "a-grid-with-no-name.spec.ts › lit: a role that must be named has a name",
     "a-kind-nobody-declared-becomes-a-text-box.spec.ts › a kind nobody declared, lit",
     "a-mount-that-stopped-halfway.spec.ts › a mount that refuses a field leaves nothing of the fields it had already painted",
+    "a-multiselect-a-keyboard-cannot-use.spec.ts › a value can be chosen with the keyboard alone, angular",
+    "a-multiselect-a-keyboard-cannot-use.spec.ts › a value can be chosen with the keyboard alone, lit",
+    "a-multiselect-a-keyboard-cannot-use.spec.ts › the declared opener is rendered and carries its role, angular",
+    "a-multiselect-a-keyboard-cannot-use.spec.ts › the declared opener is rendered and carries its role, lit",
+    "a-multiselect-a-keyboard-cannot-use.spec.ts › the declared opener is rendered and carries its role, plain",
     "a-number-nobody-can-hear.spec.ts › a clock says what it is set to, lit",
     "a-number-you-change-with-arrows.spec.ts › the hour and minute segments carry what the contract declares, lit",
     "a-part-the-contract-requires.spec.ts › every part the contract requires is built, lit",
