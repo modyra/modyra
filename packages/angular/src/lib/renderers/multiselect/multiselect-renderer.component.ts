@@ -67,6 +67,15 @@ import type { MdyOverlayBranch, MdyOverlayOwner } from "../../core/overlay-contr
       [showInlineError]="inlineErrorShown()"
       [errorText]="inlineErrorText()"
     />
+    <!-- The shell every other kind sits in. Without it this renderer's multiselect was outside the
+         row system entirely: anything a theme states about the input wrapper — the frame, the
+         disabled and readonly surfaces, the error underline — reached three kinds of four here. -->
+    <div
+      class="mdy-input-wrapper"
+      [class.mdy-input-wrapper--disabled]="isDisabled()"
+      [class.mdy-input-wrapper--readonly]="isReadonly()"
+      [class.mdy-input-wrapper--error]="paintsAsInvalid()"
+    >
     <div class="mdy-multiselect" #wrapper [class.mdy-multiselect--open]="open()">
       <!-- The control a person presses, holding what was chosen. The label names it and the
            combobox role sits here, because this is what holds the field's value — a magnifier
@@ -142,6 +151,7 @@ import type { MdyOverlayBranch, MdyOverlayOwner } from "../../core/overlay-contr
         aria-live="polite"
         aria-atomic="true"
       >{{ announcementText() }}</div>
+    </div>
     </div>
 
     <mdy-overlay-panel
