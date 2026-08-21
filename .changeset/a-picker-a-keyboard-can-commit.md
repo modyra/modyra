@@ -1,8 +1,13 @@
 ---
-"@modyra/widgets": major
+"@modyra/widgets": minor
 ---
 
 Tab moves inside a popup that has controls of its own
+
+**Read this before upgrading: it changes a declared key, and it ships under a minor.** `Tab` on an
+open timepicker no longer closes it. Anything relying on Tab to dismiss the picker — a test walking
+focus past it, a page counting on the popup being gone — sees it stay open and must use `Escape`,
+which is unchanged and now the way out.
 
 `Tab` was declared as `cancel` for every kind with an overlay. A timepicker's popup holds six
 controls, so:
