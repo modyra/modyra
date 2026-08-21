@@ -277,37 +277,33 @@ test("no projection invents a class the contract does not know", async () => {
 function buildCompactMultiselect({ chipClasses = "mdy-chip mdy-chip--value" } = {}) {
   const root = el("div", "mdy-renderer mdy-renderer--multiselect");
   const wrapper = el("div", "mdy-multiselect");
-  const header = el("div", "mdy-multiselect__header");
-  // The opener holds the field's value, so the contract gives it the combobox role rather than
-  // leaving `aria-invalid` and `aria-required` on a bare button.
-  const searchButton = el("button", "mdy-multiselect__search-btn", { role: "combobox" });
-  header.append(searchButton);
+  // The control a person presses, which holds the field's value — so the contract gives it the
+  // combobox role rather than leaving `aria-invalid` and `aria-required` on a bare button.
+  const trigger = el("button", "mdy-multiselect__trigger", { role: "combobox" });
   const chips = el("div", "mdy-multiselect__chips");
-  const chip = el("button", chipClasses);
+  // A container, because it holds controls: the label, how many, and what takes the value off.
+  const chip = el("div", chipClasses);
+  const chipRemove = el("button", "mdy-chip__remove", { type: "button" });
+  chip.append(chipRemove);
   chips.append(chip);
-  // The value area comes before the affordance that changes it, which is what the anatomy declares.
-  wrapper.append(chips, header);
-  const options = el("div", "mdy-multiselect__options");
-  const optionWrapper = el("div", "mdy-chip-wrapper");
-  const option = el("button", "mdy-chip");
-  const optionCheck = el("span", "mdy-chip__check");
-  const optionLabel = el("span", "mdy-chip__label");
-  option.append(optionCheck, optionLabel);
-  optionWrapper.append(option);
-  options.append(optionWrapper);
-  root.append(wrapper, options);
+  const arrow = el("span", "mdy-multiselect__arrow", { "aria-hidden": "true" });
+  trigger.append(chips, arrow);
+  wrapper.append(trigger);
+  root.append(wrapper);
   document.body.append(root);
   return {
     root,
-    parts: {
-      inputWrapper: wrapper, header, searchButton, chips, chip,
-      options, optionWrapper, option, optionCheck, optionLabel,
-    },
+    parts: { inputWrapper: wrapper, trigger, chips, chip, chipRemove, arrow },
   };
 }
 
-/** Parts of the multiselect this presentation does not put on screen. */
-const COMPACT_ABSENT = ["popup", "search", "listbox", "loading", "empty", "optionStep", "optionCount", "placeholder"];
+/**
+ * Parts of the multiselect this presentation does not put on screen.
+ *
+ * The options among them: they live in the popup now, and this fixture is a closed control. What a
+ * closed control shows is what was chosen.
+ */
+const COMPACT_ABSENT = ["popup", "search", "loading", "empty", "options", "optionWrapper", "optionCheck", "optionLabel", "optionStep", "optionCount", "placeholder"];
 
 test("the value-chip presentation the catalogue declares actually conforms", () => {
   const { root, parts } = buildCompactMultiselect();

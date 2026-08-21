@@ -17,8 +17,12 @@ const { inspectWidgetDom, } = await import("../../widgets/dist/testing/index.js"
 const { MDY_POPUP_OPENERS, MDY_WIDGET_CONTRACTS, overlayOnlyParts } = await import("../../widgets/dist/index.js");
 const { FIELDS, partsOf } = await import("./contract-parts.mjs");
 
-const OPENER = ".mdy-select__trigger, .mdy-datepicker__toggle, .mdy-timepicker__toggle,"
-  + " .mdy-colors__toggle-area, .mdy-multiselect__search-btn";
+/** The element that opens this kind's overlay — one kind, one part, so no other kind's class matches. */
+const openerOf = (root, kind) => {
+  const opener = MDY_POPUP_OPENERS[kind]?.opener;
+  const classes = opener ? MDY_WIDGET_CONTRACTS[kind]?.parts?.[opener]?.classes ?? [] : [];
+  return classes.length === 0 ? null : root.querySelector(classes.map((cls) => `.${cls}`).join(""));
+};
 
 const OVERLAY_FIELDS = FIELDS.filter((f) => MDY_WIDGET_CONTRACTS[f.kind].capabilities.overlay);
 
@@ -31,7 +35,7 @@ const OVERLAY_FIELDS = FIELDS.filter((f) => MDY_WIDGET_CONTRACTS[f.kind].capabil
  */
 const ABSENT_WHILE_OPEN = {
   select: ["empty", "loading"],
-  multiselect: ["empty", "loading", "chips", "chip", "placeholder", "optionStep", "optionCount"],
+  multiselect: ["empty", "loading", "chip", "optionStep", "optionCount"],
   // The single-date picker commits on the click; the range needs a confirmation because a range is
   // only meaningful once both ends are chosen, so it — and only it — renders the action bar.
   datepicker: ["actions"],
@@ -52,7 +56,7 @@ test("every overlay kind conforms while it is open", async () => {
     const mounted = mountMdyForm(host, [field], { submitLabel: null });
     try {
       const root = host.querySelector(`[data-mdy-field="${field.name}"]`);
-      const affordance = root.querySelector(OPENER);
+      const affordance = openerOf(root, field.kind);
       assert.ok(affordance, `${field.kind}: no opener affordance to click`);
       affordance.dispatchEvent(new window.MouseEvent("click", { bubbles: true }));
       await settle();

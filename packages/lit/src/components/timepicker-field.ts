@@ -834,6 +834,15 @@ export class MdyTimepickerFieldElement extends MdyFieldElement<string | null> {
               this.send({ type: "type", text: (e.target as HTMLInputElement).value });
             }}
             @blur=${() => handle.markAsTouched()}
+            @click=${() => { if (!this._open) this.send({ type: "open" }); }}
+            @keydown=${(e: KeyboardEvent) => {
+              // The keys this kind declares, read from the table rather than listed here. The
+              // contract names the *control* as the opener, and a control that only opens under a
+              // pointer is one a keyboard cannot reach the clock through at all.
+              if (this._open || keyBindingFor("timepicker", e.key, false)?.intent !== "open") return;
+              e.preventDefault();
+              this.send({ type: "open" });
+            }}
           />
           <div class="mdy-input-suffix">
             <button

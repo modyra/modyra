@@ -100,14 +100,14 @@ export const MDY_WIDGET_CONTRACTS = Object.freeze({
   // showing value chips (`chips`/`chip`/`placeholder`) is the compact alternative, so those parts
   // stay declared and optional. Which classes a chip carries is `multiselectChipClasses`, never a
   // string in a renderer.
-  multiselect: define("multiselect", ["mdy-renderer", "mdy-renderer--multiselect"], ["root", "label", "requiredMarker", "inputWrapper", "chips", "chip", "placeholder", "header", "searchButton", "options", "optionWrapper", "option", "optionCheck", "optionStep", "optionLabel", "optionCount", "popup", "search", "listbox", "loading", "empty", "inlineError", "supportingText", "errors", "errorItem"] as const, true,
-    { parents: { header: "inputWrapper", searchButton: "header", options: "root", optionWrapper: "options", option: "optionWrapper", chips: "inputWrapper", chip: "chips", placeholder: "inputWrapper", listbox: "popup", search: "popup" },
+  multiselect: define("multiselect", ["mdy-renderer", "mdy-renderer--multiselect"], ["root", "label", "requiredMarker", "inputWrapper", "trigger", "chips", "chip", "chipRemove", "placeholder", "arrow", "popup", "search", "options", "optionWrapper", "option", "optionCheck", "optionStep", "optionLabel", "optionCount", "loading", "empty", "inlineError", "supportingText", "errors", "errorItem"] as const, true,
+    { parents: { trigger: "inputWrapper", arrow: "trigger", options: "popup", optionWrapper: "options", option: "optionWrapper", chips: "trigger", chip: "chips", chipRemove: "chip", placeholder: "trigger", search: "popup" },
       // This widget is a grid of chips, not a listbox, and the chip's element depends on the mode:
       // a <button> in toggle mode, a <div> carrying its own +/- step buttons in counter mode. The
       // contract has no way to say "this part's element depends on that option", so `option` is
       // declared unconstrained rather than asserting the half of it that a single-mode fixture
       // happens to show. A counter chip contains buttons, so it cannot itself be one.
-      elements: { option: "presentation", listbox: "group" },
+      elements: { option: "presentation", options: "group" },
       // The popup frames a search field beside the chip grid, which is a composite a user enters,
       // works in and leaves — and the opener promises `dialog`. Declared here so the promise and
       // the thing promised come from one place: without a role on the part, nothing on screen
@@ -116,17 +116,14 @@ export const MDY_WIDGET_CONTRACTS = Object.freeze({
       // Not modal. The panel is anchored to its field and the page behind it stays reachable, so
       // `aria-modal` would say the opposite of what dismissal does.
       roles: { popup: "dialog" },
-      states: { option: ["selected"], chip: ["selected", "removable"], popup: POPUP_PLACEMENT_STATES },
-      classes: { inputWrapper: ["mdy-multiselect"], header: ["mdy-multiselect__header"], searchButton: ["mdy-multiselect__search-btn"], options: ["mdy-multiselect__options"], optionWrapper: [MDY_CHIP_CLASSES.wrapper], option: [MDY_CHIP_CLASSES.block], optionCheck: [MDY_CHIP_CLASSES.check], optionLabel: [MDY_CHIP_CLASSES.label], optionCount: [MDY_CHIP_CLASSES.count], optionStep: [MDY_CHIP_CLASSES.step], chips: ["mdy-multiselect__chips"], chip: [MDY_CHIP_CLASSES.block, MDY_CHIP_CLASSES.value], placeholder: ["mdy-multiselect__placeholder"], popup: ["mdy-multiselect__dropdown", MDY_POPUP_CLASS, MDY_POPUP_SURFACE_CLASS, "mdy-multiselect-overlay__panel"], search: ["mdy-multiselect-overlay__input"], listbox: ["mdy-multiselect__options", "mdy-multiselect-overlay__grid"], loading: ["mdy-select__loader"], empty: ["mdy-multiselect-overlay__empty"] } ,
+      states: { trigger: ["open", "disabled", "readonly", "invalid", "loading"], option: ["selected"], chip: ["selected", "removable"], popup: POPUP_PLACEMENT_STATES },
+      classes: { inputWrapper: ["mdy-multiselect"], trigger: ["mdy-multiselect__trigger"], arrow: ["mdy-multiselect__arrow"], options: ["mdy-multiselect__options", "mdy-multiselect-overlay__grid"], optionWrapper: [MDY_CHIP_CLASSES.wrapper], option: [MDY_CHIP_CLASSES.block], optionCheck: [MDY_CHIP_CLASSES.check], optionLabel: [MDY_CHIP_CLASSES.label], optionCount: [MDY_CHIP_CLASSES.count], optionStep: [MDY_CHIP_CLASSES.step], chips: ["mdy-multiselect__chips"], chip: [MDY_CHIP_CLASSES.block, MDY_CHIP_CLASSES.value], chipRemove: [MDY_CHIP_CLASSES.remove], placeholder: ["mdy-multiselect__placeholder"], popup: ["mdy-multiselect__dropdown", MDY_POPUP_CLASS, MDY_POPUP_SURFACE_CLASS, "mdy-multiselect-overlay__panel"], search: ["mdy-multiselect-overlay__input"], loading: ["mdy-select__loader"], empty: ["mdy-multiselect-overlay__empty"] } ,
       // The two mode markers a chip carries. `--centered` reserves the width its tick will need in
       // toggle mode; `--counter` is the bag mode, whose chip has step buttons instead of a tick.
       presentation: ["mdy-chip--centered", "mdy-chip--counter"] ,
       // `optionCheck` is toggle mode's: a counter chip has a count between two steppers and no tick
       // to draw, so requiring it would ask every counter-mode renderer for an element that means
       // nothing there.
-      // `listbox` is required to be *there*, not to be a listbox: what role a chip grid should carry
-      // is the mode question, and this says only that the popup frames the chooser rather than
-      // nothing.
       // Keyed by `mode` on the field config, which already carries these two words. The option is a
       // different element in each: in `single` it *is* the control a user activates, in `multi` it
       // is the container the two steppers sit in — and a container that is itself a button would be
@@ -135,7 +132,7 @@ export const MDY_WIDGET_CONTRACTS = Object.freeze({
         single: { elements: { option: "button" }, required: ["optionCheck"] },
         multi: { elements: { option: "container" }, required: ["optionStep", "optionCount"] },
       } ,
-      required: ["header", "option", "optionLabel", "options", "searchButton", "listbox"] }),
+      required: ["trigger", "chips", "option", "optionLabel", "options"] }),
   datepicker: define("datepicker", ["mdy-renderer", "mdy-renderer--datepicker"], ["root", "label", "requiredMarker", "inputWrapper", "control", "toggle", "popup", "dialogHeader", "calendar", "grid", "weekdays", "weekday", "row", "gridcell", "monthPicker", "monthCell", "yearPicker", "yearCell", "inlineError", "supportingText", "errors", "errorItem"] as const, true,
     { classes: { control: ["mdy-datepicker__input"], toggle: ["mdy-datepicker__toggle"], popup: ["mdy-datepicker__popup", MDY_POPUP_CLASS, MDY_POPUP_SURFACE_CLASS], calendar: ["mdy-datepicker__calendar"], dialogHeader: ["mdy-datepicker__header"], grid: ["mdy-datepicker__grid"], weekdays: ["mdy-datepicker__weekdays"], weekday: ["mdy-datepicker__weekday"], row: ["mdy-datepicker__row"], gridcell: ["mdy-datepicker__cell"], monthPicker: ["mdy-datepicker__month-picker"], monthCell: ["mdy-datepicker__month-cell"], yearPicker: ["mdy-datepicker__year-picker"], yearCell: ["mdy-datepicker__year-cell"] },
       roles: { grid: "grid", row: "row", weekdays: "row", weekday: "columnheader", gridcell: "gridcell", monthPicker: "grid", monthCell: "gridcell", yearPicker: "grid", yearCell: "gridcell" } ,

@@ -16,7 +16,7 @@ import { installDomGlobals } from "./support/dom-env.mjs";
 installDomGlobals();
 const { collectStateMatrix, normalizeStateLedger } = await import("../../widgets/dist/testing/index.js");
 const { explainValueMismatch } = await import("../../core/dist/index.js");
-const { KINDS, emptyFor, mount, valueFor } = await import("./support/state-fixture.mjs");
+const { KINDS, emptyFor, mount, openerOf, valueFor } = await import("./support/state-fixture.mjs");
 
 /**
  * Lit's divergences from the state contract, recorded rather than waived. Asserted both ways: a new
@@ -90,9 +90,10 @@ test("Escape closes an open overlay, on every kind that declares the transition"
       // that leaves focus on the opener handles it there.
       const target = document.activeElement && fixture.root.contains(document.activeElement)
         ? document.activeElement
-        : fixture.root.querySelector(
-            ".mdy-select__trigger, .mdy-datepicker__toggle, .mdy-timepicker__toggle, .mdy-colors__toggle-area, .mdy-multiselect__search-btn",
-          );
+        // The opener the catalogue names for this kind, not a list written out here: written out,
+        // it goes stale the moment an opener moves and the failure is a null dereference rather
+        // than a verdict.
+        : openerOf(fixture.root, kind);
       target.dispatchEvent(new window.KeyboardEvent("keydown", { key: "Escape", bubbles: true }));
       await fixture.settle();
 

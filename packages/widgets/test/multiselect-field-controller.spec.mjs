@@ -147,9 +147,11 @@ test("view exposes chip-group ARIA contract (role=group, not listbox)", () => {
   const { controller } = setup("single", ["medium"]);
   const view = controller.view();
   assert.strictEqual(view.parts.group.attributes.role, "group");
-  // The chip group is the popup's content; `mdy-multiselect` belongs to the trigger that opens it.
+  // The chip group is the popup's content; the trigger is the control that opens it, and carries
+  // its own class rather than the field box's — one class naming two elements is how the label came
+  // to name a box instead of a control.
   assert.strictEqual(view.parts.group.classes.includes("mdy-multiselect__options"), true);
-  assert.strictEqual(view.parts.trigger.classes.includes("mdy-multiselect"), true);
+  assert.strictEqual(view.parts.trigger.classes.includes("mdy-multiselect__trigger"), true);
   assert.strictEqual(view.parts.medium.attributes["aria-pressed"], "true");
   assert.strictEqual(view.parts.small.attributes["aria-pressed"], "false");
   assert.strictEqual(view.parts.large.attributes["aria-disabled"], "true");

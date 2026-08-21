@@ -22,7 +22,9 @@ test("each kind's affordances are the ones at its trailing edge", () => {
   assert.deepEqual(partsOf("daterange"), ["toggle"]);
   assert.deepEqual(partsOf("timepicker"), ["toggle"]);
   assert.deepEqual(partsOf("colors"), ["toggle"]);
-  assert.deepEqual(partsOf("multiselect"), ["searchButton"]);
+  // The magnifier is gone: the control opens the popup, and what sits at the trailing edge is the
+  // arrow that says which way it opens — the same affordance the single-choice sibling has.
+  assert.deepEqual(partsOf("multiselect"), ["arrow"]);
   assert.deepEqual(partsOf("number"), ["decrement", "increment"]);
 });
 
@@ -37,7 +39,9 @@ test("the caret is the only decorative one", () => {
   const indicators = kindsWithAffordances().flatMap((kind) =>
     trailingAffordances(kind).filter((a) => a.role === "indicator").map((a) => `${kind}.${a.part}`),
   );
-  assert.deepEqual(indicators, ["select.arrow"]);
+  // Both kinds that open a list from their own control draw one: the arrow says which way it
+  // opens and the control behind it is the target.
+  assert.deepEqual(indicators, ["select.arrow", "multiselect.arrow"]);
 });
 
 test("a button that is not at the trailing edge is not swept in", () => {
@@ -68,10 +72,9 @@ test("the class list a theme selects on comes from the catalogue", () => {
   const control = affordanceClasses("control");
   const indicator = affordanceClasses("indicator");
 
-  assert.deepEqual(indicator, ["mdy-select__arrow"]);
+  assert.deepEqual(indicator.slice().sort(), ["mdy-multiselect__arrow", "mdy-select__arrow"]);
   for (const expected of [
-    "mdy-datepicker__toggle", "mdy-timepicker__toggle",
-    "mdy-colors__toggle-area", "mdy-multiselect__search-btn",
+    "mdy-datepicker__toggle", "mdy-timepicker__toggle", "mdy-colors__toggle-area",
   ]) {
     assert.ok(control.includes(expected), `missing ${expected}`);
   }

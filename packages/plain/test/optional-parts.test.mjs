@@ -107,6 +107,16 @@ test("a counter-mode multiselect renders its steppers and count, and conforms", 
   await settle();
 
   const root = host.querySelector('[data-mdy-field="tags"]');
+  // The steppers and the count live on the chip in the strip, which exists once something is
+  // chosen. Asserted on an empty field, this read the option list — and the options moved into the
+  // popup, which is portalled out of the field entirely.
+  root.querySelector(".mdy-multiselect__trigger").dispatchEvent(new window.Event("click", { bubbles: true }));
+  await settle();
+  const popup = document.getElementById(root.querySelector(".mdy-multiselect__trigger").getAttribute("aria-controls"));
+  // In counter mode the option is a container with two steppers; the "+" is what chooses one.
+  popup.querySelector(".mdy-chip .mdy-chip__btn:last-of-type").dispatchEvent(new window.Event("click", { bubbles: true }));
+  await settle();
+
   assert.ok(root.querySelector(".mdy-chip__btn"), "no step button rendered");
   assert.ok(root.querySelector(".mdy-chip__count"), "no count rendered");
 
@@ -121,8 +131,14 @@ test("a counter-mode multiselect renders its steppers and count, and conforms", 
       optionLabel: Array.from(root.querySelectorAll(".mdy-chip__label")),
       optionStep: Array.from(root.querySelectorAll(".mdy-chip__btn")),
       optionCount: Array.from(root.querySelectorAll(".mdy-chip__count")),
+      chip: Array.from(root.querySelectorAll(".mdy-multiselect__chips .mdy-chip")),
+      chipLabel: Array.from(root.querySelectorAll(".mdy-multiselect__chips .mdy-chip__label")),
+      chipCount: Array.from(root.querySelectorAll(".mdy-multiselect__chips .mdy-chip__count")),
+      chipRemove: Array.from(root.querySelectorAll(".mdy-multiselect__chips .mdy-chip__remove")),
     },
-    absentParts: ["chips", "chip", "placeholder", "loading", "empty", "optionCheck"],
+    // `chip` is present now: the value chosen above put one in the strip, which is the whole point
+    // of choosing it. `optionCheck` is toggle mode's tick, which a counter chip has no room for.
+    absentParts: ["loading", "empty", "optionCheck"],
     strictClasses: true,
     adapterPrefix: "mdy-plain-",
   });

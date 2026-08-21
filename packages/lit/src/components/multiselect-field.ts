@@ -165,6 +165,11 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
     this.fieldController?.dispatch({ type: "decrement", optionKey: String(value) });
   }
 
+  /** Takes a chosen value off entirely, whatever its count — the chip's own control. */
+  private removeValue(_handle: MdyFieldHandle<readonly unknown[]>, value: unknown): void {
+    this.fieldController?.dispatch({ type: "toggle", optionKey: String(value) });
+  }
+
   protected override triggerText(handle: MdyFieldHandle<readonly unknown[]>): string {
     return this.held(handle).map((v) => this.labelFor(v)).join(", ");
   }
@@ -186,7 +191,7 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
    * where they clicked, so this is not folded into `close`.
    */
   private restoreFocus(): void {
-    this.querySelector<HTMLElement>(".mdy-multiselect__search-btn")?.focus();
+    this.querySelector<HTMLElement>(`.${this.partClass("trigger")}`)?.focus();
   }
 
   protected override close(_handle: MdyFieldHandle<readonly unknown[]>): void {
@@ -288,39 +293,39 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
           aria-label=${this.label || nothing}
           aria-describedby=${this.showErrors(handle) && !this.inlineErrors ? this.errorsId : this.descriptionId}
         >
-          ${this.held(handle).length === 0
-            ? html`<span class="${this.partClass("placeholder")}">${this.label ? `Select ${this.label.toLowerCase()}…` : "Select…"}</span>`
-            : nothing}
-          <div class="mdy-multiselect__header">
-            <button
-              type="button"
-              id=${triggerId}
-              class="mdy-multiselect__search-btn"
-              ?disabled=${handle.disabled()}
-              @click=${(e: Event) => {
-                if (!this._open) this.overlay.open(e);
-                this.toggleOpen(handle);
-              }}
-              aria-label=${this.messages.searchOptionsLabel}
-              role=${MDY_POPUP_OPENERS.multiselect?.role ?? nothing}
-              aria-haspopup=${this.popupPromise}
-              aria-expanded=${this._open ? "true" : "false"}
-              aria-required=${String(handle.required())}
-              aria-readonly=${handle.readonly() ? "true" : nothing}
-              aria-controls=${this._open ? overlayControlledId("multiselect", this.fieldId) ?? nothing : nothing}
-              aria-describedby=${this.showErrors(handle) && !this.inlineErrors ? this.errorsId : this.descriptionId}
-              aria-invalid=${String(shownErrorsOf(handle).length > 0)}
-              aria-disabled=${String(handle.disabled())}
-            >
-              ${this.loading
-        ? mdyIcon("LOADER", "mdy-select__loader")
-        : mdyIcon("SEARCH", "")}
-            </button>
-          </div>
+          <button
+            type="button"
+            id=${triggerId}
+            class="${this.partClass("trigger")}"
+            ?disabled=${handle.disabled()}
+            @click=${(e: Event) => {
+              // On the control itself. The box around it deliberately ignores clicks that land on a
+              // button inside it — a chip, a stepper — and the control is a button, so a handler
+              // only on the box never heard the one press that matters.
+              if (!this._open) this.overlay.open(e);
+              this.toggleOpen(handle);
+            }}
+            aria-label=${this.label || nothing}
+            role=${MDY_POPUP_OPENERS.multiselect?.role ?? nothing}
+            aria-haspopup=${this.popupPromise}
+            aria-expanded=${this._open ? "true" : "false"}
+            aria-required=${String(handle.required())}
+            aria-readonly=${handle.readonly() ? "true" : nothing}
+            aria-controls=${this._open ? overlayControlledId("multiselect", this.fieldId) ?? nothing : nothing}
+            aria-describedby=${this.showErrors(handle) && !this.inlineErrors ? this.errorsId : this.descriptionId}
+            aria-invalid=${String(shownErrorsOf(handle).length > 0)}
+            aria-disabled=${String(handle.disabled())}
+          >
+            <span class="${this.partClass("chips")}">${this.renderValueChips(handle)}</span>
+            ${this.held(handle).length === 0
+              ? html`<span class="${this.partClass("placeholder")}">${this.label ? `Select ${this.label.toLowerCase()}…` : "Select…"}</span>`
+              : nothing}
+            ${this.loading ? mdyIcon("LOADER", "mdy-select__loader") : nothing}
+            <span class="${this.partClass("arrow")}" aria-hidden="true"></span>
+          </button>
         </div>
         <div class="mdy-input-suffix"><slot name="suffix"></slot></div>
       </div>
-      ${this.renderOptionsGrid(handle, this.filteredOptions(handle), "")}
       ${renderOverlayPanel(overlay, this._open, {
         modal: position === "overlay",
         alignment,
@@ -337,6 +342,55 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
    * Both carry `mdy-multiselect__options`, so one rule lays out both; the popup's adds the overlay
    * class on top. Each chip sits in the contract's wrapper, which is what the grid arranges.
    */
+  /**
+   * What was chosen, drawn in the closed control: one chip per distinct value, with how many.
+   *
+   * A repeated value is a **quantity**, not a duplicate — `increment` takes `["a"]` to
+   * `["a","a","a"]` — so the count sits on the chip and the steppers with it. One chip per entry
+   * would make undoing one decision three separate removals; a chip with no count answers the same
+   * for one of something as for three.
+   */
+  private renderValueChips(handle: MdyFieldHandle<readonly unknown[]>): unknown {
+    const tally = new Map<string, { readonly value: unknown; readonly label: string; count: number }>();
+    for (const value of this.held(handle)) {
+      const key = String(value);
+      const seen = tally.get(key);
+      if (seen) seen.count += 1;
+      else tally.set(key, { value, label: this.labelFor(value), count: 1 });
+    }
+    return [...tally.values()].map(({ value, label, count }) => html`<span
+      class=${multiselectChipClasses({ mode: this.mode, selected: true }).join(" ")}
+      tabindex="0"
+      role="group"
+      aria-label=${count > 1 ? `${label}, ${count}` : label}
+    >
+      ${this.mode === "multi"
+        ? html`<button
+            type="button"
+            class=${MDY_CHIP_CLASSES.step}
+            aria-label=${this.messages.chipDecrementLabel}
+            @click=${(e: Event) => { e.stopPropagation(); this.decrement(handle, value); }}
+          >−</button>`
+        : nothing}
+      <span class=${MDY_CHIP_CLASSES.label}>${label}</span>
+      <span class=${MDY_CHIP_CLASSES.count} ?hidden=${count <= 1}>${count > 1 ? String(count) : ""}</span>
+      ${this.mode === "multi"
+        ? html`<button
+            type="button"
+            class=${MDY_CHIP_CLASSES.step}
+            aria-label=${this.messages.chipIncrementLabel}
+            @click=${(e: Event) => { e.stopPropagation(); this.increment(handle, value); }}
+          >+</button>`
+        : nothing}
+      <button
+        type="button"
+        class=${MDY_CHIP_CLASSES.remove}
+        aria-label=${this.messages.chipRemoveLabel}
+        @click=${(e: Event) => { e.stopPropagation(); this.removeValue(handle, value); }}
+      >×</button>
+    </span>`);
+  }
+
   private renderOptionsGrid(
     handle: MdyFieldHandle<readonly unknown[]>,
     options: ReadonlyArray<MdySelectOption<unknown>>,

@@ -20,11 +20,14 @@ const PART_SEMANTICS: Readonly<Record<string, MdyWidgetSemanticElement>> = Objec
   // and a native `<select>` satisfies it too.
   trigger: "input",
   toggle: "button", clear: "button",
-  // The multiselect's opener, and the same thing `trigger` is for its single-choice sibling: it
-  // holds the field's value, so it carries `role="combobox"`, `aria-expanded`, `aria-invalid` and
-  // `aria-required`. Declared a plain button, none of those had anywhere legitimate to sit.
-  searchButton: "input",
-  modeToggle: "button", action: "button", optionStep: "button", chip: "button",
+  modeToggle: "button", action: "button", optionStep: "button",
+  // A chip in the strip is what was chosen, and it carries the controls for changing that: a remove,
+  // and in counter mode the two steppers. A chip that were itself a button could hold none of them —
+  // a button inside a button is neither valid nor announceable — and a person reading "3" would have
+  // to reopen the popup and find the row again to make it 2, which is the journey the strip removes.
+  chip: "container",
+  // What the chip is made of: a name, how many, and the control that takes it off.
+  chipRemove: "button",
   // Announcements.
   errors: "status", loading: "status", empty: "status", errorItem: "status",
   // A file the field turned away is not an error of the value — the field holds what it accepted and

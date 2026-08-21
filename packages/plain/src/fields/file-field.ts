@@ -168,7 +168,7 @@ export function renderFileField(
     }
     setErrors(shell.errorList, shownErrorsOf(handle).map((error) => error.message));
     shell.syncState({
-      touched: handle.touched(), disabled: handle.disabled(),
+      touched: handle.touched(), disabled: handle.disabled(), readonly: handle.readonly(),
       hasError: showsAsInvalid({ valid: handle.valid(), disabled: handle.disabled() }), filled: files.length > 0, required: handle.required(),
     });
   });

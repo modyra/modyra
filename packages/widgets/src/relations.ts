@@ -46,7 +46,7 @@ const LABEL_TARGET: Readonly<Partial<Record<MdyWidgetKind, string>>> = Object.fr
   datepicker: "control", timepicker: "control",
   daterange: "startControl",
   select: "trigger",
-  multiselect: "searchButton",
+  multiselect: "trigger",
   // The typeable hex field, not the hidden native picker behind it.
   colors: "hexInput",
   // checkbox and toggle wrap their input in the label itself, which is the association.
@@ -69,7 +69,7 @@ const DESCRIBED_BY_CARRIER: Readonly<Partial<Record<MdyWidgetKind, string>>> = O
   daterange: "startControl",
   radio: "group", segmented: "group",
   select: "trigger",
-  multiselect: "searchButton",
+  multiselect: "trigger",
 });
 
 /** Kinds whose control surface is a container, and therefore names its label rather than being named. */

@@ -61,7 +61,7 @@ export const ABSENT = {
   // The value chips and the placeholder belong to the compact trigger a renderer may show instead
   // of the field's own grid; this one shows the grid, as the catalogue declares. The count and the steppers
   // are counter mode's.
-  multiselect: ["chips", "chip", "placeholder", "optionCount", "optionStep", "loading", "empty"],
+  multiselect: ["optionCount", "optionStep", "loading", "empty"],
   datepicker: ["actions"],
   // Nothing absent: `timepicker-field.ts` builds the clock from the contract's own classes, dial
   // included. Naming a part here asserts it is gone rather than switching its checks off, so an

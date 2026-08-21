@@ -241,7 +241,7 @@ export function renderDaterangeField(
     setErrors(shell.errorList, shownErrorsOf(handle).map((error) => error.message));
     shell.syncState({
       open: state.open,
-      touched: handle.touched(), disabled: handle.disabled(),
+      touched: handle.touched(), disabled: handle.disabled(), readonly: handle.readonly(),
       hasError: showsAsInvalid({ valid: handle.valid(), disabled: handle.disabled() }), filled: value.start !== null, required: handle.required(),
     });
 

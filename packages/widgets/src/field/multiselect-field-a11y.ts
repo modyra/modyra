@@ -102,7 +102,10 @@ export function projectMultiselectFieldA11y<TValue>(
     },
     trigger: {
       id: triggerId,
-      classes: ["mdy-multiselect"],
+      // The trigger's own classes, not the field box's. Carrying `mdy-multiselect` here put the
+      // wrapper's class on the control, so one class named two elements and whatever resolved a
+      // part by class found the wrong one — including the label, which then named a box.
+      classes: [...MDY_WIDGET_CONTRACTS.multiselect.parts.trigger.classes],
       // The role as well as the attributes. Spreading only the attributes left the opener with
       // `aria-expanded`, `aria-invalid` and `aria-required` on a bare `<button>` — a role with no
       // value to be wrong about and nothing to expand, so every one of them named a state the
