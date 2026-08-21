@@ -18998,3 +18998,52 @@ one cause. Plain green on both, lit red on both. Registered in `known-red-browse
 
 **Angular is unmeasured**, and by source it fails both halves — no layer element, slices after the
 hand. Finding 325 (no Angular browser host) is what makes that a reading rather than a measurement.
+
+## 333 — Angular's completeness gate is a ratchet with a fixed floor, so a contract that grows walks under it (S2, harness/gate defect)
+
+Asked because finding 332b needed an answer: how did Angular come to be missing a declared part with
+every gate green. There *is* a completeness gate for Angular, and its threshold is a constant while
+its denominator comes from the contract.
+
+`packages/angular/src/lib/renderers/open-coverage.spec.ts` counts, for every kind with a popup, how
+many of `overlayOnlyParts(kind)` resolve in the DOM while the widget is open:
+
+```ts
+for (const part of overlayOnlyParts(kind)) { total += 1; … if (hit) rendered += 1; }
+expect(`${rendered >= 40 ? "ok" : "dropped"} ${rendered}/${total} — …`).toMatch(/^ok /);
+```
+
+Its own comment records the baseline: *"40 of the 45 are rendered by an open widget today."*
+
+**Three parts were declared tonight** — `periodOption`, `dialUnavailable`, `dialUnavailableArc` —
+and all three are in the overlay set:
+
+```
+overlayOnlyParts("timepicker")   →   20 parts, including all three   (measured)
+```
+
+So `total` moves 45 → 48. Angular draws the slices and the period option and **not the layer**
+(finding 332b), so `rendered` moves 40 → 42 and `42 >= 40` passes. A part was added to the public
+contract, one renderer ignored it, and the gate that exists to catch exactly that stayed green.
+
+**Observed**: the threshold is the literal `40` and the denominator is derived from the contract, so
+the gate cannot see a new unrendered part while `rendered` stays at or above the floor. That follows
+from the source alone.
+
+**Probable, not measured**: the specific 42/48. The assertion prints its counts only on failure, and
+reading them would mean editing a spec in another session's package. The structural conclusion does
+not depend on the exact figures.
+
+The gate is a ratchet that never ratchets: *"A ratchet, not a target"* is the comment's own phrase,
+but nothing raises the floor when the contract grows. A relative form — `total - rendered` may not
+increase, or an explicit allowlist of the parts this adapter does not draw — would have failed the
+moment `dialUnavailable` was declared and skipped. The allowlist is the stronger of the two, because
+it also makes the exemptions readable; the comment already enumerates them in prose, and that prose
+is now stale (it names five, and there are six).
+
+**Related and separate**: `scripts/audit-angular-widget-contract.mjs` never reads
+`MDY_WIDGET_CONTRACT_VERSION`, where `audit-plain-widget-contract.mjs` and
+`audit-lit-widget-contract.mjs` both fail hard on a version they do not recognise. Version went 3 → 4
+→ 5 tonight; plain and lit demanded a re-read each time and Angular said nothing. Two of three
+renderers are pinned to the contract's version, and the third is pinned to a snapshot of its own past
+output — which cannot, by construction, notice something the contract gained.
