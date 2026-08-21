@@ -44,8 +44,44 @@ import { MDY_I18N_MESSAGES } from "./i18n";
   },
 })
 export abstract class MdyOverlayControl<TValue> extends MdyBaseControl<TValue> {
-  /** Signal tracking if the overlay is currently open. */
-  protected readonly open = signal(false);
+  /**
+   * Where "is this popup open" lives when nothing else owns it.
+   *
+   * A kind whose controller owns the state overrides the pair below and this cell is never read;
+   * `select` has no controller and keeps it.
+   */
+  private readonly localOpen = signal(false);
+
+  /**
+   * Whether the overlay is open, read from wherever this kind's state lives.
+   *
+   * A method rather than a `computed`, and the difference is not style. A `computed` evaluated
+   * before the controller exists — which happens whenever a `name` has not yet resolved to a field
+   * — would depend on nothing that ever changes again and would answer "closed" for the life of the
+   * component. A method is re-read by each change detection pass, and every read inside it is
+   * tracked by the caller's own reactive context, so the dependency is on the cell that actually
+   * holds the answer.
+   */
+  protected open(): boolean {
+    return this.isOverlayOpen();
+  }
+
+  /**
+   * The state's reader and its writer, as one pair.
+   *
+   * The widget contract owns the rule that a field leaving play closes its popup, and it expresses
+   * that rule by writing the controller's own `open`. A renderer that keeps a second cell and
+   * paints from it does not disobey the rule so much as never hear it: the contract's write lands
+   * somewhere nothing renders. Overriding both is how a kind says the controller's state is the
+   * state.
+   */
+  protected isOverlayOpen(): boolean {
+    return this.localOpen();
+  }
+
+  protected setOverlayOpen(open: boolean): void {
+    this.localOpen.set(open);
+  }
 
   /** Computed position of the overlay (below, above, or fixed overlay for mobile). */
   protected readonly position = signal<MdyOverlayPlacement>("below");
@@ -264,7 +300,7 @@ export abstract class MdyOverlayControl<TValue> extends MdyBaseControl<TValue> {
     this.position.set(decision.placement);
     this.alignment.set(decision.alignment);
     this.coords.set(anchored.coords);
-    this.open.set(transition.state.open);
+    this.setOverlayOpen(transition.state.open);
 
     this.maxHeight.set(anchored.maxHeight);
     this.heldDecision = decision;
@@ -359,7 +395,7 @@ export abstract class MdyOverlayControl<TValue> extends MdyBaseControl<TValue> {
     // somewhere, while focus anywhere else belongs to whatever the user just clicked and must be
     // left alone.
     const strandsFocus = !transition.state.open && this.focusWasStranded();
-    this.open.set(transition.state.open);
+    this.setOverlayOpen(transition.state.open);
     if (transition.effect === "setup") this.setupGlobalListeners();
     if (transition.effect === "teardown") this.teardownGlobalListeners();
     if (transition.announce === "opened") this.announcer.announce(this.overlayI18n.overlayOpened);
