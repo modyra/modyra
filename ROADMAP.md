@@ -6,7 +6,7 @@ the [changelog](CHANGELOG.md) and the per-package release notes.
 
 ## What carries a promise
 
-**In scope, versioned together, currently at 2.0.0:**
+**In scope, versioned together, currently at 2.4.0:**
 
 | Package | Why it is in |
 | --- | --- |

@@ -554,7 +554,7 @@ const CLAIMS = [
     publicEvidence: [
       "@modyra/widgets createValueWidgetController — increment/decrement take a step",
       "HTMLInputElement.stepUp/stepDown — the control this widget replaces snaps to the step",
-      "the project instructions — a migration preserves validation and runtime behaviour unless change is authorized",
+      "AGENTS.md § Standing rules — a migration preserves validation and runtime behaviour unless change is authorized",
     ],
   },
   {
@@ -576,7 +576,7 @@ const CLAIMS = [
     publicEvidence: [
       "@modyra/widgets MDY_WIDGET_CONTRACTS — 249 parts across 17 kinds, each declaring its classes, attributes, states and (31 of them) an ARIA role",
       "@modyra/widgets MDY_FORM_SHELL_STRUCTURE — a node declares `optional`, so the package has a way to say a part may be absent",
-      "the project instructions — widgets is the complete framework-agnostic UI contract, consumed rather than redefined",
+      "CONTRIBUTING.md § Comments and documentation — widgets is the complete framework-agnostic UI contract, consumed rather than redefined",
     ],
   },
   {

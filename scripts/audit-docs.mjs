@@ -35,7 +35,9 @@ const check = process.argv.includes("--check");
  * Markdown that a human here maintains.
  *
  * Excluded: dependencies, build output, the site's synced copies, generated changelogs, and the
- * links are upstream's, and editing them is undone by the next install.
+ * installer-generated skill trees vendored with tool configuration (`.github/` among them) —
+ * those are vendored, their dead links are upstream's, and editing them is undone by the next
+ * install.
  */
 const SKIP = /node_modules|\/dist\/|\/site\/src\/content\/|\.changeset|CHANGELOG|\/target\/|\/\.git\/|\/skills\//;
 

@@ -11437,7 +11437,7 @@ The project's own palette gate already knows: `e2e/palette.spec.ts:2` imports it
 `packages/styles/dist/color-utils.js`, and its prose at `:31` says *"`MDY_ON_COLOR_FLOOR` in
 `@modyra/styles`"*. Two governing documents point one way and the code and its test point the other.
 
-**Why this is worth a finding rather than a typo.** the project instructions make a decision record load-bearing:
+**Why this is worth a finding rather than a typo.** `docs/architecture/README.md` makes a decision record load-bearing:
 the thing that stops the next reader relitigating a decision from scratch. A reader verifying this one
 opens `@modyra/core`, finds no `color-utils` subpath and no such export, and has to decide whether the
 record is stale, whether the floor still exists, or whether they have the wrong package. This hunt
@@ -11448,7 +11448,7 @@ what the code already does.
 
 **Closed, and verified rather than accepted.** The record now names `@modyra/styles`, and the only
 surviving mention of `@modyra/core/color-utils` is inside a **named amendment** stating what it used
-to say and why that was dangerous — which is the form the project instructions requires: a record is superseded or
+to say and why that was dangerous — which is the form `docs/architecture/README.md` requires: a record is superseded or
 amended, never edited into agreement with the present.
 
 Two things were repaired beyond what was filed:
@@ -12340,7 +12340,7 @@ to trust is the smallest of a few runs on a quiet machine. The 45 is 42 long-sta
 193's remaining half which the owning session left open deliberately, plus findings 196 and 197. Two
 re-runs across the owning session's commits moved nothing else: no green battle turned red.
 
-**The Angular tier is green and runs in no CI job** (finding 36). It is the one adapter the project instructions
+**The Angular tier is green and runs in no CI job** (finding 36). It is the one adapter `AGENTS.md`
 holds to migrating without unapproved variation, it cannot join `differential/runtimes/every-runtime`
 — `@modyra/angular` needs Angular's compiler and will not import in a bare Node process, which is why
 it has a tier of its own — and nothing in `.github/workflows` runs that tier. Six green tests that
@@ -12505,7 +12505,7 @@ That is the third of the three questions a stylesheet can be asked from the cont
 **Severity** S3 · **Classification** comments cite a plan that is not in the repository · **Battle**
 none — read from the package sources · **Claims** —
 
-the project instructions § Comments and documentation forbids exactly one of the things these comments do:
+`AGENTS.md` § *Standing rules* forbids exactly one of the things these comments do:
 
 > Do not write: **Task or process references.** Plan numbers, commit SHAs, "task 28 fixed this",
 > "recorded in the ledger", anything about how the work was carried out or by whom.
@@ -12526,7 +12526,7 @@ cited by core/draft-manager.ts, core/form-engine.ts, core/reactive-owner.ts,
 
 **That file is not in the repository.** The only `*piano*` file anywhere is
 `.modyra/piano di comunicazione e go-to-market.md`, an unrelated document in the coordination
-directory that the project instructions itself says must never be the sole durable record of a decision. None of the
+directory that `AGENTS.md` itself says must never be the sole durable record of a decision. None of the
 `§` references cites an external standard — they are all this one plan.
 
 **What it costs a reader.** The comments are not decorative; they carry the reasoning:
@@ -12539,7 +12539,7 @@ directory that the project instructions itself says must never be the sole durab
 ```
 
 *"silently ignored (piano §4.2)"* tells the next reader that the silence is deliberate and points at
-nothing they can open. The rule the project instructions gives for this case is in the same section: express a real
+nothing they can open. The rule `AGENTS.md` gives for this case is in the same section: express a real
 constraint in code — a type, an assertion, a test — or state the invariant in the present tense as a
 property of the code. Half of these are one sentence away from doing that.
 
@@ -12557,7 +12557,7 @@ repository paths and every one resolves. The two the scan flagged are not misses
 appears in a sentence about what *adding* a Java target would cost, and `docs/architecture/0010` is a
 record referred to by its number. Finding 189's wrong package was the exception, not the pattern.
 
-**The neighbouring clause of the same rule is in far better shape.** the project instructions also forbids change
+**The neighbouring clause of the same rule is in far better shape.** `CONTRIBUTING.md` also forbids change
 history in comments — *"this used to be…", "the defect that shipped", "before this batch"* — and a
 scan of the same sources finds **eleven** phrases of that kind, of which only about half are history
 rather than a description of where a value sits. Eleven against forty-nine: the process references are
@@ -18560,8 +18560,8 @@ packages/widgets/src/transitions.ts:195
   // Angular all omit it, independently, which is the evidence that reads
 ```
 
-`@modyra/widgets` naming a dependent in a comment. The project instructions § *Dependency direction is a
-documentation rule too*: **a package must not name its dependents, in code or in prose.** Arrived in
+`@modyra/widgets` naming a dependent in a comment. `CONTRIBUTING.md` § *Comments and
+documentation*: **a package does not name the packages derived from it, in code or in prose.** Arrived in
 `4d4110b8`, the radio-group withdrawal, so it is pre-existing and not the overlay work.
 
 **Correcting a claim rather than relaying it**: `esecutore` reported it *"will block the release

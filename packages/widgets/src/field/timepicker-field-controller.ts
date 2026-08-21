@@ -104,6 +104,10 @@ export function createTimepickerFieldController(
       const id = setTimeout(run, afterMs);
       return () => clearTimeout(id);
     },
+    // A host that does not take them loses nothing it had: every command raised this way answers a
+    // decision this controller made about its own state, and a renderer that ignores them draws the
+    // same thing it drew before.
+    emit = () => {},
   } = options;
 
   const readonly = reactivity.signal(initialReadonly);
@@ -230,7 +234,10 @@ export function createTimepickerFieldController(
     stopAdvance();
     cancelAdvance = schedule(() => {
       cancelAdvance = null;
-      if (open() && focusedField() === "hour") dispatch({ type: "focus-field", field: "minute" });
+      // The commands go to the host: this dispatch answers a timer rather than a call, so there is
+      // nowhere to return them to. `focus-field` produces the `focus` that puts the caret where the
+      // face now points, and dropping it is what left the two disagreeing.
+      if (open() && focusedField() === "hour") emit(dispatch({ type: "focus-field", field: "minute" }));
     }, MDY_TIMEPICKER_ADVANCE_MS);
   }
 
