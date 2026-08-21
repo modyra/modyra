@@ -200,6 +200,14 @@ export interface MdyDynamicDateField extends MdyDynamicFieldBase, MdyDynamicCale
    */
   readonly format?: MdyTimeFormat;
   /**
+   * Which of the two views the picker opens in — `timepicker` only. Absent opens on the dial.
+   *
+   * Restored rather than seeded: closing the picker returns it here, so this is the view the field
+   * *has* rather than the one it started with. A form collecting an exact time wants the number
+   * boxes in front; one collecting an approximate time wants the face.
+   */
+  readonly viewMode?: MdyTimepickerViewMode;
+  /**
    * Whether the dial's hand moves rather than jumps — `timepicker` only. Absent is a hand that
    * jumps, which is today's behaviour and the one that never shows a value where it is not.
    */
@@ -213,6 +221,15 @@ export interface MdyDynamicDateField extends MdyDynamicFieldBase, MdyDynamicCale
    */
   readonly showUnavailable?: boolean;
 }
+
+/**
+ * The clock face, or the pair of number fields.
+ *
+ * Declared here rather than in the widget contract because a **document** names it, and a document
+ * is parsed before anything renders it. The renderers read this one; a second copy beside them would
+ * be a second answer to which views exist.
+ */
+export type MdyTimepickerViewMode = "dial" | "input";
 
 /** A stretch of the day with a minute step of its own. Half-open: `from` inclusive, `to` exclusive. */
 export interface MdyTimeWindow {

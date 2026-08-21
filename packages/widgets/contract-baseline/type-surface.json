@@ -620,7 +620,8 @@
     "format?: MdyTimeFormat",
     "granularity?: MdyTimeGranularity",
     "kind: \"datepicker\" | \"timepicker\"",
-    "showUnavailable?: boolean"
+    "showUnavailable?: boolean",
+    "viewMode?: MdyTimepickerViewMode"
   ],
   "MdyDynamicDaterangeField": [
     "kind: \"daterange\""
@@ -3487,6 +3488,10 @@
   "timepickerPartSelector": [
     "(0) part: string",
     "-> returns: string | null"
+  ],
+  "timepickerPlaceholder": [
+    "(0) format: MdyTimeFormat",
+    "-> returns: string"
   ],
   "timepickerSelectedDialValue": [
     "(0) field: \"hour\" | \"minute\"",

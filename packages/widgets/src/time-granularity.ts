@@ -5,6 +5,8 @@
  * before anything renders it. A second copy here would be a second answer to "does this step divide
  * its unit", which is the shape a widget contract exists to prevent rather than to have.
  */
+export type { MdyTimepickerViewMode } from "@modyra/core";
+
 export {
   explainGranularityProblem,
   isOnStep,

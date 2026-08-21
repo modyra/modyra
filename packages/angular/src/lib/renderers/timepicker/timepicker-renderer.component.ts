@@ -18,6 +18,10 @@ import {
   type MdyTimepickerFieldIntent,
   overlayControlledId,
   projectOverlayOpenerA11y,
+  MDY_TIMEPICKER_DEFAULT_FORMAT,
+  MDY_TIMEPICKER_INITIAL_VIEW,
+  type MdyTimepickerViewMode,
+  timepickerPlaceholder,
 } from "@modyra/widgets";
 import { MdyBaseControl } from "../../control/control.directive";
 import { MdyWidgetRuntime, timepickerCommandElements } from "../../widget-runtime";
@@ -132,6 +136,8 @@ import { MdyTimepickerClockComponent } from "./timepicker-clock.component";
           [showUnavailable]="showUnavailable()"
           [open]="open()"
           [format]="format()"
+          [viewMode]="shownViewMode()"
+          (viewModeChange)="send({ type: 'set-view-mode', mode: $event })"
           [disabled]="isDisabled()"
           (timePicked)="onTimePicked($event)"
           (dialPicked)="onDialPicked($event)"
@@ -163,12 +169,12 @@ export class MdyTimepickerComponent extends MdyOverlayControl<string | null> {
   protected readonly i18n = inject(MDY_I18N_MESSAGES);
   readonly placeholder = input<string>("");
   /**
-   * Which clock this draws. Defaults to the 24-hour one, as every renderer does.
-   *
-   * A default that differs between adapters means one document renders a different clock in each of
-   * them, which is the divergence a shared contract exists to prevent. Pass `"12h"` for the other.
+   * Which clock this draws — the contract's default, not this component's. Pass `"12h"` for the
+   * other; a default that differs between adapters renders one document two ways.
    */
-  readonly format = input<MdyTimeFormat>("24h");
+  readonly format = input<MdyTimeFormat>(MDY_TIMEPICKER_DEFAULT_FORMAT);
+  /** Which view the picker opens in, and returns to on close — the view the field has. */
+  readonly viewMode = input<MdyTimepickerViewMode>(MDY_TIMEPICKER_INITIAL_VIEW);
   /**
    * Which times this field offers. Absent offers every one.
    *
@@ -183,7 +189,7 @@ export class MdyTimepickerComponent extends MdyOverlayControl<string | null> {
   protected override readonly minSpace = 450;
 
   protected readonly effectivePlaceholder = computed(() =>
-    this.placeholder() || (this.format() === "24h" ? "HH:mm" : "hh:mm AM/PM"),
+    this.placeholder() || timepickerPlaceholder(this.format()),
   );
 
   protected readonly fieldId = `mdy-control-timepicker-${MdyBaseControl.nextId()}`;
@@ -201,9 +207,13 @@ export class MdyTimepickerComponent extends MdyOverlayControl<string | null> {
       widgetId,
       handle: handle as never,
       format: this.format(),
+      viewMode: this.viewMode(),
       ...(this.granularity() !== undefined && { granularity: this.granularity()! }),
     }),
   );
+  /** Which view the popup is showing — the controller's, which restores the declared one on close. */
+  protected readonly shownViewMode = computed(() => this.controller()?.state().viewMode ?? this.viewMode());
+
   protected readonly draftValue = computed(() => {
     const draft = this.controller()?.state().draft;
     return draft ? buildTimeString(draft.hour, draft.minute, draft.period) : getCurrentTime();

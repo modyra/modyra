@@ -39,6 +39,18 @@ export const MDY_TIMEPICKER_ADVANCE_MS = 250;
 export const MDY_TIMEPICKER_INITIAL_VIEW = "dial";
 
 /**
+ * The clock a picker draws when nothing asks for the other.
+ *
+ * `DEFAULT_` and not `INITIAL_`, beside a constant that is the other word: the view is initial —
+ * a person changes it and closing restores it — while the format does not change at all once the
+ * field is drawn. Two lifetimes, two words.
+ *
+ * ADR 0116 chose the 24-hour clock and left the answer written out in four renderers, which is the
+ * shape that lets one of them drift and nothing notice.
+ */
+export const MDY_TIMEPICKER_DEFAULT_FORMAT: MdyTimeFormat = "24h";
+
+/**
  * The part that carries DOM focus for a field.
  *
  * Named rather than selected: the parts already exist in the catalogue, and a renderer choosing its

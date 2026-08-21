@@ -7,7 +7,7 @@
  */
 import { MDY_DYNAMIC_DIAGNOSTICS, MDY_DYNAMIC_INVALID_FIELD, evaluateRuleCondition, parseDynamicForm } from "@modyra/core";
 import { mountMdyForm } from "@modyra/plain";
-import { formErrorsOf, MDY_FORM_SHELL_CLASSES, MDY_FORM_SHELL_STRUCTURE } from "@modyra/widgets";
+import { formErrorsOf, MDY_FORM_SHELL_CLASSES, MDY_FORM_SHELL_STRUCTURE, MDY_TIMEPICKER_DEFAULT_FORMAT, timepickerPlaceholder } from "@modyra/widgets";
 import { action, readoutPrinter, toolbar } from "./shell.js";
 
 const SAMPLE = {
@@ -19,6 +19,19 @@ const SAMPLE = {
       { value: "free", label: "Free" }, { value: "pro", label: "Pro" },
     ] },
     { name: "starts", kind: "datepicker", label: "Starts" },
+    // The pair is the point: the same kind, one opening on the face and one on the number boxes,
+    // because a document names the view rather than the renderer choosing it. The second also spells
+    // out the two defaults the contract owns, so what a field gets when it says nothing is visible
+    // beside a field that says something.
+    { name: "meets", kind: "timepicker", label: "Meets" },
+    {
+      name: "shiftEnds",
+      kind: "timepicker",
+      label: "Shift ends",
+      viewMode: "input",
+      format: MDY_TIMEPICKER_DEFAULT_FORMAT,
+      placeholder: timepickerPlaceholder(MDY_TIMEPICKER_DEFAULT_FORMAT),
+    },
     { name: "seats", kind: "number", label: "Seats" },
   ],
   // What the document says the form does, not only what it holds. Change the plan and watch the
@@ -32,6 +45,7 @@ const SAMPLE = {
 /** Documents that must be refused, and the reason each one is refused for. */
 const BROKEN = {
   "a kind nobody declared": { version: 2, fields: [{ name: "a", kind: "wormhole", label: "A" }] },
+  "a view a picker does not have": { version: 2, fields: [{ name: "a", kind: "timepicker", label: "A", viewMode: "sundial" }] },
   "a name that is not a path": { version: 2, fields: [{ name: "__proto__", kind: "text", label: "A" }] },
   "a pattern that is not one": { version: 2, fields: [{ name: "a", kind: "text", validators: { pattern: "(" } }] },
   "options that are not options": { version: 2, fields: [{ name: "a", kind: "select", options: "free,pro" }] },
@@ -51,6 +65,8 @@ export const dynamicPanel = {
    */
   exercises: [
     "MDY_DYNAMIC_DIAGNOSTICS",
+    "MDY_TIMEPICKER_DEFAULT_FORMAT",
+    "timepickerPlaceholder",
     "applyFlatValidators",
     "buildFlatFormSchema",
     "MDY_DYNAMIC_INVALID_FIELD",

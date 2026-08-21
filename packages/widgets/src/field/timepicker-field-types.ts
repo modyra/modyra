@@ -15,7 +15,7 @@
 import type { MdyInteractivity } from "@modyra/core";
 import type { MdyFieldHandle } from "@modyra/core";
 import type { MdyTimeFormat, ParsedTime } from "@modyra/core/datetime";
-import type { MdyTimeGranularity } from "../time-granularity.js";
+import type { MdyTimeGranularity, MdyTimepickerViewMode } from "../time-granularity.js";
 
 export interface MdyTimepickerFieldControllerOptions {
   /** Stable identity for the widget instance. */
@@ -77,8 +77,8 @@ export interface MdyTimepickerFieldControllerOptions {
   readonly parseSegment?: (text: string) => number | null;
 }
 
-/** The clock face, or the pair of number fields. */
-export type MdyTimepickerViewMode = "dial" | "input";
+/** The clock face, or the pair of number fields — the engine's, re-exported. */
+export type { MdyTimepickerViewMode };
 
 /**
  * One number on the clock face.

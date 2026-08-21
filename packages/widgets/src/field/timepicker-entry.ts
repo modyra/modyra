@@ -88,3 +88,15 @@ function readAsciiDigits(candidate: string): number | null {
 export function timepickerEntryText(value: number): string {
   return String(value).padStart(WIDTH, "0");
 }
+
+/**
+ * The shape a time is typed in, shown when the field is empty and nothing else was asked for.
+ *
+ * One answer because it describes the notation the control reads, which is the format's property
+ * rather than each renderer's taste. Written out separately it was three answers: two spellings and,
+ * in the third renderer, no placeholder at all — so the same document told a person what to type in
+ * two adapters and nothing in the other.
+ */
+export function timepickerPlaceholder(format: MdyTimeFormat): string {
+  return format === "24h" ? "HH:mm" : "hh:mm AM/PM";
+}

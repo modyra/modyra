@@ -4,6 +4,10 @@ import {
   dragPointOf,
   keyBindingFor,
   overlayControlledId,
+  MDY_TIMEPICKER_DEFAULT_FORMAT,
+  MDY_TIMEPICKER_INITIAL_VIEW,
+  type MdyTimepickerViewMode,
+  timepickerPlaceholder,
 } from "@modyra/widgets";
 import { html, nothing, type PropertyDeclarations } from "lit";
 import { observerFor, type MdyFieldHandle } from "@modyra/core";
@@ -45,7 +49,6 @@ import {
 } from "./popup-styles.js";
 // ─── Time picker ─────────────────────────────────────────────────────────────
 
-type TimepickerViewMode = "input" | "dial";
 type TimeField = "hour" | "minute";
 
 /**
@@ -59,7 +62,7 @@ const RESTING: MdyTimepickerFieldState = Object.freeze({
   draft: { hour: 12, minute: 0, period: "AM" as const },
   open: false,
   focusedField: "hour",
-  viewMode: "dial",
+  viewMode: MDY_TIMEPICKER_INITIAL_VIEW,
   format: "24h",
   granularity: undefined,
   animateHand: false,
@@ -82,6 +85,7 @@ export class MdyTimepickerFieldElement extends MdyFieldElement<string | null> {
   static override properties: PropertyDeclarations = {
     placeholder: { type: String },
     format: { type: String },
+    viewMode: { type: String },
     granularity: { type: Object },
     animateHand: { type: Boolean },
     showUnavailable: { type: Boolean },
@@ -94,6 +98,8 @@ export class MdyTimepickerFieldElement extends MdyFieldElement<string | null> {
   declare placeholder: string;
   /** `"12h"` or `"24h"`. */
   declare format: MdyTimeFormat;
+  /** `"dial"` or `"input"` — the view this picker opens in, and returns to when it closes. */
+  declare viewMode: MdyTimepickerViewMode;
   /**
    * Which times this field offers. Absent offers every one.
    *
@@ -183,9 +189,10 @@ export class MdyTimepickerFieldElement extends MdyFieldElement<string | null> {
   constructor() {
     super();
     this.placeholder = "";
-    // The 24-hour clock, as every renderer defaults to: a default that differs between adapters
-    // means one document renders a different clock in each of them. Set `format="12h"` for the other.
-    this.format = "24h";
+    // Read from the contract, not written again: a default that differs between adapters means one
+    // document renders a different clock in each of them. Set `format="12h"` for the other.
+    this.format = MDY_TIMEPICKER_DEFAULT_FORMAT;
+    this.viewMode = MDY_TIMEPICKER_INITIAL_VIEW;
     this.compact = false;
     this._open = false;
     this._isDragging = false;
@@ -209,6 +216,7 @@ export class MdyTimepickerFieldElement extends MdyFieldElement<string | null> {
         handle,
         format: this.format,
         ...(this.granularity !== undefined && { granularity: this.granularity }),
+        viewMode: this.viewMode,
         // The reading is this element's; the judgement is the controller's, so a typed entry means
         // the same thing here as in every other renderer.
         parseEntry: (text) => {
@@ -241,7 +249,7 @@ export class MdyTimepickerFieldElement extends MdyFieldElement<string | null> {
   }
 
   private get effectivePlaceholder(): string {
-    return this.placeholder || (this.format === "24h" ? "HH:mm" : "hh:mm AM/PM");
+    return this.placeholder || timepickerPlaceholder(this.format);
   }
 
   private openPopup(_handle: MdyTimepickerFieldElement["field"], event?: Event): void {
@@ -400,7 +408,7 @@ export class MdyTimepickerFieldElement extends MdyFieldElement<string | null> {
     this.onTimePicked(buildTimeString(p?.hour ?? 12, p?.minute ?? 0, period));
   }
 
-  private setViewMode(mode: TimepickerViewMode): void {
+  private setViewMode(mode: MdyTimepickerViewMode): void {
     this.send({ type: "set-view-mode", mode });
   }
 

@@ -709,6 +709,8 @@ export function parseDynamicFields(input: unknown): MdyDynamicField[] {
   const droppedGranularity = new Set<unknown>();
   /** Fields whose declared clock is not one this contract draws, dropped on the way out rather than in place. */
   const droppedFormat = new Set<unknown>();
+  /** Fields whose declared opening view is not one that exists, dropped on the way out rather than in place. */
+  const droppedViewMode = new Set<unknown>();
   const accepted: MdyDynamicField[] = items.filter((item, index): item is MdyDynamicField => {
     // Where this entry is written, so a finding underlines the entry rather than the array. A
     // duplicate names the *second* occurrence: the first is legitimate until the second exists, and
@@ -972,6 +974,26 @@ export function parseDynamicFields(input: unknown): MdyDynamicField[] {
       }
     }
 
+    // The view a picker opens in, refused the same way and for the same reason: a name that is not
+    // one of the two views describes a control this contract cannot draw, and dropping the member
+    // leaves the field opening on the dial rather than removing the field.
+    const declaredViewMode = (f as { viewMode?: unknown }).viewMode;
+    if (declaredViewMode !== undefined) {
+      const said = f.kind !== "timepicker"
+        ? `a "${String(f.kind)}" has no views to open in, which this contract does not declare`
+        : declaredViewMode === "dial" || declaredViewMode === "input"
+          ? ""
+          : `${JSON.stringify(declaredViewMode)} is neither "dial" nor "input"`;
+      if (said.length > 0) {
+        warnDev(
+          `Dynamic field "${f.name}" declares a view this reader cannot open: ${said}. ` +
+          "The field opens on the dial instead.",
+          at,
+        );
+        droppedViewMode.add(item);
+      }
+    }
+
     const needsOptions = ["select", "radio", "multiselect", "segmented"];
     if (needsOptions.includes(f.kind as string)) {
       const options = (f as { options?: unknown }).options;
@@ -1008,7 +1030,7 @@ export function parseDynamicFields(input: unknown): MdyDynamicField[] {
     }
     return true;
   });
-  if (dedupedOptions.size === 0 && droppedGranularity.size === 0 && droppedFormat.size === 0) return accepted;
+  if (dedupedOptions.size === 0 && droppedGranularity.size === 0 && droppedFormat.size === 0 && droppedViewMode.size === 0) return accepted;
   return accepted.map((declared) => {
     const kept = dedupedOptions.get(declared);
     let out = kept === undefined ? declared : { ...declared, options: kept } as MdyDynamicField;
@@ -1018,6 +1040,10 @@ export function parseDynamicFields(input: unknown): MdyDynamicField[] {
     }
     if (droppedFormat.has(declared)) {
       const { format: _dropped, ...rest } = out as MdyDynamicField & { format?: unknown };
+      out = rest as MdyDynamicField;
+    }
+    if (droppedViewMode.has(declared)) {
+      const { viewMode: _dropped, ...rest } = out as MdyDynamicField & { viewMode?: unknown };
       out = rest as MdyDynamicField;
     }
     return out;
@@ -1059,6 +1085,7 @@ export const MDY_DYNAMIC_DIAGNOSTICS: ReadonlyArray<{
   Object.freeze({ code: "MDY_DYNAMIC_DEPRECATED_VERSION", phrase: "Version 1 is deprecated" }),
   Object.freeze({ code: "MDY_DYNAMIC_UNHONOURABLE_GRANULARITY", phrase: "granularity this reader cannot honour" }),
   Object.freeze({ code: "MDY_DYNAMIC_UNHONOURABLE_FORMAT", phrase: "format this reader cannot honour" }),
+  Object.freeze({ code: "MDY_DYNAMIC_UNOPENABLE_VIEW", phrase: "view this reader cannot open" }),
 ]);
 
 /** What a refusal is called when none of the named ones fits. */
