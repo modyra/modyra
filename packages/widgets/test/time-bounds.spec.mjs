@@ -15,11 +15,12 @@ import {
 } from "../dist/index.js";
 
 test("the hour's range depends on the clock, the minute's never does", () => {
-  assert.deepEqual(timeFieldBounds("hour", "12h"), { min: 1, max: 12 });
-  assert.deepEqual(timeFieldBounds("hour", "24h"), { min: 0, max: 23 });
+  // `step: 1` is every value, which is what a field with no declared granularity offers.
+  assert.deepEqual(timeFieldBounds("hour", "12h"), { min: 1, max: 12, step: 1 });
+  assert.deepEqual(timeFieldBounds("hour", "24h"), { min: 0, max: 23, step: 1 });
   // The rule most often lost when bounds sit as literals beside the hour's.
-  assert.deepEqual(timeFieldBounds("minute", "12h"), { min: 0, max: 59 });
-  assert.deepEqual(timeFieldBounds("minute", "24h"), { min: 0, max: 59 });
+  assert.deepEqual(timeFieldBounds("minute", "12h"), { min: 0, max: 59, step: 1 });
+  assert.deepEqual(timeFieldBounds("minute", "24h"), { min: 0, max: 59, step: 1 });
 });
 
 test("a 12-hour clock accepts 1 to 12 and rejects 0 and 13", () => {
@@ -45,7 +46,7 @@ test("a minute stops at 59 on either clock", () => {
 test("a rejection says why, and carries the range it was judged against", () => {
   const tooBig = acceptTimeField("hour", "12h", "13");
   assert.equal(tooBig.reason, "out-of-range");
-  assert.deepEqual(tooBig.bounds, { min: 1, max: 12 });
+  assert.deepEqual(tooBig.bounds, { min: 1, max: 12, step: 1 });
 
   // Distinguished so a renderer can say "not a number" rather than "out of range" for `ab`.
   assert.equal(acceptTimeField("minute", "24h", "ab").reason, "not-a-number");

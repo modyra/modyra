@@ -8,6 +8,8 @@
  */
 import { to24Hour } from "@modyra/core/datetime";
 import type { MdyTimeFormat, ParsedTime } from "@modyra/core/datetime";
+import { isOnStep, MDY_EVERY_TIME, type MdyTimeSteps } from "../time-granularity.js";
+import { timeFieldBounds } from "../time-bounds.js";
 export interface MdyTimepickerDialNumber {
   readonly value: number;
   readonly label: string;
@@ -36,15 +38,22 @@ export interface MdyTimepickerDialNumber {
 export function timepickerDialNumbers(
   field: "hour" | "minute",
   format: MdyTimeFormat = "12h",
+  steps: MdyTimeSteps = MDY_EVERY_TIME,
 ): readonly MdyTimepickerDialNumber[] {
+  // A face draws what the field accepts, judged by the same rule and from the same start. Measuring
+  // the face from 0 while `acceptTimeField` measures from the range's own minimum is how a 12-hour
+  // clock came to draw a 12 it would then refuse — the two halves of one rule, disagreeing, with
+  // nothing able to notice because each is correct on its own terms.
+  const { min, step } = timeFieldBounds(field, format, steps);
+  const offered = (value: number): boolean => isOnStep(value - min, step);
   if (field === "hour") {
-    const outer = [12, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11].map((hour) =>
+    const outer = [12, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11].filter((hour) => offered(hour)).map((hour) =>
       Object.freeze({ value: hour, label: String(hour), index: hour, ring: "outer" as const }),
     );
     if (format === "12h") return Object.freeze(outer);
     // The 24-hour face: 1–12 outside, then 13–23 and 00 on the inner ring at the same positions.
     // `00` rather than `24`, because midnight is the hour a 24-hour clock actually names.
-    const inner = [0, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23].map((hour, position) =>
+    const inner = [0, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23].map((hour, position) => ({ hour, position })).filter(({ hour }) => offered(hour)).map(({ hour, position }) =>
       Object.freeze({
         value: hour,
         label: String(hour).padStart(2, "0"),
@@ -56,7 +65,7 @@ export function timepickerDialNumbers(
     return Object.freeze([...outer, ...inner]);
   }
   return Object.freeze(
-    Array.from({ length: 12 }, (_, position) => {
+    Array.from({ length: 12 }, (_, position) => position).filter((position) => offered(position * 5)).map((position) => {
       const minute = position * 5;
       return Object.freeze({
         value: minute,
@@ -67,6 +76,59 @@ export function timepickerDialNumbers(
       });
     }),
   );
+}
+
+/** Where a number sits, in degrees clockwise from the top. */
+export function dialNumberAngle(number: MdyTimepickerDialNumber): number {
+  return (number.index % 12) * 30;
+}
+
+/**
+ * The number a dragged pointer lands on.
+ *
+ * Taken from the numbers the face **drew**, rather than from arithmetic on the angle. Those are two
+ * implementations of one rule, and a face that draws every quarter hour beside a drag that rounds to
+ * the nearest minute is a widget whose hand stops between its own numbers — with nothing able to
+ * notice, because each half is correct on its own terms. Deriving the pick from the drawn list makes
+ * that disagreement unrepresentable.
+ *
+ * It also settles the 24-hour face's two rings without solving them twice: the drawn numbers carry
+ * their own ring, so the ring the pointer is over selects among them.
+ *
+ * A tie — an angle exactly between two offered numbers — goes **clockwise**, to the later of the
+ * two. Arbitrary, but stated: an unstated tie-break is one the face and the keyboard can resolve
+ * differently.
+ *
+ * Returns `null` only when the granularity offers this field nothing at all, which a validated one
+ * never does.
+ */
+export function timepickerDialPick(
+  angle: number,
+  field: "hour" | "minute",
+  format: MdyTimeFormat = "12h",
+  ring: "outer" | "inner" = "outer",
+  steps: MdyTimeSteps = MDY_EVERY_TIME,
+): MdyTimepickerDialNumber | null {
+  const drawn = timepickerDialNumbers(field, format, steps);
+  const onRing = drawn.filter((number) => number.ring === ring);
+  // A 12-hour face has no inner ring, and a granularity can empty one; either way the pointer is
+  // over the face and has to land somewhere it can see.
+  const candidates = onRing.length > 0 ? onRing : drawn;
+  if (candidates.length === 0) return null;
+
+  const target = ((angle % 360) + 360) % 360;
+  let best = candidates[0]!;
+  let bestDistance = Number.POSITIVE_INFINITY;
+  for (const number of candidates) {
+    const at = dialNumberAngle(number);
+    const apart = Math.abs(((target - at + 540) % 360) - 180);
+    // `<=` rather than `<`, and the list runs clockwise from the top, so a tie takes the later one.
+    if (apart <= bestDistance) {
+      bestDistance = apart;
+      best = number;
+    }
+  }
+  return best;
 }
 
 /**

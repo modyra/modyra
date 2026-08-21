@@ -1117,6 +1117,9 @@
   "MdyFormValue": [
     "(opaque)"
   ],
+  "MdyGranularityProblem": [
+    "(opaque)"
+  ],
   "MdyGroupDescriptor": [
     "children: TChildren",
     "kind: \"group\"",
@@ -1800,15 +1803,31 @@
   ],
   "MdyTimeFieldBounds": [
     "max: number",
-    "min: number"
+    "min: number",
+    "step: number"
   ],
   "MdyTimeFormat": [
     "'12h'",
     "'24h'"
   ],
+  "MdyTimeGranularity": [
+    "hourStep?: number",
+    "minuteStep?: number",
+    "windows?: readonly MdyTimeWindow[]"
+  ],
   "MdyTimeRejection": [
     "\"not-a-number\"",
+    "\"off-step\"",
     "\"out-of-range\""
+  ],
+  "MdyTimeSteps": [
+    "hourStep: number",
+    "minuteStep: number"
+  ],
+  "MdyTimeWindow": [
+    "from: string",
+    "minuteStep: number",
+    "to: string"
   ],
   "MdyTimepickerDialKeyResult": [
     "field: \"hour\" | \"minute\"",
@@ -2197,6 +2216,7 @@
     "(0) field: MdyTimeField",
     "(1) format: MdyTimeFormat",
     "(2) raw: string | number",
+    "(3) steps?: MdyTimeSteps",
     "-> returns: MdyTimeEntry"
   ],
   "addDays": [
@@ -2558,6 +2578,10 @@
     "(1) ring?: \"outer\" | \"inner\"",
     "-> returns: number"
   ],
+  "dialNumberAngle": [
+    "(0) number: MdyTimepickerDialNumber",
+    "-> returns: number"
+  ],
   "draftShapeMatches": [
     "(0) initial: unknown",
     "(1) value: unknown",
@@ -2590,6 +2614,10 @@
   "expectedWeekdayOrder": [
     "(0) locale: string",
     "-> returns: readonly string[]"
+  ],
+  "explainGranularityProblem": [
+    "(0) problem: MdyGranularityProblem",
+    "-> returns: string"
   ],
   "explainValueMismatch": [
     "(0) kind: MdyValueKind",
@@ -2786,6 +2814,11 @@
     "(3) max: CalendarDate | null",
     "-> returns: boolean"
   ],
+  "isOnStep": [
+    "(0) value: number",
+    "(1) step: number",
+    "-> returns: boolean"
+  ],
   "isPathRef": [
     "(0) operand: MdyOperand",
     "-> returns: operand is MdyPathRef"
@@ -2887,6 +2920,10 @@
   "minuteToAngle": [
     "(0) minute: number",
     "-> returns: number"
+  ],
+  "minutesOfDay": [
+    "(0) text: string",
+    "-> returns: number | null"
   ],
   "mountMdyDevtools": [
     "(0) form: InspectableForm",
@@ -3280,7 +3317,13 @@
     "(1) format: MdyTimeFormat",
     "(2) current: number",
     "(3) delta: number",
+    "(4) steps?: MdyTimeSteps",
     "-> returns: number"
+  ],
+  "stepValues": [
+    "(0) size: number",
+    "(1) step: number",
+    "-> returns: readonly number[]"
   ],
   "subscribeController": [
     "(0) controller: MdyWidgetController<unknown, unknown>",
@@ -3314,12 +3357,18 @@
   "timeFieldBounds": [
     "(0) field: MdyTimeField",
     "(1) format: MdyTimeFormat",
+    "(2) steps?: MdyTimeSteps",
     "-> returns: MdyTimeFieldBounds"
   ],
   "timeInputTransition": [
     "(0) raw: string",
     "(1) parseAndFormat: (value: string) => string | null",
     "-> returns: string | null | undefined"
+  ],
+  "timeStepsAt": [
+    "(0) granularity: MdyTimeGranularity | undefined",
+    "(1) hour24: number",
+    "-> returns: MdyTimeSteps"
   ],
   "timepickerDialAria": [
     "(0) field: \"hour\" | \"minute\"",
@@ -3337,7 +3386,16 @@
   "timepickerDialNumbers": [
     "(0) field: \"hour\" | \"minute\"",
     "(1) format?: MdyTimeFormat",
+    "(2) steps?: MdyTimeSteps",
     "-> returns: readonly MdyTimepickerDialNumber[]"
+  ],
+  "timepickerDialPick": [
+    "(0) angle: number",
+    "(1) field: \"hour\" | \"minute\"",
+    "(2) format?: MdyTimeFormat",
+    "(3) ring?: \"outer\" | \"inner\"",
+    "(4) steps?: MdyTimeSteps",
+    "-> returns: MdyTimepickerDialNumber | null"
   ],
   "timepickerDialRing": [
     "(0) face: { readonly width: number; readonly height: number; readonly left: number; readonly top: number; }",
@@ -3390,6 +3448,10 @@
     "(0) expr: unknown",
     "(1) where: string",
     "-> returns: readonly string[]"
+  ],
+  "validateTimeGranularity": [
+    "(0) granularity: MdyTimeGranularity",
+    "-> returns: readonly MdyGranularityProblem[]"
   ],
   "validationMessagesForLocale": [
     "(0) locale?: string",
