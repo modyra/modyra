@@ -20099,6 +20099,132 @@ Owned by `esecutore`. Not recorded as allowed — the audit offers `--write` for
 would be the ratchet from finding 333 all over again: the number that only ever goes up because the
 first person to see it wrote it down.
 
+## 355 — The chips strip is an inline box in lit and Angular, so it cannot be made to scroll (S2, UI-011)
+
+The strip that is supposed to scroll is a `<span>` in two of the three renderers, and an inline box has
+no scrollport: `overflow` does not apply to it, `clientWidth` and `scrollWidth` are both zero however
+much content it holds.
+
+```
+           tag     display   clientWidth   scrollWidth   getBoundingClientRect   chips
+plain      DIV     block     1232          1232          1232                    12
+lit        SPAN    inline    0             0             1056                    12
+angular    SPAN    inline    0             0             1232                    12
+```
+
+Twelve chips in all three; the same class, `mdy-multiselect__chips`, on all three. The rect is the only
+reading that sees them in lit and Angular, and a rect is not a scrollport.
+
+**Why this matters now rather than as a curiosity.** The repair for point 4 of the six is
+`overflow-x: auto` on `mdy-multiselect__chips` plus a floor width on the chip. Written in
+`@modyra/styles` that lands on plain and is **inert in lit and Angular** — the declaration is valid,
+it computes, and it does nothing, because the box it is applied to cannot overflow. A stylesheet fix
+verified on plain would read as done and ship two renderers where the chips still squeeze.
+
+The two zeros are also the ADR 0121 shape again — a legitimate value indistinguishable from its own
+absence. `clientWidth === 0` here does not mean *no room*, it means *not a question this box answers*,
+and any check that measures a strip by its scrollport will read lit and Angular as "no overflow"
+forever without ever being wrong in a way that shows.
+
+Either the renderers emit a block-level element for this part, or they set `display` on it. The choice
+is `esecutore`'s; what the battle asserts is the property, not the element —
+`the strip scrolls rather than squeezing its chips` in
+[`../browser/a-closed-control-a-person-can-read.spec.ts`](../browser/a-closed-control-a-person-can-read.spec.ts)
+reads `scrollWidth > clientWidth`, which stays honest whichever way it is repaired, and is red in all
+three renderers today for two different reasons.
+
+Owned by `esecutore`, with the six UI points.
+
+## 356 — On `modern` a multiselect stands taller than the row it sits in, and grows as it fills (S1, UI-009 UI-011)
+
+Reported directly: *"è mandatorio che i controlli occupino la stessa altezza e deve essere testato e
+dare rosso. al momento su plain la multiselect è più alta di altri controlli."* It is reproducible, it
+is in all three renderers, and it is in exactly one stylesheet.
+
+```
+                       text   number   select   multiselect(empty)   two   twelve
+modyra.css (default)     56       56       56                   56    56       56
+modyra-modern.css        38       38       38                   52    52    60 plain · 76 lit · 76 angular
+modyra-material.css      56       56       56                   56    56       56
+modyra-ios.css           56       56       56                   56    56       56
+modyra-ionic.css         56       56       56                   56    56       56
+```
+
+**Two defects, and only the second is about chips.**
+
+*The control is taller before anything is chosen.* 52px against 38px, empty. Nothing is in it; the
+extra fourteen pixels are the strip's own box asking for room a text field does not. This is the half
+that would survive every chip repair, and it is the half a person sees first, because a form usually
+opens with nothing chosen.
+
+*It then grows with what is put in it.* 52 → 60 in plain, 52 → 76 in lit and Angular. Choosing pushes
+the rest of the form down. Lit and Angular grow twice as far as plain — two lines of chips against
+one — which is the same divergence as [355](#355): a strip that cannot scroll wraps instead, and how
+far it wraps depends on a box that is inline in two renderers and block in the third.
+
+**They are not one fix, and the run that showed it was the one meant to confirm they were.** This was
+first recorded as finding 355 seen from the other side — a strip with nowhere to put an overflowing
+chip puts it on a second line, so scrolling and keeping the height should be the same repair. Then
+`76c08654` landed the scroll, `the strip scrolls rather than squeezing its chips` went green in all
+three renderers, and these six specs came back with **the same numbers to the pixel**: 52 empty, 52 at
+two, 60 plain and 76 lit and Angular at twelve.
+
+So the strip scrolls and the control still grows. Whatever is adding the height is not the chips
+wrapping onto a second line, because there is no second line any more. The fourteen empty pixels were
+already the harder half of this finding and they are now the whole of it: something in the
+multiselect's own box asks for room a text field does not, before and after the strip learned to
+scroll. The prediction was wrong in the direction that costs least — it would have closed this as a
+duplicate of 355.
+
+**Why only `modern`.** The other four sheets give every kind 56px, and they hide the defect rather than
+not having it: at 56px there is room for one row of chips inside a height the other controls already
+have, so the strip never needs a second line until it holds more than twelve. `modern` sets 38px for a
+plain field and the multiselect never got the memo. The rule is one row per control; four sheets keep
+it by having a tall row, one breaks it by having a short one.
+
+**The measurement, and how it was proven not to be an artefact.** The host loads `modyra-default.css`,
+so a spec reading only the host sheet is green forever. Each sheet is swapped in at runtime and its
+`--mdy-sys-color-primary` read back before anything is measured — `#6458ef` for default, modern and
+ionic, `#18181b` for material, `#007aff` for ios, with `border-radius` differing too. A reading taken
+while the previous sheet was still in force would be indistinguishable from a real one otherwise, and
+the first version of this probe could not tell them apart.
+
+Pinned by
+[`../browser/a-control-taller-than-the-row-it-sits-in.spec.ts`](../browser/a-control-taller-than-the-row-it-sits-in.spec.ts),
+six specs, three renderers × two properties. Each names every sheet it measured and lists only the ones
+that disagreed, so the repair does not have to guess which theme it broke. Owned by `esecutore`.
+
+### 355a — the `×` hazard I reasoned from is dismissed
+
+The decision to draw the chip's button mark in CSS was argued partly from this: the chip's accessible
+name is composed from its text content, so a `×` inside the button joins it and a reader says
+*"Opzione A 2 ×"*. **Measured, that is not what happens.**
+
+```
+           chip textContent   chip aria-label   button text   button aria-label
+plain      "Roma"             "Roma"            ""            "Remove"
+lit        "Roma ×"           "Roma"            "×"           "Remove"
+angular    "Roma×"            "Roma"            "×"           "Remove"
+```
+
+The chip declares an explicit `aria-label`, which wins over its content, and the button declares one
+too. Nothing reads the `×` out today. The hazard was real reasoning about a name composed from
+content, and this name is not composed from content.
+
+**Dismissed**, not deferred: it is contradicted by evidence, and it is recorded because it was passed
+to `esecutore` as the deciding argument and acted on. The CSS mark is still the better answer, for the
+reasons that survive — a theme can change it without touching a renderer, plain draws no mark at all
+today, and a mark that is never text cannot be read out **if** the `aria-label` is ever dropped, which
+counter mode composing a name from content would do. That last one is **Possible**, not Observed.
+
+### 354 — deferred, by agreement
+
+Not repaired and not recorded as allowed. `esecutore` asked for it to stand as deferred with the
+finding number so `npm run test:contracts` reads as a known red rather than a surprise, and takes it as
+its own commit once the multiselect is finished: aliasing thirty members across two files is not work
+to squeeze between two renderers. The audit still refuses the baseline, which is the correct behaviour
+and the reason it is legible at all.
+
 ### 327 — closed, and the finding itself was wrong
 
 Recorded as *"six of eight cases proven sensitive; two are not… most likely the native control's own
