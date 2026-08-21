@@ -94,6 +94,7 @@ import type { MdyOverlayBranch, MdyOverlayOwner } from "../../core/overlay-contr
               tabindex="0"
               role="group"
               [attr.aria-label]="held.count > 1 ? held.label + ', ' + held.count : held.label"
+              [title]="held.label"
             >
               @if (mode() === "multi") {
                 <button
@@ -118,7 +119,7 @@ import type { MdyOverlayBranch, MdyOverlayOwner } from "../../core/overlay-contr
                 [class]="chip.remove"
                 [attr.aria-label]="i18n.chipRemoveLabel"
                 (click)="onToggle(held.value); $event.stopPropagation()"
-              >&times;</button>
+              ></button>
             </span>
           }
         </span>
@@ -145,6 +146,7 @@ import type { MdyOverlayBranch, MdyOverlayOwner } from "../../core/overlay-contr
       [kind]="'multiselect'"
       (close)="closeOverlay()"
     >
+      @if (searchable()) {
       <input
         #overlayInput
         type="text"
@@ -155,6 +157,7 @@ import type { MdyOverlayBranch, MdyOverlayOwner } from "../../core/overlay-contr
         (input)="onSearchInput($event)"
         (keydown)="onOverlayKeydown($event)"
       />
+      }
       <div class="mdy-multiselect__options mdy-multiselect-overlay__grid">
         @for (opt of searchResults(); track opt.value; let i = $index) {
           <div [class]="chip.wrapper">

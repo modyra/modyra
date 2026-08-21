@@ -45,6 +45,7 @@ export function renderMultiselectField(
   const anchoring = overlayAnchoringFor("multiselect");
   const options = f.options as ReadonlyArray<MdySelectOption<unknown>>;
   const keyFor = (option: MdySelectOption<unknown>) => String(option.value);
+  const searchable = (f as { readonly searchable?: boolean }).searchable === true;
   const controller = createMultiselectFieldController({ widgetId: widgetId, handle, options, keyFor, mode }, reactivity);
 
   const parts = MDY_WIDGET_CONTRACTS.multiselect.parts;
@@ -138,7 +139,10 @@ export function renderMultiselectField(
   // options are seen where there is room for them. A second copy in the field made every option
   // reachable in two places and made the control's height follow the option count.
   const overlay = buildGrid([]);
-  popup.append(search, overlay.grid);
+  // Only when the field asked for it. The document has declared `searchable` all along and this
+  // renderer built the box regardless, so a field that said it wanted no search got one — and one
+  // that said nothing got one too, which made the flag look like it worked.
+  popup.append(...(searchable ? [search] : []), overlay.grid);
 
   /** Every chip standing for an option, in both grids: one option, two elements to keep in step. */
   const optionEls = new Map<string, readonly ChipHandle[]>();
@@ -223,6 +227,10 @@ export function renderMultiselectField(
       // One name for the whole chip: a label and a count in two spans are read as one run of text,
       // so "A 3" arrives with nothing saying which half is which.
       chip.setAttribute("aria-label", count > 1 ? `${label}, ${count}` : label);
+      // The full name, for a chip the strip has narrowed to an ellipsis. `title` is the pointer's
+      // half of that; a theme draws the other on focus and long press, which is what reaches a
+      // keyboard and a touch.
+      chip.title = label;
       // Appending an element already in the strip moves it, which keeps the order the value's.
       chipStrip.appendChild(chip);
     }
@@ -378,7 +386,9 @@ export function renderMultiselectField(
       // keyboard user has no way to reach it at all without tabbing into a popup that just appeared.
       // The microtask is because the popup is shown in this same effect: focusing a `hidden` element
       // silently does nothing.
-      queueMicrotask(() => search.focus());
+      // Where the person is about to work: the filter box when there is one, otherwise the first
+      // option — a popup that opens with focus nowhere is one a keyboard cannot reach into.
+      queueMicrotask(() => (searchable ? search : overlay.grid.querySelector<HTMLElement>(".mdy-chip") ?? overlay.grid).focus());
     } else {
       // The next opening decides its own side and height rather than inheriting this one's.
       releaseOverlayPlacement(popup);
