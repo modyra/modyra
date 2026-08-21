@@ -54,9 +54,15 @@ const DECLARED = Object.entries(MDY_WIDGET_KEYBOARD)
 
 for (const host of HOSTS) {
   test(`${host.name}: every key a kind declares does something`, async ({ page }) => {
-    // Seventy-two bindings, each mounted, primed, pressed and read. The default budget is for a
-    // spec that asks one question.
-    test.setTimeout(300_000);
+    // Every binding the table declares, each mounted, primed, pressed and read at every part of the
+    // widget that can take focus. The default budget is for a spec that asks one question; this one
+    // asks the whole keyboard.
+    //
+    // **The number tracks the contract, not the machine.** It was set when the table held seventy-two
+    // bindings; the chip strip's map took the multiselect from nine to eleven and the spec ran out of
+    // budget mid-priming, which surfaced as an error inside the setup rather than as a failing
+    // assertion — a shape that reads as a broken fixture and is a spec that did not get to finish.
+    test.setTimeout(600_000);
     await page.goto(host.page);
     await page.waitForFunction((flag) => (window as never as Record<string, boolean>)[flag] === true, host.ready);
 
