@@ -19860,3 +19860,50 @@ picture as they were to put in the old one.
 
 The user's instruction, verbatim: *"pianifica bene la UI, non dobbiamo perdere la funzionalità e la
 presentazione grafica in questo redesign."*
+
+## 351 — An Angular component's public surface is a consumer API and no gate watches it (S1, API-001 — gate gap, live consumer)
+
+Found while putting a net under the multiselect redesign. The user's own application injects Modyra's
+Angular components and works through their members — no DOM, no classes, no selectors:
+
+```
+mdy-multiselect-create.directive.ts   inject(MdyMultiselectComponent)  inject(MdyFormComponent)
+mdy-select-create.directive.ts        inject(MdySelectComponent)
+mdy-select-entity.directive.ts        inject(MdySelectComponent)
+```
+
+What those three reach for:
+
+```
+MdyMultiselectComponent   field · name · overrideOptions · searchQuery · selectionChange · value
+MdyFormComponent          patchValue
+```
+
+**None of it is watched.** `type-surface.json` covers `@modyra/core` and `@modyra/widgets` and
+**contains no Angular symbols at all** — `MdyMultiselectComponent` is absent, as are
+`overrideOptions`, `searchQuery` and `selectionChange`. So renaming or removing any of them passes
+`contract:diff`, `test:type-surface`, `test:contracts` and every other gate, and the first report is a
+person's application failing to compile.
+
+The members live where the rework is happening:
+
+```
+core/options-overlay-control.directive.ts:34   overrideOptions
+core/options-overlay-control.directive.ts:41   searchQuery
+renderers/dropdown-base.ts:26                  selectionChange
+```
+
+`searchQuery` and `overrideOptions` are precisely what a search-and-trigger rework touches.
+
+**Same family as 333 and 335**: a gate that cannot see the thing it is supposed to protect. Those two
+were about the contract; this one is about an adapter's own surface, which nothing has ever treated as
+public even though injecting a component is the documented way to extend one.
+
+**Not filed as a defect in the components** — nothing is broken today. It is filed because the
+multiselect is being rebuilt this hour and these six names are the ones a rebuild would tidy away
+without a single test objecting. The cheapest fix is to extend the type-surface audit to
+`@modyra/angular`'s exported components; the narrowest is to pin these six until it is.
+
+**Reassuring half, and worth saying to the user**: their directives touch **no DOM at all**. The
+anatomy rebuild — options leaving the closed field, `searchButton` retiring, chips moving — cannot
+break them. Only a change to the component surface can, and that is now named rather than hoped for.
