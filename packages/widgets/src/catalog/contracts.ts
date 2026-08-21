@@ -156,7 +156,7 @@ export const MDY_WIDGET_CONTRACTS = Object.freeze({
     { parents: { dialog: "popup", header: "content", clock: "content", dialFace: "clock", dialHand: "dialFace", dialNumber: "dialFace", dialUnavailable: "dialFace", dialUnavailableArc: "dialUnavailable", content: "container", actions: "container", modeToggle: "actions", action: "actions", hourControl: "hour", minuteControl: "minute", periodOption: "period" },
       // `hour` and `minute` share `mdy-timepicker-segment`, so `active` — which of the two the dial
       // is currently editing — hangs off that shared base and is one rule in a theme, not two.
-      states: { hour: ["active", "focused"], minute: ["active", "focused"], period: ["compact"], periodOption: ["selected"], dialNumber: ["selected", "inner"], dialHand: ["ghost", "inner"], clock: ["animated"], action: ["confirm"], popup: POPUP_PLACEMENT_STATES },
+      states: { hour: ["active", "focused"], minute: ["active", "focused"], period: ["compact"], periodOption: ["selected"], hourControl: ["readonly"], minuteControl: ["readonly"], dialNumber: ["selected", "inner"], dialHand: ["ghost", "inner"], clock: ["animated"], action: ["confirm"], popup: POPUP_PLACEMENT_STATES },
       // The state lives on the segment and the semantics on the control inside it. `--active` is
       // which of the two the dial is editing, and it is painted on the container; the input carries
       // the accessible name and takes the typing. Moving either onto the other breaks the half that

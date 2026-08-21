@@ -62,6 +62,8 @@ export class MdyTimepickerClockComponent {
   readonly format = input<MdyTimeFormat>("12h");
   /** Which times the field offers. Absent offers every one. */
   readonly granularity = input<MdyTimeGranularity | undefined>(undefined);
+  /** Whether the field itself refuses edits — not whether the clock is the view. */
+  readonly readonly = input<boolean>(false);
   /** Whether the hand moves rather than jumps. Off by default: today's behaviour exactly. */
   readonly animateHand = input<boolean>(false);
   /**
