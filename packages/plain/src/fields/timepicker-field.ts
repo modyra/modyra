@@ -112,9 +112,19 @@ export function renderTimepickerField(
   minuteSegment.appendChild(minuteInput);
   fields.append(hourSegment, separator, minuteSegment);
   const period = el("div", parts.period.classes.join(" "));
-  const periodButton = el("button", "mdy-timepicker-period-btn") as HTMLButtonElement;
-  periodButton.type = "button";
-  period.appendChild(periodButton);
+  // Both halves of the day, each its own button, one of them marked. This used to be a single button
+  // whose text was the current period and which toggled on click: the value was only readable as the
+  // label of the control that changes it, nothing was ever marked selected, and the target was half
+  // the size. The catalogue names the option and the state that says which one — the anatomy is the
+  // contract's rather than each renderer's.
+  const periodOptions = (["AM", "PM"] as const).map((half) => {
+    const button = el("button", parts.periodOption.classes.join(" ")) as HTMLButtonElement;
+    button.type = "button";
+    button.dataset.period = half;
+    setText(button, half);
+    period.appendChild(button);
+    return button;
+  });
   header.append(fields, period);
 
   // The clock face. Its numbers are placed by the foundation from the `--index` each one carries,
@@ -255,7 +265,11 @@ export function renderTimepickerField(
 
   bindSegment(hourInput, "hour", (hour) => dispatch({ type: "set-hour", hour }));
   bindSegment(minuteInput, "minute", (minute) => dispatch({ type: "set-minute", minute }));
-  periodButton.addEventListener("click", () => dispatch({ type: "set-period", period: controller.state().draft.period === "AM" ? "PM" : "AM" }));
+  for (const button of periodOptions) {
+    // Each button asks for its own half rather than for "the other one": a control that says AM and
+    // means "switch" is a control whose label describes what it is not.
+    button.addEventListener("click", () => dispatch({ type: "set-period", period: button.dataset.period as "AM" | "PM" }));
+  }
   confirmButton.addEventListener("click", () => dispatch({ type: "confirm" }));
   cancelButton.addEventListener("click", () => dispatch({ type: "cancel" }));
   // Escape is the same intent as Cancel, from wherever the user is: the picker edits a draft, and
@@ -425,8 +439,13 @@ export function renderTimepickerField(
     if (hourInput.value !== hourString) hourInput.value = hourString;
     const minuteString = String(state.draft.minute).padStart(2, "0");
     if (minuteInput.value !== minuteString) minuteInput.value = minuteString;
-    setText(periodButton, state.draft.period);
-    periodButton.hidden = format === "24h";
+    for (const button of periodOptions) {
+      button.classList.toggle(
+        `${parts.periodOption.classes[0]}--selected`,
+        button.dataset.period === state.draft.period,
+      );
+    }
+    period.hidden = format === "24h";
 
     // ── The clock face ──────────────────────────────────────────────────────────────────────
     const onDial = state.viewMode === "dial";

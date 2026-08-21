@@ -278,7 +278,6 @@
     "mdy-timepicker-fields",
     "mdy-timepicker-header",
     "mdy-timepicker-mode-toggle",
-    "mdy-timepicker-period-btn",
     "mdy-timepicker-period-btn--selected",
     "mdy-timepicker-period-toggle",
     "mdy-timepicker-period-toggle--compact",
@@ -1130,7 +1129,6 @@
     },
     "packages/angular/src/lib/renderers/timepicker/timepicker-period-toggle.component.ts": {
       "classes": [
-        "mdy-timepicker-period-btn",
         "mdy-timepicker-period-btn--selected",
         "mdy-timepicker-period-toggle",
         "mdy-timepicker-period-toggle--compact"
