@@ -560,9 +560,8 @@ export class MdyTimepickerFieldElement extends MdyFieldElement<string | null> {
           <div class="${this.partClass("hour")} ${hourActive ? "mdy-timepicker-segment--active" : ""}">
             <input
               type="number"
-              class="mdy-timepicker-segment-input ${this.view.viewMode === "dial" ? "mdy-timepicker-segment-input--readonly" : ""}"
+              class="mdy-timepicker-segment-input"
               .value=${this.hourDisplay()}
-              ?readonly=${this.view.viewMode === "dial"}
               aria-label=${this.messages.timepickerHourLabel}
               @input=${this.onHourInput}
               @focus=${() => this.send({ type: "focus-field", field: "hour" })}
@@ -584,9 +583,8 @@ export class MdyTimepickerFieldElement extends MdyFieldElement<string | null> {
           <div class="${this.partClass("minute")} ${minuteActive ? "mdy-timepicker-segment--active" : ""}">
             <input
               type="number"
-              class="mdy-timepicker-segment-input ${this.view.viewMode === "dial" ? "mdy-timepicker-segment-input--readonly" : ""}"
+              class="mdy-timepicker-segment-input"
               .value=${this.minuteDisplay()}
-              ?readonly=${this.view.viewMode === "dial"}
               aria-label=${this.messages.timepickerMinuteLabel}
               @input=${this.onMinuteInput}
               @focus=${() => this.send({ type: "focus-field", field: "minute" })}
