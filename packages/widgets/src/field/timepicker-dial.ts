@@ -59,7 +59,7 @@ export function timepickerDialNumbers(
         label: String(hour).padStart(2, "0"),
         // Midnight sits at the top, where 12 sits on the outer ring.
         index: position === 0 ? 12 : position,
-        ring: "inner" as const,
+        ring: dialRingOf("hour", hour, "24h"),
       }),
     );
     return Object.freeze([...outer, ...inner]);
@@ -179,6 +179,33 @@ export function timepickerSelectedDialValue(
 ): number {
   if (field === "minute") return (Math.round(draft.minute / 5) * 5) % 60;
   return format === "24h" ? to24Hour(draft) : draft.hour;
+}
+
+/**
+ * Which ring a value sits on. One predicate, so the face and the hand cannot disagree about it.
+ *
+ * Only a 24-hour face has two rings: midnight and 13–23 go inside, at the same twelve positions as
+ * 12 and 1–11.
+ */
+export function dialRingOf(field: "hour" | "minute", value: number, format: MdyTimeFormat): "outer" | "inner" {
+  if (field !== "hour" || format !== "24h") return "outer";
+  return value === 0 || value >= 13 ? "inner" : "outer";
+}
+
+/**
+ * Which ring the hand is currently pointing into.
+ *
+ * The hand is drawn shorter for the inner ring, and that is not decoration: a granularity can put
+ * two hours at one position — with `hourStep: 3` the outer 3 and the inner 15 share a direction —
+ * and without the difference in length the two selections are identical on screen. A person cannot
+ * tell which they chose until they read the header.
+ */
+export function timepickerSelectedRing(
+  field: "hour" | "minute",
+  draft: ParsedTime,
+  format: MdyTimeFormat = "12h",
+): "outer" | "inner" {
+  return dialRingOf(field, timepickerSelectedDialValue(field, draft, format), format);
 }
 
 /** What a key does to the number the dial is pointing at. */

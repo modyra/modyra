@@ -2578,6 +2578,13 @@
         --tp-dial-size: var(--mdy-comp-time-picker-clock-dial-size);
         --tp-num-size: 40px;
         --tp-hand-length: calc(var(--tp-dial-size) / 2 - (var(--tp-num-size) / 2) - 8px);
+        /* How far in the inner ring of a 24-hour face sits, as a fraction of the hand.
+         *
+         * One number for both the numbers and the hand that points at them. Written twice it drifts,
+         * and the drift is invisible: the hand points at one ring while the hit test picks the other,
+         * and every number is still where it should be. `MDY_TIMEPICKER_INNER_RING` is the same
+         * figure in the contract, and `css-properties.spec.mjs` fails if the two stop agreeing. */
+        --tp-inner-ring: 0.6;
         --tp-seg-width: var(--mdy-comp-time-picker-input-segment-width);
         --tp-seg-height: var(--mdy-comp-time-picker-input-segment-height);
 
@@ -2781,7 +2788,7 @@
      * twenty-four would be stacked twelve deep in twelve places. */
     .mdy-timepicker-dial__number--inner {
         transform: translate(-50%, -50%) rotate(calc(var(--index) * 30deg))
-            translateY(calc(var(--tp-hand-length) * -0.6))
+            translateY(calc(var(--tp-hand-length) * var(--tp-inner-ring) * -1))
             rotate(calc(var(--index) * -30deg));
         font-size: 0.78rem;
         color: var(--tp-on-surface-variant, var(--mdy-on-surface-variant));
@@ -2799,6 +2806,16 @@
         height: var(--tp-hand-length);
         background-color: var(--tp-primary);
         transform-origin: bottom center;
+    }
+
+    /* The hand, pointing into the inner ring.
+     *
+     * A granularity can put two hours at one position — with a three-hour step the outer 3 and the
+     * inner 15 share a direction — and a hand of one length makes the two selections identical on
+     * screen. Its length is the ring's own fraction of the hand rather than a figure of its own:
+     * a third number here is how the hand comes to point at a ring the hit test does not pick. */
+    .mdy-timepicker-dial__hand--inner {
+        height: calc(var(--tp-hand-length) * var(--tp-inner-ring));
     }
 
     .mdy-timepicker-dial__hand::after {

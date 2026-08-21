@@ -2588,6 +2588,12 @@
     "(0) number: MdyTimepickerDialNumber",
     "-> returns: number"
   ],
+  "dialRingOf": [
+    "(0) field: \"hour\" | \"minute\"",
+    "(1) value: number",
+    "(2) format: MdyTimeFormat",
+    "-> returns: \"outer\" | \"inner\""
+  ],
   "draftShapeMatches": [
     "(0) initial: unknown",
     "(1) value: unknown",
@@ -3424,6 +3430,12 @@
     "(1) draft: ParsedTime",
     "(2) format?: MdyTimeFormat",
     "-> returns: number"
+  ],
+  "timepickerSelectedRing": [
+    "(0) field: \"hour\" | \"minute\"",
+    "(1) draft: ParsedTime",
+    "(2) format?: MdyTimeFormat",
+    "-> returns: \"outer\" | \"inner\""
   ],
   "to24Hour": [
     "(0) t: ParsedTime",

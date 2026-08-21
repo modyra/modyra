@@ -29,6 +29,7 @@ import {
   timepickerDialKeyIntent,
   timepickerDialNumbers,
   timepickerDialRing,
+  timepickerSelectedRing,
   timepickerSelectedDialValue,
 } from "@modyra/widgets";
 import { MDY_I18N_MESSAGES } from "../../core/i18n";
@@ -175,6 +176,13 @@ export class MdyTimepickerClockComponent {
   protected readonly dialAria = computed(() =>
     timepickerDialAria(this.focusedField(), this.format(), this.faceValue()),
   );
+
+  /** Which ring the hand points into, from the contract's own predicate. */
+  protected readonly handRing = computed(() => {
+    if (this.isDragging() && this.dragRing !== null) return this.dragRing;
+    const parsed = this.parsed();
+    return parsed ? timepickerSelectedRing(this.focusedField(), parsed, this.format()) : "outer";
+  });
 
   protected readonly handRotation = computed(() => {
     if (this.isDragging() && this.dragAngle() !== null) {
