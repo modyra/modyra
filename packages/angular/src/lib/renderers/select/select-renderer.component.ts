@@ -214,7 +214,10 @@ import { MdyDropdownBase } from "../dropdown-base";
               <ng-container [ngTemplateOutlet]="p.template" />
             </div>
           }
+          <!-- The native chooser *is* the trigger in this presentation: it is what a person
+               presses and what holds the value. Carrying the class says so. -->
           <select
+            class="mdy-select__trigger"
             [id]="fieldId"
             [value]="value() ?? ''"
             [disabled]="isDisabled()"

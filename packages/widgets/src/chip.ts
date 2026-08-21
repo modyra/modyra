@@ -151,3 +151,23 @@ export function multiselectAnnouncement(
     .replace("{value}", labelOf((added ?? removed)!))
     .replace("{count}", String(after.size));
 }
+
+/**
+ * What a live region says when a chosen value is moved.
+ *
+ * The `Alt`-plus-arrow way of reordering has no *grabbed* state — nothing is picked up and nothing
+ * is put down — so the movement itself is the only thing there is to announce. Unannounced, a
+ * reorder is invisible to somebody who cannot see the strip: the value changed and the control said
+ * nothing about it.
+ */
+export function chipMovedAnnouncement(
+  template: string,
+  label: string,
+  position: number,
+  count: number,
+): string {
+  return template
+    .replace("{value}", label)
+    .replace("{position}", String(position))
+    .replace("{count}", String(count));
+}

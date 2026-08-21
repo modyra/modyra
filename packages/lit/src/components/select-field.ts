@@ -272,6 +272,7 @@ export class MdySelectFieldElement extends MdyDropdownFieldElement<unknown | nul
     const selected = options.findIndex((option) => option.value === handle.value());
     return html`<select
       id=${this.fieldId}
+      class="mdy-select__trigger"
       .selectedIndex=${selected}
       ?disabled=${handle.disabled()}
       aria-invalid=${this.showErrors(handle) ? "true" : "false"}
