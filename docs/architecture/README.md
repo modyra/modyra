@@ -138,6 +138,7 @@ absent section reads as an oversight, and "no security impact" is a finding.
 - [ADR 0121: A legitimate value must not be indistinguishable from its own absence](0121-a-value-indistinguishable-from-its-own-absence.md) — four defects in one evening shared a guard that asked whether a value was usable when it needed to ask whether it was there
 - [ADR 0122: Tab moves inside a popup that has controls of its own](0122-a-picker-a-keyboard-can-commit.md) — Tab dismissed every overlay, so a timepicker's confirm button was unreachable and its only commit path was a pointer
 - [ADR 0123: A default is published, or it is copied](0123-a-default-is-published-or-it-is-copied.md) — four renderers each spelled the clock default out and two had already drifted, while the view a picker opens in was a capability no document could reach
+- [ADR 0124: The public pitch is a single claim set](0124-the-public-pitch-is-a-single-claim-set.md) — three surfaces answered "what is Modyra" three ways, and the positioning that could have stopped it lived in an untracked directory
 - [ADR 0092: A condition travels with the form](0092-a-condition-travels-with-the-form.md) — `when` and `asyncWhen` were closures, so a schema carrying one was not data and the document half could not say what the typed half said
 
 ## Security-relevant records

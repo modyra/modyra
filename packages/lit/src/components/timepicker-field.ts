@@ -9,6 +9,7 @@ import {
   type MdyTimepickerViewMode,
   timepickerPlaceholder,
   type MdyUiCommand,
+  timepickerEntryText,
 } from "@modyra/widgets";
 import { html, nothing, type PropertyDeclarations } from "lit";
 import { observerFor, type MdyFieldHandle } from "@modyra/core";
@@ -373,9 +374,15 @@ export class MdyTimepickerFieldElement extends MdyFieldElement<string | null> {
     const steps = this.stepsNow();
     const entry = acceptTimeField(field, this.format, input.value, steps);
     const from = entry.type === "accepted" ? entry.value : timeFieldBounds(field, this.format, steps).min;
-    input.value = String(stepTimeField(field, this.format, from, delta, steps));
+    const next = stepTimeField(field, this.format, from, delta, steps);
+    // An arrow is not typing: it names a whole value, so the box shows the canonical form of it and
+    // the field never enters the half-typed state. Reported as the value it is rather than as text
+    // through the input path, which left the box holding `4` where the field writes `04`.
+    input.value = timepickerEntryText(next);
     input.removeAttribute("aria-invalid");
-    input.dispatchEvent(new Event("input", { bubbles: true }));
+    this.editing = null;
+    this._editingText = null;
+    this.send(field === "hour" ? { type: "set-hour", hour: next } : { type: "set-minute", minute: next });
     return true;
   }
 

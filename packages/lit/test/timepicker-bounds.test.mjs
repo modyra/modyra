@@ -65,15 +65,17 @@ test("clearing a segment is not an error", async () => {
 
 test("the arrow keys wrap at both ends", async () => {
   const p = await picker();
+  // Canonical, two digits: an arrow names a whole value rather than typing a character, so the box
+  // shows the form the field writes. `0` is what a box mid-edit may hold, not what a step produces.
   type(p.hour, "23");
   press(p.hour, "ArrowUp");
-  assert.equal(p.hour.value, "0", "past the end of a 24-hour clock comes back to midnight");
+  assert.equal(p.hour.value, "00", "past the end of a 24-hour clock comes back to midnight");
   press(p.hour, "ArrowDown");
   assert.equal(p.hour.value, "23");
 
   type(p.minute, "59");
   press(p.minute, "ArrowUp");
-  assert.equal(p.minute.value, "0");
+  assert.equal(p.minute.value, "00");
   p.dispose();
 });
 
