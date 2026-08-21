@@ -86,7 +86,7 @@ import { inputText, isoDateText } from "../renderer-projection";
             [attr.aria-disabled]="effectiveAriaDisabled()"
             [attr.aria-readonly]="isReadonly() ? 'true' : null"
             [attr.aria-label]="(label() ? label() + ' — ' : '') + i18n.daterangeStartLabel"
-            [attr.aria-haspopup]="'dialog'"
+            [mdyPart]="popupPromisePart()"
             autocomplete="off"
           />
         </span>
@@ -112,7 +112,7 @@ import { inputText, isoDateText } from "../renderer-projection";
             [attr.aria-disabled]="effectiveAriaDisabled()"
             [attr.aria-readonly]="isReadonly() ? 'true' : null"
             [attr.aria-label]="(label() ? label() + ' — ' : '') + i18n.daterangeEndLabel"
-            [attr.aria-haspopup]="'dialog'"
+            [mdyPart]="popupPromisePart()"
             autocomplete="off"
           />
         </span>
@@ -123,7 +123,6 @@ import { inputText, isoDateText } from "../renderer-projection";
             [mdyPart]="openerPart()"
             [disabled]="isDisabled()"
             [attr.aria-label]="i18n.datepickerToggleLabel"
-            [attr.aria-haspopup]="'dialog'"
             tabindex="-1"
             (click)="toggleOverlay($event)"
           >

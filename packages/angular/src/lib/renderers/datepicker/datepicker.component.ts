@@ -81,7 +81,6 @@ import { MdyCalendarComponent } from "./calendar.component";
           [readonly]="isReadonly()"
           (change)="onInputChange($event)"
           (blur)="onInputBlur($event)"
-          [attr.aria-haspopup]="'dialog'"
           [attr.aria-invalid]="paintsAsInvalid()"
           [attr.aria-describedby]="describedById(fieldId)"
           [attr.aria-label]="controlAriaLabel()"
@@ -99,8 +98,7 @@ import { MdyCalendarComponent } from "./calendar.component";
                 [disabled]="isDisabled()"
                 (click)="toggleOverlay($event)"
                 [attr.aria-label]="i18n.datepickerToggleLabel"
-                [attr.aria-expanded]="open()"
-                [attr.aria-haspopup]="'dialog'"
+                [mdyPart]="openerButtonPart()"
               >
                  <mdy-icon name="CALENDAR" class="mdy-datepicker__icon" />
               </button>
@@ -161,6 +159,8 @@ export class MdyDatePickerComponent extends MdyOverlayControl<string | null> {
   protected readonly popupClass = MDY_WIDGET_CONTRACTS.datepicker.parts.popup.classes.join(" ");
   /** The widget this draws: its popup's room, width and edge come from the catalog. */
   protected override readonly overlayKind = "datepicker" as const;
+  /** The kind this draws, which decides the constraints it may carry and what its opener promises. */
+  protected override readonly widgetKind = "datepicker" as const;
 
   protected readonly widgetContract = MDY_WIDGET_CONTRACTS.datepicker;
   protected readonly widgetHasRootClass = this.widgetContract.rootClasses.includes("mdy-renderer");

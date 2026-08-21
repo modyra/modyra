@@ -1,3 +1,4 @@
+import { projectOverlayOpenerA11y, type MdyPartContract } from "@modyra/widgets";
 import {
   DestroyRef,
   Directive,
@@ -76,6 +77,38 @@ export abstract class MdyOverlayControl<TValue> extends MdyBaseControl<TValue> {
    * tracked by the caller's own reactive context, so the dependency is on the cell that actually
    * holds the answer.
    */
+  /**
+   * What a second element that opens the same overlay carries.
+   *
+   * The control's own projection minus the role: a combobox is the element that **holds the value**,
+   * and an icon button beside it, or the second half of a range, opens the popup without being one.
+   * Everything else is the same statement about the same overlay — the promise, whether it is open,
+   * and what it controls — so it is read from the same place rather than written at each opener.
+   */
+  protected openerButtonPart(): MdyPartContract {
+    const projected = projectOverlayOpenerA11y(this.widgetKind, {
+      widgetId: this.fieldId,
+      open: this.open(),
+    });
+    if (projected === null) return { classes: [], attributes: {} };
+    const { role: _role, ...withoutRole } = projected;
+    return withoutRole;
+  }
+
+  /**
+   * The promise alone, for an element that opens the overlay without being its opener.
+   *
+   * A range's two text inputs open the calendar with `ArrowDown`, and `aria-haspopup` is a statement
+   * a textbox is allowed to make. `aria-expanded` and `aria-controls` are not: ARIA permits them on a
+   * combobox, and the range's opener — the one the catalogue names — is the toggle beside them. An
+   * input carrying the whole projection is a critical `aria-allowed-attr` violation, so this narrows
+   * it to the part a textbox may say.
+   */
+  protected popupPromisePart(): MdyPartContract {
+    const promises = this.openerButtonPart().attributes?.["aria-haspopup"];
+    return { classes: [], attributes: promises ? { "aria-haspopup": promises } : {} };
+  }
+
   protected open(): boolean {
     return this.isOverlayOpen();
   }
