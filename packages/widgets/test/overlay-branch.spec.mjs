@@ -82,3 +82,13 @@ test("a target that is not a node is outside", () => {
   }
   assert.equal(overlayBranchContains({ root: null }, at("one-option")), false);
 });
+
+test("a root is anything that can answer for a subtree", () => {
+  // `MdyOverlayRoot` is structural on purpose: a host that is not a DOM element still knows what is
+  // beneath it, and requiring `Element` would put a cast at every call site.
+  const { at } = twoFields();
+  /** @type {import("../dist/index.js").MdyOverlayRoot} */
+  const root = { contains: (node) => node === at("one-option") };
+  assert.equal(overlayBranchContains({ root }, at("one-option")), true);
+  assert.equal(overlayBranchContains({ root }, at("two-option")), false);
+});

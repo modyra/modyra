@@ -39,7 +39,6 @@ export {
   isOnStep,
   MDY_EVERY_TIME,
   minutesOfDay,
-  stepValues,
   timeStepsAt,
   validateTimeGranularity,
 } from "./time-granularity.js";

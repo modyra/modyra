@@ -21,9 +21,9 @@ import { portalRootFor } from "./portal.js";
 /**
  * Anything that can answer whether a node is beneath it.
  *
- * Structural rather than `Element`: a host that is not itself a DOM element — a Lit controller's
- * own view object — answers containment perfectly well, and demanding the full interface would put
- * a cast at every call site to satisfy a type nothing here reads.
+ * Structural rather than `Element`: a host that is not itself a DOM element — a view object that
+ * owns a subtree and answers for it — reports containment perfectly well, and demanding the full
+ * interface would put a cast at every call site to satisfy a type nothing here reads.
  */
 export interface MdyOverlayRoot {
   contains(node: Node): boolean;

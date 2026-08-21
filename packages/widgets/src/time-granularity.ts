@@ -10,7 +10,6 @@ export {
   isOnStep,
   MDY_EVERY_TIME,
   minutesOfDay,
-  stepValues,
   timeStepsAt,
   validateTimeGranularity,
   type MdyGranularityProblem,

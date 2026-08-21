@@ -13,7 +13,6 @@ import {
   isOnStep,
   MDY_EVERY_TIME,
   minutesOfDay,
-  stepValues,
   timeStepsAt,
   validateTimeGranularity,
 } from "../dist/index.js";
@@ -119,9 +118,9 @@ test("what sits on a step, and what a step offers", () => {
   assert.equal(isOnStep(7, 5), false);
   // Step 1 accepts everything, which is what "no declaration" means.
   assert.equal(isOnStep(7, 1), true);
-  assert.deepEqual(stepValues(60, 15), [0, 15, 30, 45]);
-  assert.deepEqual(stepValues(24, 6), [0, 6, 12, 18]);
-  assert.equal(stepValues(60, 1).length, 60);
+  // What a step offers is asserted through the faces that draw it, above and below: a helper that
+  // listed the values had no caller and is gone.
+  assert.deepEqual(timepickerDialNumbers("minute", "24h", { minuteStep: 15 }).map((n) => n.value), [0, 15, 30, 45]);
 });
 
 // ─── what the three functions do once a step is in force ─────────────────────
@@ -426,7 +425,7 @@ test("a twelve-hour face has one ring too", () => {
 
 // ─── the ghost ───────────────────────────────────────────────────────────────
 
-const { timepickerDialGhost, timepickerDialTolerance } = await import("../dist/index.js");
+const { dialRingOf, timepickerDialGhost, timepickerDialTolerance } = await import("../dist/index.js");
 
 test("no ghost when the pointer is on the value it chose", () => {
   // Every picker that offers every time is this case, always. A ghost permanently under the real
@@ -721,4 +720,35 @@ test("the ghost's reach is always a length CSS will take", () => {
     }
   }
   assert.deepEqual(bad, []);
+});
+
+test("the shapes these functions answer with are the ones they publish", () => {
+  // Named rather than inferred. A type nothing mentions is a type no test has ever had an opinion
+  // about, and these are the shapes a renderer destructures — a member quietly renamed would break
+  // three adapters and no assertion.
+  /** @type {import("../dist/index.js").MdyTimepickerDialPick | null} */
+  const pick = timepickerDialPick(90, "hour", "24h", "outer");
+  assert.deepEqual(Object.keys(pick).sort(), ["angle", "ring", "value"]);
+
+  /** @type {import("../dist/index.js").MdyTimepickerDialGhost | null} */
+  const ghost = timepickerDialGhost(120, pick, { within: 0, pointerReach: 50, handLength: 100 });
+  assert.deepEqual(Object.keys(ghost).sort(), ["angle", "reach", "ring"]);
+
+  /** @type {readonly import("../dist/index.js").MdyTimepickerDialArc[]} */
+  const arcs = timepickerDialUnavailableArcs("minute", "24h", { minuteStep: 15 }, 100);
+  assert.deepEqual(Object.keys(arcs[0]).sort(), ["from", "to"]);
+
+  /** @type {readonly import("../dist/index.js").MdyGranularityProblem[]} */
+  const problems = validateTimeGranularity({ minuteStep: 7 });
+  assert.deepEqual(Object.keys(problems[0]).sort(), ["member", "reason", "unit", "value"]);
+
+  /** @type {import("../dist/index.js").MdyTimeWindow} */
+  const window = { from: "09:00", to: "12:00", minuteStep: 5 };
+  assert.deepEqual(validateTimeGranularity({ windows: [window] }), []);
+
+  // One predicate decides where a number is drawn and where the hand stops; asserted here so the
+  // two cannot be separated without something failing.
+  assert.equal(dialRingOf("hour", 15, "24h"), "inner");
+  assert.equal(dialRingOf("hour", 3, "24h"), "outer");
+  assert.equal(dialRingOf("minute", 15, "24h"), "outer", "a minute face has one ring");
 });

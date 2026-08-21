@@ -53,9 +53,9 @@ function stateSelectors(kind) {
 /**
  * Rules this host cannot reach, and why — an exact set, so a new one cannot join it in silence.
  *
- * `--horizontal` is a variant the catalogue declares for a radio group's own part. Angular and Lit
- * emit it from a `layout` input; this renderer has no such input and never writes the class, so a
- * rule scoped to it selects nothing here for a reason that is about the renderer rather than about
+ * `--horizontal` is a variant the catalogue declares for a radio group's own part, written by a
+ * renderer that offers a layout choice. This one has no such input and never emits the class, so a
+ * rule scoped to it selects nothing here for a reason that is about this renderer rather than about
  * the relationship this file measures.
  */
 const UNREACHABLE_HERE = [".mdy-radio-group--horizontal input[type=\"radio\"]:checked+.mdy-radio-circle"];
