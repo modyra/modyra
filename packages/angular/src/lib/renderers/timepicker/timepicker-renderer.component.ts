@@ -137,6 +137,8 @@ import { MdyTimepickerClockComponent } from "./timepicker-clock.component";
           [open]="open()"
           [format]="format()"
           [viewMode]="shownViewMode()"
+          [focusedField]="shownField()"
+          (focusedFieldChange)="send({ type: 'focus-field', field: $event })"
           (viewModeChange)="send({ type: 'set-view-mode', mode: $event })"
           [disabled]="isDisabled()"
           (timePicked)="onTimePicked($event)"
@@ -211,6 +213,9 @@ export class MdyTimepickerComponent extends MdyOverlayControl<string | null> {
       ...(this.granularity() !== undefined && { granularity: this.granularity()! }),
     }),
   );
+  /** Which number the face is editing — the controller's, which hands it over when a drag ends. */
+  protected readonly shownField = computed(() => this.controller()?.state().focusedField ?? "hour");
+
   /** Which view the popup is showing — the controller's, which restores the declared one on close. */
   protected readonly shownViewMode = computed(() => this.controller()?.state().viewMode ?? this.viewMode());
 
@@ -260,7 +265,7 @@ export class MdyTimepickerComponent extends MdyOverlayControl<string | null> {
    * formatted time instead would have to name it in some format, and only one of the two rings of a
    * 24-hour face has names the twelve-hour notation can write.
    */
-  protected onDialPicked(pick: { field: "hour" | "minute"; angle: number; ring: "outer" | "inner" }): void {
+  protected onDialPicked(pick: { field: "hour" | "minute"; angle: number; ring: "outer" | "inner"; phase?: "move" | "end" }): void {
     this.send({ type: "set-from-angle", ...pick });
   }
 

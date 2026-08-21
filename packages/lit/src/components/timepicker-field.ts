@@ -490,28 +490,25 @@ export class MdyTimepickerFieldElement extends MdyFieldElement<string | null> {
     this.querySelector<HTMLElement>(timepickerPartSelector(next) ?? "\0")?.focus();
   }
 
-  private sendPick(): void {
+  private sendPick(phase?: "move" | "end"): void {
     const angle = this._dragAngle;
     if (angle === null) return;
     // The position, not a time read off it: what this control knows is where the pointer is, and
     // what that means — which of the two hours in this direction — is the controller's to say.
-    this.send({ type: "set-from-angle", field: this.dragField, angle, ring: this._dragRing });
+    this.send({ type: "set-from-angle", field: this.dragField, angle, ring: this._dragRing, ...(phase && { phase }) });
   }
 
   private onDragMove(event: MouseEvent | TouchEvent): void {
     if (!this._isDragging || this.view.viewMode !== "dial") return;
     if (event.cancelable) event.preventDefault();
     this.updateAngle(event);
-    this.sendPick();
+    this.sendPick("move");
   }
 
   private onDragEnd(): void {
     if (!this._isDragging) return;
     this.drag.stop();
-    const angle = this._dragAngle;
-    if (angle !== null) {
-      this.send({ type: "set-from-angle", field: this.dragField, angle, ring: this._dragRing });
-    }
+    this.sendPick("end");
     this._isDragging = false;
     this._dragAngle = null;
     // The gesture is over: the next one decides from where it lands.
