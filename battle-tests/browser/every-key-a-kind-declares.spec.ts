@@ -102,15 +102,15 @@ for (const host of HOSTS) {
           const battle = (window as never as Record<string, { mountFields(id: string, f: unknown[]): unknown }>)[api];
           const field: Record<string, unknown> = { name: "f", kind: k, label: `L ${k}` };
           if (/select|radio|segmented/.test(k)) field.options = options;
-          // A key needs the state it acts on. A multiselect's strip keys move between chips and move
-          // a chip along the strip, so a control with nothing chosen answers none of them — not
-          // because they are missing, but because there is nothing there. `reorderable` is opt-in and
-          // its keys are declared unconditionally, which is finding 378: the table promises a key
-          // that a default control does not answer, and this fixture is the only place that shows it.
-          if (k === "multiselect") {
-            field.initialValue = options.slice(0, 3).map((option: { value: unknown }) => option.value);
-            field.reorderable = true;
-          }
+          // **A kind is mounted the way a document declares it, and nothing more.** Giving a widget
+          // the state its keys happen to need is the one change that must not be made here: this spec
+          // asks what a control a consumer wrote actually answers, and a fixture that quietly opts
+          // into `reorderable` and pre-fills a value is answering a different question — a friendlier
+          // one, which the control passes.
+          //
+          // It was made, and it turned four reds into two by hiding finding 378 rather than by fixing
+          // anything: the table declares those keys unconditionally and a default control answers
+          // none of them, which is the finding and not the fixture's to paper over.
           battle.mountFields(mountId, [field]);
         },
         { api: host.api, k: kind, mountId: id, options: OPTIONS },

@@ -21071,11 +21071,19 @@ behind `reorderable` and six declared keys went quiet. That was the renderer bei
 table; this is the table being looser than the renderer. Both come from the same gap: the reorder
 capability is a field-level flag and the keyboard contract has no vocabulary for it.
 
-Surfaced by `every-key-a-kind-declares.spec.ts`, whose fixture mounted a bare multiselect — which was
-the honest reading of "what a document gets by default". The fixture now gives the multiselect chips
-and `reorderable`, because the spec's question is *does a declared key do anything*, not *is the
-declaration conditional*; the second question is this finding and belongs in the contract rather than
-in a fixture.
+Surfaced by `every-key-a-kind-declares.spec.ts`, whose fixture mounts a bare multiselect — the honest
+reading of *what a document gets by default*.
+
+**I changed that fixture to give the multiselect chips and `reorderable`, and had to change it back.**
+It turned four reds into two, and it did so by hiding this finding rather than by repairing anything:
+a fixture that quietly opts into a capability is answering a friendlier question than the one the spec
+asks, and the control passes the friendlier one. The spec's question is *what does a control a
+consumer wrote actually answer*, and giving a widget the state its keys happen to need is the one
+change that must not be made to it.
+
+That is the third time tonight a fixture was adjusted until a red went away. The two before were
+mine and wrong for the same reason, and this one I caught before it was committed as a repair — but
+only after writing it up as one.
 
 Owned by `esecutore`.
 
