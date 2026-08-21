@@ -18575,6 +18575,73 @@ It blocks **CI**, which has been red on this step all night, and the user's stat
 precondition is green CI. So it still needs an owner before the tag — through the precondition, not
 through the gate. The repair is to state the rule rather than who omits it.
 
+## 323 — One rule of a selector list survived the repair, and it is the hover half (S2, UI-009)
+
+`769fd6ec` converted nine boolean state rules from the adjacent sibling combinator to `:has()`, after
+the drawn box moved inside the label and `+` stopped reaching it. **One survived**, and it is half of a
+two-selector list where the other half was rewritten:
+
+```css
+packages/styles/src/modyra.css:1278
+  .mdy-toggle:hover input:not(:disabled) + .mdy-toggle__track .mdy-toggle__thumb::after,   ← still +
+  .mdy-toggle:has(input:focus-visible)     .mdy-toggle__track .mdy-toggle__thumb::after {  ← converted
+```
+
+Measured in the browser tier, both renderers:
+
+```
+resting  {"opacity":"0","transform":"matrix(0, 0, 0, 0, -20.3984, -20.3984)"}
+hovered  {"opacity":"0","transform":"matrix(0, 0, 0, 0, -20.3984, -20.3984)"}
+```
+
+**A toggle answers a focus and does not answer a pointer resting on it.**
+
+It survived because of where it sits: `esecutore`'s jsdom check excludes `:hover` and `:focus-visible`
+by design — neither can be produced there, so a check on them would report the harness rather than the
+product. The browser tier can produce both, and until now asked about neither. **A rule split across
+two lines of one selector list, with one line in each blind spot.**
+
+---
+
+## 324 — I retracted a correct diagnosis because my instrument measured a stale artefact (harness defect)
+
+The sibling-selector diagnosis was right. I retracted it, and the retraction was wrong.
+
+I ran the new browser battle, saw plain and lit green, and concluded the defect was Angular-only. Then
+I strengthened the battle to read `::after`, saw green again, and treated the second green as
+confirmation. Both greens were false, and I told `esecutore` to stop looking at plain and lit.
+
+**Two separate stale surfaces, and I checked neither:**
+
+- `esecutore`'s `:has()` repair was **uncommitted, on the shared disk**, when I ran it. I have a rule
+  for exactly this, written earlier tonight after findings 266 and 267: *a probe run in a shared
+  working tree measures work in flight, not `HEAD`.*
+- and the built host, `battle-tests/.tmp-browser/`, was **older than the anatomy change** — so it was
+  serving old DOM against old CSS, which are consistent with each other and paint correctly. That is
+  finding 314's family, and I wrote the freshness guard for it.
+
+**I own both rules and walked past both.** What makes it the worst instance of the night is not the
+error but its direction: the false green did not merely fail to find something, it was used to
+*withdraw* a correct finding and redirect the only executor away from two of the three broken
+renderers.
+
+**What settled it**: neutralising the `:has()` rules in the freshly built host and re-running.
+
+```
+fresh host, unmutated            4 passed
+:has() rules neutralised         4 failed
+```
+
+So the battle is sensitive and had simply never been given a broken sheet to look at. Before that
+mutation it had passed twice and proved nothing — **a green that has never been shown able to go red
+is not evidence**, which is the rule this register has applied to five of `esecutore`'s probes and had
+not yet applied to one of mine.
+
+`esecutore` also killed my replacement hypothesis by measurement before concluding: `mdyPart` does not
+strip the control class, and Angular's rendered DOM is structurally identical to plain's — *"which was
+the right observation to draw from, it just pointed the other way: same DOM and same stylesheet means
+both were broken, not that neither was."*
+
 ## The register's own shape, measured
 
 ```
