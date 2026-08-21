@@ -1,0 +1,239 @@
+/**
+ * The closed multiselect as a person meets it: the marks on its buttons, the names it truncates, the
+ * search it was or was not asked for, and whether the strip scrolls or just squeezes.
+ *
+ * Six points were given for this control. **Three were already right** when measured against
+ * `37f5eab2` and are not asserted here, because a spec's job is not to restate what works: the strip's
+ * empty area opens the popup while a chip's remove button does not, and the strip carries no box of its
+ * own — the control's shape is the box.
+ *
+ * These are the three that were not.
+ *
+ *     chip buttons        { text: "", aria: "Remove" }        a name and nothing to see
+ *     mdy-chip__label     ellipsis · 112px shown of 188px     truncated, nothing shows the rest
+ *     searchable false    1 search input, visible             the flag does nothing
+ *     chips strip         overflow-x: visible, 704 = 704      does not scroll
+ *
+ * **The truncation and the scroll are one property, not two.** Nothing scrolls today because the
+ * ellipsis absorbs the overflow — chips shrink until they fit — so a strip that scrolls only once its
+ * chips have a floor width is the thing being asked for. Asserting "it scrolls" alone would pass a
+ * strip whose chips had shrunk to nothing, which is why the width of a chip is measured against the
+ * same chip in a control holding fewer.
+ *
+ * The mark on a button is asserted as **the button paints something**, never as a glyph: the mark is
+ * the theme's and a spec naming one would go red on a theme that chose differently.
+ *
+ * The full name is asserted **without a pointer**. `title` is what a hurried fix reaches for and it
+ * passes any hover check while never appearing for a keyboard or a touch user — the two entrances this
+ * project spent a night restoring on the dial.
+ *
+ * Claims under attack: UI-009, A11Y-001, UI-011.
+ */
+
+import { expect, test } from "@playwright/test";
+import { MDY_WIDGET_CONTRACTS } from "@modyra/widgets";
+
+const HOSTS = [
+  { name: "plain", page: "/index.html", ready: "battleReady", api: "battle" },
+  { name: "lit", page: "/lit.html", ready: "battleLitReady", api: "battleLit" },
+  { name: "angular", page: "/angular.html", ready: "battleAngularReady", api: "battleAngular" },
+];
+
+const parts = MDY_WIDGET_CONTRACTS.multiselect.parts as Record<string, { classes: string[] }>;
+const CHIP = parts.chip.classes[0]!;
+const STRIP = parts.chips.classes[0]!;
+
+const longOptions = (count: number) =>
+  Array.from({ length: count }, (_, index) => ({
+    value: `v${index}`,
+    label: `Opzione con un nome deliberatamente lungo numero ${index}`,
+  }));
+
+for (const host of HOSTS) {
+  const mount = async (page: import("@playwright/test").Page, id: string, chosen: number, searchable = false) => {
+    await page.evaluate(async ({ api, id, options, chosen, searchable }) => {
+      (window as never as Record<string, Record<string, (...args: never[]) => unknown>>)[api]
+        .mountFields(id, [{
+          name: "s", kind: "multiselect", label: "Scelte", searchable, options,
+          initialValue: options.slice(0, chosen).map((option: { value: string }) => option.value),
+        }]);
+    }, { api: host.api, id, options: longOptions(14), chosen, searchable });
+    await page.waitForTimeout(400);
+  };
+
+  test(`a chip's buttons carry a visible mark, ${host.name}`, async ({ page }) => {
+    test.setTimeout(150_000);
+    await page.goto(host.page);
+    await page.waitForFunction((flag) => (window as never as Record<string, boolean>)[flag] === true, host.ready);
+    await mount(page, "marks", 2);
+
+    const buttons = await page.evaluate(({ chipClass }) => {
+      const root = document.querySelector('[data-form="marks"]');
+      if (root === null) return null;
+      const found = Array.from(root.querySelectorAll(`.${chipClass} button`));
+      return found.map((button) => {
+        const own = getComputedStyle(button);
+        const after = getComputedStyle(button, "::after");
+        const before = getComputedStyle(button, "::before");
+        const paints = (style: CSSStyleDeclaration) =>
+          style.backgroundImage !== "none" || style.maskImage !== "none"
+          || (style.content !== "none" && style.content !== "normal" && style.content !== '""');
+        return {
+          name: button.getAttribute("aria-label"),
+          text: (button.textContent ?? "").trim(),
+          marked: paints(own) || paints(after) || paints(before),
+        };
+      });
+    }, { chipClass: CHIP });
+
+    expect(buttons, "nothing was mounted").not.toBeNull();
+    // The premise: a chip draws its buttons at all. None is finding 352, not this.
+    expect(buttons!.length, "the chip drew no buttons, so there are no marks to look for").toBeGreaterThan(0);
+
+    for (const button of buttons!) {
+      expect(
+        button.marked,
+        `the ${JSON.stringify(button.name)} button paints nothing and its text is ` +
+          `${JSON.stringify(button.text)} — a person using a pointer meets a blank square and reads it ` +
+          `as decoration. Asserted as "it paints something" rather than as a glyph, because the mark ` +
+          `belongs to the theme`,
+      ).toBe(true);
+    }
+  });
+
+  test(`a truncated name can be read without a pointer, ${host.name}`, async ({ page }) => {
+    test.setTimeout(150_000);
+    await page.goto(host.page);
+    await page.waitForFunction((flag) => (window as never as Record<string, boolean>)[flag] === true, host.ready);
+    await mount(page, "long", 3);
+
+    const chip = page.locator(`[data-form="long"] .${CHIP}`).first();
+    expect(await chip.count(), "no chip was drawn").toBe(1);
+
+    const truncated = await chip.evaluate((element) => {
+      const label = element.querySelector(".mdy-chip__label") as HTMLElement | null;
+      if (label === null) return null;
+      return { shown: Math.round(label.getBoundingClientRect().width), full: label.scrollWidth };
+    });
+
+    // The premise: this name really is cut off. A chip wide enough for its label would make the
+    // assertion below true for the wrong reason.
+    expect(truncated, "the chip has no label element").not.toBeNull();
+    expect(
+      truncated!.full,
+      `the label is not truncated here — ${truncated!.shown}px shown of ${truncated!.full}px — so ` +
+        `nothing is hidden and this spec is measuring the wrong field`,
+    ).toBeGreaterThan(truncated!.shown);
+
+    await chip.focus();
+    await page.waitForTimeout(300);
+
+    const readable = await page.evaluate(() => {
+      const active = document.activeElement as HTMLElement | null;
+      if (active === null) return null;
+      const chip = active.closest(".mdy-chip") ?? active;
+      const described = chip.getAttribute("aria-describedby");
+      const tip = described === null ? null : document.getElementById(described);
+      const visibleTip = Array.from(document.querySelectorAll('[role="tooltip"]'))
+        .filter((element) => element.getBoundingClientRect().height > 0);
+      return {
+        focusedChip: chip.classList.contains("mdy-chip"),
+        // `title` is deliberately not counted: it never appears for a keyboard or touch user, which is
+        // the whole question this test asks.
+        tooltipShown: visibleTip.length > 0 || (tip !== null && tip.getBoundingClientRect().height > 0),
+      };
+    });
+
+    expect(readable?.focusedChip, "focus did not land on a chip, so nothing could have been revealed").toBe(true);
+    expect(
+      readable!.tooltipShown,
+      `the chip's name is cut off at ${truncated!.shown}px of ${truncated!.full}px and focusing it ` +
+        `reveals nothing. A \`title\` satisfies a hover and never appears for a keyboard or a touch ` +
+        `user, so the truncation is resolvable only with a mouse`,
+    ).toBe(true);
+  });
+
+  test(`a search box appears when it was asked for and not otherwise, ${host.name}`, async ({ page }) => {
+    test.setTimeout(150_000);
+    await page.goto(host.page);
+    await page.waitForFunction((flag) => (window as never as Record<string, boolean>)[flag] === true, host.ready);
+
+    const searchBoxes = () =>
+      page.evaluate(() =>
+        Array.from(document.querySelectorAll(".mdy-multiselect-overlay__input, .mdy-multiselect__search"))
+          .filter((element) => element.getBoundingClientRect().height > 0).length);
+
+    // One mount at a time: a popup is portalled out of the field, so two fields on one page cannot be
+    // told apart by scope and the second reading would count the first's.
+    await mount(page, "quiet", 1, false);
+    await page.locator('[data-form="quiet"] .mdy-multiselect__trigger, [data-form="quiet"] [aria-haspopup]')
+      .first().click({ force: true, timeout: 5_000 }).catch(() => undefined);
+    await page.waitForTimeout(400);
+    const withoutAsking = await searchBoxes();
+
+    expect(
+      withoutAsking,
+      `a field that declared no search has ${withoutAsking} search box(es) on the page — the flag does ` +
+        `nothing, so "the search stays when asked for" is true by never leaving`,
+    ).toBe(0);
+
+    await page.keyboard.press("Escape");
+    await page.waitForTimeout(200);
+    await page.evaluate(({ api }) => (window as never as Record<string, { dispose(i: string): void }>)[api].dispose("quiet"), { api: host.api });
+    await page.waitForTimeout(200);
+
+    // The control: the box appears when it is asked for. Without this, a renderer that simply never
+    // draws one would pass the assertion above.
+    await mount(page, "asking", 1, true);
+    await page.locator('[data-form="asking"] .mdy-multiselect__trigger, [data-form="asking"] [aria-haspopup]')
+      .first().click({ force: true, timeout: 5_000 }).catch(() => undefined);
+    await page.waitForTimeout(400);
+
+    expect(
+      await searchBoxes(),
+      "a field that asked for a search has none, so the flag is being read as always-off rather than not read at all",
+    ).toBe(1);
+  });
+
+  test(`the strip scrolls rather than squeezing its chips, ${host.name}`, async ({ page }) => {
+    test.setTimeout(150_000);
+    await page.goto(host.page);
+    await page.waitForFunction((flag) => (window as never as Record<string, boolean>)[flag] === true, host.ready);
+
+    const chipWidth = async (id: string) =>
+      page.evaluate(({ chipClass, id }) => {
+        const root = document.querySelector(`[data-form="${id}"]`);
+        const chip = root?.querySelector(`.${chipClass}`);
+        return chip === undefined || chip === null ? null : Math.round(chip.getBoundingClientRect().width);
+      }, { chipClass: CHIP, id });
+
+    await mount(page, "few", 3);
+    const roomy = await chipWidth("few");
+    expect(roomy, "no chip was drawn in the three-chosen control").not.toBeNull();
+
+    await mount(page, "many", 12);
+    const crowded = await chipWidth("many");
+    const strip = await page.evaluate(({ stripClass }) => {
+      const element = document.querySelector(`[data-form="many"] .${stripClass}`);
+      if (element === null) return null;
+      return { client: element.clientWidth, scroll: element.scrollWidth, overflowX: getComputedStyle(element).overflowX };
+    }, { stripClass: STRIP });
+
+    expect(strip, "the many-chosen control drew no chips strip").not.toBeNull();
+
+    // The property, and the reason it is two readings: a strip that scrolls *because* its chips kept
+    // their width is what was asked for. Measuring the scroll alone would pass a strip whose chips had
+    // shrunk to nothing, and measuring the width alone would pass one that simply overflows unseen.
+    expect(
+      crowded,
+      `a chip is ${crowded}px with twelve chosen and ${roomy}px with three — the strip is squeezing its ` +
+        `chips to fit rather than scrolling, so more choices means smaller ones and never a scroll`,
+    ).toBe(roomy);
+
+    expect(
+      strip!.scroll,
+      `the strip is ${strip!.scroll}px of content in ${strip!.client}px of space with overflow-x ` +
+        `${strip!.overflowX} — twelve chips at their own width have nowhere to go`,
+    ).toBeGreaterThan(strip!.client);
+  });
+}
