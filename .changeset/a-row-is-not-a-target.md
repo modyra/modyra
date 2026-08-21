@@ -1,12 +1,24 @@
 ---
-"@modyra/widgets": major
-"@modyra/plain": major
-"@modyra/lit": major
-"@modyra/angular": major
+"@modyra/widgets": minor
+"@modyra/plain": minor
+"@modyra/lit": minor
+"@modyra/angular": minor
 "@modyra/styles": patch
 ---
 
 A checkbox or toggle row is no longer a pointer target
+
+**Read this before upgrading: it is a breaking change released under a minor.** The anatomy below
+changes, and a stylesheet that reaches the box through the input's *sibling* stops matching. The
+shipped themes move with it; a stylesheet outside this repository does not. Selecting by state
+rather than by position survives the change:
+
+```scss
+// before — the track was the input's next sibling
+.mdy-toggle input:checked + .mdy-toggle__track .mdy-toggle__thumb { }
+// after — the track is inside the label; ask for the state, not the position
+.mdy-toggle:has(input:checked) .mdy-toggle__thumb { }
+```
 
 All three renderers built the wrapper as a `<label>`, and a native label forwards a click from
 anywhere inside it — so the empty space to the right of the words toggled the field. The wrapper is
