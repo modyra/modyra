@@ -156,14 +156,19 @@ battle(
     const semanticOf = (kind, part) =>
       MDY_WIDGET_CONTRACTS[kind].structure.nodes.find((node) => node.part === part)?.element ?? null;
 
+    // **The two kinds name the same anatomical thing differently**: a select's option list is the part
+    // `listbox`, a multiselect's is `options`. Asking a multiselect for `listbox` gets `null` — which
+    // this battle read as "declares no semantics" and reported as a defect, when what it had found was
+    // a part that had been renamed out from under it.
+    const OPTION_LIST = { select: "listbox", multiselect: "options" };
     ctx.log.note("what two option lists declare themselves to be", {
-      select: semanticOf("select", "listbox"),
-      multiselect: semanticOf("multiselect", "listbox"),
+      select: semanticOf("select", OPTION_LIST.select),
+      multiselect: semanticOf("multiselect", OPTION_LIST.multiselect),
       multiselectOption: semanticOf("multiselect", "option"),
     });
 
     // A real listbox, which is the comparison that makes the next assertion mean something.
-    expectEqual(semanticOf("select", "listbox"), "listbox", {
+    expectEqual(semanticOf("select", OPTION_LIST.select), "listbox", {
       claimIds: ["A11Y-004"],
       what: "a select's option list stopped declaring itself a listbox",
     });
@@ -172,7 +177,7 @@ battle(
     // which is a pressed toggle rather than a roving selection — so the part is named `listbox` and
     // is a group. A refactor toward consistency with select is the plausible mistake, and it would
     // announce "N of M selected" over controls that do not work that way.
-    expectEqual(semanticOf("multiselect", "listbox"), "group", {
+    expectEqual(semanticOf("multiselect", OPTION_LIST.multiselect), "group", {
       claimIds: ["A11Y-004"],
       what: "a multiselect's option list declares listbox semantics, which its chips do not have",
     });
