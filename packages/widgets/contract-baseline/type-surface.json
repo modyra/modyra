@@ -1858,6 +1858,10 @@
     "ring: \"outer\" | \"inner\"",
     "value: number"
   ],
+  "MdyTimepickerEntry": [
+    "text: string",
+    "value: number | null"
+  ],
   "MdyTimepickerFieldA11yOptions": [
     "widgetId: string"
   ],
@@ -3453,6 +3457,17 @@
     "(3) handLength?: number",
     "(4) ring?: \"outer\" | \"inner\"",
     "-> returns: readonly MdyTimepickerDialArc[]"
+  ],
+  "timepickerEntry": [
+    "(0) field: MdyTimeField",
+    "(1) format: MdyTimeFormat",
+    "(2) text: string",
+    "(3) steps?: MdyTimeSteps",
+    "-> returns: MdyTimepickerEntry | null"
+  ],
+  "timepickerEntryText": [
+    "(0) value: number",
+    "-> returns: string"
   ],
   "timepickerFieldPartIds": [
     "(0) widgetId: string",

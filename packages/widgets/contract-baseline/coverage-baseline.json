@@ -1,8 +1,8 @@
 {
   "note": "Public names not yet asserted or not yet shown. The list may only get shorter.",
   "score": {
-    "published": 730,
-    "asserted": 472,
+    "published": 734,
+    "asserted": 475,
     "shown": 79
   },
   "uncovered": [
@@ -221,6 +221,12 @@
       "asserted": true,
       "shown": false,
       "reason": "published and never shown"
+    },
+    {
+      "name": "MDY_TIMEPICKER_INITIAL_VIEW",
+      "asserted": false,
+      "shown": false,
+      "reason": "published, neither asserted nor shown"
     },
     {
       "name": "MDY_TIMEPICKER_INNER_RING",
@@ -2089,6 +2095,12 @@
       "reason": "published and never shown"
     },
     {
+      "name": "MdyTimepickerEntry",
+      "asserted": false,
+      "shown": false,
+      "reason": "published, neither asserted nor shown"
+    },
+    {
       "name": "MdyTimepickerFieldA11yOptions",
       "asserted": false,
       "shown": false,
@@ -3787,6 +3799,18 @@
       "reason": "published and never shown"
     },
     {
+      "name": "timepickerEntry",
+      "asserted": true,
+      "shown": false,
+      "reason": "published and never shown"
+    },
+    {
+      "name": "timepickerEntryText",
+      "asserted": true,
+      "shown": false,
+      "reason": "published and never shown"
+    },
+    {
       "name": "timepickerFieldPartIds",
       "asserted": false,
       "shown": false,
@@ -3806,9 +3830,9 @@
     },
     {
       "name": "timepickerPartSelector",
-      "asserted": false,
+      "asserted": true,
       "shown": false,
-      "reason": "published, neither asserted nor shown"
+      "reason": "published and never shown"
     },
     {
       "name": "timepickerSelectedDialValue",

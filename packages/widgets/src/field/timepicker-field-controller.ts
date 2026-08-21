@@ -24,7 +24,7 @@ import {
 import { acceptTimeField } from "../time-bounds.js";
 import { timeStepsAt, type MdyTimeSteps } from "../time-granularity.js";
 import { timepickerDialPick, timepickerSelectedDialValue } from "./timepicker-dial.js";
-import { MDY_TIMEPICKER_ADVANCE_MS, timepickerFocusPart } from "./timepicker-focus.js";
+import { MDY_TIMEPICKER_ADVANCE_MS, MDY_TIMEPICKER_INITIAL_VIEW, timepickerFocusPart } from "./timepicker-focus.js";
 import { blocksValueChange } from "../interactivity.js";
 import { closeOverlayWhenOutOfPlay } from "./leaving-play.js";
 
@@ -98,7 +98,7 @@ export function createTimepickerFieldController(
     format = "12h" as MdyTimeFormat,
     granularity,
     readonly: initialReadonly = false,
-    viewMode: initialViewMode = "input",
+    viewMode: initialViewMode = MDY_TIMEPICKER_INITIAL_VIEW,
     schedule = (run: () => void, afterMs: number) => {
       const id = setTimeout(run, afterMs);
       return () => clearTimeout(id);

@@ -357,7 +357,14 @@ export function renderTimepickerField(
   /** Redraws the dimmed stretches for the field and the hour the draft is on. */
   function drawUnavailable(field: "hour" | "minute", state: { format: MdyTimeFormat; draft: { hour: number; minute: number; period: "AM" | "PM" } }): void {
     unavailableLayer.replaceChildren();
-    if (f.showUnavailable !== true) return;
+    // Present only when it has something in it. An empty layer is a part of the anatomy that is
+    // there without being anything, which a conformance reading correctly calls an extra part.
+    unavailableLayer.hidden = f.showUnavailable !== true;
+    if (f.showUnavailable !== true) {
+      unavailableLayer.remove();
+      return;
+    }
+    if (!unavailableLayer.isConnected) dialFace.prepend(unavailableLayer);
     const steps = timeStepsAt(f.granularity, to24Hour(state.draft));
     for (const arc of timepickerDialUnavailableArcs(field, state.format, steps, handLength())) {
       const slice = el("div", parts.dialUnavailableArc.classes.join(" "));
