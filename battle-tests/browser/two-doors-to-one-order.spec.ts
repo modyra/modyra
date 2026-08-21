@@ -111,6 +111,55 @@ for (const host of HOSTS) {
     ).toEqual(byKeystroke);
   });
 
+  /**
+   * The third door, and the reason there are three rather than two.
+   *
+   * WCAG 2.2 **2.5.7 Dragging Movements** requires, independently of any keyboard path, that anything
+   * achievable by dragging is achievable with a single pointer that does not drag. A keyboard does not
+   * discharge it: the criterion is about pointer users who cannot hold and move — a tremor, a
+   * head-pointer, a touchpad they can tap but not drag.
+   *
+   * So the assertion is the same one as the drag's: **the same intent through a third door lands on
+   * the same value.** Not "the buttons work" against a number written here, which would let the button
+   * path and the keystroke drift apart the first time one of them is repaired.
+   */
+  test(`a pointer that cannot drag reaches the same order, ${host.name}`, async ({ page }) => {
+    test.setTimeout(150_000);
+    await page.goto(host.page);
+    await page.waitForFunction((flag) => (window as never as Record<string, boolean>)[flag] === true, host.ready);
+
+    await mount(page, "byKey", true);
+    await chips(page, "byKey").last().focus();
+    await page.keyboard.press("Alt+ArrowLeft");
+    await page.waitForTimeout(250);
+    await page.keyboard.press("Alt+ArrowLeft");
+    await page.waitForTimeout(250);
+    const byKey = await held(page, "byKey");
+
+    await mount(page, "byTap", true);
+    // Two taps of "move earlier" on **the same chip**, tracked by its label rather than by where it
+    // sits. The keystroke path carries focus with the chip as it moves, so the second press acts on
+    // the chip the first one moved; re-reading "the last chip" taps whatever slid into that place
+    // instead, which walks the value back to where it started and reads as a door that does nothing.
+    for (let press = 0; press < 2; press += 1) {
+      await chips(page, "byTap").filter({ hasText: "C" }).first()
+        .locator('button[aria-label="Move earlier"]').click({ timeout: 5_000 });
+      await page.waitForTimeout(250);
+    }
+    const byTap = await held(page, "byTap");
+
+    // The premise: the keystroke did something. Two doors agreeing on a value neither of them changed
+    // is the way this check passes while proving nothing.
+    expect(byKey, "the keyboard did not reorder, so there is nothing for the pointer to agree with").not.toEqual(["a", "b", "c"]);
+
+    expect(
+      byTap,
+      `tapping "move earlier" twice on the last chip gave ${JSON.stringify(byTap)} where the keystroke ` +
+        `that means the same thing gave ${JSON.stringify(byKey)}. One intent, three doors — a pointer ` +
+        `that cannot drag is the one 2.5.7 is about, and it has to land where the others do`,
+    ).toEqual(byKey);
+  });
+
   test(`a control that is not reorderable offers no way to move, ${host.name}`, async ({ page }) => {
     test.setTimeout(150_000);
     await page.goto(host.page);
