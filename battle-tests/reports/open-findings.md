@@ -20774,3 +20774,22 @@ with the popup closed.
 Filed rather than fixed quietly, at `esecutore`'s request. Whichever way it is settled, all three owe
 the same answer, because a spec written against one is written against all three.
 
+
+### 359a — the same defect, by the same hand, ninety minutes later
+
+`bench.ts` would not parse. The cause was a block comment saying the bench never reaches into a
+package's own sources, written with the glob spelled out — and the `*/` in it closed the comment,
+exactly as it had in `assert-fresh.mjs` earlier the same evening, in a sentence about the same subject.
+
+The finding was already written, the fix was already committed, and it happened again inside two
+hours. Which says something worth keeping: **knowing a trap is not a guard against it.** The comment
+rules in `CLAUDE.md` describe what a comment should say; nothing checks how one is spelled, and a
+sentence about paths is exactly the sentence that reaches for a glob.
+
+The difference was in how it surfaced, and that is the part worth having. `assert-fresh.mjs` crashed
+into a `reuseExistingServer` that skipped it, so the guard was dead for as long as it existed and
+nobody knew. `bench.ts` was imported by a spec, so the suite refused to collect and said which line —
+seven seconds, not seven hours. **A thing that runs on every invocation gets found; a thing that only
+runs when something else fails does not.** That is a better argument for the shared bench than any of
+the fixture defects it was written for.
+
