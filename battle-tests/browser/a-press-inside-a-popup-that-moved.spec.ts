@@ -23,12 +23,21 @@
  * overlay for its own reasons and would report "closed" whether the rule worked or not. That
  * discriminator is the whole spec; without it this passes on a broken rule.
  *
- * **Sensitivity is unproven in this tier.** Neutralising `portalRootFor` in the built host bundle did
- * not turn this red, and the reason was not established — most likely the bundler inlines it, so the
- * patched definition is not the one the call site uses. `esecutore` reproduced the defect at source
- * level with the same discriminator (portal lookup off, renderer's list truncated to the wrapper →
- * the popup dismisses under its own press), so the defect is real and measured; what is not yet shown
- * is that **this** spec would catch its return. Read the green accordingly.
+ * **The press is a real one, and that is not a detail.** A first version dispatched
+ * `new PointerEvent("pointerdown", { bubbles: true, composed: true })`, and measured in the same
+ * Chromium this tier launches:
+ *
+ *     {"isPrimary": false, "button": 0, "pointerId": 0}
+ *
+ * `isPrimary` defaults to **false** on a constructed `PointerEvent`, so `dismissal-dom.ts`'s
+ * `e.isPrimary ?? true` never applies, the press is discarded as non-primary, and the state machine
+ * never leaves `idle`. Those three events could not dismiss a popup under **any** rule — the spec
+ * passed on a correct implementation, a broken one, and an absent one alike.
+ *
+ * So the press comes from `page.mouse`, which is trusted and carries the fields a person's finger
+ * carries. And the spec no longer takes on faith that its own press works: **a press outside must
+ * dismiss**, asserted first. Without that control, a press that does nothing is indistinguishable
+ * from a rule that correctly kept the popup open.
  *
  * Claims under attack: UI-005.
  */
@@ -87,25 +96,52 @@ for (const host of HOSTS) {
 
       // The popup may be anywhere — that is the point — so it is found by what the opener names
       // rather than by looking inside the field.
-      const pressedInside = await page.evaluate(({ mountId }) => {
+      // A point on the popup's own surface with **nothing interactive under it**. Pressing an option
+      // closes the overlay for its own reasons, and a spec that pressed one would report "closed"
+      // whatever the dismissal rule did — which is the discriminator this whole spec turns on. So the
+      // point is chosen by asking what is under it, and a kind whose popup offers no such point is
+      // skipped rather than asserted about.
+      const box = await page.evaluate(({ mountId }) => {
         const opener = document.querySelector(`[data-form="${mountId}"] [aria-controls]`);
         const popup = opener && document.getElementById(opener.getAttribute("aria-controls") ?? "");
-        if (!popup) return false;
-        const box = popup.getBoundingClientRect();
-        if (box.width === 0 || box.height === 0) return false;
-        // The popup's own surface, near its edge, away from any option.
-        const target = document.elementFromPoint(box.left + 2, box.top + 2) ?? popup;
-        target.dispatchEvent(new PointerEvent("pointerdown", { bubbles: true, composed: true }));
-        target.dispatchEvent(new PointerEvent("pointerup", { bubbles: true, composed: true }));
-        target.dispatchEvent(new MouseEvent("click", { bubbles: true, composed: true }));
-        return true;
+        if (!popup) return null;
+        const rect = popup.getBoundingClientRect();
+        if (rect.width <= 8 || rect.height <= 8) return null;
+        const interactive = "button, [role=option], [role=gridcell], input, a, select, textarea, [tabindex]";
+        for (const [dx, dy] of [[2, 2], [rect.width - 2, 2], [2, rect.height - 2], [rect.width - 2, rect.height - 2], [rect.width / 2, rect.height - 2]]) {
+          const x = rect.left + dx;
+          const y = rect.top + dy;
+          const under = document.elementFromPoint(x, y);
+          if (!under || !popup.contains(under)) continue;
+          if (under.closest(interactive)) continue;
+          return { x, y, under: under.className || under.tagName };
+        }
+        return null;
       }, { mountId: id });
 
-      if (!pressedInside) { unopened.push(`${kind} (popup not locatable)`); continue; }
+      if (!box) { unopened.push(`${kind} (no inert point inside its popup)`); continue; }
+
+      await page.mouse.click(box.x, box.y);
       await page.waitForTimeout(250);
 
       if (await page.locator(`[data-form="${id}"] [aria-expanded="true"]`).count() === 0) closed.push(kind);
     }
+
+    // The control that the first version lacked: a press *outside* has to dismiss. If it does not,
+    // every "still open" above is about a press nothing received rather than a rule that held.
+    const survivedAnOutsidePress: string[] = [];
+    for (const kind of KINDS) {
+      const id = `pop-${kind}`;
+      if (await page.locator(`[data-form="${id}"] [aria-expanded="true"]`).count() === 0) continue;
+      await page.mouse.click(2, 2);
+      await page.waitForTimeout(250);
+      if (await page.locator(`[data-form="${id}"] [aria-expanded="true"]`).count() > 0) survivedAnOutsidePress.push(kind);
+    }
+    expect(
+      survivedAnOutsidePress,
+      "a press in the corner of the page did not dismiss an open popup, so the presses in this spec "
+        + "are not reaching the dismissal rule and nothing above was measured",
+    ).toEqual([]);
 
     // The control: enough kinds actually opened for the sweep to mean something.
     expect(

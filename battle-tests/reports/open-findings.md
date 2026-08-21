@@ -18716,6 +18716,57 @@ answer. Third and fourth occurrences of the same trap in one session, against a 
 exactly it, which is now a standing argument for the browser build refusing to run stale rather than
 reminding me to rebuild.
 
+## 328 — A spec that could not dismiss anything, and the defect it was hiding (S1, UI-005)
+
+`esecutore` settled 327's unproven sensitivity, and the answer was worse than insensitive.
+
+```
+packages/widgets/src/dismissal-dom.ts:35
+  policy.pointerdown(e.target, { …, isPrimary: e.isPrimary ?? true, … })
+
+new PointerEvent("pointerdown", { bubbles: true, composed: true })   in this tier's Chromium:
+  {"isPrimary": false, "button": 0, "pointerId": 0}
+```
+
+**`isPrimary` defaults to `false` on a constructed `PointerEvent`.** So `?? true` never applies, the
+press is discarded as non-primary, and the machine never leaves `idle`. My three synthetic events
+**could not dismiss a popup under any rule** — the spec passed on a correct implementation, a broken
+one, and an absent one alike. My bundler hypothesis for 327 is retired; this is the cause.
+
+**And `?? true` is a fallback that rescues synthetic events and never a real one**, which is why the
+two harnesses disagreed: `esecutore`'s jsdom test builds a plain `Event` with **no** `isPrimary`
+property, so `?? true` applies and the press counts; a real `PointerEvent` carries an explicit
+`false`. Two tiers, opposite behaviour, from one `??`. Neither test could have revealed it alone.
+
+**Repaired twice, and the second repair is the one that matters.** First, the press became a real
+`page.mouse.click()` — trusted, carrying what a finger carries. Then the spec stopped taking its own
+press on faith: **a press outside must dismiss**, asserted before anything else, because without it a
+press that does nothing is indistinguishable from a rule that correctly held.
+
+**With the instrument working, it is red:**
+
+```
+plain   select   closes under a press on its own popup
+lit     —        all kinds hold
+```
+
+The press is provably inert — the point is chosen by asking `elementFromPoint` and rejecting anything
+inside `button, [role=option], [role=gridcell], input, a, select, textarea, [tabindex]`, because
+choosing an option closes the overlay for its own reasons and would report "closed" whatever the rule
+did. Measured, the press lands on `UL.mdy-select__list` with the popup's parent a `DIV`.
+
+**That correction was my own discriminator failing**: the first fixed version pressed the popup's
+corner, which on a list *is* the first option. A spec that presses the thing whose activation closes
+the popup measures nothing, and it was red for the wrong reason before it was red for the right one.
+
+Handed over, not diagnosed further: a press on a select popup's own surface dismisses it in one
+renderer and not the other.
+
+**Also corrected, for the release notes**: `battle:angular` exists —
+`node --test "battle-tests/angular/*.battle.mjs"` after `build:angular`. It is module-level and cannot
+answer a pointer-capture question, so 325's substance holds, but *"no Angular tier at all"* is too
+strong and should not reach the user in that form.
+
 ## The register's own shape, measured
 
 ```
