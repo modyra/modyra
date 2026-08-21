@@ -8,6 +8,7 @@ import {
   MDY_TIMEPICKER_INITIAL_VIEW,
   type MdyTimepickerViewMode,
   timepickerPlaceholder,
+  type MdyUiCommand,
 } from "@modyra/widgets";
 import { html, nothing, type PropertyDeclarations } from "lit";
 import { observerFor, type MdyFieldHandle } from "@modyra/core";
@@ -131,16 +132,28 @@ export class MdyTimepickerFieldElement extends MdyFieldElement<string | null> {
   }
 
   /** Carries out what the controller asks of the DOM, which is the only half this renderer owns. */
-  private send(intent: MdyTimepickerFieldIntent): void {
+  /**
+   * Carries out what the controller asked for, whether it was asked or decided on its own.
+   *
+   * The handover has no call to return commands to: the controller's timer hands the hour to the
+   * minute, and the `focus` that goes with it arrives here through `emit` instead.
+   */
+  private runDispatched(commands: readonly MdyUiCommand[]): void {
     const handle = this.field;
-    if (!this.fieldController || !handle) return;
-    applyWidgetCommands(this, this.fieldController.dispatch(intent), {
+    if (!handle) return;
+    applyWidgetCommands(this, commands, {
       open: () => this.overlay.open(),
       close: () => this.overlay.close(),
       disabled: handle.disabled(),
       control: ".mdy-timepicker__input",
       kind: "timepicker",
     });
+  }
+
+  private send(intent: MdyTimepickerFieldIntent): void {
+    const handle = this.field;
+    if (!this.fieldController || !handle) return;
+    this.runDispatched(this.fieldController.dispatch(intent));
     // Said to the form rather than kept here: an entry this control could not read leaves the form
     // holding nothing while the person looks at text they believe was taken, and a message the
     // element painted on its own escaped every rule the form applies to its errors — it was still
@@ -148,6 +161,15 @@ export class MdyTimepickerFieldElement extends MdyFieldElement<string | null> {
     handle.reportEntry(this.view.entryUnreadable ? this.messages.entryUnreadable : null);
   }
 
+  /**
+   * What the box being edited is showing, while it is being edited.
+   *
+   * The binding cannot simply be skipped: `nothing` on a property binding still writes, setting
+   * `value` to `undefined` and emptying the box under the caret — so a stepped or half-typed number
+   * disappeared on the next render. The partial is held here and bound, which keeps the box and the
+   * draft two views of one thing rather than two owners of one field.
+   */
+  private _editingText: string | null = null;
   private _dragRing: "outer" | "inner" = "outer";
   /** Whether `_dragRing` is an answer from this gesture or the default it starts at. */
   private _ringDecided = false;
@@ -217,6 +239,9 @@ export class MdyTimepickerFieldElement extends MdyFieldElement<string | null> {
         format: this.format,
         ...(this.granularity !== undefined && { granularity: this.granularity }),
         viewMode: this.viewMode,
+        // Where the controller's own decisions land — the handover moves the face and the caret
+        // together, or an arrow edits the field nobody is looking at.
+        emit: (commands) => this.runDispatched(commands),
         // The reading is this element's; the judgement is the controller's, so a typed entry means
         // the same thing here as in every other renderer.
         parseEntry: (text) => {
@@ -388,6 +413,7 @@ export class MdyTimepickerFieldElement extends MdyFieldElement<string | null> {
   private onSegmentInput(event: Event, field: "hour" | "minute"): void {
     const target = event.target as HTMLInputElement;
     this.editing = field;
+    this._editingText = target.value;
     this.markSegment(target, field);
     this.send({ type: "focus-field", field });
     this.send({ type: "type-segment", field, text: target.value });
@@ -399,6 +425,7 @@ export class MdyTimepickerFieldElement extends MdyFieldElement<string | null> {
     // and marking the field touched here made Escape leave a picker somebody had never answered
     // looking as though they had.
     this.editing = null;
+    this._editingText = null;
     this.requestUpdate();
   }
 
@@ -555,7 +582,7 @@ export class MdyTimepickerFieldElement extends MdyFieldElement<string | null> {
             <input
               type="number"
               class="${this.partClass("hourControl")} ${this.view.readonly ? stateClass(this.partClass("hourControl"), "readonly") : ""}"
-              .value=${this.editing === "hour" ? nothing : this.hourDisplay()}
+              .value=${this.editing === "hour" ? this._editingText ?? this.hourDisplay() : this.hourDisplay()}
               ?readonly=${this.view.readonly}
               aria-label=${this.messages.timepickerHourLabel}
               @input=${(e: Event) => this.onSegmentInput(e, "hour")}
@@ -580,7 +607,7 @@ export class MdyTimepickerFieldElement extends MdyFieldElement<string | null> {
             <input
               type="number"
               class="${this.partClass("minuteControl")} ${this.view.readonly ? stateClass(this.partClass("minuteControl"), "readonly") : ""}"
-              .value=${this.editing === "minute" ? nothing : this.minuteDisplay()}
+              .value=${this.editing === "minute" ? this._editingText ?? this.minuteDisplay() : this.minuteDisplay()}
               ?readonly=${this.view.readonly}
               aria-label=${this.messages.timepickerMinuteLabel}
               @input=${(e: Event) => this.onSegmentInput(e, "minute")}

@@ -3,6 +3,12 @@
 A Modyra form can be a JSON document rather than code — produced by a service, a CMS, a visual
 editor, or a language model. Whatever produced it, treat it as untrusted input.
 
+This is the same shape the agent-UI ecosystem is converging on — declarative JSON rendered natively
+client-side, as in Vercel's [json-render](https://github.com/vercel-labs/json-render), Google's
+[A2UI](https://a2ui.sh/) and [MCP-UI](https://mcpui.dev/). A form is the highest-stakes case of that
+pattern: agent-emitted UI must validate, cancel safely and never execute. The contract below is the
+bounded surface an agent is allowed to speak, and the parser is the boundary that keeps it honest.
+
 The supported path is:
 
 ```text

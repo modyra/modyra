@@ -73,6 +73,7 @@ export default defineConfig({
 			sidebar: [
 				{ label: 'Start here', slug: 'start-here' },
 			{ label: 'Feature tour', slug: 'feature-tour' },
+				{ label: 'Quickstart', slug: 'guides/quickstart' },
 				{
 					label: 'Core concepts',
 					items: [
@@ -145,6 +146,7 @@ export default defineConfig({
 						{ label: 'Angular Reactive Forms', slug: 'guides/comparison-reactive-forms' },
 						{ label: 'react-hook-form', slug: 'guides/comparison-react-hook-form' },
 						{ label: 'Formik', slug: 'guides/comparison-formik' },
+						{ label: 'Migration guide', slug: 'guides/migration' },
 					],
 				},
 				{

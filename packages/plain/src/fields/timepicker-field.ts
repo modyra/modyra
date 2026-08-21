@@ -42,6 +42,7 @@ import {
   keyBindingFor,
   MDY_TIMEPICKER_DEFAULT_FORMAT,
   timepickerPlaceholder,
+  type MdyUiCommand,
 } from "@modyra/widgets";
 import { runCommands } from "../command-runtime.js";
 import { applyPart, el, setErrors, setIcon, setText } from "../dom.js";
@@ -79,6 +80,9 @@ export function renderTimepickerField(
     // Which view it opens in, declared the same way and restored on close, so the document names
     // the view the field *has* rather than the one it happened to start on.
     ...(f.viewMode !== undefined && { viewMode: f.viewMode }),
+    // Where the controller's own decisions land. Without it the dial drew the minutes while the
+    // caret stayed in the hour box, so an arrow moved the field nobody was looking at.
+    emit: (commands) => runDispatched(commands),
     // The reading is this renderer's — it knows the notation on screen; the judgement is the
     // controller's, so both renderers answer a typed entry the same way.
     parseEntry: (text) => {
@@ -210,13 +214,21 @@ export function renderTimepickerField(
     periodOption: periodOptions[0]!,
   };
   const lookup: MdyElementLookup = (part) => (part === "trigger" ? control : focusable[part]);
-  function dispatch(intent: Parameters<typeof controller.dispatch>[0]): void {
-    const commands = controller.dispatch(intent);
+  /**
+   * Carries out what the controller asked for, whether it was asked or decided on its own.
+   *
+   * Named because the handover has no call to return commands to: the controller's timer hands the
+   * hour to the minute, and the `focus` that goes with it arrives here through `emit` instead.
+   */
+  function runDispatched(commands: readonly MdyUiCommand[]): void {
     runCommands(commands, lookup, {
       setOpen: () => undefined,
       onTouched: () => handle.markAsTouched(),
       onDirty: () => handle.markAsDirty(),
     });
+  }
+  function dispatch(intent: Parameters<typeof controller.dispatch>[0]): void {
+    runDispatched(controller.dispatch(intent));
   }
 
   // Same reasoning as the datepicker: confirming restores focus to the input, so the sync is

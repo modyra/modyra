@@ -105,7 +105,7 @@ and `useMdyForm` modules you keep and edit — so the contract runtime is a choi
 - 17 widget kinds with one shared definition of anatomy, states and keyboard behaviour;
 - optional devtools and shared CSS themes.
 
-The published form engine measures **13.4 KB gzipped** for a realistic typed form with arrays,
+The published form engine measures **26.7 KB gzipped** for a realistic typed form with arrays,
 validation, drafts and undo. Reproduce it with `npm run test:core-bundle`.
 
 ## Example: server validation that cancels itself
@@ -206,7 +206,7 @@ coverage across adapters.
 
 ## Project status
 
-`@modyra/core` and `@modyra/widgets` are at **2.0.0** and versioned under a published
+`@modyra/core` and `@modyra/widgets` are at **2.4.0** and versioned under a published
 [compatibility policy](docs/contract-compatibility.md): nothing is removed or changed in a breaking
 way outside a major release.
 

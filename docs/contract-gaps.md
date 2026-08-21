@@ -892,7 +892,7 @@ rather than disappearing, so TypeScript reports nothing and the differ reported 
 for the only surface it can see.
 
 The change shipped as `major` on the author's reading rather than the tool's, which is the outcome
-`CLAUDE.md` § *Standing authority* asks for when the two disagree. It is not a repeatable one.
+`AGENTS.md` § *Standing rules* asks for when the two disagree. It is not a repeatable one.
 
 **It recurred immediately, and not on a projection.** Closing J4a added `stateCarriers` to the
 package root and left the catalogue untouched, so the differ reported `patch` for a change that adds

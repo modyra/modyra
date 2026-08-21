@@ -66,7 +66,7 @@ These decide arguments. When two of them pull in different directions, the earli
 Principle 3 applies to this page too.
 
 - **Two packages carry a stable promise; the rest do not.** `@modyra/core` and `@modyra/widgets`
-  are published at 2.0.0 and versioned under the compatibility policy. Every adapter, the SDKs and
+  are published at 2.4.0 and versioned under the compatibility policy. Every adapter, the SDKs and
   Studio version independently and are still below 1.0, so their public surfaces can change in a
   minor release. Pin versions and read the release notes before upgrading.
 - **Coverage is uneven, deliberately.** Three adapters render and are held to the DOM conformance

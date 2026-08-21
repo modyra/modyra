@@ -4,8 +4,9 @@ Modyra keeps a form's behaviour — state, validation, drafts, history, submissi
 framework-independent core, and lets that form travel as data. This index is organised by what you
 are trying to do.
 
-**In a hurry?** [The feature tour](feature-tour.md) shows everything Modyra does, with a runnable
-example and a screenshot for each.
+**In a hurry?** The [quickstart](guides/quickstart.md) goes from install to a running form; [the
+feature tour](feature-tour.md) shows everything Modyra does, with a runnable example and a
+screenshot for each.
 
 ## Pick your path
 
@@ -101,6 +102,7 @@ A local-first visual form builder that edits one project model and compiles it t
 
 ## Comparisons and migration
 
+- [Migration guide](guides/migration.md) — from another library, or between Modyra versions
 - [Bundle and feature comparison](guides/comparison-form-libraries.md)
 - [Angular Reactive Forms](guides/comparison-reactive-forms.md)
 - [React Hook Form](guides/comparison-react-hook-form.md)
@@ -113,8 +115,10 @@ Comparisons are dated snapshots. Re-run the scripts they name before quoting the
 - [Project background](project-background.md) — who Modyra is for, what it refuses to do
 - [Contributing](../CONTRIBUTING.md) · [Security policy](../SECURITY.md)
 - [Roadmap](../ROADMAP.md) · [Changelog](../CHANGELOG.md)
-- [Release administration](guides/release-admin-trusted-publishing.md)
-- [TypeScript 7 and the primary compiler](guides/typescript-7.md)
+
+Maintainer operations stay linked for provenance, but they are runbooks for whoever holds the
+source, not usage documentation: [release administration](guides/release-admin-trusted-publishing.md)
+and [TypeScript 7 and the primary compiler](guides/typescript-7.md).
 
 Documentation under `docs/` is the source for the published site. Package READMEs stay
 self-contained because npm renders them too.

@@ -16,6 +16,7 @@ import type { MdyInteractivity } from "@modyra/core";
 import type { MdyFieldHandle } from "@modyra/core";
 import type { MdyTimeFormat, ParsedTime } from "@modyra/core/datetime";
 import type { MdyTimeGranularity, MdyTimepickerViewMode } from "../time-granularity.js";
+import type { MdyUiCommand } from "../commands.js";
 
 export interface MdyTimepickerFieldControllerOptions {
   /** Stable identity for the widget instance. */
@@ -42,6 +43,19 @@ export interface MdyTimepickerFieldControllerOptions {
    * makes the handover assertable without sleeping, and teardown cancels through the same door.
    */
   readonly schedule?: (run: () => void, afterMs: number) => () => void;
+  /**
+   * Where commands go when this controller raises them without being asked.
+   *
+   * Almost every command answers a `dispatch`, and the caller has the return value to carry out. The
+   * handover does not: the controller decides on its own timer that the hour is finished, and the
+   * `focus` command that decision produces has no call to be returned from. Discarded, the dial
+   * drew the minutes while the browser's focus stayed in the hour box, so an arrow moved the field
+   * the person was no longer looking at.
+   *
+   * A renderer passes the same executor it uses for a dispatched command; nothing here decides what
+   * a command means.
+   */
+  readonly emit?: (commands: readonly MdyUiCommand[]) => void;
   /**
    * What the popup shows when it opens. Defaults to the number fields.
    *
