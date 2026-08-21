@@ -213,7 +213,8 @@ function multiselectWithChip(chip, variant) {
   // Open, and it says so on the root: the option chip this fixture is about lives in the popup, and
   // what a popup contains is required only of a widget that has one showing.
   const { root, label, parts, tail } = shell("multiselect", "mdy-renderer mdy-renderer--multiselect mdy-renderer--open", { labelFor: "multiselect-control" });
-  const wrapper = el("div", "mdy-multiselect");
+  const wrapper = el("div", "mdy-input-wrapper");
+  const box = el("div", "mdy-multiselect");
   // The control a person presses, which is what the label names and what holds the value. The
   // options are in the popup — absent here, because this fixture is a closed control.
   const trigger = el("button", "mdy-multiselect__trigger", {
@@ -227,7 +228,8 @@ function multiselectWithChip(chip, variant) {
   const arrow = el("span", "mdy-multiselect__arrow", { "aria-hidden": "true" });
   trigger.append(chips, arrow);
   const announcement = el("div", "mdy-multiselect__announcement", { role: "status", "aria-live": "polite" });
-  wrapper.append(trigger, announcement);
+  box.append(trigger, announcement);
+  wrapper.append(box);
 
   // Open, because the subject is the option chip and options live in the popup. The grid is both
   // `options` and `listbox`: one element, the shared class plus the overlay one, which is what lets
@@ -244,7 +246,7 @@ function multiselectWithChip(chip, variant) {
 
   root.append(label, wrapper, popup, ...tail);
   const named = {
-    ...parts, inputWrapper: wrapper, trigger, chips, arrow, announcement, popup, options, optionWrapper,
+    ...parts, inputWrapper: wrapper, box, trigger, chips, arrow, announcement, popup, options, optionWrapper,
     option: built.option, optionLabel: built.optionLabel,
     ...(built.optionCheck ? { optionCheck: built.optionCheck } : {}),
     ...(built.optionStep ? { optionStep: built.optionStep } : {}),

@@ -25,6 +25,10 @@ const PART_SEMANTICS: Readonly<Record<string, MdyWidgetSemanticElement>> = Objec
   // and in counter mode the two steppers. A chip that were itself a button could hold none of them —
   // a button inside a button is neither valid nor announceable — and a person reading "3" would have
   // to reopen the popup and find the row again to make it 2, which is the journey the strip removes.
+  // The widget's own layout box, inside the shell every kind sits in. Named rather than folded into
+  // `inputWrapper`, which means the *shell's* box for every other kind — one name for two different
+  // elements is how a height comparison came to be off by the border a theme draws on one of them.
+  box: "presentation",
   chip: "container",
   // What the chip is made of: a name, how many, and the control that takes it off.
   chipRemove: "button",

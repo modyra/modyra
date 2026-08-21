@@ -55,7 +55,10 @@ export function renderMultiselectField(
   const shell = buildFieldShell(f.label, "multiselect", {}, f.ariaLabel, f.name);
 
   // ── the field: a header with the search button, and the options as chips ──────────────────
-  const control = el("div", parts.inputWrapper.classes.join(" "));
+  // The widget's own layout box, as the single-choice sibling has one. Not the `inputWrapper` part:
+  // that is the shell's box, and it means the shell's box for every other kind — one name for two
+  // different elements is how a height comparison came to be off by the border a theme draws.
+  const control = el("div", "mdy-multiselect");
 
   /**
    * What a person presses to open the popup, and what holds what they chose.

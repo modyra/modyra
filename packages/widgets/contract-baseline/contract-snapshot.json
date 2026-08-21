@@ -56,7 +56,8 @@
           ],
           "states": [
             "disabled",
-            "error"
+            "error",
+            "readonly"
           ]
         },
         "prefix": {
@@ -216,7 +217,8 @@
           ],
           "states": [
             "disabled",
-            "error"
+            "error",
+            "readonly"
           ]
         },
         "prefix": {
@@ -376,7 +378,8 @@
           ],
           "states": [
             "disabled",
-            "error"
+            "error",
+            "readonly"
           ]
         },
         "prefix": {
@@ -536,7 +539,8 @@
           ],
           "states": [
             "disabled",
-            "error"
+            "error",
+            "readonly"
           ]
         },
         "control": {
@@ -674,7 +678,8 @@
           ],
           "states": [
             "disabled",
-            "error"
+            "error",
+            "readonly"
           ]
         },
         "control": {
@@ -1594,7 +1599,8 @@
           ],
           "states": [
             "disabled",
-            "error"
+            "error",
+            "readonly"
           ]
         },
         "trigger": {
@@ -1874,14 +1880,46 @@
           "repeated": false,
           "role": null,
           "classes": [
+            "mdy-input-wrapper"
+          ],
+          "states": [
+            "disabled",
+            "error",
+            "readonly"
+          ]
+        },
+        "box": {
+          "element": "presentation",
+          "parent": "inputWrapper",
+          "optional": true,
+          "repeated": false,
+          "role": null,
+          "classes": [
             "mdy-multiselect"
           ],
           "states": []
         },
+        "trigger": {
+          "element": "input",
+          "parent": "inputWrapper",
+          "optional": false,
+          "repeated": false,
+          "role": "combobox",
+          "classes": [
+            "mdy-multiselect__trigger"
+          ],
+          "states": [
+            "disabled",
+            "invalid",
+            "loading",
+            "open",
+            "readonly"
+          ]
+        },
         "chips": {
           "element": "group",
-          "parent": "inputWrapper",
-          "optional": true,
+          "parent": "trigger",
+          "optional": false,
           "repeated": false,
           "role": null,
           "classes": [
@@ -1890,7 +1928,7 @@
           "states": []
         },
         "chip": {
-          "element": "button",
+          "element": "container",
           "parent": "chips",
           "optional": true,
           "repeated": true,
@@ -1904,9 +1942,20 @@
             "selected"
           ]
         },
+        "chipRemove": {
+          "element": "button",
+          "parent": "chip",
+          "optional": true,
+          "repeated": false,
+          "role": null,
+          "classes": [
+            "mdy-chip__remove"
+          ],
+          "states": []
+        },
         "placeholder": {
           "element": "text",
-          "parent": "inputWrapper",
+          "parent": "trigger",
           "optional": true,
           "repeated": false,
           "role": null,
@@ -1915,35 +1964,65 @@
           ],
           "states": []
         },
-        "header": {
-          "element": "group",
+        "arrow": {
+          "element": "presentation",
+          "parent": "trigger",
+          "optional": true,
+          "repeated": false,
+          "role": null,
+          "classes": [
+            "mdy-multiselect__arrow"
+          ],
+          "states": []
+        },
+        "announcement": {
+          "element": "status",
           "parent": "inputWrapper",
           "optional": false,
           "repeated": false,
           "role": null,
           "classes": [
-            "mdy-multiselect__header"
+            "mdy-multiselect__announcement"
           ],
           "states": []
         },
-        "searchButton": {
-          "element": "input",
-          "parent": "header",
-          "optional": false,
+        "popup": {
+          "element": "popup",
+          "parent": "root",
+          "optional": true,
           "repeated": false,
-          "role": "combobox",
+          "role": "dialog",
           "classes": [
-            "mdy-multiselect__search-btn"
+            "mdy-multiselect-overlay__panel",
+            "mdy-multiselect__dropdown",
+            "mdy-popup",
+            "mdy-popup--surface"
+          ],
+          "states": [
+            "above",
+            "overlay",
+            "right"
+          ]
+        },
+        "search": {
+          "element": "input",
+          "parent": "popup",
+          "optional": true,
+          "repeated": false,
+          "role": null,
+          "classes": [
+            "mdy-multiselect-overlay__input"
           ],
           "states": []
         },
         "options": {
           "element": "group",
-          "parent": "root",
+          "parent": "popup",
           "optional": false,
           "repeated": false,
           "role": null,
           "classes": [
+            "mdy-multiselect-overlay__grid",
             "mdy-multiselect__options"
           ],
           "states": []
@@ -2013,47 +2092,6 @@
           "role": null,
           "classes": [
             "mdy-chip__count"
-          ],
-          "states": []
-        },
-        "popup": {
-          "element": "popup",
-          "parent": "root",
-          "optional": true,
-          "repeated": false,
-          "role": "dialog",
-          "classes": [
-            "mdy-multiselect-overlay__panel",
-            "mdy-multiselect__dropdown",
-            "mdy-popup",
-            "mdy-popup--surface"
-          ],
-          "states": [
-            "above",
-            "overlay",
-            "right"
-          ]
-        },
-        "search": {
-          "element": "input",
-          "parent": "popup",
-          "optional": true,
-          "repeated": false,
-          "role": null,
-          "classes": [
-            "mdy-multiselect-overlay__input"
-          ],
-          "states": []
-        },
-        "listbox": {
-          "element": "group",
-          "parent": "popup",
-          "optional": false,
-          "repeated": false,
-          "role": null,
-          "classes": [
-            "mdy-multiselect-overlay__grid",
-            "mdy-multiselect__options"
           ],
           "states": []
         },
@@ -2129,11 +2167,11 @@
           "from": "label",
           "attribute": "for",
           "to": [
-            "searchButton"
+            "trigger"
           ]
         },
         {
-          "from": "searchButton",
+          "from": "trigger",
           "attribute": "aria-describedby",
           "to": [
             "errors",
@@ -2141,7 +2179,7 @@
           ]
         },
         {
-          "from": "searchButton",
+          "from": "trigger",
           "attribute": "aria-controls",
           "to": [
             "popup"
@@ -2180,9 +2218,9 @@
         }
       },
       "keyboard": [
-        "ArrowDown@closed:open",
+        "Alt+ArrowLeft:reorder",
+        "Alt+ArrowRight:reorder",
         "ArrowDown@open:move",
-        "ArrowUp@closed:open",
         "ArrowUp@open:move",
         "End@open:move",
         "Enter@closed:open",
@@ -2248,7 +2286,8 @@
           ],
           "states": [
             "disabled",
-            "error"
+            "error",
+            "readonly"
           ]
         },
         "control": {
@@ -2572,7 +2611,8 @@
           ],
           "states": [
             "disabled",
-            "error"
+            "error",
+            "readonly"
           ]
         },
         "startControl": {
@@ -2921,7 +2961,8 @@
           ],
           "states": [
             "disabled",
-            "error"
+            "error",
+            "readonly"
           ]
         },
         "control": {
@@ -3527,7 +3568,8 @@
           ],
           "states": [
             "disabled",
-            "error"
+            "error",
+            "readonly"
           ]
         },
         "nativePicker": {
