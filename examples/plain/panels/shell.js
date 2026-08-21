@@ -29,6 +29,8 @@ export function action(host, label, run) {
   return button;
 }
 
+export { legend } from "../../shared/legend.js";
+
 /** The row a panel's controls sit in. */
 export function toolbar(host) {
   const bar = document.createElement("div");
