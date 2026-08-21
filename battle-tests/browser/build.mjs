@@ -62,6 +62,44 @@ await build({
   logLevel: "warning",
 });
 
+// A third host, rendered by `@modyra/angular`. Until this existed the tier had two renderers of
+// three, and every question about Angular's rendered geometry — paint order, pointer behaviour, what
+// a dial actually draws — could only be answered by reading its source.
+//
+// `@modyra/angular` is a private workspace package, so it resolves from its build output the way the
+// demos are built; the host's source keeps the specifier a consumer would write. Angular itself
+// resolves as a root dependency.
+await build({
+  entryPoints: [join(BATTLE_ROOT, "browser", "host", "angular-entry.mjs")],
+  outfile: join(OUT_DIR, "angular-host.js"),
+  bundle: true,
+  format: "esm",
+  target: "es2022",
+  alias: {
+    "@modyra/angular/ui": join(REPO_ROOT, "packages", "angular", "dist", "fesm2022", "modyra-angular-ui.mjs"),
+    "@modyra/angular": join(REPO_ROOT, "packages", "angular", "dist", "fesm2022", "modyra-angular.mjs"),
+  },
+  logLevel: "warning",
+});
+
+writeFileSync(
+  join(OUT_DIR, "angular.html"),
+  `<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Modyra battle host (angular)</title>
+    <link rel="stylesheet" href="./modyra.css" />
+  </head>
+  <body>
+    <main id="stage"></main>
+    <script type="module" src="./angular-host.js"></script>
+  </body>
+</html>
+`,
+  "utf8",
+);
+
 writeFileSync(
   join(OUT_DIR, "lit.html"),
   `<!doctype html>

@@ -24,8 +24,13 @@ import { newestUnder } from "../../scripts/newest-under.mjs";
 const ROOT = fileURLToPath(new URL("../../", import.meta.url));
 const HOST = join(ROOT, "battle-tests/.tmp-browser");
 
-/** The packages whose source the host bundles. Widgets and core reach it through plain and lit. */
-const SOURCES = ["core", "widgets", "styles", "plain", "lit"];
+/**
+ * The packages whose source the hosts bundle. Widgets and core reach them through the adapters.
+ *
+ * `angular` builds to `dist/fesm2022` through ng-packagr rather than through `tsc7`, so it goes stale
+ * on its own schedule — it was stale seven times in one session before this guard covered it.
+ */
+const SOURCES = ["core", "widgets", "styles", "plain", "lit", "angular"];
 
 const SOURCE_KINDS = [".ts", ".mjs", ".js", ".css"];
 const BUILT_KINDS = [".js", ".mjs", ".css", ".html"];
