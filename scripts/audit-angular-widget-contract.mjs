@@ -13,7 +13,7 @@
 import { readFileSync, readdirSync, statSync, writeFileSync } from "node:fs";
 import { join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { MDY_WIDGET_CONTRACTS, popupPlacementClass } from "../packages/widgets/dist/index.js";
+import { MDY_WIDGET_CONTRACT_VERSION, MDY_WIDGET_CONTRACTS, popupPlacementClass } from "../packages/widgets/dist/index.js";
 
 const root = resolve(fileURLToPath(new URL("..", import.meta.url)));
 const sourceRoot = join(root, "packages/angular/src/lib");
@@ -77,6 +77,20 @@ for (const file of files.sort()) {
 }
 const manifest = {
   schemaVersion: 1,
+  // The contract this snapshot was taken against.
+  //
+  // Without it the audit could only notice what *Angular* changed, never what the **contract** gained:
+  // it compares Angular's surface to a record of Angular's own past surface, so a part newly declared
+  // and drawn by nobody leaves both sides equal and the gate green. That is how `dialUnavailable`
+  // shipped declared and undrawn while plain's and lit's audits — which fail on a version they do not
+  // recognise — each demanded a re-read.
+  //
+  // The honest requirement for a snapshot audit is not the version pin those two use, because this one
+  // is not reading the contract. It is that **the snapshot may not predate the contract it is offered
+  // as evidence for**: when the version moves, this record has to be taken again and looked at. That is
+  // a weaker guarantee, and it should be — it is answering a weaker question. What holds Angular to
+  // drawing every declared part is `renderers/open-coverage.spec.ts`.
+  contractVersion: MDY_WIDGET_CONTRACT_VERSION,
   source: "packages/angular/src/lib/{control,renderers}",
   note: "Semantic surface referenced by Angular renderer source. Text scan, not rendered DOM — see dom-contract.spec.ts and the state matrices for what the widgets actually render.",
   selectors: [...selectors].sort(),
@@ -88,6 +102,27 @@ const manifest = {
 const serialized = `${JSON.stringify(manifest, null, 2)}\n`;
 if (check) {
   const expected = readFileSync(baselinePath, "utf8");
+  // Said separately from the diff below, because the two mean different things to whoever reads the
+  // failure: a surface that moved is a change to review, and a stale version is a record that can no
+  // longer be trusted to be about the current contract at all.
+  let recorded;
+  try {
+    recorded = JSON.parse(expected).contractVersion;
+  } catch {
+    recorded = undefined;
+  }
+  if (recorded !== MDY_WIDGET_CONTRACT_VERSION) {
+    console.error(
+      `Angular UI baseline was taken against widget contract version ${recorded ?? "(none recorded)"}, ` +
+      `and the contract is now at ${MDY_WIDGET_CONTRACT_VERSION}.`,
+    );
+    console.error(
+      "The snapshot cannot say whether Angular draws what the contract gained — it only compares Angular " +
+      "to Angular. Re-take it and review what moved:",
+    );
+    console.error("Run: node scripts/audit-angular-widget-contract.mjs --write");
+    process.exit(1);
+  }
   if (expected !== serialized) {
     console.error("Angular UI contract differs from packages/angular/contract-baseline/angular-ui.json");
     console.error("Run: node scripts/audit-angular-widget-contract.mjs --write and review the semantic UI change.");
