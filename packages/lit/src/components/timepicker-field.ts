@@ -528,10 +528,11 @@ export class MdyTimepickerFieldElement extends MdyFieldElement<string | null> {
     this._dragAngle = pointerAngle(face, coords.clientX, coords.clientY);
     // A 24-hour face draws `00` and 13–23 on an inner ring at the same twelve positions, so `3` and
     // `15` lie in exactly the same direction and the angle alone cannot say which is under the
-    // pointer. The hand's length comes from the stylesheet that draws the rings, so the hit cannot
-    // drift from the paint.
-    const declared = Number.parseFloat(getComputedStyle(el).getPropertyValue("--tp-hand-length"));
-    const handLength = Number.isFinite(declared) && declared > 0 ? declared : face.width / 2;
+    // pointer. Which ring the pointer is in is decided against the hand's drawn length, so the hit
+    // cannot drift from the paint — and the measurement is the contract's, because reading a custom
+    // property that resolves to a `calc()` answers `NaN` and falls through to the face's radius,
+    // which is a quarter longer than the hand and puts every press inside the inner ring.
+    const handLength = this.measuredHandLength();
     const dx = coords.clientX - (face.left + face.width / 2);
     const dy = coords.clientY - (face.top + face.height / 2);
     this._dragReach = Math.sqrt(dx * dx + dy * dy);
