@@ -7,30 +7,10 @@
  * It also refuses to start on a library build older than the library's source. See
  * {@link assertTheLibraryIsBuilt}.
  */
-import { cpSync, readdirSync, rmSync, statSync } from "node:fs";
+import { cpSync, rmSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { join } from "node:path";
-
-/** The newest mtime under a directory, or 0 when it does not exist. */
-function newestUnder(directory, extensions) {
-  let newest = 0;
-  let entries;
-  try {
-    entries = readdirSync(directory, { withFileTypes: true });
-  } catch {
-    return 0;
-  }
-  for (const entry of entries) {
-    const path = join(directory, entry.name);
-    if (entry.isDirectory()) {
-      newest = Math.max(newest, newestUnder(path, extensions));
-      continue;
-    }
-    if (!extensions.some((extension) => entry.name.endsWith(extension))) continue;
-    newest = Math.max(newest, statSync(path).mtimeMs);
-  }
-  return newest;
-}
+import { newestUnder } from "../../scripts/newest-under.mjs";
 
 /**
  * Refuses to serve a library build older than the library's source.

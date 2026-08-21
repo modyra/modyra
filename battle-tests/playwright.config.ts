@@ -23,7 +23,7 @@ export default defineConfig({
   },
   projects: [{ name: "plain-chromium", use: { browserName: "chromium" } }],
   webServer: {
-    command: "node scripts/serve-static.mjs battle-tests/.tmp-browser 4399",
+    command: "node battle-tests/browser/assert-fresh.mjs && node scripts/serve-static.mjs battle-tests/.tmp-browser 4399",
     url: "http://127.0.0.1:4399/index.html",
     cwd: "..",
     reuseExistingServer: !process.env.CI,
