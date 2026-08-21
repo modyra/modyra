@@ -16,10 +16,50 @@
  *
  * Freshness only — whether the bundle is *correct* is the suite's business. This asks the single
  * question the suite structurally cannot: is what is being served built from what is in the tree.
+ *
+ * @source-inspection — **when** a package's source was last written is a fact about the source and
+ * nowhere else. No published entry point carries its own build time, and none should: a bundle that
+ * could report its own staleness would already have solved the problem. So this reads mtimes under
+ * `packages/*/src` and reads nothing in them — it never opens a file, only asks the filesystem when
+ * each was touched. That is the narrowest form of the exemption this suite allows, and it is the
+ * reason the exemption exists rather than a use of it for convenience.
  */
+import { readdirSync, statSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { join } from "node:path";
-import { newestUnder } from "../../scripts/newest-under.mjs";
+
+/**
+ * The newest mtime under a directory tree.
+ *
+ * The same walk lives in `scripts/newest-under.mjs`, which the Angular demo's guard imports. This copy
+ * is deliberate: `battle-tests/` may not import from outside itself — `black-box-audit.mjs` enforces
+ * it, and it enforced it against this file — because a suite that reaches into repo tooling can pass
+ * by agreeing with it rather than with the published packages. Twenty lines of `readdir` is the
+ * cheaper side of that trade.
+ *
+ * Asking a *directory's* own mtime instead is the trap both copies exist to close: it records when an
+ * entry was added or removed, not when the files beneath it were written, so a rebuild that overwrites
+ * in place leaves it untouched and a fresh build reads as stale.
+ */
+function newestUnder(directory, extensions) {
+  let newest = 0;
+  let entries;
+  try {
+    entries = readdirSync(directory, { withFileTypes: true });
+  } catch {
+    return 0;
+  }
+  for (const entry of entries) {
+    const path = join(directory, entry.name);
+    if (entry.isDirectory()) {
+      newest = Math.max(newest, newestUnder(path, extensions));
+      continue;
+    }
+    if (!extensions.some((extension) => entry.name.endsWith(extension))) continue;
+    newest = Math.max(newest, statSync(path).mtimeMs);
+  }
+  return newest;
+}
 
 const ROOT = fileURLToPath(new URL("../../", import.meta.url));
 const HOST = join(ROOT, "battle-tests/.tmp-browser");
