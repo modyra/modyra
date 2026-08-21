@@ -70,6 +70,9 @@ async function openDimmedDial(page: import("@playwright/test").Page, host: (type
   // Into the dial, clicked through the element rather than the page hit test — that lands on whatever
   // is painted on top, which is the very thing under examination here.
   await page.evaluate(() => {
+    if (document.querySelector(".mdy-timepicker-dial__face")) return;
+    // The picker opens on the dial now, so a toggle sent unconditionally leaves the view
+    // this spec is about — the default changed under the spec, not the renderer.
     (document.querySelector(".mdy-timepicker-mode-toggle") as HTMLElement | null)?.click();
   });
   await page.waitForTimeout(300);

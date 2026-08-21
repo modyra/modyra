@@ -21,7 +21,20 @@
  */
 
 import { expect, test } from "@playwright/test";
-import { MDY_WIDGET_KEYBOARD } from "@modyra/widgets";
+import { MDY_WIDGET_CONTRACTS, MDY_WIDGET_KEYBOARD } from "@modyra/widgets";
+
+/**
+ * The kinds whose popup Tab moves *inside* rather than out of.
+ *
+ * Derived from the anatomy rather than named: **a kind that declares an actions bar has a confirm
+ * button inside its overlay**, and a confirm button Tab cannot reach is a widget with no keyboard
+ * commit path. ADR 0122 withdrew `Tab@open:cancel` for exactly those and left it for the rest.
+ *
+ * Deriving it is what keeps this spec honest when a second kind grows an action bar: it moves to the
+ * other assertion by itself instead of quietly failing the first.
+ */
+const KEEPS_TAB = (kind: string): boolean =>
+  (MDY_WIDGET_CONTRACTS as Record<string, { parts: Record<string, unknown> }>)[kind]?.parts?.actions !== undefined;
 
 const HOSTS = [
   { name: "plain", page: "/index.html", ready: "battleReady", api: "battle" },
@@ -45,6 +58,7 @@ for (const host of HOSTS) {
 
     const leftOpen: string[] = [];
     const neverOpened: string[] = [];
+    const closedTooSoon: string[] = [];
 
     for (const kind of KINDS) {
       const id = `tb-${kind}`;
@@ -83,7 +97,9 @@ for (const host of HOSTS) {
       else {
         await page.keyboard.press("Tab");
         await page.waitForTimeout(320);
-        if (await expanded()) leftOpen.push(kind);
+        const stillOpen = await expanded();
+        if (KEEPS_TAB(kind)) { if (!stillOpen) closedTooSoon.push(kind); }
+        else if (stillOpen) leftOpen.push(kind);
       }
 
       await page.evaluate(({ mountId, api }) =>
@@ -98,5 +114,12 @@ for (const host of HOSTS) {
 
     expect(leftOpen, "Tab left a popup open, so the keys still go to it and the user is inside the field")
       .toEqual([]);
+
+    // And the other direction, which is the half a list of exemptions would have hidden: a kind that
+    // holds a confirm button must still be there after Tab, or its keyboard commit path is gone.
+    expect(
+      closedTooSoon,
+      "Tab closed a popup that holds its own confirm button, so the only way to commit it is a pointer",
+    ).toEqual([]);
   });
 }
