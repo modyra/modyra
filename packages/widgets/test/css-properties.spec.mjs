@@ -13,6 +13,7 @@ import { test } from "node:test";
 import {
   MDY_CSS_PROPERTIES,
   MDY_TIMEPICKER_INNER_RING,
+  MDY_TIMEPICKER_NUMBER_SIZE,
 } from "../dist/index.js";
 import { MDY_CSS_PROPERTY_NAMES } from "../dist/vocabulary.js";
 
@@ -86,6 +87,19 @@ test("the hand into the inner ring is drawn at the ring's own fraction, not its 
     rule[1],
     /height:\s*calc\(var\(--tp-hand-length\)\s*\*\s*var\(--tp-inner-ring\)\)/,
     `the shortened hand carries a length of its own: ${rule[1].trim()}`,
+  );
+});
+
+test("a number is as wide as the contract says it is", () => {
+  // The tolerance that decides whether a pointer is *on* a number is `atan((size / 2) / radius)`, so
+  // the size is a contract number now, not only a drawing one. Two figures in two languages, held
+  // together by this — the same arrangement `MDY_TIMEPICKER_INNER_RING` has.
+  const declared = /--tp-num-size:\s*(\d+)px/.exec(css);
+  assert.ok(declared, "the stylesheet no longer declares --tp-num-size");
+  assert.equal(
+    Number(declared[1]),
+    MDY_TIMEPICKER_NUMBER_SIZE,
+    `the face draws its numbers ${declared[1]}px wide and the hit test reads ${MDY_TIMEPICKER_NUMBER_SIZE}`,
   );
 });
 
