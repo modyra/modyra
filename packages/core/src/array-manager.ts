@@ -596,6 +596,29 @@ export class MdyArrayManager implements MdyNestedCollection {
    * row is written whole by its own manager, as a whole-row write already does.
    */
   private _merged(node: MdyArrayManagerDeps["item"], held: unknown, incoming: unknown): unknown {
+    // A collection inside a row is merged here rather than left to its own manager, and the reason
+    // is the order things happen in: writing this row goes through `setAll`, which rebuilds the
+    // subtree — so by the time the inner manager is asked to merge, it has no rows left to merge
+    // against and every cell the patch did not name comes back as its declared initial. The value
+    // handed to `setAll` has to be complete already.
+    if (node.kind === "array") {
+      if (!Array.isArray(incoming) || !Array.isArray(held)) return incoming;
+      const item = (node as MdyAnyArrayDescriptor).item as MdyArrayManagerDeps["item"];
+      // The incoming list says which rows there are; each of them is merged over the row that was
+      // at its index, and a row past the end is new and taken as it came.
+      return incoming.map((row, index) => (
+        index < held.length ? this._merged(item, held[index], row) : row
+      ));
+    }
+    if (node.kind === "record") {
+      if (!isRecord(incoming) || !isRecord(held)) return incoming;
+      const item = (node as MdyAnyRecordDescriptor).item as MdyArrayManagerDeps["item"];
+      const out: Record<string, unknown> = {};
+      for (const [key, row] of Object.entries(incoming)) {
+        out[key] = key in held ? this._merged(item, held[key], row) : row;
+      }
+      return out;
+    }
     if (node.kind !== "group") return incoming;
     if (!isRecord(incoming) || !isRecord(held)) return incoming;
     const out: Record<string, unknown> = { ...held };
