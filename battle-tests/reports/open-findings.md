@@ -19600,3 +19600,46 @@ because it is the consequence and the other three are its reasons.
 gesture works in all three and does *not* jump to minutes mid-drag — the face changes only after a
 **tap**. So what blocks the drag is having tapped first, which is the handover above rather than a
 drag defect.
+
+## 346 — Angular draws a closed multiselect's options twice (S1, UI-009/A11Y-001)
+
+Found opening brief point 7, the multiselect's use of space. With the popup **shut** and three options
+declared:
+
+```
+plain     1 option list in the document, 1 visible, 3 chips visible
+lit       1 option list in the document, 1 visible, 3 chips visible
+angular   2 option lists in the document, 2 visible, 6 chips visible
+```
+
+Angular keeps one list inline under the renderer and another inside the overlay panel, and with the
+popup closed **both are on the page and both are visible**:
+
+```
+button.mdy-chip < div.mdy-multiselect__options < mdy-control-multiselect
+button.mdy-chip < div.mdy-multiselect__options < div.mdy-overlay-panel < mdy-control-multiselect
+```
+
+Every option is seen twice, read out twice, and clickable in two places.
+
+**Not the hide-or-remove strategy the contract allows.** That choice is legitimate for a *view* — plain
+hides its dial face where the others remove it, and `structure.ts` declares both conforming. Here there
+is no state in which two copies of the options are both correct.
+
+**Battle**: `an-option-list-drawn-twice.spec.ts`, asserted on the **closed** control on purpose. Two
+lists while open would be a renderer portalling its options and keeping the anchor, which is a question
+about portalling; closed, it is simply twice. Counted from both ends — the lists and the chips — so a
+renderer sharing one list element while drawing each option twice inside it is caught too.
+
+### The measurement point 7 was actually for
+
+The same reading gives the number the brief was about:
+
+```
+control height, three options, popup closed:   plain 209px   lit 148px   angular 160px
+```
+
+**All three render the option list inline in the closed control**, which is why a multiselect eats a
+form. That is not a defect against any current contract — it is the design the user decided to change:
+chips for what is chosen in the control, the search on click, the overflow summarised. This finding is
+the defect found on the way; the height is the work.
