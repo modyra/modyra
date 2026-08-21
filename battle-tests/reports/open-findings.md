@@ -18379,6 +18379,65 @@ unexplained is where the chain from an Angular signal to the rendered header los
 instrument that would answer it does not exist yet, and building it — one zoneless Angular fixture —
 is worth more than a guess at the fix.
 
+## 319 — The demo shows each control once, and the route it does not show was the broken one (S1, REA-002)
+
+Closed by `esecutore` in `1a3d5c67`, and recorded because the **reason it escaped** outlives the fix.
+
+**The defect.** `MdyTypedForm._buildHandle`, Angular's override, ended with `registerHandleForm(handle,
+this)` and never called the base's `_own()`, which does that **and**
+`registerHandleOwner(handle, this._adapter.reactivity)`. So the handle had no registered owner,
+`observerFor` fell back to `vanillaReactivity()`, and a controller's draft lived on signals an Angular
+`computed` cannot read. One line: `return this._own(handle)`.
+
+**Predicted from the registry and confirmed by one log line**, which is the cheapest measurement of
+the night:
+
+```
+getFieldHandleOwner(mdyForm({…}).f.alarm)?.kind   →   "(none)"
+```
+
+My proposed repair — *pass the adapter's reactivity as the controller's second argument* — was wrong
+and would have changed every call site. The registry was already the mechanism; **one of its two
+writes was missing.** `esecutore` corrected it.
+
+**Why nothing saw it.** Two maskings had to fail together:
+
+- **Zone.js redraws on every event.** Nothing in the repository runs without it (finding 318).
+- **A widget whose visible state also moves the handle has a second watcher.** The timepicker's open
+  popup is the only surface whose display depends on draft state that never touches the handle until
+  `confirm`.
+
+And a third, which is this entry's subject: **it only hit one of the two binding routes.**
+
+```
+<mdy-form [adapter]> + name="alarm"          green all along
+<mdy-form [form]>    + [field]="form.f.x"    frozen
+```
+
+`control.directive.ts:616` registers the *synthetic* handle with `angularReactivity(this._injector)`
+explicitly, with a comment naming this exact failure. **Somebody hit this once, repaired the path they
+were standing on, and the path beside it kept the defect.** That is "an instrument built narrower than
+what it claims to measure", in production code rather than in a probe.
+
+**The demo could not have caught it, and making it zoneless would not have helped** — it already is:
+Angular 21.2.19, `zone.js` in no manifest, no polyfills entry, a bare `bootstrapApplication`. The gap
+is that **the demo shows each control once**, on whichever route its section's author picked. Across
+the demo: 26 `name=` against 27 `[field]`, both routes exercised somewhere and never both for the same
+control. Both timepickers are `name=`.
+
+**`docs/examples/angular.md` documents `[field]` throughout.** The documented shape was the broken one
+and the demo demonstrated the other.
+
+**The claim that had no instrument**: `docs/guides/comparison-reactive-forms.md:45` publishes
+*"Signals-first; zoneless-friendly"*. The first party to run without Zone was a consumer.
+
+**Carried, unverified.** The fix moves `[field]`-route controllers from vanilla onto Angular
+reactivity, and `angularReactivity` without an `Injector` returns a dead `EffectRef` with
+`MDY_EFFECTS_UNAVAILABLE`. Three controller effects exist. The reading that those vanilla effects were
+reading Angular-owned signals and never re-ran anyway is plausible and untested — **Possible**. The
+fixture that settles it: `mdyForm(schema)` built in a plain function, a `select`, an option list that
+changes after construction.
+
 ## The register's own shape, measured
 
 ```
