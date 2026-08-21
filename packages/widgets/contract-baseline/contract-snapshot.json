@@ -1,5 +1,5 @@
 {
-  "contractVersion": 3,
+  "contractVersion": 4,
   "kinds": {
     "text": {
       "parts": {
@@ -953,7 +953,7 @@
           ]
         },
         "inputWrapper": {
-          "element": "group",
+          "element": "container",
           "parent": "root",
           "optional": false,
           "repeated": false,
@@ -976,7 +976,7 @@
         },
         "indicator": {
           "element": "presentation",
-          "parent": "inputWrapper",
+          "parent": "label",
           "optional": false,
           "repeated": false,
           "role": null,
@@ -986,7 +986,7 @@
           "states": []
         },
         "label": {
-          "element": "text",
+          "element": "label",
           "parent": "inputWrapper",
           "optional": true,
           "repeated": false,
@@ -1085,7 +1085,7 @@
           ]
         },
         "inputWrapper": {
-          "element": "group",
+          "element": "container",
           "parent": "root",
           "optional": false,
           "repeated": false,
@@ -1108,7 +1108,7 @@
         },
         "track": {
           "element": "group",
-          "parent": "inputWrapper",
+          "parent": "label",
           "optional": false,
           "repeated": false,
           "role": null,
@@ -1129,7 +1129,7 @@
           "states": []
         },
         "label": {
-          "element": "text",
+          "element": "label",
           "parent": "inputWrapper",
           "optional": true,
           "repeated": false,
