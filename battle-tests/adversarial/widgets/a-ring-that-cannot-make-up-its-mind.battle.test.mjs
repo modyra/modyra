@@ -36,18 +36,30 @@ const { timepickerDialRing, MDY_TIMEPICKER_NUMBER_SIZE, MDY_TIMEPICKER_INNER_RIN
 const HAND = 100;
 const FACE = { left: 0, top: 0, width: 2 * HAND, height: 2 * HAND };
 
-/** The ring reported for a pointer `reach` px from the centre, straight up. */
-const ringAt = (reach) => timepickerDialRing(FACE, HAND, HAND - reach, "24h", HAND, "hour");
+/**
+ * The ring reported for a pointer `reach` px from the centre, straight up.
+ *
+ * `previous` is threaded because that is what a renderer does: all three already carry the ring they
+ * are dragging on — `_dragRing` in Lit, the same field in Angular and Plain — and pass it to
+ * `timepickerDialPick` and `timepickerDialTolerance` on the very next line. Asking the contract without
+ * it would be asking a question no renderer asks, and no answer to it could ever be flicker-free: with
+ * nothing but a distance to go on, a function must give the same answer every time it sees the same
+ * distance, which is precisely the property that produces the tremor.
+ *
+ * So this is the caller the contract has, and the extra argument is what it is already able to supply.
+ */
+const ringAt = (reach, previous) =>
+  timepickerDialRing(FACE, HAND, HAND - reach, "24h", HAND, "hour", previous);
 
-/** How many times the answer changes across a sequence of positions. */
+/** How many times the answer changes across a sequence of positions, threading each answer forward. */
 function changesAcross(path) {
   let changes = 0;
-  let previous = null;
+  let previous;
   const seen = [];
   for (const reach of path) {
-    const ring = ringAt(reach);
+    const ring = ringAt(reach, previous);
     seen.push(`${reach}:${ring}`);
-    if (previous !== null && ring !== previous) changes += 1;
+    if (previous !== undefined && ring !== previous) changes += 1;
     previous = ring;
   }
   return { changes, seen };
