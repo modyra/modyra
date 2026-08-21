@@ -20098,3 +20098,37 @@ audit can see it. `packages/angular/src/lib/core/types.ts` and `core/typed-form.
 Owned by `esecutore`. Not recorded as allowed — the audit offers `--write` for that and using it here
 would be the ratchet from finding 333 all over again: the number that only ever goes up because the
 first person to see it wrote it down.
+
+### 327 — closed, and the finding itself was wrong
+
+Recorded as *"six of eight cases proven sensitive; two are not… most likely the native control's own
+focus ring."* Both halves were mistaken, and the mistake was in the instrument rather than in the spec.
+
+**All eight are sensitive.** The mutation was missing rules, not the spec missing coverage:
+
+```
+.mdy-(checkbox|toggle):has\(                              10 rules neutralised   6 failed, 2 passed
+.mdy-(checkbox|toggle)(?::[a-z-]+(?:\([^()]*\))?)*:has\(  11 rules neutralised   8 failed
+```
+
+One rule was written `.mdy-toggle:hover:has(input:not(:disabled))` — `:has(` is not adjacent to the
+class, so the original pattern never matched it, and the hover state layer kept its styling through
+every "neutralised" run. One rule of eleven, and it was the one both surviving cases depended on.
+
+**The two survivors were the hover pair, not the focus pair.** The finding named focus and blamed the
+UA's ring. I checked the focus case directly before touching anything — with the rule off, nothing on
+the indicator moves at all (`moved: []`) — which is what sent me looking at the mutation instead of at
+the spec.
+
+Two lessons, and the second is the one worth keeping:
+
+- **A mutation that does not fail is not evidence of anything.** Ten rules "neutralised" and two cases
+  still green read as a coverage gap; the honest reading was that the mutation had not been shown to
+  reach those two cases at all.
+- **I read the earlier run backwards.** The four test names my filter printed were the *failures*, and
+  I took them for the passes and nearly recorded that the keyboard cases were insensitive — the exact
+  opposite of the truth. The run that corrected it printed only `✓` lines and named them as such,
+  which is what the filter should have done from the start.
+
+`a-tick-the-stylesheet-cannot-reach.spec.ts` is unchanged. It was correct all along; what was recorded
+against it was not.
