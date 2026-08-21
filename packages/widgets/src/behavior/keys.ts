@@ -17,7 +17,9 @@ export type MdyWidgetKeyIntent =
   | { readonly type: "increment" }
   | { readonly type: "decrement" }
   /** Move whatever holds focus one place earlier or later in the value. */
-  | { readonly type: "reorder"; readonly by: -1 | 1 };
+  | { readonly type: "reorder"; readonly by: -1 | 1 }
+  /** Take off whatever holds focus. */
+  | { readonly type: "remove" };
 
 /**
  * How close to the viewport edge a popup may sit. Exported because it is part of the placement
@@ -40,6 +42,17 @@ export function widgetKeyIntent(kind: MdyWidgetKind, key: string, open: boolean)
     case "step":
       return key === "ArrowUp" ? { type: "increment" } : { type: "decrement" };
     case "move":
+      // A binding that carries a direction says which way it goes; the key alone cannot, because a
+      // horizontal strip runs in the writing direction and `ArrowLeft` is *later* in a right-to-left
+      // document. `toEnd` is the same direction taken as far as it goes.
+      if (binding.by !== undefined) {
+        return {
+          type: "move",
+          target: binding.toEnd
+            ? (binding.by === -1 ? "first" : "last")
+            : (binding.by === -1 ? "previous" : "next"),
+        };
+      }
       return {
         type: "move",
         target: key === "ArrowDown" ? "next" : key === "ArrowUp" ? "previous" : key === "Home" ? "first" : "last",
@@ -47,6 +60,7 @@ export function widgetKeyIntent(kind: MdyWidgetKind, key: string, open: boolean)
     // The direction is the binding's, not the key's: the strip runs in the writing direction, so in
     // a right-to-left document `ArrowLeft` moves a chip later rather than earlier.
     case "reorder": return { type: "reorder", by: binding.by ?? 1 };
+    case "remove": return { type: "remove" };
   }
 }
 

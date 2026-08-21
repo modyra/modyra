@@ -158,6 +158,14 @@ export function renderMultiselectField(
 
   /** A chip per chosen value, in the order they were chosen, drawn in the closed control. */
   const chosenEls = new Map<string, HTMLElement>();
+  /**
+   * Which chip the strip's single tab stop is on.
+   *
+   * A roving index: one stop for the whole strip, and the arrows move within it. One stop per chip
+   * made the cost of tabbing past the field grow with what it holds — twelve chosen values were
+   * twenty-six presses — and what a control holds must not decide how long it takes to leave.
+   */
+  let activeChip: string | null = null;
 
   /**
    * One chip in the strip: what was chosen, how many of it, and the controls for changing that.
@@ -172,8 +180,9 @@ export function renderMultiselectField(
    */
   function buildValueChip(key: string): HTMLElement {
     const chip = el("div", parts.chip.classes.join(" "));
-    chip.tabIndex = 0;
+    chip.tabIndex = -1;
     chip.setAttribute("role", "group");
+    chip.addEventListener("focus", () => { activeChip = key; syncRoving(); });
     // Rearranging what was chosen, from the chip a person is looking at. The keys are the
     // contract's — a renderer choosing its own is how three of them come to answer differently —
     // and the direction comes from the binding rather than from the key, because the strip runs in
@@ -182,13 +191,33 @@ export function renderMultiselectField(
       if (!reorderable) return;
       const combo = `${event.altKey ? "Alt+" : ""}${event.key}`;
       const binding = keyBindingFor("multiselect", combo, controller.state().open);
-      if (binding?.intent !== "reorder") return;
+      if (!binding) return;
+      // The chip's keys are the chip's. Left to bubble, the control's own overlay handler answered
+      // the same keys a second time — so `End` moved focus and then had the popup's answer applied
+      // over it, and `Backspace` removed nothing because the second handler won.
+      event.stopPropagation();
+      const order = stripOrder();
+      if (binding.intent === "move") {
+        event.preventDefault();
+        const at = order.indexOf(key);
+        const to = binding.toEnd
+          ? (binding.by === -1 ? 0 : order.length - 1)
+          : Math.max(0, Math.min(order.length - 1, at + (binding.by ?? 1)));
+        focusChip(order[to]);
+        return;
+      }
+      if (binding.intent === "remove") {
+        event.preventDefault();
+        const next = chipFocusAfterRemoval(order, key);
+        dispatch({ type: "toggle", optionKey: key });
+        queueMicrotask(() => (next === null ? trigger : chosenEls.get(next) ?? trigger).focus());
+        return;
+      }
+      if (binding.intent !== "reorder") return;
       event.preventDefault();
       // The order the *value* has, not the order these elements were created in: the map is keyed
       // by option and its insertion order never changes, so reading it moved the chip once and then
       // asked for the position it already had.
-      const order = [...new Set(controller.state().selectedValues.map((value) =>
-        keyFor({ value } as MdySelectOption<unknown>)))];
       dispatch({ type: "move-selected", optionKey: key, to: order.indexOf(key) + (binding.by ?? 1) });
       // The chip moved; focus goes with it, or the next key acts on whatever happens to be here.
       queueMicrotask(() => chosenEls.get(key)?.focus());
@@ -196,6 +225,9 @@ export function renderMultiselectField(
     const step = (delta: -1 | 1, label: string) => {
       const button = el("button", parts.optionStep.classes.join(" ")) as HTMLButtonElement;
       button.type = "button";
+      // Out of the tab order with the chip that holds it: the strip is one stop, and its controls
+      // are reached with the keys the contract declares rather than by tabbing through every one.
+      button.tabIndex = -1;
       button.setAttribute("aria-label", label);
       button.addEventListener("click", (event) => {
         event.stopPropagation();
@@ -209,6 +241,7 @@ export function renderMultiselectField(
     if (mode === "multi") chip.appendChild(step(1, messages.chipIncrementLabel));
     const remove = el("button", parts.chipRemove.classes.join(" ")) as HTMLButtonElement;
     remove.type = "button";
+    remove.tabIndex = -1;
     remove.setAttribute("aria-label", messages.chipRemoveLabel);
     remove.addEventListener("click", (event) => {
       // The strip sits inside the trigger, which opens the popup. Taking a value off is not asking
@@ -276,6 +309,27 @@ export function renderMultiselectField(
       chosenEls.delete(key);
     }
     placeholder.hidden = tally.size > 0;
+    syncRoving();
+  }
+
+  /** The chips in the order the value has them, which is the order the strip draws. */
+  function stripOrder(): readonly string[] {
+    return [...new Set(controller.state().selectedValues.map((value) =>
+      keyFor({ value } as MdySelectOption<unknown>)))];
+  }
+
+  /** Exactly one chip is reachable by Tab; the arrows decide which. */
+  function syncRoving(): void {
+    const order = stripOrder();
+    if (activeChip === null || !order.includes(activeChip)) activeChip = order[0] ?? null;
+    for (const [key, chip] of chosenEls) chip.tabIndex = key === activeChip ? 0 : -1;
+  }
+
+  function focusChip(key: string | undefined): void {
+    if (key === undefined) return;
+    activeChip = key;
+    syncRoving();
+    chosenEls.get(key)?.focus();
   }
 
   /**

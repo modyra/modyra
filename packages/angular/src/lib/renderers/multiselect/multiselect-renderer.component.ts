@@ -101,9 +101,10 @@ import type { MdyOverlayBranch, MdyOverlayOwner } from "../../core/overlay-contr
           @for (held of chosen(); track held.key) {
             <span
               [class]="chipClasses(true)"
-              tabindex="0"
+              [attr.tabindex]="activeChip() === held.key ? 0 : -1"
               role="group"
               [attr.data-key]="held.key"
+              (focus)="activeChipKey.set(held.key)"
               (keydown)="onChipKeydown($event, held.key)"
               [attr.aria-label]="held.count > 1 ? held.label + ', ' + held.count : held.label"
               [title]="held.label"
@@ -112,6 +113,7 @@ import type { MdyOverlayBranch, MdyOverlayOwner } from "../../core/overlay-contr
                 <button
                   type="button"
                   [class]="chip.step"
+                  tabindex="-1"
                   [attr.aria-label]="i18n.chipDecrementLabel"
                   (click)="decrement(held.value); $event.stopPropagation()"
                 ><mdy-icon name="MINUS" /></button>
@@ -122,6 +124,7 @@ import type { MdyOverlayBranch, MdyOverlayOwner } from "../../core/overlay-contr
                 <button
                   type="button"
                   [class]="chip.step"
+                  tabindex="-1"
                   [attr.aria-label]="i18n.chipIncrementLabel"
                   (click)="increment(held.value); $event.stopPropagation()"
                 ><mdy-icon name="PLUS" /></button>
@@ -129,6 +132,7 @@ import type { MdyOverlayBranch, MdyOverlayOwner } from "../../core/overlay-contr
               <button
                 type="button"
                 [class]="chip.remove"
+                tabindex="-1"
                 [attr.aria-label]="i18n.chipRemoveLabel"
                 (click)="removeChip(held.key, held.value); $event.stopPropagation()"
               ></button>
@@ -431,16 +435,54 @@ export class MdyMultiselectComponent<TValue = string>
    * rather than the binding would have to know that.
    */
   protected onChipKeydown(event: KeyboardEvent, optionKey: string): void {
-    if (!this.reorderable()) return;
     const binding = keyBindingFor("multiselect", `${event.altKey ? "Alt+" : ""}${event.key}`, this.open());
-    if (binding?.intent !== "reorder") return;
-    event.preventDefault();
+    if (!binding) return;
+    // The chip's keys are the chip's. Left to bubble, the control's own handler answers the same
+    // keys a second time and its answer lands on top of this one.
+    event.stopPropagation();
     const order = this.chosen().map((c) => c.key);
+
+    if (binding.intent === "move") {
+      event.preventDefault();
+      const at = order.indexOf(optionKey);
+      const to = binding.toEnd
+        ? (binding.by === -1 ? 0 : order.length - 1)
+        : Math.max(0, Math.min(order.length - 1, at + (binding.by ?? 1)));
+      this.focusChip(order[to]);
+      return;
+    }
+    if (binding.intent === "remove") {
+      event.preventDefault();
+      const held = this.chosen().find((c) => c.key === optionKey);
+      if (held) this.removeChip(optionKey, held.value);
+      return;
+    }
+    if (binding.intent !== "reorder" || !this.reorderable()) return;
+    event.preventDefault();
     this.controller()?.dispatch({
       type: "move-selected", optionKey, to: order.indexOf(optionKey) + (binding.by ?? 1),
     });
+    this.focusChip(optionKey);
+  }
+
+  /**
+   * Which chip carries the strip's single tab stop.
+   *
+   * A roving index: one stop for the whole strip. One stop per chip made the cost of tabbing past
+   * the field grow with what it holds — twelve chosen values were twenty-six presses.
+   */
+  protected readonly activeChipKey = signal<string | null>(null);
+  protected readonly activeChip = computed(() => {
+    const order = this.chosen().map((c) => c.key);
+    const held = this.activeChipKey();
+    return held !== null && order.includes(held) ? held : order[0] ?? null;
+  });
+
+  private focusChip(key: string | undefined): void {
+    if (key === undefined) return;
+    this.activeChipKey.set(key);
     afterNextRender(
-      () => (this.hostRef.nativeElement.querySelector(`[data-key="${optionKey}"]`) as HTMLElement | null)?.focus(),
+      () => (this.hostRef.nativeElement.querySelector(`[data-key="${key}"]`) as HTMLElement | null)?.focus(),
       { injector: this.injector },
     );
   }
