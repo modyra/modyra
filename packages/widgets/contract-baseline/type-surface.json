@@ -1830,6 +1830,10 @@
     "minuteStep: number",
     "to: string"
   ],
+  "MdyTimepickerDialGhost": [
+    "angle: number",
+    "ring: \"outer\" | \"inner\""
+  ],
   "MdyTimepickerDialKeyResult": [
     "field: \"hour\" | \"minute\"",
     "value: number"
@@ -3389,6 +3393,12 @@
     "(2) current: number",
     "-> returns: { readonly role: \"slider\"; readonly valueMin: number; readonly valueMax: number; readonly valueNow: number; readonly valueText: string; }"
   ],
+  "timepickerDialGhost": [
+    "(0) pointerAngle: number",
+    "(1) pick: MdyTimepickerDialPick",
+    "(2) options?: { readonly ring?: \"outer\" | \"inner\"; readonly within?: number; }",
+    "-> returns: MdyTimepickerDialGhost | null"
+  ],
   "timepickerDialKeyIntent": [
     "(0) key: string",
     "(1) field: \"hour\" | \"minute\"",
@@ -3418,6 +3428,11 @@
     "(4) handLength: number",
     "(5) field?: \"hour\" | \"minute\"",
     "-> returns: \"outer\" | \"inner\""
+  ],
+  "timepickerDialTolerance": [
+    "(0) ring?: \"outer\" | \"inner\"",
+    "(1) handLength?: number",
+    "-> returns: number"
   ],
   "timepickerFieldPartIds": [
     "(0) widgetId: string",

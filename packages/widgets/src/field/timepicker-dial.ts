@@ -182,6 +182,61 @@ export function timepickerSelectedDialValue(
 }
 
 /**
+ * The second hand: where the pointer is, when that is not where the value is.
+ *
+ * A dial that offers only some times has to snap, and snapping alone hides what it is doing — the
+ * hand jumps to a number the finger is not on, and whether that was the rule or a missed press is
+ * not something the screen says. So the chosen value keeps the hand it always had, and a translucent
+ * one follows the pointer whenever the two are apart. The gap between them **is** the explanation.
+ *
+ * Nothing to show when they agree, which is every picker that offers every time: a ghost permanently
+ * under the real hand would be a second thing to look at that never means anything.
+ *
+ * `within` is the tolerance in degrees, and it is the contract's rather than a renderer's for the
+ * usual reason — three answers to "close enough" is three widgets. Half the angular gap between two
+ * offered values is what it defaults to: the ghost appears exactly when the pointer is nearer some
+ * other number than the one that was taken.
+ */
+export interface MdyTimepickerDialGhost {
+  readonly angle: number;
+  readonly ring: "outer" | "inner";
+}
+
+export function timepickerDialGhost(
+  pointerAngle: number,
+  pick: MdyTimepickerDialPick,
+  options: { readonly ring?: "outer" | "inner"; readonly within?: number } = {},
+): MdyTimepickerDialGhost | null {
+  const at = ((pointerAngle % 360) + 360) % 360;
+  const apart = Math.abs(((at - pick.angle + 540) % 360) - 180);
+  const within = options.within ?? 0;
+  if (!(apart > within)) return null;
+  return { angle: at, ring: options.ring ?? pick.ring };
+}
+
+/**
+ * How far off a number the pointer can be and still be **on** it, in degrees.
+ *
+ * Not half the gap to the next number. That was the first answer and it is a tautology: the pick is
+ * *defined* as the nearest offered value, so the pointer is always within half a gap of it, and a
+ * ghost that appears past half a gap never appears at all. Measured across three faces it was hidden
+ * at every one of 360 angles, with every unit test of the parts still green.
+ *
+ * On the number means on the number. A digit is `MDY_TIMEPICKER_NUMBER_SIZE` wide, drawn at a radius
+ * of `handLength` outside and `handLength × MDY_TIMEPICKER_INNER_RING` inside, so it subtends
+ * `atan((size / 2) / radius)` either side of its own direction — about 11° out there and about 18°
+ * further in, because a same-sized number covers more of a smaller circle.
+ */
+export function timepickerDialTolerance(
+  ring: "outer" | "inner" = "outer",
+  handLength = 0,
+): number {
+  if (!(handLength > 0)) return 0;
+  const radius = ring === "inner" ? handLength * MDY_TIMEPICKER_INNER_RING : handLength;
+  return (Math.atan((MDY_TIMEPICKER_NUMBER_SIZE / 2) / radius) * 180) / Math.PI;
+}
+
+/**
  * Which ring a value sits on. One predicate, so the face and the hand cannot disagree about it.
  *
  * Only a 24-hour face has two rings: midnight and 13–23 go inside, at the same twelve positions as
@@ -249,6 +304,16 @@ export interface MdyTimepickerDialKeyResult {
  * the rings land is measured rather than assumed.
  */
 export const MDY_TIMEPICKER_INNER_RING = 0.6;
+
+/**
+ * How wide a number on the face is, in pixels.
+ *
+ * The stylesheet's `--tp-num-size`, which is also what `--tp-hand-length` subtracts half of to find
+ * the radius the outer digits sit at. Published here for the same reason the ring fraction is: the
+ * question "is the pointer on this number" is answered in the contract, and a renderer measuring the
+ * box itself would be a second answer that drifts. `css-properties.spec.mjs` holds the two together.
+ */
+export const MDY_TIMEPICKER_NUMBER_SIZE = 40;
 
 /**
  * Which ring of the face a pointer landed on.

@@ -399,3 +399,82 @@ test("a twelve-hour face has one ring too", () => {
     assert.equal(timepickerDialRing(FACE, 128 + reach, 128, "12h", HAND, "hour"), "outer");
   }
 });
+
+// ─── the ghost ───────────────────────────────────────────────────────────────
+
+const { timepickerDialGhost, timepickerDialTolerance } = await import("../dist/index.js");
+
+test("no ghost when the pointer is on the value it chose", () => {
+  // Every picker that offers every time is this case, always. A ghost permanently under the real
+  // hand is a second thing to look at that never means anything.
+  const pick = timepickerDialPick(90, "hour", "12h");
+  assert.equal(timepickerDialGhost(90, pick), null);
+});
+
+test("a ghost where the pointer is, when the value went somewhere else", () => {
+  const quarters = { minuteStep: 15 };
+  // 42° is the 7-minute mark. On a quarter-hour face the value snaps to 0 or 15, and the gap between
+  // the finger and the hand is the thing the screen has to explain.
+  const pick = timepickerDialPick(42, "minute", "24h", "outer", quarters);
+  const ghost = timepickerDialGhost(42, pick);
+  assert.ok(ghost, "the pointer is not on the chosen number");
+  assert.equal(ghost.angle, 42);
+  assert.notEqual(ghost.angle, pick.angle);
+});
+
+test("the tolerance is the number's own width, not half the gap to the next", () => {
+  // Half the gap is a tautology: the pick is *defined* as the nearest offered value, so the pointer
+  // is always within half a gap of it and the ghost never appears. On the number means on the
+  // number — a 40px digit at a 100px radius subtends about 11° either side.
+  const HAND = 100;
+  assert.equal(Math.round(timepickerDialTolerance("outer", HAND) * 10) / 10, 11.3);
+  // The same digit covers more of a smaller circle, so the inner ring is more forgiving.
+  assert.equal(Math.round(timepickerDialTolerance("inner", HAND) * 10) / 10, 18.4);
+  assert.ok(timepickerDialTolerance("inner", HAND) > timepickerDialTolerance("outer", HAND));
+  // Nothing measured yet: a face with no length gives away no tolerance at all.
+  assert.equal(timepickerDialTolerance("outer", 0), 0);
+});
+
+test("a ghost appears on a face that snaps, and never on one that does not", () => {
+  // What the first tolerance made impossible, and the case it was right about by accident. A face
+  // offering every minute has its numbers 6° apart, so the hand is always under the finger and there
+  // is nothing to explain; a face offering four has 90° between them and the gap is the whole point.
+  const HAND = 100;
+  const within = timepickerDialTolerance("outer", HAND);
+  const shownFor = (steps) => {
+    let shown = 0;
+    for (let angle = 0; angle < 360; angle += 1) {
+      const pick = timepickerDialPick(angle, "minute", "24h", "outer", steps);
+      if (timepickerDialGhost(angle, pick, { within }) !== null) shown += 1;
+    }
+    return shown;
+  };
+
+  assert.equal(shownFor(undefined), 0, "every minute is offered, so the hand is never away from the finger");
+  for (const [name, steps] of [["five", { minuteStep: 5 }], ["a quarter", { minuteStep: 15 }]]) {
+    const shown = shownFor(steps);
+    assert.ok(shown > 0, `${name}: the ghost is never drawn at any angle`);
+    assert.ok(shown < 360, `${name}: the ghost is drawn at every angle, so it says nothing`);
+  }
+  // The coarser the face, the more of the circle is off a number.
+  assert.ok(shownFor({ minuteStep: 15 }) > shownFor({ minuteStep: 5 }));
+});
+
+test("the ghost shows the ring the pointer is over, not the one the value is on", () => {
+  // The point of it is showing what is about to happen. A pointer in the inner band while the
+  // chosen hour is outside is exactly the moment that needs saying.
+  const pick = timepickerDialPick(90, "hour", "24h", "outer");
+  assert.equal(pick.ring, "outer");
+  assert.equal(timepickerDialGhost(120, pick, { ring: "inner" }).ring, "inner");
+  assert.equal(timepickerDialGhost(120, pick).ring, "outer", "and the value's own ring by default");
+});
+
+test("a ring's tolerance follows the radius its numbers are drawn at", () => {
+  // Not the count of them: a ring holding one number is as forgiving as a ring holding twelve,
+  // because what decides is how much of the circle a digit covers.
+  for (const hand of [80, 100, 140]) {
+    const outer = timepickerDialTolerance("outer", hand);
+    assert.ok(outer > 0 && outer < 45, `${hand}px: ${outer}°`);
+    assert.ok(timepickerDialTolerance("inner", hand) > outer, "a smaller circle is more forgiving");
+  }
+});
