@@ -26,7 +26,7 @@ const PORTAL_OPENERS = [
   ".mdy-datepicker__toggle",
   ".mdy-timepicker__toggle",
   ".mdy-colors__toggle-area",
-  ".mdy-multiselect__search-btn",
+  ".mdy-multiselect__trigger",
 ];
 
 /** What the reactive runtime said while `run` executed — where a surviving effect announces itself. */
