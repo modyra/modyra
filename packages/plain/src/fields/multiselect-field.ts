@@ -20,6 +20,7 @@ import {
   MDY_I18N_MESSAGES_DEFAULT,
   type MdyI18nMessages,
   keyBindingFor,
+  chipFocusAfterRemoval,
 } from "@modyra/widgets";
 import { applyPart, el, setErrors, setText, setIcon } from "../dom.js";
 import { buildFieldShell, insertControl } from "../field-shell.js";
@@ -210,7 +211,15 @@ export function renderMultiselectField(
       // The strip sits inside the trigger, which opens the popup. Taking a value off is not asking
       // to see the options.
       event.stopPropagation();
+      // Where focus goes is the contract's. Left to the browser it lands on whatever now occupies
+      // that position, which is the next chip while one exists and the document at the end of the
+      // strip — so clearing from the right loses your place on the first press.
+      const next = chipFocusAfterRemoval([...chosenEls.keys()], key);
       dispatch({ type: "toggle", optionKey: key });
+      queueMicrotask(() => {
+        const landing = next === null ? trigger : chosenEls.get(next)?.querySelector<HTMLElement>(`.${parts.chipRemove.classes[0]}`);
+        (landing ?? trigger).focus();
+      });
     });
     chip.appendChild(remove);
     return chip;
