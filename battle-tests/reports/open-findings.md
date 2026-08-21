@@ -21132,3 +21132,37 @@ shape turned on my own instrument.
 Pinned so the tier is honest about it. It is a spec-side gap and not a defect in plain, and [378](#378)
 is the contract question underneath it.
 
+
+## 379 — a quantity step reorders the value (S1, UI-011 API-001)
+
+```
+start          ["a","a","a","b"]     A ×3, B ×1
+ArrowUp        ["a","a","a","b","a"] A ×4 — appended at the end
+ArrowDown      ["a","a","b","a"]     A ×3 — removed the first occurrence
+ArrowDown      ["a","b","a"]         A ×2
+```
+
+The **count** round-trips and the **value** does not. Raising a quantity appends; lowering it removes
+the earliest match. Two presses that cancel each other out leave a different array from the one they
+started with.
+
+That matters because *the order a person chose in is the order the form holds* — a battle by that name
+was closed by the reordering work, and `option[]` is a deliberate multiset rather than a set. So
+`["a","a","a","b"]` and `["a","a","b","a"]` are two different values, and a person adjusting a quantity
+twice has rearranged a list they never touched.
+
+**Not a keyboard defect.** The keys are right: `ArrowUp` and `ArrowDown` reach a counter chip and move
+its quantity, the chip is `role="spinbutton"` with `aria-valuenow` on the chip itself rather than on a
+child — [ADR 0128](../../docs/architecture/0128-a-chip-is-one-thing-not-a-cell.md)'s narrowing of
+[373](#373), and it is already built. The step's arithmetic is what is wrong, and it is wrong through
+the pointer's steppers as much as the keyboard's arrows, because both go through the same intent.
+
+Pinned by
+[`../browser/a-quantity-only-a-mouse-can-change.spec.ts`](../browser/a-quantity-only-a-mouse-can-change.spec.ts).
+Its first assertion — that a counter chip states its quantity — is **green in all three**, which is why
+this file is worth having: it was written expecting to find 373 unbuilt and found it done, and the
+defect underneath only appeared because the second assertion asked for a round trip rather than for a
+number.
+
+Owned by `esecutore`.
+

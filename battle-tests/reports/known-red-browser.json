@@ -1,11 +1,11 @@
 {
   "note": "Browser specs that are red because the defect they describe is open. A red listed here does not fail a build; a red that is not listed is a regression. Rewrite with `npm run battle:browser:ci -- --accept`.",
   "order": "Repair in severity order, as the node tier does. A spec's severity is the worst of the claims its header names; `unknown` is a spec that names none, which is most of them.",
-  "recordedAt": "2026-08-21T23:37:18Z",
-  "openReds": 70,
+  "recordedAt": "2026-08-21T23:39:50Z",
+  "openReds": 73,
   "bySeverity": {
     "S0": 1,
-    "S1": 61,
+    "S1": 64,
     "S2": 8
   },
   "knownRed": [
@@ -39,6 +39,9 @@
     "a-number-nobody-can-hear.spec.ts › a clock says what it is set to, lit",
     "a-number-you-change-with-arrows.spec.ts › the hour and minute segments carry what the contract declares, lit",
     "a-popup-lit-cannot-open-either.spec.ts › every lit control that declares a popup opens it from the keyboard",
+    "a-quantity-only-a-mouse-can-change.spec.ts › a quantity can be changed without a pointer, angular",
+    "a-quantity-only-a-mouse-can-change.spec.ts › a quantity can be changed without a pointer, lit",
+    "a-quantity-only-a-mouse-can-change.spec.ts › a quantity can be changed without a pointer, plain",
     "a-reference-that-names-an-empty-room.spec.ts › a field with nothing to add points nowhere, lit",
     "a-reference-that-names-an-empty-room.spec.ts › a field with nothing to add points nowhere, plain",
     "a-refusal-the-page-keeps-to-itself.spec.ts › a refusal about a field reaches that field, lit",
