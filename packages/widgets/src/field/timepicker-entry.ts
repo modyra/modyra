@@ -51,14 +51,32 @@ export function timepickerEntry(
   format: MdyTimeFormat,
   text: string,
   steps: MdyTimeSteps = MDY_EVERY_TIME,
+  /**
+   * How a numeral is read, when the host knows something this package cannot.
+   *
+   * The field beside this one already goes through a host-supplied reader — the whole reason it is a
+   * dependency is that a numeral is not `[0-9]` everywhere. Reading the box with a regexp here made
+   * the same characters acceptable when the whole time was typed and refused when typed into a
+   * segment, which is one library answering one question two ways.
+   */
+  parseSegment: (candidate: string) => number | null = readAsciiDigits,
 ): MdyTimepickerEntry | null {
   const typed = text.trim();
-  if (typed.length > WIDTH || (typed.length > 0 && !/^\d+$/.test(typed))) return null;
+  if (typed.length > WIDTH) return null;
   // Empty names nothing, and that is a state a box is allowed to be in: it is how a person replaces
   // a value rather than editing it.
   if (typed.length === 0) return { text: typed, value: null };
-  const entry = acceptTimeField(field, format, typed, steps);
+  const number = parseSegment(typed);
+  // Not a numeral at all in whatever alphabet the host reads: no amount of further typing rescues
+  // it, so it is refused rather than kept as a partial.
+  if (number === null) return null;
+  const entry = acceptTimeField(field, format, number, steps);
   return { text: typed, value: entry.type === "accepted" ? entry.value : null };
+}
+
+/** The digits every locale shares, which is what a host that says nothing gets. */
+function readAsciiDigits(candidate: string): number | null {
+  return /^\d+$/.test(candidate) ? Number(candidate) : null;
 }
 
 /**

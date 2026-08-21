@@ -25,6 +25,7 @@ import { acceptTimeField } from "../time-bounds.js";
 import { timeStepsAt, type MdyTimeSteps } from "../time-granularity.js";
 import { timepickerDialPick, timepickerSelectedDialValue } from "./timepicker-dial.js";
 import { MDY_TIMEPICKER_ADVANCE_MS, MDY_TIMEPICKER_INITIAL_VIEW, timepickerFocusPart } from "./timepicker-focus.js";
+import { timepickerEntry } from "./timepicker-entry.js";
 import { blocksValueChange } from "../interactivity.js";
 import { closeOverlayWhenOutOfPlay } from "./leaving-play.js";
 
@@ -380,6 +381,21 @@ export function createTimepickerFieldController(
         // by itself so one gesture sets a whole time — a renderer that scheduled this instead was a
         // renderer deciding when the field changed, and three of them answered differently.
         if (intent.field === "hour") advanceToMinute();
+        return [];
+      }
+      case "type-segment": {
+        // The reading is the contract's and the numerals are the host's. A text that names a value
+        // the field offers moves the draft — and the hand with it — and one that does not leaves
+        // both alone while the box goes on showing what was typed.
+        const read = timepickerEntry(intent.field, format, intent.text, stepsNow(), options.parseSegment);
+        if (!read || read.value === null) return [];
+        const chosen = intent.field === "hour" ? hourFromFormat(read.value) : null;
+        if (intent.field === "hour") {
+          if (chosen === null) return [];
+          draft.set({ ...draft(), ...chosen });
+        } else {
+          draft.set({ ...draft(), minute: read.value });
+        }
         return [];
       }
       case "focus-field":
