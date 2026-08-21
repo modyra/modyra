@@ -275,6 +275,7 @@
     "mdy-timepicker-dial__number--inner",
     "mdy-timepicker-dial__number--selected",
     "mdy-timepicker-dial__unavailable",
+    "mdy-timepicker-dial__unavailable-layer",
     "mdy-timepicker-fields",
     "mdy-timepicker-header",
     "mdy-timepicker-mode-toggle",
@@ -1071,6 +1072,13 @@
         "mdy-control-textarea"
       ]
     },
+    "packages/angular/src/lib/renderers/timepicker/hand-length.ts": {
+      "classes": [
+        "mdy-timepicker-dial__hand"
+      ],
+      "aria": [],
+      "selectors": []
+    },
     "packages/angular/src/lib/renderers/timepicker/timepicker-clock.component.html": {
       "classes": [
         "mdy-timepicker--dial",
@@ -1090,6 +1098,7 @@
         "mdy-timepicker-dial__number--inner",
         "mdy-timepicker-dial__number--selected",
         "mdy-timepicker-dial__unavailable",
+        "mdy-timepicker-dial__unavailable-layer",
         "mdy-timepicker-header",
         "mdy-timepicker-mode-toggle",
         "mdy-timepicker-spacer"
