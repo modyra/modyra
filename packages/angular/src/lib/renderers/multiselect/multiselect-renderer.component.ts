@@ -1,4 +1,4 @@
-import { chipDropIndex, chipFocusAfterRemoval, chipStripWheelDelta, chipMovedAnnouncement, stateClass, keyBindingFor, multiselectAnnouncement, optionsWithUnrecognizedValues, overlayControlledId, projectOverlayOpenerA11y } from "@modyra/widgets";
+import { chipDropIndex, chipFocusAfterRemoval, chipStripWheelDelta, isTypeaheadCharacter, chipMovedAnnouncement, stateClass, keyBindingFor, multiselectAnnouncement, optionsWithUnrecognizedValues, overlayControlledId, projectOverlayOpenerA11y } from "@modyra/widgets";
 import { MdyPartDirective } from "../../control/mdy-part.directive";
 import { NgTemplateOutlet } from "@angular/common";
 import {
@@ -92,6 +92,7 @@ import type { MdyOverlayBranch, MdyOverlayOwner } from "../../core/overlay-contr
         [attr.aria-readonly]="isReadonly() ? 'true' : null"
         [attr.aria-describedby]="describedById(fieldId)"
         [attr.aria-label]="controlAriaLabel()"
+        [attr.aria-activedescendant]="activeDescendant()"
       >
         <span class="mdy-multiselect__chips" (wheel)="onStripWheel($event)">
           <!-- One chip per distinct value with how many, because a repeated value is a quantity:
@@ -211,7 +212,7 @@ import type { MdyOverlayBranch, MdyOverlayOwner } from "../../core/overlay-contr
         [attr.aria-label]="controlAriaLabel()"
       >
         @for (opt of searchResults(); track opt.value; let i = $index) {
-          <div [class]="chip.wrapper">
+          <div [class]="chip.wrapper" [attr.data-option-key]="optionKey(opt.value)">
           @if (mode() === "multi") {
             <div [class]="chipClasses(countOf(opt.value) > 0)">
               <button
@@ -360,6 +361,14 @@ export class MdyMultiselectComponent<TValue = string>
       query: this.searchQuery(),
       activeKey: this.activeOverlayKey(),
     });
+    // A letter typed at an open list without a filter box moves the cursor to the first match. Only
+    // without one: a searchable popup already answers typing by narrowing the list.
+    if (!action && !this.searchable() && this.open() && isTypeaheadCharacter(event.key, event)) {
+      event.preventDefault();
+      this.controller()?.dispatch({ type: "typeahead", character: event.key });
+      this.followCursor();
+      return;
+    }
     if (!action) return;
     // Tab keeps its native meaning: the list closes and the browser carries focus onward. Cancelling
     // it leaves the user inside a panel being torn down.
@@ -379,6 +388,7 @@ export class MdyMultiselectComponent<TValue = string>
     }
     if (action.type === "move" || action.type === "select") {
       this.controller()?.dispatch(action as never);
+      if (action.type === "move") this.followCursor();
       return;
     }
   }
@@ -572,6 +582,34 @@ export class MdyMultiselectComponent<TValue = string>
     view.addEventListener("pointermove", onMove);
     view.addEventListener("pointerup", onUp);
     view.addEventListener("pointercancel", done);
+  }
+
+  /**
+   * Puts DOM focus on the option the cursor is on, where there is no filter box to name it.
+   *
+   * With a search box the cursor is announced through `aria-activedescendant` and focus stays where
+   * a person is typing. Without one there is no element to carry that reference.
+   */
+  /**
+   * Which option the cursor is on, named from wherever focus actually is.
+   *
+   * Focus stays on the control while the list is open here, so the cursor has no element of its own
+   * to be announced from: without this it moves and nothing says so.
+   */
+  protected readonly activeDescendant = computed(() => {
+    const key = this.activeOverlayKey();
+    if (!key || !this.open()) return null;
+    return this.controller()?.view().parts[key]?.id ?? null;
+  });
+
+  private followCursor(): void {
+    if (this.searchable()) return;
+    const key = this.activeOverlayKey();
+    if (!key) return;
+    afterNextRender(
+      () => (this.hostRef.nativeElement.querySelector(`[data-option-key="${key}"] button, [data-option-key="${key}"]`) as HTMLElement | null)?.focus(),
+      { injector: this.injector },
+    );
   }
 
   /** How many are chosen, for the field's own description. */
