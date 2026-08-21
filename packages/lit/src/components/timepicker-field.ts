@@ -18,6 +18,7 @@ import {
   timepickerDialNumbers,
   timepickerSelectedRing,
   timepickerSelectedDialValue,
+  type MdyTimeGranularity,
   type MdyTimepickerFieldController,
   type MdyTimepickerFieldIntent,
   type MdyTimepickerFieldState,
@@ -47,6 +48,7 @@ const RESTING: MdyTimepickerFieldState = Object.freeze({
   focusedField: "hour",
   viewMode: "dial",
   format: "12h",
+  granularity: undefined,
   invalid: false,
   disabled: false,
   interactivity: "enabled",
@@ -64,6 +66,7 @@ export class MdyTimepickerFieldElement extends MdyFieldElement<string | null> {
   static override properties: PropertyDeclarations = {
     placeholder: { type: String },
     format: { type: String },
+    granularity: { type: Object },
     compact: { type: Boolean },
     _open: { state: true },
     _isDragging: { state: true },
@@ -72,6 +75,14 @@ export class MdyTimepickerFieldElement extends MdyFieldElement<string | null> {
   declare placeholder: string;
   /** `"12h"` or `"24h"`. */
   declare format: MdyTimeFormat;
+  /**
+   * Which times this field offers. Absent offers every one.
+   *
+   * An object rather than an attribute string, because a granularity has windows in it. A host
+   * setting it as a property is the ordinary Lit route; an attribute would need a parser here and a
+   * second answer to what the engine already validates.
+   */
+  declare granularity: MdyTimeGranularity | undefined;
   /** Compact period-toggle layout. */
   declare compact: boolean;
   declare _open: boolean;
@@ -145,6 +156,7 @@ export class MdyTimepickerFieldElement extends MdyFieldElement<string | null> {
         widgetId: this.fieldId,
         handle,
         format: this.format,
+        ...(this.granularity !== undefined && { granularity: this.granularity }),
         // The reading is this element's; the judgement is the controller's, so a typed entry means
         // the same thing here as in every other renderer.
         parseEntry: (text) => {

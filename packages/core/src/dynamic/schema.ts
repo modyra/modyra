@@ -181,6 +181,36 @@ export interface MdyDynamicCalendarOptions {
 /** Single-instant date/time kinds. */
 export interface MdyDynamicDateField extends MdyDynamicFieldBase, MdyDynamicCalendarOptions {
   readonly kind: "datepicker" | "timepicker";
+  /**
+   * Which times this field offers, when it does not offer all of them — `timepicker` only.
+   *
+   * Data rather than a predicate, so a document can carry it and a server can send it. A step that
+   * does not divide its unit, a window that covers no time, or two windows claiming the same
+   * minutes are refused where the document declares them rather than behaving oddly later.
+   */
+  readonly granularity?: MdyTimeGranularity;
+}
+
+/** A stretch of the day with a minute step of its own. Half-open: `from` inclusive, `to` exclusive. */
+export interface MdyTimeWindow {
+  readonly from: string;
+  readonly to: string;
+  readonly minuteStep: number;
+}
+
+/**
+ * Which times a timepicker offers. Absent members mean every one.
+ *
+ * Declared here rather than imported, because the document schema is the lowest layer and must not
+ * depend on what renders it. `@modyra/widgets` reads the same shape.
+ */
+export interface MdyTimeGranularity {
+  /** Minutes between offered times. Must divide 60. */
+  readonly minuteStep?: number;
+  /** Hours between offered hours. Must divide 24. */
+  readonly hourStep?: number;
+  /** Stretches of the day whose minute step differs from the field's. */
+  readonly windows?: readonly MdyTimeWindow[];
 }
 
 /** A start/end pair. Its own interface so a `kind` switch narrows to one value shape. */

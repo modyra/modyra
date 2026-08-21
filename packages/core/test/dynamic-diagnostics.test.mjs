@@ -30,6 +30,9 @@ const REFUSALS = {
     options: [{ value: "pro", label: "Pro monthly" }, { value: "pro", label: "Pro yearly" }],
   }],
   MDY_DYNAMIC_UNKNOWN_PARSE_MODE: [{ name: "a", kind: "text" }],
+  // Seven does not divide sixty, so the rule the author wrote — "every seven minutes" — is not the
+  // one the field would enforce: it offers 0, 7 … 56 and then jumps four minutes into the next hour.
+  MDY_DYNAMIC_UNHONOURABLE_GRANULARITY: [{ name: "a", kind: "timepicker", granularity: { minuteStep: 7 } }],
   // A path is the payload key and the widget id, and a document can grow one without limit.
   MDY_DYNAMIC_PATH_TOO_LONG: (() => {
     let node = { node: "field", field: { kind: "text", label: "L" } };

@@ -18,6 +18,7 @@ import { ConditionalSectionComponent } from "./sections/conditional-section.comp
 import { KeyedRowsSectionComponent } from "./sections/keyed-rows-section.component";
 import { OrdersSectionComponent } from "./sections/orders-section.component";
 import { InvoicesSectionComponent } from "./sections/invoices-section.component";
+import { TimeGranularitySectionComponent } from "./sections/time-granularity-section.component";
 import { ContractsSectionComponent } from "./sections/contracts-section.component";
 import { TypedFormSectionComponent } from "./sections/typed-form-section.component";
 import { ZodFormSectionComponent } from "./sections/zod-form-section.component";
@@ -38,6 +39,7 @@ import { ZodFormSectionComponent } from "./sections/zod-form-section.component";
     KeyedRowsSectionComponent,
     OrdersSectionComponent,
     InvoicesSectionComponent,
+    TimeGranularitySectionComponent,
     ContractsSectionComponent,
     ConditionalSectionComponent,
   ],
@@ -65,6 +67,7 @@ import { ZodFormSectionComponent } from "./sections/zod-form-section.component";
       <app-keyed-rows-section />
       <app-orders-section />
       <app-invoices-section />
+      <app-time-granularity-section />
       <app-contracts-section />
 
       <app-conditional-section />

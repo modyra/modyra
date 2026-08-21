@@ -55,6 +55,9 @@ export function renderTimepickerField(
     widgetId: widgetId,
     handle,
     format,
+    // Declared on the field, so a document can ask for it. A capability no document can reach is a
+    // capability nobody has.
+    ...(f.granularity !== undefined && { granularity: f.granularity }),
     // The reading is this renderer's — it knows the notation on screen; the judgement is the
     // controller's, so both renderers answer a typed entry the same way.
     parseEntry: (text) => {
