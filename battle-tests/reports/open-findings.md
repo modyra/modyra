@@ -20099,6 +20099,46 @@ Owned by `esecutore`. Not recorded as allowed — the audit offers `--write` for
 would be the ratchet from finding 333 all over again: the number that only ever goes up because the
 first person to see it wrote it down.
 
+## 357 — Angular's strip draws a chip per option, not per choice (S1, UI-011)
+
+Four offered, three taken:
+
+```
+plain      ["A","B","C"]
+lit        ["A","B","C"]
+angular    ["A","B","C","D"]
+```
+
+`D` was never chosen. The control whose whole purpose is to show what was chosen is showing the list,
+and `reorderable: false` cannot even be read against it because there is no chosen order there to
+refuse to move. At `c5ef141d`, so it is HEAD rather than a working tree mid-edit.
+
+**The interesting part is why it was reported closed.** `c5ef141d` was verified with two options, both
+chosen:
+
+```
+angular    chips ["Roma, 2","Milano"]   removes 2   height 56px   trigger ✓
+```
+
+Every one of those numbers is right, and **a chip per option and a chip per choice are the same strip
+when every option is chosen.** The check could not have failed. This is the mutation thought experiment
+arriving on its own: a small plausible defect that the check leaves green, found not by imagining one
+but by a different fixture happening to have a spare option in it.
+
+So the fixture is the finding. Any multiselect check whose options are all chosen cannot see the
+difference between *what is offered* and *what was taken* — and that is the distinction the control
+exists to draw. Pinned as its own assertion in
+[`../browser/a-closed-control-a-person-can-read.spec.ts`](../browser/a-closed-control-a-person-can-read.spec.ts),
+which mounts four and takes three and says in the test body why the two counts must differ. Red on
+Angular only; plain and lit are green, which is what makes it a pin rather than a contract question.
+
+It also accounts for two of the four reds in
+[`../browser/two-doors-to-one-order.spec.ts`](../browser/two-doors-to-one-order.spec.ts) — both Angular
+ones, both saying *"the control is drawing a chip per option rather than per choice"* — and for part of
+Angular's share of [356](#356): a strip holding every option is a strip with more to hold.
+
+Owned by `esecutore`.
+
 ## 355 — The chips strip is an inline box in lit and Angular, so it cannot be made to scroll (S2, UI-011)
 
 The strip that is supposed to scroll is a `<span>` in two of the three renderers, and an inline box has

@@ -61,6 +61,39 @@ for (const host of HOSTS) {
     await page.waitForTimeout(400);
   };
 
+  test(`the strip draws a chip per choice and not per option, ${host.name}`, async ({ page }) => {
+    test.setTimeout(150_000);
+    await page.goto(host.page);
+    await page.waitForFunction((flag) => (window as never as Record<string, boolean>)[flag] === true, host.ready);
+
+    // Four offered, three taken. **The two counts must differ**: with every option chosen, a strip that
+    // draws one chip per option and one that draws one per choice are the same strip, and a check made
+    // that way reports a control that shows everything as a control that shows what was chosen.
+    await page.evaluate(({ api }) => {
+      const options = ["a", "b", "c", "d"].map((value) => ({ value, label: value.toUpperCase() }));
+      (window as never as Record<string, Record<string, (...a: never[]) => unknown>>)[api]
+        .mountFields("perChoice", [{
+          name: "s", kind: "multiselect", label: "S", options, initialValue: ["a", "b", "c"],
+        }] as never);
+    }, { api: host.api });
+    await page.waitForTimeout(400);
+
+    const drawn = await page.evaluate(({ chipClass }) => {
+      const root = document.querySelector('[data-form="perChoice"]');
+      if (root === null) return null;
+      return Array.from(root.querySelectorAll(`.${chipClass}`))
+        .map((chip) => (chip.getAttribute("aria-label") ?? chip.textContent ?? "").trim());
+    }, { chipClass: CHIP });
+
+    expect(drawn, "nothing was mounted").not.toBeNull();
+    expect(
+      drawn,
+      `the strip is showing ${drawn?.length} chips for three chosen out of four offered — ` +
+        `${JSON.stringify(drawn)}. A chip per option means the control shows the whole list whether or ` +
+        `not a person took it, so nothing on it says what was chosen`,
+    ).toEqual(["A", "B", "C"]);
+  });
+
   test(`a chip's buttons carry a visible mark, ${host.name}`, async ({ page }) => {
     test.setTimeout(150_000);
     await page.goto(host.page);
