@@ -3405,6 +3405,7 @@
     "(1) field: \"hour\" | \"minute\"",
     "(2) format: MdyTimeFormat",
     "(3) current: number",
+    "(4) steps?: MdyTimeSteps",
     "-> returns: MdyTimepickerDialKeyResult | null"
   ],
   "timepickerDialNumbers": [
