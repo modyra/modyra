@@ -141,6 +141,23 @@ export function chipFocusAfterRemoval(
  * a region firing at the same time makes every toggle speak twice. The row's own removals are the
  * case nothing else speaks for.
  */
+/**
+ * What the one way back says it is putting back.
+ *
+ * "Undo" alone is ambiguous once a single reversal covers three acts, so the affordance names the
+ * act. A clear has no value to name and says how many it took; a removal and a move name the value,
+ * because that is what the person is deciding whether they meant to lose.
+ */
+export function wayBackSentence(
+  way: { readonly act: "remove" | "move" | "clear"; readonly optionKey: string | null; readonly count: number },
+  templates: { readonly removed: string; readonly moved: string; readonly cleared: string },
+  labelOf: (key: string) => string,
+): string {
+  if (way.act === "clear") return templates.cleared.replace("{count}", String(way.count));
+  const label = way.optionKey === null ? "" : labelOf(way.optionKey);
+  return (way.act === "move" ? templates.moved : templates.removed).replace("{value}", label);
+}
+
 export function multiselectAnnouncement(
   previous: readonly string[],
   next: readonly string[],

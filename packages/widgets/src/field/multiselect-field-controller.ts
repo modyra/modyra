@@ -24,6 +24,7 @@ import type { MdyWidgetController, MdyWidgetViewContract } from "../contract.js"
 import { projectMultiselectFieldA11y } from "./multiselect-field-a11y.js";
 import { showsAsInvalid } from "./verdict.js";
 import type {
+  MdyMultiselectWayBack,
   MdyMultiselectFieldControllerOptions,
   MdyMultiselectFieldIntent,
   MdyMultiselectFieldState,
@@ -115,6 +116,16 @@ export function createMultiselectFieldController<TValue>(
   // computed the widget draws from, and an effect that throws stops running — the control kept what
   // it was showing, reported itself valid, and the page had nothing to correct. Holding it as one
   // value is what the shape gate then has something to object to.
+  /**
+   * The last destructive act and the value it would put back.
+   *
+   * The value is private: an offer a host can read is an offer a host can apply to a different
+   * moment. What is published is what the act *was*, which is what an affordance has to say.
+   */
+  const wayBack = reactivity.signal<
+    (MdyMultiselectWayBack & { readonly value: ReadonlyArray<TValue> }) | null
+  >(null);
+
   const heldValues = (): ReadonlyArray<TValue> => {
     const held = handle.value() as unknown;
     if (held === null || held === undefined) return [];
@@ -153,6 +164,10 @@ export function createMultiselectFieldController<TValue>(
       touched: handle.touched(),
       dirty: handle.dirty(),
       pending: handle.pending(),
+      wayBack: (() => {
+        const offer = wayBack();
+        return offer === null ? null : { act: offer.act, optionKey: offer.optionKey, count: offer.count };
+      })(),
     };
   });
 
@@ -306,10 +321,49 @@ export function createMultiselectFieldController<TValue>(
   }
 
   function clear(): readonly MdyUiCommand[] {
+    const before = heldValues();
+    if (before.length === 0) return [];
     handle.set([]);
+    wayBack.set({ act: "clear", optionKey: null, count: before.length, value: before });
     handle.markAsDirty();
     handle.markAsTouched();
     return [{ type: "mark-dirty" }, { type: "mark-touched" }];
+  }
+
+  /**
+   * Puts back what the last destructive act took.
+   *
+   * Nothing when there is no offer, and the offer is spent once taken: depth is one, so a second
+   * press must not walk further back into a history this control does not keep.
+   */
+  function undo(): readonly MdyUiCommand[] {
+    const offer = wayBack();
+    if (offer === null) return [];
+    handle.set(offer.value);
+    wayBack.set(null);
+    handle.markAsDirty();
+    handle.markAsTouched();
+    return [{ type: "mark-dirty" }, { type: "mark-touched" }];
+  }
+
+  /**
+   * Records what a value-changing act just did, from the value on either side of it.
+   *
+   * Shorter is destructive and offers a way back; longer, or the same length, is constructive and
+   * withdraws whatever was offered — an offer left standing across an addition reverses something
+   * the person did not just lose, which is the failure a depth-one stack invites.
+   */
+  function record(act: MdyMultiselectWayBack["act"], before: ReadonlyArray<TValue>, optionKey: string | null): void {
+    const after = heldValues();
+    if (act === "move") {
+      wayBack.set({ act, optionKey, count: after.length, value: before });
+      return;
+    }
+    if (after.length < before.length) {
+      wayBack.set({ act, optionKey, count: before.length - after.length, value: before });
+      return;
+    }
+    wayBack.set(null);
   }
 
   /**
@@ -390,16 +444,33 @@ export function createMultiselectFieldController<TValue>(
     }
 
     switch (intent.type) {
-      case "toggle":
-        return toggle(intent.optionKey);
-      case "increment":
-        return increment(intent.optionKey);
-      case "decrement":
-        return decrement(intent.optionKey);
+      case "toggle": {
+        const before = heldValues();
+        const commands = toggle(intent.optionKey);
+        record("remove", before, intent.optionKey);
+        return commands;
+      }
+      case "increment": {
+        const commands = increment(intent.optionKey);
+        wayBack.set(null);
+        return commands;
+      }
+      case "decrement": {
+        const before = heldValues();
+        const commands = decrement(intent.optionKey);
+        record("remove", before, intent.optionKey);
+        return commands;
+      }
       case "clear":
         return clear();
-      case "move-selected":
-        return moveSelected(intent.optionKey, intent.to);
+      case "undo":
+        return undo();
+      case "move-selected": {
+        const before = heldValues();
+        const commands = moveSelected(intent.optionKey, intent.to);
+        if (commands.length > 0) record("move", before, intent.optionKey);
+        return commands;
+      }
     }
   }
 
