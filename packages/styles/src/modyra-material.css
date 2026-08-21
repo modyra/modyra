@@ -442,7 +442,7 @@
     }
 
     /* M3 checkmark icon in thumb when active */
-    .mdy-toggle input:checked+.mdy-toggle__track .mdy-toggle__thumb::after {
+    .mdy-toggle:has(input:checked) .mdy-toggle__track .mdy-toggle__thumb::after {
         content: "";
         position: absolute;
         top: 50%;
@@ -455,7 +455,7 @@
     }
 
     /* M3 focus: state layer around thumb */
-    .mdy-toggle input:focus-visible+.mdy-toggle__track {
+    .mdy-toggle:has(input:focus-visible) .mdy-toggle__track {
         outline: 2px solid var(--mdy-input-focus-color);
         outline-offset: 2px;
     }

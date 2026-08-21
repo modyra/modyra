@@ -207,7 +207,7 @@
     box-shadow: 0 3px 12px rgba(0, 0, 0, 0.16), 0 3px 1px rgba(0, 0, 0, 0.1);
 }
 
-.mdy-checkbox input[type="checkbox"]:focus-visible+span::before {
+.mdy-checkbox:has(input[type="checkbox"]:focus-visible) .mdy-checkbox__indicator::before {
     box-shadow: var(--mdy-input-focus-shadow);
 }
 
