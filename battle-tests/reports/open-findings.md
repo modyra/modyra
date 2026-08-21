@@ -20203,7 +20203,23 @@ not grow, not that a roving tabindex is how.
 No control matching clear, svuota, reset, remove all, deselect, in any renderer. Twelve choices come
 off one at a time, so undoing a filter is twelve deliberate acts and there is no way back to empty.
 
-### 363 — removing a chip drops focus to the document body (S1)
+### 363 — closed at `450aa2c4`, and the pin was raised before it closed
+
+Recorded below as focus falling to the document body. Fixed, and the assertion that stands over it is
+no longer the one that found it. *"Stays inside the field"* is a floor, and a floor is what an
+implementation satisfies by accident — lit passed it on a middle chip and failed on the last, because
+focus was landing on whatever occupied that index rather than being placed.
+
+The rule was stated from outside as **the next chip, else the previous one, else the trigger**, and it
+is now a check rather than a threshold: it names an answer for the end of the strip and for an empty
+strip, which are the two cases an accidental implementation gets wrong. Green in all three.
+
+**It passed vacuously first, three times.** Focus falling to the body reads the chip label as `null`,
+and the expected label is `null` too when there is no chip to expect — so the comparison succeeded by
+matching nothing against nothing. The premise assertion that now guards it is the only reason its green
+means anything. A stricter assertion is not automatically a stronger one.
+
+### 363 — as found (S1)
 
 ```
            removing the middle chip   removing the last chip

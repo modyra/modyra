@@ -146,6 +146,83 @@ for (const host of HOSTS) {
     ).toBeGreaterThan(0);
   });
 
+  /**
+   * Where focus goes after a removal, stated as a rule rather than as a threshold.
+   *
+   * "Stays inside the field" is a floor, and a floor is what a renderer satisfies by accident: lit
+   * passes it on a middle chip and fails on the last one, because focus is *landing* on whatever
+   * occupies that index afterwards instead of being *placed*. The rule that distinguishes the two is
+   * **the next chip, else the previous one, else the trigger** — it names an answer for the end of the
+   * strip and for an empty strip, which are the two cases an accidental implementation gets wrong.
+   */
+  test(`removing a chip places focus, next then previous then the trigger, ${host.name}`, async ({ page }) => {
+    test.setTimeout(150_000);
+    await open(page);
+
+    const removeAndSee = async (id: string, at: "middle" | "last" | "only") => {
+      await page.evaluate(({ id, at }) => {
+        const root = document.querySelector(`[data-form="${id}"]`)!;
+        const chips = Array.from(root.querySelectorAll(".mdy-chip"));
+        const chip = at === "last" ? chips[chips.length - 1] : at === "only" ? chips[0] : chips[Math.floor(chips.length / 2)];
+        const labelOf = (element: Element | undefined) => element?.getAttribute("aria-label") ?? null;
+        (window as never as Record<string, unknown>).__expected =
+          at === "last" ? labelOf(chips[chips.length - 2])
+          : at === "only" ? "TRIGGER"
+          : labelOf(chips[Math.floor(chips.length / 2) + 1]);
+        (chip?.querySelector("button") as HTMLElement | null)?.focus();
+        (chip?.querySelector("button") as HTMLElement | null)?.click();
+      }, { id, at });
+      await page.waitForTimeout(300);
+      return page.evaluate(() => {
+        const active = document.activeElement as HTMLElement | null;
+        const expected = (window as never as Record<string, string | null>).__expected;
+        const chip = active?.closest(".mdy-chip");
+        return {
+          expected,
+          landedOn: active === null || active === document.body ? "the document body"
+            : chip !== null && chip !== undefined ? `the chip ${JSON.stringify(chip.getAttribute("aria-label"))}`
+            : (active.getAttribute("aria-label") ?? active.tagName),
+          isTrigger: active?.classList.contains("mdy-multiselect__trigger") ?? false,
+          chipLabel: chip?.getAttribute("aria-label") ?? null,
+        };
+      });
+    };
+
+    await mount(page, "place_mid", 12);
+    const mid = await removeAndSee("place_mid", "middle");
+    // The premise, and it is the whole test: focus falling to the body reads the chip label as `null`,
+    // and a chip with no `aria-label` makes the expected value `null` too — so without this the
+    // assertion below passes by comparing nothing to nothing. It did, three times, before this line.
+    expect(
+      mid.expected,
+      "the chip after the removed one has no accessible name, so there is nothing to expect focus on " +
+        "and this comparison would succeed however the renderer behaves",
+    ).not.toBeNull();
+    expect(
+      mid.chipLabel,
+      `removing a chip in the middle put focus on ${mid.landedOn}; the rule is the next chip, which ` +
+        `was ${JSON.stringify(mid.expected)}`,
+    ).toBe(mid.expected);
+
+    await mount(page, "place_last", 12);
+    const last = await removeAndSee("place_last", "last");
+    expect(last.expected, "the chip before the removed one has no accessible name").not.toBeNull();
+    expect(
+      last.chipLabel,
+      `removing the last chip put focus on ${last.landedOn}; there is no next chip, so the rule is the ` +
+        `previous one, which was ${JSON.stringify(last.expected)}. This is the case an implementation ` +
+        `that lets focus fall to whatever holds that index gets wrong while passing the middle one`,
+    ).toBe(last.expected);
+
+    await mount(page, "place_only", 1);
+    const only = await removeAndSee("place_only", "only");
+    expect(
+      only.isTrigger,
+      `removing the only chip put focus on ${only.landedOn}; the strip is empty, so the rule is the ` +
+        `trigger — the one place still there to hold it`,
+    ).toBe(true);
+  });
+
   test(`removing a chip leaves focus inside the field, ${host.name}`, async ({ page }) => {
     test.setTimeout(150_000);
     await open(page);
