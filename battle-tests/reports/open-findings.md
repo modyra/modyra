@@ -21898,3 +21898,35 @@ a consumer-supplied value is a contract decision, and every one of those satisfi
 renders the same ids*, which is the sentence a battle would assert. I will write it once the shape is
 chosen — unlike [386](#386), where I talked myself out of a battle the property could carry.
 
+
+### 389's battle is written, and no renderer satisfies both halves
+
+[ADR 0135](../../docs/architecture/0135-an-id-is-a-function-of-the-document.md) named a trap in its own
+Verification: a renderer deriving from the path and **dropping the scope** would satisfy *the same
+document renders the same ids*, because two documents each render the same ids as themselves. So the
+scope was given a case of its own.
+
+It was not hypothetical. The two cases are exactly complementary:
+
+```
+                                       stable across mounts    two forms do not collide
+plain      derives from the path                yes                     no
+lit        mints a counter                      no                      yes
+angular    mints a counter                      no                      yes
+```
+
+**Every renderer passes one half and fails the other**, and each passes the half its own mechanism
+makes free: a counter cannot collide because it is never the same twice, and a path cannot drift
+because it is never anything else. Neither is the property — the property is both at once, and 0135's
+scope is what buys it.
+
+Had the battle been written with the stability case alone — which is the case the finding was filed
+about — plain would have been green and the scope defect would have shipped under a record that
+mentions it. **The trap was found by writing the record, not by running anything**, which is the
+argument for writing the Verification section as a section rather than as a line.
+
+Pinned:
+[`../browser/an-id-you-can-write-down-in-advance.spec.ts`](../browser/an-id-you-can-write-down-in-advance.spec.ts),
+three reds. It asserts neither what an id contains nor where it comes from — the path, a hash of the
+path and a consumer-supplied value all satisfy both sentences.
+
