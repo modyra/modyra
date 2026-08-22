@@ -64,7 +64,15 @@ export function legend(host, { contracts, keyboard, title = "The controls on thi
       const contract = contracts?.[kind];
       const keys = (keyboard?.[kind] ?? []).map((binding) => {
         const key = binding.key === " " ? "Space" : binding.key;
-        return `${key}${binding.when === undefined ? "" : ` (${binding.when})`} → ${binding.intent}`;
+        const when = binding.when === undefined || binding.when === null ? "" : ` (${binding.when})`;
+        // `requires` names a capability the field opts into, and it is off unless a document asked
+        // for it. Without this the legend listed the reordering keys exactly like the others, so a
+        // reader tried them on a demo that had never turned `reorderable` on and concluded the
+        // feature was broken. A key the control will not answer must not look like one it will.
+        const needs = binding.requires === undefined || binding.requires === null
+          ? ""
+          : ` [needs ${binding.requires}]`;
+        return `${key}${when} → ${binding.intent}${needs}`;
       });
 
       const row = document.createElement("tr");
