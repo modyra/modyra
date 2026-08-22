@@ -16,7 +16,6 @@ import {
   overlayAnchoringFor,
   projectFieldShellA11y,
   visibleErrorsOf,
-  showsAsInvalid,
   type MdyColorValueIntent,
   MDY_I18N_MESSAGES_DEFAULT,
   type MdyI18nMessages,
@@ -223,7 +222,7 @@ export function renderColorsField(
     shell.syncState({
       open: isOpen,
       touched: handle.touched(), disabled: handle.disabled(), readonly: handle.readonly(),
-      hasError: showsAsInvalid({ valid: handle.valid(), disabled: handle.disabled() }), filled: Boolean(value), required: handle.required(),
+      hasError: visibleErrorsOf(handle).length > 0, filled: Boolean(value), required: handle.required(),
     });
   });
 

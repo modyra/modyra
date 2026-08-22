@@ -48,7 +48,14 @@ test("every rendered field conforms to its widget DOM contract", () => {
 test("the shell emits the canonical class vocabulary, not adapter equivalents", () => {
   const host = document.createElement("div");
   document.body.append(host);
-  const mounted = mountMdyForm(host, [{ name: "a", kind: "text", label: "A" }], { submitLabel: null });
+  // Required, because the marker is drawn only where it applies: an optional field carrying the
+  // mark of a required one is what the shell stopped doing, so a fixture that asks for the class
+  // has to ask a field that has it.
+  const mounted = mountMdyForm(
+    host,
+    [{ name: "a", kind: "text", label: "A", validators: { required: true } }],
+    { submitLabel: null },
+  );
 
   const root = host.querySelector(".mdy-renderer");
   for (const className of ["mdy-label", "mdy-label__required", "mdy-input-wrapper", "mdy-input-wrapper__inliner", "mdy-supporting-text", "mdy-control__errors"]) {

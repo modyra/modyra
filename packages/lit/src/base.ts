@@ -298,13 +298,15 @@ export abstract class MdyFieldElement<T> extends LitElement {
     // `relatedTarget === null` is deliberately not that: re-rendering the element removes whatever
     // was focused and blurs it into nowhere — a calendar cell replaced when the view changes — and
     // reading that as leaving closed the popup on the click that was operating it.
-    if (next instanceof Node && !this.contains(next)) this.focusLeft();
+    const isNode = typeof next === "object" && next !== null
+      && typeof (next as { nodeType?: unknown }).nodeType === "number";
+    if (isNode && !this.contains(next as Node)) this.focusLeft();
     if (next !== null) return;
     queueMicrotask(() => {
       if (this.field?.disabled() !== true) return;
       const active = this.ownerDocument.activeElement;
       if (active !== null && active !== this.ownerDocument.body) return;
-      keepKeyboardInPlay(this, this.parentElement);
+      keepKeyboardInPlay(this, this.parentElement, { afterBlur: true });
     });
   };
 

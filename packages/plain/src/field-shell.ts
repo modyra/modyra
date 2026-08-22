@@ -46,10 +46,10 @@ export function buildFieldShell(
 
   const label = el("label", MDY_FIELD_SHELL_CLASSES.label) as HTMLLabelElement;
   if (labelText) setText(label, labelText);
+  // Built once and attached only while the field is required: `syncState` is what puts it in the
+  // label and what takes it out.
   const requiredMark = el("span", MDY_FIELD_SHELL_CLASSES.requiredMarker);
   setText(requiredMark, "*");
-  requiredMark.hidden = true;
-  label.appendChild(requiredMark);
 
   const wrapper = el("div", MDY_FIELD_SHELL_CLASSES.inputWrapper) as HTMLDivElement;
   // The themes lay the wrapper out as a flex row and expect the control inside an inliner —
@@ -101,7 +101,14 @@ export function buildFieldShell(
       wrapper.classList.toggle("mdy-input-wrapper--error", Boolean(hasError));
       label.classList.toggle("mdy-label--filled", Boolean(filled));
       label.classList.toggle("mdy-label--has-error", Boolean(hasError));
-      requiredMark.hidden = !required;
+      // Present only where it applies. Hidden was not enough: the element was still in the label
+      // for anything asking whether this field is marked — a test, a tool, a stylesheet — so an
+      // optional field carried the marker of a required one and only `display: none` said otherwise.
+      if (required) {
+        if (requiredMark.parentElement === null) label.appendChild(requiredMark);
+      } else {
+        requiredMark.remove();
+      }
     },
   };
 }

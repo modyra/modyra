@@ -145,6 +145,10 @@ test("out of play, no verdict: the wrapper and the error text go with it", async
   const wrapper = () => host.querySelector(".mdy-input-wrapper")?.className ?? "";
   const errorText = () => host.querySelector("[class*=error]")?.textContent?.trim() ?? "";
 
+  // Touched first: the wrapper's paint and `aria-invalid` answer one question — whether the person
+  // is being told — and a rule nobody has answered yet is not news until they have been at the field.
+  host.querySelector("input")?.dispatchEvent(new Event("blur"));
+  await reactivity.flush();
   assert.ok(wrapper().includes("mdy-input-wrapper--error"), `enabled and empty: ${wrapper()}`);
   assert.equal(host.querySelector("input")?.getAttribute("aria-invalid"), "true");
 

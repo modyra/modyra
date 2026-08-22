@@ -103,7 +103,22 @@ function firstFocusableWithin(root: Element): Focusable | null {
  * Call it *before* taking the control out of play: afterwards the element is already blurred and
  * there is nothing left to say where the keyboard was.
  */
-export function keepKeyboardInPlay(leaving: Element, scope?: Element | null): void {
+export function keepKeyboardInPlay(
+  leaving: Element,
+  scope?: Element | null,
+  options?: {
+    /**
+     * Whether the caller is asking *after* the platform has already blurred the control.
+     *
+     * A renderer that takes a control out of play itself calls before, with the keyboard still on
+     * it. A renderer that hears about it afterwards — lit binds `?disabled` while rendering — has
+     * only the fact that focus is now nowhere, and says so here. Without the distinction, "nowhere"
+     * matches a field nobody was ever standing in, and putting focus on such a widget's root moves
+     * the keyboard to a control the person never visited.
+     */
+    readonly afterBlur?: boolean;
+  },
+): void {
   const document_ = leaving.ownerDocument;
   if (document_ === null) return;
   // On this control, inside it, or nowhere at all. The third is the case being repaired: the
@@ -111,7 +126,11 @@ export function keepKeyboardInPlay(leaving: Element, scope?: Element | null): vo
   // caller that saw the keyboard leave says so by calling then.
   const active = document_.activeElement;
   const nowhere = active === null || active === document_.body;
-  if (!nowhere && active !== leaving && !(active instanceof Element && leaving.contains(active))) return;
+  // Duck-typed rather than `instanceof Element`: this runs in whatever document a host gives it,
+  // and a DOM implementation that does not put `Element` on the global object made the check throw
+  // — inside an effect, which took the rest of the render down with it.
+  const here = active === leaving || (isNode(active) && leaving.contains(active));
+  if (!here && !(nowhere && options?.afterBlur === true)) return;
 
   const root = scope ?? document_.body;
   const order = Array.from(
@@ -136,6 +155,12 @@ export function keepKeyboardInPlay(leaving: Element, scope?: Element | null): vo
     target.focus();
     if (document_.activeElement === target) return;
   }
+}
+
+/** Whether a value is a node this document can be asked about. */
+function isNode(value: unknown): value is Node {
+  return typeof value === "object" && value !== null
+    && typeof (value as { nodeType?: unknown }).nodeType === "number";
 }
 
 /** Whether an element takes focus without being given a `tabindex`. */
