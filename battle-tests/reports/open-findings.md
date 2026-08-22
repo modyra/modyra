@@ -22267,10 +22267,24 @@ lit       silent
 plain     silent
 ```
 
-**Angular's is the only one observed working.** lit publishes the bare id and stayed silent anyway, and
-I have not established why — its check may run before the element carries the id, or before the second
-form is in the document. That is where the next look starts; I am recording it rather than taking a
-seventh run at a file tonight.
+**Angular's is the only one observed working.** lit publishes the bare id and stayed silent anyway.
+One look, and it ruled out the two cheapest explanations rather than finding the cause:
+
+```
+packages/lit/src/base.ts:255   if (MDY_DEV && !this._saidCollision)
+in the host bundle             MDY_DEV = typeof __MDY_DEV__ === "undefined" || __MDY_DEV__   → true
+                               `_saidCollision` present, three occurrences
+```
+
+So it is **not the dev flag and not missing code**. What remains is the lifecycle: the check runs in
+`updated`, once per element, and sets `_saidCollision` before it knows whether it found anything — so
+an element whose first update happens while it is alone on the page **spends its only check** and
+never looks again. Whether that is the cause here depends on when lit flushes two elements appended in
+one task, and I have not measured it.
+
+Recording the two ruled out is worth more than a guess at the third: the next look starts at *the check
+is spent on first update whether or not it had anything to see*, which is a real property of the code
+regardless of whether it explains this silence.
 
 The warning itself is right, and the shape of the defect is one this register keeps meeting: **a guard
 that asks about something the thing it guards does not have.** It is the same as the keyboard sweep
