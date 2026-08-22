@@ -195,6 +195,14 @@ import type { MdyOverlayBranch, MdyOverlayOwner } from "../../core/overlay-contr
         [disabled]="isDisabled() || isReadonly()"
         (click)="onClearAll($event)"
       ><mdy-icon name="CLOSE" /></button>
+      <!-- Said rather than shown: a choice lands and the strip is the only confirmation, which is
+           the one a person using a screen reader does not get. -->
+      <div
+        class="mdy-multiselect__announcement"
+        role="status"
+        aria-live="polite"
+        aria-atomic="true"
+      >{{ announcementText() }}</div>
       <!-- The full name, for a chip the strip had to cut. Shown on hover and on focus: WCAG 1.4.13
            asks for both, and the title attribute is neither — it never appears for a keyboard or a
            touch user, who are exactly the people who cannot widen the chip. One element for the
@@ -206,14 +214,6 @@ import type { MdyOverlayBranch, MdyOverlayOwner } from "../../core/overlay-contr
         [style.inset-inline-start.px]="chipTipAt()"
         [hidden]="namedChip() === null"
       >{{ namedChipLabel() }}</span>
-      <!-- Said rather than shown: a choice lands and the strip is the only confirmation, which is
-           the one a person using a screen reader does not get. -->
-      <div
-        class="mdy-multiselect__announcement"
-        role="status"
-        aria-live="polite"
-        aria-atomic="true"
-      >{{ announcementText() }}</div>
     </div>
     </div>
 

@@ -41,7 +41,8 @@ export const MDY_WIDGET_CONTRACTS = Object.freeze({
       presentation: ["mdy-number-spinner"] ,
       elements: { increment: "button", decrement: "button" } }),
   slider: define("slider", ["mdy-renderer", "mdy-renderer--slider"], ["root", "label", "requiredMarker", "track", "control", "value", "inlineError", "supportingText", "errors", "errorItem"] as const, false,
-    { classes: { track: ["mdy-slider-container"], control: ["mdy-slider"], value: ["mdy-slider-value"] } ,
+    { parents: { value: "track" },
+      classes: { track: ["mdy-slider-container"], control: ["mdy-slider"], value: ["mdy-slider-value"] } ,
       required: ["value"] }),
   // Boolean controls wrap their input and their text in one clickable element, so the label sits
   // inside the wrapper next to the control rather than above it.
@@ -114,8 +115,8 @@ export const MDY_WIDGET_CONTRACTS = Object.freeze({
   // showing value chips (`chips`/`chip`/`placeholder`) is the compact alternative, so those parts
   // stay declared and optional. Which classes a chip carries is `multiselectChipClasses`, never a
   // string in a renderer.
-  multiselect: define("multiselect", ["mdy-renderer", "mdy-renderer--multiselect"], ["root", "label", "requiredMarker", "inputWrapper", "box", "chips", "chip", "chipMove", "chipRemove", "chipTooltip", "trigger", "placeholder", "overflowCount", "clearAll", "arrow", "announcement", "wayBack", "wayBackAction", "popup", "search", "options", "optionWrapper", "option", "optionCheck", "optionStep", "optionLabel", "optionCount", "loading", "empty", "inlineError", "supportingText", "errors", "errorItem"] as const, true,
-    { parents: { trigger: "inputWrapper", arrow: "trigger", options: "popup", optionWrapper: "options", option: "optionWrapper", chips: "inputWrapper", chip: "chips", chipRemove: "chip", chipMove: "chip", chipTooltip: "box", placeholder: "trigger", overflowCount: "inputWrapper", clearAll: "inputWrapper", announcement: "inputWrapper", wayBack: "root", wayBackAction: "wayBack", search: "popup" },
+  multiselect: define("multiselect", ["mdy-renderer", "mdy-renderer--multiselect"], ["root", "label", "requiredMarker", "inputWrapper", "box", "chips", "chip", "chipMove", "chipRemove", "trigger", "placeholder", "overflowCount", "clearAll", "arrow", "announcement", "chipTooltip", "wayBack", "wayBackAction", "popup", "search", "options", "optionWrapper", "option", "optionCheck", "optionStep", "optionLabel", "optionCount", "loading", "empty", "inlineError", "supportingText", "errors", "errorItem"] as const, true,
+    { parents: { trigger: "box", arrow: "trigger", options: "popup", optionWrapper: "options", option: "optionWrapper", chips: "box", chip: "chips", chipRemove: "chip", chipMove: "chip", chipTooltip: "box", placeholder: "trigger", overflowCount: "box", clearAll: "box", announcement: "box", wayBack: "root", wayBackAction: "wayBack", search: "popup" },
       // This widget is a grid of chips, not a listbox, and the chip's element depends on the mode:
       // a <button> in toggle mode, a <div> carrying its own +/- step buttons in counter mode. The
       // contract has no way to say "this part's element depends on that option", so `option` is
@@ -218,7 +219,8 @@ export const MDY_WIDGET_CONTRACTS = Object.freeze({
       // part would require an element neither of them draws.
       required: ["toggle", "container"] }),
   file: define("file", ["mdy-renderer", "mdy-renderer--file"], ["root", "label", "requiredMarker", "dropzone", "control", "content", "fileList", "fileItem", "clear", "rejected", "supportingText", "errors", "errorItem"] as const, false,
-    { classes: { dropzone: ["mdy-file-container"], control: ["mdy-file-input"], content: ["mdy-file-content"], fileList: ["mdy-file-list"], fileItem: ["mdy-file-item"], clear: ["mdy-file-clear"], rejected: ["mdy-file-rejected"] },
+    { parents: { fileList: "content", clear: "content", rejected: "content" },
+      classes: { dropzone: ["mdy-file-container"], control: ["mdy-file-input"], content: ["mdy-file-content"], fileList: ["mdy-file-list"], fileItem: ["mdy-file-item"], clear: ["mdy-file-clear"], rejected: ["mdy-file-rejected"] },
       states: { dropzone: ["dragover"] } ,
       // What the field refused announces itself: it answers something the person just did, and a
       // `<div>` that appears in silence is evidence only for whoever is looking at it.
@@ -228,7 +230,8 @@ export const MDY_WIDGET_CONTRACTS = Object.freeze({
       presentation: ["mdy-file-icon", "mdy-file-info", "mdy-file-placeholder", "mdy-file-name", "mdy-file-meta"] ,
       required: ["content"] }),
   colors: define("colors", ["mdy-renderer", "mdy-renderer--colors"], ["root", "label", "requiredMarker", "inputWrapper", "nativePicker", "preview", "control", "hexInput", "toggle", "popup", "presets", "swatch", "inlineError", "supportingText", "errors", "errorItem"] as const, true,
-    { // The picker is the affordance a pointer uses to reach the colour, and the contract does not
+    {
+      // The picker is the affordance a pointer uses to reach the colour, and the contract does not
       // say how a renderer builds one. A `<label>` wrapping the hidden `<input type=color>` and a
       // `<button>` beside it are both correct, and the second avoids nesting one focusable control
       // inside another — so requiring the first would mandate the weaker of the two.

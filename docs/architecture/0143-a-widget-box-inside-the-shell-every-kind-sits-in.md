@@ -1,6 +1,6 @@
 # ADR 0143: A widget box inside the shell every kind sits in
 
-Status: Proposed
+Status: Accepted
 
 ## Context
 

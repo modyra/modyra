@@ -63,7 +63,10 @@ export function trailingAffordances(kind: MdyWidgetKind): readonly MdyAffordance
     // still needs a target a finger can hit. Keying on the element alone lost it the moment the
     // role made it honest.
     if (node.element !== "button" && !(isOpener && node.parent === "header")) continue;
-    const isStepper = node.parent === "inputWrapper";
+    // Beside the control, in whichever box the kind lays its own parts out in. A widget with a box
+    // of its own declares its parts under it (ADR 0143), and keying only on the shell's name lost
+    // the multiselect's clear-all and overflow the moment they were declared where they are drawn.
+    const isStepper = node.parent === "inputWrapper" || node.parent === "box";
     if (isOpener || isStepper) found.push({ part: node.part, role: "control" });
   }
 

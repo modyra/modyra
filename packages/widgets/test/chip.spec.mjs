@@ -86,10 +86,12 @@ test("the closed control carries what was chosen, and the popup carries the opti
   const parentOf = (part) => structure.nodes.find((node) => node.part === part)?.parent;
   assert.equal(parentOf("options"), "popup");
   assert.equal(parentOf("search"), "popup");
-  assert.equal(parentOf("trigger"), "inputWrapper");
   // Beside the opener, not inside it (ADR 0142): a chip carries a button that takes a value off, and
-  // a control that opens something may not contain a control that destroys something.
-  assert.equal(parentOf("chips"), "inputWrapper");
+  // a control that opens something may not contain a control that destroys something. Under the
+  // widget's own box rather than the shell every kind sits in (ADR 0143), which is where all three
+  // renderers draw it — one part name, one element.
+  assert.equal(parentOf("chips"), "box");
+  assert.equal(parentOf("trigger"), "box");
   assert.equal(parentOf("chip"), "chips");
   // The chip is where a value is changed, so the control that takes it off belongs to the chip.
   assert.equal(parentOf("chipRemove"), "chip");

@@ -107,16 +107,21 @@ import { MdyDropdownBase } from "../dropdown-base";
             } @else {
               <span class="mdy-select__placeholder">{{ placeholder() || '&nbsp;' }}</span>
             }
+            <!-- Inside the opener: the arrow says which way this control opens, so it belongs to
+                 the control rather than being a second thing in the row, and the other two renderers
+                 of this shape draw it there. The native shape below cannot — an icon has nowhere to
+                 go inside a native chooser — which is why the contract names the box both shapes
+                 share. -->
+            @if (effectiveLoading()) {
+              <mdy-icon name="LOADER" class="mdy-select__loader" />
+            } @else {
+              <mdy-icon
+                name="CHEVRON_DOWN"
+                class="mdy-select__arrow"
+                [class.mdy-select__arrow--open]="open()"
+              />
+            }
           </button>
-          @if (effectiveLoading()) {
-            <mdy-icon name="LOADER" class="mdy-select__loader" />
-          } @else {
-            <mdy-icon
-              name="CHEVRON_DOWN"
-              class="mdy-select__arrow"
-              [class.mdy-select__arrow--open]="open()"
-            />
-          }
           @if (suffix(); as s) {
             <div class="mdy-input-suffix">
               <ng-container [ngTemplateOutlet]="s.template" />

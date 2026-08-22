@@ -863,7 +863,7 @@
         },
         "value": {
           "element": "text",
-          "parent": "root",
+          "parent": "track",
           "optional": false,
           "repeated": false,
           "role": null,
@@ -1913,7 +1913,7 @@
         },
         "chips": {
           "element": "group",
-          "parent": "inputWrapper",
+          "parent": "box",
           "optional": false,
           "repeated": false,
           "role": "list",
@@ -1960,20 +1960,9 @@
           ],
           "states": []
         },
-        "chipTooltip": {
-          "element": "text",
-          "parent": "box",
-          "optional": true,
-          "repeated": false,
-          "role": "tooltip",
-          "classes": [
-            "mdy-chip__tooltip"
-          ],
-          "states": []
-        },
         "trigger": {
           "element": "input",
-          "parent": "inputWrapper",
+          "parent": "box",
           "optional": false,
           "repeated": false,
           "role": "combobox",
@@ -2001,7 +1990,7 @@
         },
         "overflowCount": {
           "element": "button",
-          "parent": "inputWrapper",
+          "parent": "box",
           "optional": true,
           "repeated": false,
           "role": null,
@@ -2012,7 +2001,7 @@
         },
         "clearAll": {
           "element": "button",
-          "parent": "inputWrapper",
+          "parent": "box",
           "optional": true,
           "repeated": false,
           "role": null,
@@ -2034,12 +2023,23 @@
         },
         "announcement": {
           "element": "status",
-          "parent": "inputWrapper",
+          "parent": "box",
           "optional": false,
           "repeated": false,
           "role": null,
           "classes": [
             "mdy-multiselect__announcement"
+          ],
+          "states": []
+        },
+        "chipTooltip": {
+          "element": "text",
+          "parent": "box",
+          "optional": true,
+          "repeated": false,
+          "role": "tooltip",
+          "classes": [
+            "mdy-chip__tooltip"
           ],
           "states": []
         },
@@ -3506,7 +3506,7 @@
         },
         "fileList": {
           "element": "group",
-          "parent": "dropzone",
+          "parent": "content",
           "optional": true,
           "repeated": false,
           "role": null,
@@ -3528,7 +3528,7 @@
         },
         "clear": {
           "element": "button",
-          "parent": "dropzone",
+          "parent": "content",
           "optional": true,
           "repeated": false,
           "role": null,
@@ -3539,7 +3539,7 @@
         },
         "rejected": {
           "element": "status",
-          "parent": "dropzone",
+          "parent": "content",
           "optional": true,
           "repeated": false,
           "role": "status",
