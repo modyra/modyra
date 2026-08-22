@@ -50,13 +50,16 @@ import {
 
 /**
  * Versioned envelope for storing a dynamic form config in a CMS/backend.
- * Bump `version` when the field shape changes incompatibly and migrate in
- * your own loader before calling {@link parseDynamicFields}.
+ *
+ * The name of the family, kept: it is what consumers type their documents as. It used to describe
+ * version 1 alone — `{ version: 1; fields }` — so the compiler *required* the one version this
+ * contract no longer has (ADR 0136), and a document written against the published type was refused
+ * by the published parser. A migration that says "set `version`: 2" has to be one the type allows.
+ *
+ * Now it is the versions this contract accepts. {@link MdyDynamicFormConfigV2} and its successors
+ * remain, for a consumer who wants to say which one they wrote.
  */
-export interface MdyDynamicFormConfig {
-  readonly version: 1;
-  readonly fields: ReadonlyArray<MdyDynamicField>;
-}
+export type MdyDynamicFormConfig = MdyDynamicFormDocument;
 
 export type MdyDynamicRuleOperator =
   | "equals" | "notEquals" | "in" | "notIn"
@@ -630,7 +633,6 @@ export interface MdyDynamicFormConfigV4 extends Omit<MdyDynamicFormConfigV3, "ve
 }
 
 export type MdyDynamicFormDocument =
-  | MdyDynamicFormConfig
   | MdyDynamicFormConfigV2
   | MdyDynamicFormConfigV3
   | MdyDynamicFormConfigV4;
