@@ -147,6 +147,7 @@
     "mdy-daterange__input",
     "mdy-daterange__input-sizer",
     "mdy-daterange__sep",
+    "mdy-dynamic-form",
     "mdy-error-list",
     "mdy-file-clear",
     "mdy-file-container",
@@ -350,6 +351,7 @@
       "classes": [
         "mdy-control-",
         "mdy-control-text",
+        "mdy-dynamic-form",
         "mdy-form",
         "mdy-input-prefix",
         "mdy-renderer--touched"
@@ -845,10 +847,7 @@
         "aria-posinset",
         "aria-pressed",
         "aria-readonly",
-        "aria-setsize",
-        "aria-valuemin",
-        "aria-valuenow",
-        "aria-valuetext"
+        "aria-setsize"
       ],
       "selectors": [
         "mdy-control-multiselect"
