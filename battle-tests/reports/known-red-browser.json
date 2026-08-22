@@ -1,11 +1,11 @@
 {
   "note": "Browser specs that are red because the defect they describe is open. A red listed here does not fail a build; a red that is not listed is a regression. Rewrite with `npm run battle:browser:ci -- --accept`.",
   "order": "Repair in severity order, as the node tier does. A spec's severity is the worst of the claims its header names; `unknown` is a spec that names none, which is most of them.",
-  "recordedAt": "2026-08-22T02:32:09Z",
-  "openReds": 44,
+  "recordedAt": "2026-08-22T02:35:01Z",
+  "openReds": 43,
   "bySeverity": {
     "S0": 1,
-    "S1": 39,
+    "S1": 38,
     "S2": 4
   },
   "knownRed": [
@@ -40,7 +40,6 @@
     "an-id-you-can-write-down-in-advance.spec.ts › one scope for two forms is not silent, lit",
     "an-id-you-can-write-down-in-advance.spec.ts › one scope for two forms is not silent, plain",
     "an-id-you-can-write-down-in-advance.spec.ts › two scoped forms on one page do not render one id twice, angular",
-    "an-id-you-can-write-down-in-advance.spec.ts › two scoped forms on one page do not render one id twice, lit",
     "an-opener-that-names-what-it-opens.spec.ts › an opener names the overlay it opens, lit",
     "every-kind-in-lit-under-an-auditor.spec.ts › every declared kind is one the auditor has nothing to say about when it is required",
     "every-kind-in-lit-under-an-auditor.spec.ts › every declared kind renders a lit form the auditor has nothing to say about",

@@ -22186,3 +22186,34 @@ scope of its own kind, invented by the fixture — which changed plain's ids and
 losing its stability. Two lines and the same lesson as the counter mode and the missing `searchable`: a
 fixture that supplies something the document did not is measuring a control nobody wrote.
 
+
+## 391 — Angular's dynamic form has no way to scope its ids (S1, UI-011)
+
+[ADR 0135](../../docs/architecture/0135-an-id-is-a-function-of-the-document.md)'s amendment makes the
+scope the only thing that tells two mounts of one document apart. Each renderer exposes it — except at
+the level a consumer mounts a document.
+
+```
+plain     mountFields(…, { idPrefix })        a form-level option, and it works
+lit       <mdy-text-field id-scope="…">       per element, reachable by a host
+angular   idScope on control.directive.ts     per control — and `mdy-dynamic-form` declares
+                                              fields · document · parseMode · layout, no scope
+```
+
+So a consumer writing `<mdy-dynamic-form [fields]>` twice on one page **cannot scope either of them**.
+The directive underneath accepts `idScope`; the component that renders a document does not forward
+one, and a document is what a consumer mounts.
+
+That makes the hazard 0135 documents unavoidable in Angular rather than avoidable-with-one-attribute,
+which is the whole basis on which the record rejected the automatic registry: *a visible failure a
+consumer fixes with one attribute beats an invisible rule*. In Angular there is no attribute to reach
+for.
+
+**Found while establishing whether a red was mine.** The scoped case was red in lit and Angular, and
+the honest first question was whether the browser host could pass a scope at all. lit's could not and
+now does — `id-scope` on each element, which is what a consumer's host would do. Angular's cannot,
+because there is nothing to pass it to.
+
+Owned by `esecutore`. It is one input forwarded to the directive, and it is the missing half of a
+decision already taken.
+

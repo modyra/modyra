@@ -139,6 +139,13 @@ window.battleLit = {
         const tag = TAG[declared.kind] ?? "mdy-text-field";
         const element = document.createElement(tag);
         element.setAttribute("label", declared.label ?? declared.name);
+        // A host with two forms on one page is what gives them separate identities, and this host is
+        // the door — so a scope the caller asked for reaches the element the way a consumer's would.
+        // Without it a spec measuring two scoped forms is measuring two unscoped ones and reads the
+        // renderer as ignoring an option it was never handed.
+        if (options.idPrefix !== undefined && options.idPrefix !== null) {
+          element.setAttribute("id-scope", String(options.idPrefix));
+        }
         const controlType = CONTROL_TYPE[declared.kind];
         if (controlType !== undefined) element.setAttribute("type", controlType);
         if (declared.options !== undefined) element.options = declared.options;
