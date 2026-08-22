@@ -21606,3 +21606,33 @@ Owned by `esecutore`. It arrived with the last of the six UI points, which is th
 the affordance that says *there is more* and the mark that makes a button visible both landed in the
 same batch as a trap that hides the thing a keyboard just reached.
 
+
+### The six UI points are closed
+
+The mark landed in all three, which was the last of them.
+
+```
+1  the buttons carry their symbols       green — ADR 0133, drawn and never written
+2  the whole name is readable            green
+3  the strip scrolls internally          green
+4  opens anywhere but the chip buttons   green
+5  no box around the chips               green
+6  the search stays when asked for       green
+```
+
+**360 closed with it**, and with a better affordance than the one specified: the overflow control's name
+is *"29 more not shown"* — it states the count **and** is the way through, which is the one thing the
+assertion asked for and the shape an outside review ranked second of five. What was described as *a
+`+N` beside the clear-all* arrived as a name that says the number out loud.
+
+**Two reds arrived in the same batch and only one was the code's.**
+[387](#387) is a real keyboard trap and is pinned. The other was mine: `leaving the field does not cost
+more as it fills` compared two chosen against twelve, and the overflow control exists only while the
+strip overflows — so it read *an affordance appeared* as *the cost scales*. Four stops without
+overflow and five with, at twelve and at forty alike; bounded, which is what
+[ADR 0125](../../docs/architecture/0125-a-chip-strip-is-one-thing-to-a-keyboard.md) asks for. It
+compares twelve against forty now, both overflowing, and is green.
+
+The structure-node count moved 258 → 260, re-derived. Fifth time tonight, every time the anatomy
+growing.
+
