@@ -35,6 +35,8 @@ const PART_SEMANTICS: Readonly<Record<string, MdyWidgetSemanticElement>> = Objec
   // Taking every choice off, and putting the last destructive act back. Both are pressed, so both
   // are buttons; the row the way back sits in is a container that holds a sentence and that button.
   clearAll: "button", wayBackAction: "button", wayBack: "container",
+  // Text, with the role the contract declares: what a chip is called when the strip cut it short.
+  chipTooltip: "text",
   // Announcements.
   errors: "status", loading: "status", empty: "status", errorItem: "status",
   // What was chosen, said out loud. Nothing on screen: the strip is the sighted confirmation.

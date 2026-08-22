@@ -1965,6 +1965,17 @@
           ],
           "states": []
         },
+        "chipTooltip": {
+          "element": "text",
+          "parent": "box",
+          "optional": true,
+          "repeated": false,
+          "role": "tooltip",
+          "classes": [
+            "mdy-chip__tooltip"
+          ],
+          "states": []
+        },
         "placeholder": {
           "element": "text",
           "parent": "trigger",

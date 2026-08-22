@@ -26,6 +26,7 @@ import {
   chipDropIndex,
   stateClass,
   scrollChipStripByWheel,
+  chipTooltipOffset,
   wayBackSentence,
   blocksValueChange,
   isTypeaheadCharacter,
@@ -122,7 +123,29 @@ export function renderMultiselectField(
   wayBackAction.type = "button";
   setText(wayBackAction, messages.wayBackLabel);
   wayBack.append(wayBackText, wayBackAction);
-  control.append(trigger, clearAll, announcement);
+  /**
+   * One tooltip for the control, not one per chip.
+   *
+   * A child of the chip is part of the chip's own text: the name a chip composes from its contents
+   * said the label twice, and every reading of the strip did too.
+   */
+  const chipTooltip = el("span", parts.chipTooltip.classes.join(" "));
+  chipTooltip.id = `${widgetId}__chiptip`;
+  chipTooltip.setAttribute("role", "tooltip");
+  chipTooltip.hidden = true;
+
+  function revealChipName(chip: HTMLElement, key: string): void {
+    setText(chipTooltip, labelOfChip(key));
+    chipTooltip.style.insetInlineStart = `${chipTooltipOffset(chip, chipStrip)}px`;
+    chipTooltip.hidden = false;
+    chip.setAttribute("aria-describedby", chipTooltip.id);
+  }
+
+  function hideChipName(): void {
+    chipTooltip.hidden = true;
+  }
+
+  control.append(trigger, clearAll, announcement, chipTooltip);
 
   // ── popup: the filter box over the same grid ──────────────────────────────────────────────
   const popup = el("div", `${parts.popup.classes.join(" ")} mdy-overlay`) as HTMLDivElement;
@@ -452,6 +475,14 @@ export function renderMultiselectField(
       });
     });
     chip.appendChild(remove);
+    // The full name, for a chip the strip had to cut. Shown on hover *and* on focus: WCAG 1.4.13
+    // asks for both, and `title` is neither — it never appears for a keyboard or a touch user, who
+    // are exactly the people who cannot widen the chip to read it.
+    const reveal = () => revealChipName(chip, key);
+    chip.addEventListener("pointerenter", reveal);
+    chip.addEventListener("focus", reveal);
+    chip.addEventListener("pointerleave", hideChipName);
+    chip.addEventListener("blur", hideChipName);
     return chip;
   }
 

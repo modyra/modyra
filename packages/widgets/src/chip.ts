@@ -267,6 +267,17 @@ export function scrollChipStripByWheel(event: WheelEvent): void {
   strip.scrollLeft += delta;
 }
 
+/**
+ * Where a chip's tooltip sits, in the control's own coordinates.
+ *
+ * Above the strip rather than inside it: the strip clips its overflow, which is the whole reason the
+ * name needed revealing. The chip's offset is taken against the strip it scrolls in, so a chip
+ * scrolled halfway out is named where it is drawn and not where it began.
+ */
+export function chipTooltipOffset(chip: HTMLElement, strip: HTMLElement): number {
+  return chip.offsetLeft - strip.scrollLeft + strip.offsetLeft;
+}
+
 export function chipStripWheelDelta(
   deltaX: number,
   deltaY: number,

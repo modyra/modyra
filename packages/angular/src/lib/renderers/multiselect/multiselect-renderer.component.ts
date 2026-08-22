@@ -1,4 +1,4 @@
-import { wayBackSentence, chipDropIndex, chipFocusAfterRemoval, scrollChipStripByWheel, isTypeaheadCharacter, chipMovedAnnouncement, stateClass, keyBindingFor, multiselectAnnouncement, optionsWithUnrecognizedValues, overlayControlledId, projectOverlayOpenerA11y } from "@modyra/widgets";
+import { wayBackSentence, chipTooltipOffset, chipDropIndex, chipFocusAfterRemoval, scrollChipStripByWheel, isTypeaheadCharacter, chipMovedAnnouncement, stateClass, keyBindingFor, multiselectAnnouncement, optionsWithUnrecognizedValues, overlayControlledId, projectOverlayOpenerA11y } from "@modyra/widgets";
 import { MdyPartDirective } from "../../control/mdy-part.directive";
 import { NgTemplateOutlet } from "@angular/common";
 import {
@@ -107,7 +107,11 @@ import type { MdyOverlayBranch, MdyOverlayOwner } from "../../core/overlay-contr
               [attr.aria-valuemin]="mode() === 'multi' ? 0 : null"
               [attr.aria-valuetext]="mode() === 'multi' ? (held.count > 1 ? held.label + ', ' + held.count : held.label) : null"
               [attr.data-key]="held.key"
-              (focus)="activeChipKey.set(held.key)"
+              (focus)="activeChipKey.set(held.key); revealChipName($event, held.key)"
+              (pointerenter)="revealChipName($event, held.key)"
+              (pointerleave)="hideChipName()"
+              (blur)="hideChipName()"
+              [attr.aria-describedby]="namedChip() === held.key ? fieldId + '__chiptip' : null"
               (pointerdown)="startChipDrag($event, held.key)"
               (keydown)="onChipKeydown($event, held.key)"
               [attr.aria-label]="held.count > 1 ? held.label + ', ' + held.count : held.label"
@@ -182,6 +186,17 @@ import type { MdyOverlayBranch, MdyOverlayOwner } from "../../core/overlay-contr
           (click)="onClearAll($event)"
         ><mdy-icon name="CLOSE" /></button>
       }
+      <!-- The full name, for a chip the strip had to cut. Shown on hover and on focus: WCAG 1.4.13
+           asks for both, and the title attribute is neither — it never appears for a keyboard or a
+           touch user, who are exactly the people who cannot widen the chip. One element for the
+           control, not one per chip: a child of the chip is part of the chip's own text. -->
+      <span
+        class="mdy-chip__tooltip"
+        [id]="fieldId + '__chiptip'"
+        role="tooltip"
+        [style.inset-inline-start.px]="chipTipAt()"
+        [hidden]="namedChip() === null"
+      >{{ namedChipLabel() }}</span>
       <!-- Said rather than shown: a choice lands and the strip is the only confirmation, which is
            the one a person using a screen reader does not get. -->
       <div
@@ -772,6 +787,25 @@ export class MdyMultiselectComponent<TValue = string>
       (key) => this.chosen().find((held) => held.key === key)?.label ?? key,
     );
   });
+
+  /** Which chip is being named, and where its tooltip sits in the control's own coordinates. */
+  protected readonly namedChip = signal<string | null>(null);
+  protected readonly chipTipAt = signal(0);
+  protected readonly namedChipLabel = computed(() => {
+    const key = this.namedChip();
+    return key === null ? "" : this.chosen().find((held) => held.key === key)?.label ?? key;
+  });
+
+  protected revealChipName(event: Event, key: string): void {
+    const chip = event.currentTarget as HTMLElement;
+    const strip = this.hostRef.nativeElement.querySelector(".mdy-multiselect__chips") as HTMLElement | null;
+    this.chipTipAt.set(strip === null ? 0 : chipTooltipOffset(chip, strip));
+    this.namedChip.set(key);
+  }
+
+  protected hideChipName(): void {
+    this.namedChip.set(null);
+  }
 
   protected readonly announcementText = computed(() => {
     const now = this.chosen().map((c) => c.key);

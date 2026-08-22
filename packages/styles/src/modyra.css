@@ -2135,6 +2135,29 @@
         background: currentcolor;
     }
 
+    /* What a chip is called, for one the strip had to cut short.
+       WCAG 1.4.13 asks that content revealed on hover be reachable on focus as well, and the
+       `title` attribute is neither: it never appears for a keyboard or a touch user, who are exactly
+       the people who cannot widen the chip to read it. Drawn above the strip rather than inside it,
+       because the strip clips its own overflow. */
+    .mdy-chip__tooltip {
+        position: absolute;
+        inset-inline-start: 0;
+        bottom: calc(100% + 0.25rem);
+        z-index: 2;
+        display: block;
+        max-width: 16rem;
+        padding: 0.25rem 0.5rem;
+        border-radius: var(--mdy-radius-sm, 0.25rem);
+        background: var(--mdy-inverse-surface, #202020);
+        color: var(--mdy-inverse-on-surface, #f5f5f5);
+        font-size: var(--mdy-font-size-sm, 0.8125rem);
+        white-space: normal;
+        pointer-events: none;
+    }
+
+    .mdy-chip__tooltip[hidden] { display: none; }
+
     .mdy-chip__remove::before { transform: rotate(45deg); }
     .mdy-chip__remove::after { transform: rotate(-45deg); }
 
