@@ -10,14 +10,18 @@ import { observerFor, type MdyFieldHandle, type MdyReactivity, MDY_VALUE_CONTRAC
 import type { MdyDynamicNumberField, MdyDynamicTextField } from "@modyra/core";
 import {
   MDY_CSS_PROPERTIES,
+  MDY_I18N_MESSAGES_DEFAULT,
   MDY_WIDGET_CONTRACTS,
+  blocksValueChange,
+  type MdyI18nMessages,
+  type MdyPartContract,
   createTextFieldController,
   narrowConstraints,
   sliderTrack,
   shownErrorsOf,
   sliderFillRatio,
 } from "@modyra/widgets";
-import { applyPart, el, setErrors, setText } from "../dom.js";
+import { applyPart, el, setErrors, setIcon, setText } from "../dom.js";
 import { buildFieldShell, insertControl } from "../field-shell.js";
 
 /**
@@ -44,6 +48,7 @@ export function renderTextField(
   handle: MdyFieldHandle<string | number>,
   reactivity?: MdyReactivity,
   widgetId: string = f.name,
+  messages: MdyI18nMessages = MDY_I18N_MESSAGES_DEFAULT,
 ): () => void {
   reactivity = observerFor(handle, reactivity);
   const isTextarea = f.kind === "textarea";
@@ -87,6 +92,8 @@ export function renderTextField(
   const sliderMin = () => (f.kind === "slider" ? track().min : 0);
   const sliderMax = () => (f.kind === "slider" ? track().max : 100);
   let sliderValue: HTMLSpanElement | null = null;
+  /** The two steppers, held so the effect can take them out of play with the field. */
+  const spinButtons: HTMLButtonElement[] = [];
   if (slider) {
     const track = el("div") as HTMLDivElement;
     applyPart(track, slider.parts.track);
@@ -95,6 +102,43 @@ export function renderTextField(
     input.className = slider.parts.control.classes.join(" ");
     track.append(input, sliderValue);
     insertControl(shell, track);
+  } else if (f.kind === "number") {
+    /**
+     * The two controls a number field is declared to have.
+     *
+     * The catalogue names `increment` and `decrement` at the trailing edge of this kind and no
+     * renderer here built them, so a promise a theme styles and an audit counts was kept by the
+     * platform's own spinner or by nothing, depending on the browser. They step through the same
+     * intent typing does, so a stepped value meets the field's rules on the way in.
+     */
+    const number = MDY_WIDGET_CONTRACTS.number;
+    const spinner = el("span", "mdy-number-spinner");
+    const step = (direction: 1 | -1, part: MdyPartContract, label: string): HTMLButtonElement => {
+      const button = el("button", part.classes.join(" ")) as HTMLButtonElement;
+      button.type = "button";
+      // Out of the tab order: the box itself takes the arrows, and a keyboard user reaching two more
+      // stops per number field pays for an affordance the pointer needed.
+      button.tabIndex = -1;
+      button.setAttribute("aria-label", label);
+      setIcon(button, direction === 1 ? "SPIN_UP" : "SPIN_DOWN");
+      button.addEventListener("click", () => {
+        if (blocksValueChange(controller.state().interactivity)) return;
+        const rules = offered();
+        const by = typeof rules.step === "number" && rules.step > 0 ? rules.step : 1;
+        const from = numberIn(input) ?? 0;
+        const next = from + by * direction;
+        const min = typeof rules.min === "number" ? rules.min : -Infinity;
+        const max = typeof rules.max === "number" ? rules.max : Infinity;
+        controller.dispatch({ type: "input", value: Math.min(max, Math.max(min, next)) });
+      });
+      return button;
+    };
+    spinButtons.push(
+      step(1, number.parts.increment, messages.increase),
+      step(-1, number.parts.decrement, messages.decrease),
+    );
+    spinner.append(input, ...spinButtons);
+    insertControl(shell, spinner);
   } else {
     insertControl(shell, input);
   }
@@ -133,6 +177,9 @@ export function renderTextField(
 
   const effectRef = reactivity.effect(() => {
     const state = controller.state();
+    // Out of play with the field: a stepper that still answers beside a disabled box is disabled in
+    // appearance only, and the platform's own spinner disappears with the control it belongs to.
+    for (const button of spinButtons) button.disabled = blocksValueChange(state.interactivity);
     const view = controller.view();
     applyPart(shell.label, view.parts.label);
     applyPart(input, view.parts.input);

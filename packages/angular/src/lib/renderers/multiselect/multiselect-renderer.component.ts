@@ -179,25 +179,24 @@ import type { MdyOverlayBranch, MdyOverlayOwner } from "../../core/overlay-contr
       <!-- How many chips are out of sight, and the way to all of them. ADR 0127 lets the row scroll
            only where something reaches what leaves it: the wheel is that for most people and nothing
            at all for a pointer with no horizontal axis, which is most desktop mice. -->
-      @if (hiddenChips() > 0) {
-        <button
+      <button
           type="button"
           class="mdy-multiselect__overflow"
+          [hidden]="hiddenChips() === 0"
+          [disabled]="isDisabled() || isReadonly()"
           [attr.aria-label]="i18n.chipsHidden.replace('{count}', hiddenChips().toString())"
           (click)="onOverflowPress($event)"
         >{{ i18n.chipsHiddenShort.replace("{count}", hiddenChips().toString()) }}</button>
-      }
       <!-- Every choice off at once, beside the trigger rather than inside it: the trigger is a
            button, and a button inside a button is neither valid nor reachable. -->
-      @if (chosen().length > 0 && !isDisabled() && !isReadonly()) {
-        <button
-          type="button"
-          class="mdy-multiselect__clear-all"
-          [attr.aria-label]="i18n.clearSelection"
-          [disabled]="isDisabled()"
-          (click)="onClearAll($event)"
-        ><mdy-icon name="CLOSE" /></button>
-      }
+      <button
+        type="button"
+        class="mdy-multiselect__clear-all"
+        [hidden]="chosen().length === 0 || isDisabled() || isReadonly()"
+        [attr.aria-label]="i18n.clearSelection"
+        [disabled]="isDisabled() || isReadonly()"
+        (click)="onClearAll($event)"
+      ><mdy-icon name="CLOSE" /></button>
       <!-- The full name, for a chip the strip had to cut. Shown on hover and on focus: WCAG 1.4.13
            asks for both, and the title attribute is neither — it never appears for a keyboard or a
            touch user, who are exactly the people who cannot widen the chip. One element for the

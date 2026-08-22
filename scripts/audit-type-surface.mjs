@@ -274,9 +274,29 @@ function classMembersOf(node) {
  * an interface or type literal, and a bare literal such as `"single"` for a member of a union. The
  * second has no declared type of its own, which is what `null` means here — not "unknown".
  */
+/**
+ * A member the Angular compiler emitted about a class, rather than a member of it.
+ *
+ * `ɵcmp`, `ɵfac`, `ɵdir` and `ɵprov` are Angular's own marker for *not public API* — the framework
+ * prefixes them so that nobody reaches for them, and nobody does. They are a mirror of the class's
+ * real surface: `MdyCalendarCellComponent.ɵcmp` restates every input the class already declares by
+ * name, so **comparing them says a second time what the public members already say**.
+ *
+ * That duplication is not free. Adding one optional input rewrote a whole `ɵcmp` declaration and the
+ * differ reported it `major` — four of those in one batch, every one additive, and the same input was
+ * *also* reported once, correctly, as `cellId was added (optional)`. A hundred and twenty-two of these
+ * sit in the surface, and every Angular change churns the ones it touches.
+ *
+ * They are skipped on both sides rather than removed from the baseline, so no baseline is rewritten to
+ * make this true — a rewrite would bake in whatever else is uncommitted at that moment, which is a
+ * mistake this audit has already been used to make once.
+ */
+const isCompilerArtefact = (name) => name.startsWith("\u03B5") || name.startsWith("ɵ");
+
 function parseMembers(entries) {
   const parsed = new Map();
   for (const entry of entries) {
+    if (isCompilerArtefact(entry)) continue;
     const split = entry.indexOf(": ");
     if (split === -1) {
       parsed.set(entry, { optional: false, type: null });
