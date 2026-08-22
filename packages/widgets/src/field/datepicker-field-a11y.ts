@@ -11,7 +11,7 @@ import { assertUsableWidgetId } from "../ids.js";
 import type { MdyPartContract } from "../contract.js";
 import { MDY_FIELD_SHELL_CLASSES } from "../structure.js";
 import type { MdyDatepickerFieldState } from "./datepicker-field-types.js";
-import { errorsVisible, shownErrors } from "./verdict.js";
+import { errorsVisible, holdsUneditedValue, shownErrors } from "./verdict.js";
 import { fieldShellRootClasses } from "./shell-a11y.js";
 
 export interface MdyDatepickerFieldA11yOptions {
@@ -60,7 +60,7 @@ export function projectDatepickerFieldA11y(
   // A rule they have not answered waits for them to reach the field; a refusal about the value
   // already there does not, because they can neither cause it by inaction nor see the reason unless
   // it is said.
-  const tellingThem = errorsVisible({ disabled: state.disabled, touched: state.touched }, errors);
+  const tellingThem = errorsVisible({ disabled: state.disabled, touched: state.touched, holdsUnedited: holdsUneditedValue(state, "datepicker") }, errors);
 
   const describedBy = hasErrors ? errorId : descriptionId;
 

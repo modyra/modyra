@@ -35,7 +35,8 @@ declare const ngDevMode: boolean | undefined;
 import { MdyPrefixDirective } from "./prefix.directive";
 import { MdySuffixDirective } from "./suffix.directive";
 import { MdySupportingTextDirective } from "./supporting-text.directive";
-import { errorsVisible, shownErrors, showsAsInvalid } from "@modyra/widgets";
+import { errorsVisible, holdsUneditedValue, shownErrors, showsAsInvalid } from "@modyra/widgets";
+import type { MdyValueKind } from "@modyra/core";
 
 /** Global counter for generating unique field IDs. */
 let _nextFieldId = 0;
@@ -433,7 +434,16 @@ export abstract class MdyBaseControl<TValue = unknown> implements OnInit {
     () =>
       !this.inlineErrors &&
       errorsVisible(
-        { disabled: this.isDisabled(), touched: this.touched() },
+        {
+          disabled: this.isDisabled(),
+          touched: this.touched(),
+          // A value that arrived with the form and has not been edited since: a refusal about it is
+          // about something already there, which nobody at this page can have caused by inaction.
+          holdsUnedited: holdsUneditedValue(
+            { value: this.value(), dirty: this.dirty() },
+            this.widgetKind as MdyValueKind,
+          ),
+        },
         this.fieldState().errors(),
       ),
   );
@@ -447,7 +457,16 @@ export abstract class MdyBaseControl<TValue = unknown> implements OnInit {
     () =>
       this.inlineErrors &&
       errorsVisible(
-        { disabled: this.isDisabled(), touched: this.touched() },
+        {
+          disabled: this.isDisabled(),
+          touched: this.touched(),
+          // A value that arrived with the form and has not been edited since: a refusal about it is
+          // about something already there, which nobody at this page can have caused by inaction.
+          holdsUnedited: holdsUneditedValue(
+            { value: this.value(), dirty: this.dirty() },
+            this.widgetKind as MdyValueKind,
+          ),
+        },
         this.fieldState().errors(),
       ),
   );

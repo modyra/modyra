@@ -3616,7 +3616,7 @@
     "-> returns: readonly string[]"
   ],
   "errorsVisible": [
-    "(0) flags: { readonly disabled: boolean; readonly touched: boolean; }",
+    "(0) flags: { readonly disabled: boolean; readonly touched: boolean; /** * Whether the field holds a value nobody at this page typed — filled on arrival and not edited * since. * * The second half of the same principle the origins carry, and the half no origin can express: a * refusal about `150` in a field whose maximum is `50` is a rule, so its origin is `validation`, * and it is still about a value that is *already there*. `required` on an empty field is about * something not done yet; a bound broken by a value that arrived from a draft, a server or a * scripted write is about something the person can neither have caused nor understand unless it * is said. * * Optional: a caller that cannot tell says nothing, and gets the touched rule alone. */ readonly holdsUnedited?: boolean; }",
     "(1) errors: ReadonlyArray<MdyFieldError>",
     "-> returns: boolean"
   ],
@@ -3762,6 +3762,11 @@
   "hiddenChipCount": [
     "(0) strip: HTMLElement",
     "-> returns: number"
+  ],
+  "holdsUneditedValue": [
+    "(0) state: { readonly value?: unknown; readonly dirty: boolean; }",
+    "(1) kind?: MdyValueKind",
+    "-> returns: boolean"
   ],
   "hourToAngle": [
     "(0) hour: number",
@@ -4574,7 +4579,7 @@
     "-> returns: MdyReactivity & MdyBatchingCapability & MdyFlushCapability & MdyObserveCapability"
   ],
   "visibleErrorsOf": [
-    "(0) handle: MdyFieldVerdictSource & { touched(): boolean; }",
+    "(0) handle: MdyFieldVerdictSource & { touched(): boolean; value?(): unknown; dirty?(): boolean; }",
     "-> returns: ReadonlyArray<MdyFieldError>"
   ],
   "wayBackSentence": [

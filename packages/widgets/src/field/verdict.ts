@@ -14,7 +14,7 @@
  * ignoring them, and both come back the moment the field is in play again — the verdict was never
  * wrong, it was being shown to someone who could not act on it.
  */
-import type { MdyFieldError, MdyFormError } from "@modyra/core";
+import { MDY_VALUE_CONTRACTS, mdyEmptyValueFor, type MdyFieldError, type MdyFormError, type MdyValueKind } from "@modyra/core";
 
 /** The errors a field may show, given whether the form is asking about it. */
 export function shownErrors(
@@ -53,12 +53,69 @@ export function shownErrorsOf(handle: MdyFieldVerdictSource): ReadonlyArray<MdyF
 const SPEAKS_IMMEDIATELY: ReadonlySet<string> = new Set(["shape", "server", "entry"]);
 
 export function errorsVisible(
-  flags: { readonly disabled: boolean; readonly touched: boolean },
+  flags: {
+    readonly disabled: boolean;
+    readonly touched: boolean;
+    /**
+     * Whether the field holds a value nobody at this page typed — filled on arrival and not edited
+     * since.
+     *
+     * The second half of the same principle the origins carry, and the half no origin can express: a
+     * refusal about `150` in a field whose maximum is `50` is a rule, so its origin is `validation`,
+     * and it is still about a value that is *already there*. `required` on an empty field is about
+     * something not done yet; a bound broken by a value that arrived from a draft, a server or a
+     * scripted write is about something the person can neither have caused nor understand unless it
+     * is said.
+     *
+     * Optional: a caller that cannot tell says nothing, and gets the touched rule alone.
+     */
+    readonly holdsUnedited?: boolean;
+  },
   errors: ReadonlyArray<MdyFieldError>,
 ): boolean {
   const shown = shownErrors(flags, errors);
   if (shown.length === 0) return false;
-  return flags.touched || shown.some((error) => SPEAKS_IMMEDIATELY.has(error.origin ?? "validation"));
+  if (flags.touched || flags.holdsUnedited === true) return true;
+  return shown.some((error) => SPEAKS_IMMEDIATELY.has(error.origin ?? "validation"));
+}
+
+/**
+ * Whether a field holds something nobody at this page entered.
+ *
+ * Not dirty and not empty: the value arrived with the form — a draft, a server, a scripted write —
+ * and no edit has been made since. Emptiness is `required`'s question and is deliberately not this
+ * one: a field with nothing in it has nothing to explain.
+ */
+export function holdsUneditedValue(
+  state: { readonly value?: unknown; readonly dirty: boolean },
+  kind?: MdyValueKind,
+): boolean {
+  if (state.dirty) return false;
+  const value = state.value;
+  if (value === null || value === undefined) return false;
+  // The kind's own empty is not something that arrived. A slider always holds a number — a thumb is
+  // always somewhere — so its default is the control at rest rather than a value a draft put there,
+  // and a bound it breaks is not news until somebody has been at the field.
+  if (kind !== undefined && sameEmpty(value, kind)) return false;
+  if (typeof value === "string") return value.trim() !== "";
+  if (Array.isArray(value)) return value.length > 0;
+  if (typeof value === "number") return !Number.isNaN(value);
+  if (typeof value === "boolean") return value;
+  return true;
+}
+
+/**
+ * Whether a value is the one this kind holds when it holds nothing.
+ *
+ * A kind this contract does not know is not this contract's to police: a consumer rendering their own
+ * kind gets the touched rule and no opinion about what empty means for it.
+ */
+function sameEmpty(value: unknown, kind: MdyValueKind): boolean {
+  if (!(kind in MDY_VALUE_CONTRACTS)) return false;
+  const empty = mdyEmptyValueFor({ kind, name: "" } as never);
+  if (Array.isArray(empty) && Array.isArray(value)) return value.length === 0;
+  if (empty !== null && typeof empty === "object") return JSON.stringify(empty) === JSON.stringify(value);
+  return Object.is(empty, value);
 }
 
 /**
@@ -70,9 +127,19 @@ export function errorsVisible(
  * required before they had reached it.
  */
 export function visibleErrorsOf(
-  handle: MdyFieldVerdictSource & { touched(): boolean },
+  handle: MdyFieldVerdictSource & {
+    touched(): boolean;
+    value?(): unknown;
+    dirty?(): boolean;
+  },
 ): ReadonlyArray<MdyFieldError> {
-  const flags = { disabled: handle.disabled(), touched: handle.touched() };
+  const flags = {
+    disabled: handle.disabled(),
+    touched: handle.touched(),
+    holdsUnedited: handle.value !== undefined && handle.dirty !== undefined
+      ? holdsUneditedValue({ value: handle.value(), dirty: handle.dirty() })
+      : false,
+  };
   return errorsVisible(flags, handle.errors()) ? shownErrors(flags, handle.errors()) : [];
 }
 

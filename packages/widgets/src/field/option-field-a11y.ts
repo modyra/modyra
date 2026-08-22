@@ -7,7 +7,7 @@ import { assertUsableWidgetId } from "../ids.js";
 import type { MdyPartContract } from "../contract.js";
 import { MDY_CSS_PROPERTIES } from "../css.js";
 import { MDY_FIELD_STATE_CLASSES, MDY_FIELD_SHELL_CLASSES } from "../structure.js";
-import { errorsVisible, shownErrors } from "./verdict.js";
+import { errorsVisible, holdsUneditedValue, shownErrors } from "./verdict.js";
 import type {
   MdyOptionFieldState,
   MdyOptionFieldVariant,
@@ -81,7 +81,7 @@ export function projectOptionFieldA11y<TValue>(
   // A rule they have not answered waits for them to reach the field; a refusal about the value
   // already there does not, because they can neither cause it by inaction nor see the reason unless
   // it is said.
-  const tellingThem = errorsVisible({ disabled: state.disabled, touched: state.touched }, errors);
+  const tellingThem = errorsVisible({ disabled: state.disabled, touched: state.touched, holdsUnedited: holdsUneditedValue(state) }, errors);
 
   // What the group describes itself by depends on what was *rendered*, not on what is wrong.
   const describedBy = (options.errorsVisible ?? hasErrors) ? errorId : descriptionId;
