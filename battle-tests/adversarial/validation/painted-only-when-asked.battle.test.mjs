@@ -26,7 +26,7 @@ import { expectClaim, expectEqual } from "../../harness/assertions.mjs";
 import { buildSchema } from "../../models/schemas.mjs";
 
 const SPEC = Object.freeze({
-  version: 1,
+  version: 2,
   fields: Object.freeze({
     other: Object.freeze({ kind: "text" }),
     needed: Object.freeze({ kind: "text", required: true }),

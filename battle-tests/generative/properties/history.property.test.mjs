@@ -46,7 +46,7 @@ const CELLS = Object.freeze({ code: "", note: "unset" });
 const CELL_NAMES = Object.keys(CELLS);
 
 const SPEC = Object.freeze({
-  version: 1,
+  version: 2,
   fields: Object.freeze({
     rows: Object.freeze({
       kind: "record",

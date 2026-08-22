@@ -26,7 +26,7 @@ const CELL_NAMES = Object.keys(CELLS);
 const CLAIMS = Object.freeze(["COL-001", "COL-008", "SUB-001", "SUB-002"]);
 
 const SPEC = Object.freeze({
-  version: 1,
+  version: 2,
   fields: Object.freeze({
     items: Object.freeze({
       kind: "array",

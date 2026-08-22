@@ -24,7 +24,7 @@ import { battle } from "../../harness/battle.mjs";
 import { expectClaim, expectEqual } from "../../harness/assertions.mjs";
 import { buildSchema } from "../../models/schemas.mjs";
 
-const SPEC = Object.freeze({ version: 1, fields: Object.freeze({ a: Object.freeze({ kind: "text" }) }) });
+const SPEC = Object.freeze({ version: 2, fields: Object.freeze({ a: Object.freeze({ kind: "text" }) }) });
 
 battle(
   {

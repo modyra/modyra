@@ -14,7 +14,7 @@ import { battle } from "../../harness/battle.mjs";
 import { expectClaim } from "../../harness/assertions.mjs";
 
 const SPEC = Object.freeze({
-  version: 1,
+  version: 2,
   fields: Object.freeze({
     orders: Object.freeze({
       kind: "record",

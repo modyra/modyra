@@ -29,7 +29,7 @@ const THE_SAME_DEFECT = { validators: "not an object" };
 
 const parseWithName = (name) =>
   parseDynamicForm(
-    { version: 1, fields: [{ name, kind: "text", label: "L", ...THE_SAME_DEFECT }] },
+    { version: 2, fields: [{ name, kind: "text", label: "L", ...THE_SAME_DEFECT }] },
     { mode: "lenient" },
   );
 

@@ -34,7 +34,7 @@ import { expectClaim, expectEqual } from "../../harness/assertions.mjs";
 import { buildSchema } from "../../models/schemas.mjs";
 
 const SPEC = Object.freeze({
-  version: 1,
+  version: 2,
   fields: Object.freeze({
     note: Object.freeze({ kind: "text", initial: "kept" }),
     rows: Object.freeze({

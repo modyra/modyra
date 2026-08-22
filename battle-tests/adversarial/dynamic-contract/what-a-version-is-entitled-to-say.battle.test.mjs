@@ -87,38 +87,41 @@ battle(
       });
     }
 
-    // Version 1 is the bare field list. Members outside its vocabulary are not silently dropped:
-    // each is reported as belonging to a version this document did not declare.
-    const legacy = parseDynamicForm({ version: 1, id: "invoice", fields: FIELDS, layout: LAYOUT, rules: [GOOD_RULE] });
-    ctx.log.note("a flat document carrying structured members", {
-      fields: legacy.fields.length, rules: legacy.rules.length, diagnostics: codesOf(legacy),
+    // Version 1 was the bare field list, readable and deprecated. It is not read any more.
+    //
+    // [ADR 0136](../../../docs/architecture/0136-one-contract-version-set.md) decided that the
+    // contract is the set the runtimes agree on rather than the union of what each will tolerate,
+    // and TypeScript was the only one accepting 1. So a version 1 document is refused whole, the
+    // same as any version outside the set — which is what the loop below now covers.
+    //
+    // What version 1 is owed that the others are not is a **migration**: it is the only refused
+    // version somebody may have written on purpose, against a published type, because it once
+    // worked. So the refusal must say what to do about it, and that is asserted here rather than in
+    // the loop. ADR 0136 names this as the half no gate reads — a message. This is the gate.
+    const refused = parseDynamicForm({ version: 1, id: "invoice", fields: FIELDS, layout: LAYOUT, rules: [GOOD_RULE] });
+    ctx.log.note("a version 1 document, after 0136", {
+      ok: refused.ok, fields: refused.fields.length, diagnostics: codesOf(refused),
     });
 
-    expectEqual(legacy.fields.length, 2, {
-      claimIds: ["DYN-001"],
-      what: "a version 1 document lost the fields that are its whole vocabulary",
-    });
-
-    // The deprecation comes first and is a warning: version 1 is on its way out and still readable.
-    // The two after it are the members, one each.
-    expectEqual(codesOf(legacy), [
-      "MDY_DYNAMIC_DEPRECATED_VERSION",
-      "MDY_DYNAMIC_UNSUPPORTED_VERSION",
-      "MDY_DYNAMIC_UNSUPPORTED_VERSION",
-    ], {
+    expectEqual([refused.ok, refused.fields.length], [false, 0], {
       claimIds: ["DYN-003"],
-      what: "a version 1 document dropped its layout and rules without saying they belong to another version",
+      what: "a version 1 document was still read, so a document that builds a form here builds none in the other two runtimes",
     });
 
-    // And the same document with nothing outside its vocabulary says only that the version is on its
-    // way out, so the two diagnostics above are the members rather than the version.
-    expectEqual(codesOf(parseDynamicForm({ version: 1, id: "invoice", fields: FIELDS })), ["MDY_DYNAMIC_DEPRECATED_VERSION"], {
+    const said = refused.diagnostics.map((each) => String(each.message)).join(" ");
+    expectClaim(said.includes("1"), {
       claimIds: ["DYN-003"],
-      what: "a version 1 document carrying only fields was reported against anyway",
+      what: "the refusal does not say which version it refused",
+      detail: () => said,
+    });
+    expectClaim(said.includes("2"), {
+      claimIds: ["DYN-003"],
+      what: "the refusal does not name a version that would work, so a person whose document worked yesterday is left to guess",
+      detail: () => said,
     });
 
     // A version the parser does not know is refused whole rather than degraded quietly.
-    for (const version of ["2", null, undefined, 2.5, 0]) {
+    for (const version of ["2", null, undefined, 2.5, 0, 1]) {
       const unknown = parseDynamicForm({ version, id: "invoice", fields: FIELDS });
       expectEqual([unknown.ok, unknown.fields.length, codesOf(unknown)], [false, 0, ["MDY_DYNAMIC_UNSUPPORTED_VERSION"]], {
         claimIds: ["DYN-003"],

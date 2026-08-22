@@ -49,7 +49,7 @@ const VALIDATOR_NAMES = Object.freeze({
 const KIND_FOR = Object.freeze({ min: "number", max: "number" });
 
 function parseWith(field) {
-  const parsed = parseDynamicForm({ version: 1, fields: [field] }, "strict");
+  const parsed = parseDynamicForm({ version: 2, fields: [field] }, "strict");
   return {
     ok: parsed.ok,
     codes: parsed.diagnostics.map((each) => each.code),

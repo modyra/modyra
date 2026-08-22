@@ -69,7 +69,7 @@ function throughACalendarBound(value) {
   const parsed = parseDynamicForm(
     // `MdyDynamicCalendarOptions` is mixed into the date field rather than nested under a key, so
     // `minDate` sits directly on the field — which is where `parse.ts:196` looks for it.
-    { version: 1, fields: [{ name: "d", kind: "datepicker", label: "D", minDate: value }] },
+    { version: 2, fields: [{ name: "d", kind: "datepicker", label: "D", minDate: value }] },
     { mode: "strict" },
   );
   // An error is what refuses a document; a warning leaves it usable, which is what `severity` on a
@@ -81,7 +81,7 @@ function throughACalendarBound(value) {
 /** The door that is not guarded: the field's declared initial. */
 function throughAnInitialValue(value) {
   const parsed = parseDynamicForm(
-    { version: 1, fields: [{ name: "d", kind: "datepicker", label: "D", initialValue: value }] },
+    { version: 2, fields: [{ name: "d", kind: "datepicker", label: "D", initialValue: value }] },
     { mode: "strict" },
   );
   return { accepted: parsed.fields.length > 0, codes: parsed.diagnostics.map((each) => each.code) };
@@ -89,7 +89,7 @@ function throughAnInitialValue(value) {
 
 /** And the one after it: a value written into a live form. */
 async function throughAWrite(value) {
-  const parsed = parseDynamicForm({ version: 1, fields: [{ name: "d", kind: "datepicker", label: "D" }] }, { mode: "strict" });
+  const parsed = parseDynamicForm({ version: 2, fields: [{ name: "d", kind: "datepicker", label: "D" }] }, { mode: "strict" });
   const form = createForm(buildFlatFormSchema(parsed.fields), { devWarnings: false });
   try {
     applyFlatValidators(form, parsed.fields);

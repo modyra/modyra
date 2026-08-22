@@ -72,7 +72,7 @@ battle(
   async (ctx) => {
     const context = ctx.open(
       {
-        version: 1,
+        version: 2,
         fields: { items: { kind: "array", of: { sku: { kind: "text" }, note: { kind: "text" } } } },
       },
       { devWarnings: false },

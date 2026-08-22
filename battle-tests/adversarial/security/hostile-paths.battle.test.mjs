@@ -30,7 +30,7 @@ const CONFUSABLE = Object.freeze([
 ]);
 
 const SPEC = Object.freeze({
-  version: 1,
+  version: 2,
   fields: Object.freeze({
     rows: Object.freeze({
       kind: "record",
@@ -122,7 +122,7 @@ battle(
     stored.set(
       "hostile-draft",
       JSON.stringify({
-        version: 1,
+        version: 2,
         savedAt: Date.now(),
         value: { rows: { ok: { code: "fine" } }, polluted: true, __proto__: { code: "polluted" } },
       }),

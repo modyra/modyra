@@ -59,7 +59,7 @@ const UNKNOWN = Object.freeze([
 ]);
 
 const documentWith = (validators) => ({
-  version: 1,
+  version: 2,
   fields: [{ name: "f", kind: "number", label: "L", validators }],
 });
 

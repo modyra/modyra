@@ -273,6 +273,17 @@ export function renderMultiselectField(
   let wasOpen = false;
   let tallyCount = 0;
   let saySoon: string | null = null;
+
+  /**
+   * A sentence said now, for a change no render follows.
+   *
+   * Picking a chip up and putting it down move nothing, so nothing re-renders and `saySoon` — which
+   * the render pass drains — would sit unsaid until the next unrelated change. The live region is an
+   * element; this writes to it the way that pass does.
+   */
+  const sayNow = (sentence: string): void => {
+    setText(announcement, sentence);
+  };
   let saidLast: readonly string[] = [...new Set(
     (controller.state().selectedValues as readonly unknown[]).map((value) => keyFor({ value } as MdySelectOption<unknown>)),
   )];
@@ -323,8 +334,7 @@ export function renderMultiselectField(
     chip.addEventListener("keydown", (event) => {
       const combo = `${event.altKey ? "Alt+" : ""}${event.key}`;
       // Asked as the chip. A key with no binding here belongs to the control and must reach it —
-      // `ArrowDown` opens the popup from the trigger and steps the quantity from a counter chip, and
-      // the table now says which is which rather than answering whichever was declared first.
+      // `ArrowDown` opens the popup from the trigger, arrows move the chip (grabbed or not).
       const binding = keyBindingFor("multiselect", combo, controller.state().open, "chip");
       if (!binding) return;
       // The chip's keys are the chip's. Left to bubble, the control's own overlay handler answered
@@ -338,15 +348,46 @@ export function renderMultiselectField(
         const to = binding.toEnd
           ? (binding.by === -1 ? 0 : order.length - 1)
           : Math.max(0, Math.min(order.length - 1, at + (binding.by ?? 1)));
+        // Held, the arrows carry the chip; free, they walk the strip. One movement, and what moves
+        // is whatever the grab says the subject is.
+        if (grabbed !== null && grabbed.key === key) {
+          if (to === at) return;
+          saySoon = chipMovedAnnouncement(messages.selectionMoved, labelOfChip(key), to + 1, order.length);
+          dispatch({ type: "move-selected", optionKey: key, to });
+          queueMicrotask(() => chosenEls.get(key)?.focus());
+          return;
+        }
         focusChip(order[to]);
         return;
       }
-      if (binding.intent === "step") {
+      // Picking up and putting down, one key. Announced both ways, because a state nobody is told
+      // about is one they cannot know they are in — the arrows would carry a chip they believe is
+      // still walking the strip.
+      if (binding.intent === "grab") {
+        if (!reorderable) return;
         event.preventDefault();
-        // A counter chip announces itself as a spinbutton; these are the keys that make that true.
-        dispatch(event.key === "ArrowUp" ? { type: "increment", optionKey: key } : { type: "decrement", optionKey: key });
-        // The chip is rebuilt when its steppers come or go, so focus has to be put back on the one
-        // that replaced it — otherwise the second press of a spin goes to the document.
+        const at = order.indexOf(key);
+        if (grabbed !== null && grabbed.key === key) {
+          grabbed = null;
+          chip.classList.remove(stateClass(parts.chip.classes[0]!, "dragging"));
+          sayNow(chipMovedAnnouncement(messages.selectionDropped, labelOfChip(key), at + 1, order.length));
+        } else {
+          grabbed = { key, from: at };
+          chip.classList.add(stateClass(parts.chip.classes[0]!, "dragging"));
+          sayNow(chipMovedAnnouncement(messages.selectionGrabbed, labelOfChip(key), at + 1, order.length));
+        }
+        return;
+      }
+      // Putting it back where it was picked up from. Only while something is held — otherwise this
+      // key belongs to whatever else answers Escape.
+      if (binding.intent === "cancel") {
+        if (grabbed === null || grabbed.key !== key) return;
+        event.preventDefault();
+        const home = grabbed.from;
+        grabbed = null;
+        chip.classList.remove(stateClass(parts.chip.classes[0]!, "dragging"));
+        saySoon = chipMovedAnnouncement(messages.selectionReturned, labelOfChip(key), home + 1, order.length);
+        dispatch({ type: "move-selected", optionKey: key, to: home });
         queueMicrotask(() => chosenEls.get(key)?.focus());
         return;
       }
@@ -359,30 +400,6 @@ export function renderMultiselectField(
         queueMicrotask(() => (next === null ? trigger : chosenEls.get(next) ?? trigger).focus());
         return;
       }
-      // Only *reordering* is opt-in. Moving between chips and taking one off are how a keyboard
-      // uses the strip at all, and gating them on `reorderable` made six declared keys do nothing
-      // in the default configuration — which is every field that never asked to be rearranged.
-      if (binding.intent !== "reorder" || !reorderable) return;
-      event.preventDefault();
-      // The order the *value* has, not the order these elements were created in: the map is keyed
-      // by option and its insertion order never changes, so reading it moved the chip once and then
-      // asked for the position it already had.
-      // Said out loud, and set *before* dispatching: the dispatch runs the effect that reads this,
-      // so a sentence written afterwards is a sentence the render has already been past.
-      //
-      // This way of reordering has no *grabbed* state to announce — nothing is picked up and nothing
-      // put down — so the movement itself is the only thing there is to say, and unannounced a
-      // reorder is invisible to somebody who cannot see the strip.
-      const to = Math.max(0, Math.min(order.length - 1, order.indexOf(key) + (binding.by ?? 1)));
-      saySoon = chipMovedAnnouncement(
-        messages.selectionMoved,
-        labelOfChip(key),
-        to + 1,
-        order.length,
-      );
-      dispatch({ type: "move-selected", optionKey: key, to });
-      // The chip moved; focus goes with it, or the next key acts on whatever happens to be here.
-      queueMicrotask(() => chosenEls.get(key)?.focus());
     });
     const step = (delta: -1 | 1, label: string) => {
       const button = el("button", parts.optionStep.classes.join(" ")) as HTMLButtonElement;
@@ -601,6 +618,15 @@ export function renderMultiselectField(
     return [...new Set(controller.state().selectedValues.map((value) =>
       keyFor({ value } as MdySelectOption<unknown>)))];
   }
+
+  /**
+   * The chip a person is carrying, and where they picked it up from.
+   *
+   * A grab is a state and the arrows read it: the same key walks the strip when nothing is held and
+   * carries what is held when something is. `from` is what `Escape` puts back — a person who picks
+   * up the wrong chip has to be able to abandon the move, not undo it afterwards.
+   */
+  let grabbed: { readonly key: string; readonly from: number } | null = null;
 
   /** Exactly one chip is reachable by Tab; the arrows decide which. */
   function syncRoving(): void {

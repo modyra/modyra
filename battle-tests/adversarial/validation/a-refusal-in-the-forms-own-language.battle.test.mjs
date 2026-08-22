@@ -45,7 +45,7 @@ import { expectClaim, expectEqual } from "../../harness/assertions.mjs";
 function refusalsAt(locale) {
   const parsed = parseDynamicForm(
     {
-      version: 1,
+      version: 2,
       fields: [
         { name: "d", kind: "datepicker", label: "Date", locale, validators: { required: true } },
         { name: "e", kind: "email", label: "Email", locale, validators: { required: true, email: true } },

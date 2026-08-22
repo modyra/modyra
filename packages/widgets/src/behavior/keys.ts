@@ -19,7 +19,12 @@ export type MdyWidgetKeyIntent =
   /** Move whatever holds focus one place earlier or later in the value. */
   | { readonly type: "reorder"; readonly by: -1 | 1 }
   /** Take off whatever holds focus. */
-  | { readonly type: "remove" };
+  | { readonly type: "remove" }
+  /**
+   * Pick up whatever holds focus, or put it down — one key, because it is one state seen from both
+   * ends. What is held moves with the bare arrows and goes back where it was on `Escape`.
+   */
+  | { readonly type: "grab" };
 
 /**
  * How close to the viewport edge a popup may sit. Exported because it is part of the placement
@@ -61,6 +66,7 @@ export function widgetKeyIntent(kind: MdyWidgetKind, key: string, open: boolean)
     // a right-to-left document `ArrowLeft` moves a chip later rather than earlier.
     case "reorder": return { type: "reorder", by: binding.by ?? 1 };
     case "remove": return { type: "remove" };
+    case "grab": return { type: "grab" };
   }
 }
 

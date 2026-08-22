@@ -142,7 +142,7 @@ battle(
 
     // The other door: a draft carries values rather than kinds, so what it could introduce is a
     // field the document never declared.
-    const parsed = parseDynamicForm({ version: 1, fields: [{ name: "known", kind: "text", label: "K" }] }, { mode: "strict" });
+    const parsed = parseDynamicForm({ version: 2, fields: [{ name: "known", kind: "text", label: "K" }] }, { mode: "strict" });
     const reported = [];
     const form = createForm(buildFlatFormSchema(parsed.fields), {
       draft: { key: "k", storage: storageHolding({ known: "restored", smuggled: "a field nobody declared" }) },

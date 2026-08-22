@@ -597,9 +597,22 @@ export class MdyMultiselectComponent<TValue = string>
    * so `ArrowLeft` moves a chip *later* in a right-to-left document, and a renderer reading the key
    * rather than the binding would have to know that.
    */
+  /**
+   * The chip a person is carrying, and where they picked it up from.
+   *
+   * `from` is what `Escape` puts back: somebody who picks up the wrong chip has to be able to
+   * abandon the move rather than undo it afterwards.
+   */
+  private grabbed: { readonly key: string; readonly from: number } | null = null;
+
+  /** The label a chip shows, for a sentence about it. */
+  private chipLabelOf(optionKey: string): string {
+    return this.chosen().find((c) => c.key === optionKey)?.label ?? optionKey;
+  }
+
   protected onChipKeydown(event: KeyboardEvent, optionKey: string): void {
     // Asked as the chip. A key with no binding here belongs to the control and must reach it —
-    // `ArrowDown` opens the popup from the trigger and steps the quantity from a counter chip.
+    // `ArrowDown` opens the popup from the trigger, arrows move the chip (grabbed or not).
     const binding = keyBindingFor("multiselect", `${event.altKey ? "Alt+" : ""}${event.key}`, this.open(), "chip");
     if (!binding) return;
     // The chip's keys are the chip's. Left to bubble, the control's own handler answers the same
@@ -613,15 +626,46 @@ export class MdyMultiselectComponent<TValue = string>
       const to = binding.toEnd
         ? (binding.by === -1 ? 0 : order.length - 1)
         : Math.max(0, Math.min(order.length - 1, at + (binding.by ?? 1)));
+      // Held, the arrows carry the chip; free, they walk the strip. One movement, and the grab says
+      // what its subject is.
+      if (this.grabbed?.key === optionKey) {
+        if (to === at) return;
+        this.grabSaid.set(null);
+        this.saySoon = chipMovedAnnouncement(this.i18n.selectionMoved, this.chipLabelOf(optionKey), to + 1, order.length);
+        this.controller()?.dispatch({ type: "move-selected", optionKey, to });
+        this.focusChip(optionKey);
+        return;
+      }
       this.focusChip(order[to]);
       return;
     }
-    if (binding.intent === "step") {
+    // Picking up and putting down, one key: a state seen from both ends. Announced either way,
+    // because a state nobody is told about is one they cannot know they are in — the arrows would
+    // carry a chip a person believes is still walking the strip.
+    if (binding.intent === "grab") {
+      if (!this.reorderable()) return;
       event.preventDefault();
-      // A counter chip announces itself as a spinbutton; these are the keys that make that true.
-      this.controller()?.dispatch(
-        event.key === "ArrowUp" ? { type: "increment", optionKey } : { type: "decrement", optionKey },
+      const at = order.indexOf(optionKey);
+      const held = this.grabbed?.key === optionKey;
+      this.grabbed = held ? null : { key: optionKey, from: at };
+      this.saySoon = chipMovedAnnouncement(
+        held ? this.i18n.selectionDropped : this.i18n.selectionGrabbed,
+        this.chipLabelOf(optionKey), at + 1, order.length,
       );
+      this.grabSaid.set(this.saySoon);
+      this.saySoon = null;
+      return;
+    }
+    // Putting it back where it was picked up from, while something is held and not otherwise.
+    if (binding.intent === "cancel") {
+      if (this.grabbed?.key !== optionKey) return;
+      event.preventDefault();
+      const home = this.grabbed.from;
+      this.grabbed = null;
+      this.grabSaid.set(null);
+      this.saySoon = chipMovedAnnouncement(this.i18n.selectionReturned, this.chipLabelOf(optionKey), home + 1, order.length);
+      this.controller()?.dispatch({ type: "move-selected", optionKey, to: home });
+      this.focusChip(optionKey);
       return;
     }
     if (binding.intent === "remove") {
@@ -631,18 +675,6 @@ export class MdyMultiselectComponent<TValue = string>
       if (held) this.removeChip(optionKey, held.value, event.key === "Backspace" ? "backward" : "forward");
       return;
     }
-    if (binding.intent !== "reorder" || !this.reorderable()) return;
-    event.preventDefault();
-    // Said out loud, and set before dispatching. This way of reordering has no *grabbed* state to
-    // announce, so the movement itself is the only thing there is to say.
-    const to = Math.max(0, Math.min(order.length - 1, order.indexOf(optionKey) + (binding.by ?? 1)));
-    this.saySoon = chipMovedAnnouncement(
-      this.i18n.selectionMoved,
-      this.chosen().find((c) => c.key === optionKey)?.label ?? optionKey,
-      to + 1, order.length,
-    );
-    this.controller()?.dispatch({ type: "move-selected", optionKey, to });
-    this.focusChip(optionKey);
   }
 
   /**
@@ -825,6 +857,15 @@ export class MdyMultiselectComponent<TValue = string>
   private saidLast: readonly string[] | null = null;
   /** A sentence to say once, for a change no selection delta describes — a move. */
   private saySoon: string | null = null;
+
+  /**
+   * A sentence about a grab, which no change of value follows.
+   *
+   * Picking a chip up and putting it down move nothing, so the computed below would not run again
+   * and the sentence would sit unsaid until some unrelated change. Writable, so saying it is itself
+   * the change.
+   */
+  private readonly grabSaid = signal<string | null>(null);
   /** The last destructive act, or `null` when there is nothing to go back to. */
   protected readonly wayBack = computed(() => this.controller()?.state().wayBack ?? null);
 
@@ -874,7 +915,11 @@ export class MdyMultiselectComponent<TValue = string>
   protected readonly announcementText = computed(() => {
     const now = this.chosen().map((c) => c.key);
     if (this.saidLast === null) { this.saidLast = now; return ""; }
+    // Reads only. A computed that writes a signal is NG0600 — the pass throws, the binding keeps
+    // what it had, and the live region freezes on the sentence before the one that mattered.
+    const grab = this.grabSaid();
     if (this.saySoon !== null) { const once = this.saySoon; this.saySoon = null; this.saidLast = now; return once; }
+    if (grab !== null) { this.saidLast = now; return grab; }
     const said = multiselectAnnouncement(
       this.saidLast, now,
       { added: this.i18n.selectionAdded, removed: this.i18n.selectionRemoved, empty: this.i18n.selectionEmpty },

@@ -25,7 +25,7 @@ const INNER_CELLS = Object.freeze({ bin: "", qty: "0" });
 const CLAIMS = Object.freeze(["COL-001", "COL-005", "SUB-002"]);
 
 const SPEC = Object.freeze({
-  version: 1,
+  version: 2,
   fields: Object.freeze({
     items: Object.freeze({
       kind: "array",

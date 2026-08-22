@@ -31,7 +31,7 @@ import { expectClaim, expectEqual } from "../../harness/assertions.mjs";
 function schemaReporting(path) {
   return {
     "~standard": {
-      version: 1,
+      version: 2,
       vendor: "battle",
       validate: () => ({ issues: [{ message: "reported", path }] }),
     },

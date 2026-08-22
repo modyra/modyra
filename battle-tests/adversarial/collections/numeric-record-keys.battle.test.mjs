@@ -16,7 +16,7 @@ import { encodeValue } from "../../models/observations.mjs";
 const KEYS = Object.freeze(["0", "1", "01", "12", "4294967295", "tmp:1"]);
 
 const SPEC = Object.freeze({
-  version: 1,
+  version: 2,
   fields: Object.freeze({
     rows: Object.freeze({
       kind: "record",

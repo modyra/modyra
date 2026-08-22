@@ -52,7 +52,7 @@ const NEEDS_OPTIONS = new Set(["select", "radio", "multiselect", "segmented"]);
 function twoIdeasOfEmpty(kind) {
   const parsed = parseDynamicForm(
     {
-      version: 1,
+      version: 2,
       fields: [
         {
           name: "x",

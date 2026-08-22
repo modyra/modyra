@@ -21,10 +21,10 @@ import { battle } from "../../harness/battle.mjs";
 import { expectClaim, expectEqual } from "../../harness/assertions.mjs";
 import { buildSchema } from "../../models/schemas.mjs";
 
-const SPEC = Object.freeze({ version: 1, fields: Object.freeze({ note: Object.freeze({ kind: "text" }) }) });
+const SPEC = Object.freeze({ version: 2, fields: Object.freeze({ note: Object.freeze({ kind: "text" }) }) });
 
 const COLLECTION_SPEC = Object.freeze({
-  version: 1,
+  version: 2,
   fields: Object.freeze({
     note: Object.freeze({ kind: "text" }),
     rows: Object.freeze({

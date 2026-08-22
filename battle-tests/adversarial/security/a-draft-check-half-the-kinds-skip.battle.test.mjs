@@ -69,7 +69,7 @@ function storageHolding(value) {
 async function restoreInto(kind) {
   const parsed = parseDynamicForm(
     {
-      version: 1,
+      version: 2,
       fields: [
         {
           name: "x",

@@ -24,7 +24,7 @@ import { expectClaim, expectEqual } from "../../harness/assertions.mjs";
 import { KEYED_ROWS_SPEC } from "../../models/schemas.mjs";
 
 const SPEC = Object.freeze({
-  version: 1,
+  version: 2,
   fields: Object.freeze({
     rows: Object.freeze({
       kind: "record",

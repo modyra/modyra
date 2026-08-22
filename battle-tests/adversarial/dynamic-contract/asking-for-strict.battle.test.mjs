@@ -33,7 +33,7 @@ import { expectClaim, expectEqual } from "../../harness/assertions.mjs";
 
 /** A document strict refuses and lenient keeps: one field, one constraint written where it does not live. */
 const DOCUMENT = Object.freeze({
-  version: 1,
+  version: 2,
   fields: [Object.freeze({ name: "x", kind: "text", label: "X", required: true })],
 });
 

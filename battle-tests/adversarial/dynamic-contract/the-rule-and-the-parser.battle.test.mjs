@@ -51,7 +51,7 @@ const CASES = Object.freeze([
   ["a reserved name", { version: 3, fields: [{ name: "__proto__", kind: "text" }] }],
   ["an unknown kind", { version: 3, fields: [{ name: "a", kind: "wormhole" }] }],
   ["a select with no options", { version: 3, fields: [{ name: "a", kind: "select" }] }],
-  ["version 1", { version: 1, fields: [{ name: "a", kind: "text" }, { name: "a", kind: "text" }] }],
+  ["version 1", { version: 2, fields: [{ name: "a", kind: "text" }, { name: "a", kind: "text" }] }],
   ["a version nobody supports", { version: 4, fields: [{ name: "a", kind: "text" }] }],
 ]);
 

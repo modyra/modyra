@@ -79,6 +79,18 @@ export interface MdyI18nMessages {
    */
   readonly selectionMoved: string;
   /**
+   * A chip picked up, and where it was picked up from.
+   *
+   * A grab is a state, and a state nobody announces is one a person cannot know they are in: the
+   * arrows would carry a chip they believe is still walking the strip. `{value}` held, `{position}`
+   * of `{count}`.
+   */
+  readonly selectionGrabbed: string;
+  /** A chip put down where it now is. */
+  readonly selectionDropped: string;
+  /** A grab abandoned, with the chip back where it started. */
+  readonly selectionReturned: string;
+  /**
    * How many are chosen, in the field's own description.
    *
    * Not the live region: this is the *state*, asked for rather than announced, and a person who
@@ -186,6 +198,9 @@ export const MDY_I18N_MESSAGES_DEFAULT: MdyI18nMessages = Object.freeze({
   selectionRemoved: "{value} removed, {count} selected",
   selectionEmpty: "Nothing selected",
   selectionMoved: "{value}, moved to position {position} of {count}",
+  selectionGrabbed: "{value} grabbed, {position} of {count}. Use the arrows to move it, Enter to drop it, Escape to put it back",
+  selectionDropped: "{value} dropped at position {position} of {count}",
+  selectionReturned: "{value} returned to position {position} of {count}",
   selectionCount: "{count} selected",
   clearSelection: "Clear selection",
   chipsHiddenShort: "+{count}",
@@ -258,6 +273,9 @@ export const MDY_I18N_MESSAGES_IT: MdyI18nMessages = Object.freeze({
   selectionRemoved: "{value} rimosso, {count} selezionati",
   selectionEmpty: "Nessuna selezione",
   selectionMoved: "{value}, spostato in posizione {position} di {count}",
+  selectionGrabbed: "{value} preso, {position} di {count}. Usa le frecce per spostarlo, Invio per posarlo, Esc per rimetterlo dov'era",
+  selectionDropped: "{value} posato in posizione {position} di {count}",
+  selectionReturned: "{value} rimesso in posizione {position} di {count}",
   selectionCount: "{count} selezionati",
   clearSelection: "Svuota la selezione",
   chipsHiddenShort: "+{count}",
@@ -323,6 +341,9 @@ export const MDY_I18N_MESSAGES_DE: MdyI18nMessages = Object.freeze({
   selectionRemoved: "{value} entfernt, {count} ausgewählt",
   selectionEmpty: "Nichts ausgewählt",
   selectionMoved: "{value}, verschoben auf Position {position} von {count}",
+  selectionGrabbed: "{value} aufgenommen, {position} von {count}. Mit den Pfeiltasten bewegen, Eingabe zum Ablegen, Escape zum Zurücklegen",
+  selectionDropped: "{value} abgelegt auf Position {position} von {count}",
+  selectionReturned: "{value} zurückgelegt auf Position {position} von {count}",
   selectionCount: "{count} ausgewählt",
   clearSelection: "Auswahl leeren",
   chipsHiddenShort: "+{count}",
@@ -388,6 +409,9 @@ export const MDY_I18N_MESSAGES_FR: MdyI18nMessages = Object.freeze({
   selectionRemoved: "{value} retiré, {count} sélectionnés",
   selectionEmpty: "Aucune sélection",
   selectionMoved: "{value}, déplacé en position {position} sur {count}",
+  selectionGrabbed: "{value} saisi, {position} sur {count}. Utilisez les flèches pour le déplacer, Entrée pour le poser, Échap pour le remettre",
+  selectionDropped: "{value} posé en position {position} sur {count}",
+  selectionReturned: "{value} remis en position {position} sur {count}",
   selectionCount: "{count} sélectionnés",
   clearSelection: "Effacer la sélection",
   chipsHiddenShort: "+{count}",
@@ -453,6 +477,9 @@ export const MDY_I18N_MESSAGES_ES: MdyI18nMessages = Object.freeze({
   selectionRemoved: "{value} quitado, {count} seleccionados",
   selectionEmpty: "Nada seleccionado",
   selectionMoved: "{value}, movido a la posición {position} de {count}",
+  selectionGrabbed: "{value} agarrado, {position} de {count}. Use las flechas para moverlo, Intro para soltarlo, Escape para devolverlo",
+  selectionDropped: "{value} soltado en la posición {position} de {count}",
+  selectionReturned: "{value} devuelto a la posición {position} de {count}",
   selectionCount: "{count} seleccionados",
   clearSelection: "Vaciar la selección",
   chipsHiddenShort: "+{count}",

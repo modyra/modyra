@@ -129,6 +129,18 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
   private _saidLast: readonly string[] | null = null;
   /** A sentence to say once, for a change no selection delta describes — a move. */
   private _saySoon: string | null = null;
+
+  /** What the live region is saying now, so a render describing no change does not take it back. */
+  private _said = "";
+
+  /**
+   * The chip a person is carrying, and where they picked it up from.
+   *
+   * A grab is a state and the arrows read it: the same key walks the strip when nothing is held and
+   * carries what is held when something is. `from` is what `Escape` puts back — a person who picks
+   * up the wrong chip has to be able to abandon the move rather than undo it afterwards.
+   */
+  private _grabbed: { readonly key: string; readonly from: number } | null = null;
   declare loading: boolean;
   declare mode: MdyMultiselectMode;
   declare filterFn?: (value: unknown) => boolean;
@@ -646,7 +658,7 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
    */
   private onChipKeydown(event: KeyboardEvent, handle: MdyFieldHandle<readonly unknown[]>, optionKey: string): void {
     // Asked as the chip. A key with no binding here belongs to the control and must reach it —
-    // `ArrowDown` opens the popup from the trigger and steps the quantity from a counter chip.
+    // `ArrowDown` opens the popup from the trigger, arrows move the chip (grabbed or not).
     const binding = keyBindingFor("multiselect", `${event.altKey ? "Alt+" : ""}${event.key}`, this._open, "chip");
     if (!binding) return;
     // The chip's keys are the chip's. Left to bubble, the control's own handler answers the same
@@ -661,15 +673,43 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
       const to = binding.toEnd
         ? (binding.by === -1 ? 0 : order.length - 1)
         : Math.max(0, Math.min(order.length - 1, at + (binding.by ?? 1)));
+      // Held, the arrows carry the chip; free, they walk the strip. One movement, and the grab says
+      // what its subject is.
+      if (this._grabbed !== null && this._grabbed.key === optionKey) {
+        if (to === at) return;
+        this._saySoon = chipMovedAnnouncement(this.messages.selectionMoved, this.labelFor(optionKey), to + 1, order.length);
+        this.fieldController?.dispatch({ type: "move-selected", optionKey, to });
+        void this.updateComplete.then(() => this.focusChip(optionKey));
+        return;
+      }
       this.focusChip(order[to]);
       return;
     }
-    if (binding.intent === "step") {
+    // Picking up and putting down, one key: a state seen from both ends. Announced either way,
+    // because a state nobody is told about is one they cannot know they are in — the arrows would
+    // carry a chip a person believes is still walking the strip.
+    if (binding.intent === "grab") {
+      if (!this.reorderable) return;
       event.preventDefault();
-      // A counter chip announces itself as a spinbutton; these are the keys that make that true.
-      this.fieldController?.dispatch(
-        event.key === "ArrowUp" ? { type: "increment", optionKey } : { type: "decrement", optionKey },
+      const at = order.indexOf(optionKey);
+      const held = this._grabbed !== null && this._grabbed.key === optionKey;
+      this._grabbed = held ? null : { key: optionKey, from: at };
+      this._saySoon = chipMovedAnnouncement(
+        held ? this.messages.selectionDropped : this.messages.selectionGrabbed,
+        this.labelFor(optionKey), at + 1, order.length,
       );
+      this.requestUpdate();
+      return;
+    }
+    // Putting it back where it was picked up from, while something is held and not otherwise.
+    if (binding.intent === "cancel") {
+      if (this._grabbed === null || this._grabbed.key !== optionKey) return;
+      event.preventDefault();
+      const home = this._grabbed.from;
+      this._grabbed = null;
+      this._saySoon = chipMovedAnnouncement(this.messages.selectionReturned, this.labelFor(optionKey), home + 1, order.length);
+      this.fieldController?.dispatch({ type: "move-selected", optionKey, to: home });
+      void this.updateComplete.then(() => this.focusChip(optionKey));
       return;
     }
     if (binding.intent === "remove") {
@@ -678,14 +718,6 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
       this.removeAndPlaceFocus(handle, optionKey, event.key === "Backspace" ? "backward" : "forward");
       return;
     }
-    if (binding.intent !== "reorder" || !this.reorderable) return;
-    event.preventDefault();
-    // Said out loud, and set before dispatching. This way of reordering has no *grabbed* state to
-    // announce, so the movement itself is the only thing there is to say.
-    const to = Math.max(0, Math.min(order.length - 1, order.indexOf(optionKey) + (binding.by ?? 1)));
-    this._saySoon = chipMovedAnnouncement(this.messages.selectionMoved, this.labelFor(optionKey), to + 1, order.length);
-    this.fieldController?.dispatch({ type: "move-selected", optionKey, to });
-    void this.updateComplete.then(() => this.focusChip(optionKey));
   }
 
   /**
@@ -759,13 +791,18 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
   private announcementText(handle: MdyFieldHandle<readonly unknown[]>): string {
     const now = [...new Set(this.held(handle).map((value) => String(value)))];
     if (this._saidLast === null) { this._saidLast = now; return ""; }
-    if (this._saySoon !== null) { const once = this._saySoon; this._saySoon = null; this._saidLast = now; return once; }
+    if (this._saySoon !== null) { this._said = this._saySoon; this._saySoon = null; this._saidLast = now; return this._said; }
     const said = multiselectAnnouncement(
       this._saidLast, now,
       { added: this.messages.selectionAdded, removed: this.messages.selectionRemoved, empty: this.messages.selectionEmpty },
       (key) => this.labelFor(key),
     );
     this._saidLast = now;
+    // A render that describes no change leaves the sentence where it is. Returning "" over one
+    // takes it back before a reader has reached it — and a move renders twice, once for the value
+    // and once to put focus back on the chip that moved, so the second pass was erasing the first.
+    if (said === "") return this._said;
+    this._said = said;
     return said;
   }
 

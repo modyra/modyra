@@ -45,7 +45,7 @@ const NEEDS_OPTIONS = new Set(["select", "radio", "multiselect", "segmented"]);
 /** What a one-field document of this kind starts at, through the contract's own front door. */
 function seedOf(kind) {
   const doc = {
-    version: 1,
+    version: 2,
     fields: [
       {
         name: "x",
