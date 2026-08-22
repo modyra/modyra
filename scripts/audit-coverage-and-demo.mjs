@@ -31,7 +31,12 @@ const TEST_ROOTS = [
   "packages/core/test", "packages/widgets/test", "packages/plain/test", "packages/lit/test",
   "packages/react/test", "packages/vue/test", "packages/svelte/test", "packages/solid/test",
   "packages/preact/test", "packages/zod/test", "packages/standard-schema/test",
-  "packages/angular/src/lib", "docs/examples", "e2e",
+  // `packages/angular/src/lib` is here for the main package's specs, which sit beside their sources
+  // rather than under a `test` directory. Its secondary entry points do the same and were missed:
+  // `mdyFormFromSchema` has `mdy-form-from-schema.spec.ts` next to it and read here as a name no
+  // test had ever mentioned.
+  "packages/angular/src/lib", "packages/angular/zod/src", "packages/angular/testing/src",
+  "docs/examples", "e2e",
 ];
 /**
  * Where a name is *shown* — declared by a panel, and checked by that panel's own browser test.
