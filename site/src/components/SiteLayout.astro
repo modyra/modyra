@@ -6,9 +6,10 @@ interface Props {
   title: string;
   description: string;
   eyebrow?: string;
+  ogImage?: string;
 }
 
-const { title, description, eyebrow } = Astro.props;
+const { title, description, eyebrow, ogImage = 'brand/05-social/og-image.png' } = Astro.props;
 const based = (path: string) =>
   `${import.meta.env.BASE_URL.replace(/\/+$/, '')}/${path.replace(/^\/+/, '')}`;
 ---
@@ -25,10 +26,11 @@ const based = (path: string) =>
     <meta property="og:type" content="website" />
     <meta property="og:title" content={title} />
     <meta property="og:description" content={description} />
-    <meta property="og:image" content={new URL(based('brand/05-social/og-image.png'), Astro.site)} />
+    <meta property="og:image" content={new URL(based(ogImage), Astro.site)} />
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content={title} />
     <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={new URL(based(ogImage), Astro.site)} />
     <title>{title}</title>
     <CloudflareAnalytics />
   </head>

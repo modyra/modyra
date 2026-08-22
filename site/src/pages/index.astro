@@ -26,6 +26,7 @@ const form = useMdyDynamicForm(doc.fields); // React
   title="Modyra — one form contract, every framework, any backend"
   description="A typed form engine for TypeScript: one validated contract drives forms in any framework, from any backend — including ones you do not control."
   eyebrow="Typed form engine for TypeScript"
+  ogImage="brand/05-social/og-home.png"
 >
   <section class="hero">
     <h1>One form contract. Every framework. Any backend.</h1>
@@ -169,6 +170,12 @@ const form = useMdyDynamicForm(doc.fields); // React
         <span>Author, validate, preview and export a form model.</span>
       </a>
     </div>
+    <p class="facts">
+      <a href={based('changelog/')}>@modyra/core 2.4.0</a> ·
+      <a href="https://github.com/modyra/modyra/blob/main/LICENSE">MIT licensed</a> ·
+      eight renderers, two validator adapters, two backend SDKs ·
+      pre-1.0, under active development
+    </p>
   </section>
 </SiteLayout>
 
@@ -204,6 +211,9 @@ const form = useMdyDynamicForm(doc.fields); // React
   pre { margin: 0; overflow: auto; padding: 1.1rem; border: 1px solid var(--page-border); border-radius: .7rem; background: var(--page-card); font-size: .82rem; line-height: 1.5; }
   .path-grid a { display: grid; gap: .5rem; text-decoration: none; }
   .path-grid a:hover, .path-grid a:focus-visible { border-color: var(--mdy-indigo); }
+  .facts { margin: 2.4rem 0 0; color: var(--page-muted); font-family: var(--page-mono); font-size: .8rem; letter-spacing: .03em; }
+  .facts a { color: var(--page-muted); }
+  .facts a:hover, .facts a:focus-visible { color: var(--page-fg); }
   @media (max-width: 48rem) { .principle-grid, .path-grid, .contract { grid-template-columns: 1fr; } }
 </style>
 
