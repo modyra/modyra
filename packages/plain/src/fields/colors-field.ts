@@ -197,6 +197,12 @@ export function renderColorsField(
     if (isOpen) {
       if (presetList.childElementCount === 0) {
         for (const { swatch } of swatches) presetList.appendChild(swatch);
+        // Into the row it has just shown. The keys the contract declares for an open colour field
+        // are the row's, and `Tab` dismisses the palette — so a palette that left the keyboard on
+        // the toggle was one no keyboard could ever reach the presets in.
+        const landing = swatches.find(({ preset }) => colorValueEquals(value || null, preset))?.swatch
+          ?? swatches[0]?.swatch;
+        queueMicrotask(() => { if (open()) landing?.focus(); });
       }
     } else if (presetList.childElementCount > 0) {
       presetList.replaceChildren();

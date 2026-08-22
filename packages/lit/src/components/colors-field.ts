@@ -111,6 +111,24 @@ export class MdyColorsFieldElement extends MdyFieldElement<string | null> {
    * a row runs in the writing direction, and reading `ArrowLeft` as "back" is wrong in a
    * right-to-left document.
    */
+  /**
+   * Into the row the palette has just shown.
+   *
+   * The keys the contract declares for an open colour field are the row's, and `Tab` dismisses the
+   * palette — so a palette that left the keyboard on the toggle was one no keyboard could reach the
+   * presets in. The swatch holding the current value is where a person is; the first one otherwise.
+   */
+  private focusPresets(handle: MdyFieldHandle<string | null>): void {
+    void this.updateComplete.then(() => {
+      if (!this._open) return;
+      const order = [...this.querySelectorAll<HTMLButtonElement>(`.${this.partClass("swatch")}`)];
+      if (order.length === 0) return;
+      if (order.includes(document.activeElement as HTMLButtonElement)) return;
+      const held = handle.value();
+      (order.find((swatch) => swatch.getAttribute("aria-label") === held) ?? order[0]).focus();
+    });
+  }
+
   private moveThroughSwatches(event: KeyboardEvent): void {
     if (!this._open) return;
     const binding = keyBindingFor("colors", event.key, true);
@@ -207,6 +225,7 @@ export class MdyColorsFieldElement extends MdyFieldElement<string | null> {
                 } else {
                   this.overlay.open(e);
                   applyOverlayIntent(this, { type: "open", disabled: this.field?.disabled() ?? false, available: true });
+                  this.focusPresets(handle);
                 }
               }}
             >
@@ -264,6 +283,7 @@ export class MdyColorsFieldElement extends MdyFieldElement<string | null> {
                 } else {
                   this.overlay.open(e);
                   applyOverlayIntent(this, { type: "open", disabled: this.field?.disabled() ?? false, available: true });
+                  this.focusPresets(handle);
                 }
               }}
             >

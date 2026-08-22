@@ -705,7 +705,12 @@ export const MDY_CANONICAL_DISABLED: Readonly<Partial<Record<MdyWidgetKind, MdyC
 const FOCUS_ON_OPEN: Readonly<Partial<Record<MdyWidgetKind, string | null>>> = Object.freeze({
   datepicker: "gridcell",
   daterange: "gridcell",
-  colors: null,
+  // The swatch row, for the reason written above the calendars: a list the keyboard cannot reach is
+  // a list only a mouse can use. `MDY_WIDGET_KEYBOARD` declares the arrows, `Home` and `End` on an
+  // open colour field, and the palette leaves no other way in — `Tab` is declared `cancel` and
+  // dismisses it — so a table that kept focus outside made those four keys undeliverable by any
+  // conforming renderer, and made the presets pointer-only.
+  colors: "swatch",
 });
 
 /**

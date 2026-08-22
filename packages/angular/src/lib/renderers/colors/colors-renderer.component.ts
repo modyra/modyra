@@ -1,15 +1,17 @@
 import { MdyPartDirective } from "../../control/mdy-part.directive";
 import { NgClass, NgTemplateOutlet } from "@angular/common";
 import {
+  afterNextRender,
   ChangeDetectionStrategy,
   Component,
   computed,
   inject,
+  Injector,
   input,
 } from "@angular/core";
 
 import { MDY_OVERLAY_PORTAL_CLASS } from "@modyra/widgets";
-import { MDY_COLOR_PRESETS, MDY_WIDGET_CONTRACTS, colorValueEquals, colorValueTransition, popupPlacementClass, overlayControlledId, projectOverlayOpenerA11y } from "@modyra/widgets";
+import { MDY_COLOR_PRESETS, MDY_WIDGET_CONTRACTS, colorValueEquals, keyBindingFor, colorValueTransition, popupPlacementClass, overlayControlledId, projectOverlayOpenerA11y } from "@modyra/widgets";
 import { MdyErrorListComponent } from "../../control/error-list.component";
 import { MdyControlLabelComponent } from "../../control/mdy-control-label.component";
 import { MdyIconComponent } from "../../control/mdy-icon.component";
@@ -142,6 +144,7 @@ import { MdyOverlayPanelComponent } from "../../core/overlay-panel.component";
             class="mdy-colors__presets"
             role="listbox"
             [attr.aria-label]="i18n.colorPresetsHeader"
+            (keydown)="onPresetKeydown($event)"
           >
             @for (color of presets(); track color) {
               <button
@@ -208,6 +211,60 @@ export class MdyColorsComponent extends MdyOverlayControl<string> {
   protected readonly placementClass = computed(() => popupPlacementClass("colors", this.position()) ?? "");
 
   protected override onBeforeOpen(): void {
+  }
+
+  /**
+   * Into the row the palette has just shown.
+   *
+   * The keys the contract declares for an open colour field belong to the swatches, and `Tab`
+   * dismisses the palette — so a palette that left the keyboard on the toggle was one no keyboard
+   * could reach the presets in. The swatch holding the current value is where a person is.
+   */
+  protected override openOverlay(event?: Event): void {
+    super.openOverlay(event);
+    // After the render that draws the row, which is the first moment the swatches exist.
+    afterNextRender(() => {
+      if (!this.open()) return;
+      const swatches = this.presetSwatches();
+      if (swatches.length === 0) return;
+      const held = swatches.find((_, index) => colorValueEquals(this.value(), this.presets()[index]));
+      const landing = held ?? swatches[0];
+      landing?.focus();
+    }, { injector: this.presetInjector });
+  }
+
+  private readonly presetInjector = inject(Injector);
+
+  /** The swatches on the page, in the order the row draws them. */
+  private presetSwatches(): readonly HTMLButtonElement[] {
+    // By id rather than by selector: the popup is portalled out of this component, and an id built
+    // from a field path holds dots — which a selector reads as classes.
+    const root: Document | null = (this.hostElement.nativeElement as HTMLElement).ownerDocument;
+    const popup = root?.getElementById(this.popupId()) ?? null;
+    if (popup === null) return [];
+    return Array.prototype.slice.call(popup.querySelectorAll(".mdy-color-swatch")) as HTMLButtonElement[];
+  }
+
+  /**
+   * Walking the swatches, which are a listbox and answer like one.
+   *
+   * The row is real buttons, so the reading position is the focus itself. The keys are the
+   * catalogue's and so is the direction: a row runs in the writing direction, and reading
+   * `ArrowLeft` as "back" is wrong in a right-to-left document.
+   */
+  protected onPresetKeydown(event: KeyboardEvent): void {
+    const binding = keyBindingFor("colors", event.key, true);
+    if (!binding || binding.intent !== "move") return;
+    const order = this.presetSwatches();
+    if (order.length === 0) return;
+    const at = order.indexOf(document.activeElement as HTMLButtonElement);
+    const step = event.key === "ArrowUp" || event.key === "ArrowLeft" ? -1 : 1;
+    const to = event.key === "Home" ? 0
+      : event.key === "End" ? order.length - 1
+      : at === -1 ? (step === -1 ? order.length - 1 : 0)
+      : Math.max(0, Math.min(order.length - 1, at + step));
+    event.preventDefault();
+    order[to]?.focus();
   }
 
   protected onBlur(event: FocusEvent): void {
