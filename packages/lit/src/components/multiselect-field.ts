@@ -543,6 +543,15 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
           aria-label=${this.label || nothing}
           aria-describedby=${this.showErrors(handle) && !this.inlineErrors ? this.errorsId : this.descriptionId}
         >
+          <!-- The strip before the opener, and beside it rather than inside it: a chip carries a
+               button that takes a value off, and a control that opens something may not contain a
+               control that destroys something (ADR 0142). Read in this order too — the chips are
+               what the field holds, the opener is the space after them. -->
+          <span
+            class="${this.partClass("chips")}"
+            role=${this.partRole("chips")}
+            @wheel=${(e: WheelEvent) => this.onStripWheel(e)}
+          >${this.renderValueChips(handle)}</span>
           <button
             type="button"
             id=${triggerId}
@@ -568,11 +577,6 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
             @blur=${() => { handle.markAsTouched(); this.requestUpdate(); }}
             aria-disabled=${String(handle.disabled())}
           >
-            <span
-              class="${this.partClass("chips")}"
-              role=${this.partRole("chips")}
-              @wheel=${(e: WheelEvent) => this.onStripWheel(e)}
-            >${this.renderValueChips(handle)}</span>
             ${this.held(handle).length === 0
               ? html`<span class="${this.partClass("placeholder")}">${this.label ? `Select ${this.label.toLowerCase()}…` : "Select…"}</span>`
               : nothing}

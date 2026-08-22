@@ -1819,7 +1819,9 @@
         display: flex;
         align-items: center;
         gap: 0.5rem;
-        width: 100%;
+        /* The space the chips do not take, which is what a person presses to open the list. Not
+           `width: 100%`: it was the only child of the box and is now the second of two, and a full
+           width there paints it over the strip. */
         min-width: 0;
         border: none;
         background: transparent;
@@ -1838,7 +1840,11 @@
         display: flex;
         align-items: center;
         gap: 0.25rem;
-        flex: 1;
+        /* The strip takes what its chips need and no more; the opener beside it takes the rest. It
+           grew to fill the row while it lived *inside* the opener, where there was nothing to share
+           with. As siblings (ADR 0142) a strip that still grew covered the opener, and the opener
+           covered it back — a press on a chip landed on whichever won. */
+        flex: 0 1 auto;
         min-width: 0;
         overflow-x: auto;
         overflow-y: hidden;

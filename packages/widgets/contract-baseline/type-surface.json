@@ -1831,6 +1831,7 @@
     "protected popupClass: string",
     "protected popupId: _angular_core.Signal<string>",
     "protected removeChip(0) optionKey: string,(1) value: TValue,(2) direction?: \"forward\" | \"backward\",-> returns: void",
+    "protected removeName(0) label: string,-> returns: string",
     "protected revealChipName(0) event: Event,(1) key: string,-> returns: void",
     "protected searchResults: _angular_core.Signal<readonly _modyra_core.MdySelectOption<TValue>[]>",
     "protected selectedSet: _angular_core.Signal<ReadonlySet<string>>",
@@ -3446,6 +3447,11 @@
     "(3) count: number",
     "-> returns: string"
   ],
+  "chipRemoveName": [
+    "(0) verb: string",
+    "(1) label: string",
+    "-> returns: string"
+  ],
   "chipStripWheelDelta": [
     "(0) deltaX: number",
     "(1) deltaY: number",
@@ -4273,7 +4279,7 @@
     "(0) state: MdyMultiselectFieldState<TValue>",
     "(1) errors: ReadonlyArray<MdyFieldError>",
     "(2) options: MdyMultiselectFieldA11yOptions",
-    "-> returns: { readonly root: MdyPartContract; readonly label: MdyPartContract; readonly trigger: MdyPartContract; readonly placeholder: MdyPartContract; readonly chips: MdyPartContract; readonly popup: MdyPartContract; readonly search: MdyPartContract; readonly group: MdyPartContract; readonly description: MdyPartContract; readonly error: MdyPartContract; /** * What was chosen, said out loud, with the words to say it. * * A choice lands and the strip is the only confirmation — which is the one a screen reader user * does not get. The text is the whole selection rather than the last change, so it differs * whenever the selection does: a region written once announces the first choice and swallows * every one after it, which passes any check that makes only one. */ readonly announcement: MdyPartContract & { readonly text: string; }; }"
+    "-> returns: { readonly root: MdyPartContract; readonly label: MdyPartContract; readonly trigger: MdyPartContract; readonly placeholder: MdyPartContract; readonly chips: MdyPartContract; readonly popup: MdyPartContract; readonly search: MdyPartContract; readonly group: MdyPartContract; readonly description: MdyPartContract; readonly error: MdyPartContract; /** * What was chosen, said out loud, with the words to say it. * * A choice lands and the strip is the only confirmation — which is the one a screen reader user * does not get. The text is the whole selection rather than the last change, so it differs * whenever the selection does: a region written once announces the first choice and swallows * every one after it, which passes any check that makes only one. */ readonly announcement: MdyPartContract & { readonly text: string; }; /** * One chip in the strip: a value the person has chosen, as they see it. * * Projected rather than left to each renderer, because it is the element of this widget a person * looks at most and it was the one element no projection described. Three renderers each built it, * and they were brought into agreement one attribute at a time — the value class reached the last * of them a day after the other two, and a chip that said where it stood in the strip reached one * of them first. Agreement arrived at by correction diverges again on the next attribute nobody * has measured. * * `position` and `size` are the chip's place in the strip and how many there are. They are given * rather than derived because the strip decides what it draws — a strip that hides what does not * fit still has to say one of eight, not one of three. */ readonly chip: (key: string, appearance: { readonly label: string; readonly count: number; readonly position: number; readonly size: number; readonly active: boolean; readonly named: boolean; }) => MdyPartContract; }"
   ],
   "projectOptionFieldA11y": [
     "(0) state: MdyOptionFieldState<TValue>",

@@ -102,7 +102,7 @@ export function renderMultiselectField(
     loading.setAttribute("role", "status");
     trigger.appendChild(loading);
   }
-  trigger.append(chipStrip, placeholder, arrow);
+  trigger.append(placeholder, arrow);
   // Said rather than shown: a choice lands and the strip is the only confirmation, which is the one
   // a person using a screen reader does not get.
   const announcement = el("div", parts.announcement.classes.join(" "));
@@ -181,7 +181,26 @@ export function renderMultiselectField(
     keepFocusedChipInView(chipStrip);
   }
 
-  control.append(trigger, overflow, clearAll, announcement, chipTooltip);
+  // The strip before the opener, in the order they are read: the chips are what the field holds and
+  // the opener is the space after them. Siblings, not one inside the other — a chip carries a button
+  // that takes a value off, and a control that opens something may not contain a control that
+  // destroys something (ADR 0142). It is also what makes the opener a valid button again.
+  control.append(chipStrip, trigger, overflow, clearAll, announcement, chipTooltip);
+
+  /**
+   * The box forwards a press on its own empty space to the opener.
+   *
+   * Pressing the field anywhere it is not a chip still opens the list, which is what a person expects
+   * of a box shaped like a field — but it is a behaviour of the box rather than a consequence of the
+   * opener containing everything. A press that lands on a chip is a press on the chip, and no
+   * arrangement of pixels can turn it into a press on the opener.
+   */
+  control.addEventListener("pointerdown", (event) => {
+    if (event.target !== control) return;
+    event.preventDefault();
+    trigger.focus();
+    dispatch({ type: controller.state().open ? "close" : "open" });
+  });
 
   // ── popup: the filter box over the same grid ──────────────────────────────────────────────
   const popup = el("div", `${parts.popup.classes.join(" ")} mdy-overlay`) as HTMLDivElement;

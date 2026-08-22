@@ -1,6 +1,6 @@
 # ADR 0142: A field that holds controls is not a control
 
-Status: Proposed
+Status: Accepted
 
 ## Context
 

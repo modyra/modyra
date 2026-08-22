@@ -74,24 +74,10 @@ import type { MdyOverlayBranch, MdyOverlayOwner } from "../../core/overlay-contr
          disabled and readonly surfaces, the error underline — reached three kinds of four here. -->
     <div [class]="wrapperClasses()">
     <div class="mdy-multiselect" #wrapper [class.mdy-multiselect--open]="open()">
-      <!-- The control a person presses, holding what was chosen. The label names it and the
-           combobox role sits here, because this is what holds the field's value — a magnifier
-           beside the field carried the role and none of the value. -->
-      <button
-        type="button"
-        class="mdy-multiselect__trigger"
-        [id]="fieldId"
-        [mdyPart]="openerPart()"
-        [disabled]="isDisabled()"
-        (click)="toggleOverlay($event)"
-        (keydown)="onOverlayKeydown($event)"
-        [attr.aria-invalid]="paintsAsInvalid()"
-        [attr.aria-disabled]="effectiveAriaDisabled()"
-        [attr.aria-readonly]="isReadonly() ? 'true' : null"
-        [attr.aria-describedby]="describedById(fieldId)"
-        [attr.aria-label]="controlAriaLabel()"
-        [attr.aria-activedescendant]="activeDescendant()"
-      >
+      <!-- The strip before the opener, and beside it rather than inside it: a chip carries a button
+           that takes a value off, and a control that opens something may not contain a control that
+           destroys something (ADR 0142). Read in this order too — the chips are what the field
+           holds, the opener is the space after them. -->
         <span class="mdy-multiselect__chips" [attr.role]="chipsRole" (wheel)="onStripWheel($event)">
           <!-- One chip per distinct value with how many, because a repeated value is a quantity:
                incrementing takes one of something to three. One chip per entry would make undoing
@@ -162,6 +148,24 @@ import type { MdyOverlayBranch, MdyOverlayOwner } from "../../core/overlay-contr
             </span>
           }
         </span>
+      <!-- The control a person presses, holding what was chosen. The label names it and the
+           combobox role sits here, because this is what holds the field's value — a magnifier
+           beside the field carried the role and none of the value. -->
+      <button
+        type="button"
+        class="mdy-multiselect__trigger"
+        [id]="fieldId"
+        [mdyPart]="openerPart()"
+        [disabled]="isDisabled()"
+        (click)="toggleOverlay($event)"
+        (keydown)="onOverlayKeydown($event)"
+        [attr.aria-invalid]="paintsAsInvalid()"
+        [attr.aria-disabled]="effectiveAriaDisabled()"
+        [attr.aria-readonly]="isReadonly() ? 'true' : null"
+        [attr.aria-describedby]="describedById(fieldId)"
+        [attr.aria-label]="controlAriaLabel()"
+        [attr.aria-activedescendant]="activeDescendant()"
+      >
         @if (chosen().length === 0) {
           <span class="mdy-multiselect__placeholder">{{ label() }}</span>
         }

@@ -1911,26 +1911,9 @@
           ],
           "states": []
         },
-        "trigger": {
-          "element": "input",
-          "parent": "inputWrapper",
-          "optional": false,
-          "repeated": false,
-          "role": "combobox",
-          "classes": [
-            "mdy-multiselect__trigger"
-          ],
-          "states": [
-            "disabled",
-            "invalid",
-            "loading",
-            "open",
-            "readonly"
-          ]
-        },
         "chips": {
           "element": "group",
-          "parent": "trigger",
+          "parent": "inputWrapper",
           "optional": false,
           "repeated": false,
           "role": "list",
@@ -1987,6 +1970,23 @@
             "mdy-chip__tooltip"
           ],
           "states": []
+        },
+        "trigger": {
+          "element": "input",
+          "parent": "inputWrapper",
+          "optional": false,
+          "repeated": false,
+          "role": "combobox",
+          "classes": [
+            "mdy-multiselect__trigger"
+          ],
+          "states": [
+            "disabled",
+            "invalid",
+            "loading",
+            "open",
+            "readonly"
+          ]
         },
         "placeholder": {
           "element": "text",
