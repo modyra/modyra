@@ -47,10 +47,25 @@ for (const host of HOSTS) {
     // A value from a **draft, a server or a scripted write** is a fact of the world instead. It is
     // kept and marked, which is what `valueShape` is for, and it is the case this battle is about:
     // the header names all three doors and only this one leaves the value there to be explained.
-    await page.evaluate(({ api }) => {
+    // **Mounted, then written, with a tick between.** These ran in one call and neither was awaited.
+    // One renderer mounts asynchronously — it schedules its change detection rather than running it —
+    // so the write landed before the controls had claimed their fields and the declared empty value
+    // overwrote it. The spec then read an empty field and reported the renderer as ignoring a value
+    // it had never really been given.
+    //
+    // The product question underneath is left alone deliberately: in that renderer a scripted write
+    // *in the same tick as the mount* is overwritten by the control's own initial value, and which
+    // of the two should win has not been asked. A consumer would have to write before the view
+    // initialises to meet it. Separating them here measures the thing this file is about — a value
+    // that arrived with the form and is wrong — rather than that race.
+    await page.evaluate(async ({ api }) => {
       const host = (window as never as Record<string, Record<string, (...args: unknown[]) => unknown>>)[api];
-      host.mountFields("t", [{ name: "age", kind: "number", label: "Age" }] as never);
-      host.setValue("t", { age: "not a number" });
+      await host.mountFields("t", [{ name: "age", kind: "number", label: "Age" }] as never);
+    }, { api: host.api });
+    await page.waitForTimeout(120);
+    await page.evaluate(async ({ api }) => {
+      const host = (window as never as Record<string, Record<string, (...args: unknown[]) => unknown>>)[api];
+      await host.setValue("t", { age: "not a number" });
     }, { api: host.api });
     await page.waitForTimeout(420);
 
