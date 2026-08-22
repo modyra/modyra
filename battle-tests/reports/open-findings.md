@@ -14409,6 +14409,34 @@ The truncated count the charter asks about is already numbered: **finding 234**,
 question arrived, with the measurement `50 001 declared → 9 999 rejected`.
 
 
+## An action that reported a failure it had not had
+
+Not a defect in this library, and kept anyway: it is a defect in an instrument this suite depends on,
+and it is the same shape as half the findings above.
+
+Four messages were sent to another session. **All four reported `Failed to send`.** All four arrived
+complete — the other side has them. So what failed was the *receipt*, not the delivery: the action
+worked and told the caller it had not.
+
+Two things follow, and they pull in opposite directions, which is why this is worth a section rather
+than a line.
+
+**An invoked action that declares itself failed must be treated as failed until something proves
+otherwise.** That is the only safe default: a caller who assumes success on a failure report will
+eventually assume it on a real one. Here the proof arrived from the other side and said the opposite
+of the report — but it arrived, and nothing about the report could have produced it.
+
+**And a standing instruction to ignore a class of complaint is how the first two went unnoticed.**
+The advice was reasonable and it was wrong in the ordinary way: it converted a signal into noise
+before anyone had established which it was.
+
+The general form, which is why it belongs in this register: **a tool's report of its own outcome is a
+measurement, and it can be wrong in either direction.** Every reading in this file is taken through
+some instrument that also reports on itself, and this is the case where that report was false while
+the work behind it succeeded. A green that is really green and a green that is a broken sensor look
+identical from the caller's side; so do these two reds.
+
+
 ## Checked and clean: the closed catalogue, attacked through every container (H-4)
 
 `adversarial/security/a-kind-nothing-lets-through.battle.test.mjs` — green, and meant to stay green.
