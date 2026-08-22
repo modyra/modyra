@@ -430,9 +430,16 @@
      * The steppers are absent too: two controls stacked inside one 3.5rem field cannot both be
      * 44px. They take WCAG 2.5.8's 24px, which is the AA level this project ships against.
      */
+    /* The control stays where the flex line puts it: what is centred and taken out of the flow is
+       the target below, not the button. Merged into one rule, each toggle took `position: absolute`
+       and `left: 50%` and floated to the middle of the field — where it covered the point a person
+       aims at to put the caret in the text box. */
     .mdy-datepicker__toggle,
     .mdy-timepicker__toggle,
-    .mdy-colors__toggle-area,
+    .mdy-colors__toggle-area {
+        position: relative;
+    }
+
     .mdy-datepicker__toggle::after,
     .mdy-timepicker__toggle::after,
     .mdy-colors__toggle-area::after {
