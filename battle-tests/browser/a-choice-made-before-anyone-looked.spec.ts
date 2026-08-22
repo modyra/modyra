@@ -37,6 +37,17 @@
  * control that answers one and not the other is a control a mouse user and a keyboard user disagree
  * about.
  *
+ * **This file guards a symptom, not the property, and it is green for a geometric reason.** Once the
+ * opener fills the field, the midpoint falls on empty space or on a chip's label rather than on a
+ * delete button — but the delete buttons are still inside the opener, and they still occupy part of
+ * it. Sampled along the opener's midline, **up to 17% of it activates a delete**, at every chip count
+ * and in every renderer. What changed is where the hazard sits, not whether it exists.
+ *
+ * So this passing is worth exactly one thing: the reported case does not recur. The property — *the
+ * opener has no operable descendants* — is asserted in `a-trigger-with-a-control-inside-it.spec.ts`,
+ * it is content-independent, and it is red. If that one ever goes green while this one is green, the
+ * hazard is gone. If only this one is green, the hazard has moved.
+ *
  * Claims under attack: UI-011, UI-003, A11Y-004.
  */
 
