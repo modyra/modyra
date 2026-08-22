@@ -9,6 +9,17 @@
  * So a claim whose verb belongs to a person — *reads*, *sees*, *distinguishes*, *notices* — is settled
  * here instead: on the pixels, which are what the person actually gets.
  *
+ * **What this file answers, and what it does not.** `paintedFraction` asks one question: *is anything
+ * painted here that differs from the local background*. That is the right question for "is this
+ * control drawn at all", because a mark in the background colour and no mark are the same thing to a
+ * person.
+ *
+ * It is the wrong question for anything about **contrast**, and it will answer confidently and
+ * uselessly: a focus ring at 1.05:1 paints a healthy non-zero fraction and is invisible. *Painted is
+ * not perceivable.* A claim about a focus indicator surviving forced colours, a swatch boundary
+ * against its panel, or a selected state being distinguishable needs `contrastOf`, which measures the
+ * ratio between the mark and what it sits on rather than counting pixels that differ.
+ *
  * Playwright writes 8-bit PNGs, non-interlaced, with or without an alpha channel depending on whether
  * the shot has any transparency — so the decode is short enough to keep rather than to depend on:
  * concatenate the `IDAT` chunks, inflate, and undo the per-scanline filter. Anything else — a palette,
@@ -107,4 +118,64 @@ export function paintedFraction(png, tolerance = 12) {
   }
   const total = width * height;
   return { fraction: total === 0 ? 0 : different / total, different, total, background };
+}
+
+/** Relative luminance, as WCAG defines it. */
+function luminance(r, g, b) {
+  const channel = (value) => {
+    const v = value / 255;
+    return v <= 0.04045 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4;
+  };
+  return 0.2126 * channel(r) + 0.7152 * channel(g) + 0.0722 * channel(b);
+}
+
+/**
+ * The contrast between what is painted in a region and the background it is painted on.
+ *
+ * The background is the region's own dominant colour, as above. The mark is the colour furthest from
+ * it in luminance — not the average, because averaging a thin dark glyph across a pale field returns
+ * the field. A ratio is what a person's eye is sensitive to and a count of differing pixels is not:
+ * a mark can cover a third of a region and be invisible.
+ *
+ * Anti-aliased edges sit between the two and would drag an average toward the middle; taking the
+ * extreme reports the contrast of the mark's own body, which is the part that has to be seen.
+ *
+ * Returns `null` when nothing is painted at all — no mark means no ratio, and reporting 1:1 would
+ * read as a contrast failure rather than as an absence.
+ *
+ * **Unvalidated on thin strokes, and do not file from it until it is.** Its first run gave a minus
+ * sign 2.98:1 and a plus sign 6.78:1 in the same control, in the same colour — a difference that is
+ * far more likely to be the thinner stroke having no fully-opaque pixel than two different inks. On a
+ * thin mark the furthest pixel may still be a blend, so the ratio reads low and a conforming control
+ * looks like a 1.4.11 failure. Validate against a mark of known colour and known weight before any
+ * finding rests on it.
+ */
+export function contrastOf(png, tolerance = 12) {
+  const { pixels, channels } = png;
+  const { background } = paintedFraction(png, tolerance);
+  const [br, bg, bb] = background.split(",").map(Number);
+  const backLuminance = luminance(br, bg, bb);
+
+  let mark = null;
+  let furthest = -1;
+  for (let at = 0; at < pixels.length; at += channels) {
+    if (Math.abs(pixels[at] - br) <= tolerance
+      && Math.abs(pixels[at + 1] - bg) <= tolerance
+      && Math.abs(pixels[at + 2] - bb) <= tolerance) continue;
+    const value = luminance(pixels[at], pixels[at + 1], pixels[at + 2]);
+    const distance = Math.abs(value - backLuminance);
+    if (distance > furthest) {
+      furthest = distance;
+      mark = { r: pixels[at], g: pixels[at + 1], b: pixels[at + 2], luminance: value };
+    }
+  }
+  if (mark === null) return null;
+
+  const lighter = Math.max(mark.luminance, backLuminance);
+  const darker = Math.min(mark.luminance, backLuminance);
+  return {
+    ratio: Number(((lighter + 0.05) / (darker + 0.05)).toFixed(2)),
+    mark: `${mark.r},${mark.g},${mark.b}`,
+    background,
+  };
 }
