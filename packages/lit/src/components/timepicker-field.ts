@@ -1,5 +1,7 @@
 import { mdyPart } from "../mdy-part.js";
 import {
+  projectTimepickerFieldA11y,
+  type MdyPartContract,
   MDY_WIDGET_CONTRACTS,
   createPointerDrag,
   dragPointOf,
@@ -738,12 +740,26 @@ export class MdyTimepickerFieldElement extends MdyFieldElement<string | null> {
     `;
   }
 
+  /**
+   * What the popup announces itself as, from the projection.
+   *
+   * The role, the name and `aria-modal` belong to the element the opener names — one element the
+   * page can point at and walk into. Split across two, `aria-controls` resolved to a wrapper with no
+   * role while the thing carrying the role had nothing pointing at it.
+   */
+  private dialogPart(): MdyPartContract {
+    const dialog = projectTimepickerFieldA11y(this.view, this.field?.errors() ?? [], {
+      widgetId: this.fieldId,
+    }).dialog;
+    // The id stays the one the opener names: this is the popup part as well as the dialog, and two
+    // ids on one element is not a thing an element can have.
+    return { ...dialog, id: overlayControlledId("timepicker", this.fieldId) ?? dialog.id };
+  }
+
   private renderPopup(handle: MdyFieldHandle<string | null>): unknown {
     return html`
       <div
         class="mdy-timepicker-container ${this.view.viewMode === "dial" ? "mdy-timepicker--dial" : ""}"
-        role="dialog"
-        aria-label=${this.label || "Choose time"}
         @keydown=${(e: KeyboardEvent) => {
           if (e.key === "Escape") {
             e.preventDefault();
@@ -877,6 +893,7 @@ export class MdyTimepickerFieldElement extends MdyFieldElement<string | null> {
           html`<div
             class="${this.popupClass(this.overlay.state.position)} mdy-overlay"
             id=${overlayControlledId("timepicker", this.fieldId) ?? nothing}
+            ${mdyPart(this.dialogPart())}
           >${this.renderPopup(handle)}</div>`,
           this._open,
           {

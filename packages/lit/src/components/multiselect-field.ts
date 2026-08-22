@@ -468,6 +468,7 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
         class="${this.popupClass(position)} mdy-overlay"
         id=${overlayControlledId("multiselect", this.fieldId) ?? nothing}
         role=${this.partRole("popup")}
+        aria-labelledby="${this.fieldId}__label"
       >
       ${this.searchable
         ? html`<input

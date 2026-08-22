@@ -434,6 +434,7 @@ export class MdyDatepickerFieldElement extends MdyFieldElement<string | null> {
     return html`
       <div
         class="mdy-datepicker__calendar"
+        id="${this.fieldId}__dialog"
         role="dialog"
         aria-label=${this.label || "Choose date"}
         @keydown=${(e: KeyboardEvent) => this.onGridKeydown(e, handle)}
@@ -473,7 +474,12 @@ export class MdyDatepickerFieldElement extends MdyFieldElement<string | null> {
           </div>
         </div>
         ${this.view.viewMode === "days"
-          ? html`<div class="mdy-datepicker__grid" role="grid" id=${overlayControlledId("datepicker", this.fieldId) ?? nothing}>
+          ? html`<div
+              class="mdy-datepicker__grid"
+              role="grid"
+              id=${overlayControlledId("datepicker", this.fieldId) ?? nothing}
+              aria-labelledby="${this.fieldId}__label"
+            >
               ${this.renderCalendarGrid(handle)}
             </div>`
           : this.view.viewMode === "months"
