@@ -74,7 +74,7 @@ export interface MdyFieldError {
    * answering `kind: "validation"` is indistinguishable from a rule this form ran. The origin is the
    * form's own knowledge: which list the error arrived in.
    */
-  readonly origin?: "validation" | "async" | "cross-field" | "server" | "entry";
+  readonly origin?: "validation" | "async" | "cross-field" | "server" | "shape" | "entry";
 }
 
 export interface MdyFormError {

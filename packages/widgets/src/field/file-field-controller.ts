@@ -23,7 +23,7 @@ import type {
   MdyFileFieldIntent,
   MdyFileFieldState,
 } from "./file-field-types.js";
-import { showsAsInvalid } from "./verdict.js";
+import { errorsVisible, showsAsInvalid } from "./verdict.js";
 
 export interface MdyFileFieldController<TFile extends MdyFileCandidate>
   extends MdyWidgetController<MdyFileFieldState<TFile>, MdyFileFieldIntent<TFile>> {
@@ -67,7 +67,13 @@ export function createFileFieldController<TFile extends MdyFileCandidate>(
 
   const view: MdySignal<MdyWidgetViewContract> = reactivity.computed(() => {
     const current = state();
-    const shell = projectFieldShellA11y(current, handle.errors(), { widgetId, kind: "file" });
+    const shell = projectFieldShellA11y(current, handle.errors(), {
+      widgetId,
+      kind: "file",
+      // What is shown, not what is wrong: `aria-invalid` and the error list answer one question, and
+      // a rule nobody has answered yet is not news until the person has been at the field.
+      errorsVisible: errorsVisible({ disabled: current.disabled, touched: current.touched }, handle.errors()),
+    });
     const definition = MDY_WIDGET_CONTRACTS.file;
     return {
       root: { classes: fieldShellRootClasses(current as unknown as Readonly<Record<string, unknown>>), attributes: {} },

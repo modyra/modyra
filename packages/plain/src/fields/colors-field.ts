@@ -15,7 +15,7 @@ import {
   defaultWidgetIdFactory,
   overlayAnchoringFor,
   projectFieldShellA11y,
-  shownErrorsOf,
+  visibleErrorsOf,
   showsAsInvalid,
   type MdyColorValueIntent,
   MDY_I18N_MESSAGES_DEFAULT,
@@ -185,8 +185,16 @@ export function renderColorsField(
     // `applyPart` on the same element recomputes classes from the base it captured first.
     const a11y = projectFieldShellA11y(
       { disabled: handle.disabled(), required: handle.required() },
-      shownErrorsOf(handle),
-      { widgetId: widgetId, controlId: hexInput.id },
+      handle.errors(),
+      {
+        widgetId: widgetId,
+        controlId: hexInput.id,
+        // What is shown, not what is wrong. This renderer projects the shell itself rather than
+        // through the controller's view, and passed the errors already filtered — so the shell had
+        // no way to tell "there are none" from "the person is not being told yet", and marked the
+        // control wrong over a rule nobody had answered.
+        errorsVisible: visibleErrorsOf(handle).length > 0,
+      },
     );
     applyPart(shell.label, a11y.label);
     applyPart(shell.description, a11y.description);
@@ -211,7 +219,7 @@ export function renderColorsField(
     // The themes place the panel from `--mdy-overlay-*`; the widget policy decides them.
     if (isOpen) queueMicrotask(() => positionOverlay(popup, shell.wrapper, anchoring));
     toggleArrow.classList.toggle("mdy-select__arrow--open", isOpen);
-    setErrors(shell.errorList, shownErrorsOf(handle).map((error) => error.message));
+    setErrors(shell.errorList, visibleErrorsOf(handle).map((error) => error.message));
     shell.syncState({
       open: isOpen,
       touched: handle.touched(), disabled: handle.disabled(), readonly: handle.readonly(),

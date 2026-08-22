@@ -1,7 +1,6 @@
 import {
   MDY_POPUP_OPENERS,
   overlayControlledId,
-  shownErrorsOf,
   keyBindingFor,
   chipFocusAfterRemoval,
   multiselectAnnouncement,
@@ -515,7 +514,8 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
             aria-controls=${this._open ? overlayControlledId("multiselect", this.fieldId) ?? nothing : nothing}
             aria-activedescendant=${this.activeDescendant() ?? nothing}
             aria-describedby=${this.showErrors(handle) && !this.inlineErrors ? this.errorsId : this.descriptionId}
-            aria-invalid=${String(shownErrorsOf(handle).length > 0)}
+            aria-invalid=${String(this.showErrors(handle))}
+            @blur=${() => { handle.markAsTouched(); this.requestUpdate(); }}
             aria-disabled=${String(handle.disabled())}
           >
             <span

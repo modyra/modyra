@@ -153,6 +153,10 @@ for (const [name, project, [, initial, make]] of PROJECTIONS) {
     const handle = makeHandle(rx, initial());
     const controller = make(handle, rx);
 
+    // Touched first: a verdict is announced to somebody who has been at the field. A rule they have
+    // not answered yet, on a field they have not reached, is news about what they have not done —
+    // `aria-invalid` before that is a control marked wrong for arriving.
+    handle.markAsTouched();
     const inPlay = ariaOf(project(controller.state(), handle.errors(), { widgetId: "w" }));
     assert.ok(
       inPlay.invalid.some((v) => v === "true" || v === true),

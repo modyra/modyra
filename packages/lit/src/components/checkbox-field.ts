@@ -58,7 +58,14 @@ export class MdyCheckboxFieldElement extends MdyFieldElement<boolean> {
               ? this.fieldController.dispatch({ type: "blur" })
               : handle.markAsTouched()}
         />
-        <label class="mdy-label" for=${this.fieldId}>
+        <!-- The label carries the field's state the way every other kind's does: it is drawn here
+             rather than through the shared renderLabel, because the control sits inside it, and the classes
+             have to come from the same vocabulary either way. -->
+        <label
+          class="mdy-label ${this.showErrors(handle) ? "mdy-label--has-error" : ""}"
+          id="${this.fieldId}__label"
+          for=${this.fieldId}
+        >
           <span class="${this.partClass("indicator")}" aria-hidden="true"></span>
           ${this.label}
           ${this.label && handle.required()

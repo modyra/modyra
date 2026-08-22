@@ -162,7 +162,10 @@ export function projectFieldShellA11y(
           options.constraints ?? NO_CONSTRAINTS,
           options.value ?? null,
         ),
-        "aria-invalid": String(hasErrors),
+        // What is *shown*, not what is wrong. The four faces of one question include this one: a
+        // control marked wrong beside a message nobody rendered is a verdict with no explanation,
+        // and the person it is about did nothing to earn it.
+        "aria-invalid": String(errorsVisible),
         "aria-required": String(flags.required),
         // Disabled alone, never folded with read-only: a read-only control is reachable, and
         // announcing it disabled tells a screen-reader user they cannot interact with something
