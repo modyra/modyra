@@ -28,6 +28,9 @@ import { HOSTS } from "./bench";
 const MIN = "2026-06-10";
 const INSIDE = 20;
 const OUTSIDE = 3;
+/** The far end of the same door, on a month that holds both sides of it. */
+const MAX = "2026-06-10";
+const BEYOND = 25;
 
 for (const host of HOSTS) {
   test(`a day before the limit cannot be chosen, ${host.name}`, async ({ page }) => {
@@ -95,5 +98,98 @@ for (const host of HOSTS) {
       `day ${OUTSIDE} is before the declared minimum and is offered as an ordinary choice ` +
         `(${JSON.stringify(offered)}) — a person is invited to press something that cannot work`,
     ).toBe(true);
+  });
+
+  test(`a day after the limit cannot be chosen, ${host.name}`, async ({ page }) => {
+    test.setTimeout(120_000);
+    await page.goto(host.page);
+    await page.waitForFunction((flag) => (window as never as Record<string, boolean>)[flag] === true, host.ready);
+
+    // The other end of the same door. `minDate` was written first because it was the cheapest
+    // complete case, and a limit honoured at one end and not the other is a thing renderers do —
+    // the two are usually different branches.
+    await page.evaluate(({ api, max }) => {
+      (window as never as Record<string, Record<string, (...args: never[]) => unknown>>)[api]
+        .mountFields("lim2", [{
+          name: "d", kind: "datepicker", label: "D", initialValue: "2026-06-05", maxDate: max,
+        }] as never);
+    }, { api: host.api, max: MAX });
+    await page.waitForTimeout(400);
+
+    const opener = page.locator('[data-form="lim2"] button[aria-label="Toggle calendar"], [data-form="lim2"] [aria-haspopup]').first();
+    await expect(opener, "no calendar opener was drawn, so the limit cannot be exercised").toHaveCount(1, { timeout: 5_000 });
+    await opener.click();
+    await expect(page.locator('[role="gridcell"]').first(), "the calendar opened without drawing any days")
+      .toBeAttached({ timeout: 5_000 });
+
+    const held = () => page.evaluate(({ api }) =>
+      JSON.stringify((window as never as Record<string, { valueOf(i: string): Record<string, unknown> }>)[api].valueOf("lim2")),
+      { api: host.api });
+    const before = await held();
+
+    const cell = (day: number) => page.locator('[role="gridcell"], [role="grid"] button')
+      .filter({ hasText: new RegExp(`^\\s*${day}\\s*$`) }).first();
+    await expect(cell(BEYOND), `the open month drew no day ${BEYOND}`).toHaveCount(1, { timeout: 5_000 });
+
+    const offered = await cell(BEYOND).evaluate((element) => ({
+      ariaDisabled: element.getAttribute("aria-disabled"),
+      disabled: (element as HTMLButtonElement).disabled ?? null,
+    }));
+
+    await cell(BEYOND).click({ force: true }).catch(() => undefined);
+    await page.waitForTimeout(300);
+
+    expect(
+      await held(),
+      `pressing day ${BEYOND} — after the declared maximum ${MAX} — changed the value from ${before}. ` +
+        `The calendar offered the day anyway (${JSON.stringify(offered)})`,
+    ).toBe(before);
+
+    expect(
+      offered.ariaDisabled === "true" || offered.disabled === true,
+      `day ${BEYOND} is after the declared maximum and is offered as an ordinary choice ` +
+        `(${JSON.stringify(offered)})`,
+    ).toBe(true);
+  });
+
+  test(`a range refuses a start before its limit, ${host.name}`, async ({ page }) => {
+    test.setTimeout(120_000);
+    await page.goto(host.page);
+    await page.waitForFunction((flag) => (window as never as Record<string, boolean>)[flag] === true, host.ready);
+
+    // The same declaration on the kind that carries two dates. A range has more places to lose a
+    // limit than a single date does — a start branch and an end branch — and it had none of this
+    // asserted at all.
+    await page.evaluate(({ api, min }) => {
+      (window as never as Record<string, Record<string, (...args: never[]) => unknown>>)[api]
+        .mountFields("lim3", [{ name: "r", kind: "daterange", label: "R", minDate: min }] as never);
+    }, { api: host.api, min: MIN });
+    await page.waitForTimeout(400);
+
+    const opener = page.locator('[data-form="lim3"] button[aria-label="Toggle calendar"], [data-form="lim3"] [aria-haspopup]').first();
+    if (await opener.count() === 0) {
+      test.skip(true, "this renderer draws no opener for a daterange, which is a different finding");
+    }
+    await opener.click();
+    await expect(page.locator('[role="gridcell"]').first(), "the range opened without drawing any days")
+      .toBeAttached({ timeout: 5_000 });
+
+    const held = () => page.evaluate(({ api }) =>
+      JSON.stringify((window as never as Record<string, { valueOf(i: string): Record<string, unknown> }>)[api].valueOf("lim3")),
+      { api: host.api });
+    const before = await held();
+
+    const cell = page.locator('[role="gridcell"], [role="grid"] button')
+      .filter({ hasText: new RegExp(`^\\s*${OUTSIDE}\\s*$`) }).first();
+    await expect(cell, `the open month drew no day ${OUTSIDE}`).toHaveCount(1, { timeout: 5_000 });
+
+    await cell.click({ force: true }).catch(() => undefined);
+    await page.waitForTimeout(300);
+
+    expect(
+      await held(),
+      `pressing day ${OUTSIDE} — before the declared minimum ${MIN} — started a range there. ` +
+        `A limit a range only declares is one its first click ignores`,
+    ).toBe(before);
   });
 }
