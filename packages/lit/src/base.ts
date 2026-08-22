@@ -371,9 +371,12 @@ export abstract class MdyFieldElement<T> extends LitElement {
     if (!this.label) return nothing;
     const filled = this.isFilled(handle);
     const hasError = this.showErrors(handle);
+    // The label always carries the id the projections name it by. A popup's inner view is labelled by
+    // the field's label — `aria-labelledby="<widget>__label"` — and a label with no id left every one
+    // of those references pointing at nothing the moment a person opened the view that uses it.
     return html`<label
       class="${SHELL.label} ${filled ? `${SHELL.label}--filled` : ""} ${hasError ? `${SHELL.label}--has-error` : ""}"
-      id=${labelId || nothing}
+      id=${labelId || `${this.fieldId}__label`}
       for=${labelId ? nothing : forId}
     >
       ${this.label}
