@@ -18,7 +18,6 @@ import { html, nothing, type PropertyDeclarations } from "lit";
 import { observerFor, type MdyFieldHandle } from "@modyra/core";
 import { buildTimeString, formatTimeAs, hourToAngle, minuteToAngle, parseAnyTime, pointerAngle, to24Hour, type MdyTimeFormat } from "@modyra/core/datetime";
 import {
-  timepickerFieldPartIds,
   acceptTimeField,
   createTimepickerFieldController,
   stepTimeField,
@@ -597,8 +596,8 @@ export class MdyTimepickerFieldElement extends MdyFieldElement<string | null> {
           <div class="${this.partClass("hour")} ${hourActive ? "mdy-timepicker-segment--active" : ""}">
             <input
               type="number"
-              id="${timepickerFieldPartIds(this.fieldId).hourId}"
               class="${this.partClass("hourControl")} ${this.view.readonly ? stateClass(this.partClass("hourControl"), "readonly") : ""}"
+              ${mdyPart(this.segmentPart("hourControl"))}
               .value=${this.editing === "hour" ? this._editingText ?? this.hourDisplay() : this.hourDisplay()}
               ?readonly=${this.view.readonly}
               aria-label=${this.messages.timepickerHourLabel}
@@ -623,8 +622,8 @@ export class MdyTimepickerFieldElement extends MdyFieldElement<string | null> {
           <div class="${this.partClass("minute")} ${minuteActive ? "mdy-timepicker-segment--active" : ""}">
             <input
               type="number"
-              id="${timepickerFieldPartIds(this.fieldId).minuteId}"
               class="${this.partClass("minuteControl")} ${this.view.readonly ? stateClass(this.partClass("minuteControl"), "readonly") : ""}"
+              ${mdyPart(this.segmentPart("minuteControl"))}
               .value=${this.editing === "minute" ? this._editingText ?? this.minuteDisplay() : this.minuteDisplay()}
               ?readonly=${this.view.readonly}
               aria-label=${this.messages.timepickerMinuteLabel}
@@ -754,6 +753,19 @@ export class MdyTimepickerFieldElement extends MdyFieldElement<string | null> {
     // The id stays the one the opener names: this is the popup part as well as the dialog, and two
     // ids on one element is not a thing an element can have.
     return { ...dialog, id: overlayControlledId("timepicker", this.fieldId) ?? dialog.id };
+  }
+
+  /**
+   * What one segment announces: the spinbutton role, its bounds and the number it holds.
+   *
+   * From the projection rather than written here, because the bounds are the clock's — a 24-hour
+   * face whose reader is told the maximum is 12 states one of two ranges falsely, and a reader has
+   * no way to see which.
+   */
+  private segmentPart(part: "hourControl" | "minuteControl"): MdyPartContract {
+    return projectTimepickerFieldA11y(this.view, this.field?.errors() ?? [], {
+      widgetId: this.fieldId,
+    })[part];
   }
 
   private renderPopup(handle: MdyFieldHandle<string | null>): unknown {
