@@ -35,6 +35,8 @@ import {
   stateClass,
   timepickerEntry,
   timepickerEntryText,
+  timepickerDialAria,
+  timepickerDialKeyIntent,
   timepickerSelectedDialValue,
   timepickerTabTarget,
   type MdyElementLookup,
@@ -172,6 +174,27 @@ export function renderTimepickerField(
   ghostHand.setAttribute("aria-hidden", "true");
   ghostHand.hidden = true;
   dialFace.appendChild(ghostHand);
+  // A dial is a slider around a circle, and the keyboard drives it wherever it is shown. Focusable,
+  // announced with the three values that make a slider mean anything, and answering the keys the
+  // contract derives — all three from `@modyra/widgets`, so what is said and what the arrows do
+  // cannot drift apart.
+  dialFace.tabIndex = 0;
+  dialFace.addEventListener("keydown", (event) => {
+    const state = controller.state();
+    const field = state.focusedField;
+    const current = timepickerSelectedDialValue(field, state.draft, format);
+    const moved = timepickerDialKeyIntent(
+      event.key, field, format, current, timeStepsAt(f.granularity, to24Hour(state.draft)),
+    );
+    if (moved === null) return;
+    event.preventDefault();
+    // Kept here: the dialog answers Enter and Escape, and an arrow that reached the popup's own
+    // handler would be read a second time.
+    event.stopPropagation();
+    dispatch(moved.field === "hour"
+      ? { type: "set-hour", hour: moved.value }
+      : { type: "set-minute", minute: moved.value });
+  });
   clock.appendChild(dialFace);
 
   const content = el("div", parts.content.classes.join(" "));
@@ -521,6 +544,21 @@ export function renderTimepickerField(
     applyPart(control, view.parts.trigger);
     toggle.disabled = state.disabled;
     applyPart(dialog, { ...view.parts.dialog, id: overlayControlledId("timepicker", widgetId) ?? undefined });
+    // What a screen reader is told about the hand, from the same rule the arrows follow.
+    {
+      const aria = timepickerDialAria(
+        state.focusedField, format, timepickerSelectedDialValue(state.focusedField, state.draft, format),
+      );
+      dialFace.setAttribute("role", aria.role);
+      dialFace.setAttribute("aria-valuemin", String(aria.valueMin));
+      dialFace.setAttribute("aria-valuemax", String(aria.valueMax));
+      dialFace.setAttribute("aria-valuenow", String(aria.valueNow));
+      dialFace.setAttribute("aria-valuetext", aria.valueText);
+      dialFace.setAttribute(
+        "aria-label",
+        state.focusedField === "hour" ? messages.timepickerHourLabel : messages.timepickerMinuteLabel,
+      );
+    }
     applyPart(hourSegment, view.parts.hour);
     applyPart(hourInput, view.parts.hourControl);
     applyPart(minuteSegment, view.parts.minute);
