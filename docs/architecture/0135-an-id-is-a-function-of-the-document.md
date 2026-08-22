@@ -102,6 +102,46 @@ the path but omitting the scope. Two forms on one page with the same field name 
 id twice, and the assertion above passes — both documents render the same ids as themselves. The scope
 needs its own case.
 
+## Amendment: the two properties cannot both be automatic, and the scope is not optional
+
+The battle written for this record asked for *two forms mounted from one document get distinct scopes
+without a consumer having to know*. **That cannot be had**, and the contradiction is this record's own
+two columns:
+
+```
+stability      the id depends only on the document    ⇒ two live copies get one id
+no collision   the id depends on the instance         ⇒ a second mount changes the id
+```
+
+Anything that tells two mounts of one document apart has to come from outside the document — the host,
+or the order they were created in. The host is the scope, which this record already requires; the order
+is the counter it removed. There is no third source, so **the scope is not a nicety a careful consumer
+adds: it is where the second property comes from.**
+
+**What is decided, beyond what was written above:**
+
+- the promise is *two **scoped** forms do not collide*, and that is what a battle asserts;
+- an unscoped collision is a **documented hazard and not a defect** — the consumer supplied one
+  identity for two things;
+- and it **must not be silent**. Two forms with one scope produce no warning today, so a page whose
+  `aria-describedby` resolves to the wrong form looks exactly like a page whose references are correct.
+  That is [ADR 0121](0121-a-value-indistinguishable-from-its-own-absence.md)'s shape: a colliding id is
+  indistinguishable from a working one, and the person who can fix it in one attribute is the one
+  nobody tells.
+
+**A registry was the alternative and is rejected**, though it is buildable: a widget claiming its
+derived id at mount and taking a suffixed one if a live widget holds it. It would keep a single-form
+page untouched and stop two live copies crossing references — and it would make the **second** form's
+ids depend on mount order, which is the counter's defect returned in a corner. A visible failure a
+consumer fixes with one attribute is worth more than an invisible rule that makes ids depend on paint
+order.
+
+**And the exclusion by *has no field* applies to the stability case too, not only to the fallback.** The
+stability property is green today because plain never had a counter and the other two now derive from
+the path — not by construction. A fixture that mounts an unbound widget will read as unstable and be
+right to, so the case must exclude by *the widget has no field*, never by kind or tag: excluding by tag
+stops testing anything the day someone binds that fixture.
+
 ## Security and privacy
 
 A field's path appears in the DOM as an id where a counter did not. A path is a name the consumer
