@@ -21930,3 +21930,45 @@ Pinned:
 three reds. It asserts neither what an id contains nor where it comes from — the path, a hash of the
 path and a consumer-supplied value all satisfy both sentences.
 
+
+### 384 — closed. The optional-input half was not a classification question
+
+I had left it open saying it needed a judgement about the contract: *is an object type gaining a member
+additive?* — true for a `ɵcmp` inputs record, false for a type a consumer implements. That framing was
+wrong, and looking at the data rather than reasoning about it is what showed it.
+
+**The surface carries 122 members Angular's compiler emitted, not members of anything.**
+
+```
+MdyCalendarCellComponent
+  public   cell · cellId · focus · isDisabled · isFocused · isSelected · isToday · picked   9
+  ɵ        ɵcmp · ɵfac                                                                     2
+```
+
+`cellId` — the optional input whose addition produced a `major` — **is already there by name, in the
+public members**. The `ɵcmp` entry restates every input the class declares. So the differ reported one
+addition twice: once correctly as `cellId was added (optional)` and once as a whole declaration
+rewritten.
+
+`ɵ` is Angular's own marker for *not public API*. There was never a classification to decide: those
+entries are not surface, and they are skipped on both sides now.
+
+**Skipped rather than removed from the baseline**, deliberately. Rewriting it would bake in whatever
+else is uncommitted at that moment, and this audit has already been used to make exactly that mistake
+once tonight — `--write` swept a peer's in-flight work into a contract baseline. Filtering both sides
+needs no rewrite and no clean tree.
+
+Verified by mutation rather than by the audit going quiet, which it would have done either way:
+
+```
+a class of four members            keeps cell, cellId
+a change to ɵcmp alone             invisible
+a public member added              still reported
+```
+
+`node scripts/audit-type-surface.mjs` — 732 shapes, TYPE SURFACE UNCHANGED.
+
+**Both halves of 384 are closed, and neither was the thing it looked like.** The first looked like a
+tolerance to loosen and was a set compared as a sequence. The second looked like a policy question and
+was a hundred and twenty-two entries that should never have been in the comparison.
+
