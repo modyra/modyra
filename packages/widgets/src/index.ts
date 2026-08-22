@@ -111,7 +111,7 @@ export { narrowConstraints, nativeConstraintAttributes, sliderTrack } from "./na
 export type { MdyNativeAttributes } from "./native-constraints.js";
 export * from "./field/index.js";
 
-export { chipDropIndex, chipFocusAfterRemoval, chipStripWheelDelta, chipTooltipOffset, hiddenChipCount, keepFocusedChipInView, scrollChipStripByWheel, chipMovedAnnouncement, wayBackSentence, MDY_CHIP_CLASSES, multiselectAnnouncement, multiselectChipClasses, type MdyChipAppearance, type MdyChipMode, type MdyChipPart, type MdyChipRole } from "./chip.js";
+export { chipDropIndex, chipFocusAfterRemoval, chipRemoveName, chipStripWheelDelta, chipTooltipOffset, hiddenChipCount, keepFocusedChipInView, scrollChipStripByWheel, chipMovedAnnouncement, wayBackSentence, MDY_CHIP_CLASSES, multiselectAnnouncement, multiselectChipClasses, type MdyChipAppearance, type MdyChipMode, type MdyChipPart, type MdyChipRole } from "./chip.js";
 export { stateClass, type MdyPartState, type MdyStateName } from "./state.js";
 export { MDY_CSS_PROPERTIES, type MdyOverlayProperty } from "./css.js";
 export { partClasses, partStates, widgetStateClasses } from "./part-classes.js";

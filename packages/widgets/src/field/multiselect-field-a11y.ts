@@ -13,6 +13,8 @@ import type { MdyFieldError } from "@modyra/core";
 import { assertUsableWidgetId } from "../ids.js";
 import type { MdyPartContract } from "../contract.js";
 import { MDY_FIELD_SHELL_CLASSES, MDY_FIELD_STATE_CLASSES } from "../structure.js";
+import { MDY_CHIP_CLASSES, multiselectChipClasses } from "../chip.js";
+import { stateClass } from "../state.js";
 import type { MdyMultiselectFieldState } from "./multiselect-field-types.js";
 import { errorsVisible, holdsUneditedValue, shownErrors } from "./verdict.js";
 
@@ -85,6 +87,28 @@ export function projectMultiselectFieldA11y<TValue>(
    * every one after it, which passes any check that makes only one.
    */
   readonly announcement: MdyPartContract & { readonly text: string };
+  /**
+   * One chip in the strip: a value the person has chosen, as they see it.
+   *
+   * Projected rather than left to each renderer, because it is the element of this widget a person
+   * looks at most and it was the one element no projection described. Three renderers each built it,
+   * and they were brought into agreement one attribute at a time — the value class reached the last
+   * of them a day after the other two, and a chip that said where it stood in the strip reached one
+   * of them first. Agreement arrived at by correction diverges again on the next attribute nobody
+   * has measured.
+   *
+   * `position` and `size` are the chip's place in the strip and how many there are. They are given
+   * rather than derived because the strip decides what it draws — a strip that hides what does not
+   * fit still has to say one of eight, not one of three.
+   */
+  readonly chip: (key: string, appearance: {
+    readonly label: string;
+    readonly count: number;
+    readonly position: number;
+    readonly size: number;
+    readonly active: boolean;
+    readonly named: boolean;
+  }) => MdyPartContract;
 } {
   const { labelId, groupId, triggerId, popupId, searchId, descriptionId, errorId } =
     multiselectFieldPartIds(options.widgetId);
@@ -98,6 +122,9 @@ export function projectMultiselectFieldA11y<TValue>(
   const tellingThem = errorsVisible({ disabled: state.disabled, touched: state.touched, holdsUnedited: holdsUneditedValue(state, "multiselect") }, errors);
 
   const opener = projectOverlayOpenerA11y("multiselect", { widgetId: options.widgetId, open: state.open });
+  // What the catalogue says a chip in the strip is. Read once here rather than at each renderer,
+  // which is how one of them came to carry a role the other two did not.
+  const chipRole = MDY_WIDGET_CONTRACTS.multiselect.parts.chip.role;
   const describedBy = hasErrors ? errorId : descriptionId;
 
   return {
@@ -144,6 +171,28 @@ export function projectMultiselectFieldA11y<TValue>(
       // Shown only while nothing is selected — the chips speak for themselves once there are any.
       attributes: { hidden: state.selectedKeys.size > 0 },
     },
+    chip: (key, appearance) => ({
+      classes: [
+        ...multiselectChipClasses({ role: "value" }),
+        // Where the keyboard is standing in the strip, which a class is what makes visible.
+        ...(appearance.active ? [stateClass(MDY_CHIP_CLASSES.block, "active")] : []),
+      ],
+      ...(chipRole === undefined ? {} : { role: chipRole }),
+      attributes: {
+        // The roving position: one chip is the strip's tab stop and the arrows move it, so the rest
+        // are reachable without being separate stops on the way through the form.
+        tabindex: appearance.active ? 0 : -1,
+        "data-key": key,
+        // The words, and how many of this one when the mode counts. A chip whose label is the whole
+        // name it has is announced twice by a reader that also reads its text; the name is given
+        // here because the strip may show a shortened label and must still say the whole one.
+        "aria-label": appearance.count > 1 ? `${appearance.label}, ${appearance.count}` : appearance.label,
+        "aria-posinset": appearance.position,
+        "aria-setsize": appearance.size,
+        // The tooltip exists only while one chip is naming itself, and names that chip alone.
+        "aria-describedby": appearance.named ? `${options.widgetId}__chiptip` : null,
+      },
+    }),
     chips: {
       classes: ["mdy-multiselect__chips"],
       attributes: {

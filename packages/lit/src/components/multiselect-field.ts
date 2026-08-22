@@ -21,6 +21,7 @@ import { filterOptionsByQuery } from "@modyra/widgets";
 import {
   createMultiselectFieldController,
   MDY_CHIP_CLASSES,
+  chipRemoveName,
   multiselectChipClasses,
   optionsWithUnrecognizedValues,
   type MdyMultiselectFieldController,
@@ -910,7 +911,7 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
         type="button"
         class=${MDY_CHIP_CLASSES.remove}
         tabindex="-1"
-        aria-label=${this.messages.chipRemoveLabel}
+        aria-label=${chipRemoveName(this.messages.chipRemoveLabel, label)}
         @click=${(e: Event) => { e.stopPropagation(); this.removeAndPlaceFocus(handle, value); }}
       ></button>
     </span>`);

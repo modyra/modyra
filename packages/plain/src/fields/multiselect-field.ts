@@ -12,6 +12,7 @@ import type { MdyDynamicOptionsField } from "@modyra/core";
 import {
   MDY_WIDGET_CONTRACTS,
   createMultiselectFieldController,
+  chipRemoveName,
   multiselectChipClasses,
   multiselectOverlayAction,
   overlayAnchoringFor,
@@ -525,6 +526,8 @@ export function renderMultiselectField(
     const remove = el("button", parts.chipRemove.classes.join(" ")) as HTMLButtonElement;
     remove.type = "button";
     remove.tabIndex = -1;
+    // Named where the label is written, not here: at build time this chip is not in the strip yet,
+    // so asking it what it says answers with the key.
     remove.setAttribute("aria-label", messages.chipRemoveLabel);
     remove.addEventListener("click", (event) => {
       // The strip sits inside the trigger, which opens the popup. Taking a value off is not asking
@@ -593,6 +596,10 @@ export function renderMultiselectField(
       // One name for the whole chip: a label and a count in two spans are read as one run of text,
       // so "A 3" arrives with nothing saying which half is which.
       chip.setAttribute("aria-label", count > 1 ? `${label}, ${count}` : label);
+      // The button that takes this one off says which one it takes: a strip of eight offers eight
+      // controls, and a name that is only the verb is the same name on all of them.
+      chip.querySelector(`.${parts.chipRemove.classes[0]}`)
+        ?.setAttribute("aria-label", chipRemoveName(messages.chipRemoveLabel, label));
       // Where this chip sits and how many there are, stated on the chip itself. Independent of the
       // live region and of anything drawn: it survives a stripped stylesheet and a dropped
       // announcement, which the other two do not.

@@ -97,6 +97,22 @@ export function multiselectChipClasses(appearance: MdyChipAppearance = {}): read
 }
 
 /**
+ * What the button that takes a chip off is called.
+ *
+ * The verb alone — "Remove", "Rimuovi" — names the action and not its object, so a strip of eight
+ * chips offers eight controls with one name between them. Someone reading the page one control at a
+ * time hears "Remove" and has to leave it, find the chip beside it, and come back to know what they
+ * would be removing; someone listing the controls hears the same word eight times.
+ *
+ * The words stay with the renderer, which is where the language lives. The rule that the object
+ * belongs in the name lives here, so all of them compose it the same way.
+ */
+export function chipRemoveName(verb: string, label: string): string {
+  const object = label.trim();
+  return object === "" ? verb : `${verb} ${object}`;
+}
+
+/**
  * Where focus goes when a chip is taken off, named as the chip it should land on.
  *
  * `null` means the strip has nothing left and focus belongs on the control itself.

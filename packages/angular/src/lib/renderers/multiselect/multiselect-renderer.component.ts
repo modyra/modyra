@@ -19,6 +19,7 @@ import type { MdyMultiselectMode } from "@modyra/core";
 import {
   MDY_WIDGET_CONTRACTS,
   multiselectOverlayAction,
+  chipRemoveName,
   multiselectChipClasses,
   multiselectValueTransition,
   shouldCloseMultiselectOverlay,
@@ -155,7 +156,7 @@ import type { MdyOverlayBranch, MdyOverlayOwner } from "../../core/overlay-contr
                 type="button"
                 [class]="chip.remove"
                 tabindex="-1"
-                [attr.aria-label]="i18n.chipRemoveLabel"
+                [attr.aria-label]="removeName(held.label)"
                 (click)="removeChip(held.key, held.value); $event.stopPropagation()"
               ></button>
             </span>
@@ -523,6 +524,11 @@ export class MdyMultiselectComponent<TValue = string>
    * asked for the option appearance in both places — so a theme keying on the declared class styled
    * the renderers that emit it and silently skipped this one.
    */
+  /** What the button that takes this chip off is called: the verb and the value it would remove. */
+  protected removeName(label: string): string {
+    return chipRemoveName(this.i18n.chipRemoveLabel, label);
+  }
+
   protected valueChipClasses(): string {
     return multiselectChipClasses({ mode: this.mode(), role: "value" }).join(" ");
   }
