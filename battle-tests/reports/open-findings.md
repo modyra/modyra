@@ -21819,3 +21819,49 @@ a judgement about the contract and not a cleanup of the differ, so it stays open
 `node scripts/audit-type-surface.mjs` — 732 shapes, TYPE SURFACE UNCHANGED. The normalisation moves no
 baseline entry.
 
+
+## 389 — the same declaration mounted twice gets different ids (S1, UI-011 A11Y-001)
+
+[388](#388) is closed — all three renderers put an id on all forty-two calendar cells now. Measuring
+that closure showed what the ids are:
+
+```
+plain     when__day__2026-07-26                        the field's own name
+lit       mdy-field-0__day__2026-07-26                 a mount counter
+angular   mdy-control-datepicker-0__day__2026-07-26    a mount counter
+```
+
+The **shape** agrees across the three, which is what [ADR 0134](../../docs/architecture/0134-the-projection-decides-an-id.md)
+and `calendarDayId` were for. The **input** does not, and a counter is not a property of the document:
+
+```
+                 mounted second        mounted again, alone     same
+angular          mdy-control-datepicker-1__label   -2__label    no
+lit              mdy-field-1__label                -2__label    no
+plain            when__label                       when__label  yes
+```
+
+**The same field declaration produces a different id depending on what else was on the page first.**
+So in two renderers of three:
+
+- a consumer cannot write `aria-describedby="when__label"` in their own markup and have it resolve;
+- server-rendered markup and a client mount disagree the moment their order does, which is a hydration
+  mismatch on an accessibility attribute rather than on visible text;
+- a stylesheet or a test naming an id works against plain and against nothing else;
+- the id is not a function of the document, so nothing about it is reproducible.
+
+Same family as [374](#374) and [385](#385) — one contract, three answers — but the previous two were
+about *which parts carry an id*. This is about **what the id is**, and it survived those repairs
+because both were satisfied by three renderers agreeing on a shape while being handed different
+material.
+
+Plain's answer is the one a consumer can use: the id is derived from the name the document gave the
+field, so it is the same id every time that document is rendered. It is also the one that cannot
+collide silently — two fields called `when` in one document is a defect the consumer can see, where two
+counters never collide and never mean anything either.
+
+Owned by `esecutore`. No battle yet: whether a widget's id should be the field's path, a hash of it, or
+a consumer-supplied value is a contract decision, and every one of those satisfies *the same document
+renders the same ids*, which is the sentence a battle would assert. I will write it once the shape is
+chosen — unlike [386](#386), where I talked myself out of a battle the property could carry.
+
