@@ -153,6 +153,7 @@ absent section reads as an oversight, and "no security impact" is a finding.
 - [ADR 0136: A version one runtime accepts is a version all of them accept](0136-one-contract-version-set.md) — TypeScript accepted a version Rust and Java refuse, so a document built a form in one runtime and did not exist for the other two
 - [ADR 0137: A row that wraps where one line stops being a layout rule](0137-a-row-that-wraps-where-it-must.md) — the scroll departure was paid for with an announcement no role could carry, and reflow was owed to a sighted person all along
 - [ADR 0138: A chip is an item in a list, not a number in a range](0138-a-chip-is-an-item-not-a-number.md) — the quantity chip gives up the spinbutton published practice prescribes, because a role that carries a value cannot carry a position
+- [ADR 0139: A select has two shapes, and one renderer only ever draws one of them](0139-a-select-has-two-shapes.md) — `searchable` switches between a native control and a combobox, the contract describes only the combobox, and plain never leaves it
 - [ADR 0092: A condition travels with the form](0092-a-condition-travels-with-the-form.md) — `when` and `asyncWhen` were closures, so a schema carrying one was not data and the document half could not say what the typed half said
 
 ## Security-relevant records
