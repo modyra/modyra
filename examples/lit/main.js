@@ -189,7 +189,7 @@ class SignupApp extends LitElement {
         { value: "monthly", label: "Monthly" },
         { value: "yearly", label: "Yearly" },
       ]}></mdy-segmented-field>
-          <mdy-multiselect-field label="Channels"
+          <mdy-multiselect-field label="Channels" reorderable
             .field=${this.gallery.f.channels}
             .options=${[
         { value: "mail", label: "Email" },

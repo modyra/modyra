@@ -66,6 +66,7 @@ const FIELDS = [
     kind: "multiselect",
     initialValue: ["espresso", "espresso"],
     mode: "multi",
+    reorderable: true,
     label: "Servings",
     options: [
       { value: "espresso", label: "Espresso" },
@@ -95,7 +96,10 @@ const FIELDS = [
       { value: "pro", label: "Pro" },
     ],
   },
-  { name: "palette", kind: "multiselect", label: "Palette", options: colors },
+  // Reordering is opt-in and off by default, so a demo that does not ask for it shows a strip
+  // whose reordering keys and drag gesture do nothing — which reads as a broken feature rather
+  // than an unrequested one. The legend says `[needs reorderable]` for a field that has not asked.
+  { name: "palette", kind: "multiselect", label: "Palette", options: colors, reorderable: true },
   { name: "stay", kind: "daterange", label: "Stay" },
   { name: "meeting", kind: "timepicker", label: "Meeting" },
   { name: "cv", kind: "file", label: "CV", accept: ".pdf,.doc", multiple: true },

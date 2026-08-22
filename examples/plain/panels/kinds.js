@@ -20,7 +20,7 @@ const PRESENTATION = Object.fromEntries([
   ["radio", null, { label: "Plan", options: OPTIONS() }],
   ["segmented", null, { label: "Mode", options: OPTIONS() }],
   ["select", null, { label: "Country", options: OPTIONS() }],
-  ["multiselect", [], { label: "Palette", options: OPTIONS() }],
+  ["multiselect", [], { label: "Palette", options: OPTIONS(), reorderable: true }],
   ["datepicker", null, { label: "Birthday" }],
   ["daterange", { start: null, end: null }, { label: "Stay" }],
   ["timepicker", null, { label: "Meeting" }],
