@@ -10,9 +10,16 @@
     "mdy-datepicker__popup--above": "derived by popupPlacementClass/popupAlignmentClass and emitted by the renderers; no theme reacts to it yet. A placement class only earns a rule where the popup has a top/bottom or left/right asymmetry to answer \u2014 the select and multiselect flip their search box, a calendar has nothing to flip.",
     "mdy-datepicker__popup--range": "unreviewed",
     "mdy-datepicker__popup--right": "derived by popupPlacementClass/popupAlignmentClass and emitted by the renderers; no theme reacts to it yet. A placement class only earns a rule where the popup has a top/bottom or left/right asymmetry to answer \u2014 the select and multiselect flip their search box, a calendar has nothing to flip.",
+    "mdy-glass-effect": "an Angular directive a product opts into; no theme ships the material yet, so the class is declared and the treatment is the host's",
+    "mdy-glass-effect--medium": "the intensity variants of the same directive; they select a material no theme defines",
     "mdy-multiselect__dropdown": "the popup also carries mdy-multiselect-overlay__panel, which is the class the themes paint",
     "mdy-multiselect__dropdown--overlay": "derived by popupPlacementClass/popupAlignmentClass and emitted by the renderers; no theme reacts to it yet. A placement class only earns a rule where the popup has a top/bottom or left/right asymmetry to answer \u2014 the select and multiselect flip their search box, a calendar has nothing to flip.",
     "mdy-multiselect__dropdown--right": "derived by popupPlacementClass/popupAlignmentClass and emitted by the renderers; no theme reacts to it yet. A placement class only earns a rule where the popup has a top/bottom or left/right asymmetry to answer \u2014 the select and multiselect flip their search box, a calendar has nothing to flip.",
+    "mdy-multiselect__trigger--disabled": "the trigger is the control inside .mdy-input-wrapper, and the wrapper is what a theme paints for this state; a rule here would be the same treatment applied twice, on two boxes that share an edge",
+    "mdy-multiselect__trigger--invalid": "the trigger is the control inside .mdy-input-wrapper, and the wrapper is what a theme paints for this state; a rule here would be the same treatment applied twice, on two boxes that share an edge",
+    "mdy-multiselect__trigger--loading": "the trigger is the control inside .mdy-input-wrapper, and the wrapper is what a theme paints for this state; a rule here would be the same treatment applied twice, on two boxes that share an edge",
+    "mdy-multiselect__trigger--open": "the trigger is the control inside .mdy-input-wrapper, and the wrapper is what a theme paints for this state; a rule here would be the same treatment applied twice, on two boxes that share an edge",
+    "mdy-multiselect__trigger--readonly": "the trigger is the control inside .mdy-input-wrapper, and the wrapper is what a theme paints for this state; a rule here would be the same treatment applied twice, on two boxes that share an edge",
     "mdy-renderer--datepicker": "root variant hook: emitted via rootClasses for consumers to style; the foundation paints the shared mdy-renderer",
     "mdy-renderer--daterange": "root variant hook: emitted via rootClasses for consumers to style; the foundation paints the shared mdy-renderer",
     "mdy-renderer--file": "root variant hook: emitted via rootClasses for consumers to style; the foundation paints the shared mdy-renderer",
@@ -35,9 +42,7 @@
     "mdy-timepicker__dialog": "unreviewed",
     "mdy-timepicker__popup--above": "derived by popupPlacementClass/popupAlignmentClass and emitted by the renderers; no theme reacts to it yet. A placement class only earns a rule where the popup has a top/bottom or left/right asymmetry to answer \u2014 the select and multiselect flip their search box, a calendar has nothing to flip.",
     "mdy-timepicker__popup--right": "derived by popupPlacementClass/popupAlignmentClass and emitted by the renderers; no theme reacts to it yet. A placement class only earns a rule where the popup has a top/bottom or left/right asymmetry to answer \u2014 the select and multiselect flip their search box, a calendar has nothing to flip.",
-    "mdy-toggle__control": "the themes reach the input by descendant selector (.mdy-toggle input:disabled), not by its part class",
-    "mdy-glass-effect": "an Angular directive a product opts into; no theme ships the material yet, so the class is declared and the treatment is the host's",
-    "mdy-glass-effect--medium": "the intensity variants of the same directive; they select a material no theme defines"
+    "mdy-toggle__control": "the themes reach the input by descendant selector (.mdy-toggle input:disabled), not by its part class"
   },
   "mdy-angular-announcer": {
     "kind": "unstyled",
@@ -753,16 +758,5 @@
     ],
     "themes": []
   },
-  "mdy-multiselect": {
-    "kind": "drift",
-    "adapters": [
-      "angular",
-      "lit",
-      "plain"
-    ],
-    "themes": [
-      "modyra-modern.css",
-      "modyra.css"
-    ]
-  }
+  "mdy-number-spinner": "the box plain and lit put around a number's input and its two steppers. The contract declares `increment` and `decrement` and nothing that holds them, so the layout has nowhere to live on the contract; a candidate for a part rather than a class that should go away."
 }

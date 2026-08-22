@@ -780,11 +780,6 @@
     /* ═══════════════════════════════════════════════════════════════════
      * MULTISELECT / CHIPS
      * ═══════════════════════════════════════════════════════════════════ */
-    .mdy-multiselect__search-btn:hover:not(:disabled) {
-        background: color-mix(in srgb, var(--mdy-ios-blue), transparent 92%);
-        color: var(--mdy-ios-blue);
-    }
-
     .mdy-multiselect__options,
     .mdy-select__list,
     .mdy-multiselect-overlay__grid {

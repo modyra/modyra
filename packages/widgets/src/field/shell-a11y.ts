@@ -17,7 +17,7 @@ import { nativeConstraintAttributes } from "../native-constraints.js";
 import { defaultWidgetIdFactory as idFactory, assertUsableWidgetId } from "../ids.js";
 import type { MdyPartContract } from "../contract.js";
 import { MDY_FIELD_SHELL_CLASSES, MDY_FIELD_STATE_CLASSES } from "../structure.js";
-import { shownErrors } from "./verdict.js";
+import { nameIsAFallback, shownErrors } from "./verdict.js";
 import { widgetSupportsState } from "../widget-states.js";
 import { MDY_WIDGET_KINDS, type MdyWidgetKind } from "../catalog/kinds.js";
 
@@ -51,6 +51,14 @@ export interface MdyFieldShellA11yOptions {
    * Defaults to "there are errors", which is correct for a renderer that always shows them.
    */
   readonly errorsVisible?: boolean;
+  /**
+   * What a document wrote for this field's name, when the caller knows it.
+   *
+   * Supplied, the label says whether it is showing words somebody chose or words the shell composed
+   * because nobody did — which is the difference between a heading and a name owed to a screen
+   * reader. Omitted, the label carries no such claim and nothing changes.
+   */
+  readonly nameSources?: { readonly ariaLabel?: string | null; readonly label?: string | null };
   /**
    * Whether the supporting-text element is in the document.
    *
@@ -149,7 +157,12 @@ export function projectFieldShellA11y(
   return {
     label: {
       id: labelId,
-      classes: [MDY_FIELD_SHELL_CLASSES.label],
+      classes: [
+        MDY_FIELD_SHELL_CLASSES.label,
+        ...(options.nameSources !== undefined && nameIsAFallback(options.nameSources)
+          ? [`${MDY_FIELD_SHELL_CLASSES.label}--unwritten`]
+          : []),
+      ],
       attributes: options.controlId ? { for: options.controlId } : {},
     },
     control: {

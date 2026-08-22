@@ -433,14 +433,9 @@
     .mdy-datepicker__toggle,
     .mdy-timepicker__toggle,
     .mdy-colors__toggle-area,
-    .mdy-multiselect__search-btn {
-        position: relative;
-    }
-
     .mdy-datepicker__toggle::after,
     .mdy-timepicker__toggle::after,
-    .mdy-colors__toggle-area::after,
-    .mdy-multiselect__search-btn::after {
+    .mdy-colors__toggle-area::after {
         content: "";
         position: absolute;
         top: 50%;
@@ -2015,11 +2010,6 @@
         opacity: 0.6;
     }
 
-    .mdy-multiselect__search-btn:disabled {
-        opacity: 0.4;
-        cursor: not-allowed;
-    }
-
 
     .mdy-multiselect__options {
         display: flex;
@@ -2130,6 +2120,34 @@
         border: var(--mdy-chip-selected-border);
         cursor: inherit;
         height: calc(var(--mdy-chip-height) - 0.5rem);
+    }
+
+    /* The chip being carried. Half-opaque so the row underneath stays readable while it moves, and
+       lifted, because the one thing a person needs to see during a drag is which chip is in hand. */
+    .mdy-chip--dragging {
+        opacity: 0.6;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    }
+
+    /* The full name of a chip the strip had to cut short. Out of flow, or showing it would widen the
+       row it is explaining and push the chips it names out from under the pointer. Placed by the
+       renderer along the inline axis; everything else about it belongs here. */
+    .mdy-chip__tooltip {
+        position: absolute;
+        bottom: calc(100% + 0.25rem);
+        max-width: 16rem;
+        padding: 0.25rem 0.5rem;
+        border-radius: var(--mdy-tooltip-border-radius);
+        background: var(--mdy-inverse-surface, var(--mdy-sys-color-inverse-surface));
+        color: var(--mdy-inverse-on-surface, var(--mdy-sys-color-inverse-on-surface));
+        font-size: var(--mdy-supporting-font-size, 0.75rem);
+        line-height: 1.2;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        z-index: var(--mdy-z-overlay);
+        pointer-events: none;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
     }
 
     /* A renderer with no icon set leaves the check empty; the theme draws the tick, so a chip looks

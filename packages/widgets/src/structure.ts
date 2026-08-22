@@ -100,7 +100,12 @@ export const MDY_SHELL_PART_STATES: Readonly<Record<string, readonly MdyStateNam
     // tell apart: a disabled field is out of play, a read-only one is in play and locked. Declared
     // and unpainted, a form locked for review looked exactly like one waiting to be filled in.
     inputWrapper: ["disabled", "error", "readonly"],
-    label: ["filled", "hasError"],
+    // `unwritten` marks a label the shell had to compose because no document wrote one: everything
+    // inside a field is named by pointing at the label, so an empty one leaves a group, a grid or a
+    // dialog announced as its role and nothing else. The words are `fieldAccessibleName`'s, and the
+    // class is what lets a theme keep them out of sight — a name is owed to a screen reader, a
+    // heading is not.
+    label: ["filled", "hasError", "unwritten"],
     requiredMarker: ["filled"],
   });
 

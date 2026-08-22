@@ -679,15 +679,6 @@
 
     /* ─── Multiselect ─────────────────────────────────────────────────────────── */
 
-    .mdy-multiselect__search-btn {
-        color: var(--mdy-on-surface-variant);
-    }
-
-    .mdy-multiselect__search-btn:hover:not(:disabled) {
-        background: var(--mdy-select-option-hover-bg);
-        color: var(--mdy-select-option-hover-color);
-    }
-
     .mdy-multiselect__options,
     .mdy-select__list,
     .mdy-multiselect-overlay__grid {

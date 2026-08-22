@@ -10,7 +10,7 @@
  */
 const { mountMdyForm } = await import("../../dist/index.js");
 const { partsOf } = await import("../contract-parts.mjs");
-const { MDY_CANONICAL_EMPTY, settleFor } = await import("../../../widgets/dist/testing/index.js");
+const { MDY_CANONICAL_EMPTY, MDY_CANONICAL_FILLED, settleFor } = await import("../../../widgets/dist/testing/index.js");
 const { MDY_POPUP_OPENERS, MDY_WIDGET_CONTRACTS } = await import("../../../widgets/dist/index.js");
 
 /** This renderer schedules onto a task: a signal write is not in the DOM until the turn ends. */
@@ -73,21 +73,13 @@ export function controlOf(root) {
 
 /** A value each kind will actually accept — a filled state reached with a rejected value is empty. */
 export function valueFor(kind) {
-  switch (kind) {
-    case "number": case "slider": return 7;
-    case "checkbox": case "toggle": return true;
-    case "multiselect": return ["a"];
-    case "radio": case "segmented": case "select": return "a";
-    case "datepicker": return "2026-07-15";
-    case "daterange": return { start: "2026-07-15", end: "2026-07-20" };
-    case "timepicker": return "10:30";
-    case "colors": return "#004cff";
-    // An address the control would accept: `email` is a kind whose rule the browser enforces too, so
-    // a filled-but-refused value would put the fixture in two states at once.
-    case "email": return "someone@example.com";
-    case "file": return [new File(["content"], "report.txt", { type: "text/plain" })];
-    default: return "value";
-  }
+  // From the table every renderer's suite is measured against, not from a list kept here: the same
+  // value has to reach all three fixtures or "the same actions" means nothing. A `File` is the one
+  // kind that cannot be written down centrally — two files with the same bytes are still two
+  // different values — so the fixture supplies its own, which is what the table says it must.
+  if (kind === "file") return [new File(["content"], "report.txt", { type: "text/plain" })];
+  const declared = MDY_CANONICAL_FILLED[kind];
+  return declared === undefined ? "value" : declared;
 }
 
 /**

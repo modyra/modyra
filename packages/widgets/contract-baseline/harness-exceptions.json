@@ -1,5 +1,5 @@
 {
-  "total": 33,
+  "total": 15,
   "report": [
     {
       "file": "packages/plain/test/contract-parts.mjs",
@@ -10,21 +10,21 @@
     },
     {
       "file": "packages/plain/test/support/state-fixture.mjs",
-      "kindBranches": 9,
-      "selectorsDerivable": 2,
-      "selectorsUndeclared": 0,
+      "kindBranches": 0,
+      "selectorsDerivable": 1,
+      "selectorsUndeclared": 1,
       "positionalReads": 0
     },
     {
       "file": "packages/lit/test/support/state-fixture.mjs",
-      "kindBranches": 9,
-      "selectorsDerivable": 2,
+      "kindBranches": 0,
+      "selectorsDerivable": 1,
       "selectorsUndeclared": 0,
       "positionalReads": 0
     },
     {
       "file": "packages/angular/src/lib/renderers/catalog-host.spec.ts",
-      "kindBranches": 9,
+      "kindBranches": 10,
       "selectorsDerivable": 2,
       "selectorsUndeclared": 0,
       "positionalReads": 0

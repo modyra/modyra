@@ -64,6 +64,15 @@ export const MDY_STATE_MODIFIERS = Object.freeze({
   removable: "removable",
   /** Held and travelling: a chip a pointer has picked up and not yet put down. */
   dragging: "dragging",
+  /**
+   * Showing words the shell composed because no document wrote any.
+   *
+   * Everything inside a field is named by pointing at its label, so an empty one leaves a group, a
+   * grid or a dialog announced as its role and nothing else. The words are `fieldAccessibleName`'s
+   * and they are owed to a screen reader; whether they are also a heading on the page is what this
+   * lets a theme decide.
+   */
+  unwritten: "unwritten",
   /** Laid out along the row rather than down the column. */
   horizontal: "horizontal",
   /** The dense form of a control that has one. */
