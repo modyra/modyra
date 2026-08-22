@@ -102,7 +102,9 @@ for (const host of HOSTS) {
       await page.locator(`[data-form="${id}"] .${STRIP} .${CHIP}`)
         .filter({ hasText: label })
         .first()
-        .locator("button[aria-label='Remove']")
+        // The contract's part, not the button's words. A remove control names what it removes, so
+        // an exact-name selector matches one label and stops matching the day the wording changes.
+        .locator(".mdy-chip__remove")
         .click({ timeout: 5_000 });
       await page.waitForTimeout(300);
     };

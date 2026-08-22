@@ -52,7 +52,9 @@ for (const host of HOSTS) {
 
     const before = await value(page, id);
     await page.locator(`${root} .mdy-multiselect__chips .mdy-chip`).first()
-      .locator('button[aria-label="Remove"]').click({ timeout: 5_000 });
+      // The contract's part, not the button's words: a remove control names the thing it removes,
+      // so an exact-name selector matches one label and stops matching when the wording changes.
+      .locator(".mdy-chip__remove").click({ timeout: 5_000 });
     await page.waitForTimeout(300);
     // The premise: the act did something. A reversal of nothing restores nothing and passes.
     expect(await value(page, id), "removing a chip did not change the value").not.toEqual(before);
