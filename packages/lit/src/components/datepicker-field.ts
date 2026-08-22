@@ -434,7 +434,6 @@ export class MdyDatepickerFieldElement extends MdyFieldElement<string | null> {
     return html`
       <div
         class="mdy-datepicker__calendar"
-        id="${this.fieldId}__dialog"
         role="dialog"
         aria-label=${this.label || "Choose date"}
         @keydown=${(e: KeyboardEvent) => this.onGridKeydown(e, handle)}
