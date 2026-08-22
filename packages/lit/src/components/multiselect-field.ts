@@ -10,6 +10,7 @@ import {
   chipDropIndex,
   stateClass,
   scrollChipStripByWheel,
+  chipTooltipOffset,
   wayBackSentence,
   isTypeaheadCharacter,
 } from "@modyra/widgets";
@@ -530,6 +531,17 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
                 @click=${() => this.fieldController?.dispatch({ type: "clear" })}
               >${mdyIcon("CLOSE", "")}</button>`
             : nothing}
+          <!-- The full name, for a chip the strip had to cut. Shown on hover *and* on focus: WCAG
+               1.4.13 asks for both, and the title attribute is neither — it never appears for a keyboard or a
+               touch user, who are exactly the people who cannot widen the chip. One element for the
+               control, not one per chip: a child of the chip is part of the chip's own text. -->
+          <span
+            class="${this.partClass("chipTooltip")}"
+            id="${this.fieldId}__chiptip"
+            role="tooltip"
+            style="inset-inline-start: ${this._chipTipAt}px"
+            ?hidden=${this._namedChip === null}
+          >${this._namedChip === null ? nothing : this.labelFor(this._namedChip)}</span>
           <!-- Said rather than shown: a choice lands and the strip is the only confirmation, which
                is the one a person using a screen reader does not get. -->
           <div
@@ -698,6 +710,22 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
     return said;
   }
 
+  /** Which chip is being named, and where its tooltip sits in the control's own coordinates. */
+  private _namedChip: string | null = null;
+  private _chipTipAt = 0;
+
+  private revealChipName(chip: HTMLElement, _label: string): void {
+    const strip = this.querySelector<HTMLElement>(`.${this.partClass("chips").split(" ")[0]}`);
+    this._chipTipAt = strip === null ? 0 : chipTooltipOffset(chip, strip);
+    this._namedChip = chip.dataset.key ?? null;
+    this.requestUpdate();
+  }
+
+  private hideChipName(): void {
+    this._namedChip = null;
+    this.requestUpdate();
+  }
+
   private renderValueChips(handle: MdyFieldHandle<readonly unknown[]>): unknown {
     const tally = new Map<string, { readonly value: unknown; readonly label: string; count: number }>();
     for (const value of this.held(handle)) {
@@ -714,7 +742,11 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
       aria-valuenow=${this.mode === "multi" ? count : nothing}
       aria-valuemin=${this.mode === "multi" ? 0 : nothing}
       aria-valuetext=${this.mode === "multi" ? (count > 1 ? `${label}, ${count}` : label) : nothing}
-      @focus=${() => { this._activeChip = String(value); }}
+      @focus=${(e: FocusEvent) => { this._activeChip = String(value); this.revealChipName(e.currentTarget as HTMLElement, label); }}
+      @pointerenter=${(e: PointerEvent) => this.revealChipName(e.currentTarget as HTMLElement, label)}
+      @pointerleave=${() => this.hideChipName()}
+      @blur=${() => this.hideChipName()}
+      aria-describedby=${this._namedChip === String(value) ? `${this.fieldId}__chiptip` : nothing}
       @pointerdown=${(e: PointerEvent) => this.startChipDrag(e, handle, String(value))}
       @keydown=${(e: KeyboardEvent) => this.onChipKeydown(e, handle, String(value))}
       aria-label=${count > 1 ? `${label}, ${count}` : label}
