@@ -306,6 +306,19 @@ export class MdyDatepickerFieldElement extends MdyFieldElement<string | null> {
     handle.markAsDirty();
   }
 
+  /**
+   * What the opener names while the popup is open, which is whichever view is on screen.
+   *
+   * The day grid is one of three: choosing the month or the year replaces it, and an
+   * `aria-controls` fixed on the grid then named an element that had been taken away. A reference
+   * that goes stale on a view change is the same defect as one that was never right.
+   */
+  private controlledViewId(): string | typeof nothing {
+    if (this.view.viewMode === "months") return `${this.fieldId}__months`;
+    if (this.view.viewMode === "years") return `${this.fieldId}__years`;
+    return overlayControlledId("datepicker", this.fieldId) ?? nothing;
+  }
+
   private renderMonthPicker(handle: MdyFieldHandle<string | null>): unknown {
     return renderMonthPicker(this.monthNamesShort(), {
       kind: "datepicker",
@@ -463,7 +476,7 @@ export class MdyDatepickerFieldElement extends MdyFieldElement<string | null> {
           role="combobox"
           aria-haspopup=${this.popupPromise}
           aria-expanded=${this._open ? "true" : "false"}
-          aria-controls=${this._open ? overlayControlledId("datepicker", this.fieldId) ?? nothing : nothing}
+          aria-controls=${this._open ? this.controlledViewId() : nothing}
           ${mdyPart(this.controlPart(handle))}
           @change=${(e: Event) => {
             // The text goes over as text. Parsing here and writing the value back was the erasure:
