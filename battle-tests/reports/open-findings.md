@@ -21748,7 +21748,40 @@ test is a copy of something, and the copy has siblings.** When one goes stale, l
 the same breath rather than in the next run.
 
 
-## 378b — `requires` names a capability; nothing names a state the key needs
+### 378b — withdrawn. The table already has the word, and it is `on`
+
+I argued the keyboard table needed a third precondition for *"there is a chip to move between"*.
+`esecutore` disagreed and is right, and the reasoning is worth more than the conclusion:
+
+```
+when       the widget's state       open · closed    not visible from the DOM
+requires   the field's capability   reorderable      not visible from the DOM
+on         the part that answers    chip             visible from the DOM
+```
+
+`ArrowLeft` and `ArrowRight` already carry `on: "chip"`. That is not a statement about *where* a key is
+handled and silent about *whether* — it is the whole condition, because unlike the other two the answer
+is on the page. `requires` had to exist because `reorderable` is a field option with no DOM trace and a
+reader cannot recover it by looking. *Is there a chip* is recoverable by looking, and a third word for
+it would be the contract restating what the rendered widget already says.
+
+That is the same duplication as `select.listbox` one register over, and I proposed it four hours after
+filing that one.
+
+**The sweep now reads `on`**: a binding whose part the control drew none of is **unreached**, the same
+bucket as a `when` state a renderer cannot get to. Six of the eight chip keys move into it immediately.
+
+**One does not, and I am recording where the search reached rather than taking a seventh run at this
+file.** `ArrowLeft` still reports as unanswered while `ArrowRight` — identical in the table, same part,
+same intent — does not. The sweep mounts once per kind and presses every binding in order, so by the
+time these two are reached the control has been through thirteen other presses; the guard counts chips
+at that moment, and the two keys do not meet the same page. That is a property of a stateful sweep and
+not of the contract.
+
+I have been down this file six times tonight and four of those were wrong turns. It stays pinned, and
+the next person starts from *the sweep is stateful and the two keys do not see the same control*.
+
+## 378b — as argued (withdrawn above)
 
 `requires` closed half of [378](#378) and the other half came straight back. The two reorder keys are
 answered now; these two are not:
