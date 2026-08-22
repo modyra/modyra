@@ -287,13 +287,41 @@ export abstract class MdyFieldElement<T> extends LitElement {
    * what happened after.
    */
   private readonly onFocusLost = (event: FocusEvent): void => {
-    if (event.relatedTarget !== null) return;
+    const next = event.relatedTarget;
+    // Focus left this element for something else on the page. A widget with an overlay says what to
+    // do about that through its own contract, and answers here.
+    if (!(next instanceof Node && this.contains(next))) this.focusLeft();
+    if (next !== null) return;
     queueMicrotask(() => {
       if (this.field?.disabled() !== true) return;
       const active = this.ownerDocument.activeElement;
       if (active !== null && active !== this.ownerDocument.body) return;
       keepKeyboardInPlay(this, this.parentElement);
     });
+  };
+
+  /**
+   * Focus has left this element for somewhere else on the page.
+   *
+   * A no-op for a control with nothing open. A kind whose contract declares
+   * `dismissOnFocusOutside` closes its popup here: a calendar left open behind the field a person
+   * has moved on to is a dialog over a page they are trying to use, and the keys they press next
+   * reach it instead of the control they are looking at.
+   */
+  protected focusLeft(): void {}
+
+  /**
+   * Tab was pressed inside this element.
+   *
+   * Focus leaving is not enough to hear it: these popups render *inside* the element, so Tab from
+   * the trigger moves into the popup and never crosses the boundary a `focusout` would report. The
+   * keyboard table says what Tab means while a kind is open — `cancel` for the four whose overlay
+   * has nothing to commit — and this is where a kind answers it.
+   */
+  protected tabbedAway(): void {}
+
+  private readonly onTabAway = (event: KeyboardEvent): void => {
+    if (event.key === "Tab") this.tabbedAway();
   };
 
   /** The ids this element has already reported a collision on. A sentence repeated every frame is
@@ -342,6 +370,7 @@ export abstract class MdyFieldElement<T> extends LitElement {
 
   override disconnectedCallback(): void {
     this.removeEventListener("focusout", this.onFocusLost);
+    this.removeEventListener("keydown", this.onTabAway, true);
     if (this._unboundFrame !== null) {
       cancelAnimationFrame(this._unboundFrame);
       this._unboundFrame = null;
@@ -353,6 +382,7 @@ export abstract class MdyFieldElement<T> extends LitElement {
     super.connectedCallback();
     this.classList.add(...this.rootClasses);
     this.addEventListener("focusout", this.onFocusLost);
+    this.addEventListener("keydown", this.onTabAway, true);
     if (MDY_DEV) this.reportIfUnbound();
     const handle = this.field;
     if (handle && !this._tracker) {

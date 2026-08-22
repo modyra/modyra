@@ -1,5 +1,7 @@
 import { mdyPart } from "../mdy-part.js";
-import { overlayControlledId, partClasses, calendarViewOnToggle,
+import {
+  keyBindingFor,
+  MDY_WIDGET_CONTRACTS, overlayControlledId, partClasses, calendarViewOnToggle,
   createDaterangeFieldController,
   subscribeController,
   type MdyDaterangeFieldController,
@@ -343,6 +345,27 @@ export class MdyDaterangeFieldElement extends MdyFieldElement<MdyDateRange | nul
         });
       }
     }
+  }
+
+  /**
+   * Tab out of an open popup closes it, which is what the keyboard table declares for this kind.
+   *
+   * Not `preventDefault`: Tab is already carrying the keyboard onward and pulling it back would trap
+   * a person in the field they just left.
+   */
+  protected override tabbedAway(): void {
+    if (!this._open) return;
+    if (keyBindingFor("daterange", "Tab", true)?.intent !== "cancel") return;
+    const handle = this.field;
+    if (handle) this.closePopup(handle, false);
+  }
+
+  /** Closed when the keyboard moves on, which this kind's contract asks for. */
+  protected override focusLeft(): void {
+    if (!this._open) return;
+    if (!MDY_WIDGET_CONTRACTS.daterange.capabilities.dismissOnFocusOutside) return;
+    const handle = this.field;
+    if (handle) this.closePopup(handle, false);
   }
 
   override disconnectedCallback(): void {
