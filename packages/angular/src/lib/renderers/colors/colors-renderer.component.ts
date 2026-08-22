@@ -11,7 +11,7 @@ import {
 } from "@angular/core";
 
 import { MDY_OVERLAY_PORTAL_CLASS } from "@modyra/widgets";
-import { MDY_COLOR_PRESETS, MDY_WIDGET_CONTRACTS, colorValueEquals, keyBindingFor, rowRovingIndex, colorValueTransition, popupPlacementClass, overlayControlledId, projectOverlayOpenerA11y } from "@modyra/widgets";
+import { MDY_COLOR_PRESETS, MDY_WIDGET_CONTRACTS, colorValueEquals, focusWhenShown, keyBindingFor, rowRovingIndex, colorValueTransition, popupPlacementClass, overlayControlledId, projectOverlayOpenerA11y } from "@modyra/widgets";
 import { MdyErrorListComponent } from "../../control/error-list.component";
 import { MdyControlLabelComponent } from "../../control/mdy-control-label.component";
 import { MdyIconComponent } from "../../control/mdy-icon.component";
@@ -226,29 +226,19 @@ export class MdyColorsComponent extends MdyOverlayControl<string> {
     // there yet when the render this opening triggers completes. Tried again on the next frame for
     // that reason, and given up after it rather than looping: a palette that never drew is a
     // different defect, and a retry that never stops would hide it.
-    afterNextRender(() => this.landOnASwatch(2), { injector: this.presetInjector });
-  }
-
-  /** Puts the keyboard on the swatch holding the value, or on the first, once the row exists. */
-  private landOnASwatch(attemptsLeft: number): void {
-    if (!this.open()) return;
-    const document_ = (this.hostElement.nativeElement as HTMLElement).ownerDocument;
-    const swatches = this.presetSwatches();
-    const again = (): void => {
-      if (attemptsLeft > 0) requestAnimationFrame(() => this.landOnASwatch(attemptsLeft - 1));
-    };
-    if (swatches.length === 0) { again(); return; }
-    if (swatches.includes(document_?.activeElement as HTMLButtonElement)) return;
-    const held = swatches.find((_, index) => colorValueEquals(this.value(), this.presets()[index]));
-    const landing = held ?? swatches[0];
-    landing?.focus();
-    // The panel is a popover, and the frame this runs in may be the one before it is shown — a
-    // `focus()` on an element that is not being rendered yet is a no-op that reports nothing. So the
-    // attempt is checked rather than assumed, and tried again on the next frame if it did not take.
-    if (document_?.activeElement !== landing) again();
+    afterNextRender(() => focusWhenShown(() => this.landingSwatch(), { still: () => this.open() }), {
+      injector: this.presetInjector,
+    });
   }
 
   private readonly presetInjector = inject(Injector);
+
+  /** The swatch holding the value, or the first — where the keyboard lands when the row appears. */
+  private landingSwatch(): HTMLButtonElement | null {
+    const swatches = this.presetSwatches();
+    if (swatches.length === 0) return null;
+    return swatches.find((_, index) => colorValueEquals(this.value(), this.presets()[index])) ?? swatches[0] ?? null;
+  }
 
   /** The swatches on the page, in the order the row draws them. */
   private presetSwatches(): readonly HTMLButtonElement[] {

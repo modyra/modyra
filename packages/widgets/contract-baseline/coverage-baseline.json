@@ -1,8 +1,8 @@
 {
   "note": "Public names not yet asserted or not yet shown. The list may only get shorter.",
   "score": {
-    "published": 837,
-    "asserted": 580,
+    "published": 838,
+    "asserted": 581,
     "shown": 81
   },
   "uncovered": [
@@ -3485,6 +3485,12 @@
       "asserted": false,
       "shown": false,
       "reason": "published, neither asserted nor shown"
+    },
+    {
+      "name": "focusWhenShown",
+      "asserted": true,
+      "shown": false,
+      "reason": "published and never shown"
     },
     {
       "name": "formatIsoDate",

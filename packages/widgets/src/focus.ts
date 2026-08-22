@@ -234,3 +234,46 @@ export function createFocusCustodian(root: () => Element | null): MdyFocusCustod
     },
   };
 }
+
+/**
+ * Puts the keyboard on an element that may not be showing yet, and checks that it took.
+ *
+ * A popup rendered into the top layer — a `popover`, a portalled panel — exists in the document a
+ * frame before it is shown, and `focus()` on an element that is not being rendered is a no-op that
+ * reports nothing. A renderer that focuses on the render it triggered therefore leaves the keyboard
+ * where it was, and the arrows it just enabled have nothing to move.
+ *
+ * So the attempt is verified rather than assumed, and tried again on the next frame while `still`
+ * holds — bounded, because a panel that never draws is a different defect and a retry that never
+ * stops would hide it.
+ *
+ * `schedule` is the caller's frame: a renderer that already has one — a scheduler, an update
+ * promise — passes it rather than growing a second clock.
+ */
+export function focusWhenShown(
+  target: () => Element | null | undefined,
+  options: {
+    readonly attempts?: number;
+    readonly still?: () => boolean;
+    readonly schedule?: (run: () => void) => void;
+  } = {},
+): void {
+  const attempts = options.attempts ?? 3;
+  const later = options.schedule
+    ?? ((run: () => void) => {
+      if (typeof requestAnimationFrame === "function") requestAnimationFrame(run);
+      else queueMicrotask(run);
+    });
+  const attempt = (left: number): void => {
+    if (options.still !== undefined && !options.still()) return;
+    const element = target();
+    if (element === null || element === undefined) {
+      if (left > 0) later(() => attempt(left - 1));
+      return;
+    }
+    (element as HTMLElement).focus?.();
+    if (element.ownerDocument?.activeElement === element) return;
+    if (left > 0) later(() => attempt(left - 1));
+  };
+  attempt(attempts);
+}
