@@ -52,6 +52,18 @@ const DECLARED = Object.entries(MDY_WIDGET_KEYBOARD)
     [string, ReadonlyArray<{ key: string; when: string; intent: string }>]
   >;
 
+/**
+ * The selector for a part, from the classes the catalogue says it carries.
+ *
+ * **All of them, on one element.** A part's classes are what it wears together, not a list of
+ * alternatives: `chip` is `mdy-chip` *and* `mdy-chip--value`, and `mdy-chip` alone is also worn by
+ * every option inside the popup, which is a different part of a different anatomy. Joined with a
+ * comma this matched both, the four-element cap took popup options, and the keys declared on a chip
+ * were offered to something that is not one. Four bindings read as dead for several runs.
+ */
+const partSelector = (scope: string, classes: readonly string[]) =>
+  classes.length === 0 ? null : `${scope} .${classes.join(".")}`;
+
 for (const host of HOSTS) {
   test(`${host.name}: every key a kind declares does something`, async ({ page }) => {
     // Seventy-two bindings, each mounted, primed, pressed and read. The default budget is for a
@@ -96,9 +108,21 @@ for (const host of HOSTS) {
     let pressed = 0;
 
     for (const [kind, bindings] of DECLARED) {
-      const id = `k-${kind}`;
-      await page.evaluate(
-        ({ api, k, mountId, options }) => {
+      /**
+       * A fresh control for every binding.
+       *
+       * One mount served all seventy-five, and the state leaked: a key pressed earlier chose an
+       * option, so by the time the chip keys were judged the strip held a chip the document never
+       * declared — on one renderer and not the other, because the two answer different keys. Four
+       * bindings were reported as answering nothing when what differed was which control they had
+       * been offered to.
+       *
+       * The remount costs a tenth of a second each and buys the property this spec is named for:
+       * every key is offered to a control **a document declared**, not to whatever the last key
+       * left behind.
+       */
+      const mount = async (mountId: string) => await page.evaluate(
+        ({ api, k, mountId: at, options }) => {
           const battle = (window as never as Record<string, { mountFields(id: string, f: unknown[]): unknown }>)[api];
           const field: Record<string, unknown> = { name: "f", kind: k, label: `L ${k}` };
           if (/select|radio|segmented/.test(k)) field.options = options;
@@ -111,14 +135,17 @@ for (const host of HOSTS) {
           // It was made, and it turned four reds into two by hiding finding 378 rather than by fixing
           // anything: the table declares those keys unconditionally and a default control answers
           // none of them, which is the finding and not the fixture's to paper over.
-          battle.mountFields(mountId, [field]);
+          battle.mountFields(at, [field]);
         },
-        { api: host.api, k: kind, mountId: id, options: OPTIONS },
+        { api: host.api, k: kind, mountId, options: OPTIONS },
       );
-      await page.waitForTimeout(120);
-      const scope = `[data-form="${id}"]`;
 
+      let at = 0;
       for (const binding of bindings) {
+        const id = `k-${kind}-${(at += 1)}`;
+        await mount(id);
+        await page.waitForTimeout(120);
+        const scope = `[data-form="${id}"]`;
         // **A key the field never asked for is not a key that does nothing.**
         // `requires` names a field-level capability a binding depends on — `reorderable` is opt-in and
         // off by default — and a control mounted the way a document declares it has not asked for it.
@@ -149,13 +176,26 @@ for (const host of HOSTS) {
           : ((CONTRACTS[kind]?.parts?.[binding.on]?.classes ?? []) as string[]);
         if (binding.on !== undefined && binding.on !== null) {
           const classes = partClasses;
-          const drawn = classes.length === 0
-            ? 0
-            : await page.locator(classes.map((one) => `${scope} .${one}`).join(", ")).count();
+          const selector = partSelector(scope, classes);
+          const drawn = selector === null ? 0 : await page.locator(selector).count();
           if (drawn === 0) {
             unreached.push(`${kind} ${binding.key}: answered on \`${binding.on}\`, which this control drew none of`);
             continue;
           }
+        }
+
+        // **A popup the browser owns is one this page cannot see open.**
+        // Where a kind is rendered as a native `<select>`, the list is drawn by the platform
+        // outside the document: no `aria-expanded` moves, no element appears, and every key that
+        // opens it reads here as a key that did nothing. That is an unreachable observation, not an
+        // unanswered binding — the same bucket as a state a renderer cannot be driven into.
+        //
+        // Two renderers draw a native control here and one builds a combobox, which is itself worth
+        // knowing and is reported separately. What must not happen is a native control being
+        // recorded as keyboard-dead because the platform owns its list.
+        if (binding.intent === "open" && await page.locator(`${scope} select`).count() > 0) {
+          unreached.push(`${kind} ${binding.key}: opens a list the browser draws outside the document`);
+          continue;
         }
 
         // Reset to closed, then reach the state the binding names.
@@ -199,9 +239,9 @@ for (const host of HOSTS) {
           // in one renderer and alive in another — a difference in element order, reported as a
           // difference in keyboard support.
           : [
-            ...(partClasses.length === 0
+            ...(partSelector(scope, partClasses) === null
               ? []
-              : await page.locator(partClasses.map((one) => `${scope} .${one}`).join(", ")).all()),
+              : await page.locator(partSelector(scope, partClasses) as string).all()),
             ...(await page.locator(
               `${scope} [role="combobox"], ${scope} input:not([type="color"]), ${scope} button, ${scope} [tabindex]`,
             ).all()),
@@ -210,6 +250,8 @@ for (const host of HOSTS) {
 
         let answered = false;
         let lastExpanded: string | null = null;
+        /** The key holding a chip, while one is held. Released before the next binding is judged. */
+        let grabbed: string | null = null;
         for (const part of parts) {
           if (part !== null) {
             if ((await observe(scope))?.expanded === "true") {
@@ -228,6 +270,22 @@ for (const host of HOSTS) {
           // — the spec reported a keyboard hole that did not exist. A closed control is primed
           // along its own axis instead, and whichever key is used, the state is checked afterwards
           // and restored before anything is judged.
+          // **A step at the end of its range is a no-op that means the binding works.**
+          // A slider mounted the way a document declares it starts at its minimum, so `ArrowDown`
+          // there changes nothing — and the value it did not change is indistinguishable, to this
+          // observation, from a key nothing is listening for. The sibling that steps the other way
+          // is pressed first, read from the table rather than named here, so the value is somewhere
+          // a step in either direction can be seen.
+          if (binding.intent === "step") {
+            const opposite = bindings.find((each) =>
+              each.intent === "step" && each.on === binding.on && each.when === binding.when
+              && each.key !== binding.key);
+            if (opposite !== undefined) {
+              await page.keyboard.press(opposite.key === " " ? "Space" : opposite.key);
+              await page.waitForTimeout(100);
+            }
+          }
+
           if (binding.intent === "move") {
             const stateBefore = (await observe(scope))?.expanded;
             await page.keyboard.press(binding.when === "open" ? "ArrowDown" : "ArrowRight");
@@ -237,12 +295,41 @@ for (const host of HOSTS) {
               await page.waitForTimeout(80);
             }
             if ((await observe(scope))?.expanded !== stateBefore) continue;
+
+            // **A move may be moded, and the table says so.** Where the same part declares a `grab`,
+            // moving is something a person does *after* picking the thing up: the arrows walk
+            // between chips until one is grabbed, and only then do they carry it. Pressing them
+            // outside the mode changes the reading position and nothing else, which this spec
+            // observes as the value not moving — four keys reported dead that
+            // `two-doors-to-one-order` proves work.
+            //
+            // Read from the table rather than named here: whichever key grabs on this part is
+            // pressed first, and released after.
+            //
+            // Only a grab this field can actually perform. The grab is gated on a capability the
+            // fixture never declares, and its key is `Enter` — which on a closed control **opens**
+            // it. Pressing it to "enter the mode" therefore opened the popup and judged the move in
+            // the wrong state, which is the same mistake as the `ArrowDown` priming this file
+            // already carries a warning about.
+            grabbed = bindings.find((each) =>
+              each.intent === "grab" && each.on === binding.on && each.when === binding.when
+              && (each.requires === undefined || each.requires === null))?.key ?? null;
+            if (grabbed !== null) {
+              await page.keyboard.press(grabbed);
+              await page.waitForTimeout(100);
+            }
           }
 
           const before = await observe(scope);
           await page.keyboard.press(binding.key === " " ? "Space" : binding.key);
           await page.waitForTimeout(120);
           const after = await observe(scope);
+          // Put the chip back down before the next binding is judged, or the mode leaks into it.
+          if (grabbed !== null) {
+            await page.keyboard.press(grabbed);
+            await page.waitForTimeout(80);
+            grabbed = null;
+          }
           if (before === null || after === null) break;
           lastExpanded = after.expanded;
 
