@@ -21412,3 +21412,28 @@ guard, the studio command's cost, the constructor that stored an argument it can
 cross-runtime version disagreement. Those numbers are theirs and are used here as given. This file
 continues at 384.
 
+
+## 385 — only one renderer publishes the option list's id (S2, UI-011)
+
+Measured while establishing what [ADR 0132](../../docs/architecture/0132-a-part-name-is-what-it-is-for.md)
+would break. A select, open:
+
+```
+plain      id `pick__listbox`, and `aria-controls` naming it
+lit        no such id
+angular    no such id
+```
+
+The part exists in all three and its **id** exists in one. So `aria-controls` on plain's trigger
+resolves and the same attribute in the other two either is absent or names nothing — and a consumer's
+stylesheet or their own `aria-describedby` can hook plain's id and nothing equivalent elsewhere.
+
+It surfaced as a side question — *what does renaming this part break?* — and the answer was *one
+renderer of three, because the other two never published it*. That asymmetry is not a reason to keep a
+wrong name, and it is a defect on its own.
+
+Same family as [374](#374): three renderers answering one contract three ways in the DOM, where the
+difference is invisible to any spec that measures one of them.
+
+Owned by `esecutore`.
+
