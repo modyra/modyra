@@ -129,6 +129,30 @@ See [`charter/contribution-policy.md`](charter/contribution-policy.md). In short
 replay it, shrink it, promote it to `regressions/` red, then fix the implementation — a break is the
 material for making the framework harder to break, not a note to file.
 
+## Sizing a fixture
+
+**Minimise for a defect. Maximise for a comparison.** These pull in opposite directions and the usual
+advice only covers the first.
+
+Reproducing a break wants the smallest fixture that still shows it: fewer moving parts, a shorter
+repro, an obvious cause. But a claim of the form *these two things differ* needs a fixture large
+enough that they **could** differ — and the smallest one is precisely the one most likely to collapse
+the distinction being drawn.
+
+Three findings were filed here against fixtures too small to hold their own claim:
+
+- a palette with one swatch, where a key that moves the reading position and a key nothing listens
+  for both leave it where it was;
+- a multiselect holding one value, where the field's midpoint falls on a delete button — and holding
+  two, where it does not, so the same drive answers differently for a reason the fixture chose;
+- a field with one chip, where removing it by the ✕ and stepping its quantity to zero both end at an
+  empty field, so two routes that announce differently cannot be told apart.
+
+Each was measured correctly. Each was wrong, and each cost somebody a re-measurement to disprove.
+
+The test is not "is this fixture small" but **"could this fixture tell the two answers apart?"** When
+the answer is no, the reading is not evidence for the claim, whatever it shows.
+
 ## Before you believe a result
 
 [`charter/principles.md`](charter/principles.md) 8–12 are about reading what a battle tells you
