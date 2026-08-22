@@ -1,11 +1,11 @@
 {
   "note": "Browser specs that are red because the defect they describe is open. A red listed here does not fail a build; a red that is not listed is a regression. Rewrite with `npm run battle:browser:ci -- --accept`.",
   "order": "Repair in severity order, as the node tier does. A spec's severity is the worst of the claims its header names; `unknown` is a spec that names none, which is most of them.",
-  "recordedAt": "2026-08-22T00:02:20Z",
-  "openReds": 55,
+  "recordedAt": "2026-08-22T00:13:06Z",
+  "openReds": 52,
   "bySeverity": {
     "S0": 1,
-    "S1": 46,
+    "S1": 43,
     "S2": 8
   },
   "knownRed": [
@@ -30,8 +30,6 @@
     "a-grid-that-names-a-label-nobody-wrote.spec.ts › every grid a calendar shows is named, lit",
     "a-grid-with-no-name.spec.ts › lit: a role that must be named has a name",
     "a-kind-nobody-declared-becomes-a-text-box.spec.ts › a kind nobody declared, lit",
-    "a-list-you-cannot-type-your-way-into.spec.ts › typing a letter reaches the option that starts with it, angular",
-    "a-list-you-cannot-type-your-way-into.spec.ts › typing a letter reaches the option that starts with it, lit",
     "a-mount-that-stopped-halfway.spec.ts › a mount that refuses a field leaves nothing of the fields it had already painted",
     "a-number-nobody-can-hear.spec.ts › a clock says what it is set to, lit",
     "a-number-you-change-with-arrows.spec.ts › the hour and minute segments carry what the contract declares, lit",
@@ -50,7 +48,6 @@
     "four-holes-in-a-control-that-holds-many.spec.ts › there is a way to reach what the strip is hiding, angular",
     "four-holes-in-a-control-that-holds-many.spec.ts › there is a way to reach what the strip is hiding, lit",
     "four-holes-in-a-control-that-holds-many.spec.ts › there is a way to reach what the strip is hiding, plain",
-    "no-reference-that-points-at-nothing.spec.ts › no attribute names an id that is not there, lit",
     "nowhere-for-the-keyboard-to-stand.spec.ts › a field taken out of play under the cursor, lit",
     "nowhere-for-the-keyboard-to-stand.spec.ts › a field taken out of play under the cursor, plain",
     "the-key-that-leaves-a-popup-behind.spec.ts › tab closes what it tabs out of, lit",

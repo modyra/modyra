@@ -21331,3 +21331,18 @@ went clean, and it found nine closures nobody had claimed and one red that had b
 Both halves matter — a baseline that is stale in the green direction is a baseline nobody trusts, and
 one that is stale in the red direction is a build that lies.
 
+
+### 369 closed at `93fdd47f`, and a second boundary paid
+
+Type-ahead reaches the popup in all three now. The lit fix — *a cursor with an element to point at* —
+also closed `no-reference-that-points-at-nothing` in lit, which nobody was chasing: an
+`aria-activedescendant` with no cursor to name had been pointing at an id that was not there.
+
+**365 green, 52 red, 0 new, 3 closed.** Second full tier run of the night triggered by the working
+tree going clean rather than by anybody deciding to look.
+
+The rule is cheap enough to state once and keep: **run the tier when the tree goes clean.** Both runs
+tonight paid — the first found nine closures and a red introduced quietly, this one found three
+closures including one nobody had filed. Between boundaries the baseline drifts in both directions,
+and neither direction is harmless: stale-green is a list nobody trusts, stale-red is a build that lies.
+
