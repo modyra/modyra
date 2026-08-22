@@ -37,6 +37,9 @@ export const MDY_WIDGET_CONTRACTS = Object.freeze({
   // is invisible to every audit here, all of which start from what the contract declares.
   number: define("number", ["mdy-renderer", "mdy-renderer--number"], ["root", "label", "requiredMarker", "inputWrapper", "control", "increment", "decrement", "inlineError", "supportingText", "errors", "errorItem"] as const, false,
     { classes: { increment: ["mdy-spin-btn", "mdy-spin-btn-up"], decrement: ["mdy-spin-btn", "mdy-spin-btn-down"] },
+      // The box and its two steppers need one positioning context between them, and it is not a part:
+      // nothing is announced by it and no contract member points at it.
+      presentation: ["mdy-number-spinner"] ,
       elements: { increment: "button", decrement: "button" } }),
   slider: define("slider", ["mdy-renderer", "mdy-renderer--slider"], ["root", "label", "requiredMarker", "track", "control", "value", "inlineError", "supportingText", "errors", "errorItem"] as const, false,
     { classes: { track: ["mdy-slider-container"], control: ["mdy-slider"], value: ["mdy-slider-value"] } ,

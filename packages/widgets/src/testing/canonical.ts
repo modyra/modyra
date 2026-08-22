@@ -458,7 +458,10 @@ export const MDY_CANONICAL_AT_REST: Readonly<Partial<Record<MdyWidgetKind, MdyCa
     }),
     number: Object.freeze({
       parts: Object.freeze(["root", "label", "inputWrapper", "control"]),
-      optional: Object.freeze(["supportingText", "requiredMarker", "inlineError", "errors", "errorItem"]),
+      // The two steppers the catalogue declares at this kind's trailing edge. Optional rather than
+      // required: a renderer may leave the platform's own spinner in place, which is what the native
+      // control draws when nothing replaces it.
+      optional: Object.freeze(["supportingText", "requiredMarker", "inlineError", "errors", "errorItem", "increment", "decrement"]),
       relationships: Object.freeze([
         { from: "label", attribute: "for", to: "control" },
       ] as readonly MdyCanonicalRelationship[]),

@@ -1902,6 +1902,27 @@
 
     /* The clear-all, in the column of trailing controls. It is a button, so it carries the target
        size the rest of that column has rather than the size of the glyph inside it. */
+    /* The box and the two controls the contract declares beside it. The spinner is the positioning
+       context and the buttons stack at the trailing edge; their size and colour are the shared
+       affordance rules above, which is where a trailing control's geometry is named. */
+    .mdy-number-spinner {
+        position: relative;
+        display: flex;
+        align-items: center;
+        flex: 1;
+        min-width: 0;
+    }
+
+    .mdy-number-spinner > input { flex: 1; min-width: 0; padding-inline-end: var(--mdy-affordance-inset); }
+
+    .mdy-number-spinner > .mdy-spin-btn {
+        position: absolute;
+        inset-inline-end: 0;
+    }
+
+    .mdy-number-spinner > .mdy-spin-btn-up { top: 0; }
+    .mdy-number-spinner > .mdy-spin-btn-down { bottom: 0; }
+
     .mdy-multiselect__clear-all {
         display: inline-flex;
         align-self: center;

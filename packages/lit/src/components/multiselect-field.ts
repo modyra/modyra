@@ -531,10 +531,11 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
           <!-- How many chips are out of sight, and the way to all of them. ADR 0127 lets the row
                scroll only where something reaches what leaves it: the wheel is that for most people
                and nothing at all for a pointer with no horizontal axis. -->
-          ${this._hiddenChips > 0
-            ? html`<button
+          ${html`<button
                 type="button"
                 class="${this.partClass("overflowCount")}"
+                ?hidden=${this._hiddenChips === 0}
+                ?disabled=${handle.disabled() || handle.readonly()}
                 aria-label=${this.messages.chipsHidden.replace("{count}", String(this._hiddenChips))}
                 @click=${(e: Event) => {
                   e.stopPropagation();
@@ -543,18 +544,17 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
                   // moves them together.
                   if (this.field && !this._open) { this.overlay.open(e); this.toggleOpen(this.field); }
                 }}
-              >${this.messages.chipsHiddenShort.replace("{count}", String(this._hiddenChips))}</button>`
-            : nothing}
+              >${this.messages.chipsHiddenShort.replace("{count}", String(this._hiddenChips))}</button>`}
           <!-- Every choice off at once, beside the trigger rather than inside it: the trigger is a
                button, and a button inside a button is neither valid nor reachable. -->
-          ${this.held(handle).length > 0 && !handle.disabled() && !handle.readonly()
-            ? html`<button
+          ${html`<button
                 type="button"
                 class="${this.partClass("clearAll")}"
+                ?hidden=${this.held(handle).length === 0 || handle.disabled() || handle.readonly()}
+                ?disabled=${handle.disabled() || handle.readonly()}
                 aria-label=${this.messages.clearSelection}
                 @click=${() => this.fieldController?.dispatch({ type: "clear" })}
-              >${mdyIcon("CLOSE", "")}</button>`
-            : nothing}
+              >${mdyIcon("CLOSE", "")}</button>`}
           <!-- The full name, for a chip the strip had to cut. Shown on hover *and* on focus: WCAG
                1.4.13 asks for both, and the title attribute is neither — it never appears for a keyboard or a
                touch user, who are exactly the people who cannot widen the chip. One element for the

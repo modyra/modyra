@@ -66,7 +66,7 @@ export function renderField(
     case "password":
     case "number":
     case "slider":
-      return renderTextField(container, f, handle as unknown as MdyFieldHandle<string | number>, reactivity, widgetId);
+      return renderTextField(container, f, handle as unknown as MdyFieldHandle<string | number>, reactivity, widgetId, messages);
     case "checkbox":
     case "toggle":
       return renderBooleanField(container, f, handle as unknown as MdyFieldHandle<boolean>, reactivity, widgetId);
