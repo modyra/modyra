@@ -2055,6 +2055,7 @@
     "protected minSpace: number",
     "protected onBeforeOpen-> returns: void",
     "protected open-> returns: boolean",
+    "protected openOnDeclaredKey(0) event: KeyboardEvent,-> returns: void",
     "protected openOverlay(0) event?: Event,-> returns: void",
     "protected openerButtonPart-> returns: MdyPartContract",
     "protected overlayAnchor-> returns: HTMLElement | DOMRect | null",

@@ -422,6 +422,15 @@ export class MdySelectComponent<TValue = string>
 
   protected override openOverlay(event?: Event): void {
     super.openOverlay(event);
+    // The intent, not the flag. `setOpen` records that the list is showing and nothing else, so the
+    // reading position stayed nowhere — and the first `ArrowDown` after opening arrived at the first
+    // option here while it stepped past it in the two renderers that dispatch the intent, which is
+    // one document reaching two values. The controller's `open` puts the position on the chosen
+    // option, or the first when nothing is chosen, exactly as the authoring practices describe.
+    //
+    // `setOpen` is still what the command runtime calls back into: the intent's own `open-overlay`
+    // command arrives here, finds the list already showing, and stops.
+    if (!this.selectAdapter.open()) this.selectAdapter.dispatch({ type: "open", source: "keyboard" });
     this.selectAdapter.setOpen(true);
   }
 

@@ -111,10 +111,36 @@ export const defaultWidgetIdFactory: MdyWidgetIdFactory = {
  * three segments — widget, part, key.
  */
 function idSafeKey(key: string): string {
-  return key
-    .replaceAll("%", "%25")
-    .replaceAll(MDY_ID_DELIMITER, "%5F%5F")
-    .replace(/[\t\n\f\r ]/g, (ws) => `%${ws.charCodeAt(0).toString(16).toUpperCase().padStart(2, "0")}`);
+  // Everything outside what a CSS identifier may carry, escaped as `_` and two hex digits.
+  //
+  // Percent-encoding was the first answer and it solved only half the problem: `%` is not a
+  // character a CSS identifier may contain, so `document.querySelector("#city__option__a%20b")`
+  // *throws* rather than missing — measured, not assumed. An assistive technology was always served,
+  // because `getElementById` and every ARIA IDREF are exact string matches that care about none of
+  // this; the path it broke is the one a person writes by hand, and it broke it with an exception
+  // rather than a null, so even a caller who handles "not found" gets a stack trace.
+  //
+  // `_` as the escape, because it is the one punctuation character an identifier may hold. The
+  // delimiter is two of them, and an escape is always `_` followed by a hex digit — which is never
+  // `_` — so no encoded key can produce a delimiter, and an id still splits into exactly its three
+  // segments. Reversible for the same reason `%` had to go first: the escape character escapes
+  // itself, as `_5F`.
+  //
+  // Injective, because each character carries its own code: `a b`, `a\tb` and `a\nb` stay three ids
+  // rather than one. The browser accepts duplicate ids in silence, so collapsing them would point
+  // every reference at whichever element the document reaches first — and a tab inside an option's
+  // value is what a paste from a spreadsheet produces.
+  //
+  // Above ASCII is left alone: an identifier may carry it, so `città` stays readable.
+  return key.replace(
+    /[^A-Za-z0-9-]/g,
+    (character) => {
+      const code = character.codePointAt(0) ?? 0;
+      return code > 0x7f
+        ? character
+        : `_${code.toString(16).toUpperCase().padStart(2, "0")}`;
+    },
+  );
 }
 
 /**
