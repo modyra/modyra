@@ -1,4 +1,5 @@
-import { ChangeDetectionStrategy, Component, input } from "@angular/core";
+import { ChangeDetectionStrategy, Component, computed, input } from "@angular/core";
+import { defaultWidgetIdFactory } from "@modyra/widgets";
 import { MdyInlineErrorIconComponent } from "./inline-error-icon.component";
 
 /**
@@ -26,7 +27,7 @@ import { MdyInlineErrorIconComponent } from "./inline-error-icon.component";
     @if (label()) {
       <label
         [for]="forId()"
-        [attr.id]="labelId() || null"
+        [attr.id]="renderedId()"
         class="mdy-label"
         [class.mdy-label--filled]="filled()"
         [class.mdy-label--has-error]="showInlineError()"
@@ -62,6 +63,26 @@ export class MdyControlLabelComponent {
    * (radio, segmented) can reference it via `aria-labelledby` (B33).
    */
   readonly labelId = input<string>("");
+
+  /**
+   * The id this label carries, which is the one the projections name it by.
+   *
+   * Every popup's inner view is labelled by the field's own label — `aria-labelledby="<widget>__label"`
+   * comes out of the widget projections — and a label with no id leaves every one of those references
+   * pointing at nothing. Callers that need a different id pass `labelId`; the rest get the canonical
+   * one built from the field they are labelling, rather than none.
+   */
+  protected readonly renderedId = computed(() =>
+    this.labelId() || (this.widgetId() || this.forId()
+      ? defaultWidgetIdFactory.part(this.widgetId() || this.forId(), "label")
+      : null),
+  );
+
+  /**
+   * The widget whose label this is. Falls back to what the label points at, which is the control's
+   * own id for every kind that labels a control rather than a group.
+   */
+  readonly widgetId = input<string>("");
 
   /** When `true`, the inline error icon is rendered inside the label. */
   readonly showInlineError = input<boolean>(false);

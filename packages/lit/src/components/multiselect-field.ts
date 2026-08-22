@@ -840,7 +840,14 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
     options: ReadonlyArray<MdySelectOption<unknown>>,
     extraClass: string,
   ): unknown {
-    return html`<div class="${this.partClass("options")} ${extraClass}" role="group">
+    // The id the projection gives the grid — not the one the opener names, which is the popup's and
+    // is already on the panel. Two elements claiming one id is worse than a grid claiming none: every
+    // reference to it stops being deterministic.
+    return html`<div
+      id=${this.fieldController?.view().parts.group?.id ?? nothing}
+      class="${this.partClass("options")} ${extraClass}"
+      role="group"
+    >
       ${options.map(
         (option) => html`<div class=${MDY_CHIP_CLASSES.wrapper} data-option-key=${String(option.value)}>${this.renderOptionChip(handle, option)}</div>`,
       )}
