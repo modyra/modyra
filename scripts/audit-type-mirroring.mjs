@@ -81,10 +81,38 @@ function shapes(source, path) {
 }
 
 const surface = JSON.parse(readFileSync(SURFACE, "utf8"));
+
+/**
+ * The names the audited adapters declare themselves.
+ *
+ * The type surface is gathered from `core`, `widgets` **and** `angular`, so an adapter's own shapes
+ * are in the file this audit reads as "upstream" — and a shape matches itself, member for member,
+ * every time. Five Angular types were reported as restatements of themselves, with nothing upstream
+ * to derive from: `MdyOptionsControl` exists in one package only.
+ *
+ * So a name only an adapter declares is not upstream. Only that: a name core or widgets declares
+ * stays upstream however many adapters also declare it, which is what keeps a same-name copy — the
+ * most likely kind — from becoming invisible by writing itself into the exclusion.
+ */
+const declaredIn = (packages) => {
+  const names = new Set();
+  for (const pkg of packages) {
+    let files;
+    try { files = sources(join(root, "packages", pkg, "src")); } catch { continue; }
+    for (const file of files) {
+      for (const shape of shapes(readFileSync(file, "utf8"), relative(root, file))) names.add(shape.name);
+    }
+  }
+  return names;
+};
+const declaredUpstream = declaredIn(["core", "widgets"]);
+const adapterOnly = new Set([...declaredIn(ADAPTERS)].filter((name) => !declaredUpstream.has(name)));
+
 /** Upstream shapes by their member-name set, so a rename cannot hide a copy. */
 const upstream = new Map();
 for (const [name, members] of Object.entries(surface)) {
   if (!Array.isArray(members) || members.length < MIN_MEMBERS) continue;
+  if (adapterOnly.has(name)) continue;
   const names = members.map((m) => String(m).split(":")[0].trim().replace(/\?$/, "").replace(/\(.*$/, ""));
   const key = [...new Set(names)].sort().join(",");
   if (!upstream.has(key)) upstream.set(key, []);
