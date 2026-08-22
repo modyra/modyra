@@ -1,13 +1,16 @@
 {
   "note": "Browser specs that are red because the defect they describe is open. A red listed here does not fail a build; a red that is not listed is a regression. Rewrite with `npm run battle:browser:ci -- --accept`.",
   "order": "Repair in severity order, as the node tier does. A spec's severity is the worst of the claims its header names; `unknown` is a spec that names none, which is most of them.",
-  "recordedAt": "2026-08-22T18:10:09Z",
-  "openReds": 4,
+  "recordedAt": "2026-08-22T18:29:54Z",
+  "openReds": 6,
   "bySeverity": {
-    "S1": 4
+    "S0": 3,
+    "S1": 3
   },
   "knownRed": [
-    "a-draft-written-and-never-read.spec.ts › a draft is read back, not only written, angular",
+    "a-choice-made-before-anyone-looked.spec.ts › the first press opens a control that already holds a value, angular",
+    "a-choice-made-before-anyone-looked.spec.ts › the first press opens a control that already holds a value, lit",
+    "a-choice-made-before-anyone-looked.spec.ts › the first press opens a control that already holds a value, plain",
     "a-letter-typed-at-a-closed-list.spec.ts › a letter reaches a closed choice, plain",
     "a-row-system-three-renderers-disagree-about.spec.ts › a kind is inside the row system in every renderer, or outside it in every renderer",
     "a-row-system-three-renderers-disagree-about.spec.ts › a kind is the same height in every renderer"
