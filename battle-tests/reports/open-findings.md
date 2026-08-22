@@ -21283,3 +21283,27 @@ one — so converting the remaining eleven is a slow improvement rather than a r
 bulk tonight would risk eleven green specs to fix nothing that is currently broken. The three states a
 fixture can get wrong are named in `bench.ts` where the next person will meet them.
 
+
+### 379 closed, and with it the announcement and the clear-all — a batch boundary measured
+
+The working tree went clean and the full tier ran, which is the moment it is supposed to run and
+almost never does. **361 green, 56 red, 9 closed, 1 new.**
+
+```
+a quantity can be changed without a pointer     all three   379: up then down returns the value
+a choice is announced to somebody who cannot
+  see the chips                                 all three   the region speaks while the list is open
+a selection can be cleared                      all three   the clear-all exists
+```
+
+The one new red is mine and it is the structure-node count, 255 → 258, re-derived. That number has
+moved four times tonight and each time it was the anatomy growing rather than a defect — which is the
+argument for pinning a count in both directions and against pinning it at all, and the file already
+carries the reasoning for keeping it.
+
+**What the batch boundary is worth, stated once:** seven regressions were found earlier tonight because
+somebody ran the tier on a whim, a dozen commits after the last run. This one was run because the tree
+went clean, and it found nine closures nobody had claimed and one red that had been introduced quietly.
+Both halves matter — a baseline that is stale in the green direction is a baseline nobody trusts, and
+one that is stale in the red direction is a build that lies.
+
