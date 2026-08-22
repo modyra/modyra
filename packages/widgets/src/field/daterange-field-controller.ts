@@ -321,7 +321,7 @@ export function createDaterangeFieldController(
         // An unfinished range is not a range. Closing keeps what the form already had, which is why
         // the draft is separate from the value in the first place.
         draft.set(handle.value() ?? EMPTY);
-        return closePicker(intent.type === "cancel" || (intent.restoreFocus ?? false));
+        return closePicker(intent.restoreFocus ?? true);
       case "confirm": {
         const current = draft();
         if (current.start === null || current.end === null) return closePicker(true);
