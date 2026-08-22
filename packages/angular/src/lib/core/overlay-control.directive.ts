@@ -1,4 +1,4 @@
-import { keyBindingFor, projectOverlayOpenerA11y, type MdyPartContract } from "@modyra/widgets";
+import { MDY_POPUP_OPENERS, keyBindingFor, projectOverlayOpenerA11y, type MdyPartContract } from "@modyra/widgets";
 import {
   DestroyRef,
   Directive,
@@ -259,6 +259,23 @@ export abstract class MdyOverlayControl<TValue> extends MdyBaseControl<TValue> {
     if (!this.open() || this.overlayKind === null || event.key !== "Tab") return;
     if (keyBindingFor(this.overlayKind, event.key, true)?.intent !== "cancel") return;
     this.closeOverlay();
+  }
+
+  /**
+   * A pointer on the control the table names as this kind's opener.
+   *
+   * `MDY_POPUP_OPENERS` says which part a person operates to open a popup, and for the two typeable
+   * pickers that part is the field's own control rather than the button beside it. Answering the
+   * button alone left the larger target — the box a person clicks to fill the field in — doing
+   * nothing, on kinds whose contract says it opens the picker.
+   *
+   * Opens only. Clicking inside an open picker's input is a person putting the caret somewhere, not
+   * asking for the panel to go away.
+   */
+  protected openFromControl(): void {
+    if (this.open() || this.overlayKind === null) return;
+    if (MDY_POPUP_OPENERS[this.overlayKind]?.opener !== "control") return;
+    this.openOverlay();
   }
 
   protected toggleOverlay(event?: Event): void {

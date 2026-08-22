@@ -82,6 +82,7 @@ import { MdyCalendarComponent } from "./calendar.component";
           (change)="onInputChange($event)"
           (blur)="onInputBlur($event)"
           (keydown)="openOnDeclaredKey($event)"
+          (click)="openFromControl()"
           [attr.aria-invalid]="paintsAsInvalid()"
           [attr.aria-describedby]="describedById(fieldId)"
           [attr.aria-label]="controlAriaLabel()"
