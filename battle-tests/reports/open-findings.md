@@ -21405,6 +21405,26 @@ it is right.
 `esecutore` accepted the batch and said so rather than leaving it in a log, which is the correct move
 and the reason this has a number.
 
+### A second surface, and it will hit every Angular change
+
+Adding an **optional input** to an Angular component rewrites its `ɵcmp` declaration type, and the
+differ reports the whole declaration as changed:
+
+```
+[major] MdyCalendarCellComponent.ɵcmp is now ɵɵComponentDeclaration<…{ "cell": …; "cellId": …;
+        "isSelected": … }…>, was ɵɵComponentDeclaration<…{ "cell": …; "isSelected": … }…>
+```
+
+Four of those in one batch, every one additive. Same root cause as the union reordering and worth
+stating as one thing rather than two: **a structural type compared as an opaque string.** A union is a
+set and a declaration is a record; comparing either as text makes an addition indistinguishable from a
+replacement, and the tool answers `major` because that is the safe answer when you cannot tell.
+
+The cost compounds across the two surfaces. One batch tonight carried twelve false majors from
+reordering and four from optional inputs, and `contract:diff` is the authority `CLAUDE.md` makes it for
+what ships. **An authority that is wrong sixteen times in one batch spends the attention it needs for
+the seventeenth**, which is the one that will be real.
+
 ### Numbering, so two registers do not drift
 
 `esecutore3` assigned **380–383** to the four node-tier reds that predate this batch — the operand
