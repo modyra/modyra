@@ -1911,6 +1911,11 @@
 
     .mdy-multiselect__arrow {
         flex: 0 0 auto;
+        /* At the opener's trailing edge, where the field's other affordances are. Packed at the
+           start it sat wherever the chips left off — so the caret, the overflow and the clear-all
+           stood at three different distances from the edge and there was no column for the eye to
+           follow, which is the whole of what `DESIGN.md` asks of a trailing affordance. */
+        margin-inline-start: auto;
         width: var(--mdy-affordance-target);
         height: var(--mdy-affordance-target);
         display: inline-flex;

@@ -343,7 +343,12 @@ export class MdySelectFieldElement extends MdyDropdownFieldElement<unknown | nul
         ?disabled=${option.disabled === true}
         ?selected=${option.value === held}
       >${option.label}</option>`)}
-    </select>`;
+    </select>
+    <!-- The foundation takes the platform's own arrow off every native chooser so that a form of
+         them looks like one form, and a kind that removes an affordance owes one back. This shape
+         drew neither: the field had nothing at its trailing edge saying it opens, while the four
+         other kinds in this renderer draw theirs. -->
+    ${mdyIcon("CHEVRON_DOWN", "mdy-select__arrow")}`;
   }
 
   /**

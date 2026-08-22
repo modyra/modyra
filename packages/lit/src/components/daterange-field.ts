@@ -597,6 +597,18 @@ export class MdyDaterangeFieldElement extends MdyFieldElement<MdyDateRange | nul
     `;
   }
 
+  /**
+   * This kind draws its own field box.
+   *
+   * The base wraps a control in one, and this element renders another inside it — two elements
+   * answering to `inputWrapper`, one inside the other, which is the ambiguity ADR 0143 forbids: a
+   * selector returns the outer, a measurement may take either, and a reading cannot say which it
+   * meant. The kind draws its own affixes too, so nothing is lost by declining the base's.
+   */
+  protected override get useWrapper(): boolean {
+    return false;
+  }
+
   protected override renderControl(handle: MdyFieldHandle<MdyDateRange | null>): unknown {
     this.classList.toggle("mdy-renderer--open", this._open);
     const range = handle.value() ?? { start: null, end: null };
