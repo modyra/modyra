@@ -147,6 +147,7 @@ absent section reads as an oversight, and "no security impact" is a finding.
 - [ADR 0130: A popup outlives the box it opens from](0130-a-popup-outlives-the-box-it-opens-from.md) — superseded: the clipping it was built on was a rectangle compared against a rectangle, and every popup is `position: fixed`
 - [ADR 0131: A rectangle outside a box is not a clipped one](0131-a-rectangle-outside-a-box-is-not-a-clipped-one.md) — the defect did not exist; the battle written to prove it now pins the property instead
 - [ADR 0132: A part's name says what it is for, its role says what it is](0132-a-part-name-is-what-it-is-for.md) — one kind took its role as its part name, and a consumer asking the other kind for it got `undefined`
+- [ADR 0133: A chip's mark is drawn, never written](0133-a-mark-that-is-never-text.md) — the argument that decided it turned out to be false, and the decision stands on the two reasons that were not why it was taken
 - [ADR 0092: A condition travels with the form](0092-a-condition-travels-with-the-form.md) — `when` and `asyncWhen` were closures, so a schema carrying one was not data and the document half could not say what the typed half said
 
 ## Security-relevant records
