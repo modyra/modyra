@@ -1,6 +1,6 @@
 # ADR 0127: A strip that scrolls, against the published practice
 
-Status: Accepted
+Status: Superseded by [ADR 0137](0137-a-row-that-wraps-where-it-must.md)
 
 ## Context
 
