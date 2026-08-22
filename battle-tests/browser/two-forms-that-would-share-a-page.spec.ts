@@ -14,9 +14,18 @@
  * With `idPrefix`, none of it happens. That is what this pins: the remedy works, and the damage it
  * prevents is real rather than theoretical.
  *
- * One renderer never has the hazard, because it mints an id per widget instance instead of from the
- * field's name. Both are asked, and both must be clean once the option is used; only the one that
- * derives ids from names is asked what happens without it.
+ * **This paragraph used to say one renderer never had the hazard**, because it minted an id per widget
+ * instance instead of from the field's name. That stopped being true when
+ * [ADR 0135](../../docs/architecture/0135-an-id-is-a-function-of-the-document.md) made every renderer
+ * derive its ids from the field's path: the instance counter was what made an id unpredictable, and
+ * the same property was what made a collision impossible. All three have the hazard now, and all three
+ * need the scope.
+ *
+ * That is the trade the record took knowingly — an id a consumer can write down in advance, in
+ * exchange for a collision the scope has to prevent — and this file is where the second half is
+ * checked.
+ *
+ * Claims under attack: UI-011, A11Y-001.
  */
 
 import { expect, test } from "@playwright/test";
