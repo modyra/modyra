@@ -21563,8 +21563,29 @@ for someone to use, and *"escape it first"* is a rule that lives nowhere near th
 [385](#385), and is the reason this is not visible in lit or Angular rather than a sign that they are
 right.
 
-Owned by `esecutore`. No battle yet: the shape of the fix decides what to assert — a hash of the
-value, an index, or an escaped form are three different contracts — and pinning one would choose.
+Owned by `esecutore`.
+
+**It has a battle now, and my reason for not writing one was wrong.** I said the shape of the fix
+decides what to assert — a hash, an index and an escaped form being three different contracts — and
+that pinning one would choose. But all three satisfy the same property: *an id a contract publishes is
+reachable by the selector a consumer would write*. The battle never looks at what an id contains, only
+at whether `querySelector("#" + id)` finds what `getElementById` finds, so it is satisfied by any of
+the three and chooses none.
+
+[`../browser/an-id-a-selector-cannot-reach.spec.ts`](../browser/an-id-a-selector-cannot-reach.spec.ts).
+Red in all three, for two different reasons, and its premise assertion is what tells them apart:
+
+```
+plain     4 of 9 published ids unreachable, 2 of those throw
+lit       published no ids at all  ← that is 385, and the message says so
+angular   published no ids at all  ← 385
+```
+
+The near-miss is worth keeping: *"pinning one would choose"* is a real hazard — it nearly cost a
+renderer a button built to satisfy a regular expression earlier tonight — and I applied it to a case
+where the property was expressible without choosing. **The guard against over-specifying can also stop
+a check being written at all**, and the question that separates them is whether every acceptable repair
+satisfies the same sentence.
 
 
 ## 387 — a chip that takes focus shrinks the box it lives in, and leaves it (S1, A11Y-001)
