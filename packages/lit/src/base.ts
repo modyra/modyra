@@ -292,9 +292,13 @@ export abstract class MdyFieldElement<T> extends LitElement {
    */
   private readonly onFocusLost = (event: FocusEvent): void => {
     const next = event.relatedTarget;
-    // Focus left this element for something else on the page. A widget with an overlay says what to
-    // do about that through its own contract, and answers here.
-    if (!(next instanceof Node && this.contains(next))) this.focusLeft();
+    // Focus left this element *for something else on the page*. A widget with an overlay says what
+    // to do about that through its own contract, and answers here.
+    //
+    // `relatedTarget === null` is deliberately not that: re-rendering the element removes whatever
+    // was focused and blurs it into nowhere — a calendar cell replaced when the view changes — and
+    // reading that as leaving closed the popup on the click that was operating it.
+    if (next instanceof Node && !this.contains(next)) this.focusLeft();
     if (next !== null) return;
     queueMicrotask(() => {
       if (this.field?.disabled() !== true) return;
