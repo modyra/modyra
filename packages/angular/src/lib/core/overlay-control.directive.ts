@@ -97,17 +97,17 @@ export abstract class MdyOverlayControl<TValue> extends MdyBaseControl<TValue> {
   }
 
   /**
-   * The promise alone, for an element that opens the overlay without being its opener.
+   * What an element beside the opener says about the overlay, which is nothing.
    *
-   * A range's two text inputs open the calendar with `ArrowDown`, and `aria-haspopup` is a statement
-   * a textbox is allowed to make. `aria-expanded` and `aria-controls` are not: ARIA permits them on a
-   * combobox, and the range's opener — the one the catalogue names — is the toggle beside them. An
-   * input carrying the whole projection is a critical `aria-allowed-attr` violation, so this narrows
-   * it to the part a textbox may say.
+   * `aria-haspopup` is a statement a textbox is allowed to make, and it is still a promise: it tells
+   * a person operating that control that a popup opens from it. The catalogue names one opener per
+   * kind, and for a range that opener is the toggle — the text inputs answer no key the contract
+   * declares and no pointer, so the promise on them named a popup they cannot open. `aria-expanded`
+   * and `aria-controls` were never theirs either: ARIA permits those on a combobox, and an input
+   * carrying the whole projection is a critical `aria-allowed-attr` violation.
    */
   protected popupPromisePart(): MdyPartContract {
-    const promises = this.openerButtonPart().attributes?.["aria-haspopup"];
-    return { classes: [], attributes: promises ? { "aria-haspopup": promises } : {} };
+    return { classes: [], attributes: {} };
   }
 
   protected open(): boolean {
