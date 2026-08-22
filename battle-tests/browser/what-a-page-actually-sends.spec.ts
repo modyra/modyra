@@ -23,6 +23,28 @@ test.beforeEach(async ({ page }) => {
 });
 
 /** Mount with a submit action, press the button, and report what the action was handed. */
+
+/**
+ * Press the form's own submit button, named rather than positional.
+ *
+ * This was `button.last().click().catch(() => undefined)` at six sites. The submit is appended to
+ * the container, so it is last — until a row is declared and brings buttons of its own, and then
+ * the last button is a row's. The click landed on that instead, the swallowed error said nothing,
+ * and the spec reported an empty payload as the form losing every row.
+ *
+ * Named, and unguarded errors are no longer swallowed: a submit that cannot be found is a failure
+ * with a sentence, not a silent pass through to an assertion about the wrong thing.
+ */
+async function submitForm(page: import("@playwright/test").Page, id: string) {
+  const button = page.locator(`[data-form="${id}"]`).getByRole("button", { name: "Submit", exact: true });
+  await expect(
+    button,
+    `no submit button was found in "${id}" — pressing whichever button came last is how this spec ` +
+      "used to report a row's own control as the form",
+  ).toHaveCount(1, { timeout: 5_000 });
+  await button.click();
+}
+
 async function submitted(page: import("@playwright/test").Page, id: string, fields: unknown[]) {
   await page.evaluate(
     ({ mountId, given }) => {
@@ -33,7 +55,7 @@ async function submitted(page: import("@playwright/test").Page, id: string, fiel
     { mountId: id, given: fields },
   );
   await page.waitForTimeout(200);
-  await page.locator(`[data-form="${id}"] button`).last().click().catch(() => undefined);
+  await submitForm(page, id);
   await page.waitForTimeout(320);
   return page.evaluate(
     (mountId) => (window as never as { battle: { submittedBy(id: string): unknown[] } }).battle.submittedBy(mountId),
@@ -101,7 +123,7 @@ test("a field taken out of play is kept in the form and left out of the payload"
   );
   expect(held, JSON.stringify(held)).toEqual({ kept: "first", gone: "second" });
 
-  await page.locator(`[data-form="${id}"] button`).last().click().catch(() => undefined);
+  await submitForm(page, id);
   await page.waitForTimeout(320);
 
   const sent = await page.evaluate(
@@ -133,7 +155,7 @@ test("a row-shaped form sends its rows by key, and a removed row leaves nothing 
   for (let index = 0; index < count; index += 1) await inputs.nth(index).fill("x").catch(() => undefined);
   await page.waitForTimeout(200);
 
-  await page.locator(`[data-form="${id}"] button`).last().click().catch(() => undefined);
+  await submitForm(page, id);
   await page.waitForTimeout(360);
 
   const sent = await page.evaluate(
@@ -152,7 +174,7 @@ test("a row-shaped form sends its rows by key, and a removed row leaves nothing 
     id,
   );
   await page.waitForTimeout(240);
-  await page.locator(`[data-form="${id}"] button`).last().click().catch(() => undefined);
+  await submitForm(page, id);
   await page.waitForTimeout(360);
 
   const after = await page.evaluate(
@@ -183,7 +205,7 @@ test("an array-shaped form sends a list, and removing from the middle closes the
   for (let index = 0; index < count; index += 1) await inputs.nth(index).fill(`v${index}`).catch(() => undefined);
   await page.waitForTimeout(200);
 
-  await page.locator(`[data-form="${id}"] button`).last().click().catch(() => undefined);
+  await submitForm(page, id);
   await page.waitForTimeout(360);
 
   const sent = await page.evaluate(
@@ -203,7 +225,7 @@ test("an array-shaped form sends a list, and removing from the middle closes the
     id,
   );
   await page.waitForTimeout(260);
-  await page.locator(`[data-form="${id}"] button`).last().click().catch(() => undefined);
+  await submitForm(page, id);
   await page.waitForTimeout(360);
 
   const after = await page.evaluate(
@@ -244,7 +266,7 @@ test("an id prefix scopes the page and not the payload", async ({ page }) => {
       (selector) => Array.from(document.querySelectorAll(`${selector} input`)).map((element) => element.id),
       `[data-form="${id}"]`,
     );
-    await page.locator(`[data-form="${id}"] button`).last().click().catch(() => undefined);
+    await submitForm(page, id);
     await page.waitForTimeout(330);
     const sent = await page.evaluate(
       (mountId) => (window as never as { battle: { submittedBy(id: string): unknown[] } }).battle.submittedBy(mountId),

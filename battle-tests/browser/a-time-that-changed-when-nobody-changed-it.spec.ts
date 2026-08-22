@@ -37,9 +37,14 @@ for (const host of HOSTS) {
     await page.waitForFunction((flag) => (window as never as Record<string, boolean>)[flag] === true, host.ready);
 
     const mount = async (id: string, initialValue: string) => {
+      // Through the parser, on both hosts. What this spec asserts is that the form does not end up
+      // holding a time in a notation its own value contract refuses — and refusing it is the
+      // parsing door's job, not a renderer's. Through the raw door `mountMdyForm` is handed the
+      // string as given and keeps it, in both renderers alike; measuring that and calling it a
+      // renderer defect confuses which door was opened.
       await page.evaluate(({ api, mountId, value }) => {
-        (window as never as Record<string, { mountFields(i: string, f: unknown[]): unknown }>)[api]
-          .mountFields(mountId, [{ name: "meeting", kind: "timepicker", label: "Meeting", initialValue: value }]);
+        (window as never as Record<string, { mountFields(i: string, f: unknown[], o?: unknown): unknown }>)[api]
+          .mountFields(mountId, [{ name: "meeting", kind: "timepicker", label: "Meeting", initialValue: value }], { parse: true });
       }, { api: host.api, mountId: id, value: initialValue });
       await page.waitForTimeout(320);
     };
@@ -54,31 +59,47 @@ for (const host of HOSTS) {
      * are found on the page rather than under the field.
      */
     const confirmWithoutChanging = async (id: string) => {
-      await page.locator(`[data-form="${id}"] button[aria-label="Open time picker"]`).click();
-      await page.waitForTimeout(420);
+      const opener = page.locator(`[data-form="${id}"] button[aria-label="Open time picker"]`);
+      // **Never click what may not be there.** Through the parsing door a field whose initial value
+      // the contract refuses is dropped entirely, so there is no opener — and a bare `click()` then
+      // waits out the whole test budget and reports a timeout, which reads as the page hanging
+      // rather than as the field being absent. Two three-minute failures came from that.
+      await expect(
+        opener,
+        `no time picker was drawn for "${id}", so there is nothing to open — the field was refused ` +
+          "before it reached the page",
+      ).toHaveCount(1, { timeout: 5_000 });
+      await opener.click();
+      await expect(page.getByRole("button", { name: "OK", exact: true }).first()).toBeVisible({ timeout: 5_000 });
       await page.getByRole("button", { name: "OK", exact: true }).first().click();
-      await page.waitForTimeout(420);
     };
 
-    // The control: a value in the contract's notation survives the interaction, so what the second
-    // half finds is the notation rather than a confirmation that rewrites whatever it is given.
+    // The control, and the whole of what this spec can assert about the interaction: a value in the
+    // contract's own notation survives being confirmed without a dial being touched.
     await mount("canonical", CANONICAL);
     expect(await stored("canonical")).toBe(CANONICAL);
     await confirmWithoutChanging("canonical");
     expect(await stored("canonical"), "a time nobody changed did not survive being confirmed").toBe(CANONICAL);
 
-    // The same moment as the control would show it. A document that carries this is carrying a value
-    // the contract refuses, and what must not happen is the form holding it anyway.
+    // The same moment as a person would read it, and a notation the value contract does not carry.
+    //
+    // **This comes through the parsing door and asserts a refusal, not an interaction.** The raw
+    // door is `mountMdyForm`'s own behaviour — it is handed the string and keeps it, in every
+    // renderer alike — so measuring that and calling it a renderer defect names the wrong thing. I
+    // filed one as a lit divergence before checking plain through the same door; it was not.
+    //
+    // Through the parser the field is refused outright, which is why there is nothing to confirm
+    // here: a control that was never built cannot be interacted with, and asserting that it holds
+    // nothing is the whole finding.
     await mount("displayed", DISPLAYED);
     expect(
       await stored("displayed"),
       "the form is holding a time in a notation its own value contract refuses",
     ).not.toBe(DISPLAYED);
-
-    await confirmWithoutChanging("displayed");
-    expect(
-      await stored("displayed"),
-      "confirming without touching a dial left the field holding something other than a time",
-    ).not.toBe(DISPLAYED);
+    await expect(
+      page.locator('[data-form="displayed"] button[aria-label="Open time picker"]'),
+      "a field whose initial value the contract refuses was still drawn, so the refusal changed " +
+        "nothing a person can see",
+    ).toHaveCount(0);
   });
 }
