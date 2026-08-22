@@ -7,7 +7,8 @@
  * no framework: pure `document.createElement`/`addEventListener`, wired to
  * @modyra/widgets' headless controllers.
  */
-import type { MdyDraftOptions } from "@modyra/core";
+import type {
+  MdyDynamicValidation, MdyDraftOptions } from "@modyra/core";
 import { reportIdCollision } from "@modyra/widgets";
 import { applyDynamicRules, assertSafeDynamicFieldNames, vanillaReactivity, type MdyDynamicCollection, type MdyDynamicField, type MdyDynamicLayoutChild, type MdyDynamicLayoutNode, type MdyDynamicLayoutSlot, type MdyDynamicRule, type MdyFieldHandle, type MdyFormSchema, type MdyReactivity, type MdySubmittedValue, type MdyTypedForm } from "@modyra/core";
 import { buildForm } from "./schema.js";
@@ -67,6 +68,13 @@ export interface MountMdyFormOptions {
    * `enabled`/`disabled` leave it in the form and stop it being answered.
    */
   readonly rules?: ReadonlyArray<MdyDynamicRule>;
+  /**
+   * The document's cross-field rules, beside `rules` and for the same reason.
+   *
+   * `rules` decide whether a field is in play; these decide whether the form is answerable. Left
+   * out, a document declaring "start and end must differ" drew a form that never said so.
+   */
+  readonly validations?: ReadonlyArray<MdyDynamicValidation>;
   /**
    * Keep what the user typed, as `createForm` does — a key, or the whole `MdyDraftOptions`.
    *
@@ -150,7 +158,10 @@ export function mountMdyForm(
   container.appendChild(formErrors);
 
   const reactivity = vanillaReactivity();
-  const form = buildForm(fields, reactivity, options.collections, { draft: options.draft });
+  const form = buildForm(fields, reactivity, options.collections, {
+    draft: options.draft,
+    validations: options.validations,
+  });
   // Applied to the form rather than to the markup: what a rule decides is whether the field is in
   // play, which is the form's word and reaches the payload as well as the page.
   if (options.rules && options.rules.length > 0) applyDynamicRules(form, options.rules);
