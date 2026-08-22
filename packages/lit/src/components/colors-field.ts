@@ -168,12 +168,16 @@ export class MdyColorsFieldElement extends MdyFieldElement<string | null> {
       >
         <div class="${this.wrapperClass(handle)}">
           <div class="mdy-input-wrapper__inliner">
+            <!-- The swatch opens the same overlay the suffix does, so it carries the same reference:
+                 an opener that says a popup is showing without naming it leaves a screen reader
+                 nowhere to go from it. -->
             <button
               type="button"
               class="mdy-colors__primary-picker"
               ?disabled=${handle.disabled()}
               aria-expanded=${this._open ? "true" : "false"}
               aria-haspopup=${this.popupPromise}
+              aria-controls=${this._open ? overlayControlledId("colors", this.fieldId) ?? nothing : nothing}
               aria-label=${this.label || "Color"}
               @click=${(e: Event) => {
                 if (this._open) {
