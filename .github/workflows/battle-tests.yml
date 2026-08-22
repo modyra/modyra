@@ -44,6 +44,12 @@ jobs:
       - name: Install
         run: pnpm install --frozen-lockfile
 
+      # The suite imports @modyra/angular (the angular host battles), and `battle:ci` builds every
+      # other package but this one: `build:packages` never runs `build:angular`. Without the build
+      # the baseline gate aborts before a single battle runs, reporting a setup gap as a red.
+      - name: Build the Angular package
+        run: pnpm run build:angular
+
       - name: Black-box rule
         run: pnpm run battle:audit
 
@@ -96,6 +102,12 @@ jobs:
 
       - name: Install Chromium
         run: pnpm exec playwright install --with-deps chromium
+
+      # The browser host bundles an angular entry (`battle-tests/browser/host/angular-entry.mjs`
+      # imports `@modyra/angular/ui`), and `battle:browser:ci` builds core, styles, plain and lit —
+      # never angular. Without the build esbuild cannot resolve the import and no page ever loads.
+      - name: Build the Angular package
+        run: pnpm run build:angular
 
       # Baselined the way the deterministic tier is: `battle-tests/reports/known-red-browser.json`
       # lists the specs whose defect is open, and a spec that is red without being listed fails the
