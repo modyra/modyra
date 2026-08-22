@@ -559,7 +559,11 @@ export class MdyDaterangeFieldElement extends MdyFieldElement<MdyDateRange | nul
           </div>
         </div>
         ${this.view.viewMode === "days"
-          ? html`<div class="mdy-datepicker__grid" role="grid">
+          ? html`<div
+              class="mdy-datepicker__grid"
+              role="grid"
+              aria-labelledby="${this.fieldId}__label"
+            >
               ${this.renderCalendarGrid(handle)}
             </div>
             <div class="mdy-daterange__hint" aria-live="polite">${hint}</div>`
