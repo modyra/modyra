@@ -12,6 +12,7 @@ import {
   projectFieldShellA11y,
   fieldAccessibleName,
   errorsVisible,
+  reportIdCollision,
   holdsUneditedValue,
   shownErrorsOf,
   type MdyOverlayAlignment,
@@ -251,7 +252,15 @@ export abstract class MdyFieldElement<T> extends LitElement {
   protected override updated(changed: Map<string, unknown>): void {
     super.updated(changed);
     this.applyControlName();
+    // Once per element: two forms over one document claim one set of ids, and a sentence repeated
+    // every frame is one a developer scrolls past.
+    if (MDY_DEV && !this._saidCollision) {
+      this._saidCollision = true;
+      reportIdCollision(this, this.fieldId, "Set `id-scope` on the controls of each form.");
+    }
   }
+
+  private _saidCollision = false;
 
   /** Said once per element: a sentence repeated every frame is one a developer scrolls past. */
   private _saidUnbound = false;

@@ -5,6 +5,7 @@ import {
   Directive,
   effect,
   ElementRef,
+  afterNextRender,
   inject,
   input,
   InputSignal,
@@ -35,7 +36,7 @@ declare const ngDevMode: boolean | undefined;
 import { MdyPrefixDirective } from "./prefix.directive";
 import { MdySuffixDirective } from "./suffix.directive";
 import { MdySupportingTextDirective } from "./supporting-text.directive";
-import { errorsVisible, holdsUneditedValue, shownErrors, showsAsInvalid } from "@modyra/widgets";
+import { errorsVisible, holdsUneditedValue, reportIdCollision, shownErrors, showsAsInvalid } from "@modyra/widgets";
 import type { MdyValueKind } from "@modyra/core";
 
 /** Global counter for generating unique field IDs. */
@@ -740,6 +741,15 @@ export abstract class MdyBaseControl<TValue = unknown> implements OnInit {
     const n = this.effectiveName();
     if (this._declarativeRegistry && iv !== undefined && n) {
       this._declarativeRegistry.setInitialValue(n, iv);
+    }
+    // After the render that put this control's ids in the document: two forms built from one
+    // document claim one set of them unless the host scopes them, and silent that is worse than
+    // either — every reference resolves into whichever rendered last.
+    if (typeof ngDevMode !== "undefined" && ngDevMode) {
+      afterNextRender(
+        () => reportIdCollision(this.hostElement.nativeElement, this.fieldId, "Bind `[idScope]` on the controls of each form."),
+        { injector: this._injector },
+      );
     }
   }
 

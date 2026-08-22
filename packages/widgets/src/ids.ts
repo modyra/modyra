@@ -128,3 +128,42 @@ function idSafeKey(key: string): string {
 export function calendarDayId(widgetId: string, iso: string): string {
   return `${widgetId}__day__${iso}`;
 }
+
+/**
+ * Warns when a widget publishes an id another element on the page already carries.
+ *
+ * Ids are the field's path (ADR 0135), so two forms built from one document claim one set of ids
+ * unless the host scopes them. That is a *visible* failure by design — the record rejects renaming
+ * the second form's ids, because a mount-order-dependent id is the counter's defect returned in a
+ * corner — but silent it is the worst of both: `aria-describedby` resolves into the other form and
+ * the page looks exactly like one whose references are right.
+ *
+ * So: warn, never rename. `advice` is how a renderer says which of its own doors sets the scope — the
+ * fact belongs here and the spelling belongs to whoever is being read.
+ *
+ * Stateless on purpose — it asks the document rather than keeping a registry of live ids, so nothing
+ * has to be released on teardown and a remount cannot report a collision with its own former self.
+ */
+export function reportIdCollision(
+  element: Element,
+  id: string,
+  advice?: string,
+  warn?: (message: string) => void,
+): void {
+  if (id === "") return;
+  const document = element.ownerDocument;
+  if (document === null) return;
+  let seen = 0;
+  for (const each of Array.from(document.querySelectorAll("[id]"))) {
+    if (each.id === id) seen += 1;
+    if (seen > 1) break;
+  }
+  if (seen <= 1) return;
+  const say = warn ?? ((message: string) => console.warn(message));
+  say(
+    `[modyra] Two elements on this page carry the id "${id}". A widget's ids come from its field's ` +
+    `path, so two forms built from the same document claim the same ones, and every reference to ` +
+    `this field resolves into whichever rendered last. ` +
+    (advice ?? "Give each form its own id scope."),
+  );
+}

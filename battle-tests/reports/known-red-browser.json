@@ -1,11 +1,11 @@
 {
   "note": "Browser specs that are red because the defect they describe is open. A red listed here does not fail a build; a red that is not listed is a regression. Rewrite with `npm run battle:browser:ci -- --accept`.",
   "order": "Repair in severity order, as the node tier does. A spec's severity is the worst of the claims its header names; `unknown` is a spec that names none, which is most of them.",
-  "recordedAt": "2026-08-22T02:35:01Z",
-  "openReds": 43,
+  "recordedAt": "2026-08-22T02:42:16Z",
+  "openReds": 40,
   "bySeverity": {
     "S0": 1,
-    "S1": 38,
+    "S1": 35,
     "S2": 4
   },
   "knownRed": [
@@ -27,8 +27,6 @@
     "a-popup-lit-cannot-open-either.spec.ts › every lit control that declares a popup opens it from the keyboard",
     "a-reference-that-names-an-empty-room.spec.ts › a field with nothing to add points nowhere, lit",
     "a-reference-that-names-an-empty-room.spec.ts › a field with nothing to add points nowhere, plain",
-    "a-slider-that-shows-a-different-number.spec.ts › a number field holds and shows the same value, and explains the bound",
-    "a-slider-that-shows-a-different-number.spec.ts › a slider showing a number the form does not hold says so",
     "a-star-on-a-field-nobody-must-fill.spec.ts › plain: a required marker and aria-required say the same thing",
     "a-state-a-multiselect-does-not-show.spec.ts › a chip carries every class the contract says it is, lit",
     "a-state-a-multiselect-does-not-show.spec.ts › a multiselect shows that it cannot be edited, lit",
@@ -46,7 +44,6 @@
     "nowhere-for-the-keyboard-to-stand.spec.ts › a field taken out of play under the cursor, lit",
     "nowhere-for-the-keyboard-to-stand.spec.ts › a field taken out of play under the cursor, plain",
     "the-key-that-leaves-a-popup-behind.spec.ts › tab closes what it tabs out of, lit",
-    "two-forms-that-would-share-a-page.spec.ts › two forms on one page keep their own ids, lit",
     "two-judges-of-one-address.spec.ts › two judges of one address",
     "a-control-that-wears-its-theme.spec.ts › a slider is painted in the theme's own accent, whichever theme is loaded",
     "every-key-a-kind-declares.spec.ts › lit: every key a kind declares does something",

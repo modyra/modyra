@@ -15,6 +15,16 @@
  * reference that dangles after a row leaves; here it is two live instances over the same field
  * names, where a collision means one field's relationships resolve to the other's DOM — the same
  * defect arriving from the opposite side.
+ *
+ * **What this asked before ADR 0135, and what it asks now.** It asked that two live instances over one
+ * set of names mint ids that differ, and that was true for free: the renderer minted an id per widget
+ * instance, so two could not collide and neither could be predicted. 0135 traded the counter for the
+ * field's path — an id a consumer can write down in advance — and the two properties are the same two
+ * columns: an id that depends only on the document gives two live copies one id.
+ *
+ * So the instances are scoped now, which is what a page with two forms does and what the record makes
+ * the source of the distinction. Nothing about the assertion is weaker: two scoped instances that
+ * collided would be a renderer ignoring the scope, and that is a defect this still finds.
  */
 
 import { field } from "@modyra/core";
@@ -51,11 +61,26 @@ const painted = () => new Promise((resolve) => setTimeout(resolve, 20));
  * The element is created and fed the handle the way a template would: the renderer is reached only
  * through its published entry, and nothing here reads its internals.
  */
-async function mountField(name) {
+/**
+ * One field, mounted as a page mounts it — with a scope where the caller gives one.
+ *
+ * **A scope is not decoration here, it is the identity.**
+ * [ADR 0135](../../../docs/architecture/0135-an-id-is-a-function-of-the-document.md) made an id a
+ * function of the field's path, so two live instances over the same names claim the same ids unless
+ * the host says which is which — and nothing in a document distinguishes two copies of it. The
+ * counter that used to make them differ is what that record removed, and it removed it because an id
+ * a consumer cannot predict is an id they cannot write down.
+ *
+ * So the coexistence case below gives its two instances distinct scopes, which is what a page with two
+ * forms does. The unscoped pair is a documented hazard rather than a defect, and it is checked in the
+ * browser tier where a warning can be observed.
+ */
+async function mountField(name, scope) {
   const form = lit.createLitForm({ [name]: field("") });
   const host = env.host();
   const element = env.document.createElement("mdy-text-field");
   element.setAttribute("name", name);
+  if (scope !== undefined) element.setAttribute("id-scope", scope);
   element.field = form.f[name];
   host.append(element);
   await painted();
@@ -166,8 +191,11 @@ battle(
   },
   async (ctx) => {
     try {
-      const first = await mountField("name");
-      const second = await mountField("name");
+      // Two forms from one document, the way a page carries them: each says which it is. Without a
+      // scope they claim the same ids by construction, which is the hazard ADR 0135 documents rather
+      // than a defect this battle can find.
+      const first = await mountField("name", "first");
+      const second = await mountField("name", "second");
       ctx.log.note("two forms mounted over the same field name", {});
 
       // The control before the claim: a collision is only meaningful if both instances minted ids.
