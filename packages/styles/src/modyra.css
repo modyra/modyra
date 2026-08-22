@@ -2267,10 +2267,11 @@
        the same kind of thing: a small control at the edge of a chip. */
     /* The marks a chip's controls show, painted rather than written.
        Two properties decide the technique, both from ADR 0133. A mark in CSS is a theme's to change;
-       a character in markup is three renderers' to keep in step. And a **mask** takes the system's
-       own colour under `forced-colors`, where a background image is dropped entirely — so a mark
-       that is only a painted shape disappears for the readers most likely to be zoomed into a
-       control this small. Same reasoning as the overflow cue in ADR 0127.
+       a character in markup is three renderers' to keep in step. A **mask** survives `forced-colors`
+       where a background *image* is dropped — but only the shape survives: the box it clips is
+       repainted in the surface colour, so the mark is drawn in the colour of what is behind it and
+       is not there. The forced-palette block at the end of this sheet paints it `CanvasText`; the
+       mask machinery here is what makes that enough.
 
        Drawn from the icon set's own geometry: CLOSE for the remove, CHEVRON_LEFT and CHEVRON_RIGHT
        for the two move controls. */
@@ -4345,6 +4346,59 @@
         transform: translateY(var(--mdy-fl-active-y)) scale(var(--mdy-fl-active-scale));
     }
 
+
+    /* ─── A forced palette ────────────────────────────────────────────────────
+       What a person sees when they have told the system they cannot read our colours.
+
+       The system replaces every background, border and text colour with ones it guarantees. Two
+       techniques in this sheet convey meaning by colour alone and both come out blank under it:
+
+       * a **mark made by masking a coloured box** — the mask survives, the `background` it clips is
+         replaced by the surface colour, so the shape is still being drawn in the colour of what is
+         behind it. The chip's remove and move marks are drawn that way. The comment beside them
+         used to say a mask "takes the system's own colour"; measured, it does not — only the box's
+         own paint is force-adjusted, and it is adjusted to the background.
+       * a **box that is only a fill** — the toggle's thumb and the slider's track and control.
+         Nothing about their shape says where they are; the colour was the whole statement.
+
+       Repainted here in the system's own text colour, which a forced palette keeps. `CanvasText` is
+       what it guarantees is legible against `Canvas`.
+
+       Not `forced-color-adjust: none`. That opts the element out of the palette and keeps our
+       colours for the one person who has explicitly said they cannot use them — it would make a
+       measurement pass and the reader worse off. */
+    @media (forced-colors: active) {
+        .mdy-chip__remove::before,
+        .mdy-chip__move::before {
+            background-color: CanvasText;
+        }
+
+        .mdy-toggle__thumb {
+            background-color: CanvasText;
+        }
+
+        /* A range input paints nothing itself: the line is a gradient on the element and the handle
+           is a pseudo-element the platform gives it. A forced palette drops background *images*
+           outright, so the gradient goes and there is no line left — and the element's own
+           background is repainted the surface colour, so declaring one there paints nothing over
+           nothing. What survives is a border, and the parts the platform draws.
+
+           So the line is drawn as a border on the element, and the handle is painted where the
+           platform actually puts it. */
+        .mdy-slider {
+            border-block-end: var(--mdy-slider-track-height, 4px) solid CanvasText;
+        }
+
+        .mdy-slider::-webkit-slider-thumb {
+            background-color: CanvasText;
+            border: 1px solid Canvas;
+        }
+
+        .mdy-slider::-moz-range-thumb {
+            background-color: CanvasText;
+            border: 1px solid Canvas;
+        }
+    }
 }
 
 /* end @layer mdy.components */
