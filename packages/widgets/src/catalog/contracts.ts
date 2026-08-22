@@ -198,6 +198,12 @@ export const MDY_WIDGET_CONTRACTS = Object.freeze({
       // `hour` and `minute` share `mdy-timepicker-segment`, so `active` — which of the two the dial
       // is currently editing — hangs off that shared base and is one rule in a theme, not two.
       states: { hour: ["active", "focused"], minute: ["active", "focused"], period: ["compact"], periodOption: ["selected"], hourControl: ["readonly"], minuteControl: ["readonly"], dialNumber: ["selected", "inner"], dialHand: ["ghost", "inner"], clock: ["animated"], action: ["confirm"], popup: POPUP_PLACEMENT_STATES },
+      // The popup is the dialog: it holds a draft the field does not have yet, and the only way out
+      // of it that keeps the draft is its own confirm button. A renderer deciding for itself whether
+      // to say so decides it from its own placement — a panel drawn without a backdrop then had no
+      // role at all, and a person was told a clock had appeared but never that the page behind it
+      // was unavailable. Declared here, the answer is the same wherever the panel is drawn.
+      roles: { popup: "dialog" },
       // The state lives on the segment and the semantics on the control inside it. `--active` is
       // which of the two the dial is editing, and it is painted on the container; the input carries
       // the accessible name and takes the typing. Moving either onto the other breaks the half that

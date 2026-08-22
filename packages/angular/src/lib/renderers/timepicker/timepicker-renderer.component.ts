@@ -22,6 +22,7 @@ import {
   MDY_TIMEPICKER_INITIAL_VIEW,
   type MdyTimepickerViewMode,
   timepickerPlaceholder,
+  timepickerFieldPartIds,
 } from "@modyra/widgets";
 import { MdyWidgetRuntime, timepickerCommandElements } from "../../widget-runtime";
 import { MdyErrorListComponent } from "../../control/error-list.component";
@@ -111,14 +112,18 @@ import { MdyTimepickerClockComponent } from "./timepicker-clock.component";
       </div>
 
       <!-- The clock inside declares no dialog of its own, so this panel is the dialog and carries
-           the name. A modal panel with no name is what axe reports as a dialog-name violation. -->
+           the name. A modal panel with no name is what axe reports as a dialog-name violation.
+           The name is the field's label rather than the opener's words, which is the name the other
+           renderers of this kind point at, and the draft the panel holds is kept only by confirming
+           it — so the panel is modal wherever it is drawn, not only when it is drawn over the page. -->
       <mdy-overlay-panel
         [open]="open()"
         [position]="position()"
         [alignment]="alignment()"
         [coords]="coords()"
         [hasBackdrop]="position() === 'overlay'"
-        [dialogLabel]="i18n.timepickerOpenLabel"
+        [dialogLabelledBy]="labelId()"
+        [modal]="true"
         [widthMode]="'auto-content'"
         [panelClass]="popupClass"
         [panelId]="popupId()"
@@ -199,6 +204,9 @@ export class MdyTimepickerComponent extends MdyOverlayControl<string | null> {
 
   /** The id the opener names — the dialog, which is what carries the overlay's role. */
   protected readonly popupId = computed(() => overlayControlledId("timepicker", this.fieldId) ?? "");
+
+  /** The label element the popup is named by — the field's own, which is on the page already. */
+  protected readonly labelId = computed(() => timepickerFieldPartIds(this.fieldId).labelId);
 
   /** The relation between this widget's opener and the overlay it opens. */
   protected readonly openerPart = computed(

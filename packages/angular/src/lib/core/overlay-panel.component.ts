@@ -48,7 +48,8 @@ import {
       (keydown)="onPanelKeydown($event)"
       [attr.role]="panelRole()"
       [attr.aria-modal]="announcesDialog() ? 'true' : null"
-      [attr.aria-label]="panelRole() !== null ? dialogLabel() : null"
+      [attr.aria-labelledby]="dialogLabelledBy()"
+      [attr.aria-label]="panelRole() !== null && dialogLabelledBy() === null ? dialogLabel() : null"
     >
       <ng-content />
     </div>
@@ -118,10 +119,33 @@ export class MdyOverlayPanelComponent {
   readonly dialogLabel = input<string | null>(null);
 
   /**
-   * Modal semantics only when a backdrop is present: a plain select dropdown
-   * must not be announced as a modal dialog by screen readers (B29).
+   * The element whose text names this panel, when the name is already on the page.
+   *
+   * A dialog holding one field's draft is named by that field's label, not by the words on the
+   * button that opened it: the label is what the person read to know what they are setting, and it
+   * is one string rather than two that can drift apart. Where there is no such element, `dialogLabel`
+   * supplies the text instead — the two never both apply, or the panel carries two names.
    */
-  protected readonly isModal = computed(() => this.hasBackdrop());
+  readonly dialogLabelledBy = input<string | null>(null);
+
+  /**
+   * Whether the page behind this panel is unavailable while it is open.
+   *
+   * Distinct from the role, and from the backdrop. A popup can be a dialog and leave the page
+   * reachable — an anchored panel a click outside dismisses is one — so a kind that declares
+   * `dialog` has not thereby declared modality. It is distinct from the backdrop because a panel's
+   * placement decides whether it dims what is behind it, and a draft a person can only keep by
+   * confirming is held whether the panel was drawn over the page or under its field.
+   *
+   * Unset, the backdrop answers, which is what every kind that does not set it has always done.
+   */
+  readonly modal = input<boolean | null>(null);
+
+  /**
+   * What modality resolves to. A dropdown a person can click past is not a modal dialog, and
+   * announcing one as such tells a screen reader the rest of the page is gone while it is not.
+   */
+  protected readonly isModal = computed(() => this.modal() ?? this.hasBackdrop());
 
   /**
    * Whether this panel is the dialog, rather than a wrapper around one.
@@ -134,10 +158,11 @@ export class MdyOverlayPanelComponent {
    * goes back to being what it is, a positioned host; a popup whose content does not — the clock,
    * the palette — passes a name and is announced here.
    *
-   * The focus trap stays keyed on `isModal`: trapping focus is about the backdrop, not about who
-   * says the word "dialog".
+   * `aria-modal` is this and modality together, never the role alone: a popup can be a dialog and
+   * leave the page reachable, and saying otherwise tells a screen reader the rest of the page is
+   * gone while a click outside still works.
    */
-  protected readonly announcesDialog = computed(() => this.isModal() && this.dialogLabel() !== null);
+  protected readonly announcesDialog = computed(() => this.panelRole() === "dialog" && this.isModal());
 
   /**
    * The role this panel carries, asked of the catalogue for the widget it belongs to.
@@ -157,7 +182,7 @@ export class MdyOverlayPanelComponent {
       ? undefined
       : (MDY_WIDGET_CONTRACTS[kind].parts as Readonly<Record<string, { role?: string }>>)["popup"]?.role;
     if (declared !== undefined) return declared;
-    return this.announcesDialog() ? "dialog" : null;
+    return this.isModal() && this.dialogLabel() !== null ? "dialog" : null;
   });
 
   constructor() {
