@@ -160,7 +160,12 @@ battle(
     // `listbox`, a multiselect's is `options`. Asking a multiselect for `listbox` gets `null` — which
     // this battle read as "declares no semantics" and reported as a defect, when what it had found was
     // a part that had been renamed out from under it.
-    const OPTION_LIST = { select: "listbox", multiselect: "options" };
+    // **Derived, not spelled.** A kind's option list is the part its options sit in, and the catalogue
+    // is what knows the name — it was `listbox` for select until ADR 0132 renamed it, and this line
+    // held the old spelling for exactly as long as it took the next run.
+    const optionListOf = (kind) => ["options", "listbox", "grid", "menu"]
+      .find((name) => MDY_WIDGET_CONTRACTS[kind].parts[name] !== undefined);
+    const OPTION_LIST = { select: optionListOf("select"), multiselect: optionListOf("multiselect") };
     ctx.log.note("what two option lists declare themselves to be", {
       select: semanticOf("select", OPTION_LIST.select),
       multiselect: semanticOf("multiselect", OPTION_LIST.multiselect),
@@ -184,7 +189,7 @@ battle(
 
     // The naming rule follows the semantic and not the part name, which is what makes the decision
     // above hold together: a real listbox is made to carry a name, a group is not.
-    expectClaim(partsRequiringName("select").includes("listbox"), {
+    expectClaim(partsRequiringName("select").includes(OPTION_LIST.select), {
       claimIds: ["A11Y-004"],
       what: "a select's listbox is not required to carry a name",
       detail: JSON.stringify(partsRequiringName("select")),

@@ -30,6 +30,31 @@
 
 import { createSelectController } from "@modyra/widgets";
 
+
+/**
+ * What a select publishes when it has no options — which is, by definition, everything that is not an
+ * option.
+ *
+ * Asked of the widget rather than listed in this file. A hand-written list of part names is a second
+ * copy of the anatomy: it goes stale the moment the widget grows or renames a part, and it fails *as
+ * an S0 defect report about two options colliding under one key*. This file carried `listbox`, which
+ * the catalogue renamed to `options`, and the part it stopped excluding was counted as a fourth
+ * option.
+ *
+ * The same list in the same shape was repaired in `option-controllers-blast` earlier the same evening
+ * and this copy was not looked for. **Fixing the one you tripped over is not the same claim as none of
+ * the others has the fault** — and it is stated here rather than in a commit because the next reader
+ * of this helper is the person about to write the third one.
+ */
+function structuralPartsOfSelect() {
+  const empty = createSelectController({ widgetId: "structural-probe", options: [] });
+  try {
+    return Object.keys(empty.view().parts);
+  } finally {
+    empty.destroy?.();
+  }
+}
+
 import { battle } from "../../harness/battle.mjs";
 import { expectClaim, expectEqual } from "../../harness/assertions.mjs";
 
@@ -134,8 +159,17 @@ battle(
 
     try {
       // The key each option is bound under, read the way a renderer reads it.
-      const structural = ["trigger", "search", "listbox"];
-      const keys = Object.keys(controller.view().parts).filter((part) => !structural.includes(part));
+      // **Structural is whatever a controller with no options publishes.** Asked of the widget rather
+      // than listed here: a hand-written list of part names is a second copy of the anatomy, it goes
+      // stale the moment the widget grows or renames a part, and it fails *as an S0 defect report
+      // about two options colliding*. This file carried `listbox`, which the catalogue renamed to
+      // `options`, and the part it stopped excluding was counted as an extra option.
+      //
+      // The same list, in the same shape, was repaired in `option-controllers-blast` earlier the same
+      // evening — and this copy was not looked for. Fixing the one you tripped over is not the same
+      // claim as none of the others has the fault.
+      const structural = new Set(structuralPartsOfSelect());
+      const keys = Object.keys(controller.view().parts).filter((part) => !structural.has(part));
 
       // And the key the controller resolves each value to, which is the other half of the index:
       // a list of distinct part keys is no use if two values still land on one of them.

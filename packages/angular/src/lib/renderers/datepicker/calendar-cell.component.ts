@@ -19,6 +19,7 @@ import { CalendarCell, CalendarDate } from "@modyra/core/datetime";
     "[class.mdy-datepicker__cell--selected]": "isSelected()",
     "[class.mdy-datepicker__cell--focused]": "isFocused()",
     "[class.mdy-datepicker__cell--disabled]": "isDisabled()",
+    "[attr.id]": "cellId() || null",
     role: "gridcell",
     "[attr.aria-selected]": "isSelected()",
     "[attr.aria-disabled]": "isDisabled()",
@@ -30,6 +31,8 @@ import { CalendarCell, CalendarDate } from "@modyra/core/datetime";
 })
 export class MdyCalendarCellComponent {
   readonly cell = input.required<CalendarCell>();
+  /** The id the projection gives this cell, passed in rather than rebuilt here. */
+  readonly cellId = input<string>("");
   readonly isSelected = input<boolean>(false);
   readonly isToday = input<boolean>(false);
   readonly isFocused = input<boolean>(false);

@@ -54,6 +54,7 @@ import { calendarViewState } from "../../core/calendar-view-state";
     @if (view() === "days") {
       <mdy-calendar-grid
         [gridId]="gridId()"
+        [widgetId]="widgetId()"
         [year]="viewYear()"
         [month]="viewMonth()"
         [selectedDate]="selectedDate()"
@@ -84,6 +85,8 @@ import { calendarViewState } from "../../core/calendar-view-state";
 export class MdyCalendarComponent {
   /** Threaded to the grid so the opener can name it. */
   readonly gridId = input<string>("");
+  /** The widget these cells belong to, which is what their ids are built from. */
+  readonly widgetId = input<string>("");
   readonly selectedDate = input<CalendarDate | null>(null);
   readonly minDate = input<CalendarDate | null>(null);
   readonly maxDate = input<CalendarDate | null>(null);

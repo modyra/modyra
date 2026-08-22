@@ -1,3 +1,4 @@
+import { timepickerFieldPartIds } from "@modyra/widgets";
 import { ChangeDetectionStrategy, Component, inject, input, output } from "@angular/core";
 import { MDY_EVERY_TIME, type MdyTimeSteps } from "@modyra/widgets";
 import { MDY_I18N_MESSAGES } from "../../core/i18n";
@@ -13,6 +14,7 @@ import { MdyTimepickerPeriodToggleComponent } from "./timepicker-period-toggle.c
       <div class="mdy-timepicker-fields">
         <mdy-timepicker-segment
           unit="hour"
+          [controlId]="widgetId() ? timepickerFieldPartIds(widgetId()).hourId : ''"
           [format]="format()"
           [steps]="steps()"
           [readonly]="readonly()"
@@ -31,6 +33,7 @@ import { MdyTimepickerPeriodToggleComponent } from "./timepicker-period-toggle.c
 
         <mdy-timepicker-segment
           unit="minute"
+          [controlId]="widgetId() ? timepickerFieldPartIds(widgetId()).minuteId : ''"
           [format]="format()"
           [steps]="steps()"
           [readonly]="readonly()"
@@ -67,6 +70,10 @@ export class MdyTimepickerHeaderComponent {
    * the one state they most need to be usable in. A read-only field is a different claim and the
    * one the class was always meant to carry.
    */
+  /** The widget these segments belong to, which is what their control ids are built from. */
+  readonly widgetId = input<string>("");
+  protected readonly timepickerFieldPartIds = timepickerFieldPartIds;
+
   readonly readonly = input<boolean>(false);
   readonly hour = input.required<string>();
   readonly minute = input.required<string>();

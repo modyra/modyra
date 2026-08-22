@@ -15,6 +15,7 @@ import { html, nothing, type PropertyDeclarations } from "lit";
 import { observerFor, type MdyFieldHandle } from "@modyra/core";
 import { buildTimeString, formatTimeAs, hourToAngle, minuteToAngle, parseAnyTime, pointerAngle, to24Hour, type MdyTimeFormat } from "@modyra/core/datetime";
 import {
+  timepickerFieldPartIds,
   acceptTimeField,
   createTimepickerFieldController,
   stepTimeField,
@@ -585,6 +586,7 @@ export class MdyTimepickerFieldElement extends MdyFieldElement<string | null> {
           <div class="${this.partClass("hour")} ${hourActive ? "mdy-timepicker-segment--active" : ""}">
             <input
               type="number"
+              id="${timepickerFieldPartIds(this.fieldId).hourId}"
               class="${this.partClass("hourControl")} ${this.view.readonly ? stateClass(this.partClass("hourControl"), "readonly") : ""}"
               .value=${this.editing === "hour" ? this._editingText ?? this.hourDisplay() : this.hourDisplay()}
               ?readonly=${this.view.readonly}
@@ -610,6 +612,7 @@ export class MdyTimepickerFieldElement extends MdyFieldElement<string | null> {
           <div class="${this.partClass("minute")} ${minuteActive ? "mdy-timepicker-segment--active" : ""}">
             <input
               type="number"
+              id="${timepickerFieldPartIds(this.fieldId).minuteId}"
               class="${this.partClass("minuteControl")} ${this.view.readonly ? stateClass(this.partClass("minuteControl"), "readonly") : ""}"
               .value=${this.editing === "minute" ? this._editingText ?? this.minuteDisplay() : this.minuteDisplay()}
               ?readonly=${this.view.readonly}
