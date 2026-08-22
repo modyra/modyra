@@ -31,7 +31,10 @@ import { angularReactivity } from "../core/reactivity-angular";
 import { MdyFormSubmitEvent } from "../core/types";
 import { MdyFormComponent } from "../form/mdy-form.component";
 import { MdyCheckboxComponent } from "../renderers/checkbox/checkbox-renderer.component";
+import { MdyColorsComponent } from "../renderers/colors/colors-renderer.component";
 import { MdyDatePickerComponent } from "../renderers/datepicker/datepicker.component";
+import { MdyDateRangePickerComponent } from "../renderers/datepicker/daterange-renderer.component";
+import { MdyFileComponent } from "../renderers/file/file-renderer.component";
 import { MdyMultiselectComponent } from "../renderers/multiselect/multiselect-renderer.component";
 import { MdyNumberComponent } from "../renderers/number/number-renderer.component";
 import { MdyRadioGroupComponent } from "../renderers/radio/radio-group-renderer.component";
@@ -83,7 +86,10 @@ import { MdyToggleComponent } from "../renderers/toggle/toggle-renderer.componen
     MdyMultiselectComponent,
     MdySegmentedButtonComponent,
     MdyDatePickerComponent,
+    MdyDateRangePickerComponent,
     MdyTimepickerComponent,
+    MdyFileComponent,
+    MdyColorsComponent,
     NgTemplateOutlet,
   ],
   template: `
@@ -300,6 +306,32 @@ import { MdyToggleComponent } from "../renderers/toggle/toggle-renderer.componen
                 [granularity]="asTime(f).granularity"
                 [animateHand]="asTime(f).animateHand ?? false"
                 [showUnavailable]="asTime(f).showUnavailable ?? false"
+              />
+            }
+            @case ("daterange") {
+              <mdy-control-daterange
+                [name]="f.name"
+                [idScope]="idScope()"
+                [label]="f.label ?? ''"
+                [supportingText]="f.supportingText"
+                [initialValue]="emptyFor(f)"
+              />
+            }
+            @case ("file") {
+              <mdy-control-file
+                [name]="f.name"
+                [idScope]="idScope()"
+                [label]="f.label ?? ''"
+                [supportingText]="f.supportingText"
+              />
+            }
+            @case ("colors") {
+              <mdy-control-colors
+                [name]="f.name"
+                [idScope]="idScope()"
+                [label]="f.label ?? ''"
+                [supportingText]="f.supportingText"
+                [initialValue]="emptyFor(f)"
               />
             }
           }

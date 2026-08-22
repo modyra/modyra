@@ -11,7 +11,7 @@
 // Usage: node scripts/record-demo-video.mjs [--plain-only] [--keep-tmp]
 import { chromium } from "@playwright/test";
 import { spawn } from "node:child_process";
-import { mkdirSync, writeFileSync, readdirSync, copyFileSync, existsSync } from "node:fs";
+import { mkdirSync, writeFileSync, readdirSync, copyFileSync, existsSync, rmSync } from "node:fs";
 import { execFileSync } from "node:child_process";
 import { join, resolve } from "node:path";
 
@@ -49,6 +49,7 @@ function serve(cmd, args, port) {
 async function recordSegment(name, fn) {
   const browser = await chromium.launch();
   const dir = join(TMP, name);
+  rmSync(dir, { recursive: true, force: true });
   mkdirSync(dir, { recursive: true });
   const context = await browser.newContext({
     viewport: SIZE,
@@ -90,6 +91,9 @@ async function beatPlain(page) {
       await sleep(1800);
     }
   }
+  // The mode bar is hidden under a live palette; the compiled "salience" palette reveals it.
+  const salience = page.locator("[data-palette] button[data-palette='salience']");
+  if (await salience.count()) { await salience.click(); await sleep(1200); }
   const dark = page.locator("[data-color-mode] button").filter({ hasText: /dark/i }).first();
   if (await dark.count()) {
     await dark.click();
