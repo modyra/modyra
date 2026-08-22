@@ -42,8 +42,21 @@ const pointing = (page: import("@playwright/test").Page) =>
     const active = box.getAttribute("aria-activedescendant");
     return {
       active,
-      // An IDREF list is space-separated. Every part has to name something.
-      parts: active === null ? [] : active.split(/\s+/).map((id) => ({ id, resolves: document.getElementById(id) !== null })),
+      // An IDREF list is space-separated. Every part has to name something — **and be reachable by
+      // the selector a consumer would write**, which is a stronger question than resolving: two of
+      // the characters that survive `getElementById` make `querySelector` throw.
+      parts: active === null ? [] : active.split(/\s+/).map((id) => {
+        let reached = false;
+        try {
+          reached = document.querySelector(`#${id}`) !== null;
+        } catch {
+          reached = false;
+        }
+        return { id, resolves: document.getElementById(id) !== null, reached };
+      }),
+      // The label of whatever the combobox is pointing at, which is what makes an assertion about
+      // *which* option is active independent of how its id is spelled.
+      activeLabel: active === null ? null : (document.getElementById(active.split(/\s+/)[0])?.textContent ?? "").trim(),
       dangling: window.battle.danglingReferences(),
     };
   });
@@ -78,16 +91,24 @@ test("an option whose value has a space is pointed at properly too", async ({ pa
 
   const opened = await pointing(page);
 
-  // The premise: the list opens with the first option active, which is the one carrying the space.
-  // The id is the encoded form — `idSafeKey` spells the space as `%20`, which is the repair this
-  // battle asked for and the reason the reference resolves at all. Asserting the raw space here would
-  // be asserting the defect.
-  expect(opened.active, "the list did not open on the option this battle is about").toContain("New%20York");
+  // The premise: the list opens on the option this battle is about, named by its **label**.
+  //
+  // This asserted the id's spelling — `New%20York`, the encoding of the day — and went red when the
+  // encoding changed to one a CSS identifier can actually carry. That was the spec pinning a repair
+  // rather than a property: percent-encoding turned out to be the wrong escape, because `%` is not a
+  // character an identifier may contain, and a check written around it made the better repair look
+  // like a regression.
+  expect(opened.activeLabel, "the list did not open on the option this battle is about").toBe("New York");
 
-  // Every part of the reference names something. One reference, one element.
-  expect(opened.parts, JSON.stringify(opened)).toEqual([
-    { id: "city__option__New%20York", resolves: true },
-  ]);
+  // One reference, one element, **and the selector a consumer would write reaches it**. Nothing here
+  // says how the space is spelled; whichever escape is chosen, these three have to hold.
+  expect(opened.parts.length, JSON.stringify(opened)).toBe(1);
+  expect(opened.parts[0].resolves, `getElementById cannot find ${opened.parts[0].id}`).toBe(true);
+  expect(
+    opened.parts[0].reached,
+    `querySelector("#${opened.parts[0].id}") does not reach it — an id a person can write down is ` +
+      "the whole point of encoding the space at all",
+  ).toBe(true);
   expect(opened.dangling, "the page's own check reports the broken halves").toEqual([]);
 });
 
@@ -99,7 +120,11 @@ test("moving to an option without a space fixes it, which is what makes the valu
   await settled(page);
 
   const moved = await pointing(page);
-  expect(moved.active).toBe("city__option__Paris");
-  expect(moved.parts).toEqual([{ id: "city__option__Paris", resolves: true }]);
+  // Named by its label for the same reason as above: a value with no punctuation in it needs no
+  // escape today, and pinning its id here would be pinning the absence of one.
+  expect(moved.activeLabel).toBe("Paris");
+  expect(moved.parts.length, JSON.stringify(moved)).toBe(1);
+  expect(moved.parts[0].resolves).toBe(true);
+  expect(moved.parts[0].reached, "a value with nothing to escape is reachable without any").toBe(true);
   expect(moved.dangling).toEqual([]);
 });

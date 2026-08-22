@@ -45,7 +45,16 @@ for (const host of HOSTS) {
 
     await page.evaluate(({ api, options }) => {
       (window as never as Record<string, Record<string, (...a: never[]) => unknown>>)[api]
-        .mountFields("ids", [{ name: "pick", kind: "select", label: "S", options }] as never);
+        // **`searchable`, because that is the shape that has ids at all.**
+        // [ADR 0139](../../docs/architecture/0139-a-select-has-two-shapes.md) records that a select
+        // is two controls, and that `options` and `popup` hold only in the combobox one: a native
+        // `<option>` carries no id by construction, because the platform draws that list. Without
+        // this flag two of the three renderers failed the premise — *published no ids for a select* —
+        // which reads as a defect and is the contract working.
+        //
+        // That record names a gate for exactly this: a check reading those parts must say which
+        // shape it means. This is the check saying so.
+        .mountFields("ids", [{ name: "pick", kind: "select", label: "S", searchable: true, options }] as never);
     }, { api: host.api, options: PUNCTUATED });
     await page.waitForTimeout(400);
     // Open it: the option ids do not exist until the list is built.
@@ -54,9 +63,15 @@ for (const host of HOSTS) {
     await page.waitForTimeout(350);
 
     const read = await page.evaluate(() => {
-      const ids = Array.from(document.querySelectorAll("[id]"))
-        .map((element) => element.id)
-        .filter((id) => id.startsWith("pick__"));
+      const everyId = Array.from(document.querySelectorAll('[data-form="ids"] [id], [role="option"][id]'))
+        .map((element) => element.id);
+      // The contract spells a published id `<widget>__<part>__<key>`. An id that does not is not
+      // this battle's subject — but it is also not nothing, and the premise below says which of the
+      // two it found, because "published no ids" sent a reader looking for a missing feature when
+      // what was there was a renderer minting them by a scheme of its own.
+      (window as never as Record<string, unknown>).__otherScheme =
+        everyId.filter((id) => !id.startsWith("pick__"));
+      const ids = everyId.filter((id) => id.startsWith("pick__"));
       return ids.map((id) => {
         let reached: boolean | "throws";
         try {
@@ -68,9 +83,19 @@ for (const host of HOSTS) {
       });
     });
 
+    const otherScheme = await page.evaluate(() => (window as never as Record<string, string[]>).__otherScheme ?? []);
+
     // The premise: this control published ids at all. A renderer that publishes none has a different
     // defect and a different file — nothing here would be measuring it.
-    expect(read.length, `${host.name} published no ids for a select, so nothing here is being reached for`).toBeGreaterThan(2);
+    expect(
+      read.length,
+      otherScheme.length > 0
+        ? `${host.name} published ${otherScheme.length} id(s) for a select and none in the contract's ` +
+          `spelling: ${JSON.stringify(otherScheme.slice(0, 4))}. The contract spells a published id ` +
+          "`<widget>__<part>__<key>`, and a renderer minting them another way publishes something no " +
+          "consumer reading the contract can predict — which is a finding of its own, not this one"
+        : `${host.name} published no ids for a select, so nothing here is being reached for`,
+    ).toBeGreaterThan(2);
 
     // And the premise behind the premise: the values really did carry punctuation into the ids. If a
     // renderer numbered its options the ids would be plain, this would pass, and it would be right.
