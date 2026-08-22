@@ -204,6 +204,7 @@ export function field<TValue>(
   validators: ReadonlyArray<ValidatorFn<MdyWiden<TValue>>> = [],
   options?: MdyFieldOptions<MdyWiden<TValue>>,
 ): MdyFieldDescriptor<MdyWiden<TValue>> {
+  assertValidatorList(validators);
   reportUnknownFieldOptions(options);
   return {
     kind: "field",
@@ -228,6 +229,40 @@ export function field<TValue>(
  * falling back to the profile that does nothing, which is the defect one level down.
  */
 const FIELD_SANITIZE_PROFILES: ReadonlySet<string> = new Set(["off", "text", "strict"]);
+
+/**
+ * The second argument is a list of functions, refused here rather than one door later.
+ *
+ * `field(initial, validators, options)` — and the third argument is the one a reader reaches for, so
+ * the ordinary mistake is putting it second. Stored as written, that produced no complaint at all:
+ * the failure arrived from inside `createForm` as `node.validators.some is not a function`, a message
+ * naming a member of a node the author never wrote, about a call two doors back.
+ *
+ * ADR 0057 already decided this for the list-taking setters — *"refuse anything that is not an array
+ * of functions, by the same rule"* — and the rule had reached the setters and not the constructor.
+ */
+function assertValidatorList(validators: unknown): void {
+  const wrong = !Array.isArray(validators)
+    ? describeShape(validators)
+    : validators.some((each) => typeof each !== "function")
+      ? "a list holding something that is not a function"
+      : null;
+  if (wrong === null) return;
+  throw new Error(
+    `[modyra] field(initial, validators, options): the second argument takes a list of validator ` +
+    `functions and got ${wrong}. Pass \`[]\` where a field has no rules, and options third — ` +
+    `\`field(initial, [], { … })\`.`,
+  );
+}
+
+/** What a wrong argument was, in words a reader can match against their own call. */
+function describeShape(value: unknown): string {
+  if (value === null) return "null";
+  if (typeof value === "function") return "one function, not a list of them";
+  if (typeof value === "string") return `the string ${JSON.stringify(value)}`;
+  if (typeof value === "object") return "an object, which is where the options argument goes";
+  return `a ${typeof value}`;
+}
 
 function assertSanitizer(sanitize: unknown): MdySanitizer | null {
   if (sanitize === undefined || sanitize === null) return null;
