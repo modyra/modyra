@@ -22217,3 +22217,27 @@ because there is nothing to pass it to.
 Owned by `esecutore`. It is one input forwarded to the directive, and it is the missing half of a
 decision already taken.
 
+
+### 0135's twin in the node tier, and the second spec whose prose had gone false
+
+`renderer-teardown`'s coexistence case asserted that two live instances over one set of field names
+mint ids that differ. It went red the moment 0135 landed, for the reason the record names: **that
+property was free while the renderer minted a counter, and the counter is what 0135 removed.**
+
+Same shape as `two-forms-that-would-share-a-page` in the browser tier, four hours apart, and both
+headers explained a *mechanism* rather than the property they asserted — *one renderer never has the
+hazard, because it mints an id per widget instance*. The mechanism was the thing that changed.
+
+Both are corrected the same way: the instances are scoped, which is what a page with two forms does and
+what the record makes the source of the distinction. **Nothing about either assertion is weaker** — two
+scoped instances that collided would be a renderer ignoring the scope, which they still find.
+
+**The rule this leaves**, and it is worth more than either repair: a spec that explains *how* a
+renderer achieves a property has the shelf life of that mechanism. Both of these would have survived a
+rewrite of the id scheme untouched had they said *ids of two live forms differ* and left the reason
+out.
+
+Node tier: `API-001` closed at `0883045e` — `field(initial, validators, options)` stored whatever sat
+in the second position and refuses it at the door now. **One red left**, and it is the unowned
+`version: 1` disagreement.
+
