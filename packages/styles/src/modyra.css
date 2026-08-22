@@ -2084,6 +2084,14 @@
         width: 0;
     }
 
+    /* The reading position in a list of options. Focus stays on the control that owns the list and
+       the cursor is announced with `aria-activedescendant`, so the platform's focus ring never lands
+       on the option — without a mark of its own the cursor moves through the list invisibly. */
+    .mdy-chip--active {
+        outline: 2px solid var(--mdy-primary, var(--mdy-sys-color-primary));
+        outline-offset: 2px;
+    }
+
     button.mdy-chip:hover:not(.mdy-chip--selected):not(:disabled) {
         background: var(--mdy-chip-hover-bg);
         color: var(--mdy-chip-hover-color);

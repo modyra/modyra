@@ -226,6 +226,10 @@ export function createMultiselectFieldController<TValue>(
         "mdy-chip",
         mode === "multi" ? "mdy-chip--counter" : "mdy-chip--centered",
         ...(selected ? ["mdy-chip--selected"] : []),
+        // Where the keyboard is standing, which is not what is chosen. `aria-activedescendant`
+        // announces it; a class is what makes it visible, and without one the cursor moved through
+        // the list with nothing on screen following it.
+        ...(currentState.activeKey === key ? ["mdy-chip--active"] : []),
         ...(disabled ? ["mdy-chip--disabled"] : []),
       ],
       attributes: {

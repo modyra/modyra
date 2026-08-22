@@ -876,15 +876,16 @@ export function renderMultiselectField(
       const handles = optionEls.get(key);
       if (!handles) continue;
       const count = state.counts.get(key) ?? 0;
-      // The classes a chip carries — variant and state — are the contract's answer, applied to both
-      // grids so the field and the popup can never disagree about what is taken.
-      const classes = multiselectChipClasses({ mode, selected: count > 0 });
+      // The classes a chip carries — variant and state — are the contract's answer, and the part
+      // carries all of them. Writing a locally built list over the applied part dropped whatever the
+      // projection knows and this file does not: the reading position was the first casualty, so the
+      // cursor walked the list with nothing on screen following it.
       const part = view.parts[key];
       // One grid, in the popup, so it takes the part whole: the `hidden` that filtering writes and
       // the id the opener names both belong to it. There is no second copy to withhold either from.
       for (const handle of handles) {
         if (part) applyPart(handle.chip, part);
-        handle.chip.className = classes.join(" ");
+        else handle.chip.className = multiselectChipClasses({ mode, selected: count > 0 }).join(" ");
         if (handle.count) setText(handle.count, `×${count}`);
       }
     }
