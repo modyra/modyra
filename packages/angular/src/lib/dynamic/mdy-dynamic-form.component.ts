@@ -12,7 +12,7 @@ import {
   untracked,
   viewChild,
 } from "@angular/core";
-import { applyDynamicRules, applyFlatValidators, parseDynamicForm } from "@modyra/core";
+import { applyDynamicRules, applyFlatValidators, assertSafeDynamicFieldNames, parseDynamicForm } from "@modyra/core";
 import {
   mdyEmptyValueFor,
   MdyDynamicField,
@@ -452,10 +452,24 @@ export class MdyDynamicFormComponent {
     return parseDynamicForm(document, { mode: this.parseMode() });
   });
 
-  /** What is rendered: the document's fields when there is one, the input's otherwise. */
+  /**
+   * What is rendered: the document's fields when there is one, the input's otherwise.
+   *
+   * The input's are checked, because nothing upstream has checked them. A document arrives through a
+   * parser that drops what the contract will not carry; a field list handed over directly arrives as
+   * it was written, and a list naming one field twice built a form with one of that name and a
+   * control for each — so the second control wrote into the first control's field, over what a person
+   * had typed, and the entry after the pair was not drawn at all. The check is the same one the other
+   * renderer's field-list door makes, and it refuses rather than repairs: which of two fields sharing
+   * a name is the real one is not something a renderer can know.
+   */
   protected readonly renderedFields = computed<ReadonlyArray<MdyDynamicField>>(() => {
     const parsed = this.parsed();
-    if (parsed === null) return this.fields();
+    if (parsed === null) {
+      const fields = this.fields();
+      assertSafeDynamicFieldNames(fields);
+      return fields;
+    }
     return parsed.ok || this.parseMode() === "lenient" ? parsed.fields : [];
   });
 
