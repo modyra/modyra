@@ -7,6 +7,10 @@ reports/*.json
 # every known red look new on a fresh checkout.
 !reports/known-red.json
 !reports/known-red-browser.json
+# Same reason: it records how many actions are taken without asserting their target exists, so the
+# number cannot grow unnoticed. Ignored, a fresh checkout would have nothing to compare against and
+# the check would refuse to run at all.
+!reports/unguarded-actions.json
 
 # Packed tarballs and the temporary consumers installed from them.
 hostile-consumers/**/node_modules/

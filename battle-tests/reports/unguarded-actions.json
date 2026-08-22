@@ -1,0 +1,275 @@
+{
+  "note": "Actions taken without asserting the target exists, and actions whose failure is discarded. An unguarded action on an absent element waits out the test's whole budget; a swallowed one lets the next assertion measure a page it never changed. Both are sometimes deliberate. This records how many there are so the number cannot grow unnoticed.",
+  "recordedAt": "2026-08-22T10:40:01.231Z",
+  "total": 117,
+  "files": {
+    "a-box-that-does-not-say-what-it-filters.spec.ts": {
+      "positional": 0,
+      "swallowed": 1
+    },
+    "a-box-the-dial-locked.spec.ts": {
+      "positional": 0,
+      "swallowed": 1
+    },
+    "a-calendar-behind-a-closed-picker.spec.ts": {
+      "positional": 0,
+      "swallowed": 1
+    },
+    "a-calendar-that-outlived-its-field.spec.ts": {
+      "positional": 0,
+      "swallowed": 2
+    },
+    "a-choice-nobody-is-told-about.spec.ts": {
+      "positional": 2,
+      "swallowed": 3
+    },
+    "a-closed-control-a-person-can-read.spec.ts": {
+      "positional": 2,
+      "swallowed": 2
+    },
+    "a-dialog-nothing-can-point-at.spec.ts": {
+      "positional": 0,
+      "swallowed": 1
+    },
+    "a-dialog-the-page-can-be-walked-out-of.spec.ts": {
+      "positional": 0,
+      "swallowed": 1
+    },
+    "a-dimming-that-covers-the-hand.spec.ts": {
+      "positional": 0,
+      "swallowed": 1
+    },
+    "a-draft-a-keyboard-cannot-keep.spec.ts": {
+      "positional": 1,
+      "swallowed": 2
+    },
+    "a-draft-across-a-reload.spec.ts": {
+      "positional": 1,
+      "swallowed": 0
+    },
+    "a-face-with-one-ring-you-can-reach.spec.ts": {
+      "positional": 1,
+      "swallowed": 0
+    },
+    "a-field-marked-wrong-with-nothing-to-read.spec.ts": {
+      "positional": 0,
+      "swallowed": 1
+    },
+    "a-field-that-cannot-be-edited.spec.ts": {
+      "positional": 2,
+      "swallowed": 3
+    },
+    "a-field-that-cannot-look-wrong.spec.ts": {
+      "positional": 0,
+      "swallowed": 1
+    },
+    "a-field-that-says-it-cannot-read-what-it-holds.spec.ts": {
+      "positional": 1,
+      "swallowed": 0
+    },
+    "a-field-the-dial-is-not-showing.spec.ts": {
+      "positional": 1,
+      "swallowed": 0
+    },
+    "a-form-sent-twice-at-once.spec.ts": {
+      "positional": 0,
+      "swallowed": 1
+    },
+    "a-form-that-ended-under-the-controls.spec.ts": {
+      "positional": 0,
+      "swallowed": 1
+    },
+    "a-grid-that-names-a-label-nobody-wrote.spec.ts": {
+      "positional": 1,
+      "swallowed": 1
+    },
+    "a-grid-with-no-name.spec.ts": {
+      "positional": 0,
+      "swallowed": 1
+    },
+    "a-hand-that-says-which-ring.spec.ts": {
+      "positional": 0,
+      "swallowed": 1
+    },
+    "a-list-emptied-by-one-of-its-own-choices.spec.ts": {
+      "positional": 0,
+      "swallowed": 1
+    },
+    "a-minute-you-cannot-retype.spec.ts": {
+      "positional": 0,
+      "swallowed": 2
+    },
+    "a-name-that-became-a-path.spec.ts": {
+      "positional": 1,
+      "swallowed": 0
+    },
+    "a-number-nobody-can-hear.spec.ts": {
+      "positional": 1,
+      "swallowed": 0
+    },
+    "a-number-you-change-with-arrows.spec.ts": {
+      "positional": 1,
+      "swallowed": 1
+    },
+    "a-picker-no-keyboard-can-open.spec.ts": {
+      "positional": 0,
+      "swallowed": 1
+    },
+    "a-picker-that-is-switched-off.spec.ts": {
+      "positional": 0,
+      "swallowed": 1
+    },
+    "a-popup-lit-cannot-open-either.spec.ts": {
+      "positional": 1,
+      "swallowed": 0
+    },
+    "a-popup-only-a-mouse-can-open.spec.ts": {
+      "positional": 1,
+      "swallowed": 0
+    },
+    "a-popup-that-opens-without-a-word.spec.ts": {
+      "positional": 0,
+      "swallowed": 1
+    },
+    "a-popup-with-nowhere-below-to-go.spec.ts": {
+      "positional": 0,
+      "swallowed": 1
+    },
+    "a-press-inside-a-popup-that-moved.spec.ts": {
+      "positional": 0,
+      "swallowed": 1
+    },
+    "a-quantity-only-a-mouse-can-change.spec.ts": {
+      "positional": 1,
+      "swallowed": 0
+    },
+    "a-range-that-throws-away-what-you-type.spec.ts": {
+      "positional": 1,
+      "swallowed": 0
+    },
+    "a-refusal-in-two-renderers.spec.ts": {
+      "positional": 2,
+      "swallowed": 0
+    },
+    "a-ruler-that-is-one-of-the-things-measured.spec.ts": {
+      "positional": 1,
+      "swallowed": 0
+    },
+    "a-state-class-that-never-arrives.spec.ts": {
+      "positional": 0,
+      "swallowed": 3
+    },
+    "a-time-that-changed-when-nobody-changed-it.spec.ts": {
+      "positional": 1,
+      "swallowed": 0
+    },
+    "a-view-a-document-asked-for.spec.ts": {
+      "positional": 2,
+      "swallowed": 0
+    },
+    "a-way-back-that-covers-all-three.spec.ts": {
+      "positional": 2,
+      "swallowed": 0
+    },
+    "a-week-that-starts-where-the-reader-starts.spec.ts": {
+      "positional": 1,
+      "swallowed": 0
+    },
+    "an-arrow-that-moves-only-the-box.spec.ts": {
+      "positional": 1,
+      "swallowed": 1
+    },
+    "an-error-with-nowhere-to-go.spec.ts": {
+      "positional": 1,
+      "swallowed": 0
+    },
+    "an-hour-the-clock-does-not-have.spec.ts": {
+      "positional": 3,
+      "swallowed": 1
+    },
+    "an-id-a-selector-cannot-reach.spec.ts": {
+      "positional": 1,
+      "swallowed": 1
+    },
+    "an-id-one-renderer-publishes-alone.spec.ts": {
+      "positional": 1,
+      "swallowed": 1
+    },
+    "an-opener-that-names-what-it-opens.spec.ts": {
+      "positional": 0,
+      "swallowed": 1
+    },
+    "an-option-a-document-closed.spec.ts": {
+      "positional": 1,
+      "swallowed": 2
+    },
+    "every-id-an-attribute-names.spec.ts": {
+      "positional": 0,
+      "swallowed": 1
+    },
+    "every-key-a-kind-declares.spec.ts": {
+      "positional": 0,
+      "swallowed": 2
+    },
+    "every-kind-under-an-auditor.spec.ts": {
+      "positional": 3,
+      "swallowed": 0
+    },
+    "every-popup-that-leaves-play.spec.ts": {
+      "positional": 0,
+      "swallowed": 1
+    },
+    "every-transition-a-kind-declares.spec.ts": {
+      "positional": 0,
+      "swallowed": 2
+    },
+    "four-holes-in-a-control-that-holds-many.spec.ts": {
+      "positional": 1,
+      "swallowed": 0
+    },
+    "no-reference-that-points-at-nothing.spec.ts": {
+      "positional": 0,
+      "swallowed": 2
+    },
+    "plain-lifecycle.spec.ts": {
+      "positional": 1,
+      "swallowed": 0
+    },
+    "the-key-that-leaves-a-popup-behind.spec.ts": {
+      "positional": 0,
+      "swallowed": 1
+    },
+    "the-way-down-a-calendar.spec.ts": {
+      "positional": 1,
+      "swallowed": 2
+    },
+    "two-doors-to-one-order.spec.ts": {
+      "positional": 1,
+      "swallowed": 0
+    },
+    "two-forms-one-page.spec.ts": {
+      "positional": 1,
+      "swallowed": 0
+    },
+    "two-forms-that-would-share-a-page.spec.ts": {
+      "positional": 1,
+      "swallowed": 0
+    },
+    "what-a-control-promises-will-open.spec.ts": {
+      "positional": 0,
+      "swallowed": 1
+    },
+    "what-a-page-actually-sends.spec.ts": {
+      "positional": 3,
+      "swallowed": 6
+    },
+    "what-the-server-said-on-the-page.spec.ts": {
+      "positional": 1,
+      "swallowed": 0
+    },
+    "when-a-value-becomes-the-value.spec.ts": {
+      "positional": 4,
+      "swallowed": 2
+    }
+  }
+}
