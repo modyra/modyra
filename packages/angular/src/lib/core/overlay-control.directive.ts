@@ -56,6 +56,7 @@ import { MDY_I18N_MESSAGES } from "./i18n";
 @Directive({
   host: {
     "[class.mdy-renderer--open]": "open()",
+    "(keydown)": "closeOnDeclaredKey($event)",
   },
 })
 export abstract class MdyOverlayControl<TValue> extends MdyBaseControl<TValue> {
@@ -238,6 +239,26 @@ export abstract class MdyOverlayControl<TValue> extends MdyBaseControl<TValue> {
     if (keyBindingFor(this.overlayKind, event.key, false)?.intent !== "open") return;
     event.preventDefault();
     this.openOverlay(event);
+  }
+
+  /**
+   * Tab out of an open popup, which the contract says closes it.
+   *
+   * `MDY_WIDGET_KEYBOARD` declares `Tab@open: cancel` beside `Escape@open: cancel`, and the pair
+   * differ in one thing: Escape puts the person back where they were, Tab lets them carry on
+   * forward. Both close. A popup left open under Tab still has the keys, so the next Tab walks its
+   * internals — a calendar cell, then the next cell — and someone who meant to leave the field is
+   * inside it with no sign that the way out is a different key.
+   *
+   * Asked of the contract rather than listed here: a kind with an actions bar has a confirm button
+   * inside its overlay that Tab has to be able to reach, and those kinds declare no such binding.
+   * The key keeps its native meaning either way — the browser carries focus onward, and cancelling
+   * it would strand the person in a panel being torn down.
+   */
+  protected closeOnDeclaredKey(event: KeyboardEvent): void {
+    if (!this.open() || this.overlayKind === null || event.key !== "Tab") return;
+    if (keyBindingFor(this.overlayKind, event.key, true)?.intent !== "cancel") return;
+    this.closeOverlay();
   }
 
   protected toggleOverlay(event?: Event): void {
