@@ -146,24 +146,37 @@ export function calendarDayId(widgetId: string, iso: string): string {
  */
 export function reportIdCollision(
   element: Element,
-  id: string,
   advice?: string,
   warn?: (message: string) => void,
-): void {
-  if (id === "") return;
+): readonly string[] {
   const document = element.ownerDocument;
-  if (document === null) return;
-  let seen = 0;
-  for (const each of Array.from(document.querySelectorAll("[id]"))) {
-    if (each.id === id) seen += 1;
-    if (seen > 1) break;
+  if (document === null) return [];
+  // The ids this widget actually put on the page, taken from the page rather than from what it was
+  // going to call itself. Asked the other way round — "does anything else carry the widget id" — the
+  // guard checked an id a renderer need not publish at all: plain puts `when__label` and
+  // `when__trigger` on elements and nothing on `when`, so the count was always one and the check
+  // always passed, in the renderer whose ids are hand-written into consumers' pages the most.
+  const mine = new Set<string>();
+  if (element.id !== "") mine.add(element.id);
+  for (const each of Array.from(element.querySelectorAll("[id]"))) {
+    if (each.id !== "") mine.add(each.id);
   }
-  if (seen <= 1) return;
+  if (mine.size === 0) return [];
+
+  const seen = new Map<string, number>();
+  for (const each of Array.from(document.querySelectorAll("[id]"))) {
+    if (mine.has(each.id)) seen.set(each.id, (seen.get(each.id) ?? 0) + 1);
+  }
+  const shared = [...mine].filter((id) => (seen.get(id) ?? 0) > 1).sort();
+  if (shared.length === 0) return [];
+
   const say = warn ?? ((message: string) => console.warn(message));
   say(
-    `[modyra] Two elements on this page carry the id "${id}". A widget's ids come from its field's ` +
-    `path, so two forms built from the same document claim the same ones, and every reference to ` +
-    `this field resolves into whichever rendered last. ` +
+    `[modyra] Two elements on this page carry the id ${JSON.stringify(shared[0])}` +
+    (shared.length > 1 ? ` (and ${shared.length - 1} more from this field)` : "") +
+    `. A widget's ids come from its field's path, so two forms built from the same document claim ` +
+    `the same ones, and every reference to this field resolves into whichever rendered last. ` +
     (advice ?? "Give each form its own id scope."),
   );
+  return shared;
 }

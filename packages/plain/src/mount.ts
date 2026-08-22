@@ -210,7 +210,10 @@ export function mountMdyForm(
       root.dataset.mdyField = name;
       // Two forms built from one document claim one set of ids unless the host prefixes them. The
       // page still works for one of them, which is what makes it worth saying out loud.
-      reportIdCollision(root, widgetIdFor(name), "Pass a different `idPrefix` when mounting each form.");
+      // After the effect that writes the ids: this renderer's parts take theirs from the projection
+      // on the first pass, which is a microtask away, so asking now is asking before the field has
+      // published anything to collide with.
+      queueMicrotask(() => reportIdCollision(root, "Pass a different `idPrefix` when mounting each form."));
     }
   };
 
