@@ -296,9 +296,18 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
     return this.held(handle).map((v) => this.labelFor(v)).join(", ");
   }
 
+  /**
+   * Open or closed, decided by the controller and mirrored here.
+   *
+   * The element kept its own answer and never told the controller, so the two disagreed about a
+   * state only one of them owns: everything the controller derives from `open` — where the cursor
+   * is, whether it may be announced — was computed against a list it believed to be closed, and
+   * type-ahead moved a cursor `aria-activedescendant` then refused to name.
+   */
   protected override toggleOpen(handle: MdyFieldHandle<readonly unknown[]>): void {
     if (handle.disabled()) return;
-    this._open = !this._open;
+    this.fieldController?.dispatch({ type: "toggleOpen" });
+    this._open = this.fieldController?.state().open ?? !this._open;
     if (this._open) {
       this.overlay.open();
     } else {
@@ -318,6 +327,7 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
 
   protected override close(_handle: MdyFieldHandle<readonly unknown[]>): void {
     if (!this._open) return;
+    this.fieldController?.dispatch({ type: "close" });
     this._open = false;
     this.overlay.close();
   }
@@ -773,6 +783,16 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
     </div>`;
   }
 
+  /**
+   * The id the projection gives one option, put on the element that draws it.
+   *
+   * `aria-activedescendant` names an element. Without this the control pointed at an id nothing
+   * carried, so the cursor moved and a screen reader was told to look at nothing.
+   */
+  private optionDomId(option: MdySelectOption<unknown>): string | null {
+    return this.fieldController?.view().parts[String(option.value)]?.id ?? null;
+  }
+
   private renderOptionChip(
     handle: MdyFieldHandle<readonly unknown[]>,
     option: MdySelectOption<unknown>,
@@ -780,7 +800,11 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
     if (this.mode === "multi") {
       const count = this.counts(handle).get(String(option.value)) ?? 0;
       return html`<div
-        class=${multiselectChipClasses({ mode: "multi", selected: count > 0 }).join(" ")}
+        id=${this.optionDomId(option) ?? nothing}
+        class=${[
+          ...multiselectChipClasses({ mode: "multi", selected: count > 0 }),
+          ...(this.fieldController?.state().activeKey === String(option.value) ? ["mdy-chip--active"] : []),
+        ].join(" ")}
       >
         <button
           type="button"
@@ -806,7 +830,11 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
     const selected = this.isSelected(handle, option.value);
     return html`<button
       type="button"
-      class=${multiselectChipClasses({ mode: "single", selected }).join(" ")}
+      id=${this.optionDomId(option) ?? nothing}
+      class=${[
+        ...multiselectChipClasses({ mode: "single", selected }),
+        ...(this.fieldController?.state().activeKey === String(option.value) ? ["mdy-chip--active"] : []),
+      ].join(" ")}
       ?disabled=${handle.disabled()}
       aria-pressed=${selected ? "true" : "false"}
       title=${option.label}
