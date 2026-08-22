@@ -198,7 +198,10 @@ export class MdyDatepickerFieldElement extends MdyFieldElement<string | null> {
     calendarGridKey(e, this.view.viewMode, (intent) => this.send(intent), () => this.closePopup(handle));
   }
 
-  protected override updated(): void {
+  protected override updated(changed: Map<string, unknown>): void {
+    // The base names the control and reports an id this page already carries; skipping it left both
+    // to whichever kinds happened to call up.
+    super.updated(changed);
     if (this._open) {
       if (this.view.viewMode === "days") {
         this.querySelector<HTMLElement>(".mdy-datepicker__cell--focused")?.focus();
