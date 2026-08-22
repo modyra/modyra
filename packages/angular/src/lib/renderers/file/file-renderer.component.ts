@@ -120,7 +120,6 @@ export class MdyFileComponent extends MdyBaseControl<readonly File[] | null> {
   protected readonly rejectedNames = signal<readonly string[]>([]);
 
   protected readonly i18n = inject(MDY_I18N_MESSAGES);
-  protected readonly fieldId = `mdy-control-file-${MdyBaseControl.nextId()}`;
   protected readonly dragOver = signal(false);
   private readonly fileInput = viewChild<ElementRef<HTMLInputElement>>("fileInput");
 

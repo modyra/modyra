@@ -23,7 +23,6 @@ import {
   overlayControlledId,
   projectOverlayOpenerA11y,
 } from "@modyra/widgets";
-import { MdyBaseControl } from "../../control/control.directive";
 import { MdyErrorListComponent } from "../../control/error-list.component";
 import { MdyControlLabelComponent } from "../../control/mdy-control-label.component";
 import { MdyIconComponent } from "../../control/mdy-icon.component";
@@ -185,7 +184,6 @@ export class MdyDatePickerComponent extends MdyOverlayControl<string | null> {
   protected override readonly minSpace = 450;
 
   private readonly injector = inject(Injector);
-  protected readonly fieldId = `mdy-control-datepicker-${MdyBaseControl.nextId()}`;
 
   protected readonly controller = this.adoptFieldController(
     (handle, widgetId) => createDatepickerFieldController({

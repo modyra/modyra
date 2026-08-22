@@ -19,7 +19,6 @@ import {
 import { filterOptionsByQuery } from "@modyra/widgets";
 import { MDY_OVERLAY_PORTAL_CLASS } from "@modyra/widgets";
 import { MDY_WIDGET_CONTRACTS, createTypeahead, isTypeaheadCharacter, popupAlignmentClass, popupPlacementClass, optionsWithUnrecognizedValue, reconcileSelectValue, selectKeyboardAction, typeaheadMatch, overlayControlledId, projectOverlayOpenerA11y } from "@modyra/widgets";
-import { MdyBaseControl } from "../../control/control.directive";
 import { MdyErrorListComponent } from "../../control/error-list.component";
 import { MdyControlLabelComponent } from "../../control/mdy-control-label.component";
 import { MdyIconComponent } from "../../control/mdy-icon.component";
@@ -346,7 +345,6 @@ export class MdySelectComponent<TValue = string>
     }, { injector: this.injector });
   }
 
-  protected readonly fieldId = `mdy-control-select-${MdyBaseControl.nextId()}`;
 
   /** The id the opener names — the listbox, which is what carries the overlay's role. */
   protected readonly popupId = computed(() => overlayControlledId("select", this.fieldId) ?? "");

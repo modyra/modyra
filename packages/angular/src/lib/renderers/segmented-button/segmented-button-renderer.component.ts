@@ -107,7 +107,6 @@ export class MdySegmentedButtonComponent<TValue = unknown> extends MdyBaseContro
 
   public readonly fullWidth: InputSignalWithTransform<boolean, unknown> = input<boolean, unknown>(false, { transform: booleanAttribute });
 
-  protected readonly fieldId = `mdy-control-segmented-${MdyBaseControl.nextId()}`;
 
   private readonly controller = this.adoptFieldController(
     (handle, widgetId) => createOptionFieldController<TValue>(

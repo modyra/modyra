@@ -74,7 +74,6 @@ export class MdyTextareaComponent extends MdyBaseControl<string | null> {
   readonly placeholder = input<string>("");
   readonly rows = input<number>(3);
 
-  protected readonly fieldId = `mdy-control-textarea-${MdyBaseControl.nextId()}`;
 
   protected onInput(event: Event): void {
     this.dispatchValueIntent<string | null>("textarea", { type: "input", value: inputText(event) });

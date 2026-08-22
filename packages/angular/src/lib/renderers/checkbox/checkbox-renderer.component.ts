@@ -57,7 +57,6 @@ export class MdyCheckboxComponent extends MdyBaseControl<boolean> {
   protected readonly widgetContract = MDY_WIDGET_CONTRACTS.checkbox;
   protected override readonly widgetKind = "checkbox";
   protected readonly widgetHasRootClass = this.widgetContract.rootClasses.includes("mdy-renderer");
-  protected readonly fieldId = `mdy-control-checkbox-${MdyBaseControl.nextId()}`;
 
   private readonly controller = this.adoptFieldController((handle, widgetId) =>
     createBooleanFieldController({ widgetId, handle: handle as never, variant: "checkbox" }));

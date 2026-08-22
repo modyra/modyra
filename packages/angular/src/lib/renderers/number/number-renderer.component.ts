@@ -94,7 +94,6 @@ export class MdyNumberComponent extends MdyBaseControl<number | null> {
     return { min: this.minValue(), max: this.maxValue(), step: this.step() };
   }
 
-  protected readonly fieldId = `mdy-control-number-${MdyBaseControl.nextId()}`;
 
   protected onInput(event: Event): void {
     this.dispatchValueIntent<number | null>("number", { type: "input", value: inputNumber(event) });

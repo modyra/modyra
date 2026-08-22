@@ -68,7 +68,6 @@ export class MdyToggleComponent extends MdyBaseControl<boolean> {
   protected readonly widgetContract = MDY_WIDGET_CONTRACTS.toggle;
   protected override readonly widgetKind = "toggle";
   protected readonly widgetHasRootClass = this.widgetContract.rootClasses.includes("mdy-renderer");
-  protected readonly fieldId = `mdy-control-toggle-${MdyBaseControl.nextId()}`;
 
   private readonly controller = this.adoptFieldController((handle, widgetId) =>
     createBooleanFieldController({ widgetId, handle: handle as never, variant: "switch" }));

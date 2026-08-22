@@ -145,6 +145,38 @@ export abstract class MdyBaseControl<TValue = unknown> implements OnInit {
     () => this.field()?.path ?? this.name(),
   );
 
+  /**
+   * Which form on the page this control belongs to, where a host renders more than one.
+   *
+   * Unset is the ordinary case. Set, it scopes every id this control publishes, so two forms built
+   * from the same document do not both claim `when__label`. A single character neither part may
+   * contain joins them, so two distinct scopes cannot produce one id.
+   */
+  public readonly idScope = input<string>("");
+
+  /** What a control with no field falls back to. Not stable across mounts, because nothing about
+   *  such a control is. */
+  private readonly mountId = `mdy-control-${MdyBaseControl.nextId()}`;
+
+  /**
+   * The id every part of this control is built from.
+   *
+   * Derived from the field's own path (ADR 0135), so the same document renders the same ids every
+   * time: a consumer can write `aria-describedby="when__label"` in their own markup, a stylesheet or
+   * a test can name one, and server-rendered markup agrees with a client mount. A mount counter is a
+   * property of what else was on the page first, and made every one of those a guess.
+   *
+   * Two fields called `when` on one page collide, visibly, and that is the better failure: two
+   * counters never collide and never mean anything either. `idScope` is what a host with two forms
+   * uses to keep them apart.
+   */
+  protected get fieldId(): string {
+    const name = this.effectiveName();
+    if (!name) return this.mountId;
+    const scope = this.idScope();
+    return scope ? `${scope}-${name}` : name;
+  }
+
   /** The label text for the form control. */
   public readonly label = input<string>("");
 
@@ -479,8 +511,6 @@ export abstract class MdyBaseControl<TValue = unknown> implements OnInit {
     ).control,
   );
 
-  /** The renderer's own id, which the projection needs in order to name the parts it relates. */
-  protected abstract readonly fieldId: string;
 
   /**
    * The kind this renderer draws.

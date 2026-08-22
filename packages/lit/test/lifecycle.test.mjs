@@ -77,8 +77,11 @@ for (const kind of SUBJECTS) {
 }
 
 test("two live instances of a kind do not mint the same id", async () => {
-  const first = await mount("select");
-  const second = await mount("select");
+  // Two forms built from the same document, told apart the way ADR 0135 says a host tells them
+  // apart: ids are the field's path, so what keeps two of one document from claiming one id is the
+  // scope, not a counter that never collided and never meant anything either.
+  const first = await mount("select", { idScope: "one" });
+  const second = await mount("select", { idScope: "two" });
   await first.settle();
   await second.settle();
 

@@ -23,7 +23,6 @@ import {
   type MdyTimepickerViewMode,
   timepickerPlaceholder,
 } from "@modyra/widgets";
-import { MdyBaseControl } from "../../control/control.directive";
 import { MdyWidgetRuntime, timepickerCommandElements } from "../../widget-runtime";
 import { MdyErrorListComponent } from "../../control/error-list.component";
 import { MdyControlLabelComponent } from "../../control/mdy-control-label.component";
@@ -197,7 +196,6 @@ export class MdyTimepickerComponent extends MdyOverlayControl<string | null> {
     this.placeholder() || timepickerPlaceholder(this.format()),
   );
 
-  protected readonly fieldId = `mdy-control-timepicker-${MdyBaseControl.nextId()}`;
 
   /** The id the opener names — the dialog, which is what carries the overlay's role. */
   protected readonly popupId = computed(() => overlayControlledId("timepicker", this.fieldId) ?? "");
