@@ -1,24 +1,21 @@
 {
   "note": "Browser specs that are red because the defect they describe is open. A red listed here does not fail a build; a red that is not listed is a regression. Rewrite with `npm run battle:browser:ci -- --accept`.",
   "order": "Repair in severity order, as the node tier does. A spec's severity is the worst of the claims its header names; `unknown` is a spec that names none, which is most of them.",
-  "recordedAt": "2026-08-22T18:48:59Z",
-  "openReds": 12,
+  "recordedAt": "2026-08-22T18:58:22Z",
+  "openReds": 9,
   "bySeverity": {
     "S0": 3,
-    "S1": 9
+    "S1": 6
   },
   "knownRed": [
     "a-choice-made-before-anyone-looked.spec.ts › aiming at the middle of the field does not delete what it holds, angular",
     "a-choice-made-before-anyone-looked.spec.ts › aiming at the middle of the field does not delete what it holds, lit",
     "a-choice-made-before-anyone-looked.spec.ts › aiming at the middle of the field does not delete what it holds, plain",
-    "a-button-with-nothing-drawn-in-it.spec.ts › every control a chip carries draws something, angular",
-    "a-button-with-nothing-drawn-in-it.spec.ts › every control a chip carries draws something, lit",
-    "a-button-with-nothing-drawn-in-it.spec.ts › every control a chip carries draws something, plain",
-    "a-control-the-tree-does-not-carry.spec.ts › a chip's remove control reaches the accessibility tree, angular",
-    "a-control-the-tree-does-not-carry.spec.ts › a chip's remove control reaches the accessibility tree, lit",
-    "a-control-the-tree-does-not-carry.spec.ts › a chip's remove control reaches the accessibility tree, plain",
     "a-letter-typed-at-a-closed-list.spec.ts › a letter reaches a closed choice, plain",
     "a-row-system-three-renderers-disagree-about.spec.ts › a kind is inside the row system in every renderer, or outside it in every renderer",
-    "a-row-system-three-renderers-disagree-about.spec.ts › a kind is the same height in every renderer"
+    "a-row-system-three-renderers-disagree-about.spec.ts › a kind is the same height in every renderer",
+    "a-trigger-with-a-control-inside-it.spec.ts › the element that opens the list contains no other control, angular",
+    "a-trigger-with-a-control-inside-it.spec.ts › the element that opens the list contains no other control, lit",
+    "a-trigger-with-a-control-inside-it.spec.ts › the element that opens the list contains no other control, plain"
   ]
 }
