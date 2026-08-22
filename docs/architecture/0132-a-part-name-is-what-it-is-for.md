@@ -46,10 +46,27 @@ lit        no such id
 angular    no such id
 ```
 
-So the rename changes an id that is in a consumer's page today — a stylesheet may select it, their own
-`aria-describedby` may name it — and it does so **in one renderer of three**, because the other two
-never published it. That asymmetry is a defect of its own and is filed separately; it is not a reason
-to keep the name.
+So the rename changes an id that is in a consumer's page today, and it does so **in one renderer of
+three**, because the other two never published it. That asymmetry is a defect of its own and is filed
+separately; it is not a reason to keep the name.
+
+**Amendment, measured after the rename was done: the cost is narrower than the paragraph above first
+claimed.** It said a stylesheet may select the id. No CSS class moved — `mdy-select__list` was already
+the class under the old part name — so a consumer's stylesheet is untouched:
+
+```
+class           mdy-select__list       unchanged
+id              pick__listbox    →     pick__options
+aria-controls   follows the id, resolves
+```
+
+The migration is one line and it is narrower than *a part name changed*: **if you named
+`<widget>__listbox` in your own `aria-*` or in a selector on the id, it is `<widget>__options`.**
+Nothing about classes, and nothing at all for lit or Angular consumers.
+
+The correction is here rather than silently applied because a record that overstates a cost makes the
+next rename look more expensive than it is, and the next rename is the one this rule exists to make
+cheap.
 
 `contract:diff` will classify this, a changeset states the migration, and the standing authority in
 the project instructions say to ship what the tool classifies. The migration a consumer needs is one line: the
