@@ -13,6 +13,7 @@ import {
   colorValueEquals,
   colorValueTransition,
   defaultWidgetIdFactory,
+  keyBindingFor,
   overlayAnchoringFor,
   projectFieldShellA11y,
   visibleErrorsOf,
@@ -142,6 +143,32 @@ export function renderColorsField(
   for (const { preset, swatch } of swatches) {
     swatch.addEventListener("click", () => commit({ type: "preset", value: preset }));
   }
+  /**
+   * Walking the swatches, which are a listbox and answer like one.
+   *
+   * The row is real buttons, so the reading position is the focus itself — one stop moves with the
+   * arrows rather than a Tab per colour. The keys and the direction are the catalogue's: a row runs
+   * in the writing direction, and a renderer reading `ArrowLeft` as "back" would be wrong in a
+   * right-to-left document.
+   */
+  const moveThroughSwatches = (event: KeyboardEvent): boolean => {
+    if (!open()) return false;
+    const binding = keyBindingFor("colors", event.key, true);
+    if (!binding || binding.intent !== "move") return false;
+    const order = swatches.map(({ swatch }) => swatch);
+    const at = order.indexOf(document.activeElement as HTMLButtonElement);
+    const step = event.key === "ArrowUp" || event.key === "ArrowLeft" ? -1 : 1;
+    const to = event.key === "Home" ? 0
+      : event.key === "End" ? order.length - 1
+      : at === -1 ? (step === -1 ? order.length - 1 : 0)
+      : Math.max(0, Math.min(order.length - 1, at + step));
+    event.preventDefault();
+    order[to]?.focus();
+    return true;
+  };
+  presetList.addEventListener("keydown", (event) => { moveThroughSwatches(event); });
+  toggle.addEventListener("keydown", (event) => { moveThroughSwatches(event); });
+
   // Escape closes and hands focus back, from wherever the user is. This overlay does not take focus
   // when it opens, so listening on the popup alone left the palette impossible to dismiss by
   // keyboard from the control that opened it.

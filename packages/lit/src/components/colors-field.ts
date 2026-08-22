@@ -107,6 +107,30 @@ export class MdyColorsFieldElement extends MdyFieldElement<string | null> {
     super.disconnectedCallback();
   }
 
+  /**
+   * Walking the swatches, which are a listbox and answer like one.
+   *
+   * The row is real buttons, so the reading position is the focus itself — one stop that moves with
+   * the arrows rather than a Tab per colour. The keys are the catalogue's, and so is the direction:
+   * a row runs in the writing direction, and reading `ArrowLeft` as "back" is wrong in a
+   * right-to-left document.
+   */
+  private moveThroughSwatches(event: KeyboardEvent): void {
+    if (!this._open) return;
+    const binding = keyBindingFor("colors", event.key, true);
+    if (!binding || binding.intent !== "move") return;
+    const order = [...this.querySelectorAll<HTMLButtonElement>(`.${this.partClass("swatch")}`)];
+    if (order.length === 0) return;
+    const at = order.indexOf(document.activeElement as HTMLButtonElement);
+    const step = event.key === "ArrowUp" || event.key === "ArrowLeft" ? -1 : 1;
+    const to = event.key === "Home" ? 0
+      : event.key === "End" ? order.length - 1
+      : at === -1 ? (step === -1 ? order.length - 1 : 0)
+      : Math.max(0, Math.min(order.length - 1, at + step));
+    event.preventDefault();
+    order[to]?.focus();
+  }
+
   private renderDropdown(handle: MdyFieldHandle<string | null>): unknown {
     const position = this.overlay.state.position;
     return html`
@@ -118,7 +142,9 @@ export class MdyColorsFieldElement extends MdyFieldElement<string | null> {
             e.preventDefault();
             this.close(handle);
             this.restoreFocus();
+            return;
           }
+          this.moveThroughSwatches(e);
         }}
       >
         <div class="mdy-colors__dropdown-header">${this.messages.colorPresetsHeader}</div>
