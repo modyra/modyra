@@ -120,8 +120,21 @@ for (const host of HOSTS) {
     await page.waitForTimeout(360);
 
     // The control: the page moved. A reset that puts nothing back would otherwise pass.
-    expect(await shown(), "the page did not follow the values it was given")
-      .toEqual({ who: "from a fetch", many: true, when: "2026-04-03" });
+    //
+    // The date is read from the model and only counted as *changed* in the page. A date box shows a
+    // date in the reader's language, so the characters in it are one renderer's rendering of the
+    // value rather than the value — pinning them here would make this a test of date formatting
+    // wearing a reset test's name, and it would fail the one renderer that follows the reader.
+    const written = await shown();
+    expect({ who: written.who, many: written.many }, "the page did not follow the values it was given")
+      .toEqual({ who: "from a fetch", many: true });
+    expect(written.when, "the date box shows nothing after the model was given a date").not.toBe("");
+    expect(
+      await page.evaluate(({ api }) =>
+        (window as never as Record<string, { valueOf(i: string): Record<string, unknown> }>)[api].valueOf("r").when,
+        { api: host.api }),
+      "the form does not hold the date it was given",
+    ).toBe("2026-04-03");
 
     await page.evaluate(({ api }) => (window as never as Record<string, { reset(i: string): void }>)[api].reset("r"), { api: host.api });
     await page.waitForTimeout(380);

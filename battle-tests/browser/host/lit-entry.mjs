@@ -9,7 +9,7 @@
  * It exposes the same shape of operations as the Plain host where they mean the same thing, so a spec
  * can ask both renderers the same question.
  */
-import { parseDynamicForm, assertSafeDynamicFieldNames, buildDynamicFieldValidators, createLitForm, field, MDY_VALUE_CONTRACTS, parseDynamicFields } from "@modyra/lit/adapter";
+import { parseDynamicForm, assertSafeDynamicFieldNames, buildDynamicFieldValidators, createLitForm, field, mdyEmptyValueFor, parseDynamicFields } from "@modyra/lit/adapter";
 import { defineMdyElements, mdyLitTagFor } from "@modyra/lit/ui";
 import { documentProbes } from "./document-probes.mjs";
 
@@ -46,29 +46,6 @@ function handleFor(form, name) {
 const CONTROL_TYPE = {
   email: "email",
   password: "password",
-};
-
-/**
- * What a kind's value starts as, from the contract rather than from a list kept here.
- *
- * `MDY_VALUE_CONTRACTS` already says what shape a kind holds and whether it may be null, so a second
- * list beside it can only drift. It drifted once: the blank was chosen with `??`, which reads a
- * legitimate `null` as absent and fell through to `""` — so every nullable kind in this host started
- * as an empty string, and a battle reading a fresh number saw `""` where the contract says `null`.
- */
-const blankFor = (kind) => {
-  const contract = MDY_VALUE_CONTRACTS[kind];
-  if (contract === undefined) return "";
-  if (contract.nullable) return null;
-  switch (contract.shape) {
-    case "boolean": return false;
-    case "number": return 0;
-    case "option": return null;
-    case "option[]":
-    case "file[]": return [];
-    case "dateRange": return { start: null, end: null };
-    default: return "";
-  }
 };
 
 window.battleLit = {
@@ -118,7 +95,11 @@ window.battleLit = {
             // `field() was given "marksRequired", which it does not read` — noise on the console
             // channel a spec now reads for warnings that matter. The required marker is derived from
             // the validator regardless, so nothing is lost by not saying it twice.
-            field(each.initialValue === undefined ? blankFor(each.kind) : each.initialValue, built.validators ?? []),
+            // The starting value is the contract's own, which refuses an initial the kind cannot
+            // hold and names the mismatch on the console. A host that computes its own blank
+            // answers differently from the adapters that call this, and the difference reads as an
+            // adapter defect rather than as a host writing its own rule.
+            field(mdyEmptyValueFor(each), built.validators ?? []),
           ];
         }),
       );
