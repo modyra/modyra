@@ -16,6 +16,8 @@
  *
  * `file` is not swept: a File cannot be constructed from a value in the page, so there is nothing to
  * hand it that is not already what it holds.
+ *
+ * Claims under attack: UI-011, UI-006.
  */
 
 import { expect, test } from "@playwright/test";
