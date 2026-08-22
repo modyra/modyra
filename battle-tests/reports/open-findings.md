@@ -22241,3 +22241,43 @@ Node tier: `API-001` closed at `0883045e` — `field(initial, validators, option
 in the second position and refuses it at the door now. **One red left**, and it is the unowned
 `version: 1` disagreement.
 
+
+## 392 — the collision warning looks for an id plain never publishes (S2, A11Y-001)
+
+`reportIdCollision(element, id, advice)` counts elements whose id **equals** the one it is given. Each
+renderer hands it the widget id. Two of three put that id on an element; plain does not:
+
+```
+                ids under one datepicker                          bare widget id present
+angular         when__label · when · when__grid · when__day__…    yes
+lit             when__label · when · when__description            yes
+plain           when__label · when__trigger · when__grid · …      no
+```
+
+So plain's `reportIdCollision(root, widgetIdFor(name), …)` asks whether two elements carry `when`, and
+no element ever carries `when`. The count is one or zero, the guard returns early, and **two forms
+built from one document collide in silence in the one renderer whose ids are hand-written into
+consumers' pages the most.**
+
+Measured with two forms mounted from one declaration:
+
+```
+angular   warns once, with its own advice
+lit       silent
+plain     silent
+```
+
+**Angular's is the only one observed working.** lit publishes the bare id and stayed silent anyway, and
+I have not established why — its check may run before the element carries the id, or before the second
+form is in the document. That is where the next look starts; I am recording it rather than taking a
+seventh run at a file tonight.
+
+The warning itself is right, and the shape of the defect is one this register keeps meeting: **a guard
+that asks about something the thing it guards does not have.** It is the same as the keyboard sweep
+pressing a key at a part no control drew, and the same as a battle filtering structural parts by a name
+the catalogue had renamed — a check whose subject and whose question have drifted apart, and which
+therefore passes.
+
+Owned by `esecutore`. The fix is presumably to ask about an id the renderer actually publishes — the
+label's, or any part's — rather than the widget id, and that choice is theirs.
+
