@@ -491,7 +491,8 @@ export abstract class MdyFieldElement<T> extends LitElement {
         // value rather than on the rules.
         value: typeof handle.value() === "number" ? (handle.value() as number) : null,
         errorsVisible: this.showErrors(handle),
-        descriptionVisible: true,
+        // Only where there is something at the other end of the reference.
+        descriptionVisible: this.hasDescription(),
       },
     ).control;
   }
@@ -541,6 +542,19 @@ export abstract class MdyFieldElement<T> extends LitElement {
   /** What this kind says about itself in its own description. Empty unless a kind has something. */
   protected describedState(): string {
     return "";
+  }
+
+  /**
+   * Whether this element draws a description at all.
+   *
+   * The reference is only worth making when there is something at the other end: a control naming an
+   * empty description sends a reader somewhere to hear nothing, which costs them the move and
+   * teaches them not to follow the next one. Asked on every projection, because a host may supply
+   * the text after the element was built.
+   */
+  protected hasDescription(): boolean {
+    return Boolean(this.supportingText) || this.describedState() !== ""
+      || this.querySelector('[slot="supporting-text"]') !== null;
   }
 
   protected renderSupportingText(): unknown {

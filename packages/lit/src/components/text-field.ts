@@ -35,6 +35,7 @@ export class MdyTextFieldElement extends MdyFieldElement<string | null> {
       inputType: this.type,
       kind: this.widgetKind,
       autocomplete: this.autocomplete,
+      describes: () => this.hasDescription(),
     });
   }
 

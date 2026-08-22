@@ -83,6 +83,11 @@ export function createTextFieldController<TValue>(
       // the element afterwards, so there is no order of application to get right — and one place
       // answers "what does this control offer".
       constraints: narrowConstraints(handle.constraints(), narrowing?.()),
+      // Whether the renderer is drawing a description at all. A control that names an empty one
+      // sends a reader somewhere to hear nothing, which costs them the move and teaches them not to
+      // follow the next reference. Read on every projection, because a host may supply the text
+      // after the control was built.
+      descriptionVisible: options.describes?.() ?? true,
     });
 
     return {

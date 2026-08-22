@@ -30,6 +30,14 @@ export interface MdyTextFieldA11yOptions {
    * would be a renderer that could forget one, and two of them did.
    */
   readonly constraints?: MdyFieldConstraints;
+  /**
+   * Whether a description element is rendered at all.
+   *
+   * The reference is only worth making when there is something at the other end: a control naming an
+   * empty description sends a reader somewhere to hear nothing. Defaults to true, for a renderer that
+   * always draws the element.
+   */
+  readonly descriptionVisible?: boolean;
 }
 
 /** Builds the static IDs used by a field widget view. */
@@ -121,7 +129,7 @@ export function projectTextFieldA11y<TValue>(
             kind: options.kind ?? options.inputType,
             constraints: options.constraints,
             errorsVisible: tellingThem,
-            descriptionVisible: true,
+            descriptionVisible: options.descriptionVisible ?? true,
           },
         ).control.attributes,
         // The shell has no notion of read-only: it is a state only some kinds admit, and the field

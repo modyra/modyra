@@ -700,6 +700,8 @@ export function inspectWidgetDom(
   // The direction that matters is the missing one: a part carrying no reference at all has nothing
   // to dangle, so a field whose errors reach no assistive technology was indistinguishable from one
   // with no errors. A relation is required exactly when both ends are on screen.
+  const isOnScreen = (element: Element): boolean =>
+    !element.hasAttribute("hidden") && element.getAttribute("aria-hidden") !== "true";
   for (const relation of MDY_WIDGET_RELATIONS[kind]) {
     const carriers = resolved.get(relation.from) ?? [];
     if (carriers.length === 0) continue;
@@ -708,7 +710,7 @@ export function inspectWidgetDom(
     // are errors to read and at the supporting text otherwise, and the error list is in the document
     // either way — so "the first one rendered" would demand it name an empty list.
     const candidates = relation.to
-      .map((part) => ({ part, elements: resolved.get(part) ?? [] }))
+      .map((part) => ({ part, elements: (resolved.get(part) ?? []).filter(isOnScreen) }))
       .filter((candidate) => candidate.elements.length > 0);
     if (candidates.length === 0) continue;
     const target = { part: relation.to.join(" or "), elements: candidates.flatMap((c) => c.elements) };

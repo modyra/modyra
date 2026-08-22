@@ -10,6 +10,16 @@
 import type { MdyFieldConstraints, MdyFieldHandle } from "@modyra/core";
 
 export interface MdyTextFieldControllerOptions<TValue> {
+  /**
+   * Whether the renderer draws a description for this field, asked on every projection.
+   *
+   * A control that names an empty description sends a reader somewhere to hear nothing — it costs
+   * them the move and teaches them not to follow the next reference. Only the renderer knows: the
+   * text may be a host's supporting line, a slot, or a sentence the kind adds for itself. Absent,
+   * the control describes itself the way it always did.
+   */
+  readonly describes?: () => boolean;
+
   /** Stable identity for the widget instance. */
   readonly widgetId: string;
   /** Form engine handle that owns value/validation lifecycle. */
