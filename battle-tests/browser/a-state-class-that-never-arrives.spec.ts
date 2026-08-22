@@ -42,10 +42,10 @@
 import { expect, test } from "@playwright/test";
 import { MDY_FIELD_STATE_CLASSES, MDY_STATE_EXPRESSION, MDY_WIDGET_TRANSITIONS } from "@modyra/widgets";
 
-const HOSTS = [
-  { name: "plain", page: "/index.html", ready: "battleReady", api: "battle" },
-  { name: "lit", page: "/lit.html", ready: "battleLitReady", api: "battleLit" },
-];
+// **Every renderer, from the shared list.** The local list this replaced was not a scope
+// decision: the angular host published six of the twenty-two doors these specs need, so a
+// spec wanting one it lacked left the renderer out and the next reader copied the list.
+import { HOSTS } from "./bench";
 
 /** The kinds whose state is supposed to arrive as a modifier on the shared wrapper. */
 const BY_CLASS = Object.entries(MDY_STATE_EXPRESSION)

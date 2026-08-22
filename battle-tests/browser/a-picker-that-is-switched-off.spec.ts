@@ -17,10 +17,10 @@
 import { expect, test } from "@playwright/test";
 import { MDY_DISABLED_BLOCKS_TRANSITIONS, MDY_WIDGET_TRANSITIONS } from "@modyra/widgets";
 
-const HOSTS = [
-  { name: "plain", page: "/index.html", ready: "battleReady", api: "battle" },
-  { name: "lit", page: "/lit.html", ready: "battleLitReady", api: "battleLit" },
-];
+// **Every renderer, from the shared list.** The local list this replaced was not a scope
+// decision: the angular host published six of the twenty-two doors these specs need, so a
+// spec wanting one it lacked left the renderer out and the next reader copied the list.
+import { HOSTS } from "./bench";
 
 /** Every kind with a state to be blocked from reaching. */
 const KINDS = Object.entries(MDY_WIDGET_TRANSITIONS)
