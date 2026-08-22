@@ -400,8 +400,13 @@ export class MdyTimepickerFieldElement extends MdyFieldElement<string | null> {
    * draft is on, so a step resolved once would answer for the hour the popup opened at.
    */
   private stepsNow(): MdyTimeSteps {
+    // Unguarded, because `timeStepsAt` already answers for an hour it cannot place — a granularity
+    // with no windows applies at every hour, and one with windows falls back to its own steps. The
+    // guard asked whether a draft existed and, finding none, threw the whole granularity away: a
+    // field mounted empty drew all twenty-four hours and only began to honour a five-hour step once
+    // something had been chosen, which is after the moment it was for.
     const draft = this.fieldController?.state().draft;
-    return draft ? timeStepsAt(this.granularity, to24Hour(draft)) : MDY_EVERY_TIME;
+    return timeStepsAt(this.granularity, draft ? to24Hour(draft) : Number.NaN);
   }
 
   private stepSegment(event: KeyboardEvent, field: "hour" | "minute"): boolean {
