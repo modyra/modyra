@@ -5,18 +5,28 @@
  * a single value. The control has to say so before the person touches anything — and then behave
  * like a control that has been touched.
  *
- * **The count is the whole finding.** One chosen and the first press does nothing; two chosen and
- * the same press opens it, on the same control, with the same options behind it. That is why this
- * file mounts one and not two: a fixture choosing two options passes every assertion here while the
- * defect is fully present, and the case a person meets most is the one with a single value in it.
+ * **The tags a person has already chosen live inside the pressable area that opens the list, and
+ * each carries its own button that deletes it.** A press at the middle of the field — the place
+ * anyone aims to open a control — therefore lands on whatever happens to be under the middle, and
+ * with a single short value that is the delete button. The value is removed, the list does not open,
+ * and pressing again opens a field that has lost what it held.
  *
- * A control whose first press does nothing and whose second press works is not a slow control — it
- * is one that has taught the person their press does not count. They press twice from then on,
- * including where the second press closes what the first opened.
+ * **Which of the two happens is decided by the length of a word.** A short label leaves the ✕ near
+ * the centre; a longer one pushes it left and the same press opens the list normally. No code chooses
+ * that. Two people doing the identical thing get opposite outcomes because of how long their word is,
+ * which is why this cannot be repaired by moving anything a few pixels.
+ *
+ * That is also why this file mounts **one** chosen value and not two: with two, the strip is wide
+ * enough that the centre falls past the ✕, and every assertion here passes while the defect is fully
+ * present.
+ *
+ * The keyboard is unaffected — tab to the field, press the down arrow, the list opens and the value
+ * is untouched. It is the pointer alone, which is what makes it invisible to a suite that drives by
+ * key and to an accessibility sweep that finds every control correctly named.
  *
  * The strip is asserted beside it because the two are read together: what the strip shows must be
- * what the form holds, and a strip that is right while the press is dead is a control that looks
- * correct and is not.
+ * what the form holds, and a strip that is right while the aim point destroys it is a control that
+ * looks correct and is not.
  *
  * The press is made after the mount has settled, because a node addressed during a re-render is
  * pressed after it has been replaced, and the press then lands on an element the document has
@@ -82,33 +92,34 @@ for (const host of HOSTS) {
       .toEqual(CHOSEN_LABELS);
   });
 
-  test(`the first press opens a control that already holds a value, ${host.name}`, async ({ page }) => {
+  test(`aiming at the middle of the field does not delete what it holds, ${host.name}`, async ({ page }) => {
     await mountChosen(page, host);
 
     const trigger = page.locator('[data-form="chosen"] .mdy-multiselect__trigger');
     await expect(trigger).toHaveCount(1, { timeout: 5_000 });
-    expect(await expanded(page), `${host.name} came up already open`).toBe("false");
+
+    // The centre of the control, which is where a person aims to open it. Not a part selector: the
+    // question is what occupies that point, and naming a part would presuppose the answer.
+    const under = await page.evaluate(() => {
+      const box = document.querySelector('[data-form="chosen"] .mdy-multiselect__trigger')?.getBoundingClientRect();
+      if (box === undefined) return "none";
+      const element = document.elementFromPoint(box.x + box.width / 2, box.y + box.height / 2);
+      return element === null ? "none" : `${element.tagName}.${element.className.split(/\s+/)[0]}`;
+    });
 
     await trigger.click({ timeout: 5_000 });
-    const afterOne = await page.waitForFunction(
-      () => document.querySelector('[data-form="chosen"] .mdy-multiselect__trigger')?.getAttribute("aria-expanded") === "true",
-      undefined,
-      { timeout: 3_000 },
-    ).then(() => true).catch(() => false);
+    await page.waitForTimeout(400);
 
-    if (!afterOne) {
-      await trigger.click({ timeout: 5_000 });
-      const afterTwo = await page.waitForFunction(
-        () => document.querySelector('[data-form="chosen"] .mdy-multiselect__trigger')?.getAttribute("aria-expanded") === "true",
-        undefined,
-        { timeout: 3_000 },
-      ).then(() => true).catch(() => false);
-      // Naming which of the two it is, because they need different repairs: a press that never
-      // arrives is a listener problem, a press that arrives and is swallowed is a state problem.
-      expect(afterOne, `${host.name} ignored the first press on a control holding a value and opened on the ${afterTwo ? "second" : "neither"}`)
-        .toBe(true);
-    }
-    expect(afterOne).toBe(true);
+    const held = await page.evaluate(({ api }) =>
+      (window as never as Api)[api].valueOf("chosen" as never) as unknown as Record<string, unknown>, { api: host.api });
+
+    expect(
+      held.s,
+      `${host.name}: pressing the middle of the field lands on ${under} and the value went from `
+      + `${JSON.stringify(CHOSEN)} to ${JSON.stringify(held.s)} — the control that deletes sits where a person aims to open`,
+    ).toEqual(CHOSEN);
+
+    expect(await expanded(page), `${host.name} did not open on a press at the middle of its own trigger`).toBe("true");
   });
 
   test(`the keyboard opens a control that already holds a value, ${host.name}`, async ({ page }) => {

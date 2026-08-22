@@ -1,18 +1,22 @@
 {
   "note": "Browser specs that are red because the defect they describe is open. A red listed here does not fail a build; a red that is not listed is a regression. Rewrite with `npm run battle:browser:ci -- --accept`.",
   "order": "Repair in severity order, as the node tier does. A spec's severity is the worst of the claims its header names; `unknown` is a spec that names none, which is most of them.",
-  "recordedAt": "2026-08-22T18:29:54Z",
-  "openReds": 6,
+  "recordedAt": "2026-08-22T18:42:58Z",
+  "openReds": 10,
   "bySeverity": {
     "S0": 3,
-    "S1": 3
+    "S1": 7
   },
   "knownRed": [
-    "a-choice-made-before-anyone-looked.spec.ts › the first press opens a control that already holds a value, angular",
-    "a-choice-made-before-anyone-looked.spec.ts › the first press opens a control that already holds a value, lit",
-    "a-choice-made-before-anyone-looked.spec.ts › the first press opens a control that already holds a value, plain",
+    "a-choice-made-before-anyone-looked.spec.ts › aiming at the middle of the field does not delete what it holds, angular",
+    "a-choice-made-before-anyone-looked.spec.ts › aiming at the middle of the field does not delete what it holds, lit",
+    "a-choice-made-before-anyone-looked.spec.ts › aiming at the middle of the field does not delete what it holds, plain",
+    "a-button-with-nothing-drawn-in-it.spec.ts › every control a chip carries draws something, angular",
+    "a-button-with-nothing-drawn-in-it.spec.ts › every control a chip carries draws something, lit",
+    "a-button-with-nothing-drawn-in-it.spec.ts › every control a chip carries draws something, plain",
     "a-letter-typed-at-a-closed-list.spec.ts › a letter reaches a closed choice, plain",
     "a-row-system-three-renderers-disagree-about.spec.ts › a kind is inside the row system in every renderer, or outside it in every renderer",
-    "a-row-system-three-renderers-disagree-about.spec.ts › a kind is the same height in every renderer"
+    "a-row-system-three-renderers-disagree-about.spec.ts › a kind is the same height in every renderer",
+    "one-gesture-three-answers.spec.ts › one press down reaches one value for a timepicker, in every renderer"
   ]
 }
