@@ -1,25 +1,28 @@
 /**
  * A chip that carries a quantity says what the quantity is, and lets a keyboard change it.
  *
- * In counter mode a chip shows a number between two steppers. Today the number is text and the
- * steppers are buttons, so what a person hears is a name and a count read out as part of a label, and
- * what changes it is a live region announcing after the fact.
+ * In counter mode a chip shows a number between two steppers. This spec once argued that the number
+ * had to be `role="spinbutton"` on the chip itself, and won: a spinbutton announces its value
+ * natively when it moves, and `aria-valuenow` is a fact a reader can ask for rather than a sentence
+ * it has to catch.
  *
- * The published answer is `role="spinbutton"` — or a real number input — because then the value is
- * announced natively when it changes, `ArrowUp` and `ArrowDown` adjust it, and `aria-valuenow` is a
- * fact a reader can ask for rather than a sentence it has to catch. Two buttons around a static
- * number plus a region kept in step is the shape that drifts.
+ * [ADR 0138](../../docs/architecture/0138-a-chip-is-an-item-not-a-number.md) reversed that, and the
+ * reason is stronger than the one it beat: a `spinbutton` cannot carry `aria-posinset`, so a chip
+ * cannot be both the number 3 of a range and the item at position 3 of 12. Making only the quantity
+ * chip a spinbutton would give the strip one role while nobody has taken two of anything and another
+ * role the moment somebody does — a keyboard model that changes underneath a person as a consequence
+ * of what they chose.
  *
- * **[ADR 0128](../../docs/architecture/0128-a-chip-is-one-thing-not-a-cell.md) narrows this and the
- * narrowing is the point**: the spinbutton must *be* the chip, not a focusable child of it. That
- * record made the strip one tab stop by taking the chip's own controls out of the tab order, and a
- * spinbutton nested inside a chip would put one back — the same trade grid was rejected for.
+ * So the quantity is now stated in the chip's accessible name, and the native announcement is
+ * replaced by a deliberate one. **That is exactly why this spec must not be deleted.** Where a
+ * spinbutton failed loudly — no `aria-valuenow`, visible to any auditor — a name that stops
+ * including the count fails silently, and ADR 0138 names this as the cost it has not paid for.
  *
- * So the assertions are three, and the third is what stops a plausible wrong answer:
+ * The assertions are the property, and they hold under either mechanism:
  *
- *   - the quantity is exposed as a value, not only drawn;
- *   - `ArrowUp` and `ArrowDown` change it from the keyboard;
- *   - crossing the field still costs what it cost, so the fix did not buy the value back with a stop.
+ *   - a person is told the quantity, by whatever means the renderer uses to say it;
+ *   - `ArrowUp` and `ArrowDown` change it without a pointer;
+ *   - crossing the field still costs what it cost, so nothing bought the value back with a tab stop.
  *
  * Claims under attack: A11Y-001, UI-011.
  */
@@ -38,12 +41,29 @@ for (const host of HOSTS) {
       const strip = document.querySelector(sel)?.querySelector(".mdy-multiselect__chips");
       if (strip === null || strip === undefined) return null;
       return Array.from(strip.querySelectorAll(".mdy-chip")).map((chip) => {
+        // Either way of saying it counts. A spinbutton states the value in `aria-valuenow`; a
+        // listitem states it in its accessible name. What is refused is a chip that draws a number
+        // and tells nobody — which is the same defect under both mechanisms.
         const spin = chip.getAttribute("role") === "spinbutton" ? chip : chip.querySelector('[role="spinbutton"], input[type="number"]');
+        const name = chip.getAttribute("aria-label") ?? (chip.textContent ?? "").trim();
+        const drawn = (chip.querySelector(".mdy-chip__count")?.textContent ?? "").trim();
         return {
-          name: chip.getAttribute("aria-label") ?? (chip.textContent ?? "").trim(),
-          isTheChip: spin === chip,
+          name,
+          // A focusable descendant is what ADR 0128 refuses; a chip that is itself the thing, or a
+          // chip that states its quantity in its own name, both keep the strip one tab stop.
+          isTheChip: spin === null || spin === chip,
           now: spin?.getAttribute("aria-valuenow") ?? (spin as HTMLInputElement | null)?.value ?? null,
-          min: spin?.getAttribute("aria-valuemin") ?? null,
+          drawn,
+          // The number is stated if a reader can obtain it: exposed as a value, or present in the
+          // name the chip announces itself with.
+          //
+          // A chip that draws **no** number is not in scope. One of something is the default and the
+          // renderers draw nothing for it, so a chip with no quantity on screen has no quantity to
+          // state — reading that as silence made this check red against every renderer for a chip
+          // that was behaving correctly.
+          statesIt: drawn === ""
+            || (spin?.getAttribute("aria-valuenow") ?? null) !== null
+            || name.includes(drawn),
         };
       });
     }, root);
@@ -54,18 +74,19 @@ for (const host of HOSTS) {
     // did, in another spec, for most of an evening.
     expect(stated!.length, "the counter fixture drew fewer chips than it chose").toBeGreaterThan(1);
 
-    const silent = stated!.filter((chip) => chip.now === null);
+    const silent = stated!.filter((chip) => !chip.statesIt);
     expect(
-      silent.map((chip) => chip.name),
-      `${silent.length} of ${stated!.length} chips draw a quantity and expose none — a reader is given ` +
-        `the number as part of a label and told about a change only by a live region kept in step by ` +
-        `hand. A spinbutton announces the value natively when it moves`,
+      silent.map((chip) => ({ name: chip.name, drawn: chip.drawn })),
+      `${silent.length} of ${stated!.length} chips draw a quantity and state none — the number is on ` +
+        `the screen and a reader cannot obtain it, neither as a value nor in the name the chip ` +
+        `announces itself with. ADR 0138 gave up the spinbutton's native announcement on the ` +
+        `understanding that a deliberate one would replace it; this is that understanding, unmet`,
     ).toEqual([]);
 
     expect(
       stated!.every((chip) => chip.isTheChip),
-      "the quantity is exposed on a child of the chip rather than on the chip itself, which puts a " +
-        "focusable thing back inside a strip that ADR 0128 made one tab stop",
+      "the quantity is exposed on a focusable child of the chip rather than on the chip itself, " +
+        "which puts a stop back inside a strip that ADR 0128 made one",
     ).toBe(true);
   });
 
