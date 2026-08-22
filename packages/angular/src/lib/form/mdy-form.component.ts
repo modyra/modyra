@@ -4,6 +4,7 @@ import {
   Component,
   computed,
   DestroyRef,
+  afterNextRender,
   effect,
   forwardRef,
   inject,
@@ -229,15 +230,27 @@ export class MdyFormComponent<
     });
 
     // Draft autosave for declarative mode (first non-empty key wins).
+    //
+    // Enabled after the first render, not during construction, because **a stored draft belongs to a
+    // shape**: the engine names the form by the paths it holds, and a declarative form holds none
+    // until its controls have claimed their fields. Enabled a moment too early, the restore compared
+    // a draft written by a form of one field against a form of none, refused it as another form's
+    // work — correctly, by its own rule — and the page came up empty while the draft sat in storage
+    // untouched. The writing half worked throughout, which is what made it look like it worked.
     effect(() => {
       const key = this.draftKey();
       untracked(() => {
-        if (key && !this.form() && !this.adapter()) {
-          this._declarativeAdapter.enableDraft({ key });
-        }
+        if (!key || this.form() || this.adapter()) return;
+        afterNextRender(
+          () => this._declarativeAdapter.enableDraft({ key }),
+          { injector: this._draftInjector },
+        );
       });
     });
   }
+
+  /** Where the deferred draft start is scheduled from; the constructor is an injection context. */
+  private readonly _draftInjector = inject(Injector);
 
   claimField(name: string): void {
     this._registry.claimField(name);
