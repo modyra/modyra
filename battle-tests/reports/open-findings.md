@@ -22326,3 +22326,36 @@ both flush after both carry their ids, in which case each would see two and this
 But the line is wrong either way, and it is the only candidate the look left standing once the dev flag
 and the missing code were ruled out.
 
+
+### 359c — the freshness guard marked one package where the shape covers all of them
+
+`assert-fresh` carried `via: "dist"` on `angular` alone, on the reasoning that the browser tier
+rebuilds the others every run so the host's own mtime answers for them. **That holds only while their
+build succeeds.**
+
+`tsc7` failed on lit tonight — two files, a missing export — and the shape opened: `dist` keeps the
+previous output, `build.mjs` bundles it, the host is newer than every source, and the guard passes
+while the page under test is not the code in the tree. Every package goes `src -> dist -> host`; only
+one was checked that way.
+
+Fixed for all of them, and the sentence I said to `esecutore` — *lit's chain is different because the
+tier rebuilds it every run* — was written by the same hand that had already fixed this for Angular and
+not generalised it. **Closing the instance and leaving the shape is the mistake this register has now
+recorded four times**, twice against me.
+
+**And it still cannot see a partial build.** TypeScript emits despite errors unless told not to, so a
+compile that reported two failures left a `dist` newer than its source, and the guard is right to pass
+it. What catches that is the build's exit code — the phantom-script lesson, and the reason a redirect
+that swallows it is worth more scrutiny than any guard.
+
+### 392's lit half: two measurements disagree
+
+The host bundle carries the repaired code — `_saidCollision` as a Set, three occurrences, matching
+`dist` — and lit still emits no collision warning in the browser host with two forms mounted from one
+declaration. `esecutore` reports all three warning.
+
+Recorded rather than resolved, because **every disagreement tonight came from two verification paths
+measuring different things** — a package test in jsdom and a spec in a real document are not the same
+question, and the last four times one of us was sure, the fixture was the answer. The next step is
+whichever of us can say what the other's path does that theirs does not.
+

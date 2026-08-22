@@ -83,8 +83,22 @@ const SOURCES = [
   { name: "styles" },
   { name: "plain" },
   { name: "lit" },
-  { name: "angular", via: "dist" },
+  { name: "angular" },
 ];
+
+/**
+ * Every one of them goes `src → dist → host`, and the middle link is the one that can be missing.
+ *
+ * This once marked `angular` alone, on the reasoning that the browser tier rebuilds the others every
+ * run so the host's own mtime answers for them. **That is true only while their build succeeds.** When
+ * `tsc7` fails on lit, `dist` keeps yesterday's output, `build.mjs` bundles it, the host is newer than
+ * every source — and the guard passes while the page under test is not the code in the tree.
+ *
+ * It happened, and the confident sentence that lit's chain was different was written by the same hand
+ * that had already fixed this for Angular and not generalised it. Checking `src` against `dist` for
+ * all of them closes the shape rather than the instance, and costs one `readdir` per package.
+ */
+const VIA_DIST = new Set(SOURCES.map(({ name }) => name));
 
 const SOURCE_KINDS = [".ts", ".mjs", ".js", ".css"];
 const BUILT_KINDS = [".js", ".mjs", ".css", ".html"];
@@ -103,16 +117,19 @@ for (const { name, via } of SOURCES) {
 
   // The artefact the host actually bundles. Where a package has an intermediate build, that build is
   // what must be newer than the source; the host being newer than both says nothing about it.
-  const bundledAt = via === undefined ? builtAt : newestUnder(join(ROOT, "packages", name, via), BUILT_KINDS);
-  if (via !== undefined && bundledAt === 0) {
-    stale.push({ name, behindBy: 0, why: `has no ${via}/ to bundle` });
+  const distAt = VIA_DIST.has(name) ? newestUnder(join(ROOT, "packages", name, "dist"), BUILT_KINDS) : 0;
+  // A package with no `dist` at all has never been built; one whose `dist` is older than its source
+  // has a build that did not happen, which under a redirect is indistinguishable from one that did.
+  if (VIA_DIST.has(name) && distAt === 0) {
+    stale.push({ name, behindBy: 0, why: "has no dist/ to bundle" });
     continue;
   }
+  const bundledAt = distAt === 0 ? builtAt : Math.min(distAt, builtAt);
   if (sourceAt > bundledAt) {
     stale.push({
       name,
       behindBy: Math.round((sourceAt - bundledAt) / 1000),
-      why: via === undefined ? undefined : `${via}/ is older than src/`,
+      why: distAt !== 0 && distAt < sourceAt ? "dist/ is older than src/" : undefined,
     });
   }
 }
