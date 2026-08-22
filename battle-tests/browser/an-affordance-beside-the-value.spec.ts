@@ -82,13 +82,22 @@ for (const host of HOSTS) {
         const field = document.querySelector(`${selector} .mdy-input-wrapper`);
         if (field === null) return null;
         const box = field.getBoundingClientRect();
-        const affordances = declared === "" ? [] : Array.from(field.querySelectorAll(declared));
-        // A kind with no trailing control has no column to be wrong about.
+        // **Only affordances that are drawn.** An element the stylesheet hides has a rect of
+        // `(0, 0, 0, 0)` — that is not a position, it is the absence of one, and reading it as a
+        // position places the element at the page's origin. A column measured that way reports the
+        // distance to something nobody can see, and the number it returns is the width of the
+        // viewport rather than anything about the field.
+        const affordances = (declared === "" ? [] : Array.from(field.querySelectorAll(declared)))
+          .filter((element) => {
+            const rect = element.getBoundingClientRect();
+            if (rect.width === 0 && rect.height === 0) return false;
+            const style = getComputedStyle(element as HTMLElement);
+            return style.display !== "none" && style.visibility !== "hidden";
+          });
+        // A kind with no trailing control drawn has no column to be wrong about.
         if (affordances.length === 0) return { none: true };
-        const rightmost = affordances
-          .map((element) => element.getBoundingClientRect())
-          .reduce((furthest, rect) => (rect.right > furthest.right ? rect : furthest));
         const boxes = affordances.map((element) => element.getBoundingClientRect());
+        const rightmost = boxes.reduce((furthest, rect) => (rect.right > furthest.right ? rect : furthest));
         const leftmost = boxes.reduce((nearest, rect) => (rect.left < nearest.left ? rect : nearest));
         return {
           none: false,
