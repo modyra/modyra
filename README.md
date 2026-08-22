@@ -17,6 +17,10 @@ or with no framework at all.
 [![TypeScript](https://img.shields.io/badge/TypeScript-strict-blue)](https://www.typescriptlang.org)
 [![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 
+[![A fifty-second demo: one contract typed live beside its JSON state, the same contract under
+three themes and dark mode, then a field added in Studio and exported as a
+contract](site/public/demo/modyra-demo-poster.png)](https://modyra.github.io/modyra/#demo-heading)
+
 ## The problem
 
 The same business form gets rebuilt in every application that shows it. The Angular portal has one
