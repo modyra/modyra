@@ -793,6 +793,9 @@ export function renderMultiselectField(
     // After the chips are in place: the measurement is of what was drawn, not of what is about to be.
     queueMicrotask(syncOverflow);
     clearAll.disabled = blocked;
+    // Out of play for this one as well: a field whose ARIA says disabled while a button beside it
+    // still answers is disabled in appearance only.
+    overflow.disabled = blocked;
     const back = state.wayBack;
     wayBack.hidden = back === null;
     wayBackAction.disabled = blocked;
