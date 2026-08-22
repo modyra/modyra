@@ -229,11 +229,15 @@ import type { MdyOverlayBranch, MdyOverlayOwner } from "../../core/overlay-contr
            closed, reachable by a screen reader and countable by anything walking the field. -->
       @if (open()) {
         @if (searchable()) {
+        <!-- A placeholder is not a name: it is gone the moment somebody types into the box, so a box
+             named only by one is announced as nothing exactly while it is being used. -->
         <input
           #overlayInput
           type="text"
           class="mdy-multiselect-overlay__input"
           [placeholder]="i18n.searchPlaceholder"
+          [attr.aria-label]="i18n.searchOptionsLabel"
+          [attr.aria-controls]="optionsGridId()"
           autocomplete="off"
           [value]="searchQuery()"
           (input)="onSearchInput($event)"

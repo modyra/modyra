@@ -237,8 +237,10 @@ import { MdyDropdownBase } from "../dropdown-base";
                 {{ placeholder() || ' ' }}
               </option>
             }
+            <!-- An option a document closed is one nobody can choose. Drawn without the attribute, a
+                 native list offered it like any other and took it when it was picked. -->
             @for (opt of renderedOptions(); track opt.value) {
-              <option [value]="opt.value" [selected]="opt.value == value()">
+              <option [value]="opt.value" [selected]="opt.value == value()" [disabled]="opt.disabled === true">
                 {{ opt.label }}
               </option>
             }

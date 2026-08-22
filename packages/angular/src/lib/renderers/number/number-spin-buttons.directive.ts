@@ -1,4 +1,4 @@
-import { Directive, ElementRef, inject, input, OnInit, Renderer2 } from "@angular/core";
+import { Directive, effect, ElementRef, inject, Injector, input, OnInit, Renderer2 } from "@angular/core";
 import { MDY_ICONS } from "@modyra/widgets";
 import { MDY_I18N_MESSAGES } from "../../core/i18n";
 
@@ -8,6 +8,11 @@ import { MDY_I18N_MESSAGES } from "../../core/i18n";
 })
 export class MdyNumberSpinButtonsDirective implements OnInit {
   readonly mdyNumberSpinButtons = input.required<boolean | string>();
+
+  /** Whether the field these belong to is out of play. */
+  readonly mdyNumberSpinButtonsDisabled = input<boolean>(false);
+
+  private readonly injector = inject(Injector);
 
   private readonly i18n = inject(MDY_I18N_MESSAGES);
   private readonly el = inject<ElementRef<HTMLInputElement>>(ElementRef);
@@ -61,6 +66,17 @@ export class MdyNumberSpinButtonsDirective implements OnInit {
 
     upBtn.addEventListener("click", () => this.step(input, +1));
     downBtn.addEventListener("click", () => this.step(input, -1));
+
+    // A field out of play has no operable furniture. The steppers step the box, so they are as
+    // unavailable as it is — and a `<button>` inside a disabled field that is not itself disabled is
+    // a tab stop the field no longer has and a control the state audit reports as unpainted.
+    effect(() => {
+      const off = this.mdyNumberSpinButtonsDisabled();
+      for (const button of [upBtn, downBtn] as HTMLButtonElement[]) {
+        button.disabled = off;
+        button.setAttribute("aria-hidden", off ? "true" : "false");
+      }
+    }, { injector: this.injector });
   }
 
   private step(input: HTMLInputElement, dir: 1 | -1): void {

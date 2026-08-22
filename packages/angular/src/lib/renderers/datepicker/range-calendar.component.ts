@@ -75,6 +75,7 @@ type RangePhase = "pick-start" | "pick-end";
       </div>
     } @else if (view() === "months") {
       <mdy-month-picker
+        [widgetId]="widgetId()"
         [viewYear]="viewYear()"
         [minDate]="minDate()"
         [maxDate]="maxDate()"
@@ -83,6 +84,7 @@ type RangePhase = "pick-start" | "pick-end";
       />
     } @else if (view() === "years") {
       <mdy-year-picker
+        [widgetId]="widgetId()"
         [currentYear]="viewYear()"
         [minDate]="minDate()"
         [maxDate]="maxDate()"

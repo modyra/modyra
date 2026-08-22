@@ -32,6 +32,10 @@ import type { MdyTimeFormat } from "@modyra/core/datetime";
         (focus)="handleFocus()"
         (click)="handleClick()"
         [attr.aria-label]="label()"
+        [attr.role]="'spinbutton'"
+        [attr.aria-valuemin]="bounds().min"
+        [attr.aria-valuemax]="bounds().max"
+        [attr.aria-valuenow]="value()"
       />
       @if (showLabel()) {
         <span class="mdy-timepicker-segment-label">{{ label() }}</span>
@@ -71,7 +75,15 @@ export class MdyTimepickerSegmentComponent {
     "readonly",
   );
 
-  /** The range the contract states for this segment, rather than a literal beside the template. */
+  /**
+   * The range the contract states for this segment, rather than a literal beside the template.
+   *
+   * It answers the native `min`/`max` and the spoken `aria-valuemin`/`aria-valuemax` from one place:
+   * a 24-hour face whose reader is told the maximum is 12 states one of two ranges falsely, and a
+   * reader has no way to see which. The segment is declared a spinbutton by the catalogue, and a
+   * control that carries neither the role nor the number is announced as an edit box holding
+   * nothing.
+   */
   protected readonly bounds = computed(() => timeFieldBounds(this.unit(), this.format(), this.steps()));
 
   /**

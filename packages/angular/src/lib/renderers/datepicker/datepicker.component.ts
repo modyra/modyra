@@ -24,6 +24,7 @@ import {
   MDY_WIDGET_CONTRACTS,
   overlayControlledId,
   projectOverlayOpenerA11y,
+  type MdyPartContract,
 } from "@modyra/widgets";
 import { MdyErrorListComponent } from "../../control/error-list.component";
 import { MdyControlLabelComponent } from "../../control/mdy-control-label.component";
@@ -237,9 +238,34 @@ export class MdyDatePickerComponent extends MdyOverlayControl<string | null> {
   protected readonly popupId = computed(() => overlayControlledId("datepicker", this.fieldId) ?? "");
 
   /** The relation between this widget's opener and the overlay it opens. */
-  protected readonly openerPart = computed(
-    () => projectOverlayOpenerA11y("datepicker", { widgetId: this.fieldId, open: this.open() })!,
-  );
+  /**
+   * What the opener says about the popup, naming whichever view is on screen.
+   *
+   * The day grid is one of three: choosing the month or the year replaces it, and an `aria-controls`
+   * fixed on the grid then names an element that has been taken away. A reference that goes stale on
+   * a view change is the same defect as one that was never right.
+   */
+  protected readonly openerPart = computed(() => {
+    const projected = projectOverlayOpenerA11y("datepicker", { widgetId: this.fieldId, open: this.open() })!;
+    const mode = this.controller()?.state().viewMode ?? "days";
+    if (mode === "days") return projected;
+    return {
+      ...projected,
+      attributes: { ...projected.attributes, "aria-controls": `${this.fieldId}__${mode}` },
+    };
+  });
+
+  /**
+   * The same statement without the role, for the icon button beside the control.
+   *
+   * A combobox is the element that holds the value; the button that opens its popup is not one. What
+   * it controls is the same answer as the control's, so it is taken from there rather than projected
+   * again — projected again, it named the day grid while a year list was on screen.
+   */
+  protected override openerButtonPart(): MdyPartContract {
+    const { role: _role, ...withoutRole } = this.openerPart();
+    return withoutRole;
+  }
 
   protected readonly i18n = inject(MDY_I18N_MESSAGES);
   private readonly calendarRef = viewChild<MdyCalendarComponent>("calendar");

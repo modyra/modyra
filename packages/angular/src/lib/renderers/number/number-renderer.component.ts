@@ -56,6 +56,7 @@ import { inputNumber } from "../renderer-projection";
         [attr.aria-label]="controlAriaLabel()"
         [mdyPart]="controlPart()"
         [mdyNumberSpinButtons]="showSpinButtons()"
+        [mdyNumberSpinButtonsDisabled]="isDisabled()"
       />
       @if (suffix(); as s) {
         <div class="mdy-input-suffix">
@@ -85,7 +86,15 @@ export class MdyNumberComponent extends MdyBaseControl<number | null> {
   readonly minValue = input<number | null>(null);
   readonly maxValue = input<number | null>(null);
   readonly step = input<number | null>(null);
-  readonly showSpinButtons = input<boolean>(false);
+  /**
+   * Whether this field draws the two steppers the catalogue declares for it.
+   *
+   * On by default, because the parts are the kind's anatomy: they carry `mdy-spin-btn`, the themes
+   * paint them, and the native control's own arrows are suppressed by the foundation — so a field
+   * that draws neither has no stepping affordance at all where the other renderers of this kind
+   * have one. A consumer that wants the box alone turns them off.
+   */
+  readonly showSpinButtons = input<boolean>(true);
 
   /**
    * What this control asks for on top of the field's rules. It can only narrow: the projection takes

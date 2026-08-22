@@ -30,11 +30,10 @@ export const MDY_WIDGET_CONTRACTS = Object.freeze({
   password: define("password", ["mdy-renderer", "mdy-renderer--text"], ["root", "label", "requiredMarker", "inputWrapper", "prefix", "control", "suffix", "inlineError", "supportingText", "errors", "errorItem"] as const, false,
     { controlType: "password", concealed: true }),
   textarea: define("textarea", ["mdy-renderer", "mdy-renderer--textarea"], ["root", "label", "requiredMarker", "inputWrapper", "control", "inlineError", "supportingText", "errors", "errorItem"] as const, false),
-  // `increment` and `decrement` are the spin buttons an adapter may draw beside the input. Optional
-  // because the native control already has its own and a renderer that leaves them to the platform
-  // is complete without them — but declared, because one adapter draws them, they wear
-  // `mdy-spin-btn`, and the themes style them. A part that is emitted and painted and named nowhere
-  // is invisible to every audit here, all of which start from what the contract declares.
+  // `increment` and `decrement` are the spin buttons drawn beside the input. The native control has
+  // its own and the foundation hides them, so these are the stepping affordance rather than a second
+  // one: a renderer that draws neither leaves the kind with no way to step but the keyboard. They
+  // wear `mdy-spin-btn` and the themes paint them.
   number: define("number", ["mdy-renderer", "mdy-renderer--number"], ["root", "label", "requiredMarker", "inputWrapper", "control", "increment", "decrement", "inlineError", "supportingText", "errors", "errorItem"] as const, false,
     { classes: { increment: ["mdy-spin-btn", "mdy-spin-btn-up"], decrement: ["mdy-spin-btn", "mdy-spin-btn-down"] },
       // The box and its two steppers need one positioning context between them, and it is not a part:
