@@ -206,6 +206,10 @@ export abstract class MdyFieldElement<T> extends LitElement {
     const on: Readonly<Record<string, boolean>> = {
       disabled: handle.disabled(),
       error: this.showErrors(handle),
+      // A form locked for review looked exactly like one waiting to be filled in, and the only way
+      // to find out was to try. The class is declared by the shared state vocabulary; nothing was
+      // reading the state that turns it on.
+      readonly: handle.readonly(),
     };
     return [
       MDY_FIELD_STATE_CLASSES.control,

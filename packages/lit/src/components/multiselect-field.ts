@@ -477,6 +477,8 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
             .value=${this._query}
             @input=${this.onSearchInput}
             placeholder=${this.messages.searchPlaceholder}
+            aria-label=${this.messages.searchOptionsLabel}
+            aria-controls=${this.fieldController?.view().parts.group?.id ?? nothing}
           />`
         : nothing}
       ${this.optionTemplate
@@ -786,7 +788,7 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
     }
     const size = tally.size;
     return [...tally.values()].map(({ value, label, count }, index) => html`<span
-      class=${multiselectChipClasses({ mode: this.mode, selected: true }).join(" ")}
+      class=${multiselectChipClasses({ mode: this.mode, role: "value", selected: true }).join(" ")}
       tabindex=${this.activeChip(handle) === String(value) ? "0" : "-1"}
       role=${this.mode === "multi" ? "spinbutton" : "group"}
       aria-valuenow=${this.mode === "multi" ? count : nothing}
