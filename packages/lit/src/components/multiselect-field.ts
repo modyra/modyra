@@ -553,6 +553,7 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
           >
             <span
               class="${this.partClass("chips")}"
+              role=${this.partRole("chips")}
               @wheel=${(e: WheelEvent) => this.onStripWheel(e)}
             >${this.renderValueChips(handle)}</span>
             ${this.held(handle).length === 0
@@ -799,10 +800,7 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
     return [...tally.values()].map(({ value, label, count }, index) => html`<span
       class=${multiselectChipClasses({ mode: this.mode, role: "value", selected: true }).join(" ")}
       tabindex=${this.activeChip(handle) === String(value) ? "0" : "-1"}
-      role=${this.mode === "multi" ? "spinbutton" : "group"}
-      aria-valuenow=${this.mode === "multi" ? count : nothing}
-      aria-valuemin=${this.mode === "multi" ? 0 : nothing}
-      aria-valuetext=${this.mode === "multi" ? (count > 1 ? `${label}, ${count}` : label) : nothing}
+      role=${this.partRole("chip")}
       @focus=${(e: FocusEvent) => {
         this._activeChip = String(value);
         this.revealChipName(e.currentTarget as HTMLElement, label);

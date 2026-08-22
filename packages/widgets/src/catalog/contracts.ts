@@ -144,7 +144,15 @@ export const MDY_WIDGET_CONTRACTS = Object.freeze({
       // model the grid does not have.
       // The full name of a chip whose label the strip had to cut. `title` is not an answer: it never
       // appears for a keyboard or a touch user, which is precisely who cannot widen the chip.
-      roles: { options: "group", chip: "group", popup: "dialog", chipTooltip: "tooltip" },
+      // The strip is a list and each chip is an item of it. `aria-posinset`/`aria-setsize` — what
+      // ADR 0127 pays for a row that scrolls instead of wrapping — are permitted on `listitem`
+      // inside a `list` and on nothing else this strip could plausibly be: `group` does not take
+      // them, and neither does `spinbutton`, so both were written to the DOM and dropped by the
+      // accessibility layer. `option` would take them, but only inside a `listbox`, and the listbox
+      // here is the popup a person chooses from — a strip of what was already chosen is not a second
+      // one. One role whatever a chip holds, so the strip does not change what it is with its
+      // contents.
+      roles: { options: "group", chips: "list", chip: "listitem", popup: "dialog", chipTooltip: "tooltip" },
       states: { trigger: ["open", "disabled", "readonly", "invalid", "loading"], option: ["selected", "active"], chip: ["selected", "removable", "dragging"], popup: POPUP_PLACEMENT_STATES },
       classes: { box: ["mdy-multiselect"], trigger: ["mdy-multiselect__trigger"], arrow: ["mdy-multiselect__arrow"], options: ["mdy-multiselect__options", "mdy-multiselect-overlay__grid"], optionWrapper: [MDY_CHIP_CLASSES.wrapper], option: [MDY_CHIP_CLASSES.block], optionCheck: [MDY_CHIP_CLASSES.check], optionLabel: [MDY_CHIP_CLASSES.label], optionCount: [MDY_CHIP_CLASSES.count], optionStep: [MDY_CHIP_CLASSES.step], chips: ["mdy-multiselect__chips"], chip: [MDY_CHIP_CLASSES.block, MDY_CHIP_CLASSES.value], chipRemove: [MDY_CHIP_CLASSES.remove], chipMove: [MDY_CHIP_CLASSES.move], chipTooltip: ["mdy-chip__tooltip"], announcement: ["mdy-multiselect__announcement"], clearAll: ["mdy-multiselect__clear-all"], overflowCount: ["mdy-multiselect__overflow"], wayBack: ["mdy-multiselect__way-back"], wayBackAction: ["mdy-multiselect__way-back-action"], placeholder: ["mdy-multiselect__placeholder"], popup: ["mdy-multiselect__dropdown", MDY_POPUP_CLASS, MDY_POPUP_SURFACE_CLASS, "mdy-multiselect-overlay__panel"], search: ["mdy-multiselect-overlay__input"], loading: ["mdy-select__loader"], empty: ["mdy-multiselect-overlay__empty"] } ,
       // The two mode markers a chip carries. `--centered` reserves the width its tick will need in
@@ -159,12 +167,12 @@ export const MDY_WIDGET_CONTRACTS = Object.freeze({
       // a button inside a button, which is neither valid nor what any renderer emits.
       variants: {
         single: { elements: { option: "button" }, required: ["optionCheck"] },
-        // A counter chip *is* the spinbutton: the chip carries the role rather than a focusable child
-        // of it, which is what ADR 0128 leaves room for — one tab stop, and the quantity announced
-        // natively as it changes rather than through a live region firing beside two buttons.
+        // A counter chip is a list item that holds a quantity, not a spinbutton: a control cannot be
+        // both the item at position 3 of 12 and the number 3 of a range, and the role that takes the
+        // position is the one this strip owes. The quantity is in the chip's own name and announced
+        // when it changes.
         multi: {
           elements: { option: "container" },
-          roles: { chip: "spinbutton" },
           required: ["optionStep", "optionCount"],
         },
       } ,

@@ -281,10 +281,10 @@ function buildCompactMultiselect({ chipClasses = "mdy-chip mdy-chip--value" } = 
   // The control a person presses, which holds the field's value — so the contract gives it the
   // combobox role rather than leaving `aria-invalid` and `aria-required` on a bare button.
   const trigger = el("button", "mdy-multiselect__trigger", { role: "combobox" });
-  const chips = el("div", "mdy-multiselect__chips");
-  // A container, because it holds controls: the label, how many, and what takes the value off.
-  // A toggle chip announces as a group; the counter variant makes it a spinbutton.
-  const chip = el("div", chipClasses, { role: "group" });
+  // The strip is a list and each chip an item of it, which is the only pairing that keeps the
+  // position and the count the chip states about itself.
+  const chips = el("div", "mdy-multiselect__chips", { role: "list" });
+  const chip = el("div", chipClasses, { role: "listitem" });
   const chipRemove = el("button", "mdy-chip__remove", { type: "button" });
   chip.append(chipRemove);
   chips.append(chip);

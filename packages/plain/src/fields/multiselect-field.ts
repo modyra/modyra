@@ -81,6 +81,9 @@ export function renderMultiselectField(
   const trigger = el("button", parts.trigger.classes.join(" ")) as HTMLButtonElement;
   trigger.type = "button";
   const chipStrip = el("div", parts.chips.classes.join(" "));
+  // The role is the catalogue's: the strip is a list, so what each chip says about its position is
+  // an attribute the accessibility layer keeps rather than one it drops.
+  if (parts.chips.role) chipStrip.setAttribute("role", parts.chips.role);
   // A wheel reaches what has scrolled out of the strip. ADR 0127 allows the row to scroll only if
   // there is a mechanism rather than a cue, and many desktop mice have no horizontal axis at all.
   // Passive is wrong here: the point is to take the gesture, and a listener that cannot call
@@ -302,12 +305,10 @@ export function renderMultiselectField(
   function buildValueChip(key: string, count: number): HTMLElement {
     const chip = el("div", parts.chip.classes.join(" "));
     chip.tabIndex = -1;
-    // A counter chip *is* the spinbutton — the chip carries the role, not a focusable child of it,
-    // which is what ADR 0128 leaves room for: one tab stop, and the quantity announced natively as
-    // it changes rather than through a live region firing beside two buttons.
-    //
-    // `group` where there is no quantity: a chip holding one of something has no value to spin.
-    chip.setAttribute("role", stepsFor(count) ? "spinbutton" : "group");
+    // One role whatever the chip holds, and it is the catalogue's: an item of the strip's list. A
+    // chip cannot be both the item at position 3 of 12 and the number 3 of a range — and the role
+    // that carries the position is the one ADR 0127 pays with.
+    if (parts.chip.role) chip.setAttribute("role", parts.chip.role);
     chip.addEventListener("focus", () => {
       activeChip = key;
       syncRoving();
@@ -568,13 +569,9 @@ export function renderMultiselectField(
       // Where this chip sits and how many there are, stated on the chip itself. Independent of the
       // live region and of anything drawn: it survives a stripped stylesheet and a dropped
       // announcement, which the other two do not.
-      if (stepsFor(count)) {
-        // The value a spinbutton holds, and its floor. No ceiling: nothing in the contract limits
-        // how many of one option a person may take, and stating one would invent a rule.
-        chip.setAttribute("aria-valuenow", String(count));
-        chip.setAttribute("aria-valuemin", "0");
-        chip.setAttribute("aria-valuetext", count > 1 ? `${label}, ${count}` : label);
-      }
+      // No `aria-value*`: the chip is a list item and those belong to a range widget. The quantity
+      // is in the name above and in the announcement the change makes, which is where a list item's
+      // number is heard.
       chip.setAttribute("aria-posinset", String(wanted.length));
       chip.setAttribute("aria-setsize", String(tally.size));
       // The full name, for a chip the strip has narrowed to an ellipsis. `title` is the pointer's

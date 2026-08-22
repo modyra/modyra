@@ -1854,6 +1854,29 @@
         display: none;
     }
 
+    /* Where a row stops being a layout and starts being lost content.
+       WCAG 1.4.10 asks that content reflow to 320 CSS pixels — which is also what 400% zoom on a
+       desktop viewport reduces to — without a second direction to scroll in. A single row that
+       scrolls sideways answers that at comfortable widths, where the wheel and the roving focus
+       reach what is past the edge; at 320px there is no comfortable width left to trade, and a strip
+       of chips two of which are visible is a control a person has to operate blind. So the row
+       wraps: the control grows downward, every chip is on screen, and nothing has to be reached for.
+       The equal-height rule the single row exists to keep is the thing given up, and it is the
+       cheaper of the two. */
+    @media (max-width: 320px) {
+        .mdy-multiselect__chips {
+            flex-wrap: wrap;
+            overflow-x: visible;
+            /* The cues belong to a row that scrolls. Wrapped, they paint over chips that are simply
+               there. */
+            background: none;
+        }
+
+        .mdy-multiselect__chips .mdy-chip {
+            max-width: 100%;
+        }
+    }
+
     .mdy-multiselect__arrow {
         flex: 0 0 auto;
         width: var(--mdy-affordance-target);

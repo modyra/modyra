@@ -1,0 +1,51 @@
+---
+import SiteLayout from '../../components/SiteLayout.astro';
+---
+
+<SiteLayout
+  title="Modyra — changelog"
+  description="How Modyra versions its packages and where the release notes live."
+  eyebrow="Changelog"
+>
+  <section class="intro">
+    <h1>Versions are facts; notes are generated.</h1>
+    <p class="lede">
+      Modyra's packages version independently. <code>@modyra/core</code> and
+      <code>@modyra/widgets</code> move together under a published
+      compatibility policy; every adapter, the SDKs and Studio version on their
+      own and are still below 1.0 — their surfaces can change in a minor
+      release, so pin versions and read the notes before upgrading.
+    </p>
+  </section>
+
+  <section class="where" aria-labelledby="where-heading">
+    <h2 id="where-heading">Where the notes live</h2>
+    <div class="link-grid">
+      <a href="https://github.com/modyra/modyra/releases">
+        <strong>GitHub releases</strong>
+        <span>One entry per tag, with what it carried.</span>
+      </a>
+      <a href="https://github.com/modyra/modyra/blob/main/CHANGELOG.md">
+        <strong>Changelog index</strong>
+        <span>The release-tags table, and links to every per-package changelog.</span>
+      </a>
+      <a href="https://github.com/modyra/modyra/blob/main/packages/core/CHANGELOG.md">
+        <strong>@modyra/core notes</strong>
+        <span>Generated from changesets; each entry states its migration or says there is none.</span>
+      </a>
+    </div>
+  </section>
+</SiteLayout>
+
+<style>
+  .intro, .where { padding: 0 clamp(1.25rem, 7vw, 6rem) clamp(3.5rem, 7vw, 6rem); }
+  .intro h1 { max-width: 20ch; font-size: clamp(2.2rem, 5vw, 3.6rem); line-height: 1.05; letter-spacing: -.02em; }
+  .lede { max-width: 62ch; margin: 1.5rem 0 0; color: var(--page-muted); font-size: clamp(1.05rem, 1.6vw, 1.25rem); line-height: 1.6; }
+  .where { border-top: 1px solid var(--page-border); padding-top: clamp(2.5rem, 6vw, 4.5rem); }
+  .where h2 { max-width: 22ch; font-size: clamp(1.7rem, 3.5vw, 2.6rem); }
+  .link-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin-top: 2rem; }
+  .link-grid a { display: grid; gap: .5rem; padding: 1.3rem; border: 1px solid var(--page-border); border-radius: .7rem; background: var(--page-card); text-decoration: none; }
+  .link-grid span { color: var(--page-muted); line-height: 1.55; }
+  .link-grid a:hover, .link-grid a:focus-visible { border-color: var(--mdy-indigo); }
+  @media (max-width: 48rem) { .link-grid { grid-template-columns: 1fr; } }
+</style>

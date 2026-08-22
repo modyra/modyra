@@ -75,7 +75,11 @@ for (const host of HOSTS) {
         };
       }, root);
 
-      if (seen !== null && !seen.mine) covered.push({ kind, ...seen });
+      // A kind that drew nothing measurable is **not** a pass. Angular renders one node for a
+      // `daterange` — the bare form — and this check found nothing to measure and said nothing,
+      // which is how a control that does not exist reads as a control laid out correctly.
+      if (seen === null) covered.push({ kind, drew: "no field to measure" });
+      else if (!seen.mine) covered.push({ kind, ...seen });
     }
 
     expect(

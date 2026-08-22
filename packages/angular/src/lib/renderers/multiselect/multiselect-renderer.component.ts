@@ -94,7 +94,7 @@ import type { MdyOverlayBranch, MdyOverlayOwner } from "../../core/overlay-contr
         [attr.aria-label]="controlAriaLabel()"
         [attr.aria-activedescendant]="activeDescendant()"
       >
-        <span class="mdy-multiselect__chips" (wheel)="onStripWheel($event)">
+        <span class="mdy-multiselect__chips" [attr.role]="chipsRole" (wheel)="onStripWheel($event)">
           <!-- One chip per distinct value with how many, because a repeated value is a quantity:
                incrementing takes one of something to three. One chip per entry would make undoing
                one decision three separate removals. -->
@@ -102,10 +102,7 @@ import type { MdyOverlayBranch, MdyOverlayOwner } from "../../core/overlay-contr
             <span
               [class]="chipClasses(true)"
               [attr.tabindex]="activeChip() === held.key ? 0 : -1"
-              [attr.role]="mode() === 'multi' ? 'spinbutton' : 'group'"
-              [attr.aria-valuenow]="mode() === 'multi' ? held.count : null"
-              [attr.aria-valuemin]="mode() === 'multi' ? 0 : null"
-              [attr.aria-valuetext]="mode() === 'multi' ? (held.count > 1 ? held.label + ', ' + held.count : held.label) : null"
+              [attr.role]="chipRole"
               [attr.data-key]="held.key"
               (focus)="activeChipKey.set(held.key); revealChipName($event, held.key); onChipFocused()"
               (pointerenter)="revealChipName($event, held.key)"
@@ -360,6 +357,9 @@ export class MdyMultiselectComponent<TValue = string>
 
   /** What the option grid announces itself as — the contract's answer, not this renderer's. */
   protected readonly optionsRole = MDY_WIDGET_CONTRACTS.multiselect.parts.options.role ?? null;
+  /** The strip is a list and a chip is an item of it — the catalogue's answer, not this file's. */
+  protected readonly chipsRole = MDY_WIDGET_CONTRACTS.multiselect.parts.chips.role ?? null;
+  protected readonly chipRole = MDY_WIDGET_CONTRACTS.multiselect.parts.chip.role ?? null;
 
   protected readonly chip = MDY_CHIP_CLASSES;
   /** The widget this draws: its popup's room, width and edge come from the catalog. */
