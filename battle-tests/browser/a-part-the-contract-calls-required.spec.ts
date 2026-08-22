@@ -25,6 +25,13 @@
  * root in some renderers, and a part reported missing because it was drawn elsewhere would be this
  * spec's defect rather than a finding.
  *
+ * **Required means required unconditionally, which means every ancestor is too.** A part inside a
+ * popup exists when the popup does; marking it non-optional says it is always there *given its
+ * parent*. Read the other way, this reported six kinds missing an option list because nothing was
+ * open — and `select`'s `options` as a promise nothing keeps, when the promise is conditional and
+ * kept. Sixty-four parts across seventeen kinds survive the correct reading, which the premise below
+ * holds it to.
+ *
  * Claims under attack: WID-001, ADP-001.
  */
 
@@ -48,6 +55,7 @@ for (const host of HOSTS) {
     await page.waitForFunction((flag) => (window as never as Record<string, boolean>)[flag] === true, host.ready);
 
     const absent: Array<Record<string, unknown>> = [];
+    let checked = 0;
 
     for (const kind of MDY_WIDGET_KINDS) {
       const contract = CONTRACTS[kind];
@@ -74,6 +82,7 @@ for (const host of HOSTS) {
         // different question and not this one's.
         .filter((each) => each.classes.length > 0);
       if (required.length === 0) continue;
+      checked += required.length;
 
       const id = `req-${kind}`;
       await page.evaluate(({ api, mountId, k }) => {
@@ -105,6 +114,15 @@ for (const host of HOSTS) {
       if (!missing.mounted) continue;
       if (missing.missing.length > 0) absent.push({ kind, missing: missing.missing });
     }
+
+    // The premise: the reading of "required" above leaves something to compare. Counting ancestors
+    // is what makes this check honest, and it is also what could quietly reduce it to nothing —
+    // one part marked optional near the root and every descendant stops being asked about.
+    expect(
+      checked,
+      "no part survived the required-and-every-ancestor-required reading, so this battle is "
+        + "comparing nothing and would pass whatever the renderers drew",
+    ).toBeGreaterThan(20);
 
     expect(
       absent,
