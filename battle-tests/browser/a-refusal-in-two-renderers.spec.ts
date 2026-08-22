@@ -187,7 +187,10 @@ for (const host of HOSTS) {
     await page.evaluate(
       ({ api, given }) => {
         const battle = (window as never as Record<string, EitherHost>)[api];
-        return battle.mountFields("opts", [{ name: "s", kind: "select", label: "Plan", options: given }]);
+        // Through the parser, on both hosts. This test is about what the **contract** does with a
+        // repeated option value, so it must come through the door that applies the contract — the
+        // raw door is `mountMdyForm`'s own behaviour and a different question.
+        return battle.mountFields("opts", [{ name: "s", kind: "select", label: "Plan", options: given }], { parse: true });
       },
       { api: host.api, given: options },
     );

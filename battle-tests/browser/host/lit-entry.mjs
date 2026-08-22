@@ -106,9 +106,15 @@ window.battleLit = {
       // A field's rules come from the document the same way a consumer's would: the contract parser
       // reads them and the validator builder compiles them. Building the schema without that step
       // makes every field unconstrained, which looks like the renderer losing them.
-      const parsed = parseDynamicFields(fields.map((each) => ({ ...each, name: each.name })));
+      // The same two doors the plain host offers, and the same default: raw unless the caller asks
+      // to come through the parser. Symmetry matters more than which default is chosen — when the
+      // two hosts disagreed about who parses, three renderer "defects" were the disagreement.
+      const parsed = options.parse === true
+        ? parseDynamicFields(fields.map((each) => ({ ...each, name: each.name })))
+        : fields.map((each) => ({ ...each, name: each.name }));
+      const rules = parseDynamicFields(fields.map((each) => ({ ...each, name: each.name })));
       const rulesFor = (name) => {
-        const declared = parsed.find((each) => each.name === name);
+        const declared = rules.find((each) => each.name === name);
         return declared === undefined ? { validators: [] } : buildDynamicFieldValidators(declared);
       };
       // The form is built from what the parser returned, not from what the caller handed in. A field

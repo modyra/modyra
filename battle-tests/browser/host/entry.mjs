@@ -64,18 +64,21 @@ window.battle = {
     document.querySelector("#stage").append(host);
     try {
       const submitted = [];
-      // The form is built from what the parser returned, not from what the caller handed in.
-      // `mountMdyForm` reads a field list and does not parse one, so this host **is** the contract's
-      // door on that path — and a door that accepts what the contract refuses is measuring itself.
+      // **Both doors are real, and this host offers both rather than choosing one.**
       //
-      // Two reds came from the gap and neither was the renderer's: a `granularity` the parser
-      // refuses because its step does not divide the face, and a repeated option value the parser
-      // drops because a value is an option's identity. Plain honoured both and Lit did not, which
-      // read as Lit losing things — when what differed was that one host parsed and the other did
-      // not. The sibling fix is `lit-entry.mjs`.
-      const parsed = parseDynamicFields(fields);
-      const handle = mountMdyForm(host, parsed, {
-        ...options,
+      // `mountMdyForm` reads a field list and does not parse it: a consumer calling it with raw
+      // fields gets exactly that, including the refusals it raises itself. `parseDynamicForm` is
+      // the other door, and it drops what the contract will not carry — a granularity whose step
+      // does not divide the face, an option value declared twice.
+      //
+      // A host that always parses hides the first door's refusals; one that never parses shows a
+      // renderer honouring what the contract refuses. Both were measured here as renderer defects
+      // and neither was one. So the caller says which door it came through, and the default is the
+      // raw one, because that is what `mountFields` is named for.
+      const given = options.parse === true ? parseDynamicFields(fields) : fields;
+      const { parse: _parse, ...forwarded } = options;
+      const handle = mountMdyForm(host, given, {
+        ...forwarded,
         onSubmit: recording(submitted, options.onSubmit),
       });
       mounted.set(id, { handle, host, submitted });
