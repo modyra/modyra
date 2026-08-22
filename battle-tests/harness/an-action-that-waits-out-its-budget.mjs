@@ -38,6 +38,10 @@ const count = (text, pattern) => (text.match(pattern) ?? []).length;
 const found = {};
 for (const name of readdirSync(SPECS)) {
   if (!name.endsWith(".spec.ts")) continue;
+  // Throwaway probes, by the convention this tree already uses: a `zz-` file is written to answer
+  // one question and deleted in the same hour, often by whoever is mid-investigation. Counting them
+  // makes this refuse a run because somebody else is working — which is how a gate stops being read.
+  if (name.startsWith("zz-")) continue;
   const text = readFileSync(join(SPECS, name), "utf8");
   // A line that is a comment is describing the shape, not using it — this file's own prose would
   // otherwise count itself.
