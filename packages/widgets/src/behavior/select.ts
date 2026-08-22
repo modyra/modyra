@@ -33,9 +33,12 @@ export function selectKeyboardAction(input: {
     // the authoring practices' behaviour, and what a user reaching for the list expects — rather
     // than silently advancing an active option nobody can see.
     //
-    // Both directions, matching the declared bindings. Opening does not also move: the list opens
-    // with nothing active, and the next arrow lands where the direction says, because
-    // `listboxNavigationIndex` answers `ArrowUp` from nothing-active with the last option.
+    // Both directions, matching the declared bindings. Opening does not also move, because opening
+    // already places the reading position: the list opens on the option already chosen, or on the
+    // first when none is, which is what the authoring practices describe and what the select
+    // controller does. An earlier version of this comment said the opposite — that the list opens
+    // with nothing active — and it very nearly bought a repair that made `Enter` straight after
+    // opening choose nothing.
     if (!open) return key === "ArrowDown" || key === "ArrowUp" ? { type: "open" } : null;
     return { type: "move", target };
   }

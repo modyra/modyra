@@ -1,8 +1,9 @@
 // Records the 60-second demo video following .modyra/go-to-market-en/demo/script-60s.md.
 //
 // Segments, recorded with Playwright at 1280x720:
-//   1. plain example (serve-example.mjs plain 4307) — catalog, themes, modes, conditional
-//      section, keyed rows
+//   1. plain showcase page (serve-example.mjs plain 4307, /showcase.html) — typing writes the
+//      live state panel, the conditional section answers the account select, themes, dark mode,
+//      submit
 //   2. Studio (studio:dev on 4322, or the hosted build as fallback) — palette, inspector,
 //      validation, preview, export
 //   3. title and end cards — brand-gradient HTML rendered and screenshotted, then looped
@@ -67,77 +68,64 @@ async function recordSegment(name, fn) {
   return out;
 }
 
-async function beatPlain(page) {
-  await page.goto("http://localhost:4307/", { waitUntil: "networkidle" });
-  await page.waitForSelector("[data-form] .mdy-renderer", { timeout: 15000 });
+async function beatShowcase(page) {
+  await page.goto("http://localhost:4307/showcase.html", { waitUntil: "networkidle" });
+  await page.waitForSelector("[data-showcase-form] .mdy-renderer", { timeout: 15000 });
+  await sleep(2000);
 
-  // Beat 1 (0:00-0:08): slow scroll through the catalog.
-  await sleep(1500);
-  await page.mouse.move(640, 400);
-  for (let i = 0; i < 10; i++) {
-    await page.mouse.wheel(0, 260);
-    await sleep(650);
-  }
-  await page.evaluate(() => window.scrollTo({ top: 0, behavior: "instant" }));
+  // Beat 1: typing writes the live state panel on the right.
+  const name = page.locator("[data-field-host='name'] input").first();
+  await name.click();
+  await name.pressSequentially("Ada Lovelace", { delay: 70 });
   await sleep(800);
+  const email = page.locator("[data-field-host='email'] input").first();
+  await email.click();
+  await email.pressSequentially("ada@modyra.dev", { delay: 70 });
+  await sleep(1200);
 
-  // Beat 2 (0:08-0:20): theme bar, then dark mode.
-  const themes = page.locator("[data-themes] button");
-  const themeNames = ["material", "ios", "modern"];
-  for (const name of themeNames) {
-    const btn = themes.filter({ hasText: name }).first();
-    if (await btn.count()) {
-      await btn.click();
-      await sleep(1800);
-    }
-  }
-  // The mode bar is hidden under a live palette; the compiled "salience" palette reveals it.
-  const salience = page.locator("[data-palette] button[data-palette='salience']");
-  if (await salience.count()) { await salience.click(); await sleep(1200); }
-  const dark = page.locator("[data-color-mode] button").filter({ hasText: /dark/i }).first();
-  if (await dark.count()) {
-    await dark.click();
-    await sleep(1800);
-    const light = page.locator("[data-color-mode] button").filter({ hasText: /light/i }).first();
-    if (await light.count()) { await light.click(); await sleep(1200); }
-  }
-
-  // Beat 3 (0:20-0:30): conditional section — account kind to Company, type and clear.
-  await page.locator("[data-conditional-section]").scrollIntoViewIfNeeded();
-  await sleep(900);
-  const conditional = page.locator("[data-conditional]");
-  const trigger = conditional.locator("button, [role='combobox']").first();
-  if (await trigger.count()) {
-    await trigger.click();
+  // Beat 2: the conditional block answers the account select — Personal hides it, Company
+  // brings it back and the state panel gains the group.
+  const account = page.locator("[data-field-host='account'] [role='combobox'], [data-field-host='account'] button").first();
+  if (await account.count()) {
+    await account.click();
     await sleep(700);
-    const company = page.getByRole("option", { name: /company/i }).first();
-    if (await company.count()) { await company.click(); await sleep(1200); }
+    const company = page.getByRole("option", { name: /^company$/i }).first();
+    if (await company.count()) { await company.click(); await sleep(1500); }
   }
-  const companyName = conditional.locator("input[type='text']").first();
+  const conditional = page.locator("[data-showcase-conditional]");
+  await conditional.scrollIntoViewIfNeeded();
+  await sleep(700);
+  const companyName = page.locator("[data-field-host='company.name'] input").first();
   if (await companyName.count()) {
     await companyName.click();
-    await companyName.pressSequentially("Acme", { delay: 140 });
-    await sleep(900);
-    await companyName.fill("");
-    await page.locator("[data-conditional-state]").click(); // blur to trigger validation
-    await sleep(1500);
-    await companyName.fill("Acme");
-    await sleep(900);
+    await companyName.pressSequentially("Acme S.r.l.", { delay: 70 });
+    await sleep(1200);
+  }
+  await page.evaluate(() => window.scrollTo({ top: 0, behavior: "instant" }));
+  await sleep(600);
+
+  // Beat 3: the same contract under three design languages.
+  for (const theme of ["material", "ios", "modern"]) {
+    const btn = page.locator(`[data-showcase-themes] button[data-theme='${theme}']`);
+    if (await btn.count()) { await btn.click(); await sleep(2000); }
   }
 
-  // Beat 4 (0:30-0:38): keyed rows — add, rename, remove.
-  await page.locator("[data-rows-section]").first().scrollIntoViewIfNeeded();
-  await sleep(900);
-  const rowsSection = page.locator("[data-rows-section]").first();
-  const addBtn = rowsSection.locator("button").filter({ hasText: /add|new|insert|\+/i }).first();
-  if (await addBtn.count()) {
-    await addBtn.click();
-    await sleep(1500);
-  }
-  const rowButtons = rowsSection.locator("button").filter({ hasText: /remove|delete|×/i });
-  if (await rowButtons.count()) {
-    await rowButtons.last().click();
-    await sleep(1500);
+  // Beat 4: dark mode, then back to light for the closing beat.
+  const dark = page.locator("[data-showcase-mode] button[data-mode='dark']");
+  if (await dark.count()) { await dark.click(); await sleep(2200); }
+  const light = page.locator("[data-showcase-mode] button[data-mode='light']");
+  if (await light.count()) { await light.click(); await sleep(1000); }
+
+  // Beat 5: terms, then submit — the confirmation line appears. The checkbox input is the
+  // visually-hidden control; its label is the clickable surface.
+  const terms = page.locator("[data-field-host='terms'] label").first();
+  if (await terms.count()) { await terms.click(); await sleep(800); }
+  const submit = page.locator("[data-showcase-submit]").first();
+  if (await submit.count()) {
+    await submit.scrollIntoViewIfNeeded();
+    await sleep(500);
+    await submit.click();
+    await sleep(2000);
   }
 }
 
@@ -239,9 +227,9 @@ async function main() {
   loopCard(titleCard, 4, join(TMP, "part-00-title.mp4"));
   parts.push(join(TMP, "part-00-title.mp4"));
 
-  const plainWebm = await recordSegment("plain", beatPlain);
-  toMp4(plainWebm, join(TMP, "part-01-plain.mp4"));
-  parts.push(join(TMP, "part-01-plain.mp4"));
+  const showcaseWebm = await recordSegment("showcase", beatShowcase);
+  toMp4(showcaseWebm, join(TMP, "part-01-showcase.mp4"));
+  parts.push(join(TMP, "part-01-showcase.mp4"));
 
   if (!PLAIN_ONLY) {
     const studioUrl = studio ? "http://localhost:4322/" : "https://modyra.github.io/modyra/studio/app/";

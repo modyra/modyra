@@ -16,7 +16,9 @@ import {
   untracked,
   viewChild,
 } from "@angular/core";
-import { filterOptionsByQuery } from "@modyra/widgets";
+import { filterOptionsByQuery,
+  defaultWidgetIdFactory,
+} from "@modyra/widgets";
 import { MDY_OVERLAY_PORTAL_CLASS } from "@modyra/widgets";
 import { MDY_WIDGET_CONTRACTS, createTypeahead, isTypeaheadCharacter, popupAlignmentClass, popupPlacementClass, optionsWithUnrecognizedValue, reconcileSelectValue, selectKeyboardAction, typeaheadMatch, overlayControlledId, projectOverlayOpenerA11y } from "@modyra/widgets";
 import { MdyErrorListComponent } from "../../control/error-list.component";
@@ -58,7 +60,7 @@ import { MdyDropdownBase } from "../dropdown-base";
   template: `
     <mdy-control-label
       [label]="label()"
-      [forId]="fieldId"
+      [forId]="searchable() || optionTpl() ? triggerId() : fieldId"
       [required]="isRequired()"
       [filled]="value() !== null"
       [showInlineError]="inlineErrorShown()"
@@ -78,11 +80,9 @@ import { MdyDropdownBase } from "../dropdown-base";
             type="button"
             class="mdy-select__trigger"
             [mdyPart]="openerPart()"
-            [id]="fieldId"
+            [id]="triggerId()"
             [disabled]="isDisabled()"
-            [attr.aria-activedescendant]="
-              activeIndex() >= 0 ? fieldId + '-opt-' + activeIndex() : null
-            "
+            [attr.aria-activedescendant]="activeOptionId()"
             [attr.aria-invalid]="paintsAsInvalid()"
             [attr.aria-describedby]="describedById(fieldId)"
             [attr.aria-label]="controlAriaLabel()"
@@ -152,11 +152,11 @@ import { MdyDropdownBase } from "../dropdown-base";
               class="mdy-select__list"
               [id]="popupId()"
               role="listbox"
-              [attr.aria-labelledby]="fieldId"
+              [attr.aria-labelledby]="triggerId()"
             >
               @for (opt of filteredOptions(); track opt.value; let i = $index) {
                 <li
-                  [id]="fieldId + '-opt-' + i"
+                  [id]="optionId(opt)"
                   role="option"
                   class="mdy-select__option"
                   [class.mdy-select__option--active]="activeIndex() === i"
@@ -351,6 +351,33 @@ export class MdySelectComponent<TValue = string>
 
   /** The id the opener names — the listbox, which is what carries the overlay's role. */
   protected readonly popupId = computed(() => overlayControlledId("select", this.fieldId) ?? "");
+
+  /**
+   * The ids the contract publishes, rather than a scheme of this renderer's own.
+   *
+   * A published id is `<widget>__<part>__<key>`, and the controller's view already spells every one
+   * of them — including the key's escaping, which changed under a changeset and a `contract:diff`
+   * classification. This renderer minted `pick-opt-0` from the option's *position*, so a consumer
+   * reading the published format and writing a selector reached two renderers and missed this one,
+   * and an id moved when the list was filtered rather than naming the same option throughout.
+   */
+  // Built from the id factory with *this* control's current widget id, not read off the adapter's
+  // view: the adapter is constructed once and holds the id the control had at that moment, which is
+  // the mount id — so the view spelled `mdy-control-0__option__…` while every id computed later in
+  // this component spelled `pick__…`. An id is a function of the document (ADR 0135), and the
+  // factory is where that spelling lives.
+  protected triggerId(): string {
+    return defaultWidgetIdFactory.part(this.fieldId, "trigger");
+  }
+
+  protected optionId(option: MdySelectOption<TValue>): string {
+    return defaultWidgetIdFactory.item(this.fieldId, "option", this.optionKey(option.value));
+  }
+
+  protected activeOptionId(): string | null {
+    const key = this.selectAdapter.state().activeKey;
+    return key === null ? null : defaultWidgetIdFactory.item(this.fieldId, "option", key);
+  }
 
   /** The relation between this widget's opener and the overlay it opens. */
   protected readonly openerPart = computed(
