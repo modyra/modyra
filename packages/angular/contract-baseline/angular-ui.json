@@ -76,6 +76,7 @@
     "mdy-chip--centered",
     "mdy-chip--counter",
     "mdy-chip--selected",
+    "mdy-chip--value",
     "mdy-chip__tooltip",
     "mdy-color-swatch",
     "mdy-color-swatch--active",
@@ -167,10 +168,6 @@
     "mdy-inline-errors",
     "mdy-input-prefix",
     "mdy-input-suffix",
-    "mdy-input-wrapper",
-    "mdy-input-wrapper--disabled",
-    "mdy-input-wrapper--error",
-    "mdy-input-wrapper--readonly",
     "mdy-input-wrapper__inliner",
     "mdy-label",
     "mdy-label--filled",
@@ -476,6 +473,7 @@
         "mdy-control-checkbox",
         "mdy-error-list",
         "mdy-label",
+        "mdy-label--has-error",
         "mdy-label__required",
         "mdy-part",
         "mdy-renderer",
@@ -513,8 +511,6 @@
         "mdy-icon",
         "mdy-inline-errors",
         "mdy-input-suffix",
-        "mdy-input-wrapper",
-        "mdy-input-wrapper--disabled",
         "mdy-input-wrapper__inliner",
         "mdy-overlay-panel",
         "mdy-part",
@@ -569,7 +565,8 @@
       ],
       "aria": [
         "aria-controls",
-        "aria-label"
+        "aria-label",
+        "aria-labelledby"
       ],
       "selectors": [
         "mdy-calendar-grid"
@@ -629,8 +626,6 @@
         "mdy-inline-errors",
         "mdy-input-prefix",
         "mdy-input-suffix",
-        "mdy-input-wrapper",
-        "mdy-input-wrapper--disabled",
         "mdy-overlay-panel",
         "mdy-part",
         "mdy-renderer",
@@ -639,6 +634,7 @@
         "mdy-supporting-text"
       ],
       "aria": [
+        "aria-controls",
         "aria-describedby",
         "aria-disabled",
         "aria-invalid",
@@ -670,8 +666,6 @@
         "mdy-icon",
         "mdy-inline-errors",
         "mdy-input-suffix",
-        "mdy-input-wrapper",
-        "mdy-input-wrapper--disabled",
         "mdy-overlay-panel",
         "mdy-part",
         "mdy-range-calendar",
@@ -699,7 +693,9 @@
         "mdy-month-picker",
         "mdy-part"
       ],
-      "aria": [],
+      "aria": [
+        "aria-labelledby"
+      ],
       "selectors": [
         "mdy-month-picker"
       ]
@@ -725,6 +721,7 @@
         "aria-current",
         "aria-disabled",
         "aria-label",
+        "aria-labelledby",
         "aria-selected"
       ],
       "selectors": [
@@ -756,7 +753,9 @@
         "mdy-part",
         "mdy-year-picker"
       ],
-      "aria": [],
+      "aria": [
+        "aria-labelledby"
+      ],
       "selectors": [
         "mdy-year-picker"
       ]
@@ -801,16 +800,13 @@
         "mdy-chip--centered",
         "mdy-chip--counter",
         "mdy-chip--selected",
+        "mdy-chip--value",
         "mdy-chip__tooltip",
         "mdy-control-label",
         "mdy-control-multiselect",
         "mdy-error-list",
         "mdy-icon",
         "mdy-inline-errors",
-        "mdy-input-wrapper",
-        "mdy-input-wrapper--disabled",
-        "mdy-input-wrapper--error",
-        "mdy-input-wrapper--readonly",
         "mdy-multiselect",
         "mdy-multiselect--open",
         "mdy-multiselect-overlay__empty",
@@ -838,6 +834,7 @@
       "aria": [
         "aria-activedescendant",
         "aria-atomic",
+        "aria-controls",
         "aria-describedby",
         "aria-disabled",
         "aria-hidden",
@@ -862,12 +859,11 @@
         "mdy-inline-errors",
         "mdy-input-prefix",
         "mdy-input-suffix",
-        "mdy-input-wrapper",
-        "mdy-input-wrapper--disabled",
         "mdy-part",
         "mdy-renderer",
         "mdy-renderer--number",
         "mdy-renderer--touched",
+        "mdy-spin-btn",
         "mdy-supporting-text"
       ],
       "aria": [
@@ -885,6 +881,7 @@
         "mdy-spin-btn-up"
       ],
       "aria": [
+        "aria-hidden",
         "aria-label"
       ],
       "selectors": [
@@ -956,8 +953,6 @@
         "mdy-inline-errors",
         "mdy-input-prefix",
         "mdy-input-suffix",
-        "mdy-input-wrapper",
-        "mdy-input-wrapper--disabled",
         "mdy-overlay-panel",
         "mdy-part",
         "mdy-renderer",
@@ -1028,8 +1023,6 @@
         "mdy-inline-errors",
         "mdy-input-prefix",
         "mdy-input-suffix",
-        "mdy-input-wrapper",
-        "mdy-input-wrapper--disabled",
         "mdy-part",
         "mdy-renderer",
         "mdy-renderer--text",
@@ -1053,8 +1046,6 @@
         "mdy-inline-errors",
         "mdy-input-prefix",
         "mdy-input-suffix",
-        "mdy-input-wrapper",
-        "mdy-input-wrapper--disabled",
         "mdy-part",
         "mdy-renderer",
         "mdy-renderer--textarea",
@@ -1145,8 +1136,6 @@
         "mdy-inline-errors",
         "mdy-input-prefix",
         "mdy-input-suffix",
-        "mdy-input-wrapper",
-        "mdy-input-wrapper--disabled",
         "mdy-overlay-panel",
         "mdy-part",
         "mdy-renderer",
@@ -1182,7 +1171,10 @@
       ],
       "aria": [
         "aria-invalid",
-        "aria-label"
+        "aria-label",
+        "aria-valuemax",
+        "aria-valuemin",
+        "aria-valuenow"
       ],
       "selectors": [
         "mdy-timepicker-segment"

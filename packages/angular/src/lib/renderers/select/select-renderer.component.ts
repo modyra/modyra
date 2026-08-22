@@ -366,8 +366,8 @@ export class MdySelectComponent<TValue = string>
    */
   // Built from the id factory with *this* control's current widget id, not read off the adapter's
   // view: the adapter is constructed once and holds the id the control had at that moment, which is
-  // the mount id — so the view spelled `mdy-control-0__option__…` while every id computed later in
-  // this component spelled `pick__…`. An id is a function of the document (ADR 0135), and the
+  // the mount id — so the view spelled the option ids from that one while every id computed later in
+  // this component spelled them from the field's own name. An id is a function of the document (ADR 0135), and the
   // factory is where that spelling lives.
   protected triggerId(): string {
     return defaultWidgetIdFactory.part(this.fieldId, "trigger");

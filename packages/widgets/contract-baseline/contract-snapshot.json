@@ -1954,17 +1954,6 @@
             "selected"
           ]
         },
-        "chipRemove": {
-          "element": "button",
-          "parent": "chip",
-          "optional": true,
-          "repeated": false,
-          "role": null,
-          "classes": [
-            "mdy-chip__remove"
-          ],
-          "states": []
-        },
         "chipMove": {
           "element": "button",
           "parent": "chip",
@@ -1973,6 +1962,17 @@
           "role": null,
           "classes": [
             "mdy-chip__move"
+          ],
+          "states": []
+        },
+        "chipRemove": {
+          "element": "button",
+          "parent": "chip",
+          "optional": true,
+          "repeated": false,
+          "role": null,
+          "classes": [
+            "mdy-chip__remove"
           ],
           "states": []
         },
@@ -3084,7 +3084,7 @@
           "parent": "root",
           "optional": true,
           "repeated": false,
-          "role": null,
+          "role": "dialog",
           "classes": [
             "mdy-popup",
             "mdy-timepicker__popup"

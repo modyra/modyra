@@ -351,8 +351,9 @@ export class MdySelectFieldElement extends MdyDropdownFieldElement<unknown | nul
    *
    * The reason this shape exists is the control that already has a keyboard model — and where the
    * platform's own list is drawn outside the document, as it is on a picker the page cannot see,
-   * that model produces no event and the value never moves. Angular's native shape has always driven
-   * itself from the contract's policy for the same reason.
+   * that model produces no event and the value never moves. The contract's policy is what answers
+   * then, because it is the only description of the move that does not depend on the platform
+   * having drawn the list where the page can reach it.
    *
    * Deliberately without `preventDefault`: where the platform *does* answer, it answers first and
    * lands on the same option this does, and setting one value twice changes nothing. Suppressing it
