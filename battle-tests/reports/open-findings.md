@@ -21531,3 +21531,38 @@ in the three renderers there — so the un-pinning stands on the commit rather t
 Said out loud because the difference cost two sessions an argument tonight, and *"I checked which one
 I was reading"* is a claim worth making explicitly rather than implying.
 
+
+## 386 — an option's id embeds its value, and the result is not selector-safe (S2, API-001)
+
+Noticed as a shape while looking at something else, then measured rather than left as a question. A
+select whose option values contain ordinary punctuation:
+
+```
+id                              getElementById   querySelector("#" + id)
+pick__option__with%20space      resolves         throws
+pick__option__hash#one          resolves         no match — parses as two selectors
+pick__option__dot.two           resolves         no match — parses as id plus class
+pick__option__quote"three       resolves         throws
+pick__option__plain             resolves         matches
+```
+
+Only the space is encoded; `#`, `.` and `"` go in raw.
+
+**Nothing about assistive technology is broken, and that is why it would survive review.**
+`aria-activedescendant` resolves — it is an exact attribute match, not a selector — and
+`getElementById` resolves every one. The path a screen reader takes is intact.
+
+What breaks is every path through a selector: a consumer styling one option, anything doing
+`querySelector("#" + id)`, and test code. Two of the five throw rather than return nothing, which is
+the worse half — a caller that handles "not found" still gets an exception.
+
+`CSS.escape` exists and a consumer can reach for it, but a contract that publishes an id publishes it
+for someone to use, and *"escape it first"* is a rule that lives nowhere near the id.
+
+**Measured on plain only, because the other two publish no option ids at all** — which is
+[385](#385), and is the reason this is not visible in lit or Angular rather than a sign that they are
+right.
+
+Owned by `esecutore`. No battle yet: the shape of the fix decides what to assert — a hash of the
+value, an index, or an escaped form are three different contracts — and pinning one would choose.
+
