@@ -22022,3 +22022,33 @@ greens have had runs against changing code to earn theirs.
 stripping `aria-posinset` reports twelve of twelve, and giving every chip position `1` reports one
 distinct position where twelve are wanted.
 
+
+### The unowned S2, measured — it is version 1 and nothing else
+
+`three-runtimes-three-vocabularies` has sat in the node baseline since before this migration with a
+title that says *three vocabularies*. Measured, the disagreement is one number:
+
+```
+TypeScript   parseDynamicForm accepts   1  2  3  4
+Java         MdyDynamicFormParser        —  2  3  4
+Rust                                     —  2  3  …
+```
+
+**A document declaring `version: 1` builds a form in TypeScript and is refused by the other two.**
+Nothing else in the set diverges — Java has since gained 4, and the battle's own report names `1` as
+the only member.
+
+That makes it a decision rather than a repair, and the decision is not obvious in either direction:
+
+- **if 1 is a legacy version TypeScript still honours**, the other two are missing it and should gain
+  it, and a document written for the oldest contract stops being renderer-specific;
+- **if 1 is gone**, TypeScript is the one accepting something the contract no longer defines, and it
+  should refuse it — which is a breaking change for anyone whose documents still say `1`.
+
+Whoever takes it needs that answer first, and it is not in the battle: the battle asserts *every
+version one runtime accepts is one the others have a position on*, which is satisfied by either.
+
+Recorded with the number because *three vocabularies* reads as an alignment project and this is one
+integer. The cost still grows the way the earlier note said — a document written for the wrong runtime
+today is a migration tomorrow — but the work is a decision and one line in two SDKs, not an alignment.
+
