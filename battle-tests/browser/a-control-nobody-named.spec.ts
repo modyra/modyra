@@ -1,4 +1,3 @@
-import { readFileSync } from "node:fs";
 import { expect, test } from "@playwright/test";
 import { MDY_WIDGET_KINDS } from "@modyra/widgets";
 
@@ -18,18 +17,17 @@ import { MDY_WIDGET_KINDS } from "@modyra/widgets";
  * So the two halves of the contract disagree about the same field, and the renderer resolves it by
  * producing a control a screen reader announces as its role and nothing else.
  *
- * **An auditor does not see all of it**, which is why the check is written by hand. axe-core over the
- * same four fields catches the text field, the select and the checkbox — and says nothing about the
- * `daterange`, whose `role="grid"` has no name at all. A role with no name is not a rule axe runs
- * here, and it is the one the widgets contract names explicitly.
+ * **The check is written by hand because an auditor did not see all of it.** axe-core over the same
+ * four fields caught the text field, the select and the checkbox, and said nothing about the
+ * `daterange`, whose `role="grid"` had no name at all — a role with no name is not a rule axe runs
+ * here, and it is the one the widgets contract names explicitly. A second test measured that gap
+ * and has been removed now that it closed; the reason is at the foot of this file.
  *
  * Either repair closes it: require a label where a document is read, or give a control the field's
  * own name when nobody wrote one. What this refuses is a control with a role and no name.
  *
  * Claims under attack: A11Y-004, A11Y-001.
  */
-
-const AXE = readFileSync("node_modules/axe-core/axe.min.js", "utf8");
 
 /**
  * Every kind, read from the package rather than written out here. A list copied into a spec named
@@ -112,62 +110,13 @@ test("every control has a name even when the document declared none", async ({ p
   expect(unnamed, JSON.stringify(unnamed, null, 1)).toEqual([]);
 });
 
-test("what the auditor still cannot see", async ({ page }) => {
-  // Not an assertion about Modyra: an assertion about the tool, so that "axe is green" is never read
-  // as "every control has a name".
-  //
-  // Its first form asked axe to catch three of four labelless fields and it did. Those three now
-  // carry a name, so it caught none and the assertion lost its premise — a check written about the
-  // world of a defect, which is the failure this campaign has met on both sides of the fence.
-  //
-  // What replaces it is the half axe never caught: a **composite** control, whose unnamed part is a
-  // role rather than an input. A `radiogroup`, a `grid`, a `dialog` with no accessible name is not a
-  // rule axe runs here, and those are the kinds still open.
-  //
-  // This test is written to expire. When the last composite kind is named it will fail, and the right
-  // response then is to delete it rather than repair it: there will be nothing left for a hand-written
-  // check to see that the auditor does not.
-  await page.addScriptTag({ content: AXE });
-  const seen: Array<Record<string, unknown>> = [];
-
-  for (const kind of ["radio", "segmented", "datepicker", "daterange", "timepicker", "file"]) {
-    const id = `axe-${kind}`;
-    await page.evaluate(
-      ({ mountId, k }) => window.battle.mountFields(mountId, [{ name: "f", kind: k, options: [{ value: "a", label: "A" }] }] as never),
-      { mountId: id, k: kind },
-    );
-    await page.waitForTimeout(150);
-
-    const auditor = await page.evaluate(async (mountId) => {
-      const axe = (window as never as {
-        axe: { run: (context: unknown, options: unknown) => Promise<{ violations: Array<Record<string, unknown>> }> };
-      }).axe;
-      const result = await axe.run(document.querySelector(`[data-form="${mountId}"]`), {
-        runOnly: { type: "tag", values: ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"] },
-      });
-      return result.violations.map((violation) => String(violation.id));
-    }, id);
-
-    const structural = await page.evaluate((mountId) => {
-      const host = document.querySelector(`[data-form="${mountId}"]`) as HTMLElement;
-      const named = (element: Element) => {
-        const aria = element.getAttribute("aria-label");
-        if (aria !== null && aria.trim() !== "") return true;
-        const by = element.getAttribute("aria-labelledby");
-        return by !== null && by.split(/\s+/).some((ref) => (document.getElementById(ref)?.innerText ?? "").trim() !== "");
-      };
-      return [...host.querySelectorAll('[role="radiogroup"],[role="grid"],[role="dialog"],[role="listbox"]')]
-        .filter((part) => !named(part))
-        .map((part) => part.getAttribute("role"));
-    }, id);
-
-    seen.push({ kind, auditor, unnamedRoles: structural });
-  }
-
-  // The finding this file makes is that a hand-written check sees something the auditor does not. It
-  // is true while at least one kind carries an unnamed role that axe says nothing about.
-  const invisible = seen.filter(
-    (each) => (each.unnamedRoles as string[]).length > 0 && (each.auditor as string[]).length === 0,
-  );
-  expect(invisible.length, JSON.stringify(seen, null, 1)).toBeGreaterThan(0);
-});
+// The second test of this file has been removed, which is what it asked for.
+//
+// It measured that a hand-written check saw an unnamed composite role the auditor said nothing
+// about, and it was written to expire: "when the last composite kind is named it will fail, and the
+// right response then is to delete it rather than repair it: there will be nothing left for a
+// hand-written check to see that the auditor does not."
+//
+// It failed. Every composite kind is now named, so the gap it documented is closed and the property
+// it protected is the one the test above already asserts — every control has a name, auditor or no
+// auditor. Repairing it would have meant inventing a new gap for it to watch.

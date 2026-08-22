@@ -17,6 +17,13 @@
  * `a-chip-that-does-not-say-where-it-is` cannot replace it: markup we authored can only ever confirm
  * that we authored it.
  *
+ * **Scope: Chromium, and the tree it computed.** A computed tree is the goods only in the engine
+ * that computed one, and engines disagree about which ARIA they discard and how they compute a
+ * name. This spec is sound because *this* property is one where they agree — `aria-posinset` on a
+ * role that does not permit it is dropped by all of them. An assertion here about anything they
+ * differ on would be a better receipt rather than the goods, and would need saying so. Gecko and
+ * WebKit are not covered by this file.
+ *
  * Claims under attack: A11Y-001, UI-011.
  */
 

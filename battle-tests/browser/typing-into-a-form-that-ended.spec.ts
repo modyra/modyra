@@ -63,15 +63,26 @@ for (const host of HOSTS) {
     expect(await page.evaluate(() => document.querySelectorAll('[data-form="d"] input').length),
       "the controls left the page with the form, so there is no window to test").toBe(1);
 
-    await control.fill("typed after the end");
-    await control.blur();
+    // **Neither throws nor writes** — the test's own title, and the only two things asserted below.
+    // A third assertion had crept in: that the control still *takes* the keystroke. That described
+    // the world of the defect rather than the property, and it went red the day the control was
+    // taken out of play — a repair reading as a regression.
+    //
+    // Both endings satisfy the title. A control that refuses the edit never writes; a control that
+    // accepts it and discards it never writes either. The spec is blind to which, on purpose.
+    const editable = await control.isEditable();
+    if (editable) {
+      await control.fill("typed after the end");
+      await control.blur();
+    }
     await page.waitForTimeout(340);
 
-    expect(await page.evaluate(() => (document.querySelector('[data-form="d"] input') as HTMLInputElement | null)?.value),
-      "the control refused the keystroke rather than taking it").toBe("typed after the end");
-
-    expect(await held(), "a form that has ended took a write, so the last thing typed is kept where nothing reads it")
-      .toBe('"typed while alive"');
+    expect(
+      await held(),
+      editable
+        ? "the control was still editable and the form took the write, so a form that has ended is still being edited"
+        : "the control was out of play, so the value the form ended with must be the value it holds",
+    ).toBe('"typed while alive"');
 
     expect(thrown, "touching a control whose form has ended threw").toEqual([]);
   });
