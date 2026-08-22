@@ -136,6 +136,10 @@ for (const host of HOSTS) {
       disabled: (element as HTMLButtonElement).disabled ?? null,
     }));
 
+    // Swallowed on purpose, as above: a renderer that refuses the pointer outright is already
+    // answering the property, and letting that refusal throw would turn the right behaviour into a
+    // failure. What is asserted is the value afterwards, which both a refused press and an ignored
+    // one leave alone.
     await cell(BEYOND).click({ force: true }).catch(() => undefined);
     await page.waitForTimeout(300);
 
@@ -183,6 +187,8 @@ for (const host of HOSTS) {
       .filter({ hasText: new RegExp(`^\\s*${OUTSIDE}\\s*$`) }).first();
     await expect(cell, `the open month drew no day ${OUTSIDE}`).toHaveCount(1, { timeout: 5_000 });
 
+    // Swallowed on purpose, as above: the press may be refused by the renderer, and that refusal is
+    // one of the two ways this property can hold.
     await cell.click({ force: true }).catch(() => undefined);
     await page.waitForTimeout(300);
 

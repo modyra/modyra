@@ -1,7 +1,7 @@
 {
   "note": "Actions taken without asserting the target exists, and actions whose failure is discarded. An unguarded action on an absent element waits out the test's whole budget; a swallowed one lets the next assertion measure a page it never changed. Both are sometimes deliberate. This records how many there are so the number cannot grow unnoticed.",
-  "recordedAt": "2026-08-22T10:40:01.231Z",
-  "total": 117,
+  "recordedAt": "2026-08-22T12:11:20.448Z",
+  "total": 120,
   "files": {
     "a-box-that-does-not-say-what-it-filters.spec.ts": {
       "positional": 0,
@@ -90,6 +90,10 @@
     "a-hand-that-says-which-ring.spec.ts": {
       "positional": 0,
       "swallowed": 1
+    },
+    "a-limit-the-calendar-only-declares.spec.ts": {
+      "positional": 0,
+      "swallowed": 3
     },
     "a-list-emptied-by-one-of-its-own-choices.spec.ts": {
       "positional": 0,
