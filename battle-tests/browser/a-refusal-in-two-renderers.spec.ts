@@ -204,7 +204,15 @@ for (const host of HOSTS) {
     }
 
     const rendered = await page.evaluate(() =>
-      [...document.querySelectorAll('[role="option"], [data-form="opts"] option')].map((each) => each.textContent?.trim()),
+      [...document.querySelectorAll('[role="option"], [data-form="opts"] option')]
+        // **The "nothing chosen" entry is not an option the document declared.** It is the absence
+        // of one, drawn so that a native list has somewhere to sit before a choice is made, and
+        // counting it made this spec read a correct control as offering a value nobody wrote.
+        //
+        // Excluded by its **part class** rather than by its empty text: a placeholder that gained a
+        // word would slip past a text check, and the catalogue is what says which element is which.
+        .filter((each) => !each.classList.contains("mdy-select__placeholder"))
+        .map((each) => each.textContent?.trim()),
     );
 
     const kept = parseDynamicFields([{ name: "s", kind: "select", label: "Plan", options }])[0]?.options ?? [];

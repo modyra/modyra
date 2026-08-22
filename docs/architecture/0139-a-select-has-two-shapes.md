@@ -1,6 +1,6 @@
 # ADR 0139: A select has two shapes, and one renderer only ever draws one of them
 
-Status: Accepted
+Status: Accepted — amended, see *Amendment* below
 
 ## Context
 
@@ -94,6 +94,37 @@ markup rather than by what they let someone do.
 **The check that fails if this decision is violated** is a contract check that reads `options` or
 `popup` for a `select` without saying which shape it means. There is no such gate today; writing one
 is the follow-up this record owes.
+
+## Amendment: the native shape is not the platform's keyboard model
+
+Measured after this record was accepted, stepping a closed native `<select>` key by key on both
+renderers that draw one:
+
+```
+                 ArrowDown   Enter   ArrowDown   Enter
+lit                null      null     null       null
+angular            null      null     null       "a"
+events the <select> received:  keydown ×4, and nothing else, in both
+```
+
+**Neither receives a `change`.** The platform draws its list outside the document and produces no
+event this page can hear, so Angular's native shape works because its host binds `(keydown)` and
+drives the selection through the contract's own policy — the library imitating the platform, not the
+platform answering. Lit now does the same, deliberately without `preventDefault`, so that where the
+platform *does* answer it answers first and lands on the same option.
+
+This does not change the decision, and it corrects one of the reasons given for it. The argument
+quoted above for preferring the native shape names *"the platform's keyboard model"*, and in this
+environment neither renderer gets one — the keyboard is ours in both shapes. **Type-ahead and the
+mobile picker remain real reasons and are not measured here**; they are what is left of the case for
+the native shape, and they are what the decision about plain should be weighed against rather than a
+keyboard model that turns out to be a library's.
+
+A second thing the same work added, which belongs in this record because a check will meet it: the
+native shape draws an entry for **nothing chosen**, so that a list has somewhere to sit before a
+choice is made. It is not an option a document declared, and it carries the `placeholder` part's class
+so that it can be told apart by the catalogue rather than by having empty text. A collector reading
+`option` elements must exclude it or it reports a control as offering a value nobody wrote.
 
 ## Security and privacy
 
