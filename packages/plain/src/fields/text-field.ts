@@ -5,7 +5,6 @@
  * controllers: "slider" is structurally just a numeric field with
  * <input type=range> markup, not a distinct controller).
  */
-import { showsAsInvalid } from "@modyra/widgets";
 import { observerFor, type MdyFieldHandle, type MdyReactivity, MDY_VALUE_CONTRACTS } from "@modyra/core";
 import type { MdyDynamicNumberField, MdyDynamicTextField } from "@modyra/core";
 import {
@@ -218,7 +217,7 @@ export function renderTextField(
       // error list appears once the field is touched, and whether the field *is* wrong does not wait
       // for that. A control marked wrong beside a label that says nothing is the field telling two
       // different stories about itself.
-      hasError: showsAsInvalid({ valid: handle.valid(), disabled: handle.disabled() }),
+      hasError: visibleErrorsOf(handle).length > 0,
       filled: Boolean(handle.value()),
       required: handle.required(),
     });

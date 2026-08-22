@@ -18,7 +18,6 @@ import {
   projectFieldShellA11y,
   shownErrorsOf,
   visibleErrorsOf,
-  showsAsInvalid,
   type MdyDateRangeValue,
   MDY_I18N_MESSAGES_DEFAULT,
   type MdyI18nMessages,
@@ -243,7 +242,7 @@ export function renderDaterangeField(
     shell.syncState({
       open: state.open,
       touched: handle.touched(), disabled: handle.disabled(), readonly: handle.readonly(),
-      hasError: showsAsInvalid({ valid: handle.valid(), disabled: handle.disabled() }), filled: value.start !== null, required: handle.required(),
+      hasError: visibleErrorsOf(handle).length > 0, filled: value.start !== null, required: handle.required(),
     });
 
     const monthKey = `${anchor.year}-${anchor.month}`;

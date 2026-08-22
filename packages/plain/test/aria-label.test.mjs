@@ -12,7 +12,7 @@ import { installDomGlobals } from "./support/dom-env.mjs";
 
 installDomGlobals();
 const { renderField } = await import("../dist/index.js");
-const { createForm, field } = await import("@modyra/core");
+const { createForm, field, required } = await import("@modyra/core");
 
 const host = () => {
   const el = document.createElement("div");
@@ -46,7 +46,11 @@ test("an explicit name wins over the visible label", () => {
 });
 
 test("a labelled control is named by its label, without the required marker", () => {
-  const form = createForm({ n: field("", [(v) => (v ? [] : ["req"])]) });
+  // The contract's own `required`, not a closure that happens to refuse an empty string: the marker
+  // is drawn from `handle.required()`, which is derived from the rules the engine recognises. With a
+  // bare closure the field is not required and the assertion below would be about a marker the shell
+  // is right not to draw.
+  const form = createForm({ n: field("", [required()]) });
   const container = host();
 
   renderField(

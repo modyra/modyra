@@ -3902,6 +3902,7 @@
   "keepKeyboardInPlay": [
     "(0) leaving: Element",
     "(1) scope?: Element | null",
+    "(2) options?: { /** * Whether the caller is asking *after* the platform has already blurred the control. * * A renderer that takes a control out of play itself calls before, with the keyboard still on * it. A renderer that hears about it afterwards — lit binds `?disabled` while rendering — has * only the fact that focus is now nowhere, and says so here. Without the distinction, \"nowhere\" * matches a field nobody was ever standing in, and putting focus on such a widget's root moves * the keyboard to a control the person never visited. */ readonly afterBlur?: boolean; }",
     "-> returns: void"
   ],
   "keyBindingFor": [
