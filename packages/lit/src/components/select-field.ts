@@ -6,7 +6,7 @@ import {
   createTypeahead,
   isTypeaheadCharacter,
   optionsWithUnrecognizedValue,
-  shownErrorsOf, selectKeyboardAction } from "@modyra/widgets";
+  shownErrorsOf, selectKeyboardAction, listboxNextIndex } from "@modyra/widgets";
 import { MdyLitSelectAdapter } from "../widget-runtime/index.js";
 import { MdyDropdownFieldElement } from "./dropdown-field.js";
 import {
@@ -273,28 +273,76 @@ export class MdySelectFieldElement extends MdyDropdownFieldElement<unknown | nul
    */
   protected override renderControl(handle: MdyFieldHandle<unknown | null>): unknown {
     const options = this.renderedOptions(handle.value());
-    const selected = options.findIndex((option) => option.value === handle.value());
+    const held = handle.value();
+    // Nothing chosen is a state a native chooser can only show by having an entry for it. Without
+    // one, index 0 is a real option: the control read "A" while the form held `null` — a field that
+    // looks answered and is not — and the first step of a keyboard landed on the option the control
+    // was already showing, so the platform's own keyboard model changed nothing.
+    //
+    // Disabled, so it cannot be chosen back into; it leaves as soon as something is.
+    const empty = held === null || held === undefined || held === "";
+    // Kept while it is the state, or while a placeholder gives it words. Once something is chosen and
+    // there is nothing to say about the absence, the entry goes: a list that keeps offering "nothing"
+    // after a choice is a list with a row nobody can use.
+    const offersEmpty = empty || this.placeholder !== "";
     return html`<select
       id=${this.fieldId}
       class="mdy-select__trigger"
-      .selectedIndex=${selected}
       ?disabled=${handle.disabled()}
       aria-invalid=${this.showErrors(handle) ? "true" : "false"}
       aria-readonly=${handle.readonly() ? "true" : nothing}
       aria-required=${String(handle.required())}
       aria-describedby=${this.showErrors(handle) ? this.errorsId : this.descriptionId}
       @change=${(event: Event) => {
-        const index = (event.target as HTMLSelectElement).selectedIndex;
-        const option = options[index];
+        // Matched by what the element reports rather than by where it sits: the entry for "nothing
+        // chosen" comes and goes with the state, so an index into this closure's list is an index
+        // into a list that may have moved under it.
+        const picked = (event.target as HTMLSelectElement).value;
+        const option = options.find((each) => String(each.value) === picked);
         if (!option) return;
         handle.set(option.value);
         handle.markAsDirty();
         handle.markAsTouched();
       }}
+      @keydown=${(event: KeyboardEvent) => this.stepNative(event, handle, options)}
       @blur=${() => { handle.markAsTouched(); this.requestUpdate(); }}
     >
-      ${this.renderedOptions(handle.value()).map((option) => html`<option .value=${String(option.value)} ?disabled=${option.disabled === true}>${option.label}</option>`)}
+      ${offersEmpty ? html`<option value="" disabled ?selected=${empty}>${this.placeholder || " "}</option>` : nothing}
+      ${options.map((option) => html`<option
+        .value=${String(option.value)}
+        ?disabled=${option.disabled === true}
+        ?selected=${option.value === held}
+      >${option.label}</option>`)}
     </select>`;
+  }
+
+  /**
+   * The arrows on the native chooser, answered here as well as by the platform.
+   *
+   * The reason this shape exists is the control that already has a keyboard model — and where the
+   * platform's own list is drawn outside the document, as it is on a picker the page cannot see,
+   * that model produces no event and the value never moves. Angular's native shape has always driven
+   * itself from the contract's policy for the same reason.
+   *
+   * Deliberately without `preventDefault`: where the platform *does* answer, it answers first and
+   * lands on the same option this does, and setting one value twice changes nothing. Suppressing it
+   * would take away the model this shape was chosen for.
+   */
+  private stepNative(
+    event: KeyboardEvent,
+    handle: MdyFieldHandle<unknown | null>,
+    options: ReadonlyArray<MdySelectOption<unknown>>,
+  ): void {
+    if (event.key !== "ArrowDown" && event.key !== "ArrowUp") return;
+    if (options.length === 0 || handle.disabled() || handle.readonly()) return;
+    const at = options.findIndex((option) => option.value === handle.value());
+    const to = listboxNextIndex(event.key, at, options.length);
+    if (to === null) return;
+    const option = options[to];
+    if (!option || option.disabled === true) return;
+    handle.set(option.value);
+    handle.markAsDirty();
+    handle.markAsTouched();
   }
 
   override render(): unknown {
