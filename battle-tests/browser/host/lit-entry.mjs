@@ -9,7 +9,7 @@
  * It exposes the same shape of operations as the Plain host where they mean the same thing, so a spec
  * can ask both renderers the same question.
  */
-import { assertSafeDynamicFieldNames, buildDynamicFieldValidators, createLitForm, field, MDY_VALUE_CONTRACTS, parseDynamicFields } from "@modyra/lit/adapter";
+import { parseDynamicForm, assertSafeDynamicFieldNames, buildDynamicFieldValidators, createLitForm, field, MDY_VALUE_CONTRACTS, parseDynamicFields } from "@modyra/lit/adapter";
 import { defineMdyElements, mdyLitTagFor } from "@modyra/lit/ui";
 import { documentProbes } from "./document-probes.mjs";
 
@@ -230,6 +230,28 @@ window.battleLit = {
    * submitted — and asking one renderer without being able to ask the other makes a silence look
    * like an answer.
    */
+  /**
+   * Mount a form the way an application mounts one that arrived as data.
+   *
+   * The door this host did not have, so a question asked of the document path could only reach two
+   * renderers — and the one it could not reach is the one that keeps a value its kind cannot hold.
+   * A refusal is answered with the diagnostics rather than with an empty form: a document the
+   * contract will not carry is a different outcome from one it carries badly.
+   */
+  async mountDocument(id, envelope, options = {}) {
+    const parsed = parseDynamicForm(envelope, { mode: options.mode ?? "strict" });
+    if (!parsed.ok) {
+      return {
+        mounted: false,
+        diagnostics: parsed.diagnostics.map((each) => ({ code: each.code, path: each.path, message: each.message })),
+      };
+    }
+    const result = await this.mountFields(id, parsed.fields, options);
+    return result.mounted === false
+      ? result
+      : { mounted: true, accepted: parsed.acceptedCount, rejected: parsed.rejectedCount };
+  },
+
   readonly(id, path) {
     mounted.get(id).form.setReadonly(path, () => true);
   },
