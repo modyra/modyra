@@ -153,8 +153,12 @@ export function isPathRef(operand: MdyOperand): operand is MdyPathRef {
   // The member has to *be* a path, not merely be there. `{ path: 4 }` answered true here and then
   // took the read down inside `memberAccess`, where a number has no `split` — a malformed reference
   // becoming an exception in the middle of reading a form.
-  return typeof operand === "object" && operand !== null && !("op" in operand)
-    && typeof (operand as MdyPathRef).path === "string";
+  //
+  // And it has to be *only* a path, through the same helper its three siblings use. Answering on
+  // `path` alone made this the one guard that said nothing about what else the object carried, so
+  // `{ path: "a", self: true }` was handed to a consumer as a path reference while the validator
+  // turned the same operand away.
+  return namesOneThing(operand, "path") && typeof (operand as MdyPathRef).path === "string";
 }
 
 /** Whether `operand` names the value of the field the clause is written on. */
