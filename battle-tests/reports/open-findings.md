@@ -22295,3 +22295,34 @@ therefore passes.
 Owned by `esecutore`. The fix is presumably to ask about an id the renderer actually publishes — the
 label's, or any part's — rather than the widget id, and that choice is theirs.
 
+
+### 392 closed in two of three, and lit is where the one look pointed
+
+`22bf3996` made the guard ask about ids a widget actually published rather than about the widget id —
+the shape the finding named — and `0e6540c0` closed 366 with it.
+
+```
+plain     warns          was silent because it asked about an id no element carried
+angular   warns
+lit       silent         still
+```
+
+lit is the only one left, and it is where the single look pointed rather than somewhere new:
+
+```
+packages/lit/src/base.ts:255
+  if (MDY_DEV && !this._saidCollision) {
+    this._saidCollision = true;              <- set before the check knows whether it saw anything
+    reportIdCollision(this, this.fieldId, ...);
+  }
+```
+
+**An element whose first update happens while it is alone on the page spends its only check.** *Once
+per element* is the right rule against a sentence repeated every frame; *once, possibly at a moment
+with nothing to see, and never again* is a different rule wearing the same words.
+
+Whether that is the whole of lit's silence I have not measured — two elements appended in one task may
+both flush after both carry their ids, in which case each would see two and this would not explain it.
+But the line is wrong either way, and it is the only candidate the look left standing once the dev flag
+and the missing code were ruled out.
+
