@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://modyra.github.io/modyra/sitemap-index.xml
