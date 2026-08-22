@@ -25,6 +25,7 @@
  */
 
 import { expect, test } from "@playwright/test";
+import { MDY_WIDGET_KEYBOARD } from "@modyra/widgets";
 
 const HOSTS = [
   { name: "plain", page: "/index.html", ready: "battleReady", api: "battle" },
@@ -33,6 +34,44 @@ const HOSTS = [
 ];
 
 const OPTIONS = ["a", "b", "c", "d"].map((value) => ({ value, label: value.toUpperCase() }));
+
+
+/**
+ * The keys that move a chip, **read from the contract** rather than written here.
+ *
+ * This spec pressed `Alt`+arrow. That binding is gone — `Alt`+arrow is the browser's Back and
+ * Forward — and it was replaced by a grab: one key picks a chip up, arrows move it, the same key
+ * puts it down. The spec went red in all three renderers and read as the reorder breaking, when
+ * what had changed was the key.
+ *
+ * A key written into a spec is a copy of something the table owns, and every copy in this project
+ * has drifted from its original. So the gesture is assembled from the declarations: whichever key
+ * grabs, whichever moves by one towards the front, whichever drops. Rename them and this still runs.
+ */
+const chipKeys = () => {
+  const declared = (MDY_WIDGET_KEYBOARD as unknown as Record<string, ReadonlyArray<Record<string, unknown>>>).multiselect ?? [];
+  const find = (intent: string, by?: number) => declared.find((binding) =>
+    binding.intent === intent && binding.on === "chip" && binding.toEnd !== true
+    && (by === undefined || binding.by === by));
+  return { grab: find("grab")?.key as string | undefined, left: find("move", -1)?.key as string | undefined };
+};
+
+/**
+ * Move the chip under focus `steps` places towards the front, however the contract says to.
+ *
+ * A grab is a mode, so it is entered and left. Where the table declares none, the moves are pressed
+ * directly — the spec follows the contract rather than assuming which shape it is in.
+ */
+async function moveLeft(page: import("@playwright/test").Page, steps: number) {
+  const { grab, left } = chipKeys();
+  expect(left, "the contract declares no key that moves a chip towards the front").toBeDefined();
+  if (grab !== undefined) { await page.keyboard.press(grab); await page.waitForTimeout(120); }
+  for (let at = 0; at < steps; at += 1) {
+    await page.keyboard.press(left as string);
+    await page.waitForTimeout(250);
+  }
+  if (grab !== undefined) { await page.keyboard.press(grab); await page.waitForTimeout(250); }
+}
 
 for (const host of HOSTS) {
   const mount = async (page: import("@playwright/test").Page, id: string, reorderable: boolean) => {
@@ -74,16 +113,13 @@ for (const host of HOSTS) {
     ).toBe(3);
 
     await chips(page, "by-key").nth(2).focus();
-    await page.keyboard.press("Alt+ArrowLeft");
-    await page.waitForTimeout(200);
-    await page.keyboard.press("Alt+ArrowLeft");
-    await page.waitForTimeout(200);
+    await moveLeft(page, 2);
     const byKeystroke = await held(page, "by-key");
 
     expect(
       byKeystroke,
-      `two presses of Alt+ArrowLeft on the last chip left ${JSON.stringify(byKeystroke)} rather than ` +
-        `["c","a","b"] — the keyboard cannot reorder, which is the door that has to work first`,
+      `moving the last chip two places towards the front left ${JSON.stringify(byKeystroke)} rather ` +
+        `than ["c","a","b"] — the keyboard cannot reorder, which is the door that has to work first`,
     ).toEqual(["c", "a", "b"]);
 
     // By drag: the same intention, expressed with a pointer.
@@ -130,10 +166,7 @@ for (const host of HOSTS) {
 
     await mount(page, "byKey", true);
     await chips(page, "byKey").last().focus();
-    await page.keyboard.press("Alt+ArrowLeft");
-    await page.waitForTimeout(250);
-    await page.keyboard.press("Alt+ArrowLeft");
-    await page.waitForTimeout(250);
+    await moveLeft(page, 2);
     const byKey = await held(page, "byKey");
 
     await mount(page, "byTap", true);
