@@ -110,6 +110,69 @@ const builtAt = newestUnder(HOST, BUILT_KINDS);
 // directory, either of which names the real situation.
 if (builtAt === 0) process.exit(0);
 
+
+/**
+ * Every source file under a tree, as paths relative to it.
+ *
+ * The walk above answers "when was anything last written", which is the question for whether a build
+ * happened at all. This one is for the question underneath it: **which** files were written.
+ */
+function filesUnder(directory, extensions, prefix = "") {
+  const found = [];
+  let entries;
+  try {
+    entries = readdirSync(directory, { withFileTypes: true });
+  } catch {
+    return found;
+  }
+  for (const entry of entries) {
+    const path = join(directory, entry.name);
+    const relative = prefix === "" ? entry.name : `${prefix}/${entry.name}`;
+    if (entry.isDirectory()) {
+      found.push(...filesUnder(path, extensions, relative));
+      continue;
+    }
+    if (!extensions.some((extension) => entry.name.endsWith(extension))) continue;
+    found.push({ relative, at: statSync(path).mtimeMs });
+  }
+  return found;
+}
+
+/**
+ * Modules whose source is newer than the file it was emitted to.
+ *
+ * **This is the hole the newest-against-newest comparison cannot see.** TypeScript emits what it can
+ * even when it reports errors, and an incremental build re-emits only what it managed: one module
+ * fails, keeps yesterday's output, and every other file in `dist` is written a second later. The
+ * newest source is then older than the newest artefact, the guard passes, and the suite runs against
+ * a package where one module is yesterday's code.
+ *
+ * Asked per file, that is visible and unambiguous — a source newer than *its own* output was not
+ * re-emitted. An unchanged source is older than its output, so a partial rebuild produces no false
+ * positive here; only a module that should have been written and was not.
+ *
+ * Only for packages whose `dist` mirrors `src` file for file. A bundle is one artefact from many
+ * sources and has no counterpart to ask about; the newest-against-newest check is all there is for it.
+ */
+function notReEmitted(packageName) {
+  const sourceRoot = join(ROOT, "packages", packageName, "src");
+  const distRoot = join(ROOT, "packages", packageName, "dist");
+  const emitted = new Map(filesUnder(distRoot, [".js", ".mjs"]).map(({ relative, at }) => [relative, at]));
+  if (emitted.size === 0) return [];
+
+  const behind = [];
+  for (const { relative, at } of filesUnder(sourceRoot, [".ts"])) {
+    if (relative.endsWith(".d.ts") || relative.endsWith(".spec.ts")) continue;
+    const counterpart = relative.replace(/\.ts$/, ".js");
+    const emittedAt = emitted.get(counterpart) ?? emitted.get(relative.replace(/\.ts$/, ".mjs"));
+    // No counterpart at all is not staleness: a source may be type-only, or the package may bundle.
+    // What this asks about is a file that *has* an output and is newer than it.
+    if (emittedAt === undefined) continue;
+    if (at > emittedAt) behind.push({ file: relative, behindBy: Math.round((at - emittedAt) / 1000) });
+  }
+  return behind;
+}
+
 const stale = [];
 for (const { name, via } of SOURCES) {
   const sourceAt = newestUnder(join(ROOT, "packages", name, "src"), SOURCE_KINDS);
@@ -134,7 +197,33 @@ for (const { name, via } of SOURCES) {
   }
 }
 
-if (stale.length === 0) process.exit(0);
+// The second question, asked only once the first is satisfied: a build that happened, and left one
+// module behind.
+const partial = [];
+if (stale.length === 0) {
+  for (const { name } of SOURCES) {
+    const behind = notReEmitted(name);
+    if (behind.length > 0) partial.push({ name, behind });
+  }
+}
+
+if (stale.length === 0 && partial.length === 0) process.exit(0);
+
+if (stale.length === 0) {
+  process.stderr.write(
+    `\nA build ran and did not finish. Every package is newer than its source overall, but some\n` +
+      `modules were never re-emitted — TypeScript writes what it can even when it reports errors, so\n` +
+      `the newest artefact says nothing about the file that failed.\n\n` +
+      partial
+        .map(({ name, behind }) =>
+          `  @modyra/${name}`.padEnd(24) + `${behind.length} module(s) older than their source\n` +
+          behind.slice(0, 5).map(({ file, behindBy }) => `      ${file}  by ${behindBy}s\n`).join("") +
+          (behind.length > 5 ? `      … and ${behind.length - 5} more\n` : ""))
+        .join("") +
+      `\nRead the build's own errors, then run the suite again:\n\n  npm run battle:browser\n\n`,
+  );
+  process.exit(1);
+}
 
 // With the date omitted, "12:49" against yesterday's "23:09" reads as newer to a person and to a
 // string sort. The comparison is on milliseconds; the message says which day it is talking about.
