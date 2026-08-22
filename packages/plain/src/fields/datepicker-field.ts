@@ -267,14 +267,12 @@ export function renderDatepickerField(
     // coordinates are `anchorOverlay`'s, and this only measures and applies them.
     if (state.open) positionOverlay(popup, shell.wrapper, anchoring);
     else releaseOverlayPlacement(popup);
-    setText(
-      monthLabel,
-      state.viewMode === "years"
-        ? String(state.viewYear)
-        : state.viewMode === "months"
-          ? String(state.viewYear)
-          : `${dateLocale.monthNamesLong[state.viewMonth - 1]} ${state.viewYear}`,
-    );
+    // The same words in every view, which is what the other renderers of this contract show.
+    //
+    // A header that reads `2026` while the years are on screen is a button whose text is identical
+    // to one of the cells under it: anything looking for the year — a person, a test, a tool — finds
+    // the header first and presses the way back instead of the year they meant.
+    setText(monthLabel, `${dateLocale.monthNamesLong[state.viewMonth - 1]} ${state.viewYear}`);
     monthLabel.setAttribute("aria-label", messages.datepickerChangeView(monthLabel.textContent ?? ""));
     // The grid is named by the month it shows, rather than by whatever text happens to be inside it:
     // a name made of day numbers is not a name, and it disappears with them when the calendar is
