@@ -10,6 +10,8 @@
  */
 import type { MdyDraftOptions } from "@modyra/core";
 import {
+  buildDynamicValidations,
+  type MdyDynamicValidation,
   applyFlatValidators,
   buildFlatFormSchema,
   createForm,
@@ -41,10 +43,22 @@ export function buildForm(
    * Passed through rather than re-declared: a draft is the *form's* option, and this renderer's job
    * is to hand it over, not to have an opinion about it.
    */
-  formOptions: { readonly draft?: string | MdyDraftOptions } = {},
+  formOptions: {
+    readonly draft?: string | MdyDraftOptions;
+    /**
+     * The document's cross-field rules, as `parseDynamicForm` reports them.
+     *
+     * A form built without them behaves as though the slot were empty: a document saying "start and
+     * end must differ" produced a form that said so nowhere and submitted the pair anyway. They are
+     * the form's own validators — one rule about two fields has no field to belong to.
+     */
+    readonly validations?: ReadonlyArray<MdyDynamicValidation>;
+  } = {},
 ): MdyTypedForm<MdyFormSchema> {
+  const { validations = [], ...forwarded } = formOptions;
   const form = createForm(buildFlatFormSchema(fields, collections), {
-    ...formOptions,
+    ...forwarded,
+    validators: buildDynamicValidations(validations),
     reactivity,
     autoActivate: false,
   });
