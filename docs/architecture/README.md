@@ -150,6 +150,7 @@ absent section reads as an oversight, and "no security impact" is a finding.
 - [ADR 0133: A chip's mark is drawn, never written](0133-a-mark-that-is-never-text.md) — the argument that decided it turned out to be false, and the decision stands on the two reasons that were not why it was taken
 - [ADR 0134: The projection decides an id, and every renderer applies it](0134-the-projection-decides-an-id.md) — an `aria-labelledby` the contract emits resolved in one renderer and pointed at nothing in another
 - [ADR 0135: An id is a function of the document, not of mount order](0135-an-id-is-a-function-of-the-document.md) — two renderers minted ids from a counter, so the same declaration got a different id depending on what was mounted first
+- [ADR 0136: A version one runtime accepts is a version all of them accept](0136-one-contract-version-set.md) — TypeScript accepted a version Rust and Java refuse, so a document built a form in one runtime and did not exist for the other two
 - [ADR 0092: A condition travels with the form](0092-a-condition-travels-with-the-form.md) — `when` and `asyncWhen` were closures, so a schema carrying one was not data and the document half could not say what the typed half said
 
 ## Security-relevant records
