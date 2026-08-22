@@ -40,6 +40,21 @@ const form = useMdyDynamicForm(doc.fields); // React
     </div>
   </section>
 
+  <section class="demo" aria-labelledby="demo-heading">
+    <p class="section-label">Sixty seconds</p>
+    <h2 id="demo-heading">One contract, running</h2>
+    <video
+      src={based('demo/modyra-demo-60s.mp4')}
+      poster={based('demo/modyra-demo-poster.png')}
+      controls
+      muted
+      loop
+      playsinline
+      preload="metadata"
+      aria-label="A checkout form typed live beside its JSON state, the same contract under three themes and dark mode, then a field added in Studio and exported as a contract"
+    ></video>
+  </section>
+
   <section class="contract" aria-labelledby="contract-heading">
     <div>
       <p class="section-label">Not another form state hook</p>
@@ -140,7 +155,7 @@ const form = useMdyDynamicForm(doc.fields); // React
 </SiteLayout>
 
 <style>
-  .hero, .contract, .agents, .principles, .honest, .paths { padding: 0 clamp(1.25rem, 7vw, 6rem) clamp(3.5rem, 7vw, 6rem); }
+  .hero, .contract, .agents, .principles, .honest, .paths, .demo { padding: 0 clamp(1.25rem, 7vw, 6rem) clamp(3.5rem, 7vw, 6rem); }
   .hero { padding-top: 0; }
   .hero h1 { max-width: 16ch; font-size: clamp(2.7rem, 7vw, 5.4rem); line-height: 1.02; letter-spacing: -.025em; }
   .lede { max-width: 58ch; margin: 1.5rem 0 0; color: var(--page-muted); font-size: clamp(1.08rem, 1.8vw, 1.35rem); line-height: 1.55; }
@@ -149,7 +164,8 @@ const form = useMdyDynamicForm(doc.fields); // React
   /* The ink gradient, not the bright one: white text on the bright stops measures as low as
      2.85:1, and the coral end made the primary action look mis-coloured. */
   .actions .primary { border-color: transparent; background: var(--mdy-gradient-brand-ink); color: #fff; font-weight: 700; }
-  .contract, .agents, .principles, .honest, .paths { border-top: 1px solid var(--page-border); padding-top: clamp(2.5rem, 6vw, 4.5rem); }
+  .contract, .agents, .principles, .honest, .paths, .demo { border-top: 1px solid var(--page-border); padding-top: clamp(2.5rem, 6vw, 4.5rem); }
+  .demo video { display: block; width: 100%; margin-top: 2rem; border: 1px solid var(--page-border); border-radius: .9rem; background: #0e0f16; }
   .section-label { margin: 0 0 .8rem; color: var(--page-muted); font-family: var(--page-mono); font-size: .78rem; letter-spacing: .1em; text-transform: uppercase; }
   h2 { max-width: 26ch; font-size: clamp(1.7rem, 3.5vw, 2.6rem); }
   h2 em { font-style: normal; color: var(--mdy-indigo); }
