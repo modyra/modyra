@@ -145,6 +145,19 @@ export interface MdyKeyBinding {
    * just left — the same key, the same close, the opposite answer.
    */
   readonly restoresFocus?: boolean;
+  /**
+   * A field-level capability this binding depends on, where the kind alone does not decide it.
+   *
+   * `on` says *which part answers a key*; this says *whether the key exists at all* for this field.
+   * Reordering a chosen value is the case that forced it: every multiselect has chips, and only one
+   * declared `reorderable` has an order a person may change — so the two `Alt`+arrow bindings belong
+   * to the kind and not to every field of it.
+   *
+   * Without it the table said a kind answers four keys that a default field answers none of, and
+   * anything reading it across kinds — a sweep, a help panel, a consumer's own handler — had to
+   * carry its own list of which. A capability named here is one it can ask the field about.
+   */
+  readonly requires?: string;
 }
 
 /** Kinds whose value is chosen from a list the keyboard walks. */
@@ -259,8 +272,8 @@ function keyboardFor(kind: MdyWidgetKind): readonly MdyKeyBinding[] {
   // Declared for a kind whose value is a list a person arranges, which the catalogue says by
   // holding a `chips` part: a set of filters has an order nobody chose and nothing to reorder.
   if ("chips" in MDY_WIDGET_CONTRACTS[kind].parts) {
-    bindings.push({ key: "Alt+ArrowLeft", intent: "reorder", by: -1, on: "chip" });
-    bindings.push({ key: "Alt+ArrowRight", intent: "reorder", by: 1, on: "chip" });
+    bindings.push({ key: "Alt+ArrowLeft", intent: "reorder", by: -1, on: "chip", requires: "reorderable" });
+    bindings.push({ key: "Alt+ArrowRight", intent: "reorder", by: 1, on: "chip", requires: "reorderable" });
     // Moving *between* chips, and removing the one you are on. Declared `when: "closed"`, because
     // while the popup is showing the arrows belong to the list a person is choosing from — the same
     // key in two places is what the phase exists to separate.
