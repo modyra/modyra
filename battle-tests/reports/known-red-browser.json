@@ -1,47 +1,14 @@
 {
   "note": "Browser specs that are red because the defect they describe is open. A red listed here does not fail a build; a red that is not listed is a regression. Rewrite with `npm run battle:browser:ci -- --accept`.",
   "order": "Repair in severity order, as the node tier does. A spec's severity is the worst of the claims its header names; `unknown` is a spec that names none, which is most of them.",
-  "recordedAt": "2026-08-22T03:14:39Z",
-  "openReds": 34,
+  "recordedAt": "2026-08-22T11:36:59Z",
+  "openReds": 3,
   "bySeverity": {
-    "S0": 1,
-    "S1": 29,
-    "S2": 4
+    "S1": 3
   },
   "knownRed": [
-    "a-rule-the-preview-enforces.spec.ts › a document's cross-field rule reaches the page",
-    "a-box-that-does-not-say-what-it-filters.spec.ts › the filter box says what it is and what it changes, lit",
-    "a-calendar-behind-a-closed-picker.spec.ts › plain: tabbing past a closed widget reaches the next field",
-    "a-choice-shown-that-was-never-made.spec.ts › a select holding a value no option carries, lit",
-    "a-control-inside-another-control.spec.ts › no control sits inside another control, lit",
-    "a-control-nobody-named.spec.ts › every control has a name even when the document declared none",
-    "a-dialog-nothing-can-point-at.spec.ts › the opener points at the dialog it opens, lit",
-    "a-dialog-the-page-can-be-walked-out-of.spec.ts › a time picker's dialog says the page behind it is not there, lit",
-    "a-form-that-ended-under-the-controls.spec.ts › controls left on the page after the form ended are not still offering to edit it",
-    "a-grid-that-names-a-label-nobody-wrote.spec.ts › every grid a calendar shows is named, lit",
-    "a-grid-with-no-name.spec.ts › lit: a role that must be named has a name",
-    "a-kind-nobody-declared-becomes-a-text-box.spec.ts › a kind nobody declared, lit",
-    "a-mount-that-stopped-halfway.spec.ts › a mount that refuses a field leaves nothing of the fields it had already painted",
-    "a-number-nobody-can-hear.spec.ts › a clock says what it is set to, lit",
-    "a-number-you-change-with-arrows.spec.ts › the hour and minute segments carry what the contract declares, lit",
-    "a-popup-lit-cannot-open-either.spec.ts › every lit control that declares a popup opens it from the keyboard",
-    "a-star-on-a-field-nobody-must-fill.spec.ts › plain: a required marker and aria-required say the same thing",
-    "a-state-a-multiselect-does-not-show.spec.ts › a chip carries every class the contract says it is, lit",
-    "a-state-a-multiselect-does-not-show.spec.ts › a multiselect shows that it cannot be edited, lit",
-    "a-time-that-changed-when-nobody-changed-it.spec.ts › a time nobody changed is the time that was there, lit",
     "an-id-a-selector-cannot-reach.spec.ts › every id a control publishes is reachable by a selector, angular",
     "an-id-a-selector-cannot-reach.spec.ts › every id a control publishes is reachable by a selector, lit",
-    "an-id-a-selector-cannot-reach.spec.ts › every id a control publishes is reachable by a selector, plain",
-    "an-id-you-can-write-down-in-advance.spec.ts › one scope for two forms is not silent, lit",
-    "an-id-you-can-write-down-in-advance.spec.ts › two scoped forms on one page do not render one id twice, angular",
-    "an-opener-that-names-what-it-opens.spec.ts › an opener names the overlay it opens, lit",
-    "every-kind-in-lit-under-an-auditor.spec.ts › every declared kind is one the auditor has nothing to say about when it is required",
-    "every-kind-in-lit-under-an-auditor.spec.ts › every declared kind renders a lit form the auditor has nothing to say about",
-    "the-key-that-leaves-a-popup-behind.spec.ts › tab closes what it tabs out of, lit",
-    "two-judges-of-one-address.spec.ts › two judges of one address",
-    "a-control-that-wears-its-theme.spec.ts › a slider is painted in the theme's own accent, whichever theme is loaded",
-    "every-key-a-kind-declares.spec.ts › lit: every key a kind declares does something",
-    "every-key-a-kind-declares.spec.ts › plain: every key a kind declares does something",
-    "the-way-down-a-calendar.spec.ts › a calendar goes where the moves say, plain"
+    "an-id-a-selector-cannot-reach.spec.ts › every id a control publishes is reachable by a selector, plain"
   ]
 }
