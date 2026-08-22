@@ -4,6 +4,7 @@
 
 import type { EitherHost } from "./host-api";
 import { expect, test } from "@playwright/test";
+import { parseDynamicFields } from "@modyra/core";
 
 /**
  * The same refusal, asked of two renderers.
@@ -160,16 +161,21 @@ for (const host of HOSTS) {
 }
 
 for (const host of HOSTS) {
-  test(`${host.name}: every option a document declares is one a person can choose`, async ({ page }) => {
-    // Two options may share a value — a plan sold monthly and yearly is one plan — and a person must
-    // still be able to choose either. A renderer that derives an option's id from its value gives
-    // both the same id, and one of them is never rendered.
+  test(`${host.name}: what a renderer draws is what the parse kept`, async ({ page }) => {
+    // Two options may share a value — a plan sold monthly and yearly is one plan — and **the
+    // contract has already answered that, against**. `parseDynamicFields` drops the repeat and says
+    // why: an option's value is its identity, so two options sharing one leave a value naming both
+    // and a control able to reach only the first. That decision has its own passing battle.
     //
-    // This comment used to say the two renderers differed here, and that Lit was safe because it
-    // rendered native `<option>` elements which need no id. Lit builds a `role="listbox"` now, so
-    // that sentence stopped being true and the spec explained a mechanism instead of asserting a
-    // property. The property is the one below and it belongs to both: **every declared option is
-    // choosable**, however the renderer draws it.
+    // This test asserted the opposite and was red in one renderer, which read as that renderer
+    // losing an option. It was not: one host built its form from the parse and the other from the
+    // raw field list, so the two disagreed about a document the contract had already ruled on. A
+    // spec is not the place to overturn a parser decision — that is an ADR and a change to the
+    // parser, and it is recorded as an open question rather than legislated here.
+    //
+    // What is asserted instead is the property this file is named for: **the two renderers say the
+    // same thing**, and what they say is what the parse kept. That is the cross-renderer claim, and
+    // it holds whichever way the duplicate question is eventually decided.
     await page.goto(host.page);
     await page.waitForFunction((flag) => (window as never as Record<string, boolean>)[flag] === true, host.ready);
 
@@ -198,6 +204,12 @@ for (const host of HOSTS) {
       [...document.querySelectorAll('[role="option"], [data-form="opts"] option')].map((each) => each.textContent?.trim()),
     );
 
-    expect(rendered, JSON.stringify(rendered)).toEqual(["Pro monthly", "Pro yearly", "Lite"]);
+    const kept = parseDynamicFields([{ name: "s", kind: "select", label: "Plan", options }])[0]?.options ?? [];
+    expect(
+      rendered,
+      `the renderer drew ${JSON.stringify(rendered)} and the parse kept ` +
+        `${JSON.stringify(kept.map((each) => each.label))} — a control showing something the ` +
+        `contract refused, or missing something it accepted, is a document that means two things`,
+    ).toEqual(kept.map((each) => each.label));
   });
 }

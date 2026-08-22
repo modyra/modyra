@@ -6,7 +6,7 @@
  * form over the same names, tear one down. Nothing here asserts — the assertions live in the spec,
  * which reads the real DOM the browser built.
  */
-import { parseDynamicForm } from "@modyra/core";
+import { parseDynamicFields, parseDynamicForm } from "@modyra/core";
 import { createMdyAnnouncer } from "@modyra/widgets";
 import { mountMdyForm } from "@modyra/plain";
 
@@ -64,7 +64,17 @@ window.battle = {
     document.querySelector("#stage").append(host);
     try {
       const submitted = [];
-      const handle = mountMdyForm(host, fields, {
+      // The form is built from what the parser returned, not from what the caller handed in.
+      // `mountMdyForm` reads a field list and does not parse one, so this host **is** the contract's
+      // door on that path — and a door that accepts what the contract refuses is measuring itself.
+      //
+      // Two reds came from the gap and neither was the renderer's: a `granularity` the parser
+      // refuses because its step does not divide the face, and a repeated option value the parser
+      // drops because a value is an option's identity. Plain honoured both and Lit did not, which
+      // read as Lit losing things — when what differed was that one host parsed and the other did
+      // not. The sibling fix is `lit-entry.mjs`.
+      const parsed = parseDynamicFields(fields);
+      const handle = mountMdyForm(host, parsed, {
         ...options,
         onSubmit: recording(submitted, options.onSubmit),
       });

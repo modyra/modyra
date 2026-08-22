@@ -54,7 +54,11 @@ async function openDimmedDial(page: import("@playwright/test").Page, host: (type
   await page.evaluate(async ({ api }) => {
     await (window as never as Record<string, { mountFields(i: string, f: unknown[]): unknown }>)[api]
       .mountFields("dim", [
-        { name: "t", kind: "timepicker", label: "T", granularity: { hourStep: 5 }, showUnavailable: true },
+        // Six, not five. A step must divide the face it is applied to — the parser refuses
+        // `hourStep: 5` outright, saying it "does not divide 24", and hands back a field with no
+        // granularity at all. This spec asked for one the contract does not accept and then reported
+        // the renderer that obeyed the contract as the broken one.
+        { name: "t", kind: "timepicker", label: "T", granularity: { hourStep: 6 }, showUnavailable: true },
       ]);
   }, { api: host.api });
   await page.waitForTimeout(300);
@@ -117,7 +121,7 @@ for (const host of HOSTS) {
     ).toBeGreaterThan(0);
     expect(
       face.numbers,
-      `a five-hour step leaves five of twenty-four hours, and the face drew ${face.numbers}`,
+      `a six-hour step leaves four of twenty-four hours, and the face drew ${face.numbers}`,
     ).toBeLessThan(24);
 
     expect(
