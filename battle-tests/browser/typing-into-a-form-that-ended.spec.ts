@@ -55,6 +55,22 @@ for (const host of HOSTS) {
     expect(await held(), "typing did not reach the model even while the form was alive").toBe('"typed while alive"');
 
     // End the form and leave the controls where they are.
+    //
+    // **One renderer cannot be asked this, and it says so.** Angular ends a form by destroying the
+    // view that holds it, so the model and the nodes go together: the window this file is about does
+    // not exist there. That is the framework's shape rather than a gap, and skipping with the reason
+    // is the honest treatment — the host used to answer the call by doing nothing, which measured a
+    // form that had not ended and read as the renderer disagreeing.
+    const canEndOne = await page.evaluate(({ api }) => {
+      try {
+        (window as never as Record<string, { destroyFormOnly(i: string): void }>)[api].destroyFormOnly("d");
+        return true;
+      } catch {
+        return false;
+      }
+    }, { api: host.api });
+    test.skip(!canEndOne, `${host.name} publishes no way to end a form and leave its controls on the page`);
+
     await page.evaluate(({ api }) =>
       (window as never as Record<string, { destroyFormOnly(i: string): void }>)[api].destroyFormOnly("d"),
       { api: host.api });

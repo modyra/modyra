@@ -59,7 +59,11 @@ for (const host of HOSTS) {
 
     expect(await openCalendar(page, "d"), "no calendar opened, so nothing below is a measurement").toBe(true);
 
-    const cells = page.locator('[role="gridcell"] button, button[role="gridcell"]');
+    // **The role, not the tag.** This asked for a `button` carrying or inside the cell, and the
+    // contract declares `element: "gridcell"` — a role. One renderer draws a `div` with that role
+    // and was reported as having no cells, which is this selector encoding another renderer's tag
+    // choice as if it were the contract.
+    const cells = page.locator('[role="gridcell"]');
     await cells.nth(10).click({ timeout: 4000 });
     await page.waitForTimeout(300);
 
@@ -83,7 +87,7 @@ for (const host of HOSTS) {
 
     expect(await openCalendar(page, "r"), "no calendar opened, so nothing below is a measurement").toBe(true);
 
-    const cells = page.locator('[role="gridcell"] button, button[role="gridcell"]');
+    const cells = page.locator('[role="gridcell"]');
     const first = (await cells.nth(8).textContent())?.trim();
     await cells.nth(8).click({ timeout: 4000 });
     await page.waitForTimeout(320);

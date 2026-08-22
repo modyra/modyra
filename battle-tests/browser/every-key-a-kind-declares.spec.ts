@@ -122,7 +122,11 @@ for (const host of HOSTS) {
        * left behind.
        */
       const mount = async (mountId: string) => await page.evaluate(
-        ({ api, k, mountId: at, options }) => {
+        // **Awaited inside the page.** One host mounts asynchronously — it schedules its change
+        // detection rather than running it — so a call that is neither awaited nor returned resolves
+        // the evaluate while the form is still being built. A fixed pause after this hid that for as
+        // long as it was here; taking the pause away is what found it.
+        async ({ api, k, mountId: at, options }) => {
           const battle = (window as never as Record<string, { mountFields(id: string, f: unknown[]): unknown }>)[api];
           const field: Record<string, unknown> = { name: "f", kind: k, label: `L ${k}` };
           if (/select|radio|segmented/.test(k)) field.options = options;
@@ -135,7 +139,7 @@ for (const host of HOSTS) {
           // It was made, and it turned four reds into two by hiding finding 378 rather than by fixing
           // anything: the table declares those keys unconditionally and a default control answers
           // none of them, which is the finding and not the fixture's to paper over.
-          battle.mountFields(at, [field]);
+          await battle.mountFields(at, [field]);
         },
         { api: host.api, k: kind, mountId, options: OPTIONS },
       );
@@ -144,8 +148,16 @@ for (const host of HOSTS) {
       for (const binding of bindings) {
         const id = `k-${kind}-${(at += 1)}`;
         await mount(id);
-        await page.waitForTimeout(120);
         const scope = `[data-form="${id}"]`;
+        // **Wait for the control, not for a length of time.** A fixed pause here was paid seventy-
+        // eight times per renderer whether the mount took a millisecond or all of it — a tenth of
+        // the whole browser suite sat in this one line. Waiting for something focusable to exist
+        // returns on the frame it does, and still fails loudly when it never does: a mount that
+        // draws nothing is a different finding and must not be read as a key that does nothing.
+        await expect(
+          page.locator(`${scope} input, ${scope} button, ${scope} select, ${scope} textarea, ${scope} [tabindex]`).first(),
+          `${host.name} drew nothing focusable for ${kind}, so no key can be offered to it`,
+        ).toBeAttached({ timeout: 5_000 });
         // **A key the field never asked for is not a key that does nothing.**
         // `requires` names a field-level capability a binding depends on — `reorderable` is opt-in and
         // off by default — and a control mounted the way a document declares it has not asked for it.

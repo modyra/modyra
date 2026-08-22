@@ -44,7 +44,7 @@ import "@angular/compiler";
 import { createComponent, ErrorHandler, provideZonelessChangeDetection } from "@angular/core";
 import { createApplication } from "@angular/platform-browser";
 import { MdyDynamicFormComponent } from "@modyra/angular/ui";
-import { parseDynamicForm } from "@modyra/core";
+import { parseDynamicFields, parseDynamicForm } from "@modyra/core";
 import { createMdyAnnouncer } from "@modyra/widgets";
 import { announceThrough, documentProbes } from "./document-probes.mjs";
 
@@ -99,10 +99,18 @@ window.battleAngular = {
       // Inputs before the view is attached, so the first render is the one under test rather than a
       // render of the defaults followed by a correction — the two are distinguishable in the DOM and
       // only the first is what a consumer's template produces.
-      reference.setInput("fields", fields);
+      // The door the caller chose, as the other two hosts offer it. `mountFields` here read only
+      // `idPrefix`, so a spec asking for the parsing door got the raw one and read three options
+      // where the contract keeps two — the renderer reported for a choice this host made.
+      reference.setInput("fields", options.parse === true ? parseDynamicFields(fields) : fields);
       if (options.idPrefix !== undefined && options.idPrefix !== null) {
         reference.setInput("idScope", String(options.idPrefix));
       }
+      // A draft this form is asked to keep. The component takes `draftKey`; the other hosts take
+      // `{ draft: { key } }` on the mount, and a host that accepted the option and passed it nowhere
+      // is the "looks like it did it" shape once more.
+      const draftKey = options.draft?.key ?? options.draftKey;
+      if (draftKey !== undefined && draftKey !== null) reference.setInput("draftKey", String(draftKey));
       application.attachView(reference.hostView);
       const submitted = [];
       reference.instance.submitted?.subscribe?.((event) => submitted.push(event?.value ?? event));
@@ -205,8 +213,28 @@ window.battleAngular = {
    * still holds a handle to a form that has ended, and whatever a person does in that window reaches
    * it.
    */
+  /**
+   * There is no door here, and saying so is the whole of this method.
+   *
+   * The other two hosts end a form and leave its nodes: `MdyPlainForm.dispose()` and lit's
+   * equivalent are published for it. **This component has no `destroy`**, because Angular ends a
+   * form by destroying the view that holds it — the model and the nodes go together, which is the
+   * framework's own shape rather than something missing from it.
+   *
+   * This read `instance.form?.()?.destroy?.()`, and every link was optional: the call did nothing,
+   * the form stayed alive, and a spec measuring what happens after a form ends measured a form that
+   * had not ended. That is the third time one optional chain in this host has looked like success —
+   * `setValue` and the mount's own refusal were the first two — and the rule out of all three is the
+   * same: **a host that cannot do a thing says so.**
+   */
   destroyFormOnly(id) {
-    mounted.get(id)?.reference.instance.form?.()?.destroy?.();
+    if (!mounted.has(id)) throw new Error(`[battle] no form "${id}" to end`);
+    throw new Error(
+      "[battle] this renderer publishes no way to end a form while leaving its controls on the page: "
+      + "it ends one by destroying the view, so the model and the nodes go together. A spec about "
+      + "that window cannot be asked of this renderer and must say so rather than measure a form "
+      + "that is still running.",
+    );
   },
 
   /**

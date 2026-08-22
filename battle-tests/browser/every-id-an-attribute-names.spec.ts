@@ -43,15 +43,22 @@ for (const host of HOSTS) {
     await page.waitForFunction((flag) => (window as never as Record<string, boolean>)[flag] === true, host.ready);
 
     const mounted = await page.evaluate(
-      ({ api, kinds }) => {
-        const battle = (window as never as Record<string, { mountFields(id: string, fields: unknown[]): { mounted: boolean } }>)[api];
-        return kinds.map((kind: string) => {
+      // **Awaited, one at a time.** One host mounts asynchronously — it schedules its change
+      // detection rather than running it — so a synchronous `.map` read `.mounted` off a Promise and
+      // every kind reported `ok: false`. The premise then failed for that renderer and reported it
+      // as publishing no ids, which is a sentence about this loop and not about the page.
+      async ({ api, kinds }) => {
+        const battle = (window as never as Record<string, { mountFields(id: string, fields: unknown[]): { mounted: boolean } | Promise<{ mounted: boolean }> }>)[api];
+        const out = [];
+        for (const kind of kinds as string[]) {
           const field: Record<string, unknown> = { name: kind, kind, label: `L ${kind}` };
           if (/select|radio|segmented/.test(kind)) {
             field.options = [{ value: "a", label: "A" }, { value: "b", label: "B" }];
           }
-          return { kind, ok: battle.mountFields(`k-${kind}`, [field]).mounted };
-        });
+          const result = await battle.mountFields(`k-${kind}`, [field]);
+          out.push({ kind, ok: result.mounted });
+        }
+        return out;
       },
       { api: host.api, kinds: KINDS },
     );

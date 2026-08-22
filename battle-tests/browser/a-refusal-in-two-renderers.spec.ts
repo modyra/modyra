@@ -40,19 +40,24 @@ async function refuse(page: import("@playwright/test").Page, host, id, answer) {
   await page.goto(host.page);
   await page.waitForFunction((flag) => (window as never as Record<string, boolean>)[flag] === true, host.ready);
 
+  // **One path for every renderer.** This branched three ways — `mountWithSubmit` for plain, a
+  // remount to carry the answer, `submitAnswering` for lit, and a fill-and-click gated on
+  // `api === "battle"` — and a renderer matching none of them simply never submitted. The premise
+  // failed silently and the empty result read as the renderer saying nothing about a refusal.
+  //
+  // Every host publishes `submitAnswering` now, so the answer arrives at submit time everywhere and
+  // the spec asks one question instead of three.
   await page.evaluate(
     ({ api, mountId }) => {
       const battle = (window as never as Record<string, EitherHost>)[api];
-      const fields = [{ name: "email", kind: "text", label: "Email" }];
-      if (api === "battle") return battle.mountWithSubmit(mountId, fields, null);
-      return battle.mountFields(mountId, fields);
+      return battle.mountFields(mountId, [{ name: "email", kind: "text", label: "Email" }]);
     },
     { api: host.api, mountId: id },
   );
-  await page.waitForTimeout(200);
+  await page.waitForTimeout(250);
 
   // Visited, because a renderer may hold what it has to say until the person has been there — one of
-  // these two does, and this battle is not about that difference.
+  // these does, and this battle is not about that difference.
   const input = page.locator(`[data-form="${id}"] input`).first();
   await input.click();
   await input.fill("a@b.c");
@@ -62,21 +67,11 @@ async function refuse(page: import("@playwright/test").Page, host, id, answer) {
   await page.evaluate(
     async ({ api, mountId, given }) => {
       const battle = (window as never as Record<string, EitherHost>)[api];
-      if (api === "battleLit") return battle.submitAnswering(mountId, given);
-      // The plain host takes the answer at mount time, so it is remounted with it.
-      battle.dispose(mountId);
-      battle.mountWithSubmit(mountId, [{ name: "email", kind: "text", label: "Email" }], given);
+      await battle.submitAnswering(mountId, given);
       return null;
     },
     { api: host.api, mountId: id, given: answer },
   );
-
-  if (host.api === "battle") {
-    await page.waitForTimeout(150);
-    const again = page.locator(`[data-form="${id}"] input`).first();
-    await again.fill("a@b.c");
-    await page.locator(`[data-form="${id}"] button`).last().click();
-  }
   await page.waitForTimeout(300);
 
   return page.evaluate(
