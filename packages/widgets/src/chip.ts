@@ -278,6 +278,53 @@ export function chipTooltipOffset(chip: HTMLElement, strip: HTMLElement): number
   return chip.offsetLeft - strip.scrollLeft + strip.offsetLeft;
 }
 
+/**
+ * How many chips the strip is not showing.
+ *
+ * A chip counts as hidden when it is not wholly inside the strip's own box — clipped at either edge,
+ * because the row scrolls both ways and a chip half off the leading edge is as unreadable as one off
+ * the trailing edge. `0` when nothing overflows, which is the case a control must not draw an
+ * affordance for.
+ *
+ * Measured rather than derived from the count: how many fit depends on the labels, the theme's
+ * spacing and the width the host gave the field, and a renderer guessing at it would be wrong on the
+ * first long name.
+ */
+export function hiddenChipCount(strip: HTMLElement): number {
+  if (strip.scrollWidth <= strip.clientWidth) return 0;
+  const box = strip.getBoundingClientRect();
+  let hidden = 0;
+  for (const chip of Array.from(strip.children)) {
+    const at = chip.getBoundingClientRect();
+    if (at.left < box.left - 1 || at.right > box.right + 1) hidden += 1;
+  }
+  return hidden;
+}
+
+/**
+ * Brings the chip that has focus back into the strip, after something changed the strip's width.
+ *
+ * The browser scrolls a focused element into view once, at the moment focus lands. An affordance
+ * that appears on the same beat — the count of what is hidden, a clear-all — takes its width out of
+ * the scrollport *afterwards*, and the chip the browser had just brought in is outside again by
+ * about the width of the control that appeared. Nothing scrolls a second time on its own.
+ *
+ * Called after the measurement that may have changed the box, so the rule is: whatever the strip
+ * ends up as wide as, the focused chip is inside it.
+ */
+export function keepFocusedChipInView(strip: HTMLElement): void {
+  const focused = strip.ownerDocument.activeElement;
+  if (!(focused instanceof HTMLElement) || !strip.contains(focused)) return;
+  const chip = focused.closest(".mdy-chip");
+  if (!(chip instanceof HTMLElement)) return;
+  const box = strip.getBoundingClientRect();
+  const at = chip.getBoundingClientRect();
+  if (at.left >= box.left - 1 && at.right <= box.right + 1) return;
+  // `nearest` in both axes: the strip is the only thing that should move, and a chip that is already
+  // vertically where it belongs must not drag the page to it.
+  chip.scrollIntoView({ block: "nearest", inline: "nearest" });
+}
+
 export function chipStripWheelDelta(
   deltaX: number,
   deltaY: number,
