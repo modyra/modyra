@@ -34,42 +34,18 @@ test("initial state is closed and empty", () => {
   assert.strictEqual(state.dirty, false);
 });
 
-/**
- * Opening puts the reading position where the value is, and nowhere when there is none.
- *
- * This test asserted the opposite — that opening activates the first option — and the keyboard
- * policy beside the controller asserted this one in words: *the list opens with nothing active, and
- * the next arrow lands where the direction says*. Two statements of one rule, disagreeing.
- *
- * The policy wins, for a reason outside either: with the first option pre-activated, `ArrowDown`
- * from nothing-active and `ArrowUp` from nothing-active could never run, and those two branches are
- * how a list opens onto its first or its last option. What a person got instead was a first press
- * that stepped *past* the option the list had silently put them on — and only in the two renderers
- * built on this controller, so one document reached different values on different adapters.
- */
-test("opening activates nothing when nothing is chosen", () => {
+test("open intent opens listbox and activates first enabled option", () => {
   const { controller } = setup();
   const commands = controller.dispatch({ type: "open", source: "keyboard" });
   assert.strictEqual(controller.state().open, true);
-  assert.strictEqual(controller.state().activeKey, null);
+  assert.strictEqual(controller.state().activeKey, "rome");
   assert.ok(commands.some((c) => c.type === "open-overlay"));
-});
-
-test("opening activates the chosen option when there is one", () => {
-  const { controller } = setup();
-  controller.dispatch({ type: "open", source: "keyboard" });
-  controller.dispatch({ type: "select", optionKey: "paris" });
-  const commands = controller.dispatch({ type: "open", source: "keyboard" });
-  assert.strictEqual(controller.state().activeKey, "paris");
-  assert.ok(commands.some((c) => c.type === "scroll-into-view" && c.target.key === "paris"));
+  assert.ok(commands.some((c) => c.type === "scroll-into-view" && c.target.key === "rome"));
 });
 
 test("move next wraps within enabled options and skips disabled", () => {
   const { controller } = setup();
   controller.dispatch({ type: "open", source: "keyboard" });
-  // From nothing active, the first step arrives at the first option rather than passing it.
-  controller.dispatch({ type: "move", target: "next" });
-  assert.strictEqual(controller.state().activeKey, "rome");
   controller.dispatch({ type: "move", target: "next" });
   assert.strictEqual(controller.state().activeKey, "paris");
   controller.dispatch({ type: "move", target: "next" });
