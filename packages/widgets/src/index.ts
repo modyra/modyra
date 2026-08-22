@@ -159,7 +159,7 @@ export {
 } from "./i18n.js";
 export type { MdyBuiltInLocale, MdyI18nMessages } from "./i18n.js";
 export type { MdyIconName } from "./icons.js";
-export { calendarKeyboardTarget, listboxNextIndex } from "./keyboard.js";
+export { calendarKeyboardTarget, listboxNextIndex, rowRovingIndex } from "./keyboard.js";
 export { defaultOptionKey, filterOptionsByQuery } from "./options-utils.js";
 
 export { portalRootFor } from "./portal.js";

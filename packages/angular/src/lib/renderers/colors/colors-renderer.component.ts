@@ -11,7 +11,7 @@ import {
 } from "@angular/core";
 
 import { MDY_OVERLAY_PORTAL_CLASS } from "@modyra/widgets";
-import { MDY_COLOR_PRESETS, MDY_WIDGET_CONTRACTS, colorValueEquals, keyBindingFor, colorValueTransition, popupPlacementClass, overlayControlledId, projectOverlayOpenerA11y } from "@modyra/widgets";
+import { MDY_COLOR_PRESETS, MDY_WIDGET_CONTRACTS, colorValueEquals, keyBindingFor, rowRovingIndex, colorValueTransition, popupPlacementClass, overlayControlledId, projectOverlayOpenerA11y } from "@modyra/widgets";
 import { MdyErrorListComponent } from "../../control/error-list.component";
 import { MdyControlLabelComponent } from "../../control/mdy-control-label.component";
 import { MdyIconComponent } from "../../control/mdy-icon.component";
@@ -222,15 +222,25 @@ export class MdyColorsComponent extends MdyOverlayControl<string> {
    */
   protected override openOverlay(event?: Event): void {
     super.openOverlay(event);
-    // After the render that draws the row, which is the first moment the swatches exist.
-    afterNextRender(() => {
-      if (!this.open()) return;
-      const swatches = this.presetSwatches();
-      if (swatches.length === 0) return;
-      const held = swatches.find((_, index) => colorValueEquals(this.value(), this.presets()[index]));
-      const landing = held ?? swatches[0];
-      landing?.focus();
-    }, { injector: this.presetInjector });
+    // After the render that draws the row — and the row is portalled, so on a real page it is not
+    // there yet when the render this opening triggers completes. Tried again on the next frame for
+    // that reason, and given up after it rather than looping: a palette that never drew is a
+    // different defect, and a retry that never stops would hide it.
+    afterNextRender(() => this.landOnASwatch(2), { injector: this.presetInjector });
+  }
+
+  /** Puts the keyboard on the swatch holding the value, or on the first, once the row exists. */
+  private landOnASwatch(attemptsLeft: number): void {
+    (this.hostElement.nativeElement as HTMLElement).dataset.landing = `try${attemptsLeft}:open=${this.open()}:n=${this.presetSwatches().length}`;
+    if (!this.open()) return;
+    const swatches = this.presetSwatches();
+    if (swatches.length === 0) {
+      if (attemptsLeft > 0) requestAnimationFrame(() => this.landOnASwatch(attemptsLeft - 1));
+      return;
+    }
+    if (swatches.includes(this.hostElement.nativeElement.ownerDocument?.activeElement as HTMLButtonElement)) return;
+    const held = swatches.find((_, index) => colorValueEquals(this.value(), this.presets()[index]));
+    (held ?? swatches[0])?.focus();
   }
 
   private readonly presetInjector = inject(Injector);
@@ -256,13 +266,8 @@ export class MdyColorsComponent extends MdyOverlayControl<string> {
     const binding = keyBindingFor("colors", event.key, true);
     if (!binding || binding.intent !== "move") return;
     const order = this.presetSwatches();
-    if (order.length === 0) return;
-    const at = order.indexOf(document.activeElement as HTMLButtonElement);
-    const step = event.key === "ArrowUp" || event.key === "ArrowLeft" ? -1 : 1;
-    const to = event.key === "Home" ? 0
-      : event.key === "End" ? order.length - 1
-      : at === -1 ? (step === -1 ? order.length - 1 : 0)
-      : Math.max(0, Math.min(order.length - 1, at + step));
+    const to = rowRovingIndex(event.key, order.indexOf(document.activeElement as HTMLButtonElement), order.length, binding.by);
+    if (to === null) return;
     event.preventDefault();
     order[to]?.focus();
   }

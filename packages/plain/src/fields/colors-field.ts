@@ -16,6 +16,7 @@ import {
   defaultWidgetIdFactory,
   keyBindingFor,
   overlayAnchoringFor,
+  rowRovingIndex,
   projectFieldShellA11y,
   visibleErrorsOf,
   type MdyColorValueIntent,
@@ -157,12 +158,8 @@ export function renderColorsField(
     const binding = keyBindingFor("colors", event.key, true);
     if (!binding || binding.intent !== "move") return false;
     const order = swatches.map(({ swatch }) => swatch);
-    const at = order.indexOf(document.activeElement as HTMLButtonElement);
-    const step = event.key === "ArrowUp" || event.key === "ArrowLeft" ? -1 : 1;
-    const to = event.key === "Home" ? 0
-      : event.key === "End" ? order.length - 1
-      : at === -1 ? (step === -1 ? order.length - 1 : 0)
-      : Math.max(0, Math.min(order.length - 1, at + step));
+    const to = rowRovingIndex(event.key, order.indexOf(document.activeElement as HTMLButtonElement), order.length, binding.by);
+    if (to === null) return false;
     event.preventDefault();
     order[to]?.focus();
     return true;

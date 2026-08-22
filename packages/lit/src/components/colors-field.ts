@@ -1,7 +1,7 @@
 import { mdyPart } from "../mdy-part.js";
 import {
   keyBindingFor,
-  MDY_COLOR_PRESETS, MDY_WIDGET_CONTRACTS, overlayControlledId } from "@modyra/widgets";
+  MDY_COLOR_PRESETS, MDY_WIDGET_CONTRACTS, overlayControlledId, rowRovingIndex } from "@modyra/widgets";
 import { html, nothing, type PropertyDeclarations } from "lit";
 import { type MdyFieldHandle } from "@modyra/core";
 import { applyOverlayIntent, bindOutsidePointer, closeOverlayOutOfPlay } from "../widget-runtime/overlay-host.js";
@@ -134,13 +134,8 @@ export class MdyColorsFieldElement extends MdyFieldElement<string | null> {
     const binding = keyBindingFor("colors", event.key, true);
     if (!binding || binding.intent !== "move") return;
     const order = [...this.querySelectorAll<HTMLButtonElement>(`.${this.partClass("swatch")}`)];
-    if (order.length === 0) return;
-    const at = order.indexOf(document.activeElement as HTMLButtonElement);
-    const step = event.key === "ArrowUp" || event.key === "ArrowLeft" ? -1 : 1;
-    const to = event.key === "Home" ? 0
-      : event.key === "End" ? order.length - 1
-      : at === -1 ? (step === -1 ? order.length - 1 : 0)
-      : Math.max(0, Math.min(order.length - 1, at + step));
+    const to = rowRovingIndex(event.key, order.indexOf(document.activeElement as HTMLButtonElement), order.length, binding.by);
+    if (to === null) return;
     event.preventDefault();
     order[to]?.focus();
   }
