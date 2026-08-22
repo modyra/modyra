@@ -104,6 +104,8 @@ for (const host of HOSTS) {
     }, scope);
 
     const wrong: Array<Record<string, unknown>> = [];
+    /** The mount to take off the page before the next goes on. */
+    let previous: string | null = null;
     const unreached: string[] = [];
     let pressed = 0;
 
@@ -147,6 +149,17 @@ for (const host of HOSTS) {
       let at = 0;
       for (const binding of bindings) {
         const id = `k-${kind}-${(at += 1)}`;
+        // **Each mount is alone on the page.** Nothing was disposed, so by the time the later kinds
+        // were reached seventy forms were still there — every one with its own overlays, its own
+        // reading position and its own claim on `Escape`. A key judged in that room is judged
+        // against whatever the last seventy left behind, and a finding from it names the wrong
+        // control. One at a time is the only state this spec can describe.
+        if (previous !== null) {
+          await page.evaluate(({ api, gone }) => {
+            (window as never as Record<string, Record<string, (...a: never[]) => unknown>>)[api].dispose?.(gone);
+          }, { api: host.api, gone: previous });
+        }
+        previous = id;
         await mount(id);
         const scope = `[data-form="${id}"]`;
         // **Wait for the control, not for a length of time.** A fixed pause here was paid seventy-

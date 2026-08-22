@@ -45,17 +45,26 @@ for (const host of HOSTS) {
     const undriveable: string[] = [];
     let driven = 0;
 
+    /** The mount to take off the page before the next goes on. */
+    let previous: string | null = null;
+
     for (const kind of WITH_TRANSITIONS) {
       const id = `t-${kind}`;
+      // **Each kind alone on the page.** Nothing was disposed, so a transition was driven in a room
+      // holding every kind that came before it — their overlays, their reading positions, their
+      // claim on `Escape` and on an outside click. A transition that could not be reached there was
+      // reported as one the page does not make, and it was the room.
       await page.evaluate(
-        ({ api, k, mountId, options }) => {
-          const battle = (window as never as Record<string, { mountFields(id: string, f: unknown[]): unknown }>)[api];
+        async ({ api, k, mountId, options, gone }) => {
+          const battle = (window as never as Record<string, Record<string, (...a: never[]) => unknown>>)[api];
+          if (gone !== null) battle.dispose?.(gone as never);
           const field: Record<string, unknown> = { name: "f", kind: k, label: `L ${k}` };
           if (/select/.test(k)) field.options = options;
-          battle.mountFields(mountId, [field]);
+          await battle.mountFields(mountId as never, [field] as never);
         },
-        { api: host.api, k: kind, mountId: id, options: OPTIONS },
+        { api: host.api, k: kind, mountId: id, options: OPTIONS, gone: previous },
       );
+      previous = id;
       await page.waitForTimeout(150);
 
       const scope = `[data-form="${id}"]`;
