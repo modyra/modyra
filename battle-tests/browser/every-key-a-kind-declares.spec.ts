@@ -119,6 +119,19 @@ for (const host of HOSTS) {
       const scope = `[data-form="${id}"]`;
 
       for (const binding of bindings) {
+        // **A key the field never asked for is not a key that does nothing.**
+        // `requires` names a field-level capability a binding depends on — `reorderable` is opt-in and
+        // off by default — and a control mounted the way a document declares it has not asked for it.
+        // Such a key is counted as unreached rather than unanswered: this spec measures whether a
+        // declared key works, and a capability nobody requested is a different question, which
+        // `a-key-that-needs-permission-first.battle.test.mjs` asks of the table directly.
+        //
+        // Before the table could say this, four multiselect keys read as dead here for three runs.
+        if (binding.requires !== undefined && binding.requires !== null) {
+          unreached.push(`${kind} ${binding.key}: needs \`${binding.requires}\`, which this field did not declare`);
+          continue;
+        }
+
         // Reset to closed, then reach the state the binding names.
         if ((await observe(scope))?.expanded === "true") {
           await page.keyboard.press("Escape");

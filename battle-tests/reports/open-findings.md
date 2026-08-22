@@ -21437,3 +21437,32 @@ difference is invisible to any spec that measures one of them.
 
 Owned by `esecutore`.
 
+
+### 378 closed on both sides, and the ten-minute spec is twenty-two seconds
+
+`MdyKeyBinding` gained `requires` — the field-level capability a binding depends on where the kind
+alone does not decide it. `on` says which part answers a key; `requires` says whether the key exists
+for this field at all.
+
+```
+Alt+ArrowLeft    intent reorder   on chip   requires reorderable
+Alt+ArrowRight   intent reorder   on chip   requires reorderable
+```
+
+Both checks are green. The contract battle asked for **a precondition, not a particular field** — a
+version that insisted on `when` would have refused the better answer, and `requires` is the better
+answer because `when` describes a widget's state and could never have described a field's declaration.
+
+The sweep now counts such a key as **unreached** rather than unanswered. A key the field never asked
+for is not a key that does nothing, and those are two different questions asked by two different
+checks.
+
+**The side effect is the interesting part: the spec went from five minutes to twenty-two seconds.**
+Two bindings were being pressed at four focusable parts each, with waits, in a state where they could
+not answer — and whatever that cost, it was most of the run. So the ten-minute cost that made this a
+boundary-only check, that let it go red in the gaps, and that I spent three attempts treating as
+slowness to be budgeted for, **was the defect itself**.
+
+A check nobody runs because it is slow, being slow because of the thing it is reporting, is a shape
+worth remembering: the cost was evidence and I read it as an obstacle.
+
