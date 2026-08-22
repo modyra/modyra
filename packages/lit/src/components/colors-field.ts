@@ -1,7 +1,7 @@
 import { mdyPart } from "../mdy-part.js";
 import {
   keyBindingFor,
-  MDY_WIDGET_CONTRACTS, overlayControlledId } from "@modyra/widgets";
+  MDY_COLOR_PRESETS, MDY_WIDGET_CONTRACTS, overlayControlledId } from "@modyra/widgets";
 import { html, nothing, type PropertyDeclarations } from "lit";
 import { type MdyFieldHandle } from "@modyra/core";
 import { applyOverlayIntent, bindOutsidePointer, closeOverlayOutOfPlay } from "../widget-runtime/overlay-host.js";
@@ -34,11 +34,7 @@ export class MdyColorsFieldElement extends MdyFieldElement<string | null> {
 
   constructor() {
     super();
-    this.presets = [
-      "#4361ee", "#3a0ca3", "#7209b7", "#f72585", "#e63946",
-      "#f77f00", "#fcbf49", "#2a9d8f", "#43aa8b", "#264653",
-      "#1d3557", "#000000", "#6c757d", "#ffffff",
-    ];
+    this.presets = MDY_COLOR_PRESETS;
     this._open = false;
   }
 

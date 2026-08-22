@@ -1,3 +1,20 @@
+/**
+ * The colours a field offers when a document names none.
+ *
+ * Three renderers each carried a list of their own — eight colours in one, ten in another, fourteen
+ * in the third — so the same document drew a different palette depending on which adapter rendered
+ * it, and none of the three could be pointed at as the one the library suggests.
+ *
+ * Eight hues around the wheel and two neutrals: enough to cover what a person reaches for without a
+ * grid nobody scans, and no relation to the theme's own tokens, because a suggestion is not a
+ * decision about the page.
+ */
+export const MDY_COLOR_PRESETS: readonly string[] = Object.freeze([
+  "#4361ee", "#4895ef", "#4cc9f0", "#10b981",
+  "#f59e0b", "#e63946", "#f72585", "#7209b7",
+  "#18181b", "#ffffff",
+]);
+
 /** A HEX value, and the one rule that matters: a partial spelling is not a colour and is not an error either. */
 export type MdyColorValueIntent =
   | { readonly type: "native"; readonly value: string }

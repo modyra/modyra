@@ -9,7 +9,7 @@ import {
 } from "@angular/core";
 
 import { MDY_OVERLAY_PORTAL_CLASS } from "@modyra/widgets";
-import { MDY_WIDGET_CONTRACTS, colorValueEquals, colorValueTransition, popupPlacementClass, overlayControlledId, projectOverlayOpenerA11y } from "@modyra/widgets";
+import { MDY_COLOR_PRESETS, MDY_WIDGET_CONTRACTS, colorValueEquals, colorValueTransition, popupPlacementClass, overlayControlledId, projectOverlayOpenerA11y } from "@modyra/widgets";
 import { MdyErrorListComponent } from "../../control/error-list.component";
 import { MdyControlLabelComponent } from "../../control/mdy-control-label.component";
 import { MdyIconComponent } from "../../control/mdy-icon.component";
@@ -187,10 +187,7 @@ export class MdyColorsComponent extends MdyOverlayControl<string> {
   protected readonly i18n = inject(MDY_I18N_MESSAGES);
 
   readonly placeholder = input<string>("#000000");
-  readonly presets = input<readonly string[]>([
-    "#4361ee", "#7209b7", "#f72585", "#4cc9f0", "#4895ef",
-    "#18181b", "#ffffff", "#e63946", "#f59e0b", "#10b981"
-  ]);
+  readonly presets = input<readonly string[]>(MDY_COLOR_PRESETS);
 
 
   /** The id the opener names, which the projected panel has to carry. */

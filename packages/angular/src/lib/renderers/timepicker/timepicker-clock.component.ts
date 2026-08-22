@@ -369,14 +369,10 @@ export class MdyTimepickerClockComponent {
   }
 
   /**
-   * The arrows on the face.
-   *
-   * Which key does what, and what it may produce, is `timepickerDialKeyIntent` — so the hours a
-   * keyboard can reach are the hours the face shows, and neither can drift from the other. This
-   * component decides nothing: it reads the key, applies the answer, and stops the page scrolling.
-   */
-  /**
    * The arrows work while the clock is showing, wherever focus is inside it.
+   *
+   * Which key does what, and what it may produce, is `timepickerDialKeyIntent`: the hours a keyboard
+   * can reach are the hours the face shows, and neither can drift from the other.
    *
    * Focusing the face on open is not enough on its own: the moment a user tabs to Confirm to commit,
    * the arrows would go dead again — and "the clock has a keyboard" is not "the dial has a keyboard

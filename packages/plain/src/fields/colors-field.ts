@@ -9,6 +9,7 @@ import { applyOpenerPromise } from "../opener-promise.js";
 import { observerFor, type MdyFieldHandle, type MdyReactivity } from "@modyra/core";
 import type { MdyDynamicColorsField } from "@modyra/core";
 import {
+  MDY_COLOR_PRESETS,
   MDY_WIDGET_CONTRACTS,
   colorValueEquals,
   colorValueTransition,
@@ -25,7 +26,7 @@ import { applyPart, el, setErrors, setIcon } from "../dom.js";
 import { buildFieldShell, insertControl } from "../field-shell.js";
 import { dismissOnOutsidePointer, positionOverlay, reflectOverlayOpen, trackOverlay } from "../overlay.js";
 
-const DEFAULT_PRESETS = ["#7067ff", "#0e0f16", "#f8fafc", "#94a3b8", "#22c55e", "#ef4444", "#f59e0b", "#3b82f6"];
+
 
 export function renderColorsField(
   container: HTMLElement,
@@ -44,7 +45,7 @@ export function renderColorsField(
   // How this popup attaches is the contract's, not this renderer's.
   const anchoring = overlayAnchoringFor("colors");
   const definition = MDY_WIDGET_CONTRACTS.colors;
-  const presets = f.presets && f.presets.length > 0 ? f.presets : DEFAULT_PRESETS;
+  const presets = f.presets && f.presets.length > 0 ? f.presets : MDY_COLOR_PRESETS;
   const open = reactivity.signal(false);
 
   const shell = buildFieldShell(f.label, "colors", {}, f.ariaLabel, f.name, f.supportingText);
