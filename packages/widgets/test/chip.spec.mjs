@@ -8,6 +8,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import {
+  chipRemoveName,
   MDY_CHIP_CLASSES,
   MDY_WIDGET_CONTRACTS,
   multiselectChipClasses,
@@ -61,6 +62,17 @@ test("the multiselect's chip parts are the chip vocabulary, not names of their o
   assert.deepEqual(parts.chip.classes, [MDY_CHIP_CLASSES.block, MDY_CHIP_CLASSES.value]);
 });
 
+test("the button that takes a chip off is named for the chip", () => {
+  // The verb alone names eight controls the same on a strip of eight chips. The words are the
+  // renderer's, so what is checked here is the rule: the object belongs in the name.
+  assert.equal(chipRemoveName("Remove", "Alfa"), "Remove Alfa");
+  assert.equal(chipRemoveName("Rimuovi", "Ferrovia"), "Rimuovi Ferrovia");
+  // A chip with nothing to say its name by keeps the verb rather than gaining a trailing space:
+  // a name ending in whitespace is a different string to anything matching on it exactly.
+  assert.equal(chipRemoveName("Remove", ""), "Remove");
+  assert.equal(chipRemoveName("Remove", "   "), "Remove");
+});
+
 test("the closed control carries what was chosen, and the popup carries the options", () => {
   // The anatomy: the field shows what was chosen, as chips in a strip inside the control a person
   // presses; the options are seen in the popup, where there is room for them. A second copy of the
@@ -75,7 +87,9 @@ test("the closed control carries what was chosen, and the popup carries the opti
   assert.equal(parentOf("options"), "popup");
   assert.equal(parentOf("search"), "popup");
   assert.equal(parentOf("trigger"), "inputWrapper");
-  assert.equal(parentOf("chips"), "trigger");
+  // Beside the opener, not inside it (ADR 0142): a chip carries a button that takes a value off, and
+  // a control that opens something may not contain a control that destroys something.
+  assert.equal(parentOf("chips"), "inputWrapper");
   assert.equal(parentOf("chip"), "chips");
   // The chip is where a value is changed, so the control that takes it off belongs to the chip.
   assert.equal(parentOf("chipRemove"), "chip");

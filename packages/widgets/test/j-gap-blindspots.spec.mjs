@@ -226,9 +226,12 @@ function multiselectWithChip(chip, variant) {
   });
   const chips = el("div", "mdy-multiselect__chips", { role: "list" });
   const arrow = el("span", "mdy-multiselect__arrow", { "aria-hidden": "true" });
-  trigger.append(chips, arrow);
+  trigger.append(arrow);
   const announcement = el("div", "mdy-multiselect__announcement", { role: "status", "aria-live": "polite" });
-  box.append(trigger, announcement);
+  // The strip beside the opener and before it, which is where the contract puts it (ADR 0142): a
+  // chip carries a button that takes a value off, and the opener is a button. This fixture built the
+  // arrangement the decision replaced, so it was asserting the old anatomy conformed.
+  box.append(chips, trigger, announcement);
   wrapper.append(box);
 
   // Open, because the subject is the option chip and options live in the popup. The grid is both

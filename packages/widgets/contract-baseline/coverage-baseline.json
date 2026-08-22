@@ -1,8 +1,8 @@
 {
   "note": "Public names not yet asserted or not yet shown. The list may only get shorter.",
   "score": {
-    "published": 838,
-    "asserted": 581,
+    "published": 839,
+    "asserted": 582,
     "shown": 81
   },
   "uncovered": [
@@ -3128,6 +3128,12 @@
     },
     {
       "name": "chipMovedAnnouncement",
+      "asserted": true,
+      "shown": false,
+      "reason": "published and never shown"
+    },
+    {
+      "name": "chipRemoveName",
       "asserted": true,
       "shown": false,
       "reason": "published and never shown"

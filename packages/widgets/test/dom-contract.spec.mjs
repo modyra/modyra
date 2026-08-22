@@ -289,11 +289,13 @@ function buildCompactMultiselect({ chipClasses = "mdy-chip mdy-chip--value" } = 
   chip.append(chipRemove);
   chips.append(chip);
   const arrow = el("span", "mdy-multiselect__arrow", { "aria-hidden": "true" });
-  trigger.append(chips, arrow);
+  trigger.append(arrow);
   // Said rather than shown: the strip is the sighted confirmation that a choice landed, and this is
   // the same confirmation for somebody who cannot see it.
   const announcement = el("div", "mdy-multiselect__announcement", { role: "status", "aria-live": "polite" });
-  box.append(trigger, announcement);
+  // The strip beside the opener and before it (ADR 0142). Built the other way, this fixture asserted
+  // that the arrangement the decision replaced conformed.
+  box.append(chips, trigger, announcement);
   wrapper.append(box);
   root.append(wrapper);
   document.body.append(root);
