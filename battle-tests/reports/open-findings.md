@@ -21696,3 +21696,34 @@ now an id spelled twice.
 
 Owned by `esecutore`.
 
+
+### The same defect, in the file I did not look for
+
+The node tier came back with an S0 and an S1 after the rename. Both were mine, and the first was a
+copy of something I had already repaired hours earlier.
+
+```
+[S0][UI-003]   two different options are bound under the same part key: expected 3, got 4
+[S1][A11Y-004] a select's option list stopped declaring itself a listbox: expected "listbox", got null
+```
+
+**`select-option-identity.battle.test.mjs` carried `["trigger", "search", "listbox"]`** — a hand-written
+list of structural part names, exactly the shape repaired in `option-controllers-blast` earlier the
+same evening. ADR 0132 renamed `listbox` to `options`, the list stopped excluding the part, and the
+part was counted as a fourth option under a duplicate key. It reported as an S0 about two options
+colliding.
+
+I wrote *"I fixed the ones I tripped over is not the same claim as none of the others has the fault"*
+in this file tonight, about fixtures, and then did not apply it to the thing I had just fixed. **A
+grep for the pattern would have cost thirty seconds.** It had two copies in that one file, and the
+second file had three sites — the `OPTION_LIST` map I had *already corrected once tonight*, plus a
+`partsRequiringName("select").includes("listbox")` I had not noticed beside it.
+
+All five sites now derive the name instead of spelling it: structural parts are whatever a controller
+with **no options** publishes, and a kind's option list is whichever part the catalogue declares. Both
+are answers the widget gives; neither can go stale.
+
+The rule that generalises, and it is narrower than *derive from the contract*: **a name written in a
+test is a copy of something, and the copy has siblings.** When one goes stale, look for the others in
+the same breath rather than in the next run.
+
