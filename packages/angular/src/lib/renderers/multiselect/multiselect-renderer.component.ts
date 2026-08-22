@@ -228,7 +228,11 @@ import type { MdyOverlayBranch, MdyOverlayOwner } from "../../core/overlay-contr
         @for (opt of searchResults(); track opt.value; let i = $index) {
           <div [class]="chip.wrapper" [attr.data-option-key]="optionKey(opt.value)">
           @if (mode() === "multi") {
-            <div [class]="chipClasses(countOf(opt.value) > 0)">
+            <div
+              [class]="chipClasses(countOf(opt.value) > 0)"
+              [id]="optionDomId(opt.value)"
+              [class.mdy-chip--active]="activeOverlayKey() === optionKey(opt.value)"
+            >
               <button
                 type="button"
                 [class]="chip.step"
@@ -254,7 +258,13 @@ import type { MdyOverlayBranch, MdyOverlayOwner } from "../../core/overlay-contr
               </button>
             </div>
           } @else {
-            <button type="button" [class]="chipClasses(isSelected(opt.value))" (click)="onOverlaySelect(opt.value)">
+            <button
+              type="button"
+              [class]="chipClasses(isSelected(opt.value))"
+              [id]="optionDomId(opt.value)"
+              [class.mdy-chip--active]="activeOverlayKey() === optionKey(opt.value)"
+              (click)="onOverlaySelect(opt.value)"
+            >
               <mdy-icon name="CHECKMARK" [class]="chip.check" />
               <span [class]="chip.label">{{ opt.label }}</span>
             </button>
@@ -644,6 +654,17 @@ export class MdyMultiselectComponent<TValue = string>
    * Focus stays on the control while the list is open here, so the cursor has no element of its own
    * to be announced from: without this it moves and nothing says so.
    */
+  /**
+   * The id the projection gives one option, put on the element that draws it.
+   *
+   * `aria-activedescendant` names an element, and the cursor pointed at an id nothing carried: the
+   * control said where the keyboard was and no such element existed, so type-ahead moved a cursor
+   * that could not be announced.
+   */
+  protected optionDomId(value: TValue): string | null {
+    return this.controller()?.view().parts[this.optionKey(value)]?.id ?? null;
+  }
+
   protected readonly activeDescendant = computed(() => {
     const key = this.activeOverlayKey();
     if (!key || !this.open()) return null;
