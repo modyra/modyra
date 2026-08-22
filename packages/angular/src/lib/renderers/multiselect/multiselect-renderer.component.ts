@@ -96,7 +96,7 @@ import type { MdyOverlayBranch, MdyOverlayOwner } from "../../core/overlay-contr
                one decision three separate removals. -->
           @for (held of chosen(); track held.key; let i = $index) {
             <span
-              [class]="chipClasses(true)"
+              [class]="valueChipClasses()"
               [attr.tabindex]="activeChip() === held.key ? 0 : -1"
               [attr.role]="chipRole"
               [attr.data-key]="held.key"
@@ -518,6 +518,18 @@ export class MdyMultiselectComponent<TValue = string>
    */
   protected chipClasses(selected: boolean): string {
     return multiselectChipClasses({ mode: this.mode(), selected }).join(" ");
+  }
+
+  /**
+   * The classes a chip in the field carries, which is a different chip from one in the list.
+   *
+   * A chip holding what was chosen is the value; a chip in the popup is an option. The catalogue
+   * declares `chip` as the value chip and spells it `mdy-chip mdy-chip--value`, and this renderer
+   * asked for the option appearance in both places — so a theme keying on the declared class styled
+   * the renderers that emit it and silently skipped this one.
+   */
+  protected valueChipClasses(): string {
+    return multiselectChipClasses({ mode: this.mode(), role: "value" }).join(" ");
   }
 
   protected isSelected(optValue: TValue): boolean {

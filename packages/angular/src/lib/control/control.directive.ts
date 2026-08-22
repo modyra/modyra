@@ -430,7 +430,24 @@ export abstract class MdyBaseControl<TValue = unknown> implements OnInit {
    * template that can disagree with both.
    */
   protected readonly paintsAsInvalid: Signal<boolean> = computed(() =>
-    showsAsInvalid({ valid: this.isValid(), disabled: this.isDisabled() }),
+    // Out of play, no verdict — and beyond that, the same answer the error list takes. Every widget
+    // projection in the contract writes `aria-invalid` from `errorsVisible`, so a control announcing
+    // itself as wrong while nothing on the page says what is wrong is a control saying half of what
+    // the contract says. `holdsUnedited` is what keeps the other half honest: a refusal about a
+    // value that arrived with the form is spoken straight away, because nobody here caused it by
+    // inaction and nobody can see the reason unless it is said.
+    showsAsInvalid({ valid: this.isValid(), disabled: this.isDisabled() })
+    && errorsVisible(
+      {
+        disabled: this.isDisabled(),
+        touched: this.touched(),
+        holdsUnedited: holdsUneditedValue(
+          { value: this.value(), dirty: this.dirty() },
+          this.widgetKind as MdyValueKind,
+        ),
+      },
+      this.errors(),
+    ),
   );
   /**
    * The classes on the wrapper that holds the control, which is where a field shows it is unusable,
