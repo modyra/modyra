@@ -107,3 +107,109 @@ test("a kind is inside the row system in every renderer, or outside it in every 
       "there breaks the rhythm of every form it appears in.",
   ).toEqual([]);
 });
+
+/**
+ * The other half of the same question, and the half a person sees.
+ *
+ * The check above asks about the shell — an anatomy question, answered by class names. This one asks
+ * what a form **looks like**: measured across every kind, in one form, at one width.
+ *
+ *     kind        plain    lit / angular
+ *     textarea      104      128
+ *     checkbox       68       40
+ *     toggle         80       52
+ *     file          173      165
+ *     everything else 96      96
+ *
+ * Two facts sit in that table and they pull in opposite directions. **The equal-height rule is
+ * already broken by four kinds in every renderer** — a textarea is taller than one line and a file
+ * picker taller still, and neither is a defect. And **those four disagree across renderers**, by as
+ * much as twenty-eight pixels, which cannot be anything but a defect: one document, one width, three
+ * different forms.
+ *
+ * So this asserts the second and not the first. **A height this file could pick would be legislating**
+ * — whether a toggle is 52 or 80 tall is a design decision and belongs in `DESIGN.md`, not in a
+ * battle. What a battle can say is that the answer is the same everywhere.
+ *
+ * Labels are measured beside it because they are the other thing an eye follows down a form, and
+ * they agree today: every kind's label starts at the same left edge in all three. That agreement is
+ * worth holding.
+ */
+for (const _ of [0]) {
+  test("a kind is the same height in every renderer", async ({ page }) => {
+    test.setTimeout(300_000);
+
+    /** kind → renderer → the rendered height of its root. */
+    const seen = new Map<string, Record<string, number | null>>();
+    const labelLefts = new Map<string, Record<string, number | null>>();
+
+    for (const host of HOSTS) {
+      await page.setViewportSize({ width: 1100, height: 900 });
+      await page.goto(host.page);
+      await page.waitForFunction((flag) => (window as never as Record<string, boolean>)[flag] === true, host.ready);
+
+      await page.evaluate(({ api, kinds }) => {
+        (window as never as Record<string, Record<string, (...a: never[]) => unknown>>)[api]
+          .mountFields("rhythm", kinds.map((k, i) => ({
+            name: `f${i}`, kind: k, label: `Label ${k}`,
+            options: [{ value: "a", label: "A" }, { value: "b", label: "B" }],
+          })) as never);
+      }, { api: host.api, kinds: [...MDY_WIDGET_KINDS] });
+      await page.waitForTimeout(600);
+
+      const rows = await page.evaluate(({ kinds }) => {
+        const root = document.querySelector('[data-form="rhythm"]');
+        if (root === null) return [];
+        return kinds.map((kind) => {
+          const element = root.querySelector(`.mdy-renderer--${kind}`) as HTMLElement | null;
+          if (element === null) return { kind, height: null, labelLeft: null };
+          // A toggle wears its own label class rather than the shared one; asking for both keeps
+          // this about where a label sits rather than about which anatomy drew it.
+          const label = element.querySelector("label, .mdy-label, .mdy-toggle__label") as HTMLElement | null;
+          return {
+            kind,
+            height: Math.round(element.getBoundingClientRect().height),
+            labelLeft: label === null ? null : Math.round(label.getBoundingClientRect().left),
+          };
+        });
+      }, { kinds: [...MDY_WIDGET_KINDS] });
+
+      for (const { kind, height, labelLeft } of rows) {
+        if (!seen.has(kind)) { seen.set(kind, {}); labelLefts.set(kind, {}); }
+        seen.get(kind)![host.name] = height;
+        labelLefts.get(kind)![host.name] = labelLeft;
+      }
+    }
+
+    // The premise: the kinds were drawn somewhere. Three renderers agreeing on `null` would satisfy
+    // every comparison below while describing three empty pages.
+    const drawn = [...seen.values()].filter((byHost) => Object.values(byHost).some((h) => h !== null));
+    expect(drawn.length, "no renderer drew any kind, so this battle is comparing nothing").toBeGreaterThan(10);
+
+    const differs = [...seen.entries()]
+      .filter(([, byHost]) => Object.values(byHost).every((h) => h !== null))
+      .filter(([, byHost]) => new Set(Object.values(byHost)).size > 1)
+      .map(([kind, byHost]) => ({ kind, ...byHost }));
+
+    expect(
+      differs,
+      `${differs.length} kind(s) are a different height in different renderers:\n` +
+        `${JSON.stringify(differs, null, 1)}\n\n` +
+        "One document, one width, three forms. Which height is right is a design decision and this " +
+        "file does not take it — that a textarea is taller than one line is not a defect. That it is " +
+        "taller by different amounts depending on the adapter is.",
+    ).toEqual([]);
+
+    const labelsDiffer = [...labelLefts.entries()]
+      .filter(([, byHost]) => Object.values(byHost).every((l) => l !== null))
+      .filter(([, byHost]) => new Set(Object.values(byHost)).size > 1)
+      .map(([kind, byHost]) => ({ kind, ...byHost }));
+
+    expect(
+      labelsDiffer,
+      `${labelsDiffer.length} kind(s) start their label at a different left edge in different ` +
+        `renderers:\n${JSON.stringify(labelsDiffer, null, 1)}\n\nThe left edge is what an eye ` +
+        "follows down a form, and it agrees today. This holds that.",
+    ).toEqual([]);
+  });
+}
