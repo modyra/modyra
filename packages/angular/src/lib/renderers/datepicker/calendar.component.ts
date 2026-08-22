@@ -53,6 +53,7 @@ import { calendarViewState } from "../../core/calendar-view-state";
 
     @if (view() === "days") {
       <mdy-calendar-grid
+        [showCells]="showCells()"
         [gridId]="gridId()"
         [widgetId]="widgetId()"
         [year]="viewYear()"
@@ -89,6 +90,9 @@ export class MdyCalendarComponent {
   readonly gridId = input<string>("");
   /** The widget these cells belong to, which is what their ids are built from. */
   readonly widgetId = input<string>("");
+
+  /** Whether the popup holding this calendar is showing; a closed one draws no cells. */
+  readonly showCells = input<boolean>(true);
   readonly selectedDate = input<CalendarDate | null>(null);
   readonly minDate = input<CalendarDate | null>(null);
   readonly maxDate = input<CalendarDate | null>(null);

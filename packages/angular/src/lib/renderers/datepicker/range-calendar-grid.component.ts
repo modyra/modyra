@@ -50,6 +50,11 @@ import { MDY_DATE_LOCALE } from "../../core/date-locale";
         </span>
       }
     </div>
+    <!-- The rows, only while the popup is showing. The grid element itself stays: it is what the
+         opener names, and a reference to an element that comes and goes is a reference that dangles
+         half the time. What must not stay is forty-two cells a screen reader can walk behind a
+         closed panel. -->
+    @if (showCells()) {
     @for (row of rows(); track $index) {
       <div class="mdy-datepicker__row" role="row">
         @for (cell of row; track cell.iso) {
@@ -80,11 +85,15 @@ import { MDY_DATE_LOCALE } from "../../core/date-locale";
         }
       </div>
     }
+    }
   `,
 })
 export class MdyRangeCalendarGridComponent {
   /** The widget these cells belong to, which is what their ids are built from. */
   readonly widgetId = input<string>("");
+
+  /** Whether the popup holding this grid is showing. A closed calendar draws no cells. */
+  readonly showCells = input<boolean>(true);
 
   /** The label naming this grid — the field's own, which is the name the projections point at. */
   protected readonly labelledBy = computed(() =>

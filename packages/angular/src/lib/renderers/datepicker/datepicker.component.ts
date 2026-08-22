@@ -111,11 +111,6 @@ import { MdyCalendarComponent } from "./calendar.component";
         </div>
       </div>
 
-      <!-- Built when it opens, and gone when it closes. A calendar behind a closed panel is
-           forty-two gridcells a screen reader can still walk and an opener pointing into something
-           nobody can see; a field taken out of play kept them on the page, looking live and
-           answering nothing. -->
-      @if (open()) {
       <mdy-overlay-panel
         [open]="open()"
         [position]="position()"
@@ -135,6 +130,7 @@ import { MdyCalendarComponent } from "./calendar.component";
         }
 
           <mdy-calendar
+          [showCells]="open()"
             [gridId]="popupId()"
             [widgetId]="fieldId"
             #calendar
@@ -148,7 +144,6 @@ import { MdyCalendarComponent } from "./calendar.component";
           />
 
       </mdy-overlay-panel>
-      }
     </div>
 
     @if (projectedSupportingText(); as st) {
@@ -252,12 +247,7 @@ export class MdyDatePickerComponent extends MdyOverlayControl<string | null> {
    * a view change is the same defect as one that was never right.
    */
   protected readonly openerPart = computed(() => {
-    // The grid exists only while the popup is showing, so the reference is emitted only then: an
-    // `aria-controls` naming an id that is not on the page is a reference assistive technology
-    // cannot follow, and no amount of correct `aria-expanded` makes up for it.
-    const projected = projectOverlayOpenerA11y("datepicker", {
-      widgetId: this.fieldId, open: this.open(), controlsRendered: this.open(),
-    })!;
+    const projected = projectOverlayOpenerA11y("datepicker", { widgetId: this.fieldId, open: this.open() })!;
     const mode = this.controller()?.state().viewMode ?? "days";
     if (mode === "days") return projected;
     return {
