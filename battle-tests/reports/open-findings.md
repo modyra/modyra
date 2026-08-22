@@ -21087,6 +21087,30 @@ only after writing it up as one.
 
 Owned by `esecutore`.
 
+**It has a cheap check now, beside the expensive one.**
+[`../adversarial/widgets/a-key-that-needs-permission-first.battle.test.mjs`](../adversarial/widgets/a-key-that-needs-permission-first.battle.test.mjs)
+asks the table directly and names the two bindings in milliseconds:
+
+```
+multiselect Alt+ArrowLeft    intent reorder   when (none)
+multiselect Alt+ArrowRight   intent reorder   when (none)
+```
+
+`every-key-a-kind-declares.spec.ts` finds the same thing by mounting every kind in a browser and
+pressing every binding at every focusable part, which is the honest measurement and takes ten minutes.
+The two are worth having together and they fail at different moments: **the contract battle fails when
+a binding is written, the browser spec fails when a binding is written correctly and implemented
+wrongly.** A check that only runs at a boundary is a check that goes red in the gaps, which is how
+this one reached three runs before anyone read it.
+
+It asserts the narrow rule the evidence supports — a binding whose intent needs a capability the field
+opts into must carry a precondition — and deliberately does **not** say what the precondition should
+look like. That is a contract decision and a battle must not make it.
+
+**Severity: the claim registry says S1 where I filed this S2.** `A11Y-001` carries S1, and the harness
+takes a battle's severity from the claims it names rather than from the filer. The registry is right
+and the filing was a guess.
+
 ### And three tries spent on the wrong thing
 
 The first repair I wrote primed the reorder keys the way `move` keys are primed. It made the spec hang
