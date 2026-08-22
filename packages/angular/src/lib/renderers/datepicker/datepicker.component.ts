@@ -31,7 +31,7 @@ import { MdyControlLabelComponent } from "../../control/mdy-control-label.compon
 import { MdyIconComponent } from "../../control/mdy-icon.component";
 import { MDY_DATE_LOCALE } from "../../core/date-locale";
 import { MDY_I18N_MESSAGES } from "../../core/i18n";
-import { MdyOverlayControl } from "../../core/overlay-control.directive";
+import { type MdyOverlayOwner, MdyOverlayControl } from "../../core/overlay-control.directive";
 import { MdyOverlayPanelComponent } from "../../core/overlay-panel.component";
 import { inputText } from "../renderer-projection";
 import { MdyCalendarComponent } from "./calendar.component";
@@ -111,6 +111,11 @@ import { MdyCalendarComponent } from "./calendar.component";
         </div>
       </div>
 
+      <!-- Built when it opens, and gone when it closes. A calendar behind a closed panel is
+           forty-two gridcells a screen reader can still walk and an opener pointing into something
+           nobody can see; a field taken out of play kept them on the page, looking live and
+           answering nothing. -->
+      @if (open()) {
       <mdy-overlay-panel
         [open]="open()"
         [position]="position()"
@@ -129,20 +134,21 @@ import { MdyCalendarComponent } from "./calendar.component";
            </div>
         }
 
-        <mdy-calendar
-        [gridId]="popupId()"
-        [widgetId]="fieldId"
-          #calendar
-          [controller]="controller()"
-          [selectedDate]="parsedSelectedDate()"
-          [minDate]="parsedMinDate()"
-          [maxDate]="parsedMaxDate()"
-          [ariaLabel]="label() || i18n.datepickerChooseDate"
-          (datePicked)="onDatePicked($event)"
-          (closed)="closeOverlay()"
-        />
+          <mdy-calendar
+            [gridId]="popupId()"
+            [widgetId]="fieldId"
+            #calendar
+            [controller]="controller()"
+            [selectedDate]="parsedSelectedDate()"
+            [minDate]="parsedMinDate()"
+            [maxDate]="parsedMaxDate()"
+            [ariaLabel]="label() || i18n.datepickerChooseDate"
+            (datePicked)="onDatePicked($event)"
+            (closed)="closeOverlay()"
+          />
 
       </mdy-overlay-panel>
+      }
     </div>
 
     @if (projectedSupportingText(); as st) {
@@ -246,7 +252,12 @@ export class MdyDatePickerComponent extends MdyOverlayControl<string | null> {
    * a view change is the same defect as one that was never right.
    */
   protected readonly openerPart = computed(() => {
-    const projected = projectOverlayOpenerA11y("datepicker", { widgetId: this.fieldId, open: this.open() })!;
+    // The grid exists only while the popup is showing, so the reference is emitted only then: an
+    // `aria-controls` naming an id that is not on the page is a reference assistive technology
+    // cannot follow, and no amount of correct `aria-expanded` makes up for it.
+    const projected = projectOverlayOpenerA11y("datepicker", {
+      widgetId: this.fieldId, open: this.open(), controlsRendered: this.open(),
+    })!;
     const mode = this.controller()?.state().viewMode ?? "days";
     if (mode === "days") return projected;
     return {
@@ -265,6 +276,11 @@ export class MdyDatePickerComponent extends MdyOverlayControl<string | null> {
   protected override openerButtonPart(): MdyPartContract {
     const { role: _role, ...withoutRole } = this.openerPart();
     return withoutRole;
+  }
+
+  /** The controller's `open` is this kind's open state; see `MdyOverlayControl.overlayOwner`. */
+  protected override overlayOwner(): MdyOverlayOwner | undefined {
+    return this.controller() as MdyOverlayOwner | undefined;
   }
 
   protected readonly i18n = inject(MDY_I18N_MESSAGES);

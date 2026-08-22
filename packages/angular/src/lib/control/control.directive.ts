@@ -36,7 +36,7 @@ declare const ngDevMode: boolean | undefined;
 import { MdyPrefixDirective } from "./prefix.directive";
 import { MdySuffixDirective } from "./suffix.directive";
 import { MdySupportingTextDirective } from "./supporting-text.directive";
-import { MDY_FIELD_STATE_CLASSES, errorsVisible, fieldAccessibleName, holdsUneditedValue, keepKeyboardInPlay, reportIdCollision, shownErrors, showsAsInvalid, stateClass } from "@modyra/widgets";
+import { MDY_FIELD_STATE_CLASSES, blocksValueChange, errorsVisible, fieldAccessibleName, holdsUneditedValue, keepKeyboardInPlay, reportIdCollision, shownErrors, showsAsInvalid, stateClass } from "@modyra/widgets";
 import type { MdyValueKind } from "@modyra/core";
 
 /** Global counter for generating unique field IDs. */
@@ -637,6 +637,10 @@ export abstract class MdyBaseControl<TValue = unknown> implements OnInit {
    * to the form adapter.
    */
   protected dispatchValueIntent<T>(kind: MdyWidgetKind, intent: MdyValueWidgetIntent<T>): void {
+    // A field that is not in play takes no writes, whatever the DOM still allows. The engine reports
+    // a destroyed form's fields as out of play, and a control left on the page after its form ended
+    // otherwise kept editing a form that no longer exists.
+    if (blocksValueChange(this.fieldState().interactivity())) return;
     let controller = this._valueControllers.get(kind) as MdyValueWidgetController<T> | undefined;
     if (!controller) {
       controller = createValueWidgetController<T>({

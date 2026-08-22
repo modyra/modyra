@@ -93,7 +93,7 @@ import { MdyToggleComponent } from "../renderers/toggle/toggle-renderer.componen
     NgTemplateOutlet,
   ],
   template: `
-    <mdy-form #form (submitted)="submitted.emit($event)">
+    <mdy-form #form [draftKey]="draftKey()" (submitted)="submitted.emit($event)">
       <!-- Declarative layout when the form declares one, otherwise the fields in order.
            Either way each field is rendered by one template, so the two paths cannot drift. -->
       @if (renderedLayout().length > 0) {
@@ -451,6 +451,16 @@ export class MdyDynamicFormComponent {
    * and forwarded to every control this form renders.
    */
   readonly idScope = input<string>("");
+
+  /**
+   * Where this form keeps what has been typed but not sent, and `undefined` for a form that keeps
+   * nothing.
+   *
+   * Forwarded to the inner form rather than declared again. The other renderers of a document take
+   * the same option at their own door, and a component that accepted a document and dropped this
+   * silently was a form asked to keep a draft that kept nothing and said nothing about it.
+   */
+  readonly draftKey = input<string | undefined>(undefined);
 
   /** How the document is read. `strict` refuses a document with any error; `lenient` renders what parsed. */
   readonly parseMode = input<MdyDynamicParseMode>("strict");
