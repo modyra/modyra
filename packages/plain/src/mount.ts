@@ -8,6 +8,7 @@
  * @modyra/widgets' headless controllers.
  */
 import type { MdyDraftOptions } from "@modyra/core";
+import { reportIdCollision } from "@modyra/widgets";
 import { applyDynamicRules, assertSafeDynamicFieldNames, vanillaReactivity, type MdyDynamicCollection, type MdyDynamicField, type MdyDynamicLayoutChild, type MdyDynamicLayoutNode, type MdyDynamicLayoutSlot, type MdyDynamicRule, type MdyFieldHandle, type MdyFormSchema, type MdyReactivity, type MdySubmittedValue, type MdyTypedForm } from "@modyra/core";
 import { buildForm } from "./schema.js";
 import { formErrorsOf, isValidWidgetId, layoutNodeAttributes, layoutSlotStyle, MDY_FORM_SHELL_CLASSES, MDY_ID_DELIMITER, MDY_LAYOUT_CLASSES } from "@modyra/widgets";
@@ -205,7 +206,12 @@ export function mountMdyForm(
     // Name the root so a host can find a field's DOM without depending on child order —
     // which stops holding once a layout row nests fields inside it.
     const root = target.lastElementChild;
-    if (root instanceof HTMLElement) root.dataset.mdyField = name;
+    if (root instanceof HTMLElement) {
+      root.dataset.mdyField = name;
+      // Two forms built from one document claim one set of ids unless the host prefixes them. The
+      // page still works for one of them, which is what makes it worth saying out loud.
+      reportIdCollision(root, widgetIdFor(name), "Pass a different `idPrefix` when mounting each form.");
+    }
   };
 
   /** A v3 slot names a field and says where it sits; a bare string is the same slot saying nothing. */
