@@ -1,7 +1,7 @@
 # @modyra/core
 
-**Framework-agnostic, type-safe form engine.** Typed field trees and
-arrays, sync/async/cross-field validation, dirty/touched tracking, draft
+**One form contract. Every framework. Any backend.** The engine half of that contract: typed field
+trees and arrays, sync/async/cross-field validation, dirty/touched tracking, draft
 persistence, undo/redo and minimal-patch change tracking — with zero
 dependencies and no framework in sight.
 

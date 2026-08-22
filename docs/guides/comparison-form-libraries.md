@@ -8,7 +8,7 @@ behind](#where-modyra-is-behind).
 Two different measurement dates appear below, and the difference matters:
 
 - **Modyra's own figures** are measured by a script in this repository and were re-run on
-  **2026-08-20** against `@modyra/core@2.1.2`. Reproduce them with `npm run test:core-bundle` and
+  **2026-08-22** against `@modyra/core@2.4.0`. Reproduce them with `npm run test:core-bundle` and
   `npm run test:perf`.
 - **Every other library's figures** are a snapshot taken on **2026-07-21** at the versions listed in
   the methodology. The harness that produced them is not committed here, so they have not been
@@ -21,8 +21,9 @@ everything on the same day before quoting an ordering.
 above is the one a reader has most reason to trust — it names its script, and anyone can run it. It
 is also the one that moved: between 2026-08-10 and 2026-08-20 the realistic surface went from 13.4 KB
 gzip to 26.3 KB, and nothing noticed, because `npm run test:core-bundle` reports and does not gate.
-A number with a command behind it drifts exactly as quietly as one without, unless something re-runs
-the command. Treat every figure here as of its stated date, this page's own included.
+By 2026-08-22 it had moved again, to 27.0 KB. A number with a command behind it drifts exactly as
+quietly as one without, unless something re-runs the command. Treat every figure here as of its
+stated date, this page's own included.
 
 ## Methodology
 
@@ -44,14 +45,14 @@ final-form-arrays **4.0.1** · vee-validate **4.15.1** · zod **4.4.3** · @angu
 
 ## Bundle weight
 
-### Modyra, measured 2026-08-20
+### Modyra, measured 2026-08-22
 
-`@modyra/core@2.1.2`, esbuild + `gzip -9`, via `npm run test:core-bundle`:
+`@modyra/core@2.4.0`, esbuild + `gzip -9`, via `npm run test:core-bundle`:
 
 | Surface | Minified | Gzipped |
 | --- | --- | --- |
-| Whole entry | 148.6 KB | **43.1 KB** |
-| Realistic surface | 93.3 KB | **26.3 KB** |
+| Whole entry | 154.8 KB | **45.1 KB** |
+| Realistic surface | 95.3 KB | **27.0 KB** |
 
 The realistic surface is `createForm`, `field`, `group`, `array` plus `required`, `email`, `min`,
 `minLength`, `maxLength`, `pattern`, `crossField`, `serverValidator`, `oneOf` and `eachOneOf` — and
@@ -64,7 +65,8 @@ which most of the table below does not ship at all.
 | --- | --- | --- |
 | 0.4.0 | 10.6 KB | 14.1 KB |
 | 2.0.0 (2026-08-10) | 13.4 KB | 19.8 KB |
-| 2.1.2 (2026-08-20) | **26.3 KB** | **43.1 KB** |
+| 2.1.2 (2026-08-20) | 26.3 KB | 43.1 KB |
+| 2.4.0 (2026-08-22) | **27.0 KB** | **45.1 KB** |
 
 Ten days doubled it. The scope, lifecycle and typed-error machinery is always linked, so it lands in
 every bundle rather than tree-shaking away — and that was already the explanation for the first
@@ -73,7 +75,7 @@ measurement artifact**: the script has not been touched since before the 2026-08
 while `packages/core/src` grew from 44 files to 54 underneath it.
 
 **Where that leaves Modyra in this table.** Modyra's figures are esbuild, so compare them with the
-esbuild column below. At 26.3 KB gzip realistic it is the heaviest entry on this page — above
+esbuild column below. At 27.0 KB gzip realistic it is the heaviest entry on this page — above
 `@angular/forms` at 18.1 KB, which is a whole framework package, and more than twice
 react-hook-form's 12.5 KB. The page still declines to rank, because the other figures are a month
 older and a re-measure could move them too; it does not decline to say which way its own number went.
@@ -162,7 +164,7 @@ Read this before adopting.
 1. **Maturity and ecosystem.** react-hook-form, formik and final-form have years of production
    mileage, Stack Overflow coverage and UI-library integrations. Modyra has a small community and no
    third-party integrations.
-2. **Version stability is uneven.** `@modyra/core` is at 2.1.2 and `@modyra/widgets` at 2.1.0, versioned
+2. **Version stability is uneven.** `@modyra/core` is at 2.4.0 and `@modyra/widgets` at 2.4.0, versioned
    under a [compatibility policy](../contract-compatibility.md). Every adapter is still below 1.0
    and can change its public surface in a minor release.
 3. **Server-side story.** TanStack Form's server validation is a framework-integrated API [^3].
