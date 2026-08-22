@@ -1,4 +1,5 @@
 import {
+  MDY_WIDGET_CONTRACTS,
   MDY_POPUP_OPENERS,
   overlayControlledId,
   keyBindingFor,
@@ -337,6 +338,27 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
     this.fieldController?.dispatch({ type: "close" });
     this._open = false;
     this.overlay.close();
+  }
+
+  /**
+   * Tab out of an open popup closes it, which is what the keyboard table declares for this kind.
+   *
+   * Not `preventDefault`: Tab is already carrying the keyboard onward and pulling it back would trap
+   * a person in the field they just left.
+   */
+  protected override tabbedAway(): void {
+    if (!this._open) return;
+    if (keyBindingFor("multiselect", "Tab", true)?.intent !== "cancel") return;
+    const handle = this.field;
+    if (handle) this.close(handle);
+  }
+
+  /** Closed when the keyboard moves on, which this kind's contract asks for. */
+  protected override focusLeft(): void {
+    if (!this._open) return;
+    if (!MDY_WIDGET_CONTRACTS.multiselect.capabilities.dismissOnFocusOutside) return;
+    const handle = this.field;
+    if (handle) this.close(handle);
   }
 
   override disconnectedCallback(): void {

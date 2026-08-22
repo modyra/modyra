@@ -1,5 +1,6 @@
 import { mdyPart } from "../mdy-part.js";
 import {
+  MDY_WIDGET_CONTRACTS,
   createPointerDrag,
   dragPointOf,
   keyBindingFor,
@@ -263,6 +264,14 @@ export class MdyTimepickerFieldElement extends MdyFieldElement<string | null> {
       const handle = this.field;
       if (handle) this.closePopup(handle);
     });
+  }
+
+  /** Closed when the keyboard moves on, which this kind's contract asks for. */
+  protected override focusLeft(): void {
+    if (!this._open) return;
+    if (!MDY_WIDGET_CONTRACTS.timepicker.capabilities.dismissOnFocusOutside) return;
+    const handle = this.field;
+    if (handle) this.closePopup(handle);
   }
 
   override disconnectedCallback(): void {

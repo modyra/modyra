@@ -1,5 +1,7 @@
 import { mdyPart } from "../mdy-part.js";
-import { overlayControlledId } from "@modyra/widgets";
+import {
+  keyBindingFor,
+  MDY_WIDGET_CONTRACTS, overlayControlledId } from "@modyra/widgets";
 import { html, nothing, type PropertyDeclarations } from "lit";
 import { type MdyFieldHandle } from "@modyra/core";
 import { applyOverlayIntent, bindOutsidePointer, closeOverlayOutOfPlay } from "../widget-runtime/overlay-host.js";
@@ -76,6 +78,27 @@ export class MdyColorsFieldElement extends MdyFieldElement<string | null> {
       const handle = this.field;
       if (handle) this.close(handle);
     });
+  }
+
+  /**
+   * Tab out of an open popup closes it, which is what the keyboard table declares for this kind.
+   *
+   * Not `preventDefault`: Tab is already carrying the keyboard onward and pulling it back would trap
+   * a person in the field they just left.
+   */
+  protected override tabbedAway(): void {
+    if (!this._open) return;
+    if (keyBindingFor("colors", "Tab", true)?.intent !== "cancel") return;
+    const handle = this.field;
+    if (handle) this.close(handle);
+  }
+
+  /** Closed when the keyboard moves on, which this kind's contract asks for. */
+  protected override focusLeft(): void {
+    if (!this._open) return;
+    if (!MDY_WIDGET_CONTRACTS.colors.capabilities.dismissOnFocusOutside) return;
+    const handle = this.field;
+    if (handle) this.close(handle);
   }
 
   override disconnectedCallback(): void {
