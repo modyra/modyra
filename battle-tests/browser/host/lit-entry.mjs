@@ -10,7 +10,7 @@
  * can ask both renderers the same question.
  */
 import { assertSafeDynamicFieldNames, buildDynamicFieldValidators, createLitForm, field, MDY_VALUE_CONTRACTS, parseDynamicFields } from "@modyra/lit/adapter";
-import { defineMdyElements } from "@modyra/lit/ui";
+import { defineMdyElements, mdyLitTagFor } from "@modyra/lit/ui";
 
 defineMdyElements();
 
@@ -34,25 +34,6 @@ function handleFor(form, name) {
 }
 
 /** The element that renders each kind, as a consumer would write it. */
-const TAG = {
-  text: "mdy-text-field",
-  textarea: "mdy-textarea-field",
-  email: "mdy-text-field",
-  password: "mdy-text-field",
-  number: "mdy-number-field",
-  slider: "mdy-slider-field",
-  checkbox: "mdy-checkbox-field",
-  toggle: "mdy-toggle-field",
-  select: "mdy-select-field",
-  radio: "mdy-radio-group-field",
-  multiselect: "mdy-multiselect-field",
-  segmented: "mdy-segmented-field",
-  datepicker: "mdy-datepicker-field",
-  daterange: "mdy-daterange-field",
-  timepicker: "mdy-timepicker-field",
-  file: "mdy-file-field",
-  colors: "mdy-colors-field",
-};
 
 /**
  * The control type a text-family kind needs said out loud.
@@ -146,7 +127,16 @@ window.battleLit = {
       host.append(summary);
 
       for (const declared of parsed) {
-        const tag = TAG[declared.kind] ?? "mdy-text-field";
+        // **The package says which element draws a kind, and says `null` for one it does not.**
+        // This host kept a map of its own with a text field as the fallback, so a document
+        // declaring `passwordd` mounted a text input and put the value on the screen — a refusal
+        // invented by the harness, not a behaviour of `@modyra/lit`. `mdyLitTagFor` is published
+        // for exactly this, and `null` is what lets the host refuse the way the plain door does
+        // rather than guess.
+        const tag = mdyLitTagFor(declared.kind);
+        if (tag === null || tag === undefined) {
+          throw new Error(`[modyra] Unknown dynamic field kind: ${JSON.stringify(declared)}`);
+        }
         const element = document.createElement(tag);
         element.setAttribute("label", declared.label ?? declared.name);
         // A host with two forms on one page is what gives them separate identities, and this host is
@@ -172,7 +162,7 @@ window.battleLit = {
         host.append(element);
       }
       mounted.set(id, { form, host, submitted: [] });
-      return { mounted: true, tags: fields.map((each) => TAG[each.kind] ?? "mdy-text-field") };
+      return { mounted: true, tags: parsed.map((each) => mdyLitTagFor(each.kind)) };
     } catch (error) {
       return { mounted: false, message: String(error?.message ?? error) };
     }
