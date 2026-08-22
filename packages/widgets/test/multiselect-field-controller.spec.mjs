@@ -107,6 +107,14 @@ test("multi mode: increment appends, allowing repeats; decrement removes one", (
   assert.strictEqual(controller.state().counts.get("small"), 1);
 });
 
+test("multi mode: increment then decrement leaves the array as it started, order and all", () => {
+  const { controller, handle } = setup("multi", ["small", "small", "small", "medium"]);
+  controller.dispatch({ type: "increment", optionKey: "small" });
+  assert.deepStrictEqual(handle.value(), ["small", "small", "small", "small", "medium"]);
+  controller.dispatch({ type: "decrement", optionKey: "small" });
+  assert.deepStrictEqual(handle.value(), ["small", "small", "small", "medium"]);
+});
+
 test("decrementing an option not present is a no-op", () => {
   const { controller, handle } = setup("multi");
   const commands = controller.dispatch({ type: "decrement", optionKey: "medium" });
