@@ -8,6 +8,13 @@ import type { MdyFieldHandle, MdySelectOption } from "@modyra/core";
 export type MdyOptionFieldVariant = "radio" | "segmented";
 
 export interface MdyOptionFieldControllerOptions<TValue> {
+  /** What a person reads beside the control, where a document declared one. */
+  readonly label?: string | null;
+  /** What a host wrote for the control itself, which outranks the label. */
+  readonly ariaLabel?: string | null;
+  /** The field's own name — the last thing left to call a group nobody named. */
+  readonly fieldName?: string | null;
+
   /** Stable identity for the widget instance. */
   readonly widgetId: string;
   /** Form engine handle that owns value/validation lifecycle. */

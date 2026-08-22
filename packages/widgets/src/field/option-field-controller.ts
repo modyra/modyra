@@ -124,6 +124,11 @@ export function createOptionFieldController<TValue>(
       widgetId,
       variant,
       optionCount: allOptions().length,
+      // What the group is called where a document wrote no label. The controller has these because
+      // a renderer has them; the rule for choosing between them is the contract's.
+      label: options.label ?? null,
+      ariaLabel: options.ariaLabel ?? null,
+      fieldName: options.fieldName ?? handle.path ?? null,
       ...(options.errorsVisible ? { errorsVisible: options.errorsVisible(currentState) } : {}),
     });
 
