@@ -148,6 +148,7 @@ import { MdyToggleComponent } from "../renderers/toggle/toggle-renderer.componen
             @case ("text") {
               <mdy-control-text
                 [name]="f.name"
+                [idScope]="idScope()"
                 [label]="f.label ?? ''"
                 [supportingText]="f.supportingText"
                 [placeholder]="f.placeholder ?? ''"
@@ -158,6 +159,7 @@ import { MdyToggleComponent } from "../renderers/toggle/toggle-renderer.componen
               <mdy-control-text
                 type="email"
                 [name]="f.name"
+                [idScope]="idScope()"
                 [label]="f.label ?? ''"
                 [supportingText]="f.supportingText"
                 [placeholder]="f.placeholder ?? ''"
@@ -168,6 +170,7 @@ import { MdyToggleComponent } from "../renderers/toggle/toggle-renderer.componen
               <mdy-control-text
                 type="password"
                 [name]="f.name"
+                [idScope]="idScope()"
                 [label]="f.label ?? ''"
                 [supportingText]="f.supportingText"
                 [placeholder]="f.placeholder ?? ''"
@@ -177,6 +180,7 @@ import { MdyToggleComponent } from "../renderers/toggle/toggle-renderer.componen
             @case ("textarea") {
               <mdy-control-textarea
                 [name]="f.name"
+                [idScope]="idScope()"
                 [label]="f.label ?? ''"
                 [supportingText]="f.supportingText"
                 [placeholder]="f.placeholder ?? ''"
@@ -186,6 +190,7 @@ import { MdyToggleComponent } from "../renderers/toggle/toggle-renderer.componen
             @case ("number") {
               <mdy-control-number
                 [name]="f.name"
+                [idScope]="idScope()"
                 [label]="f.label ?? ''"
                 [supportingText]="f.supportingText"
                 [placeholder]="f.placeholder ?? ''"
@@ -198,6 +203,7 @@ import { MdyToggleComponent } from "../renderers/toggle/toggle-renderer.componen
             @case ("slider") {
               <mdy-control-slider
                 [name]="f.name"
+                [idScope]="idScope()"
                 [label]="f.label ?? ''"
                 [supportingText]="f.supportingText"
                 [min]="f.min ?? 0"
@@ -209,6 +215,7 @@ import { MdyToggleComponent } from "../renderers/toggle/toggle-renderer.componen
             @case ("checkbox") {
               <mdy-control-checkbox
                 [name]="f.name"
+                [idScope]="idScope()"
                 [label]="f.label ?? ''"
                 [supportingText]="f.supportingText"
                 [initialValue]="emptyFor(f)"
@@ -217,6 +224,7 @@ import { MdyToggleComponent } from "../renderers/toggle/toggle-renderer.componen
             @case ("toggle") {
               <mdy-control-toggle
                 [name]="f.name"
+                [idScope]="idScope()"
                 [label]="f.label ?? ''"
                 [supportingText]="f.supportingText"
                 [initialValue]="emptyFor(f)"
@@ -225,6 +233,7 @@ import { MdyToggleComponent } from "../renderers/toggle/toggle-renderer.componen
             @case ("select") {
               <mdy-control-select
                 [name]="f.name"
+                [idScope]="idScope()"
                 [label]="f.label ?? ''"
                 [supportingText]="f.supportingText"
                 [placeholder]="f.placeholder ?? ''"
@@ -235,6 +244,7 @@ import { MdyToggleComponent } from "../renderers/toggle/toggle-renderer.componen
             @case ("radio") {
               <mdy-control-radio
                 [name]="f.name"
+                [idScope]="idScope()"
                 [label]="f.label ?? ''"
                 [supportingText]="f.supportingText"
                 [options]="f.options"
@@ -246,6 +256,7 @@ import { MdyToggleComponent } from "../renderers/toggle/toggle-renderer.componen
                    declares and this template drops is a capability nobody can reach. -->
               <mdy-control-multiselect
                 [name]="f.name"
+                [idScope]="idScope()"
                 [label]="f.label ?? ''"
                 [supportingText]="f.supportingText"
                 [options]="f.options"
@@ -258,6 +269,7 @@ import { MdyToggleComponent } from "../renderers/toggle/toggle-renderer.componen
             @case ("segmented") {
               <mdy-control-segmented
                 [name]="f.name"
+                [idScope]="idScope()"
                 [label]="f.label ?? ''"
                 [supportingText]="f.supportingText"
                 [options]="f.options"
@@ -267,6 +279,7 @@ import { MdyToggleComponent } from "../renderers/toggle/toggle-renderer.componen
             @case ("datepicker") {
               <mdy-control-datepicker
                 [name]="f.name"
+                [idScope]="idScope()"
                 [label]="f.label ?? ''"
                 [supportingText]="f.supportingText"
                 [initialValue]="emptyFor(f)"
@@ -278,6 +291,7 @@ import { MdyToggleComponent } from "../renderers/toggle/toggle-renderer.componen
                    a capability a document can ask for and no renderer hears. -->
               <mdy-control-timepicker
                 [name]="f.name"
+                [idScope]="idScope()"
                 [label]="f.label ?? ''"
                 [supportingText]="f.supportingText"
                 [initialValue]="emptyFor(f)"
@@ -341,6 +355,16 @@ export class MdyDynamicFormComponent {
    * are emitted either way, so a host can show them.
    */
   readonly document = input<unknown>(null);
+
+  /**
+   * What tells this form's ids apart from another form's built from the same document.
+   *
+   * Ids come from the field's path, so two forms of one document claim one set of them (ADR 0135).
+   * A consumer placing controls by hand scopes each of them; a consumer of this component places
+   * none — it builds its own — so the scope is taken here, at the door a document arrives through,
+   * and forwarded to every control this form renders.
+   */
+  readonly idScope = input<string>("");
 
   /** How the document is read. `strict` refuses a document with any error; `lenient` renders what parsed. */
   readonly parseMode = input<MdyDynamicParseMode>("strict");

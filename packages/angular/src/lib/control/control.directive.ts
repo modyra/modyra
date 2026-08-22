@@ -747,7 +747,14 @@ export abstract class MdyBaseControl<TValue = unknown> implements OnInit {
     // either — every reference resolves into whichever rendered last.
     if (typeof ngDevMode !== "undefined" && ngDevMode) {
       afterNextRender(
-        () => reportIdCollision(this.hostElement.nativeElement, "Bind `[idScope]` on the controls of each form."),
+        // Both doors, because the advice is only ever right for half the audience otherwise: a
+        // consumer assembling controls binds the scope on them, and a consumer of the dynamic form
+        // component places no controls at all — it binds the scope on the form.
+        () => reportIdCollision(
+          this.hostElement.nativeElement,
+          "Bind `[idScope]` on each form — on `<mdy-dynamic-form>` where a document renders itself, " +
+          "or on the controls where you place them yourself.",
+        ),
         { injector: this._injector },
       );
     }
