@@ -212,6 +212,10 @@ window.battle = {
       const handle = mountMdyForm(host, parsed.fields, {
         layout: parsed.layout,
         rules: parsed.rules,
+        // Every slot the parse fills is a slot a consumer's mount receives. `validations` holds the
+        // document's cross-field rules; dropping it here builds a form whose rules were read and
+        // then thrown away, which reads in a spec as the renderer never enforcing them.
+        validations: parsed.validations,
         onSubmit: recording(submitted),
       });
       mounted.set(id, { handle, host, submitted });

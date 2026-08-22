@@ -111,8 +111,12 @@ window.battleLit = {
         const declared = parsed.find((each) => each.name === name);
         return declared === undefined ? { validators: [] } : buildDynamicFieldValidators(declared);
       };
+      // The form is built from what the parser returned, not from what the caller handed in. A field
+      // the contract refuses never reaches a consumer's form, so a host that mounts it anyway is
+      // measuring a document the contract does not describe — and a spec reads that as the renderer
+      // accepting something it never saw.
       const schema = Object.fromEntries(
-        fields.map((each) => {
+        parsed.map((each) => {
           const built = rulesFor(each.name);
           return [
             each.name,
@@ -135,7 +139,7 @@ window.battleLit = {
       summary.form = form;
       host.append(summary);
 
-      for (const declared of fields) {
+      for (const declared of parsed) {
         const tag = TAG[declared.kind] ?? "mdy-text-field";
         const element = document.createElement(tag);
         element.setAttribute("label", declared.label ?? declared.name);

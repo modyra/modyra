@@ -144,8 +144,11 @@ for (const host of HOSTS) {
         // I argued for a third word in the table to say this and was wrong: a third word would have
         // the contract restate what the rendered widget already says, and the rule the table needs is
         // exactly the one it cannot recover by looking.
+        const partClasses = binding.on === undefined || binding.on === null
+          ? []
+          : ((CONTRACTS[kind]?.parts?.[binding.on]?.classes ?? []) as string[]);
         if (binding.on !== undefined && binding.on !== null) {
-          const classes = (CONTRACTS[kind]?.parts?.[binding.on]?.classes ?? []) as string[];
+          const classes = partClasses;
           const drawn = classes.length === 0
             ? 0
             : await page.locator(classes.map((one) => `${scope} .${one}`).join(", ")).count();
@@ -190,9 +193,19 @@ for (const host of HOSTS) {
           // everything the sweep tries next. It is the first part of a colour field in document
           // order, which is why that field alone reported a binding the renderer answers: focusing
           // any other part of it first, the same key is answered.
-          : (await page.locator(
-            `${scope} [role="combobox"], ${scope} input:not([type="color"]), ${scope} button, ${scope} [tabindex]`,
-          ).all()).slice(0, 4);
+          // The part the binding **names** is tried before anything else, and the cap is applied
+          // after it rather than to it. Capping a document-order sweep at four never reached a chip
+          // in a renderer that draws its chips late, so four keys declared on `chip` read as dead
+          // in one renderer and alive in another — a difference in element order, reported as a
+          // difference in keyboard support.
+          : [
+            ...(partClasses.length === 0
+              ? []
+              : await page.locator(partClasses.map((one) => `${scope} .${one}`).join(", ")).all()),
+            ...(await page.locator(
+              `${scope} [role="combobox"], ${scope} input:not([type="color"]), ${scope} button, ${scope} [tabindex]`,
+            ).all()),
+          ].slice(0, 4);
         if (parts.length === 0) { unreached.push(`${kind} ${binding.key}: nothing focusable`); continue; }
 
         let answered = false;
@@ -208,9 +221,22 @@ for (const host of HOSTS) {
 
           // A move needs somewhere to move from: at the first option, `ArrowUp` and `Home` are
           // no-ops that mean the binding works, not that it is missing.
+          //
+          // **The priming key must not be one that changes the state the binding declares.**
+          // `ArrowDown` opens a closed multiselect, so every chip binding declared for the closed
+          // state was primed into the open one, offered its key there, and correctly did not answer
+          // — the spec reported a keyboard hole that did not exist. A closed control is primed
+          // along its own axis instead, and whichever key is used, the state is checked afterwards
+          // and restored before anything is judged.
           if (binding.intent === "move") {
-            await page.keyboard.press("ArrowDown");
+            const stateBefore = (await observe(scope))?.expanded;
+            await page.keyboard.press(binding.when === "open" ? "ArrowDown" : "ArrowRight");
             await page.waitForTimeout(100);
+            if ((await observe(scope))?.expanded !== stateBefore) {
+              await page.keyboard.press("Escape");
+              await page.waitForTimeout(80);
+            }
+            if ((await observe(scope))?.expanded !== stateBefore) continue;
           }
 
           const before = await observe(scope);

@@ -51,9 +51,17 @@ test("a mount that refuses a field leaves nothing of the fields it had already p
   );
   await settled(page);
 
-  // The refusal itself is right, and says why.
+  // The refusal itself is right, and says which field caused it.
+  //
+  // **The name, not the wording.** This pinned the phrase "cannot be a widget id" and went red when
+  // the refusal was reworded — a rewrite of a message reading as a broken guard. What a person
+  // needs from a refusal is which of their fields is the problem, and that survives any rewording:
+  // a message that does not name `"a b"` leaves them to find it among however many they declared.
   expect(refused.mounted).toBe(false);
-  expect(refused.message).toContain("cannot be a widget id");
+  expect(
+    refused.message,
+    `the mount refused, but the message does not name the field that caused it: ${refused.message}`,
+  ).toContain("a b");
 
   const left = await page.evaluate(() => {
     const host = document.querySelector('[data-form="halfway"]');

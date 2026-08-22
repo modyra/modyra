@@ -14,12 +14,12 @@ import { expect, test } from "@playwright/test";
  *
  * That a destroyed form keeps answering is deliberate — a renderer torn down in the other order
  * keeps reading, and throwing would turn an ordinary race into a crash. What a real DOM adds is
- * whether anything marks the controls as no longer live. Nothing does: they stay enabled, they
- * accept typing, and the browser paints what was typed because a text input holds its own value.
- * The form keeps the one it had.
+ * whether anything marks the controls as no longer live.
  *
- * Asserted as the divergence rather than as a demand for one fix: disabling the controls when the
- * form they render ends, or taking the write, both close it.
+ * The property, and it names no mechanism: **an edit made after the form ended does not reach the
+ * model.** Disabling the controls and refusing the write both hold it, and the assertions accept
+ * either — a check written around one of them goes red the day the other is chosen, which is not a
+ * regression and reads exactly like one.
  *
  * Claims under attack: LIF-001 (destroy leaves nothing observable behind), REA-002.
  */
@@ -51,20 +51,25 @@ test("controls left on the page after the form ended are not still offering to e
   await page.evaluate(() => window.battle.destroyFormOnly("main"));
   await settled(page);
 
-  // The control is still there, and still accepting input. That is the premise rather than the
-  // finding: a page mid-teardown looks exactly like this.
+  // The nodes stay: a page mid-teardown looks exactly like this, and that is the premise, not the
+  // finding.
   await expect(code).toBeVisible();
-  await expect(code).toBeEnabled();
 
-  await code.fill("after the end");
+  // The property, stated so that either repair satisfies it: **an edit made after the form ended
+  // does not reach the model.** Refusing the write and taking the control out of play both hold it,
+  // and the assertion names neither — a check that pins the mechanism expires the day the mechanism
+  // changes, which is how this file came to be red while the defect it describes was fixed.
+  const reachable = await code.isEditable();
+  if (reachable) await code.fill("after the end").catch(() => undefined);
   await settled(page);
 
-  const shown = await code.inputValue();
   const held = await page.evaluate(() => window.battle.valueOf("main"));
-
-  // What the user is looking at, and what the form would send if anything asked it. The control is
-  // enabled, it took the text, and nothing on the page distinguishes it from one whose edits land.
-  expect({ shown, held: held.rows.a.code }).toEqual({ shown: "after the end", held: "after the end" });
+  expect(
+    held.rows.a.code,
+    reachable
+      ? "the control still took the text and the form kept it, so a form that ended is still being edited"
+      : "the control refused the edit, and the value the form ended with must be the value it holds",
+  ).toBe("before");
 });
 
 test("a required cell emptied after the form ended does not paint an error the form does not have", async ({ page }) => {
@@ -88,9 +93,13 @@ test("a required cell emptied after the form ended does not paint an error the f
   await page.evaluate(() => window.battle.destroyFormOnly("main"));
   await settled(page);
 
-  await code.click();
-  await code.fill("");
-  await code.blur();
+  // Read, do not drive. Once the control is out of play a click waits for an element that will
+  // never accept one, and the timeout reads as the page failing to paint rather than as the control
+  // correctly refusing. What is under test here is what the page *says*, which needs no interaction.
+  if (await code.isEditable()) {
+    await code.fill("");
+    await code.blur();
+  }
   await settled(page);
 
   const shownAfter = await page.locator('[data-form="main"]').innerText();
