@@ -6,7 +6,7 @@ import {
   createTypeahead,
   isTypeaheadCharacter,
   optionsWithUnrecognizedValue,
-  shownErrorsOf, selectKeyboardAction, listboxNextIndex } from "@modyra/widgets";
+  shownErrorsOf, selectKeyboardAction, listboxNextIndex, focusWhenShown } from "@modyra/widgets";
 import { MdyLitSelectAdapter } from "../widget-runtime/index.js";
 import { MdyDropdownFieldElement } from "./dropdown-field.js";
 import {
@@ -84,6 +84,22 @@ export class MdySelectFieldElement extends MdyDropdownFieldElement<unknown | nul
     return optionsWithUnrecognizedValue(this.selectAdapter?.state?.options ?? this.options, value);
   }
 
+  /**
+   * The search box takes the keyboard when the list opens, because it is what the list is for.
+   *
+   * A document asking for search got the box drawn and never focused: the keys fell through to the
+   * trigger, where the type-ahead answered them, so a value still came out and the filter never saw a
+   * character. It looked like it worked — and a person watching the empty box while the list refused
+   * to narrow had nothing to act on.
+   *
+   * Through `focusWhenShown` because the panel is portalled: the frame this runs in may be the one
+   * before it is drawn, and a `focus()` there is a no-op that reports nothing.
+   */
+  protected override onOpened(): void {
+    if (!this.searchable) return;
+    focusWhenShown(() => this.querySelector(".mdy-select__search"), { still: () => this._open });
+  }
+
   protected override get listOptions(): ReadonlyArray<MdySelectOption<unknown>> {
     return this.renderedOptions(this.field?.value());
   }
@@ -138,6 +154,9 @@ export class MdySelectFieldElement extends MdyDropdownFieldElement<unknown | nul
         this._open = open;
         if (open) {
           this.overlay.open();
+          // The searchable shape opens through the adapter rather than through the base's lifecycle,
+          // so the hook that hands the keyboard to the search box is called from here too.
+          this.onOpened();
         } else {
           // Closing is not a validation event: the adapter reports a real touch through
           // `onTouched`, and a user who opened the list and dismissed it decided nothing.
@@ -258,6 +277,10 @@ export class MdySelectFieldElement extends MdyDropdownFieldElement<unknown | nul
   private onSearchInput(e: Event): void {
     const value = (e.target as HTMLInputElement).value;
     this.selectAdapter?.dispatch({ type: "search", query: value });
+    // The query lives in the adapter, which is not one of this element's reactive properties: only
+    // `setOpen` asked for a repaint, so the box held what was typed while the list under it kept
+    // showing everything. A filter nobody can see is a filter nobody has.
+    this.requestUpdate();
   }
 
   /**
@@ -393,6 +416,7 @@ export class MdySelectFieldElement extends MdyDropdownFieldElement<unknown | nul
               class="mdy-select__search"
               .value=${state.query}
               @input=${this.onSearchInput}
+              @keydown=${(event: KeyboardEvent) => this.onKeydown(event, handle)}
             />`
         : nothing}
         <ul

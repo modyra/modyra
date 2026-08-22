@@ -32,10 +32,12 @@
 import { expect, test } from "@playwright/test";
 import { MDY_FIELD_STATE_CLASSES, MDY_WIDGET_CONTRACTS } from "@modyra/widgets";
 
-const HOSTS = [
-  { name: "plain", page: "/index.html", ready: "battleReady", api: "battle" },
-  { name: "lit", page: "/lit.html", ready: "battleLitReady", api: "battleLit" },
-];
+// **Every renderer, from the shared list.** This file kept a list of its own with plain and lit in
+// it, and the renderer it left out is the one that fails: Angular's value chips carry
+// `mdy-chip--centered` — the class the shared helper gives an *option* in the popup — instead of
+// `mdy-chip--value`, so a theme keying on the contract's own class styles two renderers and skips
+// the third. A spec whose host list is narrower than the campaign's is a spec that cannot find that.
+import { HOSTS } from "./bench";
 
 const CHIP_CLASSES = MDY_WIDGET_CONTRACTS.multiselect.parts.chip.classes;
 const OPTIONS = ["a", "b", "c"].map((value) => ({ value, label: value.toUpperCase() }));

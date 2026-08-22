@@ -1,0 +1,380 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="light dark" />
+    <link rel="icon" href="data:," />
+
+    <!-- Foundation and canonical ref -> sys -> comp token contract. -->
+    <link id="modyra-base" rel="stylesheet" href="./themes/modyra-base.css" />
+
+    <!-- Structural/component theme; the switcher in the top bar swaps this href. -->
+    <link id="modyra-theme" rel="stylesheet" href="./themes/modyra-modern.css" />
+
+    <title>Modyra — forms as data</title>
+
+    <style>
+      /* Page chrome owns its own surface scale, driven by the same sys tokens the widgets use. */
+      :root {
+        --showcase-bg: #f3f4fb;
+        --showcase-card: #ffffff;
+        --showcase-border: rgb(20 22 60 / 10%);
+        --showcase-text: #171a2e;
+        --showcase-muted: #5b6076;
+        --showcase-accent-a: #6458ef;
+        --showcase-accent-b: #a855f7;
+        --showcase-accent-c: #ff6577;
+        color-scheme: light;
+      }
+
+      /*
+       * The packaged structural themes react to the OS media query only; an in-page toggle needs
+       * the same dark token set under an attribute. This block mirrors the dark half of
+       * modyra-base.css, so every theme darkens identically. The salience theme ships its own
+       * seeded dark set, which wins for its tokens instead.
+       */
+      :root[data-mdy-mode="dark"]:not([data-mdy-theme="modyra-salience"]) {
+        --mdy-sys-color-on-primary: color-mix(in srgb, var(--mdy-sys-color-primary), var(--mdy-ref-color-cloud) 80%);
+        --mdy-sys-color-primary-container: color-mix(in srgb, var(--mdy-sys-color-primary), var(--mdy-ref-color-night) 60%);
+        --mdy-sys-color-on-primary-container: color-mix(in srgb, var(--mdy-sys-color-primary), var(--mdy-ref-color-cloud) 60%);
+        --mdy-sys-color-secondary: color-mix(in srgb, var(--mdy-ref-color-violet), var(--mdy-ref-color-cloud) 20%);
+        --mdy-sys-color-on-secondary: color-mix(in srgb, var(--mdy-sys-color-secondary), var(--mdy-ref-color-cloud) 70%);
+        --mdy-sys-color-secondary-container: color-mix(in srgb, var(--mdy-sys-color-secondary), var(--mdy-ref-color-night) 80%);
+        --mdy-sys-color-on-secondary-container: color-mix(in srgb, var(--mdy-sys-color-secondary), var(--mdy-ref-color-cloud) 60%);
+        --mdy-sys-color-tertiary: color-mix(in srgb, var(--mdy-ref-color-coral), var(--mdy-ref-color-cloud) 15%);
+        --mdy-sys-color-on-tertiary: color-mix(in srgb, var(--mdy-sys-color-tertiary), var(--mdy-ref-color-cloud) 70%);
+        --mdy-sys-color-tertiary-container: color-mix(in srgb, var(--mdy-sys-color-tertiary), var(--mdy-ref-color-night) 90%);
+        --mdy-sys-color-on-tertiary-container: color-mix(in srgb, var(--mdy-sys-color-tertiary), var(--mdy-ref-color-cloud) 60%);
+        --mdy-sys-color-error: var(--mdy-ref-color-error);
+        --mdy-sys-color-on-error: color-mix(in srgb, var(--mdy-sys-color-error), var(--mdy-ref-color-cloud) 80%);
+        --mdy-sys-color-error-container: color-mix(in srgb, var(--mdy-sys-color-error), var(--mdy-ref-color-night) 70%);
+        --mdy-sys-color-on-error-container: color-mix(in srgb, var(--mdy-sys-color-error), var(--mdy-ref-color-cloud) 60%);
+        --mdy-sys-color-surface: color-mix(in srgb, var(--mdy-sys-color-primary), var(--mdy-ref-color-night) 85%);
+        --mdy-sys-color-on-surface: color-mix(in srgb, var(--mdy-sys-color-primary), var(--mdy-ref-color-cloud) 80%);
+        --mdy-sys-color-surface-variant: color-mix(in srgb, var(--mdy-sys-color-primary), color-mix(in srgb, var(--mdy-ref-color-night), var(--mdy-ref-color-slate) 35%) 60%);
+        --mdy-sys-color-on-surface-variant: color-mix(in srgb, var(--mdy-sys-color-primary), var(--mdy-ref-color-cloud) 60%);
+        --mdy-sys-color-surface-container-lowest: color-mix(in srgb, var(--mdy-sys-color-primary), var(--mdy-ref-color-night) 100%);
+        --mdy-sys-color-surface-container-low: color-mix(in srgb, var(--mdy-sys-color-primary), var(--mdy-ref-color-night) 88%);
+        --mdy-sys-color-surface-container: color-mix(in srgb, var(--mdy-sys-color-primary), var(--mdy-ref-color-night) 80%);
+        --mdy-sys-color-surface-container-high: color-mix(in srgb, var(--mdy-sys-color-primary), var(--mdy-ref-color-night) 70%);
+        --mdy-sys-color-surface-container-highest: color-mix(in srgb, var(--mdy-sys-color-primary), var(--mdy-ref-color-night) 58%);
+        --mdy-sys-color-background: color-mix(in srgb, var(--mdy-sys-color-primary), var(--mdy-ref-color-night) 95%);
+        --mdy-sys-color-on-background: color-mix(in srgb, var(--mdy-sys-color-primary), var(--mdy-ref-color-cloud) 80%);
+        --mdy-sys-color-outline: color-mix(in srgb, var(--mdy-sys-color-primary), var(--mdy-ref-color-slate) 40%);
+        --mdy-sys-color-outline-variant: color-mix(in srgb, var(--mdy-sys-color-primary), color-mix(in srgb, var(--mdy-ref-color-night), var(--mdy-ref-color-slate) 35%) 60%);
+        --mdy-sys-color-inverse-surface: color-mix(in srgb, var(--mdy-sys-color-primary), var(--mdy-ref-color-cloud) 60%);
+        --mdy-sys-color-inverse-on-surface: color-mix(in srgb, var(--mdy-sys-color-primary), var(--mdy-ref-color-night) 60%);
+        --mdy-sys-color-inverse-primary: color-mix(in srgb, var(--mdy-sys-color-primary), var(--mdy-ref-color-cloud) 40%);
+        --mdy-sys-state-veil: hsla(0, 0%, 100%, 0.08);
+      }
+
+      :root[data-mdy-mode="dark"] {
+        --showcase-bg: #0d0f1a;
+        --showcase-card: #151829;
+        --showcase-border: rgb(255 255 255 / 9%);
+        --showcase-text: #ecedf6;
+        --showcase-muted: #9a9fb8;
+        color-scheme: dark;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        font:
+          15px/1.5 system-ui,
+          -apple-system,
+          sans-serif;
+        background:
+          radial-gradient(60rem 30rem at 85% -10%, rgb(100 88 239 / 8%), transparent 60%),
+          radial-gradient(50rem 26rem at -10% 110%, rgb(255 101 119 / 6%), transparent 60%),
+          var(--showcase-bg);
+        color: var(--showcase-text);
+      }
+
+      /* ── Top bar ─────────────────────────────────────────────────────── */
+      .topbar {
+        display: flex;
+        align-items: center;
+        gap: 1.25rem;
+        padding: 0.85rem 2rem;
+        border-bottom: 1px solid var(--showcase-border);
+        background: color-mix(in srgb, var(--showcase-card) 72%, transparent);
+        backdrop-filter: blur(10px);
+        position: sticky;
+        top: 0;
+        z-index: 10;
+      }
+
+      .wordmark {
+        font-size: 1.15rem;
+        font-weight: 700;
+        letter-spacing: -0.02em;
+        background: linear-gradient(92deg, var(--showcase-accent-a), var(--showcase-accent-b) 55%, var(--showcase-accent-c));
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+        margin-right: auto;
+      }
+
+      .wordmark small {
+        font-size: 0.72rem;
+        font-weight: 500;
+        letter-spacing: 0.02em;
+        color: var(--showcase-muted);
+        -webkit-text-fill-color: var(--showcase-muted);
+        margin-left: 0.6rem;
+      }
+
+      .segmented {
+        display: flex;
+        gap: 0.15rem;
+        padding: 0.2rem;
+        border: 1px solid var(--showcase-border);
+        border-radius: 999px;
+        background: color-mix(in srgb, var(--showcase-card) 80%, transparent);
+      }
+
+      .segmented button {
+        border: 0;
+        border-radius: 999px;
+        padding: 0.3rem 0.85rem;
+        font: inherit;
+        font-size: 0.8rem;
+        font-weight: 550;
+        color: var(--showcase-muted);
+        background: transparent;
+        cursor: pointer;
+      }
+
+      .segmented button[aria-pressed="true"] {
+        color: #fff;
+        background: linear-gradient(92deg, var(--showcase-accent-a), var(--showcase-accent-b));
+        box-shadow: 0 2px 8px rgb(100 88 239 / 35%);
+      }
+
+      .segmented button:focus-visible {
+        outline: 2px solid var(--showcase-accent-b);
+        outline-offset: 2px;
+      }
+
+      /* ── Layout ──────────────────────────────────────────────────────── */
+      main {
+        display: grid;
+        grid-template-columns: minmax(0, 7fr) minmax(0, 5fr);
+        gap: 1.5rem;
+        align-items: start;
+        max-width: 72rem;
+        margin: 0 auto;
+        padding: 1.75rem 2rem 2.5rem;
+      }
+
+      .card {
+        background: var(--showcase-card);
+        border: 1px solid var(--showcase-border);
+        border-radius: 16px;
+        box-shadow: 0 12px 32px -12px rgb(20 22 60 / 14%);
+        padding: 1.6rem 1.75rem;
+      }
+
+      :root[data-mdy-mode="dark"] .card {
+        box-shadow: 0 12px 32px -12px rgb(0 0 0 / 55%);
+      }
+
+      .card h1 {
+        margin: 0;
+        font-size: 1.35rem;
+        letter-spacing: -0.01em;
+      }
+
+      .lead {
+        margin: 0.35rem 0 1.4rem;
+        color: var(--showcase-muted);
+        font-size: 0.9rem;
+        max-width: 40ch;
+      }
+
+      /* The renderer stacks its own controls; the page only tunes the rhythm between them. */
+      [data-showcase-form] {
+        display: grid;
+        gap: 0.35rem;
+      }
+
+      [data-showcase-conditional] {
+        display: grid;
+        gap: 0.35rem;
+        border-left: 3px solid;
+        border-image: linear-gradient(180deg, var(--showcase-accent-a), var(--showcase-accent-c)) 1;
+        padding-left: 1rem;
+        margin: 0.15rem 0 0.35rem;
+      }
+
+      [data-showcase-conditional][hidden] {
+        display: none;
+      }
+
+      .submit-row {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        margin-top: 1.1rem;
+      }
+
+      [data-showcase-submit] {
+        border: 0;
+        border-radius: 10px;
+        padding: 0.7rem 1.6rem;
+        font: inherit;
+        font-weight: 650;
+        font-size: 0.95rem;
+        color: #fff;
+        background: linear-gradient(92deg, var(--showcase-accent-a), var(--showcase-accent-b) 60%, var(--showcase-accent-c));
+        cursor: pointer;
+        box-shadow: 0 6px 18px -6px rgb(100 88 239 / 55%);
+      }
+
+      [data-showcase-submit]:focus-visible {
+        outline: 2px solid var(--showcase-accent-b);
+        outline-offset: 3px;
+      }
+
+      [data-showcase-submit]:active {
+        transform: translateY(1px);
+      }
+
+      [data-showcase-success] {
+        font-size: 0.85rem;
+        font-weight: 550;
+        color: #0e9f5d;
+        opacity: 0;
+        transition: opacity 0.25s ease;
+      }
+
+      [data-showcase-success].visible {
+        opacity: 1;
+      }
+
+      /* ── Live state panel ────────────────────────────────────────────── */
+      .state-card {
+        position: sticky;
+        top: 5.25rem;
+        padding: 1.25rem 1.4rem;
+      }
+
+      .state-head {
+        display: flex;
+        align-items: center;
+        gap: 0.6rem;
+        margin-bottom: 0.85rem;
+      }
+
+      .state-head h2 {
+        margin: 0;
+        font-size: 0.78rem;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: var(--showcase-muted);
+      }
+
+      .chip {
+        margin-left: auto;
+        font-size: 0.72rem;
+        font-weight: 650;
+        padding: 0.15rem 0.6rem;
+        border-radius: 999px;
+        background: rgb(220 80 80 / 12%);
+        color: #d64545;
+      }
+
+      .chip.valid {
+        background: rgb(14 159 93 / 13%);
+        color: #0e9f5d;
+      }
+
+      [data-showcase-state] {
+        margin: 0;
+        padding: 1rem 1.1rem;
+        border-radius: 10px;
+        background: #14162a;
+        color: #c8cdf5;
+        font:
+          12.5px/1.6 ui-monospace,
+          "SF Mono",
+          Menlo,
+          monospace;
+        overflow: auto;
+        max-height: 26rem;
+        white-space: pre-wrap;
+        word-break: break-word;
+      }
+
+      @media (max-width: 900px) {
+        main {
+          grid-template-columns: minmax(0, 1fr);
+        }
+        .state-card {
+          position: static;
+        }
+      }
+    </style>
+  </head>
+
+  <body>
+    <header class="topbar">
+      <div class="wordmark">Modyra<small>forms as data</small></div>
+
+      <div class="segmented" data-showcase-themes>
+        <button type="button" data-theme="modern" aria-pressed="true">Modern</button>
+        <button type="button" data-theme="material" aria-pressed="false">Material</button>
+        <button type="button" data-theme="ios" aria-pressed="false">iOS</button>
+        <button type="button" data-theme="salience" aria-pressed="false">Salience</button>
+      </div>
+
+      <div class="segmented" data-showcase-mode>
+        <button type="button" data-mode="light" aria-pressed="true">Light</button>
+        <button type="button" data-mode="dark" aria-pressed="false">Dark</button>
+      </div>
+    </header>
+
+    <main>
+      <section class="card">
+        <h1>Checkout</h1>
+        <p class="lead">
+          One contract, one running form. Everything on the right is this form's value, as it is
+          typed.
+        </p>
+
+        <div data-showcase-form>
+          <div data-field-host="name"></div>
+          <div data-field-host="email"></div>
+          <div data-field-host="country"></div>
+          <div data-field-host="account"></div>
+          <div data-showcase-conditional>
+            <div data-field-host="company.name"></div>
+            <div data-field-host="company.vat"></div>
+          </div>
+          <div data-field-host="terms"></div>
+        </div>
+
+        <div class="submit-row">
+          <button type="button" data-showcase-submit>Complete purchase</button>
+          <span data-showcase-success>✓ Order confirmed — payload on the right.</span>
+        </div>
+      </section>
+
+      <aside class="card state-card">
+        <div class="state-head">
+          <h2>Live form state</h2>
+          <span class="chip" data-showcase-valid>invalid</span>
+        </div>
+        <pre data-showcase-state></pre>
+      </aside>
+    </main>
+
+    <script type="module" src="./showcase.js"></script>
+  </body>
+</html>

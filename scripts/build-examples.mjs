@@ -22,10 +22,15 @@ const targets = [
   { name: "lit", entry: "examples/lit/main.js", pages: ["examples/lit/enterprise.js"] },
   // The framework-free renderer needs no transform at all — it is the plain-DOM baseline every
   // other adapter is measured against.
-  // The framework-free demo is two pages: `/` is the catalogue every visual baseline is pinned to,
-  // and `lab.html` is where each feature can be driven into the states that hide defects. Keeping
-  // them apart is what stops a new panel from moving a screenshot of the catalogue.
-  { name: "plain", entry: "examples/plain/main.js", pages: ["examples/plain/lab.js"] },
+  // The framework-free demo is three pages: `/` is the catalogue every visual baseline is pinned
+  // to, `lab.html` is where each feature can be driven into the states that hide defects, and
+  // `showcase.html` is the marketing-facing checkout page. Keeping them apart is what stops a new
+  // panel from moving a screenshot of the catalogue.
+  {
+    name: "plain",
+    entry: "examples/plain/main.js",
+    pages: ["examples/plain/lab.js", "examples/plain/showcase.js"],
+  },
   // Preact's automatic JSX runtime is esbuild's react transform pointed at
   // a different import source — no Babel plugin needed.
   { name: "preact", entry: "examples/preact/main.jsx", jsxImportSource: "preact" },

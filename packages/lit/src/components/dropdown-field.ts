@@ -46,7 +46,15 @@ export abstract class MdyDropdownFieldElement<T> extends MdyOptionsFieldElement<
     const transition = overlayLifecycleTransition({ open: this._open }, intent);
     if (transition.state.open === this._open) return;
     this._open = transition.state.open;
+    if (transition.state.open) this.onOpened();
   }
+
+  /**
+   * What a subclass does once the list is showing.
+   *
+   * Nothing by default: a list that opens is enough for a chooser whose keys the trigger answers.
+   */
+  protected onOpened(): void {}
 
   protected toggleOpen(handle: MdyFieldHandle<T>): void {
     this.applyLifecycle(handle, { type: "toggle", disabled: handle.disabled(), available: true });
