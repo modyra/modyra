@@ -107,6 +107,8 @@ A local-first visual form builder that edits one project model and compiles it t
 - [Angular Reactive Forms](guides/comparison-reactive-forms.md)
 - [React Hook Form](guides/comparison-react-hook-form.md)
 - [Formik](guides/comparison-formik.md)
+- [JSON Forms](guides/comparison-json-forms.md)
+- [RJSF](guides/comparison-rjsf.md)
 
 Comparisons are dated snapshots. Re-run the scripts they name before quoting the results.
 

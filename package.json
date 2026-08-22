@@ -2,6 +2,7 @@
   "name": "modyra-workspace",
   "version": "0.1.0",
   "private": true,
+  "description": "Modyra monorepo — a typed form engine: one form contract, every framework, any backend.",
   "scripts": {
     "setup": "pnpm install && pnpm run build:packages && pnpm run build:angular",
     "start": "npm run demo:angular",

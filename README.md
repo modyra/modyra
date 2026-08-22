@@ -5,7 +5,7 @@
 
 # Modyra
 
-**Define a form once. Run it in every application that needs it.**
+**One form contract. Every framework. Any backend.**
 
 Modyra keeps form state, validation and operations in a framework-independent core, and describes a
 form as portable data. Write that form in TypeScript, produce it from a Rust or Java service, or
@@ -106,7 +106,9 @@ and `useMdyForm` modules you keep and edit — so the contract runtime is a choi
 - optional devtools and shared CSS themes.
 
 The published form engine measures **26.7 KB gzipped** for a realistic typed form with arrays,
-validation, drafts and undo. Reproduce it with `npm run test:core-bundle`.
+validation, drafts and undo (core 2.4.0, 2026-08-21). Reproduce it with `npm run test:core-bundle`;
+the dated, measured [comparison with other form libraries](docs/guides/comparison-form-libraries.md)
+puts that number in context.
 
 ## Example: server validation that cancels itself
 

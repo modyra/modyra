@@ -25,7 +25,7 @@
   "bugs": {
     "url": "https://github.com/modyra/modyra/issues"
   },
-  "homepage": "https://github.com/modyra/modyra#readme",
+  "homepage": "https://modyra.github.io/modyra",
   "peerDependencies": {
     "@angular/core": ">=21.2.19",
     "@angular/common": ">=21.2.19",

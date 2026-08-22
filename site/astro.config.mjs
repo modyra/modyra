@@ -146,6 +146,8 @@ export default defineConfig({
 						{ label: 'Angular Reactive Forms', slug: 'guides/comparison-reactive-forms' },
 						{ label: 'react-hook-form', slug: 'guides/comparison-react-hook-form' },
 						{ label: 'Formik', slug: 'guides/comparison-formik' },
+						{ label: 'JSON Forms', slug: 'guides/comparison-json-forms' },
+						{ label: 'RJSF', slug: 'guides/comparison-rjsf' },
 						{ label: 'Migration guide', slug: 'guides/migration' },
 					],
 				},
