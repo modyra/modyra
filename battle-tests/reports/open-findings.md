@@ -21727,3 +21727,42 @@ The rule that generalises, and it is narrower than *derive from the contract*: *
 test is a copy of something, and the copy has siblings.** When one goes stale, look for the others in
 the same breath rather than in the next run.
 
+
+## 378b — `requires` names a capability; nothing names a state the key needs
+
+`requires` closed half of [378](#378) and the other half came straight back. The two reorder keys are
+answered now; these two are not:
+
+```
+ArrowLeft    intent move   when closed   (no requires)
+ArrowRight   intent move   when closed   (no requires)
+```
+
+They walk **between chips**, and a multiselect as a document declares it has none. So a default control
+answers neither, and the table has no way to say why.
+
+The vocabulary now has two words and needs a third:
+
+```
+when       the widget's state          open · closed
+requires   the field's capability      reorderable
+—          the value's shape           "there is more than one chip to move between"
+```
+
+`when` describes what the widget is doing, `requires` what the field asked for, and neither describes
+what the value contains. A key that needs a non-empty selection is not conditional on a capability and
+not conditional on open or closed.
+
+**This is the same finding as 378 and not a new one**, which is why it carries its number: the gap is
+that the keyboard table cannot express a precondition, and `requires` covered the case that happened to
+be in front of us. Filing it separately would let the register report two defects where there is one
+shape with two instances — the mistake this file has made twice tonight in the other direction, by
+repairing one copy of a stale name and leaving four.
+
+What it is **not** is a defect in plain. The keys work: focus a chip, press `ArrowRight`, and the
+roving index moves `0,-1,-1 → -1,0,-1`. Measured hours ago and still true.
+
+`every-key-a-kind-declares` is pinned again. It is the honest reading of *what a control a consumer
+wrote actually answers*, and the fixture must not be given chips to quiet it — that was tried, it
+silenced two of four, and it hid the finding rather than fixing anything.
+
