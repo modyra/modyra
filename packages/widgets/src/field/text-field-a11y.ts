@@ -1,7 +1,7 @@
 /**
  * Accessibility projection for primitive field widgets.
  */
-import type { MdyFieldError } from "@modyra/core";
+import type { MdyValueKind, MdyFieldError } from "@modyra/core";
 import { defaultWidgetIdFactory as idFactory, assertUsableWidgetId } from "../ids.js";
 import type { MdyPartContract } from "../contract.js";
 import { MDY_FIELD_SHELL_CLASSES, MDY_FIELD_STATE_CLASSES } from "../structure.js";
@@ -10,7 +10,7 @@ import type { MdyFieldConstraints } from "@modyra/core";
 import { MDY_WIDGET_KINDS, type MdyWidgetKind } from "../catalog.js";
 import { widgetSupportsState } from "../widget-states.js";
 import { projectFieldShellA11y } from "./shell-a11y.js";
-import { errorsVisible } from "./verdict.js";
+import { errorsVisible, holdsUneditedValue } from "./verdict.js";
 export interface MdyTextFieldA11yOptions {
   readonly widgetId: string;
   readonly inputType?: string;
@@ -77,7 +77,7 @@ export function projectTextFieldA11y<TValue>(
   // Whether the person is being told yet. A rule they have not answered waits for them to reach the
   // field; a refusal about the value already there does not, because they can neither cause it by
   // inaction nor see the reason unless it is said.
-  const tellingThem = errorsVisible({ disabled: state.disabled, touched: state.touched }, errors);
+  const tellingThem = errorsVisible({ disabled: state.disabled, touched: state.touched, holdsUnedited: holdsUneditedValue(state, options.kind as MdyValueKind | undefined) }, errors);
   // Whether this kind admits read-only at all, asked of the contract. A kind this contract does not
   // know is not this contract's to police: a consumer rendering their own kind keeps what they had.
   const kind = options.kind;

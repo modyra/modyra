@@ -1,4 +1,4 @@
-import { MdyFieldHandle, type MdyFieldConstraints } from "@modyra/core";
+import { MdyFieldHandle, type MdyFieldConstraints, type MdyValueKind } from "@modyra/core";
 import { MDY_ICONS, MDY_POPUP_OPENERS, messagesForLocale, type MdyI18nMessages } from "@modyra/widgets";
 import { html, LitElement, nothing, PropertyDeclarations } from "lit";
 import { unsafeSVG } from "lit/directives/unsafe-svg.js";
@@ -12,6 +12,7 @@ import {
   projectFieldShellA11y,
   fieldAccessibleName,
   errorsVisible,
+  holdsUneditedValue,
   shownErrorsOf,
   type MdyOverlayAlignment,
   type MdyOverlayPlacement,
@@ -360,7 +361,16 @@ export abstract class MdyFieldElement<T> extends LitElement {
    */
   protected showErrors(handle: MdyFieldHandle<T>): boolean {
     if (this.controlErrors().length > 0) return true;
-    return errorsVisible({ disabled: handle.disabled(), touched: handle.touched() }, handle.errors());
+    return errorsVisible({
+      disabled: handle.disabled(),
+      touched: handle.touched(),
+      // A value that arrived with the form and has not been edited since: a refusal about it is
+      // about something already there, which nobody at this page can have caused by inaction.
+      holdsUnedited: holdsUneditedValue(
+        { value: handle.value(), dirty: handle.dirty() },
+        this.widgetKind as MdyValueKind,
+      ),
+    }, handle.errors());
   }
 
   /** Whether the field currently holds a value (drives label styling). */

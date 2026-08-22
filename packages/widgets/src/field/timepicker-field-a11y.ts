@@ -10,7 +10,7 @@ import type { MdyPartContract } from "../contract.js";
 import { MDY_FIELD_SHELL_CLASSES } from "../structure.js";
 import type { MdyTimepickerFieldState } from "./timepicker-field-types.js";
 import { timeFieldBounds } from "../time-bounds.js";
-import { errorsVisible, shownErrors } from "./verdict.js";
+import { errorsVisible, holdsUneditedValue, shownErrors } from "./verdict.js";
 import { fieldShellRootClasses } from "./shell-a11y.js";
 
 export interface MdyTimepickerFieldA11yOptions {
@@ -65,7 +65,7 @@ export function projectTimepickerFieldA11y(
   // A rule they have not answered waits for them to reach the field; a refusal about the value
   // already there does not, because they can neither cause it by inaction nor see the reason unless
   // it is said.
-  const tellingThem = errorsVisible({ disabled: state.disabled, touched: state.touched }, errors);
+  const tellingThem = errorsVisible({ disabled: state.disabled, touched: state.touched, holdsUnedited: holdsUneditedValue(state, "timepicker") }, errors);
 
   const describedBy = hasErrors ? errorId : descriptionId;
 

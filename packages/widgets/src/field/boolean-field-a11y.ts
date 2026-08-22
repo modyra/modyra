@@ -6,7 +6,7 @@ import type { MdyFieldError } from "@modyra/core";
 import { assertUsableWidgetId } from "../ids.js";
 import type { MdyPartContract } from "../contract.js";
 import { MDY_FIELD_SHELL_CLASSES } from "../structure.js";
-import { errorsVisible, shownErrors } from "./verdict.js";
+import { errorsVisible, holdsUneditedValue, shownErrors } from "./verdict.js";
 import { fieldShellRootClasses } from "./shell-a11y.js";
 import type {
   MdyBooleanFieldState,
@@ -67,7 +67,7 @@ export function projectBooleanFieldA11y(
   // A rule they have not answered waits for them to reach the field; a refusal about the value
   // already there does not, because they can neither cause it by inaction nor see the reason unless
   // it is said.
-  const tellingThem = errorsVisible({ disabled: state.disabled, touched: state.touched }, errors);
+  const tellingThem = errorsVisible({ disabled: state.disabled, touched: state.touched, holdsUnedited: holdsUneditedValue(state) }, errors);
 
   const describedBy = hasErrors ? errorId : descriptionId;
   const isSwitch = options.variant === "switch";
