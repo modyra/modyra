@@ -647,7 +647,7 @@ export class MdyDaterangeFieldElement extends MdyFieldElement<MdyDateRange | nul
               aria-label=${this.messages.daterangeChooseRange}
               aria-haspopup=${this.popupPromise}
               aria-expanded=${this._open ? "true" : "false"}
-              aria-controls=${this._open ? overlayControlledId("daterange", this.fieldId) ?? nothing : nothing}
+              aria-controls=${overlayControlledId("daterange", this.fieldId) ?? nothing}
               @click=${(e: Event) => (this._open ? this.closePopup(handle) : this.openPopup(handle, e))}
             >
               ${mdyIcon("CALENDAR", "mdy-datepicker__icon")}
@@ -664,6 +664,7 @@ export class MdyDaterangeFieldElement extends MdyFieldElement<MdyDateRange | nul
           >${this.renderPopup(handle)}</div>`,
           this._open,
           {
+            closedId: overlayControlledId("daterange", this.fieldId) ?? undefined,
             position: this.overlay.state.position,
           alignment: this.overlay.state.alignment,
           modal: this.overlay.state.position === "overlay",

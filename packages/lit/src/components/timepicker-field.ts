@@ -920,7 +920,7 @@ export class MdyTimepickerFieldElement extends MdyFieldElement<string | null> {
             role="combobox"
             aria-haspopup=${this.popupPromise}
             aria-expanded=${this._open ? "true" : "false"}
-            aria-controls=${this._open ? overlayControlledId("timepicker", this.fieldId) ?? nothing : nothing}
+            aria-controls=${overlayControlledId("timepicker", this.fieldId) ?? nothing}
             ${mdyPart(this.controlPart(handle))}
             autocomplete="off"
             @change=${(e: Event) => {
@@ -964,6 +964,7 @@ export class MdyTimepickerFieldElement extends MdyFieldElement<string | null> {
           >${this.renderPopup(handle)}</div>`,
           this._open,
           {
+            closedId: overlayControlledId("timepicker", this.fieldId) ?? undefined,
             position: this.overlay.state.position,
           alignment: this.overlay.state.alignment,
           modal: this.overlay.state.position === "overlay",

@@ -199,7 +199,7 @@ export class MdyColorsFieldElement extends MdyFieldElement<string | null> {
               ?disabled=${handle.disabled()}
               aria-expanded=${this._open ? "true" : "false"}
               aria-haspopup=${this.popupPromise}
-              aria-controls=${this._open ? overlayControlledId("colors", this.fieldId) ?? nothing : nothing}
+              aria-controls=${overlayControlledId("colors", this.fieldId) ?? nothing}
               aria-label=${this.label || "Color"}
               @click=${(e: Event) => {
                 if (this._open) {
@@ -256,7 +256,7 @@ export class MdyColorsFieldElement extends MdyFieldElement<string | null> {
               ?disabled=${handle.disabled()}
               aria-haspopup=${this.popupPromise}
               aria-expanded=${this._open ? "true" : "false"}
-              aria-controls=${this._open ? overlayControlledId("colors", this.fieldId) ?? nothing : nothing}
+              aria-controls=${overlayControlledId("colors", this.fieldId) ?? nothing}
               aria-label=${`${this.label} — open color presets`}
               @click=${(e: Event) => {
                 if (this._open) {
@@ -274,6 +274,7 @@ export class MdyColorsFieldElement extends MdyFieldElement<string | null> {
           </div>
         </div>
         ${renderOverlayPanel(this.renderDropdown(handle), this._open, {
+          closedId: overlayControlledId("colors", this.fieldId) ?? undefined,
           position: this.overlay.state.position,
           alignment: this.overlay.state.alignment,
           modal: this.overlay.state.position === "overlay",

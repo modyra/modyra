@@ -507,7 +507,7 @@ export class MdyDatepickerFieldElement extends MdyFieldElement<string | null> {
           role="combobox"
           aria-haspopup=${this.popupPromise}
           aria-expanded=${this._open ? "true" : "false"}
-          aria-controls=${this._open ? this.controlledViewId() : nothing}
+          aria-controls=${this.controlledViewId()}
           ${mdyPart(this.controlPart(handle))}
           @change=${(e: Event) => {
             // The text goes over as text. Parsing here and writing the value back was the erasure:
@@ -544,6 +544,7 @@ export class MdyDatepickerFieldElement extends MdyFieldElement<string | null> {
           html`<div class="${this.popupClass(this.overlay.state.position)} mdy-overlay">${this.renderPopup(handle)}</div>`,
           this._open,
           {
+            closedId: overlayControlledId("datepicker", this.fieldId) ?? undefined,
             position: this.overlay.state.position,
           alignment: this.overlay.state.alignment,
           modal: this.overlay.state.position === "overlay",

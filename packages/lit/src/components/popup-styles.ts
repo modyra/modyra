@@ -388,6 +388,15 @@ export interface RenderOverlayPanelOptions {
   panelStyle?: string;
   /** Use display:contents wrapper so positioning is delegated to inner content. */
   panelDisplayContents?: boolean;
+  /**
+   * The id the opener names, kept on the page while the overlay is closed.
+   *
+   * `aria-controls` is a property of an opener in both states — an opener that drops it while closed
+   * reads as a control with no overlay at all — and a reference resolving to nothing is worse than
+   * one that resolves to an empty container. So the container outlives the content: closed, this is
+   * an empty element carrying the id, which is what the other renderers leave behind too.
+   */
+  closedId?: string;
 }
 
 /**
@@ -404,7 +413,11 @@ export function renderOverlayPanel(
   open: boolean,
   options?: RenderOverlayPanelOptions,
 ): unknown {
-  if (!open) return nothing;
+  if (!open) {
+    return options?.closedId === undefined || options.closedId === ""
+      ? nothing
+      : html`<div id=${options.closedId} hidden></div>`;
+  }
   const modalClass = options?.modal ? " mdy-overlay-panel--modal" : "";
   // No alignment class here. This wrapper is `display: contents` and lays nothing out, so a class on
   // it styles nothing however it is spelled — the same reasoning that moved `--above` off it. The

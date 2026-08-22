@@ -544,7 +544,7 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
             aria-expanded=${this._open ? "true" : "false"}
             aria-required=${String(handle.required())}
             aria-readonly=${handle.readonly() ? "true" : nothing}
-            aria-controls=${this._open ? overlayControlledId("multiselect", this.fieldId) ?? nothing : nothing}
+            aria-controls=${overlayControlledId("multiselect", this.fieldId) ?? nothing}
             aria-activedescendant=${this.activeDescendant() ?? nothing}
             aria-describedby=${this.showErrors(handle) && !this.inlineErrors ? this.errorsId : this.descriptionId}
             aria-invalid=${String(this.showErrors(handle))}
@@ -612,6 +612,7 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
       </div>
       ${this.renderWayBack(handle)}
       ${renderOverlayPanel(overlay, this._open, {
+        closedId: overlayControlledId("multiselect", this.fieldId) ?? undefined,
         modal: position === "overlay",
         alignment,
         position,
