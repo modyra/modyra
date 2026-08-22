@@ -2211,7 +2211,11 @@
         outline-offset: 2px;
     }
 
-    .mdy-chip:disabled {
+    /* Both, because a chip is not always a button: an option chip in counter mode is a `div` with
+       two step buttons inside it, and `:disabled` does not reach an element that cannot carry the
+       attribute. The class is what the contract projects for exactly that reason. */
+    .mdy-chip:disabled,
+    .mdy-chip--disabled {
         opacity: 0.4;
         cursor: not-allowed;
     }
@@ -2648,6 +2652,15 @@
         background: var(--mdy-select-option-selected-bg);
         color: var(--mdy-select-option-selected-color);
         font-weight: var(--mdy-select-option-selected-weight);
+    }
+
+    /* An option the document closed. The same treatment a disabled field takes — dimmed, and the
+       cursor says so before the press — because it is the same fact about a smaller thing. The
+       pointer is not switched off: the element keeps its hover target so a person who does press it
+       is pressing something that visibly refuses rather than a hole in the list. */
+    .mdy-select__option--disabled {
+        opacity: 0.38;
+        cursor: not-allowed;
     }
 
     /* ─── Inline Errors (icon + tooltip next to label) ────────────────────────── */

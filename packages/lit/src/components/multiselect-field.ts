@@ -24,9 +24,11 @@ import {
   multiselectChipClasses,
   optionsWithUnrecognizedValues,
   type MdyMultiselectFieldController,
+  type MdyPartContract,
 } from "@modyra/widgets";
 import { html, nothing, type PropertyDeclarations } from "lit";
 import { mdyIcon } from "../base.js";
+import { mdyPart } from "../mdy-part.js";
 import {
   MdyLitOverlayController,
   renderOverlayPanel,
@@ -958,8 +960,16 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
     this.requestUpdate();
   }
 
-  private optionDomId(option: MdySelectOption<unknown>): string | null {
-    return this.fieldController?.view().parts[String(option.value)]?.id ?? null;
+  /**
+   * Everything the contract says about one option in the list, taken whole.
+   *
+   * The id was read from the projection and the classes were rebuilt beside it, which left the part
+   * nothing rebuilt — `aria-disabled` and the native `disabled` — off the element entirely. An option
+   * a document had closed was drawn exactly like one that could be chosen: the press was refused and
+   * nothing on the page said why.
+   */
+  private optionPart(option: MdySelectOption<unknown>): MdyPartContract {
+    return this.fieldController?.view().parts[String(option.value)] ?? { classes: [], attributes: {} };
   }
 
   private renderOptionChip(
@@ -968,13 +978,7 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
   ): unknown {
     if (this.mode === "multi") {
       const count = this.counts(handle).get(String(option.value)) ?? 0;
-      return html`<div
-        id=${this.optionDomId(option) ?? nothing}
-        class=${[
-          ...multiselectChipClasses({ mode: "multi", selected: count > 0 }),
-          ...(this.fieldController?.state().activeKey === String(option.value) ? ["mdy-chip--active"] : []),
-        ].join(" ")}
-      >
+      return html`<div ${mdyPart(this.optionPart(option))}>
         <button
           type="button"
           class=${MDY_CHIP_CLASSES.step}
@@ -996,16 +1000,9 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
         </button>
       </div>`;
     }
-    const selected = this.isSelected(handle, option.value);
     return html`<button
       type="button"
-      id=${this.optionDomId(option) ?? nothing}
-      class=${[
-        ...multiselectChipClasses({ mode: "single", selected }),
-        ...(this.fieldController?.state().activeKey === String(option.value) ? ["mdy-chip--active"] : []),
-      ].join(" ")}
-      ?disabled=${handle.disabled()}
-      aria-pressed=${selected ? "true" : "false"}
+      ${mdyPart(this.optionPart(option))}
       title=${option.label}
       @click=${() => this.pick(handle, option.value)}
     >

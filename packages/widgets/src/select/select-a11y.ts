@@ -46,7 +46,7 @@ export interface MdySelectA11yProjection {
   /** The filter field. It lives inside the popup, not over the trigger's own text. */
   readonly search: MdyPartContract;
   readonly options: MdyPartContract;
-  readonly option: (key: string) => MdyPartContract;
+  readonly option: (key: string, disabled?: boolean) => MdyPartContract;
 }
 
 export function projectSelectA11y(
@@ -104,12 +104,18 @@ export function projectSelectA11y(
     },
   };
 
-  const option = (key: string): MdyPartContract => ({
+  const option = (key: string, optionDisabled = false): MdyPartContract => ({
     id: idFactory.item(widgetId, "option", key),
     role: "option",
-    classes: buildOptionClasses(key === selectedKey, key === activeKey, visibleKeys.includes(key)),
+    classes: buildOptionClasses(key === selectedKey, key === activeKey, visibleKeys.includes(key), optionDisabled),
     attributes: {
       "aria-selected": String(key === selectedKey),
+      // An option a document closed says so before it is pressed. The press is refused either way —
+      // the controller will not take it — and an option drawn exactly like an available one invites
+      // the press, answers nothing, and explains nothing: a person who cannot see the list reads
+      // that as a broken control, and one who can reads it as their own misclick.
+      "aria-disabled": String(optionDisabled),
+      disabled: optionDisabled,
       // Filtering is the contract's, not the adapter's: an option the query does not match is
       // hidden here, so every renderer filters identically by applying the part.
       hidden: !visibleKeys.includes(key),
@@ -153,10 +159,11 @@ function buildOptionClasses(
   selected: boolean,
   active: boolean,
   visible: boolean,
+  disabled: boolean,
 ): readonly string[] {
   const base = SELECT.parts.option.classes[0] ?? "mdy-select__option";
   const states: ReadonlyArray<[boolean, MdyStateName]> = [
-    [selected, "selected"], [active, "active"], [!visible, "hidden"],
+    [selected, "selected"], [active, "active"], [!visible, "hidden"], [disabled, "disabled"],
   ];
   return [base, ...states.filter(([on]) => on).map(([, state]) => stateClass(base, state))];
 }

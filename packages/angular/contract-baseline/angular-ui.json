@@ -72,7 +72,6 @@
     "mdy-calendar-header",
     "mdy-checkbox",
     "mdy-chip",
-    "mdy-chip--active",
     "mdy-chip--centered",
     "mdy-chip--counter",
     "mdy-chip--selected",
@@ -796,7 +795,6 @@
     "packages/angular/src/lib/renderers/multiselect/multiselect-renderer.component.ts": {
       "classes": [
         "mdy-chip",
-        "mdy-chip--active",
         "mdy-chip--centered",
         "mdy-chip--counter",
         "mdy-chip--selected",

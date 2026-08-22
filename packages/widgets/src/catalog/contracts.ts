@@ -88,7 +88,7 @@ export const MDY_WIDGET_CONTRACTS = Object.freeze({
       // The list a select opens *is* a listbox, and the shared default for a part named `options` is
       // the chip grid's `group`. Declared here because the semantic is this kind's, not the name's.
       elements: { options: "listbox" } ,
-      states: { arrow: ["open"], trigger: ["open", "disabled", "readonly", "invalid", "loading"], options: ["open"], option: ["selected", "active", "hidden"], popup: POPUP_PLACEMENT_STATES } ,
+      states: { arrow: ["open"], trigger: ["open", "disabled", "readonly", "invalid", "loading"], options: ["open"], option: ["selected", "active", "hidden", "disabled"], popup: POPUP_PLACEMENT_STATES } ,
       presentation: ["mdy-select", "mdy-select__option-label"] ,
       // `options` is what the popup is for. A positioning box framing nothing is a coherent-looking
       // widget with nothing in it to choose from, and `empty` is a message *inside* the list rather
@@ -152,7 +152,7 @@ export const MDY_WIDGET_CONTRACTS = Object.freeze({
       // one. One role whatever a chip holds, so the strip does not change what it is with its
       // contents.
       roles: { options: "group", chips: "list", chip: "listitem", popup: "dialog", chipTooltip: "tooltip" },
-      states: { trigger: ["open", "disabled", "readonly", "invalid", "loading"], option: ["selected", "active"], chip: ["selected", "removable", "dragging"], popup: POPUP_PLACEMENT_STATES },
+      states: { trigger: ["open", "disabled", "readonly", "invalid", "loading"], option: ["selected", "active", "disabled"], chip: ["selected", "removable", "dragging"], popup: POPUP_PLACEMENT_STATES },
       classes: { box: ["mdy-multiselect"], trigger: ["mdy-multiselect__trigger"], arrow: ["mdy-multiselect__arrow"], options: ["mdy-multiselect__options", "mdy-multiselect-overlay__grid"], optionWrapper: [MDY_CHIP_CLASSES.wrapper], option: [MDY_CHIP_CLASSES.block], optionCheck: [MDY_CHIP_CLASSES.check], optionLabel: [MDY_CHIP_CLASSES.label], optionCount: [MDY_CHIP_CLASSES.count], optionStep: [MDY_CHIP_CLASSES.step], chips: ["mdy-multiselect__chips"], chip: [MDY_CHIP_CLASSES.block, MDY_CHIP_CLASSES.value], chipRemove: [MDY_CHIP_CLASSES.remove], chipMove: [MDY_CHIP_CLASSES.move], chipTooltip: ["mdy-chip__tooltip"], announcement: ["mdy-multiselect__announcement"], clearAll: ["mdy-multiselect__clear-all"], overflowCount: ["mdy-multiselect__overflow"], wayBack: ["mdy-multiselect__way-back"], wayBackAction: ["mdy-multiselect__way-back-action"], placeholder: ["mdy-multiselect__placeholder"], popup: ["mdy-multiselect__dropdown", MDY_POPUP_CLASS, MDY_POPUP_SURFACE_CLASS, "mdy-multiselect-overlay__panel"], search: ["mdy-multiselect-overlay__input"], loading: ["mdy-select__loader"], empty: ["mdy-multiselect-overlay__empty"] } ,
       // The two mode markers a chip carries. `--centered` reserves the width its tick will need in
       // toggle mode; `--counter` is the bag mode, whose chip has step buttons instead of a tick.

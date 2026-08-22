@@ -211,7 +211,7 @@ export function createSelectController<TValue>(
     // and no `aria-selected`, and the one entry the user needs in order to replace their value.
     for (const option of paintedOptions()) {
       const key = keyOf(option);
-      parts[key] = a11y.option(key);
+      parts[key] = a11y.option(key, option.disabled === true);
     }
 
     return {

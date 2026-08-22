@@ -1717,6 +1717,7 @@
           ],
           "states": [
             "active",
+            "disabled",
             "hidden",
             "selected"
           ]
@@ -2127,6 +2128,7 @@
           ],
           "states": [
             "active",
+            "disabled",
             "selected"
           ]
         },

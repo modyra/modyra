@@ -24,6 +24,7 @@ import {
   shouldCloseMultiselectOverlay,
   createMultiselectFieldController,
   MDY_CHIP_CLASSES,
+  type MdyPartContract,
 } from "@modyra/widgets";
 import { MdyErrorListComponent } from "../../control/error-list.component";
 import { MdyControlLabelComponent } from "../../control/mdy-control-label.component";
@@ -258,11 +259,7 @@ import type { MdyOverlayBranch, MdyOverlayOwner } from "../../core/overlay-contr
           @for (opt of searchResults(); track opt.value; let i = $index) {
             <div [class]="chip.wrapper" [attr.data-option-key]="optionKey(opt.value)">
             @if (mode() === "multi") {
-              <div
-                [class]="chipClasses(countOf(opt.value) > 0)"
-                [id]="optionDomId(opt.value)"
-                [class.mdy-chip--active]="activeOverlayKey() === optionKey(opt.value)"
-              >
+              <div [mdyPart]="optionPart(opt.value)">
                 <button
                   type="button"
                   [class]="chip.step"
@@ -290,9 +287,7 @@ import type { MdyOverlayBranch, MdyOverlayOwner } from "../../core/overlay-contr
             } @else {
               <button
                 type="button"
-                [class]="chipClasses(isSelected(opt.value))"
-                [id]="optionDomId(opt.value)"
-                [class.mdy-chip--active]="activeOverlayKey() === optionKey(opt.value)"
+                [mdyPart]="optionPart(opt.value)"
                 (click)="onOverlaySelect(opt.value)"
               >
                 <mdy-icon name="CHECKMARK" [class]="chip.check" />
@@ -781,6 +776,19 @@ export class MdyMultiselectComponent<TValue = string>
    * control said where the keyboard was and no such element existed, so type-ahead moved a cursor
    * that could not be announced.
    */
+  /**
+   * Everything the contract says about one option in the list: its id, the chip classes its mode
+   * and state imply, and whether it is available.
+   *
+   * Taken whole rather than rebuilt from three bindings. The classes and the id were being spelled
+   * here while the projection already held them — and the part of it nothing spelled was
+   * `aria-disabled` and the native `disabled`, so an option a document had closed was drawn exactly
+   * like one that could be chosen. The press was refused and nothing said why.
+   */
+  protected optionPart(value: TValue): MdyPartContract {
+    return this.controller()?.view().parts[this.optionKey(value)] ?? { classes: [], attributes: {} };
+  }
+
   protected optionDomId(value: TValue): string | null {
     return this.controller()?.view().parts[this.optionKey(value)]?.id ?? null;
   }
