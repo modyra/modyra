@@ -27,8 +27,22 @@ import { MDY_WIDGET_KEYBOARD } from "@modyra/widgets";
 import { battle } from "../../harness/battle.mjs";
 import { expectEqual } from "../../harness/assertions.mjs";
 
-/** Intents that only exist when a field turned the capability on. */
-const OPT_IN_INTENTS = ["reorder", "move-selected"];
+/**
+ * Which intents are opt-in is **read from the table**, not listed here.
+ *
+ * It was listed here — `["reorder", "move-selected"]` — and when the reordering intent was renamed
+ * to `grab` this battle stopped finding anything and failed its own premise check rather than
+ * passing empty. That is the check working, and it is also a copy of something the table owns, which
+ * is the shape this campaign has now found five times.
+ *
+ * An intent is opt-in if **any** binding declaring it names a capability. The rule then becomes the
+ * one worth having: if one binding of an intent is gated and another is not, the table is telling a
+ * reader two different things about the same capability.
+ */
+const optInIntents = (declared) => new Set(
+  declared.filter((binding) => binding.requires !== undefined && binding.requires !== null)
+    .map((binding) => binding.intent),
+);
 
 battle(
   {
@@ -41,7 +55,8 @@ battle(
       .filter(([, list]) => Array.isArray(list))
       .flatMap(([kind, list]) => list.map((binding) => ({ kind, ...binding })));
 
-    const optIn = declared.filter((binding) => OPT_IN_INTENTS.includes(binding.intent));
+    const intents = optInIntents(declared);
+    const optIn = declared.filter((binding) => intents.has(binding.intent));
 
     ctx.log.note("bindings whose intent needs a capability the field opts into", {
       found: optIn.map((binding) =>
@@ -53,7 +68,7 @@ battle(
     // leave it green and meaningless.
     expectEqual(optIn.length > 0, true, {
       claimIds: ["A11Y-001"],
-      what: "no binding declares an intent that needs a capability, so this battle is comparing nothing",
+      what: "no binding names a capability the field opts into, so this battle is comparing nothing — if opt-in capabilities are gone from the contract, retire this rather than leave it green",
       detail: JSON.stringify(declared.map((binding) => binding.intent).filter((intent, at, all) => all.indexOf(intent) === at)),
     });
 
