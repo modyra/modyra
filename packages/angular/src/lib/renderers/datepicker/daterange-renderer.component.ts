@@ -152,6 +152,7 @@ import { inputText, isoDateText } from "../renderer-projection";
         }
 
         <mdy-range-calendar
+        [widgetId]="fieldId"
           #calendar
           [controller]="controller()"
           [rangeStart]="parsedStart()"

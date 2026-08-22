@@ -127,6 +127,7 @@ import { MdyTimepickerClockComponent } from "./timepicker-clock.component";
         (close)="closeOverlay()"
       >
         <mdy-timepicker-clock
+          [widgetId]="fieldId"
           [value]="draftValue()"
           [granularity]="granularity()"
           [readonly]="isReadonly()"

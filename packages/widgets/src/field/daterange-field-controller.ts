@@ -1,3 +1,4 @@
+import { calendarDayId } from "../ids.js";
 /**
  * Date-range field controller.
  *
@@ -194,7 +195,7 @@ export function createDaterangeFieldController(
 
   function a11yCell(cell: MdyDaterangeFieldCell) {
     return {
-      id: `${widgetId}__day__${cell.iso}`,
+      id: calendarDayId(widgetId, cell.iso),
       classes: [
         "mdy-datepicker__cell",
         ...(cell.inMonth ? [] : ["mdy-datepicker__cell--outside"]),

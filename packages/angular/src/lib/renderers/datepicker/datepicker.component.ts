@@ -126,6 +126,7 @@ import { MdyCalendarComponent } from "./calendar.component";
 
         <mdy-calendar
         [gridId]="popupId()"
+        [widgetId]="fieldId"
           #calendar
           [controller]="controller()"
           [selectedDate]="parsedSelectedDate()"

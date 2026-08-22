@@ -57,6 +57,7 @@ type RangePhase = "pick-start" | "pick-end";
     />
     @if (view() === "days") {
       <mdy-range-calendar-grid
+        [widgetId]="widgetId()"
         [year]="viewYear()"
         [month]="viewMonth()"
         [rangeStart]="pendingStart()"
@@ -99,6 +100,9 @@ export class MdyRangeCalendarComponent {
    * bounds refuse — is its answer. The signals below are the standalone case: this component is
    * public and mountable without a form, and that caller has no controller to ask.
    */
+  /** The widget these cells belong to, which is what their ids are built from. */
+  readonly widgetId = input<string>("");
+
   readonly controller = input<MdyDaterangeFieldController | undefined>(undefined);
 
   readonly rangeStart = input<CalendarDate | null>(null);

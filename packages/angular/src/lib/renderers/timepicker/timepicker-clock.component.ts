@@ -65,6 +65,8 @@ import { MdyTimepickerHeaderComponent } from "./timepicker-header.component";
 })
 export class MdyTimepickerClockComponent {
   protected readonly i18n = inject(MDY_I18N_MESSAGES);
+  /** The widget this clock belongs to, which is what its segment ids are built from. */
+  readonly widgetId = input<string>("");
   readonly value = input<string | null>(null);
   readonly disabled = input<boolean>(false);
   readonly format = input<MdyTimeFormat>(MDY_TIMEPICKER_DEFAULT_FORMAT);

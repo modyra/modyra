@@ -15,6 +15,7 @@ import type { MdyTimeFormat } from "@modyra/core/datetime";
       <input
         #box
         type="number"
+        [attr.id]="controlId() || null"
         class="mdy-timepicker-segment-input"
         [min]="bounds().min"
         [max]="bounds().max"
@@ -41,6 +42,9 @@ import type { MdyTimeFormat } from "@modyra/core/datetime";
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class MdyTimepickerSegmentComponent {
+  /** The id the projection gives this segment's control, passed in rather than rebuilt here. */
+  readonly controlId = input<string>("");
+
   readonly value    = input.required<string>();
   /** Which segment this is. The contract names the two separately so a theme, a test or a
    *  screen reader can tell the hour from the minute without counting siblings. */

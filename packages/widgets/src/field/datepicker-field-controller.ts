@@ -1,3 +1,4 @@
+import { calendarDayId } from "../ids.js";
 /**
  * Headless datepicker field controller.
  *
@@ -175,7 +176,7 @@ export function createDatepickerFieldController(
 
   function a11yCell(cell: MdyDatepickerFieldCell) {
     return {
-      id: `${widgetId}__day__${cell.iso}`,
+      id: calendarDayId(widgetId, cell.iso),
       classes: [
         "mdy-datepicker__cell",
         ...(cell.inMonth ? [] : ["mdy-datepicker__cell--outside"]),

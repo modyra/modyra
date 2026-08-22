@@ -444,6 +444,7 @@ export class MdyDaterangeFieldElement extends MdyFieldElement<MdyDateRange | nul
             ].join(" ");
             return html`<button
               type="button"
+              id=${this.controller?.view().parts[cell.iso]?.id ?? nothing}
               class=${classes}
               role="gridcell"
               tabindex=${this.isCellFocused(cell) ? "0" : "-1"}

@@ -116,3 +116,15 @@ function idSafeKey(key: string): string {
     .replaceAll(MDY_ID_DELIMITER, "%5F%5F")
     .replace(/[\t\n\f\r ]/g, (ws) => `%${ws.charCodeAt(0).toString(16).toUpperCase().padStart(2, "0")}`);
 }
+
+/**
+ * The id a calendar's day cell carries.
+ *
+ * One rule in one place: the field controllers compute it for the part table, and a renderer that
+ * cannot reach that table — a calendar drawn by a component two levels below the field — asks here
+ * rather than rebuilding the string. Two places computing one id is the shape that drifts the day
+ * the format changes.
+ */
+export function calendarDayId(widgetId: string, iso: string): string {
+  return `${widgetId}__day__${iso}`;
+}

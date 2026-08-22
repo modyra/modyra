@@ -1,3 +1,4 @@
+import { calendarDayId } from "@modyra/widgets";
 import {
   ChangeDetectionStrategy,
   Component,
@@ -49,6 +50,7 @@ import { MDY_DATE_LOCALE } from "../../core/date-locale";
       <div class="mdy-datepicker__row" role="row">
         @for (cell of row; track cell.iso) {
           <button
+            [attr.id]="dayId(cell.iso)"
             #cellBtn
             type="button"
             class="mdy-datepicker__cell"
@@ -77,6 +79,14 @@ import { MDY_DATE_LOCALE } from "../../core/date-locale";
   `,
 })
 export class MdyRangeCalendarGridComponent {
+  /** The widget these cells belong to, which is what their ids are built from. */
+  readonly widgetId = input<string>("");
+
+  /** The id the projection gives one day cell, asked for rather than rebuilt. */
+  protected dayId(iso: string): string {
+    return this.widgetId() ? calendarDayId(this.widgetId(), iso) : "";
+  }
+
   readonly year = input.required<number>();
   readonly month = input.required<number>();
   readonly rangeStart = input<CalendarDate | null>(null);

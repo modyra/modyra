@@ -364,6 +364,7 @@ export class MdyDatepickerFieldElement extends MdyFieldElement<string | null> {
             ].join(" ");
             return html`<button
               type="button"
+              id=${this.fieldController?.view().parts[cell.iso]?.id ?? nothing}
               class=${classes}
               role="gridcell"
               tabindex=${cell.iso === this.view.focusedDate ? "0" : "-1"}

@@ -1,3 +1,4 @@
+import { calendarDayId } from "@modyra/widgets";
 import {
   ChangeDetectionStrategy,
   Component,
@@ -49,6 +50,7 @@ import { MdyCalendarCellComponent } from "./calendar-cell.component";
         @for (cell of row; track cell.iso) {
           <mdy-calendar-cell
             [cell]="cell"
+            [cellId]="dayId(cell.iso)"
             [isSelected]="isCellSelected(cell)"
             [isToday]="isCellToday(cell)"
             [isFocused]="isCellFocused(cell)"
@@ -65,6 +67,13 @@ export class MdyCalendarGridComponent {
   readonly month = input.required<number>();
   /** The id this widget's opener names through `aria-controls`. */
   readonly gridId = input<string>("");
+  /** The widget these cells belong to, which is what their ids are built from. */
+  readonly widgetId = input<string>("");
+
+  /** The id the projection gives one day cell, asked for rather than rebuilt. */
+  protected dayId(iso: string): string {
+    return this.widgetId() ? calendarDayId(this.widgetId(), iso) : "";
+  }
   readonly selectedDate = input<CalendarDate | null>(null);
   readonly focusedDate = input<CalendarDate | null>(null);
   readonly minDate = input<CalendarDate | null>(null);

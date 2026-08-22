@@ -70,6 +70,7 @@ export {
 export type { MdyWidgetState, MdyWidgetStateContract } from "./widget-states.js";
 
 export {
+  calendarDayId,
   defaultWidgetIdFactory,
   assertUsableWidgetId,
   isValidWidgetId,
