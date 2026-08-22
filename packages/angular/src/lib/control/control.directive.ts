@@ -36,7 +36,7 @@ declare const ngDevMode: boolean | undefined;
 import { MdyPrefixDirective } from "./prefix.directive";
 import { MdySuffixDirective } from "./suffix.directive";
 import { MdySupportingTextDirective } from "./supporting-text.directive";
-import { MDY_FIELD_STATE_CLASSES, errorsVisible, holdsUneditedValue, keepKeyboardInPlay, reportIdCollision, shownErrors, showsAsInvalid, stateClass } from "@modyra/widgets";
+import { MDY_FIELD_STATE_CLASSES, errorsVisible, fieldAccessibleName, holdsUneditedValue, keepKeyboardInPlay, reportIdCollision, shownErrors, showsAsInvalid, stateClass } from "@modyra/widgets";
 import type { MdyValueKind } from "@modyra/core";
 
 /** Global counter for generating unique field IDs. */
@@ -201,8 +201,20 @@ export abstract class MdyBaseControl<TValue = unknown> implements OnInit {
    * asterisk the user's word does not — and anything matching on the name exactly, a test or an
    * assistive tool's find-by-name, then misses the control the user is asking for.
    */
+  /**
+   * What this control is announced as.
+   *
+   * The order is the contract's: a spoken name a document wrote, the visible label, and the field's
+   * own name when there is neither. A control with none of the three is announced as its role and
+   * nothing else — a text box, on a form of them — and the field name is the one thing always
+   * present, so it is a poor name and better than no name.
+   */
   protected readonly controlAriaLabel: Signal<string | null> = computed(
-    () => this.ariaLabel() || this.label() || null,
+    () => fieldAccessibleName({
+      ariaLabel: this.ariaLabel(),
+      label: this.label(),
+      name: this.effectiveName(),
+    }) || null,
   );
 
   /** Opt-in or opt-out of floating labels on a per-control basis, overriding the form-level directive. */
