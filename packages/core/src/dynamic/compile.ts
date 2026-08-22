@@ -28,7 +28,7 @@ import {
   oneOf,
   pattern,
   required,
-  valueShape,
+  kindValidators,
 } from "../validators.js";
 
 import {
@@ -213,7 +213,7 @@ export function buildDynamicFieldValidators(field: MdyDynamicField): {
   // option list: a value from a restored draft or a scripted write is not the widget's own.
   const base = {
     ...declared,
-    validators: [...declared.validators, valueShape(field.kind) as ValidatorFn<never>],
+    validators: [...declared.validators, ...(kindValidators(field.kind) as ReadonlyArray<ValidatorFn<never>>)],
   };
   if (
     field.kind === "select" ||

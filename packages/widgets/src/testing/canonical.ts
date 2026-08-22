@@ -751,7 +751,9 @@ export const MDY_CANONICAL_OPEN: Readonly<Partial<Record<MdyWidgetKind, MdyCanon
  * nothing unless every renderer is handed the same value to render.
  */
 export const MDY_CANONICAL_FILLED: Readonly<Partial<Record<MdyWidgetKind, unknown>>> = Object.freeze({
-  text: "value", email: "value", password: "value", textarea: "value",
+  // An address the control would accept, because `email` is a kind whose rule the browser also
+  // enforces: `"value"` is a filled field *and* a refused one, which is two states at once.
+  text: "value", email: "someone@example.com", password: "value", textarea: "value",
   number: 7, slider: 7,
   checkbox: true, toggle: true,
   radio: "a", segmented: "a", select: "a",
