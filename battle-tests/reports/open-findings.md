@@ -21505,3 +21505,29 @@ slowness to be budgeted for, **was the defect itself**.
 A check nobody runs because it is slow, being slow because of the thing it is reporting, is a shape
 worth remembering: the cost was evidence and I read it as an obstacle.
 
+
+### The six UI points are down to one
+
+The truncated name reads without a pointer now, in all three, at `a268ec71`. That was the point
+singled out at the start as the one worth writing first, on the grounds that `title` is what a hurried
+fix reaches for and it passes any hover-only check while never appearing for a keyboard or a touch
+user. The assertion was written to be blind to `title` for exactly that reason, and it went green on
+something else.
+
+```
+1  the buttons carry their symbols        red — the CSS mark, all three
+2  the whole name is readable             green
+3  the strip scrolls internally           green
+4  opens anywhere but the chip buttons    was already right when measured
+5  no box around the chips                was already right when measured
+6  the search stays when asked for        green
+```
+
+One of six left, and it is the mark.
+
+**A note on the reading.** It was taken with seven files still modified in the tree, so it is a
+measurement of a working state and not of a commit. `a268ec71` is what added the reveal — the change is
+in the three renderers there — so the un-pinning stands on the commit rather than on the working tree.
+Said out loud because the difference cost two sessions an argument tonight, and *"I checked which one
+I was reading"* is a claim worth making explicitly rather than implying.
+
