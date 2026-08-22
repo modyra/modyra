@@ -178,17 +178,30 @@ for (const host of HOSTS) {
       return 61;
     };
 
-    await mount(page, "few", 2);
-    const cheap = await stopsToLeave("few");
+    // **Twelve against forty, not two against twelve.**
+    // The property is that the price is not set by how much a person put in — not that it never
+    // differs at all. An overflow control exists only while the strip overflows, so it is one stop at
+    // twelve and one stop at twelve hundred; comparing an overflowing strip against a fitting one
+    // reads that appearance as growth and reports a bounded cost as an unbounded one. It did, once
+    // the affordance landed.
+    //
+    // Both sizes here overflow, so anything that appears has appeared for both, and what is left to
+    // measure is whether the count follows the content.
     await mount(page, "many", 12);
-    const dear = await stopsToLeave("many");
+    const dozen = await stopsToLeave("many");
+    await mount(page, "lots", 40);
+    const plenty = await stopsToLeave("lots");
+
+    // The premise: this fixture is measuring a strip that overflows at both sizes. If twelve did not
+    // overflow, the comparison would be the one this assertion was rewritten to stop making.
+    expect(dozen, "twelve chosen cost more stops than a sweep can count").toBeLessThan(61);
 
     expect(
-      dear,
-      `crossing the field costs ${cheap} tab stops with two chosen and ${dear} with twelve — every ` +
-        `chip is a stop and so is its remove button, so the price of getting past this control is ` +
-        `set by how much a person put in it. A roving tabindex makes the strip one stop`,
-    ).toBe(cheap);
+      plenty,
+      `crossing the field costs ${dozen} tab stops with twelve chosen and ${plenty} with forty — the ` +
+        `price of getting past this control is set by how much a person put in it. A roving tabindex ` +
+        `makes the strip one stop whatever it holds`,
+    ).toBe(dozen);
   });
 
   test(`a selection can be cleared, ${host.name}`, async ({ page }) => {
