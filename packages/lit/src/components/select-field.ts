@@ -77,7 +77,11 @@ export class MdySelectFieldElement extends MdyDropdownFieldElement<unknown | nul
     // The controller decides what is painted — it is the one place the rule lives, so a renderer
     // cannot forget it. Before it exists (connectedCallback has not run) the declared list plus the
     // held value is the same answer.
-    return this.selectAdapter?.state?.options ?? optionsWithUnrecognizedValue(this.options, value);
+    // Asked of the value every time, not only of the list the adapter was built with. A value that
+    // arrives *after* the mount — a draft, a server, a scripted write — is exactly the one no
+    // option carries, and reading the adapter's list alone left the control presenting the first
+    // option as the current choice while the form held something else.
+    return optionsWithUnrecognizedValue(this.selectAdapter?.state?.options ?? this.options, value);
   }
 
   protected override get listOptions(): ReadonlyArray<MdySelectOption<unknown>> {
