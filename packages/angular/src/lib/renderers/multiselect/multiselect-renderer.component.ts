@@ -251,7 +251,11 @@ import type { MdyOverlayBranch, MdyOverlayOwner } from "../../core/overlay-contr
         }
         <!-- The chip grid says what it is. The contract declares the role; a container left bare told
              a screen reader nothing about the set at all. -->
+        <!-- The id the projection gives the grid — not the one the opener names, which is the
+             popup's and is already on the panel: two elements claiming one id makes every reference
+             to it non-deterministic. -->
         <div
+          [id]="optionsGridId()"
           class="mdy-multiselect__options mdy-multiselect-overlay__grid"
           [attr.role]="optionsRole"
           [attr.aria-label]="controlAriaLabel()"
@@ -525,6 +529,9 @@ export class MdyMultiselectComponent<TValue = string>
 
   /** How many chips the strip is hiding, measured from what the browser actually laid out. */
   protected readonly hiddenChips = signal(0);
+
+  /** The id the projection gives the option grid. */
+  protected readonly optionsGridId = computed(() => this.controller()?.view().parts.group?.id ?? null);
 
   /** The way to the chips the strip cannot show: the list, where every one of them is. */
   protected onOverflowPress(event: Event): void {

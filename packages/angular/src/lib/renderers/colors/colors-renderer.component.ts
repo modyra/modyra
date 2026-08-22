@@ -42,6 +42,7 @@ import { MdyOverlayPanelComponent } from "../../core/overlay-panel.component";
     <mdy-control-label
       [label]="label()"
       [forId]="hexInputId"
+      [widgetId]="fieldId"
       [required]="isRequired()"
       [filled]="!!value()"
       [showInlineError]="inlineErrorShown()"

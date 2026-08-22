@@ -56,6 +56,7 @@ import { inputText, isoDateText } from "../renderer-projection";
       <mdy-control-label
         [label]="label()"
         [forId]="fieldId + '-start'"
+      [widgetId]="fieldId"
         [required]="isRequired()"
         [filled]="true"
         [showInlineError]="inlineErrorShown()"

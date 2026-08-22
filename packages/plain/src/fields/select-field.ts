@@ -152,6 +152,11 @@ export function renderSelectField(
   // trigger/listbox/options), unlike every other controller here — wire the
   // static bits by hand; the trigger id is stable regardless of state.
   shell.label.htmlFor = controller.view().parts.trigger.id ?? "";
+  // And the id the label is named by. A popup's inner view is labelled by the field's own label —
+  // `aria-labelledby="<widget>__label"` — and a label with no id leaves that reference pointing at
+  // nothing. Every other kind here gets it by applying the shell's label part; this one has no such
+  // part to apply.
+  shell.label.id = fieldShellPartIds(widgetId).labelId;
   // The select controller's view has no description/error parts, so the shell's own canonical
   // classes are all these two carry; only the live region needs adding.
   // `role="alert"` on a <ul> is what axe's aria-allowed-role objects to: alert is not a role a list
