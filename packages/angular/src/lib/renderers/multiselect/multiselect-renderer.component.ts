@@ -912,7 +912,11 @@ export class MdyMultiselectComponent<TValue = string>
     return wayBackSentence(
       offer,
       { removed: this.i18n.wayBackRemoved, moved: this.i18n.wayBackMoved, cleared: this.i18n.wayBackCleared },
-      (key) => this.chosen().find((held) => held.key === key)?.label ?? key,
+      // Resolved against the options, not against what is chosen: the way back names the value that
+      // was just taken away, and a value that was taken away is no longer among the chosen ones. The
+      // strip therefore showed the identifier while the live region, which resolves the same key the
+      // other way, said the words.
+      (key) => this.labelOfKey(key),
     );
   });
 
@@ -964,6 +968,11 @@ export class MdyMultiselectComponent<TValue = string>
     this.saidLast = now;
     return said;
   });
+
+  /** The words behind one option key, for a value that may no longer be held. */
+  private labelOfKey(key: string): string {
+    return this.effectiveOptions().find((o) => this.optionKey(o.value) === key)?.label ?? key;
+  }
 
   /** The words a chosen value is shown by, falling back to the value for one the options lost. */
   private labelOf(value: TValue): string {
