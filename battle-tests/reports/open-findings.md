@@ -21566,3 +21566,43 @@ right.
 Owned by `esecutore`. No battle yet: the shape of the fix decides what to assert — a hash of the
 value, an index, or an escaped form are three different contracts — and pinning one would choose.
 
+
+## 387 — a chip that takes focus shrinks the box it lives in, and leaves it (S1, A11Y-001)
+
+`two-doors-to-one-order` › *a chip scrolled out of the strip is still reachable and comes back into
+view* went red in all three when the overflow affordance and the mark landed. It is a keyboard trap and
+the mechanism is exact:
+
+```
+                      immediately after focus        300ms later
+angular   scrollLeft  1224                           1224      unchanged
+          inside      true                           false
+          overhang    0px                            97px
+lit       same shape, 96px
+plain     outside at both readings, 96px
+```
+
+**The strip does not scroll back — it gets narrower.**
+
+```
+before focus   clientWidth 1108   scrollWidth 2348
+after  focus   clientWidth 1012   scrollWidth 2348
+```
+
+Ninety-six pixels of scrollport disappear when a chip is focused, `scrollWidth` and `scrollLeft` both
+unchanged. The chip is where it was; the visible window shrank around it. So the focused chip is pushed
+out of view by almost exactly the amount the box lost — **the thing that gains focus makes the box it
+lives in smaller, and so leaves it.**
+
+The overflow button is not the cause: it is 44px and it is not inside the strip.
+
+**It is invisible to a probe that measures too early.** Focus scrolls the chip in synchronously and the
+browser is right at that instant; the shrink lands on the next paint. My first two readings called
+lit and Angular correct because they measured inside the same `page.evaluate` as the focus call. The
+spec waits 250ms and is why this is a finding rather than a puzzle — that wait was written for a
+different reason and caught this one.
+
+Owned by `esecutore`. It arrived with the last of the six UI points, which is the shape worth noting:
+the affordance that says *there is more* and the mark that makes a button visible both landed in the
+same batch as a trap that hides the thing a keyboard just reached.
+
