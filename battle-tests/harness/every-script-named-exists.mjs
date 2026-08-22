@@ -47,8 +47,8 @@ const scriptsOf = (file) => {
 };
 const ROOT_SCRIPTS = new Set(Object.keys(JSON.parse(readFileSync(join(ROOT, "package.json"), "utf8")).scripts ?? {}));
 
-/** Where a command gets written down. Not `node_modules`, not build output. */
-const LOOK_IN = ["battle-tests", "docs", "scripts", "packages", ".modyra"];
+/** Where a command gets written down. Not `node_modules`, not build output, nothing untracked. */
+const LOOK_IN = ["battle-tests", "docs", "scripts", "packages"];
 const READABLE = [".md", ".mjs", ".ts", ".js", ".json", ".yml", ".yaml"];
 const SKIP = new Set(["node_modules", "dist", ".tmp-browser", "test-results", ".git"]);
 

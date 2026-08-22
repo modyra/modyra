@@ -1,7 +1,7 @@
 # Fable 5 hunts
 
-Hunting assignments derived from `.modyra/fable5-work-orders.md`, which replaces the external
-brief `.modyra/modyra-fable5-brief.md`. That brief promises a server-driven contract system;
+Hunting assignments derived from the Fable 5 work orders, which replace an earlier external
+brief. That brief promises a server-driven contract system;
 roughly two thirds of it already exists in `packages/core/src/dynamic/` and
 `packages/core/src/expression.ts`. Each hunt below is a claim about that promise, stated so it
 can be broken. Findings from these hunts are numbered in

@@ -67,7 +67,7 @@ For the project motivation and development approach, see [Project background](do
 
 - **Comments say what the code does, not how it came to be.** No change
   history, no "used to be", no account of how a problem was solved. That
-  belongs in the commit message, the changeset, or `.modyra/handoffs/`.
+  belongs in the commit message or the changeset.
 - **A package does not name the packages derived from it.** `@modyra/widgets`
   is the framework-agnostic contract; `@modyra/angular`, `@modyra/lit` and
   `@modyra/plain` consume it. A comment in `widgets` citing one of them as

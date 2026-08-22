@@ -1,4 +1,4 @@
-// Records the 60-second demo video following .modyra/go-to-market-en/demo/script-60s.md.
+// Records the 60-second demo video.
 //
 // Segments, recorded with Playwright at 1280x720:
 //   1. plain showcase page (serve-example.mjs plain 4307, /showcase.html) — typing writes the

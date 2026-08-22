@@ -48,8 +48,8 @@ emits file by file — nothing is written to `dist`, so the check cannot be conf
 
 It tolerates exactly one kind of difference: the textual order of the members of a string-literal
 union. `"label" | "root"` and `"root" | "label"` are the same type, and the two compilers order them
-differently in `packages/widgets/dist/catalog.d.ts`. Every other difference fails the check, as does
-any file one compiler emits and the other does not.
+differently in the `catalog.d.ts` each emits from `packages/widgets/src/catalog.ts`. Every other
+difference fails the check, as does any file one compiler emits and the other does not.
 
 This check is what licenses shipping TypeScript 7 output, so it runs in CI.
 

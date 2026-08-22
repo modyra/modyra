@@ -12528,9 +12528,9 @@ cited by core/draft-manager.ts, core/form-engine.ts, core/reactive-owner.ts,
           react/index.ts, preact/index.ts
 ```
 
-**That file is not in the repository.** The only `*piano*` file anywhere is
-`.modyra/piano di comunicazione e go-to-market.md`, an unrelated document in the coordination
-directory that `AGENTS.md` itself says must never be the sole durable record of a decision. None of the
+**That file is not in the repository.** The only `*piano*` file anywhere is an untracked planning
+document outside version control — nothing a clone contains, and a file version control ignores can
+never be the durable record of anything. None of the
 `§` references cites an external standard — they are all this one plan.
 
 **What it costs a reader.** The comments are not decorative; they carry the reasoning:
@@ -14399,25 +14399,14 @@ One thing to know before re-measuring this: the obvious probe — `not` nested *
 — alternates by parity, so a run of `true`, `false`, `true` down the depths is the probe's arithmetic
 and not the cap.
 
-## The Fable 5 charter's author, and a message received
+## The Fable 5 charter's author
 
-`battle-tests/charter/fable5-hunts.md` and `.modyra/fable5-work-orders.md` were written by an external
-session (Kimi), which reached this one over the cross-session socket to say so and to ask that the
-truncated count be numbered. It already is: **finding 234**, filed before the message arrived, with
-the measurement `50 001 declared → 9 999 rejected`.
+`battle-tests/charter/fable5-hunts.md` derives from work orders drafted outside this repository.
+Recorded here because the charter is now a source this register cites, and a reader should know
+where it came from.
 
-Recorded here because the charter is now a source this register cites, and a reader should know where
-it came from without having to reconstruct it from a socket message.
-
-A second message asked for a ping back over the socket. Four attempts reported `Failed to send`, by
-bare name and by two refs, with that session listed as a live peer every time.
-
-**They were not failures.** That session's logs hold all four messages complete, so what failed was
-the receipt and not the delivery — the send worked and reported that it had not. Worth keeping
-because the correction runs both ways: its first message said to ignore complaints about a missing
-receipt, which is how the first two went unnoticed, and an invoked action that declares itself failed
-has to be treated as failed until something proves otherwise. Here the proof arrived from the other
-side, and it says the opposite of the report.
+The truncated count the charter asks about is already numbered: **finding 234**, filed before the
+question arrived, with the measurement `50 001 declared → 9 999 rejected`.
 
 
 ## Checked and clean: the closed catalogue, attacked through every container (H-4)

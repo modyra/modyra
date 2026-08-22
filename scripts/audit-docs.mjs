@@ -199,14 +199,22 @@ const gapProblems = gapStatusMismatches();
  * it did before.
  *
  * That is not hypothetical: five decision records supported their Verification sections by pointing
- * at a worked example that lived under gitignored `.modyra/`, so the evidence behind them was
- * unreachable from a clone.
+ * at a worked example version control ignored, so the evidence behind them was unreachable from a
+ * clone. A citation that exists only on one machine is a citation that does not exist.
  *
- * A path resolves if it exists from the repository root or beside the citing page. Two shapes are
+ * A path resolves if it exists from the repository root or beside the citing page **and is tracked
+ * by git** — an existing-but-ignored file is a violation, not a pass. Two shapes are
  * deliberately not paths and are skipped: a package subpath specifier (`./lib/version.cjs`), and an
  * abbreviation naming a file within a package it has already named in prose.
  */
 const CITED_PATH = /`([A-Za-z0-9._/-]+\.(?:ts|tsx|mjs|cjs|js|json|css|yml|yaml|html|rs|java))`/g;
+
+const TRACKED = new Set(
+  execFileSync("git", ["ls-files"], { cwd: ROOT, encoding: "utf8" })
+    .split("\n")
+    .filter(Boolean)
+    .map((path) => join(ROOT, path)),
+);
 
 function missingCitedPaths() {
   const problems = [];
@@ -218,9 +226,10 @@ function missingCitedPaths() {
       if (cited.startsWith("./") || cited.startsWith("@")) continue;
       // An abbreviation like `testing/canonical.ts`, resolved by the package the prose just named.
       if (!cited.includes(".") || cited.split("/").length < 3) continue;
-      if (existsSync(join(ROOT, cited))) continue;
-      if (existsSync(resolve(dirname(file), cited))) continue;
-      problems.push(`${relative(ROOT, file)} cites ${cited}, which does not exist`);
+      const found = [join(ROOT, cited), resolve(dirname(file), cited)].find((p) => existsSync(p));
+      if (!found) problems.push(`${relative(ROOT, file)} cites ${cited}, which does not exist`);
+      else if (!TRACKED.has(found))
+        problems.push(`${relative(ROOT, file)} cites ${cited}, which version control does not track`);
     }
   }
   return problems;

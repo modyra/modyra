@@ -31,8 +31,9 @@ npm run docs:sync && npm run docs:build
   [the compatibility policy](docs/contract-compatibility.md)).
 - **A decision record is superseded or amended, never edited into agreement with the present** —
   the mechanics are in [docs/architecture/README.md](docs/architecture/README.md).
-- **`.modyra/` is a coordination directory**: it must never be the sole durable record of a
-  decision. Durable decisions live in [docs/architecture/](docs/architecture/README.md).
+- **An untracked file is not a record**: a decision that lives only outside version control will be
+  relitigated from scratch. Durable decisions live in
+  [docs/architecture/](docs/architecture/README.md).
 - **When a tool's verdict and your own reading of a change disagree, stop and report the
   disagreement.** The conflict is worth more than either verdict alone.
 

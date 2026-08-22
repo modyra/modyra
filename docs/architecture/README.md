@@ -5,8 +5,8 @@ decided, what it costs, the alternatives that lost and why, and the check that f
 is violated.
 
 **Every architectural or security decision belongs here.** A decision recorded only in a commit
-message, a changeset, or a coordination file under `.modyra/` is a decision the next reader will
-relitigate from scratch — and `.modyra/` is git-ignored, so it is not a durable record at all.
+message, a changeset, or a file version control ignores is a decision the next reader will
+relitigate from scratch — an untracked file is not a durable record at all.
 
 Use [TEMPLATE.md](TEMPLATE.md). A record is not complete without **Verification** and **Security and
 privacy**; where either is genuinely empty, say so explicitly rather than omitting the section — an

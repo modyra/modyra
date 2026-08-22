@@ -7,8 +7,8 @@ Status: Accepted
 Asked "what is Modyra", three public surfaces gave three different answers. The README opened with
 "Define a form once. Run it in every application that needs it.", the site's homepage with "Form
 behavior that does not belong to a framework.", and the GitHub repository description with "A
-framework-agnostic, type-safe form engine". A positioning plan existed, but it lived in `.modyra/` —
-git-ignored, in Italian, and never executed — so it could not hold any surface to account.
+framework-agnostic, type-safe form engine". A positioning plan existed, but it lived outside
+version control — in Italian, and never executed — so it could not hold any surface to account.
 
 The drift was not only verbal. The README quoted a bundle size measured versions earlier (13.4 KB
 gzipped) while the dated comparison page measured the same surface at 26.3 KB; the brand page on the
