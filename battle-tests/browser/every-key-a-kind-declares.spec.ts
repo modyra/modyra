@@ -36,7 +36,7 @@
  */
 
 import { expect, test } from "@playwright/test";
-import { MDY_WIDGET_KEYBOARD } from "@modyra/widgets";
+import { MDY_WIDGET_CONTRACTS as CONTRACTS, MDY_WIDGET_KEYBOARD } from "@modyra/widgets";
 
 const HOSTS = [
   { name: "plain", page: "/index.html", ready: "battleReady", api: "battle" },
@@ -130,6 +130,29 @@ for (const host of HOSTS) {
         if (binding.requires !== undefined && binding.requires !== null) {
           unreached.push(`${kind} ${binding.key}: needs \`${binding.requires}\`, which this field did not declare`);
           continue;
+        }
+
+        // **A key belongs to a part, and the part may not be on the page.**
+        // `on` names the part that answers a key. Unlike `when` and `requires`, whose conditions are
+        // invisible in the DOM, this one is recoverable by looking: a multiselect with nothing chosen
+        // renders no chip, so `ArrowLeft` on a chip has nothing to be pressed at.
+        //
+        // That is **unreached**, not unanswered — the same bucket as a `when` state a renderer cannot
+        // get to, which this spec already keeps and already prints. It is not that the key does
+        // nothing; it is that the fixture never built the thing the key belongs to.
+        //
+        // I argued for a third word in the table to say this and was wrong: a third word would have
+        // the contract restate what the rendered widget already says, and the rule the table needs is
+        // exactly the one it cannot recover by looking.
+        if (binding.on !== undefined && binding.on !== null) {
+          const classes = (CONTRACTS[kind]?.parts?.[binding.on]?.classes ?? []) as string[];
+          const drawn = classes.length === 0
+            ? 0
+            : await page.locator(classes.map((one) => `${scope} .${one}`).join(", ")).count();
+          if (drawn === 0) {
+            unreached.push(`${kind} ${binding.key}: answered on \`${binding.on}\`, which this control drew none of`);
+            continue;
+          }
         }
 
         // Reset to closed, then reach the state the binding names.
