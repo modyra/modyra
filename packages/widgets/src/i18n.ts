@@ -86,6 +86,30 @@ export interface MdyI18nMessages {
    * of `{count}`.
    */
   readonly selectionGrabbed: string;
+  /**
+   * How a control is operated, one clause per thing its keys do.
+   *
+   * The sentence is *derived* from `MDY_WIDGET_KEYBOARD` — a phrase written beside the table is a
+   * copy of the key map and goes stale the moment a binding moves, which is the failure this
+   * project has now found five times in five shapes. These are the frames the derivation fills:
+   * `{keys}` is the keys that carry an intent, joined by {@link MdyI18nMessages.keyGuideOr}.
+   *
+   * Nothing else tells anyone the key map exists. It is discoverable by guessing, and a person who
+   * does not guess has a control they can see and cannot operate.
+   */
+  readonly keyGuideOpen: string;
+  readonly keyGuideMove: string;
+  readonly keyGuideStep: string;
+  readonly keyGuideToggle: string;
+  readonly keyGuideCommit: string;
+  readonly keyGuideCancel: string;
+  readonly keyGuideRemove: string;
+  readonly keyGuideGrab: string;
+  /** What joins two keys that do the same thing, and two clauses. */
+  readonly keyGuideOr: string;
+  readonly keyGuideJoin: string;
+  /** What a key is called when it has no printable name of its own. */
+  readonly keyGuideSpace: string;
   /** A chip put down where it now is. */
   readonly selectionDropped: string;
   /** A grab abandoned, with the chip back where it started. */
@@ -198,6 +222,17 @@ export const MDY_I18N_MESSAGES_DEFAULT: MdyI18nMessages = Object.freeze({
   selectionRemoved: "{value} removed, {count} selected",
   selectionEmpty: "Nothing selected",
   selectionMoved: "{value}, moved to position {position} of {count}",
+  keyGuideOpen: "{keys} opens it",
+  keyGuideMove: "{keys} moves through it",
+  keyGuideStep: "{keys} changes the value",
+  keyGuideToggle: "{keys} switches it",
+  keyGuideCommit: "{keys} confirms",
+  keyGuideCancel: "{keys} closes it",
+  keyGuideRemove: "{keys} takes one off",
+  keyGuideGrab: "{keys} picks one up to move it",
+  keyGuideOr: " or ",
+  keyGuideJoin: ", ",
+  keyGuideSpace: "Space",
   selectionGrabbed: "{value} grabbed, {position} of {count}. Use the arrows to move it, Enter to drop it, Escape to put it back",
   selectionDropped: "{value} dropped at position {position} of {count}",
   selectionReturned: "{value} returned to position {position} of {count}",
@@ -273,6 +308,17 @@ export const MDY_I18N_MESSAGES_IT: MdyI18nMessages = Object.freeze({
   selectionRemoved: "{value} rimosso, {count} selezionati",
   selectionEmpty: "Nessuna selezione",
   selectionMoved: "{value}, spostato in posizione {position} di {count}",
+  keyGuideOpen: "{keys} lo apre",
+  keyGuideMove: "{keys} lo percorre",
+  keyGuideStep: "{keys} cambia il valore",
+  keyGuideToggle: "{keys} lo commuta",
+  keyGuideCommit: "{keys} conferma",
+  keyGuideCancel: "{keys} lo chiude",
+  keyGuideRemove: "{keys} ne toglie uno",
+  keyGuideGrab: "{keys} ne prende uno per spostarlo",
+  keyGuideOr: " o ",
+  keyGuideJoin: ", ",
+  keyGuideSpace: "Spazio",
   selectionGrabbed: "{value} preso, {position} di {count}. Usa le frecce per spostarlo, Invio per posarlo, Esc per rimetterlo dov'era",
   selectionDropped: "{value} posato in posizione {position} di {count}",
   selectionReturned: "{value} rimesso in posizione {position} di {count}",
@@ -341,6 +387,17 @@ export const MDY_I18N_MESSAGES_DE: MdyI18nMessages = Object.freeze({
   selectionRemoved: "{value} entfernt, {count} ausgewählt",
   selectionEmpty: "Nichts ausgewählt",
   selectionMoved: "{value}, verschoben auf Position {position} von {count}",
+  keyGuideOpen: "{keys} öffnet es",
+  keyGuideMove: "{keys} bewegt sich darin",
+  keyGuideStep: "{keys} ändert den Wert",
+  keyGuideToggle: "{keys} schaltet um",
+  keyGuideCommit: "{keys} bestätigt",
+  keyGuideCancel: "{keys} schließt es",
+  keyGuideRemove: "{keys} entfernt eines",
+  keyGuideGrab: "{keys} nimmt eines auf, um es zu bewegen",
+  keyGuideOr: " oder ",
+  keyGuideJoin: ", ",
+  keyGuideSpace: "Leertaste",
   selectionGrabbed: "{value} aufgenommen, {position} von {count}. Mit den Pfeiltasten bewegen, Eingabe zum Ablegen, Escape zum Zurücklegen",
   selectionDropped: "{value} abgelegt auf Position {position} von {count}",
   selectionReturned: "{value} zurückgelegt auf Position {position} von {count}",
@@ -409,6 +466,17 @@ export const MDY_I18N_MESSAGES_FR: MdyI18nMessages = Object.freeze({
   selectionRemoved: "{value} retiré, {count} sélectionnés",
   selectionEmpty: "Aucune sélection",
   selectionMoved: "{value}, déplacé en position {position} sur {count}",
+  keyGuideOpen: "{keys} l'ouvre",
+  keyGuideMove: "{keys} le parcourt",
+  keyGuideStep: "{keys} change la valeur",
+  keyGuideToggle: "{keys} le bascule",
+  keyGuideCommit: "{keys} valide",
+  keyGuideCancel: "{keys} le ferme",
+  keyGuideRemove: "{keys} en retire un",
+  keyGuideGrab: "{keys} en saisit un pour le déplacer",
+  keyGuideOr: " ou ",
+  keyGuideJoin: ", ",
+  keyGuideSpace: "Espace",
   selectionGrabbed: "{value} saisi, {position} sur {count}. Utilisez les flèches pour le déplacer, Entrée pour le poser, Échap pour le remettre",
   selectionDropped: "{value} posé en position {position} sur {count}",
   selectionReturned: "{value} remis en position {position} sur {count}",
@@ -477,6 +545,17 @@ export const MDY_I18N_MESSAGES_ES: MdyI18nMessages = Object.freeze({
   selectionRemoved: "{value} quitado, {count} seleccionados",
   selectionEmpty: "Nada seleccionado",
   selectionMoved: "{value}, movido a la posición {position} de {count}",
+  keyGuideOpen: "{keys} lo abre",
+  keyGuideMove: "{keys} lo recorre",
+  keyGuideStep: "{keys} cambia el valor",
+  keyGuideToggle: "{keys} lo conmuta",
+  keyGuideCommit: "{keys} confirma",
+  keyGuideCancel: "{keys} lo cierra",
+  keyGuideRemove: "{keys} quita uno",
+  keyGuideGrab: "{keys} agarra uno para moverlo",
+  keyGuideOr: " o ",
+  keyGuideJoin: ", ",
+  keyGuideSpace: "Espacio",
   selectionGrabbed: "{value} agarrado, {position} de {count}. Use las flechas para moverlo, Intro para soltarlo, Escape para devolverlo",
   selectionDropped: "{value} soltado en la posición {position} de {count}",
   selectionReturned: "{value} devuelto a la posición {position} de {count}",

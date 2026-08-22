@@ -369,3 +369,96 @@ export function keyBindingFor(
       && ((binding.on ?? undefined) === on || (opener !== undefined && binding.on === opener)),
   ) ?? null;
 }
+
+/**
+ * How a control is operated, in one sentence, derived from the table above.
+ *
+ * Nothing else on a page says the key map exists. It is discoverable by guessing — the outside view's
+ * largest finding — and a person who does not guess has a control they can see and cannot operate.
+ *
+ * Derived rather than written beside the table, because a sentence naming keys *is* a copy of the key
+ * map: it goes stale the moment a binding moves, and this project has now found that shape five times
+ * in five places. Derived, "it holds for every consumer" is true by construction rather than by
+ * discipline.
+ *
+ * What it leaves out is as deliberate as what it says:
+ *
+ * - **Keys that need a capability the field did not ask for.** `reorderable` is opt-in, and a legend
+ *   listing a key that does nothing on this control is worse than no legend — it was the likeliest
+ *   reading of "reordering does not work".
+ * - **Keys answered on a part that is not there.** A chip's keys mean nothing to a field holding no
+ *   chips.
+ * - **The keys every control shares.** Tab moves between fields everywhere; a sentence that says so
+ *   on each of them is noise a reader learns to skip, and the ones that matter are inside it.
+ */
+export function widgetKeyGuide(
+  kind: MdyWidgetKind,
+  messages: {
+    readonly keyGuideOpen: string;
+    readonly keyGuideMove: string;
+    readonly keyGuideStep: string;
+    readonly keyGuideToggle: string;
+    readonly keyGuideCommit: string;
+    readonly keyGuideCancel: string;
+    readonly keyGuideRemove: string;
+    readonly keyGuideGrab: string;
+    readonly keyGuideOr: string;
+    readonly keyGuideJoin: string;
+    readonly keyGuideSpace: string;
+  },
+  options: {
+    /** The capabilities this field asked for; a key that needs one it did not ask for is left out. */
+    readonly capabilities?: readonly string[];
+    /**
+     * The parts this control drew, where the caller knows.
+     *
+     * A key answered on a part that is not there is left out — a chip's keys mean nothing to a field
+     * holding no chips. The part a person opens this kind with is always counted: it is the control,
+     * and a control that is not drawn is not a control.
+     */
+    readonly parts?: readonly string[];
+    /**
+     * Which state to describe. A closed control's keys and an open one's are different sets, and a
+     * sentence holding both says `ArrowDown` opens the list and moves through it at once.
+     */
+    readonly open?: boolean;
+  } = {},
+): string {
+  const frames: Readonly<Record<string, string>> = {
+    open: messages.keyGuideOpen,
+    move: messages.keyGuideMove,
+    step: messages.keyGuideStep,
+    toggle: messages.keyGuideToggle,
+    commit: messages.keyGuideCommit,
+    cancel: messages.keyGuideCancel,
+    remove: messages.keyGuideRemove,
+    grab: messages.keyGuideGrab,
+  };
+  const named = (key: string): string => (key === " " ? messages.keyGuideSpace : key);
+
+  // One clause per intent, in the order the frames declare them, so two kinds that answer the same
+  // keys read the same way round.
+  const phase: MdyOverlayPhase = options.open === true ? "open" : "closed";
+  const opener = MDY_POPUP_OPENERS[kind]?.opener;
+  const keysByIntent = new Map<string, string[]>();
+  for (const binding of MDY_WIDGET_KEYBOARD[kind]) {
+    if (binding.when !== undefined && binding.when !== phase) continue;
+    if (binding.requires !== undefined && !(options.capabilities ?? []).includes(binding.requires)) continue;
+    if (
+      binding.on !== undefined && binding.on !== opener
+      && options.parts !== undefined && !options.parts.includes(binding.on)
+    ) continue;
+    if (frames[binding.intent] === undefined) continue;
+    const already = keysByIntent.get(binding.intent) ?? [];
+    if (!already.includes(binding.key)) already.push(binding.key);
+    keysByIntent.set(binding.intent, already);
+  }
+
+  const clauses: string[] = [];
+  for (const intent of Object.keys(frames)) {
+    const keys = keysByIntent.get(intent);
+    if (keys === undefined || keys.length === 0) continue;
+    clauses.push(frames[intent]!.replace("{keys}", keys.map(named).join(messages.keyGuideOr)));
+  }
+  return clauses.join(messages.keyGuideJoin);
+}

@@ -49,6 +49,7 @@ export {
   MDY_WIDGET_TRANSITIONS,
   keyBindingFor,
   transitionsFrom,
+  widgetKeyGuide,
 } from "./transitions.js";
 export type {
   MdyKeyBinding,
