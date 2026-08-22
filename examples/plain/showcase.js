@@ -16,14 +16,15 @@ const THEMES = {
   modern: "modyra-modern.css",
   material: "modyra-material.css",
   ios: "modyra-ios.css",
-  // The compiled salience build carries its own seeded light and dark token sets, so the page's
-  // generic dark overrides step aside for it through `data-mdy-theme`.
-  salience: "modyra-salience.theme.css",
+  // Salience ships as a compiled token set, not a structure: it rides on the modern structural
+  // theme and takes over the colour tokens through `data-mdy-theme`.
+  salience: "modyra-modern.css",
 };
 const SALIENCE_THEME_NAME = "modyra-salience";
 
 const root = document.documentElement;
 const themeLink = document.getElementById("modyra-theme");
+const compiledThemeLink = document.getElementById("modyra-compiled-theme");
 const statePre = document.querySelector("[data-showcase-state]");
 const validChip = document.querySelector("[data-showcase-valid]");
 const submitButton = document.querySelector("[data-showcase-submit]");
@@ -104,6 +105,8 @@ form.reactivity.effect(() => {
 });
 
 submitButton.addEventListener("click", () => {
+  // The terms verdict stays quiet until the form has been touched or submitted once.
+  document.querySelector("[data-showcase-form]").classList.add("attempted");
   successNote.classList.remove("visible");
   form.submit(() => {
     successNote.classList.add("visible");
@@ -116,8 +119,10 @@ for (const button of document.querySelectorAll("[data-showcase-themes] button[da
   button.addEventListener("click", () => {
     themeLink.href = `./themes/${THEMES[button.dataset.theme]}`;
     if (button.dataset.theme === "salience") {
+      compiledThemeLink.disabled = false;
       root.dataset.mdyTheme = SALIENCE_THEME_NAME;
     } else {
+      compiledThemeLink.disabled = true;
       root.removeAttribute("data-mdy-theme");
     }
     for (const other of button.parentElement.children) {

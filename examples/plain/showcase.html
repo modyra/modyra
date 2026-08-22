@@ -12,6 +12,10 @@
     <!-- Structural/component theme; the switcher in the top bar swaps this href. -->
     <link id="modyra-theme" rel="stylesheet" href="./themes/modyra-modern.css" />
 
+    <!-- Salience is a palette, not a structure: its token set layers over the structural theme and
+         activates through data-mdy-theme, never by replacing the stylesheet above. -->
+    <link id="modyra-compiled-theme" rel="stylesheet" href="./themes/modyra-salience.theme.css" disabled />
+
     <title>Modyra — forms as data</title>
 
     <style>
@@ -101,7 +105,7 @@
         display: flex;
         align-items: center;
         gap: 1.25rem;
-        padding: 0.85rem 2rem;
+        padding: 0.65rem 2rem;
         border-bottom: 1px solid var(--showcase-border);
         background: color-mix(in srgb, var(--showcase-card) 72%, transparent);
         backdrop-filter: blur(10px);
@@ -170,7 +174,7 @@
         align-items: start;
         max-width: 72rem;
         margin: 0 auto;
-        padding: 1.75rem 2rem 2.5rem;
+        padding: 1.25rem 2rem 2rem;
       }
 
       .card {
@@ -178,7 +182,7 @@
         border: 1px solid var(--showcase-border);
         border-radius: 16px;
         box-shadow: 0 12px 32px -12px rgb(20 22 60 / 14%);
-        padding: 1.6rem 1.75rem;
+        padding: 1.35rem 1.6rem;
       }
 
       :root[data-mdy-mode="dark"] .card {
@@ -192,7 +196,7 @@
       }
 
       .lead {
-        margin: 0.35rem 0 1.4rem;
+        margin: 0.35rem 0 1rem;
         color: var(--showcase-muted);
         font-size: 0.9rem;
         max-width: 40ch;
@@ -202,6 +206,30 @@
       [data-showcase-form] {
         display: grid;
         gap: 0.35rem;
+      }
+
+      /* Tighter than the theme's default field margin so the whole contract fits a 720p frame. */
+      [data-showcase-form] .mdy-renderer {
+        margin-bottom: 4px;
+      }
+
+      /*
+       * A required boolean states its refusal immediately — that is the widgets' rule for
+       * checkboxes, and the catalogue page shows it too. Here the verdict waits for the first
+       * touch or submit attempt, so the page loads without a red row nobody has reached yet.
+       */
+      [data-showcase-form]:not(.attempted)
+        [data-field-host="terms"]
+        .mdy-renderer:not(.mdy-renderer--touched)
+        .mdy-control__errors {
+        display: none;
+      }
+
+      [data-showcase-form]:not(.attempted)
+        [data-field-host="terms"]
+        .mdy-renderer:not(.mdy-renderer--touched)
+        .mdy-label--has-error {
+        color: inherit;
       }
 
       [data-showcase-conditional] {
@@ -221,7 +249,7 @@
         display: flex;
         align-items: center;
         gap: 1rem;
-        margin-top: 1.1rem;
+        margin-top: 0.85rem;
       }
 
       [data-showcase-submit] {

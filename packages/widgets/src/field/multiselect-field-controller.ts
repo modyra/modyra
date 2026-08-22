@@ -367,7 +367,18 @@ export function createMultiselectFieldController<TValue>(
   function undo(): readonly MdyUiCommand[] {
     const offer = wayBack();
     if (offer === null) return [];
-    handle.set(offer.value);
+    // Only what the field still offers. An option set is not fixed — a document changes it, a host
+    // reloads it, a dependent field narrows it — and an offer made before that change holds values
+    // from a world that no longer exists. Restoring one puts a value in the form that nobody can
+    // choose, on a chip with no option to take a label from, so what a person reads is the raw value
+    // beside words.
+    //
+    // Kept rather than refused wholesale: the part the set still holds is the part the person asked
+    // for back, and a way back that silently does nothing is worse than one that does what it can.
+    const offered = new Set(allOptions().map((option) => keyFor(option)));
+    const restorable = offer.value.filter((value) =>
+      offered.has(keyFor({ value } as MdySelectOption<TValue>)));
+    handle.set(restorable as typeof offer.value);
     wayBack.set(null);
     handle.markAsDirty();
     handle.markAsTouched();
