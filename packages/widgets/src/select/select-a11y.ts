@@ -45,7 +45,7 @@ export interface MdySelectA11yProjection {
   readonly trigger: MdyPartContract;
   /** The filter field. It lives inside the popup, not over the trigger's own text. */
   readonly search: MdyPartContract;
-  readonly listbox: MdyPartContract;
+  readonly options: MdyPartContract;
   readonly option: (key: string) => MdyPartContract;
 }
 
@@ -88,14 +88,14 @@ export function projectSelectA11y(
     attributes: {
       role: "combobox",
       "aria-expanded": String(open),
-      "aria-controls": idFactory.part(widgetId, "listbox"),
+      "aria-controls": idFactory.part(widgetId, "options"),
       "aria-activedescendant": activeKey ? idFactory.item(widgetId, "option", activeKey) : undefined,
       "aria-autocomplete": "list",
     },
   };
 
-  const listbox: MdyPartContract = {
-    id: idFactory.part(widgetId, "listbox"),
+  const optionList: MdyPartContract = {
+    id: idFactory.part(widgetId, "options"),
     role: "listbox",
     classes: buildListboxClasses(open),
     attributes: {
@@ -116,7 +116,7 @@ export function projectSelectA11y(
     },
   });
 
-  return { trigger, search, listbox, option };
+  return { trigger, search, options: optionList, option };
 }
 
 function buildTriggerClasses(
@@ -144,8 +144,8 @@ function buildTriggerClasses(
 }
 
 function buildListboxClasses(open: boolean): readonly string[] {
-  const classes = [...SELECT.parts.listbox.classes];
-  if (open) classes.push(...SELECT.parts.listbox.classes.map((c) => `${c}--open`));
+  const classes = [...SELECT.parts.options.classes];
+  if (open) classes.push(...SELECT.parts.options.classes.map((c) => `${c}--open`));
   return classes;
 }
 

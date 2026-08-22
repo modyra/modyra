@@ -219,7 +219,7 @@ export function createSelectController<TValue>(
       parts: {
         trigger: a11y.trigger,
         search: a11y.search,
-        listbox: a11y.listbox,
+        options: a11y.options,
         ...parts,
       },
     };

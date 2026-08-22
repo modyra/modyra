@@ -1683,7 +1683,7 @@
           ],
           "states": []
         },
-        "listbox": {
+        "options": {
           "element": "listbox",
           "parent": "popup",
           "optional": false,
@@ -1698,7 +1698,7 @@
         },
         "option": {
           "element": "option",
-          "parent": "listbox",
+          "parent": "options",
           "optional": true,
           "repeated": true,
           "role": "option",
@@ -1798,7 +1798,7 @@
           "from": "trigger",
           "attribute": "aria-controls",
           "to": [
-            "listbox"
+            "options"
           ]
         }
       ],

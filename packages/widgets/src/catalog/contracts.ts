@@ -76,15 +76,19 @@ export const MDY_WIDGET_CONTRACTS = Object.freeze({
       states: { option: ["selected"] } ,
       presentation: ["mdy-segmented__button--first", "mdy-segmented__button--last"] ,
       required: ["option", "optionControl", "optionCheck", "optionText"] }),
-  select: define("select", ["mdy-renderer", "mdy-renderer--select"], ["root", "label", "requiredMarker", "inputWrapper", "trigger", "value", "placeholder", "arrow", "popup", "search", "listbox", "option", "loading", "empty", "inlineError", "supportingText", "errors", "errorItem"] as const, true,
-    { classes: { trigger: ["mdy-select__trigger"], value: ["mdy-select__value"], placeholder: ["mdy-select__placeholder"], arrow: ["mdy-select__arrow"], popup: ["mdy-select__dropdown", MDY_POPUP_CLASS, MDY_POPUP_SURFACE_CLASS], search: ["mdy-select__search"], listbox: ["mdy-select__list"], option: ["mdy-select__option"], loading: ["mdy-select__loader"], empty: ["mdy-select__empty"] },
+  select: define("select", ["mdy-renderer", "mdy-renderer--select"], ["root", "label", "requiredMarker", "inputWrapper", "trigger", "value", "placeholder", "arrow", "popup", "search", "options", "option", "loading", "empty", "inlineError", "supportingText", "errors", "errorItem"] as const, true,
+    { parents: { options: "popup" },
+      classes: { trigger: ["mdy-select__trigger"], value: ["mdy-select__value"], placeholder: ["mdy-select__placeholder"], arrow: ["mdy-select__arrow"], popup: ["mdy-select__dropdown", MDY_POPUP_CLASS, MDY_POPUP_SURFACE_CLASS], search: ["mdy-select__search"], options: ["mdy-select__list"], option: ["mdy-select__option"], loading: ["mdy-select__loader"], empty: ["mdy-select__empty"] },
       // `selected` is the value; `active` is where the keyboard is. They are genuinely different —
       // arrowing through a list moves `active` without changing what is chosen — and a renderer that
       // conflated them would make the list unnavigable for anyone not using a pointer.
-      roles: { listbox: "listbox", option: "option" } ,
-      states: { arrow: ["open"], trigger: ["open", "disabled", "readonly", "invalid", "loading"], listbox: ["open"], option: ["selected", "active", "hidden"], popup: POPUP_PLACEMENT_STATES } ,
+      roles: { options: "listbox", option: "option" } ,
+      // The list a select opens *is* a listbox, and the shared default for a part named `options` is
+      // the chip grid's `group`. Declared here because the semantic is this kind's, not the name's.
+      elements: { options: "listbox" } ,
+      states: { arrow: ["open"], trigger: ["open", "disabled", "readonly", "invalid", "loading"], options: ["open"], option: ["selected", "active", "hidden"], popup: POPUP_PLACEMENT_STATES } ,
       presentation: ["mdy-select", "mdy-select__option-label"] ,
-      // `listbox` is what the popup is for. A positioning box framing nothing is a coherent-looking
+      // `options` is what the popup is for. A positioning box framing nothing is a coherent-looking
       // widget with nothing in it to choose from, and `empty` is a message *inside* the list rather
       // than a substitute for it.
       // Not `arrow` and not `placeholder`. A select that does not filter renders the **native**
@@ -93,9 +97,9 @@ export const MDY_WIDGET_CONTRACTS = Object.freeze({
       // placeholder is an `<option>`. Requiring them made a correct rendering fail, which is the
       // contract describing one of two presentations and calling the other broken.
       //
-      // `listbox` stays required *of an open control*, which is the combobox path by construction:
+      // `options` stays required *of an open control*, which is the combobox path by construction:
       // a native chooser opens nothing this contract can see.
-      required: ["listbox"] }),
+      required: ["options"] }),
   // Part order is the reading order, so it is decided here rather than inherited from the sequence
   // these names happen to be written in. What the control shows for the current selection comes
   // before the affordance that changes it: the chips, or the placeholder standing in for them while

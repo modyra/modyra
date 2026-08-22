@@ -113,9 +113,9 @@ export class MdySelectFieldElement extends MdyDropdownFieldElement<unknown | nul
             undefined
           );
         }
-        if (part === "listbox") {
+        if (part === "options") {
           return (
-            this.renderRoot.querySelector<HTMLElement>(`#${view.parts.listbox.id}`) ??
+            this.renderRoot.querySelector<HTMLElement>(`#${view.parts.options.id}`) ??
             undefined
           );
         }
@@ -311,7 +311,7 @@ export class MdySelectFieldElement extends MdyDropdownFieldElement<unknown | nul
     const state = this.selectAdapter.state;
     const view = this.selectAdapter.view;
     const trigger = view.parts.trigger;
-    const listbox = view.parts.listbox;
+    const listbox = view.parts.options;
     const text = this.triggerText(handle);
     const filtered = filterOptionsByQuery(this.renderedOptions(handle.value()), state.query);
     const showBlockErrors = !this.inlineErrors && this.showErrors(handle);

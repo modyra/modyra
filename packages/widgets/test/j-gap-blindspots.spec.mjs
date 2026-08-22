@@ -390,7 +390,7 @@ function buildOpenSelect() {
   root.append(label, wrapper, popup, ...tail);
   return {
     root, trigger, popup, listbox,
-    parts: { ...parts, inputWrapper: wrapper, trigger, arrow, placeholder, popup, listbox, option },
+    parts: { ...parts, inputWrapper: wrapper, trigger, arrow, placeholder, popup, options: listbox, option },
   };
 }
 
@@ -457,7 +457,7 @@ test("J4b — every overlay kind requires its popup to frame something", () => {
 
   assert.deepEqual(emptyPopupIsLegal, [], "no overlay kind may frame nothing");
   assert.deepEqual(frames, {
-    select: ["listbox"],
+    select: ["options"],
     // `options` joins it: the option grid moved into the popup, so the popup frames both the
     // chooser and the grid it is drawn in.
     multiselect: ["options"],
@@ -482,13 +482,13 @@ function codesFor(issues, ...parts) {
 /** An open select whose popup content is built by the caller, so each negative breaks one thing. */
 function openSelectWithPopup(fill) {
   const { root, parts } = buildOpenSelect();
-  parts.listbox.remove();
+  parts.options.remove();
   const built = fill();
   if (built) parts.popup.append(built);
   const next = { ...parts };
   delete next.option;
-  if (built) next.listbox = built;
-  else delete next.listbox;
+  if (built) next.options = built;
+  else delete next.options;
   const issues = inspectWidgetDom(root, "select", { parts: next, open: true });
   root.remove();
   return { issues };
@@ -497,8 +497,8 @@ function openSelectWithPopup(fill) {
 test("J4b — a popup framing nothing is rejected", () => {
   const { issues } = openSelectWithPopup(() => null);
   assert.deepEqual(
-    codesFor(issues, "listbox"),
-    ["PART_MISSING:listbox"],
+    codesFor(issues, "options"),
+    ["PART_MISSING:options"],
     "an open select whose popup holds no list has nothing to choose from",
   );
 });
@@ -506,8 +506,8 @@ test("J4b — a popup framing nothing is rejected", () => {
 test("J4b — a popup framing the right class with the wrong role is rejected", () => {
   const { issues } = openSelectWithPopup(() => el("div", "mdy-select__list", { role: "menu" }));
   assert.deepEqual(
-    codesFor(issues, "listbox"),
-    ["PART_ROLE:listbox", "PART_ELEMENT:listbox", "NAME_MISSING:listbox"],
+    codesFor(issues, "options"),
+    ["PART_ROLE:options", "PART_ELEMENT:options", "NAME_MISSING:options"],
     "a menu is not a listbox, and the options inside it are announced as commands",
   );
 });
@@ -529,16 +529,16 @@ test("J4b — the list rendered outside the popup it belongs to is rejected", ()
   // The one a `querySelector` from the widget root gets wrong: the element exists, carries the right
   // class and the right role, and is nowhere near the box the user is looking at.
   const { root, parts } = buildOpenSelect();
-  root.append(parts.listbox);
+  root.append(parts.options);
   const issues = inspectWidgetDom(root, "select", { parts, open: true });
   root.remove();
 
   assert.deepEqual(
-    codesFor(issues, "listbox", "option"),
+    codesFor(issues, "options", "option"),
     // Only the list is reported. The options moved with it and are still inside their own declared
     // parent, which is the rule working: containment is a statement about a part and its parent,
     // and reporting the whole subtree would name every element for one displacement.
-    ["PART_NOT_CONTAINED:listbox"],
+    ["PART_NOT_CONTAINED:options"],
     "presence is not enough — the popup has to be what frames it",
   );
 });
