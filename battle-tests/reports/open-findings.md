@@ -21346,3 +21346,36 @@ tonight paid — the first found nine closures and a red introduced quietly, thi
 closures including one nobody had filed. Between boundaries the baseline drifts in both directions,
 and neither direction is harmless: stale-green is a list nobody trusts, stale-red is a build that lies.
 
+
+### The four node reds nobody scheduled, re-verified
+
+The queue has been entirely multiselect for a night, and the node tier carries four reds older than
+any of it. Three findings tonight turned out to be stale instruments rather than defects, so these
+were re-run rather than assumed:
+
+```
+[S1][EXP-001]  a guard claims an operand the validator refuses
+               seven shapes: path+self, path+root, path+context and the combinations, all claimed
+               by `isPath` and all refused. A consumer telling the shapes apart handles one the
+               contract will not take.
+
+[S1][STU-006]  changing one node's label costs what copying every node costs
+               a command pays for the document rather than for its edit.
+
+[S2][API-001]  a constructor stored an argument it cannot use
+               the call that could not do what it was asked said nothing, and the failure arrives
+               later somewhere else.
+
+[S2][DYN-001,DYN-003]  a version the TypeScript parser builds a form from is one the other runtimes
+               refuse, so a document that renders on one does not render on another.
+```
+
+**All four are current.** None is an instrument that went stale; each reproduces now, and each is
+outside `@modyra/widgets` — expressions, studio commands, a core constructor, and the cross-runtime
+document contract.
+
+They are recorded here rather than added to the queue, because the queue is a batch and these are not
+part of it. But two of them are S1 and one — the cross-runtime version disagreement — is the kind that
+is cheap to fix while three runtimes are being kept in step and expensive once a document written for
+one is in somebody's repository.
+
