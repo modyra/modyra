@@ -32,10 +32,10 @@
 
 import { expect, test } from "@playwright/test";
 
-const HOSTS = [
-  { name: "plain", page: "/index.html", ready: "battleReady", api: "battle" },
-  { name: "lit", page: "/lit.html", ready: "battleLitReady", api: "battleLit" },
-];
+// **Every renderer, from the shared list.** The local list this replaced was not a scope
+// decision: the angular host published six of the twenty-two doors these specs need, so a
+// spec wanting one it lacked left the renderer out and the next reader copied the list.
+import { HOSTS } from "./bench";
 
 /** Kinds that declare a popup in the widget contract. */
 const KINDS = ["select", "multiselect", "datepicker", "daterange", "timepicker", "colors"];

@@ -116,7 +116,15 @@ window.battleAngular = {
    */
   async setValue(id, patch) {
     const form = mounted.get(id)?.reference.instance.form?.();
-    form?.adapter?.()?.patchValue?.(patch);
+    // `patchValue` on the form itself, which is what the other two hosts call and what this one
+    // reaches through `form()`. It used to go `form.adapter().patchValue(...)`, and every link in
+    // that chain was optional — so when `adapter` turned out not to be there, the write did nothing
+    // and said nothing. A spec then read a value that had never been set and reported the renderer
+    // as ignoring it: the premise failed and the finding was attributed to the wrong component.
+    if (typeof form?.patchValue !== "function") {
+      throw new Error("[battle] the angular form exposes no patchValue, so setValue cannot write");
+    }
+    form.patchValue(patch);
     await settled();
   },
 
