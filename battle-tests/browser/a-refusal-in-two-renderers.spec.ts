@@ -161,9 +161,15 @@ for (const host of HOSTS) {
 
 for (const host of HOSTS) {
   test(`${host.name}: every option a document declares is one a person can choose`, async ({ page }) => {
-    // Where the two renderers differ, and the difference is the fix. Lit renders native <option>
-    // elements, which need no id; Plain builds a listbox whose option ids come from the option's
-    // value, so two options sharing one value collide and one is never rendered.
+    // Two options may share a value — a plan sold monthly and yearly is one plan — and a person must
+    // still be able to choose either. A renderer that derives an option's id from its value gives
+    // both the same id, and one of them is never rendered.
+    //
+    // This comment used to say the two renderers differed here, and that Lit was safe because it
+    // rendered native `<option>` elements which need no id. Lit builds a `role="listbox"` now, so
+    // that sentence stopped being true and the spec explained a mechanism instead of asserting a
+    // property. The property is the one below and it belongs to both: **every declared option is
+    // choosable**, however the renderer draws it.
     await page.goto(host.page);
     await page.waitForFunction((flag) => (window as never as Record<string, boolean>)[flag] === true, host.ready);
 
