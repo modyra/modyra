@@ -126,7 +126,7 @@ export type { MdyCatalogWidgetIntent, MdyCatalogWidgetState } from "./catalog-co
 
 export { acceptTimeField, stepTimeField, timeFieldBounds } from "./time-bounds.js";
 export type { MdyTimeEntry, MdyTimeField, MdyTimeFieldBounds, MdyTimeRejection } from "./time-bounds.js";
-export { createFocusCustodian } from "./focus.js";
+export { createFocusCustodian, keepKeyboardInPlay } from "./focus.js";
 export { createPointerDrag, dragPointOf } from "./pointer-drag.js";
 export type { MdyDragPoint, MdyPointerDrag, MdyPointerDragOptions } from "./pointer-drag.js";
 /**
