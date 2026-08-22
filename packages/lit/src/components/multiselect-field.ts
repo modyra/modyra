@@ -523,7 +523,9 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
     return html`
       ${this.renderLabel(handle, triggerId)}
       <div class="${this.wrapperClass(handle)}">
-        <div class="mdy-input-prefix"><slot name="prefix"></slot></div>
+        ${this.querySelector('[slot="prefix"]') === null
+          ? nothing
+          : html`<div class="mdy-input-prefix"><slot name="prefix"></slot></div>`}
         <div
           class="mdy-multiselect ${this._open ? "mdy-multiselect--open" : ""}"
           @keydown=${(e: KeyboardEvent) => this.onKeydown(e, handle)}
@@ -624,7 +626,13 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
             aria-atomic="true"
           >${this.announcementText(handle)}</div>
         </div>
-        <div class="mdy-input-suffix"><slot name="suffix"></slot></div>
+        <!-- Drawn only when something was given to it. An empty slot is not an empty box: the
+             container still takes its width, and it takes it at the field's trailing edge — so every
+             affordance inside the field stopped short of the edge by that width, and the column the
+             eye follows was sixteen pixels off in one renderer of three. -->
+        ${this.querySelector('[slot="suffix"]') === null
+          ? nothing
+          : html`<div class="mdy-input-suffix"><slot name="suffix"></slot></div>`}
       </div>
       ${this.renderWayBack(handle)}
       ${renderOverlayPanel(overlay, this._open, {

@@ -24,6 +24,14 @@ export class MdyNumberSpinButtonsDirective implements OnInit {
     const input = this.el.nativeElement;
     const wrapper = this.renderer.createElement("span");
     this.renderer.setStyle(wrapper, "position", "relative");
+    // The wrapper stands where the input stood, so it takes the row the input was taking. A span is
+    // inline and sized by its content, and the steppers inside it are positioned against it — so a
+    // box that stopped after the number put them beside the value instead of on the field's edge,
+    // and the affordance column had one field in it at a different distance from all the others.
+    this.renderer.setStyle(wrapper, "display", "flex");
+    this.renderer.setStyle(wrapper, "align-items", "center");
+    this.renderer.setStyle(wrapper, "flex", "1 1 auto");
+    this.renderer.setStyle(wrapper, "min-width", "0");
     this.renderer.setStyle(input, "paddingRight", "2.5em");
     this.renderer.insertBefore(input.parentNode, wrapper, input);
     this.renderer.appendChild(wrapper, input);

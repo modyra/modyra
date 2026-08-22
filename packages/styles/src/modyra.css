@@ -893,6 +893,17 @@
         padding-inline-end: var(--mdy-affordance-inset);
     }
 
+    /* A slot with nothing in it takes no room. A renderer that draws both slots whether or not it
+       has anything to put in them left an empty box on the field's trailing edge, and every
+       affordance inside the field stopped short of it by the width of that box — the alignment reads
+       as broken while every affordance token is correct, which is the failure `DESIGN.md` names.
+       Written here rather than at each renderer: whether the slot is drawn is the renderer's
+       business, and whether an empty one occupies space is the foundation's. */
+    .mdy-input-prefix:empty,
+    .mdy-input-suffix:empty {
+        display: none;
+    }
+
     .mdy-input-suffix {
         color: var(--mdy-input-icon-color);
         flex-shrink: 0;
@@ -1789,6 +1800,14 @@
            the field's box and the text below painted over it — drawn, and not pressable. */
         display: flex;
         align-items: center;
+        /* And the row is the field's, not the chips'. This box is itself a flex item of the wrapper,
+           so without a grow it took only the width its content asked for — and everything inside it
+           came along: the trigger filled a box that stopped after the last chip, and the clear-all
+           landed beside the value instead of on the field's edge. The affordance column then sat
+           wherever the longest chosen word happened to end, and moved whenever a value was added,
+           removed or translated. `DESIGN.md` states the rule and names this exact failure: a control
+           sized by its own text leaves the field's fill as empty space beside it. */
+        flex: 1 1 auto;
     }
 
     .mdy-renderer .mdy-multiselect > .mdy-multiselect__trigger {
