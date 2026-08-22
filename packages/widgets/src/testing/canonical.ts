@@ -524,7 +524,7 @@ export const MDY_CANONICAL_AT_REST: Readonly<Partial<Record<MdyWidgetKind, MdyCa
     }),
     select: Object.freeze({
       parts: Object.freeze(["root", "label", "inputWrapper", "trigger", "placeholder", "arrow"]),
-      optional: Object.freeze(["supportingText", "requiredMarker", "value", "popup", "search", "listbox", "option", "loading", "empty", "inlineError", "errors", "errorItem"]),
+      optional: Object.freeze(["supportingText", "requiredMarker", "value", "popup", "search", "options", "option", "loading", "empty", "inlineError", "errors", "errorItem"]),
       relationships: Object.freeze([
         { from: "label", attribute: "for", to: "trigger" },
         { from: "trigger", attribute: "aria-controls", to: null },

@@ -60,8 +60,8 @@ export const PARENT_CANDIDATES: Readonly<Record<string, readonly string[]>> = Ob
   // requires is that it lives in the wrapper, and containment is transitive.
   arrow: ["inputWrapper", "trigger"], value: ["trigger", "inputWrapper"], placeholder: ["trigger", "inputWrapper"],
   track: ["inputWrapper"], thumb: ["track"], box: ["inputWrapper"], chips: ["trigger"], chip: ["chips"], chipRemove: ["chip"], chipMove: ["chip"], announcement: ["box", "inputWrapper"],
-  group: [], option: ["optionWrapper", "listbox", "options", "group"], optionControl: ["option"], optionLabel: ["option"], optionCheck: ["option"], optionText: ["option"], optionCount: ["option"], optionStep: ["option"],
-  search: ["popup"], listbox: ["popup"], optionWrapper: ["options", "listbox"], options: ["root"],
+  group: [], option: ["optionWrapper", "options", "group"], optionControl: ["option"], optionLabel: ["option"], optionCheck: ["option"], optionText: ["option"], optionCount: ["option"], optionStep: ["option"],
+  search: ["popup"], optionWrapper: ["options"], options: ["popup", "root"],
   // A field that is loading has to say so without being opened, so the indicator belongs to the
   // control. `empty` is the opposite case: "no options match" is a statement about the list, and it
   // has nothing to say until there is a list on screen.
@@ -365,7 +365,7 @@ export const MDY_POPUP_OPENERS: Readonly<Partial<Record<MdyWidgetKind, MdyPopupO
   // `controls` is the part the relation names, and it is not always the popup: ARIA points at the
   // element carrying the role — a listbox, a grid, a dialog — which for some kinds sits inside the
   // popup rather than being it.
-  select: Object.freeze({ opener: "trigger", controls: "listbox", role: "combobox", promises: "listbox" }),
+  select: Object.freeze({ opener: "trigger", controls: "options", role: "combobox", promises: "listbox" }),
   // A combobox like its single-choice sibling: the opener holds the field's value, so it is what
   // carries `aria-invalid` and `aria-required`, and neither belongs on a role that has no value to
   // be wrong about. Declared nowhere, the states were being written onto a bare `<button>`, where

@@ -85,7 +85,7 @@ export function renderSelectField(
   search.type = "text";
   search.autocomplete = "off";
   search.placeholder = messages.searchPlaceholder;
-  const listbox = el("ul", parts.listbox.classes.join(" ")) as HTMLUListElement;
+  const listbox = el("ul", parts.options.classes.join(" ")) as HTMLUListElement;
   // A filter box only where the field asked for one: drawn unconditionally, a five-option select got
   // a search nobody wanted and focus landed in it rather than on the list.
   popup.append(...(searchable ? [search] : []), listbox);
@@ -280,7 +280,7 @@ export function renderSelectField(
     const view = controller.view();
     applyPart(trigger, view.parts.trigger);
     applyPart(search, view.parts.search);
-    applyPart(listbox, view.parts.listbox);
+    applyPart(listbox, view.parts.options);
     setErrors(shell.errorList, shownErrorsOf(handle).map((e) => e.message));
     syncOptions(state.options, state.optionKeys);
 

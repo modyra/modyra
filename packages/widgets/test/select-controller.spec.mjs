@@ -118,7 +118,7 @@ test("view exposes ARIA contract", () => {
   const view = controller.view();
   assert.strictEqual(view.parts.trigger.role, "combobox");
   assert.strictEqual(view.parts.trigger.attributes["aria-expanded"], "false");
-  assert.strictEqual(view.parts.listbox.role, "listbox");
+  assert.strictEqual(view.parts.options.role, "listbox");
   assert.strictEqual(view.parts.paris.role, "option");
   assert.strictEqual(view.parts.paris.attributes["aria-selected"], "true");
   assert.strictEqual(view.parts.rome.attributes["aria-selected"], "false");

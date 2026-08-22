@@ -332,7 +332,7 @@ const MUTATIONS = [
       const other = selectField({ id: "s2" });
       // This widget adopts the *other* widget's popup as its own.
       fx.root.append(other.parts.popup);
-      const parts = { ...fx.parts, popup: other.parts.popup, listbox: other.parts.listbox, option: other.parts.option };
+      const parts = { ...fx.parts, popup: other.parts.popup, options: other.parts.options, option: other.parts.option };
       return { root: fx.root, kind: "select", options: { parts } };
     },
   },
@@ -389,7 +389,7 @@ const MUTATIONS = [
       fx.parts.popup.remove();
       const parts = { ...fx.parts };
       delete parts.popup;
-      delete parts.listbox;
+      delete parts.options;
       delete parts.option;
       return {
         root: fx.root, kind: "select",
@@ -405,7 +405,7 @@ const MUTATIONS = [
       fx.parts.trigger.setAttribute("aria-expanded", "false");
       const parts = { ...fx.parts };
       delete parts.popup;
-      delete parts.listbox;
+      delete parts.options;
       delete parts.option;
       return {
         root: fx.root, kind: "select",

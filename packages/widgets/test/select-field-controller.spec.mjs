@@ -129,6 +129,6 @@ test("the projection is exported, so a renderer need not rewrite it", async () =
   });
   assert.ok(projected.trigger, "the projection produced no trigger");
   assert.equal(projected.trigger.attributes["aria-haspopup"], "listbox");
-  assert.ok(projected.listbox, "the projection produced no listbox");
+  assert.ok(projected.options, "the projection produced no option list");
   controller.destroy(); form.destroy();
 });
