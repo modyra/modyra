@@ -6,6 +6,8 @@ import {
   Component,
   computed,
   inject,
+  effect,
+  untracked,
   Injector,
   input,
 } from "@angular/core";
@@ -203,6 +205,28 @@ export class MdyTimepickerComponent extends MdyOverlayControl<string | null> {
     this.placeholder() || timepickerPlaceholder(this.format()),
   );
 
+  /**
+   * The text this control could not read, said to the form.
+   *
+   * The field holds a value its own rules accept — `null`, which nothing objects to — while the
+   * person is looking at text the widget could not parse. Unreported, the form was told nothing was
+   * wrong and the submit went out empty where they had typed something.
+   *
+   * Reported to the form rather than painted from the controller's state, so the entry is one of the
+   * field's errors like any other and goes through the rule that says a control out of play carries
+   * no verdict.
+   */
+  protected readonly entryReported = effect(() => {
+    // Read first, so this effect has a dependency before the controller exists: the controller is
+    // built on a handle that arrives after the first change detection, and an effect that read
+    // nothing on its first run never runs again.
+    this.fieldState();
+    const controller = this.controller();
+    if (!controller) return;
+    const unreadable = controller.state().entryUnreadable;
+    untracked(() => this.reportEntry(unreadable ? this.i18n.entryUnreadable : null));
+  });
+
 
   /** The id the opener names — the dialog, which is what carries the overlay's role. */
   protected readonly popupId = computed(() => overlayControlledId("timepicker", this.fieldId) ?? "");
@@ -318,8 +342,18 @@ export class MdyTimepickerComponent extends MdyOverlayControl<string | null> {
     if (!this.value()) afterNextRender(() => input.select(), { injector: this.injector });
   }
 
+  /**
+   * Leaving the field puts the control back in step with the value — unless there is no value.
+   *
+   * A time the field could not read is still what the person typed, and it is the only copy of it.
+   * Replacing it with the empty string on the way out took their entry away and said nothing about
+   * why, leaving a control that looks untouched and a person with nothing to correct. Held instead,
+   * so the next keystroke edits what they wrote rather than starting again.
+   */
   protected onInputBlur(event: FocusEvent): void {
-    (event.target as HTMLInputElement).value = this.value() || "";
+    const input = event.target as HTMLInputElement;
+    const held = this.value() || "";
+    if (held !== "" || input.value === "") input.value = held;
     this.dispatchValueBlur("timepicker");
   }
 }

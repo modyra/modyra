@@ -65,6 +65,7 @@ import { calendarViewState } from "../../core/calendar-view-state";
       />
     } @else if (view() === "months") {
       <mdy-month-picker
+        [widgetId]="widgetId()"
         [viewYear]="viewYear()"
         [minDate]="minDate()"
         [maxDate]="maxDate()"
@@ -73,6 +74,7 @@ import { calendarViewState } from "../../core/calendar-view-state";
       />
     } @else if (view() === "years") {
       <mdy-year-picker
+        [widgetId]="widgetId()"
         [currentYear]="viewYear()"
         [minDate]="minDate()"
         [maxDate]="maxDate()"

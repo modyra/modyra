@@ -19,6 +19,11 @@ import { MDY_DATE_LOCALE } from "../../core/date-locale";
   host: {
     "[class]": "view().classes.join(' ')",
     "[attr.role]": "view().attributes['role']",
+    // The id and the name, from the same projection as the role. Bound without them, a view that
+    // announced itself as a grid was a grid of nothing, and the header pointing at it by id pointed
+    // at no element at all.
+    "[attr.id]": "view().id || null",
+    "[attr.aria-labelledby]": "view().attributes['aria-labelledby']",
   },
   template: `
     @for (monthName of months(); track $index) {

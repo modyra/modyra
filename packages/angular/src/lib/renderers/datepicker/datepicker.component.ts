@@ -6,6 +6,8 @@ import {
   Component,
   computed,
   inject,
+  effect,
+  untracked,
   input,
   viewChild,
   Injector,
@@ -191,9 +193,40 @@ export class MdyDatePickerComponent extends MdyOverlayControl<string | null> {
   protected readonly controller = this.adoptFieldController(
     (handle, widgetId) => createDatepickerFieldController({
       widgetId, handle: handle as never, minDate: this.minDate(), maxDate: this.maxDate(),
-      firstDayOfWeek: this.locale.firstDayOfWeek }),
+      firstDayOfWeek: this.locale.firstDayOfWeek,
+      // What this control can read, told to the controller rather than kept here. Parsing locally
+      // and dropping what did not parse left the controller believing the field was empty while a
+      // person was looking at their own text, so nothing reported that it could not be read.
+      parseEntry: (text: string) => {
+        const parsed = this.displayFormat() === "localized"
+          ? parseLocalizedDate(text, this.locale.locale)
+          : parseIsoDate(text);
+        return parsed ? formatIsoDate(parsed) : null;
+      } }),
     (c) => c.setBounds(this.minDate(), this.maxDate()),
   );
+
+  /**
+   * The text this control could not read, said to the form.
+   *
+   * The field holds a value its own rules accept — `null`, which nothing objects to — while the
+   * person is looking at text the widget could not parse. Unreported, the form was told nothing was
+   * wrong and the submit went out empty where they had typed something.
+   *
+   * Reported to the form rather than painted from the controller's state, so the entry is one of the
+   * field's errors like any other and goes through the rule that says a control out of play carries
+   * no verdict.
+   */
+  protected readonly entryReported = effect(() => {
+    // Read first, so this effect has a dependency before the controller exists: the controller is
+    // built on a handle that arrives after the first change detection, and an effect that read
+    // nothing on its first run never runs again.
+    this.fieldState();
+    const controller = this.controller();
+    if (!controller) return;
+    const unreadable = controller.state().entryUnreadable;
+    untracked(() => this.reportEntry(unreadable ? this.i18n.entryUnreadable : null));
+  });
 
   /** One committed date: the controller decides what the range and the field allow. */
   private commitDate(iso: string | null): void {
@@ -214,6 +247,11 @@ export class MdyDatePickerComponent extends MdyOverlayControl<string | null> {
 
 
   protected readonly displayValue = computed((): string => {
+    // The outstanding entry first. Text the field could not read is what the person typed and the
+    // only copy of it; showing the value instead replaces their entry with the empty string and
+    // leaves them nothing to correct.
+    const entry = this.controller()?.state().entryText ?? null;
+    if (entry !== null) return entry;
     const v = this.value();
     if (!v) return "";
     const iso = v.substring(0, 10);
@@ -272,20 +310,12 @@ export class MdyDatePickerComponent extends MdyOverlayControl<string | null> {
   }
 
   protected onInputChange(event: Event): void {
-    const raw = inputText(event).trim();
-    if (!raw) {
-      this.commitDate(null);
-      return;
-    }
-    const parsed =
-      this.displayFormat() === "localized"
-        ? parseLocalizedDate(raw, this.locale.locale)
-        : parseIsoDate(raw);
-    if (parsed) this.commitDate(formatIsoDate(parsed));
+    this.controller()?.dispatch({ type: "type", text: inputText(event) });
   }
 
   protected onInputBlur(event: FocusEvent): void {
     (event.target as HTMLInputElement).value = this.displayValue();
+
     this.controller()?.dispatch({ type: "blur" });
   }
 }

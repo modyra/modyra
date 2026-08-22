@@ -1,4 +1,4 @@
-import { calendarDayId } from "@modyra/widgets";
+import { calendarDayId, defaultWidgetIdFactory } from "@modyra/widgets";
 import {
   ChangeDetectionStrategy,
   Component,
@@ -32,6 +32,10 @@ import { MDY_DATE_LOCALE } from "../../core/date-locale";
     // Nothing said so, so every row in every calendar was an orphan — axe reports it as a critical
     // required-parent violation. It went unseen because the a11y suite never opened a popup: axe
     // skips hidden subtrees, and a closed overlay panel is hidden.
+    // A grid is one of the roles ARIA requires to be named, and the name a calendar takes is the
+    // field's own label: it is the words the person read to know what date they are choosing. Left
+    // off, a screen reader announces a grid of forty-two cells belonging to nothing.
+    "[attr.aria-labelledby]": "labelledBy() || null",
     role: "grid",
   },
   template: `
@@ -81,6 +85,12 @@ import { MDY_DATE_LOCALE } from "../../core/date-locale";
 export class MdyRangeCalendarGridComponent {
   /** The widget these cells belong to, which is what their ids are built from. */
   readonly widgetId = input<string>("");
+
+  /** The label naming this grid — the field's own, which is the name the projections point at. */
+  protected readonly labelledBy = computed(() =>
+    this.widgetId() ? defaultWidgetIdFactory.part(this.widgetId(), "label") : "",
+  );
+
 
   /** The id the projection gives one day cell, asked for rather than rebuilt. */
   protected dayId(iso: string): string {
