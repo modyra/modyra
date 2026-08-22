@@ -2315,7 +2315,14 @@
         align-items: center;
         justify-content: center;
         width: var(--mdy-chip-height);
+        /* 2.5.8 asks for 24 CSS px, and the chip is 24 tall counting its own border — so a child at
+           `height: 100%` measured 22 and missed by two. Two pixels is not a rounding error for the
+           people that criterion exists for: aiming for the middle is the only strategy a head
+           pointer or a switch has, and the control beside this one deletes a value. The floor is
+           stated here and the chip's height is left alone, so the target grows into the border
+           rather than the row growing around it. */
         height: 100%;
+        min-height: 24px;
         border: none;
         background: transparent;
         color: inherit;

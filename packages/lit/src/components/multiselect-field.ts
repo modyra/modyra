@@ -530,12 +530,12 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
           class="mdy-multiselect ${this._open ? "mdy-multiselect--open" : ""}"
           @keydown=${(e: KeyboardEvent) => this.onKeydown(e, handle)}
           @click=${(e: Event) => {
-            // The whole trigger opens the popup, not only the search affordance: every other widget
-            // in the catalog opens from its trigger. Clicks that landed on a control inside it —
-            // a chip, a step button, the search button — are that control's, not the trigger's.
-            const path = e.composedPath();
-            const own = path.slice(0, path.indexOf(e.currentTarget as EventTarget));
-            if (own.some((node) => (node as Element).localName === "button")) return;
+            // The box forwards a press on **its own** area, and nothing else (ADR 0142). Asking
+            // instead whether the press crossed a `button` on the way up let a chip through, because
+            // a chip is a span: pressing one both focused it and opened the list, where the other
+            // two renderers only focused it. What a press does is decided by what it landed on, not
+            // by what that thing happens to be made of.
+            if (e.target !== e.currentTarget) return;
             if (!this._open) this.overlay.open(e);
             this.toggleOpen(handle);
           }}
