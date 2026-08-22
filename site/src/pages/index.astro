@@ -38,6 +38,23 @@ const form = useMdyDynamicForm(doc.fields); // React
       <a class="primary" href={based('studio/')}>Open Studio</a>
       <a href={based('start-here/')}>Read the documentation</a>
     </div>
+    <p class="install">
+      <code id="install-cmd">npm i @modyra/core</code>
+      <button type="button" class="copy" data-copy="install-cmd" aria-label="Copy install command">Copy</button>
+    </p>
+    <ul class="renderers" aria-label="Renderers and integrations">
+      <li>Framework-free</li>
+      <li>React</li>
+      <li>Preact</li>
+      <li>Solid</li>
+      <li>Vue</li>
+      <li>Svelte</li>
+      <li>Angular</li>
+      <li>Lit</li>
+      <li>Zod</li>
+      <li>Standard Schema</li>
+      <li>Rust &amp; Java SDKs</li>
+    </ul>
   </section>
 
   <section class="demo" aria-labelledby="demo-heading">
@@ -47,6 +64,7 @@ const form = useMdyDynamicForm(doc.fields); // React
       src={based('demo/modyra-demo-60s.mp4')}
       poster={based('demo/modyra-demo-poster.png')}
       controls
+      autoplay
       muted
       loop
       playsinline
@@ -161,6 +179,12 @@ const form = useMdyDynamicForm(doc.fields); // React
   .lede { max-width: 58ch; margin: 1.5rem 0 0; color: var(--page-muted); font-size: clamp(1.08rem, 1.8vw, 1.35rem); line-height: 1.55; }
   .actions { display: flex; flex-wrap: wrap; gap: .8rem; margin-top: 2rem; }
   .actions a { padding: .72rem 1rem; border: 1px solid var(--page-border); border-radius: .55rem; text-decoration: none; }
+  .install { display: flex; align-items: center; gap: .6rem; margin: 1.4rem 0 0; font-size: .95rem; }
+  .install code { padding: .55rem .9rem; border: 1px solid var(--page-border); border-radius: .55rem; background: var(--page-card); }
+  .copy { padding: .55rem .8rem; border: 1px solid var(--page-border); border-radius: .55rem; background: transparent; color: var(--page-muted); font: inherit; cursor: pointer; }
+  .copy:hover, .copy:focus-visible { color: var(--page-fg); border-color: var(--mdy-indigo); }
+  .renderers { display: flex; flex-wrap: wrap; gap: .5rem .9rem; margin: 1.6rem 0 0; padding: 0; list-style: none; color: var(--page-muted); font-family: var(--page-mono); font-size: .8rem; letter-spacing: .04em; }
+  .renderers li + li::before { content: "·"; margin-right: .9rem; color: var(--page-border); }
   /* The ink gradient, not the bright one: white text on the bright stops measures as low as
      2.85:1, and the coral end made the primary action look mis-coloured. */
   .actions .primary { border-color: transparent; background: var(--mdy-gradient-brand-ink); color: #fff; font-weight: 700; }
@@ -182,3 +206,15 @@ const form = useMdyDynamicForm(doc.fields); // React
   .path-grid a:hover, .path-grid a:focus-visible { border-color: var(--mdy-indigo); }
   @media (max-width: 48rem) { .principle-grid, .path-grid, .contract { grid-template-columns: 1fr; } }
 </style>
+
+<script>
+  document.querySelectorAll<HTMLButtonElement>('.copy').forEach((button) => {
+    button.addEventListener('click', async () => {
+      const target = document.getElementById(button.dataset.copy ?? '');
+      if (!target?.textContent) return;
+      await navigator.clipboard.writeText(target.textContent.trim());
+      button.textContent = 'Copied';
+      setTimeout(() => { button.textContent = 'Copy'; }, 1600);
+    });
+  });
+</script>
