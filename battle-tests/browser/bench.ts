@@ -161,3 +161,29 @@ export function chosen(page: Page, root: string) {
       .filter((label) => label !== "");
   }, root);
 }
+
+/**
+ * Refuse a fixture in which the claim being made could not have come out false.
+ *
+ * A comparison needs at least two things to compare, and the smallest fixture that reproduces
+ * *something* is the one most likely to collapse the distinction being drawn. Three findings were
+ * filed against fixtures too small to hold their own claim — a palette with one swatch, where a key
+ * that moves the reading position and a key nothing listens for both leave it where it was; a field
+ * with one chosen value, where two routes to removing it both end at an empty field; a chip with a
+ * quantity of one, where a count has nothing to say.
+ *
+ * Each was measured correctly and each was wrong, so this is a guard rather than advice: a spec that
+ * asserts a difference states what the difference is between, and the run stops if the fixture cannot
+ * hold it.
+ *
+ * `least` is how many distinct things the claim needs — two to compare, three to see an order.
+ */
+export function distinguishing(name: string, values: readonly unknown[], least = 2) {
+  const distinct = new Set(values.map((one) => JSON.stringify(one)));
+  expect(
+    distinct.size,
+    `${name}: this fixture offers ${distinct.size} distinct value(s) where the claim needs ${least}. `
+    + "A reading taken here cannot come out false for the reason the claim gives, whatever it shows.",
+  ).toBeGreaterThanOrEqual(least);
+  return values;
+}

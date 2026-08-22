@@ -53,7 +53,7 @@
 
 import { expect, test } from "@playwright/test";
 
-import { HOSTS } from "./bench";
+import { distinguishing, HOSTS } from "./bench";
 
 type Api = Record<string, Record<string, (...args: never[]) => unknown>>;
 
@@ -65,6 +65,8 @@ const OPTIONS = [
 ];
 
 /** One value, not two. Two passes while the defect is present — see the header. */
+// One value, not two: with two the strip is wide enough that the midpoint falls past the ✕, and every
+// assertion here passes while the defect is fully present.
 const CHOSEN = ["a"];
 const CHOSEN_LABELS = ["Alfa"];
 
@@ -87,6 +89,10 @@ const expanded = (page: import("@playwright/test").Page) => page.evaluate(() =>
 for (const host of HOSTS) {
   test(`the strip shows the choice the form holds, ${host.name}`, async ({ page }) => {
     await mountChosen(page, host);
+
+    // The claim compares what the strip shows against what the form holds, so the options have to
+    // offer more than one answer for the comparison to be capable of failing.
+    distinguishing("the options this fixture offers", OPTIONS.map((option) => option.value));
 
     const shown = await page.evaluate(() => Array.from(document.querySelectorAll('[data-form="chosen"] .mdy-chip'))
       .map((chip) => (chip.querySelector(".mdy-chip__label")?.textContent ?? chip.textContent ?? "").trim())
