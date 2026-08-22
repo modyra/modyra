@@ -47,6 +47,73 @@ const PACKAGE_DIRS = PACKAGES.map((name) => `packages/${name}/dist`);
  * Resolved through the checker rather than by reading the entry's own text: an entry that says
  * `export * from "./types.js"` names nothing, and the whole point is what that expands to.
  */
+
+/**
+ * Split a type at the top level on one separator, ignoring anything nested or quoted.
+ *
+ * `A | B<C | D>` is two members and not three. A naive split on the separator reads the inner `|` as a
+ * boundary and produces members that are not types, which then sort into an order that has nothing to
+ * do with the original — so the normalisation below would report a change where there is none, which
+ * is the defect it exists to remove, arriving by another road.
+ */
+function splitTopLevel(text, separator) {
+  const parts = [];
+  let depth = 0;
+  let quote = null;
+  let start = 0;
+  for (let at = 0; at < text.length; at += 1) {
+    const ch = text[at];
+    if (quote !== null) {
+      if (ch === quote && text[at - 1] !== "\\") quote = null;
+      continue;
+    }
+    if (ch === '"' || ch === "'" || ch === "`") { quote = ch; continue; }
+    if (ch === "<" || ch === "(" || ch === "{" || ch === "[") depth += 1;
+    else if (ch === ">" || ch === ")" || ch === "}" || ch === "]") depth -= 1;
+    else if (ch === separator && depth === 0) { parts.push(text.slice(start, at)); start = at + 1; }
+  }
+  parts.push(text.slice(start));
+  return parts.map((part) => part.trim()).filter((part) => part !== "");
+}
+
+/**
+ * The same type, written the same way — so that two spellings of one type compare equal.
+ *
+ * **A union is a set and a record is a record; neither has an order a consumer can observe.** The
+ * differ compared them as text, so adding one part to one contract reshuffled a union on nine Angular
+ * components and each reshuffle was reported `major`; adding an *optional input* to an Angular
+ * component rewrote its whole `ɵcmp` declaration and that was reported `major` too. Sixteen of those
+ * in one batch, every one additive.
+ *
+ * The cost is not the noise. `contract:diff` is the authority on what ships, and an authority that is
+ * wrong sixteen times in a batch spends the attention it needs for the seventeenth — which is the one
+ * that will be real.
+ *
+ * This normalises order and nothing else. **A member added to a union still changes the normalised
+ * form**, so a widened return type or a new object member is still reported: what stops being reported
+ * is the same members in a different sequence.
+ */
+function normaliseType(text) {
+  const inner = String(text).trim();
+  const union = splitTopLevel(inner, "|");
+  if (union.length > 1) return union.map(normaliseType).sort().join(" | ");
+  const object = /^\{([\s\S]*)\}$/.exec(inner);
+  if (object !== null) {
+    const members = splitTopLevel(object[1], ";").map((member) => member.trim()).sort();
+    return `{ ${members.join("; ")} }`;
+  }
+  // **And inside a generic**, which is where the real ones live: the union that reshuffled was
+  // `MdyWidgetDefinition<"errors" | "root" | …>`, so a normalisation that only reached the top level
+  // left every reported case exactly as it found it. The first version of this did, and passed six of
+  // seven invented examples while covering none of the four hundred real ones.
+  const generic = /^([\w$.]+)\s*<([\s\S]*)>$/.exec(inner);
+  if (generic !== null) {
+    const args = splitTopLevel(generic[2], ",").map(normaliseType);
+    return `${generic[1]}<${args.join(", ")}>`;
+  }
+  return inner;
+}
+
 function publicNames() {
   const reachable = new Set();
   for (const pkg of PACKAGES) {
@@ -341,7 +408,8 @@ for (const name of Object.keys(baseline)) {
     // became required and changed type is two facts, and collapsing them hides one.
     if (before.optional && !after.optional) changes.push(["major", `${name}.${member} is now required`]);
     if (!before.optional && after.optional) changes.push(["minor", `${name}.${member} is now optional`]);
-    if (before.type !== after.type) {
+    // Compared after normalising order, so the same members in a different sequence are the same type.
+    if (normaliseType(before.type) !== normaliseType(after.type)) {
       changes.push(["major", `${name}.${member} is now \`${after.type}\`, was \`${before.type}\``]);
     }
   }
