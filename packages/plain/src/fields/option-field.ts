@@ -10,6 +10,7 @@ import {
   MDY_WIDGET_CONTRACTS,
   createOptionFieldController,
   shownErrorsOf,
+  visibleErrorsOf,
 } from "@modyra/widgets";
 import { applyPart, el, setErrors, setText } from "../dom.js";
 import { buildFieldShell, insertControl } from "../field-shell.js";
@@ -99,7 +100,7 @@ export function renderOptionField(
     applyPart(group, view.parts.group);
     applyPart(shell.description, view.parts.description);
     applyPart(shell.errorList, view.parts.error);
-    setErrors(shell.errorList, shownErrorsOf(handle).map((e) => e.message));
+    setErrors(shell.errorList, visibleErrorsOf(handle).map((e) => e.message));
     for (const { key, input, row } of rows) {
       const part = view.parts[key];
       // Classes go to the option element the contract names; the ARIA the part carries belongs to

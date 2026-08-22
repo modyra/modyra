@@ -18,7 +18,7 @@ import {
   createTimepickerFieldController,
   overlayAnchoringFor,
   overlayControlledId,
-  shownErrorsOf,
+  visibleErrorsOf,
   showsAsInvalid,
   stepTimeField,
   timeFieldBounds,
@@ -517,10 +517,10 @@ export function renderTimepickerField(
     // which nothing objects to — while the person is looking at text this control could not read, so
     // without this the submit went out holding nothing where they had typed something.
     // Reported to the form first, so the entry is one of the field's errors like any other — and read
-    // back through `shownErrorsOf`, which is where "out of play, no verdict" lives. Painting from
+    // back through `visibleErrorsOf`, which is where "out of play, no verdict" lives. Painting from
     // `entryUnreadable` directly kept announcing a control nobody could touch.
     handle.reportEntry(state.entryUnreadable ? messages.entryUnreadable : null);
-    setErrors(shell.errorList, shownErrorsOf(handle).map((e) => e.message));
+    setErrors(shell.errorList, visibleErrorsOf(handle).map((e) => e.message));
     control.setAttribute("aria-invalid", String(showsAsInvalid({ valid: handle.valid(), disabled: handle.disabled() })));
     shell.syncState({
       open: state.open,

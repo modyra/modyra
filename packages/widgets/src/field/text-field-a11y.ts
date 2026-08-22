@@ -10,7 +10,7 @@ import type { MdyFieldConstraints } from "@modyra/core";
 import { MDY_WIDGET_KINDS, type MdyWidgetKind } from "../catalog.js";
 import { widgetSupportsState } from "../widget-states.js";
 import { projectFieldShellA11y } from "./shell-a11y.js";
-import { shownErrors } from "./verdict.js";
+import { errorsVisible } from "./verdict.js";
 export interface MdyTextFieldA11yOptions {
   readonly widgetId: string;
   readonly inputType?: string;
@@ -74,7 +74,10 @@ export function projectTextFieldA11y<TValue>(
   const { inputId, labelId, descriptionId, errorId } = textFieldPartIds(options.widgetId);
   // Out of play, no verdict — the wrapper, the label, `aria-invalid` and whether the error
   // text renders are four faces of one question, answered once in verdict.ts.
-  const hasErrors = shownErrors(state, errors).length > 0;
+  // Whether the person is being told yet. A rule they have not answered waits for them to reach the
+  // field; a refusal about the value already there does not, because they can neither cause it by
+  // inaction nor see the reason unless it is said.
+  const tellingThem = errorsVisible({ disabled: state.disabled, touched: state.touched }, errors);
   // Whether this kind admits read-only at all, asked of the contract. A kind this contract does not
   // know is not this contract's to police: a consumer rendering their own kind keeps what they had.
   const kind = options.kind;
@@ -117,7 +120,7 @@ export function projectTextFieldA11y<TValue>(
             widgetId: options.widgetId,
             kind: options.kind ?? options.inputType,
             constraints: options.constraints,
-            errorsVisible: hasErrors,
+            errorsVisible: tellingThem,
             descriptionVisible: true,
           },
         ).control.attributes,

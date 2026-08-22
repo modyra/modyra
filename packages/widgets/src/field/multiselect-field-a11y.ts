@@ -14,7 +14,7 @@ import { assertUsableWidgetId } from "../ids.js";
 import type { MdyPartContract } from "../contract.js";
 import { MDY_FIELD_SHELL_CLASSES, MDY_FIELD_STATE_CLASSES } from "../structure.js";
 import type { MdyMultiselectFieldState } from "./multiselect-field-types.js";
-import { shownErrors } from "./verdict.js";
+import { errorsVisible, shownErrors } from "./verdict.js";
 
 export interface MdyMultiselectFieldA11yOptions {
   readonly widgetId: string;
@@ -91,6 +91,12 @@ export function projectMultiselectFieldA11y<TValue>(
   // Out of play, no verdict — the wrapper, the label, `aria-invalid` and whether the error
   // text renders are four faces of one question, answered once in verdict.ts.
   const hasErrors = shownErrors(state, errors).length > 0;
+  // Whether the person is being told yet — `aria-invalid` says the same thing the error list does.
+  // A rule they have not answered waits for them to reach the field; a refusal about the value
+  // already there does not, because they can neither cause it by inaction nor see the reason unless
+  // it is said.
+  const tellingThem = errorsVisible({ disabled: state.disabled, touched: state.touched }, errors);
+
   const opener = projectOverlayOpenerA11y("multiselect", { widgetId: options.widgetId, open: state.open });
   const describedBy = hasErrors ? errorId : descriptionId;
 
@@ -123,7 +129,7 @@ export function projectMultiselectFieldA11y<TValue>(
       attributes: {
         ...opener?.attributes,
         "aria-labelledby": labelId,
-        "aria-invalid": String(hasErrors),
+        "aria-invalid": String(tellingThem),
         "aria-required": String(state.required),
         "aria-disabled": String(state.disabled),
         // A read-only field refuses the change and stays in play: focusable, submitted, validated.

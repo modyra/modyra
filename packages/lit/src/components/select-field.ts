@@ -277,6 +277,8 @@ export class MdySelectFieldElement extends MdyDropdownFieldElement<unknown | nul
       ?disabled=${handle.disabled()}
       aria-invalid=${this.showErrors(handle) ? "true" : "false"}
       aria-readonly=${handle.readonly() ? "true" : nothing}
+      aria-required=${String(handle.required())}
+      aria-describedby=${this.showErrors(handle) ? this.errorsId : this.descriptionId}
       @change=${(event: Event) => {
         const index = (event.target as HTMLSelectElement).selectedIndex;
         const option = options[index];
@@ -285,7 +287,7 @@ export class MdySelectFieldElement extends MdyDropdownFieldElement<unknown | nul
         handle.markAsDirty();
         handle.markAsTouched();
       }}
-      @blur=${() => handle.markAsTouched()}
+      @blur=${() => { handle.markAsTouched(); this.requestUpdate(); }}
     >
       ${this.renderedOptions(handle.value()).map((option) => html`<option .value=${String(option.value)} ?disabled=${option.disabled === true}>${option.label}</option>`)}
     </select>`;

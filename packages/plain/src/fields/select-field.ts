@@ -17,6 +17,7 @@ import {
   overlayAnchoringFor,
   selectKeyboardAction,
   shownErrorsOf,
+  visibleErrorsOf,
   showsAsInvalid,
   type MdyElementLookup,
   typeaheadMatch,
@@ -286,7 +287,7 @@ export function renderSelectField(
     applyPart(trigger, view.parts.trigger);
     applyPart(search, view.parts.search);
     applyPart(listbox, view.parts.options);
-    setErrors(shell.errorList, shownErrorsOf(handle).map((e) => e.message));
+    setErrors(shell.errorList, visibleErrorsOf(handle).map((e) => e.message));
     syncOptions(state.options, state.optionKeys);
 
     reflectOverlayOpen(popup, state.open, messages);

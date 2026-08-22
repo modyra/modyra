@@ -1,4 +1,4 @@
-import { MdyFormValidatorFn, ValidatorFn } from "./types.js";
+import { MdyFieldError, MdyFormValidatorFn, ValidatorFn } from "./types.js";
 import {
   explainValueMismatch,
   MDY_VALUE_CONTRACTS,
@@ -82,10 +82,29 @@ export const required = <T>(message = 'This field is required'): ValidatorFn<T> 
  * Nullish is not its business: whether a field may be empty is `required`'s question, and answering
  * it here too would make an optional field invalid for holding nothing.
  */
+/**
+ * The origin a validator's refusals carry, written on the function itself.
+ *
+ * A rule the person has not answered yet and a value the field cannot hold are both "invalid" and
+ * are not the same news. The first is about what they have not done — showing it before they reach
+ * the field is telling somebody off for arriving — and the second is about what is already there,
+ * which they can neither cause nor see the reason for unless it is said. The form knows which list
+ * an error arrived in; this is how it knows which *rule* produced one.
+ */
+export function markOrigin<T>(origin: MdyFieldError["origin"], fn: ValidatorFn<T>): ValidatorFn<T> {
+  return Object.assign(fn, { mdyErrorOrigin: origin });
+}
+
+/** The origin a validator declares for its refusals, or `"validation"` where it declares none. */
+export function originOf(fn: unknown): NonNullable<MdyFieldError["origin"]> {
+  const declared = (fn as { mdyErrorOrigin?: MdyFieldError["origin"] }).mdyErrorOrigin;
+  return declared ?? "validation";
+}
+
 export const valueShape = <T>(
   kind: MdyValueKind,
   message?: string,
-): ValidatorFn<T> => (value) => {
+): ValidatorFn<T> => markOrigin("shape", (value: T) => {
   if (value === null || value === undefined) return [];
   const contract = MDY_VALUE_CONTRACTS[kind];
   if (!contract) return [];
@@ -98,7 +117,7 @@ export const valueShape = <T>(
   return [message ?? (matchesValueShape(contract.shape, value)
     ? `This field holds ${mismatch.slice(mismatch.indexOf("holds") + 6)}`
     : `This field holds ${contract.shape}`)];
-};
+});
 
 /**
  * Fail a start/end pair that has one endpoint and not the other.

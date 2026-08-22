@@ -14,7 +14,7 @@ import { assertUsableWidgetId } from "../ids.js";
 import type { MdyPartContract } from "../contract.js";
 import { MDY_FIELD_SHELL_CLASSES } from "../structure.js";
 import type { MdyDaterangeFieldState } from "./daterange-field-types.js";
-import { shownErrors } from "./verdict.js";
+import { errorsVisible, shownErrors } from "./verdict.js";
 import { fieldShellRootClasses } from "./shell-a11y.js";
 
 export interface MdyDaterangeFieldA11yOptions {
@@ -67,6 +67,12 @@ export function projectDaterangeFieldA11y(
   // Out of play, no verdict — the wrapper, the label, `aria-invalid` and whether the error text
   // renders are four faces of one question, answered once in verdict.ts.
   const hasErrors = shownErrors(state, errors).length > 0;
+  // Whether the person is being told yet — `aria-invalid` says the same thing the error list does.
+  // A rule they have not answered waits for them to reach the field; a refusal about the value
+  // already there does not, because they can neither cause it by inaction nor see the reason unless
+  // it is said.
+  const tellingThem = errorsVisible({ disabled: state.disabled, touched: state.touched }, errors);
+
   const opener = projectOverlayOpenerA11y("daterange", { widgetId: options.widgetId, open: state.open });
   const describedBy = hasErrors ? errorId : descriptionId;
   const definition = MDY_WIDGET_CONTRACTS.daterange;
@@ -80,7 +86,7 @@ export function projectDaterangeFieldA11y(
       // Named as well as labelled: two boxes under one label are two boxes a screen-reader user
       // cannot tell apart, and "Stay" twice is not an answer to "which end am I in".
       "aria-label": label,
-      "aria-invalid": String(hasErrors),
+      "aria-invalid": String(tellingThem),
       "aria-required": String(state.required),
       "aria-disabled": String(state.disabled),
       "aria-describedby": describedBy,

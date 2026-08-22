@@ -17,6 +17,7 @@ import {
   overlayAnchoringFor,
   projectFieldShellA11y,
   shownErrorsOf,
+  visibleErrorsOf,
   showsAsInvalid,
   type MdyDateRangeValue,
   MDY_I18N_MESSAGES_DEFAULT,
@@ -238,7 +239,7 @@ export function renderDaterangeField(
     // coordinates are `anchorOverlay`'s, and this only measures and applies them.
     if (state.open) positionOverlay(popup, shell.wrapper, anchoring);
     else releaseOverlayPlacement(popup);
-    setErrors(shell.errorList, shownErrorsOf(handle).map((error) => error.message));
+    setErrors(shell.errorList, visibleErrorsOf(handle).map((error) => error.message));
     shell.syncState({
       open: state.open,
       touched: handle.touched(), disabled: handle.disabled(), readonly: handle.readonly(),

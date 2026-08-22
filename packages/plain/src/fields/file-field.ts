@@ -14,6 +14,7 @@ import {
   fileSelectionTransition,
   projectFieldShellA11y,
   shownErrorsOf,
+  visibleErrorsOf,
   showsAsInvalid,
   type MdyFileCandidate,
   MDY_I18N_MESSAGES_DEFAULT,
@@ -166,7 +167,7 @@ export function renderFileField(
       item.append(name, meta);
       fileList.appendChild(item);
     }
-    setErrors(shell.errorList, shownErrorsOf(handle).map((error) => error.message));
+    setErrors(shell.errorList, visibleErrorsOf(handle).map((error) => error.message));
     shell.syncState({
       touched: handle.touched(), disabled: handle.disabled(), readonly: handle.readonly(),
       hasError: showsAsInvalid({ valid: handle.valid(), disabled: handle.disabled() }), filled: files.length > 0, required: handle.required(),

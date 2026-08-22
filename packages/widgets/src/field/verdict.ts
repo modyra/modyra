@@ -41,21 +41,39 @@ export function shownErrorsOf(handle: MdyFieldVerdictSource): ReadonlyArray<MdyF
 }
 
 /**
- * Whether the error text is on screen.
+ * The refusals that reach a person the moment they arrive, whatever they have touched.
  *
- * Two conditions, and the second is the one renderers answer differently: a field is failing, **and**
- * the person has been given the chance to fill it. An invalid untouched field is the ordinary state
- * of an empty form — every required field holds an error before anyone has typed — so painting those
- * errors on arrival tells a user off for a form they have not started.
- *
- * Whatever names the error list — `aria-describedby` above all — reads the same answer, because a
- * reference to an element that was never rendered points at nothing.
+ * A rule the person has not answered yet and a value the field cannot hold are both "invalid" and
+ * are not the same news. `required` is about what they have not done — shown before they reach the
+ * field, it tells somebody off for arriving. A shape refusal, a server's answer, an entry the
+ * control could not read are about what is *already there*: they cannot cause them by inaction and
+ * cannot see the reason unless it is said, so waiting for a touch withholds the only explanation of
+ * a control already painted as wrong.
  */
+const SPEAKS_IMMEDIATELY: ReadonlySet<string> = new Set(["shape", "server", "entry"]);
+
 export function errorsVisible(
   flags: { readonly disabled: boolean; readonly touched: boolean },
   errors: ReadonlyArray<MdyFieldError>,
 ): boolean {
-  return flags.touched && shownErrors(flags, errors).length > 0;
+  const shown = shownErrors(flags, errors);
+  if (shown.length === 0) return false;
+  return flags.touched || shown.some((error) => SPEAKS_IMMEDIATELY.has(error.origin ?? "validation"));
+}
+
+/**
+ * The messages a field shows right now: its shown errors, or none until it is in play.
+ *
+ * `shownErrorsOf` answers *which refusals exist*; this answers *whether the person is being told
+ * yet*, which is the question a renderer painting an error list is actually asking. Written out at
+ * each call site, nine of them decided it separately and one renderer told a person their field was
+ * required before they had reached it.
+ */
+export function visibleErrorsOf(
+  handle: MdyFieldVerdictSource & { touched(): boolean },
+): ReadonlyArray<MdyFieldError> {
+  const flags = { disabled: handle.disabled(), touched: handle.touched() };
+  return errorsVisible(flags, handle.errors()) ? shownErrors(flags, handle.errors()) : [];
 }
 
 /**

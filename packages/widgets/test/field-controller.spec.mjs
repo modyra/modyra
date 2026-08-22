@@ -123,6 +123,9 @@ test("readonly controller ignores input", () => {
 
 test("view exposes ARIA contract", () => {
   const { controller } = setupText();
+  // Touched, because a verdict is announced to somebody who has been at the field: `aria-invalid`
+  // and the error list say the same thing, and neither says it about a rule nobody has answered yet.
+  controller.dispatch({ type: "blur" });
   const view = controller.view();
   assert.strictEqual(view.parts.input.attributes.type, "email");
   assert.strictEqual(view.parts.input.attributes["aria-invalid"], "true");
@@ -154,6 +157,9 @@ test("out of play, no verdict: a disabled field reports no failure to show", () 
   const controller = createTextFieldController({ widgetId: "email", handle: form.f.email, inputType: "email" });
 
   assert.equal(controller.state().invalid, true, "an empty required field is failing");
+  // Announced once the person has been there. The state is the verdict; the attribute is whether
+  // they are being told, and those are two questions with one answer only after a touch.
+  controller.dispatch({ type: "blur" });
   assert.equal(controller.view().parts.input.attributes["aria-invalid"], "true");
 
   form.setDisabled("email", () => true);

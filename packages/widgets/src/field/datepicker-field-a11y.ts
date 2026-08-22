@@ -11,7 +11,7 @@ import { assertUsableWidgetId } from "../ids.js";
 import type { MdyPartContract } from "../contract.js";
 import { MDY_FIELD_SHELL_CLASSES } from "../structure.js";
 import type { MdyDatepickerFieldState } from "./datepicker-field-types.js";
-import { shownErrors } from "./verdict.js";
+import { errorsVisible, shownErrors } from "./verdict.js";
 import { fieldShellRootClasses } from "./shell-a11y.js";
 
 export interface MdyDatepickerFieldA11yOptions {
@@ -56,6 +56,12 @@ export function projectDatepickerFieldA11y(
   // Out of play, no verdict — the wrapper, the label, `aria-invalid` and whether the error
   // text renders are four faces of one question, answered once in verdict.ts.
   const hasErrors = shownErrors(state, errors).length > 0;
+  // Whether the person is being told yet — `aria-invalid` says the same thing the error list does.
+  // A rule they have not answered waits for them to reach the field; a refusal about the value
+  // already there does not, because they can neither cause it by inaction nor see the reason unless
+  // it is said.
+  const tellingThem = errorsVisible({ disabled: state.disabled, touched: state.touched }, errors);
+
   const describedBy = hasErrors ? errorId : descriptionId;
 
   return {
@@ -76,7 +82,7 @@ export function projectDatepickerFieldA11y(
         ...projectOverlayOpenerA11y("datepicker", { widgetId: options.widgetId, open: state.open })
           ?.attributes,
         "aria-labelledby": labelId,
-        "aria-invalid": String(hasErrors),
+        "aria-invalid": String(tellingThem),
         "aria-required": String(state.required),
         // `aria-disabled` reflects `disabled` alone. A read-only control is not disabled: it takes
         // focus, its text can be selected and copied, and announcing it as disabled tells a

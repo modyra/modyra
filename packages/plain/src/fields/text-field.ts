@@ -18,7 +18,7 @@ import {
   createTextFieldController,
   narrowConstraints,
   sliderTrack,
-  shownErrorsOf,
+  visibleErrorsOf,
   sliderFillRatio,
 } from "@modyra/widgets";
 import { applyPart, el, setErrors, setIcon, setText } from "../dom.js";
@@ -200,7 +200,7 @@ export function renderTextField(
     }
     applyPart(shell.description, view.parts.description);
     applyPart(shell.errorList, view.parts.error);
-    setErrors(shell.errorList, shownErrorsOf(handle).map((e) => e.message));
+    setErrors(shell.errorList, visibleErrorsOf(handle).map((e) => e.message));
     // The themes style these state classes, the contract's own base element toggles.
     shell.syncState({
       touched: handle.touched(),

@@ -15,7 +15,7 @@ import {
   multiselectChipClasses,
   multiselectOverlayAction,
   overlayAnchoringFor,
-  shownErrorsOf,
+  visibleErrorsOf,
   type MdyElementLookup,
   MDY_I18N_MESSAGES_DEFAULT,
   type MdyI18nMessages,
@@ -824,7 +824,7 @@ export function renderMultiselectField(
     setText(shell.description, described);
     shell.description.hidden = described === "";
     applyPart(shell.errorList, view.parts.error);
-    setErrors(shell.errorList, shownErrorsOf(handle).map((e) => e.message));
+    setErrors(shell.errorList, visibleErrorsOf(handle).map((e) => e.message));
     shell.syncState({
       open: state.open,
       touched: state.touched,

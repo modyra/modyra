@@ -1,3 +1,4 @@
+import { originOf } from "./validators.js";
 /**
  * Field record factory and async validator runner.
  *
@@ -195,7 +196,9 @@ export function createFieldRecord(
         readMessages(runValidator(fn, v, warn), warn)
           .filter((message) => !said.has(message) && said.add(message) !== undefined)
           .map(
-            message => ({ kind: "validation", message, origin: "validation" }) as MdyFieldError,
+            // The origin the rule declares, so a refusal about the value already in the field is
+            // distinguishable from one about an answer nobody has given yet.
+            message => ({ kind: "validation", message, origin: originOf(fn) }) as MdyFieldError,
           ),
       ),
     );

@@ -35,6 +35,10 @@ describe("the aria a renderer no longer spells", () => {
     const input = fixture.nativeElement.querySelector("input") as HTMLInputElement;
 
     expect(input.getAttribute("aria-required")).toBe("true");
+    // Touched first: `aria-invalid` says what the error list says, and neither says it about a rule
+    // the person has not been given a chance to answer.
+    input.dispatchEvent(new Event("blur"));
+    fixture.detectChanges();
     expect(input.getAttribute("aria-invalid")).toBe("true");
     expect(input.getAttribute("aria-disabled")).toBe("false");
   });
