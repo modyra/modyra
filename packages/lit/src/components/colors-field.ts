@@ -188,25 +188,28 @@ export class MdyColorsFieldElement extends MdyFieldElement<string | null> {
                 class="mdy-colors__preview-swatch"
                 style="background-color:${handle.value() ?? "#4361ee"}"
               ></div>
-              <input
-                type="color"
-                class="mdy-colors__native-hidden"
-                ${mdyPart(this.controlPart(handle))}
-                tabindex="-1"
-                style=${NATIVE_HIDDEN_STYLE}
-                .value=${handle.value() ?? "#000000"}
-                ?disabled=${handle.disabled()}
-                @input=${(e: Event) => {
-                  handle.set((e.target as HTMLInputElement).value);
-                  handle.markAsDirty();
-                  handle.markAsTouched();
-                }}
-                @click=${(e: Event) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                }}
-              />
             </button>
+            <!-- Beside the button, not inside it: a control nested in a control is invalid HTML and
+                 reachable only by accident — the outer one swallows the press, and what a pointer
+                 lands on depends on which browser is asked. -->
+            <input
+              type="color"
+              class="mdy-colors__native-hidden"
+              ${mdyPart(this.controlPart(handle))}
+              tabindex="-1"
+              style=${NATIVE_HIDDEN_STYLE}
+              .value=${handle.value() ?? "#000000"}
+              ?disabled=${handle.disabled()}
+              @input=${(e: Event) => {
+                handle.set((e.target as HTMLInputElement).value);
+                handle.markAsDirty();
+                handle.markAsTouched();
+              }}
+              @click=${(e: Event) => {
+                e.preventDefault();
+                e.stopPropagation();
+              }}
+            />
             <input
               id=${this.fieldId}
               type="text"
