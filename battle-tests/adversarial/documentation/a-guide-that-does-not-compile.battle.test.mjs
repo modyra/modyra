@@ -118,9 +118,19 @@ battle(
       for (const link of text.matchAll(/\]\(([^)\s]+\.md)#([^)\s]+)\)/g)) {
         const target = resolve(dirname(resolve(REPO, page)), link[1]);
         checkedLinks += 1;
+        // A page outside `docs/` — the repository README, a package's own — is **unknown, not
+        // broken**. Reading "not in my map" as "does not exist" reported a link to a file that is
+        // right there, which is the check accusing the documentation of its own narrow walk.
         if (!headings.has(target)) {
-          landsNowhere.push(`${page}: ${link[1]} does not exist`);
-          continue;
+          if (!existsSync(target)) {
+            landsNowhere.push(`${page}: ${link[1]} does not exist`);
+            continue;
+          }
+          const set = new Set();
+          for (const line of readFileSync(target, "utf8").matchAll(/^#{1,6}\s+(.+?)\s*$/gm)) {
+            set.add(slugOf(line[1]));
+          }
+          headings.set(target, set);
         }
         if (!headings.get(target).has(link[2].toLowerCase())) {
           landsNowhere.push(`${page}: ${link[1]} has no section "${link[2]}"`);
