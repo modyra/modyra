@@ -18,10 +18,10 @@
 import { expect, test } from "@playwright/test";
 import { MDY_OVERLAY_VIEWPORT_MARGIN, MDY_POPUP_CLASS } from "@modyra/widgets";
 
-const HOSTS = [
-  { name: "plain", page: "/index.html", ready: "battleReady", api: "battle" },
-  { name: "lit", page: "/lit.html", ready: "battleLitReady", api: "battleLit" },
-];
+// **Every renderer, from the shared list.** The local list this replaced was not a scope
+// decision: the angular host published six of the twenty-two doors these specs need, so a
+// spec wanting one it lacked left the renderer out and the next reader copied the list.
+import { HOSTS } from "./bench";
 
 /** A window short enough that a field pushed down it has no room underneath. */
 const VIEWPORT = { width: 900, height: 600 };
