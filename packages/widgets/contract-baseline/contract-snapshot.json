@@ -2297,8 +2297,6 @@
         }
       },
       "keyboard": [
-        "Alt+ArrowLeft:reorder",
-        "Alt+ArrowRight:reorder",
         "ArrowDown@closed:open",
         "ArrowDown@closed:step",
         "ArrowDown@open:move",
@@ -2311,8 +2309,10 @@
         "Delete@closed:remove",
         "End@closed:move",
         "End@open:move",
+        "Enter@closed:grab",
         "Enter@closed:open",
         "Enter@open:commit",
+        "Escape@closed:cancel",
         "Escape@open:cancel",
         "Home@closed:move",
         "Home@open:move",
