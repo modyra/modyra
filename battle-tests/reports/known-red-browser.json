@@ -1,11 +1,11 @@
 {
   "note": "Browser specs that are red because the defect they describe is open. A red listed here does not fail a build; a red that is not listed is a regression. Rewrite with `npm run battle:browser:ci -- --accept`.",
   "order": "Repair in severity order, as the node tier does. A spec's severity is the worst of the claims its header names; `unknown` is a spec that names none, which is most of them.",
-  "recordedAt": "2026-08-22T00:35:35Z",
-  "openReds": 52,
+  "recordedAt": "2026-08-22T00:55:33Z",
+  "openReds": 51,
   "bySeverity": {
     "S0": 1,
-    "S1": 44,
+    "S1": 43,
     "S2": 7
   },
   "knownRed": [
@@ -14,9 +14,6 @@
     "a-calendar-behind-a-closed-picker.spec.ts › plain: tabbing past a closed widget reaches the next field",
     "a-chip-that-is-only-a-label.spec.ts › a chip says how many and lets a person change it, angular",
     "a-choice-shown-that-was-never-made.spec.ts › a select holding a value no option carries, lit",
-    "a-closed-control-a-person-can-read.spec.ts › a chip's buttons carry a visible mark, angular",
-    "a-closed-control-a-person-can-read.spec.ts › a chip's buttons carry a visible mark, lit",
-    "a-closed-control-a-person-can-read.spec.ts › a chip's buttons carry a visible mark, plain",
     "a-control-inside-another-control.spec.ts › no control sits inside another control, lit",
     "a-control-nobody-named.spec.ts › every control has a name even when the document declared none",
     "a-dialog-nothing-can-point-at.spec.ts › the opener points at the dialog it opens, lit",
@@ -48,10 +45,12 @@
     "every-kind-in-lit-under-an-auditor.spec.ts › every declared kind renders a lit form the auditor has nothing to say about",
     "four-holes-in-a-control-that-holds-many.spec.ts › something says how many are out of sight and can be pressed, angular",
     "four-holes-in-a-control-that-holds-many.spec.ts › something says how many are out of sight and can be pressed, lit",
-    "four-holes-in-a-control-that-holds-many.spec.ts › something says how many are out of sight and can be pressed, plain",
     "nowhere-for-the-keyboard-to-stand.spec.ts › a field taken out of play under the cursor, lit",
     "nowhere-for-the-keyboard-to-stand.spec.ts › a field taken out of play under the cursor, plain",
     "the-key-that-leaves-a-popup-behind.spec.ts › tab closes what it tabs out of, lit",
+    "two-doors-to-one-order.spec.ts › a chip scrolled out of the strip is still reachable and comes back into view, angular",
+    "two-doors-to-one-order.spec.ts › a chip scrolled out of the strip is still reachable and comes back into view, lit",
+    "two-doors-to-one-order.spec.ts › a chip scrolled out of the strip is still reachable and comes back into view, plain",
     "two-judges-of-one-address.spec.ts › two judges of one address",
     "wrong-before-anybody-touched-it.spec.ts › a field wrong on arrival says why, lit",
     "a-control-that-wears-its-theme.spec.ts › a slider is painted in the theme's own accent, whichever theme is loaded",
