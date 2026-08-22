@@ -1884,6 +1884,21 @@
         opacity: 0.6;
     }
 
+    /* A name for a field whose document wrote no label: owed to a screen reader, not shown as a
+       heading nobody asked for. `clip-path` rather than `display: none`, which would take it out of
+       the accessibility tree along with everything that points at it. */
+    .mdy-label--unwritten {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        overflow: hidden;
+        clip-path: inset(50%);
+        white-space: nowrap;
+        border: 0;
+        padding: 0;
+        margin: -1px;
+    }
+
     /* Said, not shown. The strip is the sighted confirmation that a choice landed; this is the same
        confirmation for somebody who cannot see it, and it must occupy no space to avoid being two
        answers to one question. `clip-path` rather than `display: none`, which removes it from the

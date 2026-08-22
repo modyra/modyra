@@ -27,7 +27,10 @@ export function renderOptionField(
   const variant = f.kind === "segmented" ? "segmented" : "radio";
   const options = f.options as ReadonlyArray<MdySelectOption<unknown>>;
   const keyFor = (option: MdySelectOption<unknown>) => String(option.value);
-  const controller = createOptionFieldController({ widgetId: widgetId, handle, options, variant, keyFor }, reactivity);
+  const controller = createOptionFieldController(
+    { widgetId: widgetId, handle, options, variant, keyFor, label: f.label ?? null, ariaLabel: f.ariaLabel ?? null, fieldName: f.name },
+    reactivity,
+  );
 
   // Both variants are one radio group semantically, but each names its parts its own way in the
   // contract; picking the definition per variant keeps every class in the catalog.

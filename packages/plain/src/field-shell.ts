@@ -45,7 +45,17 @@ export function buildFieldShell(
   root.classList.add(...MDY_WIDGET_CONTRACTS[kind].rootClasses);
 
   const label = el("label", MDY_FIELD_SHELL_CLASSES.label) as HTMLLabelElement;
+  // A label a document did not write still has to say something, because everything inside this
+  // shell is named by pointing at it: a `radiogroup`, a `grid`, a `dialog` whose `aria-labelledby`
+  // resolves to an empty element is announced as its role and nothing else. The words are the ones
+  // `fieldAccessibleName` chooses, and where they are the field's own name rather than a person's,
+  // the label is kept out of sight — a name is owed to a screen reader, a heading is not.
+  const written = fieldAccessibleName({ ariaLabel, label: labelText, name: fieldName });
   if (labelText) setText(label, labelText);
+  else if (written) {
+    setText(label, written);
+    label.classList.add("mdy-label--unwritten");
+  }
   // Built once and attached only while the field is required: `syncState` is what puts it in the
   // label and what takes it out.
   const requiredMark = el("span", MDY_FIELD_SHELL_CLASSES.requiredMarker);

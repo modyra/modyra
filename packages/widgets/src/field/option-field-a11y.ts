@@ -7,7 +7,7 @@ import { assertUsableWidgetId } from "../ids.js";
 import type { MdyPartContract } from "../contract.js";
 import { MDY_CSS_PROPERTIES } from "../css.js";
 import { MDY_FIELD_STATE_CLASSES, MDY_FIELD_SHELL_CLASSES } from "../structure.js";
-import { errorsVisible, holdsUneditedValue, shownErrors } from "./verdict.js";
+import { errorsVisible, fieldAccessibleName, holdsUneditedValue, shownErrors } from "./verdict.js";
 import type {
   MdyOptionFieldState,
   MdyOptionFieldVariant,
@@ -18,6 +18,17 @@ export interface MdyOptionFieldA11yOptions {
   readonly variant: MdyOptionFieldVariant;
   /** How many options the group renders. The segmented theme sizes its tick gutter from it. */
   readonly optionCount: number;
+  /**
+   * What the field is called, for the case where nothing was written for a person.
+   *
+   * A group is named by its label where there is one. A document may declare no label — the
+   * published corpus does — and a `radiogroup` with no name is announced as "group" and nothing
+   * else. `fieldAccessibleName` holds the order: what a host wrote, then the label, then the
+   * field's own name, which is the last thing left to say.
+   */
+  readonly label?: string | null;
+  readonly ariaLabel?: string | null;
+  readonly fieldName?: string | null;
   /**
    * Whether the error list is actually in the document.
    *
@@ -81,6 +92,7 @@ export function projectOptionFieldA11y<TValue>(
   // A rule they have not answered waits for them to reach the field; a refusal about the value
   // already there does not, because they can neither cause it by inaction nor see the reason unless
   // it is said.
+  const hasLabel = typeof options.label === "string" && options.label.trim() !== "";
   const tellingThem = errorsVisible({ disabled: state.disabled, touched: state.touched, holdsUnedited: holdsUneditedValue(state) }, errors);
 
   // What the group describes itself by depends on what was *rendered*, not on what is wrong.
@@ -103,7 +115,15 @@ export function projectOptionFieldA11y<TValue>(
       classes: options.variant === "segmented" ? ["mdy-segmented"] : ["mdy-radio-group"],
       attributes: {
         role: "radiogroup",
-        "aria-labelledby": labelId,
+        // Named by the label where the label has words, and by what is left otherwise: pointing at
+        // an empty element is a name that resolves to nothing.
+        ...(hasLabel
+          ? { "aria-labelledby": labelId }
+          : { "aria-label": fieldAccessibleName({
+              ariaLabel: options.ariaLabel,
+              label: options.label,
+              name: options.fieldName,
+            }) || null }),
         "aria-invalid": String(tellingThem),
         "aria-required": String(state.required),
         // `aria-disabled` reflects `disabled` alone. A read-only control is not disabled: it takes

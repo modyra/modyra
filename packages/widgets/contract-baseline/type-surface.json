@@ -1901,7 +1901,10 @@
     "ɵfac: _angular_core.ɵɵFactoryDeclaration<MdyOptionDirective, never>"
   ],
   "MdyOptionFieldA11yOptions": [
+    "ariaLabel?: string | null",
     "errorsVisible?: boolean",
+    "fieldName?: string | null",
+    "label?: string | null",
     "optionCount: number",
     "variant: MdyOptionFieldVariant",
     "widgetId: string"
@@ -1912,9 +1915,12 @@
     "setValue: void"
   ],
   "MdyOptionFieldControllerOptions": [
+    "ariaLabel?: string | null",
     "errorsVisible?: (state: MdyOptionFieldState<TValue>) => boolean",
+    "fieldName?: string | null",
     "handle: MdyFieldHandle<TValue | null>",
     "keyFor?: (option: MdySelectOption<TValue>) => string",
+    "label?: string | null",
     "options: readonly MdySelectOption<TValue>[]",
     "readonly?: boolean",
     "variant?: MdyOptionFieldVariant",
