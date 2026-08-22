@@ -170,6 +170,12 @@ function writeBaseline(names, file = BASELINE_FILE) {
  * The two are read by different people for the same decision — what to repair next — and a count
  * kept by hand drifts the first time nobody remembers to change it. Only the fenced block is
  * touched, and a register without one is left alone rather than guessed at.
+ *
+ * That sentence was true of the prose beside the block as well, and went unnoticed there for as long
+ * as it took somebody to read the two together: the register opened by naming a number of failing
+ * battles and a suite size, both by hand, both wrong. The prose now points at the block instead of
+ * repeating it — **a count stated once cannot disagree with itself** — which is the cheaper half of
+ * what this function does and needed no code at all.
  */
 export function writeRegisterSummary(body, file = join(BATTLE_ROOT, "reports", "open-findings.md")) {
   if (!existsSync(file)) return;

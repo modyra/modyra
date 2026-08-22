@@ -13,12 +13,18 @@ Severity is the order of work: every S0, then every S1, then S2 and below. The s
 thing to repair. This section is written from that file rather than by hand — when the two disagree
 the file is right, because a run wrote it.
 
-Twenty-four battles fail on purpose, out of a suite of five hundred and thirty-eight. Each is a claim
-the suite makes about published behaviour that the engine does not currently keep, reduced to the smallest
-sequence that shows it, and each names what would turn it green — usually two answers, because most
-have more than one defensible repair and the battle asserts the property rather than the fix.
+The battles that fail on purpose are the ones the block above counts, and their number is stated there
+and nowhere else. It said "twenty-four out of five hundred and thirty-eight" here for as long as
+nobody remembered to change it, while the block said something else — in a file whose own generator
+carries the sentence *a count kept by hand drifts the first time nobody remembers to change it*, two
+paragraphs below it.
 
-Two of the thirty are not pins. `generative/properties/history.property.test.mjs` and the positional
+Each is a claim the suite makes about published behaviour that the engine does not currently keep,
+reduced to the smallest sequence that shows it, and each names what would turn it green — usually two
+answers, because most have more than one defensible repair and the battle asserts the property rather
+than the fix.
+
+Two of them are not pins, however many the block above says there are. `generative/properties/history.property.test.mjs` and the positional
 campaign beside it draw a fresh seed each run and reach their defect most times but not every time;
 their green is not evidence, and the battles beside them are. `adversarial/studio/every-target` packs
 seven packages and can fail on a loaded machine for that reason, which its first assertion says in
