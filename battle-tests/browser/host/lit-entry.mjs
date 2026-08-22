@@ -11,6 +11,7 @@
  */
 import { assertSafeDynamicFieldNames, buildDynamicFieldValidators, createLitForm, field, MDY_VALUE_CONTRACTS, parseDynamicFields } from "@modyra/lit/adapter";
 import { defineMdyElements, mdyLitTagFor } from "@modyra/lit/ui";
+import { documentProbes } from "./document-probes.mjs";
 
 defineMdyElements();
 
@@ -71,6 +72,10 @@ const blankFor = (kind) => {
 };
 
 window.battleLit = {
+  // What the page says about itself: dangling references, duplicate ids, where focus is, how many
+  // controls the stage holds. No adapter appears in any of them, so all three hosts answer alike.
+  ...documentProbes,
+
   /** Build a form over `fields` and render one element per field. */
   mountFields(id, fields, options = {}) {
     const host = document.createElement("section");

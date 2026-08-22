@@ -44,6 +44,7 @@ import "@angular/compiler";
 import { createComponent, provideZonelessChangeDetection } from "@angular/core";
 import { createApplication } from "@angular/platform-browser";
 import { MdyDynamicFormComponent } from "@modyra/angular/ui";
+import { documentProbes } from "./document-probes.mjs";
 
 const mounted = new Map();
 
@@ -59,6 +60,10 @@ const application = await createApplication({ providers: [provideZonelessChangeD
 const settled = () => new Promise((resolve) => requestAnimationFrame(() => resolve()));
 
 window.battleAngular = {
+  // What the page says about itself: dangling references, duplicate ids, where focus is, how many
+  // controls the stage holds. No adapter appears in any of them, so all three hosts answer alike.
+  ...documentProbes,
+
   /** Build a form over `fields` and render it, as `<mdy-dynamic-form [fields]>` does. */
   async mountFields(id, fields, options = {}) {
     const host = document.createElement("section");

@@ -9,6 +9,7 @@
 import { parseDynamicFields, parseDynamicForm } from "@modyra/core";
 import { createMdyAnnouncer } from "@modyra/widgets";
 import { mountMdyForm } from "@modyra/plain";
+import { documentProbes } from "./document-probes.mjs";
 
 const mounted = new Map();
 
@@ -312,51 +313,9 @@ window.battle = {
   },
 
   /** Every id reference in the document that points at nothing. */
-  danglingReferences() {
-    const dangling = [];
-    for (const element of document.querySelectorAll("*")) {
-      for (const attribute of [
-        "for",
-        "aria-controls",
-        "aria-describedby",
-        "aria-labelledby",
-        "aria-errormessage",
-        "aria-activedescendant",
-      ]) {
-        const value = element.getAttribute(attribute);
-        if (!value) continue;
-        for (const id of value.split(/\s+/)) {
-          if (id && !document.getElementById(id)) {
-            dangling.push(`${element.tagName.toLowerCase()}[${attribute}="${id}"]`);
-          }
-        }
-      }
-    }
-    return dangling;
-  },
-
-  duplicateIds() {
-    const counts = new Map();
-    for (const element of document.querySelectorAll("[id]")) {
-      counts.set(element.id, (counts.get(element.id) ?? 0) + 1);
-    }
-    return [...counts.entries()].filter(([, count]) => count > 1).map(([id]) => id);
-  },
-
-  /** Where focus is, and whether that element is still in the document. */
-  focusState() {
-    const active = document.activeElement;
-    return {
-      tag: active?.tagName.toLowerCase() ?? null,
-      id: active?.id ?? null,
-      connected: active ? active.isConnected : false,
-      isBody: active === document.body,
-    };
-  },
-
-  controlCount() {
-    return document.querySelectorAll("#stage input, #stage select, #stage button").length;
-  },
+  // The four that read the page and nothing else, shared with the other two hosts: there is one
+  // right answer to each and no adapter in any of them.
+  ...documentProbes,
 };
 
 window.battleReady = true;
