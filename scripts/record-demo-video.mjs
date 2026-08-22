@@ -145,38 +145,41 @@ async function beatStudio(page, url) {
   await page.goto(url, { waitUntil: "networkidle" });
   await sleep(2500);
 
-  // Beat 5 (0:38-0:46): add a Text field from the palette, label it, add Required.
-  const paletteText = page.getByRole("button", { name: /^text$/i }).first();
-  if (await paletteText.count()) {
-    await paletteText.click();
-    await sleep(1500);
-  } else {
-    const paletteItem = page.getByText(/^Text$/).first();
-    if (await paletteItem.count()) { await paletteItem.click(); await sleep(1500); }
-  }
-  const labelInput = page.getByLabel(/label/i).first();
-  if (await labelInput.count()) {
-    await labelInput.click();
-    await labelInput.fill("");
-    await labelInput.pressSequentially("Email", { delay: 120 });
-    await sleep(1200);
-  }
-  const addValidator = page.locator("[data-add-validator]").first();
-  if (await addValidator.count()) {
-    await addValidator.selectOption({ label: /required/i }).catch(() => addValidator.selectOption({ index: 1 }));
-    await sleep(1500);
-  }
+  // Beat 5 (0:38-0:46): the dock is collapsed at this viewport, so fields are added through the
+  // "Add field" palette: ⌘K opens it, Enter takes the highlighted kind (Text is first).
+  try {
+    await page.keyboard.press("Meta+k");
+    await sleep(900);
+    const textOption = page.locator("[role=dialog] button, [role=listbox] button").filter({ hasText: /^Text/ }).first();
+    if (await textOption.count()) await textOption.click({ timeout: 4000 });
+    else await page.keyboard.press("Enter");
+    await sleep(1800);
+  } catch { /* a palette that never opens still leaves the canvas worth showing */ }
 
-  // Beat 6 (0:46-0:55): Export tab, generate contract, then a code target.
-  const exportTab = page.getByRole("tab", { name: /export/i }).first();
-  const exportByText = page.getByText(/^Export$/).first();
-  if (await exportTab.count()) { await exportTab.click(); }
-  else if (await exportByText.count()) { await exportByText.click(); }
-  await sleep(1500);
-  const generate = page.getByRole("button", { name: /generate/i }).first();
-  if (await generate.count()) {
+  // The inspector's Label field, if the palette added a field.
+  try {
+    const labelInput = page.locator("label", { hasText: /^Label$/ }).locator("..").locator("input").first();
+    if (await labelInput.isVisible()) {
+      await labelInput.click();
+      await labelInput.fill("");
+      await labelInput.pressSequentially("Email", { delay: 110 });
+      await sleep(1200);
+    }
+  } catch { /* inspector layout is free to change; the beat is optional */ }
+
+  // Beat 6 (0:46-0:55): Export tab — pick the contract target and generate.
+  try {
+    const exportTab = page.locator("[role=tab]", { hasText: /export/i }).first();
+    await exportTab.click({ timeout: 6000 });
+    const generate = page.locator("button", { hasText: /^generate$/i }).first();
+    await generate.waitFor({ state: "visible", timeout: 8000 });
+    await sleep(1200);
+    const contractTarget = page.locator("button", { hasText: /contract/i }).first();
+    if (await contractTarget.isVisible()) { await contractTarget.click(); await sleep(900); }
     await generate.click();
-    await sleep(2500);
+    await sleep(2800);
+  } catch (e) {
+    console.warn("studio export beat failed:", e.message.split("\n")[0]);
   }
 }
 
