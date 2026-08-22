@@ -21786,3 +21786,36 @@ roving index moves `0,-1,-1 → -1,0,-1`. Measured hours ago and still true.
 wrote actually answers*, and the fixture must not be given chips to quiet it — that was tried, it
 silenced two of four, and it hid the finding rather than fixing anything.
 
+
+### 384 — the reordering half is fixed; the optional-input half is not, and deliberately
+
+`scripts/audit-type-surface.mjs` normalises a type's **order** before comparing it. A union's members
+are sorted, an object literal's members are sorted, and both happen inside a generic — which is where
+every real one lives.
+
+```
+MdyWidgetDefinition<"errors" | "root" | "label">  vs  <"root" | "label" | "errors">    quiet
+MdyWidgetDefinition<"a" | "b">                    vs  <"a" | "b" | "c">                reported
+C<T, { cell: X; isSelected: Y }>                  vs  C<T, { isSelected: Y; cell: X }> quiet
+A | B<C | D>                                      vs  B<C | D> | A                     quiet
+Map<A, B>                                         vs  Map<B, A>                        reported
+```
+
+The last two are the ones worth checking and both are right: a nested `|` is not a boundary, so the
+splitter is depth-aware; and a generic's **arguments** are positional, so their order is not noise.
+
+**My first version passed six of seven invented examples and covered none of the real ones.** It
+normalised only the top level, and the union that reshuffled sits inside `MdyWidgetDefinition<…>` — so
+every case the finding was written about came through unchanged. I found it by testing the actual
+string from the report rather than the examples I had thought of, which is the only reason it is not
+shipped that way.
+
+**The optional-input half is not fixed and should not be by this change.** Adding `cellId` to an
+Angular component's inputs record is a member genuinely added, and normalising order cannot tell that
+from any other widening. Calling it minor requires deciding *an object type gaining a member is
+additive*, which is true for a `ɵcmp` inputs record and false for a type a consumer implements. That is
+a judgement about the contract and not a cleanup of the differ, so it stays open under this number.
+
+`node scripts/audit-type-surface.mjs` — 732 shapes, TYPE SURFACE UNCHANGED. The normalisation moves no
+baseline entry.
+
