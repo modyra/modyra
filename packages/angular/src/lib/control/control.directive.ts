@@ -36,7 +36,7 @@ declare const ngDevMode: boolean | undefined;
 import { MdyPrefixDirective } from "./prefix.directive";
 import { MdySuffixDirective } from "./suffix.directive";
 import { MdySupportingTextDirective } from "./supporting-text.directive";
-import { MDY_FIELD_STATE_CLASSES, errorsVisible, holdsUneditedValue, reportIdCollision, shownErrors, showsAsInvalid, stateClass } from "@modyra/widgets";
+import { MDY_FIELD_STATE_CLASSES, errorsVisible, holdsUneditedValue, keepKeyboardInPlay, reportIdCollision, shownErrors, showsAsInvalid, stateClass } from "@modyra/widgets";
 import type { MdyValueKind } from "@modyra/core";
 
 /** Global counter for generating unique field IDs. */
@@ -52,6 +52,7 @@ let _nextFieldId = 0;
 @Directive({
   host: {
     "[class.mdy-renderer--touched]": "touched()",
+    "(focusout)": "onFocusLost($event)",
   },
 })
 export abstract class MdyBaseControl<TValue = unknown> implements OnInit {
@@ -438,6 +439,29 @@ export abstract class MdyBaseControl<TValue = unknown> implements OnInit {
     if (this.paintsAsInvalid()) classes.push(stateClass(base, "error"));
     return classes.join(" ");
   });
+
+  /**
+   * Where the keyboard goes when this field leaves play under it.
+   *
+   * Disabling a focused element blurs it — that is the platform. What follows is this library's: the
+   * person who was typing is on `<body>`, their next Tab starts at the top of the document, and
+   * nothing says where they went. A document's rule reaches this without anyone clicking, when a
+   * value arriving from a fetch takes the field under the cursor out of play mid-word.
+   *
+   * `relatedTarget === null` is the only case handled: focus went nowhere rather than to something
+   * else on the page. It is read one microtask later because the control is disabled during the
+   * render that blurs it, and the question is what happened after.
+   */
+  protected onFocusLost(event: FocusEvent): void {
+    if (event.relatedTarget !== null) return;
+    queueMicrotask(() => {
+      if (!this.fieldState().disabled()) return;
+      const host = this.hostElement.nativeElement;
+      const active = host.ownerDocument.activeElement;
+      if (active !== null && active !== host.ownerDocument.body) return;
+      keepKeyboardInPlay(host, host.parentElement, { afterBlur: true });
+    });
+  }
 
   /** Effective aria-disabled: explicit input overrides field state. */
   protected readonly effectiveAriaDisabled: Signal<boolean> = computed(
