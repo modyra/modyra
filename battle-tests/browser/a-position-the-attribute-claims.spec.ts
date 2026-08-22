@@ -1,28 +1,38 @@
 /**
- * A chip's position is a property the accessibility layer computed, not an attribute we wrote.
+ * A chip's position needs a role that can carry it, and the browser is asked which role it computed.
  *
  * `aria-posinset` and `aria-setsize` are legal on `option`, `listitem`, `row`, `tab`, `treeitem`,
- * `radio`, the `menuitem` family, `article` and `comment`. On any other role they are written to the
- * DOM and discarded: nothing is exposed, no browser warns, and no screen reader says "3 of 12". An
- * `option` also only computes a set inside a `listbox`, so the container's role decides as much as
- * the chip's.
+ * `radio`, the `menuitem` family, `article` and `comment`, and each of those computes a set only
+ * inside the container that owns it — an `option` in a `listbox`, a `listitem` in a `list`. On any
+ * other role the attributes reach the DOM and are discarded. Nothing errors. Nothing is announced.
  *
- * [ADR 0137](../../docs/architecture/0137-a-row-that-wraps-where-it-must.md) exists because that
- * happened here and was invisible for weeks. Its predecessor made a 1.4.10 departure conditional on
- * the position being announced; the position was never announced; and the check that should have
- * caught it asserted the attribute was **present**, which it always was.
+ * That happened here. The chips carried both attributes on `role="group"`, and on `role="spinbutton"`
+ * when they held a quantity, so nothing had ever said "3 of 12".
+ * [ADR 0137](../../docs/architecture/0137-a-row-that-wraps-where-it-must.md) records it, because a
+ * superseded record had made a 1.4.10 departure *conditional* on that announcement — a stated price
+ * that went unpaid while a check agreed it had been paid.
  *
- * So this spec never reads an attribute. It asks the browser what it computed. That is the whole
- * difference between the two, and it is why the sibling spec
- * `a-chip-that-does-not-say-where-it-is` cannot replace it: markup we authored can only ever confirm
- * that we authored it.
+ * **Why this asserts the role rather than the position.** The obvious check is to read `posinset`
+ * back out of the accessibility tree. It cannot be written: Chromium does not expose `posinset` or
+ * `setsize` among an object's computed properties for *any* role, verified against markup that is
+ * beyond reproach —
  *
- * **Scope: Chromium, and the tree it computed.** A computed tree is the goods only in the engine
- * that computed one, and engines disagree about which ARIA they discard and how they compute a
- * name. This spec is sound because *this* property is one where they agree — `aria-posinset` on a
- * role that does not permit it is dropped by all of them. An assertion here about anything they
- * differ on would be a better receipt rather than the goods, and would need saying so. Gecko and
- * WebKit are not covered by this file.
+ *     <ul><li aria-posinset=2 aria-setsize=7>      → role listitem, ignored false, properties [level]
+ *     <div role=listbox><div role=option …>        → role option,   ignored false, properties [selected]
+ *
+ * — so an assertion on the computed position is true of every conforming control in this engine and
+ * distinguishes nothing. What the tree does expose, and expose correctly, is the **role**, and the
+ * role is the whole of the defect: it is what decides whether the attributes mean anything.
+ *
+ * So the property is stated as the necessary condition it really is. A chip whose computed role
+ * permits the attributes may still carry a wrong number; a chip whose role forbids them cannot carry
+ * a right one. This measures the second, which is the half no attribute-reading check can see.
+ *
+ * The sibling spec `a-chip-that-does-not-say-where-it-is` asserts the attributes are present, and it
+ * was green throughout — markup we authored can only ever confirm that we authored it.
+ *
+ * Scope: Chromium, and the tree it computed. Engines disagree about which ARIA they discard; this
+ * property is one where they agree. Gecko and WebKit are not covered by this file.
  *
  * Claims under attack: A11Y-001, UI-011.
  */
@@ -30,92 +40,82 @@
 import { expect, test } from "@playwright/test";
 import { HOSTS, bench } from "./bench";
 
+/** Roles ARIA 1.2 permits `aria-posinset`/`aria-setsize` on, with the container each needs. */
+const CARRIES_A_SET: Record<string, readonly string[]> = {
+  option: ["listbox"],
+  listitem: ["list"],
+  row: ["grid", "treegrid", "table", "rowgroup"],
+  tab: ["tablist"],
+  treeitem: ["tree", "group"],
+  radio: ["radiogroup"],
+  menuitem: ["menu", "menubar", "group"],
+  menuitemcheckbox: ["menu", "menubar", "group"],
+  menuitemradio: ["menu", "menubar", "group"],
+  article: ["feed"],
+  comment: ["article", "comment"],
+};
+
 /**
- * The accessibility tree as the browser computed it, keyed by the DOM id of the node it belongs to.
- * A property absent from the tree is a property no assistive technology can read, whatever the
- * markup says.
+ * The role the browser computed for one element, by the supported path: no handle internals, which
+ * is both a private member this campaign refuses to touch and — in this version — `null`, so every
+ * lookup failed and every node was reported as ignored whatever the page held.
  */
-async function computed(page: import("@playwright/test").Page, selector: string) {
+async function computedRole(page: import("@playwright/test").Page, selector: string) {
   const session = await page.context().newCDPSession(page);
   try {
-    const { nodes } = (await session.send("Accessibility.getFullAXTree")) as {
-      nodes: Array<{
-        nodeId: string;
-        backendDOMNodeId?: number;
-        ignored?: boolean;
-        role?: { value?: string };
-        properties?: Array<{ name: string; value?: { value?: unknown } }>;
-      }>;
+    const { root } = (await session.send("DOM.getDocument", { depth: -1 })) as unknown as { root: { nodeId: number } };
+    const { nodeId } = (await session.send("DOM.querySelector", { nodeId: root.nodeId, selector })) as unknown as { nodeId: number };
+    if (nodeId === 0) return null;
+    const { nodes } = (await session.send("Accessibility.getPartialAXTree", { nodeId, fetchRelatives: false })) as unknown as {
+      nodes: Array<{ role?: { value?: string }; ignored?: boolean }>;
     };
-
-    const wanted = await page.evaluate((sel) => {
-      const root = document.querySelector(sel);
-      const strip = root?.querySelector(".mdy-multiselect__chips") ?? null;
-      const chips = strip === null ? [] : Array.from(strip.querySelectorAll(".mdy-chip"));
-      chips.forEach((chip, index) => chip.setAttribute("data-battle-chip", String(index)));
-      strip?.setAttribute("data-battle-strip", "1");
-      return { chips: chips.length, hasStrip: strip !== null };
-    }, selector);
-
-    // Resolve by backend node id: the marker attributes above give a stable handle from the DOM side.
-    const byBackend = new Map<number, (typeof nodes)[number]>();
-    for (const node of nodes) if (typeof node.backendDOMNodeId === "number") byBackend.set(node.backendDOMNodeId, node);
-
-    const describe = async (sel: string) => {
-      const handle = await page.$(sel);
-      if (handle === null) return null;
-      const { node } = (await session.send("DOM.describeNode", {
-        objectId: (handle as unknown as { _objectId?: string })._objectId,
-      }).catch(() => ({ node: null }))) as { node: { backendNodeId?: number } | null };
-      const found = node?.backendNodeId === undefined ? undefined : byBackend.get(node.backendNodeId);
-      if (found === undefined || found.ignored === true) return null;
-      const props: Record<string, unknown> = {};
-      for (const p of found.properties ?? []) props[p.name] = p.value?.value;
-      return { role: found.role?.value ?? null, props };
-    };
-
-    const strip = wanted.hasStrip ? await describe(`${selector} [data-battle-strip]`) : null;
-    const chips = [];
-    for (let index = 0; index < wanted.chips; index += 1) {
-      chips.push(await describe(`${selector} [data-battle-chip="${index}"]`));
-    }
-    return { strip, chips, count: wanted.chips };
+    const node = nodes[0];
+    if (node === undefined || node.ignored === true) return { role: null, ignored: true };
+    return { role: node.role?.value ?? null, ignored: false };
   } finally {
     await session.detach().catch(() => undefined);
   }
 }
 
 for (const host of HOSTS) {
-  test(`a chip's position is computed, not merely written, ${host.name}`, async ({ page }) => {
+  test(`a chip's role can carry its position, ${host.name}`, async ({ page }) => {
     test.setTimeout(150_000);
     await page.goto(host.page);
     await page.waitForFunction((flag) => (window as never as Record<string, boolean>)[flag] === true, host.ready);
 
     const { root } = await bench(page, host, "full");
-    const tree = await computed(page, root);
 
-    expect(tree.count, "no chips were drawn, so there is no position to compute").toBeGreaterThan(0);
+    const marked = await page.evaluate((sel) => {
+      const strip = document.querySelector(sel)?.querySelector(".mdy-multiselect__chips") ?? null;
+      if (strip === null) return 0;
+      strip.setAttribute("data-battle-strip", "1");
+      const chips = Array.from(strip.querySelectorAll(".mdy-chip"));
+      chips.forEach((chip, index) => chip.setAttribute("data-battle-chip", String(index)));
+      return chips.length;
+    }, root);
 
-    const silent = tree.chips
-      .map((chip, index) => ({ index, chip }))
-      .filter(({ chip }) => chip === null || chip.props.posinset === undefined || chip.props.setsize === undefined);
+    expect(marked, "no chips were drawn, so there is no position to carry").toBeGreaterThan(0);
 
-    // The message carries the role, because the role is always the reason: the attribute is on the
-    // element and the layer dropped it for not being legal there.
-    const roles = tree.chips.map((chip) => chip?.role ?? "ignored").join(", ");
+    const strip = await computedRole(page, `${root} [data-battle-strip]`);
+    const chip = await computedRole(page, `${root} [data-battle-chip="0"]`);
+
+    const chipRole = chip?.role ?? null;
+    const stripRole = strip?.role ?? null;
+    const containers = chipRole === null ? undefined : CARRIES_A_SET[chipRole];
+
     expect(
-      silent.length,
-      `${silent.length} of ${tree.count} chips expose no position to assistive technology. ` +
-        `Computed roles: [${roles}]. Strip role: ${tree.strip?.role ?? "ignored"}. ` +
-        `aria-posinset and aria-setsize are legal on option, listitem, row, tab, treeitem, radio, ` +
-        `menuitem*, article and comment — and an option only computes a set inside a listbox.`,
-    ).toBe(0);
+      containers,
+      `the chip computes as \`${chipRole ?? "ignored"}\`, which ARIA does not permit ` +
+        `aria-posinset or aria-setsize on. The attributes are written and the accessibility layer ` +
+        `discards them, so nothing announces a chip's position. Roles that can carry it: ` +
+        `${Object.keys(CARRIES_A_SET).join(", ")}.`,
+    ).toBeDefined();
 
-    // A set that is announced must also be the set that exists: a size the browser computed from a
-    // container holding something else is worse than no size at all.
-    for (const [index, chip] of tree.chips.entries()) {
-      expect(chip?.props.setsize, `chip ${index} reports a set size that is not the number of chips`).toBe(tree.count);
-      expect(chip?.props.posinset, `chip ${index} reports the wrong position`).toBe(index + 1);
-    }
+    expect(
+      containers ?? [],
+      `the chip computes as \`${chipRole}\`, which carries a set only inside ` +
+        `${(containers ?? []).join(" or ")} — and the strip computes as \`${stripRole ?? "ignored"}\`. ` +
+        `A role that permits the attributes still announces nothing when its container cannot own a set.`,
+    ).toContain(stripRole);
   });
 }
