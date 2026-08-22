@@ -36,11 +36,15 @@ const idsIn = (page: import("@playwright/test").Page, form: string) =>
 const FIELDS = [{ name: "when", kind: "datepicker", label: "D" }];
 
 for (const host of HOSTS) {
-  const mount = async (page: import("@playwright/test").Page, id: string, fields: unknown[]) => {
-    await page.evaluate(({ api, id, fields }) => {
-      (window as never as Record<string, Record<string, (...a: never[]) => unknown>>)[api]
-        .mountFields(id, fields as never);
-    }, { api: host.api, id, fields });
+  const mount = async (page: import("@playwright/test").Page, id: string, fields: unknown[], scope?: string) => {
+    await page.evaluate(({ api, id, fields, scope }) => {
+      const mountFields = (window as never as Record<string, Record<string, (...a: never[]) => unknown>>)[api].mountFields;
+      // **An unscoped mount passes nothing, not `null`.** Handing `{ idPrefix: null }` is a scope of
+      // its own kind and changed plain's ids — a mount option invented by the fixture, which read as
+      // the renderer losing its stability.
+      if (scope === null) mountFields(id, fields as never);
+      else mountFields(id, fields as never, { idPrefix: scope } as never);
+    }, { api: host.api, id, fields, scope: scope ?? null });
     await page.waitForTimeout(400);
   };
 
@@ -73,38 +77,81 @@ for (const host of HOSTS) {
     ).toEqual(afterSomething);
   });
 
-  test(`two forms on one page do not render one id twice, ${host.name}`, async ({ page }) => {
+  /**
+   * Two **scoped** forms do not collide — and an unscoped pair is not silent about it.
+   *
+   * The first version of this asked for two forms mounted from one document to get distinct ids
+   * without a consumer supplying anything. That cannot be had, and
+   * [ADR 0135](../../docs/architecture/0135-an-id-is-a-function-of-the-document.md) now carries the
+   * contradiction: an id that depends only on the document gives two live copies one id, and an id
+   * that tells the copies apart depends on the instance. Nothing distinguishes two mounts of one
+   * document except the host or the order they were created in, and the second is the counter that
+   * record removed.
+   *
+   * So the promise is the scoped one, and it is asserted here. What is **not** a defect is a page
+   * whose author gave one identity to two things; what **is** one is that nothing says so — two forms
+   * sharing a scope produce no warning today, so a page whose `aria-describedby` resolves into the
+   * wrong form looks exactly like a page whose references are right.
+   */
+  test(`two scoped forms on one page do not render one id twice, ${host.name}`, async ({ page }) => {
     test.setTimeout(150_000);
     await page.goto(host.page);
     await page.waitForFunction((flag) => (window as never as Record<string, boolean>)[flag] === true, host.ready);
 
-    // The same field name in two forms — ordinary, and nobody has made a mistake.
-    await mount(page, "left", FIELDS);
-    await mount(page, "right", FIELDS);
+    await mount(page, "left", FIELDS, "left");
+    await mount(page, "right", FIELDS, "right");
 
     const left = await idsIn(page, "left");
     const right = await idsIn(page, "right");
     expect(left, "nothing was mounted").not.toBeNull();
     expect(left!.length, `${host.name} published no ids`).toBeGreaterThan(2);
 
+    // The premise: the two really were given different scopes. If a renderer ignores the option, this
+    // assertion would be measuring the unscoped case under the scoped case's name.
+    expect(
+      left!.some((id) => right!.includes(id)) === false || left![0] !== right![0],
+      "the two forms were given different scopes and rendered identical first ids, so the scope was not applied at all",
+    ).toBe(true);
+
     const shared = left!.filter((id) => right!.includes(id));
     expect(
       shared.slice(0, 4),
-      `${shared.length} ids appear in both forms — the same field name in two forms produced the same ` +
-        `id, so every reference to it is ambiguous and a stylesheet naming it hits both. This is the ` +
-        `case a renderer passes by deriving from the path and dropping the scope, which is why it is ` +
-        `asked separately from whether ids are stable`,
+      `${shared.length} ids appear in both forms although the two were given different scopes — every ` +
+        `reference to one of them is ambiguous, and a stylesheet naming it hits both`,
     ).toEqual([]);
+  });
 
-    // And the ids really are collisions rather than the whole document being empty of them.
-    const duplicated = await page.evaluate(() => {
-      const all = Array.from(document.querySelectorAll("[id]")).map((element) => element.id);
-      return all.filter((id, at) => all.indexOf(id) !== at);
+  test(`one scope for two forms is not silent, ${host.name}`, async ({ page }) => {
+    test.setTimeout(150_000);
+    const warnings: string[] = [];
+    page.on("console", (message) => {
+      if (message.type() === "warning" || message.type() === "error") warnings.push(message.text());
     });
+    await page.goto(host.page);
+    await page.waitForFunction((flag) => (window as never as Record<string, boolean>)[flag] === true, host.ready);
+
+    // The same declaration twice with nothing to tell them apart: one identity, two things. The
+    // consumer did this, and it is theirs to fix — with one attribute, if anybody tells them.
+    await mount(page, "twinA", FIELDS);
+    await mount(page, "twinB", FIELDS);
+
+    const a = await idsIn(page, "twinA");
+    const b = await idsIn(page, "twinB");
+    expect(a, "nothing was mounted").not.toBeNull();
+
+    // The premise: they really did collide. If a renderer disambiguated them, there is nothing to warn
+    // about and this case is measuring the wrong page.
+    const shared = a!.filter((id) => b!.includes(id));
     expect(
-      duplicated.slice(0, 4),
-      `the page carries ${duplicated.length} duplicated ids, which makes every \`aria-*\` naming one of ` +
-        `them resolve to whichever the browser reached first`,
-    ).toEqual([]);
+      shared.length,
+      "the two unscoped forms rendered no id in common, so nothing collided and there is nothing to say",
+    ).toBeGreaterThan(0);
+
+    expect(
+      warnings.filter((text) => /id|scope/i.test(text)),
+      `${shared.length} ids are claimed by both forms and nothing said so. A page whose ` +
+        `\`aria-describedby\` resolves into the other form looks exactly like a page whose references ` +
+        `are right — and the person who could fix it with one attribute is the one nobody tells`,
+    ).not.toEqual([]);
   });
 }
