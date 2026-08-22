@@ -21,6 +21,13 @@
  *     though the renderer dropped it. A property no field type carries is not a renderer defect, and
  *     an earlier probe of mine reported it as one in all three at once.
  *
+ * **Not the same file as `no-reference-that-points-at-nothing.spec.ts`, and the names are close enough
+ * to be worth separating.** That one asks whether an id an attribute names *exists* — the reference
+ * has gone stale, resolves to nothing, and is worst when the element it named used to be there. This
+ * one asks whether the element it names has anything to *say*: the id resolves, the element is real,
+ * and it is empty. A page can pass either and fail the other, and the second is quieter — an empty
+ * description survives every check that follows the reference and finds a node.
+ *
  * Claims under attack: A11Y-001, UI-011.
  */
 
