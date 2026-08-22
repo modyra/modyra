@@ -21657,3 +21657,42 @@ compares twelve against forty now, both overflowing, and is green.
 The structure-node count moved 258 → 260, re-derived. Fifth time tonight, every time the anatomy
 growing.
 
+
+## 388 — lit's calendar cell writes an id the page does not have (S2, UI-011)
+
+```
+packages/lit/src/components/datepicker-field.ts:367
+  id="${this.fieldId}__day__${cell.iso}"
+```
+
+That is the only cell renderer in the file — lines 358–369 build the class list, the id, the role. And
+the rendered element does not carry an id:
+
+```
+lit      <button type="button" role="gridcell" class="mdy-datepicker__cell …"
+                 tabindex="-1" aria-selected="false">          no id attribute
+plain    id="when__day__2026-07-26"                            42 of 42 cells
+angular  no id                                                 42 cells
+```
+
+**The source says one thing and the page says another**, which is the worst shape this register
+carries: a reader who opens that file concludes lit emits the id, and every review that reads the code
+rather than the DOM agrees with them. It is how `[385](#385)`'s cell row was nearly settled as *lit
+does not do this* when what lit does is write it and lose it.
+
+I have not established the mechanism and am not guessing at Lit's attribute binding. What is measured
+is the pair above.
+
+**And the line is a second copy of a rule the contract owns.** `datepicker-field-controller.ts:178` and
+`daterange-field-controller.ts:197` both compute `` `${widgetId}__day__${cell.iso}` ``; lit rebuilds
+the same string by hand rather than reading the projection's. So whichever way the cell id is settled —
+[ADR 0134](../../docs/architecture/0134-the-projection-decides-an-id.md) says apply what the projection
+emits, and the projection emits this — that line has to read it rather than reproduce it, or the two
+drift the day the format changes.
+
+The parallel-copy shape again, and the fourth of its family tonight: a hand-written `aria-haspopup` at
+ten openers, a local `_open` the controller never saw, an index moved before asking what to take, and
+now an id spelled twice.
+
+Owned by `esecutore`.
+
