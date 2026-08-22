@@ -90,8 +90,10 @@ because the mark belongs to the theme and a spec naming one would go red on a th
 differently. Red in all three today.
 
 The check that fails if this is satisfied in letter and violated in spirit: a renderer putting the glyph
-back as text while also painting one would pass the paint assertion. Nothing currently catches that, and
-it is the honest gap in this record.
+back as text while also painting one would pass the paint assertion. **That gap was named here and is
+now closed** — the same spec asserts each button's text is empty, beside asserting that it paints. The
+two are separate expectations on purpose: painted-and-written is not a partial success, and a single
+combined assertion would report which half failed less clearly than two report it.
 
 ## Security and privacy
 
