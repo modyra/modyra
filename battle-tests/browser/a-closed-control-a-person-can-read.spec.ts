@@ -138,6 +138,20 @@ for (const host of HOSTS) {
           `as decoration. Asserted as "it paints something" rather than as a glyph, because the mark ` +
           `belongs to the theme`,
       ).toBe(true);
+
+      // **And the mark is not also a character.**
+      // [ADR 0133](../../docs/architecture/0133-a-mark-that-is-never-text.md) decides the mark is
+      // drawn and never written, and named this as the gap in its own verification: a renderer that
+      // painted a mark *and* kept the glyph would satisfy the assertion above while doing the thing
+      // the record forbids. A character in the button is a renderer deciding what a remove button
+      // looks like, in three places, with a glyph no theme can change — and it is text a name can
+      // absorb the day a chip stops declaring its own `aria-label`.
+      expect(
+        button.text,
+        `the ${JSON.stringify(button.name)} button paints a mark and also writes ` +
+          `${JSON.stringify(button.text)} in its text. Painted and written are not additive: the ` +
+          `character is what a theme cannot change and what an accessible name can absorb`,
+      ).toBe("");
     }
   });
 
