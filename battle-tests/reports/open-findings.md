@@ -21379,3 +21379,36 @@ part of it. But two of them are S1 and one — the cross-runtime version disagre
 is cheap to fix while three runtimes are being kept in step and expensive once a document written for
 one is in somebody's repository.
 
+
+## 384 — the type-surface differ is sensitive to union member ordering (S2, API-001)
+
+Reported by `esecutore` rather than found by a battle, and it is the shape this register exists for: a
+tool and a person disagreed, and the disagreement was the tool's.
+
+Every accept tonight produced a dozen entries like
+
+```
+[major] widgetContract is now MdyWidgetDefinition<"errors" | "root" | "label" | ...>,
+        was MdyWidgetDefinition<"errorItem" | "errors" | ...>
+```
+
+— the same members, reordered, on kinds nothing touched. Adding one part to one contract reshuffles the
+union on nine Angular components, and on that basis alone the differ classified
+`MdyKeyBinding.requires was added (optional)` as **major** when it is additive.
+
+A union is a set. A differ that compares its members as an ordered sequence reports a rename of nothing
+as a breaking change, and the cost is not the noise: it is that a real major buried in twelve false
+ones is a major nobody reads. `CLAUDE.md`'s standing authority makes `contract:diff` the authority on
+what ships, and an authority that cries major on a reordering spends the trust it needs for the time
+it is right.
+
+`esecutore` accepted the batch and said so rather than leaving it in a log, which is the correct move
+and the reason this has a number.
+
+### Numbering, so two registers do not drift
+
+`esecutore3` assigned **380–383** to the four node-tier reds that predate this batch — the operand
+guard, the studio command's cost, the constructor that stored an argument it cannot use, and the
+cross-runtime version disagreement. Those numbers are theirs and are used here as given. This file
+continues at 384.
+

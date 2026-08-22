@@ -96,25 +96,30 @@ for (const host of HOSTS) {
   });
 
   /**
-   * A cue is not a mechanism, and the strip currently has only the cue.
+   * The cue and the mechanism are the same affordance, or nothing joins them.
    *
-   * The assertion above accepts an edge gradient, a count or a control — any of the three — because
-   * naming one would have decided the design. It went green on the gradient alone, which is the
-   * weakest of the three and the one
-   * [ADR 0127](../../docs/architecture/0127-a-strip-that-scrolls-against-the-practice.md) says is not
-   * enough: that record makes the scroll departure conditional on **a mechanism, not only a cue**, and
-   * on the overflow being announced independently of anything visual.
+   * The first version of this asked for a control whose label matched `/more|next|scroll/`, and it was
+   * wrong in the way this suite exists to catch: **a pointer with no horizontal axis can already press
+   * the trigger and get the popup, where every chosen value is listed and removable.** That is
+   * pressable, it is not a scroll, and it reveals the rest — so the mechanism was there and the
+   * assertion demanded a second one shaped like its own regular expression. Asked to build against it,
+   * a renderer would have added a button that exists to satisfy a matcher.
    *
-   * The programmatic half is now kept elsewhere — every chip states its position and set size, which
-   * `a-chip-that-does-not-say-where-it-is.spec.ts` holds. What is still missing is the half for a
-   * person using a pointer with no horizontal axis, which is most desktop mice: the gradient tells
-   * them there is more and offers them no way to reach it. A keyboard user has the roving index and a
-   * chip that scrolls into view on focus; they have nothing.
+   * What is actually missing is smaller and harder to fake: **nothing says how many are out of sight,
+   * and nothing connects the cue to the way through.** The gradient says *there is more* and names no
+   * number; the trigger reveals everything and says nothing about the hidden ones. A person is told a
+   * fact by one thing and offered an action by another, and has to guess they are related.
    *
-   * So this asks for a *control* — anything pressable that reveals the rest — and it is deliberately
-   * not satisfied by the strip being scrollable, because being scrollable is the thing they cannot do.
+   * So this asks for one affordance that does both: something pressable whose accessible name states
+   * how many are not visible. A `+6` beside the control satisfies it; a trigger renamed to say "Scelte,
+   * 6 more not shown" satisfies it; a bare arrow does not, and neither does static text.
+   *
+   * That is also the published answer. An outside review ranked an overflow counter second of five,
+   * behind wrapping the row, and was explicit that it **must be a real button that reveals the
+   * remainder, not static text** — static text tells a pointer user content exists and gives them no
+   * way to get it.
    */
-  test(`there is a way to reach what the strip is hiding, ${host.name}`, async ({ page }) => {
+  test(`something says how many are out of sight and can be pressed, ${host.name}`, async ({ page }) => {
     test.setTimeout(150_000);
     await open(page);
     const { root } = await bench(page, host, "full");
@@ -130,28 +135,28 @@ for (const host of HOSTS) {
         return at.left < box.left - 1 || at.right > box.right + 1;
       }).length;
       const named = (element: Element) =>
-        `${element.getAttribute("aria-label") ?? (element.textContent ?? "").trim()}`;
+        (element.getAttribute("aria-label") ?? (element.textContent ?? "").trim()).replace(/\s+/g, " ");
+      const pressable = Array.from(field.querySelectorAll("button, [role=button]")).map(named);
       return {
         hidden,
         chips: chips.length,
-        // Anything pressable that would bring the rest into view: a "+6", a scroll arrow, a control
-        // that opens the whole set. Not the strip itself — scrolling is what they cannot do.
-        controls: Array.from(field.querySelectorAll("button, [role=button]"))
-          .map(named)
-          .filter((name) => /\+\s*\d|more|altre|show all|scroll|avanti|indietro|next|prev/i.test(name)),
+        pressable,
+        // A number in the name of something pressable. Not a particular word, and not a number
+        // anywhere on the page: the fact and the way through have to be the same thing.
+        saysHowMany: pressable.filter((name) => /\d/.test(name)),
       };
     }, root);
 
     expect(reach, "nothing was mounted").not.toBeNull();
-    // The premise: something really is out of reach. A strip that fits owes no mechanism.
+    // The premise: something really is out of sight. A strip that fits owes no count.
     expect(reach!.hidden, `all ${reach!.chips} chips are in view, so this fixture hides nothing`).toBeGreaterThan(0);
 
     expect(
-      reach!.controls,
-      `${reach!.hidden} of ${reach!.chips} chips are outside the strip and nothing can be pressed to ` +
-        `reach them. The edge gradient says there is more; a person whose mouse has no horizontal ` +
-        `axis is told so and given no way to act on it, and forced-colors mode removes the gradient ` +
-        `entirely — so the readers most likely to be clipped are the ones the only cue does not reach`,
+      reach!.saysHowMany,
+      `${reach!.hidden} of ${reach!.chips} chips are out of sight and nothing pressable says so. What ` +
+        `can be pressed is ${JSON.stringify(reach!.pressable)}. The gradient says there is more and ` +
+        `names no number; the trigger reveals everything and mentions none of it — so the fact and the ` +
+        `way through are two different things and a person has to guess they are related`,
     ).not.toEqual([]);
   });
 
