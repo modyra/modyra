@@ -37,6 +37,46 @@ const CATALOG: ReadonlyArray<readonly [string, CustomElementConstructor]> = [
   ["mdy-form-errors", MdyFormErrorsElement],
 ];
 
+/**
+ * The element that draws a kind, or `null` for a kind this package does not draw.
+ *
+ * Published because a host otherwise keeps its own copy of this map, and a copy needs a fallback for
+ * the kind it does not find. The fallback every copy reaches for is a text field, and a text field is
+ * what `kind: "passwordd"` — one letter more than a real kind — then renders as: the value on screen,
+ * no error, and a page that looks finished.
+ *
+ * `null` is the answer that lets a host refuse instead of guessing. A kind this package does not draw
+ * is not a kind to draw as something else.
+ *
+ * Three kinds share one element and say which they are through `type`, the way a consumer writing
+ * lit by hand does: `<mdy-text-field type="email">`.
+ */
+// A null prototype, because these keys are data: a document declaring `kind: "__proto__"` reads
+// `Object.prototype` off a plain object, which is not `null` and is not an element either — so the
+// guard below would pass it on as a tag name.
+const TAG_FOR_KIND: Readonly<Record<string, string>> = Object.freeze(Object.assign(Object.create(null) as Record<string, string>, {
+  text: "mdy-text-field", email: "mdy-text-field", password: "mdy-text-field",
+  textarea: "mdy-textarea-field",
+  number: "mdy-number-field",
+  slider: "mdy-slider-field",
+  checkbox: "mdy-checkbox-field",
+  toggle: "mdy-toggle-field",
+  radio: "mdy-radio-group-field",
+  segmented: "mdy-segmented-field",
+  select: "mdy-select-field",
+  multiselect: "mdy-multiselect-field",
+  datepicker: "mdy-datepicker-field",
+  daterange: "mdy-daterange-field",
+  timepicker: "mdy-timepicker-field",
+  file: "mdy-file-field",
+  colors: "mdy-colors-field",
+}));
+
+/** The custom element that draws one kind, or `null` where this package draws none. */
+export function mdyLitTagFor(kind: string): string | null {
+  return TAG_FOR_KIND[kind] ?? null;
+}
+
 /** Registers the whole control catalog (idempotent). */
 export function defineMdyElements(): void {
   for (const [tag, ctor] of CATALOG) {
