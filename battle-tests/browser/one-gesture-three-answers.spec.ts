@@ -36,11 +36,16 @@ const OPTIONS = [
 ];
 
 /** One press down from nothing chosen, then confirm. The smallest gesture that has an answer. */
-async function chooseWithOneStep(page: import("@playwright/test").Page, host: (typeof HOSTS)[number], id: string) {
-  await page.evaluate(({ api, mountId, options }) => {
+async function chooseWithOneStep(
+  page: import("@playwright/test").Page,
+  host: (typeof HOSTS)[number],
+  id: string,
+  kind = "select",
+) {
+  await page.evaluate(({ api, mountId, options, k }) => {
     (window as never as Record<string, Record<string, (...args: never[]) => unknown>>)[api]
-      .mountFields(mountId, [{ name: "f", kind: "select", label: "Plan", searchable: true, options }] as never);
-  }, { api: host.api, mountId: id, options: OPTIONS });
+      .mountFields(mountId, [{ name: "f", kind: k, label: "Plan", searchable: true, options }] as never);
+  }, { api: host.api, mountId: id, options: OPTIONS, k: kind });
   await page.waitForTimeout(400);
 
   const control = page.locator(`[data-form="${id}"] [role="combobox"], [data-form="${id}"] select`).first();
@@ -87,3 +92,37 @@ test("one press down from nothing chosen reaches one value, in every renderer", 
       "control",
   ).toBe(1);
 });
+
+/**
+ * The same question of the kinds that carry a value behind a popup.
+ *
+ * Asked of `select` first because it was the cheapest, and the answer was worth asking twice. These
+ * two land on the **same** control in all three renderers — a text input, verified rather than
+ * assumed, because "the first focusable thing" is a different element in three anatomies and a
+ * divergence found that way would be the selector's.
+ *
+ * `colors` is deliberately not here. Its first focusable element is a swatch button in two renderers
+ * and the native colour input in the third, so the gesture reaches different controls and any
+ * disagreement says nothing about the keyboard model. That is a real difference in anatomy and a
+ * question for a different spec.
+ */
+for (const kind of ["datepicker", "timepicker"]) {
+  test(`one press down reaches one value for a ${kind}, in every renderer`, async ({ page }) => {
+    test.setTimeout(180_000);
+
+    const answers: Record<string, unknown> = {};
+    for (const host of HOSTS) {
+      await page.goto(host.page);
+      await page.waitForFunction((flag) => (window as never as Record<string, boolean>)[flag] === true, host.ready);
+      answers[host.name] = await chooseWithOneStep(page, host, `gesture-${kind}`, kind);
+    }
+
+    const distinct = [...new Set(Object.values(answers).map((each) => JSON.stringify(each)))];
+    expect(
+      distinct.length,
+      `the same keystrokes on a ${kind} reached different values: ${JSON.stringify(answers)}. All ` +
+        "three focus the same control — a text input — so this is the keyboard model diverging and " +
+        "not the spec reaching for different elements",
+    ).toBe(1);
+  });
+}
