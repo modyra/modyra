@@ -44,7 +44,8 @@ battle(
     const optIn = declared.filter((binding) => OPT_IN_INTENTS.includes(binding.intent));
 
     ctx.log.note("bindings whose intent needs a capability the field opts into", {
-      found: optIn.map((binding) => `${binding.kind} ${binding.key} ${binding.intent} when=${binding.when ?? "(none)"}`),
+      found: optIn.map((binding) =>
+        `${binding.kind} ${binding.key} ${binding.intent} when=${binding.when ?? "(none)"} requires=${binding.requires ?? "(none)"}`),
     });
 
     // The premise: the table declares such a binding at all. A table with none would pass this while
@@ -56,7 +57,14 @@ battle(
       detail: JSON.stringify(declared.map((binding) => binding.intent).filter((intent, at, all) => all.indexOf(intent) === at)),
     });
 
-    const unconditional = optIn.filter((binding) => binding.when === undefined || binding.when === null);
+    // **A precondition, not a particular field.** `when` says which state the widget must be in;
+    // `requires` says which capability the field must have declared. Either answers the question a
+    // reader is asking — *will an ordinary control honour this key* — and the table was given
+    // `requires` precisely because `when` could not express a field-level flag. A battle that insisted
+    // on `when` would have refused the better answer.
+    const unconditional = optIn.filter((binding) =>
+      (binding.when === undefined || binding.when === null)
+      && (binding.requires === undefined || binding.requires === null));
     expectEqual(unconditional.map((binding) => `${binding.kind} ${binding.key}`), [], {
       claimIds: ["A11Y-001"],
       what: "the table declares a key for a capability the field must opt into, with no precondition — so a consumer reading it cannot tell that key from one an ordinary control answers",
