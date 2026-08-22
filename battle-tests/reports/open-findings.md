@@ -22079,3 +22079,40 @@ recorded three times tonight in the other direction, where a fixture was tuned u
 A parked red with a stated condition is a decision. A parked red without one is a number nobody will
 ever take out.
 
+
+## 390 — a value that arrived out of bounds is silent until somebody touches it (S1, A11Y-001 UI-006)
+
+The refusal rule closed seven specs and opened two, and the two are the rule meeting a case it did not
+enumerate.
+
+```
+field       initialValue 150, validators { max: 50 }, untouched
+held        150
+shown       "150"
+aria-invalid false
+error text  ""
+internally  { kind: "validation", message: "Maximum value is 50", origin: "validation" }
+```
+
+The error exists and is withheld, because `errorsVisible` shows on touch or immediately for `shape`,
+`server` and `entry` — and a `max` validator's refusal is `validation`.
+
+**By the rule's own criterion it should be shown.** The distinction drawn was *the three a person can
+neither cause by inaction nor understand unless told*. Nobody typed 150; it was given to the field. A
+person cannot cause it by inaction and cannot understand it unless told, which is exactly the test.
+
+What separates it from the case the rule was written to fix is **whose value it is**:
+
+```
+required, untouched       about something the person has not done yet   shouting is premature
+out of bounds on arrival  about a value already in the field            silence is the wrong choice
+```
+
+Both are `origin: "validation"` today, so the contract cannot tell them apart — the same shape as the
+keyboard table before `requires`, and as `origin` itself before `shape`. The rule is right and its
+vocabulary is one word short: a refusal of *a value the field was given* is not a refusal of *a value
+the person entered*.
+
+Not a regression in the sense of a mistake. Seven specs closed on a rule that was missing before
+tonight, and this is the eighth case arriving at it. Owned by `esecutore`.
+
