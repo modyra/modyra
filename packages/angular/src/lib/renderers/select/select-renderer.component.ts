@@ -229,7 +229,10 @@ import { MdyDropdownBase } from "../dropdown-base";
                 [style.opacity]="(value() === null || value() === undefined) ? '0.6' : '1'"
           >
             @if (placeholder() || value() === null || value() === undefined) {
-              <option value="" disabled [selected]="value() === null || value() === undefined">
+              <!-- The entry for "nothing chosen", which is not an option the document declared. It
+                   wears the placeholder part so a reader can tell the two apart by the contract
+                   rather than by guessing at an empty label. -->
+              <option class="mdy-select__placeholder" value="" disabled [selected]="value() === null || value() === undefined">
                 {{ placeholder() || ' ' }}
               </option>
             }

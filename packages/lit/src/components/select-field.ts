@@ -307,7 +307,14 @@ export class MdySelectFieldElement extends MdyDropdownFieldElement<unknown | nul
       @keydown=${(event: KeyboardEvent) => this.stepNative(event, handle, options)}
       @blur=${() => { handle.markAsTouched(); this.requestUpdate(); }}
     >
-      ${offersEmpty ? html`<option value="" disabled ?selected=${empty}>${this.placeholder || " "}</option>` : nothing}
+      ${offersEmpty
+        ? html`<option
+            class="${this.partClass("placeholder")}"
+            value=""
+            disabled
+            ?selected=${empty}
+          >${this.placeholder || " "}</option>`
+        : nothing}
       ${options.map((option) => html`<option
         .value=${String(option.value)}
         ?disabled=${option.disabled === true}
