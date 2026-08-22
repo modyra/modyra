@@ -391,6 +391,16 @@ export function renderMultiselectField(
         queueMicrotask(() => chosenEls.get(key)?.focus());
         return;
       }
+      // The quantity, from the keyboard. The ± controls are `tabindex="-1"` pointer affordances, so
+      // these two keys are the only way to a counter chip's number without a mouse.
+      if (binding.intent === "step") {
+        event.preventDefault();
+        dispatch(event.key === "ArrowUp" ? { type: "increment", optionKey: key } : { type: "decrement", optionKey: key });
+        // The chip is rebuilt when its steppers come or go, so focus has to be put back on the one
+        // that replaced it — otherwise the second press of a spin goes to the document.
+        queueMicrotask(() => chosenEls.get(key)?.focus());
+        return;
+      }
       if (binding.intent === "remove") {
         event.preventDefault();
         // Backspace goes back, Delete goes on — the convention every text field on every platform

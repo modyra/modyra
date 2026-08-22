@@ -8,7 +8,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { JSDOM } from "jsdom";
-import { chipStripWheelDelta, keepKeyboardInPlay, visibleErrorsOf } from "../dist/index.js";
+import { MDY_COLOR_PRESETS, chipStripWheelDelta, keepKeyboardInPlay, rowRovingIndex, visibleErrorsOf } from "../dist/index.js";
 
 test("a wheel over a strip that does not overflow scrolls nothing", () => {
   // The guard, and the reason the function exists at all: a strip whose chips fit has nowhere to
@@ -103,4 +103,40 @@ test("what the field was handed speaks before anybody has touched it", () => {
     errors: () => [{ kind: "email", message: "Not an address", origin: "validation" }],
   });
   assert.deepEqual(given.errors().length && visibleErrorsOf(given).map((e) => e.message), ["Not an address"]);
+});
+
+test("a row walks with either axis and clamps at its ends", () => {
+  // Either axis, because a horizontal listbox is still a list: a person reaching for ArrowDown in a
+  // row of swatches means the next one.
+  assert.equal(rowRovingIndex("ArrowRight", 0, 5), 1);
+  assert.equal(rowRovingIndex("ArrowDown", 0, 5), 1);
+  assert.equal(rowRovingIndex("ArrowLeft", 3, 5), 2);
+  assert.equal(rowRovingIndex("ArrowUp", 3, 5), 2);
+  assert.equal(rowRovingIndex("Home", 3, 5), 0);
+  assert.equal(rowRovingIndex("End", 1, 5), 4);
+
+  // Clamps rather than wraps: reaching the end is something a person is told by staying there, not
+  // by finding themselves back at the beginning.
+  assert.equal(rowRovingIndex("ArrowRight", 4, 5), 4);
+  assert.equal(rowRovingIndex("ArrowLeft", 0, 5), 0);
+
+  // From nowhere, forward starts at the beginning and back starts at the end.
+  assert.equal(rowRovingIndex("ArrowRight", -1, 5), 0);
+  assert.equal(rowRovingIndex("ArrowLeft", -1, 5), 4);
+
+  // The binding's direction wins over the key's, which is what makes a right-to-left row read right.
+  assert.equal(rowRovingIndex("ArrowLeft", 2, 5, 1), 3);
+  assert.equal(rowRovingIndex("ArrowRight", 2, 5, -1), 1);
+
+  // A key the row does not answer, and a row with nothing in it.
+  assert.equal(rowRovingIndex("Enter", 2, 5), null);
+  assert.equal(rowRovingIndex("ArrowRight", 0, 0), null);
+});
+
+test("the default palette is hues and neutrals, and every entry is a colour", () => {
+  // The suggestion the library makes when a document names none. Three renderers had three lists;
+  // this is the one they now share, so what it holds is worth stating.
+  assert.ok(MDY_COLOR_PRESETS.length >= 8, "a palette too short to suggest anything");
+  for (const colour of MDY_COLOR_PRESETS) assert.match(colour, /^#[0-9a-f]{6}$/i, `${colour} is not a hex colour`);
+  assert.equal(new Set(MDY_COLOR_PRESETS).size, MDY_COLOR_PRESETS.length, "a palette offering the same colour twice");
 });

@@ -308,8 +308,17 @@ function keyboardFor(kind: MdyWidgetKind): readonly MdyKeyBinding[] {
     bindings.push({ key: "Home", when: "closed", intent: "move", by: -1, toEnd: true, on: "chip" });
     bindings.push({ key: "End", when: "closed", intent: "move", by: 1, toEnd: true, on: "chip" });
     // Taking one off from the keyboard, both spellings: `Backspace` is what a person reaches for
-    // and `Delete` is what the platform's own lists answer to. Quantity chips are buttons (ADR 0138),
-    // not spinbuttons; arrows move the chip, not its value.
+    // The quantity, on a chip that has one. ADR 0138 took the `spinbutton` role off the chip because
+    // a control cannot be both the item at position 3 of 12 and the number 3 of a range — it did not
+    // take the quantity away, and the record says so. The ± controls are `tabindex="-1"` pointer
+    // affordances, so without these two keys a quantity is reachable by pointer and by nothing else:
+    // WCAG 2.1.1, which is not a cost any record traded for a role.
+    //
+    // They collide with nothing. The strip's own arrows are left and right; the `open` bindings that
+    // once claimed every part now name the control they open from.
+    bindings.push({ key: "ArrowUp", when: "closed", intent: "step", on: "chip" });
+    bindings.push({ key: "ArrowDown", when: "closed", intent: "step", on: "chip" });
+    // and `Delete` is what the platform's own lists answer to.
     bindings.push({ key: "Backspace", when: "closed", intent: "remove", on: "chip" });
     bindings.push({ key: "Delete", when: "closed", intent: "remove", on: "chip" });
   }

@@ -668,6 +668,16 @@ export class MdyMultiselectComponent<TValue = string>
       this.focusChip(optionKey);
       return;
     }
+    // The quantity, from the keyboard. The ± controls are `tabindex="-1"` pointer affordances, so
+    // these two keys are the only way to a counter chip's number without a mouse.
+    if (binding.intent === "step") {
+      event.preventDefault();
+      this.controller()?.dispatch(
+        event.key === "ArrowUp" ? { type: "increment", optionKey } : { type: "decrement", optionKey },
+      );
+      this.focusChip(optionKey);
+      return;
+    }
     if (binding.intent === "remove") {
       event.preventDefault();
       const held = this.chosen().find((c) => c.key === optionKey);
