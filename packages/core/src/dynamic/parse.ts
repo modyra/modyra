@@ -687,12 +687,14 @@ export function parseDynamicFields(input: unknown): MdyDynamicField[] {
     "fields" in input
   ) {
     const envelope = input as { version?: unknown; fields?: unknown };
-    if (
-      envelope.version !== 1 && envelope.version !== 2
-      && envelope.version !== 3 && envelope.version !== 4
-    ) {
+    if (envelope.version !== 2 && envelope.version !== 3 && envelope.version !== 4) {
       warnDev(
-        `Unsupported dynamic form config version ${String(envelope.version)} — expected 1, 2, 3 or 4.`,
+        `Unsupported dynamic form config version ${String(envelope.version)} — this contract has ` +
+        "versions 2, 3 and 4." +
+        (envelope.version === 1
+          ? ' Version 1 was read by this runtime alone and is no longer supported — set "version": 2, ' +
+            "which reads the same fields."
+          : ""),
       );
       return [];
     }
@@ -1082,7 +1084,6 @@ export const MDY_DYNAMIC_DIAGNOSTICS: ReadonlyArray<{
   Object.freeze({ code: "MDY_DYNAMIC_PATTERN_TOO_COSTLY", phrase: "backtracks exponentially" }),
   Object.freeze({ code: "MDY_DYNAMIC_COUNT_INCOMPLETE", phrase: "a floor and not a total" }),
   Object.freeze({ code: "MDY_DYNAMIC_UNKNOWN_MEMBER", phrase: "which this contract does not declare" }),
-  Object.freeze({ code: "MDY_DYNAMIC_DEPRECATED_VERSION", phrase: "Version 1 is deprecated" }),
   Object.freeze({ code: "MDY_DYNAMIC_UNHONOURABLE_GRANULARITY", phrase: "granularity this reader cannot honour" }),
   Object.freeze({ code: "MDY_DYNAMIC_UNHONOURABLE_FORMAT", phrase: "format this reader cannot honour" }),
   Object.freeze({ code: "MDY_DYNAMIC_UNOPENABLE_VIEW", phrase: "view this reader cannot open" }),
@@ -1591,7 +1592,7 @@ export function parseDynamicForm(
     ? rawEnvelope.version
     : undefined;
   const versionUnderstood = versionDeclared === undefined
-    || versionDeclared === 1 || versionDeclared === 2 || versionDeclared === 3 || versionDeclared === 4;
+    || versionDeclared === 2 || versionDeclared === 3 || versionDeclared === 4;
   if (!versionUnderstood) {
     return {
       ok: false,
@@ -1608,9 +1609,15 @@ export function parseDynamicForm(
         severity: "error",
         path: "/version",
         message:
-          `Unsupported dynamic form config version ${JSON.stringify(versionDeclared)} — this reader ` +
-          "has versions 1, 2, 3 and 4. The document is from a publisher this reader does not know, " +
-          "and nothing in it was read.",
+          `Unsupported dynamic form config version ${JSON.stringify(versionDeclared)} — this contract ` +
+          "has versions 2, 3 and 4, and nothing in this document was read. " +
+          (versionDeclared === 1
+            // The one refusal people will meet with a document that worked yesterday, so it carries
+            // the whole migration rather than the fact of the refusal: version 1 differs from 2 in
+            // the number and in nothing else.
+            ? 'Version 1 was read by this runtime alone and is no longer supported — set "version": 2, ' +
+              "which reads the same fields."
+            : "The document is from a publisher this reader does not know."),
       }],
     };
   }
@@ -1648,7 +1655,10 @@ export function parseDynamicForm(
       requiresContext?: unknown;
     }
     : undefined;
-  const version: 1 | 2 | 3 | 4 | null = Array.isArray(input) || envelope?.version === 1
+  // A bare field array declares no version and is the shape most callers pass; it is read as the
+  // flat document it is. A declared `version: 1` never reaches here — it is refused above, because a
+  // version two of the three runtimes refuse is not a version this contract has (ADR 0136).
+  const version: 1 | 2 | 3 | 4 | null = Array.isArray(input)
     ? 1 : envelope?.version === 2 ? 2 : envelope?.version === 3 ? 3 : envelope?.version === 4 ? 4 : null;
   // v3 is v2 plus per-slot placement: every envelope member is read the same way, and only the
   // layout validator is told which vocabulary the document is entitled to use.
@@ -1723,26 +1733,6 @@ export function parseDynamicForm(
   /** Fields already placed by an accepted layout node — a field belongs in exactly one slot. */
   const placed = new Set<string>();
 
-  // A v1 envelope carrying a member its version predates. The slot is read by nothing here — v1 is
-  // fields and nothing else — so it was dropped in silence: an author who wrote rules against the
-  // wrong version number got a document the parser called clean, a lint that had nothing to report,
-  // and a form where the rules simply were not there. Reported rather than accepted, because the
-  // three ways they could have learned are the three that said nothing.
-  // Version 1 is still read, and it is the oldest shape there is: no published schema describes it,
-  // no fixture measures it, and the two other runtimes of this contract do not have it. A document
-  // written against it is told, once, in the one place that reads it. A bare field array is not that
-  // document: it declares no version at all, and it is the shape most callers pass.
-  if (envelope?.version === 1) {
-    diagnostics.push({
-      code: "MDY_DYNAMIC_DEPRECATED_VERSION",
-      severity: "warning",
-      path: "/version",
-      message:
-        "Version 1 is deprecated: it declares fields and nothing else, no published schema " +
-        "describes it, and the Rust and Java readers of this contract do not have it. Raise the " +
-        'document to "version": 2, which reads the same fields.',
-    });
-  }
   // A member no version of this contract has. A document reaching for something the contract does
   // not do — a computation, a slot an author expected to exist — parsed clean and rendered a form
   // that quietly did not do it.
@@ -1780,7 +1770,7 @@ export function parseDynamicForm(
         path: `/${slot}`,
         // The registry's phrase for this code has to appear in the sentence: a consumer keys on the
         // code, and `dynamic-diagnostics.test.mjs` is what keeps the two from drifting apart.
-        message: `Unsupported dynamic form config version for "${slot}": version 1 declares fields and nothing else. Set "version": 2 to use it.`,
+        message: `Unsupported dynamic form config version for "${slot}": a document that declares no version reads fields and nothing else. Set "version": 2 to use it.`,
       });
     }
   }

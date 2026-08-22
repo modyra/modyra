@@ -74,8 +74,6 @@ const REFUSALS = {
   // A member nobody declared, in the slot a document is most often assembled by hand: the parser is
   // the only one of the three checks a stored or generated document ever meets.
   MDY_DYNAMIC_UNKNOWN_MEMBER: [{ name: "a", kind: "text", nonsenseKey: 1 }],
-  // The oldest shape of the contract, still read and no longer recommended.
-  MDY_DYNAMIC_DEPRECATED_VERSION: { version: 1, fields: [{ name: "a", kind: "text" }] },
   MDY_DYNAMIC_COUNT_INCOMPLETE: (() => {
     const children = {};
     for (let index = 0; index <= 100_000; index += 1) {
@@ -237,41 +235,72 @@ test("a finding names the entry it is about, not the array it is in", () => {
   );
 });
 
+/**
+ * The refusal a document that worked yesterday will meet.
+ *
+ * ADR 0136 stops this runtime accepting `version: 1`, because a version the other two refuse is not a
+ * version the contract has. The record states what the refusal owes and says no gate reads a message,
+ * so this is that gate: the version refused, the versions accepted, and the one-line migration.
+ */
+test("refusing version one says which version, which versions it has, and what to write instead", () => {
+  const refused = parseDynamicForm({ version: 1, fields: [{ name: "a", kind: "text" }] });
+
+  assert.equal(refused.ok, false, "a version this contract does not have built a form");
+  assert.deepEqual(refused.fields, [], "a refused document handed fields over anyway");
+  assert.deepEqual(
+    refused.diagnostics.map((each) => [each.code, each.path]),
+    [["MDY_DYNAMIC_UNSUPPORTED_VERSION", "/version"]],
+  );
+
+  const said = refused.diagnostics[0].message;
+  assert.match(said, /\b1\b/, "the refusal does not name the version it refused");
+  assert.match(said, /2, 3 and 4/, "the refusal does not name the versions it has");
+  assert.match(said, /"version": 2/, "the refusal does not say what to write instead");
+});
+
+/** The shape most callers pass declares no version at all, and it is not what was refused. */
+test("a bare field array is read, not refused", () => {
+  const parsed = parseDynamicForm([{ name: "a", kind: "text" }]);
+  assert.equal(parsed.ok, true);
+  assert.equal(parsed.fields.length, 1);
+});
+
 test("a member a version predates is named, not ignored", () => {
-  // Version 1 is a flat field list and nothing else: `layout`, `rules` and `validations` are not in
-  // its vocabulary. Dropped in silence, an author who wrote rules against the wrong version number
-  // got a document the parser called clean, a lint with nothing to report, and a form where the
-  // rules simply were not there — the three places they could have learned, all quiet.
-  const v1 = (extra) => ({
-    version: 1,
-    id: "f",
-    fields: [{ name: "x", kind: "text", label: "X" }],
-    ...extra,
-  });
-  const rule = { effect: "hidden", target: "x", when: { field: "x", operator: "equals", value: "a" } };
-
-  for (const [slot, extra] of Object.entries({
-    rules: { rules: [rule] },
-    layout: { layout: [{ kind: "section", id: "s", children: ["x"] }] },
-    validations: { validations: [{ when: { op: "equals", operands: [{ path: "x" }, "a"] }, message: "no" }] },
-  })) {
-    const parsed = parseDynamicForm(v1(extra), { mode: "lenient" });
-    const named = parsed.diagnostics.filter((each) => each.path === `/${slot}`);
-    assert.equal(named.length, 1, `${slot} was dropped without a word`);
-    assert.equal(named[0].code, "MDY_DYNAMIC_UNSUPPORTED_VERSION");
-  }
-
-  // The control, and it is what makes the three above about the member rather than about version 1:
-  // a v1 document that stays inside its own vocabulary parses clean in the strictest mode there is.
-  assert.equal(parseDynamicForm(v1({}), { mode: "strict" }).ok, true);
-
-  // And the same members at the version that has them are read, not reported.
-  const v2 = parseDynamicForm({
+  // The member that arrived with version 4, on a document that says 2. Dropped in silence, an author
+  // who wrote it against the wrong version number got a document the parser called clean, a lint with
+  // nothing to report, and a form that read no context — the three places they could have learned,
+  // all quiet.
+  const predates = parseDynamicForm({
     version: 2,
     id: "f",
     fields: [{ name: "x", kind: "text", label: "X" }],
-    rules: [rule],
+    requiresContext: ["role"],
+  }, { mode: "lenient" });
+  const named = predates.diagnostics.filter((each) => each.path === "/requiresContext");
+  assert.equal(named.length, 1, "requiresContext was dropped without a word");
+  assert.equal(named[0].code, "MDY_DYNAMIC_UNSUPPORTED_VERSION");
+
+  // The control: the same member at the version that has it is read, not reported.
+  const v4 = parseDynamicForm({
+    version: 4,
+    id: "f",
+    fields: [{ name: "x", kind: "text", label: "X" }],
+    requiresContext: ["role"],
   }, { mode: "strict" });
-  assert.equal(v2.ok, true);
-  assert.equal(v2.rules.length, 1);
+  assert.equal(v4.ok, true);
+
+  // And the whole document, where the version itself is the one this contract does not have: the
+  // slots are not reported one by one, because the answer is not that `rules` is misplaced.
+  const retired = parseDynamicForm({
+    version: 1,
+    id: "f",
+    fields: [{ name: "x", kind: "text", label: "X" }],
+    rules: [{ effect: "hidden", target: "x", when: { field: "x", operator: "equals", value: "a" } }],
+  }, { mode: "lenient" });
+  assert.deepEqual(
+    retired.diagnostics.map((each) => each.path),
+    ["/version"],
+    "a version this contract does not have was reported as a misplaced member",
+  );
 });
+
