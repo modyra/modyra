@@ -33,10 +33,12 @@ const HERE = dirname(new URL(import.meta.url).pathname);
 /** The stylesheets the package ships, as built. The host page carries none of its own. */
 const SHIPPED = resolve(HERE, "..", "..", "packages", "styles", "dist");
 
-const HOSTS = [
-  { name: "plain", page: "/index.html", ready: "battleReady", api: "battle" },
-  { name: "lit", page: "/lit.html", ready: "battleLitReady", api: "battleLit" },
-];
+// **Every renderer, from the shared list.** This file kept one of its own with plain and lit
+// in it. That was never a scope decision: the angular host published six of the twenty-two
+// doors these specs need, so a spec that wanted one it lacked left the renderer out, and the
+// next reader copied the list. Sixty-eight files came to exclude it that way. The doors are
+// open now.
+import { HOSTS } from "./bench";
 
 const KINDS = ["text", "number", "checkbox", "toggle", "segmented", "radio", "select", "multiselect", "file"];
 const OPTIONS = [{ value: "a", label: "A" }, { value: "b", label: "B" }];
