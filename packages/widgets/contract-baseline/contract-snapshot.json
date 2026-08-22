@@ -1932,7 +1932,7 @@
           "parent": "trigger",
           "optional": false,
           "repeated": false,
-          "role": null,
+          "role": "list",
           "classes": [
             "mdy-multiselect__chips"
           ],
@@ -1943,7 +1943,7 @@
           "parent": "chips",
           "optional": true,
           "repeated": true,
-          "role": "group",
+          "role": "listitem",
           "classes": [
             "mdy-chip",
             "mdy-chip--value"
