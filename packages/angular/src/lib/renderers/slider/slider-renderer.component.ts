@@ -23,6 +23,7 @@ import { inputText } from "../renderer-projection";
     <mdy-control-label
       [label]="label()"
       [forId]="fieldId"
+      [hasError]="paintsAsInvalid()"
       [required]="isRequired()"
       [filled]="true"
       [showInlineError]="inlineErrorShown()"

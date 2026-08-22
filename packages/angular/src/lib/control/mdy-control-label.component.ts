@@ -30,7 +30,7 @@ import { MdyInlineErrorIconComponent } from "./inline-error-icon.component";
         [attr.id]="renderedId()"
         class="mdy-label"
         [class.mdy-label--filled]="filled()"
-        [class.mdy-label--has-error]="showInlineError()"
+        [class.mdy-label--has-error]="hasError() || showInlineError()"
       ><!--
         The text and the marker sit against each other on purpose. A newline between them is a text
         node, and a text node is part of the computed accessible name: the control ends up called
@@ -54,6 +54,16 @@ import { MdyInlineErrorIconComponent } from "./inline-error-icon.component";
 export class MdyControlLabelComponent {
   /** The label text. If empty, renders nothing. */
   readonly label = input<string>("");
+
+  /**
+   * Whether the field this label belongs to is failing.
+   *
+   * Distinct from `showInlineError`, which says *where* the message is drawn. The label used to take
+   * its state from that alone, so a field showing its errors in a list below — the default — had a
+   * label that never marked itself, and a theme keying off the class painted nothing on the field
+   * the form had refused.
+   */
+  readonly hasError = input<boolean>(false);
 
   /** The `id` of the input this label is associated with (maps to `[for]`). */
   readonly forId = input<string>("");

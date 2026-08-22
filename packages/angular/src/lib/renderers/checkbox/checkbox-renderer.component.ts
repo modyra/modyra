@@ -30,6 +30,7 @@ import { MdyErrorListComponent } from "../../control/error-list.component";
       />
       <label
         class="mdy-label"
+        [class.mdy-label--has-error]="paintsAsInvalid()"
         [for]="fieldId"
         [title]="inlineErrorShown() ? inlineErrorText() : null"
       >

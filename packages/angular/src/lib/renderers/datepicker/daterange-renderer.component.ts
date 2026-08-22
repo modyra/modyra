@@ -55,6 +55,7 @@ import { inputText, isoDateText } from "../renderer-projection";
       <mdy-control-label
         [label]="label()"
         [forId]="fieldId + '-start'"
+        [hasError]="paintsAsInvalid()"
       [widgetId]="fieldId"
         [required]="isRequired()"
         [filled]="true"
@@ -64,7 +65,7 @@ import { inputText, isoDateText } from "../renderer-projection";
     }
 
     <div class="mdy-datepicker" #wrapper>
-      <div class="mdy-input-wrapper mdy-daterange__group" [class.mdy-input-wrapper--disabled]="isDisabled()">
+      <div [class]="wrapperClasses() + ' mdy-daterange__group'">
         <span class="mdy-daterange__input-sizer" [attr.data-value]="displayStart() || startPlaceholder()">
           <input
             #startInput

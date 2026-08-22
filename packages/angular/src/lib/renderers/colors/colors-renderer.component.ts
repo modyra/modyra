@@ -43,6 +43,7 @@ import { MdyOverlayPanelComponent } from "../../core/overlay-panel.component";
     <mdy-control-label
       [label]="label()"
       [forId]="hexInputId"
+      [hasError]="paintsAsInvalid()"
       [widgetId]="fieldId"
       [required]="isRequired()"
       [filled]="!!value()"
@@ -51,7 +52,7 @@ import { MdyOverlayPanelComponent } from "../../core/overlay-panel.component";
     />
 
     <div class="mdy-colors" #wrapper [class.mdy-colors--open]="open()">
-      <div class="mdy-input-wrapper" [class.mdy-input-wrapper--disabled]="isDisabled()">
+      <div [class]="wrapperClasses()">
 
         <!-- Color Preview -->
         <div class="mdy-input-wrapper__inliner">

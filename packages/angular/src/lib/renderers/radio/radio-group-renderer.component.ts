@@ -23,6 +23,7 @@ import { MdySelectOption } from "../../core/types";
     <mdy-control-label
       [label]="label()"
       [labelId]="fieldId + '-label'"
+      [hasError]="paintsAsInvalid()"
       [required]="isRequired()"
       [filled]="value() !== null"
       [showInlineError]="inlineErrorShown()"

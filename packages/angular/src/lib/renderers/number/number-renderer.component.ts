@@ -31,12 +31,13 @@ import { inputNumber } from "../renderer-projection";
     <mdy-control-label
       [label]="label()"
       [forId]="fieldId"
+      [hasError]="paintsAsInvalid()"
       [required]="isRequired()"
       [filled]="value() !== null"
       [showInlineError]="inlineErrorShown()"
       [errorText]="inlineErrorText()"
     />
-    <div class="mdy-input-wrapper" [class.mdy-input-wrapper--disabled]="isDisabled()">
+    <div [class]="wrapperClasses()">
       @if (prefix(); as p) {
         <div class="mdy-input-prefix">
           <ng-container [ngTemplateOutlet]="p.template" />

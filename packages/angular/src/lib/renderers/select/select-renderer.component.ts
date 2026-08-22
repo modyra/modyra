@@ -61,6 +61,7 @@ import { MdyDropdownBase } from "../dropdown-base";
     <mdy-control-label
       [label]="label()"
       [forId]="searchable() || optionTpl() ? triggerId() : fieldId"
+      [hasError]="paintsAsInvalid()"
       [required]="isRequired()"
       [filled]="value() !== null"
       [showInlineError]="inlineErrorShown()"
@@ -70,7 +71,7 @@ import { MdyDropdownBase } from "../dropdown-base";
     @if (optionTpl() || searchable()) {
       <!-- Custom dropdown -->
       <div class="mdy-select" #wrapper>
-        <div class="mdy-input-wrapper" [class.mdy-input-wrapper--disabled]="isDisabled()">
+        <div [class]="wrapperClasses()">
           @if (prefix(); as p) {
             <div class="mdy-input-prefix">
               <ng-container [ngTemplateOutlet]="p.template" />
@@ -205,7 +206,7 @@ import { MdyDropdownBase } from "../dropdown-base";
       </div>
     } @else {
       <!-- Native select fallback -->
-      <div class="mdy-input-wrapper" [class.mdy-input-wrapper--disabled]="isDisabled()">
+      <div [class]="wrapperClasses()">
          @if (prefix(); as p) {
             <div class="mdy-input-prefix">
               <ng-container [ngTemplateOutlet]="p.template" />

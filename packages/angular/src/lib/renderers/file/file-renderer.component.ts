@@ -23,6 +23,7 @@ import { MDY_I18N_MESSAGES } from "../../core/i18n";
     <mdy-control-label
       [label]="label()"
       [forId]="fieldId"
+      [hasError]="paintsAsInvalid()"
       [required]="isRequired()"
       [filled]="chosen().length > 0"
       [showInlineError]="inlineErrorShown()"

@@ -36,7 +36,7 @@ declare const ngDevMode: boolean | undefined;
 import { MdyPrefixDirective } from "./prefix.directive";
 import { MdySuffixDirective } from "./suffix.directive";
 import { MdySupportingTextDirective } from "./supporting-text.directive";
-import { errorsVisible, holdsUneditedValue, reportIdCollision, shownErrors, showsAsInvalid } from "@modyra/widgets";
+import { MDY_FIELD_STATE_CLASSES, errorsVisible, holdsUneditedValue, reportIdCollision, shownErrors, showsAsInvalid, stateClass } from "@modyra/widgets";
 import type { MdyValueKind } from "@modyra/core";
 
 /** Global counter for generating unique field IDs. */
@@ -419,6 +419,26 @@ export abstract class MdyBaseControl<TValue = unknown> implements OnInit {
   protected readonly paintsAsInvalid: Signal<boolean> = computed(() =>
     showsAsInvalid({ valid: this.isValid(), disabled: this.isDisabled() }),
   );
+  /**
+   * The classes on the wrapper that holds the control, which is where a field shows it is unusable,
+   * locked or wrong.
+   *
+   * Composed here from the contract's own table rather than spelled per template. Every renderer
+   * wrote the base class and bound `--disabled` beside it, and none of them bound the other two the
+   * contract lists: a field the form had refused looked exactly like one it had accepted, and a
+   * field locked for review exactly like one waiting to be filled in. The error class follows
+   * `paintsAsInvalid`, the same answer `aria-invalid` takes, so what a theme paints and what a
+   * screen reader is told cannot disagree.
+   */
+  protected readonly wrapperClasses: Signal<string> = computed(() => {
+    const base = MDY_FIELD_STATE_CLASSES.control;
+    const classes = [base];
+    if (this.isDisabled()) classes.push(stateClass(base, "disabled"));
+    if (this.isReadonly()) classes.push(stateClass(base, "readonly"));
+    if (this.paintsAsInvalid()) classes.push(stateClass(base, "error"));
+    return classes.join(" ");
+  });
+
   /** Effective aria-disabled: explicit input overrides field state. */
   protected readonly effectiveAriaDisabled: Signal<boolean> = computed(
     () => this.ariaDisabled() ?? this.isDisabled(),

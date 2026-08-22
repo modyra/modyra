@@ -57,6 +57,7 @@ import { MdyTimepickerClockComponent } from "./timepicker-clock.component";
     <mdy-control-label
       [label]="label()"
       [forId]="fieldId"
+      [hasError]="paintsAsInvalid()"
       [required]="isRequired()"
       [filled]="value() !== null"
       [showInlineError]="inlineErrorShown()"
@@ -64,7 +65,7 @@ import { MdyTimepickerClockComponent } from "./timepicker-clock.component";
     />
 
     <div class="mdy-timepicker" #wrapper>
-      <div class="mdy-input-wrapper" [class.mdy-input-wrapper--disabled]="isDisabled()">
+      <div [class]="wrapperClasses()">
         @if (prefix(); as p) {
            <div class="mdy-input-prefix">
              <ng-container [ngTemplateOutlet]="p.template" />
