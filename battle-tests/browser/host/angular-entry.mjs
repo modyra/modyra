@@ -60,7 +60,7 @@ const settled = () => new Promise((resolve) => requestAnimationFrame(() => resol
 
 window.battleAngular = {
   /** Build a form over `fields` and render it, as `<mdy-dynamic-form [fields]>` does. */
-  async mountFields(id, fields) {
+  async mountFields(id, fields, options = {}) {
     const host = document.createElement("section");
     host.dataset.form = id;
     document.querySelector("#stage").append(host);
@@ -73,6 +73,9 @@ window.battleAngular = {
       // render of the defaults followed by a correction — the two are distinguishable in the DOM and
       // only the first is what a consumer's template produces.
       reference.setInput("fields", fields);
+      if (options.idPrefix !== undefined && options.idPrefix !== null) {
+        reference.setInput("idScope", String(options.idPrefix));
+      }
       application.attachView(reference.hostView);
       const submitted = [];
       reference.instance.submitted?.subscribe?.((event) => submitted.push(event?.value ?? event));
