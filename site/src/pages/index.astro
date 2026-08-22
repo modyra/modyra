@@ -28,6 +28,20 @@ const form = useMdyDynamicForm(doc.fields); // React
   eyebrow="Typed form engine for TypeScript"
   ogImage="brand/05-social/og-home.png"
 >
+  <script
+    slot="head"
+    type="application/ld+json"
+    set:html={JSON.stringify({
+      '@context': 'https://schema.org',
+      '@type': 'SoftwareSourceCode',
+      name: 'Modyra',
+      description: 'A typed form engine for TypeScript: one validated contract drives forms in any framework, from any backend.',
+      codeRepository: 'https://github.com/modyra/modyra',
+      programmingLanguage: 'TypeScript',
+      license: 'https://github.com/modyra/modyra/blob/main/LICENSE',
+      version: '2.4.0',
+    })}
+  />
   <section class="hero">
     <h1>One form contract. Every framework. Any backend.</h1>
     <p class="lede">
@@ -227,4 +241,11 @@ const form = useMdyDynamicForm(doc.fields); // React
       setTimeout(() => { button.textContent = 'Copy'; }, 1600);
     });
   });
+
+  // Reduced motion wins over autoplay: the demo stays one click away.
+  const demoVideo = document.querySelector<HTMLVideoElement>('.demo video');
+  if (demoVideo && matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    demoVideo.removeAttribute('autoplay');
+    demoVideo.pause();
+  }
 </script>

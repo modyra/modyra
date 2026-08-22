@@ -177,8 +177,7 @@ function cardHtml(title, subtitle) {
     background:linear-gradient(135deg,#0E0F16 0%,#1a1b2e 100%);color:#F8FAFC;
     font-family:-apple-system,'SF Pro Display',sans-serif;text-align:center;">
     <div style="font-size:52px;font-weight:800;letter-spacing:-0.02em;max-width:900px;line-height:1.15;
-      background:linear-gradient(90deg,#6458EF,#A855F7,#FF6577);-webkit-background-clip:text;
-      background-clip:text;color:transparent;">${title}</div>
+      color:#FF6577;">${title}</div>
     <div style="font-size:22px;color:#94A3B8;max-width:760px;line-height:1.5;">${subtitle}</div>
   </body></html>`;
 }

@@ -32,6 +32,7 @@ const based = (path: string) =>
     <meta name="twitter:description" content={description} />
     <meta name="twitter:image" content={new URL(based(ogImage), Astro.site)} />
     <title>{title}</title>
+    <slot name="head" />
     <CloudflareAnalytics />
   </head>
   <body>
