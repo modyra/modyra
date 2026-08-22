@@ -26,7 +26,7 @@ import {
   MdySignal,
 } from "@modyra/core";
 import type { MdyTimeFormat } from "@modyra/core/datetime";
-import { layoutNodeAttributes, layoutSlotStyle, MDY_LAYOUT_CLASSES, MDY_TIMEPICKER_DEFAULT_FORMAT, MDY_TIMEPICKER_INITIAL_VIEW } from "@modyra/widgets";
+import { layoutNodeAttributes, layoutSlotStyle, MDY_COLOR_PRESETS, MDY_LAYOUT_CLASSES, MDY_TIMEPICKER_DEFAULT_FORMAT, MDY_TIMEPICKER_INITIAL_VIEW } from "@modyra/widgets";
 import { angularReactivity } from "../core/reactivity-angular";
 import { MdyFormSubmitEvent } from "../core/types";
 import { MdyFormComponent } from "../form/mdy-form.component";
@@ -237,6 +237,8 @@ import { MdyToggleComponent } from "../renderers/toggle/toggle-renderer.componen
               />
             }
             @case ("select") {
+              <!-- searchable decides which control this is: a native chooser, or a combobox with
+                   a filter. Unbound, a document asking for one got the other and nothing said so. -->
               <mdy-control-select
                 [name]="f.name"
                 [idScope]="idScope()"
@@ -244,6 +246,7 @@ import { MdyToggleComponent } from "../renderers/toggle/toggle-renderer.componen
                 [supportingText]="f.supportingText"
                 [placeholder]="f.placeholder ?? ''"
                 [options]="f.options"
+                [searchable]="asOptions(f).searchable ?? false"
                 [initialValue]="emptyFor(f)"
               />
             }
@@ -288,6 +291,8 @@ import { MdyToggleComponent } from "../renderers/toggle/toggle-renderer.componen
                 [idScope]="idScope()"
                 [label]="f.label ?? ''"
                 [supportingText]="f.supportingText"
+                [minDate]="asMore(f).minDate ?? null"
+                [maxDate]="asMore(f).maxDate ?? null"
                 [initialValue]="emptyFor(f)"
               />
             }
@@ -314,6 +319,8 @@ import { MdyToggleComponent } from "../renderers/toggle/toggle-renderer.componen
                 [idScope]="idScope()"
                 [label]="f.label ?? ''"
                 [supportingText]="f.supportingText"
+                [minDate]="asMore(f).minDate ?? null"
+                [maxDate]="asMore(f).maxDate ?? null"
                 [initialValue]="emptyFor(f)"
               />
             }
@@ -323,6 +330,8 @@ import { MdyToggleComponent } from "../renderers/toggle/toggle-renderer.componen
                 [idScope]="idScope()"
                 [label]="f.label ?? ''"
                 [supportingText]="f.supportingText"
+                [accept]="asMore(f).accept ?? ''"
+                [multiple]="asMore(f).multiple ?? false"
               />
             }
             @case ("colors") {
@@ -331,6 +340,7 @@ import { MdyToggleComponent } from "../renderers/toggle/toggle-renderer.componen
                 [idScope]="idScope()"
                 [label]="f.label ?? ''"
                 [supportingText]="f.supportingText"
+                [presets]="asMore(f).presets ?? defaultPresets"
                 [initialValue]="emptyFor(f)"
               />
             }
@@ -346,6 +356,8 @@ export class MdyDynamicFormComponent {
      owns, and the one furthest from anything that would notice it drifting. */
   protected readonly defaultFormat = MDY_TIMEPICKER_DEFAULT_FORMAT;
   protected readonly initialView = MDY_TIMEPICKER_INITIAL_VIEW;
+  /** The palette the contract suggests, for a document that names none. */
+  protected readonly defaultPresets = MDY_COLOR_PRESETS;
 
   /** An options field's own members, read from the union the template narrows by `kind`. */
   protected asOptions(field: MdyDynamicField): {
@@ -354,6 +366,30 @@ export class MdyDynamicFormComponent {
     readonly mode?: "single" | "multi";
   } {
     return field as { searchable?: boolean; reorderable?: boolean; mode?: "single" | "multi" };
+  }
+
+  /**
+   * The rest of what a document may say about a field, read from the union the template narrows by
+   * `kind`.
+   *
+   * A member a document declares, a component reads and a case does not bind is a capability that
+   * parses, validates and reaches no control — the shape that left `searchable` dropped and a
+   * document asking for a filter getting a native chooser. These are the ones the audit found.
+   */
+  protected asMore(field: MdyDynamicField): {
+    readonly presets?: readonly string[];
+    readonly accept?: string;
+    readonly multiple?: boolean;
+    readonly minDate?: string;
+    readonly maxDate?: string;
+  } {
+    return field as {
+      presets?: readonly string[];
+      accept?: string;
+      multiple?: boolean;
+      minDate?: string;
+      maxDate?: string;
+    };
   }
 
   /** A timepicker's own members, read from the union the template narrows by `kind`. */
