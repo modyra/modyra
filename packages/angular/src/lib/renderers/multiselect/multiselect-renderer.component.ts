@@ -25,7 +25,6 @@ import {
   createMultiselectFieldController,
   MDY_CHIP_CLASSES,
 } from "@modyra/widgets";
-import { MdyBaseControl } from "../../control/control.directive";
 import { MdyErrorListComponent } from "../../control/error-list.component";
 import { MdyControlLabelComponent } from "../../control/mdy-control-label.component";
 import { MdyIconComponent } from "../../control/mdy-icon.component";
@@ -373,7 +372,6 @@ export class MdyMultiselectComponent<TValue = string>
 
   readonly filterFn = input<((value: TValue) => boolean) | undefined>(undefined);
 
-  protected readonly fieldId = `mdy-control-multiselect-${MdyBaseControl.nextId()}`;
 
   private readonly controller = this.adoptFieldController(
     (handle, widgetId) => createMultiselectFieldController<TValue>(

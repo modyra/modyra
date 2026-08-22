@@ -100,7 +100,6 @@ export class MdySliderComponent extends MdyBaseControl<number> {
 
   private readonly rangeInput = viewChild<ElementRef<HTMLInputElement>>('rangeInput');
 
-  protected readonly fieldId = `mdy-control-slider-${MdyBaseControl.nextId()}`;
 
   constructor() {
     super();

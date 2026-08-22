@@ -73,7 +73,6 @@ export class MdyRadioGroupComponent<TValue = unknown> extends MdyBaseControl<TVa
   readonly options = input<readonly MdySelectOption<TValue>[]>([]);
   readonly layout  = input<"vertical" | "horizontal">("vertical");
 
-  protected readonly fieldId = `mdy-control-radio-${MdyBaseControl.nextId()}`;
 
   private readonly controller = this.adoptFieldController(
     (handle, widgetId) => createOptionFieldController<TValue>(

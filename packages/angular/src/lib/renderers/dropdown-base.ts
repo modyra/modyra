@@ -29,7 +29,6 @@ export abstract class MdyDropdownBase<TValue, TOptionValue = unknown>
     read: TemplateRef,
   });
 
-  protected abstract readonly fieldId: string;
 
   public abstract resetSelection(): void;
 

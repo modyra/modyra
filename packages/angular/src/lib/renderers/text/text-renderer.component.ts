@@ -83,7 +83,6 @@ export class MdyTextComponent extends MdyBaseControl<string> implements OnInit {
   readonly type = input<string>("text");
   readonly autocomplete = input<string | null>(null);
 
-  protected readonly fieldId = `mdy-control-text-${MdyBaseControl.nextId()}`;
   private fieldController?: MdyTextFieldController<string>;
   private readonly destroyRef = inject(DestroyRef);
 

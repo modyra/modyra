@@ -156,7 +156,7 @@ export function partsOf(root, kind) {
  * empty is already failing, and a renderer free to show that immediately (the contract permits it)
  * would make "at rest" and "invalid" the same observation.
  */
-export async function mount(kind, { validators: withValidators = true, variant, rules, value } = {}) {
+export async function mount(kind, { validators: withValidators = true, variant, rules, value, idScope } = {}) {
   const tag = TAG_FOR.get(kind);
   // A slider is never empty, so `required` alone can never fail on one and its `invalid` row would
   // be green because the state is unreachable rather than because the renderer is right.
@@ -180,6 +180,9 @@ export async function mount(kind, { validators: withValidators = true, variant, 
   const element = await mountElement(tag, (el) => {
     el.field = form.f.value;
     el.label = "Label";
+    // Which form on the page this one is. Ids come from the field's path (ADR 0135), so two forms
+    // built from the same document claim the same ids unless the host says they are two.
+    if (idScope !== undefined) el.idScope = idScope;
     if (kind === "email" || kind === "password") el.type = kind;
     if (kind === "radio" || kind === "segmented" || kind === "select" || kind === "multiselect") {
       el.options = [option];

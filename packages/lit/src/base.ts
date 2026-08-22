@@ -68,6 +68,7 @@ export abstract class MdyFieldElement<T> extends LitElement {
     inlineErrors: { type: Boolean, attribute: "inline-errors" },
     floatingLabel: { type: Boolean, attribute: "floating-label" },
     locale: { type: String },
+    idScope: { type: String, attribute: "id-scope" },
   };
 
   declare field: MdyFieldHandle<T> | undefined;
@@ -101,7 +102,39 @@ export abstract class MdyFieldElement<T> extends LitElement {
     return this.locale ?? (typeof navigator === "undefined" ? "en-US" : navigator.language);
   }
 
-  protected readonly fieldId = `mdy-field-${nextId++}`;
+  /**
+   * The id every part of this widget is built from.
+   *
+   * Derived from the field's own path (ADR 0135), so the same document renders the same ids every
+   * time: a consumer can write `aria-describedby="when__label"` in their own markup, a stylesheet or
+   * a test can name one, and server-rendered markup agrees with a client mount. A mount counter is a
+   * property of what else was on the page first, and made every one of those a guess.
+   *
+   * Two fields called `when` on one page collide, visibly, and that is the better failure: two
+   * counters never collide and never mean anything either. `idScope` is what a host with two forms
+   * uses to keep them apart.
+   *
+   * The counter survives for a widget bound to **no** field — a documented shape in this package,
+   * with nothing to derive an id from. Its ids are not stable across mounts, because nothing about
+   * such a widget is.
+   */
+  protected get fieldId(): string {
+    const path = this.field?.path;
+    if (path === undefined || path === "") return this._mountId;
+    // A single character neither part may contain: the joiner's first occurrence always ends the
+    // scope, so two distinct scopes cannot produce one id.
+    return this.idScope ? `${this.idScope}-${path}` : path;
+  }
+
+  /**
+   * Which form on the page this widget belongs to, where a host renders more than one.
+   *
+   * Unset is the ordinary case. Set, it scopes every id this widget publishes, so two forms built
+   * from the same document do not both claim `when__label`.
+   */
+  declare idScope?: string;
+
+  private readonly _mountId = `mdy-field-${nextId++}`;
   private _tracker: MdyFormController | null = null;
 
   /** The widget kind this element renders. Its classes come from the catalog, never from here. */

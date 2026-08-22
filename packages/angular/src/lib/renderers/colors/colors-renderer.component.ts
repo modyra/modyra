@@ -10,7 +10,6 @@ import {
 
 import { MDY_OVERLAY_PORTAL_CLASS } from "@modyra/widgets";
 import { MDY_WIDGET_CONTRACTS, colorValueEquals, colorValueTransition, popupPlacementClass, overlayControlledId, projectOverlayOpenerA11y } from "@modyra/widgets";
-import { MdyBaseControl } from "../../control/control.directive";
 import { MdyErrorListComponent } from "../../control/error-list.component";
 import { MdyControlLabelComponent } from "../../control/mdy-control-label.component";
 import { MdyIconComponent } from "../../control/mdy-icon.component";
@@ -193,7 +192,6 @@ export class MdyColorsComponent extends MdyOverlayControl<string> {
     "#18181b", "#ffffff", "#e63946", "#f59e0b", "#10b981"
   ]);
 
-  protected readonly fieldId = `mdy-control-colors-${MdyBaseControl.nextId()}`;
 
   /** The id the opener names, which the projected panel has to carry. */
   protected readonly popupId = computed(() => overlayControlledId("colors", this.fieldId) ?? "");

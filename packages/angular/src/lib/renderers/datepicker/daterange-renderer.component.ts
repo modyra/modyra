@@ -20,7 +20,6 @@ import {
   MDY_WIDGET_CONTRACTS,
   dateRangeValueTransition,
   overlayControlledId, projectOverlayOpenerA11y, createDaterangeFieldController } from "@modyra/widgets";
-import { MdyBaseControl } from "../../control/control.directive";
 import { MdyErrorListComponent } from "../../control/error-list.component";
 import { MdyControlLabelComponent } from "../../control/mdy-control-label.component";
 import { MdyIconComponent } from "../../control/mdy-icon.component";
@@ -220,7 +219,6 @@ export class MdyDateRangePickerComponent extends MdyOverlayControl<MdyDateRange 
 
   protected override readonly minSpace = 450;
 
-  protected readonly fieldId = `mdy-daterange-${MdyBaseControl.nextId()}`;
 
   /** The id the opener names, which the projected panel has to carry. */
   protected readonly popupId = computed(() => overlayControlledId("daterange", this.fieldId) ?? "");
