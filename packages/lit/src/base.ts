@@ -254,13 +254,27 @@ export abstract class MdyFieldElement<T> extends LitElement {
     this.applyControlName();
     // Once per element: two forms over one document claim one set of ids, and a sentence repeated
     // every frame is one a developer scrolls past.
-    if (MDY_DEV && !this._saidCollision) {
-      this._saidCollision = true;
-      reportIdCollision(this, this.fieldId, "Set `id-scope` on the controls of each form.");
+    // Checked on every update and said once per id: this element may paint before the form it
+    // collides with is on the page at all, and a latch spent on the first frame is a guard that
+    // never sees the second one.
+    if (MDY_DEV) {
+      let message: string | null = null;
+      const shared = reportIdCollision(
+        this,
+        "Set `id-scope` on the controls of each form.",
+        (said) => { message = said; },
+      );
+      const fresh = shared.filter((id) => !this._saidCollision.has(id));
+      if (fresh.length > 0 && message !== null) {
+        console.warn(message);
+        for (const id of fresh) this._saidCollision.add(id);
+      }
     }
   }
 
-  private _saidCollision = false;
+  /** The ids this element has already reported a collision on. A sentence repeated every frame is
+   *  one a developer scrolls past. */
+  private readonly _saidCollision = new Set<string>();
 
   /** Said once per element: a sentence repeated every frame is one a developer scrolls past. */
   private _saidUnbound = false;
