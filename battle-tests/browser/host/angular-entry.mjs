@@ -41,7 +41,7 @@
 // Before anything that touches the framework: Angular and `ng-packagr` both ship partial-compiled
 // output, and nothing in an esbuild bundle runs the Linker that would finish the job.
 import "@angular/compiler";
-import { createComponent, provideZonelessChangeDetection } from "@angular/core";
+import { createComponent, ErrorHandler, provideZonelessChangeDetection } from "@angular/core";
 import { createApplication } from "@angular/platform-browser";
 import { MdyDynamicFormComponent } from "@modyra/angular/ui";
 import { parseDynamicForm } from "@modyra/core";
@@ -50,7 +50,26 @@ import { announceThrough, documentProbes } from "./document-probes.mjs";
 
 const mounted = new Map();
 
-const application = await createApplication({ providers: [provideZonelessChangeDetection()] });
+/**
+ * Whatever the application threw and Angular caught, since the last mount.
+ *
+ * **A guard that throws inside change detection does not reach `attachView`.** Angular routes it to
+ * the `ErrorHandler` and carries on, so a mount whose form refused every field returned
+ * `{ mounted: true }` from here and a spec read an empty page as a renderer drawing nothing. That is
+ * the "looks like it did it" shape — the same one this host's `setValue` wore this morning, from the
+ * other side.
+ *
+ * Collected rather than rethrown: rethrowing here would break Angular's own recovery and change what
+ * the page does, and this host exists to watch a page rather than to change one.
+ */
+const caught = [];
+
+const application = await createApplication({
+  providers: [
+    provideZonelessChangeDetection(),
+    { provide: ErrorHandler, useValue: { handleError: (error) => caught.push(String(error?.message ?? error)) } },
+  ],
+});
 
 /**
  * Let Angular settle before a spec looks.
@@ -68,6 +87,7 @@ window.battleAngular = {
 
   /** Build a form over `fields` and render it, as `<mdy-dynamic-form [fields]>` does. */
   async mountFields(id, fields, options = {}) {
+    const since = caught.length;
     const host = document.createElement("section");
     host.dataset.form = id;
     document.querySelector("#stage").append(host);
@@ -88,6 +108,14 @@ window.battleAngular = {
       reference.instance.submitted?.subscribe?.((event) => submitted.push(event?.value ?? event));
       mounted.set(id, { reference, host, submitted });
       await settled();
+      // A refusal that reached the ErrorHandler instead of this `try` is still a refusal, and a
+      // mount that says it succeeded over an empty page is worse than one that says it failed.
+      if (caught.length > since) {
+        const message = caught[caught.length - 1];
+        mounted.delete(id);
+        host.remove();
+        return { mounted: false, message };
+      }
       return { mounted: true, fields: fields.length };
     } catch (error) {
       return { mounted: false, message: String(error?.message ?? error) };
