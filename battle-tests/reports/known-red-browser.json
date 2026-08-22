@@ -1,11 +1,11 @@
 {
   "note": "Browser specs that are red because the defect they describe is open. A red listed here does not fail a build; a red that is not listed is a regression. Rewrite with `npm run battle:browser:ci -- --accept`.",
   "order": "Repair in severity order, as the node tier does. A spec's severity is the worst of the claims its header names; `unknown` is a spec that names none, which is most of them.",
-  "recordedAt": "2026-08-22T00:28:46Z",
-  "openReds": 51,
+  "recordedAt": "2026-08-22T00:32:27Z",
+  "openReds": 55,
   "bySeverity": {
     "S0": 1,
-    "S1": 43,
+    "S1": 47,
     "S2": 7
   },
   "knownRed": [
@@ -42,6 +42,10 @@
     "a-state-a-multiselect-does-not-show.spec.ts › a multiselect shows that it cannot be edited, lit",
     "a-time-that-changed-when-nobody-changed-it.spec.ts › a time nobody changed is the time that was there, lit",
     "an-error-before-anyone-typed.spec.ts › a required field nobody has reached is not painted as failing",
+    "an-id-one-renderer-publishes-alone.spec.ts › the three renderers agree which parts of a datepicker carry an id",
+    "an-id-one-renderer-publishes-alone.spec.ts › the three renderers agree which parts of a multiselect carry an id",
+    "an-id-one-renderer-publishes-alone.spec.ts › the three renderers agree which parts of a select carry an id",
+    "an-id-one-renderer-publishes-alone.spec.ts › the three renderers agree which parts of a timepicker carry an id",
     "an-opener-that-names-what-it-opens.spec.ts › an opener names the overlay it opens, lit",
     "every-kind-in-lit-under-an-auditor.spec.ts › every declared kind is one the auditor has nothing to say about when it is required",
     "every-kind-in-lit-under-an-auditor.spec.ts › every declared kind renders a lit form the auditor has nothing to say about",

@@ -21413,7 +21413,46 @@ cross-runtime version disagreement. Those numbers are theirs and are used here a
 continues at 384.
 
 
-## 385 — only one renderer publishes the option list's id (S2, UI-011)
+## 385 — the three renderers disagree about which parts carry an id (S1, UI-011 A11Y-001)
+
+Filed as *only plain publishes the option list's id*, from a side question about what
+[ADR 0132](../../docs/architecture/0132-a-part-name-is-what-it-is-for.md)'s rename would break. Asked
+generally — **which parts carry an id, in each renderer, for every kind with a popup** — it is much
+larger than one id, and the largest part of it is the label:
+
+```
+select        mdy-label                       plain none   lit id     angular none
+multiselect   mdy-label                       plain id     lit id     angular none
+              mdy-multiselect__options        plain id     lit none   angular none
+              mdy-multiselect-overlay__grid   plain id     lit none   angular none
+datepicker    mdy-label                       plain id     lit id     angular none
+              mdy-datepicker__cell            plain id     lit none   angular none
+timepicker    mdy-label                       plain id     lit id     angular none
+              mdy-timepicker-segment-input    plain id     lit none   angular none
+```
+
+**Angular never gives a label an id, and plain gives one to three kinds of four.** That is not a
+styling difference: `aria-labelledby="<widget>__label"` is what a projection emits, and `esecutore`
+closed exactly this shape in lit earlier tonight — a calendar-view projection naming a label id that
+lit's label did not carry. The same hole is open in Angular for every kind, and open in plain for
+`select`.
+
+An id is what an `aria-controls` points at, what an `aria-labelledby` names, what an
+`aria-activedescendant` resolves to, and what a consumer's stylesheet selects. So a part carrying one
+in one renderer and not another is one contract answered three ways, and the attribute that resolves on
+one dangles or is absent on the others.
+
+Pinned by
+[`../browser/an-id-one-renderer-publishes-alone.spec.ts`](../browser/an-id-one-renderer-publishes-alone.spec.ts),
+four kinds, red in all four. **It compares the renderers against each other and against no list**:
+nothing in it says which parts ought to have ids, because that is the contract's business and a spec
+naming them would be deciding it. It opens each control before reading, since a popup's insides do not
+exist at rest and that is where a missing id hides best.
+
+Raised from S2 to S1: the original entry was one id in one renderer; this is every kind, and it breaks
+accessible names rather than only stylesheet hooks.
+
+### 385 — as filed, one id (S2, UI-011)
 
 Measured while establishing what [ADR 0132](../../docs/architecture/0132-a-part-name-is-what-it-is-for.md)
 would break. A select, open:
