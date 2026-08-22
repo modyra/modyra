@@ -230,6 +230,15 @@ window.battle = {
         // document's cross-field rules; dropping it here builds a form whose rules were read and
         // then thrown away, which reads in a spec as the renderer never enforcing them.
         validations: parsed.validations,
+        // And the rows. `mountMdyForm` takes them (`packages/plain/src/mount.ts:27`), a document
+        // declares them through the tree — `node: "record"` with an `item` carrying the row
+        // template — and the parse hands them back with that template attached.
+        //
+        // Dropping them here is the same defect as the sentence above, which I wrote for
+        // `validations` and then did not finish asking of the rest: **no browser spec could see a
+        // document's rows render in any renderer**, and one that tried would have read this fixture
+        // as the renderer losing them.
+        collections: parsed.collections,
         onSubmit: recording(submitted),
       });
       mounted.set(id, { handle, host, submitted });
