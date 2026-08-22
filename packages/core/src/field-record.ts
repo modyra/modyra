@@ -217,7 +217,10 @@ export function createFieldRecord(
   // what keeps a conditional branch from being a fourth kind of state.
   const interactivity = rx.computed<MdyInteractivity>(() => {
     const outer = outerVerdict();
-    return disabledSignal()() || inactiveSignal()() || outer === "disabled"
+    // Writes being over is a fourth way to be out of play, and the same one: a form that has ended
+    // is not asking. Read here rather than announced separately so a control cannot be enabled and
+    // refused at once.
+    return writesRefused() || disabledSignal()() || inactiveSignal()() || outer === "disabled"
       ? "disabled"
       : readonlySignal()() || outer === "readonly"
         ? "readonly"

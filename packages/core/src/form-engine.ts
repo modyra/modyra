@@ -1709,6 +1709,18 @@ export class MdyFormEngine
 
   private _destroyed = false;
 
+  /**
+   * The same fact as {@link destroyed}, in a form a computed can watch.
+   *
+   * Every field's verdict reads it, so a form that ends takes its controls out of play in the same
+   * beat. The plain boolean beside it cannot carry that: nothing recomputes when it flips.
+   */
+  private _endedSignal: MdyWritableSignal<boolean> | null = null;
+
+  private get _ended(): MdyWritableSignal<boolean> {
+    return (this._endedSignal ??= this._rx.signal(false));
+  }
+
   /** True once {@link destroy} has run. */
   get destroyed(): boolean {
     return this._destroyed;
@@ -1769,6 +1781,12 @@ export class MdyFormEngine
   destroy(): void {
     if (this._destroyed) return;
     this._destroyed = true;
+    // Before the records go, so each one's verdict recomputes while something still holds it. A
+    // control rendered from a handle is on the page after the form ends — an unmount and a teardown
+    // are two moments, and between them a person types into a field whose form is over. The write is
+    // refused either way; this is what makes the refusal visible instead of leaving an enabled
+    // control painting text the form will never hold.
+    this._rx.untracked(() => this._ended.set(true));
     this._fields.forEach(rec => {
       rec.asyncRunner?.destroy();
       rec.asyncRunner = null;
@@ -1851,7 +1869,7 @@ export class MdyFormEngine
       (v) => this._applySecurity(name, v),
       (message) => this._warn(`"${name}" ${message}`),
       this._rx.computed(() => this._outerVerdict(name)),
-      () => this._destroyed,
+      () => this._ended(),
     );
 
     // A record built for a path a binding already spoke about answers to that binding from the

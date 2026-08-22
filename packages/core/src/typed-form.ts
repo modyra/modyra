@@ -1912,8 +1912,14 @@ export abstract class MdyTypedFormBase<
       pending: rx.computed(() => state()?.pending() ?? false),
       required: rx.computed(() => state()?.required() ?? false),
       constraints: rx.computed(() => state()?.constraints() ?? NO_CONSTRAINTS),
-      interactivity: rx.computed(() => state()?.interactivity() ?? "enabled"),
-      disabled: rx.computed(() => state()?.disabled() ?? false),
+      // A form that has ended has no records left, so a handle handed out before it ended finds
+      // nothing to answer from — and answering "enabled" there says the control is in play when the
+      // only thing certain about it is that nothing it sends will be kept. The controls outlive the
+      // model by a beat: a teardown runs, the nodes stay until an animation or a scheduler removes
+      // them, and what is typed in that beat reaches a form that is over. `fieldNames()` above is
+      // read on every pass and changes when the form ends, so this answer moves with it.
+      interactivity: rx.computed(() => state()?.interactivity() ?? (this._adapter.destroyed ? "disabled" : "enabled")),
+      disabled: rx.computed(() => state()?.disabled() ?? this._adapter.destroyed),
       readonly: rx.computed(() => state()?.readonly() ?? false),
       set: (value: unknown) => state()?.value.set(value),
       markAsTouched: () => state()?.touched.set(true),
