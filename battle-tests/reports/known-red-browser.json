@@ -1,17 +1,18 @@
 {
   "note": "Browser specs that are red because the defect they describe is open. A red listed here does not fail a build; a red that is not listed is a regression. Rewrite with `npm run battle:browser:ci -- --accept`.",
   "order": "Repair in severity order, as the node tier does. A spec's severity is the worst of the claims its header names; `unknown` is a spec that names none, which is most of them.",
-  "recordedAt": "2026-08-22T20:58:47Z",
+  "recordedAt": "2026-08-22T21:12:09Z",
   "openReds": 6,
   "bySeverity": {
-    "S1": 6
+    "S1": 3,
+    "S2": 3
   },
   "knownRed": [
     "a-letter-typed-at-a-closed-list.spec.ts › a letter reaches a closed choice, plain",
     "a-row-system-three-renderers-disagree-about.spec.ts › a kind is inside the row system in every renderer, or outside it in every renderer",
     "a-row-system-three-renderers-disagree-about.spec.ts › a kind is the same height in every renderer",
-    "a-target-too-small-to-hit.spec.ts › every target is big enough or far enough, angular",
-    "a-target-too-small-to-hit.spec.ts › every target is big enough or far enough, lit",
-    "a-target-too-small-to-hit.spec.ts › every target is big enough or far enough, plain"
+    "an-affordance-beside-the-value.spec.ts › the trailing affordances sit at the field's inline end, angular",
+    "an-affordance-beside-the-value.spec.ts › the trailing affordances sit at the field's inline end, lit",
+    "an-affordance-beside-the-value.spec.ts › the trailing affordances sit at the field's inline end, plain"
   ]
 }

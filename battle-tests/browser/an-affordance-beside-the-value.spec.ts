@@ -25,10 +25,15 @@
  * a time: the kinds that obey it are what prove the measurement is reading the property rather than a
  * constant, and a kind that starts disobeying it is caught the day it does.
  *
- * **The measurement is the distance from the trailing affordance to the field's trailing edge**,
- * compared against the inset the design tokens declare. Reading the control's width instead would
- * pin a layout technique; a caller may reach the edge by filling, by growing, or by pushing the
- * column with a spacer, and all three are the same answer to the eye.
+ * **Two things are measured, because one of them alone missed the defect it exists to catch.** The
+ * distance from the *last* affordance to the field's trailing edge says whether the column reaches
+ * the edge — and a single affordance sitting there satisfies it while every other one is stranded
+ * beside the value. So the spread of the column is measured too: `DESIGN.md` says a user reads them
+ * as one column, and two controls six hundred pixels apart are two columns.
+ *
+ * Reading the control's width instead would pin a layout technique; a caller may reach the edge by
+ * filling, by growing, or by pushing the column with a spacer, and all three are the same answer to
+ * the eye.
  *
  * The tolerance is the declared inset plus a pixel of rounding, and nothing else — a rule that
  * allowed "close enough" would be satisfied by the arrangement it exists to forbid.
@@ -37,7 +42,7 @@
  */
 
 import { expect, test } from "@playwright/test";
-import { MDY_WIDGET_KINDS } from "@modyra/widgets";
+import { MDY_WIDGET_KINDS, partClasses, trailingAffordances } from "@modyra/widgets";
 
 import { HOSTS } from "./bench";
 
@@ -66,38 +71,55 @@ for (const host of HOSTS) {
       await page.evaluate(({ api }) => (window as never as Api)[api].settle?.(), { api: host.api }).catch(() => undefined);
       await page.waitForTimeout(250);
 
-      const measured = await page.evaluate((selector) => {
+      // **The set comes from the catalogue, not from a guess at class names.** A pattern wide enough
+      // to catch every renderer's spelling also catches a chip's remove button at the leading edge,
+      // and the column then measures as the width of the whole field.
+      const declared = (trailingAffordances(kind) as Array<{ part: string }>)
+        .flatMap((each) => (partClasses(kind, each.part) as string[]).map((className) => `.${className}`))
+        .join(", ");
+
+      const measured = await page.evaluate(({ selector, declared }) => {
         const field = document.querySelector(`${selector} .mdy-input-wrapper`);
         if (field === null) return null;
         const box = field.getBoundingClientRect();
-        const affordances = Array.from(field.querySelectorAll(
-          "[class*='__arrow'], [class*='__toggle'], [class*='__clear'], [class*='__stepper'], [class*='__spin'], button",
-        ));
+        const affordances = declared === "" ? [] : Array.from(field.querySelectorAll(declared));
         // A kind with no trailing control has no column to be wrong about.
         if (affordances.length === 0) return { none: true };
         const rightmost = affordances
           .map((element) => element.getBoundingClientRect())
           .reduce((furthest, rect) => (rect.right > furthest.right ? rect : furthest));
+        const boxes = affordances.map((element) => element.getBoundingClientRect());
+        const leftmost = boxes.reduce((nearest, rect) => (rect.left < nearest.left ? rect : nearest));
         return {
           none: false,
           gap: Math.round(box.right - rightmost.right),
+          // How far the column is spread. One affordance is a spread of its own width.
+          spread: Math.round(rightmost.right - leftmost.left),
+          widest: Math.round(Math.max(...boxes.map((rect) => rect.width))),
+          count: boxes.length,
           inset: getComputedStyle(field).getPropertyValue("--mdy-affordance-inset").trim(),
           width: Math.round(box.width),
         };
-      }, root);
+      }, { selector: root, declared });
 
       await page.evaluate(({ api, id }) => { (window as never as Api)[api].dispose?.(id as never); }, { api: host.api, id });
 
       if (measured === null || measured.none === true) continue;
 
       // Read from the page rather than assumed, so a token change moves this spec with it.
-      const declared = measured.inset?.endsWith("rem") === true
+      const insetPx = measured.inset?.endsWith("rem") === true
         ? Math.round(parseFloat(measured.inset) * 16)
         : Math.round(parseFloat(measured.inset ?? "4"));
-      const allowed = (Number.isNaN(declared) ? 4 : declared) + 2;
+      const allowed = (Number.isNaN(insetPx) ? 4 : insetPx) + 2;
+
+      // One column: every affordance within a few of its own widths of the last. A generous bound —
+      // it forbids a control stranded beside the value without prescribing the gaps between them.
+      const together = (measured.spread ?? 0) <= (measured.count ?? 1) * (measured.widest ?? 0) + allowed;
 
       if ((measured.gap ?? 0) > allowed) {
         wide.push(`${kind} stops ${measured.gap}px short of a ${measured.width}px field`);
+      } else if (!together) {
+        wide.push(`${kind} spreads its ${measured.count} affordances over ${measured.spread}px, so they are not one column`);
       } else {
         reached.push(kind);
       }
