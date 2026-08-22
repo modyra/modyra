@@ -13,6 +13,7 @@ import {
   MDY_I18N_MESSAGES_DEFAULT,
   MDY_WIDGET_CONTRACTS,
   blocksValueChange,
+  keepKeyboardInPlay,
   type MdyI18nMessages,
   type MdyPartContract,
   createTextFieldController,
@@ -187,6 +188,9 @@ export function renderTextField(
     for (const button of spinButtons) button.disabled = blocksValueChange(state.interactivity);
     const view = controller.view();
     applyPart(shell.label, view.parts.label);
+    // Before the part takes the control out of play: disabling a focused element blurs it, and by
+    // then there is nothing left to say where the keyboard was.
+    if (state.disabled) keepKeyboardInPlay(input, shell.root.parentElement);
     applyPart(input, view.parts.input);
     if (sliderValue) {
       setText(sliderValue, String(state.value ?? ""));

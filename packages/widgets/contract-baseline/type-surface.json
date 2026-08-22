@@ -426,7 +426,7 @@
     "protected popupClass: string",
     "protected popupId: _angular_core.Signal<string>",
     "protected selectColor(0) color: string,-> returns: void",
-    "protected widgetContract: _modyra_widgets.MdyWidgetDefinition<\"errors\" | \"root\" | \"label\" | \"toggle\" | \"control\" | \"errorItem\" | \"inputWrapper\" | \"requiredMarker\" | \"supportingText\" | \"popup\" | \"inlineError\" | \"hexInput\" | \"nativePicker\" | \"presets\" | \"preview\" | \"swatch\">",
+    "protected widgetContract: _modyra_widgets.MdyWidgetDefinition<\"toggle\" | \"errors\" | \"root\" | \"label\" | \"control\" | \"errorItem\" | \"inputWrapper\" | \"requiredMarker\" | \"supportingText\" | \"popup\" | \"inlineError\" | \"hexInput\" | \"nativePicker\" | \"presets\" | \"preview\" | \"swatch\">",
     "protected widgetHasRootClass: boolean",
     "protected widgetKind: \"colors\"",
     "ɵcmp: _angular_core.ɵɵComponentDeclaration<MdyColorsComponent, \"mdy-control-colors\", never, { \"placeholder\": { \"alias\": \"placeholder\"; \"required\": false; \"isSignal\": true; }; \"presets\": { \"alias\": \"presets\"; \"required\": false; \"isSignal\": true; }; }, {}, never, never, true, never>",
@@ -591,7 +591,7 @@
     "protected parsedSelectedDate: _angular_core.Signal<CalendarDate | null>",
     "protected popupClass: string",
     "protected popupId: _angular_core.Signal<string>",
-    "protected widgetContract: _modyra_widgets.MdyWidgetDefinition<\"errors\" | \"root\" | \"row\" | \"label\" | \"toggle\" | \"control\" | \"errorItem\" | \"inputWrapper\" | \"requiredMarker\" | \"supportingText\" | \"popup\" | \"inlineError\" | \"calendar\" | \"dialogHeader\" | \"grid\" | \"gridcell\" | \"monthCell\" | \"monthPicker\" | \"weekday\" | \"weekdays\" | \"yearCell\" | \"yearPicker\">",
+    "protected widgetContract: _modyra_widgets.MdyWidgetDefinition<\"toggle\" | \"errors\" | \"root\" | \"row\" | \"label\" | \"control\" | \"errorItem\" | \"inputWrapper\" | \"requiredMarker\" | \"supportingText\" | \"popup\" | \"inlineError\" | \"calendar\" | \"dialogHeader\" | \"grid\" | \"gridcell\" | \"monthCell\" | \"monthPicker\" | \"weekday\" | \"weekdays\" | \"yearCell\" | \"yearPicker\">",
     "protected widgetHasRootClass: boolean",
     "protected widgetKind: \"datepicker\"",
     "variant: _angular_core.InputSignal<\"docked\" | \"modal\">",
@@ -640,7 +640,7 @@
     "protected parsedStart: _angular_core.Signal<CalendarDate | null>",
     "protected popupClass: string",
     "protected popupId: _angular_core.Signal<string>",
-    "protected widgetContract: _modyra_widgets.MdyWidgetDefinition<\"errors\" | \"root\" | \"row\" | \"label\" | \"toggle\" | \"errorItem\" | \"inputWrapper\" | \"requiredMarker\" | \"supportingText\" | \"popup\" | \"inlineError\" | \"calendar\" | \"dialogHeader\" | \"grid\" | \"gridcell\" | \"monthCell\" | \"monthPicker\" | \"weekday\" | \"weekdays\" | \"yearCell\" | \"yearPicker\" | \"endControl\" | \"separator\" | \"startControl\">",
+    "protected widgetContract: _modyra_widgets.MdyWidgetDefinition<\"toggle\" | \"errors\" | \"root\" | \"row\" | \"label\" | \"errorItem\" | \"inputWrapper\" | \"requiredMarker\" | \"supportingText\" | \"popup\" | \"inlineError\" | \"calendar\" | \"dialogHeader\" | \"grid\" | \"gridcell\" | \"monthCell\" | \"monthPicker\" | \"weekday\" | \"weekdays\" | \"yearCell\" | \"yearPicker\" | \"endControl\" | \"separator\" | \"startControl\">",
     "protected widgetHasRootClass: boolean",
     "protected widgetKind: \"daterange\"",
     "startPlaceholder: _angular_core.InputSignal<string>",
@@ -1805,7 +1805,7 @@
     "protected startChipDrag(0) event: PointerEvent,(1) optionKey: string,-> returns: void",
     "protected wayBack: _angular_core.Signal<_modyra_widgets.MdyMultiselectWayBack | null>",
     "protected wayBackText: _angular_core.Signal<string>",
-    "protected widgetContract: _modyra_widgets.MdyWidgetDefinition<\"errors\" | \"option\" | \"root\" | \"loading\" | \"label\" | \"search\" | \"errorItem\" | \"inputWrapper\" | \"requiredMarker\" | \"supportingText\" | \"popup\" | \"inlineError\" | \"arrow\" | \"empty\" | \"options\" | \"placeholder\" | \"trigger\" | \"optionLabel\" | \"announcement\" | \"box\" | \"chip\" | \"chipMove\" | \"chipRemove\" | \"chipTooltip\" | \"chips\" | \"clearAll\" | \"optionCheck\" | \"optionCount\" | \"optionStep\" | \"optionWrapper\" | \"overflowCount\" | \"wayBack\" | \"wayBackAction\">",
+    "protected widgetContract: _modyra_widgets.MdyWidgetDefinition<\"errors\" | \"option\" | \"root\" | \"loading\" | \"label\" | \"search\" | \"errorItem\" | \"inputWrapper\" | \"requiredMarker\" | \"supportingText\" | \"popup\" | \"inlineError\" | \"optionLabel\" | \"optionCheck\" | \"arrow\" | \"empty\" | \"options\" | \"placeholder\" | \"trigger\" | \"announcement\" | \"box\" | \"chip\" | \"chipMove\" | \"chipRemove\" | \"chipTooltip\" | \"chips\" | \"clearAll\" | \"optionCount\" | \"optionStep\" | \"optionWrapper\" | \"overflowCount\" | \"wayBack\" | \"wayBackAction\">",
     "protected widgetHasRootClass: boolean",
     "protected widgetKind: \"multiselect\"",
     "reorderable: _angular_core.InputSignalWithTransform<boolean, unknown>",
@@ -2715,7 +2715,7 @@
     "protected send(0) intent: MdyTimepickerFieldIntent,-> returns: void",
     "protected shownField: _angular_core.Signal<\"hour\" | \"minute\">",
     "protected shownViewMode: _angular_core.Signal<MdyTimepickerViewMode$1>",
-    "protected widgetContract: _modyra_widgets.MdyWidgetDefinition<\"errors\" | \"root\" | \"dialog\" | \"header\" | \"label\" | \"toggle\" | \"control\" | \"errorItem\" | \"inputWrapper\" | \"requiredMarker\" | \"supportingText\" | \"content\" | \"popup\" | \"inlineError\" | \"action\" | \"actions\" | \"clock\" | \"container\" | \"dialFace\" | \"dialHand\" | \"dialNumber\" | \"dialUnavailable\" | \"dialUnavailableArc\" | \"hour\" | \"hourControl\" | \"minute\" | \"minuteControl\" | \"modeToggle\" | \"period\" | \"periodOption\">",
+    "protected widgetContract: _modyra_widgets.MdyWidgetDefinition<\"toggle\" | \"errors\" | \"root\" | \"dialog\" | \"header\" | \"label\" | \"control\" | \"errorItem\" | \"inputWrapper\" | \"requiredMarker\" | \"supportingText\" | \"content\" | \"popup\" | \"inlineError\" | \"action\" | \"actions\" | \"clock\" | \"container\" | \"dialFace\" | \"dialHand\" | \"dialNumber\" | \"dialUnavailable\" | \"dialUnavailableArc\" | \"hour\" | \"hourControl\" | \"minute\" | \"minuteControl\" | \"modeToggle\" | \"period\" | \"periodOption\">",
     "protected widgetHasRootClass: boolean",
     "protected widgetKind: \"timepicker\"",
     "showUnavailable: _angular_core.InputSignal<boolean>",
@@ -3897,6 +3897,11 @@
   ],
   "keepFocusedChipInView": [
     "(0) strip: HTMLElement",
+    "-> returns: void"
+  ],
+  "keepKeyboardInPlay": [
+    "(0) leaving: Element",
+    "(1) scope?: Element | null",
     "-> returns: void"
   ],
   "keyBindingFor": [

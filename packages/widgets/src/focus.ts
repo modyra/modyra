@@ -87,6 +87,63 @@ function firstFocusableWithin(root: Element): Focusable | null {
 }
 
 /**
+ * Keeps the keyboard somewhere when the control it was standing on leaves play.
+ *
+ * Disabling a focused element blurs it — that is the platform. What follows is this library's: the
+ * person who was typing is on `<body>`, their next Tab starts at the top of the document, and
+ * nothing says where they went. A document's rule can do this without anyone clicking: a value
+ * arrives from a fetch, a condition turns false, and the field under the cursor goes out of play
+ * mid-word.
+ *
+ * Read-only is the proof that it need not cost them their place — a read-only field keeps the
+ * keyboard — so this puts a disabled one somewhere too: the next thing that can take focus after it,
+ * the previous one otherwise, and the widget's own root as the last resort so the next Tab starts
+ * from where they were rather than from the top of the page.
+ *
+ * Call it *before* taking the control out of play: afterwards the element is already blurred and
+ * there is nothing left to say where the keyboard was.
+ */
+export function keepKeyboardInPlay(leaving: Element, scope?: Element | null): void {
+  const document_ = leaving.ownerDocument;
+  if (document_ === null) return;
+  // On this control, inside it, or nowhere at all. The third is the case being repaired: the
+  // platform has already blurred a disabled element by the time a renderer hears about it, and a
+  // caller that saw the keyboard leave says so by calling then.
+  const active = document_.activeElement;
+  const nowhere = active === null || active === document_.body;
+  if (!nowhere && active !== leaving && !(active instanceof Element && leaving.contains(active))) return;
+
+  const root = scope ?? document_.body;
+  const order = Array.from(
+    root.querySelectorAll<HTMLElement>("button, input, select, textarea, a[href], [tabindex]"),
+  ).filter((candidate) => candidate.getAttribute("tabindex") !== "-1" && !leaving.contains(candidate) && candidate !== leaving);
+  const at = order.findIndex((candidate) => leaving.compareDocumentPosition(candidate) & 4 /* FOLLOWING */);
+
+  const tries: Element[] = [];
+  if (at >= 0) tries.push(order[at]!);
+  for (let index = order.length - 1; index >= 0; index -= 1) {
+    if (at < 0 || index < at) { tries.push(order[index]!); break; }
+  }
+  const widget = leaving.closest("[class*=\"mdy-renderer\"]") ?? leaving.parentElement;
+  if (widget !== null) tries.push(widget);
+
+  for (const candidate of tries) {
+    if (!isReachable(candidate)) continue;
+    const target = candidate as HTMLElement;
+    // A container is not in the tab order and does not need to be: it is somewhere to stand, so the
+    // next Tab starts here rather than at the top of the document.
+    if (!target.hasAttribute("tabindex") && !isNativelyFocusable(target)) target.tabIndex = -1;
+    target.focus();
+    if (document_.activeElement === target) return;
+  }
+}
+
+/** Whether an element takes focus without being given a `tabindex`. */
+function isNativelyFocusable(element: Element): boolean {
+  return ["button", "input", "select", "textarea", "a"].includes(element.tagName.toLowerCase());
+}
+
+/**
  * A focus custodian for one widget.
  *
  * `root` is a function because a widget's root can be replaced — a re-render, a remount — and a

@@ -12,6 +12,7 @@ import {
   projectFieldShellA11y,
   fieldAccessibleName,
   errorsVisible,
+  keepKeyboardInPlay,
   reportIdCollision,
   holdsUneditedValue,
   shownErrorsOf,
@@ -252,6 +253,7 @@ export abstract class MdyFieldElement<T> extends LitElement {
   protected override updated(changed: Map<string, unknown>): void {
     super.updated(changed);
     this.applyControlName();
+
     // Once per element: two forms over one document claim one set of ids, and a sentence repeated
     // every frame is one a developer scrolls past.
     // Checked on every update and said once per id: this element may paint before the form it
@@ -271,6 +273,28 @@ export abstract class MdyFieldElement<T> extends LitElement {
       }
     }
   }
+
+  /**
+   * Somewhere to stand when this element's control goes out of play under the cursor.
+   *
+   * Disabling a focused element blurs it — that is the platform — and the person who was typing is
+   * then on `body`, their next Tab starting at the top of the page. Read-only keeps the keyboard, so
+   * losing it is a choice rather than a fact about browsers.
+   *
+   * Heard as the focus leaving with nowhere to go: `relatedTarget` is null exactly when the platform
+   * took it rather than a person moving it, which is the one case worth acting on. Asked a beat
+   * later, because the element is disabled during the render that blurs it and the question is about
+   * what happened after.
+   */
+  private readonly onFocusLost = (event: FocusEvent): void => {
+    if (event.relatedTarget !== null) return;
+    queueMicrotask(() => {
+      if (this.field?.disabled() !== true) return;
+      const active = this.ownerDocument.activeElement;
+      if (active !== null && active !== this.ownerDocument.body) return;
+      keepKeyboardInPlay(this, this.parentElement);
+    });
+  };
 
   /** The ids this element has already reported a collision on. A sentence repeated every frame is
    *  one a developer scrolls past. */
@@ -317,6 +341,7 @@ export abstract class MdyFieldElement<T> extends LitElement {
   }
 
   override disconnectedCallback(): void {
+    this.removeEventListener("focusout", this.onFocusLost);
     if (this._unboundFrame !== null) {
       cancelAnimationFrame(this._unboundFrame);
       this._unboundFrame = null;
@@ -327,6 +352,7 @@ export abstract class MdyFieldElement<T> extends LitElement {
   override connectedCallback(): void {
     super.connectedCallback();
     this.classList.add(...this.rootClasses);
+    this.addEventListener("focusout", this.onFocusLost);
     if (MDY_DEV) this.reportIfUnbound();
     const handle = this.field;
     if (handle && !this._tracker) {
