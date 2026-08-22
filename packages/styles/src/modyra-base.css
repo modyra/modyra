@@ -495,7 +495,10 @@
         --mdy-comp-slider-handle-height: 20px;
         --mdy-comp-slider-handle-width: 20px;
         --mdy-comp-slider-handle-shape: var(--mdy-sys-shape-corner-full);
-        --mdy-comp-slider-active-track-color: var(--mdy-sys-color-primary);
+        /* The accent as a theme expresses it, not the seed it is derived from. Material tones its
+           primary — `oklch(from …)` — so a slider reading the raw system colour wore near-black
+           where every other accented control wore the theme's own. */
+        --mdy-comp-slider-active-track-color: var(--mdy-primary, var(--mdy-sys-color-primary));
         --mdy-comp-slider-inactive-track-color: var(--mdy-sys-color-secondary-container);
         --mdy-comp-slider-handle-color: var(--mdy-sys-color-primary);
         --mdy-comp-slider-track-shape: var(--mdy-sys-shape-corner-full);
