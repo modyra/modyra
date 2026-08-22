@@ -308,10 +308,12 @@ const SHELL_SELECTORS = {
   inputWrapper: ".mdy-input-wrapper, .mdy-checkbox, .mdy-toggle",
   // Scoped to the box the contract says holds the control. `input, textarea, select` found *an*
   // input — a search box, a hidden native picker, whichever came first — and that is a coincidence,
-  // not a contract check.
+  // not a contract check. The number kind's steppers hold their box inside the presentation
+  // spinner the catalogue names, one level below the wrapper the other textual kinds use.
   control:
     ".mdy-input-wrapper > input, .mdy-input-wrapper > textarea, .mdy-input-wrapper > select," +
-    ".mdy-input-wrapper__inliner > input, .mdy-input-wrapper__inliner > textarea, .mdy-input-wrapper__inliner > select",
+    ".mdy-input-wrapper__inliner > input, .mdy-input-wrapper__inliner > textarea, .mdy-input-wrapper__inliner > select," +
+    ".mdy-number-spinner > input",
   supportingText: ".mdy-supporting-text",
   errors: ".mdy-control__errors",
   errorItem: ".mdy-control__error",
