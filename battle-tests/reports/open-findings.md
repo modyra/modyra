@@ -22052,3 +22052,30 @@ Recorded with the number because *three vocabularies* reads as an alignment proj
 integer. The cost still grows the way the earlier note said — a document written for the wrong runtime
 today is a migration tomorrow — but the work is a decision and one line in two SDKs, not an alignment.
 
+
+### 386 is parked, and a parked red needs a condition or it is a ratchet
+
+`an-id-a-selector-cannot-reach` is pinned and nobody intends to repair it. `esecutore` argued that
+nothing selects an option by id today and I agreed. That agreement left the check permanently red,
+which is the shape [333](#333) named: *the number that only ever goes up because the first person to
+see it wrote it down.*
+
+So the parking gets a condition rather than an indefinite pass:
+
+**It is unparked the day anything selects a published id by CSS or by `querySelector`** — the
+library's own code, an example, a documented recipe, or a consumer's report. Until then the id resolves
+by `getElementById` and by every `aria-*` that names it, and nothing is broken for a reader.
+
+**And the battle stays regardless of 386**, because it is already earning its place on a second front:
+its premise assertion is what separates *no ids at all* from *ids a selector cannot reach*, which is
+how one run reported lit and Angular as [385](#385) and plain as 386 without either being confused for
+the other.
+
+What was **not** done, deliberately: weakening the assertion to match what is acceptable today. Scoping
+it to ids something references would make it green and would make it agree with the current state
+rather than with a property — and a check rewritten until it passes is the failure this register has
+recorded three times tonight in the other direction, where a fixture was tuned until a red went away.
+
+A parked red with a stated condition is a decision. A parked red without one is a number nobody will
+ever take out.
+
