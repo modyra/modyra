@@ -63,10 +63,15 @@ export function renderTextField(
     ? { min: ranged.min ?? null, max: ranged.max ?? null, step: ranged.step ?? null }
     : undefined;
 
+  /** What the description will hold, so the control does not name it while it is empty. */
+  const describedText = (): string =>
+    [f.supportingText ?? "", shell.description.textContent ?? ""].join("").trim();
+
   const controller = createTextFieldController<string | number | null>(
     {
       widgetId: widgetId,
       handle,
+      describes: () => describedText() !== "",
       inputType: isTextarea ? undefined : nativeInputType(f.kind),
       kind: f.kind,
       constraints: () => narrowing ?? {},
