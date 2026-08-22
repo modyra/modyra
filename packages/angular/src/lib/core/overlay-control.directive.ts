@@ -1,4 +1,4 @@
-import { projectOverlayOpenerA11y, type MdyPartContract } from "@modyra/widgets";
+import { keyBindingFor, projectOverlayOpenerA11y, type MdyPartContract } from "@modyra/widgets";
 import {
   DestroyRef,
   Directive,
@@ -224,6 +224,22 @@ export abstract class MdyOverlayControl<TValue> extends MdyBaseControl<TValue> {
    * Pass the triggering UIEvent (mouse, touch, keyboard) so the popup can
    * anchor to the correct corner and resolve the scroll ancestor via event.target.
    */
+  /**
+   * The keys that open this kind, read from the table rather than named here.
+   *
+   * A control that binds one key by name answers that key and no other: this adapter's timepicker
+   * opened on `ArrowDown` alone and its datepicker on nothing at all, while the same document on the
+   * other two renderers opened on `Enter` — one control, different keys depending on which adapter
+   * drew it. `MDY_WIDGET_KEYBOARD` already says which keys open which kind, including that a typeable
+   * opener does not claim `Space`, and a binding gained upstream reaches this without an edit.
+   */
+  protected openOnDeclaredKey(event: KeyboardEvent): void {
+    if (this.open() || this.overlayKind === null) return;
+    if (keyBindingFor(this.overlayKind, event.key, false)?.intent !== "open") return;
+    event.preventDefault();
+    this.openOverlay(event);
+  }
+
   protected toggleOverlay(event?: Event): void {
     if (this.open()) {
       this.applyLifecycle({ type: "toggle", disabled: this.isDisabled(), available: typeof window !== "undefined" });

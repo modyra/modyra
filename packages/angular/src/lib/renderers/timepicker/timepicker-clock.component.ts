@@ -51,6 +51,7 @@ import {
   MDY_TIMEPICKER_DEFAULT_FORMAT,
   MDY_TIMEPICKER_INITIAL_VIEW,
   type MdyTimepickerViewMode,
+  keyBindingFor,
 } from "@modyra/widgets";
 import { MDY_I18N_MESSAGES } from "../../core/i18n";
 import { MdyTimepickerHeaderComponent } from "./timepicker-header.component";
@@ -387,6 +388,20 @@ export class MdyTimepickerClockComponent {
     if (event.key === "Tab") {
       event.preventDefault();
       this.moveByTab(event.shiftKey ? -1 : 1);
+      return;
+    }
+    // Enter commits the draft, which is what the table says a dialog's Enter does. A focused button
+    // answers it for itself — the platform turns Enter there into a click, and cancelling would
+    // otherwise also confirm — so this speaks for the rest of the dialog, which is where somebody
+    // setting the time from the keyboard stands.
+    if (
+      event.key === "Enter"
+      && !event.defaultPrevented
+      && (event.target as Element | null)?.closest?.("button") == null
+      && keyBindingFor("timepicker", "Enter", true)?.intent === "commit"
+    ) {
+      event.preventDefault();
+      this.confirmClicked.emit();
       return;
     }
     const target = event.target as HTMLElement | null;

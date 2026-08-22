@@ -273,10 +273,16 @@ export function createSelectController<TValue>(
         if (!open()) {
           open.set(true);
           const keys = navigableKeys(query());
-          const next =
-            selectedKey() && keys.includes(selectedKey()!)
-              ? selectedKey()
-              : keys[0] ?? null;
+          // The reading position starts where the value is, and nowhere when there is none — which
+          // is what the keyboard policy beside this says in words: *the list opens with nothing
+          // active, and the next arrow lands where the direction says*. Falling back to the first
+          // option contradicted it and made the rule unreachable: `listboxNextIndex` answers
+          // `ArrowDown` from nothing-active with the first option and `ArrowUp` with the last, and
+          // neither branch could ever run. What a person got instead was a first press that stepped
+          // *past* the option the list had silently put them on — and in one renderer of three,
+          // because the other reached the same list without this controller.
+          const chosen = selectedKey();
+          const next = chosen !== null && keys.includes(chosen) ? chosen : null;
           setActive(next, commands);
           commands.push({
             type: "open-overlay",
