@@ -22149,3 +22149,40 @@ checks prose. This one described the *mechanism* of a renderer rather than the p
 asserting, and the mechanism was the thing that changed. An explanation that names an implementation
 has the same shelf life as the implementation.
 
+
+### 0135's second case was asking for something the record decided against
+
+The battle asked for *two forms mounted from one document get distinct ids without a consumer
+supplying anything*. `esecutore` showed it cannot be had, and the contradiction is 0135's own two
+columns:
+
+```
+stability      the id depends only on the document    ⇒ two live copies get one id
+no collision   the id depends on the instance         ⇒ a second mount changes the id
+```
+
+Nothing tells two mounts of one document apart except the host or the order they were created in, and
+the second is the counter 0135 removed. **So the scope is not a nicety a careful consumer adds — it is
+where the second property comes from**, and the record now says so.
+
+The case is rewritten as the property the record actually promises, plus one the record earns:
+
+```
+two scoped forms do not collide        green in plain · red in lit and Angular
+one scope for two forms is not silent  red in all three
+```
+
+The second is the part worth having. An unscoped collision is the consumer's — they gave one identity
+to two things — but **nothing says so**. A page whose `aria-describedby` resolves into the other form
+looks exactly like a page whose references are right, which is
+[ADR 0121](../../docs/architecture/0121-a-value-indistinguishable-from-its-own-absence.md)'s shape
+aimed at the one person who could fix it with one attribute.
+
+A registry that suffixed a duplicate claim was the alternative and is rejected in the record: it would
+make the *second* form's ids depend on mount order, which is the counter's defect returned in a corner.
+
+**And one red in that run was mine again.** An unscoped mount was passing `{ idPrefix: null }` — a
+scope of its own kind, invented by the fixture — which changed plain's ids and read as the renderer
+losing its stability. Two lines and the same lesson as the counter mode and the missing `searchable`: a
+fixture that supplies something the document did not is measuring a control nobody wrote.
+
