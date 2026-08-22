@@ -300,7 +300,11 @@ export function renderDatepickerField(
     } else if (renderedYear !== state.viewYear || renderedMonth !== state.viewMonth) {
       // The controller owns which days exist and their state; the shared body owns the anatomy
       // (weekday header, one row per week) the themes lay out.
-      cellEls = fillCalendar(grid, "datepicker", state.viewYear, state.viewMonth, dateLocale, (cell) => dispatch({ type: "select-date", iso: cell.iso }));
+      cellEls = fillCalendar(
+        grid, "datepicker", state.viewYear, state.viewMonth, dateLocale,
+        (cell) => dispatch({ type: "select-date", iso: cell.iso }),
+        widgetId,
+      );
       renderedYear = state.viewYear;
       renderedMonth = state.viewMonth;
     }

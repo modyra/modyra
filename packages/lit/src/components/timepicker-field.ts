@@ -778,6 +778,24 @@ export class MdyTimepickerFieldElement extends MdyFieldElement<string | null> {
             this.closePopup(handle);
             return;
           }
+          // Enter commits the draft, which is what the table says a dialog's Enter does. A focused
+          // button answers it for itself — the platform turns Enter there into a click, and
+          // cancelling would otherwise also confirm — so this speaks for the rest of the dialog,
+          // which is where somebody setting the time from the keyboard stands.
+          if (
+            e.key === "Enter"
+            && !e.defaultPrevented
+            && (e.target as Element | null)?.closest?.("button") == null
+            && keyBindingFor("timepicker", "Enter", true)?.intent === "commit"
+          ) {
+            e.preventDefault();
+            // Kept inside the dialog: the element's own handler opens the picker on Enter, and the
+            // same press that committed would arrive there with the popup already closed and open it
+            // again.
+            e.stopPropagation();
+            this.confirm(handle);
+            return;
+          }
           if (e.key === "Tab") this.moveByTab(e);
         }}
       >

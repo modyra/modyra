@@ -8,7 +8,7 @@
  * the seven columns on the row, so a flat list of cells renders as a single column.
  */
 import { buildMonthGrid, type CalendarCell, type MdyDateLocale } from "@modyra/core/datetime";
-import { MDY_WIDGET_CONTRACTS, type MdyWidgetKind } from "@modyra/widgets";
+import { MDY_WIDGET_CONTRACTS, calendarDayId, type MdyWidgetKind } from "@modyra/widgets";
 import { el, setText } from "../dom.js";
 
 export interface CalendarBody {
@@ -37,6 +37,13 @@ export function fillCalendar(
   month: number,
   locale: MdyDateLocale,
   onPick: (cell: CalendarCell) => void,
+  /**
+   * The widget these days belong to, so each cell carries the id the contract names for it.
+   *
+   * A day is what `aria-activedescendant` points at and what a document writes down to reach one
+   * cell; without an id there is nothing to point at and nothing to name.
+   */
+  widgetId?: string,
 ): ReadonlyMap<string, HTMLButtonElement> {
   const firstDayOfWeek = locale.firstDayOfWeek;
   grid.replaceChildren();
@@ -65,6 +72,7 @@ export function fillCalendar(
       button.type = "button";
       button.setAttribute("role", "gridcell");
       button.setAttribute("aria-label", cell.iso);
+      if (widgetId !== undefined && widgetId !== "") button.id = calendarDayId(widgetId, cell.iso);
       if (!cell.inMonth) button.classList.add("mdy-datepicker__cell--outside");
       setText(button, String(cell.date.day));
       button.addEventListener("click", () => onPick(cell));

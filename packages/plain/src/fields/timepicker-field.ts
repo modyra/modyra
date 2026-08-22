@@ -362,6 +362,24 @@ export function renderTimepickerField(
   // focus lands — Escape hands it back to the opener, Tab leaves it where the key was taking it.
   const onEscape = (event: KeyboardEvent) => {
     if (event.key === "Escape") dispatch({ type: "cancel" });
+    // Enter commits the draft, which is what the table says a dialog's Enter does. A button answers
+    // it for itself — the platform turns Enter on a focused button into a click, and cancelling
+    // would then also confirm — so this speaks only for the rest of the dialog, which is where a
+    // person setting the time with the keyboard actually stands.
+    if (
+      event.key === "Enter"
+      && controller.state().open
+      && !event.defaultPrevented
+      // Asked of the element rather than of its constructor: `instanceof` answers false across the
+      // document boundaries some test environments render in, and the guard would then be off
+      // exactly where a button is focused.
+      && (event.target as Element | null)?.closest?.("button") == null
+      && keyBindingFor("timepicker", "Enter", true)?.intent === "commit"
+    ) {
+      event.preventDefault();
+      dispatch({ type: "confirm" });
+      return;
+    }
     // The dialog sits inside the wrapper and this handler is on both, so a key pressed in the popup
     // arrives twice. Escape does not care — cancelling twice cancels once — but a Tab handled twice
     // moves two stops and silently skips the minute box.

@@ -151,6 +151,15 @@ export function renderDaterangeField(
   }
   prevButton.addEventListener("click", () => dispatch({ type: "navigate-month", delta: -1 }));
   nextButton.addEventListener("click", () => dispatch({ type: "navigate-month", delta: 1 }));
+  // The calendar's own keys, answered by the controller that owns the month — the same intent the
+  // single-date sibling sends. Without this the grid took focus when the popup opened and then
+  // answered nothing: a range was pickable with a pointer and with nothing else.
+  grid.addEventListener("keydown", (event) => {
+    if (["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown", "PageUp", "PageDown", "Home", "End", "Enter", " ", "Escape"].includes(event.key)) {
+      event.preventDefault();
+      dispatch({ type: "keydown", key: event.key, shiftKey: event.shiftKey });
+    }
+  });
   // Escape dismisses from wherever the user is. This overlay does not take focus when it opens, so
   // listening on the popup alone meant the handler could only ever fire if the user had already
   // reached inside it — the keyboard could open the range and not close it.
@@ -268,8 +277,10 @@ export function renderDaterangeField(
     } else if (renderedMonth !== monthKey) {
       // The second pick closes the range, writes it and shuts the popup — all the controller's,
       // because this kind's value contract says `live`.
-      cellEls = fillCalendar(grid, "daterange", anchor.year, anchor.month, dateLocale, (cell) =>
-        dispatch({ type: "select-date", iso: cell.iso }),
+      cellEls = fillCalendar(
+        grid, "daterange", anchor.year, anchor.month, dateLocale,
+        (cell) => dispatch({ type: "select-date", iso: cell.iso }),
+        widgetId,
       );
       renderedMonth = monthKey;
       trackPreview();
@@ -285,6 +296,11 @@ export function renderDaterangeField(
       button.classList.toggle("mdy-datepicker__cell--in-range", cell.inRange);
       button.classList.toggle("mdy-datepicker__cell--selected", cell.rangeStart || cell.rangeEnd);
       button.setAttribute("aria-selected", String(cell.rangeStart || cell.rangeEnd));
+      // Where the keyboard is standing, which the controller answers and this grid was not painting:
+      // the arrows moved a cursor nothing showed and nothing followed, so the calendar answered a
+      // pointer and no key at all. One tab stop, on the cell the cursor is on.
+      button.classList.toggle("mdy-datepicker__cell--focused", cell.focused);
+      button.tabIndex = cell.focused ? 0 : -1;
       button.disabled = cell.disabled;
     }
 
@@ -292,10 +308,19 @@ export function renderDaterangeField(
     // did and this one did not: a grid the keyboard cannot reach is a grid only a mouse can use.
     // The start endpoint is where the range begins, so that is where the user is put; failing that,
     // the first day that can be picked.
-    if (state.open && !popup.contains(document.activeElement)) {
-      const target = (value.start ? cellEls.get(value.start) : undefined)
-        ?? [...cellEls.values()].find((cell) => !cell.disabled);
-      target?.focus();
+    if (state.open) {
+      const cursor = state.cells.find((cell) => cell.focused);
+      const onCursor = cursor ? cellEls.get(cursor.iso) : undefined;
+      if (!popup.contains(document.activeElement)) {
+        const target = onCursor
+          ?? (value.start ? cellEls.get(value.start) : undefined)
+          ?? [...cellEls.values()].find((cell) => !cell.disabled);
+        target?.focus();
+      } else if (onCursor && grid.contains(document.activeElement) && document.activeElement !== onCursor) {
+        // The cursor moved under a keyboard that is still in the grid, so focus goes with it —
+        // otherwise the next arrow is measured from the cell the person left behind.
+        onCursor.focus();
+      }
     }
   });
 
