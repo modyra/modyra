@@ -21996,3 +21996,29 @@ refused by another is cheap to settle while three runtimes are being kept in ste
 such a document is in somebody's repository. It is S2 because nothing is broken today, and its cost
 grows with the number of documents written before it is fixed.
 
+
+### The green battles of tonight, mutation-tested
+
+A red battle proves itself by being red for a stated reason. A green one proves nothing until it has
+been seen to fail, and four of tonight's instrument defects were checks that were green because they
+could not fail. So the two contract battles written this session were mutated:
+
+```
+a-key-that-needs-permission-first     strip `requires` from the reorder bindings
+                                      → reports Alt+ArrowLeft, Alt+ArrowRight
+
+a-part-two-kinds-spell-differently    rename `select.options` back to `listbox`
+                                      → reports ["listbox", "options"]
+```
+
+Both bite. Neither is green because it stopped looking.
+
+Worth stating why these two and not every green in the suite: they are the ones **written tonight, by
+me, and passed within hours of being written** — the shortest gap between an assertion and its verdict,
+and the case where a mistake in the assertion has had no time to be found by anything else. The older
+greens have had runs against changing code to earn theirs.
+
+`a-chip-that-does-not-say-where-it-is` was mutated when it landed, because two ADRs rest on it —
+stripping `aria-posinset` reports twelve of twelve, and giving every chip position `1` reports one
+distinct position where twelve are wanted.
+
