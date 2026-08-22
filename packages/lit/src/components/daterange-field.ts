@@ -61,6 +61,13 @@ export class MdyDaterangeFieldElement extends MdyFieldElement<MdyDateRange | nul
   static override properties: PropertyDeclarations = {
     min: { type: String },
     max: { type: String },
+    // The names the contract uses. A document declares `minDate` and `maxDate`
+    // (MdyDynamicCalendarOptions), the other two adapters read them under those names, and this
+    // element read only `min`/`max` — so a host forwarding what the document said set a property
+    // this element does not declare, and the calendar offered every day as an ordinary choice.
+    // `min`/`max` stay: a consumer writing lit by hand has been using them.
+    minDate: { type: String, attribute: "min-date" },
+    maxDate: { type: String, attribute: "max-date" },
     startPlaceholder: { type: String, attribute: "start-placeholder" },
     endPlaceholder: { type: String, attribute: "end-placeholder" },
     firstDayOfWeek: { type: Number, attribute: "first-day-of-week" },
@@ -70,6 +77,8 @@ export class MdyDaterangeFieldElement extends MdyFieldElement<MdyDateRange | nul
   };
   declare min?: string;
   declare max?: string;
+  declare minDate?: string;
+  declare maxDate?: string;
   declare startPlaceholder: string;
   declare endPlaceholder: string;
   /**
@@ -156,8 +165,8 @@ export class MdyDaterangeFieldElement extends MdyFieldElement<MdyDateRange | nul
       this.controller = createDaterangeFieldController({
         widgetId: this.fieldId,
         handle: handle as never,
-        minDate: this.min ?? null,
-        maxDate: this.max ?? null,
+        minDate: this.earliest ?? null,
+        maxDate: this.latest ?? null,
         firstDayOfWeek: this.weekStart,
       });
       // Lit repaints on its own reactive properties, and the controller's state is not one of them.
@@ -223,12 +232,22 @@ export class MdyDaterangeFieldElement extends MdyFieldElement<MdyDateRange | nul
     return calendarYearRange(this.view.viewYear, this.parseMin(), this.parseMax());
   }
 
+  /**
+   * The bounds, under either name.
+   *
+   * One accessor, because a bound read in four places under one name and set under another is how a
+   * calendar came to offer days its own limit refused: every reader here asks the same question.
+   */
+  protected get earliest(): string | undefined { return this.minDate ?? this.min; }
+
+  protected get latest(): string | undefined { return this.maxDate ?? this.max; }
+
   private parseMin(): CalendarDate | null {
-    return this.min ? parseIsoDate(this.min) : null;
+    return this.earliest ? parseIsoDate(this.earliest) : null;
   }
 
   private parseMax(): CalendarDate | null {
-    return this.max ? parseIsoDate(this.max) : null;
+    return this.latest ? parseIsoDate(this.latest) : null;
   }
 
   private isWithinBounds(iso: string): boolean {

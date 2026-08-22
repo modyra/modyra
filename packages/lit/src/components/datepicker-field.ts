@@ -58,6 +58,13 @@ export class MdyDatepickerFieldElement extends MdyFieldElement<string | null> {
   static override properties: PropertyDeclarations = {
     min: { type: String },
     max: { type: String },
+    // The names the contract uses. A document declares `minDate` and `maxDate`
+    // (MdyDynamicCalendarOptions), the other two adapters read them under those names, and this
+    // element read only `min`/`max` — so a host forwarding what the document said set a property
+    // this element does not declare, and the calendar offered every day as an ordinary choice.
+    // `min`/`max` stay: a consumer writing lit by hand has been using them.
+    minDate: { type: String, attribute: "min-date" },
+    maxDate: { type: String, attribute: "max-date" },
     placeholder: { type: String },
     firstDayOfWeek: { type: Number, attribute: "first-day-of-week" },
     variant: { type: String },
@@ -65,6 +72,8 @@ export class MdyDatepickerFieldElement extends MdyFieldElement<string | null> {
   };
   declare min?: string;
   declare max?: string;
+  declare minDate?: string;
+  declare maxDate?: string;
   declare placeholder: string;
   /**
    * 0 = Sunday, 1 = Monday. Unset follows the locale, which is what a calendar owes its user: a
@@ -185,12 +194,22 @@ export class MdyDatepickerFieldElement extends MdyFieldElement<string | null> {
     return calendarYearRange(this.view.viewYear, this.parseMin(), this.parseMax());
   }
 
+  /**
+   * The bounds, under either name.
+   *
+   * One accessor, because a bound read in four places under one name and set under another is how a
+   * calendar came to offer days its own limit refused: every reader here asks the same question.
+   */
+  protected get earliest(): string | undefined { return this.minDate ?? this.min; }
+
+  protected get latest(): string | undefined { return this.maxDate ?? this.max; }
+
   private parseMin(): CalendarDate | null {
-    return this.min ? parseIsoDate(this.min) : null;
+    return this.earliest ? parseIsoDate(this.earliest) : null;
   }
 
   private parseMax(): CalendarDate | null {
-    return this.max ? parseIsoDate(this.max) : null;
+    return this.latest ? parseIsoDate(this.latest) : null;
   }
 
   /** The calendar keyboard, which the controller answers — moving, paging and picking alike. */
@@ -248,8 +267,8 @@ export class MdyDatepickerFieldElement extends MdyFieldElement<string | null> {
       this.fieldController = createDatepickerFieldController({
         widgetId: this.fieldId,
         handle,
-        minDate: this.min ?? null,
-        maxDate: this.max ?? null,
+        minDate: this.earliest ?? null,
+        maxDate: this.latest ?? null,
         firstDayOfWeek: this.weekStart,
         // The reading is this element's — it knows the locale on screen; the judgement is the
         // controller's, which is what stops this renderer and the next answering differently.
@@ -309,7 +328,7 @@ export class MdyDatepickerFieldElement extends MdyFieldElement<string | null> {
     // The ends of the range are properties and can move; the controller is told rather than
     // rebuilt, which would forget the month on screen.
     if (changed.has("min") || changed.has("max")) {
-      this.fieldController?.setBounds(this.min ?? null, this.max ?? null);
+      this.fieldController?.setBounds(this.earliest ?? null, this.latest ?? null);
     }
   }
 
@@ -368,7 +387,7 @@ export class MdyDatepickerFieldElement extends MdyFieldElement<string | null> {
     const selectedIso = handle.value();
     const todayIso = formatIsoDate(today());
     const inRange = (iso: string): boolean =>
-      (!this.min || iso >= this.min) && (!this.max || iso <= this.max);
+      (!this.earliest || iso >= this.earliest) && (!this.latest || iso <= this.latest);
     return html`
       <div class="mdy-datepicker__weekdays" role="row">
         ${this.weekdayNames().map(
