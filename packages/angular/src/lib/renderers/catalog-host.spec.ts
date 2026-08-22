@@ -256,6 +256,9 @@ export function valueFor(kind: MdyWidgetKind): unknown {
     case "daterange": return { start: "2026-07-15", end: "2026-07-20" };
     case "timepicker": return "10:30";
     case "colors": return "#004cff";
+    // The comment above this function is the reason: `email` is a kind whose rule the browser
+    // enforces too, so "value" is a filled state reached with a rejected value.
+    case "email": return "someone@example.com";
     case "file": return [new File(["content"], "report.txt", { type: "text/plain" })];
     default: return "value";
   }

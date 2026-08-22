@@ -19,7 +19,7 @@ import {
   type MdyFormSchema,
 } from "./typed-form.js";
 import { MDY_VALUE_CONTRACTS, type MdyValueShape } from "./value-contracts.js";
-import { valueShape } from "./validators.js";
+import { kindValidators } from "./validators.js";
 import type { ValidatorFn } from "./types.js";
 import type { MdyFormRegistry } from "./contracts/form-registry.js";
 import { collectSchemaPaths, numericKeysToArrays } from "./schema-utils.js";
@@ -66,7 +66,7 @@ function shapeOf(
  * depending only on which of the two published builders a consumer called.
  */
 function leafFor(f: MdyDynamicField): unknown {
-  return field(mdyEmptyValueFor(f) as never, [valueShape(f.kind) as ValidatorFn<never>], {
+  return field(mdyEmptyValueFor(f) as never, kindValidators(f.kind) as ReadonlyArray<ValidatorFn<never>> as ValidatorFn<never>[], {
     sensitive: f.sensitive === true,
     ...shapeOf(f),
   });

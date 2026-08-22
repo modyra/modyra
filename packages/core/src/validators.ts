@@ -171,15 +171,46 @@ export const maxLength = (
       : [];
   }, { maxLength: max });
 
+/**
+ * What `<input type="email">` accepts, as the HTML standard defines it.
+ *
+ * Deliberately more permissive than a "real" address check — `a@b` passes, because the browser
+ * passes it — and deliberately ASCII, because the browser refuses anything else. A stricter rule is
+ * a rule the control does not enforce, and every difference between them is a form that says one
+ * thing and submits another.
+ */
+const EMAIL = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/;
+
 /** Email format validator */
 export const email = (message = 'Invalid email address'): ValidatorFn<string | null> =>
   withFacts((value) => {
     if (!value) return [];
-    const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return re.test(value) ? [] : [message];
+    // The rule the platform uses for `type="email"`, written out from the HTML standard rather than
+    // approximated. A field of this kind is judged twice — by the control the browser draws and by
+    // this — and two judges of one address must agree: `a@b` was refused here and accepted there,
+    // `ünicode@example.com` the other way round. A person is then either invited to submit what will
+    // be refused, or blocked by a browser over something nothing in the form objects to.
+    return EMAIL.test(value) ? [] : [message];
     // The keyboard, not the type: which control this is belongs to the kind, and a rule that could
     // change it would let a validator turn a text field into something else.
   }, { inputMode: "email" });
+
+/**
+ * The rules a *kind* carries, before a document declares any of its own.
+ *
+ * `valueShape` for every kind — what it can hold at all — and, for `email`, the address rule the
+ * control it draws already enforces. A field of that kind is judged twice, by the browser and by
+ * this form, and two judges of one address must agree: without the rule here the browser blocked
+ * submissions nothing in the form objected to.
+ *
+ * A document that also declares `validators: { email: true }` adds the same rule and the same
+ * sentence, which the engine says once.
+ */
+export function kindValidators<T>(kind: MdyValueKind): ReadonlyArray<ValidatorFn<T>> {
+  return kind === "email"
+    ? [valueShape<T>(kind), email() as unknown as ValidatorFn<T>]
+    : [valueShape<T>(kind)];
+}
 
 /** RegExp pattern validator */
 export const pattern = (regex: RegExp, message = 'Invalid format'): ValidatorFn<string | null> =>

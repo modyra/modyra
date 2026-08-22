@@ -72,6 +72,9 @@ export function valueFor(kind) {
     case "daterange": return { start: "2026-07-15", end: "2026-07-20" };
     case "timepicker": return "10:30";
     case "colors": return "#004cff";
+    // An address the control would accept: `email` is a kind whose rule the browser enforces too, so
+    // a filled-but-refused value would put the fixture in two states at once.
+    case "email": return "someone@example.com";
     case "file": return [new File(["content"], "report.txt", { type: "text/plain" })];
     default: return "value";
   }
