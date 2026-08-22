@@ -61,7 +61,7 @@ import { MdyOverlayPanelComponent } from "../../core/overlay-panel.component";
             class="mdy-colors__primary-picker"
             [disabled]="isDisabled()"
             [mdyPart]="openerButtonPart()"
-            [attr.aria-label]="i18n.colorPresetsHeader"
+            [attr.aria-label]="i18n.selectColorPrefix"
             (click)="toggleOverlay($event); $event.stopPropagation()"
           >
             <div
@@ -147,6 +147,9 @@ import { MdyOverlayPanelComponent } from "../../core/overlay-panel.component";
             [attr.aria-label]="i18n.colorPresetsHeader"
             (keydown)="onPresetKeydown($event)"
           >
+            <!-- A swatch is announced as the colour it is, and not "Select colour #hex": the option
+                 role already says what pressing it does, and ten options repeating the verb is the
+                 verb ten times. -->
             @for (color of presets(); track color) {
               <button
                 type="button"
@@ -155,7 +158,7 @@ import { MdyOverlayPanelComponent } from "../../core/overlay-panel.component";
                 [style.--color]="color"
                 [class.mdy-color-swatch--active]="isActiveColor(color)"
                 [attr.aria-selected]="isActiveColor(color)"
-                [attr.aria-label]="i18n.selectColorPrefix + ' ' + color"
+                [attr.aria-label]="color"
                 (click)="selectColor(color)"
               ></button>
             }
