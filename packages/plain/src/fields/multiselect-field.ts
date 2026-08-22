@@ -27,6 +27,8 @@ import {
   stateClass,
   scrollChipStripByWheel,
   chipTooltipOffset,
+  hiddenChipCount,
+  keepFocusedChipInView,
   wayBackSentence,
   blocksValueChange,
   isTypeaheadCharacter,
@@ -145,7 +147,37 @@ export function renderMultiselectField(
     chipTooltip.hidden = true;
   }
 
-  control.append(trigger, clearAll, announcement, chipTooltip);
+  /**
+   * How many chips are out of sight, and the way to all of them.
+   *
+   * ADR 0127 lets the row scroll only where something reaches what leaves it. The wheel is that for
+   * most people and nothing at all for a pointer with no horizontal axis, which is most desktop
+   * mice — so one control states the count and acts on it, rather than a cue saying *there is more*
+   * beside a trigger that mentions none of it.
+   */
+  const overflow = el("button", parts.overflowCount.classes.join(" ")) as HTMLButtonElement;
+  overflow.type = "button";
+  overflow.hidden = true;
+  overflow.addEventListener("click", (event) => {
+    event.stopPropagation();
+    dispatch({ type: "open" });
+  });
+
+  /** Measured after every render, because how many fit depends on the labels and the width given. */
+  function syncOverflow(): void {
+    const hidden = hiddenChipCount(chipStrip);
+    overflow.hidden = hidden === 0;
+    if (hidden > 0) {
+      setText(overflow, messages.chipsHiddenShort.replace("{count}", String(hidden)));
+      overflow.setAttribute("aria-label", messages.chipsHidden.replace("{count}", String(hidden)));
+    }
+    // The affordance takes its width out of the strip, so a chip the browser scrolled to on focus is
+    // outside again by about that width. Whatever the strip ends up as wide as, the focused chip is
+    // inside it.
+    keepFocusedChipInView(chipStrip);
+  }
+
+  control.append(trigger, overflow, clearAll, announcement, chipTooltip);
 
   // ── popup: the filter box over the same grid ──────────────────────────────────────────────
   const popup = el("div", `${parts.popup.classes.join(" ")} mdy-overlay`) as HTMLDivElement;
@@ -276,7 +308,13 @@ export function renderMultiselectField(
     //
     // `group` where there is no quantity: a chip holding one of something has no value to spin.
     chip.setAttribute("role", stepsFor(count) ? "spinbutton" : "group");
-    chip.addEventListener("focus", () => { activeChip = key; syncRoving(); });
+    chip.addEventListener("focus", () => {
+      activeChip = key;
+      syncRoving();
+      // After the paint, because the browser's own scroll-into-view happens first and the strip may
+      // still be about to change width around it. A focused chip nobody can see is a keyboard trap.
+      requestAnimationFrame(() => keepFocusedChipInView(chipStrip));
+    });
     // Rearranging what was chosen, from the chip a person is looking at. The keys are the
     // contract's — a renderer choosing its own is how three of them come to answer differently —
     // and the direction comes from the binding rather than from the key, because the strip runs in
@@ -752,6 +790,8 @@ export function renderMultiselectField(
     // whose ARIA says disabled while a button beside it still answers is disabled in appearance only.
     const blocked = blocksValueChange(state.interactivity);
     clearAll.hidden = nowChosen.length === 0 || blocked;
+    // After the chips are in place: the measurement is of what was drawn, not of what is about to be.
+    queueMicrotask(syncOverflow);
     clearAll.disabled = blocked;
     const back = state.wayBack;
     wayBack.hidden = back === null;

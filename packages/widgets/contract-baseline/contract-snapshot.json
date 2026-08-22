@@ -1987,6 +1987,17 @@
           ],
           "states": []
         },
+        "overflowCount": {
+          "element": "button",
+          "parent": "inputWrapper",
+          "optional": true,
+          "repeated": false,
+          "role": null,
+          "classes": [
+            "mdy-multiselect__overflow"
+          ],
+          "states": []
+        },
         "clearAll": {
           "element": "button",
           "parent": "inputWrapper",

@@ -11,6 +11,8 @@ import {
   stateClass,
   scrollChipStripByWheel,
   chipTooltipOffset,
+  hiddenChipCount,
+  keepFocusedChipInView,
   wayBackSentence,
   isTypeaheadCharacter,
 } from "@modyra/widgets";
@@ -149,6 +151,11 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
     });
   }
 
+  protected override updated(changed: Map<string, unknown>): void {
+    super.updated(changed);
+    this.measureHiddenChips();
+  }
+
   override willUpdate(changed: Map<string, unknown>): void {
     super.willUpdate?.(changed);
     // A field out of play keeps no popup over it: the overlay is torn down where every renderer
@@ -229,12 +236,12 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
   private searchResults(
     handle: MdyFieldHandle<readonly unknown[]>,
   ): ReadonlyArray<MdySelectOption<unknown>> {
-    let opts = this.filteredOptions(handle);
-    if (this.mode === "single") {
-      const selected = this.selectedSet(handle);
-      opts = opts.filter((o) => !selected.has(String(o.value)));
-    }
-    return filterOptionsByQuery(opts, this._query);
+    // Every option, chosen or not, with the state that says which. Filtering the chosen ones out
+    // was this renderer's own answer: the contract gives each option a `selected` state and, in
+    // toggle mode, `aria-pressed` — both unreachable for a list that removes what was taken. It also
+    // made the strip's overflow affordance a lie, because the values it says are out of sight are
+    // exactly the ones such a list omits.
+    return filterOptionsByQuery(this.filteredOptions(handle), this._query);
   }
 
   /**
@@ -521,6 +528,23 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
             ${this.loading ? mdyIcon("LOADER", "mdy-select__loader") : nothing}
             <span class="${this.partClass("arrow")}" aria-hidden="true"></span>
           </button>
+          <!-- How many chips are out of sight, and the way to all of them. ADR 0127 lets the row
+               scroll only where something reaches what leaves it: the wheel is that for most people
+               and nothing at all for a pointer with no horizontal axis. -->
+          ${this._hiddenChips > 0
+            ? html`<button
+                type="button"
+                class="${this.partClass("overflowCount")}"
+                aria-label=${this.messages.chipsHidden.replace("{count}", String(this._hiddenChips))}
+                @click=${(e: Event) => {
+                  e.stopPropagation();
+                  // The same door the trigger opens, taken the same way: the element's copy of
+                  // `open` and the overlay's own state both have to move, and `toggleOpen` is what
+                  // moves them together.
+                  if (this.field && !this._open) { this.overlay.open(e); this.toggleOpen(this.field); }
+                }}
+              >${this.messages.chipsHiddenShort.replace("{count}", String(this._hiddenChips))}</button>`
+            : nothing}
           <!-- Every choice off at once, beside the trigger rather than inside it: the trigger is a
                button, and a button inside a button is neither valid nor reachable. -->
           ${this.held(handle).length > 0 && !handle.disabled() && !handle.readonly()
@@ -710,6 +734,9 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
     return said;
   }
 
+  /** How many chips the strip is hiding, measured after each render of what was actually drawn. */
+  private _hiddenChips = 0;
+
   /** Which chip is being named, and where its tooltip sits in the control's own coordinates. */
   private _namedChip: string | null = null;
   private _chipTipAt = 0;
@@ -742,7 +769,12 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
       aria-valuenow=${this.mode === "multi" ? count : nothing}
       aria-valuemin=${this.mode === "multi" ? 0 : nothing}
       aria-valuetext=${this.mode === "multi" ? (count > 1 ? `${label}, ${count}` : label) : nothing}
-      @focus=${(e: FocusEvent) => { this._activeChip = String(value); this.revealChipName(e.currentTarget as HTMLElement, label); }}
+      @focus=${(e: FocusEvent) => {
+        this._activeChip = String(value);
+        this.revealChipName(e.currentTarget as HTMLElement, label);
+        const strip = this.querySelector<HTMLElement>(".mdy-multiselect__chips");
+        if (strip !== null) requestAnimationFrame(() => keepFocusedChipInView(strip));
+      }}
       @pointerenter=${(e: PointerEvent) => this.revealChipName(e.currentTarget as HTMLElement, label)}
       @pointerleave=${() => this.hideChipName()}
       @blur=${() => this.hideChipName()}
@@ -821,6 +853,25 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
    * `aria-activedescendant` names an element. Without this the control pointed at an id nothing
    * carried, so the cursor moved and a screen reader was told to look at nothing.
    */
+  /**
+   * How many chips the strip is hiding, taken from what the browser laid out.
+   *
+   * After the update rather than during it: how many fit depends on the labels, the theme's spacing
+   * and the width the host gave the field, and a count computed before layout is a guess.
+   */
+  private measureHiddenChips(): void {
+    const strip = this.querySelector<HTMLElement>(".mdy-multiselect__chips");
+    if (strip === null) return;
+    // The affordance takes its width out of the strip, so a chip the browser scrolled to on focus is
+    // outside again by about that width. Whatever the strip ends up as wide as, the focused chip is
+    // inside it.
+    keepFocusedChipInView(strip);
+    const hidden = hiddenChipCount(strip);
+    if (hidden === this._hiddenChips) return;
+    this._hiddenChips = hidden;
+    this.requestUpdate();
+  }
+
   private optionDomId(option: MdySelectOption<unknown>): string | null {
     return this.fieldController?.view().parts[String(option.value)]?.id ?? null;
   }

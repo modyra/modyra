@@ -1,4 +1,4 @@
-import { wayBackSentence, chipTooltipOffset, chipDropIndex, chipFocusAfterRemoval, scrollChipStripByWheel, isTypeaheadCharacter, chipMovedAnnouncement, stateClass, keyBindingFor, multiselectAnnouncement, optionsWithUnrecognizedValues, overlayControlledId, projectOverlayOpenerA11y } from "@modyra/widgets";
+import { wayBackSentence, chipTooltipOffset, hiddenChipCount, keepFocusedChipInView, chipDropIndex, chipFocusAfterRemoval, scrollChipStripByWheel, isTypeaheadCharacter, chipMovedAnnouncement, stateClass, keyBindingFor, multiselectAnnouncement, optionsWithUnrecognizedValues, overlayControlledId, projectOverlayOpenerA11y } from "@modyra/widgets";
 import { MdyPartDirective } from "../../control/mdy-part.directive";
 import { NgTemplateOutlet } from "@angular/common";
 import {
@@ -7,6 +7,7 @@ import {
   ChangeDetectionStrategy,
   Component,
   computed,
+  effect,
   ElementRef,
   forwardRef,
   input,
@@ -107,7 +108,7 @@ import type { MdyOverlayBranch, MdyOverlayOwner } from "../../core/overlay-contr
               [attr.aria-valuemin]="mode() === 'multi' ? 0 : null"
               [attr.aria-valuetext]="mode() === 'multi' ? (held.count > 1 ? held.label + ', ' + held.count : held.label) : null"
               [attr.data-key]="held.key"
-              (focus)="activeChipKey.set(held.key); revealChipName($event, held.key)"
+              (focus)="activeChipKey.set(held.key); revealChipName($event, held.key); onChipFocused()"
               (pointerenter)="revealChipName($event, held.key)"
               (pointerleave)="hideChipName()"
               (blur)="hideChipName()"
@@ -175,6 +176,17 @@ import type { MdyOverlayBranch, MdyOverlayOwner } from "../../core/overlay-contr
         }
         <span class="mdy-multiselect__arrow" aria-hidden="true"></span>
       </button>
+      <!-- How many chips are out of sight, and the way to all of them. ADR 0127 lets the row scroll
+           only where something reaches what leaves it: the wheel is that for most people and nothing
+           at all for a pointer with no horizontal axis, which is most desktop mice. -->
+      @if (hiddenChips() > 0) {
+        <button
+          type="button"
+          class="mdy-multiselect__overflow"
+          [attr.aria-label]="i18n.chipsHidden.replace('{count}', hiddenChips().toString())"
+          (click)="onOverflowPress($event)"
+        >{{ i18n.chipsHiddenShort.replace("{count}", hiddenChips().toString()) }}</button>
+      }
       <!-- Every choice off at once, beside the trigger rather than inside it: the trigger is a
            button, and a button inside a button is neither valid nor reachable. -->
       @if (chosen().length > 0 && !isDisabled() && !isReadonly()) {
@@ -221,83 +233,88 @@ import type { MdyOverlayBranch, MdyOverlayOwner } from "../../core/overlay-contr
       [kind]="'multiselect'"
       (close)="closeOverlay()"
     >
-      @if (searchable()) {
-      <input
-        #overlayInput
-        type="text"
-        class="mdy-multiselect-overlay__input"
-        [placeholder]="i18n.searchPlaceholder"
-        autocomplete="off"
-        [value]="searchQuery()"
-        (input)="onSearchInput($event)"
-        (keydown)="onOverlayKeydown($event)"
-      />
-      }
-      <!-- The chip grid says what it is. The contract declares the role; a container left bare told
-           a screen reader nothing about the set at all. -->
-      <div
-        class="mdy-multiselect__options mdy-multiselect-overlay__grid"
-        [attr.role]="optionsRole"
-        [attr.aria-label]="controlAriaLabel()"
-      >
-        @for (opt of searchResults(); track opt.value; let i = $index) {
-          <div [class]="chip.wrapper" [attr.data-option-key]="optionKey(opt.value)">
-          @if (mode() === "multi") {
-            <div
-              [class]="chipClasses(countOf(opt.value) > 0)"
-              [id]="optionDomId(opt.value)"
-              [class.mdy-chip--active]="activeOverlayKey() === optionKey(opt.value)"
-            >
-              <button
-                type="button"
-                [class]="chip.step"
-                (click)="decrement(opt.value)"
-                [disabled]="countOf(opt.value) === 0"
-                [attr.aria-label]="i18n.decrease"
+      <!-- A closed popup holds nothing. The panel hides itself, and its contents went on
+           existing behind it: twelve option chips in the document of a control that looks
+           closed, reachable by a screen reader and countable by anything walking the field. -->
+      @if (open()) {
+        @if (searchable()) {
+        <input
+          #overlayInput
+          type="text"
+          class="mdy-multiselect-overlay__input"
+          [placeholder]="i18n.searchPlaceholder"
+          autocomplete="off"
+          [value]="searchQuery()"
+          (input)="onSearchInput($event)"
+          (keydown)="onOverlayKeydown($event)"
+        />
+        }
+        <!-- The chip grid says what it is. The contract declares the role; a container left bare told
+             a screen reader nothing about the set at all. -->
+        <div
+          class="mdy-multiselect__options mdy-multiselect-overlay__grid"
+          [attr.role]="optionsRole"
+          [attr.aria-label]="controlAriaLabel()"
+        >
+          @for (opt of searchResults(); track opt.value; let i = $index) {
+            <div [class]="chip.wrapper" [attr.data-option-key]="optionKey(opt.value)">
+            @if (mode() === "multi") {
+              <div
+                [class]="chipClasses(countOf(opt.value) > 0)"
+                [id]="optionDomId(opt.value)"
+                [class.mdy-chip--active]="activeOverlayKey() === optionKey(opt.value)"
               >
-                <mdy-icon name="MINUS" />
-              </button>
-              <span [class]="chip.label">{{
-                opt.label
-              }}</span>
-              <span [class]="chip.count"
-                >&times;{{ countOf(opt.value) }}</span
-              >
-              <button
-                type="button"
-                [class]="chip.step"
-                (click)="increment(opt.value)"
-                [attr.aria-label]="i18n.increase"
-              >
-                <mdy-icon name="PLUS" />
-              </button>
-            </div>
-          } @else {
-            <button
-              type="button"
-              [class]="chipClasses(isSelected(opt.value))"
-              [id]="optionDomId(opt.value)"
-              [class.mdy-chip--active]="activeOverlayKey() === optionKey(opt.value)"
-              (click)="onOverlaySelect(opt.value)"
-            >
-              <mdy-icon name="CHECKMARK" [class]="chip.check" />
-              <span [class]="chip.label">{{ opt.label }}</span>
-            </button>
-          }
-          </div>
-        } @empty {
-          <div class="mdy-multiselect-overlay__empty">
-            @if (effectiveLoading()) {
-              <div class="mdy-select__loading-content">
-                <mdy-icon name="LOADER" class="mdy-select__loader" />
-                <span>{{ loadingText() || i18n.loading }}</span>
+                <button
+                  type="button"
+                  [class]="chip.step"
+                  (click)="decrement(opt.value)"
+                  [disabled]="countOf(opt.value) === 0"
+                  [attr.aria-label]="i18n.decrease"
+                >
+                  <mdy-icon name="MINUS" />
+                </button>
+                <span [class]="chip.label">{{
+                  opt.label
+                }}</span>
+                <span [class]="chip.count"
+                  >&times;{{ countOf(opt.value) }}</span
+                >
+                <button
+                  type="button"
+                  [class]="chip.step"
+                  (click)="increment(opt.value)"
+                  [attr.aria-label]="i18n.increase"
+                >
+                  <mdy-icon name="PLUS" />
+                </button>
               </div>
             } @else {
-              {{ i18n.noResults }}
+              <button
+                type="button"
+                [class]="chipClasses(isSelected(opt.value))"
+                [id]="optionDomId(opt.value)"
+                [class.mdy-chip--active]="activeOverlayKey() === optionKey(opt.value)"
+                (click)="onOverlaySelect(opt.value)"
+              >
+                <mdy-icon name="CHECKMARK" [class]="chip.check" />
+                <span [class]="chip.label">{{ opt.label }}</span>
+              </button>
             }
-          </div>
-        }
-      </div>
+            </div>
+          } @empty {
+            <div class="mdy-multiselect-overlay__empty">
+              @if (effectiveLoading()) {
+                <div class="mdy-select__loading-content">
+                  <mdy-icon name="LOADER" class="mdy-select__loader" />
+                  <span>{{ loadingText() || i18n.loading }}</span>
+                </div>
+              } @else {
+                {{ i18n.noResults }}
+              }
+            </div>
+          }
+        </div>
+      }
     </mdy-overlay-panel>
 
     <!-- The one way back, under the control. Untimed and in the page rather than in a toast: a
@@ -389,12 +406,12 @@ export class MdyMultiselectComponent<TValue = string>
   });
 
   protected readonly searchResults = computed(() => {
-    let opts = this.filteredOptions();
-    if (this.mode() === "single") {
-      const selected = this.selectedSet();
-      opts = opts.filter((o) => !selected.has(String(o.value)));
-    }
-    return filterOptionsByQuery(opts, this.searchQuery());
+    // Every option, chosen or not, with the state that says which. Filtering the chosen ones out
+    // was this renderer's own answer: the contract gives each option a `selected` state and, in
+    // toggle mode, `aria-pressed` — both unreachable for a list that removes what was taken. It also
+    // made the strip's overflow affordance a lie, because the values it says are out of sight are
+    // exactly the ones such a list omits.
+    return filterOptionsByQuery(this.filteredOptions(), this.searchQuery());
   });
 
   private readonly overlayInputRef =
@@ -505,6 +522,36 @@ export class MdyMultiselectComponent<TValue = string>
   protected isSelected(optValue: TValue): boolean {
     return this.selectedSet().has(this.optionKey(optValue));
   }
+
+  /** How many chips the strip is hiding, measured from what the browser actually laid out. */
+  protected readonly hiddenChips = signal(0);
+
+  /** The way to the chips the strip cannot show: the list, where every one of them is. */
+  protected onOverflowPress(event: Event): void {
+    event.stopPropagation();
+    this.openOverlay(event);
+  }
+
+  /**
+   * Counts what the strip is hiding, after the render that drew it.
+   *
+   * How many fit depends on the labels, the theme's spacing and the width the host gave the field,
+   * so this is a measurement and not a derivation from the number chosen.
+   */
+  protected readonly measureOverflow = effect(() => {
+    this.chosen();
+    // After the paint that drew the chips, not during the pass that decided them: `scrollWidth` on a
+    // strip that has not been laid out yet answers about the previous state.
+    queueMicrotask(() => {
+      const strip = this.hostRef.nativeElement.querySelector(".mdy-multiselect__chips") as HTMLElement | null;
+      if (strip === null) return;
+      // The affordance takes its width out of the strip, so a chip the browser scrolled to on focus
+      // is outside again by about that width. Whatever the strip ends up as wide as, the focused
+      // chip is inside it.
+      keepFocusedChipInView(strip);
+      this.hiddenChips.set(hiddenChipCount(strip));
+    });
+  });
 
   /** Every choice off at once. The press must not reach the trigger behind it and reopen the popup. */
   protected onClearAll(event: Event): void {
@@ -801,6 +848,19 @@ export class MdyMultiselectComponent<TValue = string>
     const strip = this.hostRef.nativeElement.querySelector(".mdy-multiselect__chips") as HTMLElement | null;
     this.chipTipAt.set(strip === null ? 0 : chipTooltipOffset(chip, strip));
     this.namedChip.set(key);
+  }
+
+  /**
+   * A focused chip is brought back into the strip, after the paint that may have narrowed it.
+   *
+   * The browser scrolls a focused element in once, at the moment focus lands; an affordance that
+   * appears on the same beat takes its width out of the scrollport afterwards. A focused chip nobody
+   * can see is a keyboard trap.
+   */
+  protected onChipFocused(): void {
+    const strip = this.hostRef.nativeElement.querySelector(".mdy-multiselect__chips") as HTMLElement | null;
+    if (strip === null) return;
+    requestAnimationFrame(() => keepFocusedChipInView(strip));
   }
 
   protected hideChipName(): void {

@@ -89,6 +89,17 @@ export interface MdyI18nMessages {
   /** The control that takes every choice off at once. */
   readonly clearSelection: string;
   /**
+   * The affordance at the strip's trailing edge, which says how many chips are out of sight and
+   * opens the list where all of them are.
+   *
+   * ADR 0127 allows the row to scroll only where something reaches what leaves it. A wheel is that
+   * mechanism for most people and not for a pointer with no horizontal axis, which is most desktop
+   * mice — so the count is a fact one control states and the same control acts on. `{count}` is how
+   * many are hidden; the short form is what is drawn, the long one is what is announced.
+   */
+  readonly chipsHiddenShort: string;
+  readonly chipsHidden: string;
+  /**
    * The one way back, and what it says it is putting back.
    *
    * A single reversal covers the last destructive change whatever produced it, so "Undo" alone is
@@ -177,6 +188,8 @@ export const MDY_I18N_MESSAGES_DEFAULT: MdyI18nMessages = Object.freeze({
   selectionMoved: "{value}, moved to position {position} of {count}",
   selectionCount: "{count} selected",
   clearSelection: "Clear selection",
+  chipsHiddenShort: "+{count}",
+  chipsHidden: "{count} more not shown",
   wayBackLabel: "Undo",
   wayBackRemoved: "{value} removed",
   wayBackMoved: "{value} moved",
@@ -247,6 +260,8 @@ export const MDY_I18N_MESSAGES_IT: MdyI18nMessages = Object.freeze({
   selectionMoved: "{value}, spostato in posizione {position} di {count}",
   selectionCount: "{count} selezionati",
   clearSelection: "Svuota la selezione",
+  chipsHiddenShort: "+{count}",
+  chipsHidden: "altri {count} non mostrati",
   wayBackLabel: "Annulla",
   wayBackRemoved: "{value} rimosso",
   wayBackMoved: "{value} spostato",
@@ -310,6 +325,8 @@ export const MDY_I18N_MESSAGES_DE: MdyI18nMessages = Object.freeze({
   selectionMoved: "{value}, verschoben auf Position {position} von {count}",
   selectionCount: "{count} ausgewählt",
   clearSelection: "Auswahl leeren",
+  chipsHiddenShort: "+{count}",
+  chipsHidden: "{count} weitere nicht sichtbar",
   wayBackLabel: "Rückgängig",
   wayBackRemoved: "{value} entfernt",
   wayBackMoved: "{value} verschoben",
@@ -373,6 +390,8 @@ export const MDY_I18N_MESSAGES_FR: MdyI18nMessages = Object.freeze({
   selectionMoved: "{value}, déplacé en position {position} sur {count}",
   selectionCount: "{count} sélectionnés",
   clearSelection: "Effacer la sélection",
+  chipsHiddenShort: "+{count}",
+  chipsHidden: "{count} autres non affichés",
   wayBackLabel: "Annuler",
   wayBackRemoved: "{value} retiré",
   wayBackMoved: "{value} déplacé",
@@ -436,6 +455,8 @@ export const MDY_I18N_MESSAGES_ES: MdyI18nMessages = Object.freeze({
   selectionMoved: "{value}, movido a la posición {position} de {count}",
   selectionCount: "{count} seleccionados",
   clearSelection: "Vaciar la selección",
+  chipsHiddenShort: "+{count}",
+  chipsHidden: "{count} más no mostrados",
   wayBackLabel: "Deshacer",
   wayBackRemoved: "{value} eliminado",
   wayBackMoved: "{value} movido",

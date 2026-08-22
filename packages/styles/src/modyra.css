@@ -1918,6 +1918,28 @@
     }
 
     .mdy-multiselect__clear-all:hover { color: var(--mdy-color-text, inherit); }
+
+    /* How many chips are out of sight, and the way to all of them. Text rather than a glyph: the
+       number is the fact, and forced-colors mode keeps text where it drops a background image. */
+    .mdy-multiselect__overflow {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        flex: 0 0 auto;
+        min-width: var(--mdy-affordance-size, 2.75rem);
+        height: var(--mdy-affordance-size, 2.75rem);
+        padding: 0 var(--mdy-space-1, 0.25rem);
+        border: 0;
+        background: none;
+        color: var(--mdy-color-text-muted, inherit);
+        font: inherit;
+        font-size: var(--mdy-font-size-sm, 0.8125rem);
+        cursor: pointer;
+        white-space: nowrap;
+    }
+
+    .mdy-multiselect__overflow:hover { color: var(--mdy-color-text, inherit); }
+    .mdy-multiselect__overflow[hidden] { display: none; }
     .mdy-multiselect__clear-all[hidden] { display: none; }
 
     /* The one way back. In the page and untimed: a message that takes itself away after five
@@ -2122,60 +2144,46 @@
        person is looking when they change their mind — the alternative is reopening the popup and
        finding the row again among the others. Sized and laid out with the steppers because it is
        the same kind of thing: a small control at the edge of a chip. */
-    /* The mark the remove control shows, drawn rather than written.
-       A `×` in the button's text is read out as part of whatever composes an accessible name from
-       its contents — the chip's name is built that way, so the character arrived as "Opzione A 2 ×"
-       unless somebody remembered to exclude it. A mark that is never text cannot be. */
+    /* The marks a chip's controls show, painted rather than written.
+       Two properties decide the technique, both from ADR 0133. A mark in CSS is a theme's to change;
+       a character in markup is three renderers' to keep in step. And a **mask** takes the system's
+       own colour under `forced-colors`, where a background image is dropped entirely — so a mark
+       that is only a painted shape disappears for the readers most likely to be zoomed into a
+       control this small. Same reasoning as the overflow cue in ADR 0127.
+
+       Drawn from the icon set's own geometry: CLOSE for the remove, CHEVRON_LEFT and CHEVRON_RIGHT
+       for the two move controls. */
     .mdy-chip__remove::before,
-    .mdy-chip__remove::after {
+    .mdy-chip__move::before {
         content: "";
         position: absolute;
-        width: calc(var(--mdy-affordance-glyph) / 2);
-        height: 1.5px;
+        width: var(--mdy-affordance-glyph);
+        height: var(--mdy-affordance-glyph);
         background: currentcolor;
+        -webkit-mask-repeat: no-repeat;
+        mask-repeat: no-repeat;
+        -webkit-mask-position: center;
+        mask-position: center;
+        -webkit-mask-size: contain;
+        mask-size: contain;
     }
 
-    /* What a chip is called, for one the strip had to cut short.
-       WCAG 1.4.13 asks that content revealed on hover be reachable on focus as well, and the
-       `title` attribute is neither: it never appears for a keyboard or a touch user, who are exactly
-       the people who cannot widen the chip to read it. Drawn above the strip rather than inside it,
-       because the strip clips its own overflow. */
-    .mdy-chip__tooltip {
-        position: absolute;
-        inset-inline-start: 0;
-        bottom: calc(100% + 0.25rem);
-        z-index: 2;
-        display: block;
-        max-width: 16rem;
-        padding: 0.25rem 0.5rem;
-        border-radius: var(--mdy-radius-sm, 0.25rem);
-        background: var(--mdy-inverse-surface, #202020);
-        color: var(--mdy-inverse-on-surface, #f5f5f5);
-        font-size: var(--mdy-font-size-sm, 0.8125rem);
-        white-space: normal;
-        pointer-events: none;
+    .mdy-chip__remove::before {
+        -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M5 5l14 14M19 5L5 19' fill='none' stroke='black' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E");
+        mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M5 5l14 14M19 5L5 19' fill='none' stroke='black' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E");
     }
 
-    .mdy-chip__tooltip[hidden] { display: none; }
-
-    .mdy-chip__remove::before { transform: rotate(45deg); }
-    .mdy-chip__remove::after { transform: rotate(-45deg); }
-
-    /* The two marks the pointer's move controls show, drawn rather than written for the same reason
-       the remove is: a character in the button's text is picked up by an accessible name composed
-       from contents. */
-    .mdy-chip__move::after {
-        content: "";
-        position: absolute;
-        width: calc(var(--mdy-affordance-glyph) / 2.4);
-        height: calc(var(--mdy-affordance-glyph) / 2.4);
-        border-left: 1.5px solid currentcolor;
-        border-bottom: 1.5px solid currentcolor;
-        transform: rotate(45deg);
+    /* The first move control points back and the last points on. Which is which comes from the
+       drawing order, so a right-to-left document needs no rule of its own: the strip runs in the
+       writing direction and so do these. */
+    .mdy-chip__move::before {
+        -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M15 18l-6-6 6-6' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+        mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M15 18l-6-6 6-6' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
     }
 
-    .mdy-chip__move:last-of-type::after {
-        transform: rotate(-135deg);
+    .mdy-chip__move:last-of-type::before {
+        -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M9 18l6-6-6-6' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+        mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M9 18l6-6-6-6' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
     }
 
     .mdy-chip__btn,
