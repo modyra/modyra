@@ -44,6 +44,7 @@ import "@angular/compiler";
 import { createComponent, provideZonelessChangeDetection } from "@angular/core";
 import { createApplication } from "@angular/platform-browser";
 import { MdyDynamicFormComponent } from "@modyra/angular/ui";
+import { parseDynamicForm } from "@modyra/core";
 import { createMdyAnnouncer } from "@modyra/widgets";
 import { announceThrough, documentProbes } from "./document-probes.mjs";
 
@@ -173,6 +174,57 @@ window.battleAngular = {
   },
 
   /**
+   * Mount, and remember the answer this form's submission is to be given.
+   *
+   * The plain door takes an `onSubmit` at mount time; this component takes none, so the answer is
+   * held here and applied when `submit` runs. **That is the faithful translation rather than a
+   * lesser one**: what the specs using this assert is what a page does with a refusal, and a
+   * refusal arriving at submit time is the same refusal. Inventing a mount-time handler the
+   * component does not have would be the host describing an API that is not there.
+   *
+   * **One observable difference, stated rather than hidden.** The plain host's `submit` installs a
+   * handler of its own that returns nothing, so it *bypasses* the answer its own `mountWithSubmit`
+   * was given — press the button there and the refusal arrives, call `submit` and it does not. This
+   * host honours the answer either way. A spec widened to run here that depends on the bypass will
+   * see the difference, and the difference is plain's quirk rather than this host's invention.
+   */
+  async mountWithSubmit(id, fields, errors) {
+    const result = await this.mountFields(id, fields);
+    const entry = mounted.get(id);
+    if (entry !== undefined) entry.answer = errors;
+    return result;
+  },
+
+  /** The same, with the answer arriving after a wait, so a spec can ask what the page shows meanwhile. */
+  async mountSlowSubmit(id, fields, ms, errors = null) {
+    const result = await this.mountFields(id, fields);
+    const entry = mounted.get(id);
+    if (entry !== undefined) { entry.answer = errors; entry.answerAfter = ms; }
+    return result;
+  },
+
+  /**
+   * Mount a form the way an application mounts one that arrived as data.
+   *
+   * Through the contract's own door: the envelope is parsed, and a refusal is answered with the
+   * diagnostics rather than with an empty form, because a document the contract will not carry is a
+   * different outcome from one it carries badly.
+   */
+  async mountDocument(id, envelope, options = {}) {
+    const parsed = parseDynamicForm(envelope, { mode: options.mode ?? "strict" });
+    if (!parsed.ok) {
+      return {
+        mounted: false,
+        diagnostics: parsed.diagnostics.map((each) => ({ code: each.code, path: each.path, message: each.message })),
+      };
+    }
+    const result = await this.mountFields(id, parsed.fields, options);
+    return result.mounted === false
+      ? result
+      : { mounted: true, accepted: parsed.acceptedCount, rejected: parsed.rejectedCount };
+  },
+
+  /**
    * Sending, and what a page does with the answer.
    *
    * The three the submission specs need. Each drives the running form rather than pressing a button:
@@ -182,9 +234,14 @@ window.battleAngular = {
   async submit(id) {
     const entry = mounted.get(id);
     const form = entry?.reference.instance.form?.();
-    await form?.submit?.((value) => {
+    await form?.submit?.(async (value) => {
       entry.submitted.push(structuredClone(value));
-      return null;
+      // An answer a mount asked to be given, and the wait it asked for. Absent both, a submission
+      // that succeeds silently, which is what a bare submit means.
+      if (entry.answerAfter !== undefined) {
+        await new Promise((resolve) => setTimeout(resolve, entry.answerAfter));
+      }
+      return entry.answer ?? null;
     });
     await settled();
     return entry?.submitted.length ?? 0;
