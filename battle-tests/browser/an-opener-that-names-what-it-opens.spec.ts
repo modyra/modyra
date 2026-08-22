@@ -24,10 +24,10 @@
 import { expect, test } from "@playwright/test";
 import { MDY_POPUP_OPENERS, projectOverlayOpenerA11y } from "@modyra/widgets";
 
-const HOSTS = [
-  { name: "plain", page: "/index.html", ready: "battleReady", api: "battle" },
-  { name: "lit", page: "/lit.html", ready: "battleLitReady", api: "battleLit" },
-];
+// **Every renderer, from the shared list.** The local list this replaced was not a scope
+// decision: the angular host published six of the twenty-two doors these specs need, so a
+// spec wanting one it lacked left the renderer out and the next reader copied the list.
+import { HOSTS } from "./bench";
 
 const KINDS = Object.keys(MDY_POPUP_OPENERS);
 const OPTIONS = [{ value: "a", label: "A" }, { value: "b", label: "B" }];
