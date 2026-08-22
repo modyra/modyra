@@ -22116,3 +22116,36 @@ the person entered*.
 Not a regression in the sense of a mistake. Seven specs closed on a rule that was missing before
 tonight, and this is the eighth case arriving at it. Owned by `esecutore`.
 
+
+### 0135 is built, and the trade landed exactly as the record said it would
+
+```
+                              stable across mounts    two forms do not collide
+before   plain                        yes                      no
+         lit · angular                no                       yes
+after    all three                    yes                      no
+```
+
+The two renderers moved from one column to the other. **That is the trade the record took knowingly**
+— an id a consumer can write down in advance, in exchange for a collision the scope has to prevent —
+and it is why the battle was written with two cases instead of one. With the stability case alone, this
+batch would have turned the file green while introducing the defect the record names in its own
+Consequences.
+
+The scope case is now red in all three rather than in plain alone, which is the correct next state and
+not a regression: every renderer has the hazard because every renderer now has the property that
+creates it.
+
+**A third red arrived with it, and it is an older spec whose header had gone false.**
+`two-forms-that-would-share-a-page` said *one renderer never has the hazard, because it mints an id per
+widget instance* — true when written, and untrue the moment 0135 landed. The instance counter was what
+made an id unpredictable and the same property was what made a collision impossible.
+
+That file also named no claim, so the gate could not rank its red. Both are fixed: the paragraph says
+what changed and why, and the header names `UI-011` and `A11Y-001`.
+
+**Worth keeping as a shape**: a spec's prose can go stale in a way its assertions cannot, and nothing
+checks prose. This one described the *mechanism* of a renderer rather than the property it was
+asserting, and the mechanism was the thing that changed. An explanation that names an implementation
+has the same shelf life as the implementation.
+
