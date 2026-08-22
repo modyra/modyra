@@ -64,7 +64,7 @@ function* filesUnder(dir) {
 }
 
 // `npm run x`, `npm run x -- --flag`, `pnpm run x`, and the same inside backticks or a code fence.
-const NAMED = /\b(?:npm|pnpm)\s+run\s+([a-zA-Z0-9:_-]+)/g;
+const NAMED = /\b(?:npm|pnpm)\s+run\s+([a-zA-Z0-9:_-]+)((?:\s+--?[a-zA-Z0-9:_-]+(?:[= ][^\s`"']+)?)*)/g;
 
 /** This file's own examples name commands that must not exist; it would report itself otherwise. */
 const SELF = "battle-tests/harness/every-script-named-exists.mjs";
@@ -78,9 +78,12 @@ for (const where of LOOK_IN) {
     if (here === SELF) continue;
     const text = readFileSync(file, "utf8");
     const known = new Set([...ROOT_SCRIPTS, ...scriptsOf(file)]);
-    for (const [, name] of text.matchAll(NAMED)) {
+    for (const [, name, tail] of text.matchAll(NAMED)) {
       // `npm run --silent x` puts a flag where a name goes; the flag is not a script.
       if (name.startsWith("-")) continue;
+      // `npm run build --prefix packages/studio` runs *that* package's script, and this file has no
+      // way to know which without resolving the prefix — so it is out of scope rather than reported.
+      if (/--prefix|--workspace|-w\b|-C\b/.test(tail ?? "")) continue;
       if (known.has(name)) continue;
       const at = phantom.get(name) ?? new Set();
       at.add(relative(ROOT, file));
