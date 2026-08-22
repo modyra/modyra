@@ -113,6 +113,59 @@ window.battleAngular = {
     await settled();
   },
 
+  /**
+   * The form-level doors the other two hosts have had all along.
+   *
+   * This host published six methods where the plain one publishes twenty-six, and **every one of the
+   * twenty missing is called by some spec**. That is the reason sixty-nine of a hundred and
+   * forty-one browser specs keep a host list with no Angular in it: not a decision anyone took, but a
+   * host that could not do what they needed, so the renderer was left out one file at a time and the
+   * suite went quiet about it.
+   *
+   * Each one reaches the same place the other hosts reach — the running form — and each mutation
+   * awaits a frame, because this renderer schedules its change detection instead of running it. A
+   * spec that read the DOM in the same task as the write would read the previous frame, which is the
+   * shape every Angular defect in this suite has worn at least once.
+   */
+  async readonly(id, path) {
+    mounted.get(id)?.reference.instance.form?.()?.setReadonly?.(path, () => true);
+    await settled();
+  },
+
+  async disable(id, path) {
+    mounted.get(id)?.reference.instance.form?.()?.setDisabled?.(path, () => true);
+    await settled();
+  },
+
+  async reset(id) {
+    mounted.get(id)?.reference.instance.form?.()?.reset?.();
+    await settled();
+  },
+
+  /** What the engine says is wrong with one field, and whether the form may be sent. */
+  errorsOf(id, path) {
+    return mounted.get(id)?.reference.instance.form?.()?.errorsFor?.(path)?.() ?? [];
+  },
+
+  canSubmitOf(id) {
+    return mounted.get(id)?.reference.instance.form?.()?.state?.canSubmit?.() ?? null;
+  },
+
+  submittingOf(id) {
+    return mounted.get(id)?.reference.instance.form?.()?.state?.submitting?.() ?? null;
+  },
+
+  /**
+   * End the form and leave the controls in the document.
+   *
+   * The window a framework opens between destroying its model and removing its nodes: an element
+   * still holds a handle to a form that has ended, and whatever a person does in that window reaches
+   * it.
+   */
+  destroyFormOnly(id) {
+    mounted.get(id)?.reference.instance.form?.()?.destroy?.();
+  },
+
   /** Give Angular a beat, for a spec that drove the page through the DOM rather than through here. */
   async settle() {
     await settled();
