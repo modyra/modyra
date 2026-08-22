@@ -44,7 +44,8 @@ import "@angular/compiler";
 import { createComponent, provideZonelessChangeDetection } from "@angular/core";
 import { createApplication } from "@angular/platform-browser";
 import { MdyDynamicFormComponent } from "@modyra/angular/ui";
-import { documentProbes } from "./document-probes.mjs";
+import { createMdyAnnouncer } from "@modyra/widgets";
+import { announceThrough, documentProbes } from "./document-probes.mjs";
 
 const mounted = new Map();
 
@@ -170,6 +171,50 @@ window.battleAngular = {
   destroyFormOnly(id) {
     mounted.get(id)?.reference.instance.form?.()?.destroy?.();
   },
+
+  /**
+   * Sending, and what a page does with the answer.
+   *
+   * The three the submission specs need. Each drives the running form rather than pressing a button:
+   * whether the page *offers* to send is a separate question with its own specs, and mixing the two
+   * makes a failure to send indistinguishable from a failure to ask.
+   */
+  async submit(id) {
+    const entry = mounted.get(id);
+    const form = entry?.reference.instance.form?.();
+    await form?.submit?.((value) => {
+      entry.submitted.push(structuredClone(value));
+      return null;
+    });
+    await settled();
+    return entry?.submitted.length ?? 0;
+  },
+
+  async submitAnswering(id, answer) {
+    const entry = mounted.get(id);
+    const form = entry?.reference.instance.form?.();
+    await form?.submit?.((value) => {
+      entry.submitted.push(structuredClone(value));
+      // A thrown answer is how a spec asks what a page does when the server does not reply with a
+      // refusal but with a failure.
+      if (answer !== null && typeof answer === "object" && answer.__throw !== undefined) {
+        throw new Error(String(answer.__throw));
+      }
+      return answer;
+    });
+    await settled();
+  },
+
+  lastSubmitErrorsOf(id) {
+    const errors = mounted.get(id)?.reference.instance.form?.()?.state?.lastSubmitErrors?.() ?? [];
+    return errors.map((entry) => ({
+      path: entry.path ?? null,
+      message: typeof entry.message === "string" ? entry.message : String(entry.message),
+    }));
+  },
+
+  /** A published widget helper that needs only a region and a sentence. */
+  announce: announceThrough(createMdyAnnouncer),
 
   /** Give Angular a beat, for a spec that drove the page through the DOM rather than through here. */
   async settle() {

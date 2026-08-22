@@ -69,5 +69,15 @@ export function controlCount() {
   return document.querySelectorAll("#stage input, #stage select, #stage button").length;
 }
 
+/**
+ * Say something in a live region, through the published helper.
+ *
+ * Framework-free by construction — `createMdyAnnouncer` takes a region id and a string — so a host
+ * that could not offer it was withholding a widgets helper rather than an adapter's behaviour.
+ */
+export function announceThrough(createMdyAnnouncer) {
+  return (regionId, message) => createMdyAnnouncer(regionId).announce(message);
+}
+
 /** The four together, for a host to spread into the object it publishes. */
 export const documentProbes = { danglingReferences, duplicateIds, focusState, controlCount };
