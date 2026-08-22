@@ -62,15 +62,34 @@ const chipKeys = () => {
  * A grab is a mode, so it is entered and left. Where the table declares none, the moves are pressed
  * directly — the spec follows the contract rather than assuming which shape it is in.
  */
-async function moveLeft(page: import("@playwright/test").Page, steps: number) {
+async function moveLeft(
+  page: import("@playwright/test").Page,
+  host: (typeof HOSTS)[number],
+  id: string,
+  steps: number,
+) {
   const { grab, left } = chipKeys();
   expect(left, "the contract declares no key that moves a chip towards the front").toBeDefined();
-  if (grab !== undefined) { await page.keyboard.press(grab); await page.waitForTimeout(120); }
+  const order = () => page.evaluate(({ api, mountId }) =>
+    JSON.stringify((window as never as Record<string, { valueOf(i: string): Record<string, unknown> }>)[api].valueOf(mountId)),
+    { api: host.api, mountId: id });
+
+  if (grab !== undefined) await page.keyboard.press(grab);
   for (let at = 0; at < steps; at += 1) {
+    // Wait for the move to land, not for a length of time. A fixed sleep pays its whole cost on
+    // every press whether the renderer took a millisecond or the full budget; polling the value
+    // returns on the frame it changes, and still fails loudly when it never does.
+    const before = await order();
     await page.keyboard.press(left as string);
-    await page.waitForTimeout(250);
+    await expect.poll(order, { timeout: 4000 }).not.toBe(before);
   }
-  if (grab !== undefined) { await page.keyboard.press(grab); await page.waitForTimeout(250); }
+  if (grab !== undefined) {
+    const before = await order();
+    await page.keyboard.press(grab);
+    // Dropping may or may not change the value — the move already did. What must settle is that
+    // nothing further moves, so this waits one turn of the poll rather than a fixed pause.
+    await expect.poll(order, { timeout: 1000 }).toBe(before).catch(() => undefined);
+  }
 }
 
 for (const host of HOSTS) {
@@ -113,7 +132,7 @@ for (const host of HOSTS) {
     ).toBe(3);
 
     await chips(page, "by-key").nth(2).focus();
-    await moveLeft(page, 2);
+    await moveLeft(page, host, "by-key", 2);
     const byKeystroke = await held(page, "by-key");
 
     expect(
@@ -166,7 +185,7 @@ for (const host of HOSTS) {
 
     await mount(page, "byKey", true);
     await chips(page, "byKey").last().focus();
-    await moveLeft(page, 2);
+    await moveLeft(page, host, "byKey", 2);
     const byKey = await held(page, "byKey");
 
     await mount(page, "byTap", true);
