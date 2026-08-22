@@ -628,6 +628,9 @@ export function renderMultiselectField(
    */
   function syncGrids(painted: readonly MdySelectOption<unknown>[]): void {
     const wanted = new Set<string>();
+    // Where the next option belongs, counted as they are placed: an option already sitting there is
+    // left alone.
+    let placed = 0;
     for (const option of painted) {
       const key = keyFor(option);
       wanted.add(key);
@@ -642,11 +645,17 @@ export function renderMultiselectField(
         });
         optionEls.set(key, handles);
       }
-      // Appending an element already in a grid moves it, which keeps the order the controller's.
+      // Appending an element already in a grid moves it, which keeps the order the controller's —
+      // and only when it is not already where it belongs. Moving a node in the DOM takes focus off
+      // it, so re-appending every option on every pass sent the keyboard to the document the moment
+      // somebody chose one with the pointer: the popup was then open with nothing focused inside it,
+      // and `Escape` reached no listener.
       for (const target of [overlay]) {
         const chip = target.chips.get(key);
-        if (chip?.chip.parentElement) target.grid.appendChild(chip.chip.parentElement);
+        const wrapper = chip?.chip.parentElement;
+        if (wrapper && wrapper !== target.grid.children[placed]) target.grid.appendChild(wrapper);
       }
+      placed += 1;
     }
     for (const key of [...optionEls.keys()]) {
       if (wanted.has(key)) continue;

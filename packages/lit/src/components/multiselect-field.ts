@@ -283,14 +283,19 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
   ): void {
     const order = [...new Set(this.held(handle).map((v) => String(v)))];
     const next = chipFocusAfterRemoval(order, String(value), direction);
+    // The stop moves with the focus, or the next Tab returns to a chip that is no longer there.
+    if (next !== null) this._activeChip = next;
     this.removeValue(handle, value);
     // Twice: the first `updateComplete` can settle for a render that was already scheduled when the
     // value changed, so the strip is still the old one and focus lands on whatever sat at that
     // index before. The second waits for the render the removal caused.
     void this.updateComplete.then(() => this.updateComplete).then(() => {
+      // The chip, not the button inside it: the strip is one tab stop and the chip is what carries
+      // it, so landing on a child with `tabindex="-1"` leaves the roving index pointing at one
+      // element and the keyboard standing on another.
       const landing = next === null
         ? this.querySelector<HTMLElement>(`.${this.partClass("trigger")}`)
-        : this.querySelector<HTMLElement>(`[data-key="${next}"] .${MDY_CHIP_CLASSES.remove}`);
+        : this.querySelector<HTMLElement>(`[data-key="${next}"]`);
       (landing ?? this.querySelector<HTMLElement>(`.${this.partClass("trigger")}`))?.focus();
     });
   }
@@ -384,7 +389,10 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
       }
       return;
     }
-    if (!this._open && (e.key === "ArrowDown" || e.key === "Enter" || e.key === " ")) {
+    // Which keys open it comes from the table, not from a list written here: a renderer that keeps
+    // its own copy answers three of the four the contract declares, and the missing one is invisible
+    // until somebody presses it.
+    if (!this._open && keyBindingFor("multiselect", e.key, false)?.intent === "open") {
       e.preventDefault();
       this.overlay.open();
       this._open = true;
