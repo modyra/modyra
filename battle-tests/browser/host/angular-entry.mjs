@@ -116,9 +116,18 @@ window.battleAngular = {
       reference.instance.submitted?.subscribe?.((event) => submitted.push(event?.value ?? event));
       mounted.set(id, { reference, host, submitted });
       await settled();
-      // A refusal that reached the ErrorHandler instead of this `try` is still a refusal, and a
-      // mount that says it succeeded over an empty page is worse than one that says it failed.
-      if (caught.length > since) {
+      // A refusal that reached the ErrorHandler instead of this `try` is still a refusal, and a mount
+      // that says it succeeded over an empty page is worse than one that says it failed.
+      //
+      // **Judged by what is on the page, not by what arrived in a window.** Counting errors since
+      // entry blamed whichever mount happened to be running when a *previous* one's error surfaced —
+      // this renderer schedules its work, so an error from one mount lands during the next. A second
+      // `colors` mount was removed for the first one's error, and the spec then reported the
+      // renderer as drawing nothing focusable, which was this host deleting the form.
+      //
+      // An error that did not stop the component from rendering is not a failed mount. One that did
+      // leaves nothing behind, and that is the thing worth reporting.
+      if (caught.length > since && host.childElementCount === 0) {
         const message = caught[caught.length - 1];
         mounted.delete(id);
         host.remove();
