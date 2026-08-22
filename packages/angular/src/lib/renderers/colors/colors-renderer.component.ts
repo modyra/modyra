@@ -231,16 +231,21 @@ export class MdyColorsComponent extends MdyOverlayControl<string> {
 
   /** Puts the keyboard on the swatch holding the value, or on the first, once the row exists. */
   private landOnASwatch(attemptsLeft: number): void {
-    (this.hostElement.nativeElement as HTMLElement).dataset.landing = `try${attemptsLeft}:open=${this.open()}:n=${this.presetSwatches().length}`;
     if (!this.open()) return;
+    const document_ = (this.hostElement.nativeElement as HTMLElement).ownerDocument;
     const swatches = this.presetSwatches();
-    if (swatches.length === 0) {
+    const again = (): void => {
       if (attemptsLeft > 0) requestAnimationFrame(() => this.landOnASwatch(attemptsLeft - 1));
-      return;
-    }
-    if (swatches.includes(this.hostElement.nativeElement.ownerDocument?.activeElement as HTMLButtonElement)) return;
+    };
+    if (swatches.length === 0) { again(); return; }
+    if (swatches.includes(document_?.activeElement as HTMLButtonElement)) return;
     const held = swatches.find((_, index) => colorValueEquals(this.value(), this.presets()[index]));
-    (held ?? swatches[0])?.focus();
+    const landing = held ?? swatches[0];
+    landing?.focus();
+    // The panel is a popover, and the frame this runs in may be the one before it is shown — a
+    // `focus()` on an element that is not being rendered yet is a no-op that reports nothing. So the
+    // attempt is checked rather than assumed, and tried again on the next frame if it did not take.
+    if (document_?.activeElement !== landing) again();
   }
 
   private readonly presetInjector = inject(Injector);
