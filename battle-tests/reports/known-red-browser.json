@@ -1,11 +1,12 @@
 {
   "note": "Browser specs that are red because the defect they describe is open. A red listed here does not fail a build; a red that is not listed is a regression. Rewrite with `npm run battle:browser:ci -- --accept`.",
   "order": "Repair in severity order, as the node tier does. A spec's severity is the worst of the claims its header names; `unknown` is a spec that names none, which is most of them.",
-  "recordedAt": "2026-08-22T18:58:22Z",
-  "openReds": 9,
+  "recordedAt": "2026-08-22T19:14:01Z",
+  "openReds": 12,
   "bySeverity": {
     "S0": 3,
-    "S1": 6
+    "S1": 6,
+    "S2": 3
   },
   "knownRed": [
     "a-choice-made-before-anyone-looked.spec.ts › aiming at the middle of the field does not delete what it holds, angular",
@@ -16,6 +17,9 @@
     "a-row-system-three-renderers-disagree-about.spec.ts › a kind is the same height in every renderer",
     "a-trigger-with-a-control-inside-it.spec.ts › the element that opens the list contains no other control, angular",
     "a-trigger-with-a-control-inside-it.spec.ts › the element that opens the list contains no other control, lit",
-    "a-trigger-with-a-control-inside-it.spec.ts › the element that opens the list contains no other control, plain"
+    "a-trigger-with-a-control-inside-it.spec.ts › the element that opens the list contains no other control, plain",
+    "an-affordance-beside-the-value.spec.ts › the trailing affordances sit at the field's inline end, angular",
+    "an-affordance-beside-the-value.spec.ts › the trailing affordances sit at the field's inline end, lit",
+    "an-affordance-beside-the-value.spec.ts › the trailing affordances sit at the field's inline end, plain"
   ]
 }
