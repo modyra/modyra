@@ -158,7 +158,14 @@ export function renderDaterangeField(
   // panel floating over a control the user has already left. Both dismiss, and they differ in where
   // focus lands — Escape hands it back to the opener, Tab leaves it where the key was taking it.
   const onEscape = (event: KeyboardEvent) => {
-    if (event.key === "Escape" || event.key === "Tab") dispatch({ type: "cancel" });
+    // Only while something is open. Dismissing a closed popup is not free: the dismissal restores
+    // focus to the start input, so every Tab inside this field pulled the keyboard back to where it
+    // began — two boxes and no way out of them.
+    if (!controller.state().open) return;
+    if (event.key === "Escape") dispatch({ type: "cancel" });
+    // And Tab lets go: it is already carrying the keyboard onward, and taking it back is the trap
+    // this dismissal exists to avoid.
+    else if (event.key === "Tab") dispatch({ type: "cancel", restoreFocus: false });
   };
   popup.addEventListener("keydown", onEscape);
   // Leaving the calendar ends the preview: the highlight belongs to where the pointer is, and a

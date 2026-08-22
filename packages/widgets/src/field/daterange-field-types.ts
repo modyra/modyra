@@ -116,7 +116,15 @@ export type MdyDaterangeFieldIntent =
   /** The cell under the pointer, or null when it leaves the grid. */
   | { readonly type: "preview"; readonly iso: string | null }
   | { readonly type: "confirm" }
-  | { readonly type: "cancel" }
+  /**
+   * Dismiss without committing.
+   *
+   * `restoreFocus` is what tells Escape from Tab: Escape means *put me back where I was*, so focus
+   * returns to the opener; Tab is already carrying the keyboard onward and pulling it back traps a
+   * person in the field they just left. The keyboard table says which is which — `restoresFocus` on
+   * the binding — and defaults to restoring, because a dismissal nobody asked about is Escape's.
+   */
+  | { readonly type: "cancel"; readonly restoreFocus?: boolean }
   | { readonly type: "clear" }
   | { readonly type: "focus" }
   /**
