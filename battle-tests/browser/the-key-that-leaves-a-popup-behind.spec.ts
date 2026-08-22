@@ -36,10 +36,10 @@ import { MDY_WIDGET_CONTRACTS, MDY_WIDGET_KEYBOARD } from "@modyra/widgets";
 const KEEPS_TAB = (kind: string): boolean =>
   (MDY_WIDGET_CONTRACTS as Record<string, { parts: Record<string, unknown> }>)[kind]?.parts?.actions !== undefined;
 
-const HOSTS = [
-  { name: "plain", page: "/index.html", ready: "battleReady", api: "battle" },
-  { name: "lit", page: "/lit.html", ready: "battleLitReady", api: "battleLit" },
-];
+// **Every renderer, from the shared list.** The local list this replaced was not a scope
+// decision: the angular host published six of the twenty-two doors these specs need, so a
+// spec wanting one it lacked left the renderer out and the next reader copied the list.
+import { HOSTS } from "./bench";
 
 /** Every kind that declares what Tab does while it is open. */
 const KINDS = Object.entries(MDY_WIDGET_KEYBOARD)
