@@ -21972,3 +21972,27 @@ a public member added              still reported
 tolerance to loosen and was a set compared as a sequence. The second looked like a policy question and
 was a hundred and twenty-two entries that should never have been in the comparison.
 
+
+### The node tier, from eight to two
+
+```
+at the first run tonight   8 red   one of them an S0 that was a hand-written list in a battle
+now                        2 red   both S2, both outside this migration
+```
+
+Closed since: the false S0, the option list's role, the arrow that no longer opened a multiselect, the
+popup promise Angular wrote by hand at ten openers, the operand guard that answered on one member of
+four, and the studio command that copied the document to change one node.
+
+The two that remain are the ones nobody has scheduled and both predate this work:
+
+```
+[S2][API-001]           a constructor stored an argument it cannot use and said nothing
+[S2][DYN-001,DYN-003]   a version the TypeScript parser accepts, the other runtimes refuse
+```
+
+The second is worth a sentence beyond its severity: a document that renders on one runtime and is
+refused by another is cheap to settle while three runtimes are being kept in step, and expensive once
+such a document is in somebody's repository. It is S2 because nothing is broken today, and its cost
+grows with the number of documents written before it is fixed.
+
