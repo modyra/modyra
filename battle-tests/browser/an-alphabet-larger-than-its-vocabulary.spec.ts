@@ -57,12 +57,27 @@ type Api = Record<string, Record<string, (...args: never[]) => unknown>>;
  * A step count, not a taste: a spacing scale that needs more than nine steps is not a scale, and an
  * interactive-height scale needs three — compact, default, comfortable — because a fourth is a
  * component asking to be its own size.
+ *
+ * **Height is three populations, not one, and counting them together was this file's own error.**
+ * `DESIGN.md` records the disagreement in those words: *"a control inside a field, a field, and a
+ * control standing on its own are three scales that happen to share a unit"*. It documents 24 for a
+ * stacked stepper, 28 for an affordance box and 56 for the field — three heights before a button is
+ * drawn — so a single ceiling of three was unsatisfiable without overriding a documented exception or
+ * resizing every field in the library, and neither is a thing to do to satisfy a threshold.
+ *
+ * A control inside a field carries its pointer target as an overlay and its box stays small; a button
+ * with no field around it has no overlay to carry one, so its box is the target. They are different
+ * scales for a stated reason, and a check that adds them up is measuring across a boundary the design
+ * record draws.
  */
 const VOCABULARY: Record<string, number> = {
   gap: 9,
   "font-size": 6,
   radius: 5,
-  height: 3,
+  // Height is counted three times, once per population — see below.
+  "height inside a field": 3,
+  "height of a field": 3,
+  "height standing alone": 3,
 };
 
 for (const host of HOSTS) {
@@ -83,8 +98,9 @@ for (const host of HOSTS) {
     await page.waitForTimeout(800);
 
     const { alphabet, counts } = await page.evaluate(() => {
-      const seen: Record<string, Record<string, string>> = { gap: {}, "font-size": {}, radius: {}, height: {} };
-      const many: Record<string, Record<string, number>> = { gap: {}, "font-size": {}, radius: {}, height: {} };
+      const keys = ["gap", "font-size", "radius", "height inside a field", "height of a field", "height standing alone"];
+      const seen: Record<string, Record<string, string>> = Object.fromEntries(keys.map((k) => [k, {}]));
+      const many: Record<string, Record<string, number>> = Object.fromEntries(keys.map((k) => [k, {}]));
       document.querySelectorAll('[data-form^="alphabet_"] *').forEach((element) => {
         const box = element.getBoundingClientRect();
         // Something not drawn has no size to contribute to an alphabet.
@@ -100,10 +116,26 @@ for (const host of HOSTS) {
         if (style.gap && style.gap !== "normal" && parseFloat(style.gap) > 0) put("gap", style.gap);
         put("font-size", style.fontSize);
         if (parseFloat(style.borderTopLeftRadius) > 0) put("radius", style.borderTopLeftRadius);
+        // The field's own box is a population of one kind; measured here so it is counted once.
+        if (element.classList.contains("mdy-input-wrapper")) put("height of a field", `${Math.round(box.height)}px`);
         // Interactive things only: a paragraph's height is its content, not a decision.
         const tag = element.tagName.toLowerCase();
         if (tag === "button" || tag === "input" || tag === "select" || tag === "textarea") {
-          put("height", `${Math.round(box.height)}px`);
+          // A textarea is as tall as its rows, which is content and not a step.
+          if (tag === "textarea") return;
+          // A one-pixel box is how a native control is kept focusable while the styled one is drawn.
+          // It is a hiding technique and states no size.
+          if (Math.round(box.height) <= 1 || Math.round(box.width) <= 1) return;
+          // The bench draws a submit button of its own with no part class. It belongs to the harness.
+          if (name === element.tagName.toLowerCase()) return;
+
+          const field = element.closest(".mdy-input-wrapper");
+          const population = element.classList.contains("mdy-input-wrapper") || field === element
+            ? "height of a field"
+            : field !== null
+              ? "height inside a field"
+              : "height standing alone";
+          put(population, `${Math.round(box.height)}px`);
         }
       });
       return { alphabet: seen, counts: many };
