@@ -2082,11 +2082,15 @@
         align-items: center;
         gap: var(--mdy-space-2, 0.5rem);
         margin-top: var(--mdy-space-1, 0.25rem);
+        /* One line, reserved, whether or not anything is offered. Rendered only when there is
+           something to undo, the row makes every control below the field step down the moment a
+           value goes, and step again on the next removal — a cost that moves is one nobody can
+           learn, where a fixed one is learnt once. Its contents come and go inside the band, and
+           nothing else on the page moves. */
+        min-height: 1lh;
         font-size: var(--mdy-font-size-sm, 0.875rem);
         color: var(--mdy-color-text-muted, inherit);
     }
-
-    .mdy-multiselect__way-back[hidden] { display: none; }
 
     .mdy-multiselect__way-back-action {
         border: 0;

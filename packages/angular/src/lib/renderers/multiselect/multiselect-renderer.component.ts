@@ -220,6 +220,20 @@ import type { MdyOverlayBranch, MdyOverlayOwner } from "../../core/overlay-contr
     </div>
     </div>
 
+    <!-- The one way back, under the control. Untimed and in the page rather than in a toast: a
+         message that takes itself away after five seconds is a time limit under WCAG 2.2.1, and an
+         undo has no exception under it. It names the act, because one reversal covers three. -->
+    <div class="mdy-multiselect__way-back">
+      <span [hidden]="wayBack() === null">{{ wayBackText() }}</span>
+      <button
+        type="button"
+        class="mdy-multiselect__way-back-action"
+        [hidden]="wayBack() === null"
+        [disabled]="isDisabled() || isReadonly()"
+        (click)="onWayBack()"
+      >{{ i18n.wayBackLabel }}</button>
+    </div>
+
     <mdy-overlay-panel
       [open]="open()"
       [position]="position()"
@@ -319,20 +333,6 @@ import type { MdyOverlayBranch, MdyOverlayOwner } from "../../core/overlay-contr
       }
     </mdy-overlay-panel>
 
-    <!-- The one way back, under the control. Untimed and in the page rather than in a toast: a
-         message that takes itself away after five seconds is a time limit under WCAG 2.2.1, and an
-         undo has no exception under it. It names the act, because one reversal covers three. -->
-    @if (wayBack(); as offer) {
-      <div class="mdy-multiselect__way-back">
-        <span>{{ wayBackText() }}</span>
-        <button
-          type="button"
-          class="mdy-multiselect__way-back-action"
-          [disabled]="isDisabled() || isReadonly()"
-          (click)="onWayBack()"
-        >{{ i18n.wayBackLabel }}</button>
-      </div>
-    }
 
     @if (errorsRendered()) {
       <mdy-error-list [fieldId]="fieldId" [errors]="errors()" />

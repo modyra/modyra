@@ -182,6 +182,7 @@ import type { DesignSystemConfig } from "./design-system-section.component";
           label="Interests"
           [options]="interestOptions"
           [searchable]="true"
+          [reorderable]="true"
           mode="multi"
         >
           <div *mdySupportingText>Choose your favorite topics</div>

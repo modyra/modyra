@@ -896,7 +896,9 @@ export function renderMultiselectField(
     // still answers is disabled in appearance only.
     overflow.disabled = blocked;
     const back = state.wayBack;
-    wayBack.hidden = back === null;
+    // The slot is always in the page, empty at rest. Rendered only when there is something to undo, it makes every control below the field step down the moment a value goes, and step again on the next removal — a cost that moves is one nobody can learn, where a fixed one is learnt once. Nor may it appear inside the control: the clear-all and the caret would slide sideways as it arrived, which is the same defect on the other axis.
+    wayBackText.hidden = back === null;
+    wayBackAction.hidden = back === null;
     wayBackAction.disabled = blocked;
     if (back !== null) {
       setText(wayBackText, wayBackSentence(

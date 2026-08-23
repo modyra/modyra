@@ -158,6 +158,7 @@ absent section reads as an oversight, and "no security impact" is a finding.
 - [ADR 0141: An id built from a value escapes it](0141-an-id-built-from-a-value-escapes-it.md) — a published id is a handle a consumer may select with, so caller data is hex-escaped into it rather than embedded raw
 - [ADR 0142: A field that holds controls is not a control](0142-a-field-that-holds-controls-is-not-a-control.md) — the box becomes a container, the chip strip and the opener become siblings, and a press stops being decided by the length of a word
 - [ADR 0143: A widget box inside the shell every kind sits in](0143-a-widget-box-inside-the-shell-every-kind-sits-in.md) — one part name means one element, so a kind that draws two boxes declares two parts and its parts hang off the inner one
+- [ADR 0144: A slot that is always there](0144-a-slot-that-is-always-there.md) — the way back reserves its line whether or not it is offered, because a cost that moves is one nobody can learn
 - [ADR 0092: A condition travels with the form](0092-a-condition-travels-with-the-form.md) — `when` and `asyncWhen` were closures, so a schema carrying one was not data and the document half could not say what the typed half said
 
 ## Security-relevant records
