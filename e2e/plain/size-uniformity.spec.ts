@@ -52,17 +52,44 @@ test("every field that is a single row is the same height", async ({ page }) => 
 test("a chip is one height, whichever mode it is in", async ({ page }) => {
   // Toggle mode reserves width for a tick; counter mode carries two steppers instead. They are the
   // same chip, and `--mdy-chip-height` has to mean the same number in both.
-  const heights = await page.evaluate(() => {
-    const seen = new Set<number>();
+  //
+  // **The popups have to be open.** An option chip lives inside one and has no box while it is shut,
+  // so a page at rest offers only the value chips in the strips — and this test excluded those,
+  // which left it comparing an empty set. It passed for years and then began failing with `chip
+  // heights:` and nothing after the colon, which is what "I found nothing" looks like once an
+  // assertion has turned it into a number.
+  // One, not all: an overlay dismisses on an interaction outside it, so opening the second closes
+  // the first and the page never holds two at once. One open multiselect shows both shapes — its
+  // option chips in the popup and its value chips in the strip behind it.
+  await page.locator(".mdy-renderer--multiselect [aria-haspopup]").first().click({ force: true });
+  await page.waitForTimeout(400);
+
+  const measured = await page.evaluate(() => {
+    const values = new Set<number>();
+    const options = new Set<number>();
     for (const chip of document.querySelectorAll(".mdy-chip")) {
       if (!(chip instanceof HTMLElement)) continue;
-      const h = Math.round(chip.getBoundingClientRect().height);
-      // A chip inside a closed popup has no box; only what is on screen is being compared.
-      if (h > 0 && !chip.classList.contains("mdy-chip--value")) seen.add(h);
+      const height = Math.round(chip.getBoundingClientRect().height);
+      // A chip with no box is in a popup that did not open, and says nothing about a height.
+      if (height === 0) continue;
+      (chip.classList.contains("mdy-chip--value") ? values : options).add(height);
     }
-    return [...seen];
+    return { values: [...values], options: [...options] };
   });
-  expect(heights.length, `chip heights: ${heights.join(", ")}`).toBe(1);
+
+  // Both shapes have to be on screen, or "one height" is a statement about one of them.
+  expect(
+    measured.values.length > 0 && measured.options.length > 0,
+    `this page shows ${measured.values.length} value-chip height(s) and ${measured.options.length} `
+    + "option-chip height(s) — with none of one, the comparison has nothing to compare",
+  ).toBe(true);
+
+  const heights = [...new Set([...measured.values, ...measured.options])];
+  expect(
+    heights.length,
+    `a chip is ${heights.length} different heights: value ${measured.values.join(", ")} and option `
+    + `${measured.options.join(", ")}`,
+  ).toBe(1);
 });
 
 test("the fields that grow, grow for a reason", async ({ page }) => {
