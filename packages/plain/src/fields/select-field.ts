@@ -78,7 +78,7 @@ export function renderSelectField(
   // The placeholder is its own contract part, not a modifier class on the value: they are two
   // pieces of text with different meanings, and a theme styles them separately.
   const placeholderText = el("span", parts.placeholder.classes.join(" ")) as HTMLSpanElement;
-  setText(placeholderText, f.placeholder ?? "Select…");
+  setText(placeholderText, f.placeholder ?? messages.selectPlaceholder);
   // The panel is the `__dropdown` (positioning, frame, shadow); the scroller inside it is the
   // `__list`, and the filter field is its first row — same three parts the contract names.
   const popup = el("div", parts.popup.classes.join(" ")) as HTMLDivElement;

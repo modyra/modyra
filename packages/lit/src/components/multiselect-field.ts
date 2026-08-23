@@ -601,7 +601,7 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
             aria-disabled=${String(handle.disabled())}
           >
             ${this.held(handle).length === 0
-              ? html`<span class="${this.partClass("placeholder")}">${this.label ? `Select ${this.label.toLowerCase()}…` : "Select…"}</span>`
+              ? html`<span class="${this.partClass("placeholder")}">${this.messages.selectPlaceholder}</span>`
               : nothing}
             ${this.loading ? mdyIcon("LOADER", "mdy-select__loader") : nothing}
             <span class="${this.partClass("arrow")}" aria-hidden="true"></span>

@@ -13,6 +13,14 @@
  */
 export interface MdyI18nMessages {
   readonly searchPlaceholder: string;
+  /**
+   * What a chooser shows before anything is chosen, where the document names none of its own.
+   *
+   * A default written into a renderer is a default in one language: three renderers wrote three
+   * (one of them nothing at all), and an English word sat inside a form whose every other word had
+   * been translated. A caller that wants silence passes an empty string.
+   */
+  readonly selectPlaceholder: string;
   readonly noResults: string;
   readonly colorPresetsHeader: string;
   readonly selectColorPrefix: string;
@@ -194,6 +202,7 @@ function namesInMessage(names: readonly string[] | string): string {
 
 export const MDY_I18N_MESSAGES_DEFAULT: MdyI18nMessages = Object.freeze({
   searchPlaceholder: "Search\u2026",
+  selectPlaceholder: "Select\u2026",
   entryUnreadable: "That could not be read. Leave it and correct it, or clear the field.",
   noResults: "No results",
   colorPresetsHeader: "Presets",
@@ -282,6 +291,7 @@ export type MdyBuiltInLocale = "en" | "it" | "de" | "fr" | "es";
 
 export const MDY_I18N_MESSAGES_IT: MdyI18nMessages = Object.freeze({
   searchPlaceholder: "Cerca…",
+  selectPlaceholder: "Seleziona…",
   entryUnreadable: "Non è stato possibile leggerlo. Correggilo, oppure svuota il campo.",
   noResults: "Nessun risultato",
   colorPresetsHeader: "Preset",
@@ -363,6 +373,7 @@ export const MDY_I18N_MESSAGES_IT: MdyI18nMessages = Object.freeze({
 
 export const MDY_I18N_MESSAGES_DE: MdyI18nMessages = Object.freeze({
   searchPlaceholder: "Suchen…",
+  selectPlaceholder: "Auswählen…",
   entryUnreadable: "Das konnte nicht gelesen werden. Korrigieren Sie es, oder leeren Sie das Feld.",
   noResults: "Keine Ergebnisse",
   colorPresetsHeader: "Voreinstellungen",
@@ -444,6 +455,7 @@ export const MDY_I18N_MESSAGES_DE: MdyI18nMessages = Object.freeze({
 
 export const MDY_I18N_MESSAGES_FR: MdyI18nMessages = Object.freeze({
   searchPlaceholder: "Rechercher…",
+  selectPlaceholder: "Sélectionner…",
   entryUnreadable: "Cette saisie n’a pas pu être lue. Corrigez-la, ou videz le champ.",
   noResults: "Aucun résultat",
   colorPresetsHeader: "Préréglages",
@@ -525,6 +537,7 @@ export const MDY_I18N_MESSAGES_FR: MdyI18nMessages = Object.freeze({
 
 export const MDY_I18N_MESSAGES_ES: MdyI18nMessages = Object.freeze({
   searchPlaceholder: "Buscar…",
+  selectPlaceholder: "Seleccionar…",
   entryUnreadable: "No se ha podido leer. Corríjalo, o vacíe el campo.",
   noResults: "Sin resultados",
   colorPresetsHeader: "Preajustes",

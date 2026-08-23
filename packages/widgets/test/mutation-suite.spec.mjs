@@ -79,9 +79,9 @@ function dateRange({ id = `d${(fixtureSeq += 1)}` } = {}) {
   const root = el("div", "mdy-renderer mdy-renderer--datepicker mdy-renderer--daterange");
   const label = el("label", "mdy-label", { for: `${id}-start` });
   const wrapper = el("div", "mdy-input-wrapper");
-  const startControl = el("input", "mdy-datepicker__input mdy-daterange__input", { id: `${id}-start` });
+  const startControl = el("input", "mdy-datepicker__input mdy-daterange__input mdy-daterange__input--start", { id: `${id}-start` });
   const separator = el("span", "mdy-daterange__sep");
-  const endControl = el("input", "mdy-datepicker__input mdy-daterange__input", { id: `${id}-end` });
+  const endControl = el("input", "mdy-datepicker__input mdy-daterange__input mdy-daterange__input--end", { id: `${id}-end` });
   const toggle = el("button", "mdy-datepicker__toggle", { "aria-controls": `${id}-popup`, "aria-expanded": "true" });
   wrapper.append(startControl, separator, endControl, toggle);
   const popup = el("div", "mdy-datepicker__popup mdy-popup mdy-popup--surface mdy-datepicker__popup--range", { id: `${id}-popup`, role: "dialog" });
