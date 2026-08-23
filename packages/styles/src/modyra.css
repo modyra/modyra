@@ -2022,7 +2022,10 @@
         align-items: center;
         justify-content: center;
         flex: 0 0 auto;
-        width: var(--mdy-affordance-size, 2.75rem);
+        /* As wide as the other affordances in the column. At the target's 44 its centre sat 8px
+           further in than theirs, so the column bent around one kind — and the target is the overlay
+           below, which needs no width from the box it belongs to. */
+        width: var(--mdy-control-1);
         /* The row's own height. `height: 100%` is a share of a line the content decides, so it
            shrank with the line rather than setting it; stretching takes the height the box gives the
            row. Sized to a *target* instead — 44 in a field of 36 — it made the row taller than the
@@ -2121,7 +2124,10 @@
         justify-content: center;
         gap: 0;
         position: relative;
-        height: var(--mdy-chip-height);
+        /* One control step, whichever shape the chip takes. `--mdy-chip-height` is 32, which is not
+           a step: the chip in the field moved onto the scale and the chip in the popup did not, so
+           one control was two heights depending on where a person was looking at it. */
+        height: var(--mdy-control-1);
         max-width: var(--mdy-chip-max-width);
         padding: var(--mdy-chip-padding);
         font-size: var(--mdy-chip-font-size);
@@ -2287,10 +2293,11 @@
 
     /* Counter chip (multi mode) */
     .mdy-chip--counter {
-        /* The same height as every other chip. Its step buttons take `height: 100%`, so with the
-           chip's height coming from its content instead of the token, a counter chip measured 34px
-           beside a toggle chip's 32 — two heights for one vocabulary. */
-        height: var(--mdy-chip-height);
+        /* The same height as every other chip, and that is now a step rather than a token of its
+           own. Its step buttons take `height: 100%`, so with the chip's height coming from its
+           content a counter chip stood taller than the toggle chip beside it — two heights for one
+           vocabulary, which is what the control scale exists to end. */
+        height: var(--mdy-control-1);
         gap: 0;
         padding: 0;
         overflow: hidden;
