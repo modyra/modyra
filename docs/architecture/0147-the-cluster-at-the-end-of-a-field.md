@@ -105,10 +105,43 @@ again under this record: with no row beneath the field there is nothing to reser
 it makes about the trailing controls not sliding sideways is the one that survives — it now covers the
 reserved slot instead of the reserved line.
 
-**Not verified, and it is half of this decision: the 4.5:1 contrast floor on the undo mark.** The
-contrast tool in this repository samples painted pixels and is solid over a filled region; it is not
-validated over a thin stroke, which is exactly what an icon drawn as a stroke is. Producing a number
-from it here would be inventing one. That check needs an instrument this suite does not have.
+**The 4.5:1 contrast floor on the undo mark is checkable, under one condition.** See the amendment
+below; the paragraph this replaced said the instrument did not exist, and it was wrong within the
+hour.
+
+
+## Amendment: the limit was never the stroke's weight
+
+This record shipped saying the contrast floor on the undo mark could not be checked, because the
+repository's contrast tool samples painted pixels and had never been validated over a thin stroke.
+That sentence was inherited from the finding that prompted it and **it was certified false an hour
+later** — `battle-tests/harness/a-ratio-a-thin-mark-can-carry.test.mjs`, which synthesises marks of a
+known ink on a known background so that *measured equals calculated* is a statement about the
+instrument rather than about a browser.
+
+```
+ink 44,25,61 on white — calculated 15.99:1
+
+4px · 2px · 1px on the pixel grid       15.99:1     the ink exactly
+1px across a half-pixel boundary         3.21:1     two columns at half coverage
+0.5px                                    3.21:1
+0.25px                                   1.68:1
+```
+
+**The same one-pixel stroke reads 15.99 or 3.21 depending on where its edge falls**, so no rule about
+weight can express the limit. What the instrument needs is **one fully opaque pixel**, which makes the
+condition one about capture rather than about design: **read the contrast at a device pixel ratio of 2
+or more.** At `deviceScaleFactor: 3` a 1px CSS stroke becomes three device pixels and its interior is
+opaque however it is aligned.
+
+It also explains the anomaly the original warning came from — a minus at 2.98:1 beside a plus at
+6.78:1, in one control, in one colour. Two subpixel alignments, one ink.
+
+**What is certified and what is inferred, kept apart.** The certification is synthetic: it proves the
+tool computes the right ratio from given pixels. That a browser's rasteriser produces opaque interiors
+at DPR 2–3 is the inference on top, and it is reasoning rather than a rendered measurement. The floor
+is therefore checkable, and the first run against a real capture is still the one that has not
+happened.
 
 ## Security and privacy
 
