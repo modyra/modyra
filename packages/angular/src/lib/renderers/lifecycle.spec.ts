@@ -102,12 +102,21 @@ describe("the lifecycle contract, driven against this renderer", () => {
       idsUnder(second.nativeElement as Element),
     );
 
-    // Two hosts of the same template legitimately mint the same ids unless one is scoped — the
-    // contract's answer is `idPrefix`, and what is asserted here is that the collision is *named*
-    // rather than passing unnoticed.
+    // `every` over an empty list is true, so this said nothing whichever way the renderer behaved —
+    // and it would have gone on saying nothing after ADR 0146 changed the answer underneath it. What
+    // is asserted is the count first and the kind second.
+    //
+    // Two hosts of one template, in one document, with no scope: this renderer computes an id while
+    // rendering, before its element is in a document, so it has nothing to compare against and the
+    // twin case is the consumer's to answer. ADR 0146 says so in as many words, and the collision
+    // being *named* is what keeps it from passing unnoticed. The scoped half — two hosts told apart
+    // publish disjoint ids — is asserted by the conformance kit's multi-instance section, which
+    // mounts through this package's own `mountScoped`.
+    expect(issues.length).toBeGreaterThan(0);
     expect(issues.every((i) => i.code === MDY_LIFECYCLE_ISSUE.idCollidedAcrossInstances)).toBe(true);
 
     first.destroy();
     second.destroy();
   });
+
 });
