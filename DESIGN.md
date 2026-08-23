@@ -94,10 +94,34 @@ Every text role takes its leading from the typescale, in px, as the input, helpe
 did. A role with a size token and no leading token is the defect; the host fills the gap and the
 system never sees it.
 
-**A chip is one height in both modes.** `--mdy-chip-height` means the height *including border* —
-left to `content-box`, one token measured 34px in counter mode and 32 in toggle.
+**A chip is one height in both modes, and that height is a control step.** `--mdy-chip-height` meant
+the height *including border* — left to `content-box`, one token measured 34px in counter mode and 32
+in toggle. It is `--mdy-control-1` now, wherever a chip is drawn: the chip in the field moved onto the
+scale first and the chip in the popup did not, so one control was two heights depending on where a
+person was looking at it.
 
-*Enforced by* `e2e/plain/size-uniformity.spec.ts`.
+**A control is `border-box`.** Left as `content-box`, whatever padding reaches an element is added to
+its height rather than taken out of it, and the control is whatever the sum happens to be — a range
+input whose track is 4px stood 20px tall because a text field's padding reached it. The element's box
+is a control step; a track, a rail or a groove drawn inside it is painted on its own pseudo-element,
+where its thickness is its own.
+
+**A full corner has one spelling.** `--mdy-radius-full`. The sheet wrote `50%`, `calc(height / 2)` and
+`9999px` for the same curve, which is three values in an alphabet that has one — and on a square they
+all draw the same circle, so the difference was never visible and never checked.
+
+**A control standing on its own takes the 44px step.** A control *inside* a field carries its pointer
+target as a centred overlay and its box stays 28; a button with no field around it has no overlay to
+carry one, so its box is the target.
+
+*Enforced by* `e2e/plain/size-uniformity.spec.ts` and, for the count of distinct values a measurement
+may take, `battle-tests/browser/an-alphabet-larger-than-its-vocabulary.spec.ts`.
+
+**Interactive height is not one population.** The alphabet check counts three, and the system
+documents more than three before a button is drawn: 24px for a stacked stepper (2.5.8, above), 28px
+for an affordance box, 56px for the field. A control inside a field, a field, and a control standing
+on its own are three scales that happen to share a unit. Recorded here as a known disagreement between
+this document and that check, not as a licence to ignore either.
 
 ---
 
