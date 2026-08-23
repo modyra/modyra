@@ -446,10 +446,15 @@
         content: "";
         position: absolute;
         top: 50%;
-        left: 50%;
+        /* Anchored to the control's inner edge and grown inwards, not centred on it. A target wider
+           than the control it belongs to, centred, hangs over both sides — and these controls sit at
+           the field's trailing edge, so half of that hangs outside the field entirely. A press three
+           pixels past the border activated the colour toggle, in the space belonging to whatever the
+           form draws next. Inwards, the whole target is over the field it acts on. */
+        inset-inline-end: 0;
         width: var(--mdy-affordance-target);
         height: var(--mdy-affordance-target);
-        transform: translate(-50%, -50%);
+        transform: translateY(-50%);
     }
 
     /* ─── Custom Number Spin Buttons ─────────────────────────────────────────── */

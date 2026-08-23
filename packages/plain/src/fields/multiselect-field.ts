@@ -434,6 +434,10 @@ export function renderMultiselectField(
     const step = (delta: -1 | 1, label: string) => {
       const button = el("button", parts.optionStep.classes.join(" ")) as HTMLButtonElement;
       button.type = "button";
+      // The mark, from the same icon set the grid's steppers use. Written there and not here, the
+      // chip's two steppers were 32×24 of nothing: they took their space, answered a press and told
+      // a person nothing, so the only way to find one was to press the blank and watch the number.
+      setIcon(button, delta === 1 ? "PLUS" : "MINUS");
       // Out of the tab order with the chip that holds it: the strip is one stop, and its controls
       // are reached with the keys the contract declares rather than by tabbing through every one.
       button.tabIndex = -1;

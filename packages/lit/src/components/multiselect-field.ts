@@ -897,7 +897,7 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
             tabindex="-1"
             aria-label=${this.messages.chipDecrementLabel}
             @click=${(e: Event) => { e.stopPropagation(); this.decrement(handle, value); }}
-          ></button>`
+          >${mdyIcon("MINUS", "")}</button>`
         : nothing}
       <span class=${MDY_CHIP_CLASSES.label}>${label}</span>
       <span class=${MDY_CHIP_CLASSES.count} ?hidden=${count <= 1}>${count > 1 ? String(count) : ""}</span>
@@ -908,7 +908,7 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
             tabindex="-1"
             aria-label=${this.messages.chipIncrementLabel}
             @click=${(e: Event) => { e.stopPropagation(); this.increment(handle, value); }}
-          ></button>`
+          >${mdyIcon("PLUS", "")}</button>`
         : nothing}
       ${this.reorderable
         ? html`<button
