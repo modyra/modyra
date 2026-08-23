@@ -157,6 +157,15 @@ for (const host of HOSTS) {
 
   test(`a truncated name can be read without a pointer, ${host.name}`, async ({ page }) => {
     test.setTimeout(150_000);
+    // **A narrow field, not a long label.** A chip is shortened when a value is wider than the room
+    // there is, and the room is the container — so a fixture that relies on the label being long
+    // enough is relying on the bench being narrow enough, which is a property of the viewport rather
+    // than of the widget. This test's premise died the day a chip stopped being capped at a constant:
+    // the same label that used to overflow now fits, and the guard fired instead of the assertion.
+    //
+    // Sized to the widget's own limit rather than to the defect's: whatever a chip's ceiling turns
+    // out to be, a field this narrow is below it.
+    await page.setViewportSize({ width: 420, height: 700 });
     await page.goto(host.page);
     await page.waitForFunction((flag) => (window as never as Record<string, boolean>)[flag] === true, host.ready);
     await mount(page, "long", 3);
