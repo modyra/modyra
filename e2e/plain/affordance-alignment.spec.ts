@@ -21,7 +21,7 @@ const AFFORDANCES = [
   { kind: "datepicker", selector: ".mdy-renderer--datepicker .mdy-datepicker__toggle" },
   { kind: "timepicker", selector: ".mdy-renderer--timepicker .mdy-timepicker__toggle" },
   { kind: "colors", selector: ".mdy-renderer--colors .mdy-colors__toggle-area" },
-  { kind: "multiselect", selector: ".mdy-renderer--multiselect .mdy-multiselect__search-btn" },
+  { kind: "multiselect", selector: ".mdy-renderer--multiselect .mdy-multiselect__trigger" },
 ];
 
 interface Placement {

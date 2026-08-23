@@ -121,7 +121,7 @@ test("no icon is a text character", async ({ page }) => {
     const pictographic = /[\u2190-\u2BFF\u{1F000}-\u{1FAFF}]/u;
     for (const el of document.querySelectorAll(
       ".mdy-select__arrow, .mdy-datepicker__toggle, .mdy-timepicker__toggle, " +
-      ".mdy-multiselect__search-btn, .mdy-chip__btn, .mdy-datepicker__nav-btn",
+      ".mdy-multiselect__trigger, .mdy-chip__btn, .mdy-datepicker__nav-btn",
     )) {
       const text = (el.textContent ?? "").trim();
       if (text && pictographic.test(text)) found.push(`${el.className}: ${text}`);

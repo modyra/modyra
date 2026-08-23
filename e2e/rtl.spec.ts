@@ -42,7 +42,7 @@ const MIRROR_CASES = [
   { family: "datepicker", widget: ".mdy-renderer--datepicker", part: ".mdy-datepicker__toggle" },
   { family: "timepicker", widget: ".mdy-renderer--timepicker", part: ".mdy-timepicker__toggle" },
   { family: "colors", widget: ".mdy-renderer--colors", part: ".mdy-colors__toggle-area" },
-  { family: "multiselect", widget: ".mdy-renderer--multiselect", part: ".mdy-multiselect__search-btn" },
+  { family: "multiselect", widget: ".mdy-renderer--multiselect", part: ".mdy-multiselect__trigger" },
   { family: "checkbox", widget: ".mdy-renderer--checkbox", part: ".mdy-checkbox__indicator" },
   { family: "radio", widget: ".mdy-renderer--radio-group", part: ".mdy-radio-circle" },
   { family: "slider", widget: ".mdy-renderer--slider", part: ".mdy-slider-value" },

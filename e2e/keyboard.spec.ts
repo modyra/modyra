@@ -109,7 +109,7 @@ test("Tab closes the list and lets focus carry on", async ({ page }) => {
  * Asserting them separately is what stops the two policies drifting into different keyboards.
  */
 const MULTI = ".mdy-renderer--multiselect";
-const MULTI_OPENER = `${MULTI} .mdy-multiselect__search-btn`;
+const MULTI_OPENER = `${MULTI} .mdy-multiselect__trigger`;
 
 const expectMultiOpen = (page: import("@playwright/test").Page, open: boolean) =>
   expect(page.locator(MULTI_OPENER).first()).toHaveAttribute("aria-expanded", String(open));
