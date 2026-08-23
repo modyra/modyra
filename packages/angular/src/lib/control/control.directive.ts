@@ -598,6 +598,9 @@ export abstract class MdyBaseControl<TValue = unknown> implements OnInit {
         kind: this.widgetKind,
         constraints: narrowConstraints(this.fieldState().constraints(), this.narrowedConstraints()),
         errorsVisible: this.errorsRendered(),
+        // What the control says about itself, which is not the same as which element holds the
+        // words: with inline errors there is no list to point at and the field is still refused.
+        invalid: this.paintsAsInvalid(),
         // Supporting text is only emitted when a host projects some.
         descriptionVisible: this.hasSupportingText(),
       },

@@ -52,6 +52,16 @@ export interface MdyFieldShellA11yOptions {
    */
   readonly errorsVisible?: boolean;
   /**
+   * Whether the control announces itself as failing.
+   *
+   * Separate from `errorsVisible`, which says what is on the page to point at. A field drawing its
+   * refusal *inline* renders no error list, and a control that read one flag for both then said it
+   * was valid while the field beside it was painted wrong and an icon stated the reason.
+   *
+   * Defaults to `errorsVisible`, so a renderer that draws its errors one way only is unaffected.
+   */
+  readonly invalid?: boolean;
+  /**
    * What a document wrote for this field's name, when the caller knows it.
    *
    * Supplied, the label says whether it is showing words somebody chose or words the shell composed
@@ -150,6 +160,12 @@ export function projectFieldShellA11y(
   const hasErrors = shownErrors(flags, errors).length > 0;
   // What the control describes itself by depends on what was *rendered*, not on what is wrong.
   const errorsVisible = options.errorsVisible ?? hasErrors;
+  // Whether the control announces itself as failing is a different question from which element
+  // carries the words. A field showing its errors *inline* renders no error list, so the one flag
+  // answered "nothing rendered" and the control said it was valid — while the wrapper beside it
+  // painted the refusal and an icon stated it. `aria-invalid` follows the verdict; `aria-describedby`
+  // follows what exists to point at.
+  const told = options.invalid ?? errorsVisible;
   const describedBy = errorsVisible
     ? errorId
     : (options.descriptionVisible ?? true) ? descriptionId : null;
@@ -178,7 +194,7 @@ export function projectFieldShellA11y(
         // What is *shown*, not what is wrong. The four faces of one question include this one: a
         // control marked wrong beside a message nobody rendered is a verdict with no explanation,
         // and the person it is about did nothing to earn it.
-        "aria-invalid": String(errorsVisible),
+        "aria-invalid": String(told),
         "aria-required": String(flags.required),
         // Disabled alone, never folded with read-only: a read-only control is reachable, and
         // announcing it disabled tells a screen-reader user they cannot interact with something
