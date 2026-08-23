@@ -27,6 +27,20 @@
  * chosen to make today's numbers pass — every one of them is exceeded right now, and the excess is the
  * finding.
  *
+ * **Two numbers are reported, and reading only one of them will mislead you.**
+ *
+ * The count of distinct values is *how far there is to go*. It moves when the **last** component using
+ * a stray value leaves it, not when the first one does — so a value shared by three components takes
+ * three migrations to disappear and the first two look like no progress at all. The chip moving onto
+ * the control scale changed nothing here, because a stepper still holds the height it left behind.
+ *
+ * The count of declarations pointing at a stray value is *whether the last commit did anything*. It
+ * falls every time a component moves, so it is the number to watch while migrating and the useless one
+ * to judge completeness by.
+ *
+ * The assertion is on the first. The second is in the message, because somebody six migrations from
+ * now reading an unchanged headline needs to see that the work is landing.
+ *
  * Claims under attack: UI-005.
  */
 
@@ -68,8 +82,9 @@ for (const host of HOSTS) {
     }
     await page.waitForTimeout(800);
 
-    const alphabet = await page.evaluate(() => {
+    const { alphabet, counts } = await page.evaluate(() => {
       const seen: Record<string, Record<string, string>> = { gap: {}, "font-size": {}, radius: {}, height: {} };
+      const many: Record<string, Record<string, number>> = { gap: {}, "font-size": {}, radius: {}, height: {} };
       document.querySelectorAll('[data-form^="alphabet_"] *').forEach((element) => {
         const box = element.getBoundingClientRect();
         // Something not drawn has no size to contribute to an alphabet.
@@ -77,7 +92,10 @@ for (const host of HOSTS) {
         const style = getComputedStyle(element as HTMLElement);
         const name = (element.className || "").toString().split(/\s+/).find((one) => one.startsWith("mdy-"))
           || element.tagName.toLowerCase();
-        const put = (kind: string, value: string) => { if (!(value in seen[kind])) seen[kind][value] = name; };
+        const put = (kind: string, value: string) => {
+          if (!(value in seen[kind])) seen[kind][value] = name;
+          many[kind][value] = (many[kind][value] ?? 0) + 1;
+        };
 
         if (style.gap && style.gap !== "normal" && parseFloat(style.gap) > 0) put("gap", style.gap);
         put("font-size", style.fontSize);
@@ -88,7 +106,7 @@ for (const host of HOSTS) {
           put("height", `${Math.round(box.height)}px`);
         }
       });
-      return seen;
+      return { alphabet: seen, counts: many };
     });
 
     const over: string[] = [];
@@ -98,7 +116,11 @@ for (const host of HOSTS) {
       // A measurement nothing uses says nothing about coherence either way.
       if (entries.length === 0) continue;
       if (entries.length > ceiling) {
-        over.push(`${kind}: ${entries.length} distinct where a scale declares ${ceiling} — `
+        // The stray values are the ones past the ceiling once the scale's own are accounted for; how
+        // many elements carry each is the number that moves per commit.
+        const carriers = entries.reduce((total, [value]) => total + (counts[kind]?.[value] ?? 0), 0);
+        over.push(`${kind}: ${entries.length} distinct where a scale declares ${ceiling}, `
+          + `across ${carriers} element(s) — `
           + entries.map(([value, where]) => `${value} on ${where}`).join(", "));
       }
     }

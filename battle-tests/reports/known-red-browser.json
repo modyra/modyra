@@ -1,10 +1,10 @@
 {
   "note": "Browser specs that are red because the defect they describe is open. A red listed here does not fail a build; a red that is not listed is a regression. Rewrite with `npm run battle:browser:ci -- --accept`.",
   "order": "Repair in severity order, as the node tier does. A spec's severity is the worst of the claims its header names; `unknown` is a spec that names none, which is most of them.",
-  "recordedAt": "2026-08-23T09:19:43Z",
-  "openReds": 12,
+  "recordedAt": "2026-08-23T09:59:24Z",
+  "openReds": 8,
   "bySeverity": {
-    "S1": 9,
+    "S1": 5,
     "S2": 3
   },
   "knownRed": [
@@ -13,10 +13,6 @@
     "a-parent-the-contract-named.spec.ts › every part sits inside the part the contract names, plain",
     "a-row-system-three-renderers-disagree-about.spec.ts › a kind is inside the row system in every renderer, or outside it in every renderer",
     "a-row-system-three-renderers-disagree-about.spec.ts › a kind is the same height in every renderer",
-    "two-controls-drawn-the-same-way.spec.ts › the two controls that move a chip are not drawn alike, angular",
-    "two-controls-drawn-the-same-way.spec.ts › the two controls that move a chip are not drawn alike, lit",
-    "two-controls-drawn-the-same-way.spec.ts › the two controls that move a chip are not drawn alike, plain",
-    "what-a-field-says-on-arrival.spec.ts › a field with a value says so before it is opened, angular",
     "an-alphabet-larger-than-its-vocabulary.spec.ts › the library draws no more sizes than a scale would declare, angular",
     "an-alphabet-larger-than-its-vocabulary.spec.ts › the library draws no more sizes than a scale would declare, lit",
     "an-alphabet-larger-than-its-vocabulary.spec.ts › the library draws no more sizes than a scale would declare, plain"
