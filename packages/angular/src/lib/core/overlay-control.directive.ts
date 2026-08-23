@@ -559,7 +559,11 @@ export abstract class MdyOverlayControl<TValue> extends MdyBaseControl<TValue> {
    */
   protected restoreOverlayTriggerFocus(): void {
     const wrapper = this.wrapperRef()?.nativeElement;
-    const preferred = wrapper?.querySelector<HTMLElement>("button, input, [tabindex='0']") ?? null;
+    this.restoreFocusTo(wrapper?.querySelector<HTMLElement>("button, input, [tabindex='0']") ?? null);
+  }
+
+  /** The custodian's restore, reachable by a host that overrides where focus comes back to. */
+  protected restoreFocusTo(preferred: HTMLElement | null): void {
     this.focus.restore(preferred);
   }
 

@@ -155,6 +155,7 @@ import type { DesignSystemConfig } from "./design-system-section.component";
           <mdy-control-timepicker
             name="appointmentTime"
             label="Appointment Time"
+            format="12h"
           >
             <div *mdySupportingText>Pick a slot for your visit</div>
           </mdy-control-timepicker>
