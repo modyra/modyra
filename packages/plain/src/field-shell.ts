@@ -143,9 +143,18 @@ export function insertControl(shell: FieldShell, control: HTMLElement): void {
   });
   // On the element a person operates, which is not always the one handed over: a slider arrives
   // wrapped in its track, and a name on the wrapper is a name the control does not carry.
-  const operated = control.matches("input, select, textarea, [role], button")
+  //
+  // A real control before a bare `[role]`, and that order is the whole of it. Asked for either at
+  // once, a multiselect handed over its box and the first match was the **chip strip** — a
+  // `role="list"`, structure rather than control — so the field's name was announced on the list of
+  // chosen values while the combobox beside it carried the same word. One name, two things, and the
+  // renderer that did it was the only one of three that did.
+  const operable = "input, select, textarea, button";
+  const operated = control.matches(`${operable}, [role]`)
     ? control
-    : control.querySelector<HTMLElement>("input, select, textarea, [role], button") ?? control;
+    : control.querySelector<HTMLElement>(operable)
+      ?? control.querySelector<HTMLElement>("[role]")
+      ?? control;
   if (name) operated.setAttribute("aria-label", name);
   (shell.wrapper.querySelector(`.${MDY_FIELD_SHELL_CLASSES.control}`) ?? shell.wrapper).appendChild(control);
 }

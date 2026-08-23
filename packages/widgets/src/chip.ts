@@ -97,17 +97,22 @@ export function multiselectChipClasses(appearance: MdyChipAppearance = {}): read
 }
 
 /**
- * What the button that takes a chip off is called.
+ * What a button inside a chip is called.
  *
- * The verb alone — "Remove", "Rimuovi" — names the action and not its object, so a strip of eight
- * chips offers eight controls with one name between them. Someone reading the page one control at a
- * time hears "Remove" and has to leave it, find the chip beside it, and come back to know what they
- * would be removing; someone listing the controls hears the same word eight times.
+ * The verb alone — "Remove", "One fewer", "Rimuovi" — names the action and not its object, so a strip
+ * of eight chips offers eight controls with one name between them. Someone reading the page one
+ * control at a time hears "Remove" and has to leave it, find the chip beside it, and come back to
+ * know what they would be removing; someone listing the controls hears the same word eight times.
+ *
+ * **Every button in the chip, not only the one that removes it.** Read from the accessibility tree, a
+ * two-chip strip offered `Remove Alfa` and `Remove Beta` beside four steppers called `One fewer` and
+ * `One more` — four controls that sound like two, in the same chip that already knew how to say it.
+ * And the unnamed pair is the one that destroys: stepping down from one takes the value off.
  *
  * The words stay with the renderer, which is where the language lives. The rule that the object
  * belongs in the name lives here, so all of them compose it the same way.
  */
-export function chipRemoveName(verb: string, label: string): string {
+export function chipActionName(verb: string, label: string): string {
   const object = label.trim();
   return object === "" ? verb : `${verb} ${object}`;
 }

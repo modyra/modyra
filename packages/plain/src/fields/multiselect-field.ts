@@ -12,7 +12,7 @@ import type { MdyDynamicOptionsField } from "@modyra/core";
 import {
   MDY_WIDGET_CONTRACTS,
   createMultiselectFieldController,
-  chipRemoveName,
+  chipActionName,
   quantityAnnouncement,
   settledVoice,
   multiselectChipClasses,
@@ -633,7 +633,22 @@ export function renderMultiselectField(
       // The button that takes this one off says which one it takes: a strip of eight offers eight
       // controls, and a name that is only the verb is the same name on all of them.
       chip.querySelector(`.${parts.chipRemove.classes[0]}`)
-        ?.setAttribute("aria-label", chipRemoveName(messages.chipRemoveLabel, label));
+        ?.setAttribute("aria-label", chipActionName(messages.chipRemoveLabel, label));
+      // And every other button in the chip, by the same rule. Read from the accessibility tree, the
+      // steppers were four controls called "One fewer" and "One more" beside two that said which
+      // value they removed — and stepping down from one is what removes it, so the pair that
+      // destroys was the pair that did not say what it would destroy.
+      //
+      // Named here rather than where the buttons are built: the label belongs to the value this chip
+      // is showing now, and at build time the chip is still empty.
+      const named = (selector: string, verb: string, at = 0): void => {
+        chip.querySelectorAll(selector)[at]
+          ?.setAttribute("aria-label", chipActionName(verb, label));
+      };
+      named(`.${parts.optionStep.classes[0]}`, messages.chipDecrementLabel, 0);
+      named(`.${parts.optionStep.classes[0]}`, messages.chipIncrementLabel, 1);
+      named(`.${parts.chipMove.classes[0]}`, messages.chipMoveEarlierLabel, 0);
+      named(`.${parts.chipMove.classes[0]}`, messages.chipMoveLaterLabel, 1);
       // Where this chip sits and how many there are, stated on the chip itself. Independent of the
       // live region and of anything drawn: it survives a stripped stylesheet and a dropped
       // announcement, which the other two do not.

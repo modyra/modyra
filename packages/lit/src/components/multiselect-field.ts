@@ -21,7 +21,7 @@ import { filterOptionsByQuery } from "@modyra/widgets";
 import {
   createMultiselectFieldController,
   MDY_CHIP_CLASSES,
-  chipRemoveName,
+  chipActionName,
   multiselectChipClasses,
   quantityAnnouncement,
   settledVoice,
@@ -913,7 +913,7 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
             type="button"
             class=${MDY_CHIP_CLASSES.move}
             tabindex="-1"
-            aria-label=${this.messages.chipMoveEarlierLabel}
+            aria-label=${chipActionName(this.messages.chipMoveEarlierLabel, label)}
             @click=${(e: Event) => { e.stopPropagation(); this.moveByPointer(handle, String(value), -1); }}
           ></button>`
         : nothing}
@@ -922,7 +922,7 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
             type="button"
             class=${MDY_CHIP_CLASSES.step}
             tabindex="-1"
-            aria-label=${this.messages.chipDecrementLabel}
+            aria-label=${chipActionName(this.messages.chipDecrementLabel, label)}
             @click=${(e: Event) => { e.stopPropagation(); this.decrement(handle, value); }}
           >${mdyIcon("MINUS", "")}</button>`
         : nothing}
@@ -933,7 +933,7 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
             type="button"
             class=${MDY_CHIP_CLASSES.step}
             tabindex="-1"
-            aria-label=${this.messages.chipIncrementLabel}
+            aria-label=${chipActionName(this.messages.chipIncrementLabel, label)}
             @click=${(e: Event) => { e.stopPropagation(); this.increment(handle, value); }}
           >${mdyIcon("PLUS", "")}</button>`
         : nothing}
@@ -942,7 +942,7 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
             type="button"
             class=${MDY_CHIP_CLASSES.move}
             tabindex="-1"
-            aria-label=${this.messages.chipMoveLaterLabel}
+            aria-label=${chipActionName(this.messages.chipMoveLaterLabel, label)}
             @click=${(e: Event) => { e.stopPropagation(); this.moveByPointer(handle, String(value), 1); }}
           ></button>`
         : nothing}
@@ -950,7 +950,7 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
         type="button"
         class=${MDY_CHIP_CLASSES.remove}
         tabindex="-1"
-        aria-label=${chipRemoveName(this.messages.chipRemoveLabel, label)}
+        aria-label=${chipActionName(this.messages.chipRemoveLabel, label)}
         @click=${(e: Event) => { e.stopPropagation(); this.removeAndPlaceFocus(handle, value); }}
       ></button>
     </span>`);

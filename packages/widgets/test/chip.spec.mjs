@@ -8,7 +8,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import {
-  chipRemoveName,
+  chipActionName,
   quantityAnnouncement,
   settledVoice,
   MDY_CHIP_CLASSES,
@@ -90,12 +90,12 @@ test("a settling voice says the value a gesture ended on, not every value it pas
 test("the button that takes a chip off is named for the chip", () => {
   // The verb alone names eight controls the same on a strip of eight chips. The words are the
   // renderer's, so what is checked here is the rule: the object belongs in the name.
-  assert.equal(chipRemoveName("Remove", "Alfa"), "Remove Alfa");
-  assert.equal(chipRemoveName("Rimuovi", "Ferrovia"), "Rimuovi Ferrovia");
+  assert.equal(chipActionName("Remove", "Alfa"), "Remove Alfa");
+  assert.equal(chipActionName("Rimuovi", "Ferrovia"), "Rimuovi Ferrovia");
   // A chip with nothing to say its name by keeps the verb rather than gaining a trailing space:
   // a name ending in whitespace is a different string to anything matching on it exactly.
-  assert.equal(chipRemoveName("Remove", ""), "Remove");
-  assert.equal(chipRemoveName("Remove", "   "), "Remove");
+  assert.equal(chipActionName("Remove", ""), "Remove");
+  assert.equal(chipActionName("Remove", "   "), "Remove");
 });
 
 test("the closed control carries what was chosen, and the popup carries the options", () => {

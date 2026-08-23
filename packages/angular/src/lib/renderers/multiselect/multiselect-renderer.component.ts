@@ -19,7 +19,7 @@ import type { MdyMultiselectMode } from "@modyra/core";
 import {
   MDY_WIDGET_CONTRACTS,
   multiselectOverlayAction,
-  chipRemoveName,
+  chipActionName,
   defaultWidgetIdFactory,
   multiselectChipClasses,
   quantityAnnouncement,
@@ -108,7 +108,7 @@ import type { MdyOverlayBranch, MdyOverlayOwner } from "../../core/overlay-contr
                   type="button"
                   [class]="chip.move"
                   tabindex="-1"
-                  [attr.aria-label]="i18n.chipMoveEarlierLabel"
+                  [attr.aria-label]="actionName(i18n.chipMoveEarlierLabel, held.label)"
                   (click)="moveByPointer(held.key, -1); $event.stopPropagation()"
                 ></button>
               }
@@ -117,7 +117,7 @@ import type { MdyOverlayBranch, MdyOverlayOwner } from "../../core/overlay-contr
                   type="button"
                   [class]="chip.step"
                   tabindex="-1"
-                  [attr.aria-label]="i18n.chipDecrementLabel"
+                  [attr.aria-label]="actionName(i18n.chipDecrementLabel, held.label)"
                   (click)="decrement(held.value); $event.stopPropagation()"
                 ><mdy-icon name="MINUS" /></button>
               }
@@ -128,7 +128,7 @@ import type { MdyOverlayBranch, MdyOverlayOwner } from "../../core/overlay-contr
                   type="button"
                   [class]="chip.step"
                   tabindex="-1"
-                  [attr.aria-label]="i18n.chipIncrementLabel"
+                  [attr.aria-label]="actionName(i18n.chipIncrementLabel, held.label)"
                   (click)="increment(held.value); $event.stopPropagation()"
                 ><mdy-icon name="PLUS" /></button>
               }
@@ -137,7 +137,7 @@ import type { MdyOverlayBranch, MdyOverlayOwner } from "../../core/overlay-contr
                   type="button"
                   [class]="chip.move"
                   tabindex="-1"
-                  [attr.aria-label]="i18n.chipMoveLaterLabel"
+                  [attr.aria-label]="actionName(i18n.chipMoveLaterLabel, held.label)"
                   (click)="moveByPointer(held.key, 1); $event.stopPropagation()"
                 ></button>
               }
@@ -532,8 +532,19 @@ export class MdyMultiselectComponent<TValue = string>
    * the renderers that emit it and silently skipped this one.
    */
   /** What the button that takes this chip off is called: the verb and the value it would remove. */
+  /**
+   * What a button inside a chip is called: the verb and the value it would act on.
+   *
+   * Every button, not only the one that removes. Read from the accessibility tree, a two-chip strip
+   * offered four steppers called "One fewer" and "One more" beside two that named their value — and
+   * stepping down from one is what removes it.
+   */
+  protected actionName(verb: string, label: string): string {
+    return chipActionName(verb, label);
+  }
+
   protected removeName(label: string): string {
-    return chipRemoveName(this.i18n.chipRemoveLabel, label);
+    return chipActionName(this.i18n.chipRemoveLabel, label);
   }
 
   protected valueChipClasses(): string {
