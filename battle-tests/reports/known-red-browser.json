@@ -1,10 +1,10 @@
 {
   "note": "Browser specs that are red because the defect they describe is open. A red listed here does not fail a build; a red that is not listed is a regression. Rewrite with `npm run battle:browser:ci -- --accept`.",
   "order": "Repair in severity order, as the node tier does. A spec's severity is the worst of the claims its header names; `unknown` is a spec that names none, which is most of them.",
-  "recordedAt": "2026-08-23T19:19:54Z",
-  "openReds": 15,
+  "recordedAt": "2026-08-23T19:52:36Z",
+  "openReds": 11,
   "bySeverity": {
-    "S1": 15
+    "S1": 11
   },
   "knownRed": [
     "a-cluster-a-thumb-can-tell-apart.spec.ts › a destroy and a restore are told apart by more than a margin, angular",
@@ -17,10 +17,6 @@
     "a-row-system-three-renderers-disagree-about.spec.ts › a kind is the same height in every renderer",
     "an-id-a-selector-cannot-reach.spec.ts › a nested document's own ids are reachable by a selector, angular",
     "an-id-a-selector-cannot-reach.spec.ts › a nested document's own ids are reachable by a selector, lit",
-    "an-id-a-selector-cannot-reach.spec.ts › a nested document's own ids are reachable by a selector, plain",
-    "what-a-reader-is-told-about-a-choice.spec.ts › a part is named in every renderer, or in none",
-    "what-a-reader-is-told-about-a-choice.spec.ts › a reader can tell two controls apart, angular",
-    "what-a-reader-is-told-about-a-choice.spec.ts › a reader can tell two controls apart, lit",
-    "what-a-reader-is-told-about-a-choice.spec.ts › a reader can tell two controls apart, plain"
+    "an-id-a-selector-cannot-reach.spec.ts › a nested document's own ids are reachable by a selector, plain"
   ]
 }
