@@ -1,6 +1,6 @@
 # ADR 0144: A slot that is always there
 
-Status: Accepted
+Status: Superseded by [ADR 0147](0147-the-cluster-at-the-end-of-a-field.md)
 
 ## Context
 
