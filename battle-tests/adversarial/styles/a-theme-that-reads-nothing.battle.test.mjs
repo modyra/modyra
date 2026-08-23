@@ -52,10 +52,31 @@ battle(
       detail: `${STYLES}: ${sheets.join(", ")}`,
     });
 
-    // Two sheets a consumer always has alongside a theme.
+    /**
+     * What a sheet has alongside it, followed from its own `@import`s rather than named here.
+     *
+     * A hardcoded pair was true until a third sheet joined the system: the scale went into its own
+     * file, `modyra.css` imported it, and this battle reported every step as undefined — a stale
+     * fixture in the suite that exists to catch stale fixtures. Reading the imports means the next
+     * file to arrive is followed too, and a sheet that stops importing one is caught rather than
+     * quietly forgiven.
+     */
+    const definitionsReachableFrom = (entry, seen = new Set()) => {
+      if (seen.has(entry)) return new Set();
+      seen.add(entry);
+      let text;
+      try { text = readFileSync(join(STYLES, entry), "utf8"); } catch { return new Set(); }
+      const names = new Set(namesIn(text, DEFINED));
+      for (const found of text.matchAll(/@import\s+['"]\.\/([^'"]+)['"]/g)) {
+        for (const name of definitionsReachableFrom(found[1], seen)) names.add(name);
+      }
+      return names;
+    };
+
+    // Two sheets a consumer always has alongside a theme, plus everything they pull in.
     const shared = new Set([
-      ...namesIn(readFileSync(join(STYLES, "modyra-base.css"), "utf8"), DEFINED),
-      ...namesIn(readFileSync(join(STYLES, "modyra.css"), "utf8"), DEFINED),
+      ...definitionsReachableFrom("modyra-base.css"),
+      ...definitionsReachableFrom("modyra.css"),
     ]);
     ctx.log.note("what the shared sheets define", { count: shared.size });
 
