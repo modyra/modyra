@@ -1,20 +1,29 @@
 /**
  * What two forms of one shape do to each other when nothing is said about ids.
  *
- * `plain-lifecycle` proves the scoped case: given an `idPrefix` each, two forms over the same field
- * names keep their labels pointing at their own controls. This records the other case, because the
- * option is opt-in and unset is the default.
+ * Two mounts of one document over one set of field names. Nobody names a scope, which is the default
+ * and the state an application reaches first — the same editor placed twice, a filter beside a form,
+ * a comparison of two records, a dialog over a page.
  *
- * The behaviour is deliberate and `MountMdyFormOptions.idPrefix` says so in its own words — *the
- * second form's relationships silently resolve to the first form's elements; neither form examined
- * alone looks wrong, which is why only a page holding both can detect it.* So this is not a claim
- * that the default is wrong. It is the consequence written down where it can be seen: sixteen
- * duplicate ids on a page with two of one form, every label in the second resolving into the first,
- * and a click on the second form's label moving focus into the first.
+ * **Each form carries a scope of its own whether or not anyone asked** ([ADR
+ * 0146](../../docs/architecture/0146-a-form-carries-its-own-scope.md)), so the second form's label
+ * points at the second form's control. The property this file holds is that the *unscoped* case and
+ * the scoped one now behave alike: naming a scope changes what the ids are, not whether they
+ * collide.
  *
- * It is measured rather than asserted as a defect because the decision is taken. What is missing is
- * not the option — it is that no guide mentions it, so the first page an application writes with the
- * same editor twice is the broken one.
+ * That equivalence is the whole point and it is why the two tests below read almost identically to
+ * the scoped one above them. A file where they diverged would be recording that the default is worse
+ * than the option, which is the state the record was written to end.
+ *
+ * **Three symptoms, and they fail independently**, because a repair can reach one and miss the
+ * others: no duplicate id on the page; the second form's label resolving into the second form; and a
+ * click on that label moving focus into the second form. The first is what a validator sees, the
+ * second is what a screen reader follows, and the third is what a person meets with no assistive
+ * technology at all.
+ *
+ * **Each asserts a premise first**, because every one of the three is satisfied by an empty page: no
+ * duplicates, no stray label and no stray focus are all true of a document with nothing in it. The
+ * premise is that both forms really rendered controls.
  */
 
 import { expect, test } from "@playwright/test";
@@ -54,33 +63,52 @@ test("scoped, the two forms share no id and each label stays at home", async ({ 
   expect(owner).toBe("second");
 });
 
-test("unscoped, every id is shared and every label points at the first form", async ({ page }) => {
+test("unscoped, the two forms share no id and every label stays at home", async ({ page }) => {
   await mountTwo(page, false);
 
-  // The duplicates are the visible half: a document with two of every id is simply invalid.
-  const duplicates = await page.evaluate(() => window.battle.duplicateIds());
-  expect(duplicates.length).toBeGreaterThan(0);
+  // The premise: both forms really are on the page. Every assertion below is true of an empty one.
+  expect(
+    await page.evaluate(() => window.battle.controlCount()),
+    "fewer than two controls rendered, so nothing here could collide and nothing is being measured",
+  ).toBeGreaterThan(1);
 
-  // The quiet half, and the one that reaches a person: the second form's label resolves into the
-  // first form, so a screen reader announces one field while the user is in another.
+  // The visible half: a document with two of every id is simply invalid.
+  expect(
+    await page.evaluate(() => window.battle.duplicateIds()),
+    "two forms of one document publish the same ids, so every reference in one of them resolves "
+    + "into whichever rendered first",
+  ).toEqual([]);
+
+  // The quiet half, and the one that reaches a person: a label resolving into the other form makes a
+  // screen reader announce one field while the user is in another.
   const owner = await page.evaluate(() => {
     const label = document.querySelector('[data-form="second"] label') as HTMLLabelElement | null;
     const target = label ? document.getElementById(label.htmlFor) : null;
     return (target?.closest("[data-form]") as HTMLElement | null)?.dataset.form ?? null;
   });
-  expect(owner).toBe("first");
+  expect(owner, "the second form's label names a control in another form").toBe("second");
 });
 
-test("unscoped, a click on the second form's label lands in the first", async ({ page }) => {
+test("unscoped, a click on the second form's label lands in the second", async ({ page }) => {
   await mountTwo(page, false);
+
+  expect(
+    await page.evaluate(() => window.battle.controlCount()),
+    "fewer than two controls rendered, so a click cannot land in the wrong one",
+  ).toBeGreaterThan(1);
 
   await page.locator('[data-form="second"] label').first().click();
   const focused = await page.evaluate(
     () => (document.activeElement?.closest("[data-form]") as HTMLElement | null)?.dataset.form ?? null,
   );
 
-  // The consequence a user meets without any assistive technology at all.
-  expect(focused).toBe("first");
+  // The consequence a user meets without any assistive technology at all: pressing a label puts the
+  // caret in the control it names, and it must be the one beside it.
+  expect(
+    focused,
+    "pressing the second form's label moved the caret into another form, which a person sees happen "
+    + "and cannot explain",
+  ).toBe("second");
 });
 
 declare global {

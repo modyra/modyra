@@ -1,23 +1,34 @@
 /**
- * The same document renders the same ids, whatever else is on the page.
+ * The same document renders the same ids, whatever else is on the page — inside its scope.
  *
  * An id is the only part of a widget a consumer can name from outside: in their own
  * `aria-describedby`, in a stylesheet, in a test. That requires it to be a function of the document
- * they wrote — and in two renderers of three it was a function of **mount order**, because the widget
- * id was a counter. The same field declaration mounted second and then alone got
- * `mdy-field-1__label` and `mdy-field-2__label`.
+ * they wrote, and not of what happened to be mounted first.
  *
- * [ADR 0135](../../docs/architecture/0135-an-id-is-a-function-of-the-document.md) settles it: a widget
- * bound to a field derives its id from that field's path within its form's id scope.
+ * **A form carries an id scope, always** ([ADR
+ * 0146](../../docs/architecture/0146-a-form-carries-its-own-scope.md)). Its default is minted, so two
+ * live copies of one document no longer claim one another's ids; and a consumer who needs the ids
+ * written down in advance — a server render, a stylesheet, a test — supplies the scope, and inside
+ * that scope the id is a function of the document again.
  *
- * **Two cases, and the second exists because the first can be satisfied while the rule is broken.**
- * A renderer that derived from the path and dropped the scope would pass *the same document renders
- * the same ids* — two documents each render the same ids as themselves. The record says so and this
- * file is why: the scope needs a case of its own, and it is the one a plausible implementation fails.
+ * **That is the shape of all three cases here.** Predictability is asserted *within* a supplied
+ * scope, because that is where the record puts it: the minted default is deliberately not a value
+ * anyone may write down, and a file pinning it would be promising what the contract refuses to.
  *
- * What it does **not** assert is what the id contains. The path, a hash of the path and a
- * consumer-supplied value all satisfy both sentences, and naming one would decide a contract from a
- * test file.
+ * **The scope needs a case of its own, and it is the one a plausible implementation fails.** A
+ * renderer deriving from the path and dropping the scope satisfies *the same document renders the
+ * same ids* — two documents each render the same ids as themselves — while two forms on a page
+ * collide. So the second case gives two forms different scopes and requires no id in common.
+ *
+ * The third is the consumer's own error, and it is the only collision that remains reachable: one
+ * scope handed to two forms. The library honours it, because a supplied scope wins over the minted
+ * one — so the page is broken exactly as asked and **nothing says so**, which is what that case is
+ * about. A page whose `aria-describedby` resolves into the other form looks like a page whose
+ * references are right.
+ *
+ * What this does **not** assert is what an id contains. The path, a hash of the path and a
+ * consumer-supplied value all satisfy every sentence above, and naming one would decide a contract
+ * from a test file.
  *
  * Claims under attack: UI-011, A11Y-001.
  */
@@ -48,19 +59,19 @@ for (const host of HOSTS) {
     await page.waitForTimeout(400);
   };
 
-  test(`the same declaration renders the same ids whatever came first, ${host.name}`, async ({ page }) => {
+  test(`within a scope, the same declaration renders the same ids whatever came first, ${host.name}`, async ({ page }) => {
     test.setTimeout(150_000);
     await page.goto(host.page);
     await page.waitForFunction((flag) => (window as never as Record<string, boolean>)[flag] === true, host.ready);
 
     // Something else first, then the declaration under test — the ordinary page.
     await mount(page, "other", [{ name: "unrelated", kind: "text", label: "T" }]);
-    await mount(page, "after", FIELDS);
+    await mount(page, "after", FIELDS, "sa");
     const afterSomething = await idsIn(page, "after");
 
-    // The same declaration again, with more in front of it.
+    // The same declaration again, with more in front of it, under a scope of its own.
     await mount(page, "more", [{ name: "another", kind: "text", label: "T" }]);
-    await mount(page, "later", FIELDS);
+    await mount(page, "later", FIELDS, "sb");
     const afterMore = await idsIn(page, "later");
 
     expect(afterSomething, "nothing was mounted").not.toBeNull();
@@ -68,13 +79,25 @@ for (const host of HOSTS) {
     // two empty lists and pass while saying nothing.
     expect(afterSomething!.length, `${host.name} published no ids for a datepicker`).toBeGreaterThan(2);
 
+    // And the premise behind it: the supplied scope reached the ids. A host that ignored `idPrefix`
+    // would leave both lists unstripped, and comparing them would be asking the superseded question.
+    const wears = (ids: string[], scope: string) => ids.every((id) => id.startsWith(`${scope}-`));
     expect(
-      afterMore,
+      [wears(afterSomething!, "sa"), wears(afterMore!, "sb")],
+      `${host.name} did not put the supplied scope on every id — ` +
+        `${JSON.stringify(afterSomething!.slice(0, 2))} / ${JSON.stringify(afterMore!.slice(0, 2))}. ` +
+        "Nothing below is measuring what it says it is",
+    ).toEqual([true, true]);
+
+    const withoutScope = (ids: string[], scope: string) => ids.map((id) => id.slice(scope.length + 1));
+
+    expect(
+      withoutScope(afterMore!, "sb"),
       `the same declaration rendered ${JSON.stringify(afterMore?.slice(0, 2))} where it rendered ` +
-        `${JSON.stringify(afterSomething!.slice(0, 2))} a moment earlier — the id depends on what was ` +
-        `mounted first, so a consumer cannot name it in advance and a server render and a client mount ` +
-        `disagree the moment their order does`,
-    ).toEqual(afterSomething);
+        `${JSON.stringify(afterSomething!.slice(0, 2))} a moment earlier — inside its scope the id ` +
+        `depends on what was mounted first, so a consumer cannot name it in advance and a server ` +
+        `render and a client mount disagree the moment their order does`,
+    ).toEqual(withoutScope(afterSomething!, "sa"));
   });
 
   /**
@@ -121,7 +144,7 @@ for (const host of HOSTS) {
     ).toEqual([]);
   });
 
-  test(`one scope for two forms is not silent, ${host.name}`, async ({ page }) => {
+  test(`one scope given to two forms is not silent, ${host.name}`, async ({ page }) => {
     test.setTimeout(150_000);
     const warnings: string[] = [];
     page.on("console", (message) => {
@@ -130,21 +153,23 @@ for (const host of HOSTS) {
     await page.goto(host.page);
     await page.waitForFunction((flag) => (window as never as Record<string, boolean>)[flag] === true, host.ready);
 
-    // The same declaration twice with nothing to tell them apart: one identity, two things. The
-    // consumer did this, and it is theirs to fix — with one attribute, if anybody tells them.
-    await mount(page, "twinA", FIELDS);
-    await mount(page, "twinB", FIELDS);
+    // A form carries a scope of its own now, so two mounts of one document no longer collide by
+    // default. The collision that remains is the one a consumer asks for: **one identity handed to
+    // two things**, which a supplied scope can still express and the library still honours.
+    await mount(page, "twinA", FIELDS, "same");
+    await mount(page, "twinB", FIELDS, "same");
 
     const a = await idsIn(page, "twinA");
     const b = await idsIn(page, "twinB");
     expect(a, "nothing was mounted").not.toBeNull();
 
-    // The premise: they really did collide. If a renderer disambiguated them, there is nothing to warn
-    // about and this case is measuring the wrong page.
+    // The premise: they really did collide. If a renderer disambiguated them despite being given one
+    // scope, there is nothing to warn about and this case is measuring the wrong page.
     const shared = a!.filter((id) => b!.includes(id));
     expect(
       shared.length,
-      "the two unscoped forms rendered no id in common, so nothing collided and there is nothing to say",
+      "the two forms were given one scope and rendered no id in common, so nothing collided and "
+      + "there is nothing to say",
     ).toBeGreaterThan(0);
 
     expect(

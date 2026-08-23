@@ -280,7 +280,22 @@ test("an id prefix scopes the page and not the payload", async ({ page }) => {
 
   // The control: the prefix did something. If the ids were the same in both, the payload agreeing
   // would say nothing about scoping.
-  expect(bare.ids, JSON.stringify(seen)).toEqual(["email", "note"]);
+  //
+  // The bare ids are not pinned to the field names. A form carries a scope whether or not anyone
+  // named one, and its default value is minted from the document — so writing it down here would pin
+  // a value the contract deliberately does not promise. What is asserted is that the scope is
+  // *there* and that it is not the supplied one.
+  expect(
+    bare.ids.map((id) => id.replace(/^.*?-/, "")),
+    `the bare mount published ${JSON.stringify(bare.ids)}, whose tails are not the field names — so `
+    + "the id is not a function of the document within its scope and the comparison below is not "
+    + `about scoping at all. ${JSON.stringify(seen)}`,
+  ).toEqual(["email", "note"]);
+  expect(
+    bare.ids,
+    `the bare mount and the prefixed one published the same ids, so the prefix did nothing and the `
+    + `payload agreeing says nothing about scoping. ${JSON.stringify(seen)}`,
+  ).not.toEqual(prefixed.ids);
   expect(prefixed.ids, JSON.stringify(seen)).toEqual(["one-email", "one-note"]);
 
   // And the thing that must not move.

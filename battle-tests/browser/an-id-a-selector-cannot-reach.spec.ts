@@ -26,6 +26,8 @@
  */
 
 import { expect, test } from "@playwright/test";
+import { flattenDynamicSchema } from "@modyra/core";
+
 import { HOSTS } from "./bench";
 
 /** Ordinary values, each carrying one character a CSS parser reads as syntax. */
@@ -65,13 +67,16 @@ for (const host of HOSTS) {
     const read = await page.evaluate(() => {
       const everyId = Array.from(document.querySelectorAll('[data-form="ids"] [id], [role="option"][id]'))
         .map((element) => element.id);
-      // The contract spells a published id `<widget>__<part>__<key>`. An id that does not is not
-      // this battle's subject — but it is also not nothing, and the premise below says which of the
-      // two it found, because "published no ids" sent a reader looking for a missing feature when
-      // what was there was a renderer minting them by a scheme of its own.
-      (window as never as Record<string, unknown>).__otherScheme =
-        everyId.filter((id) => !id.startsWith("pick__"));
-      const ids = everyId.filter((id) => id.startsWith("pick__"));
+      // The contract spells a published id `<widget>__<part>__<key>`, and ADR 0146 puts a form's
+      // scope in front of it joined by `-`. So the widget's spelling is matched where it sits rather
+      // than at the start: `f3p5mzl-pick__option__a` is the same id under a scope.
+      //
+      // An id in neither shape is not this battle's subject — but it is also not nothing, and the
+      // premise below says which of the two it found, because "published no ids" sent a reader
+      // looking for a missing feature when what was there was a renderer minting them its own way.
+      const inContractSpelling = (id: string) => /(?:^|-)pick__/.test(id);
+      (window as never as Record<string, unknown>).__otherScheme = everyId.filter((id) => !inContractSpelling(id));
+      const ids = everyId.filter(inContractSpelling);
       return ids.map((id) => {
         let reached: boolean | "throws";
         try {
@@ -112,6 +117,119 @@ for (const host of HOSTS) {
         `and ${unreachable.filter((entry) => entry.reached === "throws").length} of those throw rather ` +
         `than miss — so a consumer who handles "not found" still gets an exception. Every reader is ` +
         `served, which is why this survives review: the only path it breaks is the one a person writes`,
+    ).toEqual([]);
+  });
+}
+
+/**
+ * The same property, with nobody supplying anything unusual.
+ *
+ * The check above needs a caller to put punctuation in a value. This one needs nothing: **a form
+ * inside a form produces the punctuation by itself.**
+ *
+ * A repeatable collection is flattened to indexed paths — `righe.0.nome`, `righe.1.nome` — and that
+ * is the right answer to the question a collection actually poses, which is how two rows of one
+ * document avoid claiming each other's ids. The index disambiguates them, and a per-form id scope
+ * could not have: two rows are the *same form*.
+ *
+ * But the separator that does the disambiguating is `.`, and a widget id is built from the path. So
+ * the id of an ordinary field, in an ordinary document, with a plain ASCII name, is
+ * `righe.0.nome__label` — which `getElementById` resolves and `querySelector("#" + id)` throws on,
+ * because a CSS parser reads `.0` as a class and `0` cannot begin one.
+ *
+ * `isValidWidgetId` refuses the id delimiter and refuses whitespace, and the reasoning beside it
+ * applies to both: *"forbidding costs nothing: an id built from a name containing the delimiter was
+ * never deterministic in the first place"*. **The dot is not on that list**, and it is the one
+ * character the path scheme itself emits.
+ *
+ * So this is the first check that does not need a hostile input to fire. The one above can be read as
+ * a caller's problem — do not put a quote in a value. There is no such reading here: nesting is the
+ * feature, and the feature writes the character.
+ *
+ * **Robust to the id scope arriving.** A scoped id is `<scope>_righe.0.nome__label`, which is dotted
+ * for the same reason and unreachable for the same reason, so this file does not have to move when
+ * ADR 0146 lands.
+ *
+ * The names are taken from `flattenDynamicSchema` rather than written out, so the check follows the
+ * path scheme if the path scheme changes — and if flattening ever stops producing a dot, the premise
+ * below says so instead of passing quietly.
+ */
+
+/** A document with a collection in it: two rows, each holding one ordinary field. */
+const NESTED = {
+  node: "group",
+  children: {
+    intestazione: { node: "field", field: { kind: "text", label: "Titolo" } },
+    righe: {
+      node: "array",
+      label: "Righe",
+      initialValue: [{}, {}],
+      item: { node: "group", children: { nome: { node: "field", field: { kind: "text", label: "Nome" } } } },
+    },
+  },
+} as never;
+
+for (const host of HOSTS) {
+  test(`a nested document's own ids are reachable by a selector, ${host.name}`, async ({ page }) => {
+    test.setTimeout(150_000);
+    await page.goto(host.page);
+    await page.waitForFunction((flag) => (window as never as Record<string, boolean>)[flag] === true, host.ready);
+
+    const flat = flattenDynamicSchema(NESTED) as ReadonlyArray<{ name: string }>;
+    const fields = flat.map((field) => ({ ...field, supportingText: "aiuto" }));
+
+    // The premise behind everything below: flattening really did put a dot in a name. If the path
+    // scheme changed to something a selector can reach, this file has nothing to say and should say
+    // that rather than pass as though it had checked.
+    const dotted = fields.filter((field) => field.name.includes("."));
+    expect(
+      dotted.map((field) => field.name),
+      "flattening a document with a collection produced no name containing a `.`, so the case this "
+      + "file is about does not arise and nothing below is measuring it",
+    ).not.toEqual([]);
+
+    await page.evaluate(({ api, fields }) => {
+      (window as never as Record<string, Record<string, (...a: never[]) => unknown>>)[api]
+        .mountFields("nested", fields as never);
+    }, { api: host.api, fields });
+    await page.waitForTimeout(500);
+
+    const read = await page.evaluate(() => {
+      const ids = Array.from(document.querySelectorAll('[data-form="nested"] [id]')).map((element) => element.id);
+      return ids.map((id) => {
+        let reached: boolean | "throws";
+        try {
+          reached = document.querySelector(`#${id}`) !== null;
+        } catch {
+          reached = "throws";
+        }
+        return { id, byId: document.getElementById(id) !== null, reached };
+      });
+    });
+
+    // Published anything at all, and published something from a row rather than only from the field
+    // that sits outside the collection.
+    expect(
+      read.filter((entry) => entry.id.includes(".")).length,
+      `${host.name} published ${read.length} id(s) for a nested document and none of them came from a `
+      + `row: ${JSON.stringify(read.map((entry) => entry.id).slice(0, 6))}. Either the collection did `
+      + "not render or its fields are named some other way, and neither is what this file is about",
+    ).toBeGreaterThan(0);
+
+    expect(
+      read.every((entry) => entry.byId),
+      "an id this form published does not resolve by `getElementById` either, which is a broken id "
+      + "rather than an unreachable one",
+    ).toBe(true);
+
+    const unreachable = read.filter((entry) => entry.reached !== true);
+    expect(
+      unreachable.map((entry) => `${entry.id} → ${entry.reached === "throws" ? "throws" : "no match"}`),
+      `${unreachable.length} of ${read.length} ids this form published cannot be reached by `
+      + `\`querySelector\`. Nobody supplied a strange value: the names are \`intestazione\` and `
+      + "`nome`, and the punctuation is the path separator the library writes when a document holds a "
+      + "collection. So a consumer selecting a nested field by the id the contract gave them gets an "
+      + "exception, and the only input required to reach this state is putting a form inside a form",
     ).toEqual([]);
   });
 }
