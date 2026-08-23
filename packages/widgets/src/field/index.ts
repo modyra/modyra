@@ -163,7 +163,7 @@ export type {
 
 export { timepickerEntry, timepickerEntryText, timepickerPlaceholder, type MdyTimepickerEntry } from "./timepicker-entry.js";
 export { MDY_TIMEPICKER_ADVANCE_MS, MDY_TIMEPICKER_DEFAULT_FORMAT, MDY_TIMEPICKER_INITIAL_VIEW, timepickerFocusPart, timepickerPartSelector, timepickerTabOrder, timepickerTabTarget } from "./timepicker-focus.js";
-export { dialHandLength, dialNumberAngle, dialRingOf, timepickerDialGhost, timepickerDialTolerance, timepickerDialUnavailableArcs, timepickerSelectedRing, timepickerDialAria, timepickerDialKeyIntent, timepickerDialNumbers, timepickerDialPick, MDY_TIMEPICKER_INNER_RING, MDY_TIMEPICKER_NUMBER_SIZE, MDY_TIMEPICKER_RING_BAND, timepickerDialRing, timepickerSelectedDialValue, type MdyTimepickerDialKeyResult } from "./timepicker-dial.js";
+export { dialHandLength, dialNumberAngle, dialRingOf, timepickerDialGhost, timepickerDialTolerance, timepickerDialUnavailableArcs, timepickerSelectedRing, timepickerSegmentAria, timepickerDialKeyIntent, timepickerDialNumbers, timepickerDialPick, MDY_TIMEPICKER_INNER_RING, MDY_TIMEPICKER_NUMBER_SIZE, MDY_TIMEPICKER_RING_BAND, timepickerDialRing, timepickerSelectedDialValue, type MdyTimepickerDialKeyResult } from "./timepicker-dial.js";
 export type { MdyTimepickerDialArc, MdyTimepickerDialGhost, MdyTimepickerDialNumber, MdyTimepickerDialPick } from "./timepicker-dial.js";
 export type {
   MdyTimepickerFieldControllerOptions,

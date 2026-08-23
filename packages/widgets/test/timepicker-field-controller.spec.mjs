@@ -404,11 +404,13 @@ test("a key the dial does not claim is left alone", async () => {
 });
 
 test("what a screen reader is told matches what the arrows can reach", async () => {
-  const { timepickerDialAria, timepickerDialKeyIntent } = await import("../dist/index.js");
+  const { timepickerSegmentAria, timepickerDialKeyIntent } = await import("../dist/index.js");
   for (const format of ["12h", "24h"]) {
     for (const field of ["hour", "minute"]) {
-      const aria = timepickerDialAria(field, format, field === "minute" ? 30 : format === "24h" ? 14 : 5);
-      assert.equal(aria.role, "slider");
+      const aria = timepickerSegmentAria(field, format, field === "minute" ? 30 : format === "24h" ? 14 : 5);
+      // The box is the operable control and the dial beside it is hidden, so this is a spinbutton's
+      // value and never a slider's.
+      assert.equal(aria.role, "spinbutton");
       // The announced bounds are the bounds Home and End land on — one rule, not two.
       assert.equal(aria.valueMin, timepickerDialKeyIntent("Home", field, format, 5).value, `${format}/${field} min`);
       assert.equal(aria.valueMax, timepickerDialKeyIntent("End", field, format, 5).value, `${format}/${field} max`);

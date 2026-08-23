@@ -6,7 +6,7 @@
  * demo. A consumer running zoneless was the first thing in the project's life able to see one.
  *
  * The timepicker's open popup is the surface where that matters most: it is the only display in the
- * library that depends on state which never touches the form handle until `confirm`. Every other
+ * library that depends on state which never touches the form handle until confirm. Every other
  * widget's visible state moves the handle, and a renderer watches the handle for a dozen other
  * reasons — so a missing subscription is masked by something else redrawing.
  *
@@ -48,23 +48,28 @@ class BoundHandleHost {
 }
 
 /**
- * Opens the picker and turns the hand one step with the keyboard, reading the face before and after.
+ * Opens the picker and turns the hand one step with the keyboard, reading the hour before and after.
  *
- * The face is the display; `aria-valuenow` is what it says. Neither is the draft the controller
+ * The hour box is the display: it is where the draft is shown and where it is announced, and the
+ * dial beside it draws the same number without stating it. Neither is the draft the controller
  * holds, which is correct whether or not anything re-renders.
  */
 async function turnTheHand(host: HTMLElement, settle: () => Promise<unknown>) {
   host.querySelector<HTMLElement>(".mdy-timepicker__toggle")!.click();
   await settle();
 
-  const face = host.querySelector<HTMLElement>(".mdy-timepicker-dial__face")!;
-  expect(face).toBeTruthy();
-  const before = face.getAttribute("aria-valuenow");
+  const box = host.querySelector<HTMLInputElement>(
+    ".mdy-timepicker-segment--hour .mdy-timepicker-segment-input",
+  )!;
+  expect(box).toBeTruthy();
+  const before = box.value;
 
-  face.focus();
-  face.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowUp", bubbles: true }));
+  // From the clock rather than from the box: the box answers its own arrows, and this is the path
+  // that goes through the controller and comes back out as a binding.
+  host.querySelector(".mdy-timepicker-dial")!
+    .dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowUp", bubbles: true }));
   await settle();
-  return { before, after: face.getAttribute("aria-valuenow") };
+  return { before, after: box.value };
 }
 
 describe("Angular without Zone.js", () => {

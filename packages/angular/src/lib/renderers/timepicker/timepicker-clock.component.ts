@@ -27,7 +27,6 @@ import {
   createPointerDrag,
   dragPointOf,
   timeClockTransition,
-  timepickerDialAria,
   timepickerDialKeyIntent,
   timepickerDialNumbers,
   timepickerDialGhost,
@@ -242,11 +241,6 @@ export class MdyTimepickerClockComponent {
    */
   protected readonly faceValue = computed(() =>
     timepickerSelectedDialValue(this.focusedField(), this.draft(), this.format()),
-  );
-
-  /** What a screen reader is told the hand is pointing at — the contract's, with the format's bounds. */
-  protected readonly dialAria = computed(() =>
-    timepickerDialAria(this.focusedField(), this.format(), this.faceValue()),
   );
 
   /** How long the hand is, measured when a gesture starts — the tolerance is an angle at a radius. */

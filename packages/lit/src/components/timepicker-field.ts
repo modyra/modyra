@@ -23,8 +23,6 @@ import {
   stepTimeField,
   subscribeController,
   timeFieldBounds,
-  timepickerDialAria,
-  timepickerDialKeyIntent,
   timepickerDialNumbers,
   timepickerDialRing,
   dialHandLength,
@@ -318,30 +316,6 @@ export class MdyTimepickerFieldElement extends MdyFieldElement<string | null> {
   }
 
   /** The draft the controller is editing, which is what the dial draws. */
-  /**
-   * The hand, turned from the keyboard.
-   *
-   * The keys and what they land on are `timepickerDialKeyIntent`, which is the same rule the segment
-   * arrows follow — written a second time here, the two answered differently the moment a field
-   * offered only some of its values.
-   */
-  private onDialKeydown(event: KeyboardEvent): void {
-    const field = this.view.focusedField;
-    const parsed = this.parsed() ?? { hour: this.numericHour(), minute: this.numericMinute(), period: this.periodDisplay() };
-    const moved = timepickerDialKeyIntent(
-      event.key, field, this.format,
-      timepickerSelectedDialValue(field, parsed, this.format),
-      this.stepsNow(),
-    );
-    if (moved === null) return;
-    event.preventDefault();
-    // Kept on the face: the dialog answers Enter and Escape, and an arrow reaching its handler would
-    // be read a second time.
-    event.stopPropagation();
-    this.send(moved.field === "hour"
-      ? { type: "set-hour", hour: moved.value }
-      : { type: "set-minute", minute: moved.value });
-  }
 
   private parsed(): import("@modyra/core/datetime").ParsedTime | null {
     return this.fieldController?.state().draft ?? null;
@@ -715,21 +689,17 @@ export class MdyTimepickerFieldElement extends MdyFieldElement<string | null> {
     const parsed = this.parsed() ?? { hour: this.numericHour(), minute: this.numericMinute(), period: this.periodDisplay() };
     // In the units the face shows: on a 24-hour face this marks 14, not the 2 the draft holds.
     const selected = timepickerSelectedDialValue(field, parsed, this.format);
-    // A dial is a slider around a circle, and only the three values make a slider mean anything.
-    const dialAria = timepickerDialAria(field, this.format, selected);
     return html`
       <div class="mdy-timepicker-dial-variant">
         <div class="${this.partClass("clock")} ${this.animateHand ? stateClass(this.partClass("clock"), "animated") : ""}">
+          <!-- The dial sets nothing the hour and minute boxes cannot set, and they are on screen
+               beside it, so it is a pointer surface and nothing else: hidden from assistive
+               technology, with no role and no tab stop. A slider role a Tab walk skips is found
+               anyway in browse mode, announces a value, answers none of the keys it promises, and
+               says the hour a second time after the box already has. ADR 0145. -->
           <div
             class="mdy-timepicker-dial__face"
-            tabindex="0"
-            role=${dialAria.role}
-            aria-valuemin=${dialAria.valueMin}
-            aria-valuemax=${dialAria.valueMax}
-            aria-valuenow=${dialAria.valueNow}
-            aria-valuetext=${dialAria.valueText}
-            aria-label=${field === "hour" ? this.messages.timepickerHourLabel : this.messages.timepickerMinuteLabel}
-            @keydown=${(e: KeyboardEvent) => this.onDialKeydown(e)}
+            aria-hidden="true"
             @mousedown=${this.onDragStart}
             @touchstart=${this.onDragStart}
           >

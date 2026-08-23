@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, input, output } from "@angular/core";
-import { acceptTimeField, MDY_EVERY_TIME, MDY_WIDGET_CONTRACTS, stateClass, stepTimeField, timeFieldBounds, type MdyTimeSteps } from "@modyra/widgets";
+import { acceptTimeField, MDY_EVERY_TIME, MDY_WIDGET_CONTRACTS, stateClass, stepTimeField, timeFieldBounds, timepickerSegmentAria, type MdyTimeSteps } from "@modyra/widgets";
 import type { MdyTimeFormat } from "@modyra/core/datetime";
 
 @Component({
@@ -35,7 +35,8 @@ import type { MdyTimeFormat } from "@modyra/core/datetime";
         [attr.role]="'spinbutton'"
         [attr.aria-valuemin]="bounds().min"
         [attr.aria-valuemax]="bounds().max"
-        [attr.aria-valuenow]="value()"
+        [attr.aria-valuenow]="announced().valueNow"
+        [attr.aria-valuetext]="announced().valueText"
       />
       @if (showLabel()) {
         <span class="mdy-timepicker-segment-label">{{ label() }}</span>
@@ -85,6 +86,21 @@ export class MdyTimepickerSegmentComponent {
    * nothing.
    */
   protected readonly bounds = computed(() => timeFieldBounds(this.unit(), this.format(), this.steps()));
+
+  /**
+   * The number a reader is told this box holds, and how it is said.
+   *
+   * The dial beside it is hidden, so this is the only place the value is announced. `aria-valuenow`
+   * is the number and not the display: `09` in the box is nine, and an attribute typed as a number
+   * that holds a padded string is a value each assistive technology reads its own way. The spoken
+   * form carries what the number leaves out — nine on a twelve-hour clock is nine in the morning or
+   * nine at night, and the period is a control a reader meets one stop later.
+   */
+  protected readonly announced = computed(() =>
+    timepickerSegmentAria(this.unit(), this.format(), Number(this.value()), this.period()));
+
+  /** Which half of a twelve-hour day the draft is in, for what the hour is announced as. */
+  readonly period = input<"AM" | "PM" | null>(null);
 
   /**
    * Whether what is in the box is outside that range.

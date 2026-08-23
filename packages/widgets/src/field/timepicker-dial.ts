@@ -640,19 +640,23 @@ export function timepickerDialKeyIntent(
 
 
 /**
- * What a screen reader is told about the hand's current position.
+ * What a screen reader is told about the number a person is editing.
  *
- * A dial is a slider around a circle, and `role="slider"` is what says so — but only with the three
- * values that make a slider mean anything. Without them the face was a `<div>` of `<div>`s: no role,
- * no value, no name, and nothing at all to a screen reader. The bounds come from the same rule the
- * keyboard follows, so what is announced and what the arrows do cannot drift apart.
+ * The hour and the minute are the operable controls: they hold the value, they answer the arrows,
+ * and they are what `timepickerTabOrder` walks. The dial beside them sets nothing they cannot set,
+ * so it is hidden and this is where the value is announced — once, on the control that can act on it.
+ *
+ * `valueText` is the reason the three numbers are not enough on their own: `15` on a twelve-hour
+ * face is `3 PM`, and a minute of `5` is `05`. A reader given the raw number says something the face
+ * does not show.
  */
-export function timepickerDialAria(
+export function timepickerSegmentAria(
   field: "hour" | "minute",
   format: MdyTimeFormat,
   current: number,
+  period?: "AM" | "PM" | null,
 ): {
-  readonly role: "slider";
+  readonly role: "spinbutton";
   readonly valueMin: number;
   readonly valueMax: number;
   readonly valueNow: number;
@@ -660,12 +664,16 @@ export function timepickerDialAria(
 } {
   const min = field === "minute" ? 0 : format === "24h" ? 0 : 1;
   const max = field === "minute" ? 59 : format === "24h" ? 23 : 12;
+  // Three on a twelve-hour clock is three in the morning or three in the afternoon, and the number
+  // alone says neither. The period sits in a control of its own beside the hour, which a reader
+  // meets one stop later — by which point they have already been told a bare "3".
+  const hourText = format === "12h" && period ? `${current} ${period}` : `${current} hours`;
   return {
-    role: "slider",
+    role: "spinbutton",
     valueMin: min,
     valueMax: max,
     valueNow: current,
-    valueText: field === "minute" ? `${String(current).padStart(2, "0")} minutes` : `${current} hours`,
+    valueText: field === "minute" ? `${String(current).padStart(2, "0")} minutes` : hourText,
   };
 }
 

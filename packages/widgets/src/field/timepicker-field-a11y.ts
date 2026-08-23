@@ -6,6 +6,7 @@ import { MDY_WIDGET_CONTRACTS } from "../catalog.js";
 import { projectOverlayOpenerA11y } from "../opener-a11y.js";
 import type { MdyFieldError } from "@modyra/core";
 import { assertUsableWidgetId } from "../ids.js";
+import { timepickerSegmentAria } from "./timepicker-dial.js";
 import type { MdyPartContract } from "../contract.js";
 import { MDY_FIELD_SHELL_CLASSES } from "../structure.js";
 import type { MdyTimepickerFieldState } from "./timepicker-field-types.js";
@@ -134,6 +135,10 @@ export function projectTimepickerFieldA11y(
         "aria-valuemin": timeFieldBounds("hour", state.format).min,
         "aria-valuemax": timeFieldBounds("hour", state.format).max,
         "aria-valuenow": state.draft.hour,
+        // The number said the way the face shows it. This is the only place the hour is announced —
+        // the dial repeats it and is hidden — so a bare "3" on a twelve-hour clock would leave a
+        // reader to guess which three it is.
+        "aria-valuetext": timepickerSegmentAria("hour", state.format, state.draft.hour, state.draft.period).valueText,
       },
     },
     minute: {
@@ -149,6 +154,7 @@ export function projectTimepickerFieldA11y(
         "aria-valuemin": timeFieldBounds("minute", state.format).min,
         "aria-valuemax": timeFieldBounds("minute", state.format).max,
         "aria-valuenow": state.draft.minute,
+        "aria-valuetext": timepickerSegmentAria("minute", state.format, state.draft.minute).valueText,
       },
     },
     description: {

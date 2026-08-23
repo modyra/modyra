@@ -30,20 +30,15 @@
           class="mdy-timepicker-dial"
           [class]="animateHand() ? animatedClass : ''"
         >
-          <!-- A dial is a slider around a circle. It had no role, no value and no keyboard: every
-               number on it was reachable only by dragging, which is the one gesture a keyboard
-               cannot make and a screen reader cannot describe. -->
+          <!-- The dial sets nothing the hour and minute boxes cannot set, and they are on screen
+               beside it, so it is a pointer surface and nothing else: hidden from assistive
+               technology, with no role and no tab stop. A `slider` a Tab walk skips is found anyway
+               in browse mode, announces a value, answers none of the keys it promises, and says the
+               hour a second time after the box already has. ADR 0145. -->
           <div
             #dialFace
             class="mdy-timepicker-dial__face"
-            tabindex="0"
-            [attr.role]="dialAria().role"
-            [attr.aria-valuemin]="dialAria().valueMin"
-            [attr.aria-valuemax]="dialAria().valueMax"
-            [attr.aria-valuenow]="dialAria().valueNow"
-            [attr.aria-valuetext]="dialAria().valueText"
-            [attr.aria-label]="focusedField() === 'hour' ? i18n.timepickerHourLabel : i18n.timepickerMinuteLabel"
-            [attr.aria-disabled]="disabled() ? 'true' : null"
+            aria-hidden="true"
             (mousedown)="onDragStart($event)"
             (touchstart)="onDragStart($event)"
           >

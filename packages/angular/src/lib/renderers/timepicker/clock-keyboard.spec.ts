@@ -5,10 +5,14 @@ import { MdyFormComponent } from "../../form/mdy-form.component";
 import { MdyTimepickerComponent } from "./timepicker-renderer.component";
 
 /**
- * The clock face is a control, not a pointer surface. Listening for `mousedown` and `touchstart`
- * alone would leave every number on it reachable only by dragging a hand around a circle. These
- * assert the two halves of that: the arrows turn the hand, and a time keeps its own formalism on
- * the face as well as in its value.
+ * The clock face is a pointer surface, and the hour and minute boxes are the controls.
+ *
+ * Every value the dial can set, the boxes set too, and they are on screen beside it — so the dial is
+ * hidden from assistive technology and carries no role and no tab stop, while the boxes carry the
+ * spinbutton semantics and the announced value. ADR 0145.
+ *
+ * The arrows are asserted from where a person actually presses them, and read from the box, because
+ * the box is now the only place the value is stated.
  */
 @Component({
   standalone: true,
@@ -35,23 +39,41 @@ function open(format: "12h" | "24h") {
 }
 
 const face = (host: HTMLElement) => host.querySelector<HTMLElement>(".mdy-timepicker-dial__face")!;
+const hourBox = (host: HTMLElement) =>
+  host.querySelector<HTMLElement>(".mdy-timepicker-segment--hour .mdy-timepicker-segment-input")!;
+/** The hour a reader is told, which is the hour the arrows moved. */
+const announced = (host: HTMLElement) => hourBox(host).getAttribute("aria-valuenow");
+/** A press from somewhere inside the dialog that is not a box — the clock root answers it. */
+const pressOnClock = (host: HTMLElement, key: string) =>
+  host.querySelector(".mdy-timepicker-dial")!
+    .dispatchEvent(new KeyboardEvent("keydown", { key, bubbles: true, cancelable: true }));
 
 describe("the clock face as a control", () => {
-  it("is focusable and announces itself as a slider with the format's bounds", () => {
+  it("is hidden from a reader, and the box beside it carries the value", () => {
     const twelve = open("12h");
     const f = face(twelve.host);
-    expect(f.getAttribute("tabindex")).toBe("0");
-    expect(f.getAttribute("role")).toBe("slider");
-    expect(f.getAttribute("aria-valuemin")).toBe("1");
-    expect(f.getAttribute("aria-valuemax")).toBe("12");
-    expect(f.getAttribute("aria-valuenow")).toBe("9");
-    expect(f.getAttribute("aria-valuetext")).toContain("9");
+    // A role a Tab walk skips is still found in browse mode, where it promises keys it does not
+    // answer and says the hour a second time after the box already has.
+    expect(f.getAttribute("aria-hidden")).toBe("true");
+    expect(f.getAttribute("role")).toBeNull();
+    expect(f.getAttribute("tabindex")).toBeNull();
+    expect(f.getAttribute("aria-valuenow")).toBeNull();
+
+    const box = hourBox(twelve.host);
+    expect(box.getAttribute("role")).toBe("spinbutton");
+    expect(box.getAttribute("aria-valuemin")).toBe("1");
+    expect(box.getAttribute("aria-valuemax")).toBe("12");
+    expect(box.getAttribute("aria-valuenow")).toBe("9");
+    // Nine on a twelve-hour clock is nine in the morning or nine at night, and the number says
+    // neither; the period sits in a control a reader meets one stop later.
+    expect(box.getAttribute("aria-valuetext")).toBe("9 AM");
 
     const day = open("24h");
-    const g = face(day.host);
+    expect(face(day.host).getAttribute("aria-hidden")).toBe("true");
+    const dayBox = hourBox(day.host);
     // Twenty-four hours, and no hour thirteen on a twelve-hour clock.
-    expect(g.getAttribute("aria-valuemin")).toBe("0");
-    expect(g.getAttribute("aria-valuemax")).toBe("23");
+    expect(dayBox.getAttribute("aria-valuemin")).toBe("0");
+    expect(dayBox.getAttribute("aria-valuemax")).toBe("23");
   });
 
   it("offers every hour the format has, and no more", () => {
@@ -72,10 +94,10 @@ describe("the clock face as a control", () => {
   it("turns the hand with the arrows, clockwise, and wraps at the end of the ring", () => {
     const { fixture, host } = open("12h");
     const press = (key: string) => {
-      face(host).dispatchEvent(new KeyboardEvent("keydown", { key, bubbles: true, cancelable: true }));
+      pressOnClock(host, key);
       fixture.detectChanges();
     };
-    const now = () => face(host).getAttribute("aria-valuenow");
+    const now = () => announced(host);
 
     expect(now()).toBe("9");
     press("ArrowRight");
@@ -94,14 +116,14 @@ describe("the clock face as a control", () => {
   it("never reaches an hour the format does not have", () => {
     const { fixture, host } = open("24h");
     const press = (key: string) => {
-      face(host).dispatchEvent(new KeyboardEvent("keydown", { key, bubbles: true, cancelable: true }));
+      pressOnClock(host, key);
       fixture.detectChanges();
     };
     // All the way round twice, in both directions: the announced value stays inside 0–23 throughout.
     for (const key of ["ArrowRight", "ArrowLeft", "PageUp", "PageDown"]) {
       for (let step = 0; step < 26; step += 1) {
         press(key);
-        const value = Number(face(host).getAttribute("aria-valuenow"));
+        const value = Number(announced(host));
         expect(value).toBeGreaterThanOrEqual(0);
         expect(value).toBeLessThanOrEqual(23);
       }
@@ -132,7 +154,7 @@ describe("the clock face as a control", () => {
       from.dispatchEvent(new KeyboardEvent("keydown", { key, bubbles: true, cancelable: true }));
       fixture.detectChanges();
     };
-    const now = () => face(host).getAttribute("aria-valuenow");
+    const now = () => announced(host);
 
     // From Confirm — where focus lands the moment a user reaches for the button that commits.
     const confirm = host.querySelector(".mdy-timepicker-action-btn--confirm")!;
@@ -149,12 +171,12 @@ describe("the clock face as a control", () => {
     }
   });
 
-  it("turning the hand from the face still turns it once, not twice", () => {
-    // The handler moved to the clock root and a keydown on the face bubbles to it. Left on both,
-    // every arrow would step two hours.
+  it("a press on the dial turns the hand once, not twice", () => {
+    // One handler, on the clock root. A second one on the face — where a press from a pointer user's
+    // click still lands — would step two hours for every arrow.
     const { fixture, host } = open("12h");
     face(host).dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowRight", bubbles: true, cancelable: true }));
     fixture.detectChanges();
-    expect(face(host).getAttribute("aria-valuenow")).toBe("10");
+    expect(announced(host)).toBe("10");
   });
 });
