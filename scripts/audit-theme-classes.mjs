@@ -12,7 +12,7 @@
  */
 
 import { readFileSync, readdirSync } from "node:fs";
-import { MDY_CHIP_CLASSES, MDY_FIELD_SHELL_CLASSES, MDY_FIELD_STATE_CLASSES, MDY_WIDGET_CONTRACTS, popupPlacementClass } from "../packages/widgets/dist/index.js";
+import { MDY_CHIP_CLASSES, MDY_FIELD_SHELL_CLASSES, MDY_FIELD_STATE_CLASSES, MDY_WIDGET_CONTRACTS, partClasses, popupPlacementClass } from "../packages/widgets/dist/index.js";
 import { dirname, extname, join, relative, resolve } from "node:path";
 
 const ROOT = resolve(import.meta.dirname, "..");
@@ -128,6 +128,39 @@ function findHostBindings(ts) {
   return classes;
 }
 
+/**
+ * Classes a renderer asks the contract for instead of spelling.
+ *
+ * `partClasses(kind, part)` returns what the element wears — the part's own classes, or the shell's
+ * vocabulary where the part declares none — so a renderer reading its classes from the contract puts
+ * them on the element without any of them appearing in its source as a literal. An audit that reads
+ * only the literal reports the difference as a renderer that stopped drawing the part.
+ *
+ * The function is called rather than the tables read, for the reason `popupPlacementClass` is: the
+ * fallback to the shell vocabulary lives in the accessor, and a copy of it here would answer
+ * differently the moment either moved.
+ *
+ * A kind or part the contract does not declare makes it throw, and that contributes nothing —
+ * whatever the renderer was supposed to draw stays missing and the audit still asks about it.
+ * Recognising the call is not the same as trusting it.
+ *
+ * Shared by both collectors: either renderer may reach the contract this way, and a second copy of
+ * this would answer differently the moment one of them was edited.
+ */
+function classesAskedOfTheContract(ts) {
+  const found = [];
+  const re = /partClasses\(\s*["'`]([A-Za-z0-9_-]+)["'`]\s*,\s*["'`]([A-Za-z0-9_]+)["'`]/g;
+  let m;
+  while ((m = re.exec(ts)) !== null) {
+    try {
+      found.push(...partClasses(m[1], m[2]));
+    } catch {
+      // Not a part of that kind, so it names no class and none is added.
+    }
+  }
+  return found;
+}
+
 function extractAngularClasses(ts, filePath, kind) {
   const template = findTemplate(ts, filePath);
   const host = findHostBindings(ts);
@@ -148,6 +181,7 @@ function extractAngularClasses(ts, filePath, kind) {
   while ((m = catalogRe.exec(ts)) !== null) {
     fromContract.push(...(MDY_WIDGET_CONTRACTS[m[1]]?.parts[m[2]]?.classes ?? []));
   }
+  fromContract.push(...classesAskedOfTheContract(ts));
   // Same for a popup's placement: the renderer names it through the catalog, so the class is on the
   // element at runtime without ever appearing as a literal here. Two spellings reach the same call —
   // the renderer computing it itself, and the renderer handing its kind to `<mdy-overlay-panel>`,
@@ -394,6 +428,7 @@ function extractContractClasses(ts, kind) {
   while ((m = partModifierRe.exec(ts)) !== null) {
     for (const base of definition.parts[m[1]]?.classes ?? []) classes.push(`${base}--${m[2]}`);
   }
+  classes.push(...classesAskedOfTheContract(ts));
   // The chip vocabulary, when a renderer takes it from the contract instead of spelling it out.
   // Without this a renderer that moved onto `multiselectChipClasses` reads as one that stopped
   // emitting chips at all, and the audit reports a parity gap that does not exist.
