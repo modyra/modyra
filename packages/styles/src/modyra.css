@@ -159,7 +159,10 @@
         /* ── Checkbox ───────────────────────────────────────────────────────────── */
         --mdy-checkbox-size: var(--mdy-comp-checkbox-container-size);
         /* 18px */
-        --mdy-checkbox-border-radius: var(--mdy-comp-checkbox-container-shape);
+        /* A step, not the M3 component token. 2px is Material's own corner and it is the only 2 in
+           the library — one control asking to be its own size. The Material theme points back at the
+           reference token, where fidelity to that system is the whole point. */
+        --mdy-checkbox-border-radius: var(--mdy-radius-1);
         /* 2px */
         --mdy-checkbox-accent: var(--mdy-comp-checkbox-selected-container-color);
         --mdy-checkbox-checkmark-color: var(--mdy-comp-checkbox-selected-icon-color);
@@ -1275,7 +1278,9 @@
         height: var(--mdy-toggle-height);
         background: var(--mdy-toggle-bg);
         border: var(--mdy-toggle-border);
-        border-radius: calc(var(--mdy-toggle-height) / 2);
+        /* A pill, said once. Half the height is the same curve until the height moves, and then
+           it is a value nothing else in the library holds. */
+        border-radius: var(--mdy-radius-full);
         transition: background var(--mdy-toggle-transition), border-color var(--mdy-toggle-transition);
         flex-shrink: 0;
     }
@@ -1383,7 +1388,9 @@
         /* M3: 20px */
         height: var(--mdy-radio-size);
         border: 2px solid var(--mdy-radio-unselected-color);
-        border-radius: 50%;
+        /* One spelling for a full radius. On a square this is the same circle `50%` drew, and
+           the sheet drawing it two ways was two values in an alphabet that has one. */
+        border-radius: var(--mdy-radius-full);
         background: transparent;
         transition: border-color var(--mdy-sys-motion-duration-base), background var(--mdy-sys-motion-duration-base), box-shadow var(--mdy-sys-motion-duration-base);
         position: relative;
@@ -1451,8 +1458,16 @@
         flex: 1;
         -webkit-appearance: none;
         appearance: none;
-        height: var(--mdy-slider-track-height);
-        /* M3: 4px */
+        /* The control is a step; the track inside it is 4px. They were the same element, so a range
+           input took the text field's padding — 8px above and below a 4px track — and stood 20px
+           tall: under the 24px a pointer target needs, and a size nothing else in the library has.
+           The track is painted on its own pseudo-element below, where its thickness is its own. */
+        padding: 0;
+        /* Border-box like every other control here. Left as content-box, whatever padding reaches
+           this element is added to the height rather than taken out of it, and the control is
+           whatever the sum happens to be — which is how a 4px track became a 20px control. */
+        box-sizing: border-box;
+        height: var(--mdy-control-1);
         /* Where the fill ends: under the centre of the handle. A range input's handle travels by
            its centre, from `thumb/2` to `100% - thumb/2`, and never hangs off either end — so a
            stop at `ratio * 100%` tracks the element instead of the handle and misses it by
@@ -1467,19 +1482,37 @@
            its own declaration is computed, so at `:root` this would freeze at the root's 0.
            Writing this property no longer has any effect — write `--mdy-slider-fill`. */
         --mdy-slider-fill-pct: calc(var(--mdy-slider-fill) * 100%);
-        /* The split track: filled up to the handle, empty after it. Composed here, on the element
-           that carries the ratio, so the stop is the value the renderer just wrote. */
-        background: linear-gradient(to right,
+        /* The split track: filled up to the handle, empty after it. Composed on the element that
+           carries the ratio, so the stop is the value the renderer just wrote, and inherited by the
+           track pseudo-elements that draw it. */
+        --mdy-slider-track-paint: linear-gradient(to right,
                 var(--mdy-slider-active-color) var(--mdy-slider-fill-stop),
                 var(--mdy-slider-inactive-color) var(--mdy-slider-fill-stop));
+        background: none;
         outline: none;
         cursor: pointer;
-        border-radius: var(--mdy-corner-full);
+    }
+
+    /* The two engines name the same part differently and will not accept one rule for both: a
+       selector list containing a pseudo-element neither knows drops the whole rule. */
+    .mdy-slider::-webkit-slider-runnable-track {
+        height: var(--mdy-slider-track-height);
+        border-radius: var(--mdy-radius-full);
+        background: var(--mdy-slider-track-paint);
+    }
+
+    .mdy-slider::-moz-range-track {
+        height: var(--mdy-slider-track-height);
+        border-radius: var(--mdy-radius-full);
+        background: var(--mdy-slider-track-paint);
     }
 
     .mdy-slider::-webkit-slider-thumb {
         -webkit-appearance: none;
         appearance: none;
+        /* Centred on the track by hand, which is what this engine requires once the track has a
+           height of its own: without it the handle sits on the track's top edge. */
+        margin-top: calc((var(--mdy-slider-track-height) - var(--mdy-slider-thumb-size)) / 2);
         width: var(--mdy-slider-thumb-size);
         height: var(--mdy-slider-thumb-size);
         background: var(--mdy-slider-thumb-color);
@@ -1575,7 +1608,10 @@
         cursor: pointer;
         font-size: 0.875rem;
         font-weight: 500;
-        height: 2.5rem;
+        /* A step, and the step that clears WCAG 2.5.5: this button stands on its own rather than
+           inside a field, so it has no overlay to carry a target for it. 2.5rem was 40px — four
+           short, and a fourth height in a library that names three. */
+        height: var(--mdy-control-3);
         transition: opacity var(--mdy-sys-motion-duration-slow);
     }
 
@@ -2880,7 +2916,9 @@
         align-items: center;
         justify-content: center;
         color: var(--mdy-sys-color-on-surface-variant);
-        border-radius: 50%;
+        /* One spelling for a full radius. On a square this is the same circle `50%` drew, and
+           the sheet drawing it two ways was two values in an alphabet that has one. */
+        border-radius: var(--mdy-radius-full);
         transition: background-color var(--mdy-sys-motion-duration-slow), color var(--mdy-sys-motion-duration-slow);
         padding: 0;
         width: var(--mdy-affordance-box);
@@ -2915,7 +2953,9 @@
         height: var(--mdy-affordance-box);
         padding: 0;
         border: none;
-        border-radius: 50%;
+        /* One spelling for a full radius. On a square this is the same circle `50%` drew, and
+           the sheet drawing it two ways was two values in an alphabet that has one. */
+        border-radius: var(--mdy-radius-full);
         background: none;
         color: inherit;
         cursor: pointer;

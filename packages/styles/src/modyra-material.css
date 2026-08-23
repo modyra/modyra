@@ -51,6 +51,10 @@
         --mdy-label-font-weight: var(--mdy-font-weight-medium);
         --mdy-input-placeholder-color: var(--mdy-outline);
 
+        /* ─── Shape ──────────────────────────────────────────────────────────────── */
+        /* Material's own checkbox corner, which the library's scale does not carry. */
+        --mdy-checkbox-border-radius: var(--mdy-comp-checkbox-container-shape);
+
         /* ─── Key Palette (Zinc Neutral) ───────────────────────────────────────────
            Declared at the `sys` tier, which is where the palette maths in modyra-base.css reads
            from. Set on `--mdy-primary` instead — as this was — the colour arrives *after* the
