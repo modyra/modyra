@@ -180,7 +180,16 @@ export function mergeFacts(facts: readonly MdyValidatorFacts[]): {
  */
 function nativePatternSource(source: string | null): string | null {
   if (source === null || source === "") return source;
-  const projected = `${source.startsWith("^") ? "" : ".*"}(?:${source})${source.endsWith("$") ? "" : ".*"}`;
+  const opensAnchored = source.startsWith("^");
+  const closesAnchored = source.endsWith("$");
+  // Anchored at both ends the rule already means what the attribute means, and it is written out
+  // unchanged: a group around it changes nothing a browser does and everything a person reads, and
+  // the attribute is read — in the DOM, in a screenshot, in a report of what the control asks for.
+  // The group is there for the padding: `.*a|b.*` binds the alternation across the padding, where
+  // `.*(?:a|b).*` is the rule with room either side of it.
+  const projected = opensAnchored && closesAnchored
+    ? source
+    : `${opensAnchored ? "" : ".*"}(?:${source})${closesAnchored ? "" : ".*"}`;
   try {
     new RegExp(projected);
   } catch {

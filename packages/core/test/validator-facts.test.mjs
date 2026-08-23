@@ -70,7 +70,7 @@ test("mergeFacts refuses to invent an intersection of two patterns", () => {
 
   // Wrapped, because the constraint is what a control offers and `<input pattern>` is implicitly
   // anchored; an expression already carrying both anchors means the same either way.
-  assert.equal(one.constraints.pattern, "(?:^a+$)");
+  assert.equal(one.constraints.pattern, "^a+$");
   assert.equal(one.conflictingPatterns, false);
   assert.equal(two.constraints.pattern, null);
   assert.equal(two.conflictingPatterns, true, "reported, so a caller can say why none is offered");

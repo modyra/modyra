@@ -23,7 +23,7 @@ test("lengths, bounds, integers and an unflagged pattern cross over", () => {
     {
       min: null, max: null, step: null,
       // Wrapped: what a control offers is the rule said the way an anchored attribute reads one.
-      minLength: 3, maxLength: 8, pattern: "(?:^[A-Z]+$)",
+      minLength: 3, maxLength: 8, pattern: "^[A-Z]+$",
       inputMode: null,
     },
   );

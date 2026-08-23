@@ -49,7 +49,7 @@ describe("the constraints a field's rules state", () => {
     expect(code!.getAttribute("maxlength")).toBe("8");
     // Wrapped, because the native attribute is anchored by the platform: a rule the author anchored
     // themselves keeps its own anchors inside the group rather than being anchored twice.
-    expect(code!.getAttribute("pattern")).toBe("(?:^[A-Z]+$)");
+    expect(code!.getAttribute("pattern")).toBe("^[A-Z]+$");
   });
 
   it("survive composition", () => {

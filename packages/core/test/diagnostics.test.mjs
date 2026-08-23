@@ -63,7 +63,7 @@ test("one pattern says nothing at all", () => {
   const said = warnings(() => {
     const form = createForm({ code: field("", [pattern(/^[A-Z]+$/), required()]) });
     // Wrapped: the constraint is the rule said the way an implicitly anchored attribute reads one.
-    assert.equal(form.getField("code")().constraints().pattern, "(?:^[A-Z]+$)");
+    assert.equal(form.getField("code")().constraints().pattern, "^[A-Z]+$");
   });
 
   assert.deepEqual(said, []);

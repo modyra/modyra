@@ -55,7 +55,7 @@ test("a pattern reaches the input, unless two rules disagree about it", () => {
   // form accepts.
   assert.equal(
     render({ name: "code", kind: "text", label: "Code" }, form.f.code, rx).getAttribute("pattern"),
-    "(?:^[A-Z]{3}$)",
+    "^[A-Z]{3}$",
   );
   assert.equal(
     render({ name: "both", kind: "text", label: "Both" }, form.f.both, rx).getAttribute("pattern"),
