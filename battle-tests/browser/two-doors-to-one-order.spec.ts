@@ -25,7 +25,19 @@
  */
 
 import { expect, test } from "@playwright/test";
-import { MDY_WIDGET_KEYBOARD } from "@modyra/widgets";
+import { MDY_WIDGET_KEYBOARD, messagesForLocale } from "@modyra/widgets";
+
+/**
+ * The verb a chip's move button wears, taken from the catalogue rather than written out.
+ *
+ * The accessible name is the verb and then the value it acts on — `"Move earlier Alfa"` — so a
+ * selector cannot spell the whole of it without knowing which chip it will land on. It matches the
+ * verb as a prefix, and the verb comes from the message catalogue: a spec that repeats the English
+ * string breaks the day the wording improves, which is what happened to this line the day every chip
+ * button started naming its object.
+ */
+const MOVE_EARLIER = `button[aria-label^="${messagesForLocale("en").chipMoveEarlierLabel}"]`;
+
 
 const HOSTS = [
   { name: "plain", page: "/index.html", ready: "battleReady", api: "battle" },
@@ -195,7 +207,7 @@ for (const host of HOSTS) {
     // instead, which walks the value back to where it started and reads as a door that does nothing.
     for (let press = 0; press < 2; press += 1) {
       await chips(page, "byTap").filter({ hasText: "C" }).first()
-        .locator('button[aria-label="Move earlier"]').click({ timeout: 5_000 });
+        .locator(MOVE_EARLIER).click({ timeout: 5_000 });
       await page.waitForTimeout(250);
     }
     const byTap = await held(page, "byTap");

@@ -24,7 +24,21 @@
  */
 
 import { expect, test } from "@playwright/test";
+import { messagesForLocale } from "@modyra/widgets";
+
 import { HOSTS, bench, chosen } from "./bench";
+
+/**
+ * The verb a chip's move button wears, taken from the catalogue rather than written out.
+ *
+ * The accessible name is the verb and then the value it acts on — `"Move earlier Alfa"` — so a
+ * selector cannot spell the whole of it without knowing which chip it will land on. It matches the
+ * verb as a prefix, and the verb comes from the message catalogue: a spec that repeats the English
+ * string breaks the day the wording improves, which is what happened to this line the day every chip
+ * button started naming its object.
+ */
+const MOVE_EARLIER = `button[aria-label^="${messagesForLocale("en").chipMoveEarlierLabel}"]`;
+
 
 /** Anything offering to reverse what just happened, wherever it is drawn. */
 const UNDO = 'button:has-text("Undo"), button:has-text("Annulla"), [data-mdy-undo], button[aria-label*="Undo" i]';
@@ -72,7 +86,7 @@ for (const host of HOSTS) {
 
     const before = await value(page, id);
     await page.locator(`${root} .mdy-multiselect__chips .mdy-chip`).last()
-      .locator('button[aria-label="Move earlier"]').click({ timeout: 5_000 });
+      .locator(MOVE_EARLIER).click({ timeout: 5_000 });
     await page.waitForTimeout(300);
     expect(await value(page, id), "moving a chip did not change the order").not.toEqual(before);
 
