@@ -1827,6 +1827,9 @@
     .mdy-multiselect__trigger {
         display: flex;
         align-items: center;
+        /* The height of the row it sits in: this is the control a person presses to open the list,
+           and a box that shrank to its glyph would be a target the size of an arrow. */
+        align-self: stretch;
         gap: 0.5rem;
         /* The space the chips do not take, which is what a person presses to open the list. Not
            `width: 100%`: it was the only child of the box and is now the second of two, and a full
@@ -1925,8 +1928,12 @@
            stood at three different distances from the edge and there was no column for the eye to
            follow, which is the whole of what `DESIGN.md` asks of a trailing affordance. */
         margin-inline-start: auto;
-        width: var(--mdy-affordance-target);
-        height: var(--mdy-affordance-target);
+        /* The glyph's box, not a target's. This is `aria-hidden` decoration inside the opener — the
+           opener is what a person presses — and sized to the 44px target it made the row 44 tall
+           inside a field of 36, which pushed everything else in the row 8px below the centre line
+           and hung the chips past the bottom edge. A target is not a size. */
+        width: var(--mdy-affordance-glyph);
+        height: var(--mdy-affordance-glyph);
         display: inline-flex;
         align-items: center;
         justify-content: center;
@@ -2004,12 +2011,15 @@
 
     .mdy-multiselect__clear-all {
         display: inline-flex;
-        align-self: center;
         align-items: center;
         justify-content: center;
         flex: 0 0 auto;
         width: var(--mdy-affordance-size, 2.75rem);
-        height: var(--mdy-affordance-size, 2.75rem);
+        /* The row's own height. `height: 100%` is a share of a line the content decides, so it
+           shrank with the line rather than setting it; stretching takes the height the box gives the
+           row. Sized to a *target* instead — 44 in a field of 36 — it made the row taller than the
+           box that holds it, and pushed every other part 8px below the centre line. */
+        align-self: stretch;
         padding: 0;
         border: 0;
         background: none;
@@ -2027,7 +2037,11 @@
         justify-content: center;
         flex: 0 0 auto;
         min-width: var(--mdy-affordance-size, 2.75rem);
-        height: var(--mdy-affordance-size, 2.75rem);
+        /* The row's own height. `height: 100%` is a share of a line the content decides, so it
+           shrank with the line rather than setting it; stretching takes the height the box gives the
+           row. Sized to a *target* instead — 44 in a field of 36 — it made the row taller than the
+           box that holds it, and pushed every other part 8px below the centre line. */
+        align-self: stretch;
         padding: 0 var(--mdy-space-1, 0.25rem);
         border: 0;
         background: none;
