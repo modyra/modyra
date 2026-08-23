@@ -2188,7 +2188,11 @@
         color: var(--mdy-chip-selected-color);
         border: var(--mdy-chip-selected-border);
         cursor: inherit;
-        height: calc(var(--mdy-chip-height) - 0.5rem);
+        /* A step, not a subtraction. A value chip is the compact control — `control-1`, 28px — and it
+           was written as the filter chip's height less half a rem, which is 24: below the floor at
+           which a control can hold a conformant 24px target, and arrived at by arithmetic nobody
+           could argue with because nothing said what it was for. The strip is 4px taller for it. */
+        height: var(--mdy-control-1);
     }
 
     /* The chip being carried. Half-opaque so the row underneath stays readable while it moves, and
@@ -2330,14 +2334,12 @@
         align-items: center;
         justify-content: center;
         width: var(--mdy-chip-height);
-        /* 2.5.8 asks for 24 CSS px, and the chip is 24 tall counting its own border — so a child at
-           `height: 100%` measured 22 and missed by two. Two pixels is not a rounding error for the
-           people that criterion exists for: aiming for the middle is the only strategy a head
-           pointer or a switch has, and the control beside this one deletes a value. The floor is
-           stated here and the chip's height is left alone, so the target grows into the border
-           rather than the row growing around it. */
+        /* Full height, and that is now enough: a value chip stands at `control-1`, which is the
+           smallest height that can hold a conformant 24px target with its border. This used to state
+           a 24px floor of its own and grow into the chip's border, because the chip was 24 tall and
+           a child at `height: 100%` measured 22. The floor belongs to the control scale, not to
+           every control that has to reach it. */
         height: 100%;
-        min-height: 24px;
         border: none;
         background: transparent;
         color: inherit;
