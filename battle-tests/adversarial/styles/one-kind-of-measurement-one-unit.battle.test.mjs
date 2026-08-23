@@ -5,6 +5,13 @@
  * is not a spelling choice — it decides whether a measurement follows a person who enlarges their
  * text or stays behind while everything around it moves.
  *
+ * **`em` is on the list too, and for a different reason that is worth stating rather than lumping in.**
+ * An `em` does not stay still — it is the one unit that tracks the reader's text most closely of all.
+ * The reason it is not the unit for these measurements is that it multiplies a size *the theme chose*
+ * by a number *the host chose*, so the product depends on two independent decisions and only some of
+ * those products land on a whole pixel. `rem` has one decision in it. Saying `em` "stays put" would be
+ * arguing something it does not do, and an earlier version of this file's message did exactly that.
+ *
  * The rule that makes that checkable is simple and absolute: **each kind of measurement uses exactly
  * one unit everywhere.** Anything that surrounds or contains text — spacing, type size, control
  * height, corner radius — is `rem`, because it has to grow with what it holds or the padding crushes
@@ -96,7 +103,9 @@ battle(
     expectEqual(listed, [], {
       claimIds: ["UI-005"],
       what: `${listed.length} declaration(s) state a measurement in the wrong unit: ${listed.join("; ")}. `
-        + "Each one stays still while everything around it grows for a reader who enlarges their text",
+        + "A `px` length stays where it is while everything around it grows for a reader who enlarges "
+        + "their text; an `em` moves, but by a factor the host chose on top of a size the theme chose, "
+        + "so where it lands is the product of two decisions rather than one",
     });
   },
 );
