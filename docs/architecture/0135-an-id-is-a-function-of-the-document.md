@@ -1,6 +1,6 @@
 # ADR 0135: An id is a function of the document, not of mount order
 
-Status: Accepted
+Status: Superseded by [ADR 0146](0146-a-form-carries-its-own-scope.md)
 
 ## Context
 

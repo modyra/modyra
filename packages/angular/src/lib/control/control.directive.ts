@@ -30,6 +30,7 @@ import {
   type MdyPartContract,
   type MdyValueWidgetIntent,
   type MdyWidgetKind,
+  widgetScopeOf,
 } from "@modyra/widgets";
 
 declare const ngDevMode: boolean | undefined;
@@ -176,7 +177,13 @@ export abstract class MdyBaseControl<TValue = unknown> implements OnInit {
   protected get fieldId(): string {
     const name = this.effectiveName();
     if (!name) return this.mountId;
-    const scope = this.idScope();
+    // The form this control's handle belongs to, when no scope was bound: two forms built from one
+    // document would otherwise both claim `when__label`, and a reference from the second resolves
+    // into the first. ADR 0146.
+    const scope = this.idScope() || widgetScopeOf(
+      this.field(),
+      (candidate) => (this.hostElement.nativeElement as HTMLElement).ownerDocument.querySelector(`[id^="${candidate}-"]`) !== null,
+    );
     return scope ? `${scope}-${name}` : name;
   }
 

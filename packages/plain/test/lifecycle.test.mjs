@@ -167,19 +167,22 @@ test("two forms with different field names coexist without sharing an id", async
 });
 
 // An id is what ties a control to its label, its description and its error list. Two forms built
-// from the same field names mint the same ids unless one of them is scoped, and then the second
-// form's `label[for]`, `aria-describedby` and `aria-errormessage` all resolve to the *first* form's
-// elements — while nothing about either form, examined alone, looks wrong.
-test("two forms with the same field names collide unless one is scoped", async () => {
+// from the same field names once minted the same ids unless one of them was scoped, and then the
+// second form's `label[for]`, `aria-describedby` and `aria-errormessage` all resolved to the *first*
+// form's elements — while nothing about either form, examined alone, looked wrong.
+//
+// ADR 0146: a form carries a scope whether or not the host named one, so the two no longer meet.
+test("two forms with the same field names do not collide", async () => {
   const unscopedFirst = mount(FIELDS);
   const unscopedSecond = mount(FIELDS);
   await settle();
 
-  // The defect the option exists for. Asserted rather than assumed, so the scoped case below is
-  // known to be closing something real.
-  const collision = inspectCoexistence(idsUnder(unscopedFirst.host), idsUnder(unscopedSecond.host));
-  assert.equal(collision.length, 1);
-  assert.equal(collision[0].code, "ID_COLLIDED_ACROSS_INSTANCES");
+  // The case the record is about: nobody asked for a scope, and the ids are still each form's own.
+  assert.deepEqual(
+    inspectCoexistence(idsUnder(unscopedFirst.host), idsUnder(unscopedSecond.host)),
+    [],
+    "two forms built from one document claimed one set of ids",
+  );
 
   unscopedFirst.mounted.dispose();
   unscopedSecond.mounted.dispose();
@@ -230,16 +233,23 @@ test("a scoped form still resolves its own relationships", async () => {
   mounted.dispose();
 });
 
-test("no prefix leaves every id exactly as it was", async () => {
+test("no prefix still puts every id inside a scope", async () => {
   const { host, mounted } = mount(FIELDS);
   await settle();
 
-  // The option is additive, and this is the half that says so: the default mount is the one every
-  // other suite in this package asserts against, and it must not have moved.
+  // ADR 0146: the field name is the data path and the id is the path inside the form's scope, which
+  // a form has whether or not the host named one. What the scope *is* is deliberately not asserted —
+  // a minted one depends on the order forms were created in, and a test that pinned its spelling
+  // would be pinning the order of the suite around it.
   const ids = [...idsUnder(host)].sort();
-  assert.ok(ids.includes("name"), `the input's own id is the field name: ${ids.join(", ")}`);
-  assert.ok(ids.includes("name__label"));
-  assert.ok(ids.includes("name__errors"));
+  const own = ids.filter((id) => id.endsWith("-name"));
+  assert.equal(own.length, 1, `exactly one id is the scoped field itself: ${ids.join(", ")}`);
+  const scope = own[0].slice(0, -"-name".length);
+  assert.ok(scope.length > 0, "the scope is not empty");
+  assert.ok(ids.includes(`${scope}-name__label`));
+  assert.ok(ids.includes(`${scope}-name__errors`));
+  // Every id this form published belongs to one scope, so a reference cannot leave the form.
+  assert.deepEqual(ids.filter((id) => !id.startsWith(`${scope}-`)), []);
 
   mounted.dispose();
 });

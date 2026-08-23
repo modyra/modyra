@@ -1,5 +1,5 @@
 import { MdyFieldHandle, type MdyFieldConstraints, type MdyValueKind } from "@modyra/core";
-import { MDY_ICONS, MDY_POPUP_OPENERS, messagesForLocale, type MdyI18nMessages } from "@modyra/widgets";
+import { MDY_ICONS, MDY_POPUP_OPENERS, messagesForLocale, widgetScopeOf, type MdyI18nMessages } from "@modyra/widgets";
 import { html, LitElement, nothing, PropertyDeclarations } from "lit";
 import { unsafeSVG } from "lit/directives/unsafe-svg.js";
 import {
@@ -126,7 +126,14 @@ export abstract class MdyFieldElement<T> extends LitElement {
     if (path === undefined || path === "") return this._mountId;
     // A single character neither part may contain: the joiner's first occurrence always ends the
     // scope, so two distinct scopes cannot produce one id.
-    return this.idScope ? `${this.idScope}-${path}` : path;
+    // The form this handle belongs to, when the element was not told a scope: two forms built from
+    // one document would otherwise both claim `when__label`, and a reference from the second
+    // resolves into the first. ADR 0146.
+    const scope = this.idScope ?? widgetScopeOf(
+      this.field,
+      (candidate) => (this.ownerDocument ?? document).querySelector(`[id^="${candidate}-"]`) !== null,
+    );
+    return scope ? `${scope}-${path}` : path;
   }
 
   /**

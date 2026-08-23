@@ -30,16 +30,21 @@ export const absentParts = Object.fromEntries(
 );
 
 /**
- * Two instances that are meant to differ — which for this renderer is just two mounts.
+ * Two instances that are meant to differ.
  *
- * Each element mints its own `mdy-field-N` at construction, so instances are scoped whether or not
- * anyone asks. A renderer whose ids come from caller-supplied field names has to be told a scope
- * instead; this one has nothing to be told.
+ * The prose here used to say this renderer minted `mdy-field-N` per element and so could not produce
+ * two instances sharing ids. That counter went with [ADR 0135](../../docs/architecture/0135-an-id-is-a-function-of-the-document.md),
+ * which made an id a function of the field's path, and the claim outlived the mechanism: two mounts
+ * of one document shared every id, and the suite reported it against a config that said it could not
+ * happen.
  *
- * The scope argument is unused on purpose: the suite asks for two instances that should not share
- * ids, and this renderer cannot produce two that do.
+ * A form carries a scope now ([ADR 0146](../../docs/architecture/0146-a-form-carries-its-own-scope.md)),
+ * and its default is a function of the document — which cannot separate two forms built from the
+ * *same* document. This renderer computes an id while rendering, before its element is in a
+ * document, so it has nothing to compare against and the twin case is the consumer's to answer. This
+ * is where it answers it.
  */
-export const mountScoped = (kind) => mount(kind);
+export const mountScoped = (kind, scope) => mount(kind, { idScope: scope });
 
 /**
  * Kinds whose anatomy depends on configuration, and the values this renderer supports.

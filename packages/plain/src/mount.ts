@@ -12,7 +12,7 @@ import type {
 import { reportIdCollision } from "@modyra/widgets";
 import { applyDynamicRules, assertSafeDynamicFieldNames, vanillaReactivity, type MdyDynamicCollection, type MdyDynamicField, type MdyDynamicLayoutChild, type MdyDynamicLayoutNode, type MdyDynamicLayoutSlot, type MdyDynamicRule, type MdyFieldHandle, type MdyFormSchema, type MdyReactivity, type MdySubmittedValue, type MdyTypedForm } from "@modyra/core";
 import { buildForm } from "./schema.js";
-import { formErrorsOf, isValidWidgetId, layoutNodeAttributes, layoutSlotStyle, MDY_FORM_SHELL_CLASSES, MDY_ID_DELIMITER, MDY_LAYOUT_CLASSES } from "@modyra/widgets";
+import { formErrorsOf, formScopeOf, isValidWidgetId, layoutNodeAttributes, layoutSlotStyle, MDY_FORM_SHELL_CLASSES, MDY_ID_DELIMITER, MDY_LAYOUT_CLASSES } from "@modyra/widgets";
 import { renderField } from "./fields/index.js";
 import { el, setText } from "./dom.js";
 
@@ -140,10 +140,7 @@ export function mountMdyForm(
 ): MdyPlainForm {
   assertMountableNames(fields, options.idPrefix);
 
-  // The widget id is the identity a field's DOM is built from; the field name stays the data path.
-  // They are the same string unless the host scopes this form.
-  const widgetIdFor = (name: string): string =>
-    options.idPrefix === undefined ? name : `${options.idPrefix}${ID_PREFIX_JOINER}${name}`;
+
 
   container.replaceChildren();
   container.classList.add("mdy-dynamic-form", "mdy-plain-form");
@@ -165,7 +162,22 @@ export function mountMdyForm(
   // Applied to the form rather than to the markup: what a rule decides is whether the field is in
   // play, which is the form's word and reaches the payload as well as the page.
   if (options.rules && options.rules.length > 0) applyDynamicRules(form, options.rules);
+
+  // The widget id is the identity a field's DOM is built from; the field name stays the data path.
+  // The two differ by this form's scope, which it has whether or not the host named one: two forms
+  // built from the same document would otherwise both claim `when__label`, and a reference from the
+  // second resolves into the first. ADR 0146.
   /**
+   * Whether a live form on this page already answers to `scope`.
+   *
+   * Every id a form publishes begins with its scope, so one element carrying one is enough. A form
+   * that has been disposed took its elements with it, which is what lets a remount read as the same
+   * document rather than as a new one.
+   */
+  const scopeIsLive = (scope: string): boolean =>
+    (container.ownerDocument ?? document).querySelector(`[id^="${scope}${ID_PREFIX_JOINER}"]`) !== null;
+  const scope = options.idPrefix ?? formScopeOf(form, scopeIsLive);
+  const widgetIdFor = (name: string): string => `${scope}${ID_PREFIX_JOINER}${name}`;  /**
    * The handle a name points at.
    *
    * A name in this list is a path — a flattened document names a nested field `shipping.city` — and

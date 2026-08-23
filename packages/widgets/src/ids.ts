@@ -5,7 +5,7 @@
  * be SSR-safe: the same input must produce the same output on server and
  * client.
  */
-import { MDY_ID_DELIMITER } from "@modyra/core";
+import { MDY_ID_DELIMITER, handleFormOf } from "@modyra/core";
 
 export interface MdyWidgetIdFactory {
   /** ID for a named part of a widget instance. */
@@ -205,4 +205,118 @@ export function reportIdCollision(
     (advice ?? "Give each form its own id scope."),
   );
   return shared;
+}
+
+
+/**
+ * The scope every id of one form sits in.
+ *
+ * A form carries an identity of its own, and every widget bound to it derives its ids inside that
+ * identity — so two forms built from the same document do not both claim `when__label`, whether or
+ * not the consumer knew to ask for a scope. ADR 0146.
+ *
+ * The key is the **form object**, reached from a handle through core's registry, so a control that
+ * only ever sees a handle — which is every control in two of the three renderers — arrives at the
+ * same scope as its siblings. Pass either: a form is used as itself, a handle resolves to the form
+ * that built it.
+ *
+ * `undefined` for a hand-built handle that no form registered, which is a shape the registry
+ * documents. A caller that gets it should leave the id unscoped rather than invent one: an id that
+ * changes because a test double was used is worse than one that collides where nothing else exists
+ * to collide with.
+ *
+ * **The minted value depends on the order forms are created in**, which is why it is a fallback and
+ * not the mechanism: a consumer who needs the ids written down in advance supplies the scope, and a
+ * server render must. That cost is the whole subject of ADR 0146.
+ */
+const SCOPE_REGISTRY = Symbol.for("modyra.widgets.formScopes");
+
+interface FormScopeRegistry {
+  readonly scopes: WeakMap<object, string>;
+}
+
+const scopeRegistry = ((): FormScopeRegistry => {
+  const host = globalThis as Record<symbol, unknown>;
+  const held = host[SCOPE_REGISTRY] as Partial<FormScopeRegistry> | undefined;
+  // Shared through the global the way core shares its handle registry: two copies of this package on
+  // one page would otherwise hold two scopes for one form, and the ids of one form would depend on
+  // which copy happened to draw each widget.
+  if (held?.scopes instanceof WeakMap) return held as FormScopeRegistry;
+  const fresh: FormScopeRegistry = { scopes: new WeakMap() };
+  host[SCOPE_REGISTRY] = fresh;
+  return fresh;
+})();
+
+/**
+ * A short, stable name for a set of field paths.
+ *
+ * Deliberately a function of *what the form holds* rather than of when it was made: the same
+ * document mounted again — after a remount, or on a client hydrating what a server rendered — must
+ * arrive at the same scope, or every id in the page moves and the relationships recorded against
+ * them stop meaning anything. FNV-1a because it is four lines and this is a name, not a digest.
+ */
+function signatureOf(paths: readonly string[]): string {
+  let hash = 0x811c9dc5;
+  for (const path of [...paths].sort()) {
+    for (let index = 0; index < path.length; index += 1) {
+      hash ^= path.charCodeAt(index);
+      hash = Math.imul(hash, 0x01000193) >>> 0;
+    }
+    hash ^= 0x2f;
+    hash = Math.imul(hash, 0x01000193) >>> 0;
+  }
+  return `f${hash.toString(36)}`;
+}
+
+/** The top-level names a form holds, which is what its scope is a function of. */
+function pathsOf(form: object): readonly string[] {
+  const tree = (form as { readonly f?: Record<string, unknown> }).f;
+  return tree === undefined || tree === null ? [] : Object.keys(tree);
+}
+
+/**
+ * The scope every id of one form sits in.
+ *
+ * A form carries an identity of its own, and every widget bound to it derives its ids inside that
+ * identity — so two forms built from the same document do not both claim `when__label`, whether or
+ * not the consumer knew to ask for a scope. ADR 0146.
+ *
+ * The default is a function of the document, so a remount and a hydration land on the ids they had.
+ * **Two forms built from the *same* document are the case that cannot be answered from the document**
+ * — they are identical by construction — so the second is told apart by `taken`, a question only the
+ * caller can answer because only the caller can see the page. A caller that cannot say passes
+ * nothing and gets the signature, which is the single-form case and by far the common one.
+ *
+ * A caller that needs the scope to be a name it chose passes it instead; the renderers' own doors —
+ * `idPrefix`, `id-scope`, `[idScope]` — still win over this.
+ */
+export function formScopeOf(form: object | null | undefined, taken?: (scope: string) => boolean): string {
+  if (form === null || form === undefined) return signatureOf([]);
+  const held = scopeRegistry.scopes.get(form);
+  if (held !== undefined) return held;
+  const signature = signatureOf(pathsOf(form));
+  let scope = signature;
+  // Only a *live* scope pushes the next one along, so a form that has gone takes its scope with it
+  // and the document that replaces it reads the same as the one before.
+  for (let ordinal = 2; taken?.(scope) === true; ordinal += 1) scope = `${signature}x${ordinal}`;
+  scopeRegistry.scopes.set(form, scope);
+  return scope;
+}
+
+/**
+ * The scope of the form that built `handle`.
+ *
+ * Separate from {@link formScopeOf} rather than one function taking either: a form and a handle are
+ * both objects, so a single entry point cannot tell an unregistered handle from a form and would
+ * hold a scope **per control** for the first — every field of one form under a different scope,
+ * which is worse than the collision this exists to end.
+ *
+ * `undefined` for a hand-built handle no form registered, which is a shape core's registry
+ * documents. A caller that gets it should leave the id unscoped: an id that moves because a test
+ * double was used is worse than one that collides where nothing else exists to collide with.
+ */
+export function widgetScopeOf(handle: object | null | undefined, taken?: (scope: string) => boolean): string | undefined {
+  if (handle === null || handle === undefined) return undefined;
+  const form = handleFormOf(handle);
+  return form === undefined ? undefined : formScopeOf(form, taken);
 }

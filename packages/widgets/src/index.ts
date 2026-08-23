@@ -75,6 +75,8 @@ export {
   reportIdCollision,
   defaultWidgetIdFactory,
   assertUsableWidgetId,
+  formScopeOf,
+  widgetScopeOf,
   isValidWidgetId,
   MDY_ID_DELIMITER,
 } from "./ids.js";

@@ -160,6 +160,7 @@ absent section reads as an oversight, and "no security impact" is a finding.
 - [ADR 0143: A widget box inside the shell every kind sits in](0143-a-widget-box-inside-the-shell-every-kind-sits-in.md) — one part name means one element, so a kind that draws two boxes declares two parts and its parts hang off the inner one
 - [ADR 0144: A slot that is always there](0144-a-slot-that-is-always-there.md) — the way back reserves its line whether or not it is offered, because a cost that moves is one nobody can learn
 - [ADR 0145: A dial that repeats what a box already says](0145-a-dial-that-repeats-what-a-box-already-says.md) — a redundant graphic is hidden from assistive technology, and what it announced moves to the control a person can reach
+- [ADR 0146: A form carries its own scope](0146-a-form-carries-its-own-scope.md) — every form has an id scope whether or not anybody asked, because the person who pays for a collision is not the one who reads the warning
 - [ADR 0092: A condition travels with the form](0092-a-condition-travels-with-the-form.md) — `when` and `asyncWhen` were closures, so a schema carrying one was not data and the document half could not say what the typed half said
 
 ## Security-relevant records

@@ -1,8 +1,8 @@
 {
   "note": "Public names not yet asserted or not yet shown. The list may only get shorter.",
   "score": {
-    "published": 841,
-    "asserted": 584,
+    "published": 843,
+    "asserted": 587,
     "shown": 81
   },
   "uncovered": [
@@ -2786,9 +2786,9 @@
     },
     {
       "name": "MdyWidgetPart",
-      "asserted": false,
+      "asserted": true,
       "shown": false,
-      "reason": "published, neither asserted nor shown"
+      "reason": "published and never shown"
     },
     {
       "name": "MdyWidgetRelation",
@@ -3494,6 +3494,12 @@
     },
     {
       "name": "focusWhenShown",
+      "asserted": true,
+      "shown": false,
+      "reason": "published and never shown"
+    },
+    {
+      "name": "formScopeOf",
       "asserted": true,
       "shown": false,
       "reason": "published and never shown"
@@ -4556,6 +4562,12 @@
     },
     {
       "name": "widgetKeyIntent",
+      "asserted": true,
+      "shown": false,
+      "reason": "published and never shown"
+    },
+    {
+      "name": "widgetScopeOf",
       "asserted": true,
       "shown": false,
       "reason": "published and never shown"
