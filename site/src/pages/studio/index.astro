@@ -23,6 +23,22 @@ const based = (path: string) =>
     </div>
   </section>
 
+  <section class="shot" aria-labelledby="shot-heading">
+    <h2 id="shot-heading" class="visually-hidden">The Studio canvas</h2>
+    <figure>
+      <img
+        src={based('shots/studio-checkout.png')}
+        alt="The Studio canvas with the checkout project: an outline of groups and fields on the left, the form model as nested cards in the centre with the ZIP code field selected, and the inspector on the right showing the field's name, label and its required and pattern validators"
+        loading="lazy"
+      />
+      <figcaption>
+        The checkout project open in Studio: the ZIP code field selected, its
+        validators readable in the inspector. Captured from the app itself
+        (<code>npm run docs:studio-shot</code>).
+      </figcaption>
+    </figure>
+  </section>
+
   <section class="flow" aria-labelledby="flow-heading">
     <h2 id="flow-heading">A model-first workflow</h2>
     <ol>
@@ -70,9 +86,13 @@ const based = (path: string) =>
 </SiteLayout>
 
 <style>
-  .hero, .flow, .boundaries, .status { padding: 0 clamp(1.25rem, 7vw, 6rem) clamp(3.5rem, 7vw, 6rem); }
+  .hero, .flow, .boundaries, .status, .shot { padding: 0 clamp(1.25rem, 7vw, 6rem) clamp(3.5rem, 7vw, 6rem); }
   .hero h1 { max-width: 18ch; font-size: clamp(2.5rem, 6vw, 4.7rem); line-height: 1.04; }
   .hero p, .status p { max-width: 62ch; color: var(--page-muted); font-size: 1.12rem; line-height: 1.6; }
+  .visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+  .shot figure { margin: 0; }
+  .shot img { display: block; width: 100%; border: 1px solid var(--page-border); border-radius: .9rem; background: var(--mdy-night); }
+  .shot figcaption { margin-top: 1rem; color: var(--page-muted); font-size: .9rem; line-height: 1.55; }
   .actions { display: flex; flex-wrap: wrap; gap: .8rem; margin-top: 1.8rem; }
   .actions a { padding: .72rem 1rem; border: 1px solid var(--page-border); border-radius: .55rem; text-decoration: none; }
   /* The ink gradient, not the bright one: white text on the bright stops measures as low as
