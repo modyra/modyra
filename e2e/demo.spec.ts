@@ -272,9 +272,14 @@ test("the clock shows the hours its format has, on two rings, and takes the keyb
         outerRadius: Math.max(...outer.map(radius)),
         innerRadius: inner.length ? Math.max(...inner.map(radius)) : 0,
         role: face.getAttribute("role"),
-        valueMax: face.getAttribute("aria-valuemax"),
-        valueNow: face.getAttribute("aria-valuenow"),
-        focused: document.activeElement === face,
+        hidden: face.getAttribute("aria-hidden"),
+        faceFocused: document.activeElement === face,
+        // Where the keyboard actually is, and what it says it holds.
+        active: document.activeElement === null ? null : {
+          role: document.activeElement.getAttribute("role"),
+          valueText: document.activeElement.getAttribute("aria-valuetext"),
+          isSegment: document.activeElement.closest(".mdy-timepicker") !== null,
+        },
         hasPeriodToggle: !!root.querySelector(".mdy-timepicker-period-toggle"),
       };
     });
@@ -289,14 +294,12 @@ test("the clock shows the hours its format has, on two rings, and takes the keyb
   // Twelve hours and a period beside them.
   expect(twelve.labels).toHaveLength(12);
   expect(twelve.innerCount).toBe(0);
-  expect(twelve.valueMax).toBe("12");
   expect(twelve.hasPeriodToggle).toBe(true);
 
   // Twenty-four hours and no period at all — the value 14:00 can now be pointed at.
   expect(day.labels).toHaveLength(24);
   expect(day.labels).toContain("14");
   expect(day.labels).toContain("00");
-  expect(day.valueMax).toBe("23");
   expect(day.hasPeriodToggle).toBe(false);
   // On two rings, drawn at two radii. Equal radii means twelve numbers sitting on twelve others,
   // which is what a component stylesheet's copy of the foundation's placement produced.
@@ -304,12 +307,29 @@ test("the clock shows the hours its format has, on two rings, and takes the keyb
   expect(day.innerRadius).toBeGreaterThan(0);
   expect(day.outerRadius - day.innerRadius).toBeGreaterThan(20);
 
-  // The face is the control, and it holds focus as soon as the picker opens — otherwise the arrows
-  // go to the page and the clock has a keyboard nobody can reach.
+  // **The face is a picture of a control, not the control.** ADR 0145: the hour and minute boxes are
+  // the inputs, they are on screen beside the dial, and they answer the same keys — so a dial that
+  // also carried `role="slider"` and a tab stop was a second control for one value.
+  //
+  // This test asserted the opposite until that decision, and it was not wrong when it was written: a
+  // face that holds focus is the right design *if* the face is the control. What changed is which
+  // element that is. A spec that keeps asserting the arrangement a record replaced is a stale fixture
+  // with a date on it.
+  //
+  // The reason the redundant version was worse than merely unnecessary: a screen reader in browse
+  // mode ignores `tabindex` entirely, so a slider the Tab walk skipped was still found, still
+  // announced a value, and still answered none of the keys it advertised.
   for (const state of [twelve, day]) {
-    expect(state.role).toBe("slider");
-    expect(state.focused).toBe(true);
-    expect(Number(state.valueNow)).not.toBeNaN();
+    expect(state.role, "the dial face claims a role it does not implement").toBeNull();
+    expect(state.hidden, "the dial face is a picture of the boxes beside it").toBe("true");
+    expect(state.faceFocused, "the dial face takes a tab stop for a value another control owns").toBe(false);
+  }
+
+  // And the keyboard is somewhere: the panel opens onto the control that owns the value, which is
+  // what makes the face's silence safe rather than a loss.
+  for (const state of [twelve, day]) {
+    expect(state.active?.isSegment, "opening the panel left the keyboard outside the picker").toBe(true);
+    expect(state.active?.valueText, "the focused segment does not say what it holds").not.toBeNull();
   }
 });
 
