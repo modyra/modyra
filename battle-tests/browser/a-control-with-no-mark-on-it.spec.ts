@@ -73,7 +73,11 @@ for (const host of HOSTS) {
       const shot = await page.screenshot({
         clip: { x: box.x + INSET, y: box.y + INSET, width: box.width - INSET * 2, height: box.height - INSET * 2 },
       });
-      const painted = paintedFraction(decodePng(shot));
+      // Captured at the viewport's own density, and that is sound *here* for one reason: the only
+      // thing asserted below is a fraction of exactly zero, and a region that paints nothing paints
+      // nothing however finely it is sampled. A threshold anywhere above zero would not survive it —
+      // a hairline mark at half coverage can blend to within the tolerance of its background.
+      const painted = paintedFraction(decodePng(shot), { scale: 1 });
 
       if (painted.fraction === 0) {
         const name = await control.getAttribute("aria-label");

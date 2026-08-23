@@ -16,9 +16,9 @@
  *
  * **The boundary turns out not to be the width.** It is whether any pixel is fully covered:
  *
- *     4px, 2px, 1px aligned to the grid    one or more columns at full coverage   exact
- *     1px on a half-pixel boundary         two columns at 50%                     reads low
- *     0.5px                                one column at 50%                      reads low
+ *     4, 2, 1 device px aligned to the grid   one or more columns fully covered      exact
+ *     1 device px on a half-pixel boundary    two columns at 50%                     reads low
+ *     half a device px                        one column at 50%                      reads low
  *
  * So a 1px stroke is measurable or not depending on where it lands, which no rule about weight can
  * express. What the instrument needs is not a wider mark but **one opaque pixel**, and that is the
@@ -26,13 +26,25 @@
  *
  * Anti-aliasing is modelled the way a rasteriser does it — coverage-weighted blending of ink over
  * background — so the blended values here are the ones a real thin stroke produces.
+ *
+ * **What this certifies, and what it does not.** It certifies the arithmetic: the instrument computes
+ * the right ratio *given* pixels. It cannot certify the capture — that a browser's rasteriser hands it
+ * opaque interiors at a given density is inference from how coverage works, not a measurement, and the
+ * first reading against a real capture is still the one that has not happened.
+ *
+ * One artifact is deliberately outside it. **Subpixel (LCD) antialiasing is a different thing from
+ * coverage antialiasing**: it paints a glyph's edge using the red, green and blue subpixels
+ * separately, producing coloured fringes that are neither the ink nor the background and are not on
+ * the line between them. Coverage blending cannot produce one, so nothing here tests the
+ * furthest-in-luminance heuristic against a fringe — and the last case below shows what happens when
+ * it meets one. The capture must have subpixel antialiasing off.
  */
 
 import { deflateSync } from "node:zlib";
 import { test } from "node:test";
 import assert from "node:assert/strict";
 
-import { decodePng, contrastOf } from "./what-a-region-paints.mjs";
+import { decodePng, contrastOf, paintedFraction } from "./what-a-region-paints.mjs";
 
 /** The luminance term of WCAG's contrast formula, on 0–255 channels. */
 function luminance(r, g, b) {
@@ -108,10 +120,18 @@ const strokeAt = (left, weight) => (x) => {
   return INK.map((channel, index) => Math.round(channel * covered + BACK[index] * (1 - covered)));
 };
 
+/**
+ * `scale` is passed because the guard requires it, and the weights below are therefore **device**
+ * pixels — which is what a decoded buffer holds whatever produced it.
+ *
+ * That makes the two limits separate and both real: the capture floor keeps a 1px *CSS* stroke from
+ * arriving as half a device pixel, and this fixture shows that a mark narrower than one device pixel
+ * is unmeasurable even above that floor. The floor is necessary and it is not sufficient.
+ */
 const measure = (left, weight) => {
   const paint = strokeAt(left, weight);
   const png = decodePng(encodePng(WIDTH, HEIGHT, (x) => paint(x)));
-  return contrastOf(png);
+  return contrastOf(png, { scale: 2 });
 };
 
 const EXPECTED = ratioBetween(INK, BACK);
@@ -138,9 +158,9 @@ test("a mark with one fully covered pixel is measured exactly", () => {
 
 test("a mark with no fully covered pixel reads low, and by how much", () => {
   const cases = [
-    ["1px on a half-pixel boundary", 10.5, 1],
-    ["0.5px", 10, 0.5],
-    ["0.25px", 10, 0.25],
+    ["1 device px on a half-pixel boundary", 10.5, 1],
+    ["half a device px", 10, 0.5],
+    ["a quarter of a device px", 10, 0.25],
   ];
 
   const low = [];
@@ -167,4 +187,88 @@ test("a mark with no fully covered pixel reads low, and by how much", () => {
     `a 0.5px stroke reads ${half.ratio}:1 against ${EXPECTED}:1 — the under-report is smaller than `
     + "expected, so the warning in the header may be overstated",
   );
+});
+
+/**
+ * The artifact the fixture above cannot produce, and what it costs.
+ *
+ * Coverage blending moves a pixel along the line between ink and background, so every blend is
+ * *between* them and the furthest one is the ink. **Subpixel rendering does not work that way**: it
+ * lights the red, green and blue subpixels by different amounts, and the result is a colour off that
+ * line entirely.
+ *
+ * A fringe can therefore sit **further from the background than the ink is** — and then the heuristic
+ * picks the fringe, and the ratio comes back **too high**. That is the dangerous direction. A thin
+ * stroke under-reporting raises a false alarm somebody investigates; a fringe over-reporting clears a
+ * mark that does not conform, and nobody investigates a pass.
+ *
+ * Written as an assertion rather than a warning so that the day the capture changes — headed, another
+ * platform, a Playwright upgrade — this says what it costs instead of being a sentence someone read
+ * once.
+ */
+test("a subpixel fringe fools the furthest-pixel heuristic, upward", () => {
+  const grey = [120, 120, 120];
+  const white = [255, 255, 255];
+  const trueRatio = ratioBetween(grey, white);
+
+  // A mid-grey stroke with one saturated blue fringe pixel at its edge — blue carries the least
+  // luminance of the three channels, so the fringe is darker than the ink it belongs to.
+  const fringed = decodePng(encodePng(WIDTH, HEIGHT, (x) => {
+    if (x === 10) return [0, 0, 255];
+    if (x > 10 && x < 14) return grey;
+    return white;
+  }));
+
+  const seen = contrastOf(fringed, { scale: 2 });
+  assert.ok(seen !== null, "nothing was painted, so this case measures nothing");
+
+  // The premise: the fringe really is the furthest pixel. If it were not, the heuristic would be
+  // unbothered and this test would be describing a hazard that does not exist.
+  assert.equal(
+    seen.mark,
+    "0,0,255",
+    `the furthest pixel is ${seen.mark}, not the fringe — this ink and fringe do not exercise the `
+    + "artifact and the case needs rebuilding before it means anything",
+  );
+
+  assert.ok(
+    seen.ratio > trueRatio,
+    `the fringe reported ${seen.ratio}:1 where the ink is ${trueRatio}:1 — it did not over-report, so `
+    + "the heuristic may be more robust than this test assumes",
+  );
+});
+
+/**
+ * The guards themselves, because a rule that lives in a header is one the next caller does not obey.
+ *
+ * Both refusals fired on this file the moment they were written — every case above called without a
+ * scale and every one of them stopped. That is the evidence they work, and it is not evidence anyone
+ * can see six months from now, which is what these assertions are for.
+ *
+ * **Each match on the message, not merely on "something was thrown".** The first draft of this test
+ * did not import `paintedFraction` at all, so the call raised a `ReferenceError` — which a bare
+ * `assert.throws` accepts as proof that the guard fired. The pattern is what told the two apart, and
+ * a test that a refusal happens is worth nothing unless it knows *which* refusal.
+ */
+test("a pixel measure refuses to answer without knowing how densely it was captured", () => {
+  const plain = decodePng(encodePng(4, 4, () => [255, 255, 255]));
+
+  assert.throws(
+    () => paintedFraction(plain),
+    /deviceScaleFactor/,
+    "paintedFraction answered without being told the capture scale",
+  );
+  assert.throws(
+    () => contrastOf(plain, { scale: 1 }),
+    /deviceScaleFactor 2 or more/,
+    "contrastOf answered for pixels captured at scale 1, where a 1px stroke may have no opaque pixel",
+  );
+  assert.throws(
+    () => contrastOf(plain),
+    /deviceScaleFactor 2 or more/,
+    "contrastOf answered without being told the capture scale",
+  );
+
+  // And it does answer when told, so the guard is a condition rather than a wall.
+  assert.equal(paintedFraction(plain, { scale: 1 }).fraction, 0);
 });

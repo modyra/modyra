@@ -96,7 +96,31 @@ export function decodePng(buffer) {
  * colour is what a mark has to stand out from, whatever the theme made it. `tolerance` is per channel,
  * so anti-aliasing at the edge of a glyph does not read as a mark on its own — but a glyph's body does.
  */
-export function paintedFraction(png, tolerance = 12) {
+export function paintedFraction(png, options = {}) {
+  const { scale, tolerance = 12 } = typeof options === "number" ? { tolerance: options } : options;
+  // Stated, not defaulted. What a pixel measure means depends on how densely the region was
+  // captured, and a caller who has not said cannot be assumed to have thought about it. A `=== 0`
+  // comparison holds at any density — nothing is nothing however finely it is sampled — but a
+  // threshold anywhere above zero does not, because a hairline mark at half coverage can blend to
+  // within the tolerance of its own background.
+  if (typeof scale !== "number" || !(scale > 0)) {
+    throw new Error(
+      "[battle] paintedFraction needs the deviceScaleFactor the screenshot was taken at: "
+      + "paintedFraction(png, { scale }). See a-ratio-a-thin-mark-can-carry.test.mjs for what the "
+      + "density decides.",
+    );
+  }
+  // Stated, not defaulted. What a pixel measure means depends on how densely the region was
+  // captured, and a caller who has not said cannot be assumed to have thought about it — the header
+  // records the mechanism and a header is not a guard.
+  if (typeof scale !== "number" || !(scale > 0)) {
+    throw new Error(
+      "[battle] paintedFraction needs the deviceScaleFactor the screenshot was taken at: "
+      + "paintedFraction(png, { scale }). A fraction compared against a threshold near zero is only "
+      + "meaningful at scale 2 or more, where a hairline mark still covers a whole pixel; a `=== 0` "
+      + "comparison holds at any scale, because nothing is nothing at any density.",
+    );
+  }
   const { width, height, pixels, channels } = png;
   const counts = new Map();
   for (let at = 0; at < pixels.length; at += channels) {
@@ -117,7 +141,7 @@ export function paintedFraction(png, tolerance = 12) {
       || Math.abs(alpha - ba) > tolerance) different += 1;
   }
   const total = width * height;
-  return { fraction: total === 0 ? 0 : different / total, different, total, background };
+  return { fraction: total === 0 ? 0 : different / total, different, total, background, scale };
 }
 
 /** Relative luminance, as WCAG defines it. */
@@ -177,9 +201,23 @@ function luminance(r, g, b) {
  * That also explains the anomaly this warning was first written for: a minus sign at 2.98:1 and a plus
  * sign at 6.78:1, in one control, in one colour. Two subpixel alignments, one ink.
  */
-export function contrastOf(png, tolerance = 12) {
+export function contrastOf(png, options = {}) {
+  const { scale, tolerance = 12 } = options;
+  // The one condition the certificate rests on, enforced where the reading is taken rather than
+  // stated where nobody has to read it. Below scale 2 a one-pixel stroke may have no opaque pixel at
+  // all, and then the furthest-from-background pixel is a blend — the ratio comes back low and a
+  // conforming mark looks like a failure. A number produced there is not a weak measurement, it is
+  // the wrong one, so this refuses rather than returning it.
+  if (typeof scale !== "number" || scale < 2) {
+    throw new Error(
+      `[battle] contrastOf needs pixels captured at deviceScaleFactor 2 or more; got ${JSON.stringify(scale)}. `
+      + "The same 1px stroke reads 15.99:1 aligned to the grid and 3.21:1 on a half-pixel boundary, so a "
+      + "ratio read at scale 1 measures the alignment rather than the ink. See "
+      + "a-ratio-a-thin-mark-can-carry.test.mjs.",
+    );
+  }
   const { pixels, channels } = png;
-  const { background } = paintedFraction(png, tolerance);
+  const { background } = paintedFraction(png, { scale, tolerance });
   const [br, bg, bb] = background.split(",").map(Number);
   const backLuminance = luminance(br, bg, bb);
 

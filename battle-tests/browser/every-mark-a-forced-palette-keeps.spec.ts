@@ -93,7 +93,7 @@ for (const host of HOSTS) {
             },
           }).catch(() => null);
           if (shot === null) continue;
-          painted.set(`${kind}.${part}`, paintedFraction(decodePng(shot)).fraction);
+          painted.set(`${kind}.${part}`, paintedFraction(decodePng(shot), { scale: 3 }).fraction);
         }
 
         await page.evaluate(({ api, id }) => { (window as never as Api)[api].dispose?.(id as never); }, { api: host.api, id });

@@ -73,7 +73,7 @@ for (const host of HOSTS) {
           clip: { x: field.x + field.width - COLUMN, y: field.y + 4, width: COLUMN - 4, height: field.height - 8 },
         }).catch(() => null);
         if (shot !== null) {
-          const painted = paintedFraction(decodePng(shot));
+          const painted = paintedFraction(decodePng(shot), { scale: 3 });
           if (painted.fraction === 0) bare.push(kind);
           else drawn.push(kind);
         }
