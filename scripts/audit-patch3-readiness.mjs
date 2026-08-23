@@ -81,6 +81,33 @@ const overlaySource = readFileSync(resolve(root, "packages/angular/src/lib/core/
 // this. What must never pass is a renderer computing a placement of its own.
 const sharedOverlayPlacement = overlaySource.includes("anchorOverlay") || overlaySource.includes("decideOverlayPlacement");
 const sharedOverlayLifecycle = overlaySource.includes("overlayLifecycleTransition");
+/**
+ * The ARIA a renderer serves without naming.
+ *
+ * Two checks below ask whether a renderer's source states an attribute. A renderer that consumes the
+ * contract states none of them and serves all of them, so the question has to be what supplies the
+ * attribute rather than whether the string appears — otherwise the gate asks for the literal back
+ * beside the projection that already emits it, and rewards the duplication the projection exists to
+ * remove.
+ *
+ * `[mdyPart]` carries the shell's own statements. `projectOverlayOpenerA11y` is the contract's
+ * statement of what an opener promises, and it emits role, `aria-haspopup`, `aria-expanded` and
+ * `aria-controls` together.
+ *
+ * A token carries its binding text — `aria-haspopup]="'listbox'"` — so this matches on the attribute
+ * name inside it: the supplier decides the value, and the value is not the renderer's to state.
+ */
+function ariaSuppliedWithoutNaming(source) {
+  const supplied = [];
+  if (source.includes("[mdyPart]")) {
+    supplied.push("aria-invalid", "aria-required", "aria-disabled", "aria-describedby");
+  }
+  if (source.includes("projectOverlayOpenerA11y")) {
+    supplied.push("aria-haspopup", "aria-expanded", "aria-controls");
+  }
+  return (token) => supplied.some((attribute) => token === attribute || token.includes(attribute));
+}
+
 const fixturePath = resolve(root, "packages/angular/contract-baseline/angular-dom/source-parity.json");
 const fixtureFailures = [];
 let parityFixtures = 0;
@@ -88,14 +115,8 @@ if (existsSync(fixturePath)) {
   const fixture = JSON.parse(readFileSync(fixturePath, "utf8"));
   for (const [kind, evidence] of Object.entries(fixture.controls)) {
     const source = readFileSync(resolve(rendererRoot, evidence.renderer), "utf8");
-    // Same rule as the projection evidence below: binding the part is how a renderer consumes the
-    // ARIA the part supplies, and repeating the attribute afterwards is what the part prevents.
-    const suppliedByPart = source.includes("[mdyPart]")
-      ? ["aria-invalid", "aria-required", "aria-disabled", "aria-describedby"]
-      : [];
-    const missing = evidence.tokens.filter(
-      (token) => !source.includes(token) && !suppliedByPart.includes(token),
-    );
+    const supplied = ariaSuppliedWithoutNaming(source);
+    const missing = evidence.tokens.filter((token) => !source.includes(token) && !supplied(token));
     if (missing.length === 0) parityFixtures++;
     else fixtureFailures.push({ kind, missing });
   }
@@ -113,12 +134,10 @@ if (existsSync(projectionPath)) {
     // `[mdyPart]` carries the shell projection's `aria-invalid`, `aria-required`, `aria-disabled`
     // and `aria-describedby`, so a renderer that binds it and then repeats them would be the thing
     // the part exists to prevent.
-    const suppliedByPart = source.includes("[mdyPart]")
-      ? ["aria-invalid", "aria-required", "aria-disabled", "aria-describedby"]
-      : [];
+    const supplied = ariaSuppliedWithoutNaming(source);
     const missingParts = evidence.contractProjection.parts.filter((token) => !source.includes(token));
     const missingAria = evidence.contractProjection.aria.filter(
-      (token) => !source.includes(token) && !suppliedByPart.includes(token),
+      (token) => !source.includes(token) && !supplied(token),
     );
     if (missingParts.length === 0) contractPartProjections++;
     if (missingAria.length === 0) ariaProjections++;
