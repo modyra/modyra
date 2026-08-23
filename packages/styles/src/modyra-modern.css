@@ -324,9 +324,12 @@
 
     /* ─── Multiselect and option groups ───────────────────────────────────────── */
 
+    /* One line, and the strip inside it scrolls (ADR 0127). Wrapping here put the opener and the
+       clear-all on a second line the field cannot grow to hold and does not clip, so they were drawn
+       over whatever the form draws underneath — and how many values it took to get there depended on
+       the labels, which is not something this library decides. */
     .mdy-multiselect {
         display: flex;
-        flex-wrap: wrap;
         align-items: center;
         gap: 0.25rem;
         width: 100%;
@@ -600,10 +603,14 @@
     gap: 0.125rem;
 }
 
-/* Closed, the trigger reads like any other control: chips inline, placeholder when empty. */
+/* Closed, the trigger reads like any other control: chips inline, placeholder when empty.
+   No `flex-wrap` here. The strip keeps one line and scrolls (ADR 0127), and that is not a look a
+   theme may take back: a row that wraps grows with what is put in it, while the field around it
+   cannot grow and does not clip — so the second line was painted outside the field, over whatever
+   the form draws underneath. The foundation wraps it at 320px and only there, where reflow is worth
+   more than equal heights, with the reasoning written beside the rule. */
 .mdy-multiselect__chips {
     display: flex;
-    flex-wrap: wrap;
     gap: 0.25rem;
     min-width: 0;
 }

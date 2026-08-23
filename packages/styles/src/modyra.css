@@ -440,13 +440,21 @@
        aims at to put the caret in the text box. */
     .mdy-datepicker__toggle,
     .mdy-timepicker__toggle,
-    .mdy-colors__toggle-area {
+    .mdy-colors__toggle-area,
+    .mdy-multiselect__clear-all,
+    .mdy-multiselect__overflow {
         position: relative;
     }
 
     .mdy-datepicker__toggle::after,
     .mdy-timepicker__toggle::after,
-    .mdy-colors__toggle-area::after {
+    .mdy-colors__toggle-area::after,
+    /* The two at the end of a multiselect stand at the row's height — a control step — and their
+       target is this overlay, as every other trailing affordance's is. Sized to the target directly
+       they made the row taller than the field that holds it; given the target here, the box is a
+       step and the thing a finger has to hit is still 44. */
+    .mdy-multiselect__clear-all::after,
+    .mdy-multiselect__overflow::after {
         content: "";
         position: absolute;
         top: 50%;
