@@ -82,17 +82,18 @@
 
 /* The brand gradient, in the two jobs it actually has.
 
-   The bright one is a decorative fill. It cannot carry text: white on its stops measures 4.14, 3.96
-   and 2.85 against 4.5:1, and the coral end is the worst of them. As *text* on a light page it is
-   no better: 3.96, 3.78, 2.72. Buttons do not use either gradient — the brand assigns Coral, solid,
-   to actions.
+   The bright one — the exact token stops — is a decorative fill. It cannot carry text: white on
+   its stops measures 5.02, 3.96 and 2.85 against 4.5:1, and only the indigo start passes. As
+   *text* on a light page the violet and coral ends measure 3.60 and 2.57. Buttons do not use
+   either gradient — the brand assigns Coral, solid, to actions.
 
-   So there is a second gradient that takes the same journey — indigo through violet to coral — deep
-   enough to be read as text on a light page. The bright one keeps the jobs it is good at: fills and
-   text on a dark surface. */
+   The ink variant takes the same journey with each stop only as deep as the two text jobs
+   require: the indigo start is the token itself, violet and coral keep their hue and give up
+   lightness. White on the stops measures 5.02, 5.07 and 5.06; as text on cloud, 4.56, 4.60 and
+   4.60. The bright one keeps the jobs it is good at: fills and text on a dark surface. */
 :root {
-	--mdy-gradient-brand: linear-gradient(90deg, #7067ff 0%, #a855f7 50%, #ff6577 100%);
-	--mdy-gradient-brand-ink: linear-gradient(90deg, #4f46d6 0%, #8a3fa8 50%, #b32d44 100%);
+	--mdy-gradient-brand: linear-gradient(90deg, #6458ef 0%, #a855f7 50%, #ff6577 100%);
+	--mdy-gradient-brand-ink: linear-gradient(90deg, #6458ef 0%, #9735f5 50%, #d12c41 100%);
 	/* Which of the two the active-link marker uses; the dark page can afford the bright one. */
 	--mdy-gradient-brand-marker: var(--mdy-gradient-brand);
 }
