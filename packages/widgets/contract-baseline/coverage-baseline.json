@@ -3115,6 +3115,12 @@
       "reason": "published and never shown"
     },
     {
+      "name": "chipActionName",
+      "asserted": true,
+      "shown": false,
+      "reason": "published and never shown"
+    },
+    {
       "name": "chipDropIndex",
       "asserted": true,
       "shown": false,
@@ -3128,12 +3134,6 @@
     },
     {
       "name": "chipMovedAnnouncement",
-      "asserted": true,
-      "shown": false,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "chipRemoveName",
       "asserted": true,
       "shown": false,
       "reason": "published and never shown"

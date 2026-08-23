@@ -24,3 +24,6 @@ for all of them.
 
 Now, in all three renderers: `Move earlier Alfa`, `One fewer Alfa`, `One more Alfa`, `Move later Alfa`,
 `Remove Alfa`.
+
+Angular's `removeName` goes with it: one method names every button in the chip, which is the same
+consolidation one function up.

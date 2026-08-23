@@ -145,7 +145,7 @@ import type { MdyOverlayBranch, MdyOverlayOwner } from "../../core/overlay-contr
                 type="button"
                 [class]="chip.remove"
                 tabindex="-1"
-                [attr.aria-label]="removeName(held.label)"
+                [attr.aria-label]="actionName(i18n.chipRemoveLabel, held.label)"
                 (click)="removeChip(held.key, held.value); $event.stopPropagation()"
               ></button>
             </span>
@@ -541,10 +541,6 @@ export class MdyMultiselectComponent<TValue = string>
    */
   protected actionName(verb: string, label: string): string {
     return chipActionName(verb, label);
-  }
-
-  protected removeName(label: string): string {
-    return chipActionName(this.i18n.chipRemoveLabel, label);
   }
 
   protected valueChipClasses(): string {
