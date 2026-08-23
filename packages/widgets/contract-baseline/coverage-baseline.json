@@ -4363,12 +4363,6 @@
       "reason": "published and never shown"
     },
     {
-      "name": "timepickerDialAria",
-      "asserted": true,
-      "shown": false,
-      "reason": "published and never shown"
-    },
-    {
       "name": "timepickerDialGhost",
       "asserted": true,
       "shown": false,
@@ -4442,6 +4436,12 @@
     },
     {
       "name": "timepickerPartSelector",
+      "asserted": true,
+      "shown": false,
+      "reason": "published and never shown"
+    },
+    {
+      "name": "timepickerSegmentAria",
       "asserted": true,
       "shown": false,
       "reason": "published and never shown"

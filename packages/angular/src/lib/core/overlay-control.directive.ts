@@ -1,4 +1,4 @@
-import { MDY_POPUP_OPENERS, keyBindingFor, projectOverlayOpenerA11y, type MdyPartContract } from "@modyra/widgets";
+import { MDY_POPUP_OPENERS, keyBindingFor, partClasses, projectOverlayOpenerA11y, type MdyPartContract } from "@modyra/widgets";
 import {
   DestroyRef,
   Directive,
@@ -23,6 +23,7 @@ import {
   type MdyOverlayDecision,
   type MdyOverlayLifecycleIntent,
   type MdyWidgetKind,
+  type MdyWidgetPart,
   trackAnchoredOverlay,
   bindLightDismiss,
 } from "@modyra/widgets";
@@ -559,12 +560,20 @@ export abstract class MdyOverlayControl<TValue> extends MdyBaseControl<TValue> {
    */
   protected restoreOverlayTriggerFocus(): void {
     const wrapper = this.wrapperRef()?.nativeElement;
-    this.restoreFocusTo(wrapper?.querySelector<HTMLElement>("button, input, [tabindex='0']") ?? null);
-  }
-
-  /** The custodian's restore, reachable by a host that overrides where focus comes back to. */
-  protected restoreFocusTo(preferred: HTMLElement | null): void {
-    this.focus.restore(preferred);
+    // The part a person opens this kind with is declared, so focus comes back to it by name rather
+    // than to whatever happens to be first. "First interactive element in the wrapper" is a
+    // description of one arrangement: a multiselect draws its chosen values ahead of the trigger and
+    // every chip is tabbable, so closing on Tab put focus on a chip and let the browser carry on
+    // from there — onto the trigger, the control the person was leaving.
+    const kind = this.overlayKind;
+    // The table declares the opener as a part name of its own kind, and a battle asserts every
+    // declared opener is a part the kind has — so the cast states a guarantee that is checked
+    // elsewhere rather than one taken on trust here.
+    const opener = kind === null ? undefined : (MDY_POPUP_OPENERS[kind]?.opener as MdyWidgetPart<typeof kind> | undefined);
+    const declared = wrapper && kind !== null && opener !== undefined
+      ? wrapper.querySelector<HTMLElement>(partClasses(kind, opener).map((one) => `.${one}`).join(""))
+      : null;
+    this.focus.restore(declared ?? wrapper?.querySelector<HTMLElement>("button, input, [tabindex='0']") ?? null);
   }
 
   private unbindDismissal: (() => void) | null = null;

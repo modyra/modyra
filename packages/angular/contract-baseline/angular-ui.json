@@ -145,6 +145,8 @@
     "mdy-daterange__group",
     "mdy-daterange__hint",
     "mdy-daterange__input",
+    "mdy-daterange__input--end",
+    "mdy-daterange__input--start",
     "mdy-daterange__input-sizer",
     "mdy-daterange__sep",
     "mdy-dynamic-form",
@@ -658,6 +660,8 @@
         "mdy-datepicker__toggle",
         "mdy-daterange__group",
         "mdy-daterange__input",
+        "mdy-daterange__input--end",
+        "mdy-daterange__input--start",
         "mdy-daterange__input-sizer",
         "mdy-daterange__sep",
         "mdy-error-list",
@@ -1080,13 +1084,8 @@
         "mdy-timepicker-spacer"
       ],
       "aria": [
-        "aria-disabled",
         "aria-hidden",
-        "aria-label",
-        "aria-valuemax",
-        "aria-valuemin",
-        "aria-valuenow",
-        "aria-valuetext"
+        "aria-label"
       ],
       "selectors": []
     },
@@ -1172,7 +1171,8 @@
         "aria-label",
         "aria-valuemax",
         "aria-valuemin",
-        "aria-valuenow"
+        "aria-valuenow",
+        "aria-valuetext"
       ],
       "selectors": [
         "mdy-timepicker-segment"

@@ -473,19 +473,6 @@ export class MdyMultiselectComponent<TValue = string>
   protected readonly selectedSet = computed(() => this.controller()?.state().selectedKeys ?? new Set<string>());
 
 
-  /**
-   * Focus comes back to the trigger, which is not the first interactive element in this field.
-   *
-   * The strip of chosen values sits ahead of the trigger inside the box and every chip is tabbable,
-   * so "the first focusable in the wrapper" is a chip. Closing on `Tab` then placed focus on a chip
-   * and let the browser carry on from there — onto the trigger, the very control the person was
-   * leaving. Naming the trigger puts the browser's next step after it instead.
-   */
-  protected override restoreOverlayTriggerFocus(): void {
-    const host = this.hostRef.nativeElement as HTMLElement;
-    this.restoreFocusTo(host.querySelector<HTMLElement>(".mdy-multiselect__trigger"));
-  }
-
   /** The controller's `open` is this kind's open state; see `MdyOverlayControl.overlayOwner`. */
   protected override overlayOwner(): MdyOverlayOwner | undefined {
     return this.controller() as MdyOverlayOwner | undefined;
