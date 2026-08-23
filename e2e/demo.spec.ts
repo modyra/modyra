@@ -1,5 +1,6 @@
 import { expect, test } from "@playwright/test";
 import { COMBOBOX_TRIGGER } from "./support/select-shape";
+import { decodePng } from "../battle-tests/harness/what-a-region-paints.mjs";
 
 /**
  * Smoke test: the packaged demo boots, a text control accepts input and
@@ -394,8 +395,35 @@ test("a slider's track fills up to its handle, in every theme", async ({ page })
     await useTheme(page, theme);
 
     const slider = page.locator("mdy-control-slider .mdy-slider").first();
-    const image = await slider.evaluate((el) => getComputedStyle(el).backgroundImage);
-    expect(image, `${theme}: the track must be a split, not one flat colour`).toContain("linear-gradient");
+
+    // Put the value in the middle, so there is a filled side and an unfilled one to compare.
+    await geometry(slider, "mid");
+
+    // **The split is read in pixels, because no other instrument here can see it.** The track is
+    // painted on `::-webkit-slider-runnable-track` / `::-moz-range-track` rather than on the element:
+    // the element is a control step tall, and putting the gradient on it would give a track of that
+    // height. So `getComputedStyle(el).backgroundImage` is `none`, and right to be.
+    //
+    // Asking `getComputedStyle(el, "::-webkit-slider-runnable-track")` does not answer it either —
+    // Chromium replies with the *element's* values, so the track and the handle both come back as the
+    // element's height and every number looks plausible. A screenshot holds no such opinion.
+    const shot = decodePng(await slider.screenshot());
+    const sample = (fraction: number): readonly number[] => {
+      const x = Math.min(shot.width - 1, Math.max(0, Math.round(fraction * shot.width)));
+      const at = (Math.floor(shot.height / 2) * shot.width + x) * shot.channels;
+      return [shot.pixels[at], shot.pixels[at + 1], shot.pixels[at + 2]];
+    };
+    // A quarter along and three quarters along: clear of the handle at either side of it.
+    const filled = sample(0.25);
+    const empty = sample(0.75);
+    const apart = Math.max(...filled.map((channel, index) => Math.abs(channel - empty[index]!)));
+
+    expect(
+      apart,
+      `${theme}: the track is one flat colour — rgb(${filled.join(",")}) a quarter along and ` +
+        `rgb(${empty.join(",")}) at three quarters. A slider that does not show how far along it is ` +
+        "says nothing a person can read at a glance",
+    ).toBeGreaterThan(12);
 
     const seen: number[] = [];
     for (const position of ["min", "mid", "max"] as const) {
