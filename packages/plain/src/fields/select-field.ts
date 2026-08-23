@@ -219,11 +219,18 @@ export function renderSelectField(
     const state = controller.state();
     // A listbox jumps rather than filters. Handled before the keyboard policy, which has no rule for
     // a printable character and would otherwise let it fall through to nothing.
-    if (!searchable && state.open && isTypeaheadCharacter(event.key, event)) {
+    //
+    // Open and closed take the same letter to different ends, which is what every platform does with
+    // a closed chooser: open, the reading position moves and the value waits, so a person can type
+    // past an option they did not mean; closed, there is no reading position to move and the letter
+    // is the choice. A closed control that answered nothing was the fastest way to pick from a list
+    // somebody already knows, costing no popup, no arrows and no reading, missing entirely.
+    if (!searchable && isTypeaheadCharacter(event.key, event)) {
       const match = typeaheadMatch(controller.state().options, typeahead.push(event.key));
       if (match) {
         event.preventDefault();
-        dispatch({ type: "activate", optionKey: state.optionKeys[state.options.indexOf(match)] ?? keyFor(match) });
+        const optionKey = state.optionKeys[state.options.indexOf(match)] ?? keyFor(match);
+        dispatch(state.open ? { type: "activate", optionKey } : { type: "select", optionKey });
       }
       return;
     }
