@@ -23,11 +23,27 @@ export function installDomGlobals() {
   return dom;
 }
 
-/** Renders one element, waits for Lit's update, and returns it. */
-export async function mount(tag, configure) {
+/**
+ * Renders one element, waits for Lit's update, and returns it.
+ *
+ * The one before it is taken off the page first. Every test here mounts a field of the same name, so
+ * leaving them appended put several elements in one document claiming one set of ids — and a
+ * contract check that resolves an id then reads whichever came first. The failure that follows names
+ * the widget under test and is caused by the one before it, which is the worst kind to debug: it
+ * appears when an unrelated kind starts publishing an id the earlier one already had.
+ *
+ * Pass `keep` when a test is *about* two elements coexisting.
+ */
+const mounted = [];
+
+export async function mount(tag, configure, { keep = false } = {}) {
+  if (!keep) {
+    for (const previous of mounted.splice(0)) previous.remove();
+  }
   const element = document.createElement(tag);
   configure?.(element);
   document.body.append(element);
+  mounted.push(element);
   await element.updateComplete;
   return element;
 }

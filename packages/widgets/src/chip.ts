@@ -205,6 +205,63 @@ export function multiselectAnnouncement(
 }
 
 /**
+ * What a live region says when a quantity settles.
+ *
+ * A quantity that changes says nothing today: the sentence a selection change produces compares the
+ * *distinct values* held, and stepping three of something down to two changes none of them. So the
+ * only step that spoke was the one that removed the value — a person stepping down heard nothing
+ * until what they were counting was gone.
+ *
+ * **Said on arriving at the smallest quantity, not on leaving it.** Warning at the moment of deletion
+ * is too late: the value is already gone and the person is being told rather than asked. Said on
+ * arrival, the next step down is a known act.
+ */
+export function quantityAnnouncement(
+  label: string,
+  count: number,
+  words: { readonly settled: string; readonly atMinimum: string },
+  minimum = 1,
+): string {
+  const template = count <= minimum ? words.atMinimum : words.settled;
+  return template.replace("{value}", label).replace("{count}", String(count));
+}
+
+/**
+ * A voice that says the value a gesture ended on, rather than every value it passed through.
+ *
+ * A live region is a queue, and a held arrow key fills it: eleven presses from twelve to one leave
+ * eleven polite sentences to be read out after the person has stopped pressing, each describing a
+ * state several steps in the past. A `spinbutton` does not have this problem because the platform
+ * reads a *value* and coalesces rapid changes itself — so a control that gives up the role takes on
+ * the coalescing, which is what this is.
+ *
+ * `schedule` is injected so a test can settle the voice without waiting: the default is the clock.
+ */
+export function settledVoice(
+  say: (sentence: string) => void,
+  options: {
+    readonly delayMs?: number;
+    readonly schedule?: (run: () => void, ms: number) => unknown;
+    readonly cancel?: (handle: unknown) => void;
+  } = {},
+): { announce: (sentence: string) => void; stop: () => void } {
+  const delayMs = options.delayMs ?? 300;
+  const schedule = options.schedule ?? ((run, ms) => setTimeout(run, ms));
+  const cancel = options.cancel ?? ((handle) => clearTimeout(handle as ReturnType<typeof setTimeout>));
+  let pending: unknown = null;
+  return {
+    announce(sentence) {
+      if (pending !== null) cancel(pending);
+      pending = schedule(() => { pending = null; say(sentence); }, delayMs);
+    },
+    stop() {
+      if (pending !== null) cancel(pending);
+      pending = null;
+    },
+  };
+}
+
+/**
  * What a live region says when a chosen value is moved.
  *
  * The `Alt`-plus-arrow way of reordering has no *grabbed* state — nothing is picked up and nothing

@@ -13,6 +13,8 @@ import {
   MDY_WIDGET_CONTRACTS,
   createMultiselectFieldController,
   chipRemoveName,
+  quantityAnnouncement,
+  settledVoice,
   multiselectChipClasses,
   multiselectOverlayAction,
   overlayAnchoringFor,
@@ -304,6 +306,13 @@ export function renderMultiselectField(
   const sayNow = (sentence: string): void => {
     setText(announcement, sentence);
   };
+  /**
+   * The quantity, said once the pressing stops.
+   *
+   * A held arrow steps many times, and a live region read on every step reads out a backlog after the
+   * person has let go. This says the value the gesture ended on.
+   */
+  const quantityVoice = settledVoice(sayNow);
   let saidLast: readonly string[] = [...new Set(
     (controller.state().selectedValues as readonly unknown[]).map((value) => keyFor({ value } as MdySelectOption<unknown>)),
   )];
@@ -416,6 +425,7 @@ export function renderMultiselectField(
       if (binding.intent === "step") {
         event.preventDefault();
         dispatch(event.key === "ArrowUp" ? { type: "increment", optionKey: key } : { type: "decrement", optionKey: key });
+        sayQuantity(key);
         // The chip is rebuilt when its steppers come or go, so focus has to be put back on the one
         // that replaced it — otherwise the second press of a spin goes to the document.
         queueMicrotask(() => chosenEls.get(key)?.focus());
@@ -445,6 +455,7 @@ export function renderMultiselectField(
       button.addEventListener("click", (event) => {
         event.stopPropagation();
         dispatch(delta === 1 ? { type: "increment", optionKey: key } : { type: "decrement", optionKey: key });
+        sayQuantity(key);
       });
       return button;
     };
@@ -649,6 +660,22 @@ export function renderMultiselectField(
   }
 
   /** What a chip is called, for a sentence about it. */
+  /**
+   * What the field now holds of one value, offered to the settling voice.
+   *
+   * Nothing is said for a quantity that reached zero: the value is gone, and the removal has its own
+   * sentence and its own way back.
+   */
+  function sayQuantity(key: string): void {
+    const count = controller.state().counts.get(key) ?? 0;
+    if (count === 0) return;
+    quantityVoice.announce(quantityAnnouncement(
+      labelOfChip(key),
+      count,
+      { settled: messages.quantitySettled, atMinimum: messages.quantityAtMinimum },
+    ));
+  }
+
   function labelOfChip(key: string): string {
     return chosenEls.get(key)?.querySelector(`.${parts.optionLabel.classes[0]}`)?.textContent ?? key;
   }

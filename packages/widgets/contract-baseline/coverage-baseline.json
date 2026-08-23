@@ -1,8 +1,8 @@
 {
   "note": "Public names not yet asserted or not yet shown. The list may only get shorter.",
   "score": {
-    "published": 839,
-    "asserted": 582,
+    "published": 841,
+    "asserted": 584,
     "shown": 81
   },
   "uncovered": [
@@ -4123,6 +4123,12 @@
       "reason": "published and never shown"
     },
     {
+      "name": "quantityAnnouncement",
+      "asserted": true,
+      "shown": false,
+      "reason": "published and never shown"
+    },
+    {
       "name": "reactivityRunsEffects",
       "asserted": false,
       "shown": false,
@@ -4244,6 +4250,12 @@
     },
     {
       "name": "setOverlayOpen",
+      "asserted": true,
+      "shown": false,
+      "reason": "published and never shown"
+    },
+    {
+      "name": "settledVoice",
       "asserted": true,
       "shown": false,
       "reason": "published and never shown"

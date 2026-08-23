@@ -9,6 +9,8 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import {
   chipRemoveName,
+  quantityAnnouncement,
+  settledVoice,
   MDY_CHIP_CLASSES,
   MDY_WIDGET_CONTRACTS,
   multiselectChipClasses,
@@ -60,6 +62,29 @@ test("the multiselect's chip parts are the chip vocabulary, not names of their o
   assert.deepEqual(parts.optionStep.classes, [MDY_CHIP_CLASSES.step]);
   assert.deepEqual(parts.optionWrapper.classes, [MDY_CHIP_CLASSES.wrapper]);
   assert.deepEqual(parts.chip.classes, [MDY_CHIP_CLASSES.block, MDY_CHIP_CLASSES.value]);
+});
+
+test("a quantity says what it settled on, and says when it is at its floor", () => {
+  const words = { settled: "{value}, {count}", atMinimum: "{value}, {count}, minimum" };
+  assert.equal(quantityAnnouncement("Alfa", 3, words), "Alfa, 3");
+  // On arriving at one, not on leaving it: a warning at the moment of deletion is too late, because
+  // the value is already gone and the person is being told rather than asked.
+  assert.equal(quantityAnnouncement("Alfa", 1, words), "Alfa, 1, minimum");
+});
+
+test("a settling voice says the value a gesture ended on, not every value it passed", () => {
+  const said = [];
+  let queued = null;
+  const voice = settledVoice((sentence) => said.push(sentence), {
+    schedule: (run) => { queued = run; return 1; },
+    cancel: () => { queued = null; },
+  });
+  // Eleven presses of a held key: a region read on every one of them reads a backlog out after the
+  // person has let go.
+  for (const count of [12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2]) voice.announce(`Alfa, ${count}`);
+  assert.deepEqual(said, [], "nothing is said while the presses are still arriving");
+  queued();
+  assert.deepEqual(said, ["Alfa, 2"], "one sentence, and it is the value the gesture ended on");
 });
 
 test("the button that takes a chip off is named for the chip", () => {

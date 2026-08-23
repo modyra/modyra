@@ -21,6 +21,8 @@ import {
   multiselectOverlayAction,
   chipRemoveName,
   multiselectChipClasses,
+  quantityAnnouncement,
+  settledVoice,
   multiselectValueTransition,
   shouldCloseMultiselectOverlay,
   createMultiselectFieldController,
@@ -692,6 +694,7 @@ export class MdyMultiselectComponent<TValue = string>
       this.controller()?.dispatch(
         event.key === "ArrowUp" ? { type: "increment", optionKey } : { type: "decrement", optionKey },
       );
+      this.sayQuantity(optionKey);
       this.focusChip(optionKey);
       return;
     }
@@ -970,7 +973,10 @@ export class MdyMultiselectComponent<TValue = string>
       (key) => this.chosen().find((c) => c.key === key)?.label ?? this.labelOf(key as unknown as TValue),
     );
     this.saidLast = now;
-    return said;
+    // A quantity that settled says itself, and a selection change that says nothing leaves it
+    // standing: stepping three of something down to two moves no distinct value, so the sentence
+    // above is empty for exactly the change the person just made.
+    return said === "" ? this.saidQuantity() : said;
   });
 
   /** The words behind one option key, for a value that may no longer be held. */
@@ -990,11 +996,35 @@ export class MdyMultiselectComponent<TValue = string>
 
   protected increment(optValue: TValue): void {
     this.commitMultiselect({ type: "increment", value: optValue });
+    this.sayQuantity(this.optionKey(optValue));
   }
 
   protected decrement(optValue: TValue): void {
     this.commitMultiselect({ type: "decrement", value: optValue });
+    this.sayQuantity(this.optionKey(optValue));
   }
+
+  /**
+   * The quantity, said once the pressing stops.
+   *
+   * A held arrow steps many times, and a region read on every step reads a backlog out after the
+   * person has let go. Nothing is said for a quantity that reached zero: the value is gone, and the
+   * removal has its own sentence and its own way back.
+   */
+  private readonly quantityVoice = settledVoice((sentence) => this.saidQuantity.set(sentence));
+
+  private sayQuantity(key: string): void {
+    const count = this.counts().get(key) ?? 0;
+    if (count === 0) return;
+    this.quantityVoice.announce(quantityAnnouncement(
+      this.labelOfKey(key),
+      count,
+      { settled: this.i18n.quantitySettled, atMinimum: this.i18n.quantityAtMinimum },
+    ));
+  }
+
+  /** The settled quantity sentence, which the live region shows until something replaces it. */
+  protected readonly saidQuantity = signal("");
 
   public resetSelection(): void {
     this.commitMultiselect({ type: "clear" });

@@ -70,6 +70,16 @@ export interface MdyI18nMessages {
   readonly selectionRemoved: string;
   /** What is said when the last choice is taken off and there is nothing left to name. */
   readonly selectionEmpty: string;
+  /** What a quantity says when it settles: the value and how many of it. */
+  readonly quantitySettled: string;
+  /**
+   * What it says on arriving at the smallest quantity it can hold.
+   *
+   * Said on **reaching** one, not on leaving it. A warning at the moment of deletion is too late —
+   * the value is already gone and the person is being told rather than asked; said on arrival, the
+   * next step down is a known act rather than a surprise.
+   */
+  readonly quantityAtMinimum: string;
   /**
    * What a live region says when a chosen value is moved.
    *
@@ -218,6 +228,8 @@ export const MDY_I18N_MESSAGES_DEFAULT: MdyI18nMessages = Object.freeze({
   chipRemoveLabel: "Remove",
   chipMoveEarlierLabel: "Move earlier",
   chipMoveLaterLabel: "Move later",
+  quantitySettled: "{value}, {count}",
+  quantityAtMinimum: "{value}, {count}, minimum",
   selectionAdded: "{value} added, {count} selected",
   selectionRemoved: "{value} removed, {count} selected",
   selectionEmpty: "Nothing selected",
@@ -304,6 +316,8 @@ export const MDY_I18N_MESSAGES_IT: MdyI18nMessages = Object.freeze({
   chipRemoveLabel: "Rimuovi",
   chipMoveEarlierLabel: "Sposta prima",
   chipMoveLaterLabel: "Sposta dopo",
+  quantitySettled: "{value}, {count}",
+  quantityAtMinimum: "{value}, {count}, minimo",
   selectionAdded: "{value} aggiunto, {count} selezionati",
   selectionRemoved: "{value} rimosso, {count} selezionati",
   selectionEmpty: "Nessuna selezione",
@@ -383,6 +397,8 @@ export const MDY_I18N_MESSAGES_DE: MdyI18nMessages = Object.freeze({
   chipRemoveLabel: "Entfernen",
   chipMoveEarlierLabel: "Nach vorne",
   chipMoveLaterLabel: "Nach hinten",
+  quantitySettled: "{value}, {count}",
+  quantityAtMinimum: "{value}, {count}, Minimum",
   selectionAdded: "{value} hinzugefügt, {count} ausgewählt",
   selectionRemoved: "{value} entfernt, {count} ausgewählt",
   selectionEmpty: "Nichts ausgewählt",
@@ -462,6 +478,8 @@ export const MDY_I18N_MESSAGES_FR: MdyI18nMessages = Object.freeze({
   chipRemoveLabel: "Retirer",
   chipMoveEarlierLabel: "Déplacer avant",
   chipMoveLaterLabel: "Déplacer après",
+  quantitySettled: "{value}, {count}",
+  quantityAtMinimum: "{value}, {count}, minimum",
   selectionAdded: "{value} ajouté, {count} sélectionnés",
   selectionRemoved: "{value} retiré, {count} sélectionnés",
   selectionEmpty: "Aucune sélection",
@@ -541,6 +559,8 @@ export const MDY_I18N_MESSAGES_ES: MdyI18nMessages = Object.freeze({
   chipRemoveLabel: "Quitar",
   chipMoveEarlierLabel: "Mover antes",
   chipMoveLaterLabel: "Mover después",
+  quantitySettled: "{value}, {count}",
+  quantityAtMinimum: "{value}, {count}, mínimo",
   selectionAdded: "{value} añadido, {count} seleccionados",
   selectionRemoved: "{value} quitado, {count} seleccionados",
   selectionEmpty: "Nada seleccionado",

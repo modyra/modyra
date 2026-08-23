@@ -23,6 +23,8 @@ import {
   MDY_CHIP_CLASSES,
   chipRemoveName,
   multiselectChipClasses,
+  quantityAnnouncement,
+  settledVoice,
   optionsWithUnrecognizedValues,
   type MdyMultiselectFieldController,
   type MdyPartContract,
@@ -278,10 +280,31 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
 
   private increment(_handle: MdyFieldHandle<readonly unknown[]>, value: unknown): void {
     this.fieldController?.dispatch({ type: "increment", optionKey: String(value) });
+    this.sayQuantity(String(value));
   }
 
   private decrement(_handle: MdyFieldHandle<readonly unknown[]>, value: unknown): void {
     this.fieldController?.dispatch({ type: "decrement", optionKey: String(value) });
+    this.sayQuantity(String(value));
+  }
+
+  /**
+   * The quantity, said once the pressing stops.
+   *
+   * A held arrow steps many times, and a region read on every step reads a backlog out after the
+   * person has let go. Nothing is said for a quantity that reached zero: the value is gone, and the
+   * removal has its own sentence and its own way back.
+   */
+  private readonly quantityVoice = settledVoice((sentence) => { this._said = sentence; this.requestUpdate(); });
+
+  private sayQuantity(key: string): void {
+    const count = this.fieldController?.state().counts.get(key) ?? 0;
+    if (count === 0) return;
+    this.quantityVoice.announce(quantityAnnouncement(
+      this.labelFor(key),
+      count,
+      { settled: this.messages.quantitySettled, atMinimum: this.messages.quantityAtMinimum },
+    ));
   }
 
   /**
@@ -610,6 +633,14 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
                 aria-label=${this.messages.clearSelection}
                 @click=${() => this.fieldController?.dispatch({ type: "clear" })}
               >${mdyIcon("CLOSE", "")}</button>`}
+          <!-- Said rather than shown: a choice lands and the strip is the only confirmation, which
+               is the one a person using a screen reader does not get. -->
+          <div
+            class="${this.partClass("announcement")}"
+            role="status"
+            aria-live="polite"
+            aria-atomic="true"
+          >${this.announcementText(handle)}</div>
           <!-- The full name, for a chip the strip had to cut. Shown on hover *and* on focus: WCAG
                1.4.13 asks for both, and the title attribute is neither — it never appears for a keyboard or a
                touch user, who are exactly the people who cannot widen the chip. One element for the
@@ -621,14 +652,6 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
             style="inset-inline-start: ${this._chipTipAt}px"
             ?hidden=${this._namedChip === null}
           >${this._namedChip === null ? nothing : this.labelFor(this._namedChip)}</span>
-          <!-- Said rather than shown: a choice lands and the strip is the only confirmation, which
-               is the one a person using a screen reader does not get. -->
-          <div
-            class="${this.partClass("announcement")}"
-            role="status"
-            aria-live="polite"
-            aria-atomic="true"
-          >${this.announcementText(handle)}</div>
         </div>
         <!-- Drawn only when something was given to it. An empty slot is not an empty box: the
              container still takes its width, and it takes it at the field's trailing edge — so every
@@ -734,6 +757,7 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
       this.fieldController?.dispatch(
         event.key === "ArrowUp" ? { type: "increment", optionKey } : { type: "decrement", optionKey },
       );
+      this.sayQuantity(optionKey);
       void this.updateComplete.then(() => this.focusChip(optionKey));
       return;
     }

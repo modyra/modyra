@@ -433,7 +433,7 @@
     "protected popupClass: string",
     "protected popupId: _angular_core.Signal<string>",
     "protected selectColor(0) color: string,-> returns: void",
-    "protected widgetContract: _modyra_widgets.MdyWidgetDefinition<\"toggle\" | \"errorItem\" | \"errors\" | \"inlineError\" | \"inputWrapper\" | \"label\" | \"popup\" | \"requiredMarker\" | \"root\" | \"supportingText\" | \"control\" | \"hexInput\" | \"nativePicker\" | \"presets\" | \"preview\" | \"swatch\">",
+    "protected widgetContract: _modyra_widgets.MdyWidgetDefinition<\"toggle\" | \"errorItem\" | \"errors\" | \"inlineError\" | \"inputWrapper\" | \"label\" | \"popup\" | \"requiredMarker\" | \"root\" | \"supportingText\" | \"presets\" | \"control\" | \"hexInput\" | \"nativePicker\" | \"preview\" | \"swatch\">",
     "protected widgetHasRootClass: boolean",
     "protected widgetKind: \"colors\"",
     "ɵcmp: _angular_core.ɵɵComponentDeclaration<MdyColorsComponent, \"mdy-control-colors\", never, { \"placeholder\": { \"alias\": \"placeholder\"; \"required\": false; \"isSignal\": true; }; \"presets\": { \"alias\": \"presets\"; \"required\": false; \"isSignal\": true; }; }, {}, never, never, true, never>",
@@ -1637,6 +1637,8 @@
     "noResults: string",
     "overlayClosed: string",
     "overlayOpened: string",
+    "quantityAtMinimum: string",
+    "quantitySettled: string",
     "searchOptionsLabel: string",
     "searchPlaceholder: string",
     "selectColorPrefix: string",
@@ -1833,6 +1835,7 @@
     "protected removeChip(0) optionKey: string,(1) value: TValue,(2) direction?: \"forward\" | \"backward\",-> returns: void",
     "protected removeName(0) label: string,-> returns: string",
     "protected revealChipName(0) event: Event,(1) key: string,-> returns: void",
+    "protected saidQuantity: _angular_core.WritableSignal<string>",
     "protected searchResults: _angular_core.Signal<readonly _modyra_core.MdySelectOption<TValue>[]>",
     "protected selectedSet: _angular_core.Signal<ReadonlySet<string>>",
     "protected startChipDrag(0) event: PointerEvent,(1) optionKey: string,-> returns: void",
@@ -4313,6 +4316,13 @@
     "(1) options?: MdyLocaleOptions",
     "-> returns: Provider[]"
   ],
+  "quantityAnnouncement": [
+    "(0) label: string",
+    "(1) count: number",
+    "(2) words: { readonly settled: string; readonly atMinimum: string; }",
+    "(3) minimum?: number",
+    "-> returns: string"
+  ],
   "reactivityRunsEffects": [
     "(0) rx: Pick<MdyReactivity, \"capabilities\">",
     "-> returns: boolean"
@@ -4399,6 +4409,11 @@
     "(0) beat: MdyPaintBeat",
     "(1) hostFlush?: () => Promise<unknown> | unknown",
     "-> returns: () => Promise<void>"
+  ],
+  "settledVoice": [
+    "(0) say: (sentence: string) => void",
+    "(1) options?: { readonly delayMs?: number; readonly schedule?: (run: () => void, ms: number) => unknown; readonly cancel?: (handle: unknown) => void; }",
+    "-> returns: { announce: (sentence: string) => void; stop: () => void; }"
   ],
   "shouldCloseMultiselectOverlay": [
     "(0) mode: MdyMultiselectMode",
