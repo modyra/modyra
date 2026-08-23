@@ -2716,7 +2716,8 @@
           "role": null,
           "classes": [
             "mdy-datepicker__input",
-            "mdy-daterange__input"
+            "mdy-daterange__input",
+            "mdy-daterange__input--start"
           ],
           "states": []
         },
@@ -2739,7 +2740,8 @@
           "role": null,
           "classes": [
             "mdy-datepicker__input",
-            "mdy-daterange__input"
+            "mdy-daterange__input",
+            "mdy-daterange__input--end"
           ],
           "states": []
         },

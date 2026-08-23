@@ -3778,7 +3778,10 @@
     }
 
     /* First input: round left, flat right */
-    .mdy-daterange__group .mdy-daterange__input:first-of-type {
+    /* Named, not counted. `:first-of-type` counts <input> elements, so a renderer that puts anything
+       else of that tag in the group — a hidden native, a sizer — moves the rounding onto the wrong
+       end. The two ends are two declared parts and now carry a class each. */
+    .mdy-daterange__group .mdy-daterange__input--start {
         border-right: none;
         border-radius: var(--mdy-input-border-radius) 0 0 var(--mdy-input-border-radius);
         box-shadow: none;
@@ -3786,7 +3789,7 @@
     }
 
     /* Second input: flat both sides */
-    .mdy-daterange__group .mdy-daterange__input:nth-of-type(2) {
+    .mdy-daterange__group .mdy-daterange__input--end {
         border-left: none;
         border-right: none;
         border-radius: 0;

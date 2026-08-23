@@ -623,7 +623,7 @@ export class MdyDaterangeFieldElement extends MdyFieldElement<MdyDateRange | nul
             <input
               id=${this.startInputId}
               type="text"
-              class="mdy-datepicker__input mdy-daterange__input"
+              class="${partClasses("daterange", "startControl").join(" ")}"
               placeholder=${this.startPlaceholder}
               .value=${range.start ?? ""}
               ?disabled=${handle.disabled()}
@@ -651,7 +651,7 @@ export class MdyDaterangeFieldElement extends MdyFieldElement<MdyDateRange | nul
           >
             <input
               type="text"
-              class="mdy-datepicker__input mdy-daterange__input"
+              class="${partClasses("daterange", "endControl").join(" ")}"
               placeholder=${this.endPlaceholder}
               .value=${range.end ?? ""}
               ?disabled=${handle.disabled()}

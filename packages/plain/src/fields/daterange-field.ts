@@ -72,7 +72,7 @@ export function renderDaterangeField(
 
   const shell = buildFieldShell(f.label, "daterange", {}, f.ariaLabel, f.name, f.supportingText);
   const wrapper = el("div", "mdy-datepicker mdy-plain-daterange");
-  const startInput = el("input", "mdy-datepicker__input mdy-daterange__input") as HTMLInputElement;
+  const startInput = el("input", definition.parts.startControl.classes.join(" ")) as HTMLInputElement;
   startInput.type = "text";
   startInput.autocomplete = "off";
   startInput.setAttribute("aria-label", `${f.label ?? "Range"} — start`);
@@ -80,7 +80,7 @@ export function renderDaterangeField(
   const separator = el("span", definition.parts.separator.classes.join(" "));
   separator.setAttribute("aria-hidden", "true");
   setText(separator, "–");
-  const endInput = el("input", "mdy-datepicker__input mdy-daterange__input") as HTMLInputElement;
+  const endInput = el("input", definition.parts.endControl.classes.join(" ")) as HTMLInputElement;
   endInput.type = "text";
   endInput.autocomplete = "off";
   endInput.setAttribute("aria-label", `${f.label ?? "Range"} — end`);

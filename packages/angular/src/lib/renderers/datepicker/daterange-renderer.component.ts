@@ -71,7 +71,7 @@ import { inputText, isoDateText } from "../renderer-projection";
             #startInput
             type="text"
             [id]="fieldId + '-start'"
-            class="mdy-datepicker__input mdy-daterange__input"
+            class="mdy-datepicker__input mdy-daterange__input mdy-daterange__input--start"
             [value]="displayStart()"
             [disabled]="isDisabled()"
             [readonly]="isReadonly()"
@@ -97,7 +97,7 @@ import { inputText, isoDateText } from "../renderer-projection";
             #endInput
             type="text"
             [id]="fieldId + '-end'"
-            class="mdy-datepicker__input mdy-daterange__input"
+            class="mdy-datepicker__input mdy-daterange__input mdy-daterange__input--end"
             [value]="displayEnd()"
             [disabled]="isDisabled()"
             [readonly]="isReadonly()"
