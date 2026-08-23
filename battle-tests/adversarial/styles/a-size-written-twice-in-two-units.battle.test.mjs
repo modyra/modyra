@@ -60,7 +60,7 @@ battle(
     title: "one size is not written in two units",
     environments: ["node"],
   },
-  async () => {
+  async (ctx) => {
     const css = readFileSync(SHEET, "utf8");
 
     /** Every length this sheet states for a property that should follow the reader's text. */
@@ -80,6 +80,14 @@ battle(
         const into = unit === "rem" ? inRem : inPx;
         into.set(pixels, (into.get(pixels) ?? 0) + 1);
       }
+    }
+
+    // What this battle did is read both populations, which is true of a clean sheet as much as of a
+    // mixed one. Recording it here rather than beside each finding is what lets the gate report
+    // "scanned, found nothing" instead of failing as an empty battle once the mixture is gone.
+    for (const [unit, sizes] of [["rem", inRem], ["px", inPx]]) {
+      const stated = [...sizes.values()].reduce((sum, times) => sum + times, 0);
+      ctx.log.note("sizes read in one unit", { unit, distinct: sizes.size, stated });
     }
 
     // A sheet stating nothing in either unit would report no mixture for the wrong reason.

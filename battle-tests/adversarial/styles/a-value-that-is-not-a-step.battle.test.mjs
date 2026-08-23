@@ -52,7 +52,7 @@ battle(
     title: "a token below the scale holds a step, not a number",
     environments: ["node"],
   },
-  async () => {
+  async (ctx) => {
     // Without a scale there is no tier one, and every property would read as a leak from a system
     // that does not exist yet. Say that rather than report 206 findings.
     expectEqual(existsSync(SCALE), true, {
@@ -70,10 +70,13 @@ battle(
     });
 
     const leaks = [];
+    /** Properties below the scale that were read and judged, leak or not. */
+    let examined = 0;
     for (const declaration of readFileSync(SHEET, "utf8").matchAll(/(--mdy-[a-z0-9-]+)\s*:\s*([^;]+);/g)) {
       const [, name, raw] = declaration;
       // A step is allowed to be a number. That is what a step is.
       if (steps.has(name)) continue;
+      examined += 1;
       const value = raw.trim();
       if (value.startsWith("var(")) continue;
       if (NOT_A_MEASUREMENT.test(value)) continue;
@@ -82,6 +85,12 @@ battle(
       if (!/(?:^|[\s(])-?[0-9]*\.?[0-9]+(rem|px|em)\b/.test(value)) continue;
       leaks.push(`${name}: ${value}`);
     }
+
+    // The scale that was measured against and the population measured, recorded as the action —
+    // both are facts about the sweep rather than about its findings, so this gate can still say what
+    // it did on the day the last leak is fixed.
+    ctx.log.note("the scale this sheet is measured against", { steps: steps.size });
+    ctx.log.note("properties below the scale, read and judged", { examined, leaks: leaks.length });
 
     expectEqual(leaks, [], {
       claimIds: ["UI-005"],

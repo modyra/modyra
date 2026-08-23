@@ -53,7 +53,7 @@ battle(
     title: "a positional rule counts the set it is about",
     environments: ["node"],
   },
-  async () => {
+  async (ctx) => {
     // Comments first: a selector is whatever precedes a brace, and a comment sitting above a rule
     // arrives glued to it — which is how the first run of this battle reported `flat right */` as
     // part of a selector.
@@ -72,6 +72,11 @@ battle(
         wrong.add(selector.replace(/\s+/g, " ").slice(0, 100));
       }
     }
+
+    // The action is the sweep across every selector the sheet declares, which is what happened
+    // whether or not one of them counts the wrong set. Recorded here so a sheet with no positional
+    // misuse left reports a scan rather than an empty battle.
+    ctx.log.note("selectors swept for a positional rule", { selectors });
 
     // A sheet with no selectors would report no misuse for the wrong reason.
     expectEqual(selectors > 200, true, {

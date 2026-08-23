@@ -57,9 +57,11 @@ battle(
     title: "one kind of measurement is stated in one unit",
     environments: ["node"],
   },
-  async () => {
+  async (ctx) => {
     const css = readFileSync(SHEET, "utf8");
     const wrong = new Map();
+    /** How many lengths were read under each unit's rule, whether or not they broke it. */
+    const examined = new Map(Object.keys(UNIT_FOR).map((unit) => [unit, 0]));
     let checked = 0;
 
     // Rule bodies, so a declaration can be read together with the others it sits beside.
@@ -80,6 +82,7 @@ battle(
             // Zero is the same length in every unit and states nothing.
             if (Number(amount) === 0) continue;
             checked += 1;
+            examined.set(unit, examined.get(unit) + 1);
             if (written === unit) continue;
             if (hidden && Math.abs(Number(amount)) === 1) continue;
             const key = `${property}: ${amount}${written} (should be ${unit})`;
@@ -87,6 +90,14 @@ battle(
           }
         }
       }
+    }
+
+    // The scan is recorded, not the findings. A gate that logs only what it catches has nothing to
+    // show on a clean sheet, and the harness fails it for concluding nothing — so it would go red at
+    // the exact moment the migration it guards finished. What it did is read every length stated for
+    // a property whose unit is fixed; that is the action, and it happens whether or not any is wrong.
+    for (const [unit, count] of examined) {
+      ctx.log.note("lengths read under a fixed unit", { unit, examined: count });
     }
 
     // A sheet stating no lengths at all would report no violation for the wrong reason.
