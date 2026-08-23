@@ -24,6 +24,10 @@
    fixed hex. Importing it is what lets a single-file theme derive. */
 @import './modyra-base.css';
 
+/* Tier 1: the steps every length above this line is written in terms of. Imported before anything
+   that could reference a step, and the only file in the system where a length is a number. */
+@import './modyra-scale.css';
+
 /* ═══════════════════════════════════════════════════════════════════════════
  * LAYER: mdy.tokens
  * CSS custom properties — bridge from --mdy-sys-* / comp tokens

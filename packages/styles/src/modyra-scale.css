@@ -1,0 +1,138 @@
+/*
+ * modyra-scale.css — tier 1: the steps every other value is written in terms of.
+ *
+ * This file is the only place in the system where a length is a number. Everything above it —
+ * semantic tokens, component tokens, declarations — references a step from here. A value with no
+ * step is not written as a literal; the step is added, which is a reviewed decision rather than a
+ * number nobody sees.
+ *
+ * **Why a scale at all.** Measured before this file existed: 206 custom properties, every one of
+ * them per-component, no shared step of any kind — and 167 sizing declarations written as literals
+ * against 205 written through a variable. Eleven distinct `gap` values, ten `font-size`, sixteen
+ * `padding`. The scale was already latent: `0.875rem` appeared seven times and is a type step,
+ * `0.5rem` six times and is a space step, `16px` and `1rem` are one step written in two units. This
+ * is not a system imposed on the sheet; it is the one the sheet was reaching for and could not hold.
+ *
+ * **One unit per kind of measurement.** Space, size, control and radius are `rem`; stroke and focus
+ * are `px`; breakpoints are `em`. The rule makes `gap: 16px` a violation of `gap: 1rem` rather than
+ * a variant of it — mechanically detectable, with no intent to compare. `px` for stroke and focus is
+ * deliberate: a 1px border scaled to 150% text is a blurred half-pixel, and a ring that scales can
+ * outgrow the control it surrounds.
+ *
+ * **What a theme keeps.** A theme still says what a component is —
+ * `[data-theme="compact"] { --mdy-chip-height: var(--mdy-control-1); }` — and may replace this whole
+ * file to shift every step at once, which is one coherent gesture instead of 206. What it gives up
+ * is inventing a value *between* steps, which is the freedom that produced eleven gaps.
+ *
+ * Each scale states its basis. A list of numbers gets edited by whoever needs a different number; a
+ * basis makes the next person either satisfy it or argue with it, and both are better than a quiet
+ * extra step.
+ */
+
+@layer mdy.tokens {
+
+    :root {
+        /* ── space ───────────────────────────────────────────────────────────────
+           Padding, gap, margin and inset, from one scale. They are not split, because two scales
+           for one kind of distance drift, and a component's internal gap stops relating to its own
+           padding.
+
+           Linear in the base while adjacent steps are still distinguishable, then ×1.5. The base is
+           0.25rem because at a 16px root it is 4px, and 4 divides evenly into every control height
+           below — which makes optical centring arithmetic rather than tuning. */
+        --mdy-space-0: 0;
+        --mdy-space-1: 0.25rem;
+        --mdy-space-2: 0.5rem;
+        --mdy-space-3: 0.75rem;
+        --mdy-space-4: 1rem;
+        --mdy-space-5: 1.5rem;
+        --mdy-space-6: 2rem;
+        --mdy-space-7: 3rem;
+        --mdy-space-8: 4rem;
+
+        /* ── size ────────────────────────────────────────────────────────────────
+           Font size. Base 1rem, ratio 1.125, rounded to 0.0625rem so every step is a whole pixel at
+           the default root. 1.125 rather than 1.2 because dense form UI needs several usable sizes
+           inside a narrow band.
+
+           0.75rem is a hard floor, not a smallest-so-far: below 12px text stops being readable for a
+           large population, and page zoom does not recover it for everyone. A component asking for
+           less is asking for something this scale will not express. */
+        --mdy-size-1: 0.75rem;
+        --mdy-size-2: 0.875rem;
+        --mdy-size-3: 1rem;
+        --mdy-size-4: 1.125rem;
+        --mdy-size-5: 1.25rem;
+        --mdy-size-6: 1.5rem;
+
+        /* ── leading ─────────────────────────────────────────────────────────────
+           Line height, unitless so it multiplies whatever size it lands on.
+
+           1.5 is the **body default**, not the top of the scale, and that is a conformance point
+           rather than taste: a reader may set line height to 1.5 and the content must survive it. A
+           scale whose maximum is 1.5 has never been tested in the state those readers browse in. */
+        --mdy-leading-1: 1.25;
+        --mdy-leading-2: 1.5;
+        --mdy-leading-3: 1.75;
+
+        /* ── radius ──────────────────────────────────────────────────────────────
+           Corner radius. `full` is a sentinel with one spelling: the sheet has used both `50%` and
+           `9999px` for the same intent, which reads as two decisions and is one. */
+        --mdy-radius-0: 0;
+        --mdy-radius-1: 0.25rem;
+        --mdy-radius-2: 0.5rem;
+        --mdy-radius-3: 0.75rem;
+        --mdy-radius-full: 9999px;
+
+        /* ── stroke ──────────────────────────────────────────────────────────────
+           Border and divider width, in px on purpose: a hairline is a device concept, and a border
+           that scales with text becomes a blurred half-pixel at 150%. */
+        --mdy-stroke-1: 1px;
+        --mdy-stroke-2: 2px;
+
+        /* ── control ─────────────────────────────────────────────────────────────
+           The height of anything a person operates. This is the scale most systems omit and the one
+           whose absence is visible: a chip of one arbitrary height inside an input of another cannot
+           share a centre line except by luck.
+
+           Each step is a whole number of space bases — 7, 9 and 11 × 4px — so a control and the
+           space around it are measured in the same unit.
+
+           The floor is not a style choice. **28px is the smallest height that can hold a conformant
+           24px target**, and 36px holds one with 6px of clear zone on each side, so the minimum
+           target size is satisfied by construction rather than by measurement. 44px is the enhanced
+           target size. A component asking to be shorter than `control-1` is asking to be
+           non-conformant, and the scale says so instead of a reviewer having to. */
+        --mdy-control-1: 1.75rem;
+        --mdy-control-2: 2.25rem;
+        --mdy-control-3: 2.75rem;
+
+        /* ── focus ───────────────────────────────────────────────────────────────
+           One ring, everywhere. A focus indicator that varies by component is something a person has
+           to learn per control instead of once. The offset keeps the ring off the control's own
+           border, so its contrast is measured against the background rather than against a line that
+           may be any colour. */
+        --mdy-focus-width: 2px;
+        --mdy-focus-offset: 2px;
+
+        /* ── duration ────────────────────────────────────────────────────────────
+           Transition time. Two steps: one for a state change a person is looking at, one for a thing
+           that moves. */
+        --mdy-duration-1: 120ms;
+        --mdy-duration-2: 200ms;
+    }
+
+    /*
+     * Reduced motion, defined once.
+     *
+     * A property of the system rather than something every component remembers: thirty components
+     * each writing their own media query is thirty chances for one to be forgotten, and the one
+     * forgotten is the one that moves.
+     */
+    @media (prefers-reduced-motion: reduce) {
+        :root {
+            --mdy-duration-1: 0ms;
+            --mdy-duration-2: 0ms;
+        }
+    }
+}
