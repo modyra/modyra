@@ -2321,7 +2321,12 @@
         mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M15 18l-6-6 6-6' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
     }
 
-    .mdy-chip__move:last-of-type::before {
+    /* The second of the two, whichever tag position it lands in. `:last-of-type` counts buttons, and
+       the last button in a chip is the one that removes it — so the rule for the later arrow never
+       matched and both arrows pointed the same way. A person saw one control twice; the names were
+       right, so a reader could tell them apart and an eye could not. The general sibling combinator
+       asks the question the rule means: is there a move control before this one. */
+    .mdy-chip__move ~ .mdy-chip__move::before {
         -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M9 18l6-6-6-6' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
         mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M9 18l6-6-6-6' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
     }

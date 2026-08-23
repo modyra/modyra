@@ -20,6 +20,7 @@ import {
   MDY_WIDGET_CONTRACTS,
   multiselectOverlayAction,
   chipRemoveName,
+  defaultWidgetIdFactory,
   multiselectChipClasses,
   quantityAnnouncement,
   settledVoice,
@@ -823,6 +824,20 @@ export class MdyMultiselectComponent<TValue = string>
   }
 
   /** How many are chosen, for the field's own description. */
+  /**
+   * This kind describes itself by more than its supporting text.
+   *
+   * The base withholds the description's id unless a consumer gave the field words, and a multiselect
+   * writes its own — how many are chosen — into the same element. So the sentence was on the page and
+   * nothing named it: a person who cannot see the chips was told the field's name and nothing about
+   * what it holds, while the text saying so sat one element away.
+   */
+  protected override descriptionId(fieldId: string): string | null {
+    if (this.errorsRendered()) return null;
+    return super.descriptionId(fieldId)
+      ?? (this.describedState() === "" ? null : defaultWidgetIdFactory.part(fieldId, "description"));
+  }
+
   protected readonly describedState = computed(() => {
     const count = this.chosen().length;
     return count === 0 ? "" : this.i18n.selectionCount.replace("{count}", String(count));

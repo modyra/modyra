@@ -24,6 +24,13 @@
  * file to shift every step at once, which is one coherent gesture instead of 206. What it gives up
  * is inventing a value *between* steps, which is the freedom that produced eleven gaps.
  *
+ * **What a tier prevents, in one example from this sheet.** A value chip's height was
+ * `calc(var(--mdy-chip-height) - 0.5rem)` — the filter chip's 32px less half a rem, which is 24, and
+ * below the floor at which a control can hold a conformant target. Nobody chose 24. Somebody chose
+ * *a bit shorter than a filter chip*, and 24 fell out: an arithmetic nobody can argue with because
+ * nothing states what it is for. A step has to be named before it can be used, and naming it is where
+ * the argument happens.
+ *
  * Each scale states its basis. A list of numbers gets edited by whoever needs a different number; a
  * basis makes the next person either satisfy it or argue with it, and both are better than a quiet
  * extra step.
