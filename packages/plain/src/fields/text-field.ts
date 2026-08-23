@@ -208,7 +208,7 @@ export function renderTextField(
     }
     applyPart(shell.description, view.parts.description);
     applyPart(shell.errorList, view.parts.error);
-    setErrors(shell.errorList, visibleErrorsOf(handle).map((e) => e.message));
+    setErrors(shell.errorList, visibleErrorsOf(handle, f.kind).map((e) => e.message));
     // The themes style these state classes, the contract's own base element toggles.
     shell.syncState({
       touched: handle.touched(),

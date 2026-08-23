@@ -132,12 +132,20 @@ export function visibleErrorsOf(
     value?(): unknown;
     dirty?(): boolean;
   },
+  /**
+   * The kind, where the caller knows it, so that a value which *is* this kind's empty is not read as
+   * one that arrived from somewhere. Without it a slider at 0 counts as holding something nobody
+   * entered, and the field states a broken bound before anybody has been near it — while the
+   * projection beside it, which does pass the kind, says nothing is being shown. Two answers to one
+   * question, and the control ends up naming no error while the page displays one.
+   */
+  kind?: MdyValueKind,
 ): ReadonlyArray<MdyFieldError> {
   const flags = {
     disabled: handle.disabled(),
     touched: handle.touched(),
     holdsUnedited: handle.value !== undefined && handle.dirty !== undefined
-      ? holdsUneditedValue({ value: handle.value(), dirty: handle.dirty() })
+      ? holdsUneditedValue({ value: handle.value(), dirty: handle.dirty() }, kind)
       : false,
   };
   return errorsVisible(flags, handle.errors()) ? shownErrors(flags, handle.errors()) : [];
