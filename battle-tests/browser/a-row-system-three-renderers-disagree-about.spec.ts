@@ -28,9 +28,19 @@
  * The heights are asserted too, but only for the kinds all three agree are in. `textarea` is
  * legitimately taller than one line; what it may not be is 64 in one renderer and 88 in two.
  *
- * **This does not say which answer is right.** A radio group has a strong case for being outside a
- * text shell and a strong case for being inside it, and choosing is a contract decision. What it
- * refuses is three renderers choosing differently.
+ * **This does not say which answer is right, and it no longer has to.** A radio group has a strong
+ * case for being outside a text shell and a strong case for being inside it — and the answer is not a
+ * list of kinds anybody maintains. **A kind is in the row system when its height comes from the
+ * control scale's default step.** Membership stops being a judgement about a kind and becomes a
+ * consequence of where its height is stated, which is checkable and which nobody has to remember.
+ *
+ * That is why this file is pinned rather than repaired. The three renderers disagree today because
+ * each states its own heights; they stop disagreeing when the heights come from one place, and this
+ * becomes green as a consequence of the scale migration rather than of anyone editing a list.
+ * `an-alphabet-larger-than-its-vocabulary` reporting three distinct control heights is the signal
+ * that the question has resolved itself — before that, deciding here would be deciding twice.
+ *
+ * What it refuses in the meantime is unchanged: three renderers choosing differently.
  *
  * Claims under attack: ADP-001, UI-011.
  */

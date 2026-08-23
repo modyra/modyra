@@ -32,8 +32,15 @@
  * and **arriving at the floor says that too**. A control that announced only its steps would still
  * let someone walk off the edge without warning.
  *
- * Whether stepping to zero *should* remove at all is a product question and this file does not decide
- * it. Under every answer to it, a step that changes a value silently is a defect.
+ * **Stepping to zero removes the value, and that is decided.** The counter has no floor above zero:
+ * reaching zero is reaching the absence of the thing, and a counter that refused to say so would be
+ * hiding the state it exists to show. So this file does not ask for a floor, and a renderer that added
+ * one would be answering a question nobody asked.
+ *
+ * What the decision rests on is the warning, and the warning is the reason it is safe: arriving at one
+ * announces that it is the minimum, so the destructive step is the one the person has already been
+ * told about. Take that announcement away and the decision stops holding — which is why the assertion
+ * below is on the announcement rather than on the value.
  *
  * Claims under attack: A11Y-004, UI-007.
  */
