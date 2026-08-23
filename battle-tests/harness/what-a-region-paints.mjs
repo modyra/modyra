@@ -143,6 +143,18 @@ function luminance(r, g, b) {
  * Returns `null` when nothing is painted at all — no mark means no ratio, and reporting 1:1 would
  * read as a contrast failure rather than as an absence.
  *
+ * **Two floors, because two criteria apply and they do not reach the same things.** A mark a person
+ * *reads* — a minus, a plus, a cross, a caret, a tick, anything whose shape carries the meaning — is
+ * text under the reading this repository has taken, and its floor is **4.5:1**. Structural non-text —
+ * a border, a divider, a slider's track, a chip's outline, a focus ring — is not text under any
+ * reading, and its floor is **3:1**.
+ *
+ * The first of those resolves a genuinely split practice rather than restating a settled one:
+ * practitioners differ on whether an icon-glyph is assessed as the text it is made of or as the
+ * graphic it functions as. This is the stricter side. Applying it to the second group would be wrong,
+ * and for a focus ring in a forced palette it would also be unenforceable — the system picks both
+ * colours there and the ratio is not the author's to set.
+ *
  * **Unvalidated on thin strokes, and do not file from it until it is.** Its first run gave a minus
  * sign 2.98:1 and a plus sign 6.78:1 in the same control, in the same colour — a difference that is
  * far more likely to be the thinner stroke having no fully-opaque pixel than two different inks. On a
