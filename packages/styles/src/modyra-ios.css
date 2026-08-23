@@ -301,7 +301,6 @@
         --mdy-chip-selected-bg: var(--mdy-ios-blue);
         --mdy-chip-selected-color: var(--mdy-ios-on-blue);
         --mdy-chip-selected-border: 1px solid transparent;
-        --mdy-chip-max-width: 11rem;
         --mdy-chip-transition: var(--mdy-sys-motion-duration-base, 0.15s) var(--mdy-sys-motion-easing-standard, cubic-bezier(0.4, 0, 0.2, 1));
         --mdy-chip-hover-bg: var(--mdy-ios-fill-strong);
         --mdy-chip-hover-border: transparent;

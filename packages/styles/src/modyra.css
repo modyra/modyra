@@ -267,7 +267,6 @@
            exactly 0 — white over white. A hover state that only exists in one of the two states the
            control has is the kind of thing a token stops you from writing. */
         --mdy-chip-btn-hover-opacity: 0.12;
-        --mdy-chip-max-width: 11rem;
         --mdy-chip-transition: var(--mdy-sys-motion-duration-base) var(--mdy-sys-motion-easing-standard);
 
         /* ── Slider ─────────────────────────────────────────────────────────────── */
@@ -1899,7 +1898,11 @@
     .mdy-multiselect__chips .mdy-chip {
         flex: 0 0 auto;
         min-width: 4rem;
-        max-width: 12rem;
+        /* The ceiling is the strip, not a constant. A fixed one cut a label while three quarters of
+           the field was unused, and a label cut to a few characters renders two different values
+           identically — the strip stops being a record of what was chosen. Bounded by the strip, a
+           chip is shortened only when one value really is wider than the room there is. */
+        max-width: 100%;
     }
 
     .mdy-multiselect__chips::-webkit-scrollbar {
@@ -2128,7 +2131,11 @@
            a step: the chip in the field moved onto the scale and the chip in the popup did not, so
            one control was two heights depending on where a person was looking at it. */
         height: var(--mdy-control-1);
-        max-width: var(--mdy-chip-max-width);
+        /* As wide as the strip it sits in, and no wider. A constant cap cut a label while the field
+           around it was three quarters empty, and at a few characters two different values render
+           identically — the strip stops saying which one was chosen. Bounded by its container, a
+           chip is shortened only when there is genuinely no room, and the strip scrolls before that. */
+        max-width: 100%;
         padding: var(--mdy-chip-padding);
         font-size: var(--mdy-chip-font-size);
         font-family: inherit;

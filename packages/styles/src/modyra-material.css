@@ -183,7 +183,6 @@
         --mdy-multiselect-padding: 0.25rem 1rem;
         --mdy-multiselect-max-height: 5.5rem;
         --mdy-chip-color: var(--mdy-on-surface-variant);
-        --mdy-chip-max-width: 11rem;
 
         /* ─── DatePicker M3 overrides (differ from base defaults) ─────────────── */
         --mdy-datepicker-popup-border: 1px solid var(--mdy-outline-subtle);
