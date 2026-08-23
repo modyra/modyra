@@ -115,14 +115,14 @@
         --mdy-input-placeholder-color: var(--mdy-comp-field-label-text-color);
         --mdy-input-focus-color: var(--mdy-comp-field-focus-active-indicator-color);
         --mdy-input-icon-color: var(--mdy-comp-field-leading-icon-color);
-        --mdy-input-focus-shadow: inset 0 -2px 0 0 var(--mdy-input-focus-color);
+        --mdy-input-focus-shadow: inset 0 calc(-1 * var(--mdy-stroke-2)) 0 0 var(--mdy-input-focus-color);
         --mdy-error-color: var(--mdy-comp-field-error-active-indicator-color);
-        --mdy-error-focus-shadow: inset 0 -2px 0 0 var(--mdy-error-color);
+        --mdy-error-focus-shadow: inset 0 calc(-1 * var(--mdy-stroke-2)) 0 0 var(--mdy-error-color);
         --mdy-input-font-size: var(--mdy-sys-typescale-body-large-size);
         /* 16px */
         --mdy-input-line-height: var(--mdy-sys-typescale-body-large-line-height);
         /* 24px */
-        --mdy-input-padding: 0.5rem 1rem;
+        --mdy-input-padding: var(--mdy-space-2) var(--mdy-space-4);
 
         /* ── Label & Helper Text ────────────────────────────────────────────────── */
         --mdy-label-font-size: var(--mdy-sys-typescale-body-large-size);
@@ -138,13 +138,13 @@
         --mdy-helper-font-size: var(--mdy-sys-typescale-body-small-size);
         /* 12px */
         --mdy-helper-line-height: var(--mdy-sys-typescale-body-small-line-height);
-        --mdy-helper-padding-top: 4px;
+        --mdy-helper-padding-top: var(--mdy-space-1);
         --mdy-error-font-size: var(--mdy-sys-typescale-body-small-size);
         --mdy-error-line-height: var(--mdy-sys-typescale-body-small-line-height);
 
         /* ── Renderer Layout ────────────────────────────────────────────────────── */
         --mdy-renderer-gap: 0;
-        --mdy-renderer-margin-bottom: 1rem;
+        --mdy-renderer-margin-bottom: var(--mdy-space-4);
 
         /* ── Disabled ───────────────────────────────────────────────────────────── */
         --mdy-disabled-bg: color-mix(in srgb, var(--mdy-on-surface), transparent 88%);
@@ -167,7 +167,7 @@
         --mdy-checkbox-accent: var(--mdy-comp-checkbox-selected-container-color);
         --mdy-checkbox-checkmark-color: var(--mdy-comp-checkbox-selected-icon-color);
         --mdy-checkbox-border: var(--mdy-comp-checkbox-unselected-outline-width) solid var(--mdy-comp-checkbox-unselected-outline-color);
-        --mdy-checkbox-gap: 0.75rem;
+        --mdy-checkbox-gap: var(--mdy-space-3);
         --mdy-checkbox-transition: var(--mdy-sys-motion-duration-base) var(--mdy-sys-motion-easing-standard);
         /* Tick geometry — override per theme if needed */
         --mdy-checkbox-tick-w: 0.3;
@@ -208,8 +208,8 @@
         /* 24px */
         --mdy-toggle-thumb-color: var(--mdy-comp-switch-handle-color);
         --mdy-toggle-thumb-color-checked: var(--mdy-comp-switch-selected-handle-color);
-        --mdy-toggle-thumb-offset: 4px;
-        --mdy-toggle-gap: 0.75rem;
+        --mdy-toggle-thumb-offset: var(--mdy-space-1);
+        --mdy-toggle-gap: var(--mdy-space-3);
         --mdy-toggle-transition: var(--mdy-sys-motion-duration-slow) var(--mdy-sys-motion-easing-standard);
         /* The halo the thumb wears on hover and focus. Sized from the handle rather than fixed, so
            a theme that resizes the knob keeps a halo that fits its track; the colour follows the
@@ -250,19 +250,19 @@
         /* 32px */
         --mdy-chip-border-radius: var(--mdy-comp-filter-chip-container-shape);
         /* 8px */
-        --mdy-chip-padding: 0 0.75rem;
-        --mdy-chip-gap: 0.375rem;
-        --mdy-chip-border: 1px solid var(--mdy-comp-filter-chip-outline-color);
+        --mdy-chip-padding: var(--mdy-space-0) var(--mdy-space-3);
+        --mdy-chip-gap: var(--mdy-space-2);
+        --mdy-chip-border: var(--mdy-stroke-1) solid var(--mdy-comp-filter-chip-outline-color);
         --mdy-chip-bg: transparent;
         --mdy-chip-color: var(--mdy-comp-filter-chip-label-text-color);
         --mdy-chip-font-size: var(--mdy-sys-typescale-label-large-size);
         /* 14px */
         --mdy-chip-selected-bg: var(--mdy-comp-filter-chip-selected-container-color);
         --mdy-chip-selected-color: var(--mdy-comp-filter-chip-selected-label-text-color);
-        --mdy-chip-selected-border: 1px solid var(--mdy-comp-filter-chip-outline-color);
+        --mdy-chip-selected-border: var(--mdy-stroke-1) solid var(--mdy-comp-filter-chip-outline-color);
         --mdy-chip-hover-bg: color-mix(in srgb, var(--mdy-on-surface), transparent 92%);
         --mdy-chip-hover-color: var(--mdy-on-surface);
-        --mdy-chip-hover-border: 1px solid var(--mdy-comp-filter-chip-outline-color);
+        --mdy-chip-hover-border: var(--mdy-stroke-1) solid var(--mdy-comp-filter-chip-outline-color);
         /* The +/− steppers inside a counter chip. Mixed from `currentColor` — which on those buttons
            is the chip's own label colour — so the tint darkens a light chip and lightens a dark one.
            It was a literal `rgba(255,255,255,0.2)`: white, calibrated for the selected chip alone.
@@ -303,7 +303,7 @@
         --mdy-color-dropdown-shadow: var(--mdy-comp-color-picker-dropdown-shadow);
 
         /* ── Spin Button ────────────────────────────────────────────────────────── */
-        --mdy-spin-btn-size: 1.5rem;
+        --mdy-spin-btn-size: var(--mdy-affordance-target-stacked);
         --mdy-spin-btn-border-radius: var(--mdy-corner-full);
         --mdy-spin-btn-hover-bg: color-mix(in srgb, var(--mdy-primary), transparent 92%);
 
@@ -313,7 +313,7 @@
         --mdy-select-dropdown-border-radius: var(--mdy-corner-extra-small);
         --mdy-select-dropdown-shadow: var(--mdy-shadow-depth-2);
         --mdy-select-dropdown-max-height: 17.5rem;
-        --mdy-select-option-padding: 0.75rem 1rem;
+        --mdy-select-option-padding: var(--mdy-space-3) var(--mdy-space-4);
         --mdy-select-border-subtle: var(--mdy-outline-variant);
         --mdy-select-no-results-color: var(--mdy-on-surface-variant);
         --mdy-select-placeholder-color: var(--mdy-input-placeholder-color);
@@ -322,11 +322,11 @@
         --mdy-select-option-selected-bg: color-mix(in srgb, var(--mdy-on-surface), transparent 88%);
         --mdy-select-option-selected-color: var(--mdy-on-surface);
         --mdy-select-option-selected-weight: 500;
-        --mdy-multiselect-padding: 0.5rem 1rem;
+        --mdy-multiselect-padding: var(--mdy-space-2) var(--mdy-space-4);
         --mdy-multiselect-max-height: 5.5rem;
 
         /* ── File Upload ────────────────────────────────────────────────────────── */
-        --mdy-file-container-border: 2px dashed var(--mdy-outline-variant);
+        --mdy-file-container-border: var(--mdy-stroke-2) dashed var(--mdy-outline-variant);
         --mdy-file-container-radius: var(--mdy-corner-medium);
         --mdy-file-container-bg: var(--mdy-surface-container);
 
@@ -349,8 +349,8 @@
         --mdy-daterange-endpoint-bg: var(--mdy-comp-date-picker-endpoint-bg);
         --mdy-daterange-endpoint-color: var(--mdy-comp-date-picker-endpoint-color);
         --mdy-daterange-input-min-width: 8ch;
-        --mdy-daterange-input-padding: 0 0.5rem;
-        --mdy-daterange-sep-padding: 0 0.25rem;
+        --mdy-daterange-input-padding: var(--mdy-space-0) var(--mdy-space-2);
+        --mdy-daterange-sep-padding: var(--mdy-space-0) var(--mdy-space-1);
 
         /* ── Select Arrow ───────────────────────────────────────────────────────── */
         --mdy-select-arrow-color: var(--mdy-on-surface-variant);
@@ -1698,7 +1698,7 @@
         gap: 0;
 
         /* Width the check glyph reserves inside every segment. */
-        --mdy-tick-w: 1.125rem;
+        --mdy-tick-w: var(--mdy-size-4);
         /* 1rem icon + approx 0.125rem visible distance */
     }
 
@@ -4163,7 +4163,7 @@
          * `--mdy-overlay-padding` and `--mdy-overlay-surface-color` wherever they are set, so this
          * is the palette asking the one surface to be a little roomier — which is what a widget
          * should be able to say — rather than drawing a second one. */
-        --mdy-overlay-padding: 1.25rem;
+        --mdy-overlay-padding: var(--mdy-space-5);
         --mdy-overlay-surface-color: var(--mdy-surface-container);
         --mdy-overlay-shape: var(--mdy-color-dropdown-radius);
         --mdy-overlay-shadow: var(--mdy-color-dropdown-shadow);
@@ -4308,7 +4308,7 @@
 
     .mdy-renderer.mdy-floating-label {
         --mdy-fl-density-val: var(--mdy-floating-density, 0);
-        --mdy-fl-label-height: 0.75rem;
+        --mdy-fl-label-height: var(--mdy-size-1);
 
         /* Height shrinks with density: 56px at 0, 40px at -3. */
         --mdy-fl-height: calc(3.5rem + (var(--mdy-fl-density-val) * 0.25rem));
@@ -4325,7 +4325,7 @@
         --mdy-fl-rest-y: calc((var(--mdy-fl-input-height) - 1.25rem) / 2);
         --mdy-fl-rest-scale: 1;
 
-        --mdy-fl-label-left: 1rem;
+        --mdy-fl-label-left: var(--mdy-space-4);
         --mdy-fl-gap-mid: calc(0.125rem + (var(--mdy-fl-density-val) * 0.03125rem));
 
         /* The room the risen label needs, and what is left for the text under it. */
