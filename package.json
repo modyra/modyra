@@ -48,7 +48,7 @@
     "contract:diff": "npm run build:packages && node scripts/contract-diff.mjs",
     "contract:snapshot": "npm run build:packages && node scripts/contract-diff.mjs --write",
     "test:contract-snapshot": "node scripts/contract-diff.mjs --check",
-  "docs:sync": "node scripts/sync-docs-site.mjs",
+    "docs:sync": "node scripts/sync-docs-site.mjs",
     "docs:widget-shots": "node scripts/capture-widget-shots.mjs",
     "docs:studio-shot": "node scripts/capture-studio-shot.mjs",
     "brand:og-home": "node scripts/generate-og-home.mjs && node scripts/sync-brand-assets.mjs",
