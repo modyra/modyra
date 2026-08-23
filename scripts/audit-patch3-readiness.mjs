@@ -12,6 +12,8 @@
 import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 
+import { MDY_WIDGET_CONTRACTS } from "@modyra/widgets";
+
 const root = resolve(new URL("..", import.meta.url).pathname);
 const rendererRoot = resolve(root, "packages/angular/src/lib/renderers");
 const renderers = {
@@ -97,15 +99,33 @@ const sharedOverlayLifecycle = overlaySource.includes("overlayLifecycleTransitio
  * A token carries its binding text — `aria-haspopup]="'listbox'"` — so this matches on the attribute
  * name inside it: the supplier decides the value, and the value is not the renderer's to state.
  */
-function ariaSuppliedWithoutNaming(source) {
+function ariaSuppliedWithoutNaming(source, kind) {
   const supplied = [];
-  if (source.includes("[mdyPart]")) {
+  const appliesParts = source.includes("[mdyPart]") || source.includes("applyPart");
+  if (appliesParts) {
     supplied.push("aria-invalid", "aria-required", "aria-disabled", "aria-describedby");
   }
   if (source.includes("projectOverlayOpenerA11y")) {
     supplied.push("aria-haspopup", "aria-expanded", "aria-controls");
   }
-  return (token) => supplied.some((attribute) => token === attribute || token.includes(attribute));
+
+  // `applyPart` writes the part's role from the contract, so a renderer applying parts serves every
+  // role the contract declares for this kind without spelling any of them. Narrowed to the declared
+  // set on purpose: a fixture asking for a role the contract does *not* declare is asking for
+  // something no projection supplies, and that question survives.
+  const declaredRoles = appliesParts
+    ? new Set(
+      Object.values(MDY_WIDGET_CONTRACTS[kind]?.parts ?? {})
+        .map((part) => part.role)
+        .filter((role) => typeof role === "string" && role !== ""),
+    )
+    : new Set();
+
+  return (token) => {
+    if (supplied.some((attribute) => token === attribute || token.includes(attribute))) return true;
+    const role = /^role=["']?([A-Za-z]+)["']?$/.exec(token.trim());
+    return role !== null && declaredRoles.has(role[1]);
+  };
 }
 
 const fixturePath = resolve(root, "packages/angular/contract-baseline/angular-dom/source-parity.json");
@@ -115,7 +135,7 @@ if (existsSync(fixturePath)) {
   const fixture = JSON.parse(readFileSync(fixturePath, "utf8"));
   for (const [kind, evidence] of Object.entries(fixture.controls)) {
     const source = readFileSync(resolve(rendererRoot, evidence.renderer), "utf8");
-    const supplied = ariaSuppliedWithoutNaming(source);
+    const supplied = ariaSuppliedWithoutNaming(source, kind);
     const missing = evidence.tokens.filter((token) => !source.includes(token) && !supplied(token));
     if (missing.length === 0) parityFixtures++;
     else fixtureFailures.push({ kind, missing });
@@ -134,7 +154,7 @@ if (existsSync(projectionPath)) {
     // `[mdyPart]` carries the shell projection's `aria-invalid`, `aria-required`, `aria-disabled`
     // and `aria-describedby`, so a renderer that binds it and then repeats them would be the thing
     // the part exists to prevent.
-    const supplied = ariaSuppliedWithoutNaming(source);
+    const supplied = ariaSuppliedWithoutNaming(source, kind);
     const missingParts = evidence.contractProjection.parts.filter((token) => !source.includes(token));
     const missingAria = evidence.contractProjection.aria.filter(
       (token) => !source.includes(token) && !supplied(token),
