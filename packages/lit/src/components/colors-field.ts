@@ -121,7 +121,11 @@ export class MdyColorsFieldElement extends MdyFieldElement<string | null> {
   private focusPresets(handle: MdyFieldHandle<string | null>): void {
     void this.updateComplete.then(() => {
       if (!this._open) return;
-      const order = [...this.querySelectorAll<HTMLButtonElement>(`.${this.partClass("swatch")}`)];
+      // `Array.from` rather than a spread: a `NodeList` is iterable at runtime in every browser
+      // this ships to, and typed as iterable only when the `dom.iterable` lib is on. The library
+      // compiles under two TypeScript versions, and the older one refused the spread while the
+      // newer accepted it — so the normal build passed and only the parity gate saw it.
+      const order = Array.from(this.querySelectorAll<HTMLButtonElement>(`.${this.partClass("swatch")}`));
       if (order.length === 0) return;
       if (order.includes(document.activeElement as HTMLButtonElement)) return;
       const held = handle.value();
@@ -133,7 +137,7 @@ export class MdyColorsFieldElement extends MdyFieldElement<string | null> {
     if (!this._open) return;
     const binding = keyBindingFor("colors", event.key, true);
     if (!binding || binding.intent !== "move") return;
-    const order = [...this.querySelectorAll<HTMLButtonElement>(`.${this.partClass("swatch")}`)];
+    const order = Array.from(this.querySelectorAll<HTMLButtonElement>(`.${this.partClass("swatch")}`));
     const to = rowRovingIndex(event.key, order.indexOf(document.activeElement as HTMLButtonElement), order.length, binding.by);
     if (to === null) return;
     event.preventDefault();

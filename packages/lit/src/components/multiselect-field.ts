@@ -549,6 +549,11 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
         ${this.querySelector('[slot="prefix"]') === null
           ? nothing
           : html`<div class="mdy-input-prefix"><slot name="prefix"></slot></div>`}
+        <!-- The box carries no role, no name and no description. It held role="group" and both of
+             the others, alone among the three renderers and declared by no contract — an extra level
+             in the accessibility tree for the same document, depending on which renderer drew it.
+             The combobox inside it holds the value, the name and the description; the list of
+             options is the group the catalogue does declare. -->
         <div
           class="mdy-multiselect ${this._open ? "mdy-multiselect--open" : ""}"
           @keydown=${(e: KeyboardEvent) => this.onKeydown(e, handle)}
@@ -562,9 +567,6 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
             if (!this._open) this.overlay.open(e);
             this.toggleOpen(handle);
           }}
-          role="group"
-          aria-label=${this.label || nothing}
-          aria-describedby=${this.showErrors(handle) && !this.inlineErrors ? this.errorsId : this.descriptionId}
         >
           <!-- The strip before the opener, and beside it rather than inside it: a chip carries a
                button that takes a value off, and a control that opens something may not contain a
