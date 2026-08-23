@@ -155,12 +155,27 @@ function luminance(r, g, b) {
  * and for a focus ring in a forced palette it would also be unenforceable — the system picks both
  * colours there and the ratio is not the author's to set.
  *
- * **Unvalidated on thin strokes, and do not file from it until it is.** Its first run gave a minus
- * sign 2.98:1 and a plus sign 6.78:1 in the same control, in the same colour — a difference that is
- * far more likely to be the thinner stroke having no fully-opaque pixel than two different inks. On a
- * thin mark the furthest pixel may still be a blend, so the ratio reads low and a conforming control
- * looks like a 1.4.11 failure. Validate against a mark of known colour and known weight before any
- * finding rests on it.
+ * **Sound exactly when the mark has one fully opaque pixel, and the boundary is not the stroke's
+ * width.** Certified in `a-ratio-a-thin-mark-can-carry.test.mjs` against synthesised marks of known
+ * ink on a known background, so the ratio it should report is arithmetic rather than a second
+ * measurement:
+ *
+ *     4px · 2px · 1px aligned to the pixel grid      15.99:1   the ink exactly
+ *     1px on a half-pixel boundary                    3.21:1   two columns at half coverage
+ *     0.5px                                           3.21:1
+ *     0.25px                                          1.68:1
+ *
+ * The same one-pixel stroke reads 15.99 or 3.21 depending only on where its edge falls, so no rule
+ * about weight can express the limit. What the instrument needs is an opaque pixel, and a stroke
+ * narrower than a pixel never has one.
+ *
+ * **So take the screenshot at a device pixel ratio of 2 or more.** At `deviceScaleFactor: 3` a 1px
+ * CSS stroke rasterises to three device pixels and its interior is opaque whatever the alignment —
+ * which is why a run at that scale reports the ink and a run at 1 may not. This is a property of the
+ * capture, not of the control, and reading a ratio at scale 1 is the mistake.
+ *
+ * That also explains the anomaly this warning was first written for: a minus sign at 2.98:1 and a plus
+ * sign at 6.78:1, in one control, in one colour. Two subpixel alignments, one ink.
  */
 export function contrastOf(png, tolerance = 12) {
   const { pixels, channels } = png;
