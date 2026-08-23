@@ -734,7 +734,7 @@
 
     .mdy-datepicker__weekday {
         width: var(--mdy-datepicker-cell-size);
-        height: 32px;
+        height: 2rem;
         /* Weekday labels are shorter than cells in M3 */
         font-weight: var(--mdy-font-weight-medium);
         color: var(--mdy-on-surface-variant);

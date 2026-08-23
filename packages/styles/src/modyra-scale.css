@@ -71,6 +71,10 @@
         --mdy-size-4: 1.125rem;
         --mdy-size-5: 1.25rem;
         --mdy-size-6: 1.5rem;
+        /* The display step, for a numeral read across a room rather than a word read in a line: the
+           time picker's hour and minute. Material's display-medium, and the only place in the
+           library where text is set above a heading's size. */
+        --mdy-size-7: 2.8125rem;
 
         /* ── leading ─────────────────────────────────────────────────────────────
            Line height, unitless so it multiplies whatever size it lands on.
