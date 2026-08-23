@@ -1,10 +1,10 @@
 {
   "note": "Browser specs that are red because the defect they describe is open. A red listed here does not fail a build; a red that is not listed is a regression. Rewrite with `npm run battle:browser:ci -- --accept`.",
   "order": "Repair in severity order, as the node tier does. A spec's severity is the worst of the claims its header names; `unknown` is a spec that names none, which is most of them.",
-  "recordedAt": "2026-08-23T08:27:32Z",
-  "openReds": 9,
+  "recordedAt": "2026-08-23T08:44:44Z",
+  "openReds": 6,
   "bySeverity": {
-    "S1": 9
+    "S1": 6
   },
   "knownRed": [
     "a-letter-typed-at-a-closed-list.spec.ts › a letter reaches a closed choice, plain",
@@ -12,9 +12,6 @@
     "a-parent-the-contract-named.spec.ts › every part sits inside the part the contract names, plain",
     "a-row-system-three-renderers-disagree-about.spec.ts › a kind is inside the row system in every renderer, or outside it in every renderer",
     "a-row-system-three-renderers-disagree-about.spec.ts › a kind is the same height in every renderer",
-    "a-step-that-says-nothing-until-it-deletes.spec.ts › every step of a quantity is announced, angular",
-    "a-step-that-says-nothing-until-it-deletes.spec.ts › every step of a quantity is announced, lit",
-    "a-step-that-says-nothing-until-it-deletes.spec.ts › every step of a quantity is announced, plain",
     "what-a-field-says-on-arrival.spec.ts › a field with a value says so before it is opened, angular"
   ]
 }

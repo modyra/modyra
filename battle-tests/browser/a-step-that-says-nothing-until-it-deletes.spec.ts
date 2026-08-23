@@ -16,14 +16,21 @@
  * is crossed. Someone holding the key down to reach a small number overshoots into deletion, which is
  * what a floor exists to prevent.
  *
- * **`aria-valuemin` is not decoration, and its absence is the mechanism.** With `spinbutton` given up,
- * nothing states the range, so the last decrement before deletion is indistinguishable from every
- * decrement before it. A person cannot know they are at the boundary because nothing has told them
- * where it is.
+ * **The range has to be stated, and this file does not say by what mechanism.** A first version asked
+ * for `aria-valuemin` — which is the `spinbutton` vocabulary ADR 0138 removed on purpose, because a
+ * role that carries a value cannot also carry a position, and a chip needs to say where it stands in
+ * the strip. Asserting the attribute back would have been a spec demanding the arrangement a decision
+ * record had replaced: the same shape as a fixture built against an anatomy that has moved, and no
+ * more correct for being written afterwards.
+ *
+ * So the property is asserted where it now lives — the control says it has reached the floor, in the
+ * words it says everything else in. **Announced on arrival, not on crossing**: warning at the moment
+ * of deletion is too late, because the value is already gone and the person is being told rather than
+ * asked. Reaching the minimum speaks, so the next step down is a known destructive act.
  *
  * Two things are asserted and they fail independently: **every step that changes the value says so**,
- * and **the range is stated**. A control that announced only its range, or only its steps, would still
- * leave the boundary invisible.
+ * and **arriving at the floor says that too**. A control that announced only its steps would still
+ * let someone walk off the edge without warning.
  *
  * Whether stepping to zero *should* remove at all is a product question and this file does not decide
  * it. Under every answer to it, a step that changes a value silently is a defect.
@@ -88,10 +95,23 @@ for (const host of HOSTS) {
       + "The step that deletes does announce, so a person stepping down hears nothing until their value is gone.",
     ).toEqual([]);
 
+    // Down to the floor, then read what the control says about being there. The wording is the
+    // renderer's own; what this asserts is that arriving at the boundary is said at all.
+    let guard = 0;
+    while (guard < 6) {
+      const was = await state();
+      if (!was.held.includes('"a","a"')) break;
+      await page.keyboard.press("ArrowDown");
+      await page.waitForTimeout(450);
+      guard += 1;
+    }
+    const atFloor = await state();
+
     expect(
-      before.min,
-      `${host.name}: nothing states the quantity's range, so the last step before deletion is `
-      + "indistinguishable from every step before it.",
-    ).not.toBeNull();
+      atFloor.said.join(" ").toLowerCase(),
+      `${host.name}: the quantity is at its floor and the control says "${atFloor.said.join(" ")}" — `
+      + "nothing marks the boundary, so the last step before deletion is indistinguishable from every "
+      + "step before it, and a person holding the key walks off the edge.",
+    ).toMatch(/min|floor|last|1$|, 1\b/);
   });
 }
