@@ -1,5 +1,7 @@
 import { expect, test } from "@playwright/test";
 
+import { THEMES } from "../support/visual";
+
 /**
  * What a field contains, and what sits on its centre line.
  *
@@ -27,6 +29,11 @@ import { expect, test } from "@playwright/test";
  *
  * A pixel of tolerance each way, because a half-pixel from an odd height is not a defect and rounding
  * one is not a finding.
+ *
+ * **Every shipped theme, not the one the demo happens to start on.** A theme decides the heights these
+ * two properties are arithmetic over, so one theme cannot show a defect the others have — and a
+ * fixture that cannot show a difference is not evidence about it, whatever it reports. The themes come
+ * from the list the visual suite already keeps rather than a second copy here.
  */
 
 /** A part may sit this far from its field's centre, and no further. */
@@ -36,7 +43,28 @@ test.beforeEach(async ({ page }) => {
   await page.goto("/");
 });
 
-test("nothing a field draws is painted outside it", async ({ page }) => {
+/** Swap the demo onto a theme and let its faces resolve, the way the visual suite does. */
+const wearing = async (page: import("@playwright/test").Page, theme: string) => {
+  await page.evaluate(async (name) => {
+    const link = document.querySelector('link[href*="themes/"]') as HTMLLinkElement | null;
+    if (link === null) throw new Error("the demo has no theme stylesheet to swap");
+    const href = `./themes/${name}.css`;
+    if (link.getAttribute("href") !== href) {
+      await new Promise<void>((resolve) => {
+        link.addEventListener("load", () => resolve(), { once: true });
+        link.addEventListener("error", () => resolve(), { once: true });
+        link.setAttribute("href", href);
+      });
+    }
+    // Text metrics decide the heights both of these are arithmetic over.
+    await document.fonts.ready;
+  }, theme);
+  await page.waitForTimeout(200);
+};
+
+for (const theme of THEMES) {
+test(`nothing a field draws is painted outside it, under ${theme}`, async ({ page }) => {
+  await wearing(page, theme);
   const escaping = await page.evaluate(() => {
     const found: string[] = [];
     for (const renderer of document.querySelectorAll(".mdy-renderer")) {
@@ -75,7 +103,8 @@ test("nothing a field draws is painted outside it", async ({ page }) => {
   ).toEqual([]);
 });
 
-test("the things in a field's row share its centre line", async ({ page }) => {
+test(`the things in a field's row share its centre line, under ${theme}`, async ({ page }) => {
+  await wearing(page, theme);
   const off = await page.evaluate((tolerance) => {
     const found: string[] = [];
     for (const renderer of document.querySelectorAll(".mdy-renderer")) {
@@ -117,3 +146,4 @@ test("the things in a field's row share its centre line", async ({ page }) => {
     + "from one scale that arithmetic is a coincidence.",
   ).toEqual([]);
 });
+}
