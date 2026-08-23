@@ -1,14 +1,11 @@
 {
   "note": "How far past its budget each renderer is today. These numbers may shrink and may not grow.",
+  "measure": "Executable TypeScript: comments, `template:` and `styles:` literals, and blank lines are not counted. Every distance fell sharply when this measure replaced counting every line — that was the measure changing and not the renderers shrinking, and a reader comparing against an older baseline should not read it as a repair.",
   "overrun": {
-    "total": 740,
+    "total": 0,
     "files": {
-      "select/select-renderer.component.ts": 92,
-      "multiselect/multiselect-renderer.component.ts": 65,
-      "datepicker/range-calendar.component.ts": 22,
-      "timepicker/timepicker-clock.component.ts": 256,
-      "timepicker/timepicker-renderer.component.ts": 97,
-      "colors/colors-renderer.component.ts": 38
+      "multiselect/multiselect-renderer.component.ts": 113,
+      "timepicker/timepicker-clock.component.ts": 77
     }
   }
 }
