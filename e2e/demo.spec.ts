@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { COMBOBOX_TRIGGER } from "./support/select-shape";
 
 /**
  * Smoke test: the packaged demo boots, a text control accepts input and
@@ -93,7 +94,7 @@ test("an overlay draws one surface, not a wrapper's as well", async ({ page }) =
   // cutouts — a white notch at each top corner, and worse the darker the theme.
   await page.goto("/");
   await page.waitForSelector("mdy-control-select", { state: "attached", timeout: 15000 });
-  const trigger = page.locator(".mdy-select__trigger").first();
+  const trigger = page.locator(COMBOBOX_TRIGGER).first();
   await trigger.scrollIntoViewIfNeeded();
   await trigger.click({ force: true });
   // Wait for the popup to actually be laid out — clicking only asks for it, and this measures boxes.
@@ -107,7 +108,7 @@ test("an overlay draws one surface, not a wrapper's as well", async ({ page }) =
     const panel = popup.closest(".mdy-overlay-panel") as HTMLElement;
     const ps = getComputedStyle(panel);
     const popupBox = popup.getBoundingClientRect();
-    const anchor = document.querySelector(".mdy-select__trigger") as HTMLElement;
+    const anchor = document.querySelector(".mdy-select__trigger[aria-haspopup]") as HTMLElement;
     return {
       panelBackground: ps.backgroundColor,
       panelPadding: ps.paddingTop,
@@ -144,7 +145,7 @@ test("an overlay is positioned once, by the box that draws it", async ({ page })
   // straight past it.
   await page.goto("/");
   await page.waitForSelector("mdy-control-select", { state: "attached", timeout: 15000 });
-  const trigger = page.locator(".mdy-select__trigger").first();
+  const trigger = page.locator(COMBOBOX_TRIGGER).first();
   await trigger.scrollIntoViewIfNeeded();
   await trigger.click({ force: true });
   await page.waitForFunction(() =>
@@ -155,7 +156,7 @@ test("an overlay is positioned once, by the box that draws it", async ({ page })
     const popup = [...document.querySelectorAll(".mdy-select__dropdown")]
       .find((el) => (el as HTMLElement).getBoundingClientRect().height > 0) as HTMLElement;
     const panel = popup.closest(".mdy-overlay-panel") as HTMLElement;
-    const anchor = document.querySelector(".mdy-select__trigger") as HTMLElement;
+    const anchor = document.querySelector(".mdy-select__trigger[aria-haspopup]") as HTMLElement;
     const panelBox = panel.getBoundingClientRect();
     const popupBox = popup.getBoundingClientRect();
     return {

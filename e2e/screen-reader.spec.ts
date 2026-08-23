@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { COMBOBOX_TRIGGER } from "./support/select-shape";
 
 /**
  * What the browser computes, rather than what the markup asks for.
@@ -27,7 +28,7 @@ const CONTROL = "input,select,textarea,button,[role=combobox],[role=radiogroup],
 
 test.beforeEach(async ({ page }) => {
   await page.goto("/");
-  await page.locator(".mdy-select__trigger").first().waitFor({ state: "visible" });
+  await page.locator(COMBOBOX_TRIGGER).first().waitFor({ state: "visible" });
 });
 
 test("every operable control has an accessible name", async ({ page }) => {

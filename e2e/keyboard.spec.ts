@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { COMBOBOX_SELECT, COMBOBOX_TRIGGER } from "./support/select-shape";
 
 /**
  * The select, driven by real keys in a real browser.
@@ -16,8 +17,8 @@ import { expect, test } from "@playwright/test";
  * exactly like a widget that ignored it.
  */
 
-const SELECT = ".mdy-renderer--select";
-const TRIGGER = `${SELECT} .mdy-select__trigger`;
+const SELECT = COMBOBOX_SELECT;
+const TRIGGER = COMBOBOX_TRIGGER;
 
 /** `aria-expanded` on the opener is the contract's own statement of open-ness. */
 const expectOpen = (page: import("@playwright/test").Page, open: boolean) =>

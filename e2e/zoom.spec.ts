@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { COMBOBOX_SELECT, COMBOBOX_TRIGGER } from "./support/select-shape";
 
 /**
  * The form at 200% text, which is what WCAG 1.4.4 asks of it.
@@ -13,14 +14,8 @@ import { expect, test } from "@playwright/test";
  * measuring at the moment it places, rather than reusing numbers taken when the page loaded.
  */
 
-/**
- * Not every `.mdy-renderer--select` on the demo page has a trigger — some are variants that render
- * a different control. Naming the trigger in the selector picks a widget that has one, rather than
- * whichever came first in the document: `.first()` answers a question about document order, and a
- * test that asks it gets a true answer to the wrong question.
- */
-const SELECT = ".mdy-renderer--select:has(.mdy-select__trigger)";
-const TRIGGER = `${SELECT} .mdy-select__trigger`;
+const SELECT = COMBOBOX_SELECT;
+const TRIGGER = COMBOBOX_TRIGGER;
 
 /** WCAG 1.4.4: text to 200%, viewport unchanged. */
 async function doubleTextSize(page: import("@playwright/test").Page): Promise<void> {

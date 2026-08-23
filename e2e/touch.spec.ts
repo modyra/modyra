@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { COMBOBOX_SELECT, COMBOBOX_TRIGGER } from "./support/select-shape";
 
 /**
  * The overlays, driven by a finger rather than a mouse.
@@ -16,8 +17,8 @@ import { expect, test } from "@playwright/test";
 
 test.use({ hasTouch: true });
 
-const SELECT = ".mdy-renderer--select";
-const TRIGGER = `${SELECT} .mdy-select__trigger`;
+const SELECT = COMBOBOX_SELECT;
+const TRIGGER = COMBOBOX_TRIGGER;
 
 const expectOpen = (page: import("@playwright/test").Page, open: boolean) =>
   expect(page.locator(TRIGGER).first()).toHaveAttribute("aria-expanded", String(open));
