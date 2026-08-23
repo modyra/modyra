@@ -83,12 +83,13 @@
 /* The brand gradient, in the two jobs it actually has.
 
    The bright one is a decorative fill. It cannot carry text: white on its stops measures 4.14, 3.96
-   and 2.85 against 4.5:1, and the coral end is the worst of them — which is why the primary action
-   read as badly coloured. As *text* on a light page it is no better: 3.96, 3.78, 2.72.
+   and 2.85 against 4.5:1, and the coral end is the worst of them. As *text* on a light page it is
+   no better: 3.96, 3.78, 2.72. Buttons do not use either gradient — the brand assigns Coral, solid,
+   to actions.
 
    So there is a second gradient that takes the same journey — indigo through violet to coral — deep
-   enough to hold white text (6.6, 6.3, 6.2) and to be read as text on a light page. The bright one
-   keeps the jobs it is good at: fills and text on a dark surface. */
+   enough to be read as text on a light page. The bright one keeps the jobs it is good at: fills and
+   text on a dark surface. */
 :root {
 	--mdy-gradient-brand: linear-gradient(90deg, #7067ff 0%, #a855f7 50%, #ff6577 100%);
 	--mdy-gradient-brand-ink: linear-gradient(90deg, #4f46d6 0%, #8a3fa8 50%, #b32d44 100%);
