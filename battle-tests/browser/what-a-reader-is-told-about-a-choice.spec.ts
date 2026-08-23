@@ -53,6 +53,12 @@ const mount = async (page: import("@playwright/test").Page, host: (typeof HOSTS)
   await page.evaluate(({ api, id }) => {
     (window as never as Api)[api].mountFields(id, [{
       name: "m", kind: "multiselect", label: "Scelte", mode: "multi", clearable: true,
+      // **`reorderable`, because a fixture that does not draw a control cannot report on it.** The
+      // first version of this file left it off, so the two movers in every chip were outside the
+      // reading — and they carried the same defect as the steppers, found by someone else and not
+      // by this. A field configured for less than it can do is a check that covers less than it
+      // looks like it covers.
+      reorderable: true,
       options: [{ value: "a", label: "Alfa" }, { value: "b", label: "Beta" }],
       initialValue: ["a", "a", "b"],
     }] as never);
@@ -77,11 +83,16 @@ for (const host of HOSTS) {
 
     // The premise: this field put operable things in the tree at all. Every assertion below is true
     // of a page that reached the tree as nothing.
+    // Two chips, each with two movers, two steppers and a removal, plus the opener and clear-all:
+    // eleven before the page's own submit. A floor low enough to pass on a field that quietly stopped
+    // drawing its movers would be a premise that permits the gap this fixture was widened to close.
     expect(
       operable.length,
-      `${host.name} put ${operable.length} operable node(s) in the accessibility tree for a field `
-      + `holding two values. There is nothing here to tell apart.\n${asLines(roots).join("\n")}`,
-    ).toBeGreaterThan(4);
+      `${host.name} put ${operable.length} operable node(s) in the accessibility tree for a reorderable `
+      + `field holding two values, where eleven are configured. Something the fixture asked for was `
+      + `not drawn, and what is missing is not being told apart because it is not here.\n`
+      + asLines(roots).join("\n"),
+    ).toBeGreaterThanOrEqual(11);
 
     // Nothing operable may be nameless: a reader meets it as "button" and nothing else.
     expect(
