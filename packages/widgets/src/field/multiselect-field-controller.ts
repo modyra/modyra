@@ -18,7 +18,7 @@ import { listboxNextIndex } from "../keyboard.js";
 import { createTypeahead, typeaheadMatch } from "../typeahead.js";
 
 import { multiselectValueTransition, overlayLifecycleTransition } from "../behavior.js";
-import { optionsWithUnrecognizedValues } from "../options-reconciliation.js";
+import { optionsWithUnrecognizedValues, sameChoice } from "../options-reconciliation.js";
 import type { MdyUiCommand } from "../commands.js";
 import type { MdyWidgetController, MdyWidgetViewContract } from "../contract.js";
 import { projectMultiselectFieldA11y } from "./multiselect-field-a11y.js";
@@ -94,7 +94,16 @@ export function createMultiselectFieldController<TValue>(
     byKey: ReadonlyMap<string, MdySelectOption<TValue>>,
   ): string[] =>
     values
-      .map((value) => [...byKey.entries()].find(([, o]) => o.value === value)?.[0])
+      .map((value) => {
+        // Identity first, then the loose rule the list itself is reconciled by: a draft, a
+        // refetch or an import hands the field a fresh object that *is* an option's value without
+        // *being* it, and optionsWithUnrecognizedValues has already declined to paint it as
+        // unrecognised. A selection that answered only the exact question would hold such a value
+        // in the model while no chip admitted to it.
+        for (const [key, option] of byKey) if (option.value === value) return key;
+        for (const [key, option] of byKey) if (sameChoice(value, option.value)) return key;
+        return undefined;
+      })
       .filter((key): key is string => key !== undefined);
 
   const readonly = reactivity.signal(initialReadonly);
@@ -285,8 +294,10 @@ export function createMultiselectFieldController<TValue>(
   function increment(key: string): readonly MdyUiCommand[] {
     return withOption(key, (option) => {
       const values = [...heldValues()];
+      // One index for the whole scan: building it per value would be a Map per occurrence.
+      const byKey = indexOf(effectiveOptions());
       const last = values.reduce(
-        (found, value, index) => (keysOf([value], indexOf(effectiveOptions()))[0] === key ? index : found),
+        (found, value, index) => (keysOf([value], byKey)[0] === key ? index : found),
         -1,
       );
       if (last === -1) values.push(option.value);
@@ -298,7 +309,7 @@ export function createMultiselectFieldController<TValue>(
 
   function decrement(key: string): readonly MdyUiCommand[] {
     const option = indexOf(effectiveOptions()).get(key);
-    if (!option) return [];
+    if (!option || option.disabled) return [];
     // The last of the group, so the ones that remain keep the positions they had. Taking the first
     // moves every later occurrence up by one, which is the same silent reordering incrementing at the
     // end used to cause.
@@ -515,6 +526,9 @@ export function createMultiselectFieldController<TValue>(
 
   function setValue(values: ReadonlyArray<TValue>): void {
     handle.set(values);
+    // A programmatic write is not an act the user took, so it keeps no way back of its own — and
+    // an offer recorded before it pointed at a value this write just replaced.
+    wayBack.set(null);
   }
 
   function setOptions(next: readonly MdySelectOption<TValue>[]): void {

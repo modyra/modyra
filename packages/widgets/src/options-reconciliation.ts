@@ -36,7 +36,7 @@ export interface MdySelectReconciliationState<TValue> {
  * the list gained a second entry for a choice already in it, labelled with its own JSON and sharing
  * a key with the entry below it: a keyboard pointing at whichever the DOM found first.
  */
-function sameChoice(value: unknown, optionValue: unknown): boolean {
+export function sameChoice(value: unknown, optionValue: unknown): boolean {
   if (Object.is(value, optionValue)) return true;
   if (value === null || value === undefined || optionValue === null || optionValue === undefined) {
     return false;

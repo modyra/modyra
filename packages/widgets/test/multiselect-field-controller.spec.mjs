@@ -122,6 +122,24 @@ test("decrementing an option not present is a no-op", () => {
   assert.deepStrictEqual(commands, []);
 });
 
+test("decrementing a disabled option is refused, as toggling it is", () => {
+  const { controller, handle } = setup("multi", ["large"]);
+  const commands = controller.dispatch({ type: "decrement", optionKey: "large" });
+  assert.deepStrictEqual(handle.value(), ["large"]);
+  assert.deepStrictEqual(commands, []);
+  assert.strictEqual(handle.dirty(), false);
+});
+
+test("a programmatic setValue spends the way back a clear had offered", () => {
+  const { controller, handle } = setup("single", ["small", "medium"]);
+  controller.dispatch({ type: "clear" });
+  assert.strictEqual(controller.state().wayBack?.act, "clear");
+  controller.setValue(["medium"]);
+  assert.strictEqual(controller.state().wayBack, null);
+  controller.dispatch({ type: "undo" });
+  assert.deepStrictEqual(handle.value(), ["medium"]);
+});
+
 test("clear resets to an empty array", () => {
   const { controller, handle } = setup("single", ["small", "medium"]);
   controller.dispatch({ type: "clear" });
@@ -217,6 +235,74 @@ test("setValue updates state programmatically", () => {
   controller.setValue(["small", "large"]);
   assert.deepStrictEqual(handle.value(), ["small", "large"]);
   assert.strictEqual(controller.state().selectedKeys.has("large"), true);
+});
+
+/* ── Loose identity (ADR 0051) ──────────────────────────────────────────────────
+ * A draft, a refetch or an import hands the field a fresh object that *is* an option's value
+ * without *being* it. `optionsWithUnrecognizedValues` already recognises the choice loosely, so
+ * no placeholder is added; the selection projection has to recognise it too, or the model holds
+ * a value no chip admits to.
+ */
+function setupObjects(initialValue) {
+  const rx = vanillaReactivity();
+  const objectOptions = [
+    { value: { id: "a" }, label: "Ada" },
+    { value: { id: "b" }, label: "Bia" },
+  ];
+  const value = rx.signal(initialValue);
+  const errors = rx.signal([]);
+  const touched = rx.signal(false);
+  const dirty = rx.signal(false);
+  const handle = {
+    path: "people",
+    value,
+    errors,
+    touched,
+    dirty,
+    valid: rx.computed(() => errors().length === 0),
+    pending: rx.signal(false),
+    required: rx.signal(false),
+    disabled: rx.signal(false),
+    readonly: rx.signal(false),
+    interactivity: rx.computed(() => "enabled"),
+    set(v) {
+      value.set(v);
+    },
+    markAsTouched() {
+      touched.set(true);
+    },
+    markAsDirty() {
+      dirty.set(true);
+    },
+  };
+  const controller = createMultiselectFieldController(
+    { widgetId: "people", handle, options: objectOptions, mode: "multi" },
+    rx,
+  );
+  return { controller, handle, rx };
+}
+
+test("a fresh object holding an option's value is selected, counted and reachable", () => {
+  const { controller, handle } = setupObjects([{ id: "a" }, { id: "a" }, { id: "b" }]);
+  const state = controller.state();
+  // No unrecognised placeholder: each value loosely matches a declared option.
+  assert.strictEqual(state.options.length, 2);
+  assert.strictEqual(state.selectedKeys.has('{"id":"a"}'), true);
+  assert.strictEqual(state.selectedKeys.has('{"id":"b"}'), true);
+  assert.strictEqual(state.counts.get('{"id":"a"}'), 2);
+  assert.strictEqual(state.counts.get('{"id":"b"}'), 1);
+
+  // Increment groups with the occurrences already held, it does not start a second group.
+  controller.dispatch({ type: "increment", optionKey: '{"id":"b"}' });
+  assert.deepStrictEqual(handle.value().map((v) => v.id), ["a", "a", "b", "b"]);
+
+  // Decrement finds the loosely held value and removes its last occurrence.
+  controller.dispatch({ type: "decrement", optionKey: '{"id":"a"}' });
+  assert.deepStrictEqual(handle.value().map((v) => v.id), ["a", "b", "b"]);
+
+  // Move carries the loosely held group as one thing.
+  controller.dispatch({ type: "move-selected", optionKey: '{"id":"b"}', to: 0 });
+  assert.deepStrictEqual(handle.value().map((v) => v.id), ["b", "b", "a"]);
 });
 
 /* ── The declared commit mode ───────────────────────────────────────────────────
