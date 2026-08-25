@@ -3871,5 +3871,40 @@
         "Tab@open:cancel"
       ]
     }
-  }
+  },
+  "scale": [
+    "--mdy-control-1",
+    "--mdy-control-2",
+    "--mdy-control-3",
+    "--mdy-duration-1",
+    "--mdy-duration-2",
+    "--mdy-focus-offset",
+    "--mdy-focus-width",
+    "--mdy-leading-1",
+    "--mdy-leading-2",
+    "--mdy-leading-3",
+    "--mdy-radius-0",
+    "--mdy-radius-1",
+    "--mdy-radius-2",
+    "--mdy-radius-3",
+    "--mdy-radius-full",
+    "--mdy-size-1",
+    "--mdy-size-2",
+    "--mdy-size-3",
+    "--mdy-size-4",
+    "--mdy-size-5",
+    "--mdy-size-6",
+    "--mdy-size-7",
+    "--mdy-space-0",
+    "--mdy-space-1",
+    "--mdy-space-2",
+    "--mdy-space-3",
+    "--mdy-space-4",
+    "--mdy-space-5",
+    "--mdy-space-6",
+    "--mdy-space-7",
+    "--mdy-space-8",
+    "--mdy-stroke-1",
+    "--mdy-stroke-2"
+  ]
 }

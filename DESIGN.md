@@ -75,6 +75,21 @@ literal size or inset on an affordance.
 
 ---
 
+## The scale is public surface
+
+**A step's name is API.** A consumer builds a theme by setting `--mdy-control-1` or `--mdy-space-4`, so
+renaming one breaks them exactly as renaming a widget part does. `contract:diff` records the step
+names and reports a lost one as **major** and a new one as **minor**.
+
+**Names, not values.** Changing what a step *is* is what a theme is for, so recording values would
+report every theme as a contract change. What a consumer cannot survive is a name that stops
+answering.
+
+The names are read from `modyra-scale.css` rather than listed anywhere, so a step added or renamed is
+seen without anybody remembering to record it.
+
+---
+
 ## Size
 
 **A field is one height.** Every single-row field shares it, whether or not it carries an affordance.

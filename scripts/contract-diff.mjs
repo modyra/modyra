@@ -84,7 +84,26 @@ function snapshot() {
         .sort(),
     };
   }
-  return { contractVersion: MDY_WIDGET_CONTRACT_VERSION, kinds };
+  return { contractVersion: MDY_WIDGET_CONTRACT_VERSION, kinds, scale: scaleTokens() };
+}
+
+/**
+ * The scale's step names, which are public surface.
+ *
+ * A consumer builds a theme by setting these; renaming one breaks them exactly as renaming a part
+ * does, and until now nothing here could see it. The names are read from the sheet rather than listed,
+ * so a step added or renamed shows up without anybody remembering to record it.
+ *
+ * **Names, not values.** A theme is expected to change what a step *is* — that is what a theme is for
+ * — so recording values would report every theme as a contract change. What a consumer cannot survive
+ * is a name that stops answering.
+ */
+function scaleTokens() {
+  const sheet = readFileSync(resolve(root, "packages/styles/src/modyra-scale.css"), "utf8");
+  // Declarations only: a `var(--mdy-…)` reading a step is a use, not a definition, and counting it
+  // would make the snapshot depend on which rules happen to consume which step.
+  const declared = [...sheet.matchAll(/^\s*(--mdy-[a-z0-9-]+)\s*:/gm)].map((m) => m[1]);
+  return [...new Set(declared)].sort();
 }
 
 /** `major` breaks a consumer, `minor` gives it something new, `patch` changes nothing it can see. */
@@ -122,6 +141,20 @@ try {
 
 if (baseline.contractVersion !== current.contractVersion) {
   record("major", "contract", `contract version changed: ${baseline.contractVersion} → ${current.contractVersion}`);
+}
+
+// The scale is compared before the kinds because a step that stops answering breaks every theme built
+// on it, whichever kinds happen to use it.
+const heldScale = Array.isArray(baseline.scale) ? baseline.scale : null;
+if (heldScale === null) {
+  record("minor", "scale", `scale steps now recorded: ${current.scale.length} step(s)`);
+} else {
+  for (const step of heldScale) {
+    if (!current.scale.includes(step)) record("major", "scale", `step removed: ${step}`);
+  }
+  for (const step of current.scale) {
+    if (!heldScale.includes(step)) record("minor", "scale", `step added: ${step}`);
+  }
 }
 
 for (const kind of Object.keys(baseline.kinds)) {
