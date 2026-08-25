@@ -78,6 +78,15 @@ export interface MdyI18nMessages {
   readonly selectionRemoved: string;
   /** What is said when the last choice is taken off and there is nothing left to name. */
   readonly selectionEmpty: string;
+  /**
+   * What is said when the value removed was the last one.
+   *
+   * Both halves, because both are needed and neither implies the other. *"Roma removed"* alone leaves
+   * a person not knowing the field is now empty; *"nothing selected"* alone leaves them not knowing
+   * which of twelve went. And once the strip is gone there is nothing left in the page to tell them —
+   * a field somebody has just emptied looks exactly like one they never filled.
+   */
+  readonly selectionRemovedLast: string;
   /** What a quantity says when it settles: the value and how many of it. */
   readonly quantitySettled: string;
   /**
@@ -242,6 +251,7 @@ export const MDY_I18N_MESSAGES_DEFAULT: MdyI18nMessages = Object.freeze({
   selectionAdded: "{value} added, {count} selected",
   selectionRemoved: "{value} removed, {count} selected",
   selectionEmpty: "Nothing selected",
+  selectionRemovedLast: "{value} removed, nothing selected",
   selectionMoved: "{value}, moved to position {position} of {count}",
   keyGuideOpen: "{keys} opens it",
   keyGuideMove: "{keys} moves through it",
@@ -331,6 +341,7 @@ export const MDY_I18N_MESSAGES_IT: MdyI18nMessages = Object.freeze({
   selectionAdded: "{value} aggiunto, {count} selezionati",
   selectionRemoved: "{value} rimosso, {count} selezionati",
   selectionEmpty: "Nessuna selezione",
+  selectionRemovedLast: "{value} rimosso, nessuna selezione",
   selectionMoved: "{value}, spostato in posizione {position} di {count}",
   keyGuideOpen: "{keys} lo apre",
   keyGuideMove: "{keys} lo percorre",
@@ -413,6 +424,7 @@ export const MDY_I18N_MESSAGES_DE: MdyI18nMessages = Object.freeze({
   selectionAdded: "{value} hinzugefügt, {count} ausgewählt",
   selectionRemoved: "{value} entfernt, {count} ausgewählt",
   selectionEmpty: "Nichts ausgewählt",
+  selectionRemovedLast: "{value} entfernt, nichts ausgewählt",
   selectionMoved: "{value}, verschoben auf Position {position} von {count}",
   keyGuideOpen: "{keys} öffnet es",
   keyGuideMove: "{keys} bewegt sich darin",
@@ -495,6 +507,7 @@ export const MDY_I18N_MESSAGES_FR: MdyI18nMessages = Object.freeze({
   selectionAdded: "{value} ajouté, {count} sélectionnés",
   selectionRemoved: "{value} retiré, {count} sélectionnés",
   selectionEmpty: "Aucune sélection",
+  selectionRemovedLast: "{value} supprimé, aucune sélection",
   selectionMoved: "{value}, déplacé en position {position} sur {count}",
   keyGuideOpen: "{keys} l'ouvre",
   keyGuideMove: "{keys} le parcourt",
@@ -577,6 +590,7 @@ export const MDY_I18N_MESSAGES_ES: MdyI18nMessages = Object.freeze({
   selectionAdded: "{value} añadido, {count} seleccionados",
   selectionRemoved: "{value} quitado, {count} seleccionados",
   selectionEmpty: "Nada seleccionado",
+  selectionRemovedLast: "{value} eliminado, nada seleccionado",
   selectionMoved: "{value}, movido a la posición {position} de {count}",
   keyGuideOpen: "{keys} lo abre",
   keyGuideMove: "{keys} lo recorre",

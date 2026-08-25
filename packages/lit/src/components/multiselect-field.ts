@@ -584,11 +584,18 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
                button that takes a value off, and a control that opens something may not contain a
                control that destroys something (ADR 0142). Read in this order too — the chips are
                what the field holds, the opener is the space after them. -->
-          <span
+          ${this.held(handle).length === 0 ? nothing : html`<span
             class="${this.partClass("chips")}"
             role=${this.partRole("chips")}
+            aria-colcount=${this.held(handle).length}
+            aria-rowcount="1"
             @wheel=${(e: WheelEvent) => this.onStripWheel(e)}
-          >${this.renderValueChips(handle)}</span>
+          ><!-- ARIA structures a grid as grid → row → cell, and this strip is one row of cells. ADR 0148. -->
+            <span
+              class="${this.partClass("chipRow")}"
+              role=${this.partRole("chipRow")}
+              aria-rowindex="1"
+            >${this.renderValueChips(handle)}</span></span>`}
           <button
             type="button"
             id=${triggerId}
@@ -858,7 +865,7 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
     if (this._saySoon !== null) { this._said = this._saySoon; this._saySoon = null; this._saidLast = now; return this._said; }
     const said = multiselectAnnouncement(
       this._saidLast, now,
-      { added: this.messages.selectionAdded, removed: this.messages.selectionRemoved, empty: this.messages.selectionEmpty },
+      { added: this.messages.selectionAdded, removed: this.messages.selectionRemoved, empty: this.messages.selectionEmpty, removedLast: this.messages.selectionRemovedLast },
       (key) => this.labelFor(key),
     );
     this._saidLast = now;
@@ -897,7 +904,6 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
       if (seen) seen.count += 1;
       else tally.set(key, { value, label: this.labelFor(value), count: 1 });
     }
-    const size = tally.size;
     return [...tally.values()].map(({ value, label, count }, index) => html`<span
       class=${multiselectChipClasses({ mode: this.mode, role: "value", selected: true }).join(" ")}
       tabindex=${this.activeChip(handle) === defaultOptionKey(value) ? "0" : "-1"}
@@ -917,8 +923,7 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
       aria-label=${count > 1 ? `${label}, ${count}` : label}
       title=${label}
       data-key=${defaultOptionKey(value)}
-      aria-posinset=${index + 1}
-      aria-setsize=${size}
+      aria-colindex=${index + 1}
     >
       ${this.reorderable
         ? html`<button

@@ -539,11 +539,12 @@ export const MDY_CANONICAL_AT_REST: Readonly<Partial<Record<MdyWidgetKind, MdyCa
     }),
     multiselect: Object.freeze({
       // The control opens the popup and holds the value, so it is what the label names and what
-      // announces the popup. `chips` is where what was chosen is drawn, inside the trigger.
+      // announces the popup. `chips` — the grid of what was chosen — is optional at rest: an empty
+      // grid announces contents it does not have, so it appears with the first value. ADR 0148.
       // The options live in the popup now, so at rest they are absent by construction — the same
       // reason every other overlay kind lists its popup's contents as optional.
-      parts: Object.freeze(["root", "label", "inputWrapper", "box", "trigger", "chips", "arrow", "announcement"]),
-      optional: Object.freeze(["options", "option", "optionCheck", "optionLabel", "optionWrapper", "supportingText", "requiredMarker", "chip", "chipRemove", "placeholder", "optionStep", "optionCount", "popup", "search", "loading", "empty", "inlineError", "errors", "errorItem", "clearAll", "overflowCount", "wayBack", "wayBackAction", "chipTooltip"]),
+      parts: Object.freeze(["root", "label", "inputWrapper", "box", "trigger", "arrow", "announcement"]),
+      optional: Object.freeze(["options", "option", "optionCheck", "optionLabel", "optionWrapper", "supportingText", "requiredMarker", "chip", "chipRemove", "placeholder", "optionStep", "optionCount", "popup", "search", "loading", "empty", "inlineError", "errors", "errorItem", "clearAll", "overflowCount", "wayBack", "wayBackAction", "chipTooltip", "chips", "chipRow"]),
       relationships: Object.freeze([
         { from: "label", attribute: "for", to: "trigger" },
         { from: "trigger", attribute: "aria-controls", to: null },

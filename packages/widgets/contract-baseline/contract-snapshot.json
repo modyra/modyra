@@ -1914,7 +1914,7 @@
         "chips": {
           "element": "group",
           "parent": "box",
-          "optional": false,
+          "optional": true,
           "repeated": false,
           "role": "grid",
           "classes": [
@@ -1922,9 +1922,20 @@
           ],
           "states": []
         },
+        "chipRow": {
+          "element": "group",
+          "parent": "chips",
+          "optional": true,
+          "repeated": false,
+          "role": "row",
+          "classes": [
+            "mdy-multiselect__chip-row"
+          ],
+          "states": []
+        },
         "chip": {
           "element": "container",
-          "parent": "chips",
+          "parent": "chipRow",
           "optional": true,
           "repeated": true,
           "role": "gridcell",

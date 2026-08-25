@@ -81,7 +81,13 @@ import type { MdyOverlayBranch, MdyOverlayOwner } from "../../core/overlay-contr
            that takes a value off, and a control that opens something may not contain a control that
            destroys something (ADR 0142). Read in this order too — the chips are what the field
            holds, the opener is the space after them. -->
-        <span class="mdy-multiselect__chips" [attr.role]="chipsRole" (wheel)="onStripWheel($event)">
+        <!-- An empty grid is not a grid: the role requires rows and row requires cells, so a field
+             nobody has chosen anything in would announce contents it does not have. The correct
+             rendering of nothing chosen is no grid. ADR 0148. -->
+        @if (chosen().length > 0) {
+        <span class="mdy-multiselect__chips" [attr.role]="parts.chips.role" [attr.aria-colcount]="chosen().length" aria-rowcount="1" (wheel)="onStripWheel($event)">
+          <!-- ARIA structures a grid as grid → row → cell, and this strip is one row of cells. ADR 0148. -->
+          <span class="mdy-multiselect__chip-row" [attr.role]="parts.chipRow.role" aria-rowindex="1">
           <!-- One chip per distinct value with how many, because a repeated value is a quantity:
                incrementing takes one of something to three. One chip per entry would make undoing
                one decision three separate removals. -->
@@ -100,8 +106,7 @@ import type { MdyOverlayBranch, MdyOverlayOwner } from "../../core/overlay-contr
               (keydown)="onChipKeydown($event, held.key)"
               [attr.aria-label]="held.count > 1 ? held.label + ', ' + held.count : held.label"
               [title]="held.label"
-              [attr.aria-posinset]="i + 1"
-              [attr.aria-setsize]="chosen().length"
+              [attr.aria-colindex]="i + 1"
             >
               @if (reorderable()) {
                 <button
@@ -150,7 +155,9 @@ import type { MdyOverlayBranch, MdyOverlayOwner } from "../../core/overlay-contr
               ></button>
             </span>
           }
+          </span>
         </span>
+        }
       <!-- The control a person presses, holding what was chosen. The label names it and the
            combobox role sits here, because this is what holds the field's value — a magnifier
            beside the field carried the role and none of the value. -->
@@ -361,7 +368,8 @@ export class MdyMultiselectComponent<TValue = string>
   /** What the option grid announces itself as — the contract's answer, not this renderer's. */
   protected readonly optionsRole = MDY_WIDGET_CONTRACTS.multiselect.parts.options.role ?? null;
   /** The strip is a list and a chip is an item of it — the catalogue's answer, not this file's. */
-  protected readonly chipsRole = MDY_WIDGET_CONTRACTS.multiselect.parts.chips.role ?? null;
+  /** The parts, so a template asks the contract for a role rather than holding one field per part. */
+  protected readonly parts = MDY_WIDGET_CONTRACTS.multiselect.parts;
   protected readonly chipRole = MDY_WIDGET_CONTRACTS.multiselect.parts.chip.role ?? null;
 
   protected readonly chip = MDY_CHIP_CLASSES;
@@ -991,7 +999,7 @@ export class MdyMultiselectComponent<TValue = string>
     if (grab !== null) { this.saidLast = now; return grab; }
     const said = multiselectAnnouncement(
       this.saidLast, now,
-      { added: this.i18n.selectionAdded, removed: this.i18n.selectionRemoved, empty: this.i18n.selectionEmpty },
+      { added: this.i18n.selectionAdded, removed: this.i18n.selectionRemoved, empty: this.i18n.selectionEmpty, removedLast: this.i18n.selectionRemovedLast },
       (key) => this.chosen().find((c) => c.key === key)?.label ?? this.labelOf(key as unknown as TValue),
     );
     this.saidLast = now;

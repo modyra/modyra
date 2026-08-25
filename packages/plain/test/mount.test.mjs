@@ -157,9 +157,17 @@ test("multiselect: the control opens the options, and what is chosen shows in th
   assert.equal(popup.hidden, false);
   assert.equal(trigger.getAttribute("aria-expanded"), "true");
 
-  const strip = container.querySelector(".mdy-multiselect__chips");
-  const chosen = () => [...strip.querySelectorAll(".mdy-chip")].map((chip) => chip.textContent.trim());
+  // Read on each call rather than held: the strip is a grid, and an empty grid announces contents
+  // it does not have — so with nothing chosen there is no strip at all, and it arrives with the
+  // first value. ADR 0148.
+  const chosen = () => [...container.querySelectorAll(".mdy-multiselect__chips .mdy-chip")]
+    .map((chip) => chip.textContent.trim());
   assert.deepEqual(chosen(), [], "nothing chosen, nothing in the strip");
+  assert.equal(
+    container.querySelector(".mdy-multiselect__chips"),
+    null,
+    "with nothing chosen there is no grid: an empty one promises rows it does not have",
+  );
 
   const musicChip = [...popup.querySelectorAll(".mdy-chip--centered")].find((b) => b.textContent.startsWith("Music"));
   musicChip.dispatchEvent(new Event("click"));

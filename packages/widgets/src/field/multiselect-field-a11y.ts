@@ -73,6 +73,8 @@ export function projectMultiselectFieldA11y<TValue>(
   readonly trigger: MdyPartContract;
   readonly placeholder: MdyPartContract;
   readonly chips: MdyPartContract;
+  /** The single row a grid structures its cells in. */
+  readonly chipRow: MdyPartContract;
   readonly popup: MdyPartContract;
   readonly search: MdyPartContract;
   readonly group: MdyPartContract;
@@ -187,8 +189,17 @@ export function projectMultiselectFieldA11y<TValue>(
         // name it has is announced twice by a reader that also reads its text; the name is given
         // here because the strip may show a shortened label and must still say the whole one.
         "aria-label": appearance.count > 1 ? `${appearance.label}, ${appearance.count}` : appearance.label,
-        "aria-posinset": appearance.position,
-        "aria-setsize": appearance.size,
+        // Which of how many, in the grid's vocabulary. A `gridcell` does not carry `aria-posinset`
+        // and `aria-setsize` — they were written and the accessibility layer discarded them, so the
+        // position ADR 0137 pays the scrolling strip with never arrived. A grid says the same thing
+        // with a column index against the count on the grid, and a reader announces it in its own
+        // slot after the name: "Roma, column 3 of 12". ADR 0148.
+        //
+        // **One cell per chip, never one per button.** `aria-colindex` counts cells, so a chip whose
+        // five buttons were cells each would land a person on "column 14 of 72" — arithmetically
+        // right and humanly useless. The buttons are inside the cell and reached with the grid's
+        // interaction mode.
+        "aria-colindex": appearance.position,
         // The tooltip exists only while one chip is naming itself, and names that chip alone.
         "aria-describedby": appearance.named ? `${options.widgetId}__chiptip` : null,
       },
@@ -201,7 +212,19 @@ export function projectMultiselectFieldA11y<TValue>(
         // the fact that makes the hidden ones findable — pointed at from the strip itself, because a
         // reader on the strip is exactly the person who cannot see that it runs on.
         "aria-describedby": state.selectedKeys.size > 0 ? descriptionId : null,
+        // How many chips there are, in the grid's own vocabulary. `aria-posinset`/`aria-setsize` are
+        // what a list says it with and a `gridcell` does not carry them; a grid says the same thing
+        // with a column count and a column index, which exist for a set that is not all rendered —
+        // the same shape as a row that scrolls. A reader hears "column 3 of 12". ADR 0148.
+        "aria-colcount": String(state.selectedKeys.size),
+        // Stated rather than left to be inferred: one row, so nobody is left looking for rows they
+        // have not found.
+        "aria-rowcount": "1",
       },
+    },
+    chipRow: {
+      classes: ["mdy-multiselect__chip-row"],
+      attributes: { "aria-rowindex": "1" },
     },
     popup: {
       id: popupId,

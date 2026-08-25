@@ -96,14 +96,17 @@ export function renderMultiselectField(
   const trigger = el("button", parts.trigger.classes.join(" ")) as HTMLButtonElement;
   trigger.type = "button";
   const chipStrip = el("div", parts.chips.classes.join(" "));
-  // The role is the catalogue's: the strip is a list, so what each chip says about its position is
-  // an attribute the accessibility layer keeps rather than one it drops.
   if (parts.chips.role) chipStrip.setAttribute("role", parts.chips.role);
   // A wheel reaches what has scrolled out of the strip. ADR 0127 allows the row to scroll only if
   // there is a mechanism rather than a cue, and many desktop mice have no horizontal axis at all.
   // Passive is wrong here: the point is to take the gesture, and a listener that cannot call
   // `preventDefault` leaves the page scrolling underneath as well.
   chipStrip.addEventListener("wheel", scrollChipStripByWheel, { passive: false });
+  // ARIA structures a grid as grid → row → cell, and this strip is one row of cells. ADR 0148.
+  const chipRow = el("div", parts.chipRow.classes.join(" "));
+  if (parts.chipRow.role) chipRow.setAttribute("role", parts.chipRow.role);
+  chipRow.setAttribute("aria-rowindex", "1");
+  chipStrip.appendChild(chipRow);
   const placeholder = el("span", parts.placeholder.classes.join(" "));
   // The affordance at the trailing edge, as the single-choice sibling has. Decorative: the whole
   // control opens the popup, so this says which way it opens rather than being the way.
@@ -667,14 +670,35 @@ export function renderMultiselectField(
       // No `aria-value*`: the chip is a list item and those belong to a range widget. The quantity
       // is in the name above and in the announcement the change makes, which is where a list item's
       // number is heard.
-      chip.setAttribute("aria-posinset", String(wanted.length));
-      chip.setAttribute("aria-setsize", String(tally.size));
+      // Which of how many, in the grid's vocabulary — the column index, not a list's position: a gridcell does not carry aria-posinset/aria-setsize and the accessibility layer discarded them. ADR 0148.
+      chip.setAttribute("aria-colindex", String(wanted.length));
       // The full name, for a chip the strip has narrowed to an ellipsis. `title` is the pointer's
       // half of that; a theme draws the other on focus and long press, which is what reaches a
       // keyboard and a touch.
       chip.title = label;
       // Appending an element already in the strip moves it, which keeps the order the value's.
-      chipStrip.appendChild(chip);
+      chipRow.appendChild(chip);
+      // How many cells the grid has, said on the grid: a reader announces the cell's index against
+      // it — "column 3 of 12". ADR 0148.
+    }
+    // The grid arrives with the first chip and leaves with the last, and it is the whole element
+    // that comes and goes rather than its role. A container for a set with no members is not a
+    // smaller version of the set: `grid` requires rows and `row` requires cells, so an empty one
+    // announces "Selected values, grid" and sends a person looking for something that is not there.
+    // The correct rendering of *nothing chosen* is no grid, the way the correct rendering of *no
+    // errors* is no error message. ADR 0148.
+    //
+    // What says the field is empty is the field's own value — the placeholder — not an empty
+    // container. And nothing in the empty region is a tab stop, which an empty roving composite
+    // would be.
+    if (tally.size > 0) {
+      // How many cells the grid has, said on the grid: a reader announces the cell's index against
+      // it — "column 3 of 12".
+      chipStrip.setAttribute("aria-colcount", String(tally.size));
+      chipStrip.setAttribute("aria-rowcount", "1");
+      if (chipStrip.parentElement === null) control.insertBefore(chipStrip, trigger);
+    } else {
+      chipStrip.remove();
     }
     for (const key of [...chosenEls.keys()]) {
       if (tally.has(key)) continue;
@@ -903,7 +927,7 @@ export function renderMultiselectField(
     // ordinary thing for a renderer to do.
     const said = multiselectAnnouncement(
       saidLast, nowChosen,
-      { added: messages.selectionAdded, removed: messages.selectionRemoved, empty: messages.selectionEmpty },
+      { added: messages.selectionAdded, removed: messages.selectionRemoved, empty: messages.selectionEmpty, removedLast: messages.selectionRemovedLast },
       (key) => state.options.find((option) => keyFor(option) === key)?.label ?? key,
     );
     if (said !== "") setText(announcement, said);

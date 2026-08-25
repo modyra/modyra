@@ -117,7 +117,10 @@ test("the closed control carries what was chosen, and the popup carries the opti
   // renderers draw it — one part name, one element.
   assert.equal(parentOf("chips"), "box");
   assert.equal(parentOf("trigger"), "box");
-  assert.equal(parentOf("chip"), "chips");
+  // A row between the strip and its cells: ARIA structures a grid as grid → row → cell, and the
+  // strip is one row of them. ADR 0148.
+  assert.equal(parentOf("chipRow"), "chips");
+  assert.equal(parentOf("chip"), "chipRow");
   // The chip is where a value is changed, so the control that takes it off belongs to the chip.
   assert.equal(parentOf("chipRemove"), "chip");
 });

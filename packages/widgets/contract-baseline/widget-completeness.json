@@ -242,6 +242,7 @@
         "inputWrapper",
         "box",
         "chips",
+        "chipRow",
         "chip",
         "chipMove",
         "chipRemove",

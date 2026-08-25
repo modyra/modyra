@@ -1891,6 +1891,19 @@
     /* One line that scrolls, which is the whole reason the option list left the closed control.
        `min-width: 0` on a flex child is what lets it be narrower than its content — without it the
        strip grows to fit and the control's width follows the number of chips. */
+    /* The row a grid structures its cells in, and it takes the layout the strip used to do itself.
+       ARIA needs the element between the grid and its cells; without a rule it was a block, so the
+       chips stopped being a row that overflows and the strip stopped scrolling — the affordance ADR
+       0127 pays for, gone because a semantic element arrived with no layout. ADR 0148. */
+    .mdy-multiselect__chip-row {
+        display: flex;
+        align-items: center;
+        gap: var(--mdy-chip-gap);
+        /* Wide as its contents, so the strip that holds it is what scrolls. */
+        flex: 0 0 auto;
+        min-width: 0;
+    }
+
     .mdy-multiselect__chips {
         display: flex;
         align-items: center;

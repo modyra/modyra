@@ -52,8 +52,39 @@ is against a conditional grid and does not reach an unconditional one.** Used al
 change to be surprised by, and the property ADR 0138 was protecting — one keyboard model regardless of
 contents — is kept intact.
 
-`gridcell` carries a position, so `aria-posinset` and `aria-setsize` keep meaning what ADR 0137 paid
-for. And a cell may legitimately contain buttons, which is what a chip is: a thing with buttons in it.
+A cell may legitimately contain buttons, which is what a chip is: a thing with up to five of them in
+it. And **a grid carries a position — in its own vocabulary.** `aria-posinset`/`aria-setsize` are what a
+list says it with and a `gridcell` does not take them; a grid says the same thing with `aria-colcount`
+on the grid and `aria-colindex` on each cell, which exist for a set that is not all rendered — the same
+shape as a row that scrolls. A reader announces "Roma, column 3 of 12". That is what ADR 0137 pays the
+scrolling strip with, kept rather than lost.
+
+**One cell per chip, never one per button.** `aria-colindex` counts cells, so a chip whose five buttons
+were each a cell would land a person on "column 14 of 72" — arithmetically correct and humanly useless.
+The buttons live inside the cell and are reached with the grid's interaction mode, which is why grid
+exists as a pattern rather than being a table with `tabindex`.
+
+**The strip appears with the first value and goes with the last.** A container for a set with no
+members is not a smaller version of the set: `grid` requires rows and `row` requires cells, so an empty
+one announces "Selected values, grid" and sends a person looking for something that is not there. The
+correct rendering of *nothing chosen* is no grid, the way the correct rendering of *no errors* is no
+error message. What says the field is empty is the field's own placeholder.
+
+**That is not the disease this record's predecessor was avoiding**, and the discriminator is worth
+keeping:
+
+> A control changing what it **is** when its contents change is normal.
+> A control changing what a **key does** while looking the same is the defect.
+
+The quantity floor ADR 0138 weighed overloaded one key with two jobs at a boundary nobody could
+perceive. A container arriving when there is something to put in it is a life cycle: nothing is
+overloaded, the change is visible — a chip appears — and the person caused it and got what they asked
+for. **The combobox is always a combobox**: same role, same name, same keys, at zero values and at
+twelve. Only the value container comes and goes.
+
+**Uniform from one upward.** A grid of one cell is a lot of vocabulary for one word on screen, and it
+is kept anyway: a strip that were a grid at two values and something else at one would change its
+interaction model at a boundary a person cannot perceive, which is the disease itself.
 
 ## Consequences
 
@@ -69,6 +100,13 @@ avoided.
 
 **`Home`/`End` regain two meanings** — the row's ends, and whatever the focused cell's contents make
 of them — for the same reason.
+
+**Removing the last value has to be announced with the resulting state**, because once the strip is
+gone nothing in the page says what happened: a field somebody has just emptied looks exactly like one
+they never filled. The sentence carries both halves — *"Roma removed, nothing selected"* — since the
+name alone leaves them not knowing the field is empty and the count alone leaves them not knowing which
+of twelve went. Focus lands on the trigger, which announces the empty value itself, so the live region
+is not the only thing carrying it.
 
 The contract, the three renderers and every check that asserts `list`/`listitem` move together. The
 computed role is what the assertions read, so this is visible to them rather than silent.
@@ -97,14 +135,6 @@ be moved to this record's pair; until it is, it is a known failure stating the d
 
 The spec the outside view's finding produced asserts that the focused chip's role is one a browsing
 reader's mode switches on. It is red today and green under this record.
-
-**The cells have no `row` between them and the grid, and that is a departure.** ARIA structures a grid
-as `grid` → `row` → `gridcell`, and this strip is one row of cells with no row element. Measured from
-the computed tree in Chromium, all three renderers: `grid` with `gridcell` children, none of them
-ignored — so that engine builds the relationship without the intermediate node. **Only that engine has
-been measured.** A renderer of a stricter tree could drop the cells, which would be worse than the
-`listitem` this replaces, and the honest statement is that adding the row is the safe move and has not
-been taken because the measurement did not demand it.
 
 **What no check here can establish:** that a screen reader actually switches, and that the arrows then
 do what this repository believes. The role table is published practice; the behaviour is inferred from

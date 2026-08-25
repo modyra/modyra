@@ -194,7 +194,13 @@ export function wayBackSentence(
 export function multiselectAnnouncement(
   previous: readonly string[],
   next: readonly string[],
-  words: { readonly added: string; readonly removed: string; readonly empty: string },
+  words: {
+    readonly added: string;
+    readonly removed: string;
+    readonly empty: string;
+    /** What is said when the value removed was the last one; falls back to `empty` where absent. */
+    readonly removedLast?: string;
+  },
   labelOf: (key: string) => string,
 ): string {
   const before = new Set(previous);
@@ -202,7 +208,14 @@ export function multiselectAnnouncement(
   const added = next.find((key) => !before.has(key));
   const removed = previous.find((key) => !after.has(key));
   if (added === undefined && removed === undefined) return "";
-  if (after.size === 0) return words.empty;
+  // Emptied, and the sentence carries both halves. Saying only "nothing selected" loses which of
+  // twelve went; saying only "Roma removed" loses that the field is now empty. And once the strip is
+  // gone there is nothing left in the page to tell them either — a field somebody has just emptied
+  // looks exactly like one they never filled. ADR 0148.
+  if (after.size === 0) {
+    if (removed === undefined || words.removedLast === undefined) return words.empty;
+    return words.removedLast.replace("{value}", labelOf(removed));
+  }
   const template = added !== undefined ? words.added : words.removed;
   return template
     .replace("{value}", labelOf((added ?? removed)!))
