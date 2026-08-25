@@ -139,6 +139,76 @@ for (const host of HOSTS) {
     expect(await expanded(page), `${host.name} did not open on a press at the middle of its own trigger`).toBe("true");
   });
 
+  /**
+   * The same property, asked where the control *says* to press.
+   *
+   * The case above aims at the middle of the field, which is where a person aims when nothing tells
+   * them otherwise. Something does: the field draws a caret at its trailing edge, and that mark is the
+   * conventional "this opens" of every select a person has used. It is the point they aim at second,
+   * and the first once they have learned the control.
+   *
+   * Measured, identically in all three renderers: **pressing the caret empties the field.** The value
+   * goes from two choices to none and the list does not open.
+   *
+   * The mechanism is a repair that reached further than its own control. Clear-all is 28px wide and
+   * owes a 44px target, so 16px of it has to overhang; the sheet grows that overhang **inwards**, and
+   * says why — grown outwards it lands in whatever the form draws next, and a press three pixels past
+   * the border once activated the control beyond. Inwards is where the caret is.
+   *
+   *     caret        1144..1160   pointer-events: none, decoration inside the trigger
+   *     clear-all    1160..1188   answers from 1144
+   *
+   * So a 44px target on a 28px control has sixteen pixels that must go somewhere, and both directions
+   * are occupied: outwards is the next field, inwards is the mark that opens this one. **The geometry
+   * cannot hold all three**, and no amount of care about which way to overhang changes that.
+   *
+   * The caret is `pointer-events: none` on purpose, so that a press on it falls through to the trigger
+   * behind — which is right, and is defeated by something painted over it.
+   *
+   * Claims under attack: A11Y-004, UI-007.
+   */
+  test(`pressing the mark that says it opens, opens it, ${host.name}`, async ({ page }) => {
+    await mountChosen(page, host);
+
+    const caret = page.locator('[data-form="chosen"] .mdy-multiselect__arrow');
+    // The premise: the field draws the mark this test is about. A renderer that draws none has a
+    // different anatomy and this would be reporting on nothing.
+    await expect(caret, `${host.name} draws no caret, so there is no "press here to open" to press`)
+      .toHaveCount(1, { timeout: 5_000 });
+
+    const where = await caret.evaluate((element) => {
+      const box = element.getBoundingClientRect();
+      const at = document.elementFromPoint(box.x + box.width / 2, box.y + box.height / 2);
+      return {
+        x: box.x + box.width / 2,
+        y: box.y + box.height / 2,
+        answers: at === null ? "none" : `${at.tagName.toLowerCase()}.${String(at.className).split(/\s+/)[0]}`,
+      };
+    });
+
+    // Pressed by coordinate rather than through the locator: the question is what happens to a person
+    // aiming at the mark they can see, and clicking the element would ask the DOM instead of the page.
+    await page.mouse.click(where.x, where.y);
+    await page.waitForTimeout(400);
+
+    const held = await page.evaluate(({ api }) =>
+      (window as never as Api)[api].valueOf("chosen" as never) as unknown as Record<string, unknown>, { api: host.api });
+
+    expect(
+      held.s,
+      `${host.name}: pressing the centre of the caret lands on ${where.answers}, and the value went `
+      + `from ${JSON.stringify(CHOSEN)} to ${JSON.stringify(held.s)}. The mark that means "this opens" `
+      + "is covered by the control that discards everything, so the gesture a person learns is the one "
+      + "that destroys what they have.",
+    ).toEqual(CHOSEN);
+
+    expect(
+      await expanded(page),
+      `${host.name} did not open on a press at the centre of its own caret — the mark exists to say `
+      + "that pressing there opens the list.",
+    ).toBe("true");
+  });
+
   test(`the keyboard opens a control that already holds a value, ${host.name}`, async ({ page }) => {
     await mountChosen(page, host);
 
