@@ -107,6 +107,10 @@ export function renderOptionField(
       touched: handle.touched(),
       disabled: handle.disabled(),
       hasError: shownErrorsOf(handle).length > 0,
+      // Locked against change, which is not the same refusal as disabled and must not look like
+      // it: the field is still focusable, still submitted, and a person can select what it holds.
+      readonly: handle.readonly(),
+
       filled: handle.value() !== null && handle.value() !== undefined,
       required: handle.required(),
     });

@@ -876,6 +876,24 @@
         cursor: default;
     }
 
+    /* The same statement, for the kinds that have no wrapper to carry it.
+       A checkbox, a switch and a chooser draw their own frame and never sit in an input wrapper, so
+       the rule above cannot reach them — and a control locked against change looked exactly like one
+       waiting for an answer. Measured across the three renderers: the state reached a screen reader
+       in every kind, through `aria-readonly`, and reached the eye in none of the eight in plain.
+
+       Keyed on the attribute the projections already emit rather than on a class a renderer has to
+       remember: the attribute is the contract's own statement of the state, and it was already
+       there in all twenty-four cases while the classes were in one.   */
+    .mdy-renderer:has([aria-readonly="true"]) .mdy-checkbox,
+    .mdy-renderer:has([aria-readonly="true"]) .mdy-toggle__track,
+    .mdy-renderer:has([aria-readonly="true"]) .mdy-radio-group,
+    .mdy-renderer:has([aria-readonly="true"]) .mdy-segmented,
+    .mdy-renderer:has([aria-readonly="true"]) .mdy-slider-container {
+        background: var(--mdy-surface-variant, color-mix(in srgb, currentColor 6%, transparent));
+        cursor: default;
+    }
+
     /* Excluded for the same reason as the reset further down: a boolean control owns its frame. */
     /* A slider is exempt for the same reason a checkbox is: it draws itself. This reset flattens a
        text control's frame, and `background: transparent` at (0,2,1) silently erased the split

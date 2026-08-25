@@ -213,6 +213,9 @@ export function renderTextField(
     shell.syncState({
       touched: handle.touched(),
       disabled: handle.disabled(),
+      // Locked against change, which is not the same refusal as disabled and must not look like
+      // it: the field is still focusable, still submitted, and a person can select what it holds.
+      readonly: handle.readonly(),
       // The same question the control answers with `aria-invalid`, so the two cannot disagree: the
       // error list appears once the field is touched, and whether the field *is* wrong does not wait
       // for that. A control marked wrong beside a label that says nothing is the field telling two
