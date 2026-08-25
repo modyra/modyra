@@ -443,6 +443,18 @@
     .mdy-datepicker__toggle,
     .mdy-timepicker__toggle,
     .mdy-colors__toggle-area,
+    /* These two carry no target overlay, and that is the repair rather than an omission.
+       A 44px target on a 28px control has sixteen pixels to put somewhere, and at the end of a
+       multiselect both directions are taken: outwards is whatever the form draws next — a press three
+       pixels past the border once activated the colour toggle — and inwards is the caret, which is
+       exactly sixteen pixels wide. Grown inwards the overlay covered it whole, so pressing the mark
+       that says "this opens" emptied the field instead: the value went, the list did not open, and
+       nothing said why.
+
+       The geometry cannot hold all three, and no choice of direction changes that. What resolves it
+       is that the overlay is not needed: the floor is 24×24 (WCAG 2.5.8, the same exception
+       `DESIGN.md` records for stacked steppers) and these controls are a control step wide and the
+       row's full height. The box is already the target. */
     .mdy-multiselect__clear-all,
     .mdy-multiselect__overflow {
         position: relative;
@@ -450,13 +462,7 @@
 
     .mdy-datepicker__toggle::after,
     .mdy-timepicker__toggle::after,
-    .mdy-colors__toggle-area::after,
-    /* The two at the end of a multiselect stand at the row's height — a control step — and their
-       target is this overlay, as every other trailing affordance's is. Sized to the target directly
-       they made the row taller than the field that holds it; given the target here, the box is a
-       step and the thing a finger has to hit is still 44. */
-    .mdy-multiselect__clear-all::after,
-    .mdy-multiselect__overflow::after {
+    .mdy-colors__toggle-area::after {
         content: "";
         position: absolute;
         top: 50%;
