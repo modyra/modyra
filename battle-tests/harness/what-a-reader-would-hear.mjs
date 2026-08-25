@@ -36,6 +36,23 @@
  * **CDP is Chromium.** One engine of three. That Chromium's tree says X is measured; that Firefox and
  * WebKit agree is inference, and a spec resting on this should say so in its own header.
  *
+ * **It cannot see where something sits in a set.** Measured, not assumed: `getFullAXTree` reports no
+ * `posinset` and no `setsize`, for any role —
+ *
+ *     <ol><li>            listitem   level=1                     the browser computes the position itself
+ *     role=listitem       listitem   level=1                     with aria-posinset="2" aria-setsize="7"
+ *     role=option         option     selected=false
+ *     role=gridcell       gridcell   readonly=false, required=false
+ *
+ * — so an element carrying those attributes and one carrying none read identically here. Any question
+ * of the form *does this say which of how many it is* has to be asked of the DOM attribute together
+ * with the computed role, which is what `a-position-the-attribute-claims` does and why that file
+ * caught a conflict this one is blind to.
+ *
+ * The native `<ol>` is the control that establishes it: the browser computes a position there without
+ * anyone asking, and this API still does not carry it. Without that row the same silence would read as
+ * *the page did not set them*.
+ *
  * **And a tree is not a voice.** Reading order, browse mode, what a person actually hears — none of it
  * is here. This closes the gap between the markup and the tree, which is the one that can be closed
  * without an assistive technology in the room.
