@@ -92,6 +92,34 @@ const POPUP = ".mdy-datepicker__popup";
 /** The affordance that opens it, which all three renderers draw with the same class. */
 const CALENDAR_TOGGLE = ".mdy-renderer--datepicker:not(.mdy-renderer--daterange) .mdy-datepicker__toggle";
 
+/**
+ * Waits until the page stops changing height, and fails rather than shooting if it never does.
+ *
+ * A full-page screenshot is the height of the document, so a page that settles at two heights
+ * produces two images and the baseline is whichever one won the day it was recorded. One did: the
+ * same shot alternated between 4707 and 4714 pixels, four times each over eight runs, and had been
+ * failing half the time since the commit that wrote it — including at that commit.
+ *
+ * A fixed pause cannot express this. The theme swap above waits for the stylesheet to load, but the
+ * theme a demo *starts* on fires no load event, so for that one theme nothing was waited for at all —
+ * and that is the theme whose baseline was unstable.
+ *
+ * Two identical readings a frame apart, rather than a longer pause: a pause long enough to be safe
+ * on a slow machine is a pause paid on every shot, and one short enough not to be is this defect
+ * again with a bigger number.
+ */
+async function heightHasStopped(page: import("@playwright/test").Page): Promise<void> {
+  const height = async (): Promise<number> => page.evaluate(() => document.documentElement.scrollHeight);
+  let previous = await height();
+  for (let attempt = 0; attempt < 40; attempt += 1) {
+    await page.waitForTimeout(50);
+    const current = await height();
+    if (current === previous) return;
+    previous = current;
+  }
+  throw new Error(`the page never stopped changing height — last reading ${previous}px, so any screenshot of it is one of several`);
+}
+
 export function declareVisualBaselines(fixture: MdyVisualFixture): void {
   const openCalendar = async (page: import("@playwright/test").Page): Promise<void> => {
     await page.locator(CALENDAR_TOGGLE).first().click();
@@ -123,6 +151,7 @@ export function declareVisualBaselines(fixture: MdyVisualFixture): void {
       [fixture.themeLinkId, theme] as const,
     );
     await page.waitForTimeout(150);
+    await heightHasStopped(page);
   };
 
   test.beforeEach(async ({ page }) => {
