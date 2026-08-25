@@ -6,7 +6,8 @@
 S0     0      the whole of it before any S1
 S2     1
       --
-       1      open reds, 2026-08-23 15:09:40 UTC
+       1      open node reds, 2026-08-25 20:50:14 UTC
+              the browser tier keeps its own count, in known-red-browser.json
 ```
 
 Severity is the order of work: every S0, then every S1, then S2 and below. The same counts are in
