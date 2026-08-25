@@ -441,7 +441,7 @@ export abstract class MdyFieldElement<T> extends LitElement {
     const handle = this.field;
     if (!handle) return;
     const shared = groupSubmitName(this, handle.path, this.fieldId);
-    for (const radio of radios) radio.name = shared;
+    for (const radio of Array.from(radios)) radio.name = shared;
   }
 
   /**
