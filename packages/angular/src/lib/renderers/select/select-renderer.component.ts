@@ -166,7 +166,7 @@ import { MdyDropdownBase } from "../dropdown-base";
                   role="option"
                   class="mdy-select__option"
                   [class.mdy-select__option--active]="activeIndex() === i"
-                  [class.mdy-select__option--selected]="opt.value == value()"
+                  [class.mdy-select__option--selected]="isChosen(opt.value)"
                   [attr.aria-selected]="opt.value == value()"
                   (click)="selectOption(opt)"
                 >
@@ -245,7 +245,11 @@ import { MdyDropdownBase } from "../dropdown-base";
             <!-- An option a document closed is one nobody can choose. Drawn without the attribute, a
                  native list offered it like any other and took it when it was picked. -->
             @for (opt of renderedOptions(); track opt.value) {
-              <option [value]="opt.value" [selected]="opt.value == value()" [disabled]="opt.disabled === true">
+              <!-- The key, not the value: an option element carries a string, so an object-valued
+                   list wrote [object Object] on every one of them and the browser could not tell
+                   them apart. onNativeChange then looked that string up and found nothing, so
+                   choosing any option emptied the field. -->
+              <option [value]="optionKey(opt.value)" [selected]="isChosen(opt.value)" [disabled]="opt.disabled === true">
                 {{ opt.label }}
               </option>
             }
@@ -521,7 +525,7 @@ export class MdySelectComponent<TValue = string>
       const match = typeaheadMatch(this.options(), this.typeahead.push(event.key));
       if (match) {
         event.preventDefault();
-        this.selectAdapter.dispatch({ type: "activate", optionKey: String(match.value) });
+        this.selectAdapter.dispatch({ type: "activate", optionKey: this.optionKey(match.value) });
       }
       return;
     }
@@ -563,6 +567,22 @@ export class MdySelectComponent<TValue = string>
   public resetSelection(): void {
     this.selectAdapter.setValue(null);
     this.dispatchValueIntent<TValue | null>("select", { type: "select", value: null });
+  }
+
+  /**
+   * Whether a held value is this option's, asked the way the contract asks it.
+   *
+   * `==` is identity for an object, so a fresh one from a restored draft or a refetch matched no
+   * option and the control showed nothing chosen while the model held a value. The key answers both:
+   * the same object, and a copy carrying the same data.
+   */
+  protected isChosen(optionValue: TValue): boolean {
+    const held = this.value();
+    if ((held as unknown) === (optionValue as unknown)) return true;
+    if (held === null || held === undefined || optionValue === null || optionValue === undefined) {
+      return false;
+    }
+    return this.optionKey(held) === this.optionKey(optionValue);
   }
 
   protected onNativeChange(event: Event): void {
