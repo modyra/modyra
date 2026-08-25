@@ -27,7 +27,7 @@ import { MDY_WIDGET_KINDS, stateCarriers } from "@modyra/widgets";
 // **Every renderer, from the shared list.** The local list this replaced was not a scope
 // decision: the angular host published six of the twenty-two doors these specs need, so a
 // spec wanting one it lacked left the renderer out and the next reader copied the list.
-import { HOSTS } from "./bench";
+import { became, HOSTS, stops } from "./bench";
 
 /**
  * Kinds a click can change without opening anything first, each with the control to click.
@@ -63,26 +63,28 @@ for (const host of HOSTS) {
           (window as never as Record<string, { mountFields(i: string, f: unknown[]): unknown }>)[api]
             .mountFields(mountId, [{ name: "x", kind: k, label: "X", options: [{ value: "a", label: "A" }, { value: "b", label: "B" }] }]);
         }, { mountId: id, k: kind, api: host.api });
-        await page.waitForTimeout(220);
+        const own = page.locator(`[data-form="${id}"] ${control}`).last();
+        await became(() => own.count().then((found) => found > 0));
         if (readonly) {
           await page.evaluate(({ mountId, api }) =>
             (window as never as Record<string, { readonly(i: string, p: string): void }>)[api].readonly(mountId, "x"),
             { mountId: id, api: host.api });
-          await page.waitForTimeout(240);
         }
-        const before = await value(id);
-        // The field's own control, named for this kind.
-        await page.locator(`[data-form="${id}"] ${control}`).last().click({ force: true }).catch(() => undefined);
-        await page.waitForTimeout(180);
+
+        // Settled rather than sampled, on both sides. What is compared is a value before a gesture
+        // against the value after it, so a reading taken while either one is still arriving reports
+        // a change this field never made — or hides the one it did.
+        const before = await stops(() => value(id));
+
+        await own.click({ force: true, timeout: 500 }).catch(() => undefined);
         // And the keyboard, which is a second way in that a pointer guard alone does not close.
-        await page.locator(`[data-form="${id}"] ${control}`).last().focus().catch(() => undefined);
+        await own.focus({ timeout: 500 }).catch(() => undefined);
         await page.keyboard.press("ArrowRight").catch(() => undefined);
-        await page.waitForTimeout(300);
-        const after = await value(id);
+        const after = await stops(() => value(id));
+
         await page.evaluate(({ mountId, api }) =>
           (window as never as Record<string, { dispose(i: string): void }>)[api].dispose(mountId),
           { mountId: id, api: host.api });
-        await page.waitForTimeout(60);
         return before !== after;
       };
 
@@ -120,19 +122,24 @@ for (const host of HOSTS) {
         (window as never as Record<string, { mountFields(i: string, f: unknown[]): unknown }>)[api]
           .mountFields(mountId, [{ name: "x", kind: k, label: "X", options: [{ value: "a", label: "A" }] }]);
       }, { mountId: id, k: kind, api: host.api });
-      await page.waitForTimeout(200);
+
+      // The field has to exist before it can be asked to go read-only; a kind that draws nothing is
+      // reported as silent below, which is the same answer either way.
+      await became(() => page.evaluate((sel) => document.querySelector(sel)?.children.length ?? 0, `[data-form="${id}"]`)
+        .then((drawn) => drawn > 0));
 
       await page.evaluate(({ mountId, api }) =>
         (window as never as Record<string, { readonly(i: string, p: string): void }>)[api].readonly(mountId, "x"),
         { mountId: id, api: host.api });
-      await page.waitForTimeout(240);
 
-      const says = await page.evaluate((sel) => {
+      // The finding here is a silence, so there is nothing to poll for: what is waited on is the page
+      // settling, which happens whether the state arrives or not.
+      const says = await stops(() => page.evaluate((sel) => {
         const root = document.querySelector(sel);
         const controls = Array.from(root?.querySelectorAll('input, textarea, select, [role="combobox"], [role="radiogroup"], [role="group"]') ?? []);
         return controls.some((each) =>
           each.getAttribute("aria-readonly") === "true" || (each as HTMLInputElement).readOnly === true);
-      }, `[data-form="${id}"]`);
+      }, `[data-form="${id}"]`));
 
       if (declares.includes(kind) && !says) silent.push(kind);
       if (declaresNone.includes(kind) && says) spoke.push(kind);
@@ -140,7 +147,6 @@ for (const host of HOSTS) {
       await page.evaluate(({ mountId, api }) =>
         (window as never as Record<string, { dispose(i: string): void }>)[api].dispose(mountId),
         { mountId: id, api: host.api });
-      await page.waitForTimeout(50);
     }
 
     // The control: some kinds do say it, so the silence below is those kinds rather than a state

@@ -29,7 +29,7 @@ import { MDY_WIDGET_KINDS } from "@modyra/widgets";
 // doors these specs need, so a spec that wanted one it lacked left the renderer out, and the
 // next reader copied the list. Sixty-eight files came to exclude it that way. The doors are
 // open now.
-import { HOSTS } from "./bench";
+import { became, HOSTS, stops } from "./bench";
 
 const OPTIONS = [{ value: "a", label: "A" }, { value: "b", label: "B" }];
 
@@ -49,17 +49,25 @@ for (const host of HOSTS) {
         (window as never as Record<string, { mountFields(i: string, f: unknown[]): unknown }>)[api]
           .mountFields(mountId, [{ name: "x", kind: k, label: "X", options, validators: { required: true } }]);
       }, { mountId: id, k: kind, api: host.api, options: OPTIONS });
-      await page.waitForTimeout(220);
 
-      // Touch it the way a user does: arrive, then leave without filling it in.
+      // Touch it the way a user does: arrive, then leave without filling it in. The wait is for the
+      // control to exist, bounded: a kind that draws nothing focusable is counted as not invalid
+      // below, which is the same answer either way.
       const control = page.locator(`[data-form="${id}"] [aria-invalid], [data-form="${id}"] input, [data-form="${id}"] select`).first();
-      if (await control.count() > 0) {
-        await control.focus().catch(() => undefined);
+      if (await became(() => control.count().then((found) => found > 0))) {
+        await control.focus({ timeout: 500 }).catch(() => undefined);
         await control.blur().catch(() => undefined);
       }
-      await page.waitForTimeout(300);
 
-      const seen = await page.evaluate((sel) => {
+      // The refusal is the premise of the whole reading; the missing message is the finding, and a
+      // finding that is an absence has nothing to poll for, so what is waited on after it is the
+      // page settling.
+      const marked = await became(() => page.evaluate(
+        (sel) => (document.querySelector(sel)?.querySelectorAll('[aria-invalid="true"]').length ?? 0) > 0,
+        `[data-form="${id}"]`,
+      ));
+
+      const seen = await stops(() => page.evaluate((sel) => {
         const root = document.querySelector(sel);
         if (root === null) return null;
         const invalid = Array.from(root.querySelectorAll('[aria-invalid="true"]'));
@@ -76,7 +84,7 @@ for (const host of HOSTS) {
           return holder !== null && holder.id !== "" && [...described, ...errorMessage].includes(holder.id);
         });
         return { invalid: true, hasMessage: message !== undefined, referenced };
-      }, `[data-form="${id}"]`);
+      }, `[data-form="${id}"]`), { window: marked ? 150 : 0 });
 
       if (seen?.invalid === true) {
         invalidSeen += 1;
@@ -87,7 +95,6 @@ for (const host of HOSTS) {
       await page.evaluate(({ mountId, api }) =>
         (window as never as Record<string, { dispose(i: string): void }>)[api].dispose(mountId),
         { mountId: id, api: host.api });
-      await page.waitForTimeout(70);
     }
 
     // The control: fields did reach the invalid state. A run where none did would report nothing

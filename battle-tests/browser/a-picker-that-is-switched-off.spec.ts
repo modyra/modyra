@@ -20,7 +20,7 @@ import { MDY_DISABLED_BLOCKS_TRANSITIONS, MDY_WIDGET_TRANSITIONS } from "@modyra
 // **Every renderer, from the shared list.** The local list this replaced was not a scope
 // decision: the angular host published six of the twenty-two doors these specs need, so a
 // spec wanting one it lacked left the renderer out and the next reader copied the list.
-import { HOSTS } from "./bench";
+import { became, HOSTS } from "./bench";
 
 /** Every kind with a state to be blocked from reaching. */
 const KINDS = Object.entries(MDY_WIDGET_TRANSITIONS)
@@ -45,7 +45,8 @@ for (const host of HOSTS) {
         (window as never as Record<string, { mountFields(i: string, f: unknown[]): unknown }>)[api]
           .mountFields(mountId, [{ name: "x", kind: k, label: "X", options }]);
       }, { mountId: id, k: kind, api: host.api, options: OPTIONS });
-      await page.waitForTimeout(280);
+      await became(() => page.evaluate(
+        (sel) => (document.querySelector(sel)?.children.length ?? 0) > 0, `[data-form="${id}"]`));
     };
     const expanded = (id: string) => page.evaluate((sel) =>
       document.querySelector(`${sel} [aria-expanded="true"]`) !== null, `[data-form="${id}"]`);
@@ -59,8 +60,9 @@ for (const host of HOSTS) {
         const candidate = page.locator(selector).first();
         if (await candidate.count() === 0) continue;
         await candidate.click({ force: true }).catch(() => undefined);
-        await page.waitForTimeout(220);
-        if (await expanded(id)) return true;
+        // Short on purpose: this is tried against a field that is supposed to refuse, so the bound is
+        // paid on every door of every kind that correctly stays shut.
+        if (await became(() => expanded(id), { timeout: 250 })) return true;
       }
       return false;
     };
@@ -86,11 +88,14 @@ for (const host of HOSTS) {
       await page.evaluate(({ mountId, api }) =>
         (window as never as Record<string, { disable(i: string, p: string): void }>)[api].disable(mountId, "x"),
         { mountId: off, api: host.api });
-      await page.waitForTimeout(280);
+      // The field has to have taken the state before it is pointed at, or a door that opens proves
+      // only that the pointing came first.
+      await became(() => page.evaluate(
+        (sel) => document.querySelector(`${sel} [disabled], ${sel} [aria-disabled="true"]`) !== null,
+        `[data-form="${off}"]`));
 
       if (await pointAtEverything(off)) openedWhileDisabled.push(kind);
       await dispose(off);
-      await page.waitForTimeout(80);
     }
 
     // A renderer that stopped opening anything would otherwise pass this file perfectly.

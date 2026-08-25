@@ -26,7 +26,7 @@ import { MDY_WIDGET_KINDS } from "@modyra/widgets";
 // **Every renderer, from the shared list.** The local list this replaced was not a scope
 // decision: the angular host published six of the twenty-two doors these specs need, so a
 // spec wanting one it lacked left the renderer out and the next reader copied the list.
-import { HOSTS } from "./bench";
+import { became, HOSTS, SETTLES, stops } from "./bench";
 
 /** A value each kind can hold, different from what it starts with. */
 const ARRIVING: Record<string, unknown> = {
@@ -54,7 +54,6 @@ for (const host of HOSTS) {
         (window as never as Record<string, { mountFields(i: string, f: unknown[]): unknown }>)[api]
           .mountFields(mountId, [{ name: "x", kind: k, label: "X", options: [{ value: "a", label: "A" }, { value: "b", label: "B" }] }]);
       }, { mountId: id, k: kind, api: host.api });
-      await page.waitForTimeout(200);
 
       /** Everything about this field a person could see. */
       const visible = () => page.evaluate((sel) => {
@@ -67,17 +66,28 @@ for (const host of HOSTS) {
         });
       }, `[data-form="${id}"]`);
 
-      const before = await visible();
+      // The field has to have been drawn before "what a person could see" means anything, and it has
+      // to have stopped moving before it can be compared against a later reading of the same thing.
+      await became(() => page.evaluate(
+        (sel) => (document.querySelector(sel)?.querySelectorAll("input, select, textarea").length ?? 0) > 0,
+        `[data-form="${id}"]`,
+      ));
+      const before = await stops(visible);
 
       await page.evaluate(({ mountId, api, value }) =>
         (window as never as Record<string, { setValue(i: string, p: unknown): void }>)[api].setValue(mountId, { x: value }),
         { mountId: id, api: host.api, value: ARRIVING[kind] });
-      await page.waitForTimeout(320);
 
-      const held = await page.evaluate(({ mountId, api }) =>
-        JSON.stringify((window as never as Record<string, { valueOf(i: string): Record<string, unknown> }>)[api].valueOf(mountId).x),
-        { mountId: id, api: host.api });
-      const after = await visible();
+      // Read as one settled snapshot rather than as two samples. What is judged below is the pair —
+      // the model took the value *and* the page moved — so a model read before a page that had not
+      // finished redrawing reports a control that followed as one that did not.
+      const arrived = await stops(async () => ({
+        held: await page.evaluate(({ mountId, api }) =>
+          JSON.stringify((window as never as Record<string, { valueOf(i: string): Record<string, unknown> }>)[api].valueOf(mountId).x),
+          { mountId: id, api: host.api }),
+        after: await visible(),
+      }));
+      const { held, after } = arrived;
 
       if (held !== JSON.stringify(ARRIVING[kind])) stale.push(`${kind}: the model refused it, holding ${held}`);
       else if (before === after) stale.push(`${kind}: the model took it and nothing on the page changed`);
@@ -85,7 +95,6 @@ for (const host of HOSTS) {
       await page.evaluate(({ mountId, api }) =>
         (window as never as Record<string, { dispose(i: string): void }>)[api].dispose(mountId),
         { mountId: id, api: host.api });
-      await page.waitForTimeout(50);
     }
 
     expect(stale, "a control did not follow the value its form was given").toEqual([]);
@@ -104,20 +113,20 @@ for (const host of HOSTS) {
           { name: "when", kind: "datepicker", label: "When" },
         ]);
     }, { api: host.api });
-    await page.waitForTimeout(320);
 
     const shown = () => page.evaluate(() => {
       const inputs = Array.from(document.querySelectorAll('[data-form="r"] input')) as HTMLInputElement[];
       return { who: inputs[0]?.value ?? null, many: inputs[1]?.checked ?? null, when: inputs[2]?.value ?? null };
     });
 
+    await expect
+      .poll(shown, { message: "the form did not start where it was told to", ...SETTLES })
+      .toEqual({ who: "start", many: false, when: "" });
     const start = await shown();
-    expect(start, "the form did not start where it was told to").toEqual({ who: "start", many: false, when: "" });
 
     await page.evaluate(({ api }) =>
       (window as never as Record<string, { setValue(i: string, p: unknown): void }>)[api]
         .setValue("r", { who: "from a fetch", many: true, when: "2026-04-03" }), { api: host.api });
-    await page.waitForTimeout(360);
 
     // The control: the page moved. A reset that puts nothing back would otherwise pass.
     //
@@ -125,10 +134,17 @@ for (const host of HOSTS) {
     // date in the reader's language, so the characters in it are one renderer's rendering of the
     // value rather than the value — pinning them here would make this a test of date formatting
     // wearing a reset test's name, and it would fail the one renderer that follows the reader.
-    const written = await shown();
-    expect({ who: written.who, many: written.many }, "the page did not follow the values it was given")
+    await expect
+      .poll(async () => { const seen = await shown(); return { who: seen.who, many: seen.many }; },
+        { message: "the page did not follow the values it was given", ...SETTLES })
       .toEqual({ who: "from a fetch", many: true });
-    expect(written.when, "the date box shows nothing after the model was given a date").not.toBe("");
+    // The box starts empty, so waiting for it to stop being empty is a wait for something to arrive
+    // rather than a claim that is already true — which is the only shape in which a negative may be
+    // waited on at all.
+    await expect
+      .poll(async () => (await shown()).when,
+        { message: "the date box shows nothing after the model was given a date", ...SETTLES })
+      .not.toBe("");
     expect(
       await page.evaluate(({ api }) =>
         (window as never as Record<string, { valueOf(i: string): Record<string, unknown> }>)[api].valueOf("r").when,
@@ -137,8 +153,9 @@ for (const host of HOSTS) {
     ).toBe("2026-04-03");
 
     await page.evaluate(({ api }) => (window as never as Record<string, { reset(i: string): void }>)[api].reset("r"), { api: host.api });
-    await page.waitForTimeout(380);
 
-    expect(await shown(), "a reset left the page showing what the form no longer holds").toEqual(start);
+    await expect
+      .poll(shown, { message: "a reset left the page showing what the form no longer holds", ...SETTLES })
+      .toEqual(start);
   });
 }
