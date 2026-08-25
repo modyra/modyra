@@ -29,6 +29,20 @@
  * read from the catalogue rather than written here: a kind that stops portalling its overlay is
  * checked strictly again without this file changing.
  *
+ * **One row is red for a reason that is not a defect, and stays red until the catalogue can say so.**
+ * A colours field's hidden native input is placed differently by different renderers on purpose: a
+ * `<label>` wrapping it and a `<button>` beside it are both correct, and demanding the first would
+ * mandate nesting one focusable control inside another. The contract records that freedom in prose
+ * and not in a flag, so this file cannot read it the way it reads the popup exemption — and writing
+ * the exemption here instead would put a rule about one kind in the one place that is supposed to
+ * derive every rule from the catalogue.
+ *
+ * Relaxing the question for everyone is the other tempting repair and is worse: the looser form is
+ * satisfied by almost any arrangement, which is the failure this file's shape was chosen to avoid.
+ *
+ * So the row is pinned rather than argued away. **What closes it is a capability flag naming the
+ * parts whose placement a renderer chooses** — the same shape as the overlay flag, read the same way.
+ *
  * Claims under attack: UI-005, A11Y-004.
  */
 
