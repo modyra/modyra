@@ -59,9 +59,12 @@ it was added for and loses the one it was never meant to have.
 **A boolean says what it means.** An unchecked box is *absent* from a payload — the rule — so `false`
 and "this field was never sent" would arrive identical; and a checked box with no `value` sends the
 string `on`, which describes the box rather than the answer. So the control carries the model's value
-and a hidden companion carries `false` under the same key ahead of it. Both are disabled with the
-field, because a disabled control is left out of the payload entirely and a companion still sending
-`false` would answer a question the field was not asking.
+and a hidden companion carries `false` under the same key. **The companion goes quiet while the box
+is ticked**, so the payload carries one key either way rather than two — `ok=true` or `ok=false`,
+never both. The common construction puts the companion first and lets the later value win; switching
+it off instead needs no convention at the receiving end, and it frees the companion to sit *after*
+the control. Both are disabled with the field, because a disabled control is left out of the payload
+entirely and a companion still sending `false` would answer a question the field was not asking.
 
 **Where several controls carry one value, the contract decides which one is named and clears the
 rest.** `applySubmissionNames` reads the classes the contract declares for each part — the one
@@ -85,9 +88,13 @@ see should not have to satisfy an anatomy that exists to describe what people pe
 - **The DOM carries a second copy of the value for `select` and `multiselect`.** This is the defect
   shape this repository has found four times, and it is here because there is no alternative: an
   input is the only thing a form serialises. It is confined to the two kinds that need it.
-- **A checkbox sends its key twice when checked** — `ok=false&ok=true`. The later value is the
-  answer, which is the convention every server-side form library already implements, and it is still
-  a convention rather than a rule.
+- **A field can hold more inputs than it used to**, and that changes what a selector by position
+  finds. The hidden inputs are placed **after** the visible control so `querySelector("input")` and
+  `.first()` still land on the control a person can see — but `querySelectorAll("input")[2]` may be a
+  different element than before. Measured, not predicted: six carefully written specs in the battle
+  suite broke this way within an hour of the first placement, which put the companion first. One of
+  them read a whole renderer as mute because focus had been put on an element that cannot take it.
+  `input:not([type="hidden"])` is the selector that survives.
 - **A control mounted outside a form keeps the scoped name**, so a group moved into a form after
   mount submits under the scoped key until it is redrawn. Declared rather than fixed: the renderers
   recompute it on every render, so the window is one paint wide.

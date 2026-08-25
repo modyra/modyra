@@ -53,11 +53,14 @@ export function renderBooleanField(
   const accessibleName = fieldAccessibleName({ ariaLabel: f.ariaLabel, label: f.label, name: f.name });
   if (accessibleName) input.setAttribute("aria-label", accessibleName);
 
-  // The false half of the value, ahead of the box. HTML leaves an unchecked box out of the payload
-  // altogether, so without this a person who said no and a form that never carried the question
-  // arrive identical.
+  // The false half of the value. HTML leaves an unchecked box out of the payload altogether, so
+  // without this a person who said no and a form that never carried the question arrive identical.
+  //
+  // **After** the box, not before: a hidden input ahead of the visible control changes what
+  // `querySelector("input")` and `.first()` mean for everyone reading the field, and that is the
+  // most obvious selector anybody writes.
   const submitFalse = el("input") as HTMLInputElement;
-  wrapper.append(submitFalse, input);
+  wrapper.append(input, submitFalse);
   // The drawn box goes *inside* the words' label, and that is what keeps it a pointer target: the
   // native input is visually hidden, so with the wrapper inert the only thing forwarding a click is
   // the `<label>`. Left outside it, the box a person actually aims at stopped working — measured,

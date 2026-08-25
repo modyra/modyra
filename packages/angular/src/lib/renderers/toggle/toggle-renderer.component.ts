@@ -18,12 +18,6 @@ import { MdyInlineErrorIconComponent } from "../../control/inline-error-icon.com
   },
   template: `
     <div class="mdy-toggle">
-      <!--
-        The false half of the value, ahead of the box. HTML leaves an unchecked box out of the
-        payload altogether, so without this a person who said no and a form that never carried the
-        question arrive identical at the other end.
-      -->
-      <input [mdyPart]="submitFalsePart()" />
       <input
         type="checkbox"
         role="switch"
@@ -56,6 +50,15 @@ import { MdyInlineErrorIconComponent } from "../../control/inline-error-icon.com
           }
         }
       </label>
+      <!--
+        The false half of the value, after the visible control. HTML leaves an unchecked box out of
+        the payload altogether, so without this a person who said no and a form that never carried
+        the question arrive identical at the other end.
+
+        After, not before: a hidden input ahead of the visible control changes what the most obvious
+        selector anybody writes — the first input in the field — actually finds.
+      -->
+      <input [mdyPart]="submitFalsePart()" />
     </div>
     @if (errorsRendered()) {
       <mdy-error-list [fieldId]="fieldId" [errors]="errors()" />

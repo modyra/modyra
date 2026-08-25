@@ -4541,7 +4541,7 @@
   ],
   "submitFalsePart": [
     "(0) path: string",
-    "(1) disabled?: boolean",
+    "(1) state?: { readonly disabled?: boolean; readonly checked?: boolean; }",
     "-> returns: { readonly classes: readonly string[]; readonly attributes: Readonly<Record<string, string | boolean>>; }"
   ],
   "subscribeController": [

@@ -22,8 +22,15 @@ and the name only groups the set, it is still used.
 
 **A checkbox says what it means.** An unchecked box is absent from a payload in HTML, so `false` and
 "never sent" arrived identical; and a checked box with no `value` sends `on`. A boolean now sends its
-model value, with a hidden companion carrying `false` under the same key ahead of it — so the key is
-always present, and when checked the later value is the answer. Both are disabled with the field.
+model value, with a hidden companion carrying `false` — so the key is always present. The companion
+goes quiet while the box is ticked, so the payload carries **one** key either way: `ok=true` or
+`ok=false`, never both, and nothing at the receiving end has to know which repeat wins.
+
+**If you select controls by position, check your selectors.** `select`, `multiselect`, `checkbox` and
+`toggle` now render a hidden input, so a field can hold more inputs than it used to. The hidden one is
+always placed **after** the visible control, so `querySelector("input")` and `.first()` still find the
+control a person can see — but `querySelectorAll("input")[2]` may now be a different element than it
+was. `input:not([type="hidden"])` is the selector that survives either way.
 
 **`select` and `multiselect` gained hidden inputs**, because they draw no form control at all. One
 per value, in order, so a multiselect keeps both.

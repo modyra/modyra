@@ -111,16 +111,19 @@ export function projectBooleanFieldA11y(
       classes: isSwitch ? ["mdy-toggle__track"] : ["mdy-checkbox__indicator"],
       attributes: { "aria-hidden": "true" },
     },
-    // Carries `false` under the field's key, ahead of the box. Nothing to render without a name.
+    // Carries `false` under the field's key, **after** the box in the document: a hidden input
+    // before the visible control changes what `querySelector("input")` and `.first()` mean for
+    // everyone reading the field, and that is the most obvious selector anybody writes.
     submitFalse: {
       classes: [],
       attributes: options.submitName === undefined ? {} : {
         type: "hidden",
         name: options.submitName,
         value: "false",
-        // Disabled with the field: a disabled control is left out of the payload entirely, and a
-        // companion that kept sending `false` would answer a question the field was not asking.
-        disabled: state.disabled === true,
+        // Silent while the box is ticked, so the payload carries one key rather than two: a ticked
+        // box sends `true` alone and an unticked one sends `false` alone, with no repeated key for a
+        // receiving end to resolve. Disabled with the field for the same reason a control is.
+        disabled: state.disabled === true || state.checked === true,
       },
     },
     input: {

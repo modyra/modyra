@@ -650,7 +650,7 @@ export abstract class MdyBaseControl<TValue = unknown> implements OnInit {
    * value is the answer.
    */
   protected readonly submitFalsePart: Signal<MdyPartContract> = computed(
-    () => submitFalsePart(this.effectiveName(), this.isDisabled()),
+    () => submitFalsePart(this.effectiveName(), { disabled: this.isDisabled(), checked: this.fieldState().value() === true }),
   );
 
   protected readonly controlPart: Signal<MdyPartContract> = computed(() =>

@@ -177,12 +177,29 @@ export function submissionDefects(): readonly string[] {
  * them needs to know why. The why is HTML's: an unchecked box is absent from the payload, so a
  * person who said no and a form that never carried the question arrive identical.
  */
-export function submitFalsePart(path: string, disabled = false): { readonly classes: readonly string[]; readonly attributes: Readonly<Record<string, string | boolean>> } {
+export function submitFalsePart(
+  path: string,
+  state: { readonly disabled?: boolean; readonly checked?: boolean } = {},
+): { readonly classes: readonly string[]; readonly attributes: Readonly<Record<string, string | boolean>> } {
   return Object.freeze({
     classes: Object.freeze([]),
-    // Disabled with the field. A disabled control is left out of the payload entirely, and a
-    // companion that kept sending `false` would answer a question the field was not asking.
-    attributes: Object.freeze({ type: "hidden", name: path, value: "false", disabled }),
+    attributes: Object.freeze({
+      type: "hidden",
+      name: path,
+      value: "false",
+      // Silent while the box is ticked, so the payload carries **one** key rather than two.
+      //
+      // The common construction puts the companion first and lets the later value win, which works
+      // and asks the receiving end to know that rule. Switching it off instead needs no convention:
+      // a ticked box sends `true` alone, an unticked one sends `false` alone, and there is never a
+      // repeated key to resolve. It also frees the companion to sit *after* the control — see
+      // `submitFalsePart`'s placement note in the renderers.
+      //
+      // Disabled with the field for the same reason a control is: a disabled field is left out of
+      // the payload entirely, and a companion still sending `false` would answer a question the
+      // field was not asking.
+      disabled: state.disabled === true || state.checked === true,
+    }),
   });
 }
 

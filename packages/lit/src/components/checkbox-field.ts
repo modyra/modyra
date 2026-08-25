@@ -37,12 +37,6 @@ export class MdyCheckboxFieldElement extends MdyFieldElement<boolean> {
     this.syncStateClasses(handle);
     return html`
       <div class="${this.partClass("inputWrapper")}">
-        <!--
-          The false half of the value, ahead of the box. HTML leaves an unchecked box out of the
-          payload altogether, so without this a person who said no and a form that never carried the
-          question arrive identical at the other end.
-        -->
-        <input ${mdyPart(submitFalsePart(handle.path, handle.disabled()))} />
         <input
           id=${this.fieldId}
           class="${this.partClass("control")}"
@@ -78,6 +72,15 @@ export class MdyCheckboxFieldElement extends MdyFieldElement<boolean> {
             ? html`<span class="mdy-label__required" aria-hidden="true">*</span>`
             : nothing}
         </label>
+        <!--
+          The false half of the value, after the visible control. HTML leaves an unchecked box out of
+          the payload altogether, so without this a person who said no and a form that never carried
+          the question arrive identical at the other end.
+
+          After, not before: a hidden input ahead of the visible control changes what the most
+          obvious selector anybody writes — the first input in the field — actually finds.
+        -->
+        <input ${mdyPart(submitFalsePart(handle.path, { disabled: handle.disabled(), checked: handle.value() === true }))} />
       </div>
       ${this.renderErrors(handle)}
       ${this.renderSupportingText()}
