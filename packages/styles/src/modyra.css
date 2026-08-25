@@ -1835,6 +1835,11 @@
        overflows, `overflow-x` has nothing to do, and the control is as wide as the value is long.
        That is the same expansion the inline option list used to cause, one axis over. */
     .mdy-renderer .mdy-multiselect {
+        /* What a chip's ceiling is measured against. The box takes its width from the field rather
+           than from the chips, so it can be asked; the strip cannot, because its own width *is* the
+           chips and a container that sizes to its contents cannot also size them. `inline-size`
+           leaves the block axis alone. */
+        container-type: inline-size;
         min-width: 0;
         max-width: 100%;
         /* `height`, not `min-height`. Every other control takes the field height as a floor and
@@ -1947,11 +1952,18 @@
     .mdy-multiselect__chips .mdy-chip {
         flex: 0 0 auto;
         min-width: 4rem;
-        /* The ceiling is the strip, not a constant. A fixed one cut a label while three quarters of
-           the field was unused, and a label cut to a few characters renders two different values
-           identically — the strip stops being a record of what was chosen. Bounded by the strip, a
-           chip is shortened only when one value really is wider than the room there is. */
-        max-width: 100%;
+        /* The ceiling is the strip *as a person sees it*, not a constant and not `100%`.
+           A fixed one cut a label while three quarters of the field was unused, and a label cut to a
+           few characters renders two different values identically — the strip stops being a record of
+           what was chosen. But `100%` inside a scroller resolves against the scrolled *content*,
+           which is as wide as the chips make it: the ceiling was the thing it was meant to bound, so
+           a long value grew to 1299px inside a 684px field and nothing was ever shortened. The
+           machinery for shortening was still there and had nothing left to bite on.
+
+           `cqw` is the strip's own visible width, which is what "the room there is" meant. A chip
+           wider than the strip is cut with an ellipsis; the strip still scrolls, because scrolling is
+           for reaching the chips past the edge rather than for reading one chip in instalments. */
+        max-width: 100cqw;
     }
 
     .mdy-multiselect__chips::-webkit-scrollbar {
