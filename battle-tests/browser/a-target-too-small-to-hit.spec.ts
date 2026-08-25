@@ -35,13 +35,34 @@ type Api = Record<string, Record<string, (...args: never[]) => unknown>>;
 /** WCAG 2.5.8 Target Size (Minimum), in CSS pixels. */
 const FLOOR = 24;
 
+/**
+ * The root text sizes this runs at, and the reason the small one is here.
+ *
+ * A target expressed in `rem` grows with the reader's text, which is the point — and it **shrinks**
+ * with it too. An application that installs this library is free to write `html { font-size: 62.5% }`,
+ * the old ten-pixel trick, and it is still common. Every `rem` in the sheet is then five eighths of
+ * what it was, and a floor stated as `1.5rem` lands at 15 CSS pixels.
+ *
+ * **Nothing here controls that declaration and nothing can see it.** It is the same shape as the
+ * browser floor: the decision belongs to somebody else, arrives without warning, and the sheet stays
+ * "proportional and correct" while the rendered result stops conforming.
+ *
+ * 200% is the direction everybody tests, and a target only grows there. **62.5% is the one direction
+ * in which a rem-sized target falls below its floor, and it is the one nobody runs.**
+ */
+const ROOT_SIZES = ["62.5%", "100%", "200%"] as const;
+
 const OPTIONS = Array.from({ length: 4 }, (_, index) => ({ value: `v${index}`, label: `Scelta ${index}` }));
 
 for (const host of HOSTS) {
-  test(`every target is big enough or far enough, ${host.name}`, async ({ page }) => {
+  for (const root of ROOT_SIZES) {
+  test(`every target is big enough or far enough at root ${root}, ${host.name}`, async ({ page }) => {
     await page.setViewportSize({ width: 900, height: 700 });
     await page.goto(host.page);
     await page.waitForFunction((flag) => (window as never as Record<string, boolean>)[flag] === true, host.ready);
+
+    // Set before mounting, so the field is built under the text size rather than reflowed into it.
+    await page.evaluate((size) => { document.documentElement.style.fontSize = size; }, root);
 
     await page.evaluate(({ api, options }) => {
       (window as never as Api)[api].mountFields("targets", [{
@@ -89,13 +110,21 @@ for (const host of HOSTS) {
     }, FLOOR);
 
     // Nothing pressable means nothing measured, and an empty list of failures would say so wrongly.
-    expect(measured.count, `${host.name} drew no pressable control in the field`).toBeGreaterThan(1);
+    expect(
+      measured.count,
+      `${host.name} drew no pressable control in the field at root ${root}`,
+    ).toBeGreaterThan(1);
 
     expect(
       measured.crowded,
-      `${host.name}: ${measured.undersized.length} target(s) are under ${FLOOR}×${FLOOR} — `
-      + `${measured.undersized.join(", ")} — and the spacing that would excuse them is not there: `
-      + `${measured.crowded.join("; ")}.`,
+      `${host.name} at root ${root}: ${measured.undersized.length} target(s) are under `
+      + `${FLOOR}×${FLOOR} — ${measured.undersized.join(", ")} — and the spacing that would excuse `
+      + `them is not there: ${measured.crowded.join("; ")}.`
+      + (root === "62.5%"
+        ? " This is the reduced text size an application may set on its own root, which shrinks every "
+          + "rem in the sheet without anything here being able to see it."
+        : ""),
     ).toEqual([]);
   });
+  }
 }
