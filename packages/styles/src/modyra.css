@@ -1990,8 +1990,19 @@
        of chips two of which are visible is a control a person has to operate blind. So the row
        wraps: the control grows downward, every chip is on screen, and nothing has to be reached for.
        The equal-height rule the single row exists to keep is the thing given up, and it is the
-       cheaper of the two. */
-    @media (max-width: 320px) {
+       cheaper of the two.
+
+       **Asked of the field, not of the window.** As a media query this read the viewport, and the
+       thing it is about is how wide the *strip* is: a multiselect in a 284px column inside a 1400px
+       page had 1067px of chips in 252px of view and no wrap, because the window was wide and the
+       query could not see the column. A component that asks the viewport is guessing about a page it
+       cannot see. The box already declares itself a container for the chip ceiling, so this costs
+       nothing but the word.
+
+       The threshold stays 320 and now means the field: at a 320px viewport the field measures about
+       284 with the page's own padding, so a container threshold of 320 covers that case and the
+       narrow-column one with it. */
+    @container (max-width: 320px) {
         .mdy-multiselect__chips {
             flex-wrap: wrap;
             overflow-x: visible;
