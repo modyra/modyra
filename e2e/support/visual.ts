@@ -93,6 +93,26 @@ const POPUP = ".mdy-datepicker__popup";
 const CALENDAR_TOGGLE = ".mdy-renderer--datepicker:not(.mdy-renderer--daterange) .mdy-datepicker__toggle";
 
 /**
+ * Takes one full-page shot and throws it away, because the first one moves the page.
+ *
+ * Capturing beyond the viewport makes the engine lay the document out at its whole height, and the
+ * rounding of `line-height: normal` lands differently there: a `th` gained a pixel, an `h2` lost one,
+ * and the document went from 4371 to 4366 **inside the capture**. Font size, family and line-height
+ * are identical before and after — measured — so nothing about the page changed except where the
+ * sub-pixel boundaries fell.
+ *
+ * A second shot leaves it at 4366, and a third. So the state after one capture is the stable one, and
+ * this is how the comparison gets to start from it. Waiting cannot substitute: the page is already
+ * still, and it moves only when something asks it to be painted whole.
+ *
+ * The cost is one discarded capture per shot, which is the price of a baseline that means the same
+ * thing twice.
+ */
+async function theCaptureHasHappenedOnce(page: import("@playwright/test").Page): Promise<void> {
+  await page.screenshot({ fullPage: true });
+}
+
+/**
  * Waits until the page stops changing height, and fails rather than shooting if it never does.
  *
  * A full-page screenshot is the height of the document, so a page that settles at two heights
@@ -151,6 +171,7 @@ export function declareVisualBaselines(fixture: MdyVisualFixture): void {
       [fixture.themeLinkId, theme] as const,
     );
     await page.waitForTimeout(150);
+    await theCaptureHasHappenedOnce(page);
     await heightHasStopped(page);
   };
 
