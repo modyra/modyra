@@ -136,10 +136,20 @@ be moved to this record's pair; until it is, it is a known failure stating the d
 The spec the outside view's finding produced asserts that the focused chip's role is one a browsing
 reader's mode switches on. It is red today and green under this record.
 
-**What no check here can establish:** that a screen reader actually switches, and that the arrows then
+**What no check here can establish** is that a screen reader actually switches, and that the arrows then
 do what this repository believes. The role table is published practice; the behaviour is inferred from
-it. No assistive technology has been run against this library — see the closing note of ADR 0145, which
-records the same boundary for the same reason.
+it, and no check in this repository can close the gap.
+
+**It was closed by listening, and this is the first time anything here has been.** VoiceOver on macOS,
+a field with one chosen value, arriving at the strip and pressing `→`: **focus moves between the
+values.** So the reader does switch on the role this record chose, and the keyboard model this strip
+declares reaches the person using it — which is the whole of what the change bought and the one thing
+the DOM could only promise.
+
+One reader on one platform. NVDA on Windows is where the mode table comes from and has not been run;
+neither has anything else. But the sentence "no assistive technology has been run against this library"
+was true when this record shipped and is not true any more, and the part it was hedging is the part
+that has been confirmed.
 
 ## Security and privacy
 
