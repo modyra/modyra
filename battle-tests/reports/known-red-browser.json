@@ -1,12 +1,13 @@
 {
   "note": "Browser specs that are red because the defect they describe is open. A red listed here does not fail a build; a red that is not listed is a regression. Rewrite with `npm run battle:browser:ci -- --accept`.",
   "order": "Repair in severity order, as the node tier does. A spec's severity is the worst of the claims its header names; `unknown` is a spec that names none, which is most of them.",
-  "recordedAt": "2026-08-25T07:37:13Z",
-  "openReds": 13,
+  "recordedAt": "2026-08-25T08:13:24Z",
+  "openReds": 12,
   "bySeverity": {
-    "S1": 13
+    "S1": 12
   },
   "knownRed": [
+    "a-choice-that-writes-another.spec.ts › choosing the second option writes the second option, angular",
     "a-cluster-a-thumb-can-tell-apart.spec.ts › a destroy and a restore are told apart by more than a margin, angular",
     "a-cluster-a-thumb-can-tell-apart.spec.ts › a destroy and a restore are told apart by more than a margin, lit",
     "a-cluster-a-thumb-can-tell-apart.spec.ts › a destroy and a restore are told apart by more than a margin, plain",
@@ -17,8 +18,6 @@
     "a-row-system-three-renderers-disagree-about.spec.ts › a kind is the same height in every renderer",
     "an-id-a-selector-cannot-reach.spec.ts › a nested document's own ids are reachable by a selector, angular",
     "an-id-a-selector-cannot-reach.spec.ts › a nested document's own ids are reachable by a selector, lit",
-    "an-id-a-selector-cannot-reach.spec.ts › a nested document's own ids are reachable by a selector, plain",
-    "one-choice-that-marks-two.spec.ts › a radio holding one value marks one option, lit",
-    "one-choice-that-marks-two.spec.ts › a segmented holding one value marks one option, lit"
+    "an-id-a-selector-cannot-reach.spec.ts › a nested document's own ids are reachable by a selector, plain"
   ]
 }
