@@ -61,9 +61,10 @@ What this costs:
 - **A consumer who wanted the browser's semantics cannot have them.** Returning to the `value`
   attribute — which for these renderers means empty — is no longer reachable through Cancel. That
   behaviour was never useful here, but it was the platform's, and this overrides it.
-- **`<mdy-form>` nested in a consumer's own `<form>` does not answer the outer form's reset.** Its
-  controls belong to the inner form, so the browser does not reset them either; the behaviour is
-  consistent, and it will still surprise someone.
+- **`<mdy-form>` nested in a consumer's own `<form>` answers the outer form's reset**, although the
+  browser does not reset its controls: they belong to the inner form. The model returns to its
+  initial values and the boxes follow from the model, so the two agree — but a consumer who nested a
+  form expecting the outer Cancel to leave it alone does not get that.
 - **One document-level listener per binding**, rather than one per form. For a renderer that binds
   per control this is a listener per control on the document, for an event that fires rarely.
 - **A new public export to keep stable**: `bindFormReset` and `MdyFormResetBinding`.
@@ -124,6 +125,13 @@ moved into one afterwards was bound to nothing and stayed bound to nothing:
 Two renderers of one contract disagreeing, with lit correct only because a custom element's lifecycle
 happens to fire again. Resolving the form at each reset removes the difference and the accident
 together: all three now answer in both shapes.
+
+**And it reverses a consequence this record stated.** The original text said a `<mdy-form>` nested in
+a consumer's own form does not answer the outer reset. It does now, because an outer form *contains*
+the inner one and containment is the question being asked. Measured: the outer form's reset returns
+the Angular model to its initial values. The reversal is an improvement — three renderers answered one
+gesture in two ways, and now they answer alike — but it is a behaviour change, not a clarification,
+and the original consequence is wrong rather than incomplete.
 
 ## Security and privacy
 
