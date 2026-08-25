@@ -66,7 +66,12 @@ for (const host of HOSTS) {
 
     await page.evaluate(({ api, options }) => {
       (window as never as Api)[api].mountFields("targets", [{
-        name: "m", kind: "multiselect", label: "Scelte", clearable: true,
+        // **`reorderable`, because a fixture that does not draw a control cannot measure it.** Without
+        // it this field draws three pressable things; with it, thirteen — every button of every chip.
+        // The reduced-root failure was reported here as three targets and was thirteen, and the
+        // difference was configuration rather than measurement. Second time: the movers were outside
+        // the accessibility reading for the same reason.
+        name: "m", kind: "multiselect", label: "Scelte", clearable: true, reorderable: true,
         options, initialValue: [options[0].value, options[1].value],
       }] as never);
     }, { api: host.api, options: OPTIONS });
@@ -110,10 +115,16 @@ for (const host of HOSTS) {
     }, FLOOR);
 
     // Nothing pressable means nothing measured, and an empty list of failures would say so wrongly.
+    // Two chips, each carrying its own buttons, plus the control at the trailing edge: eight
+    // pressable things. A floor of "more than one" would pass on a field that had quietly stopped
+    // drawing the chip buttons, which is exactly the state this fixture was widened to measure — and
+    // the reduced-root failure was reported as three targets when it was more, because of it.
     expect(
       measured.count,
-      `${host.name} drew no pressable control in the field at root ${root}`,
-    ).toBeGreaterThan(1);
+      `${host.name} at root ${root} drew ${measured.count} pressable control(s) where the fixture `
+      + "configures eight. Something it asked for was not drawn, and what is missing is not being "
+      + "measured because it is not here.",
+    ).toBeGreaterThanOrEqual(8);
 
     expect(
       measured.crowded,
