@@ -1,7 +1,7 @@
 import { mdyPart } from "../mdy-part.js";
 import { html, nothing, type PropertyDeclarations } from "lit";
 import { type MdyFieldHandle } from "@modyra/core";
-import { MDY_WIDGET_CONTRACTS, clearFileSelection, fileSelectionTransition } from "@modyra/widgets";
+import { blocksValueChange, MDY_WIDGET_CONTRACTS, clearFileSelection, fileSelectionTransition } from "@modyra/widgets";
 import { MdyFieldElement, mdyIcon } from "../base.js";
 
 export class MdyFileFieldElement extends MdyFieldElement<readonly File[] | null> {
@@ -42,6 +42,11 @@ export class MdyFileFieldElement extends MdyFieldElement<readonly File[] | null>
     // meant an element that ignored `accept` on a drop and wrote a bare `File`, which is not the
     // shape `MDY_VALUE_CONTRACTS.file` declares.
     const pick = (picked: readonly File[]): void => {
+      // Asked of the model, not of the affordance. Disabling the button stops a pointer and nothing
+      // else: a file still arrives by being dropped on the field, by a script, or through an
+      // assistive technology driving the input — and each of those wrote a value the application had
+      // declared unchangeable. A guard on a door is not a lock.
+      if (blocksValueChange(handle.interactivity())) return;
       const transition = fileSelectionTransition(picked, {
         accept: this.accept,
         multiple: this.multiple,

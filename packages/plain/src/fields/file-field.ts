@@ -8,7 +8,7 @@
  */
 import { observerFor, type MdyFieldHandle, type MdyReactivity } from "@modyra/core";
 import type { MdyDynamicFileField } from "@modyra/core";
-import {
+import { blocksValueChange,
   MDY_WIDGET_CONTRACTS,
   clearFileSelection,
   fileSelectionTransition,
@@ -88,6 +88,11 @@ export function renderFileField(
   const turnedAway = reactivity.signal<readonly File[]>([]);
 
   function commit(candidates: readonly File[]): void {
+    // Asked of the model, not of the affordance. Disabling the button stops a pointer and nothing
+    // else: a file still arrives by being dropped on the field, by a script, or through an assistive
+    // technology driving the input — and each of those wrote a value the application had declared
+    // unchangeable. A guard on a door is not a lock.
+    if (blocksValueChange(handle.interactivity())) return;
     const transition = fileSelectionTransition(candidates, selectionOptions);
     turnedAway.set(transition.rejected);
     if (transition.value === undefined) return;
