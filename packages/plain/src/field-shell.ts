@@ -65,6 +65,25 @@ export function buildFieldShell(
   // The themes lay the wrapper out as a flex row and expect the control inside an inliner —
   // without it the control is a flex item with no basis and collapses to nothing.
   const inliner = el("div", MDY_FIELD_SHELL_CLASSES.control);
+  /**
+   * A press that lands on the box rather than on the control still reaches the control.
+   *
+   * The inliner is inset from the field it sits in, so there is a strip along each edge that looks
+   * like the field and is not the control: a press there put focus nowhere at all — measured, the
+   * document's body kept it — while the same press in the other two renderers lands on the control,
+   * because neither of them draws this element.
+   *
+   * Forwarded rather than removed: the themes lay the wrapper out as a flex row and expect this box,
+   * and a control that is a flex item with no basis collapses to nothing. Only a press on the box
+   * *itself* is forwarded — one on a prefix, a suffix or a button inside it is that element's.
+   */
+  inliner.addEventListener("mousedown", (event) => {
+    if (event.target !== inliner) return;
+    const control = inliner.querySelector<HTMLElement>("input, textarea, select, button");
+    if (control === null || control.hasAttribute("disabled")) return;
+    event.preventDefault();
+    control.focus();
+  });
   // Only when there is something to put in them: an empty affix is a gap the theme still spaces.
   if (affixes.prefix) {
     const prefix = el("div", MDY_FIELD_SHELL_CLASSES.prefix);
