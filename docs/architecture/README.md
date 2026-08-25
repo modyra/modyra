@@ -165,6 +165,7 @@ absent section reads as an oversight, and "no security impact" is a finding.
 - [ADR 0148: A strip a browsing reader can reach](0148-a-strip-a-browsing-reader-can-reach.md) — a listitem does not switch a screen reader's mode, so the strip's whole keyboard model never reached somebody who arrived by browsing
 - [ADR 0149: A form answers its own reset by returning to the initial values](0149-a-form-that-answers-its-own-reset.md)
 - [ADR 0150: What is submitted is what was on screen](0150-what-the-browser-gave-back.md) — the browser writes into a person's form and tells nobody, so the field showed one value while the form held another
+- [ADR 0151: The floor is Baseline widely available, and everything below it is declared](0151-the-platform-floor.md) — the repository never said which browsers it works in, and arrived here one rule at a time
 - [ADR 0092: A condition travels with the form](0092-a-condition-travels-with-the-form.md) — `when` and `asyncWhen` were closures, so a schema carrying one was not data and the document half could not say what the typed half said
 
 ## Security-relevant records

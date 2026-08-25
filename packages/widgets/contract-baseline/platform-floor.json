@@ -1,0 +1,44 @@
+{
+  "note": "The platform this library promises to work on, and every feature used below that line. A feature below the floor is allowed only with a fallback that a check demonstrates — the allowlist is also the documentation of what somebody under the floor loses.",
+  "floor": {
+    "baseline": "widely available",
+    "means": "In the Baseline sense: interoperable across Chrome, Edge, Firefox and Safari for at least 30 months. A feature that reached that line needs no entry here.",
+    "declaredOn": "2026-08-25"
+  },
+  "roles": {
+    "load-bearing": "Something a person cannot do at all without it. Needs a fallback that leaves the same capability reachable by another route.",
+    "enhancement": "Something that looks or feels better with it. Needs a fallback that degrades rather than breaks, and the entry says what is lost."
+  },
+  "allowed": [
+    {
+      "feature": "popover-api",
+      "matches": ["showPopover", "hidePopover"],
+      "where": "script",
+      "baseline": "newly available 2024-04, widely available expected 2026-10",
+      "role": "enhancement",
+      "lost": "The popup is laid out in the page rather than the top layer, so an ancestor with a transform or a clipping overflow can cut it. It still opens, closes, positions against its trigger and dismisses.",
+      "fallback": "`hidden` carries the open state on its own, and every call is wrapped: a missing method, a disconnected element and a refusal from the platform all leave the popup showing rather than taking the field down.",
+      "provenBy": "packages/widgets/test/platform-fallbacks.spec.mjs"
+    },
+    {
+      "feature": "backdrop-filter",
+      "matches": ["backdrop-filter"],
+      "where": "style",
+      "baseline": "newly available 2024-09, widely available expected 2027-03",
+      "role": "enhancement",
+      "lost": "A translucent surface is drawn as a solid one. Nothing moves and nothing becomes unreadable.",
+      "fallback": "Every use sits inside `@supports`, with the solid colour declared outside it.",
+      "guardedBy": "@supports"
+    },
+    {
+      "feature": "relative-color-syntax",
+      "matches": ["oklch(from"],
+      "where": "style",
+      "baseline": "newly available 2024-07, widely available expected 2027-01",
+      "role": "enhancement",
+      "lost": "The secondary, tertiary and error colours are not derived from the primary one; the palette's declared defaults are used instead.",
+      "fallback": "Every use sits inside `@supports`, with the fixed palette declared outside it.",
+      "guardedBy": "@supports"
+    }
+  ]
+}

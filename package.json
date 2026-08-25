@@ -85,6 +85,7 @@
     "test:docs": "node scripts/audit-docs.mjs --check",
     "test:layout-contract": "node scripts/audit-layout-contract.mjs --check",
     "test:styles-architecture": "node scripts/audit-styles-architecture.mjs --check",
+    "test:platform-floor": "node scripts/audit-platform-floor.mjs --check",
     "test:contract-coverage": "node scripts/audit-contract-style-coverage.mjs --check",
     "test:typescript7": "node scripts/test-typescript-7.mjs",
     "benchmark:typescript": "node scripts/benchmark-typescript.mjs",

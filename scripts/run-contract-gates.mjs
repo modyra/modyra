@@ -49,6 +49,7 @@ const GATES = [
   "npm run test:harness-exceptions",
   "npm run test:deprecations",
   "npm run test:contract-schema",
+  "npm run test:platform-floor",
   "npm run test:eslint-plugin",
   "npm run test:docs",
   "npm run test:conformance",
