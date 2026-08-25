@@ -43,10 +43,18 @@ const parts = MDY_WIDGET_CONTRACTS.multiselect.parts as Record<string, { classes
 const CHIP = parts.chip.classes[0]!;
 const STRIP = parts.chips.classes[0]!;
 
+/**
+ * Names long enough to exceed a chip's ceiling **whatever that ceiling is measured against**.
+ *
+ * Long by a large multiple rather than by a chosen number of pixels: the cap has been an absolute
+ * constant and is now a share of the box, and a fixture tuned to either stops producing the state
+ * this file measures the day it changes to the other.
+ */
 const longOptions = (count: number) =>
   Array.from({ length: count }, (_, index) => ({
     value: `v${index}`,
-    label: `Opzione con un nome deliberatamente lungo numero ${index}`,
+    label: `Opzione con un nome deliberatamente lungo che prosegue ben oltre la larghezza `
+      + `di qualunque campo ragionevole e non accenna a finire, numero ${index}`,
   }));
 
 for (const host of HOSTS) {
@@ -157,14 +165,17 @@ for (const host of HOSTS) {
 
   test(`a truncated name can be read without a pointer, ${host.name}`, async ({ page }) => {
     test.setTimeout(150_000);
-    // **A narrow field, not a long label.** A chip is shortened when a value is wider than the room
-    // there is, and the room is the container — so a fixture that relies on the label being long
-    // enough is relying on the bench being narrow enough, which is a property of the viewport rather
-    // than of the widget. This test's premise died the day a chip stopped being capped at a constant:
-    // the same label that used to overflow now fits, and the guard fired instead of the assertion.
+    // **A long label, and a narrow field is not enough.** This premise has now died twice, for
+    // opposite reasons, and the second one is why the first strategy is inverted here.
     //
-    // Sized to the widget's own limit rather than to the defect's: whatever a chip's ceiling turns
-    // out to be, a field this narrow is below it.
+    // It died first when a chip stopped being capped at a constant: the label that used to overflow
+    // began to fit. Narrowing the field was the answer then, because the ceiling did not move with
+    // it. It died again when the ceiling became a **share of the box** — because then narrowing the
+    // field narrows the ceiling by the same amount, and no viewport is narrow enough to force a cut.
+    //
+    // What survives both is a name longer than the box by a large multiple. The viewport stays narrow
+    // because the rest of this file measures a strip that must scroll, not because it is what causes
+    // the truncation.
     await page.setViewportSize({ width: 420, height: 700 });
     await page.goto(host.page);
     await page.waitForFunction((flag) => (window as never as Record<string, boolean>)[flag] === true, host.ready);
