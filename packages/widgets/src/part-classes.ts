@@ -7,8 +7,8 @@
  * depends on nothing, and only this module needs to know the whole catalog.
  */
 import { MDY_WIDGET_CONTRACTS, type MdyWidgetKind, type MdyWidgetPart } from "./catalog.js";
+import { SHELL_CLASS_FALLBACK } from "./catalog/define.js";
 import { stateClass, type MdyPartState, type MdyStateName } from "./state.js";
-import { MDY_FIELD_SHELL_CLASSES } from "./structure.js";
 
 interface ResolvedPart {
   readonly classes: readonly string[];
@@ -29,8 +29,13 @@ function resolvePart(kind: MdyWidgetKind, part: string): ResolvedPart {
   const contract = (definition.parts as Readonly<Record<string, ResolvedPart | undefined>>)[part];
   if (!contract) throw new RangeError(`Widget "${kind}" has no part "${part}".`);
   if (contract.classes.length > 0) return contract;
-  const shell = (MDY_FIELD_SHELL_CLASSES as Readonly<Record<string, string | undefined>>)[part];
-  return shell === undefined ? contract : { ...contract, classes: [shell] };
+  // The same table the catalogue itself falls back to, rather than the shell's whole vocabulary by
+  // name. The two disagree on one word: the shell calls `control` the **box** that holds the control
+  // — `mdy-input-wrapper__inliner` — while a contract calls `control` the control. Resolving by name
+  // handed a text field's input the class its container wears, so this accessor and the record it
+  // reads from answered differently about the same part, and both are published.
+  const shell = SHELL_CLASS_FALLBACK[part];
+  return shell === undefined ? contract : { ...contract, classes: [...shell] };
 }
 
 /**
