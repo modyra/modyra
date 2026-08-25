@@ -4,6 +4,7 @@ import {
   Component,
   computed,
   DestroyRef,
+  ElementRef,
   afterNextRender,
   effect,
   forwardRef,
@@ -19,7 +20,7 @@ import {
   MdyDeclarativeRegistry,
 } from "../core/declarative-form-adapter";
 import { MDY_DECLARATIVE_REGISTRY, MDY_FORM_ADAPTER } from "../core/tokens";
-import { formErrorsOf, MDY_FORM_SHELL_CLASSES } from "@modyra/widgets";
+import { bindFormReset, formErrorsOf, MDY_FORM_SHELL_CLASSES } from "@modyra/widgets";
 import {
   MdyAsyncValidatorFn,
   MdyAsyncValidatorOptions,
@@ -199,6 +200,23 @@ export class MdyFormComponent<
     // component. External [form]/[adapter] models stay untouched: their
     // lifetime belongs to whoever created them.
     inject(DestroyRef).onDestroy(() => this._declarativeAdapter.destroy());
+
+    // The reset of the rendered `<form>`, answered by returning the model to its initial values.
+    //
+    // A Cancel button is `type="reset"`, and the browser's reset returns each control to its `value`
+    // *attribute* — which this renderer never writes, since it keeps the box in step with the model.
+    // Without this the button emptied the boxes and left the value the form would send untouched,
+    // so what a person saw stopped being what they submitted.
+    //
+    // The write is deferred by `bindFormReset` because the browser resets its controls after the
+    // event is dispatched: a model written during the event is overwritten a moment later.
+    const host = inject(ElementRef).nativeElement as HTMLElement;
+    const destroyRef = inject(DestroyRef);
+    afterNextRender(() => {
+      const form = host.querySelector("form");
+      if (form === null) return;
+      destroyRef.onDestroy(bindFormReset({ element: form, reset: () => { this.reset(); } }));
+    });
 
     // Sync formValue input to the adapter reactively.
     // Only keys whose seed value actually changed (Object.is) are patched:

@@ -1,5 +1,6 @@
-import { MdyFieldHandle, type MdyFieldConstraints, type MdyValueKind } from "@modyra/core";
-import { MDY_ICONS, MDY_POPUP_OPENERS, defaultOptionKey, messagesForLocale, widgetScopeOf, type MdyI18nMessages } from "@modyra/widgets";
+import {
+  handleFormOf, MdyFieldHandle, type MdyFieldConstraints, type MdyValueKind } from "@modyra/core";
+import { MDY_ICONS, MDY_POPUP_OPENERS, bindFormReset, defaultOptionKey, messagesForLocale, widgetScopeOf, type MdyI18nMessages } from "@modyra/widgets";
 import { html, LitElement, nothing, PropertyDeclarations } from "lit";
 import { unsafeSVG } from "lit/directives/unsafe-svg.js";
 import {
@@ -402,9 +403,33 @@ export abstract class MdyFieldElement<T> extends LitElement {
     this._unboundFrame = requestAnimationFrame(look);
   }
 
+  private _unbindFormReset: (() => void) | null = null;
+
+  /**
+   * The reset of a `<form>` this control is inside, answered by returning to the initial value.
+   *
+   * A consumer's Cancel button is `type="reset"`, and the browser's reset sets each box back to its
+   * `value` *attribute* — which this renderer never writes. So the box emptied and the model kept
+   * what was typed: a person pressed Cancel, watched the field clear, and submitted the value they
+   * believed they had discarded.
+   *
+   * Every control in the form binds its own, and the form's reset returns all of them — so this runs
+   * once per control and does the same thing each time. Idempotent by construction rather than by
+   * coordination, which is cheaper than the bookkeeping that would make it run once.
+   */
+  private bindEnclosingFormReset(): void {
+    this._unbindFormReset?.();
+    const handle = this.field;
+    const form = handle === undefined ? undefined : handleFormOf(handle) as { reset?: () => void } | undefined;
+    if (form?.reset === undefined) { this._unbindFormReset = null; return; }
+    this._unbindFormReset = bindFormReset({ element: this, reset: () => { form.reset?.(); } });
+  }
+
   override disconnectedCallback(): void {
     this.removeEventListener("focusout", this.onFocusLost);
     this.removeEventListener("keydown", this.onTabAway, true);
+    this._unbindFormReset?.();
+    this._unbindFormReset = null;
     if (this._unboundFrame !== null) {
       cancelAnimationFrame(this._unboundFrame);
       this._unboundFrame = null;
@@ -417,6 +442,7 @@ export abstract class MdyFieldElement<T> extends LitElement {
     this.classList.add(...this.rootClasses);
     this.addEventListener("focusout", this.onFocusLost);
     this.addEventListener("keydown", this.onTabAway, true);
+    this.bindEnclosingFormReset();
     if (MDY_DEV) this.reportIfUnbound();
     const handle = this.field;
     if (handle && !this._tracker) {

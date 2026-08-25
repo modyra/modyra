@@ -9,7 +9,7 @@
  */
 import type {
   MdyDynamicValidation, MdyDraftOptions } from "@modyra/core";
-import { reportIdCollision } from "@modyra/widgets";
+import { bindFormReset, reportIdCollision } from "@modyra/widgets";
 import { applyDynamicRules, assertSafeDynamicFieldNames, vanillaReactivity, type MdyDynamicCollection, type MdyDynamicField, type MdyDynamicLayoutChild, type MdyDynamicLayoutNode, type MdyDynamicLayoutSlot, type MdyDynamicRule, type MdyFieldHandle, type MdyFormSchema, type MdyReactivity, type MdySubmittedValue, type MdyTypedForm } from "@modyra/core";
 import { buildForm } from "./schema.js";
 import { formErrorsOf, formScopeOf, isValidWidgetId, layoutNodeAttributes, layoutSlotStyle, MDY_FORM_SHELL_CLASSES, MDY_ID_DELIMITER, MDY_LAYOUT_CLASSES } from "@modyra/widgets";
@@ -347,6 +347,13 @@ export function mountMdyForm(
     formErrors.hidden = shown.length === 0;
   });
   disposers.push(() => formErrorsEffect.destroy());
+
+  // A `<form>` around this one, with a button that says Cancel. That button is `type="reset"`, and
+  // the browser's reset sets each box back to its `value` *attribute* — which this renderer never
+  // writes, because it writes the property. So the boxes emptied and the model kept what was typed:
+  // a person pressed Cancel, watched the field clear, and submitted the value they thought they had
+  // discarded. Returning to the initial is what a reset means and what the button says.
+  disposers.push(bindFormReset({ element: container, reset: () => { form.reset(); } }));
 
   function dispose(): void {
     for (const disposeField of disposers) disposeField();

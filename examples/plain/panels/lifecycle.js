@@ -7,6 +7,7 @@
  */
 import { createForm, field as mdyField, required as mdyRequired } from "@modyra/core";
 import { renderField } from "@modyra/plain";
+import { bindFormReset } from "@modyra/widgets";
 import { action, grid, readoutPrinter, toolbar } from "./shell.js";
 
 const FIELDS = [
@@ -34,6 +35,8 @@ export const lifecyclePanel = {
     "renderField",
     "MdyDraftOptions",
     "MdyDraftStorage",
+    "bindFormReset",
+    "MdyFormResetBinding",
   ],
 
   invariant:
@@ -53,8 +56,30 @@ export const lifecyclePanel = {
     );
 
     const bar = toolbar(work);
-    const area = grid(work);
+
+    /**
+     * A real `<form>` around the fields, with the Cancel button a consumer actually writes.
+     *
+     * `type="reset"` is elementary HTML and the browser answers it by returning each control to its
+     * `value` *attribute* — which this renderer never writes, since it keeps the box in step with
+     * the model. Unbound, Cancel emptied the boxes and left the value the form would send untouched:
+     * what a person saw stopped being what they submitted. `bindFormReset` is what closes that.
+     */
+    const enclosing = document.createElement("form");
+    enclosing.noValidate = true;
+    enclosing.addEventListener("submit", (event) => { event.preventDefault(); });
+    work.append(enclosing);
+
+    const area = grid(enclosing);
     const dispose = FIELDS.map((f) => renderField(area, f, form.f[f.name], form.reactivity));
+
+    const cancel = document.createElement("button");
+    cancel.type = "reset";
+    cancel.textContent = "Cancel (the browser's own reset)";
+    cancel.dataset.action = cancel.textContent;
+    enclosing.append(cancel);
+
+    const unbindReset = bindFormReset({ element: cancel, reset: () => form.reset() });
 
     action(bar, "Undo", () => form.undo());
     action(bar, "Redo", () => form.redo());
@@ -100,7 +125,7 @@ export const lifecyclePanel = {
       afterTheWrite = setTimeout(print, 250);
     });
 
-    return () => { effect.destroy(); clearTimeout(afterTheWrite); print.cancel(); for (const d of dispose) d?.(); form.destroy(); };
+    return () => { effect.destroy(); clearTimeout(afterTheWrite); print.cancel(); unbindReset(); for (const d of dispose) d?.(); form.destroy(); };
   },
 };
 
