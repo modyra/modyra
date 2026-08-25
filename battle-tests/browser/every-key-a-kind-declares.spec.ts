@@ -41,7 +41,7 @@ import { MDY_WIDGET_CONTRACTS as CONTRACTS, MDY_WIDGET_KEYBOARD } from "@modyra/
 // **Every renderer, from the shared list.** The local list this replaced was not a scope
 // decision: the angular host published six of the twenty-two doors these specs need, so a
 // spec wanting one it lacked left the renderer out and the next reader copied the list.
-import { HOSTS } from "./bench";
+import { became, HOSTS, stops } from "./bench";
 
 /** Three, so "first", "next" and "last" are three different places to be. */
 const OPTIONS = [{ value: "a", label: "A" }, { value: "b", label: "B" }, { value: "c", label: "C" }];
@@ -76,6 +76,18 @@ for (const host of HOSTS) {
     expect(total, "the keyboard table is empty, so this sweep would press nothing").toBeGreaterThan(20);
 
     /** Everything about a mounted field that a key could visibly change. */
+    /**
+     * Wait for a press to show, bounded by the pause it replaces.
+     *
+     * A key that answers changes something within a frame or two; a key that answers nothing is what
+     * this spec is looking for, so its expiry is an ordinary answer rather than a failure. The bound
+     * is the length of the fixed pause this replaced, which makes the change strictly cheap: a key
+     * that works is read as soon as it works, and one that does not costs exactly what it cost
+     * before.
+     */
+    const showed = async (scope: string, before: unknown, within: number) =>
+      became(async () => JSON.stringify(await observe(scope)) !== JSON.stringify(before), { timeout: within });
+
     const observe = (scope: string) => page.evaluate((selector) => {
       const root = document.querySelector(selector);
       if (root === null) return null;
@@ -226,13 +238,13 @@ for (const host of HOSTS) {
         // Reset to closed, then reach the state the binding names.
         if ((await observe(scope))?.expanded === "true") {
           await page.keyboard.press("Escape");
-          await page.waitForTimeout(80);
+          await became(async () => (await observe(scope))?.expanded !== "true");
         }
         if (binding.when === "open") {
           const toggle = page.locator(`${scope} button`).first();
           if (await toggle.count() === 0) { unreached.push(`${kind} ${binding.key}: no control opens it`); continue; }
           await toggle.click({ timeout: 2000 }).catch(() => undefined);
-          await page.waitForTimeout(120);
+          await became(async () => (await observe(scope))?.expanded === "true");
           if ((await observe(scope))?.expanded !== "true") {
             unreached.push(`${kind} ${binding.key}: could not open it`);
             continue;
@@ -281,7 +293,7 @@ for (const host of HOSTS) {
           if (part !== null) {
             if ((await observe(scope))?.expanded === "true") {
               await page.keyboard.press("Escape");
-              await page.waitForTimeout(60);
+              await became(async () => (await observe(scope))?.expanded !== "true");
             }
             await part.focus().catch(() => undefined);
           }
@@ -306,18 +318,20 @@ for (const host of HOSTS) {
               each.intent === "step" && each.on === binding.on && each.when === binding.when
               && each.key !== binding.key);
             if (opposite !== undefined) {
+              const priming = await observe(scope);
               await page.keyboard.press(opposite.key === " " ? "Space" : opposite.key);
-              await page.waitForTimeout(100);
+              await showed(scope, priming, 100);
             }
           }
 
           if (binding.intent === "move") {
-            const stateBefore = (await observe(scope))?.expanded;
+            const priming = await observe(scope);
+            const stateBefore = priming?.expanded;
             await page.keyboard.press(binding.when === "open" ? "ArrowDown" : "ArrowRight");
-            await page.waitForTimeout(100);
+            await showed(scope, priming, 100);
             if ((await observe(scope))?.expanded !== stateBefore) {
               await page.keyboard.press("Escape");
-              await page.waitForTimeout(80);
+              await became(async () => (await observe(scope))?.expanded === stateBefore, { timeout: 80 });
             }
             if ((await observe(scope))?.expanded !== stateBefore) continue;
 
@@ -340,19 +354,20 @@ for (const host of HOSTS) {
               each.intent === "grab" && each.on === binding.on && each.when === binding.when
               && (each.requires === undefined || each.requires === null))?.key ?? null;
             if (grabbed !== null) {
+              const held = await observe(scope);
               await page.keyboard.press(grabbed);
-              await page.waitForTimeout(100);
+              await showed(scope, held, 100);
             }
           }
 
           const before = await observe(scope);
           await page.keyboard.press(binding.key === " " ? "Space" : binding.key);
-          await page.waitForTimeout(120);
+          await showed(scope, before, 120);
           const after = await observe(scope);
           // Put the chip back down before the next binding is judged, or the mode leaks into it.
           if (grabbed !== null) {
             await page.keyboard.press(grabbed);
-            await page.waitForTimeout(80);
+            await showed(scope, after, 80);
             grabbed = null;
           }
           if (before === null || after === null) break;
