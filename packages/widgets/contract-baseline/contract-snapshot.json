@@ -1916,7 +1916,7 @@
           "parent": "box",
           "optional": false,
           "repeated": false,
-          "role": "list",
+          "role": "grid",
           "classes": [
             "mdy-multiselect__chips"
           ],
@@ -1927,7 +1927,7 @@
           "parent": "chips",
           "optional": true,
           "repeated": true,
-          "role": "listitem",
+          "role": "gridcell",
           "classes": [
             "mdy-chip",
             "mdy-chip--value"

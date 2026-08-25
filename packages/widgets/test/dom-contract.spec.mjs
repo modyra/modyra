@@ -283,8 +283,8 @@ function buildCompactMultiselect({ chipClasses = "mdy-chip mdy-chip--value" } = 
   const trigger = el("button", "mdy-multiselect__trigger", { role: "combobox" });
   // The strip is a list and each chip an item of it, which is the only pairing that keeps the
   // position and the count the chip states about itself.
-  const chips = el("div", "mdy-multiselect__chips", { role: "list" });
-  const chip = el("div", chipClasses, { role: "listitem" });
+  const chips = el("div", "mdy-multiselect__chips", { role: "grid" });
+  const chip = el("div", chipClasses, { role: "gridcell" });
   const chipRemove = el("button", "mdy-chip__remove", { type: "button" });
   chip.append(chipRemove);
   chips.append(chip);

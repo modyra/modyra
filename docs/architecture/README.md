@@ -162,6 +162,7 @@ absent section reads as an oversight, and "no security impact" is a finding.
 - [ADR 0145: A dial that repeats what a box already says](0145-a-dial-that-repeats-what-a-box-already-says.md) — a redundant graphic is hidden from assistive technology, and what it announced moves to the control a person can reach
 - [ADR 0146: A form carries its own scope](0146-a-form-carries-its-own-scope.md) — every form has an id scope whether or not anybody asked, because the person who pays for a collision is not the one who reads the warning
 - [ADR 0147: The cluster at the end of a field](0147-the-cluster-at-the-end-of-a-field.md) — the undo joins the controls it is the opposite of, in a slot reserved so nothing slides under a thumb
+- [ADR 0148: A strip a browsing reader can reach](0148-a-strip-a-browsing-reader-can-reach.md) — a listitem does not switch a screen reader's mode, so the strip's whole keyboard model never reached somebody who arrived by browsing
 - [ADR 0092: A condition travels with the form](0092-a-condition-travels-with-the-form.md) — `when` and `asyncWhen` were closures, so a schema carrying one was not data and the document half could not say what the typed half said
 
 ## Security-relevant records

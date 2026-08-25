@@ -1,6 +1,6 @@
 # ADR 0138: A chip is an item in a list, not a number in a range
 
-Status: Accepted
+Status: Superseded by [ADR 0148](0148-a-strip-a-browsing-reader-can-reach.md)
 
 ## Context
 

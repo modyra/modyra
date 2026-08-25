@@ -224,7 +224,7 @@ function multiselectWithChip(chip, variant) {
     // it is about lives inside one.
     "aria-controls": "multiselect-popup", "aria-expanded": "true", "aria-haspopup": "dialog",
   });
-  const chips = el("div", "mdy-multiselect__chips", { role: "list" });
+  const chips = el("div", "mdy-multiselect__chips", { role: "grid" });
   const arrow = el("span", "mdy-multiselect__arrow", { "aria-hidden": "true" });
   trigger.append(arrow);
   const announcement = el("div", "mdy-multiselect__announcement", { role: "status", "aria-live": "polite" });
