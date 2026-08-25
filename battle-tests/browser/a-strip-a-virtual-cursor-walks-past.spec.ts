@@ -35,11 +35,30 @@
  * It asserts a **structural consequence of published behaviour**: the element that takes focus inside
  * the strip carries a role that hands the arrow keys to the application. That is checkable here.
  *
- * It does not measure what a person hears, because nothing in this suite can. Whether the strip should
- * become a listbox or a grid — they differ in what else they promise — is a decision for the contract
- * and for all three renderers together, and **no record states it yet**. This file holds the finding
- * red until one does; a reader meeting a contradiction should read it as a decision owed, not as a
- * renderer at fault.
+ * It does not measure what a person hears, because nothing in this suite can. Which composite the
+ * strip becomes — `listbox` and `grid` differ in what else they promise — is a decision for the
+ * contract and for all three renderers together, and it is taken:
+ * [ADR 0148](../../docs/architecture/0148-a-strip-a-browsing-reader-can-reach.md) chose `grid` with
+ * `gridcell`, and the three renderers carry it.
+ *
+ * ## The part this file could only promise has since been heard
+ *
+ * Everything above is inference: published behaviour, a role read from the tree, and the conclusion
+ * that a reader would therefore hand the arrow keys over. **A person ran VoiceOver on macOS against
+ * this control and the arrows moved between the values.**
+ *
+ * So the switch happens on the role this asserts, and the keyboard model the strip declares reaches
+ * somebody using it. That is the whole of what the change was for, and the one thing the DOM could
+ * state and not demonstrate.
+ *
+ * **What that establishes, and what it does not.** It establishes that the switch occurs and that the
+ * control is not silent. It does not establish that the removal's announcement and the focus move do
+ * not talk over each other, and it says nothing about anything other than VoiceOver on macOS — NVDA on
+ * Windows is where the mode table comes from and has not been run.
+ *
+ * One reader on one platform is not coverage. It is the difference between a property argued and a
+ * property observed, and this file is now the first kind resting on the second rather than on its own
+ * confidence.
  *
  * Claims under attack: A11Y-004, KBD-001.
  */
