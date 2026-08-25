@@ -40,6 +40,26 @@
 import { expect, test } from "@playwright/test";
 import { HOSTS, bench } from "./bench";
 
+/**
+ * The other way a set announces a position, and the reason this file asks about the **property**.
+ *
+ * `aria-posinset`/`aria-setsize` is the list-shaped mechanism. A grid has its own —
+ * `aria-colcount` on the grid and `aria-colindex` on the cell — and it exists for exactly this case:
+ * a set that is not all rendered, which is what a strip that scrolls is. A reader announces
+ * "column 3 of 12".
+ *
+ * So a chip that computes as a `gridcell` announces its position perfectly well and carries neither
+ * `posinset` nor `setsize`. An earlier version of this file asserted the first mechanism by name and
+ * would have stayed red against a correct grid — a check naming the mechanism instead of the property,
+ * which is the shape it was written to catch in others.
+ */
+const COUNTS_ITS_COLUMNS: Record<string, readonly string[]> = {
+  gridcell: ["grid", "treegrid"],
+  columnheader: ["grid", "treegrid", "table"],
+  rowheader: ["grid", "treegrid", "table"],
+  cell: ["table"],
+};
+
 /** Roles ARIA 1.2 permits `aria-posinset`/`aria-setsize` on, with the container each needs. */
 const CARRIES_A_SET: Record<string, readonly string[]> = {
   option: ["listbox"],
@@ -102,20 +122,41 @@ for (const host of HOSTS) {
     const chipRole = chip?.role ?? null;
     const stripRole = strip?.role ?? null;
     const containers = chipRole === null ? undefined : CARRIES_A_SET[chipRole];
+    const columns = chipRole === null ? undefined : COUNTS_ITS_COLUMNS[chipRole];
+
+    // Either mechanism satisfies the property, and the container has to support the one the chip's
+    // role uses: a `gridcell` outside a grid counts columns of nothing.
+    const bySet = containers !== undefined && stripRole !== null && containers.includes(stripRole);
+    const byColumn = columns !== undefined && stripRole !== null && columns.includes(stripRole);
 
     expect(
-      containers,
-      `the chip computes as \`${chipRole ?? "ignored"}\`, which ARIA does not permit ` +
-        `aria-posinset or aria-setsize on. The attributes are written and the accessibility layer ` +
-        `discards them, so nothing announces a chip's position. Roles that can carry it: ` +
-        `${Object.keys(CARRIES_A_SET).join(", ")}.`,
-    ).toBeDefined();
+      bySet || byColumn,
+      `the chip computes as \`${chipRole ?? "ignored"}\` inside a \`${stripRole ?? "ignored"}\`, and `
+      + "that pair announces a position by neither mechanism ARIA offers. A list-shaped set says it "
+      + `with aria-posinset and aria-setsize — permitted on ${Object.keys(CARRIES_A_SET).join(", ")} — `
+      + "and a grid says it with aria-colcount on the container and aria-colindex on the cell, which "
+      + "is the mechanism meant for a set that is not all rendered. A strip that scrolls is exactly "
+      + "that, so a person has no way to know there are chips out of sight.",
+    ).toBe(true);
+
+    // And the attributes for whichever mechanism this pair uses are actually on the page. A role that
+    // permits them announces nothing while nobody writes them, which reads identically from the role
+    // alone — and the computed tree cannot answer it, because it reports neither.
+    const written = await page.evaluate(({ selector, wants }) => {
+      const chip = document.querySelector(selector) as HTMLElement | null;
+      const strip = chip?.parentElement?.closest("[data-battle-strip]") as HTMLElement | null;
+      if (chip === null) return null;
+      return wants === "set"
+        ? { on: chip.getAttribute("aria-posinset"), of: chip.getAttribute("aria-setsize") }
+        : { on: chip.getAttribute("aria-colindex"), of: strip?.getAttribute("aria-colcount") ?? null };
+    }, { selector: `${root} [data-battle-chip="0"]`, wants: byColumn ? "column" : "set" });
 
     expect(
-      containers ?? [],
-      `the chip computes as \`${chipRole}\`, which carries a set only inside ` +
-        `${(containers ?? []).join(" or ")} — and the strip computes as \`${stripRole ?? "ignored"}\`. ` +
-        `A role that permits the attributes still announces nothing when its container cannot own a set.`,
-    ).toContain(stripRole);
+      [written?.on, written?.of].every((value) => value !== null && value !== undefined && value !== ""),
+      `the chip is a \`${chipRole}\` in a \`${stripRole}\`, which may announce its position, and the `
+      + `attributes that would say it are ${JSON.stringify(written)}. A role that permits them says `
+      + "nothing while nobody writes them, and the computed tree reports neither — so the page is the "
+      + "only place this can be asked.",
+    ).toBe(true);
   });
 }

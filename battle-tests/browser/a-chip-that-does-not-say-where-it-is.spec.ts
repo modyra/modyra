@@ -1,12 +1,15 @@
 /**
  * A chip says which one it is and how many there are, without anything being visible.
  *
- * [ADR 0128](../../docs/architecture/0128-a-chip-is-one-thing-not-a-cell.md) decided the strip is not
- * a grid: a chip is one operable thing rather than a cell with children. That trade gives up what a
- * `gridcell` supplies for free — the "row 1, column 3 of 12" scaffolding a screen reader reads out —
- * and the record names `aria-posinset`/`aria-setsize` as what replaces it. **A condition of the
- * decision, not an improvement to it**, and the ADR says in its own Verification section that nothing
- * asserted it. This is that assertion.
+ * **The property, and not the mechanism that happens to carry it.** ARIA offers two: a list-shaped set
+ * says a place with `aria-posinset`/`aria-setsize` on the item, and a grid says it with `aria-colcount`
+ * on the container against `aria-colindex` on the cell — the second being the one meant for a set that
+ * is not all rendered, which a strip that scrolls is.
+ *
+ * This file asked for the first by name, because the decision standing when it was written had chosen
+ * it. That decision has since been replaced, and a check naming a mechanism goes red against a correct
+ * implementation of the other one — which is the failure it exists to catch in the library, committed
+ * in the file that catches it.
  *
  * It is also the programmatic half of
  * [ADR 0127](../../docs/architecture/0127-a-strip-that-scrolls-against-the-practice.md)'s conditions.
@@ -43,11 +46,27 @@ for (const host of HOSTS) {
           const at = chip.getBoundingClientRect();
           return at.left >= box.left - 1 && at.right <= box.right + 1;
         }).length,
-        stated: chips.map((chip) => ({
-          name: chip.getAttribute("aria-label") ?? (chip.querySelector(".mdy-chip__label")?.textContent ?? "").trim(),
-          posinset: chip.getAttribute("aria-posinset"),
-          setsize: chip.getAttribute("aria-setsize"),
-        })),
+        // **Both mechanisms, because the property is what matters and ARIA offers two.** A list-shaped
+        // set says it with `aria-posinset`/`aria-setsize` on the item; a grid says it with
+        // `aria-colcount` on the container and `aria-colindex` on the cell — which is the one meant
+        // for a set that is not all rendered, and a strip that scrolls is exactly that.
+        //
+        // Whichever a renderer uses, the same three things have to hold: every chip states a place,
+        // they agree on how many there are, and no two claim the same one.
+        stated: chips.map((chip) => {
+          // The count sits on the container that owns the set, which is the strip itself or the
+          // element carrying the grid role above it — a renderer may put the role either place.
+          const owner = chip.closest("[aria-colcount]") ?? strip;
+          const colcount = owner?.getAttribute("aria-colcount") ?? null;
+          const colindex = chip.getAttribute("aria-colindex");
+          const usesColumns = colcount !== null || colindex !== null;
+          return {
+            name: chip.getAttribute("aria-label") ?? (chip.querySelector(".mdy-chip__label")?.textContent ?? "").trim(),
+            how: usesColumns ? "column" : "set",
+            at: usesColumns ? colindex : chip.getAttribute("aria-posinset"),
+            of: usesColumns ? colcount : chip.getAttribute("aria-setsize"),
+          };
+        }),
       };
     }, root);
 
@@ -61,26 +80,27 @@ for (const host of HOSTS) {
         `one this spec is about`,
     ).toBeLessThan(read!.total);
 
-    const missing = read!.stated.filter((chip) => chip.posinset === null || chip.setsize === null);
+    const missing = read!.stated.filter((chip) => chip.at === null || chip.of === null);
     expect(
       missing.map((chip) => chip.name),
-      `${missing.length} of ${read!.total} chips state no position in the set — ${read!.inView} are in ` +
-        `view, so a person using a screen reader is told neither where they are nor that there is more. ` +
-        `This is what ADR 0128 traded the grid's scaffolding away for, and what ADR 0127's scroll ` +
-        `departure is conditional on`,
+      `${missing.length} of ${read!.total} chips state no position in the set — ${read!.inView} are in `
+      + "view, so a person using a screen reader is told neither where they are nor that there is more. "
+      + "A list-shaped strip says it with aria-posinset and aria-setsize; a grid says it with "
+      + "aria-colindex against the container's aria-colcount. Neither is written here.",
     ).toEqual([]);
 
     // Every chip agrees about how big the set is, and each says a different place in it. A renderer
-    // that wrote the same `posinset` on every chip would satisfy "present" and say nothing.
+    // writing the same index on every chip would satisfy "present" and say nothing.
+    const how = read!.stated[0]?.how ?? "set";
     expect(
-      new Set(read!.stated.map((chip) => chip.setsize)),
-      "the chips disagree about how many there are",
+      new Set(read!.stated.map((chip) => chip.of)),
+      `the chips disagree about how many there are, counting by ${how}`,
     ).toEqual(new Set([String(read!.total)]));
 
     expect(
-      new Set(read!.stated.map((chip) => chip.posinset)).size,
-      `the chips give ${new Set(read!.stated.map((chip) => chip.posinset)).size} distinct positions ` +
-        `between ${read!.total} of them, so at least two claim the same place`,
+      new Set(read!.stated.map((chip) => chip.at)).size,
+      `the chips give ${new Set(read!.stated.map((chip) => chip.at)).size} distinct positions between `
+      + `${read!.total} of them, counting by ${how}, so at least two claim the same place`,
     ).toBe(read!.total);
   });
 }
