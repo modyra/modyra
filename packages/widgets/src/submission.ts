@@ -252,3 +252,40 @@ export function syncSubmitValues(host: Element, path: string, values: readonly u
  * element is not a part a theme has any business styling.
  */
 const SUBMIT_MARK = "data-mdy-submit";
+
+/**
+ * Writes each control's submission key onto the elements that carry it, found by the classes the
+ * contract declares for that part.
+ *
+ * For the kinds whose value is spread over several controls — a range's two ends, a colour's picker
+ * and its hex box — and for the kinds whose one control the shell already names, this is the single
+ * place that decides which element gets which key.
+ *
+ * By class rather than by a reference the renderer passes: three renderers build these elements in
+ * three different ways, and the classes are the one description all three already honour. A part
+ * whose element is missing is skipped rather than raising — a renderer may legitimately draw fewer
+ * elements than the contract permits.
+ *
+ * The elements not named by the shape are *cleared*, which is the load-bearing half: a colour's
+ * native picker and a range's second end both inherit a name from the shared control projection, and
+ * two controls under one key send the value twice. `FormData.get` then takes the first and drops the
+ * rest without an error, so the loss is silent.
+ */
+export function applySubmissionNames(root: Element, kind: MdyWidgetKind, path: string): void {
+  const shape = SUBMISSION[kind];
+  if (shape.form === "hidden" || shape.form === "shared") return;
+
+  const names = submissionNames(kind, path);
+  const parts = MDY_WIDGET_CONTRACTS[kind].parts;
+
+  // Read from `classList` rather than through a selector: the classes are the contract's own and need
+  // no escaping, and `CSS.escape` does not exist in every document this runs in.
+  for (const element of Array.from(root.querySelectorAll("input, textarea, select"))) {
+    const part = Object.entries(parts).find(([, contract]) =>
+      contract.classes.length > 0 && contract.classes.every((name) => element.classList.contains(name)));
+    if (part === undefined) continue;
+    const name = names[part[0]];
+    if (name === undefined) element.removeAttribute("name");
+    else element.setAttribute("name", name);
+  }
+}

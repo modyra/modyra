@@ -1,6 +1,6 @@
 import {
   handleFormOf, MdyFieldHandle, type MdyFieldConstraints, type MdyValueKind } from "@modyra/core";
-import { MDY_ICONS, MDY_POPUP_OPENERS, adoptSilentWrites, bindFormReset, groupSubmitName, submissionFor, syncSubmitValues, defaultOptionKey, messagesForLocale, widgetScopeOf, type MdyI18nMessages } from "@modyra/widgets";
+import { MDY_ICONS, MDY_POPUP_OPENERS, adoptSilentWrites, applySubmissionNames, bindFormReset, groupSubmitName, submissionFor, syncSubmitValues, defaultOptionKey, messagesForLocale, widgetScopeOf, type MdyI18nMessages } from "@modyra/widgets";
 import { html, LitElement, nothing, PropertyDeclarations } from "lit";
 import { unsafeSVG } from "lit/directives/unsafe-svg.js";
 import {
@@ -283,6 +283,7 @@ export abstract class MdyFieldElement<T> extends LitElement {
     super.updated(changed);
     this.applyControlName();
     this.nameRadioGroup();
+    this.nameSubmissionParts();
     this.syncHiddenSubmission();
     this.watchSilentWrites();
 
@@ -410,6 +411,22 @@ export abstract class MdyFieldElement<T> extends LitElement {
 
   /** Stops watching for values written into this control by something other than the renderer. */
   private _stopWatchingWrites: (() => void) | null = null;
+
+  /**
+   * Each control's submission key, for the kinds whose value is spread over more than one.
+   *
+   * The shared control projection names every control it is bound to, which for a range's two ends
+   * and a colour's picker-plus-hex means two controls under one key — and a value sent twice, of
+   * which a receiver keeps the first without an error. The contract decides which element gets which
+   * key, and clears the ones that carry none.
+   */
+  private nameSubmissionParts(): void {
+    const handle = this.field;
+    if (!handle) return;
+    const kind = this.widgetKind as MdyWidgetKind;
+    if (!(kind in MDY_WIDGET_CONTRACTS)) return;
+    applySubmissionNames(this, kind, handle.path);
+  }
 
   /**
    * The values a native submit reads, for the kinds that draw no form control at all.

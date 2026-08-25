@@ -172,7 +172,12 @@ export function createDaterangeFieldController(
 
   const view: MdySignal<MdyWidgetViewContract> = reactivity.computed(() => {
     const currentState = state();
-    const a11y = projectDaterangeFieldA11y(currentState, handle.errors(), { widgetId });
+    const a11y = projectDaterangeFieldA11y(currentState, handle.errors(), {
+      widgetId,
+      // The key each end submits under, taken from the handle: it is what knows the field's place in
+      // the form, and a renderer passing it separately could pass a different one.
+      submitName: handle.path,
+    });
     // A null prototype, because these keys are data: an option valued `__proto__` assigned into a
     // plain object sets that object's prototype instead of adding a member, so the part vanished and
     // the renderer was handed `undefined` — the control disappeared from the page mid-draw.

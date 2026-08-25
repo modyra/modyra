@@ -7,7 +7,7 @@
 import { observerFor, type MdyFieldHandle, type MdyReactivity } from "@modyra/core";
 import { buildDateLocale, formatIsoDate, parseLocalizedDate, calendarYearRange, isMonthOutOfRange, isYearOutOfRange, parseIsoDate } from "@modyra/core/datetime";
 import type { MdyDynamicDateField } from "@modyra/core";
-import {
+import { applySubmissionNames,
   MDY_WIDGET_CONTRACTS,
   createDatepickerFieldController,
   overlayAnchoringFor,
@@ -316,6 +316,10 @@ export function renderDatepickerField(
       button.disabled = cell.disabled;
       if (cell.focused && state.open && document.activeElement !== button) button.focus();
     }
+    // The key a native submit reads this control's value under, after the parts are applied: the
+    // shared control projection writes `name: null` for a field it was not given a name for, and a
+    // part carrying `null` removes the attribute.
+    applySubmissionNames(shell.root, "datepicker", f.name);
   });
 
   return withControls(

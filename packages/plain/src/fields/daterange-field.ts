@@ -10,7 +10,7 @@ import { applyOpenerPromise } from "../opener-promise.js";
 import { observerFor, type MdyFieldHandle, type MdyReactivity } from "@modyra/core";
 import type { MdyDynamicDaterangeField } from "@modyra/core";
 import { buildDateLocale, formatIsoDate, parseLocalizedDate } from "@modyra/core/datetime";
-import {
+import { applySubmissionNames,
   MDY_WIDGET_CONTRACTS,
   createDaterangeFieldController,
   defaultWidgetIdFactory,
@@ -242,11 +242,17 @@ export function renderDaterangeField(
       // than one that says nothing at all.
       applyPart(input, { ...part, attributes: { ...part.attributes, ...a11y.control.attributes } });
       input.disabled = handle.disabled();
+      // The key each end submits under, decided by the contract rather than by this loop.
       // A read-only range refuses the typed date and the calendar's choice alike; the native
       // attribute stops the typing and the ARIA says why.
       input.readOnly = handle.readonly();
       input.setAttribute("aria-readonly", String(handle.readonly()));
     }
+
+    // Each end under its own key, after the parts are applied: the shared control projection writes
+    // `name: null` for a field it was not given a name for, and a part that carries `null` removes
+    // the attribute. Ordered rather than merged, so one place decides which element gets which key.
+    applySubmissionNames(shell.root, "daterange", f.name);
     toggle.disabled = handle.disabled();
     toggle.setAttribute("aria-expanded", String(state.open));
     reflectOverlayOpen(popup, state.open, messages);

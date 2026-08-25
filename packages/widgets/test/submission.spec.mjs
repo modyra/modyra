@@ -10,6 +10,7 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 
 import {
+  applySubmissionNames,
   MDY_WIDGET_CONTRACTS,
   MDY_WIDGET_KINDS,
   submissionDefects,
@@ -78,4 +79,39 @@ test("the kinds HTML groups by name share one part between their options", () =>
     assert.equal(shape.part, "optionControl");
     assert.deepEqual(submissionNames(kind, "colore"), { optionControl: "colore" });
   }
+});
+
+test("each control is named by the contract, and the ones that carry no key are cleared", async () => {
+  const { JSDOM } = await import("jsdom");
+  const dom = new JSDOM(`<div id="root">
+    <input class="mdy-datepicker__input mdy-daterange__input mdy-daterange__input--start" name="stale">
+    <input class="mdy-datepicker__input mdy-daterange__input mdy-daterange__input--end" name="stale">
+  </div>`);
+  const root = dom.window.document.getElementById("root");
+
+  applySubmissionNames(root, "daterange", "quando");
+  assert.deepEqual(
+    [...root.querySelectorAll("input")].map((input) => input.getAttribute("name")),
+    ["quando.start", "quando.end"],
+    "one key each, or a receiver cannot say which date is which",
+  );
+});
+
+test("a control the shape does not name loses the name it inherited", async () => {
+  const { JSDOM } = await import("jsdom");
+  // The colours picker and the hex box both come out of the shared control projection, which names
+  // whatever it is bound to. Two controls under one key send the value twice, and `FormData.get`
+  // keeps the first without an error.
+  const dom = new JSDOM(`<div id="root">
+    <input class="mdy-colors__primary-picker" name="colore">
+    <input class="mdy-colors__hex-input" name="colore">
+  </div>`);
+  const root = dom.window.document.getElementById("root");
+
+  applySubmissionNames(root, "colors", "colore");
+  assert.deepEqual(
+    [...root.querySelectorAll("input")].map((input) => input.getAttribute("name")),
+    [null, "colore"],
+    "the native picker carries no key: the hex box is the one the contract submits from",
+  );
 });

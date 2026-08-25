@@ -11,7 +11,7 @@
 import type { MdyDynamicDateField } from "@modyra/core";
 import { observerFor, type MdyFieldHandle, type MdyReactivity } from "@modyra/core";
 import { formatTimeAs, hourToAngle, minuteToAngle, parseAnyTime, pointerAngle, to24Hour, type MdyTimeFormat } from "@modyra/core/datetime";
-import {
+import { applySubmissionNames,
   MDY_I18N_MESSAGES_DEFAULT,
   MDY_WIDGET_CONTRACTS,
   acceptTimeField,
@@ -632,6 +632,10 @@ export function renderTimepickerField(
     for (const node of Array.from(dialFace.querySelectorAll<HTMLElement>(`.${parts.dialNumber.classes[0]}`))) {
       node.classList.toggle("mdy-timepicker-dial__number--selected", Number(node.dataset.value) === selected);
     }
+    // The key a native submit reads this control's value under, after the parts are applied: the
+    // shared control projection writes `name: null` for a field it was not given a name for, and a
+    // part carrying `null` removes the attribute.
+    applySubmissionNames(shell.root, "timepicker", f.name);
   });
 
   return () => {

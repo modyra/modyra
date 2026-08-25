@@ -8,7 +8,7 @@
 import { applyOpenerPromise } from "../opener-promise.js";
 import { observerFor, type MdyFieldHandle, type MdyReactivity } from "@modyra/core";
 import type { MdyDynamicColorsField } from "@modyra/core";
-import {
+import { applySubmissionNames,
   MDY_COLOR_PRESETS,
   MDY_WIDGET_CONTRACTS,
   colorValueEquals,
@@ -255,6 +255,10 @@ export function renderColorsField(
       touched: handle.touched(), disabled: handle.disabled(), readonly: handle.readonly(),
       hasError: visibleErrorsOf(handle).length > 0, filled: Boolean(value), required: handle.required(),
     });
+    // The key a native submit reads this control's value under, after the parts are applied: the
+    // shared control projection writes `name: null` for a field it was not given a name for, and a
+    // part carrying `null` removes the attribute.
+    applySubmissionNames(shell.root, "colors", f.name);
   });
 
   const untrack = trackOverlay(popup, shell.wrapper, () => open(), anchoring);

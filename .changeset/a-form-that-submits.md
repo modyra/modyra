@@ -12,7 +12,7 @@ all three renderers, `new URLSearchParams(new FormData(form)).toString()` return
 without a `name` is not serialised, and no control wrote one.
 
 Every kind now declares how its value is submitted, and the key is the **field's path** — `colour`,
-not the scoped widget id. Ten of the fourteen kinds measured now send their value identically in
+not the scoped widget id. Thirteen of the fourteen kinds measured now send their value identically in
 plain, Lit and Angular.
 
 **`radio` and `segmented` change what they send.** They were the two kinds that already carried a
@@ -32,5 +32,7 @@ New in `@modyra/widgets`: `submissionFor`, `submissionNames`, `submissionDefects
 `groupSubmitName`, `syncSubmitValues`, `MdySubmissionShape`. `checkbox` and `toggle` gain an optional
 `submitFalse` part.
 
-Still sending nothing in plain and Angular: `datepicker`, `daterange`, `timepicker`, `colors`. In Lit
-`daterange` and `colors` send their value twice under one key. See ADR 0152.
+Thirteen of the fourteen kinds measured now agree across plain, Lit and Angular. The one that does
+not is `datepicker`: Angular sends `01/02/2026` where the other two send `2026-01-02` — the text the
+box shows rather than the value the model holds. The name is right in all three; what the control's
+`value` carries is a divergence that predates this and is now visible. See ADR 0152.

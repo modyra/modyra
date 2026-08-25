@@ -11,6 +11,7 @@ import { MDY_WIDGET_CONTRACTS } from "../catalog.js";
 import { projectOverlayOpenerA11y } from "../opener-a11y.js";
 import type { MdyFieldError } from "@modyra/core";
 import { assertUsableWidgetId } from "../ids.js";
+import { submissionNames } from "../submission.js";
 import type { MdyPartContract } from "../contract.js";
 import { MDY_FIELD_SHELL_CLASSES } from "../structure.js";
 import type { MdyDaterangeFieldState } from "./daterange-field-types.js";
@@ -22,6 +23,15 @@ export interface MdyDaterangeFieldA11yOptions {
   /** How each end is named, for a host that translates. Defaults are English and deliberate. */
   readonly startLabel?: string;
   readonly endLabel?: string;
+  /**
+   * The field's path, from which each end takes the key it submits under.
+   *
+   * Two ends under one key would leave a receiving end unable to say which date is which — and
+   * `FormData.get` takes the first and drops the other without an error, so the loss is silent. So
+   * they are suffixed, and the contract declares the suffixes rather than each renderer inventing
+   * them.
+   */
+  readonly submitName?: string;
 }
 
 export function daterangeFieldPartIds(widgetId: string): {
@@ -77,11 +87,19 @@ export function projectDaterangeFieldA11y(
   const describedBy = hasErrors ? errorId : descriptionId;
   const definition = MDY_WIDGET_CONTRACTS.daterange;
 
+  /** The key each end submits under, suffixed so the two are told apart. */
+  const submitNames = options.submitName === undefined
+    ? {}
+    : submissionNames("daterange", options.submitName);
+
   /** Both ends carry the same semantics and differ only in what they are called. */
-  const end = (id: string, label: string, classes: readonly string[]): MdyPartContract => ({
+  const end = (id: string, label: string, classes: readonly string[], name: string | undefined): MdyPartContract => ({
     id,
     classes: [...classes],
     attributes: {
+      // What a native submit reads. Absent leaves the end unserialised, which is what a form does
+      // with a control that has no name: it sends nothing at all rather than sending it empty.
+      name: name ?? null,
       "aria-labelledby": labelId,
       // Named as well as labelled: two boxes under one label are two boxes a screen-reader user
       // cannot tell apart, and "Stay" twice is not an answer to "which end am I in".
@@ -111,8 +129,8 @@ export function projectDaterangeFieldA11y(
       // a person fills. Pointing it at the wrapper would name neither.
       attributes: { for: startId },
     },
-    startControl: end(startId, options.startLabel ?? "Start date", definition.parts.startControl.classes),
-    endControl: end(endId, options.endLabel ?? "End date", definition.parts.endControl.classes),
+    startControl: end(startId, options.startLabel ?? "Start date", definition.parts.startControl.classes, submitNames.startControl),
+    endControl: end(endId, options.endLabel ?? "End date", definition.parts.endControl.classes, submitNames.endControl),
     toggle: {
       classes: [...definition.parts.toggle.classes],
       // The opener carries the overlay semantics, not the inputs: one grid serves both ends, so one

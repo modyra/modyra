@@ -23,6 +23,7 @@ import { handleFormOf, NO_CONSTRAINTS, registerHandleOwner, type MdyFieldConstra
 import type { MdyInteractivity } from "@modyra/core";
 import {
   MDY_WIDGET_CONTRACTS,
+  applySubmissionNames,
   groupSubmitName,
   submissionFor,
   submitFalsePart,
@@ -100,6 +101,17 @@ export abstract class MdyBaseControl<TValue = unknown> implements OnInit {
         this._claimedName = n;
       });
     });
+    // Each control's submission key, for the kinds whose value is spread over more than one. The
+    // shared control projection names every control it is bound to, which for a range's two ends
+    // means two controls under one key — a value sent twice, of which a receiver keeps the first
+    // without an error.
+    effect(() => {
+      const kind = this.widgetKind as MdyWidgetKind;
+      if (!(kind in MDY_WIDGET_CONTRACTS)) return;
+      this.fieldState().value();
+      applySubmissionNames(this.hostElement.nativeElement as Element, kind, this.effectiveName());
+    });
+
     // The hidden inputs a select or a multiselect submits through, kept in step with the value.
     // In an effect because the value moves: the inputs are the only thing a form can read for these
     // two kinds, and one left behind sends what was chosen a moment ago.

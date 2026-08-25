@@ -63,6 +63,13 @@ and a hidden companion carries `false` under the same key ahead of it. Both are 
 field, because a disabled control is left out of the payload entirely and a companion still sending
 `false` would answer a question the field was not asking.
 
+**Where several controls carry one value, the contract decides which one is named and clears the
+rest.** `applySubmissionNames` reads the classes the contract declares for each part — the one
+description all three renderers already honour — and removes the name from every control the shape
+does not name. That second half is load-bearing: a colour's native picker and a range's second end
+both inherit a name from the shared control projection, and two controls under one key send the value
+twice, of which `FormData.get` keeps the first without an error.
+
 **The two kinds with no control get hidden inputs, and only those two.** `syncSubmitValues` keeps
 them in step with the value: one per value, in order, because a multiselect joined into one key loses
 both the order and the multiplicity that the field exists to carry. They are marked with an attribute
@@ -110,14 +117,16 @@ question with a taxonomy of its own.
   every kind declares a shape, every part it names exists, the key carries no scope, a range's two
   ends are distinguishable, a boolean's companion shares its key, and the two kinds with no control
   name no part.
-- Browser, three renderers, one form each: **ten of the fourteen kinds measured agree and are
+- Browser, three renderers, one form each: **thirteen of the fourteen kinds measured agree and are
   non-empty**, including the four classes that fail differently — `radio` sends one key, `daterange`
   two, `multiselect` one per value in order, a boolean always present.
 - `pnpm run test:contracts` 27/27 · widgets 728 · plain 263 · lit 204 · angular 379.
 
-Not yet covered, and stated rather than implied: **`datepicker`, `daterange`, `timepicker` and
-`colors` still send nothing in plain and Angular**, and in Lit `daterange` and `colors` send their
-value twice under one key. Their projections are their own and were not reached by this batch.
+**One kind still disagrees, and it is not about the name.** `datepicker` sends `2026-01-02` from
+plain and Lit and **`01/02/2026` from Angular** — the text the box shows rather than the value the
+model holds. The name is right in all three; what differs is what the control's `value` was already
+carrying, which nothing had ever read. Naming it made a divergence visible that predates this batch,
+and it belongs to whatever decides a datepicker's control value, not here.
 
 ## Security and privacy
 

@@ -45,6 +45,7 @@ export const lifecyclePanel = {
     "submitFalsePart",
     "groupSubmitName",
     "syncSubmitValues",
+    "applySubmissionNames",
     "MdySubmissionShape",
   ],
 
