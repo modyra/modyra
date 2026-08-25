@@ -38,6 +38,17 @@ export interface MdyTextFieldA11yOptions {
    * always draws the element.
    */
   readonly descriptionVisible?: boolean;
+  /**
+   * The key this control sends its value under when the browser submits the form it sits in.
+   *
+   * The field's path, not its widget id: the id carries a per-form scope so two forms on one page do
+   * not collide, and a scope in a payload is a key the receiving end never asked for. Two forms send
+   * the same key and stay apart, because a payload belongs to its form.
+   *
+   * Absent for a renderer that has no path to give, which leaves the control unserialised — the
+   * state every kind was in before this existed.
+   */
+  readonly submitName?: string;
 }
 
 /** Builds the static IDs used by a field widget view. */
@@ -130,6 +141,10 @@ export function projectTextFieldA11y<TValue>(
             constraints: options.constraints,
             errorsVisible: tellingThem,
             descriptionVisible: options.descriptionVisible ?? true,
+            // Asked of the shell rather than written here: this projection spreads the shell's
+            // attributes over its own, so a name written on both sides is decided by the spread
+            // rather than by either author.
+            submitName: options.submitName,
           },
         ).control.attributes,
         // The shell has no notion of read-only: it is a state only some kinds admit, and the field

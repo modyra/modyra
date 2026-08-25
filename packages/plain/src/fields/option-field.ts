@@ -6,7 +6,7 @@
  */
 import { observerFor, type MdyFieldHandle, type MdyReactivity, type MdySelectOption } from "@modyra/core";
 import type { MdyDynamicOptionsField } from "@modyra/core";
-import {
+import { groupSubmitName,
   MDY_WIDGET_CONTRACTS,
   createOptionFieldController,
   shownErrorsOf,
@@ -65,7 +65,9 @@ export function renderOptionField(
     row.className = parts.option.classes.join(" ");
     const input = el("input") as HTMLInputElement;
     input.type = "radio";
-    input.name = widgetId;
+    // The name does two jobs — it groups the set, and it is the key the answer arrives under — and
+    // which one is at stake depends on whether this set has a form to belong to.
+    input.name = groupSubmitName(group, f.name, widgetId);
     input.value = key;
     // The choice itself, named by the contract where the kind declares it. `radio` reaches its
     // native input through the label instead, so there is nothing to name there.
@@ -110,6 +112,11 @@ export function renderOptionField(
     });
     applyPart(shell.label, view.parts.label);
     applyPart(group, view.parts.group);
+    // Recomputed here rather than settled when the rows were built: at build time the group is not
+    // in the document yet, so the question "is there a form around this" has no answer. It has one
+    // by the time anything is painted, and it can change afterwards if the field is moved.
+    const grouped = groupSubmitName(group, f.name, widgetId);
+    for (const { input } of rows) input.name = grouped;
     applyPart(shell.description, view.parts.description);
     applyPart(shell.errorList, view.parts.error);
     setErrors(shell.errorList, visibleErrorsOf(handle).map((e) => e.message));

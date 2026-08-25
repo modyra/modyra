@@ -16,6 +16,13 @@ import type {
 export interface MdyBooleanFieldA11yOptions {
   readonly widgetId: string;
   readonly variant: MdyBooleanFieldVariant;
+  /**
+   * The key this control sends its value under when the browser submits the form it sits in.
+   *
+   * The field's path, not its widget id: a scope in a payload is a key the receiving end never asked
+   * for, and two forms send the same key while staying apart, because a payload belongs to its form.
+   */
+  readonly submitName?: string;
 }
 
 /** Builds the static IDs used by a boolean field widget view. */
@@ -54,6 +61,19 @@ export function projectBooleanFieldA11y(
   readonly root: MdyPartContract;
   readonly label: MdyPartContract;
   readonly input: MdyPartContract;
+  /**
+   * The false half of the value, which HTML cannot express on its own.
+   *
+   * An unchecked box is **absent** from a form's payload — that is the rule — so `false` and "this
+   * field was never sent" arrive identical, and a receiver cannot tell a person who said no from a
+   * form that did not carry the question. This carries `false` under the same key, ahead of the box,
+   * so the key is always present; when the box is checked it sends `true` after this one, and the
+   * later value is the answer.
+   *
+   * Rendered only when the field has a submit name. Without one nothing here is serialised anyway,
+   * and a hidden input in a form that cannot submit is a node with no reader.
+   */
+  readonly submitFalse: MdyPartContract;
   /** The drawn control: a checkbox's box, decorative because the native input carries the state. */
   readonly indicator: MdyPartContract;
   readonly description: MdyPartContract;
@@ -91,6 +111,18 @@ export function projectBooleanFieldA11y(
       classes: isSwitch ? ["mdy-toggle__track"] : ["mdy-checkbox__indicator"],
       attributes: { "aria-hidden": "true" },
     },
+    // Carries `false` under the field's key, ahead of the box. Nothing to render without a name.
+    submitFalse: {
+      classes: [],
+      attributes: options.submitName === undefined ? {} : {
+        type: "hidden",
+        name: options.submitName,
+        value: "false",
+        // Disabled with the field: a disabled control is left out of the payload entirely, and a
+        // companion that kept sending `false` would answer a question the field was not asking.
+        disabled: state.disabled === true,
+      },
+    },
     input: {
       id: inputId,
       classes: [],
@@ -100,6 +132,10 @@ export function projectBooleanFieldA11y(
         type: "checkbox",
         role: isSwitch ? "switch" : "checkbox",
         checked: state.checked === true,
+        // What a native submit reads, and the value it reads rather than the `on` HTML defaults to:
+        // a payload saying `on` describes the box, not the answer.
+        name: options.submitName ?? null,
+        value: options.submitName === undefined ? null : "true",
         // One of the tokens the attribute is allowed to hold, never `String(whatever arrived)`.
         // This projection is published, so the state is the caller's to supply and its shape is not
         // ours to guarantee — but the attribute's value is, and `aria-checked="undefined"` maps to

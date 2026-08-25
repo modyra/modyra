@@ -88,6 +88,10 @@ export function createTextFieldController<TValue>(
       // follow the next reference. Read on every projection, because a host may supply the text
       // after the control was built.
       descriptionVisible: options.describes?.() ?? true,
+      // The key a native submit reads this control's value under. Taken from the handle rather than
+      // asked of the renderer: the handle is what knows the field's place in the form, and a
+      // renderer passing it separately is a renderer that can pass a different one.
+      submitName: handle.path,
     });
 
     return {

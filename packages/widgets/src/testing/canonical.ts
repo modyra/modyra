@@ -483,7 +483,9 @@ export const MDY_CANONICAL_AT_REST: Readonly<Partial<Record<MdyWidgetKind, MdyCa
     }),
     checkbox: Object.freeze({
       parts: Object.freeze(["root", "inputWrapper", "control", "indicator", "label"]),
-      optional: Object.freeze(["supportingText", "requiredMarker", "errors", "errorItem"]),
+      // `submitFalse` is optional because it exists only where the field has a name to submit under:
+      // a control mounted outside a form has nothing to serialise and needs no companion.
+      optional: Object.freeze(["supportingText", "requiredMarker", "errors", "errorItem", "submitFalse"]),
       relationships: Object.freeze([
 
       ] as readonly MdyCanonicalRelationship[]),
@@ -494,7 +496,7 @@ export const MDY_CANONICAL_AT_REST: Readonly<Partial<Record<MdyWidgetKind, MdyCa
     }),
     toggle: Object.freeze({
       parts: Object.freeze(["root", "inputWrapper", "control", "track", "thumb", "label"]),
-      optional: Object.freeze(["supportingText", "requiredMarker", "inlineError", "errors", "errorItem"]),
+      optional: Object.freeze(["supportingText", "requiredMarker", "inlineError", "errors", "errorItem", "submitFalse"]),
       relationships: Object.freeze([
 
       ] as readonly MdyCanonicalRelationship[]),

@@ -142,6 +142,10 @@ export const MDY_SEMANTIC_ELEMENTS: Readonly<Record<string, { tags: readonly str
     roles: ["textbox", "searchbox", "combobox", "spinbutton", "slider", "checkbox", "radio", "switch"],
   },
   button: { tags: ["button"], roles: ["button", "switch"] },
+  // An input that exists so a native submit has something to read. It carries no role, because a
+  // role would put it in the accessibility tree, where it is a duplicate of a value the person can
+  // already see and operate somewhere else.
+  submission: { tags: ["input"], roles: [] },
   listbox: { tags: ["select"], roles: ["listbox", "grid"] },
   option: { tags: ["option"], roles: ["option", "gridcell"] },
   // A choice in a radiogroup. Native or by role, as everywhere else — the tag check below refuses an

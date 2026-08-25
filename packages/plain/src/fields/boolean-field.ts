@@ -53,7 +53,11 @@ export function renderBooleanField(
   const accessibleName = fieldAccessibleName({ ariaLabel: f.ariaLabel, label: f.label, name: f.name });
   if (accessibleName) input.setAttribute("aria-label", accessibleName);
 
-  wrapper.append(input);
+  // The false half of the value, ahead of the box. HTML leaves an unchecked box out of the payload
+  // altogether, so without this a person who said no and a form that never carried the question
+  // arrive identical.
+  const submitFalse = el("input") as HTMLInputElement;
+  wrapper.append(submitFalse, input);
   // The drawn box goes *inside* the words' label, and that is what keeps it a pointer target: the
   // native input is visually hidden, so with the wrapper inert the only thing forwarding a click is
   // the `<label>`. Left outside it, the box a person actually aims at stopped working — measured,
@@ -94,6 +98,7 @@ export function renderBooleanField(
       MDY_FIELD_STATE_CLASSES.label + "--has-error",
       showsAsInvalid({ valid: handle.valid(), disabled: handle.disabled() }),
     );
+    applyPart(submitFalse, view.parts.submitFalse);
     applyPart(input, view.parts.input);
     // After the control has been named, not before: the id is the contract's, minted from the widget
     // id by `applyPart`, and reading it back is what keeps the words and the box associated now that

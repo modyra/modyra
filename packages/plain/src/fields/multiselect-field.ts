@@ -9,7 +9,7 @@
  */
 import { observerFor, type MdyFieldHandle, type MdyMultiselectMode, type MdyReactivity, type MdySelectOption } from "@modyra/core";
 import type { MdyDynamicOptionsField } from "@modyra/core";
-import {
+import { syncSubmitValues,
   MDY_WIDGET_CONTRACTS,
   createMultiselectFieldController,
   chipActionName,
@@ -900,6 +900,12 @@ export function renderMultiselectField(
     const view = controller.view();
 
     applyPart(shell.root, view.root);
+    // The values a native submit reads. This kind draws a button and a strip of chips, so without
+    // these there is no form control anywhere in it and the browser sends nothing. One input per
+    // chosen value, in order: a single joined key would lose the order and the multiplicity, which
+    // is the whole of what this field is for.
+    const chosen = handle.value();
+    syncSubmitValues(control, f.name, Array.isArray(chosen) ? chosen : chosen === null || chosen === undefined ? [] : [chosen]);
     applyPart(shell.label, view.parts.label);
     // The label names the control that holds the value, which is the trigger — the same relation the
     // single-choice sibling has. Left on the wrapper, the label named a box rather than a control.

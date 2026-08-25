@@ -64,7 +64,8 @@ import { MdySelectOption } from "../../core/types";
           <input
             type="radio"
             class="mdy-segmented__control"
-            [name]="fieldId"
+            [name]="groupName()"
+            [value]="opt.value"
             [checked]="value() === opt.value"
             [disabled]="isDisabled()"
             [attr.data-seg-index]="i"

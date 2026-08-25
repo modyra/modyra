@@ -7,7 +7,7 @@
  */
 import { createForm, field as mdyField, required as mdyRequired } from "@modyra/core";
 import { renderField } from "@modyra/plain";
-import { adoptSilentWrites, bindFormReset } from "@modyra/widgets";
+import { adoptSilentWrites, bindFormReset, submissionFor, submissionNames } from "@modyra/widgets";
 import { action, grid, readoutPrinter, toolbar } from "./shell.js";
 
 const FIELDS = [
@@ -39,6 +39,13 @@ export const lifecyclePanel = {
     "MdyFormResetBinding",
     "adoptSilentWrites",
     "MdySilentWriteBinding",
+    "submissionFor",
+    "submissionNames",
+    "submissionDefects",
+    "submitFalsePart",
+    "groupSubmitName",
+    "syncSubmitValues",
+    "MdySubmissionShape",
   ],
 
   invariant:
@@ -121,6 +128,13 @@ export const lifecyclePanel = {
       // what was written, and the form would answer about what it holds.
       stored: readStoredDraft(),
       formValid: form.state.valid(),
+      // What a native submit would send, beside what the form holds. The two are the same question
+      // asked of two different owners, and the panel exists to show where they disagree.
+      submits: Object.fromEntries(FIELDS.map((f) => [
+        f.name,
+        { shape: submissionFor(f.kind).form, keys: Object.values(submissionNames(f.kind, f.name)) },
+      ])),
+      sent: new URLSearchParams(new FormData(enclosing)).toString(),
     }));
 
     /**

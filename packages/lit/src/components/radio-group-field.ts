@@ -81,7 +81,7 @@ export class MdyRadioGroupFieldElement extends MdyOptionsFieldElement<unknown | 
             >
               <input
                 type="radio"
-                name=${this.fieldId}
+                .value=${String(key)}
                 .checked=${this.isChosen(handle.value(), option.value)}
                 ?disabled=${handle.disabled() || option.disabled === true}
                 aria-checked=${optionAttrs?.["aria-checked"] ?? (this.isChosen(handle.value(), option.value) ? "true" : "false")}

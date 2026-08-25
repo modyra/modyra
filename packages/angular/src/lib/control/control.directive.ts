@@ -22,6 +22,11 @@ import { MdyFieldError, MdyFieldState, MdyFormAdapter } from "../core/types";
 import { handleFormOf, NO_CONSTRAINTS, registerHandleOwner, type MdyFieldConstraints } from "@modyra/core";
 import type { MdyInteractivity } from "@modyra/core";
 import {
+  MDY_WIDGET_CONTRACTS,
+  groupSubmitName,
+  submissionFor,
+  submitFalsePart,
+  syncSubmitValues,
   createValueWidgetController,
   type MdyValueWidgetController,
   defaultWidgetIdFactory,
@@ -95,6 +100,11 @@ export abstract class MdyBaseControl<TValue = unknown> implements OnInit {
         this._claimedName = n;
       });
     });
+    // The hidden inputs a select or a multiselect submits through, kept in step with the value.
+    // In an effect because the value moves: the inputs are the only thing a form can read for these
+    // two kinds, and one left behind sends what was chosen a moment ago.
+    effect(() => { this.syncHiddenSubmission(); });
+
     effect(() => {
       const hasPrefix = !!this.prefix();
       const isFloating = this.isFloatingLabel();
@@ -589,6 +599,48 @@ export abstract class MdyBaseControl<TValue = unknown> implements OnInit {
    * `errorsVisible` is answered here because the projection cannot know it: these renderers defer
    * the error list until the field is touched, so having errors is not the same as showing them.
    */
+  /**
+   * The values a native submit reads, for the kinds that draw no form control at all.
+   *
+   * A select is a button and a listbox; a multiselect is a button and a strip of chips. Neither is
+   * something a form serialises, so without these inputs the browser sends nothing for the field —
+   * not an empty value, nothing. Which kinds need them is the contract's answer, not this file's.
+   */
+  private syncHiddenSubmission(): void {
+    const kind = this.widgetKind as MdyWidgetKind;
+    if (!(kind in MDY_WIDGET_CONTRACTS) || submissionFor(kind).form !== "hidden") return;
+    const value = this.fieldState().value();
+    syncSubmitValues(
+      this.hostElement.nativeElement as Element,
+      this.effectiveName(),
+      Array.isArray(value) ? value : value === null || value === undefined ? [] : [value],
+      this.isDisabled(),
+    );
+  }
+
+  /**
+   * The name a group of radio inputs shares.
+   *
+   * Two jobs in one attribute — it groups the set, and it is the key the answer arrives under — and
+   * which one is at stake depends on whether this control has a form to belong to. Read from the DOM
+   * rather than from state, because that is where the answer lives.
+   */
+  protected groupName(): string {
+    return groupSubmitName(this.hostElement.nativeElement as Element, this.effectiveName(), this.fieldId);
+  }
+
+  /**
+   * The hidden input a boolean field renders ahead of its box.
+   *
+   * HTML leaves an unchecked box out of the payload altogether, so without this a person who said no
+   * and a form that never carried the question arrive identical at the other end. It carries `false`
+   * under the field's key; when the box is checked it sends `true` after this one, and the later
+   * value is the answer.
+   */
+  protected readonly submitFalsePart: Signal<MdyPartContract> = computed(
+    () => submitFalsePart(this.effectiveName(), this.isDisabled()),
+  );
+
   protected readonly controlPart: Signal<MdyPartContract> = computed(() =>
     projectFieldShellA11y(
       {
@@ -610,6 +662,9 @@ export abstract class MdyBaseControl<TValue = unknown> implements OnInit {
         invalid: this.paintsAsInvalid(),
         // Supporting text is only emitted when a host projects some.
         descriptionVisible: this.hasSupportingText(),
+        // The key a native submit reads this control's value under: the field's path, not the
+        // scoped id this control uses for its DOM references.
+        submitName: this.effectiveName(),
       },
     ).control,
   );

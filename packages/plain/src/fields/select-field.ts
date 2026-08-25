@@ -8,7 +8,7 @@
  */
 import { observerFor, type MdyFieldHandle, type MdyReactivity, type MdySelectOption } from "@modyra/core";
 import type { MdyDynamicOptionsField } from "@modyra/core";
-import {
+import { syncSubmitValues,
   MDY_WIDGET_CONTRACTS,
   createSelectController,
   createTypeahead,
@@ -300,6 +300,10 @@ export function renderSelectField(
 
     const state = controller.state();
     const view = controller.view();
+    // The value a native submit reads. This kind draws a button and a listbox, so without this there
+    // is no form control anywhere in it and the browser sends nothing at all.
+    const chosen = handle.value();
+    syncSubmitValues(wrapper, f.name, chosen === null || chosen === undefined ? [] : [chosen]);
     applyPart(trigger, view.parts.trigger);
     applyPart(search, view.parts.search);
     applyPart(listbox, view.parts.options);

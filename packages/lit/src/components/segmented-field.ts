@@ -73,7 +73,7 @@ export class MdySegmentedFieldElement extends MdyOptionsFieldElement<unknown | n
             <input
               type="radio"
               class="${this.partClass("optionControl")}"
-              name=${this.fieldId}
+              .value=${String(key)}
               .checked=${selected}
               aria-checked=${optionAttrs?.["aria-checked"] ?? (selected ? "true" : "false")}
               ?disabled=${handle.disabled() || option.disabled === true}

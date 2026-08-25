@@ -17,6 +17,12 @@ import { MdyErrorListComponent } from "../../control/error-list.component";
   },
   template: `
     <div class="mdy-checkbox">
+      <!--
+        The false half of the value, ahead of the box. HTML leaves an unchecked box out of the
+        payload altogether, so without this a person who said no and a form that never carried the
+        question arrive identical at the other end.
+      -->
+      <input [mdyPart]="submitFalsePart()" />
       <input
         type="checkbox"
         [class]="widgetContract.parts.control.classes.join(' ')"

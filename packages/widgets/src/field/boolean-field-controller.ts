@@ -63,6 +63,9 @@ export function createBooleanFieldController(
     const a11y = projectBooleanFieldA11y(state(), handle.errors(), {
       widgetId,
       variant,
+      // The key a native submit reads this control's value under, taken from the handle: it is what
+      // knows the field's place in the form, and a renderer passing it separately could pass another.
+      submitName: handle.path,
     });
 
     return {
@@ -70,6 +73,7 @@ export function createBooleanFieldController(
       parts: {
         label: a11y.label,
         input: a11y.input,
+        submitFalse: a11y.submitFalse,
         description: a11y.description,
         error: a11y.error,
       },

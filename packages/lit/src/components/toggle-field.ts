@@ -1,6 +1,6 @@
 import { mdyPart } from "../mdy-part.js";
 import { html, nothing } from "lit";
-import { createBooleanFieldController, type MdyBooleanFieldController } from "@modyra/widgets";
+import { submitFalsePart, createBooleanFieldController, type MdyBooleanFieldController } from "@modyra/widgets";
 import { MdyFieldElement } from "../base.js";
 
 export class MdyToggleFieldElement extends MdyFieldElement<boolean> {
@@ -36,6 +36,12 @@ export class MdyToggleFieldElement extends MdyFieldElement<boolean> {
     const inputAttrs = this.fieldController?.view().parts.input.attributes;
     return html`
       <div class="${this.partClass("inputWrapper")}">
+        <!--
+          The false half of the value, ahead of the switch. HTML leaves an unchecked box out of the
+          payload altogether, so without this a person who said no and a form that never carried the
+          question arrive identical at the other end.
+        -->
+        <input ${mdyPart(submitFalsePart(handle.path, handle.disabled()))} />
         <input
           id=${this.fieldId}
           class="${this.partClass("control")}"

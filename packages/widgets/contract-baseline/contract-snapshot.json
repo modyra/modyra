@@ -985,6 +985,15 @@
           ],
           "states": []
         },
+        "submitFalse": {
+          "element": "submission",
+          "parent": "inputWrapper",
+          "optional": true,
+          "repeated": false,
+          "role": null,
+          "classes": [],
+          "states": []
+        },
         "indicator": {
           "element": "presentation",
           "parent": "label",
@@ -1116,6 +1125,15 @@
           "classes": [
             "mdy-toggle__control"
           ],
+          "states": []
+        },
+        "submitFalse": {
+          "element": "submission",
+          "parent": "inputWrapper",
+          "optional": true,
+          "repeated": false,
+          "role": null,
+          "classes": [],
           "states": []
         },
         "track": {

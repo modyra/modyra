@@ -41,7 +41,7 @@ import { MdySelectOption } from "../../core/types";
         <label class="mdy-radio-item" [class.mdy-radio-item--disabled]="isDisabled()">
           <input
             type="radio"
-            [name]="fieldId"
+            [name]="groupName()"
             [value]="opt.value"
             [checked]="value() === opt.value"
             [disabled]="isDisabled()"

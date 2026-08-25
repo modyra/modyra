@@ -16,6 +16,11 @@ const PART_SEMANTICS: Readonly<Record<string, MdyWidgetSemanticElement>> = Objec
   // it: a segment holding a `<div>` where the input belongs is a widget nothing can operate.
   hour: "group", minute: "group", hourControl: "input", minuteControl: "input",
   hexInput: "input", nativePicker: "input",
+  // The value a native submit reads, and nothing else. It is an `<input>` and it is not a control:
+  // nobody focuses it, nobody names it, and a screen reader never reaches it — so it answers to
+  // `submission` rather than `input`, which would require it to have an accessible name it can
+  // neither carry nor need. Kinds declare one only where no real control holds the value.
+  submitFalse: "submission",
   // The trigger is the widget's control surface, not a plain button: it carries `role="combobox"`,
   // and a native `<select>` satisfies it too.
   trigger: "input",

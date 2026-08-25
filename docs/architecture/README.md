@@ -166,6 +166,7 @@ absent section reads as an oversight, and "no security impact" is a finding.
 - [ADR 0149: A form answers its own reset by returning to the initial values](0149-a-form-that-answers-its-own-reset.md)
 - [ADR 0150: What is submitted is what was on screen](0150-what-the-browser-gave-back.md) — the browser writes into a person's form and tells nobody, so the field showed one value while the form held another
 - [ADR 0151: The floor is Baseline widely available, and everything below it is declared](0151-the-platform-floor.md) — the repository never said which browsers it works in, and arrived here one rule at a time
+- [ADR 0152: A form built with these controls submits, and the payload carries the field's own names](0152-what-a-native-submit-sends.md) — no control wrote a `name`, so a native submit sent nothing at all
 - [ADR 0092: A condition travels with the form](0092-a-condition-travels-with-the-form.md) — `when` and `asyncWhen` were closures, so a schema carrying one was not data and the document half could not say what the typed half said
 
 ## Security-relevant records

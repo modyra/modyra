@@ -34,6 +34,9 @@ export interface MdyFieldShellFlags {
   readonly readonly?: boolean;
 }
 
+/** The kinds whose control is a checkbox, and which therefore need a value of their own. */
+const BOOLEAN_KINDS: ReadonlySet<string> = new Set(["checkbox", "toggle"]);
+
 export interface MdyFieldShellA11yOptions {
   readonly widgetId: string;
   /**
@@ -51,6 +54,17 @@ export interface MdyFieldShellA11yOptions {
    * Defaults to "there are errors", which is correct for a renderer that always shows them.
    */
   readonly errorsVisible?: boolean;
+  /**
+   * The key this control sends its value under when the browser submits the form it sits in.
+   *
+   * The field's path, not its widget id: the id carries a per-form scope so two forms on one page do
+   * not collide, and a scope in a payload is a key the receiving end never asked for. Two forms send
+   * the same key and stay apart, because a payload belongs to its form.
+   *
+   * Absent leaves the control unserialised, which is what a native submit does with a control that
+   * has no name: it sends nothing at all, rather than sending it empty.
+   */
+  readonly submitName?: string;
   /**
    * Whether the control announces itself as failing.
    *
@@ -184,6 +198,13 @@ export function projectFieldShellA11y(
     control: {
       classes: [],
       attributes: {
+        // What a native submit reads. Every renderer that binds this part gets it, which is the
+        // point of it living here: three renderers writing the same attribute is three places for
+        // one of them to forget.
+        name: options.submitName ?? null,
+        // A checked box with no `value` sends the string `on`, which describes the box rather than
+        // the answer. The kinds whose control is a checkbox say what they mean instead.
+        value: options.submitName !== undefined && BOOLEAN_KINDS.has(options.kind ?? "") ? "true" : null,
         // What the field's rules state, in the attributes this kind's control can carry. Absent
         // members are `null`, which is how a part contract says "remove this".
         ...nativeConstraintAttributes(

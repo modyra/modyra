@@ -1,6 +1,6 @@
 import {
   handleFormOf, MdyFieldHandle, type MdyFieldConstraints, type MdyValueKind } from "@modyra/core";
-import { MDY_ICONS, MDY_POPUP_OPENERS, adoptSilentWrites, bindFormReset, defaultOptionKey, messagesForLocale, widgetScopeOf, type MdyI18nMessages } from "@modyra/widgets";
+import { MDY_ICONS, MDY_POPUP_OPENERS, adoptSilentWrites, bindFormReset, groupSubmitName, submissionFor, syncSubmitValues, defaultOptionKey, messagesForLocale, widgetScopeOf, type MdyI18nMessages } from "@modyra/widgets";
 import { html, LitElement, nothing, PropertyDeclarations } from "lit";
 import { unsafeSVG } from "lit/directives/unsafe-svg.js";
 import {
@@ -282,6 +282,8 @@ export abstract class MdyFieldElement<T> extends LitElement {
   protected override updated(changed: Map<string, unknown>): void {
     super.updated(changed);
     this.applyControlName();
+    this.nameRadioGroup();
+    this.syncHiddenSubmission();
     this.watchSilentWrites();
 
     // Once per element: two forms over one document claim one set of ids, and a sentence repeated
@@ -408,6 +410,39 @@ export abstract class MdyFieldElement<T> extends LitElement {
 
   /** Stops watching for values written into this control by something other than the renderer. */
   private _stopWatchingWrites: (() => void) | null = null;
+
+  /**
+   * The values a native submit reads, for the kinds that draw no form control at all.
+   *
+   * A select is a button and a listbox; a multiselect is a button and a strip of chips. Neither is
+   * something a form serialises, so without these inputs the browser sends nothing for the field —
+   * not an empty value, nothing. Which kinds need them is the contract's answer, not this file's.
+   */
+  private syncHiddenSubmission(): void {
+    const handle = this.field;
+    if (!handle) return;
+    const kind = this.widgetKind as MdyWidgetKind;
+    if (!(kind in MDY_WIDGET_CONTRACTS) || submissionFor(kind).form !== "hidden") return;
+    const value = handle.value();
+    syncSubmitValues(this, handle.path, Array.isArray(value) ? value : value === null || value === undefined ? [] : [value], handle.disabled());
+  }
+
+  /**
+   * The one name a set of radio inputs shares, written after the render.
+   *
+   * Two jobs in one attribute — it groups the set, and it is the key the answer arrives under — and
+   * which one is at stake depends on whether this element has a form around it. Written here rather
+   * than in a template because at template time the element may not be in the document yet, and
+   * "is there a form around this" has no answer until it is.
+   */
+  private nameRadioGroup(): void {
+    const radios = this.querySelectorAll<HTMLInputElement>('input[type="radio"]');
+    if (radios.length === 0) return;
+    const handle = this.field;
+    if (!handle) return;
+    const shared = groupSubmitName(this, handle.path, this.fieldId);
+    for (const radio of radios) radio.name = shared;
+  }
 
   /**
    * Watches for values written into this control by something other than the renderer.
@@ -643,6 +678,9 @@ export abstract class MdyFieldElement<T> extends LitElement {
         errorsVisible: this.showErrors(handle),
         // Only where there is something at the other end of the reference.
         descriptionVisible: this.hasDescription(),
+        // The key a native submit reads this control's value under: the field's path, not the
+        // scoped id this element uses for its DOM references.
+        submitName: handle.path,
       },
     ).control;
   }
