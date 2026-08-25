@@ -1,12 +1,15 @@
 {
   "note": "Browser specs that are red because the defect they describe is open. A red listed here does not fail a build; a red that is not listed is a regression. Rewrite with `npm run battle:browser:ci -- --accept`.",
   "order": "Repair in severity order, as the node tier does. A spec's severity is the worst of the claims its header names; `unknown` is a spec that names none, which is most of them.",
-  "recordedAt": "2026-08-25T22:43:31Z",
-  "openReds": 15,
+  "recordedAt": "2026-08-25T22:52:16Z",
+  "openReds": 17,
   "bySeverity": {
+    "S0": 2,
     "S1": 15
   },
   "knownRed": [
+    "a-file-a-locked-field-still-takes.spec.ts › a field an application locked does not take a file, lit",
+    "a-file-a-locked-field-still-takes.spec.ts › a field an application locked does not take a file, plain",
     "a-cluster-a-thumb-can-tell-apart.spec.ts › a destroy and a restore are told apart by more than a margin, angular",
     "a-cluster-a-thumb-can-tell-apart.spec.ts › a destroy and a restore are told apart by more than a margin, lit",
     "a-cluster-a-thumb-can-tell-apart.spec.ts › a destroy and a restore are told apart by more than a margin, plain",
