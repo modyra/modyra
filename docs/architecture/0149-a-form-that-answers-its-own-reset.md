@@ -1,6 +1,6 @@
 # ADR 0149: A form answers its own reset by returning to the initial values
 
-Status: Accepted
+Status: Accepted — amended 2026-08-25 (see **Amendment**)
 
 ## Context
 
@@ -39,7 +39,10 @@ component to the `<form>` it renders.
 
 Two properties are load-bearing and neither is incidental:
 
-- **The listener is on the form.** `reset` does not bubble past it, so nothing higher up can hear it.
+- **The form is resolved at each reset, not at bind time.** The listener sits on the document in the
+  capture phase and asks whether the form being reset contains the element. Which form that is can
+  change: an element mounted before its page is assembled, and placed into a form afterwards, is that
+  form's control from then on.
 - **The write is deferred by a task.** The browser resets its own controls *after* dispatching the
   event; a model written during the event is overwritten by the boxes a moment later. The `schedule`
   hook exists so a renderer that batches its writes can supply its own, and so a test can drive it.
@@ -61,6 +64,8 @@ What this costs:
 - **`<mdy-form>` nested in a consumer's own `<form>` does not answer the outer form's reset.** Its
   controls belong to the inner form, so the browser does not reset them either; the behaviour is
   consistent, and it will still surprise someone.
+- **One document-level listener per binding**, rather than one per form. For a renderer that binds
+  per control this is a listener per control on the document, for an event that fires rarely.
 - **A new public export to keep stable**: `bindFormReset` and `MdyFormResetBinding`.
 
 ## Alternatives rejected
@@ -84,15 +89,41 @@ defect a person cannot work around.
 `<form>` and one listener covers every control inside it; N listeners for one event is a cost with no
 return. Plain and lit bind per mount because that is where they know their form.
 
+**Attach the listener to the enclosing form, resolved once at bind time.** The obvious shape, and it
+is what this decision was first built as. Rejected on measurement — see the amendment.
+
 ## Verification
 
-- `packages/widgets/test/form-reset.spec.mjs` — five cases against the rule directly: the deferral
+- `packages/widgets/test/form-reset.spec.mjs` — seven cases against the rule directly: the deferral
   (asserting the model is *not* written during the event), unbinding, an element outside any form,
-  the form element itself, and a reset dispatched on a different form. Mutating the deferral away
-  turns exactly one of the five red.
+  the form element itself, a reset dispatched on a different form, and an element moved into and out
+  of a form after binding. Mutating the deferral away turns exactly one of the seven red.
 - Measured in a browser in all three renderers, box and model together: `Grace` → Cancel → box `Ada`,
   model `{"nome":"Ada"}`.
 - `npm run test:type-surface` classifies the two new exports as minor and holds them.
+
+## Amendment (2026-08-25)
+
+The decision holds; two things it asserted were wrong, and the second was wrong in a way that left a
+renderer silently inert.
+
+**`reset` does bubble.** The original text said it does not, and that a listener therefore had to sit
+on the form itself. Measured: it bubbles in Chromium, Firefox and WebKit alike — and does *not* bubble
+in jsdom, which is where the claim came from. A rule taken from the test environment and stated as a
+property of the platform. The listener now sits on the document in the **capture** phase, which is
+independent of bubbling and holds in both.
+
+**Resolving the form once, at bind time, is not enough.** A control mounted before any form exists and
+moved into one afterwards was bound to nothing and stayed bound to nothing:
+
+| | mounted inside a form | mounted loose, moved in after |
+| --- | --- | --- |
+| plain | Cancel worked | **Cancel did nothing, for good** |
+| lit | Cancel worked | Cancel worked — by accident: reconnecting rebinds it |
+
+Two renderers of one contract disagreeing, with lit correct only because a custom element's lifecycle
+happens to fire again. Resolving the form at each reset removes the difference and the accident
+together: all three now answer in both shapes.
 
 ## Security and privacy
 

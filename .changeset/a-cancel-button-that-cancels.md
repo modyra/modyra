@@ -20,4 +20,7 @@ themselves; a consumer needs it only for a form they render and mount by hand. I
 supplies the scheduler for the deferred write — the browser resets its own controls after the event
 is dispatched, so a model written during the event is overwritten a moment later.
 
+The form is resolved at each reset rather than at bind time, so a control mounted before its page is
+assembled and placed into a form afterwards is answered from then on.
+
 No migration. A control outside a `<form>` is unaffected. See ADR 0149.

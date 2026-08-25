@@ -56,7 +56,7 @@ test("unbinding stops it, and a second reset is not answered", () => {
   assert.equal(resets, 0);
 });
 
-test("an element outside any form binds nothing and unbinds safely", () => {
+test("an element outside any form is not answered, and unbinds safely", () => {
   const document = page();
   let resets = 0;
 
@@ -64,6 +64,37 @@ test("an element outside any form binds nothing and unbinds safely", () => {
   document.getElementById("f").dispatchEvent(new document.defaultView.Event("reset"));
   assert.equal(resets, 0, "a control mounted on its own has no reset to answer");
   assert.doesNotThrow(unbind);
+});
+
+test("an element moved into a form after binding is answered by that form", () => {
+  const document = page();
+  const clock = manual();
+  let resets = 0;
+
+  // Bound while it belongs to no form at all. A binding that resolved the form once, at bind time,
+  // would have resolved it to nothing and stayed there — which is the shape a renderer that mounts
+  // before its page is assembled actually has.
+  const loose = document.getElementById("loose");
+  bindFormReset({ element: loose, reset: () => { resets += 1; }, schedule: clock.schedule });
+
+  document.getElementById("f").append(loose);
+  document.getElementById("f").dispatchEvent(new document.defaultView.Event("reset"));
+  clock.flush();
+  assert.equal(resets, 1);
+});
+
+test("an element moved out of a form after binding is no longer answered by it", () => {
+  const document = page();
+  const clock = manual();
+  let resets = 0;
+
+  const input = document.getElementById("in");
+  bindFormReset({ element: input, reset: () => { resets += 1; }, schedule: clock.schedule });
+
+  document.body.append(input);
+  document.getElementById("f").dispatchEvent(new document.defaultView.Event("reset"));
+  clock.flush();
+  assert.equal(resets, 0, "the form it left is not its form any more");
 });
 
 test("the form itself is a legitimate element: a renderer that owns its form binds to it directly", () => {
