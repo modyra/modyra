@@ -272,3 +272,27 @@ test("a pixel measure refuses to answer without knowing how densely it was captu
   // And it does answer when told, so the guard is a condition rather than a wall.
   assert.equal(paintedFraction(plain, { scale: 1 }).fraction, 0);
 });
+
+/**
+ * A region with nothing in it, told apart from a region with nothing painted in it.
+ *
+ * The two are one number at the call site unless the measure refuses: a fraction of zero means *this
+ * control paints nothing*, and a clip that caught no pixels means *nothing was measured*. A caller
+ * comparing against zero reports the first when it has the second.
+ *
+ * It is the shape that never fails. A planted violation is found the day it is planted and a degenerate
+ * fixture is found when somebody reads the data, but a measure that looks at nothing stays green for
+ * ever, covers more each month, and is trusted in proportion to how long it has never complained.
+ */
+test("a region with no pixels is refused rather than measured", () => {
+  assert.throws(
+    () => paintedFraction(decodePng(encodePng(0, 4, () => [255, 255, 255])), { scale: 2 }),
+    /no pixels to judge/,
+    "a zero-width region was given a fraction instead of a refusal",
+  );
+
+  // And a region that has pixels and no mark still answers, because that is a real reading.
+  const blank = paintedFraction(decodePng(encodePng(6, 6, () => [255, 255, 255])), { scale: 2 });
+  assert.equal(blank.fraction, 0, "a real region that paints nothing must still be measurable");
+  assert.equal(blank.total, 36, "the area is reported, so a caller can tell how much was looked at");
+});

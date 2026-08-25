@@ -141,7 +141,19 @@ export function paintedFraction(png, options = {}) {
       || Math.abs(alpha - ba) > tolerance) different += 1;
   }
   const total = width * height;
-  return { fraction: total === 0 ? 0 : different / total, different, total, background, scale };
+  // **A region with no pixels is not a region that painted nothing.** Returning 0 for both makes the
+  // two indistinguishable at the call site, and the caller that compares against zero then reports a
+  // blank control for a control that was never measured — the failure that never fails, because an
+  // empty reading looks exactly like a clean one and grows more reassuring the longer it holds.
+  if (total === 0) {
+    throw new Error(
+      `[battle] paintedFraction was given a ${png.width}×${png.height} region, which has no pixels to `
+      + "judge. A fraction of zero would be indistinguishable from a region that is genuinely blank, "
+      + "and those are different findings: one is a control that paints nothing, the other is a clip "
+      + "that caught nothing.",
+    );
+  }
+  return { fraction: different / total, different, total, background, scale };
 }
 
 /** Relative luminance, as WCAG defines it. */
