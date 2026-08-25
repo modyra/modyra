@@ -130,7 +130,7 @@ test("the register's count is rewritten from the file a run wrote", () => {
   const written = readFileSync(file, "utf8");
   assert.match(written, /S0 {5}6 {6}the whole of it before any S1/);
   assert.match(written, /S1 {4}15/);
-  assert.match(written, / {6}24 {6}open reds, 2026-08-19/);
+  assert.match(written, / {6}24 {6}open node reds, 2026-08-19/);
   assert.match(written, /the rest of the register, which must survive/);
 });
 
@@ -173,11 +173,14 @@ test("the block carries the time as well as the day", () => {
   ].join("\n"), "utf8");
 
   writeRegisterSummary({ openReds: 1, bySeverity: { S0: 1 }, recordedAt: "2026-08-20T09:41:07Z" }, file);
-  assert.match(readFileSync(file, "utf8"), /open reds, 2026-08-20 09:41:07 UTC/);
+  assert.match(readFileSync(file, "utf8"), /open node reds, 2026-08-20 09:41:07 UTC/);
+  // Named for the tier that wrote it: this gate runs the node battles and nothing else, and a reader
+  // who takes the total for the project's was reading a number that was never about the whole of it.
+  assert.match(readFileSync(file, "utf8"), /known-red-browser\.json/);
 
   // And the block it just wrote is one it can rewrite again, which a stricter pattern would not be.
   writeRegisterSummary({ openReds: 2, bySeverity: { S0: 2 }, recordedAt: "2026-08-20T10:02:00Z" }, file);
-  assert.match(readFileSync(file, "utf8"), /open reds, 2026-08-20 10:02:00 UTC/);
+  assert.match(readFileSync(file, "utf8"), /open node reds, 2026-08-20 10:02:00 UTC/);
 });
 
 test("a register without the block is left alone rather than guessed at", () => {

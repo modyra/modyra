@@ -183,7 +183,10 @@ export function writeRegisterSummary(body, file = join(BATTLE_ROOT, "reports", "
   // Every severity that has a row, however many there are: the block used to name S0, S1 and S2 and
   // nothing else, so the first S3 red raised the total without appearing in the list under it — the
   // rows and the total disagreed, and the section says the file is the one to believe.
-  const block = /```\nS0 +\d+ +the whole of it before any S1\n(?:S\d +\d+\n)* +--\n +\d+ +open reds, [\d:\- ]+(?:UTC)?\n```/;
+  // The trailing lines are matched loosely and the word "node" optionally, so that adding a line to
+  // what is written below cannot silently stop this from matching what it wrote last time — a block
+  // that no longer matches is not an error here, it is a number that quietly stops being updated.
+  const block = /```\nS0 +\d+ +the whole of it before any S1\n(?:S\d +\d+\n)* +--\n +\d+ +open (?:node )?reds, [\d:\- ]+(?:UTC)?\n(?: +\S[^\n]*\n)*```/;
   if (!block.test(register)) return;
   const at = (key) => String(body.bySeverity[key] ?? 0).padStart(2);
   const rows = [...new Set(["S0", ...Object.keys(body.bySeverity)])].sort()
@@ -194,7 +197,11 @@ export function writeRegisterSummary(body, file = join(BATTLE_ROOT, "reports", "
     "```",
     ...rows,
     "      --",
-    `      ${String(body.openReds).padStart(2)}      open reds, ${body.recordedAt.replace("T", " ").replace("Z", " UTC")}`,
+    `      ${String(body.openReds).padStart(2)}      open node reds, ${body.recordedAt.replace("T", " ").replace("Z", " UTC")}`,
+    // **This gate sees one tier.** It runs the node battles and writes what they report; the browser
+    // tier keeps a baseline of its own and never reaches this file. A reader who takes this total for
+    // the project's total is reading a number that was never about the whole of it.
+    "              the browser tier keeps its own count, in known-red-browser.json",
     "```",
   ].join("\n");
   writeFileSync(file, register.replace(block, written), "utf8");
