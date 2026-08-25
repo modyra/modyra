@@ -22,6 +22,7 @@ import {
   createMultiselectFieldController,
   MDY_CHIP_CLASSES,
   chipActionName,
+  defaultOptionKey,
   multiselectChipClasses,
   quantityAnnouncement,
   settledVoice,
@@ -228,11 +229,22 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
     handle: MdyFieldHandle<readonly unknown[]>,
     value: unknown,
   ): boolean {
-    return this.selectedSet(handle).has(String(value));
+    return this.selectedSet(handle).has(defaultOptionKey(value));
   }
 
+  /**
+   * What a held value is called, matched the way the list itself is reconciled.
+   *
+   * Identity first, then the contract's key: a draft, a refetch or an import hands the field a fresh
+   * object that *is* an option's value without *being* it, and asked only the exact question the
+   * chip fell through to the fallback — which for an object is `[object Object]`, a label naming
+   * nothing a person chose.
+   */
   private labelFor(value: unknown): string {
-    return this.options.find((o) => o.value === value)?.label ?? String(value);
+    const key = defaultOptionKey(value);
+    const option = this.options.find((o) => o.value === value)
+      ?? this.options.find((o) => defaultOptionKey(o.value) === key);
+    return option?.label ?? key;
   }
 
   /**
@@ -272,20 +284,20 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
     _handle: MdyFieldHandle<readonly unknown[]>,
     value: unknown,
   ): void {
-    const optionKey = String(value);
+    const optionKey = defaultOptionKey(value);
     this.fieldController?.dispatch(
       this.mode === "multi" ? { type: "increment", optionKey } : { type: "toggle", optionKey },
     );
   }
 
   private increment(_handle: MdyFieldHandle<readonly unknown[]>, value: unknown): void {
-    this.fieldController?.dispatch({ type: "increment", optionKey: String(value) });
-    this.sayQuantity(String(value));
+    this.fieldController?.dispatch({ type: "increment", optionKey: defaultOptionKey(value) });
+    this.sayQuantity(defaultOptionKey(value));
   }
 
   private decrement(_handle: MdyFieldHandle<readonly unknown[]>, value: unknown): void {
-    this.fieldController?.dispatch({ type: "decrement", optionKey: String(value) });
-    this.sayQuantity(String(value));
+    this.fieldController?.dispatch({ type: "decrement", optionKey: defaultOptionKey(value) });
+    this.sayQuantity(defaultOptionKey(value));
   }
 
   /**
@@ -320,7 +332,7 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
     direction: "forward" | "backward" = "forward",
   ): void {
     const order = [...new Set(this.held(handle).map((v) => String(v)))];
-    const next = chipFocusAfterRemoval(order, String(value), direction);
+    const next = chipFocusAfterRemoval(order, defaultOptionKey(value), direction);
     // The stop moves with the focus, or the next Tab returns to a chip that is no longer there.
     if (next !== null) this._activeChip = next;
     this.removeValue(handle, value);
@@ -340,7 +352,7 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
 
   /** Takes a chosen value off entirely, whatever its count — the chip's own control. */
   private removeValue(_handle: MdyFieldHandle<readonly unknown[]>, value: unknown): void {
-    this.fieldController?.dispatch({ type: "toggle", optionKey: String(value) });
+    this.fieldController?.dispatch({ type: "toggle", optionKey: defaultOptionKey(value) });
   }
 
   protected override triggerText(handle: MdyFieldHandle<readonly unknown[]>): string {
@@ -796,7 +808,7 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
   protected override describedState(): string {
     const handle = this.field;
     if (!handle) return "";
-    const count = new Set(this.held(handle).map((value) => String(value))).size;
+    const count = new Set(this.held(handle).map((value) => defaultOptionKey(value))).size;
     return count === 0 ? "" : this.messages.selectionCount.replace("{count}", String(count));
   }
 
@@ -841,7 +853,7 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
    * something the person just did.
    */
   private announcementText(handle: MdyFieldHandle<readonly unknown[]>): string {
-    const now = [...new Set(this.held(handle).map((value) => String(value)))];
+    const now = [...new Set(this.held(handle).map((value) => defaultOptionKey(value)))];
     if (this._saidLast === null) { this._saidLast = now; return ""; }
     if (this._saySoon !== null) { this._said = this._saySoon; this._saySoon = null; this._saidLast = now; return this._said; }
     const said = multiselectAnnouncement(
@@ -880,7 +892,7 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
   private renderValueChips(handle: MdyFieldHandle<readonly unknown[]>): unknown {
     const tally = new Map<string, { readonly value: unknown; readonly label: string; count: number }>();
     for (const value of this.held(handle)) {
-      const key = String(value);
+      const key = defaultOptionKey(value);
       const seen = tally.get(key);
       if (seen) seen.count += 1;
       else tally.set(key, { value, label: this.labelFor(value), count: 1 });
@@ -888,10 +900,10 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
     const size = tally.size;
     return [...tally.values()].map(({ value, label, count }, index) => html`<span
       class=${multiselectChipClasses({ mode: this.mode, role: "value", selected: true }).join(" ")}
-      tabindex=${this.activeChip(handle) === String(value) ? "0" : "-1"}
+      tabindex=${this.activeChip(handle) === defaultOptionKey(value) ? "0" : "-1"}
       role=${this.partRole("chip")}
       @focus=${(e: FocusEvent) => {
-        this._activeChip = String(value);
+        this._activeChip = defaultOptionKey(value);
         this.revealChipName(e.currentTarget as HTMLElement, label);
         const strip = this.querySelector<HTMLElement>(".mdy-multiselect__chips");
         if (strip !== null) requestAnimationFrame(() => keepFocusedChipInView(strip));
@@ -899,12 +911,12 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
       @pointerenter=${(e: PointerEvent) => this.revealChipName(e.currentTarget as HTMLElement, label)}
       @pointerleave=${() => this.hideChipName()}
       @blur=${() => this.hideChipName()}
-      aria-describedby=${this._namedChip === String(value) ? `${this.fieldId}__chiptip` : nothing}
-      @pointerdown=${(e: PointerEvent) => this.startChipDrag(e, handle, String(value))}
-      @keydown=${(e: KeyboardEvent) => this.onChipKeydown(e, handle, String(value))}
+      aria-describedby=${this._namedChip === defaultOptionKey(value) ? `${this.fieldId}__chiptip` : nothing}
+      @pointerdown=${(e: PointerEvent) => this.startChipDrag(e, handle, defaultOptionKey(value))}
+      @keydown=${(e: KeyboardEvent) => this.onChipKeydown(e, handle, defaultOptionKey(value))}
       aria-label=${count > 1 ? `${label}, ${count}` : label}
       title=${label}
-      data-key=${String(value)}
+      data-key=${defaultOptionKey(value)}
       aria-posinset=${index + 1}
       aria-setsize=${size}
     >
@@ -914,7 +926,7 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
             class=${MDY_CHIP_CLASSES.move}
             tabindex="-1"
             aria-label=${chipActionName(this.messages.chipMoveEarlierLabel, label)}
-            @click=${(e: Event) => { e.stopPropagation(); this.moveByPointer(handle, String(value), -1); }}
+            @click=${(e: Event) => { e.stopPropagation(); this.moveByPointer(handle, defaultOptionKey(value), -1); }}
           ></button>`
         : nothing}
       ${this.mode === "multi"
@@ -943,7 +955,7 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
             class=${MDY_CHIP_CLASSES.move}
             tabindex="-1"
             aria-label=${chipActionName(this.messages.chipMoveLaterLabel, label)}
-            @click=${(e: Event) => { e.stopPropagation(); this.moveByPointer(handle, String(value), 1); }}
+            @click=${(e: Event) => { e.stopPropagation(); this.moveByPointer(handle, defaultOptionKey(value), 1); }}
           ></button>`
         : nothing}
       <button

@@ -1006,10 +1006,16 @@ export class MdyMultiselectComponent<TValue = string>
     return this.effectiveOptions().find((o) => this.optionKey(o.value) === key)?.label ?? key;
   }
 
-  /** The words a chosen value is shown by, falling back to the value for one the options lost. */
+  /**
+   * The words a chosen value is shown by, falling back to its key for one the options lost.
+   *
+   * The key rather than `String(value)`: every plain object renders as `[object Object]` through it,
+   * so a value whose option went away was labelled with a name that says nothing about what was
+   * chosen. The key at least describes what the value holds.
+   */
   private labelOf(value: TValue): string {
     return this.effectiveOptions().find((o) => this.optionKey(o.value) === this.optionKey(value))?.label
-      ?? String(value);
+      ?? this.optionKey(value);
   }
 
   protected countOf(optValue: TValue): number {

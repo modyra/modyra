@@ -13,6 +13,7 @@ import {
   MDY_WIDGET_CONTRACTS,
   createMultiselectFieldController,
   chipActionName,
+  defaultOptionKey,
   quantityAnnouncement,
   settledVoice,
   multiselectChipClasses,
@@ -60,7 +61,18 @@ export function renderMultiselectField(
   // How this popup attaches is the contract's, not this renderer's.
   const anchoring = overlayAnchoringFor("multiselect");
   const options = f.options as ReadonlyArray<MdySelectOption<unknown>>;
-  const keyFor = (option: MdySelectOption<unknown>) => String(option.value);
+  /**
+   * The key a value is identified by, which is the contract's and not this renderer's.
+   *
+   * `String(value)` renders every plain object as `[object Object]`, so two different choices held at
+   * once arrived as one key: the field drew a single chip labelled as the first of them, taken twice,
+   * with the counter agreeing. A person read a field asserting something they had not chosen.
+   *
+   * `defaultOptionKey` is what the controller derives its own keys with, so a renderer that spells the
+   * derivation again is a second answer to a question already answered — and for primitives the two
+   * agree exactly, which is why every fixture in this suite concurred and none of them could see it.
+   */
+  const keyFor = (option: MdySelectOption<unknown>) => defaultOptionKey(option.value);
   const searchable = (f as { readonly searchable?: boolean }).searchable === true;
   const reorderable = (f as { readonly reorderable?: boolean }).reorderable === true;
   const controller = createMultiselectFieldController({ widgetId: widgetId, handle, options, keyFor, mode }, reactivity);

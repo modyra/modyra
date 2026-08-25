@@ -1,7 +1,19 @@
 import { addMonths, CalendarDate } from "@modyra/core/datetime";
+import { defaultOptionKey } from "@modyra/widgets";
 import { MdySelectOption } from "../core/types";
 
-export const projectionKey = (value: unknown): string => String(value);
+/**
+ * The key a value is identified by, which is the contract's and not this renderer's.
+ *
+ * `String(value)` renders every plain object as `[object Object]`, so two different choices held at
+ * once arrived as one key: the field drew a single chip labelled as the first of them, taken twice,
+ * with the counter agreeing. A person read a field asserting something they had not chosen.
+ *
+ * `defaultOptionKey` is what the controller derives its own keys with, so a renderer that spells the
+ * derivation again is a second answer to a question already answered — and for primitives the two
+ * agree exactly, which is why every fixture in this suite concurred and none of them could see it.
+ */
+export const projectionKey = (value: unknown): string => defaultOptionKey(value);
 
 export function findProjectedOption<T>(
   options: readonly MdySelectOption<T>[],
