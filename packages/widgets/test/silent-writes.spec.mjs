@@ -1,20 +1,21 @@
 /**
- * Adopting what the browser gave back, against the rule directly.
+ * Values written by something other than this library, against the rule directly.
  *
- * The load-bearing case is the negative one: a control the renderer itself wrote to between the
- * snapshot and the comparison must not be reported to the model as a person's input. Every value in
- * a form moves at some point; what distinguishes a restore is that nothing in this library moved it.
+ * The load-bearing cases are the negative ones. A control the renderer itself wrote to must not be
+ * reported to the model as somebody else's input — every value in a form moves at some point, and
+ * what distinguishes a silent write is only that nothing here heard about it. And the submit guard
+ * must run *before* whatever reads the value, or it guards nothing.
  */
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { JSDOM } from "jsdom";
 
-import { adoptHistoryRestore } from "../dist/index.js";
+import { adoptSilentWrites } from "../dist/index.js";
 
-/** @typedef {import("../dist/index.js").MdyHistoryRestoreBinding} MdyHistoryRestoreBinding */
+/** @typedef {import("../dist/index.js").MdySilentWriteBinding} MdySilentWriteBinding */
 
 const page = () => {
-  const dom = new JSDOM("<div id='root'><input id='a' value='Ada'><input id='b' value='Alan'><textarea id='c'>prima</textarea><input id='d' type='checkbox'></div>");
+  const dom = new JSDOM("<form id='f'><div id='root'><input id='a' value='Ada'><input id='b' value='Alan'><textarea id='c'>prima</textarea><input id='d' type='checkbox'></div></form><div id='altrove'><input id='e'></div>");
   return dom.window.document;
 };
 
@@ -34,15 +35,20 @@ const listen = (document) => {
 };
 
 const backForward = () => "back_forward";
+const ordinary = () => "navigate";
+const root = (document) => document.getElementById("root");
+const submit = (document) => document.getElementById("f").dispatchEvent(new document.defaultView.Event("submit", { bubbles: true, cancelable: true }));
+
+// ── The restore, as the controls are built ────────────────────────────────────────────────────
 
 test("a control the browser restored is reported to the model", () => {
   const document = page();
   const clock = manual();
   const heard = listen(document);
 
-  /** @type {MdyHistoryRestoreBinding} */
-  const binding = { root: document.getElementById("root"), schedule: clock.schedule, navigation: backForward };
-  adoptHistoryRestore(binding);
+  /** @type {MdySilentWriteBinding} */
+  const binding = { root: root(document), schedule: clock.schedule, navigation: backForward };
+  adoptSilentWrites(binding);
 
   // The browser writing the value back, which is all a restore is: no event, just a new value.
   document.getElementById("a").value = "Grace";
@@ -56,18 +62,18 @@ test("a control nothing touched is left alone", () => {
   const clock = manual();
   const heard = listen(document);
 
-  adoptHistoryRestore({ root: document.getElementById("root"), schedule: clock.schedule, navigation: backForward });
+  adoptSilentWrites({ root: root(document), schedule: clock.schedule, navigation: backForward });
   clock.flush();
 
   assert.deepEqual(heard, [], "every field would be marked touched by a form nobody had typed in");
 });
 
-test("an ordinary navigation adopts nothing at all", () => {
+test("an ordinary navigation adopts nothing as the controls are built", () => {
   const document = page();
   const clock = manual();
   const heard = listen(document);
 
-  adoptHistoryRestore({ root: document.getElementById("root"), schedule: clock.schedule, navigation: () => "navigate" });
+  adoptSilentWrites({ root: root(document), schedule: clock.schedule, navigation: ordinary });
   document.getElementById("a").value = "Grace";
   clock.flush();
 
@@ -79,7 +85,7 @@ test("a checkbox and a textarea are restored like anything else", () => {
   const clock = manual();
   const heard = listen(document);
 
-  adoptHistoryRestore({ root: document.getElementById("root"), schedule: clock.schedule, navigation: backForward });
+  adoptSilentWrites({ root: root(document), schedule: clock.schedule, navigation: backForward });
   document.getElementById("c").value = "dopo";
   document.getElementById("d").checked = true;
   clock.flush();
@@ -87,42 +93,99 @@ test("a checkbox and a textarea are restored like anything else", () => {
   assert.deepEqual(heard, ["c:input", "c:change", "d:input", "d:change"]);
 });
 
-test("a control removed before the comparison is not spoken to", () => {
+// ── The submit, whatever wrote in between ─────────────────────────────────────────────────────
+
+test("a value written silently is adopted at the submit", () => {
   const document = page();
-  const clock = manual();
   const heard = listen(document);
 
-  adoptHistoryRestore({ root: document.getElementById("root"), schedule: clock.schedule, navigation: backForward });
-  const b = document.getElementById("b");
-  b.value = "Turing";
-  b.remove();
-  clock.flush();
+  adoptSilentWrites({ root: root(document), navigation: ordinary });
+  // Autofill, a password manager, an extension: a value property set, and nothing said.
+  document.getElementById("a").value = "Grace";
+  submit(document);
+
+  assert.deepEqual(heard, ["a:input", "a:change"]);
+});
+
+test("the submit guard runs before anything that reads the value", () => {
+  const document = page();
+  const seen = [];
+
+  adoptSilentWrites({ root: root(document), navigation: ordinary });
+  document.getElementById("f").addEventListener("submit", () => {
+    seen.push(document.getElementById("a").value);
+  });
+  document.getElementById("a").addEventListener("input", () => { seen.push("adopted"); });
+
+  document.getElementById("a").value = "Grace";
+  submit(document);
+
+  assert.deepEqual(seen, ["adopted", "Grace"], "a handler reading the value must read the adopted one");
+});
+
+test("what arrived the ordinary way is not adopted again at the submit", () => {
+  const document = page();
+  const heard = listen(document);
+
+  adoptSilentWrites({ root: root(document), navigation: ordinary });
+  const a = document.getElementById("a");
+  a.value = "Grace";
+  a.dispatchEvent(new document.defaultView.Event("input", { bubbles: true }));
+  heard.length = 0;
+
+  submit(document);
+  assert.deepEqual(heard, [], "a person's own typing was already heard; adopting it twice is a second input");
+});
+
+test("a submit on another form is not answered", () => {
+  const dom = new JSDOM("<form id='mine'><input id='a' value='Ada'></form><form id='theirs'><input /></form>");
+  const document = dom.window.document;
+  const heard = listen(document);
+
+  adoptSilentWrites({ root: document.getElementById("mine"), navigation: ordinary });
+  document.getElementById("a").value = "Grace";
+  document.getElementById("theirs").dispatchEvent(new dom.window.Event("submit", { bubbles: true, cancelable: true }));
 
   assert.deepEqual(heard, []);
 });
 
-test("cancelling before the comparison stops it", () => {
+test("a control outside the root is neither watched nor adopted", () => {
   const document = page();
-  const clock = manual();
   const heard = listen(document);
 
-  const cancel = adoptHistoryRestore({ root: document.getElementById("root"), schedule: clock.schedule, navigation: backForward });
-  document.getElementById("a").value = "Grace";
-  cancel();
-  clock.flush();
+  adoptSilentWrites({ root: root(document), navigation: ordinary });
+  document.getElementById("e").value = "Turing";
+  submit(document);
 
-  assert.deepEqual(heard, [], "a form torn down between the two halves must not write to a model that is gone");
+  assert.deepEqual(heard, []);
 });
 
-test("only the controls that moved are adopted, and the others stay silent", () => {
+// ── Lifetime ──────────────────────────────────────────────────────────────────────────────────
+
+test("a control that appears after the binding is not mistaken for a silent write", () => {
+  const document = page();
+  const heard = listen(document);
+
+  adoptSilentWrites({ root: root(document), navigation: ordinary });
+  const fresh = document.createElement("input");
+  fresh.id = "nuovo";
+  fresh.value = "Hopper";
+  root(document).append(fresh);
+  submit(document);
+
+  assert.deepEqual(heard, [], "a field the renderer has just drawn was written by the renderer");
+});
+
+test("unbinding stops both halves", () => {
   const document = page();
   const clock = manual();
   const heard = listen(document);
 
-  adoptHistoryRestore({ root: document.getElementById("root"), schedule: clock.schedule, navigation: backForward });
+  const stop = adoptSilentWrites({ root: root(document), schedule: clock.schedule, navigation: backForward });
   document.getElementById("a").value = "Grace";
-  clock.flush();
+  stop();
 
-  assert.equal(heard.filter((h) => h.startsWith("b:")).length, 0);
-  assert.equal(heard.filter((h) => h.startsWith("a:")).length, 2);
+  clock.flush();
+  submit(document);
+  assert.deepEqual(heard, [], "a form torn down must not write to a model that is gone");
 });

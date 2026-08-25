@@ -1,6 +1,6 @@
-# ADR 0150: A restored value is adopted, and the form never disagrees with what is on screen
+# ADR 0150: What is submitted is what was on screen
 
-Status: Accepted
+Status: Accepted — amended 2026-08-25 (see **Amendment**)
 
 ## Context
 
@@ -42,17 +42,22 @@ review.
 
 ## Decision
 
-**Where the browser restored a value, the form adopts it. Where it did not, nothing happens. The two
-never disagree.**
+**The model and the boxes never disagree about what will be submitted. A value written into a control
+by something other than this library is adopted; where nothing wrote, nothing happens.**
 
-`adoptHistoryRestore` in `@modyra/widgets` is the single implementation, bound by each renderer where
-it already binds the form's reset.
+`adoptSilentWrites` in `@modyra/widgets` is the single implementation, bound by each renderer where
+it already binds the form's reset. It enforces the rule at the only two moments a silent write can be
+caught:
 
-**Which controls were restored is answered by difference, because nothing reports it.** The
-navigation type is checked first — anything other than `back_forward` returns immediately, so an
-ordinary mount pays one string comparison. Then the value of every control under the root is
-recorded as the controls are built, and compared a task later. A control whose value changed without
-this library changing it was written to by the browser.
+- **as the controls are built**, when the page was reached by going back or forward, which is when a
+  restore lands;
+- **at the submit**, on the document in the capture phase, so it runs before the renderer's handler,
+  the consumer's, or a validator — what they read is what was on screen.
+
+**Which controls were written to is answered by difference, because nothing reports it.** Every
+control's value is remembered and refreshed on each `input` and `change` that passes, so what arrived
+the ordinary way is accounted for; anything else is left over. A control whose value differs from the
+last one this library heard about was written to by somebody else.
 
 **Adoption is an `input` and a `change` on that control** — the door a person's own typing comes
 through. The model hears about it the way it hears about everything else, and the field is marked
@@ -73,7 +78,9 @@ touched, which it was: they had typed there before they navigated away.
   already true when they left.
 - **A snapshot of every control at mount**, held until the comparison runs. One map, one task, then
   released.
-- **New public exports to keep stable**: `adoptHistoryRestore` and `MdyHistoryRestoreBinding`.
+- **New public exports to keep stable**: `adoptSilentWrites` and `MdySilentWriteBinding`.
+- **A listener per binding for `input`, `change` and `submit`**, and one map of remembered values.
+  The map is the size of the form and is refreshed, not grown.
 
 ## Alternatives rejected
 
@@ -92,8 +99,13 @@ detect.
 it writes a person's input to `localStorage` on a page that never asked for storage, which is a
 privacy obligation taken on their behalf.
 
-**Listen for the restore rather than compare.** There is nothing to listen to; the restore is silent
-in all three browsers.
+**Listen for the write rather than compare.** There is nothing to listen to: the restore is silent in
+all three browsers, and a fill cannot be trusted to announce itself either.
+
+**Guard only at the submit, and drop the comparison at build time.** Simpler, and it would still stop
+the wrong value being sent. Rejected because a person coming back to a form reads it long before they
+submit it: leaving the model stale until the last moment means every validation, every conditional
+field and every cross-field rule runs against a value that is not the one on screen.
 
 **Discard a restore that is old, or that came from far away.** Rejected on principle and on
 mechanism. The browser already bounds session history and expires its caches, and it is the only
@@ -103,14 +115,34 @@ clock in it.
 
 ## Verification
 
-- `packages/widgets/test/history-restore.spec.mjs` — seven cases: a restored control is reported, an
-  untouched one is not, an ordinary navigation adopts nothing, a checkbox and a textarea behave like
-  anything else, a removed control is not spoken to, cancelling stops the comparison, and only what
-  moved is adopted. Mutating away the "only what changed" filter turns five of the seven red;
-  mutating away the navigation check turns one red.
+- `packages/widgets/test/silent-writes.spec.mjs` — eleven cases across both moments, including the
+  ordering one: a handler reading the value at submit time must read the adopted value, not the
+  stale one. Four mutations were run against it and each is caught — adopting every control rather
+  than the ones that moved (7 red), moving the submit guard out of the capture phase (2), answering
+  any form's submit (1), and no longer hearing ordinary typing (1).
 - Browser, three renderers × three browsers after a Back: nine of nine agree, and in Chromium they
   agree on the typed value.
 - `npm run test:type-surface` classifies the two new exports as minor and holds them.
+
+## Amendment (2026-08-25)
+
+The decision holds and its scope was too narrow. It was written about the back button; the rule it
+was really taking is about **submission**, and the back button is one way to break it.
+
+**Autofill breaks it the same way.** A browser filling in an address or a card writes the value
+property, exactly as a restore does, and at a moment that has nothing to do with a history traversal.
+A guard that only ran when the page was reached by going back would have watched the wrong door.
+
+This could not be measured here: `Autofill.enable` is not present in the Chromium this repository
+drives, so there is no way to trigger a fill from a test. The mechanism is asserted from the shape of
+the problem — a value property set by the browser — and **not from an observation**, which is the
+weakest part of this record.
+
+So the guard moved to the submit as well, where the question is not *what wrote this* but *is what
+leaves the page what the person was looking at*. It is on the document in the capture phase, ahead of
+every handler that reads a value.
+
+`adoptHistoryRestore` became `adoptSilentWrites`, before either was released.
 
 ## Security and privacy
 

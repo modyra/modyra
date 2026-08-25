@@ -1,6 +1,6 @@
 import {
   handleFormOf, MdyFieldHandle, type MdyFieldConstraints, type MdyValueKind } from "@modyra/core";
-import { MDY_ICONS, MDY_POPUP_OPENERS, adoptHistoryRestore, bindFormReset, defaultOptionKey, messagesForLocale, widgetScopeOf, type MdyI18nMessages } from "@modyra/widgets";
+import { MDY_ICONS, MDY_POPUP_OPENERS, adoptSilentWrites, bindFormReset, defaultOptionKey, messagesForLocale, widgetScopeOf, type MdyI18nMessages } from "@modyra/widgets";
 import { html, LitElement, nothing, PropertyDeclarations } from "lit";
 import { unsafeSVG } from "lit/directives/unsafe-svg.js";
 import {
@@ -282,16 +282,7 @@ export abstract class MdyFieldElement<T> extends LitElement {
   protected override updated(changed: Map<string, unknown>): void {
     super.updated(changed);
     this.applyControlName();
-
-    // What the browser gave back when somebody pressed Back, told to the model. Started after the
-    // first render, because a control that does not exist yet cannot have been restored into.
-    //
-    // Session history restoration writes a person's typing straight into the boxes and announces
-    // nothing, so the field showed what they had written while the form held the value it was built
-    // with. Where the browser restored nothing there is nothing to adopt and this does not fire.
-    if (this._cancelHistoryRestore === null) {
-      this._cancelHistoryRestore = adoptHistoryRestore({ root: this });
-    }
+    this.watchSilentWrites();
 
     // Once per element: two forms over one document claim one set of ids, and a sentence repeated
     // every frame is one a developer scrolls past.
@@ -415,8 +406,24 @@ export abstract class MdyFieldElement<T> extends LitElement {
 
   private _unbindFormReset: (() => void) | null = null;
 
-  /** Cancels the pending comparison of a history restore, if one is still waiting. */
-  private _cancelHistoryRestore: (() => void) | null = null;
+  /** Stops watching for values written into this control by something other than the renderer. */
+  private _stopWatchingWrites: (() => void) | null = null;
+
+  /**
+   * Watches for values written into this control by something other than the renderer.
+   *
+   * Session history restoration hands a person their typing back when they press Back, and autofill
+   * puts an address into fields nobody touched. Both write the value property and announce nothing,
+   * so the field showed one value while the form held another and a submit sent the second.
+   *
+   * Idempotent, and does nothing until the control exists: called from both the connection and each
+   * render, whichever is the first to have something to watch.
+   */
+  private watchSilentWrites(): void {
+    if (this._stopWatchingWrites !== null) return;
+    if (this.querySelector("input, textarea, select") === null) return;
+    this._stopWatchingWrites = adoptSilentWrites({ root: this });
+  }
 
   /**
    * The reset of a `<form>` this control is inside, answered by returning to the initial value.
@@ -443,8 +450,8 @@ export abstract class MdyFieldElement<T> extends LitElement {
     this.removeEventListener("keydown", this.onTabAway, true);
     this._unbindFormReset?.();
     this._unbindFormReset = null;
-    this._cancelHistoryRestore?.();
-    this._cancelHistoryRestore = null;
+    this._stopWatchingWrites?.();
+    this._stopWatchingWrites = null;
     if (this._unboundFrame !== null) {
       cancelAnimationFrame(this._unboundFrame);
       this._unboundFrame = null;
@@ -458,6 +465,18 @@ export abstract class MdyFieldElement<T> extends LitElement {
     this.addEventListener("focusout", this.onFocusLost);
     this.addEventListener("keydown", this.onTabAway, true);
     this.bindEnclosingFormReset();
+
+    // Values written into the control by something that never says so, told to the model.
+    //
+    // Session history restoration hands a person their typing back when they press Back, and
+    // autofill puts an address into fields nobody touched. Both write the value property and
+    // announce nothing, so the field showed one value while the form held another.
+    //
+    // Started only once there are controls to watch. The comparison that catches a history restore
+    // reads their values as it begins, so beginning before the first render reads an empty element
+    // and catches nothing. An element that reconnects after being moved already has its controls,
+    // and must start again here: it does not render a second time, so `updated` never runs.
+    this.watchSilentWrites();
     if (MDY_DEV) this.reportIfUnbound();
     const handle = this.field;
     if (handle && !this._tracker) {

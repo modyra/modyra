@@ -182,7 +182,7 @@ export {
 } from "./time-granularity.js";
 export { bindLightDismiss } from "./dismissal-dom.js";
 export { bindFormReset } from "./form-reset-dom.js";
-export { adoptHistoryRestore, type MdyHistoryRestoreBinding } from "./history-restore-dom.js";
+export { adoptSilentWrites, type MdySilentWriteBinding } from "./silent-writes-dom.js";
 export type { MdyFormResetBinding } from "./form-reset-dom.js";
 export type { MdyDismissalBindingOptions } from "./dismissal-dom.js";
 export { affordanceClasses, kindsWithAffordances, trailingAffordances } from "./affordance.js";

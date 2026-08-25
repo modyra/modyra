@@ -1595,11 +1595,6 @@
   "MdyGroupOptions": [
     "when?: (value: Record<string, unknown>, enclosing: Record<string, unknown>) => boolean"
   ],
-  "MdyHistoryRestoreBinding": [
-    "navigation?: () => string | undefined",
-    "root: Element",
-    "schedule?: (run: () => void) => void"
-  ],
   "MdyI18nMessages": [
     "chipDecrementLabel: string",
     "chipIncrementLabel: string",
@@ -2559,6 +2554,11 @@
     "debugName?: string",
     "equal?: MdyEqualityFn<T>"
   ],
+  "MdySilentWriteBinding": [
+    "navigation?: () => string | undefined",
+    "root: Element",
+    "schedule?: (run: () => void) => void"
+  ],
   "MdySliderComponent": [
     "constructor-> returns: (inferred)",
     "max: _angular_core.InputSignal<number | null>",
@@ -3275,8 +3275,8 @@
     "(1) count: number",
     "-> returns: CalendarDate"
   ],
-  "adoptHistoryRestore": [
-    "(0) binding: MdyHistoryRestoreBinding",
+  "adoptSilentWrites": [
+    "(0) binding: MdySilentWriteBinding",
     "-> returns: () => void"
   ],
   "affordanceClasses": [

@@ -20,7 +20,7 @@ import {
   MdyDeclarativeRegistry,
 } from "../core/declarative-form-adapter";
 import { MDY_DECLARATIVE_REGISTRY, MDY_FORM_ADAPTER } from "../core/tokens";
-import { adoptHistoryRestore, bindFormReset, formErrorsOf, MDY_FORM_SHELL_CLASSES } from "@modyra/widgets";
+import { adoptSilentWrites, bindFormReset, formErrorsOf, MDY_FORM_SHELL_CLASSES } from "@modyra/widgets";
 import {
   MdyAsyncValidatorFn,
   MdyAsyncValidatorOptions,
@@ -217,13 +217,13 @@ export class MdyFormComponent<
       if (form === null) return;
       destroyRef.onDestroy(bindFormReset({ element: form, reset: () => { this.reset(); } }));
 
-      // What the browser gave back when somebody pressed Back, told to the model.
+      // Values written into the boxes by something that never says so, told to the model.
       //
-      // Session history restoration writes a person's typing straight into the boxes and announces
-      // nothing, so the field showed what they had written while the form held the value it was
-      // built with — and a submit sent the second. Where the browser restored nothing there is
-      // nothing to adopt and this does not fire.
-      destroyRef.onDestroy(adoptHistoryRestore({ root: form }));
+      // Session history restoration hands a person their typing back when they press Back, and
+      // autofill puts an address into fields nobody touched. Both write the value property and
+      // announce nothing, so the field showed one value while the form held another and a submit
+      // sent the second.
+      destroyRef.onDestroy(adoptSilentWrites({ root: form }));
     });
 
     // Sync formValue input to the adapter reactively.
