@@ -26,7 +26,12 @@ export default defineConfig({
     command: "node battle-tests/browser/assert-fresh.mjs && node scripts/serve-static.mjs battle-tests/.tmp-browser 4399",
     url: "http://127.0.0.1:4399/index.html",
     cwd: "..",
-    reuseExistingServer: !process.env.CI,
+    // **Never reused, locally included.** The freshness guard runs as the first half of the command
+    // above, so reusing a listening server skips it — and what is listening may be serving another
+    // tree's bundle entirely. That is not hypothetical: a server left up by one checkout has already
+    // answered a run started from another, and the suite reported on a page nobody in that run built.
+    // Restarting costs about a second; not restarting costs a whole run's meaning.
+    reuseExistingServer: false,
     timeout: 30_000,
   },
 });
