@@ -198,17 +198,17 @@
         /* The box the affordance occupies in the layout. It must fit *inside* the field: sized to
            the 44px target, three kinds grew their field to 46px while the rest stayed at 38, which
            is the height mismatch a user sees down a column of controls. */
-        --mdy-affordance-box: 1.75rem;
+        --mdy-affordance-box: max(1.75rem, 28px);
         /* The pointer target, delivered by an overlay rather than by the box, so meeting WCAG 2.5.5
            costs no layout. An affordance that is `pointer-events: none` takes no overlay: the
            control behind it is already the target. */
-        --mdy-affordance-target: 2.75rem;
+        --mdy-affordance-target: max(2.75rem, 44px);
         /* Two controls stacked inside one field cannot both be 44px: the field is 3.5rem tall and
            two targets would need 5.5rem. The steppers take WCAG 2.5.8's 24px instead, which is the
            AA requirement and the level this project ships against; 2.5.5's 44px is AAA. Recorded as
            an exception rather than left as an oversight — and it is why `target` is not simply
            applied to every affordance. */
-        --mdy-affordance-target-stacked: 1.5rem;
+        --mdy-affordance-target-stacked: max(1.5rem, 24px);
 
         --mdy-sys-shape-corner-full: 9999px;
 

@@ -113,10 +113,20 @@
            24px target**, and 36px holds one with 6px of clear zone on each side, so the minimum
            target size is satisfied by construction rather than by measurement. 44px is the enhanced
            target size. A component asking to be shorter than `control-1` is asking to be
-           non-conformant, and the scale says so instead of a reviewer having to. */
-        --mdy-control-1: 1.75rem;
-        --mdy-control-2: 2.25rem;
-        --mdy-control-3: 2.75rem;
+           non-conformant, and the scale says so instead of a reviewer having to.
+
+           **`max()` because a `rem` shrinks as well as grows.** An application that installs this can
+           write `html { font-size: 62.5% }` — the ten-pixel trick, still common — and every `rem` here
+           becomes five eighths of itself. Measured at that root: a chip 202×18, its buttons 32×16, the
+           clear-all 18×35. Nothing in this repository controls that declaration and nothing can see
+           it, so the floor has to be carried by the value rather than assumed from the unit.
+
+           Reading it the other way is the point: the step is proportional and rises with a reader who
+           enlarges their text; it simply cannot fall through the conformance floor on the way down.
+           200% was the direction everyone tests, and a target can only grow there. */
+        --mdy-control-1: max(1.75rem, 28px);
+        --mdy-control-2: max(2.25rem, 36px);
+        --mdy-control-3: max(2.75rem, 44px);
 
         /* ── focus ───────────────────────────────────────────────────────────────
            One ring, everywhere. A focus indicator that varies by component is something a person has
