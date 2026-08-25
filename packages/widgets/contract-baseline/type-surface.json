@@ -1263,6 +1263,7 @@
     "maxFileSize: _angular_core.InputSignal<number>",
     "maxFiles: _angular_core.InputSignal<number>",
     "multiple: _angular_core.InputSignal<boolean>",
+    "protected cannotPick: _angular_core.Signal<boolean>",
     "protected chosen: _angular_core.Signal<readonly File[]>",
     "protected clear-> returns: void",
     "protected dragOver: _angular_core.WritableSignal<boolean>",
