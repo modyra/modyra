@@ -53,7 +53,13 @@ for (const host of HOSTS) {
       // Touch it the way a user does: arrive, then leave without filling it in. The wait is for the
       // control to exist, bounded: a kind that draws nothing focusable is counted as not invalid
       // below, which is the same answer either way.
-      const control = page.locator(`[data-form="${id}"] [aria-invalid], [data-form="${id}"] input, [data-form="${id}"] select`).first();
+      // **Not `input:first`.** A field may carry a hidden input beside its visible control so that a
+      // native submit sends the value, and that one comes first in the document. Focusing it touches
+      // nothing, so the field was never left and never reported itself wrong — a whole renderer read
+      // as silent because the spec had arrived at the wrong element.
+      const control = page.locator(
+        `[data-form="${id}"] [aria-invalid], [data-form="${id}"] input:not([type="hidden"]), [data-form="${id}"] select`,
+      ).first();
       if (await became(() => control.count().then((found) => found > 0))) {
         await control.focus({ timeout: 500 }).catch(() => undefined);
         await control.blur().catch(() => undefined);

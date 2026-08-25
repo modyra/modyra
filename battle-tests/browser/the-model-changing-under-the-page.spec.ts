@@ -115,7 +115,12 @@ for (const host of HOSTS) {
     }, { api: host.api });
 
     const shown = () => page.evaluate(() => {
-      const inputs = Array.from(document.querySelectorAll('[data-form="r"] input')) as HTMLInputElement[];
+      // **The controls a person meets, not every input on the page.** A field may carry a hidden
+      // input alongside its visible control so that a native submit sends the value; that one is
+      // never typed into and never seen, and counting it shifts every position after it — reading
+      // the third input got the checkbox's hidden partner and called it a date.
+      const inputs = Array.from(document.querySelectorAll('[data-form="r"] input'))
+        .filter((each) => (each as HTMLInputElement).type !== "hidden") as HTMLInputElement[];
       return { who: inputs[0]?.value ?? null, many: inputs[1]?.checked ?? null, when: inputs[2]?.value ?? null };
     });
 

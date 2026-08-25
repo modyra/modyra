@@ -96,7 +96,11 @@ test("every control has a name even when the document declared none", async ({ p
       // native controls a person actually operates.
       const parts = [
         ...host.querySelectorAll('[role="listbox"],[role="dialog"],[role="grid"],[role="combobox"],[role="radiogroup"]'),
-        ...host.querySelectorAll("input,textarea,select"),
+        // A hidden input is not one of them, and cannot be: it is not rendered, so it has no
+        // accessible name to give and no person to give it to. A field may carry one alongside its
+        // visible control so a native submit sends the value.
+        ...Array.from(host.querySelectorAll("input,textarea,select"))
+          .filter((each) => (each as HTMLInputElement).type !== "hidden"),
       ];
       const missing = parts
         .filter((part) => nameOf(part) === "")
