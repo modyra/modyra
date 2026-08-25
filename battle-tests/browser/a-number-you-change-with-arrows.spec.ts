@@ -27,7 +27,7 @@ import { projectTimepickerFieldA11y } from "@modyra/widgets";
 // **Every renderer, from the shared list.** The local list this replaced was not a scope
 // decision: the angular host published six of the twenty-two doors these specs need, so a
 // spec wanting one it lacked left the renderer out and the next reader copied the list.
-import { HOSTS } from "./bench";
+import { HOSTS , SETTLES} from "./bench";
 
 /** A state the projection can answer for, used only to read what it declares. */
 const STATE = {
@@ -92,8 +92,7 @@ for (const host of HOSTS) {
     const before = await shown();
     await page.locator(SEGMENT).first().focus();
     await page.keyboard.press("ArrowUp");
-    await page.waitForTimeout(280);
-    expect(await shown(), "the arrow keys do not move the hour, so the spinbutton vocabulary is not what this part needs").not.toBe(before);
+    await expect.poll(() => shown(), { message: "the arrow keys do not move the hour, so the spinbutton vocabulary is not what this part needs", ...SETTLES }).not.toBe(before);
 
     // Every segment states the range it will take, in one of the two ways there are.
     expect(

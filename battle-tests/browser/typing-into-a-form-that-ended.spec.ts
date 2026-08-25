@@ -20,7 +20,7 @@ import { expect, test } from "@playwright/test";
 // **Every renderer, from the shared list.** The local list this replaced was not a scope
 // decision: the angular host published six of the twenty-two doors these specs need, so a
 // spec wanting one it lacked left the renderer out and the next reader copied the list.
-import { HOSTS } from "./bench";
+import { HOSTS , SETTLES} from "./bench";
 
 for (const host of HOSTS) {
   test(`a control outliving its form neither throws nor writes, ${host.name}`, async ({ page }) => {
@@ -51,8 +51,7 @@ for (const host of HOSTS) {
     const control = page.locator('[data-form="d"] input').first();
     await control.fill("typed while alive");
     await control.blur();
-    await page.waitForTimeout(300);
-    expect(await held(), "typing did not reach the model even while the form was alive").toBe('"typed while alive"');
+    await expect.poll(() => held(), { message: "typing did not reach the model even while the form was alive", ...SETTLES }).toBe('"typed while alive"');
 
     // End the form and leave the controls where they are.
     //

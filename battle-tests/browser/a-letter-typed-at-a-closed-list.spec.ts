@@ -54,8 +54,6 @@ for (const host of HOSTS) {
       (window as never as Record<string, Record<string, (...a: never[]) => unknown>>)[api]
         .mountFields("letter", [{ name: "f", kind: "select", label: "P", searchable: false, options }] as never);
     }, { api: host.api, options: OPTIONS });
-    await page.waitForTimeout(400);
-
     const control = page.locator('[data-form="letter"] [role="combobox"], [data-form="letter"] select').first();
     await expect(control, "no select this spec can reach was drawn").toHaveCount(1, { timeout: 5_000 });
     await control.focus();

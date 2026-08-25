@@ -22,6 +22,7 @@
  */
 
 import { expect, test } from "@playwright/test";
+import { SETTLES } from "./bench";
 
 type Api = Record<string, {
   mountFields(id: string, fields: unknown[]): unknown;
@@ -67,8 +68,7 @@ test("an hour the clock does not have, plain", async ({ page }) => {
   };
 
   await mount();
-  await page.waitForTimeout(320);
-  expect(await openTimePopup(page, "t"), "no time popup opened, so nothing below is a measurement").toBe(true);
+  await expect.poll(() => openTimePopup(page, "t"), { message: "no time popup opened, so nothing below is a measurement", ...SETTLES }).toBe(true);
 
   // The control: an hour the clock does have is shown and committed as itself. Without this, a box
   // that shows nothing and a box that shows too much are the same measurement.

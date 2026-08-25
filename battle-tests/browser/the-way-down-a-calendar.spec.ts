@@ -27,7 +27,7 @@ import { MDY_CALENDAR_VIEW_MODES, calendarViewAfterPick, calendarViewOnToggle } 
 // **Every renderer, from the shared list.** The local list this replaced was not a scope
 // decision: the angular host published six of the twenty-two doors these specs need, so a
 // spec wanting one it lacked left the renderer out and the next reader copied the list.
-import { HOSTS } from "./bench";
+import { HOSTS , SETTLES} from "./bench";
 
 test("the published moves between a calendar's views", () => {
   expect(MDY_CALENDAR_VIEW_MODES).toEqual(["days", "months", "years"]);
@@ -105,8 +105,7 @@ for (const host of HOSTS) {
     const year = inCalendar(/^\s*\d{4}\s*$/).nth(4);
     expect(await year.count(), "the years view offered no year to choose").toBeGreaterThan(0);
     await year.click();
-    await page.waitForTimeout(340);
-    expect(await shown(), "choosing a year did not land on that year's months").toBe(calendarViewAfterPick("years"));
+    await expect.poll(() => shown(), { message: "choosing a year did not land on that year's months", ...SETTLES }).toBe(calendarViewAfterPick("years"));
 
     /**
      * And the year already shown, which is the same move.
@@ -153,7 +152,6 @@ for (const host of HOSTS) {
     const month = inCalendar(/^\s*[A-Za-zÀ-ÿ]{3,}\s*$/).first();
     expect(await month.count(), "the months view offered no month to choose").toBeGreaterThan(0);
     await month.click();
-    await page.waitForTimeout(340);
-    expect(await shown(), "choosing a month did not land on its days").toBe(calendarViewAfterPick("months"));
+    await expect.poll(() => shown(), { message: "choosing a month did not land on its days", ...SETTLES }).toBe(calendarViewAfterPick("months"));
   });
 }

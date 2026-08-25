@@ -27,7 +27,7 @@ import { MDY_VALUE_CONTRACTS } from "@modyra/core";
 // **Every renderer, from the shared list.** The local list this replaced was not a scope
 // decision: the angular host published six of the twenty-two doors these specs need, so a
 // spec wanting one it lacked left the renderer out and the next reader copied the list.
-import { HOSTS } from "./bench";
+import { HOSTS , SETTLES} from "./bench";
 
 type Api = Record<string, {
   mountFields(id: string, fields: unknown[]): unknown;
@@ -140,8 +140,7 @@ test("a timepicker changes only on confirmation, plain", async ({ page }) => {
   expect(await held(), "a timepicker declaring confirm wrote an edit through before it was confirmed").toBeNull();
 
   await page.locator("button").filter({ hasText: /^Cancel$/ }).first().click({ timeout: 4000 });
-  await page.waitForTimeout(320);
-  expect(await held(), "cancelling a time edit left it in the model").toBeNull();
+  await expect.poll(() => held(), { message: "cancelling a time edit left it in the model", ...SETTLES }).toBeNull();
 
   // The control: confirming does commit, so the two nulls above are the draft rather than a popup
   // that changes nothing at all.
@@ -149,8 +148,7 @@ test("a timepicker changes only on confirmation, plain", async ({ page }) => {
   await segments.first().fill("9");
   await page.waitForTimeout(260);
   await page.locator("button").filter({ hasText: /^OK$/ }).first().click({ timeout: 4000 });
-  await page.waitForTimeout(320);
-  expect(await held(), "a confirmed time edit did not reach the model").not.toBeNull();
+  await expect.poll(() => held(), { message: "a confirmed time edit did not reach the model", ...SETTLES }).not.toBeNull();
 });
 
 
@@ -177,8 +175,7 @@ test("a colour field writes through on the interaction, plain", async ({ page })
     swatch.value = "#445566";
     swatch.dispatchEvent(new Event("input", { bubbles: true }));
   });
-  await page.waitForTimeout(240);
-  expect(await held(), "the native swatch did not write through either, so this is not about the hex box").toBe("#445566");
+  await expect.poll(() => held(), { message: "the native swatch did not write through either, so this is not about the hex box", ...SETTLES }).toBe("#445566");
 
   // And the hex box, typed a character at a time, ending on a complete colour.
   const hex = page.locator('[data-form="c"] .mdy-colors__hex-input').first();
@@ -199,6 +196,5 @@ test("a colour field writes through on the interaction, plain", async ({ page })
 
   // And the confirmation lands it.
   await hex.blur();
-  await page.waitForTimeout(240);
-  expect(await held(), "leaving the box did not commit the colour typed into it").toBe("#112233");
+  await expect.poll(() => held(), { message: "leaving the box did not commit the colour typed into it", ...SETTLES }).toBe("#112233");
 });

@@ -26,7 +26,7 @@
 import { expect, test } from "@playwright/test";
 import { messagesForLocale } from "@modyra/widgets";
 
-import { HOSTS, bench, chosen } from "./bench";
+import { HOSTS, bench, chosen , SETTLES} from "./bench";
 
 /**
  * The verb a chip's move button wears, taken from the catalogue rather than written out.
@@ -69,9 +69,8 @@ for (const host of HOSTS) {
       // The contract's part, not the button's words: a remove control names the thing it removes,
       // so an exact-name selector matches one label and stops matching when the wording changes.
       .locator(".mdy-chip__remove").click({ timeout: 5_000 });
-    await page.waitForTimeout(300);
     // The premise: the act did something. A reversal of nothing restores nothing and passes.
-    expect(await value(page, id), "removing a chip did not change the value").not.toEqual(before);
+    await expect.poll(() => value(page, id), { message: "removing a chip did not change the value", ...SETTLES }).not.toEqual(before);
 
     const back = await takeTheWayBack(page, "a removal");
     expect(back.offered, "nothing offered a way back after a chip was removed").toBe(true);
@@ -87,8 +86,7 @@ for (const host of HOSTS) {
     const before = await value(page, id);
     await page.locator(`${root} .mdy-multiselect__chips .mdy-chip`).last()
       .locator(MOVE_EARLIER).click({ timeout: 5_000 });
-    await page.waitForTimeout(300);
-    expect(await value(page, id), "moving a chip did not change the order").not.toEqual(before);
+    await expect.poll(() => value(page, id), { message: "moving a chip did not change the order", ...SETTLES }).not.toEqual(before);
 
     const back = await takeTheWayBack(page, "a move");
     expect(
@@ -114,8 +112,7 @@ for (const host of HOSTS) {
     ).toBeGreaterThan(0);
 
     await clear.first().click({ timeout: 5_000 });
-    await page.waitForTimeout(300);
-    expect(await chosen(page, root), "clearing left chips behind").toEqual([]);
+    await expect.poll(() => chosen(page, root), { message: "clearing left chips behind", ...SETTLES }).toEqual([]);
 
     const back = await takeTheWayBack(page, "a clear");
     expect(

@@ -24,6 +24,7 @@
  */
 
 import { expect, test } from "@playwright/test";
+import { SETTLES } from "./bench";
 
 /** A document whose two rules are both about the same two fields. */
 const DOCUMENT = {
@@ -65,8 +66,7 @@ test("a document's cross-field rule reaches the page", async ({ page }) => {
   const first = page.locator('[data-form="v"] input').first();
   await first.fill("x");
   await first.blur();
-  await page.waitForTimeout(320);
-  expect(await errorsOn("start"), "the document's per-field rule was not applied either").toEqual(["Minimum length is 2"]);
+  await expect.poll(() => errorsOn("start"), { message: "the document's per-field rule was not applied either", ...SETTLES }).toEqual(["Minimum length is 2"]);
 
   // Put it back, so the only thing wrong with the form is the thing the document's cross-field rule
   // is about: the two fields holding the same value.

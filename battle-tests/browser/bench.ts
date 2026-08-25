@@ -115,6 +115,25 @@ export async function inside(page: Page, root: string, ancestor: AncestorName) {
 let wrapped = 0;
 
 /**
+ * How long a retrying assertion waits, and how often it looks.
+ *
+ * Passed to `expect.poll` and `expect(...).toPass()` wherever a fixed pause used to sit. The pause was
+ * a guess at how long a renderer takes; this is a ceiling on how long it may take, with the waiting
+ * itself decided by the page.
+ *
+ * **The timeout is stated rather than defaulted, because the default makes red slow.** A site that
+ * used to sleep 300ms and fail immediately would take Playwright's five seconds to fail — and with a
+ * suite people run against known reds, that cost is paid on every run. Two seconds is generous for a
+ * renderer settling and cheap when the answer is never coming.
+ *
+ * **And the intervals are stated because the default is coarse at the front.** It looks at 0, 100,
+ * 250, 500, 1000 — so something that settles in 120ms is not seen until 250, which is slower than the
+ * pause it replaced. Most of the mass here is under 200ms, so the looking is dense there and thins out
+ * behind it.
+ */
+export const SETTLES = { timeout: 2_000, intervals: [50, 50, 100, 200, 400, 800] } as const;
+
+/**
  * Mount one multiselect in a named state and refuse to continue if it did not appear.
  *
  * **Each call takes a fresh id.** Mounting twice into the same id appends a second form rather than

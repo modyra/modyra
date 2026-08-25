@@ -28,7 +28,7 @@ import { MDY_VALUE_CONTRACTS } from "@modyra/core";
 // **Every renderer, from the shared list.** The local list this replaced was not a scope
 // decision: the angular host published six of the twenty-two doors these specs need, so a
 // spec wanting one it lacked left the renderer out and the next reader copied the list.
-import { HOSTS } from "./bench";
+import { HOSTS , SETTLES} from "./bench";
 
 type Api = Record<string, {
   mountFields(id: string, fields: unknown[]): unknown;
@@ -58,8 +58,7 @@ for (const host of HOSTS) {
     // renderer that always said zero and one that always said null would be indistinguishable here.
     expect(await held(), "an untouched number field does not start empty").toBeNull();
     await box.fill("7");
-    await page.waitForTimeout(220);
-    expect(await held(), "a number field did not take a number").toBe(7);
+    await expect.poll(() => held(), { message: "a number field did not take a number", ...SETTLES }).toBe(7);
 
     // And what the user does when they change their mind.
     await box.fill("");

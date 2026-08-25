@@ -47,8 +47,6 @@ for (const host of HOSTS) {
           minDate: min,
         }] as never);
     }, { api: host.api, min: MIN });
-    await page.waitForTimeout(400);
-
     const opener = page.locator('[data-form="lim"] button[aria-label="Toggle calendar"], [data-form="lim"] [aria-haspopup]').first();
     await expect(opener, "no calendar opener was drawn, so the limit cannot be exercised").toHaveCount(1, { timeout: 5_000 });
     await opener.click();
@@ -114,8 +112,6 @@ for (const host of HOSTS) {
           name: "d", kind: "datepicker", label: "D", initialValue: "2026-06-05", maxDate: max,
         }] as never);
     }, { api: host.api, max: MAX });
-    await page.waitForTimeout(400);
-
     const opener = page.locator('[data-form="lim2"] button[aria-label="Toggle calendar"], [data-form="lim2"] [aria-haspopup]').first();
     await expect(opener, "no calendar opener was drawn, so the limit cannot be exercised").toHaveCount(1, { timeout: 5_000 });
     await opener.click();
@@ -168,8 +164,6 @@ for (const host of HOSTS) {
       (window as never as Record<string, Record<string, (...args: never[]) => unknown>>)[api]
         .mountFields("lim3", [{ name: "r", kind: "daterange", label: "R", minDate: min }] as never);
     }, { api: host.api, min: MIN });
-    await page.waitForTimeout(400);
-
     const opener = page.locator('[data-form="lim3"] button[aria-label="Toggle calendar"], [data-form="lim3"] [aria-haspopup]').first();
     if (await opener.count() === 0) {
       test.skip(true, "this renderer draws no opener for a daterange, which is a different finding");

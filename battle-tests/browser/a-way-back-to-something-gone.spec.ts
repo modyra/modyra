@@ -33,6 +33,7 @@
  */
 
 import { expect, test } from "@playwright/test";
+import { SETTLES } from "./bench";
 
 test("the way back does not bring back an option the field stopped offering", async ({ page }) => {
   test.setTimeout(120_000);
@@ -56,16 +57,14 @@ test("the way back does not bring back an option the field stopped offering", as
   const removers = page.locator('[data-form="gone"] .mdy-chip__remove');
   await expect(removers, "no chip offered a way to take it off").toHaveCount(2, { timeout: 5_000 });
   await removers.nth(1).click();
-  await page.waitForTimeout(350);
-  expect(await held(), "taking a chip off did not take its value with it").toEqual(["a"]);
+  await expect.poll(() => held(), { message: "taking a chip off did not take its value with it", ...SETTLES }).toEqual(["a"]);
 
   // The set changes under the control: Bravo is no longer something this field offers.
   await page.evaluate(() => {
     const element = document.querySelector('[data-form="gone"] mdy-multiselect-field') as never as Record<string, unknown> | null;
     if (element !== null) element.options = [{ value: "a", label: "Alpha" }, { value: "c", label: "Charlie" }];
   });
-  await page.waitForTimeout(400);
-  expect(await held(), "changing what the field offers changed what it holds, which is a different defect").toEqual(["a"]);
+  await expect.poll(() => held(), { message: "changing what the field offers changed what it holds, which is a different defect", ...SETTLES }).toEqual(["a"]);
 
   const wayBack = page.locator('[data-form="gone"] .mdy-multiselect__way-back-action');
   await expect(
