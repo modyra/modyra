@@ -15,6 +15,7 @@
  */
 
 import { expect, test } from "@playwright/test";
+import { SETTLES } from "./bench";
 import { MDY_WIDGET_KINDS } from "@modyra/widgets";
 
 test.beforeEach(async ({ page }) => {
@@ -45,6 +46,24 @@ async function submitForm(page: import("@playwright/test").Page, id: string) {
   await button.click();
 }
 
+/**
+ * What a form submitted, waited for by name.
+ *
+ * A pause after pressing submit is approximating "the submission has landed" — which is a condition,
+ * so it is stated as one. The read is retried until something arrived rather than for a fixed number
+ * of milliseconds, and the message says which form said nothing when it never does.
+ */
+async function whatLanded(page: import("@playwright/test").Page, id: string) {
+  const collected = () => page.evaluate(
+    (mountId) => (window as never as { battle: { submittedBy(id: string): unknown[] } }).battle.submittedBy(mountId),
+    id,
+  );
+  await expect
+    .poll(collected, { message: `"${id}" submitted nothing, so there is no payload to read`, ...SETTLES })
+    .not.toHaveLength(0);
+  return collected();
+}
+
 async function submitted(page: import("@playwright/test").Page, id: string, fields: unknown[]) {
   await page.evaluate(
     ({ mountId, given }) => {
@@ -54,13 +73,11 @@ async function submitted(page: import("@playwright/test").Page, id: string, fiel
     },
     { mountId: id, given: fields },
   );
-  await page.waitForTimeout(200);
+  // No pause before pressing: `submitForm` asserts the button is there with a retrying matcher, so it
+  // already waits exactly as long as the mount takes.
   await submitForm(page, id);
-  await page.waitForTimeout(320);
-  return page.evaluate(
-    (mountId) => (window as never as { battle: { submittedBy(id: string): unknown[] } }).battle.submittedBy(mountId),
-    id,
-  );
+
+  return whatLanded(page, id);
 }
 
 test("a page sends the names the document declared, and no others", async ({ page }) => {
@@ -124,12 +141,7 @@ test("a field taken out of play is kept in the form and left out of the payload"
   expect(held, JSON.stringify(held)).toEqual({ kept: "first", gone: "second" });
 
   await submitForm(page, id);
-  await page.waitForTimeout(320);
-
-  const sent = await page.evaluate(
-    (mountId) => (window as never as { battle: { submittedBy(id: string): unknown[] } }).battle.submittedBy(mountId),
-    id,
-  );
+  const sent = await whatLanded(page, id);
   expect(sent.length, JSON.stringify(sent)).toBe(1);
   expect(sent[0], JSON.stringify(sent[0])).toEqual({ kept: "first" });
 });
@@ -153,15 +165,9 @@ test("a row-shaped form sends its rows by key, and a removed row leaves nothing 
   const inputs = page.locator(`[data-form="${id}"] input`);
   const count = await inputs.count();
   for (let index = 0; index < count; index += 1) await inputs.nth(index).fill("x").catch(() => undefined);
-  await page.waitForTimeout(200);
 
   await submitForm(page, id);
-  await page.waitForTimeout(360);
-
-  const sent = await page.evaluate(
-    (mountId) => (window as never as { battle: { submittedBy(id: string): unknown[] } }).battle.submittedBy(mountId),
-    id,
-  );
+  const sent = await whatLanded(page, id);
 
   // The control: it submitted, and it submitted both rows — so the absence below is the removal.
   expect(sent.length, JSON.stringify(sent)).toBeGreaterThan(0);
@@ -173,14 +179,8 @@ test("a row-shaped form sends its rows by key, and a removed row leaves nothing 
     (mountId) => (window as never as { battle: { removeRow(id: string, k: string): void } }).battle.removeRow(mountId, "b"),
     id,
   );
-  await page.waitForTimeout(240);
   await submitForm(page, id);
-  await page.waitForTimeout(360);
-
-  const after = await page.evaluate(
-    (mountId) => (window as never as { battle: { submittedBy(id: string): unknown[] } }).battle.submittedBy(mountId),
-    id,
-  );
+  const after = await whatLanded(page, id);
   expect(after.length, JSON.stringify(after)).toBeGreaterThan(sent.length - 1);
   const rowsAfter = (after.at(-1) as { rows: Record<string, unknown> }).rows;
   expect(Object.keys(rowsAfter), JSON.stringify(rowsAfter)).toEqual(["a"]);
@@ -203,15 +203,9 @@ test("an array-shaped form sends a list, and removing from the middle closes the
   const inputs = page.locator(`[data-form="${id}"] input`);
   const count = await inputs.count();
   for (let index = 0; index < count; index += 1) await inputs.nth(index).fill(`v${index}`).catch(() => undefined);
-  await page.waitForTimeout(200);
 
   await submitForm(page, id);
-  await page.waitForTimeout(360);
-
-  const sent = await page.evaluate(
-    (mountId) => (window as never as { battle: { submittedBy(id: string): unknown[] } }).battle.submittedBy(mountId),
-    id,
-  );
+  const sent = await whatLanded(page, id);
 
   // The control: three rows went out, as a list. A form that sent two from the start would make the
   // check below meaningless.
@@ -224,14 +218,8 @@ test("an array-shaped form sends a list, and removing from the middle closes the
     (mountId) => (window as never as { battle: { removeRow(id: string, k: string): void } }).battle.removeRow(mountId, "1"),
     id,
   );
-  await page.waitForTimeout(260);
   await submitForm(page, id);
-  await page.waitForTimeout(360);
-
-  const after = await page.evaluate(
-    (mountId) => (window as never as { battle: { submittedBy(id: string): unknown[] } }).battle.submittedBy(mountId),
-    id,
-  );
+  const after = await whatLanded(page, id);
   // The row that was second is gone and the third has closed up behind it: no hole, no null, and no
   // index left pointing at a row that is not there.
   expect(after.at(-1), JSON.stringify(after.at(-1))).toEqual({ rows: [{ code: "v0" }, { code: "v2" }] });
@@ -333,20 +321,20 @@ test("a form in the middle of submitting does not send again, and does once it i
   // Press again, twice, while it is still running.
   await button.click({ force: true }).catch(() => undefined);
   await button.click({ force: true }).catch(() => undefined);
-  await page.waitForTimeout(950);
-
-  const during = await page.evaluate(
-    (mountId) => (window as never as { battle: { submittedBy(id: string): unknown[] } }).battle.submittedBy(mountId),
-    id,
-  );
+  const during = await whatLanded(page, id);
   expect(during.length, JSON.stringify(during)).toBe(1);
 
   // The control, and the half that a permanently disabled button would fail: the window closes.
-  const afterwards = await page.evaluate((mountId) => ({
-    submitting: (window as never as { battle: { submittingOf(id: string): boolean } }).battle.submittingOf(mountId),
-    disabled: (document.querySelector(`[data-form="${mountId}"] button:last-of-type`) as HTMLButtonElement | null)?.disabled ?? null,
-  }), id);
-  expect(afterwards, JSON.stringify(afterwards)).toEqual({ submitting: false, disabled: false });
+  //
+  // Waited on the closing rather than on a duration, and the two are not the same condition — the
+  // payload arrives while the form is still in flight, so waiting for it to *land* leaves this
+  // reading the middle of the flight. What this asserts is that the flight is over.
+  await expect
+    .poll(() => page.evaluate((mountId) => ({
+      submitting: (window as never as { battle: { submittingOf(id: string): boolean } }).battle.submittingOf(mountId),
+      disabled: (document.querySelector(`[data-form="${mountId}"] button:last-of-type`) as HTMLButtonElement | null)?.disabled ?? null,
+    }), id), { message: "the submitting window never closed", ...SETTLES })
+    .toEqual({ submitting: false, disabled: false });
 
   await button.click().catch(() => undefined);
   await page.waitForTimeout(950);
