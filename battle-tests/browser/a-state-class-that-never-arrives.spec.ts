@@ -45,7 +45,7 @@ import { MDY_FIELD_STATE_CLASSES, MDY_STATE_EXPRESSION, MDY_WIDGET_TRANSITIONS }
 // **Every renderer, from the shared list.** The local list this replaced was not a scope
 // decision: the angular host published six of the twenty-two doors these specs need, so a
 // spec wanting one it lacked left the renderer out and the next reader copied the list.
-import { HOSTS } from "./bench";
+import { became, HOSTS, stops } from "./bench";
 
 /** The kinds whose state is supposed to arrive as a modifier on the shared wrapper. */
 const BY_CLASS = Object.entries(MDY_STATE_EXPRESSION)
@@ -83,20 +83,31 @@ for (const host of HOSTS) {
         },
         { mountId: id, k: kind, api: host.api, options: OPTIONS },
       );
-      await page.waitForTimeout(130);
 
       // A `<textarea>` is not an input, a select or a button, and leaving it out meant the premise
       // never touched a textarea field at all — so the kind reported as bare was a kind this spec had
       // not reached. What is being asked here is "the field was left", and the tags that can be left
       // are all four.
+      //
+      // Waited for rather than counted once: the control has to have been drawn before it can be
+      // left. But the wait is bounded and its failure is ordinary — several kinds render nothing a
+      // person can focus, and letting the locator's own timeout discover that costs a second each.
       const first = page.locator(FOCUSABLE.map((tag) => `[data-form="${id}"] ${tag}`).join(", ")).first();
-      if (await first.count() > 0) {
-        await first.focus().catch(() => undefined);
+      if (await became(() => first.count().then((found) => found > 0))) {
+        await first.focus({ timeout: 500 }).catch(() => undefined);
         await first.blur().catch(() => undefined);
       }
-      await page.waitForTimeout(190);
 
-      const seen = await page.evaluate(({ sel, wrapper, label }) => {
+      // The refusal is the premise of everything below: a kind this form did not refuse is skipped,
+      // so waiting for it costs nothing on a kind that is about to be skipped anyway.
+      const ready = await became(() => page.evaluate(
+        (sel) => (document.querySelector(sel)?.querySelectorAll('[aria-invalid="true"]').length ?? 0) > 0,
+        `[data-form="${id}"]`,
+      ));
+
+      // A premise that did not hold has nothing to settle for: the reading below is about to be
+      // classified as no evidence, so it is taken once rather than waited on.
+      const seen = await stops(() => page.evaluate(({ sel, wrapper, label }) => {
         const root = document.querySelector(sel);
         if (root === null) return null;
         return {
@@ -105,7 +116,7 @@ for (const host of HOSTS) {
           wrapperError: root.querySelector(`.${wrapper}--error`) !== null,
           labelError: root.querySelector(`.${label}--has-error`) !== null,
         };
-      }, { sel: `[data-form="${id}"]`, wrapper: WRAPPER, label: LABEL });
+      }, { sel: `[data-form="${id}"]`, wrapper: WRAPPER, label: LABEL }), { window: ready ? 150 : 0 });
 
       if (seen === null) continue;
       if (seen.labelError) labelledSomewhere += 1;
@@ -147,20 +158,31 @@ for (const host of HOSTS) {
         },
         { mountId: id, k: kind, api: host.api, options: OPTIONS },
       );
-      await page.waitForTimeout(130);
 
       // A `<textarea>` is not an input, a select or a button, and leaving it out meant the premise
       // never touched a textarea field at all — so the kind reported as bare was a kind this spec had
       // not reached. What is being asked here is "the field was left", and the tags that can be left
       // are all four.
+      //
+      // Waited for rather than counted once: the control has to have been drawn before it can be
+      // left. But the wait is bounded and its failure is ordinary — several kinds render nothing a
+      // person can focus, and letting the locator's own timeout discover that costs a second each.
       const first = page.locator(FOCUSABLE.map((tag) => `[data-form="${id}"] ${tag}`).join(", ")).first();
-      if (await first.count() > 0) {
-        await first.focus().catch(() => undefined);
+      if (await became(() => first.count().then((found) => found > 0))) {
+        await first.focus({ timeout: 500 }).catch(() => undefined);
         await first.blur().catch(() => undefined);
       }
-      await page.waitForTimeout(190);
 
-      const seen = await page.evaluate(({ sel, label }) => {
+      // The refusal is the premise of everything below: a kind this form did not refuse is skipped,
+      // so waiting for it costs nothing on a kind that is about to be skipped anyway.
+      const ready = await became(() => page.evaluate(
+        (sel) => (document.querySelector(sel)?.querySelectorAll('[aria-invalid="true"]').length ?? 0) > 0,
+        `[data-form="${id}"]`,
+      ));
+
+      // A premise that did not hold has nothing to settle for: the reading below is about to be
+      // classified as no evidence, so it is taken once rather than waited on.
+      const seen = await stops(() => page.evaluate(({ sel, label }) => {
         const root = document.querySelector(sel);
         if (root === null) return null;
         return {
@@ -168,7 +190,7 @@ for (const host of HOSTS) {
           hasLabel: root.querySelector(`.${label}`) !== null,
           labelError: root.querySelector(`.${label}--has-error`) !== null,
         };
-      }, { sel: `[data-form="${id}"]`, label: LABEL });
+      }, { sel: `[data-form="${id}"]`, label: LABEL }), { window: ready ? 150 : 0 });
 
       if (seen === null) continue;
       // A kind the form did not refuse, or that renders no label, is not evidence either way.
@@ -207,9 +229,16 @@ for (const host of HOSTS) {
         },
         { mountId: id, k: kind, api: host.api, options: OPTIONS },
       );
-      await page.waitForTimeout(140);
 
-      const seen = await page.evaluate(({ sel, label }) => {
+      // A kind that renders no label is skipped below, so the label is what there is to wait for.
+      const ready = await became(() => page.evaluate(
+        ({ sel, label }) => document.querySelector(sel)?.querySelector(`.${label}`) !== null && document.querySelector(sel)?.querySelector(`.${label}`) !== undefined,
+        { sel: `[data-form="${id}"]`, label: LABEL },
+      ));
+
+      // A premise that did not hold has nothing to settle for: the reading below is about to be
+      // classified as no evidence, so it is taken once rather than waited on.
+      const seen = await stops(() => page.evaluate(({ sel, label }) => {
         const root = document.querySelector(sel);
         if (root === null) return null;
         const control = root.querySelector("input, textarea, select") as HTMLInputElement | null;
@@ -220,7 +249,7 @@ for (const host of HOSTS) {
           placeholder: control?.getAttribute("placeholder") ?? null,
           type: control?.getAttribute("type") ?? null,
         };
-      }, { sel: `[data-form="${id}"]`, label: LABEL });
+      }, { sel: `[data-form="${id}"]`, label: LABEL }), { window: ready ? 150 : 0 });
 
       if (seen === null || !seen.hasLabel) continue;
       if (!seen.filled) { settled += 1; continue; }
@@ -264,20 +293,30 @@ for (const host of HOSTS) {
         },
         { mountId: id, k: kind, api: host.api, options: OPTIONS },
       );
-      await page.waitForTimeout(140);
 
+      // Same bound as the focus above: a kind this renderer builds from a native control has no
+      // button to press, and that is an ordinary answer rather than something to wait two seconds for.
       const toggle = page.locator(`[data-form="${id}"] button`).first();
-      if (await toggle.count() > 0) await toggle.click({ timeout: 2000 }).catch(() => undefined);
-      await page.waitForTimeout(240);
+      if (await became(() => toggle.count().then((found) => found > 0))) {
+        await toggle.click({ timeout: 500 }).catch(() => undefined);
+      }
 
-      const seen = await page.evaluate(({ sel, cls }) => {
+      // A kind that did not open is skipped, so opening is the premise rather than the claim.
+      const ready = await became(() => page.evaluate(
+        (sel) => document.querySelector(sel)?.querySelector('[aria-expanded="true"]') != null,
+        `[data-form="${id}"]`,
+      ));
+
+      // A premise that did not hold has nothing to settle for: the reading below is about to be
+      // classified as no evidence, so it is taken once rather than waited on.
+      const seen = await stops(() => page.evaluate(({ sel, cls }) => {
         const root = document.querySelector(sel);
         if (root === null) return null;
         const open = root.querySelector('[aria-expanded="true"]') !== null;
         const wears = Array.from(root.querySelectorAll("*"))
           .some((element) => typeof element.className === "string" && element.className.split(" ").includes(cls));
         return { open, wears };
-      }, { sel: `[data-form="${id}"]`, cls: OPEN });
+      }, { sel: `[data-form="${id}"]`, cls: OPEN }), { window: ready ? 150 : 0 });
 
       if (seen === null) continue;
       // A kind that did not open is not evidence: a renderer may build it from a native control.

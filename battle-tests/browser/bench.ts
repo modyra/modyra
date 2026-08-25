@@ -134,6 +134,51 @@ let wrapped = 0;
 export const SETTLES = { timeout: 2_000, intervals: [50, 50, 100, 200, 400, 800] } as const;
 
 /**
+ * Read something until it stops changing, then hand back the last reading.
+ *
+ * **This is the wait for a measurement whose finding is an absence.** A spec that collects the kinds
+ * whose error class never arrived cannot poll for the class: polling waits for a value to *become*
+ * something, and the thing it would wait for is exactly what the defect says is missing, so every
+ * real finding would cost the full timeout and the assertion would be about the clock. Waiting for
+ * the page to stop moving asks the other question — has this renderer finished having its chance —
+ * and that one has the same answer whether the class arrives or not.
+ *
+ * The window is deliberately generous rather than measured. Too short is a flake with a plausible
+ * story; too long costs a fraction of a second. The asymmetry decides it without an experiment.
+ */
+export async function stops<T>(read: () => Promise<T>, { window = 200, timeout = 2_000 } = {}): Promise<T> {
+  const until = Date.now() + timeout;
+  let last = await read();
+  let held = 0;
+  while (Date.now() < until && held < window) {
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    const now = await read();
+    held = JSON.stringify(now) === JSON.stringify(last) ? held + 50 : 0;
+    last = now;
+  }
+  return last;
+}
+
+/**
+ * Wait for a condition and report whether it arrived, without failing if it did not.
+ *
+ * `expect.poll` throws on timeout, which is right for a claim and wrong for a premise the caller
+ * intends to branch on: a spec that skips a kind its renderer never refused wants the answer, not an
+ * ended test. Cheap to give up on, because giving up is an expected outcome here — and the cap is
+ * short for the same reason: the caller pays it on every premise that does not hold, so a generous
+ * one turns the ordinary case of "this renderer builds that kind from a native control" into the
+ * most expensive path in the spec.
+ */
+export async function became(holds: () => Promise<boolean>, { timeout = 400 } = {}): Promise<boolean> {
+  const until = Date.now() + timeout;
+  for (;;) {
+    if (await holds().catch(() => false)) return true;
+    if (Date.now() >= until) return false;
+    await new Promise((resolve) => setTimeout(resolve, 25));
+  }
+}
+
+/**
  * Wait until a form has submitted at least once, then hand back everything it sent.
  *
  * **A submission is the only post-condition an assertion about a payload can wait on, and the reason
