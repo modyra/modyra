@@ -137,7 +137,15 @@ export function renderSelectField(
   const arrow = el("span", parts.arrow.classes.join(" "));
   setIcon(arrow, "CHEVRON_DOWN");
   arrow.setAttribute("aria-hidden", "true");
-  trigger.append(valueText, placeholderText, arrow);
+  trigger.append(valueText, placeholderText);
+  // The arrow beside the trigger, not inside it: the trigger is what a person presses, and a control
+  // that does not fill its own field leaves a strip along each edge where a press lands on nothing.
+  // The other two renderers already draw it this way, and the contract names `inputWrapper` as its
+  // parent — an arrow inside the trigger answers to the trigger instead.
+  wrapper.append(trigger, arrow);
+
+  // After the arrow is in the document: `replaceWith` on a node with no parent does nothing, and
+  // the indicator would simply never appear.
   // Waiting on its options: the indicator sits on the control, where it is visible without opening
   // the list it is waiting for. It replaces the arrow, which has nothing to point at yet.
   if (f.loading) {
@@ -145,7 +153,7 @@ export function renderSelectField(
     loading.setAttribute("role", "status");
     arrow.replaceWith(loading);
   }
-  wrapper.append(trigger);
+
   insertControl(shell, wrapper);
   container.appendChild(shell.root);
 
