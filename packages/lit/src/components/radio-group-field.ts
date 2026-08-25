@@ -4,6 +4,7 @@ import {
   createOptionFieldController,
   shownErrorsOf,
   type MdyOptionFieldController,
+  defaultOptionKey,
 } from "@modyra/widgets";
 import { MdyOptionsFieldElement } from "./options-field.js";
 
@@ -69,7 +70,10 @@ export class MdyRadioGroupFieldElement extends MdyOptionsFieldElement<unknown | 
       >
         ${this.options.map(
           (option) => {
-            const key = String(option.value);
+            // The key the contract derives, not `String()`: every plain object renders as `[object Object]`
+            // through it, so every option of an object-valued list read the *same* projection entry —
+            // and a group with one value held marked every option as the chosen one.
+            const key = defaultOptionKey(option.value);
             const optionView = view?.parts[key];
             const optionAttrs = optionView?.attributes;
             return html`<label
@@ -78,9 +82,9 @@ export class MdyRadioGroupFieldElement extends MdyOptionsFieldElement<unknown | 
               <input
                 type="radio"
                 name=${this.fieldId}
-                .checked=${handle.value() === option.value}
+                .checked=${this.isChosen(handle.value(), option.value)}
                 ?disabled=${handle.disabled() || option.disabled === true}
-                aria-checked=${optionAttrs?.["aria-checked"] ?? (handle.value() === option.value ? "true" : "false")}
+                aria-checked=${optionAttrs?.["aria-checked"] ?? (this.isChosen(handle.value(), option.value) ? "true" : "false")}
                 aria-disabled=${optionAttrs?.["aria-disabled"] ?? (option.disabled || handle.disabled())}
                 @change=${() => {
                   if (this.fieldController) {

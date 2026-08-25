@@ -2,7 +2,7 @@ import { mdyPart } from "../mdy-part.js";
 import { styleMap } from "lit/directives/style-map.js";
 import { html, nothing } from "lit";
 import { type MdySelectOption } from "@modyra/core";
-import { createOptionFieldController, type MdyOptionFieldController } from "@modyra/widgets";
+import { createOptionFieldController, defaultOptionKey, type MdyOptionFieldController } from "@modyra/widgets";
 import { mdyIcon } from "../base.js";
 import { MdyOptionsFieldElement } from "./options-field.js";
 
@@ -52,10 +52,13 @@ export class MdySegmentedFieldElement extends MdyOptionsFieldElement<unknown | n
         style=${styleMap(view?.parts.group?.style ?? {})}
       >
         ${this.options.map((option, index) => {
-          const key = String(option.value);
+          // The key the contract derives, not `String()`: every plain object renders as `[object Object]`
+          // through it, so every option of an object-valued list read the *same* projection entry —
+          // and a group with one value held marked every option as the chosen one.
+          const key = defaultOptionKey(option.value);
           const optionView = view?.parts[key];
           const optionAttrs = optionView?.attributes;
-          const selected = handle.value() === option.value;
+          const selected = this.isChosen(handle.value(), option.value);
           const classes = [
             "mdy-segmented__button",
             index === 0 ? "mdy-segmented__button--first" : "",

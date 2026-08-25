@@ -1,5 +1,5 @@
 import { MdyFieldHandle, type MdyFieldConstraints, type MdyValueKind } from "@modyra/core";
-import { MDY_ICONS, MDY_POPUP_OPENERS, messagesForLocale, widgetScopeOf, type MdyI18nMessages } from "@modyra/widgets";
+import { MDY_ICONS, MDY_POPUP_OPENERS, defaultOptionKey, messagesForLocale, widgetScopeOf, type MdyI18nMessages } from "@modyra/widgets";
 import { html, LitElement, nothing, PropertyDeclarations } from "lit";
 import { unsafeSVG } from "lit/directives/unsafe-svg.js";
 import {
@@ -121,6 +121,23 @@ export abstract class MdyFieldElement<T> extends LitElement {
    * with nothing to derive an id from. Its ids are not stable across mounts, because nothing about
    * such a widget is.
    */
+  /**
+   * Whether a held value is this option's, asked the way the contract asks it.
+   *
+   * Identity first, then the key: a draft, a refetch or an import hands the field a fresh object that
+   * *is* an option's value without *being* it, and asked only the exact question no option admitted
+   * to the value the model holds. Asked through `String()` instead — which was the other half of the
+   * same defect — every plain object matched every other, and a single-choice group marked all of
+   * them.
+   */
+  protected isChosen(held: unknown, optionValue: unknown): boolean {
+    if (held === optionValue) return true;
+    if (held === null || held === undefined || optionValue === null || optionValue === undefined) {
+      return false;
+    }
+    return defaultOptionKey(held) === defaultOptionKey(optionValue);
+  }
+
   protected get fieldId(): string {
     const path = this.field?.path;
     if (path === undefined || path === "") return this._mountId;

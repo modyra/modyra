@@ -982,7 +982,7 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
       role="group"
     >
       ${options.map(
-        (option) => html`<div class=${MDY_CHIP_CLASSES.wrapper} data-option-key=${String(option.value)}>${this.renderOptionChip(handle, option)}</div>`,
+        (option) => html`<div class=${MDY_CHIP_CLASSES.wrapper} data-option-key=${defaultOptionKey(option.value)}>${this.renderOptionChip(handle, option)}</div>`,
       )}
     </div>`;
   }
@@ -1021,7 +1021,7 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
    * nothing on the page said why.
    */
   private optionPart(option: MdySelectOption<unknown>): MdyPartContract {
-    return this.fieldController?.view().parts[String(option.value)] ?? { classes: [], attributes: {} };
+    return this.fieldController?.view().parts[defaultOptionKey(option.value)] ?? { classes: [], attributes: {} };
   }
 
   private renderOptionChip(
@@ -1029,7 +1029,7 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
     option: MdySelectOption<unknown>,
   ): unknown {
     if (this.mode === "multi") {
-      const count = this.counts(handle).get(String(option.value)) ?? 0;
+      const count = this.counts(handle).get(defaultOptionKey(option.value)) ?? 0;
       return html`<div ${mdyPart(this.optionPart(option))}>
         <button
           type="button"
