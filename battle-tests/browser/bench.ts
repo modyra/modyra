@@ -134,6 +134,30 @@ let wrapped = 0;
 export const SETTLES = { timeout: 2_000, intervals: [50, 50, 100, 200, 400, 800] } as const;
 
 /**
+ * Wait until a form has submitted at least once, then hand back everything it sent.
+ *
+ * **A submission is the only post-condition an assertion about a payload can wait on, and the reason
+ * is that most of those assertions are negative.** `expect(payload).not.toContain(secret)` is
+ * satisfied by a form that has not submitted at all — poll it directly and it passes on the first
+ * look, before the page has done anything, and goes on passing after the field it guards starts
+ * leaking. The wait belongs on the arrival; the claim is then asserted once, against a payload that
+ * exists.
+ *
+ * The read is repeated after the poll rather than captured inside it, so the value returned is the
+ * one the last look saw.
+ */
+export async function whatLanded(page: Page, id: string) {
+  const collected = () => page.evaluate(
+    (mountId) => (window as never as { battle: { submittedBy(id: string): unknown[] } }).battle.submittedBy(mountId),
+    id,
+  );
+  await expect
+    .poll(collected, { message: `"${id}" submitted nothing, so there is no payload to read`, ...SETTLES })
+    .not.toHaveLength(0);
+  return collected();
+}
+
+/**
  * Mount one multiselect in a named state and refuse to continue if it did not appear.
  *
  * **Each call takes a fresh id.** Mounting twice into the same id appends a second form rather than

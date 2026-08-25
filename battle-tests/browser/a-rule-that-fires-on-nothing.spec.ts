@@ -23,6 +23,7 @@
  */
 
 import { expect, test } from "@playwright/test";
+import { SETTLES, whatLanded } from "./bench";
 
 type Api = Record<string, {
   mountDocument(id: string, envelope: unknown, options?: unknown): { mounted: boolean; diagnostics?: unknown[] };
@@ -32,6 +33,17 @@ type Api = Record<string, {
   submittedBy(id: string): Array<Record<string, unknown>>;
   disable(id: string, path: string): void;
 }>;
+
+/** A field's own control, found the way this host names one: the field's name inside the id. */
+function control(page: import("@playwright/test").Page, form: string, name: string) {
+  return page.evaluate(({ formId, fieldName }) => {
+    const found = Array.from(document.querySelectorAll(`[data-form="${formId}"] input`))
+      .find((each) => (each.id ?? "").includes(fieldName)) as HTMLInputElement | undefined;
+    return found === undefined
+      ? null
+      : { value: found.value, disabled: found.disabled, aria: found.getAttribute("aria-disabled") };
+  }, { formId: form, fieldName: name });
+}
 
 const FIELDS = [
   {
@@ -61,10 +73,16 @@ test("a field a document says to show only sometimes is out of play when it shou
         when: { field: "customerType", operator: "equals", value: "business" },
       }],
     }), FIELDS);
-  await page.waitForTimeout(340);
 
   // The premise, in the page rather than in the parser: strict mode took this document.
   expect(mounted.mounted, "the document was refused, so there is no form to measure").toBe(true);
+
+  await expect
+    .poll(() => page.evaluate(() => document.querySelectorAll('[data-form="g"] [id*="customerType"]').length), {
+      message: "the document mounted and drew no control to set a value into",
+      ...SETTLES,
+    })
+    .toBeGreaterThan(0);
 
   const vatShows = () => page.evaluate(() => {
     const found = Array.from(document.querySelectorAll('[data-form="g"] input'))
@@ -73,29 +91,28 @@ test("a field a document says to show only sometimes is out of play when it shou
   });
 
   await page.evaluate(() => (window as never as Api).battle.setValue("g", { customerType: "business" }));
-  await page.waitForTimeout(320);
 
   // The control: on the side of the condition the rule allows, the field is there. A field that
   // never rendered at all would fail here and the assertion below would be about nothing.
-  expect(await vatShows(), "the field is not shown even when the rule's condition holds").toBe(true);
+  await expect
+    .poll(vatShows, { message: "the field is not shown even when the rule's condition holds", ...SETTLES })
+    .toBe(true);
 
   await page.evaluate(() => (window as never as Api).battle.setValue("g", { customerType: "person" }));
-  await page.waitForTimeout(320);
 
   // What the rule does is take the field out of play rather than off the screen — finding 159 is that
   // `visible` and `hidden` are indistinguishable from `enabled` and `disabled`. What this test holds
   // is the part with consequences: on the side of the condition the rule excludes, the field is not
   // operable and does not go to the server.
-  const off = await page.evaluate(() => {
-    const found = Array.from(document.querySelectorAll('[data-form="g"] input'))
-      .find((each) => (each.id ?? "").includes("vatNumber")) as HTMLInputElement | undefined;
-    return found === undefined ? null : { disabled: found.disabled, aria: found.getAttribute("aria-disabled") };
-  });
-
-  expect(
-    off,
-    "a document said to show this field only for a business and it is fully in play for a private customer",
-  ).toEqual({ disabled: true, aria: "true" });
+  await expect
+    .poll(async () => {
+      const found = await control(page, "g", "vatNumber");
+      return found === null ? null : { disabled: found.disabled, aria: found.aria };
+    }, {
+      message: "a document said to show this field only for a business and it is fully in play for a private customer",
+      ...SETTLES,
+    })
+    .toEqual({ disabled: true, aria: "true" });
 });
 
 test("what a field a document disabled still sends", async ({ page }) => {
@@ -113,15 +130,28 @@ test("what a field a document disabled still sends", async ({ page }) => {
       { name: "taxId", kind: "text", label: "Tax id" },
     ]);
   });
-  await page.waitForTimeout(300);
-  await page.evaluate((value) => (window as never as Api).battle.setValue("byHand", { customerType: "person", taxId: value }), secret);
-  await page.waitForTimeout(280);
-  await page.evaluate(() => (window as never as Api).battle.disable("byHand", "taxId"));
-  await page.waitForTimeout(300);
-  await page.evaluate(() => (window as never as Api).battle.submit("byHand"));
-  await page.waitForTimeout(400);
+  await expect
+    .poll(() => control(page, "byHand", "taxId"), { message: "the fields mounted and no tax id was drawn", ...SETTLES })
+    .not.toBeNull();
 
-  const byHand = await page.evaluate(() => (window as never as Api).battle.submittedBy("byHand"));
+  await page.evaluate((value) => (window as never as Api).battle.setValue("byHand", { customerType: "person", taxId: value }), secret);
+  await expect
+    .poll(async () => (await control(page, "byHand", "taxId"))?.value, {
+      message: "the value never reached the field, so disabling it proves nothing",
+      ...SETTLES,
+    })
+    .toBe(secret);
+
+  await page.evaluate(() => (window as never as Api).battle.disable("byHand", "taxId"));
+  await expect
+    .poll(async () => (await control(page, "byHand", "taxId"))?.disabled, {
+      message: "the handle was asked to disable this field and it stayed in play",
+      ...SETTLES,
+    })
+    .toBe(true);
+
+  await page.evaluate(() => (window as never as Api).battle.submit("byHand"));
+  const byHand = await whatLanded(page, "byHand");
   expect(
     JSON.stringify(byHand.at(-1)),
     "a field disabled through the handle was sent, so nothing below is a measurement of the document",
@@ -142,15 +172,18 @@ test("what a field a document disabled still sends", async ({ page }) => {
         when: { field: "customerType", operator: "equals", value: "person" },
       }],
     }));
-  await page.waitForTimeout(340);
   expect(mounted.mounted, "the document was refused, so there is no form to measure").toBe(true);
 
   await page.evaluate((value) => (window as never as Api).battle.setValue("byDocument", { customerType: "person", taxId: value }), secret);
-  await page.waitForTimeout(320);
-  await page.evaluate(() => (window as never as Api).battle.submit("byDocument"));
-  await page.waitForTimeout(400);
+  await expect
+    .poll(async () => (await control(page, "byDocument", "taxId"))?.value, {
+      message: "the value never reached the field, so what the form sends is not a measurement of the rule",
+      ...SETTLES,
+    })
+    .toBe(secret);
 
-  const byDocument = await page.evaluate(() => (window as never as Api).battle.submittedBy("byDocument"));
+  await page.evaluate(() => (window as never as Api).battle.submit("byDocument"));
+  const byDocument = await whatLanded(page, "byDocument");
   expect(
     JSON.stringify(byDocument.at(-1)),
     "a document disabled this field for this customer and the form sent its value anyway",

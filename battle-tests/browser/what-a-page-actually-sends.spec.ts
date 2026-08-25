@@ -15,7 +15,7 @@
  */
 
 import { expect, test } from "@playwright/test";
-import { SETTLES } from "./bench";
+import { SETTLES, whatLanded } from "./bench";
 import { MDY_WIDGET_KINDS } from "@modyra/widgets";
 
 test.beforeEach(async ({ page }) => {
@@ -53,17 +53,6 @@ async function submitForm(page: import("@playwright/test").Page, id: string) {
  * so it is stated as one. The read is retried until something arrived rather than for a fixed number
  * of milliseconds, and the message says which form said nothing when it never does.
  */
-async function whatLanded(page: import("@playwright/test").Page, id: string) {
-  const collected = () => page.evaluate(
-    (mountId) => (window as never as { battle: { submittedBy(id: string): unknown[] } }).battle.submittedBy(mountId),
-    id,
-  );
-  await expect
-    .poll(collected, { message: `"${id}" submitted nothing, so there is no payload to read`, ...SETTLES })
-    .not.toHaveLength(0);
-  return collected();
-}
-
 async function submitted(page: import("@playwright/test").Page, id: string, fields: unknown[]) {
   await page.evaluate(
     ({ mountId, given }) => {
