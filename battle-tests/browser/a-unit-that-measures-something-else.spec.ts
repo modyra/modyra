@@ -25,15 +25,28 @@
  * container unit tomorrow is covered without anyone remembering to add it — and a rule that stops
  * using one takes itself out.
  *
- * @source-inspection — the authored sheet is where a unit still exists. By the time a browser has
- * computed a length it is pixels, and `100cqw` resolved against the viewport is indistinguishable from
- * a correct one except by being wrong.
+ * ## The rules are read through the CSSOM, and that is the second thing this file is about
+ *
+ * A unit only exists before it is resolved — by the time a browser has computed a length it is pixels,
+ * and `100cqw` answered by the viewport is indistinguishable from a correct one except by being wrong.
+ * So the rules have to be read rather than the computed styles.
+ *
+ * **Read as text, they cannot be.** At least five constructions nest rules — `@layer`, `@media`,
+ * `@supports`, `@container`, and native nesting with `&` — and a reader counting braces handles the
+ * ones its author had met. The first version of this file was one: it counted braces, this sheet nests
+ * inside `@layer`, and it reported that **no rule uses a container unit at all**. Which reads as good
+ * news.
+ *
+ * `document.styleSheets` is the browser's own parse, and a descent that asks each rule for its
+ * children walks every construction including the one added after this was written. The browser has
+ * done the interpreting; redoing it is redoing a job that can only be got wrong.
+ *
+ * A sheet from another origin throws on `cssRules`, and that is **reported rather than skipped** —
+ * silently passing over one is how a reader goes back to saying "nothing to look at" in the voice of
+ * "nothing found".
  *
  * Claims under attack: UI-005, STY-001.
  */
-
-import { readFileSync } from "node:fs";
-import { dirname, join, resolve } from "node:path";
 
 import { expect, test } from "@playwright/test";
 
@@ -41,32 +54,8 @@ import { HOSTS } from "./bench";
 
 type Api = Record<string, Record<string, (...args: never[]) => unknown>>;
 
-const HERE = dirname(new URL(import.meta.url).pathname);
-const SHEET = join(resolve(HERE, "..", ".."), "packages", "styles", "src", "modyra.css");
-
-/**
- * Selectors whose declarations use a container query unit.
- *
- * Read line by line rather than by matching rule bodies: the sheet nests inside `@layer` and
- * `@media`, and a brace-counting reader that does not know that reports zero rules and looks like
- * good news.
- */
-const selectorsUsingContainerUnits = (): string[] => {
-  const lines = readFileSync(SHEET, "utf8").split("\n");
-  const found = new Set<string>();
-  let selector: string | null = null;
-  for (const raw of lines) {
-    const line = raw.trim();
-    if (line.startsWith("/*") || line.startsWith("*")) continue;
-    if (line.endsWith("{")) {
-      const head = line.slice(0, -1).trim();
-      if (head !== "" && !head.startsWith("@")) selector = head;
-      continue;
-    }
-    if (/\b[0-9.]+cq(w|i|h|b|min|max)\b/.test(line) && selector !== null) found.add(selector);
-  }
-  return [...found];
-};
+/** A unit that answers to a query container rather than to the viewport. */
+const CONTAINER_UNIT = /\b[0-9.]+cq(w|i|h|b|min|max)\b/;
 
 for (const host of HOSTS) {
   test(`every container unit has a container above it, ${host.name}`, async ({ page }) => {
@@ -74,15 +63,74 @@ for (const host of HOSTS) {
     await page.goto(host.page);
     await page.waitForFunction((flag) => (window as never as Record<string, boolean>)[flag] === true, host.ready);
 
-    const selectors = selectorsUsingContainerUnits();
+    const sheets = await page.evaluate(({ pattern }) => {
+      const wanted = new RegExp(pattern);
+      const selectors = new Set<string>();
+      const unreadable: string[] = [];
+      let rulesSeen = 0;
 
-    // The premise, and it is the one that matters: a reader that found nothing would pass while
-    // measuring nothing, and "no rule uses a container unit" is exactly what a broken reader says.
+      // Every construction that nests rules holds them under `cssRules`, so the descent asks for the
+      // property rather than for a list of types it happens to know. One added to CSS after this was
+      // written carries its children the same way and is walked without this being edited.
+      const walk = (rules: CSSRuleList) => {
+        for (const rule of Array.from(rules)) {
+          rulesSeen += 1;
+          const style = (rule as CSSStyleRule).style as CSSStyleDeclaration | undefined;
+          if (style !== undefined && style !== null) {
+            for (let at = 0; at < style.length; at += 1) {
+              if (wanted.test(style.getPropertyValue(style[at]!))) {
+                const selector = (rule as CSSStyleRule).selectorText;
+                if (selector !== undefined && selector !== "") selectors.add(selector);
+              }
+            }
+          }
+          const nested = (rule as unknown as { cssRules?: CSSRuleList }).cssRules;
+          if (nested !== undefined) walk(nested);
+        }
+      };
+
+      for (const sheet of Array.from(document.styleSheets)) {
+        try {
+          walk(sheet.cssRules);
+        } catch (error) {
+          unreadable.push(`${sheet.href ?? "(inline)"}: ${String(error).slice(0, 60)}`);
+        }
+      }
+      return { selectors: [...selectors], unreadable, rulesSeen };
+    }, { pattern: CONTAINER_UNIT.source });
+
+    // A sheet this reader could not open is a hole of exactly the shape this file refuses: it would
+    // report "no rule uses one" while never having looked. Reported, never skipped.
+    expect(
+      sheets.unreadable,
+      `${host.name}: ${sheets.unreadable.length} stylesheet(s) could not be read, so anything below `
+      + `would be a statement about what was reachable rather than about the page:\n`
+      + sheets.unreadable.join("\n"),
+    ).toEqual([]);
+
+    // A nested rule's `selectorText` carries its `&`, which no `querySelectorAll` accepts. Such a
+    // selector cannot be checked from here and is **named** rather than passed over: skipping it
+    // quietly would shrink the population and leave the file reporting on what it happened to be able
+    // to ask about.
+    const unqueryable = sheets.selectors.filter((one) => one.includes("&"));
+    expect(
+      unqueryable,
+      `${host.name}: ${unqueryable.length} rule(s) using a container unit are written with native `
+      + `nesting and cannot be resolved to elements from here — ${JSON.stringify(unqueryable)}. They `
+      + "are the ones this file would otherwise be silent about.",
+    ).toEqual([]);
+
+    const selectors = sheets.selectors;
+
+    // The premise, and it is the one that matters: **"the property holds" and "the property has no
+    // instances" are the same green**, and one of them means this file read nothing. The count of
+    // rules walked is in the message because it is what tells the two apart.
     expect(
       selectors.length,
-      "no rule in the stylesheet was found using a container query unit. Either none does — in which "
-      + "case this file has nothing to check and should say so — or the sheet is being read wrongly, "
-      + "which is what a brace-counting reader does with an @layer.",
+      `${host.name} walked ${sheets.rulesSeen} rule(s) and found none using a container query unit. `
+      + "Either no rule does — in which case this file has nothing to check and should say so — or "
+      + "they are not being reached, which is what a brace-counting reader did with an @layer and what "
+      + "an unopened sheet does in silence.",
     ).toBeGreaterThan(0);
 
     await page.evaluate(({ api }) => {
