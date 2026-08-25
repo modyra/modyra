@@ -46,18 +46,41 @@ async function chooseWithOneStep(
     (window as never as Record<string, Record<string, (...args: never[]) => unknown>>)[api]
       .mountFields(mountId, [{ name: "f", kind: k, label: "Plan", searchable: true, options }] as never);
   }, { api: host.api, mountId: id, options: OPTIONS, k: kind });
-  await page.waitForTimeout(400);
 
   const control = page.locator(`[data-form="${id}"] [role="combobox"], [data-form="${id}"] select`).first();
   await expect(control, `${host.name} drew no select this spec can reach`).toHaveCount(1, { timeout: 5_000 });
   await control.focus();
 
+  // **Waited on by settling, not by the clock.** These were three fixed pauses, and this test drives
+  // all three renderers and then compares what they answered — so a host read a beat early reports a
+  // value the others do not have, and the failure says *the keyboard model diverges* about a page
+  // that had simply not finished. It failed once inside a full suite run and passed alone three times,
+  // which is the shape of a clock and not of a defect.
+  //
+  // The value is polled until it stops moving. A renderer that answers at once settles at once; one
+  // that takes longer under load is waited for rather than caught mid-write.
+  const held = () => page.evaluate(({ api, mountId }) =>
+    JSON.stringify((window as never as Record<string, { valueOf(i: string): Record<string, unknown> }>)[api]
+      .valueOf(mountId).f ?? null),
+    { api: host.api, mountId: id });
+
+  const settled = async () => {
+    let last = await held();
+    for (let still = 0; still < 3;) {
+      await page.waitForTimeout(60);
+      const now = await held();
+      still = now === last ? still + 1 : 0;
+      last = now;
+    }
+    return last;
+  };
+
   await page.keyboard.press("Enter");
-  await page.waitForTimeout(300);
+  await settled();
   await page.keyboard.press("ArrowDown");
-  await page.waitForTimeout(250);
+  await settled();
   await page.keyboard.press("Enter");
-  await page.waitForTimeout(350);
+  await settled();
 
   return page.evaluate(({ api, mountId }) =>
     (window as never as Record<string, { valueOf(i: string): Record<string, unknown> }>)[api].valueOf(mountId).f,
