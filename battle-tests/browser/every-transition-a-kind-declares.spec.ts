@@ -23,7 +23,7 @@ import { MDY_WIDGET_TRANSITIONS } from "@modyra/widgets";
 // **Every renderer, from the shared list.** The local list this replaced was not a scope
 // decision: the angular host published six of the twenty-two doors these specs need, so a
 // spec wanting one it lacked left the renderer out and the next reader copied the list.
-import { HOSTS } from "./bench";
+import { became, HOSTS } from "./bench";
 
 /** Kinds whose declared machine has at least one move. */
 const WITH_TRANSITIONS = Object.entries(MDY_WIDGET_TRANSITIONS)
@@ -65,7 +65,8 @@ for (const host of HOSTS) {
         { api: host.api, k: kind, mountId: id, options: OPTIONS, gone: previous },
       );
       previous = id;
-      await page.waitForTimeout(150);
+      await became(() => page.evaluate(
+        (selector) => (document.querySelector(selector)?.children.length ?? 0) > 0, `[data-form="${id}"]`));
 
       const scope = `[data-form="${id}"]`;
       const expanded = () => page.evaluate(
@@ -89,11 +90,13 @@ for (const host of HOSTS) {
           undriveable.push(`${kind}: no button to drive it with`);
           break;
         }
-        if (await expanded() === "true") await page.keyboard.press("Escape");
-        await page.waitForTimeout(80);
+        if (await expanded() === "true") {
+          await page.keyboard.press("Escape");
+          await became(async () => await expanded() !== "true");
+        }
         if (from === "open") {
           await toggle.click({ timeout: 2000 }).catch(() => undefined);
-          await page.waitForTimeout(150);
+          await became(async () => await expanded() === "true");
         }
         if (await expanded() !== (from === "open" ? "true" : "false")) {
           undriveable.push(`${kind}: could not reach "${from}"`);
@@ -111,7 +114,13 @@ for (const host of HOSTS) {
           undriveable.push(`${kind}: no way to apply a trigger of type "${trigger.type}"`);
           continue;
         }
-        await page.waitForTimeout(200);
+        // **Waited for the state the table declares, not for a length of time.** A fixed pause here
+        // decided the verdict by the clock: a transition the page did make in three hundred
+        // milliseconds was recorded as one it did not make, and the file reported three renderers
+        // breaking their own table on a busy machine and none of them on a quiet one. A transition
+        // that happens is now read when it happens; one that does not costs the bound and is the
+        // finding.
+        await became(async () => (await expanded() === "true" ? "open" : "closed") === to, { timeout: 800 });
 
         driven += 1;
         const reached = await expanded() === "true" ? "open" : "closed";
