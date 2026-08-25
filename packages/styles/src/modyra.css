@@ -1960,9 +1960,15 @@
            a long value grew to 1299px inside a 684px field and nothing was ever shortened. The
            machinery for shortening was still there and had nothing left to bite on.
 
-           `cqw` is the strip's own visible width, which is what "the room there is" meant. A chip
-           wider than the strip is cut with an ellipsis; the strip still scrolls, because scrolling is
-           for reaching the chips past the edge rather than for reading one chip in instalments. */
+           `cqw` is the box's own width, which is what "the room there is" meant. A chip wider than
+           the box is cut with an ellipsis; the strip still scrolls, because scrolling is for reaching
+           the chips past the edge rather than for reading one chip in instalments.
+
+           The literal above it is the cascade's own fallback, for a browser that does not know the
+           unit: generous, so it does not cut what fits, and finite, so nothing grows past the field.
+           It may not be stated through a custom property — a `var()` parses whatever it holds, so
+           the failure would move to substitution and take the inherited value instead of this. */
+        max-width: 20rem;
         max-width: 100cqw;
     }
 
@@ -2148,6 +2154,14 @@
            value goes, and step again on the next removal — a cost that moves is one nobody can
            learn, where a fixed one is learnt once. Its contents come and go inside the band, and
            nothing else on the page moves. */
+        /* The literal first, the modern unit second: a browser that does not know `lh` drops the
+           second declaration and keeps the first, which is the cascade's own fallback and costs two
+           lines. Without it the band reserves nothing and the page steps down 21px again — the whole
+           point of the row. The literal is this row's own line height at the default font size.
+           Never state either through a custom property: a `var()` is valid at parse time whatever it
+           holds, so the failure moves to substitution, where it takes the *inherited* value rather
+           than the declaration above. The fallback is silently gone and the linter is green. */
+        min-height: 1.3125rem;
         min-height: 1lh;
         font-size: var(--mdy-font-size-sm, 0.875rem);
         color: var(--mdy-color-text-muted, inherit);
