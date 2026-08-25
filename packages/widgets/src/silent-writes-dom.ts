@@ -88,7 +88,8 @@ const VALUE_OF = (el: Element): string | null => {
 };
 
 const controls = (root: Element): Element[] =>
-  [root, ...root.querySelectorAll("input, textarea, select")].filter((el) => VALUE_OF(el) !== null);
+  [root, ...Array.from(root.querySelectorAll("input, textarea, select"))]
+    .filter((el) => VALUE_OF(el) !== null);
 
 const navigationType = (root: Element): string | undefined => {
   const timing = root.ownerDocument.defaultView?.performance?.getEntriesByType?.("navigation")?.[0];
