@@ -1,6 +1,6 @@
 import {
   handleFormOf, MdyFieldHandle, type MdyFieldConstraints, type MdyValueKind } from "@modyra/core";
-import { MDY_ICONS, MDY_POPUP_OPENERS, bindFormReset, defaultOptionKey, messagesForLocale, widgetScopeOf, type MdyI18nMessages } from "@modyra/widgets";
+import { MDY_ICONS, MDY_POPUP_OPENERS, adoptHistoryRestore, bindFormReset, defaultOptionKey, messagesForLocale, widgetScopeOf, type MdyI18nMessages } from "@modyra/widgets";
 import { html, LitElement, nothing, PropertyDeclarations } from "lit";
 import { unsafeSVG } from "lit/directives/unsafe-svg.js";
 import {
@@ -283,6 +283,16 @@ export abstract class MdyFieldElement<T> extends LitElement {
     super.updated(changed);
     this.applyControlName();
 
+    // What the browser gave back when somebody pressed Back, told to the model. Started after the
+    // first render, because a control that does not exist yet cannot have been restored into.
+    //
+    // Session history restoration writes a person's typing straight into the boxes and announces
+    // nothing, so the field showed what they had written while the form held the value it was built
+    // with. Where the browser restored nothing there is nothing to adopt and this does not fire.
+    if (this._cancelHistoryRestore === null) {
+      this._cancelHistoryRestore = adoptHistoryRestore({ root: this });
+    }
+
     // Once per element: two forms over one document claim one set of ids, and a sentence repeated
     // every frame is one a developer scrolls past.
     // Checked on every update and said once per id: this element may paint before the form it
@@ -405,6 +415,9 @@ export abstract class MdyFieldElement<T> extends LitElement {
 
   private _unbindFormReset: (() => void) | null = null;
 
+  /** Cancels the pending comparison of a history restore, if one is still waiting. */
+  private _cancelHistoryRestore: (() => void) | null = null;
+
   /**
    * The reset of a `<form>` this control is inside, answered by returning to the initial value.
    *
@@ -430,6 +443,8 @@ export abstract class MdyFieldElement<T> extends LitElement {
     this.removeEventListener("keydown", this.onTabAway, true);
     this._unbindFormReset?.();
     this._unbindFormReset = null;
+    this._cancelHistoryRestore?.();
+    this._cancelHistoryRestore = null;
     if (this._unboundFrame !== null) {
       cancelAnimationFrame(this._unboundFrame);
       this._unboundFrame = null;

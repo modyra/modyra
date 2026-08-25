@@ -7,7 +7,7 @@
  */
 import { createForm, field as mdyField, required as mdyRequired } from "@modyra/core";
 import { renderField } from "@modyra/plain";
-import { bindFormReset } from "@modyra/widgets";
+import { adoptHistoryRestore, bindFormReset } from "@modyra/widgets";
 import { action, grid, readoutPrinter, toolbar } from "./shell.js";
 
 const FIELDS = [
@@ -37,6 +37,8 @@ export const lifecyclePanel = {
     "MdyDraftStorage",
     "bindFormReset",
     "MdyFormResetBinding",
+    "adoptHistoryRestore",
+    "MdyHistoryRestoreBinding",
   ],
 
   invariant:
@@ -80,6 +82,18 @@ export const lifecyclePanel = {
     enclosing.append(cancel);
 
     const unbindReset = bindFormReset({ element: cancel, reset: () => form.reset() });
+
+    /**
+     * What the browser gave back on the way in, told to the model.
+     *
+     * Type something, follow a link away, and press Back: one browser puts the typing straight into
+     * the boxes and tells nobody, so the field showed what was written while the form still held
+     * what it was built with. Reading one and submitting the other is the state this closes.
+     *
+     * `renderField` already does this for a form it mounts. It is here explicitly because the panel
+     * builds its own form, and because a reader should see what the call looks like.
+     */
+    const stopAdopting = adoptHistoryRestore({ root: enclosing });
 
     action(bar, "Undo", () => form.undo());
     action(bar, "Redo", () => form.redo());
@@ -125,7 +139,7 @@ export const lifecyclePanel = {
       afterTheWrite = setTimeout(print, 250);
     });
 
-    return () => { effect.destroy(); clearTimeout(afterTheWrite); print.cancel(); unbindReset(); for (const d of dispose) d?.(); form.destroy(); };
+    return () => { effect.destroy(); clearTimeout(afterTheWrite); print.cancel(); unbindReset(); stopAdopting(); for (const d of dispose) d?.(); form.destroy(); };
   },
 };
 
