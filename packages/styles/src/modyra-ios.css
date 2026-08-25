@@ -751,7 +751,7 @@
         transition: background var(--mdy-sys-motion-duration-slow, 0.2s) ease;
     }
 
-    .mdy-toggle:has(input:checked) .mdy-toggle__track {
+    .mdy-toggle:has(.mdy-toggle__control:checked) .mdy-toggle__track {
         background: var(--mdy-toggle-bg-checked);
         border-color: transparent;
     }
@@ -763,7 +763,7 @@
         box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
     }
 
-    .mdy-toggle:has(input:focus-visible) .mdy-toggle__track {
+    .mdy-toggle:has(.mdy-toggle__control:focus-visible) .mdy-toggle__track {
         outline: 3.5px solid rgba(0, 122, 255, 0.4);
         outline-offset: 2px;
     }

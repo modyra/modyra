@@ -1326,18 +1326,18 @@
         pointer-events: none;
     }
 
-    .mdy-toggle:hover:has(input:not(:disabled)) .mdy-toggle__track .mdy-toggle__thumb::after,
-    .mdy-toggle:has(input:focus-visible) .mdy-toggle__track .mdy-toggle__thumb::after {
+    .mdy-toggle:hover:has(.mdy-toggle__control:not(:disabled)) .mdy-toggle__track .mdy-toggle__thumb::after,
+    .mdy-toggle:has(.mdy-toggle__control:focus-visible) .mdy-toggle__track .mdy-toggle__thumb::after {
         transform: translate(-50%, -50%) scale(1);
         opacity: var(--mdy-toggle-state-layer-opacity, 0.12);
     }
 
-    .mdy-toggle:has(input:checked) .mdy-toggle__track {
+    .mdy-toggle:has(.mdy-toggle__control:checked) .mdy-toggle__track {
         background: var(--mdy-toggle-bg-checked);
         border: var(--mdy-toggle-border-checked);
     }
 
-    .mdy-toggle:has(input:checked) .mdy-toggle__track .mdy-toggle__thumb {
+    .mdy-toggle:has(.mdy-toggle__control:checked) .mdy-toggle__track .mdy-toggle__thumb {
         background: var(--mdy-toggle-thumb-color-checked);
         /* One travel distance, derived from the track: width minus the thumb and both insets. */
         transform: translateY(-50%)
@@ -1350,12 +1350,16 @@
     }
 
 
-    .mdy-toggle:has(input:focus-visible) .mdy-toggle__track {
+    .mdy-toggle:has(.mdy-toggle__control:focus-visible) .mdy-toggle__track {
         outline: 2px solid var(--mdy-input-focus-color);
         outline-offset: 2px;
     }
 
-    .mdy-toggle:has(input:disabled) .mdy-toggle__track {
+    /* The switch's own control, named rather than "any input in here": a field carries more than one
+       input — the hidden one that makes a boolean submit as `false` is disabled exactly while the
+       box is ticked — and an unqualified `input` painted a switch that was **on** as though it were
+       unavailable. The checkbox rules below already name their part; this now matches them. */
+    .mdy-toggle:has(.mdy-toggle__control:disabled) .mdy-toggle__track {
         opacity: 0.5;
         cursor: not-allowed;
     }

@@ -41,8 +41,7 @@
     "mdy-timepicker-segment--minute": "the shared mdy-timepicker-segment base is what the themes paint \u2014 one rule for both segments, by design",
     "mdy-timepicker__dialog": "unreviewed",
     "mdy-timepicker__popup--above": "derived by popupPlacementClass/popupAlignmentClass and emitted by the renderers; no theme reacts to it yet. A placement class only earns a rule where the popup has a top/bottom or left/right asymmetry to answer \u2014 the select and multiselect flip their search box, a calendar has nothing to flip.",
-    "mdy-timepicker__popup--right": "derived by popupPlacementClass/popupAlignmentClass and emitted by the renderers; no theme reacts to it yet. A placement class only earns a rule where the popup has a top/bottom or left/right asymmetry to answer \u2014 the select and multiselect flip their search box, a calendar has nothing to flip.",
-    "mdy-toggle__control": "the themes reach the input by descendant selector (.mdy-toggle input:disabled), not by its part class"
+    "mdy-timepicker__popup--right": "derived by popupPlacementClass/popupAlignmentClass and emitted by the renderers; no theme reacts to it yet. A placement class only earns a rule where the popup has a top/bottom or left/right asymmetry to answer \u2014 the select and multiselect flip their search box, a calendar has nothing to flip."
   },
   "mdy-angular-announcer": {
     "kind": "unstyled",

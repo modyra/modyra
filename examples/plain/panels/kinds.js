@@ -16,7 +16,11 @@ const PRESENTATION = Object.fromEntries([
   ["number", null, { label: "Age" }],
   ["slider", 0, { label: "Volume" }],
   ["checkbox", false, { label: "Accept" }],
-  ["toggle", false, { label: "Newsletter" }],
+  // On, not off, and that is the point of the value: a switch only shows its "on" treatment when it
+  // is on, so a baseline that photographs it off is a baseline that cannot see half of what a theme
+  // paints. One did exactly that, and a defect that made an on switch look unavailable crossed it
+  // untouched.
+  ["toggle", true, { label: "Newsletter" }],
   ["radio", null, { label: "Plan", options: OPTIONS() }],
   ["segmented", null, { label: "Mode", options: OPTIONS() }],
   ["select", null, { label: "Country", options: OPTIONS() }],
