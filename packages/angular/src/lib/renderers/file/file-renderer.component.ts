@@ -44,7 +44,7 @@ import { MDY_I18N_MESSAGES } from "../../core/i18n";
         [id]="fieldId"
         [accept]="accept()"
         [multiple]="multiple()"
-        [disabled]="isDisabled()"
+        [disabled]="cannotPick()"
         (change)="onFileChange($event)"
         (blur)="dispatchValueBlur('file')"
         [mdyPart]="controlPart()"
@@ -55,7 +55,7 @@ import { MDY_I18N_MESSAGES } from "../../core/i18n";
           type="button"
           class="mdy-button"
           (click)="fileInput.click()"
-          [disabled]="isDisabled()"
+          [disabled]="cannotPick()"
         >
           <svg viewBox="0 0 24 24" class="mdy-file-icon" aria-hidden="true">
             <path d="M9 16h6v-6h4l-7-7-7 7h4v6zm-4 2h14v2H5v-2z"/>
@@ -76,7 +76,7 @@ import { MDY_I18N_MESSAGES } from "../../core/i18n";
               type="button"
               class="mdy-file-clear"
               (click)="clear()"
-              [disabled]="isDisabled()"
+              [disabled]="cannotPick()"
               [attr.aria-label]="i18n.fileClearSelection"
             >
               &times;
@@ -109,6 +109,16 @@ export class MdyFileComponent extends MdyBaseControl<readonly File[] | null> {
   protected readonly widgetContract = MDY_WIDGET_CONTRACTS.file;
   protected override readonly widgetKind = "file" as const;
   protected readonly widgetHasRootClass = this.widgetContract.rootClasses.includes("mdy-renderer");
+  /**
+   * Whether the picker may be operated at all.
+   *
+   * A read-only file field has no word of its own — the contract declares no read-only state for
+   * this kind, because the picker is the browser's and the element's role has no `aria-readonly` to
+   * carry. What is expressible is that the affordance is not operable, and the field itself stays in
+   * play: focusable, submitted, validated. The other two renderers already say it this way.
+   */
+  protected readonly cannotPick = computed(() => this.isDisabled() || this.isReadonly());
+
   readonly accept = input<string>("");
   readonly multiple = input<boolean>(false);
   readonly maxFileSize = input<number>(0);
