@@ -17,6 +17,21 @@
  * to reach the hex box. A renderer that satisfies that has laid the two out in some workable way, and
  * one that fails it has an invisible element in front of a control, however the boxes measure.
  *
+ * **The second half asserts a mechanism, and the mechanism is under decision.** Two renderers give
+ * the swatch another job — it opens the list of preset colours — so the press not reaching the
+ * native input is deliberate there rather than an oversight. What is not deliberate is the
+ * consequence: with the swatch spoken for, a person who wants a colour that is not among the presets
+ * has one way left, which is knowing that `#ff6600` is an orange and typing it.
+ *
+ * So the red these two carry is a **product decision that has not been taken**, not a defect
+ * awaiting repair: whether a colours field must offer a pointer route to any colour at all, or may
+ * legitimately restrict a pointer to an approved set. A brand's palette is a real reason to want the
+ * second.
+ *
+ * When it is taken, this half is rewritten in its terms — as a count of the routes to an arbitrary
+ * colour, which reads the same whichever way the decision goes, and which no renderer may answer
+ * differently from another without that difference being declared.
+ *
  * Claims under attack: UI-005, A11Y-002.
  */
 
