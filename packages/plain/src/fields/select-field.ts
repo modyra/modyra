@@ -23,6 +23,7 @@ import {
   typeaheadMatch,
   MDY_I18N_MESSAGES_DEFAULT,
   type MdyI18nMessages,
+  defaultOptionKey,
 } from "@modyra/widgets";
 import { applyPart, el, setErrors, setText, setIcon } from "../dom.js";
 import { buildFieldShell, insertControl } from "../field-shell.js";
@@ -50,7 +51,15 @@ export function renderSelectField(
   // combobox that filters. Unset is a listbox, which is what a select without a stated opinion is.
   const searchable = (f as { readonly searchable?: boolean }).searchable === true;
   const typeahead = createTypeahead();
-  const keyFor = (option: MdySelectOption<unknown>) => String(option.value);
+  /**
+   * The key the contract derives, not `String()`.
+   *
+   * Every plain object renders as `[object Object]` through it, so an object-valued list gave every
+   * option one key: two different choices became one, and a group holding one value marked all of
+   * them. `defaultOptionKey` is what the controller derives its own keys with, and for a primitive
+   * the two agree exactly — which is why every fixture here concurred and none could see it.
+   */
+  const keyFor = (option: MdySelectOption<unknown>) => defaultOptionKey(option.value);
 
   const controller = createSelectController<unknown>(
     {

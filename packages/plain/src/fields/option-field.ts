@@ -11,6 +11,7 @@ import {
   createOptionFieldController,
   shownErrorsOf,
   visibleErrorsOf,
+  defaultOptionKey,
 } from "@modyra/widgets";
 import { applyPart, el, setErrors, setText } from "../dom.js";
 import { buildFieldShell, insertControl } from "../field-shell.js";
@@ -26,7 +27,15 @@ export function renderOptionField(
   reactivity = observerFor(handle, reactivity);
   const variant = f.kind === "segmented" ? "segmented" : "radio";
   const options = f.options as ReadonlyArray<MdySelectOption<unknown>>;
-  const keyFor = (option: MdySelectOption<unknown>) => String(option.value);
+  /**
+   * The key the contract derives, not `String()`.
+   *
+   * Every plain object renders as `[object Object]` through it, so an object-valued list gave every
+   * option one key: two different choices became one, and a group holding one value marked all of
+   * them. `defaultOptionKey` is what the controller derives its own keys with, and for a primitive
+   * the two agree exactly — which is why every fixture here concurred and none could see it.
+   */
+  const keyFor = (option: MdySelectOption<unknown>) => defaultOptionKey(option.value);
   const controller = createOptionFieldController(
     { widgetId: widgetId, handle, options, variant, keyFor, label: f.label ?? null, ariaLabel: f.ariaLabel ?? null, fieldName: f.name },
     reactivity,

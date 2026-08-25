@@ -1,5 +1,5 @@
 import { type MdyFieldHandle, type MdySelectOption } from "@modyra/core";
-import { filterOptionsByQuery } from "@modyra/widgets";
+import { defaultOptionKey, filterOptionsByQuery } from "@modyra/widgets";
 import { html, nothing, type PropertyDeclarations, type PropertyValueMap } from "lit";
 import { MdyFieldElement, mdyIcon } from "../base.js";
 import {
@@ -320,8 +320,13 @@ export class MdySelectFieldElement extends MdyDropdownFieldElement<unknown | nul
         // Matched by what the element reports rather than by where it sits: the entry for "nothing
         // chosen" comes and goes with the state, so an index into this closure's list is an index
         // into a list that may have moved under it.
+        //
+        // And by the contract's key, not `String()`. An `<option>`'s value is a string, so an
+        // object-valued list wrote `[object Object]` on every one of them: the browser could not
+        // tell them apart, and this lookup answered with whichever came first. Choosing the second
+        // choice put the first in the model — the person's own selection, silently replaced.
         const picked = (event.target as HTMLSelectElement).value;
-        const option = options.find((each) => String(each.value) === picked);
+        const option = options.find((each) => defaultOptionKey(each.value) === picked);
         if (!option) return;
         handle.set(option.value);
         handle.markAsDirty();
@@ -339,9 +344,9 @@ export class MdySelectFieldElement extends MdyDropdownFieldElement<unknown | nul
           >${this.placeholder || " "}</option>`
         : nothing}
       ${options.map((option) => html`<option
-        .value=${String(option.value)}
+        .value=${defaultOptionKey(option.value)}
         ?disabled=${option.disabled === true}
-        ?selected=${option.value === held}
+        ?selected=${this.isChosen(held, option.value)}
       >${option.label}</option>`)}
     </select>
     <!-- The foundation takes the platform's own arrow off every native chooser so that a form of
