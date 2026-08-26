@@ -251,6 +251,18 @@ export class MdySelectFieldElement extends MdyDropdownFieldElement<unknown | nul
           return;
         case "move":
           this.selectAdapter?.dispatch({ type: "move", target: action.target });
+          // The cursor lives in the adapter, which is not one of this element's reactive properties,
+          // so moving it changes nothing on the page: the class that lights the option under it and
+          // the attribute that names that option are both products of a render, and only opening and
+          // typing asked for one. What reads the cursor live — the key that commits — kept working,
+          // so the value arrived while both reports stood on the first option: a person watching saw
+          // the same row lit at every press, and a person listening was told the same option while
+          // the selection travelled past the others.
+          //
+          // Here and not after every dispatch: the intents that open and close already repaint
+          // through `setOpen`, and repainting under them a second time re-enters the overlay's
+          // lifecycle — measured, five of the select's own checks go red.
+          this.requestUpdate();
           return;
         case "select":
           this.selectAdapter?.dispatch({ type: "select", optionKey: action.optionKey });
