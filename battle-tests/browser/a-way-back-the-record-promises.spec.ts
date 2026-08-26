@@ -23,10 +23,16 @@
  * Placing focus somewhere convenient first would test a shortcut nobody presses that way, and would
  * turn a shortcut that only works from one element into a passing check.
  *
- * The second half is about what the remedy costs when it is given. A control that disappears the
+ * **The second question is what the remedy costs when it is given.** A control that disappears the
  * moment it is used takes the reading position with it unless something catches it, and a person
  * walking the page with the keys is returned to the beginning of the document — the price of undoing
  * one value is finding their place again, which is the cost the remedy exists to avoid.
+ *
+ * **The third is the boundary the same gesture has to respect.** Inside a text box that gesture
+ * belongs to the platform — it takes back the last thing typed — and a field that answered it there
+ * would reach past the box a person is working in and change something else entirely, while the
+ * letters they meant to remove stay where they are. The two undos are not competing conveniences: one
+ * of them is the operating system's, and a component does not get to take it.
  *
  * Claims under attack: A11Y-001, A11Y-004.
  */
@@ -55,16 +61,22 @@ const HELD = ["a", "b"];
 /** Both modifiers the record names, because which one is the platform's is the platform's business. */
 const SHORTCUTS = ["Control+z", "Meta+z"] as const;
 
+/**
+ * The one this platform actually binds, for the case that is about the platform's own undo rather
+ * than about the field's. Sending the other would prove nothing: it is not the gesture here.
+ */
+const PLATFORM_UNDO = process.platform === "darwin" ? "Meta+z" : "Control+z";
+
 for (const host of HOSTS) {
-  const mount = async (page: import("@playwright/test").Page, id: string) => {
+  const mount = async (page: import("@playwright/test").Page, id: string, searchable = false) => {
     await page.setViewportSize({ width: 1_200, height: 700 });
     await page.goto(host.page);
     await page.waitForFunction((flag) => (window as never as Record<string, boolean>)[flag] === true, host.ready);
-    await page.evaluate(({ api, mountId, options, held }) => {
+    await page.evaluate(({ api, mountId, options, held, searchable }) => {
       (window as never as Api)[api].mountFields(mountId, [{
-        name: "m", kind: "multiselect", label: "Scelte", clearable: true, options, initialValue: held,
+        name: "m", kind: "multiselect", label: "Scelte", clearable: true, searchable, options, initialValue: held,
       }] as never);
-    }, { api: host.api, mountId: id, options: OPTIONS, held: [...HELD] });
+    }, { api: host.api, mountId: id, options: OPTIONS, held: [...HELD], searchable });
     await page.locator(`[data-form="${id}"]`).waitFor({ timeout: 5_000 });
     await page.evaluate(({ api }) => (window as never as Api)[api].settle?.(), { api: host.api }).catch(() => undefined);
     await page.waitForTimeout(350);
@@ -120,6 +132,46 @@ for (const host of HOSTS) {
       + "wrong value reaches for that shortcut before they look for a button — so the record promises "
       + "a way in that is not there, and nothing on the page says otherwise.",
     ).toBeLessThan(SHORTCUTS.length);
+  });
+
+  test(`the shortcut leaves the platform's own undo alone, ${host.name}`, async ({ page }) => {
+    test.setTimeout(180_000);
+    await mount(page, "typing", true);
+    const removed = await removeOne(page, "typing");
+
+    await page.locator(`[data-form="typing"] .${classOf("trigger")}`).click({ timeout: 5_000 });
+    await page.waitForTimeout(500);
+    const box = page.locator(`.${classOf("search")}`).first();
+    // A field with no place to type cannot answer this question, and answering it anyway would be
+    // reporting a boundary that this arrangement does not have.
+    expect(await box.count(), `${host.name} drew no place to type, so there is no platform undo here`)
+      .toBeGreaterThan(0);
+
+    await box.click({ timeout: 5_000 });
+    await page.keyboard.type("Gam");
+    await page.waitForTimeout(250);
+    const typed = await box.inputValue();
+    expect(typed, `${host.name}: nothing was typed, so the gesture below would be pressed in an empty box`)
+      .not.toBe("");
+
+    await page.keyboard.press(PLATFORM_UNDO);
+    await page.waitForTimeout(500);
+
+    // The premise: the gesture reached the box. If the letters are untouched the key went somewhere
+    // else, and the field having kept its value would say nothing about who answered.
+    expect(
+      await box.inputValue().catch(() => typed),
+      `${host.name}: the letters are unchanged after the platform's own undo, so the gesture did not `
+      + "reach the box and this reads about a key that landed somewhere else",
+    ).not.toBe(typed);
+
+    expect(
+      await value(page, "typing"),
+      `${host.name}: the gesture typed inside a text box put a removed value back into the field. `
+      + "That gesture is the platform's there — it belongs to the letters a person is typing — and "
+      + "answering it reaches past the box they are working in to change something they were not "
+      + "looking at.",
+    ).toBe(removed.after);
   });
 
   test(`giving the remedy does not cost a person their place, ${host.name}`, async ({ page }) => {
