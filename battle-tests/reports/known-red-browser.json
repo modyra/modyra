@@ -1,16 +1,17 @@
 {
   "note": "Browser specs that are red because the defect they describe is open. A red listed here does not fail a build; a red that is not listed is a regression. Rewrite with `npm run battle:browser:ci -- --accept`.",
   "order": "Repair in severity order, as the node tier does. A spec's severity is the worst of the claims its header names; `unknown` is a spec that names none, which is most of them.",
-  "recordedAt": "2026-08-26T10:08:59Z",
-  "openReds": 12,
+  "recordedAt": "2026-08-26T10:31:57Z",
+  "openReds": 13,
   "bySeverity": {
-    "S1": 12
+    "S1": 13
   },
   "knownRed": [
     "a-description-that-belongs-to-another-form.spec.ts › a reference made in one form lands in that form, angular",
     "a-field-that-does-not-fit-a-narrow-screen.spec.ts › a field full of values fits the narrowest width, angular",
     "a-field-that-does-not-fit-a-narrow-screen.spec.ts › a field full of values fits the narrowest width, lit",
     "a-field-that-does-not-fit-a-narrow-screen.spec.ts › a field full of values fits the narrowest width, plain",
+    "a-gesture-that-differs-by-renderer.spec.ts › the gesture that opens a field is the same gesture in every renderer",
     "a-parent-the-contract-named.spec.ts › every part sits inside the part the contract names, plain",
     "a-row-system-three-renderers-disagree-about.spec.ts › a kind is inside the row system in every renderer, or outside it in every renderer",
     "a-row-system-three-renderers-disagree-about.spec.ts › a kind is the same height in every renderer",
