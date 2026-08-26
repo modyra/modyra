@@ -21,5 +21,9 @@ Two elements rather than one: a square that were a door when empty and a colour 
 different things depending on how it was set. Pressed full, either the chooser opens and the tint
 cannot be re-picked, or it selects and the door is gone. ADR 0158.
 
+The door is declared a child of the `popup`, which is where it is drawn. Left to the default it read
+as a child of the root, and a record describing an anatomy no renderer builds is one that will be
+believed by somebody who cannot see the page.
+
 **Migration.** `MdyI18nMessages` gains `colorCustomEntry` and `colorCustomValue`; a consumer with its
 own message table supplies them. `colors` gains an optional `customEntry` part.

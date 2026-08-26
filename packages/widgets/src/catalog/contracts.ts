@@ -255,6 +255,11 @@ export const MDY_WIDGET_CONTRACTS = Object.freeze({
       //
       // The native input is therefore a sibling under the wrapper rather than a child of the
       // picker: where it sits is a rendering choice, that it exists is the contract.
+      // In the popup, which is where it is drawn and where the sentence above puts it: after the
+      // grid is a place inside the panel, not beside the field. Left undeclared it reads as a child
+      // of the root, and a record that describes an anatomy the renderers do not build is a record
+      // that will be believed by somebody who cannot see the page.
+      parents: { customEntry: "popup" },
       // The door to the platform's chooser, and only that. It is a button and it is **not** a swatch:
       // a set has a total and a position within it, so a button inside the grid would announce
       // "thirteen of thirteen" over twelve colours, put a thing of another kind into the arrow walk,

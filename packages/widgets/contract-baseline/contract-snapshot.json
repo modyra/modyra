@@ -3789,7 +3789,7 @@
         },
         "customEntry": {
           "element": "button",
-          "parent": "root",
+          "parent": "popup",
           "optional": true,
           "repeated": false,
           "role": null,
