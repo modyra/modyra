@@ -4579,6 +4579,21 @@
        colours for the one person who has explicitly said they cannot use them — it would make a
        measurement pass and the reader worse off. */
     @media (forced-colors: active) {
+        /* The one control in this library whose colour is its content, and the only place a forced
+           palette may be refused.
+           Everywhere else a colour is decoration and the imposed palette wins, because the person
+           who imposed it needs a contrast this one does not give them. Here the swatches *are* the
+           values: repainted, six become two, the question "which colour do you want" is asked over a
+           row of near-identical squares — and every contrast check passes, because each forced tint
+           contrasts well with the surface. Nothing measures whether they differ from *each other*,
+           so the control is erased and every instrument reports health.
+           The cost is paid rather than dodged: only the fill is exempt. The border, the selected
+           ring and every word in the panel obey the imposed palette like everything else, and the
+           swatches carry a name so they stay distinguishable without their colour at all. */
+        .mdy-color-swatch {
+            forced-color-adjust: none;
+        }
+
         .mdy-chip__remove::before,
         .mdy-chip__move::before {
             background-color: CanvasText;

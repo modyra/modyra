@@ -24,7 +24,10 @@ const PRESENTATION = Object.fromEntries([
   ["radio", null, { label: "Plan", options: OPTIONS() }],
   ["segmented", null, { label: "Mode", options: OPTIONS() }],
   ["select", null, { label: "Country", options: OPTIONS() }],
-  ["multiselect", [], { label: "Palette", options: OPTIONS(), reorderable: true }],
+  // The one field that holds a dozen: the strip's cost, and the screen-reader walk, are both
+  // questions about length rather than about the control working at all.
+  ["multiselect", A_DOZEN().map((option) => option.value),
+    { label: "Palette", options: A_DOZEN(), reorderable: true }],
   ["datepicker", null, { label: "Birthday" }],
   ["daterange", { start: null, end: null }, { label: "Stay" }],
   ["timepicker", null, { label: "Meeting" }],
@@ -50,5 +53,34 @@ function OPTIONS() {
     { value: "indigo", label: "Indigo" },
     { value: "cloud", label: "Cloud" },
     { value: "night", label: "Night" },
+  ];
+}
+
+/**
+ * A dozen, for the field where the length of the walk is the thing being looked at.
+ *
+ * Three is enough to see that a strip works and not enough to see what it costs. Crossing a chosen
+ * value with the arrows is two presses at three and twelve at twelve, and the question a person with
+ * a screen reader is answering — *is this reachable, or do I give up before the end* — only has an
+ * answer at a length somebody could give up on. A short version of the walk is not a short version
+ * of the question.
+ *
+ * Ordinary names rather than one-syllable ones, because how long a value takes to hear is part of
+ * what is being measured.
+ */
+function A_DOZEN() {
+  return [
+    { value: "indigo", label: "Indigo" },
+    { value: "cloud", label: "Cloud" },
+    { value: "night", label: "Night" },
+    { value: "sienna", label: "Sienna" },
+    { value: "harbour", label: "Harbour" },
+    { value: "moss", label: "Moss" },
+    { value: "cobalt", label: "Cobalt" },
+    { value: "amber", label: "Amber" },
+    { value: "slate", label: "Slate" },
+    { value: "coral", label: "Coral" },
+    { value: "juniper", label: "Juniper" },
+    { value: "saffron", label: "Saffron" },
   ];
 }
