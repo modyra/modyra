@@ -576,6 +576,13 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
             // two renderers only focused it. What a press does is decided by what it landed on, not
             // by what that thing happens to be made of.
             if (e.target !== e.currentTarget) return;
+            // The opener takes the reading position before the list opens, exactly as it does when
+            // the keyboard opens it. A press leaves focus wherever the pointer left it — on the box,
+            // which is not focusable, so nowhere — and a panel opened with focus on nothing answers
+            // no arrow and no dismissal: the person who opened it with a hand on the mouse and then
+            // reached for the keyboard cannot close what they just opened. Which way in a person
+            // came is not a statement about which hand they will use next.
+            this.querySelector<HTMLElement>(`.${this.partClass("trigger")}`)?.focus();
             if (!this._open) this.overlay.open(e);
             this.toggleOpen(handle);
           }}
