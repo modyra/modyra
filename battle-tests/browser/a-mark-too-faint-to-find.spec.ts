@@ -33,7 +33,7 @@ type Api = Record<string, Record<string, (...args: never[]) => unknown>>;
 const SCALE = 3;
 const FLOOR = 3;
 
-const MARKS = ["wayBack", "clearAll", "arrow"] as const;
+const MARKS = ["wayBackAction", "clearAll", "arrow"] as const;
 const selectorFor = (part: string) => (partClasses("multiselect", part) as string[]).map((one) => `.${one}`).join("");
 
 const OPTIONS = [{ value: "a", label: "Alfa" }, { value: "b", label: "Beta" }, { value: "c", label: "Gamma" }];
@@ -69,11 +69,11 @@ for (const host of HOSTS) {
       // the way back appear, and it is also what makes the clear itself go away — there is nothing
       // left to clear. Reading all three afterwards measured two and reported the third as undrawn,
       // which is a mark going unchecked while the file passes.
-      for (const part of MARKS.filter((one) => one !== "wayBack")) await read(part);
+      for (const part of MARKS.filter((one) => one !== "wayBackAction")) await read(part);
 
       await paper.locator(`[data-form="faint"] ${selectorFor("clearAll")}`).first().click({ timeout: 5_000 }).catch(() => undefined);
-      await became(() => paper.locator(`[data-form="faint"] ${selectorFor("wayBack")}`).count().then((n) => n > 0));
-      await read("wayBack");
+      await became(() => paper.locator(`[data-form="faint"] ${selectorFor("wayBackAction")}`).count().then((n) => n > 0));
+      await read("wayBackAction");
 
       console.log(`[${host.name}] ${JSON.stringify(readings)}`);
 
