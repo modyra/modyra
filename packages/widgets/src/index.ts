@@ -36,6 +36,7 @@ export {
   MDY_SEMANTICS_REQUIRING_NAME,
   MDY_WIDGET_RELATIONS,
   partsRequiringName,
+  openPlatformChooser,
 } from "./relations.js";
 export type {
   MdyAccessibleNameSource,

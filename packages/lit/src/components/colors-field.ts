@@ -1,7 +1,7 @@
 import { mdyPart } from "../mdy-part.js";
 import {
   keyBindingFor,
-  MDY_COLOR_PRESETS, MDY_WIDGET_CONTRACTS, overlayControlledId, rowRovingIndex } from "@modyra/widgets";
+  MDY_COLOR_PRESETS, MDY_WIDGET_CONTRACTS, openPlatformChooser, overlayControlledId, rowRovingIndex } from "@modyra/widgets";
 import { html, nothing, type PropertyDeclarations } from "lit";
 import { type MdyFieldHandle } from "@modyra/core";
 import { applyOverlayIntent, bindOutsidePointer, closeOverlayOutOfPlay } from "../widget-runtime/overlay-host.js";
@@ -205,7 +205,7 @@ export class MdyColorsFieldElement extends MdyFieldElement<string | null> {
         <button
           type="button"
           class="${this.partClass("customEntry")}"
-          @click=${() => this.querySelector<HTMLInputElement>(`.${this.partClass("control")}`)?.click()}
+          @click=${() => openPlatformChooser(this.querySelector<HTMLInputElement>(`.${this.partClass("control")}`))}
         >${this.messages.colorCustomEntry}</button>
         <button
           type="button"
@@ -286,7 +286,7 @@ export class MdyColorsFieldElement extends MdyFieldElement<string | null> {
               style=${NATIVE_HIDDEN_STYLE}
               .value=${handle.value() ?? "#000000"}
               ?disabled=${handle.disabled()}
-              @input=${(e: Event) => {
+              @change=${(e: Event) => {
                 handle.set((e.target as HTMLInputElement).value);
                 handle.markAsDirty();
                 handle.markAsTouched();

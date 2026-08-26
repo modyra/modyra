@@ -137,6 +137,28 @@ change that did not happen is worse than silence. Closed with a colour: the valu
 returns to the door, and the change is announced, because the chooser's own confirmation happened
 inside its window and nothing perceivable happened in ours.
 
+### The chooser reports a choice, not a dragging
+
+The requirement above — *where the chooser applies colour as it is dragged, cancel must restore the
+previous value* — is met by taking nothing to restore.
+
+A colour control fires `input` at every step of a drag through the platform's chooser and `change`
+when the person settles. All three renderers took the value on `input`, so the field recorded colours
+nobody chose, and abandoning the chooser left whichever one the pointer had been passing over. The
+field then held a valid colour that had genuinely been on the screen a moment earlier: **only the
+person who cancelled could tell, and only if they remembered what they had.**
+
+They now take it on `change`. There is nothing to restore because nothing was taken, and the colour
+being dragged past is shown by the chooser itself, which is where the person is looking.
+
+**What this gives up**, stated rather than glossed: the page no longer previews the drag. A consumer
+listening for a value while a person moves the pointer through the chooser hears nothing until they
+settle — which is the same trade the record makes everywhere else, that a presentation and a value
+are different things.
+
+**What is still unverified**: whether a real platform fires `change` on cancel, and with which value.
+No runner opens that chooser, so this is one of the checks that waits for a person with a browser.
+
 **The hex box is not removable.** It is the route that works when that surface does not — and that
 surface is one we cannot name, cannot describe and cannot guarantee is operable by keyboard.
 

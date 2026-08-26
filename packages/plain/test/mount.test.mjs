@@ -508,9 +508,17 @@ test("daterange, file and colors mount and round-trip their own value shape", ()
   assert.deepEqual(mounted.form.f.cv.value(), []);
   assert.ok(host.querySelector(".mdy-file-container > .mdy-file-content .mdy-file-list"));
 
+  // The platform's chooser reports a drag with `input` and the choice with `change`. A step of the
+  // drag must not reach the model: the field would hold a colour nobody chose, and abandoning the
+  // chooser would leave whichever one the pointer was passing over — valid, on screen a moment
+  // earlier, and wrong in a way only the person who cancelled could notice.
   const color = host.querySelector(".mdy-renderer--colors .mdy-colors__native-hidden");
+  const before = mounted.form.f.brand.value();
   color.value = "#7067ff";
   color.dispatchEvent(new Event("input"));
+  assert.equal(mounted.form.f.brand.value(), before, "a drag through the chooser is not a choice");
+
+  color.dispatchEvent(new Event("change"));
   assert.equal(mounted.form.f.brand.value(), "#7067ff");
 
   mounted.dispose();

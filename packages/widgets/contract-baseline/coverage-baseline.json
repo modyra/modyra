@@ -1,8 +1,8 @@
 {
   "note": "Public names not yet asserted or not yet shown. The list may only get shorter.",
   "score": {
-    "published": 858,
-    "asserted": 602,
+    "published": 859,
+    "asserted": 603,
     "shown": 93
   },
   "uncovered": [
@@ -3908,6 +3908,12 @@
     },
     {
       "name": "openOverlay",
+      "asserted": true,
+      "shown": false,
+      "reason": "published and never shown"
+    },
+    {
+      "name": "openPlatformChooser",
       "asserted": true,
       "shown": false,
       "reason": "published and never shown"

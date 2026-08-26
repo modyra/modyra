@@ -12,7 +12,7 @@ import {
 } from "@angular/core";
 
 import { MDY_OVERLAY_PORTAL_CLASS } from "@modyra/widgets";
-import { MDY_COLOR_PRESETS, MDY_WIDGET_CONTRACTS, colorValueEquals, focusWhenShown, keyBindingFor, rowRovingIndex, colorValueTransition, popupPlacementClass, overlayControlledId, projectOverlayOpenerA11y } from "@modyra/widgets";
+import { MDY_COLOR_PRESETS, MDY_WIDGET_CONTRACTS, colorValueEquals, focusWhenShown, openPlatformChooser, keyBindingFor, rowRovingIndex, colorValueTransition, popupPlacementClass, overlayControlledId, projectOverlayOpenerA11y } from "@modyra/widgets";
 import { MdyErrorListComponent } from "../../control/error-list.component";
 import { MdyControlLabelComponent } from "../../control/mdy-control-label.component";
 import { MdyIconComponent } from "../../control/mdy-icon.component";
@@ -87,7 +87,7 @@ import { MdyOverlayPanelComponent } from "../../core/overlay-panel.component";
             tabindex="-1"
             [value]="value() || '#4361ee'"
             [disabled]="isDisabled()"
-            (input)="onInput($event)"
+            (change)="onInput($event)"
             class="mdy-colors__native-hidden"
           />
 
@@ -338,8 +338,8 @@ export class MdyColorsComponent extends MdyOverlayControl<string> {
   protected openPlatformChooser(): void {
     const held = this.value();
     if (typeof held === "string" && held !== "") this.remembered.set(held);
-    (this.hostElement.nativeElement as HTMLElement)
-      .querySelector<HTMLInputElement>(".mdy-colors__native-hidden")?.click();
+    openPlatformChooser((this.hostElement.nativeElement as HTMLElement)
+      .querySelector<HTMLInputElement>(".mdy-colors__native-hidden"));
   }
 
   protected selectColor(color: string): void {

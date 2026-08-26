@@ -173,7 +173,19 @@ export function renderColorsField(
     if (transition.close) open.set(false);
   }
 
-  control.addEventListener("input", () => commit({ type: "native", value: control.value }));
+  /**
+   * The platform's chooser reports the choice, not the dragging.
+   *
+   * A colour control fires `input` at every step of a drag through the platform's chooser and
+   * `change` when the person settles. Taking the value on `input` records colours nobody chose, and
+   * abandoning the chooser leaves whichever one the pointer was passing over — a field that keeps a
+   * choice the person walked away from.
+   *
+   * There is nothing to restore afterwards because nothing was taken: the page follows the value the
+   * person settled on, and the colour they are dragging past is shown by the chooser itself, which
+   * is where they are looking. ADR 0158.
+   */
+  control.addEventListener("change", () => commit({ type: "native", value: control.value }));
   hexInput.addEventListener("change", () => commit({ type: "text", value: hexInput.value }));
   hexInput.addEventListener("blur", () => handle.markAsTouched());
   toggle.addEventListener("click", () => open.set(!open()));

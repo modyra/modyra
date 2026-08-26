@@ -159,3 +159,21 @@ export function partsRequiringName(kind: MdyWidgetKind): readonly string[] {
     .filter((node) => MDY_SEMANTICS_REQUIRING_NAME.includes(node.element))
     .map((node) => node.part);
 }
+
+/**
+ * Opens the platform's own colour chooser from the hidden native input.
+ *
+ * `showPicker` and not a click: a renderer may guard that input's click to keep a press on the
+ * swatch from reaching it twice, and a guarded click is one this door cannot open — the button says
+ * it opens something and does nothing, which is the defect a door exists to avoid. The click is the
+ * fallback for a platform without the explicit call.
+ *
+ * Called rather than focused. On some platforms the chooser is a separate window; a panel that
+ * dismissed when focus left the page would take the door with it and leave nothing to come back to.
+ */
+export function openPlatformChooser(control: HTMLInputElement | null | undefined): void {
+  if (control === null || control === undefined) return;
+  const withPicker = control as HTMLInputElement & { showPicker?: () => void };
+  if (typeof withPicker.showPicker === "function") withPicker.showPicker();
+  else control.click();
+}
