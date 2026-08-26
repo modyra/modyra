@@ -26,7 +26,7 @@
 import { expect, test } from "@playwright/test";
 import { messagesForLocale } from "@modyra/widgets";
 
-import { HOSTS, bench, chosen , SETTLES} from "./bench";
+import { became, HOSTS, bench, chosen , SETTLES} from "./bench";
 
 /**
  * The verb a chip's move button wears, taken from the catalogue rather than written out.
@@ -51,7 +51,11 @@ for (const host of HOSTS) {
 
   const takeTheWayBack = async (page: import("@playwright/test").Page, after: string) => {
     const offered = page.locator(UNDO);
-    const count = await offered.count();
+    // The offer is drawn in answer to the act, so it arrives on whatever schedule the renderer keeps.
+    // Counting once and concluding "nothing offered" reports the reading's own moment rather than the
+    // page: a renderer that paints a tick later fails a check a slower one passes, and the failure
+    // looks exactly like an offer that was never made.
+    const count = await became(() => offered.count().then((many) => many > 0)) ? await offered.count() : 0;
     if (count === 0) return { offered: false as const };
     await offered.first().click({ timeout: 5_000 });
     await page.waitForTimeout(300);

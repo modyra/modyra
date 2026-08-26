@@ -71,8 +71,16 @@ for (const host of HOSTS) {
       // which is a mark going unchecked while the file passes.
       for (const part of MARKS.filter((one) => one !== "wayBackAction")) await read(part);
 
-      await paper.locator(`[data-form="faint"] ${selectorFor("clearAll")}`).first().click({ timeout: 5_000 }).catch(() => undefined);
-      await became(() => paper.locator(`[data-form="faint"] ${selectorFor("wayBackAction")}`).count().then((n) => n > 0));
+      await paper.locator(`[data-form="faint"] ${selectorFor("clearAll")}`).first().click({ timeout: 5_000 });
+      // A box, not a presence. The mark enters the document before it is laid out, and in whichever
+      // renderer that gap is widest a reading taken on presence alone finds an element with no
+      // geometry and reports it as a mark that was never drawn — the premise below then fails for a
+      // reason that belongs to the reading rather than to the page.
+      await became(async () => {
+        const box = await paper.locator(`[data-form="faint"] ${selectorFor("wayBackAction")}`).first()
+          .boundingBox().catch(() => null);
+        return box !== null && box.width >= 1 && box.height >= 1;
+      }, { timeout: 2_000 });
       await read("wayBackAction");
 
       console.log(`[${host.name}] ${JSON.stringify(readings)}`);
