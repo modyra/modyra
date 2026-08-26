@@ -59,7 +59,11 @@ const MOVES = (MDY_WIDGET_KEYBOARD.colors ?? [])
  * a key that leaves the palette must not read as a key that moved within it.
  */
 const position = (page: import("@playwright/test").Page) => page.evaluate(() => {
-  const swatches = Array.from(document.querySelectorAll(".mdy-color-swatch, [role='option'], [role='gridcell']"));
+  // Only the swatches a person can reach. A palette may hold a place for a colour that has not been
+  // chosen yet and keep it out of sight until it has; such an element is not in the accessibility
+  // tree, takes no focus, and counting it would make every reading below one place wrong.
+  const swatches = Array.from(document.querySelectorAll(".mdy-color-swatch, [role='option'], [role='gridcell']"))
+    .filter((one) => (one as HTMLElement).offsetParent !== null || one.getClientRects().length > 0);
   const active = document.activeElement;
   const focused = active === null ? -1 : swatches.indexOf(active);
   // A renderer may hold the position without moving DOM focus, so the same index is read from the
@@ -84,7 +88,9 @@ for (const host of HOSTS) {
     await page.locator(root).waitFor({ timeout: 5_000 });
     await page.locator(`${root} [aria-haspopup]`).first().click({ timeout: 5_000 });
 
-    const swatches = page.locator(".mdy-color-swatch, [role='option'], [role='gridcell']");
+    const swatches = page.locator(
+      ".mdy-color-swatch:visible, [role='option']:visible, [role='gridcell']:visible",
+    );
     await expect(swatches.first()).toBeVisible({ timeout: 5_000 });
     const count = await swatches.count();
     // A palette with one swatch has no second place for a move to go, and every key would read as
