@@ -393,6 +393,11 @@ export function renderMultiselectField(
     // and the direction comes from the binding rather than from the key, because the strip runs in
     // the writing direction and `ArrowLeft` moves a chip *later* in a right-to-left document.
     chip.addEventListener("keydown", (event) => {
+      // A key pressed on a control the chip carries is that control's, not the chip's. The chip's own
+      // bindings share `Enter` and `Space` with the platform's activation of a button, so answering
+      // here takes the key from the button a person has focused inside it — and the chip does
+      // something else with it, which is worse than doing nothing.
+      if (event.target !== chip) return;
       const combo = `${event.altKey ? "Alt+" : ""}${event.key}`;
       // Asked as the chip. A key with no binding here belongs to the control and must reach it —
       // `ArrowDown` opens the popup from the trigger, arrows move the chip (grabbed or not).
@@ -860,6 +865,21 @@ export function renderMultiselectField(
    * cursor to move, so a person who opened the list with a keyboard could reach the filter box and
    * nothing else — the policy had returned both all along with nowhere to send them.
    */
+  /**
+   * Whether a key that reached the box was aimed at the box.
+   *
+   * The bindings this policy answers name the part they belong to — `Enter` and `Space` are declared
+   * `on: "trigger"` — and a command standing inside the field is a different part. Every one of them
+   * is a `<button>`, which the platform already activates with both keys; answering the key here as
+   * the field's own calls `preventDefault` on it, and the button a person has focused draws its ring,
+   * says it can be operated, and does nothing.
+   *
+   * Compared against the opener by identity, not by tag: the opener is a button too, and it is the
+   * one part whose keys these are.
+   */
+  const aimedAtTheField = (target: EventTarget | null): boolean =>
+    target === trigger || !(target instanceof HTMLElement) || target.closest("button") === null;
+
   const onKeydown = (event: KeyboardEvent): void => {
     const state = controller.state();
     const action = multiselectOverlayAction({
@@ -898,7 +918,9 @@ export function renderMultiselectField(
     if (key === null) return;
     queueMicrotask(() => optionEls.get(key)?.[0]?.chip.focus());
   }
-  control.addEventListener("keydown", onKeydown);
+  // The guard is the box's and not the popup's: inside the popup an option *is* a button, and the
+  // keys that move between options and commit one are exactly this policy's.
+  control.addEventListener("keydown", (event) => { if (aimedAtTheField(event.target)) onKeydown(event); });
   popup.addEventListener("keydown", onKeydown);
 
   const undismiss = dismissOnOutsidePointer(

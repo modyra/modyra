@@ -690,6 +690,11 @@ export class MdyMultiselectComponent<TValue = string>
   }
 
   protected onChipKeydown(event: KeyboardEvent, optionKey: string): void {
+    // A key pressed on a control the chip carries is that control's, not the chip's. The chip's own
+    // bindings share `Enter` and `Space` with the platform's activation of a button, so answering
+    // here takes the key from the button a person has focused inside it — and the chip does
+    // something else with it, which is worse than doing nothing.
+    if (event.target !== event.currentTarget) return;
     // Asked as the chip. A key with no binding here belongs to the control and must reach it —
     // `ArrowDown` opens the popup from the trigger, arrows move the chip (grabbed or not).
     const binding = keyBindingFor("multiselect", `${event.altKey ? "Alt+" : ""}${event.key}`, this.open(), "chip");

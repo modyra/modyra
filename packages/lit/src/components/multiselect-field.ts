@@ -568,7 +568,21 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
              options is the group the catalogue does declare. -->
         <div
           class="mdy-multiselect ${this._open ? "mdy-multiselect--open" : ""}"
-          @keydown=${(e: KeyboardEvent) => this.onKeydown(e, handle)}
+          @keydown=${(e: KeyboardEvent) => {
+            // A key that reached the box was not necessarily aimed at it. The bindings this policy
+            // answers name the part they belong to — `Enter` and `Space` are declared `on: "trigger"`
+            // — and a command standing inside the field is a different part. Every one of them is a
+            // `<button>`, which the platform already activates with both keys; answering here calls
+            // `preventDefault` on it, and the button a person has focused draws its ring, says it can
+            // be operated, and does nothing.
+            // Compared against the opener by identity, not by tag: the opener is a button too, and
+            // it is the one part whose keys these are. The popup is not covered by this — an option
+            // there is a button, and the keys that move between options are this policy's.
+            const target = e.target;
+            const opener = this.querySelector(`.${this.partClass("trigger")}`);
+            if (target !== opener && target instanceof HTMLElement && target.closest("button") !== null) return;
+            this.onKeydown(e, handle);
+          }}
           @click=${(e: Event) => {
             // The box forwards a press on **its own** area, and nothing else (ADR 0142). Asking
             // instead whether the press crossed a `button` on the way up let a chip through, because
@@ -731,6 +745,11 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
    * rather than the binding would have to know that.
    */
   private onChipKeydown(event: KeyboardEvent, handle: MdyFieldHandle<readonly unknown[]>, optionKey: string): void {
+    // A key pressed on a control the chip carries is that control's, not the chip's. The chip's own
+    // bindings share `Enter` and `Space` with the platform's activation of a button, so answering
+    // here takes the key from the button a person has focused inside it — and the chip does
+    // something else with it, which is worse than doing nothing.
+    if (event.target !== event.currentTarget) return;
     // Asked as the chip. A key with no binding here belongs to the control and must reach it —
     // `ArrowDown` opens the popup from the trigger, arrows move the chip (grabbed or not).
     const binding = keyBindingFor("multiselect", `${event.altKey ? "Alt+" : ""}${event.key}`, this._open, "chip");
