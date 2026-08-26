@@ -38,8 +38,20 @@ export class MdyColorsFieldElement extends MdyFieldElement<string | null> {
     this._open = false;
   }
 
+  /**
+   * The colour picked by hand, kept while the field lives.
+   *
+   * A value the presets do not hold came from the chooser or from the hex box, and the panel keeps
+   * it so that trying a preset and changing one's mind costs one press rather than the whole chooser
+   * again — which is the behaviour a colour picker exists for. Two colours are then on the page, one
+   * carrying the selected mark and one merely present, as eleven of twelve already are.
+   */
+  private _custom: string | null = null;
+
   override willUpdate(changed: Map<string, unknown>): void {
     super.willUpdate?.(changed);
+    const held = this.field?.value() ?? null;
+    if (typeof held === "string" && held !== "" && !this.presets.includes(held)) this._custom = held;
     // A field out of play keeps no popup over it: the overlay is torn down where every renderer
     // tears it down, in answer to the field rather than to a gesture.
     const handle = this.field;
@@ -176,7 +188,25 @@ export class MdyColorsFieldElement extends MdyFieldElement<string | null> {
               }}
             ></button>`,
           )}
+          ${this._custom === null ? nothing : html`<button
+            type="button"
+            class="mdy-color-swatch ${handle.value() === this._custom ? "mdy-color-swatch--active" : ""}"
+            role="option"
+            aria-selected=${handle.value() === this._custom ? "true" : "false"}
+            aria-label=${this.messages.colorCustomValue.replace("{value}", this._custom)}
+            style="background-color:${this._custom}"
+            @click=${() => { this.set(handle, this._custom!); this.close(handle); }}
+          ></button>`}
         </div>
+        <!-- The door, after the grid and outside it. A button and never a swatch: a set has a total
+             and a position within it, so a button among the options would announce "thirteen of
+             thirteen" over twelve colours and claim a place a listbox does not admit. It carries no
+             tint and never the selected mark, because it is not a value. -->
+        <button
+          type="button"
+          class="${this.partClass("customEntry")}"
+          @click=${() => this.querySelector<HTMLInputElement>(`.${this.partClass("control")}`)?.click()}
+        >${this.messages.colorCustomEntry}</button>
         <button
           type="button"
           class="mdy-button"

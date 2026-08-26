@@ -1,6 +1,8 @@
 ---
 "@modyra/widgets": major
 "@modyra/plain": minor
+"@modyra/lit": minor
+"@modyra/angular": minor
 "@modyra/styles": patch
 ---
 
@@ -21,5 +23,3 @@ cannot be re-picked, or it selects and the door is gone. ADR 0158.
 
 **Migration.** `MdyI18nMessages` gains `colorCustomEntry` and `colorCustomValue`; a consumer with its
 own message table supplies them. `colors` gains an optional `customEntry` part.
-
-This lands in `@modyra/plain` first. Lit and Angular follow.

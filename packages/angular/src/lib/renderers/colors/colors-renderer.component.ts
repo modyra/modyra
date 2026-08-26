@@ -8,6 +8,7 @@ import {
   inject,
   Injector,
   input,
+  signal,
 } from "@angular/core";
 
 import { MDY_OVERLAY_PORTAL_CLASS } from "@modyra/widgets";
@@ -162,7 +163,28 @@ import { MdyOverlayPanelComponent } from "../../core/overlay-panel.component";
                 (click)="selectColor(color)"
               ></button>
             }
+            @if (customColour(); as custom) {
+              <button
+                type="button"
+                role="option"
+                class="mdy-color-swatch"
+                [style.--color]="custom"
+                [class.mdy-color-swatch--active]="isActiveColor(custom)"
+                [attr.aria-selected]="isActiveColor(custom)"
+                [attr.aria-label]="i18n.colorCustomValue.replace('{value}', custom)"
+                (click)="selectColor(custom)"
+              ></button>
+            }
           </div>
+          <!-- The door, after the grid and outside it. A button and never a swatch: a set has a
+               total and a position within it, so a button among the options would announce "thirteen
+               of thirteen" over twelve colours and claim a place a listbox does not admit. It carries
+               no tint and never the selected mark, because it is not a value. -->
+          <button
+            type="button"
+            class="mdy-colors__custom-entry"
+            (click)="openPlatformChooser()"
+          >{{ i18n.colorCustomEntry }}</button>
         </div>
       </mdy-overlay-panel>
     </div>
@@ -290,6 +312,34 @@ export class MdyColorsComponent extends MdyOverlayControl<string> {
 
   protected onTextInput(event: Event): void {
     this.applyColorIntent("text", (event.target as HTMLInputElement).value);
+  }
+
+  /**
+   * The colour picked by hand, kept while the field lives.
+   *
+   * A value the presets do not hold came from the chooser or from the hex box, and the panel keeps
+   * it so that trying a preset and changing one's mind costs one press rather than the whole chooser
+   * again — which is the behaviour a colour picker exists for.
+   */
+  private readonly remembered = signal<string | null>(null);
+
+  protected readonly customColour = computed((): string | null => {
+    const held = this.value();
+    if (typeof held === "string" && held !== "" && !this.presets().includes(held)) return held;
+    return this.remembered();
+  });
+
+  /**
+   * Opens the platform's own chooser, through the hidden native input that is already there.
+   *
+   * Clicked rather than focused: on some platforms the chooser is a separate window, and a panel
+   * that closed when focus left would take this button with it and leave nothing to return to.
+   */
+  protected openPlatformChooser(): void {
+    const held = this.value();
+    if (typeof held === "string" && held !== "") this.remembered.set(held);
+    (this.hostElement.nativeElement as HTMLElement)
+      .querySelector<HTMLInputElement>(".mdy-colors__native-hidden")?.click();
   }
 
   protected selectColor(color: string): void {
