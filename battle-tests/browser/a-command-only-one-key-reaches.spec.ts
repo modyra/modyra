@@ -18,6 +18,13 @@
  * destruction answers a key and the remedy does not is not half-working: it is a control that takes
  * things away and will not give them back, from exactly the person who has no pointer to reach for.
  *
+ * **Both configurations of the strip are exercised, because they carry different bindings.** When
+ * the chosen values can be reordered, each chip takes keys of its own — and a key pressed on a button
+ * *inside* a chip travels through the chip on its way out. A file that mounts only the arrangement
+ * where the chip binds nothing cannot see a key being answered by the wrong owner: it would read a key
+ * that arrives and does something else as a key that arrives and works, which is the direction that
+ * hides the defect rather than inventing one.
+ *
  * **The pointer is the control.** A command that does nothing by pointer either is a different defect
  * — nothing wired at all — and reporting it here would name the keyboard for something the keyboard
  * is not responsible for. So every command is exercised with a press first, in the same run, and this
@@ -53,6 +60,15 @@ const OPTIONS = [
 const HELD = ["a", "b"];
 
 /**
+ * The two arrangements of the strip. They differ in what a chip binds for itself, which is what
+ * decides whether a key pressed on a button inside a chip has more than one possible owner.
+ */
+const STRIPS = [
+  { name: "a strip that does not reorder", reorderable: false },
+  { name: "a strip whose chips take keys of their own", reorderable: true },
+] as const;
+
+/**
  * The commands the field draws, and whether the field has to be disturbed before one is offered.
  *
  * `afterRemoval` marks the remedy, which only exists once something has been taken away.
@@ -70,15 +86,15 @@ for (const host of HOSTS) {
   test(`every command in the field answers both keys a button answers, ${host.name}`, async ({ page }) => {
     test.setTimeout(300_000);
 
-    const mount = async (id: string) => {
+    const mount = async (id: string, reorderable: boolean) => {
       await page.setViewportSize({ width: 1_200, height: 700 });
       await page.goto(host.page);
       await page.waitForFunction((flag) => (window as never as Record<string, boolean>)[flag] === true, host.ready);
-      await page.evaluate(({ api, mountId, options, held }) => {
+      await page.evaluate(({ api, mountId, options, held, reorderable }) => {
         (window as never as Api)[api].mountFields(mountId, [{
-          name: "m", kind: "multiselect", label: "Scelte", clearable: true, options, initialValue: held,
+          name: "m", kind: "multiselect", label: "Scelte", clearable: true, reorderable, options, initialValue: held,
         }] as never);
-      }, { api: host.api, mountId: id, options: OPTIONS, held: [...HELD] });
+      }, { api: host.api, mountId: id, options: OPTIONS, held: [...HELD], reorderable });
       await page.locator(`[data-form="${id}"]`).waitFor({ timeout: 5_000 });
       await page.evaluate(({ api }) => (window as never as Api)[api].settle?.(), { api: host.api }).catch(() => undefined);
       await page.waitForTimeout(350);
@@ -94,8 +110,8 @@ for (const host of HOSTS) {
      * `by` is either a key name or the press, so the pointer control travels the same path as the
      * keys and any difference between them belongs to the giving and not to the arranging.
      */
-    const give = async (command: (typeof COMMANDS)[number], by: string, id: string) => {
-      await mount(id);
+    const give = async (command: (typeof COMMANDS)[number], by: string, id: string, reorderable: boolean) => {
+      await mount(id, reorderable);
       if (command.afterRemoval) {
         await page.locator(`[data-form="${id}"] .${classOf("chipRemove")}`).first().click({ timeout: 5_000 });
         await page.waitForTimeout(500);
@@ -122,17 +138,21 @@ for (const host of HOSTS) {
     const unwired: string[] = [];
     const unreachable: string[] = [];
 
-    for (const command of COMMANDS) {
-      const byPress = await give(command, "a press", `key_${command.part}_press`);
-      expect(byPress, `${host.name} draws no ${command.name}`).not.toHaveProperty("gone", true);
+    for (const strip of STRIPS) {
+      const where = `${strip.name}: `;
+      for (const command of COMMANDS) {
+        const tag = `${command.part}_${strip.reorderable ? "moves" : "still"}`;
+        const byPress = await give(command, "a press", `key_${tag}_press`, strip.reorderable);
+        expect(byPress, `${host.name} draws no ${command.name} in ${strip.name}`).not.toHaveProperty("gone", true);
 
-      // The control. A command nothing operates is a different defect and is named as one.
-      if (byPress.acted !== true) { unwired.push(command.name); continue; }
+        // The control. A command nothing operates is a different defect and is named as one.
+        if (byPress.acted !== true) { unwired.push(`${where}${command.name}`); continue; }
 
-      for (const key of KEYS) {
-        const outcome = await give(command, key, `key_${command.part}_${key}`);
-        if ("misfocused" in outcome) { unreachable.push(`${command.name} could not be focused`); continue; }
-        if (outcome.acted !== true) deaf.push(`${command.name} does not answer ${key}`);
+        for (const key of KEYS) {
+          const outcome = await give(command, key, `key_${tag}_${key}`, strip.reorderable);
+          if ("misfocused" in outcome) { unreachable.push(`${where}${command.name} could not be focused`); continue; }
+          if (outcome.acted !== true) deaf.push(`${where}${command.name} does not answer ${key}`);
+        }
       }
     }
 
