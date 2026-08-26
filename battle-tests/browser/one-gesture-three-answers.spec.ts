@@ -69,13 +69,23 @@ async function chooseWithOneStep(
       .valueOf(mountId).f ?? null),
     { api: host.api, mountId: id });
 
-  /** Where the reading position is, by whichever of the two mechanisms an anatomy uses to carry it. */
+  /**
+   * Whatever an arrow would have changed, by any of the mechanisms an anatomy uses.
+   *
+   * **Not the reading position alone.** Two families of control answer the same key in two ways: a
+   * list moves the position among its options and leaves every value where it was, while a control
+   * made of segments keeps the position still and changes the number under it. Watching only for the
+   * position to move waits for something one of the two families never does — the wait then expires
+   * on every run, and the keystrokes that follow land on a control that is not where they assume it
+   * is. It expired silently for three runs before anything said so.
+   */
   const readingAt = () => page.evaluate((mountId) => {
     const root = document.querySelector(`[data-form="${mountId}"]`);
-    const active = document.activeElement;
+    const active = document.activeElement as HTMLInputElement | null;
     const pointed = root?.querySelector("[aria-activedescendant]")?.getAttribute("aria-activedescendant") ?? "";
     const selected = root?.querySelector("[aria-selected='true'],[aria-current='true']")?.id ?? "";
-    return `${active === null ? "" : active.id || active.className}|${pointed}|${selected}`;
+    const held = Array.from(root?.querySelectorAll("input") ?? []).map((one) => one.value).join(",");
+    return `${active === null ? "" : active.id || active.className}|${active?.value ?? ""}|${pointed}|${selected}|${held}`;
   }, id);
 
   const became = async (holds: () => Promise<boolean>, timeout = 3_000) => {
@@ -105,11 +115,22 @@ async function chooseWithOneStep(
   await page.keyboard.press("Enter");
   // A kind whose popup reports no expanded state at all cannot be waited on this way; there the
   // reading position moving is the only signal, and the next wait covers it.
-  await became(async () => wasClosed === "(none)" || (await openNow()) !== wasClosed);
+  const opened = await became(async () => wasClosed === "(none)" || (await openNow()) !== wasClosed);
 
   const before = await readingAt();
   await page.keyboard.press("ArrowDown");
-  await became(async () => (await readingAt()) !== before);
+  const moved = await became(async () => (await readingAt()) !== before);
+
+  // **A wait that gave up is not a state that arrived.** Both of these are bounded, and under load a
+  // renderer can exceed the bound — at which point the keystrokes that follow land on a control that
+  // is not where they assume it is, and the value they produce is not comparable with one taken from
+  // a control that got there. Reported as what it is rather than carried into the comparison, where
+  // it reads as *the keyboard model diverges* about a page that had simply not finished. This is the
+  // shape that fails inside a full suite and passes alone, and saying nothing about it is what let it
+  // do that three times.
+  if (!opened || !moved) {
+    return { unsettled: `${host.name}: ${!opened ? "the list did not open" : "the reading position did not move"} within the time this file waits` };
+  }
 
   await page.keyboard.press("Enter");
   await settled();
@@ -118,6 +139,19 @@ async function chooseWithOneStep(
     (window as never as Record<string, { valueOf(i: string): Record<string, unknown> }>)[api].valueOf(mountId).f,
     { api: host.api, mountId: id });
 }
+
+/**
+ * The readings that never reached a comparable state, named rather than compared.
+ *
+ * A bounded wait that expired has not produced a value about the keyboard: it has produced a value
+ * about a page that had not finished. Carried into the comparison it reads as a divergence between
+ * renderers, which is the wrong finding and the one that only appears under load.
+ */
+const unsettled = (answers: Record<string, unknown>): string[] =>
+  Object.values(answers)
+    .filter((each): each is { unsettled: string } =>
+      typeof each === "object" && each !== null && "unsettled" in each)
+    .map((each) => each.unsettled);
 
 test("one press down from nothing chosen reaches one value, in every renderer", async ({ page }) => {
   test.setTimeout(180_000);
@@ -128,6 +162,12 @@ test("one press down from nothing chosen reaches one value, in every renderer", 
     await page.waitForFunction((flag) => (window as never as Record<string, boolean>)[flag] === true, host.ready);
     answers[host.name] = await chooseWithOneStep(page, host, "gesture");
   }
+
+  expect(
+    unsettled(answers),
+    "a renderer never reached the state these keystrokes assume, so what it answered is about a page "
+    + "that had not finished rather than about its keyboard",
+  ).toEqual([]);
 
   // The premise: the gesture did something everywhere. Three renderers agreeing on `null` would
   // satisfy the comparison below while describing three broken controls.
@@ -171,6 +211,12 @@ for (const kind of ["datepicker", "timepicker"]) {
       await page.waitForFunction((flag) => (window as never as Record<string, boolean>)[flag] === true, host.ready);
       answers[host.name] = await chooseWithOneStep(page, host, `gesture-${kind}`, kind);
     }
+
+    expect(
+      unsettled(answers),
+      `a renderer never reached the state these keystrokes assume on a ${kind}, so what it answered `
+      + "is about a page that had not finished rather than about its keyboard",
+    ).toEqual([]);
 
     // The premise, which this test was missing while its sibling above carried it: the gesture chose
     // something everywhere. Three renderers answering nothing agree perfectly, and would report three
