@@ -94,7 +94,6 @@ const SUBMISSION: Readonly<Record<MdyWidgetKind, MdySubmissionShape>> = Object.f
   textarea: { form: "single", part: "control" },
   number: { form: "single", part: "control" },
   slider: { form: "single", part: "control" },
-  datepicker: { form: "single", part: "control" },
   timepicker: { form: "single", part: "control" },
   file: { form: "single", part: "control" },
   colors: { form: "single", part: "hexInput" },
@@ -110,6 +109,16 @@ const SUBMISSION: Readonly<Record<MdyWidgetKind, MdySubmissionShape>> = Object.f
     parts: [{ part: "startControl", suffix: "start" }, { part: "endControl", suffix: "end" }],
   },
 
+  // The value, not the reading of it. A date's control shows a date the way a person writes one, and
+  // how a person writes one is a property of where they are — so a control that carries the name
+  // sends whichever spelling it happens to be showing. A receiver handed `01/02/2026` cannot tell
+  // the second of January from the first of February, and neither can the sender, because the
+  // sending side is looking at a field that holds the right answer.
+  //
+  // It is not a defect of whichever renderer formats today. A control's text is a presentation and
+  // the value is not, and a name on the presentation sends the presentation the moment anybody
+  // formats anything.
+  datepicker: { form: "hidden", repeats: false },
   select: { form: "hidden", repeats: false },
   multiselect: { form: "hidden", repeats: true },
 });

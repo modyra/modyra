@@ -8,6 +8,7 @@ import { observerFor, type MdyFieldHandle, type MdyReactivity } from "@modyra/co
 import { buildDateLocale, formatIsoDate, parseLocalizedDate, calendarYearRange, isMonthOutOfRange, isYearOutOfRange, parseIsoDate } from "@modyra/core/datetime";
 import type { MdyDynamicDateField } from "@modyra/core";
 import { applySubmissionNames,
+  syncSubmitValues,
   MDY_WIDGET_CONTRACTS,
   createDatepickerFieldController,
   overlayAnchoringFor,
@@ -320,6 +321,9 @@ export function renderDatepickerField(
     // shared control projection writes `name: null` for a field it was not given a name for, and a
     // part carrying `null` removes the attribute.
     applySubmissionNames(shell.root, "datepicker", f.name);
+    // The value the field holds, carried by an input of its own. The control shows a date the way a
+    // person writes one, and a name on it would send whichever spelling it is showing.
+    syncSubmitValues(shell.root, f.name, state.selectedDate ? [state.selectedDate] : [], handle.disabled());
   });
 
   return withControls(
