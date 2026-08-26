@@ -1,13 +1,16 @@
 {
   "note": "Browser specs that are red because the defect they describe is open. A red listed here does not fail a build; a red that is not listed is a regression. Rewrite with `npm run battle:browser:ci -- --accept`.",
   "order": "Repair in severity order, as the node tier does. A spec's severity is the worst of the claims its header names; `unknown` is a spec that names none, which is most of them.",
-  "recordedAt": "2026-08-26T20:44:07Z",
-  "openReds": 7,
+  "recordedAt": "2026-08-27",
+  "openReds": 10,
   "bySeverity": {
-    "S1": 6,
+    "S1": 9,
     "S2": 1
   },
   "knownRed": [
+    "a-choice-abandoned-that-stays-made.spec.ts › a colour dragged past and abandoned is not the field's, angular",
+    "a-choice-abandoned-that-stays-made.spec.ts › a colour dragged past and abandoned is not the field's, lit",
+    "a-choice-abandoned-that-stays-made.spec.ts › a colour dragged past and abandoned is not the field's, plain",
     "a-description-that-belongs-to-another-form.spec.ts › a reference made in one form lands in that form, angular",
     "a-parent-the-contract-named.spec.ts › every part sits inside the part the contract names, plain",
     "a-row-system-three-renderers-disagree-about.spec.ts › a kind is inside the row system in every renderer, or outside it in every renderer",
