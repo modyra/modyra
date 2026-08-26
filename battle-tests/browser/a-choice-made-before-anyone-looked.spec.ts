@@ -147,23 +147,21 @@ for (const host of HOSTS) {
    * conventional "this opens" of every select a person has used. It is the point they aim at second,
    * and the first once they have learned the control.
    *
-   * Measured, identically in all three renderers: **pressing the caret empties the field.** The value
-   * goes from two choices to none and the list does not open.
+   * **The caret takes no pointer events**, so a press aimed at it does not reach the caret at all: it
+   * falls through to the box the field is drawn in. That is the arrangement working — the caret is a
+   * drawing, and the command that opens is the field — and it makes the box the thing that has to
+   * answer.
    *
-   * The mechanism is a repair that reached further than its own control. Clear-all is 28px wide and
-   * owes a 44px target, so 16px of it has to overhang; the sheet grows that overhang **inwards**, and
-   * says why — grown outwards it lands in whatever the form draws next, and a press three pixels past
-   * the border once activated the control beyond. Inwards is where the caret is.
+   *     press at the centre of the caret  ->  lands on the box, in every renderer and at every fill
    *
-   *     caret        1144..1160   pointer-events: none, decoration inside the trigger
-   *     clear-all    1160..1188   answers from 1144
+   * Two renderers open on it. One does nothing, at every number of chosen values, which is what makes
+   * it a property of the renderer rather than of where the press happened to fall. A person aiming at
+   * the one mark that means *this opens* gets no response at all, and nothing else on the field tells
+   * them where else to aim.
    *
-   * So a 44px target on a 28px control has sixteen pixels that must go somewhere, and both directions
-   * are occupied: outwards is the next field, inwards is the mark that opens this one. **The geometry
-   * cannot hold all three**, and no amount of care about which way to overhang changes that.
-   *
-   * The caret is `pointer-events: none` on purpose, so that a press on it falls through to the trigger
-   * behind — which is right, and is defeated by something painted over it.
+   * **The value must survive the press either way.** A press that opens nothing and also discards
+   * everything is a worse failure than one that merely does nothing, so both are asserted, and the
+   * value is asserted first: a run where the field emptied would make the second question meaningless.
    *
    * Claims under attack: A11Y-004, UI-007.
    */
@@ -204,8 +202,9 @@ for (const host of HOSTS) {
 
     expect(
       await expanded(page),
-      `${host.name} did not open on a press at the centre of its own caret — the mark exists to say `
-      + "that pressing there opens the list.",
+      `${host.name} did not open on a press at the centre of its own caret. The caret takes no `
+      + "pointer events, so the press reached the box the field is drawn in, and the box is the "
+      + "command that opens — a person aiming at the one mark that means \"this opens\" got nothing.",
     ).toBe("true");
   });
 
