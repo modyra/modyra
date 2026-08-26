@@ -181,3 +181,27 @@ page contains and this measures what a person got.
 
 Where an answer contradicts something the automated suite reports as green, the suite is wrong about
 what it was asking, not the person about what they heard.
+
+---
+
+## Una sesta, arrivata dopo, che costa dieci secondi
+
+**Cosa fa il selettore di colore del sistema quando si annulla.**
+
+Un campo tiene un colore. Si apre il selettore del sistema, si trascina il puntatore attraverso la
+ruota senza fermarsi su niente — la pagina dietro cambia a ogni passo, che è lo scopo — e poi si
+**annulla**.
+
+La domanda è una sola: **il campo torna al colore che aveva prima, o tiene l'ultimo su cui il puntatore
+è passato?**
+
+Va provata su ciascuna delle piattaforme a disposizione, perché il selettore è del sistema e non della
+pagina, e le tre non si comportano necessariamente allo stesso modo.
+
+**Perché serve una persona.** Nessun runner apre quella finestra e nessuno la annulla. Quello che una
+macchina ha già stabilito è il meccanismo attraverso cui il danno passerebbe: ogni passo del
+trascinamento arriva nel campo mentre accade, e nessuno dei tre renderer memorizza il valore prima di
+aprire. Se il selettore vero, all'annullamento, riscrive il valore di partenza, il danno non c'è. Se
+non lo riscrive, non c'è niente da cui tornare indietro.
+
+**Come riferire.** Il colore prima, il colore dopo l'annullamento, e quale delle tre piattaforme.
