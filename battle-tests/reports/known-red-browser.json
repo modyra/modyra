@@ -1,14 +1,12 @@
 {
   "note": "Browser specs that are red because the defect they describe is open. A red listed here does not fail a build; a red that is not listed is a regression. Rewrite with `npm run battle:browser:ci -- --accept`.",
   "order": "Repair in severity order, as the node tier does. A spec's severity is the worst of the claims its header names; `unknown` is a spec that names none, which is most of them.",
-  "recordedAt": "2026-08-26T12:40:46Z",
-  "openReds": 14,
+  "recordedAt": "2026-08-26T13:11:42Z",
+  "openReds": 12,
   "bySeverity": {
-    "S1": 14
+    "S1": 12
   },
   "knownRed": [
-    "a-command-only-one-key-reaches.spec.ts › every command in the field answers both keys a button answers, lit",
-    "a-command-only-one-key-reaches.spec.ts › every command in the field answers both keys a button answers, plain",
     "a-description-that-belongs-to-another-form.spec.ts › a reference made in one form lands in that form, angular",
     "a-field-that-does-not-fit-a-narrow-screen.spec.ts › a field full of values fits the narrowest width, angular",
     "a-field-that-does-not-fit-a-narrow-screen.spec.ts › a field full of values fits the narrowest width, lit",
