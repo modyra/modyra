@@ -1,10 +1,10 @@
 {
   "note": "Browser specs that are red because the defect they describe is open. A red listed here does not fail a build; a red that is not listed is a regression. Rewrite with `npm run battle:browser:ci -- --accept`.",
   "order": "Repair in severity order, as the node tier does. A spec's severity is the worst of the claims its header names; `unknown` is a spec that names none, which is most of them.",
-  "recordedAt": "2026-08-26T13:11:42Z",
-  "openReds": 12,
+  "recordedAt": "2026-08-26T13:32:56Z",
+  "openReds": 18,
   "bySeverity": {
-    "S1": 12
+    "S1": 18
   },
   "knownRed": [
     "a-description-that-belongs-to-another-form.spec.ts › a reference made in one form lands in that form, angular",
@@ -16,6 +16,12 @@
     "a-row-system-three-renderers-disagree-about.spec.ts › a kind is the same height in every renderer",
     "a-swatch-that-covers-the-box-beside-it.spec.ts › a press meant for the hex box reaches it, angular",
     "a-swatch-that-covers-the-box-beside-it.spec.ts › a press meant for the hex box reaches it, lit",
+    "a-way-back-the-record-promises.spec.ts › giving the remedy does not cost a person their place, angular",
+    "a-way-back-the-record-promises.spec.ts › giving the remedy does not cost a person their place, lit",
+    "a-way-back-the-record-promises.spec.ts › giving the remedy does not cost a person their place, plain",
+    "a-way-back-the-record-promises.spec.ts › the undo shortcut the record promises reaches the remedy, angular",
+    "a-way-back-the-record-promises.spec.ts › the undo shortcut the record promises reaches the remedy, lit",
+    "a-way-back-the-record-promises.spec.ts › the undo shortcut the record promises reaches the remedy, plain",
     "an-id-a-selector-cannot-reach.spec.ts › a nested document's own ids are reachable by a selector, angular",
     "an-id-a-selector-cannot-reach.spec.ts › a nested document's own ids are reachable by a selector, lit",
     "an-id-a-selector-cannot-reach.spec.ts › a nested document's own ids are reachable by a selector, plain"
