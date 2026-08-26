@@ -107,6 +107,20 @@ swatch all show the same colour. They must agree in every direction — in parti
 the twelve must update the hex box**. Left empty or left on the previous value, the screen carries two
 truths at once, and the person who trusts the wrong one is the person who types.
 
+### Why no names ship for the defaults, checked rather than argued
+
+The record above says an approximated colour name claims a meaning it does not have. That is a
+principle; here is the measurement that makes it a decision.
+
+**An approximated name passes every check this project has.** "Blue" has an accessible name, has
+contrast, is in the computed tree, is translated. Nothing in the suite distinguishes a right name from
+a plausible one — the only thing that does is somebody who knows that this blue is the invoices blue.
+A palette that guessed would be **green everywhere and wrong**, which is the worst category this
+repository has: not a defect the instruments miss, a defect they actively report as health.
+
+So the names come from the document, where that knowledge is, and an entry without one is announced by
+its value.
+
 **The custom colour is the one value in the panel that cannot be described to somebody who cannot see
 it.** Nobody has named `#4361EE`. Its name will be *Custom, #4361EE* — honest and poor. Approximating
 a colour name is worse than the hexadecimal, because a swatch announcing itself as "blue" while being
