@@ -146,13 +146,11 @@ for (const host of HOSTS) {
  * a caller's problem — do not put a quote in a value. There is no such reading here: nesting is the
  * feature, and the feature writes the character.
  *
- * **Robust to the id scope arriving.** A scoped id is `<scope>_righe.0.nome__label`, which is dotted
- * for the same reason and unreachable for the same reason, so this file does not have to move when
- * ADR 0146 lands.
- *
- * The names are taken from `flattenDynamicSchema` rather than written out, so the check follows the
- * path scheme if the path scheme changes — and if flattening ever stops producing a dot, the premise
- * below says so instead of passing quietly.
+ * **Robust to the id scope arriving, and to the id scheme changing.** What is asserted is that every
+ * id this form publishes can be reached by a selector — not what the ids look like. A scope prefix, a
+ * different separator, an escape of the path's punctuation: any of them satisfies this file, and that
+ * is the point. The names are taken from `flattenDynamicSchema` rather than written out, so the
+ * document under test follows the path scheme rather than restating it.
  */
 
 /** A document with a collection in it: two rows, each holding one ordinary field. */
@@ -207,14 +205,22 @@ for (const host of HOSTS) {
       });
     });
 
-    // Published anything at all, and published something from a row rather than only from the field
-    // that sits outside the collection.
+    // Published anything at all, and published it for the fields inside the collection rather than only
+    // for the one that sits outside it.
+    //
+    // **Asked of the page, not of the punctuation.** An earlier form of this looked for a `.` in the
+    // published ids, which was the character the defect was made of — so the repair that took the
+    // character out made the premise announce that the collection had not rendered. A check that
+    // recognises a thing by the shape of the defect stops recognising it exactly when it is fixed. The
+    // rows are found here by the label a person reads, which no encoding of ours can move.
+    const rowsDrawn = await page.locator('[data-form="nested"] label', { hasText: "Nome" }).count();
     expect(
-      read.filter((entry) => entry.id.includes(".")).length,
-      `${host.name} published ${read.length} id(s) for a nested document and none of them came from a `
-      + `row: ${JSON.stringify(read.map((entry) => entry.id).slice(0, 6))}. Either the collection did `
-      + "not render or its fields are named some other way, and neither is what this file is about",
-    ).toBeGreaterThan(0);
+      rowsDrawn,
+      `${host.name} drew ${rowsDrawn} field(s) from inside the collection, where the document declares `
+      + `two rows. Published ids: ${JSON.stringify(read.map((entry) => entry.id).slice(0, 6))}. Either `
+      + "the collection did not render or its fields are labelled some other way, and neither is what "
+      + "this file is about",
+    ).toBe(2);
 
     expect(
       read.every((entry) => entry.byId),
