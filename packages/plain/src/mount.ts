@@ -12,7 +12,7 @@ import type {
 import { adoptSilentWrites, bindFormReset, reportIdCollision } from "@modyra/widgets";
 import { applyDynamicRules, assertSafeDynamicFieldNames, vanillaReactivity, type MdyDynamicCollection, type MdyDynamicField, type MdyDynamicLayoutChild, type MdyDynamicLayoutNode, type MdyDynamicLayoutSlot, type MdyDynamicRule, type MdyFieldHandle, type MdyFormSchema, type MdyReactivity, type MdySubmittedValue, type MdyTypedForm } from "@modyra/core";
 import { buildForm } from "./schema.js";
-import { formErrorsOf, formScopeOf, isValidWidgetId, layoutNodeAttributes, layoutSlotStyle, MDY_FORM_SHELL_CLASSES, MDY_ID_DELIMITER, MDY_LAYOUT_CLASSES } from "@modyra/widgets";
+import { formErrorsOf, formScopeOf, idSafeKey, isValidWidgetId, layoutNodeAttributes, layoutSlotStyle, MDY_FORM_SHELL_CLASSES, MDY_ID_DELIMITER, MDY_LAYOUT_CLASSES } from "@modyra/widgets";
 import { renderField } from "./fields/index.js";
 import { el, setText } from "./dom.js";
 
@@ -177,7 +177,11 @@ export function mountMdyForm(
   const scopeIsLive = (scope: string): boolean =>
     (container.ownerDocument ?? document).querySelector(`[id^="${scope}${ID_PREFIX_JOINER}"]`) !== null;
   const scope = options.idPrefix ?? formScopeOf(form, scopeIsLive);
-  const widgetIdFor = (name: string): string => `${scope}${ID_PREFIX_JOINER}${name}`;  /**
+  // The name is a path — a document names a nested field `rows.0.name` — and the separator is a class
+  // selector to a browser, so an id carrying it cannot be reached by the consumer it was published
+  // for. Spelled in the character set an id may hold, as every other piece of data in one is
+  // (ADR 0141).
+  const widgetIdFor = (name: string): string => `${scope}${ID_PREFIX_JOINER}${idSafeKey(name)}`;  /**
    * The handle a name points at.
    *
    * A name in this list is a path — a flattened document names a nested field `shipping.city` — and

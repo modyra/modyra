@@ -1,8 +1,8 @@
 {
   "note": "Public names not yet asserted or not yet shown. The list may only get shorter.",
   "score": {
-    "published": 857,
-    "asserted": 601,
+    "published": 858,
+    "asserted": 602,
     "shown": 93
   },
   "uncovered": [
@@ -3560,6 +3560,12 @@
     },
     {
       "name": "hourToAngle",
+      "asserted": true,
+      "shown": false,
+      "reason": "published and never shown"
+    },
+    {
+      "name": "idSafeKey",
       "asserted": true,
       "shown": false,
       "reason": "published and never shown"

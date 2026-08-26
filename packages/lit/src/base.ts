@@ -1,6 +1,6 @@
 import {
   handleFormOf, MdyFieldHandle, type MdyFieldConstraints, type MdyValueKind } from "@modyra/core";
-import { MDY_ICONS, MDY_POPUP_OPENERS, stateClass, type MdyStateName, adoptSilentWrites, applySubmissionNames, bindFormReset, groupSubmitName, submissionFor, syncSubmitValues, defaultOptionKey, messagesForLocale, widgetScopeOf, type MdyI18nMessages } from "@modyra/widgets";
+import { MDY_ICONS, MDY_POPUP_OPENERS, idSafeKey, stateClass, type MdyStateName, adoptSilentWrites, applySubmissionNames, bindFormReset, groupSubmitName, submissionFor, syncSubmitValues, defaultOptionKey, messagesForLocale, widgetScopeOf, type MdyI18nMessages } from "@modyra/widgets";
 import { html, LitElement, nothing, PropertyDeclarations } from "lit";
 import { unsafeSVG } from "lit/directives/unsafe-svg.js";
 import {
@@ -151,7 +151,12 @@ export abstract class MdyFieldElement<T> extends LitElement {
       this.field,
       (candidate) => (this.ownerDocument ?? document).querySelector(`[id^="${candidate}-"]`) !== null,
     );
-    return scope ? `${scope}-${path}` : path;
+    // The path is data — a document names a nested field `rows.0.name` — and the separator is a class
+    // selector to a browser, so an id carrying it cannot be reached by the consumer it was published
+    // for. Spelled in the character set an id may hold, as every other piece of data in one is
+    // (ADR 0141).
+    const safe = idSafeKey(path);
+    return scope ? `${scope}-${safe}` : safe;
   }
 
   /**

@@ -86,11 +86,19 @@ export const defaultWidgetIdFactory: MdyWidgetIdFactory = {
 };
 
 /**
- * A key as a piece of an id.
+ * A piece of data as a piece of an id.
  *
- * A widget id is a host's word and is refused when it cannot be one; an item key is **data** — an
- * option's value, a row's key — and refusing it would refuse the document that declared it. So it is
- * spelled instead, in the one encoding an id may carry.
+ * A widget id is a host's word and is refused when it cannot be one; this is for the parts that are
+ * **data** — an option's value, a row's key, and the path a document gives a nested field. Refusing
+ * those would refuse the document that declared them, so they are spelled instead, in the one
+ * encoding an id may carry.
+ *
+ * The path is here for the same reason the others are, and it arrived by the harder road: the
+ * library refused a host's id containing punctuation and then wrote one itself, because a field
+ * inside a collection is named `rows.0.name` and the separator is a class selector to a browser.
+ * `querySelector("#form-rows.0.name")` does not miss, it **throws** — a class may not begin with a
+ * digit — so a consumer selecting a nested field by the id this contract published gets an
+ * exception, and the only input needed is a form inside a form.
  *
  * Whitespace is why: `aria-activedescendant` and its family are space-separated lists of ids, so an
  * option valued `New York` produced `city__option__New York`, which an assistive technology reads as
@@ -110,7 +118,7 @@ export const defaultWidgetIdFactory: MdyWidgetIdFactory = {
  * No code emitted here contains the delimiter or whitespace, so an id still splits into exactly its
  * three segments — widget, part, key.
  */
-function idSafeKey(key: string): string {
+export function idSafeKey(key: string): string {
   // Everything outside what a CSS identifier may carry, escaped as `_` and two hex digits.
   //
   // Percent-encoding was the first answer and it solved only half the problem: `%` is not a

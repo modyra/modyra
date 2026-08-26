@@ -73,7 +73,7 @@ export type { MdyWidgetState, MdyWidgetStateContract } from "./widget-states.js"
 export {
   calendarDayId,
   reportIdCollision,
-  defaultWidgetIdFactory,
+  defaultWidgetIdFactory, idSafeKey,
   assertUsableWidgetId,
   formScopeOf,
   widgetScopeOf,

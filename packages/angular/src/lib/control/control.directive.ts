@@ -37,6 +37,7 @@ import {
   type MdyValueWidgetIntent,
   type MdyWidgetKind,
   widgetScopeOf,
+  idSafeKey,
 } from "@modyra/widgets";
 
 declare const ngDevMode: boolean | undefined;
@@ -206,7 +207,12 @@ export abstract class MdyBaseControl<TValue = unknown> implements OnInit {
       this.field(),
       (candidate) => (this.hostElement.nativeElement as HTMLElement).ownerDocument.querySelector(`[id^="${candidate}-"]`) !== null,
     );
-    return scope ? `${scope}-${name}` : name;
+    // The name is a path — a document names a nested field `rows.0.name` — and the separator is a
+    // class selector to a browser, so an id carrying it cannot be reached by the consumer it was
+    // published for. Spelled in the character set an id may hold, as every other piece of data in
+    // one is (ADR 0141).
+    const safe = idSafeKey(name);
+    return scope ? `${scope}-${safe}` : safe;
   }
 
   /** The label text for the form control. */

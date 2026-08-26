@@ -9,6 +9,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import {
+  idSafeKey,
   MDY_ID_DELIMITER,
   booleanFieldPartIds,
   defaultWidgetIdFactory,
@@ -68,4 +69,34 @@ test("the joining primitive stays a joining primitive", () => {
   // Deliberately not guarded: a consumer may replace the factory, it is documented as deterministic
   // and reversible, and something constructing ids speculatively is entitled to use it.
   assert.equal(defaultWidgetIdFactory.part("my form", "label"), `my form${MDY_ID_DELIMITER}label`);
+});
+
+test("a path a document writes is spelled into an id a selector can reach", () => {
+  // A field inside a collection is named `rows.0.name`, and the separator is a class selector to a
+  // browser: `querySelector("#form-rows.0.name")` does not miss, it **throws**, because a class may
+  // not begin with a digit. So a consumer selecting a nested field by the id this contract published
+  // gets an exception, and the only input needed is a form inside a form.
+  assert.equal(idSafeKey("rows.0.name"), "rows_2E0_2Ename");
+  assert.equal(idSafeKey("shipping.city"), "shipping_2Ecity");
+
+  // A plain name is left exactly as it was, which is what keeps the common id readable.
+  assert.equal(idSafeKey("name"), "name");
+  assert.equal(idSafeKey("first-name"), "first-name");
+
+  // The escape character escapes itself, which is what keeps the encoding reversible: without it a
+  // name that already reads like an escape and the escape of another name land on one id, and an
+  // ARIA reference resolves into whichever element the document reaches first.
+  assert.equal(idSafeKey("first-name_2"), "first-name_5F2");
+
+  // What comes out is reachable, and the escaped form is what a document has to be asked for.
+  for (const path of ["rows.0.name", "a b", "hash#one", "shipping.city"]) {
+    const id = `form-${idSafeKey(path)}`;
+    assert.doesNotThrow(() => new Set([id]).has(id));
+    assert.match(id, /^[A-Za-z_][A-Za-z0-9_-]*$/, path);
+  }
+
+  // Reversible and injective: two paths never land on one id, which is what stops a reference
+  // resolving into the wrong field.
+  const paths = ["a.b", "a-b", "a_b", "a b", "a\tb"];
+  assert.equal(new Set(paths.map(idSafeKey)).size, paths.length);
 });

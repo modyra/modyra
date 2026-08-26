@@ -99,3 +99,53 @@ respect to the selector grammar.
 It is not a sanitiser and must not be relied on as one. A value that must not appear in the page must
 not be an option value; that is a decision for the caller's document, and no naming rule here can
 substitute for it.
+
+## Amendment: the library was the other producer of an unreachable id
+
+This record was written about **caller data** — an option's value, a row's key — and it named the
+producer as the caller. There was a second producer, and it was this library.
+
+A document that holds a collection names a nested field `rows.0.name`, and every renderer builds that
+field's id from its path. The separator is a class selector to a browser:
+
+```
+querySelector("#form-rows.0.name")   throws — a class may not begin with a digit
+```
+
+Not a miss, an exception. So a consumer selecting a nested field by the id this contract published
+gets a stack trace, and **the only input required is putting a form inside a form**. Nobody supplied a
+strange value; the punctuation is the library's own.
+
+It survived because the surrounding rules all looked satisfied. `assertUsableWidgetId` refuses a
+host's id containing whitespace or the delimiter — and says so loudly — while the id the library then
+minted for itself went through no such door. A rule that guards the front entrance and not the one the
+house uses reads, from the code, exactly like a rule.
+
+**The decision above is unchanged and now covers the path.** A path is data in the same sense a value
+is: the document named it, refusing it would refuse the document, so it is spelled in the character
+set an id may hold. `rows.0.name` becomes `rows_2E0_2Ename`, by the same total escape, through the
+same function — which is exported for this, so the three renderers spell it one way rather than three.
+
+### What it costs
+
+**Every nested field's id changes.** A consumer's stylesheet, test or `aria-describedby` naming
+`form-rows.0.name` names nothing after this. That is the breaking half, and it is the price of the
+ids being reachable at all: the ones that change are exactly the ones that could not be selected.
+
+A flat document is untouched — `name` escapes to `name` — so the common id stays readable and the
+change reaches only the shape that was broken.
+
+## Verification of the amendment
+
+`packages/widgets/test/ids.spec.mjs` asserts the spelling, that what comes out matches the character
+set a selector can carry, and that the encoding stays injective — two paths never landing on one id is
+what stops an ARIA reference resolving into the wrong field.
+
+Falsified by returning a path unescaped: red, and green again when it is put back.
+
+**What is not checked**: that a renderer routes its path through this rather than happening to produce
+a safe id. All three call the same function today; nothing fails if one stops.
+
+## Security and privacy of the amendment
+
+None. The escape changes how a name is spelled in an id, not what is stored, sent or shown.
