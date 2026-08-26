@@ -131,6 +131,25 @@ three renderers stop disagreeing about which kinds are peers.
 
 So they stay counted. The gate is red on two properties, and that red is the question, not a backlog.
 
+**The properties this section exempts:**
+
+- `--mdy-select-dropdown-max-height`
+- `--mdy-multiselect-max-height`
+- `--mdy-chip-w`
+- `--mdy-fl-rest-y`
+- `--mdy-fl-active-y`
+- `--mdy-fl-gap-mid`
+- `--mdy-fl-pad-bottom`
+- `--mdy-fl-pad-top-textarea`
+
+Whole names, one line each, and nothing above this line exempts anything. The prose is where the
+reason lives and the list is where the decision is taken — a paragraph has to be able to name a
+property in order to argue about it, including to argue that it is **not** exempt, and for a while it
+could not: the sentence saying these two were not exempt exempted one of them, and the paragraph
+arguing against a family exemption *was* the family exemption.
+
+Two names are absent on purpose, and they are the ones the paragraph above argues about.
+
 The test that tells them apart: **would moving the scale move this?** A padding must move with it, and
 a token that did not would leave a control spaced by two systems at once. A popup's ceiling must not —
 it is bounded by the window, which no theme changes. And a derivation moves already, through the
