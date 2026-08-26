@@ -42,6 +42,17 @@
  * Tier one is discovered by reading the scale rather than by matching names, so a step added there is
  * immediately allowed to hold a number and a property renamed into looking like a step is not.
  *
+ * **What is exempt is read from the record, not kept here.** Some lengths are argued not to be steps
+ * at all — a popup's ceiling is a question about the window, and a term inside a derivation moves
+ * already through the tokens beside it. Those arguments live in `DESIGN.md`, which is where a decision
+ * about the design system belongs, and this gate reads the properties that record names rather than
+ * holding a second copy of the list.
+ *
+ * The two cannot then drift apart. A property exempted in the record goes quiet here without anybody
+ * editing a test; a property that stops being argued comes back. And a list nobody argued cannot be
+ * added to this file at all, which is the failure mode a hand-kept exemption list has: it grows by one
+ * every time somebody is in a hurry, and nothing about it ever says why.
+ *
  * @source-inspection — a custom property's *declared* value is the thing under test. By the time a
  * browser resolves it, a step and a literal that happen to be equal are the same computed number, and
  * the difference this battle is about — whether a value can be moved by moving the scale — exists
@@ -63,6 +74,25 @@ const SHEET = join(STYLES, "modyra.css");
 
 /** Values that are not measurements, or are the same one in every scale. */
 const NOT_A_MEASUREMENT = /^(auto|none|inherit|initial|unset|revert|transparent|currentcolor|0|[0-9]+%|[0-9]+fr)$/i;
+
+const DESIGN = join(resolve(HERE, "..", "..", ".."), "DESIGN.md");
+
+/**
+ * The properties the design record argues are not steps, as names or as name prefixes.
+ *
+ * Taken from the section that makes the argument, so that the exemption and its reason are one thing.
+ * A prefix ends in `-` and stands for a family the record describes rather than enumerates — a ramp
+ * has more parts than a paragraph wants to list, and naming the family is truer than naming four of
+ * its members and leaving the fifth to be discovered.
+ */
+function exemptedByTheRecord() {
+  if (!existsSync(DESIGN)) return null;
+  const text = readFileSync(DESIGN, "utf8");
+  const section = /### Two kinds of length are not steps[\s\S]*?(?=\n## |\n### |$)/.exec(text);
+  if (section === null) return null;
+  const named = [...section[0].matchAll(/`(--mdy-[a-z0-9-]*)`/g)].map((match) => match[1]);
+  return named.length === 0 ? null : named;
+}
 
 battle(
   {
@@ -87,7 +117,19 @@ battle(
       what: `the scale declares ${steps.size} step(s) — too few to be the scale this battle assumes`,
     });
 
+    // The record is read before the sheet, because without it every argued length reads as a leak and
+    // this gate would be reporting the absence of a document as a fault in a stylesheet.
+    const exempt = exemptedByTheRecord();
+    expectEqual(exempt !== null, true, {
+      claimIds: ["UI-005"],
+      what: "the design record names no length as exempt from the scale — either the section that "
+        + "argues them is gone or it stopped naming what it argues, and without it every length below "
+        + "the scale is a leak by default",
+    });
+
     const leaks = [];
+    /** Lengths the record argues are not steps, and the argument's own words say why. */
+    let argued = 0;
     /** Properties below the scale that were read and judged, leak or not. */
     let examined = 0;
     /** Lengths passed over because the sheet multiplies them by a unitless token. */
@@ -113,6 +155,10 @@ battle(
           coefficients += 1;
           continue;
         }
+        if (exempt.some((one) => (one.endsWith("-") ? name.startsWith(one) : name === one))) {
+          argued += 1;
+          continue;
+        }
         leaks.push(`${name}: ${literal}${value === literal ? "" : ` in \`${value}\``}`);
       }
     }
@@ -123,6 +169,7 @@ battle(
     ctx.log.note("the scale this sheet is measured against", { steps: steps.size });
     ctx.log.note("properties below the scale, read and judged", { examined, leaks: leaks.length });
     ctx.log.note("lengths passed over as a ramp's slope", { coefficients });
+    ctx.log.note("lengths the design record argues are not steps", { argued, named: exempt.length });
 
     expectEqual(leaks, [], {
       claimIds: ["UI-005"],
