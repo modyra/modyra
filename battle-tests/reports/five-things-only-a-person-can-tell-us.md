@@ -52,21 +52,20 @@ npm run demo:angular
 
 | trial | where | what to do first |
 |---|---|---|
-| 1 — walking the strip | **Servings** | already holds two; nothing to set up |
-| 2 — choosing an option | **Palette** | open it and choose one |
-| 3 — removing from the middle | **Palette** | choose all three first, then remove the middle one |
-| 4 — crossing twelve values | **nowhere yet** | see below |
-| 5 — holding a step key | **Servings** | it already holds the same value twice, which is what draws a quantity |
+| 1 — walking the strip | **Palette**, on `/lab.html` | already holds twelve; nothing to set up |
+| 2 — choosing an option | **Palette**, on the front page | open it and choose one |
+| 3 — removing from the middle | **Palette**, on `/lab.html` | remove one from the middle of the twelve |
+| 4 — crossing twelve values | **Palette**, on `/lab.html` | already holds twelve, with ordinary names |
+| 5 — holding a step key | **Servings**, on the front page | it already holds the same value twice, which is what draws a quantity |
 
-**Trial 4 has no starting state.** It asks a person to cross twelve chosen values with the arrow keys
-and to be timed doing it, and the largest list any demo field offers is three. Two or three names is
-not a shorter version of the same question — the thing being measured is what happens when the
-crossing gets long enough to give up on, and it cannot be observed on a strip a person crosses in two
-presses.
+`/lab.html` is the same server, one page along — `http://localhost:4307/lab.html` for the first
+command above. Its Palette field holds twelve values from the start, which is what trial 4 needs and
+what makes trial 1 worth doing: two or three names is not a shorter version of either question. What
+is being measured is what happens when the crossing gets long enough to give up on, and a strip a
+person crosses in two presses has nothing to say about it.
 
-What it needs is one field with about twelve options and names of ordinary length. Until that exists,
-run the other four and record trial 4 as **not attempted, for want of a field to attempt it on** —
-which is a fact about us and not about the reader.
+**Trial 5 stays on the front page**, because it needs a value chosen more than once — that is what
+draws a quantity to step — and the lab's twelve are each chosen once.
 
 ## 1 — Walking a strip of chosen values with a virtual cursor
 
