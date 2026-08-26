@@ -216,10 +216,24 @@ export function renderMultiselectField(
    * of a box shaped like a field — but it is a behaviour of the box rather than a consequence of the
    * opener containing everything. A press that lands on a chip is a press on the chip, and no
    * arrangement of pixels can turn it into a press on the opener.
+   *
+   * **On the release, not on the press**, which is what makes the gesture cancellable: beginning a
+   * press and moving away before letting go is how a person takes a tap back, and it is the whole of
+   * WCAG 2.5.2. It is also what the opener this forwards to already does — a button activates on
+   * release — so a field whose empty space acted sooner would give one control two activation models
+   * depending on which pixel was hit.
+   *
+   * The press half is still cancelled, so the box does not take focus from the opener it is about to
+   * hand it to; focus is placed before the list opens, because the opener is what carries the
+   * expanded state and answers the keyboard.
    */
   control.addEventListener("pointerdown", (event) => {
     if (event.target !== control) return;
     event.preventDefault();
+  });
+
+  control.addEventListener("click", (event) => {
+    if (event.target !== control) return;
     trigger.focus();
     dispatch({ type: controller.state().open ? "close" : "open" });
   });

@@ -169,6 +169,7 @@ absent section reads as an oversight, and "no security impact" is a finding.
 - [ADR 0152: A form built with these controls submits, and the payload carries the field's own names](0152-what-a-native-submit-sends.md) — no control wrote a `name`, so a native submit sent nothing at all
 - [ADR 0153: A control's accessible name is what it is for, never what it holds](0153-a-name-is-what-a-control-is-for.md) — the check asked a chooser to answer to the grey word inside it, so it failed the renderer that was right
 - [ADR 0154: A part's classes read the same from the record and from the accessor](0154-one-part-one-answer.md) — two published surfaces gave opposite answers about the same part, and neither reader was misreading
+- [ADR 0155: A press completes on the release](0155-a-press-completes-on-the-release.md) — one renderer opened a list while the button was still down, so the gesture a person uses to take a tap back did nothing
 - [ADR 0092: A condition travels with the form](0092-a-condition-travels-with-the-form.md) — `when` and `asyncWhen` were closures, so a schema carrying one was not data and the document half could not say what the typed half said
 
 ## Security-relevant records
