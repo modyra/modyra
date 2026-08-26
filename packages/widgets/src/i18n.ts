@@ -87,6 +87,21 @@ export interface MdyI18nMessages {
    * a field somebody has just emptied looks exactly like one they never filled.
    */
   readonly selectionRemovedLast: string;
+  /**
+   * What is said when one act moves more than one value, and how many are held afterwards.
+   *
+   * `{moved}` is how many changed, `{count}` how many are held — two numbers because a clear that
+   * takes three from a field of three and one that takes three from a field of ten are different
+   * facts, and a sentence with one number cannot tell them apart.
+   *
+   * Counted rather than listed. The singular templates put `{value}` before a verb that agrees with
+   * it, so a list of names dropped into one is ungrammatical in every language that inflects — and a
+   * reader hearing twelve names for one act they took knowingly is being read a list, not told a
+   * fact.
+   */
+  readonly selectionAddedMany: string;
+  readonly selectionRemovedMany: string;
+  readonly selectionRemovedManyLast: string;
   /** What a quantity says when it settles: the value and how many of it. */
   readonly quantitySettled: string;
   /**
@@ -252,6 +267,9 @@ export const MDY_I18N_MESSAGES_DEFAULT: MdyI18nMessages = Object.freeze({
   selectionRemoved: "{value} removed, {count} selected",
   selectionEmpty: "Nothing selected",
   selectionRemovedLast: "{value} removed, nothing selected",
+  selectionAddedMany: "{moved} added, {count} selected",
+  selectionRemovedMany: "{moved} removed, {count} selected",
+  selectionRemovedManyLast: "{moved} removed, nothing selected",
   selectionMoved: "{value}, moved to position {position} of {count}",
   keyGuideOpen: "{keys} opens it",
   keyGuideMove: "{keys} moves through it",
@@ -342,6 +360,9 @@ export const MDY_I18N_MESSAGES_IT: MdyI18nMessages = Object.freeze({
   selectionRemoved: "{value} rimosso, {count} selezionati",
   selectionEmpty: "Nessuna selezione",
   selectionRemovedLast: "{value} rimosso, nessuna selezione",
+  selectionAddedMany: "{moved} aggiunti, {count} selezionati",
+  selectionRemovedMany: "{moved} rimossi, {count} selezionati",
+  selectionRemovedManyLast: "{moved} rimossi, nessuna selezione",
   selectionMoved: "{value}, spostato in posizione {position} di {count}",
   keyGuideOpen: "{keys} lo apre",
   keyGuideMove: "{keys} lo percorre",
@@ -425,6 +446,9 @@ export const MDY_I18N_MESSAGES_DE: MdyI18nMessages = Object.freeze({
   selectionRemoved: "{value} entfernt, {count} ausgewählt",
   selectionEmpty: "Nichts ausgewählt",
   selectionRemovedLast: "{value} entfernt, nichts ausgewählt",
+  selectionAddedMany: "{moved} hinzugefügt, {count} ausgewählt",
+  selectionRemovedMany: "{moved} entfernt, {count} ausgewählt",
+  selectionRemovedManyLast: "{moved} entfernt, nichts ausgewählt",
   selectionMoved: "{value}, verschoben auf Position {position} von {count}",
   keyGuideOpen: "{keys} öffnet es",
   keyGuideMove: "{keys} bewegt sich darin",
@@ -508,6 +532,9 @@ export const MDY_I18N_MESSAGES_FR: MdyI18nMessages = Object.freeze({
   selectionRemoved: "{value} retiré, {count} sélectionnés",
   selectionEmpty: "Aucune sélection",
   selectionRemovedLast: "{value} supprimé, aucune sélection",
+  selectionAddedMany: "{moved} ajoutés, {count} sélectionnés",
+  selectionRemovedMany: "{moved} retirés, {count} sélectionnés",
+  selectionRemovedManyLast: "{moved} retirés, aucune sélection",
   selectionMoved: "{value}, déplacé en position {position} sur {count}",
   keyGuideOpen: "{keys} l'ouvre",
   keyGuideMove: "{keys} le parcourt",
@@ -591,6 +618,9 @@ export const MDY_I18N_MESSAGES_ES: MdyI18nMessages = Object.freeze({
   selectionRemoved: "{value} quitado, {count} seleccionados",
   selectionEmpty: "Nada seleccionado",
   selectionRemovedLast: "{value} eliminado, nada seleccionado",
+  selectionAddedMany: "{moved} añadidos, {count} seleccionados",
+  selectionRemovedMany: "{moved} eliminados, {count} seleccionados",
+  selectionRemovedManyLast: "{moved} eliminados, nada seleccionado",
   selectionMoved: "{value}, movido a la posición {position} de {count}",
   keyGuideOpen: "{keys} lo abre",
   keyGuideMove: "{keys} lo recorre",

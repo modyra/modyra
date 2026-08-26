@@ -944,7 +944,15 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
     if (this._saySoon !== null) { this._said = this._saySoon; this._saySoon = null; this._saidLast = now; return this._said; }
     const said = multiselectAnnouncement(
       this._saidLast, now,
-      { added: this.messages.selectionAdded, removed: this.messages.selectionRemoved, empty: this.messages.selectionEmpty, removedLast: this.messages.selectionRemovedLast },
+      {
+        added: this.messages.selectionAdded,
+        removed: this.messages.selectionRemoved,
+        empty: this.messages.selectionEmpty,
+        removedLast: this.messages.selectionRemovedLast,
+        addedMany: this.messages.selectionAddedMany,
+        removedMany: this.messages.selectionRemovedMany,
+        removedManyLast: this.messages.selectionRemovedManyLast,
+      },
       (key) => this.labelFor(key),
     );
     this._saidLast = now;

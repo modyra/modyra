@@ -1089,7 +1089,15 @@ export class MdyMultiselectComponent<TValue = string>
     if (grab !== null) { this.saidLast = now; return grab; }
     const said = multiselectAnnouncement(
       this.saidLast, now,
-      { added: this.i18n.selectionAdded, removed: this.i18n.selectionRemoved, empty: this.i18n.selectionEmpty, removedLast: this.i18n.selectionRemovedLast },
+      {
+        added: this.i18n.selectionAdded,
+        removed: this.i18n.selectionRemoved,
+        empty: this.i18n.selectionEmpty,
+        removedLast: this.i18n.selectionRemovedLast,
+        addedMany: this.i18n.selectionAddedMany,
+        removedMany: this.i18n.selectionRemovedMany,
+        removedManyLast: this.i18n.selectionRemovedManyLast,
+      },
       (key) => this.chosen().find((c) => c.key === key)?.label ?? this.labelOf(key as unknown as TValue),
     );
     this.saidLast = now;

@@ -219,14 +219,46 @@ export function multiselectAnnouncement(
     readonly empty: string;
     /** What is said when the value removed was the last one; falls back to `empty` where absent. */
     readonly removedLast?: string;
+    /**
+     * What is said when one act moved more than one value. `{moved}` is how many changed, `{count}`
+     * how many are held afterwards — a clear taking three from three and one taking three from ten
+     * are different facts, and one number cannot tell them apart.
+     *
+     * Optional, and the singular forms answer where they are absent: a caller that has not been
+     * given them says something true about a smaller act rather than nothing at all.
+     */
+    readonly addedMany?: string;
+    readonly removedMany?: string;
+    readonly removedManyLast?: string;
   },
   labelOf: (key: string) => string,
 ): string {
   const before = new Set(previous);
   const after = new Set(next);
-  const added = next.find((key) => !before.has(key));
-  const removed = previous.find((key) => !after.has(key));
+  // All of them, not the first. One act moves as many values as it moves — a clear takes every one,
+  // a way back puts every one of them back — and naming the first of three describes a smaller act
+  // than the one that happened. The count beside it stays right either way, which is what makes the
+  // shorter sentence sound like an account rather than a fragment: *"Alfa removed, nothing
+  // selected"* invites a listener to reconcile the halves themselves, and the reading that comes
+  // back is the one where they had only ever chosen Alfa.
+  const addedKeys = next.filter((key) => !before.has(key));
+  const removedKeys = previous.filter((key) => !after.has(key));
+  const added = addedKeys[0];
+  const removed = removedKeys[0];
+  const moved = addedKeys.length > 0 ? addedKeys.length : removedKeys.length;
   if (added === undefined && removed === undefined) return "";
+  // Counted rather than listed once more than one moved. The singular templates put the value before
+  // a verb that agrees with it, so a list of names dropped into one is ungrammatical in every
+  // language that inflects — and twelve names read out for one act a person took knowingly is a list
+  // rather than a fact.
+  if (moved > 1) {
+    const plural = after.size === 0
+      ? words.removedManyLast ?? words.removedMany
+      : addedKeys.length > 0 ? words.addedMany : words.removedMany;
+    if (plural !== undefined) {
+      return plural.replace("{moved}", String(moved)).replace("{count}", String(after.size));
+    }
+  }
   // Emptied, and the sentence carries both halves. Saying only "nothing selected" loses which of
   // twelve went; saying only "Roma removed" loses that the field is now empty. And once the strip is
   // gone there is nothing left in the page to tell them either — a field somebody has just emptied

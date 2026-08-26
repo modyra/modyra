@@ -1015,7 +1015,15 @@ export function renderMultiselectField(
     // ordinary thing for a renderer to do.
     const said = multiselectAnnouncement(
       saidLast, nowChosen,
-      { added: messages.selectionAdded, removed: messages.selectionRemoved, empty: messages.selectionEmpty, removedLast: messages.selectionRemovedLast },
+      {
+        added: messages.selectionAdded,
+        removed: messages.selectionRemoved,
+        empty: messages.selectionEmpty,
+        removedLast: messages.selectionRemovedLast,
+        addedMany: messages.selectionAddedMany,
+        removedMany: messages.selectionRemovedMany,
+        removedManyLast: messages.selectionRemovedManyLast,
+      },
       (key) => state.options.find((option) => keyFor(option) === key)?.label ?? key,
     );
     if (said !== "") setText(announcement, said);
