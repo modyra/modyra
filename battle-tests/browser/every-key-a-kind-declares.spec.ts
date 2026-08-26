@@ -205,6 +205,24 @@ for (const host of HOSTS) {
           continue;
         }
 
+        // **A key that waits for something to have happened is not a key that does nothing.**
+        // `awaits` names a passing state rather than a capability: the two are told apart by asking
+        // whether the answer can change with nobody touching the document, and this one can. A control
+        // mounted as a document declares it has done nothing yet, so the state is absent and the key
+        // is right to be silent.
+        //
+        // Counted as unreached rather than arranged for. Making the state here is the one change this
+        // file must not make — a fixture that performs the act a key is waiting on is asking a
+        // friendlier question, and the last time that shortcut was taken it turned four reds into two
+        // by hiding a finding. The key is exercised where the state belongs, against a control that
+        // has something to give back: `a-way-back-the-record-promises.spec.ts` presses it after a
+        // removal, by both modifiers, and asserts it leaves the platform's own undo alone.
+        if (binding.awaits !== undefined && binding.awaits !== null) {
+          unreached.push(
+            `${kind} ${binding.key}: waits for \`${binding.awaits}\`, which has not happened to this field`);
+          continue;
+        }
+
         // **A key belongs to a part, and the part may not be on the page.**
         // `on` names the part that answers a key. Unlike `when` and `requires`, whose conditions are
         // invisible in the DOM, this one is recoverable by looking: a multiselect with nothing chosen

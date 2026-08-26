@@ -28,6 +28,14 @@
  * walking the page with the keys is returned to the beginning of the document — the price of undoing
  * one value is finding their place again, which is the cost the remedy exists to avoid.
  *
+ * **The fourth is the half of the declaration that is easy to leave unwritten.** The table now says
+ * the gesture waits for the offer, and a renderer that keeps its own condition instead of reading that
+ * one agrees with it today and drifts the moment either moves. What the declaration means from
+ * outside is two things, not one: the gesture does nothing while the offer is absent, and something
+ * once it is there. A control answering it unconditionally passes every check that only looks after a
+ * removal, so the silence before one is asserted too — with the acting after one in the same run, so
+ * that silence is known to be the state's doing and not a dead key's.
+ *
  * **The third is the boundary the same gesture has to respect.** Inside a text box that gesture
  * belongs to the platform — it takes back the last thing typed — and a field that answered it there
  * would reach past the box a person is working in and change something else entirely, while the
@@ -132,6 +140,48 @@ for (const host of HOSTS) {
       + "wrong value reaches for that shortcut before they look for a button — so the record promises "
       + "a way in that is not there, and nothing on the page says otherwise.",
     ).toBeLessThan(SHORTCUTS.length);
+  });
+
+  test(`the gesture waits for something to undo, ${host.name}`, async ({ page }) => {
+    test.setTimeout(180_000);
+    await mount(page, "awaits");
+
+    // The premise: nothing has been taken, so the state the gesture waits for is absent.
+    //
+    // **Asked as "is it on offer", not "is it there".** The remedy keeps a place in the cluster whether
+    // or not it has anything to offer, so that nothing shifts sideways when it arrives — which means
+    // the element is in the document from the start and counting it finds one every time. What tells
+    // the two apart is whether it has been given a box.
+    const standing = await page.locator(`[data-form="awaits"] .${classOf("wayBackAction")}`).first()
+      .boundingBox().catch(() => null);
+    expect(
+      standing === null || standing.width < 1 || standing.height < 1,
+      `${host.name}: a remedy is on offer before anything was removed, so the state the gesture waits `
+      + "for is already here and its silence below would say nothing",
+    ).toBe(true);
+
+    const untouched = await value(page, "awaits");
+    await page.keyboard.press(PLATFORM_UNDO);
+    await page.waitForTimeout(600);
+    const afterEarly = await value(page, "awaits");
+
+    // The control, in the same run: once something has been taken, the same gesture acts. Without it
+    // a gesture that does nothing ever satisfies the silence above for the wrong reason.
+    const removed = await removeOne(page, "awaits");
+    await page.keyboard.press(PLATFORM_UNDO);
+    await page.waitForTimeout(600);
+    expect(
+      await value(page, "awaits"),
+      `${host.name}: the gesture does nothing after a removal either, so it is not waiting for `
+      + "anything — it is not answering at all, and the reading above is about a dead key",
+    ).toBe(removed.before);
+
+    expect(
+      afterEarly,
+      `${host.name}: the gesture changed what the field holds before anything had been taken out of `
+      + "it. The table says it waits for the offer; a control that answers it whenever it is pressed "
+      + "agrees with that only by coincidence, and the two part company the moment either moves.",
+    ).toBe(untouched);
   });
 
   test(`the shortcut leaves the platform's own undo alone, ${host.name}`, async ({ page }) => {
