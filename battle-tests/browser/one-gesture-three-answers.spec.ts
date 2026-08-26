@@ -51,18 +51,41 @@ async function chooseWithOneStep(
   await expect(control, `${host.name} drew no select this spec can reach`).toHaveCount(1, { timeout: 5_000 });
   await control.focus();
 
-  // **Waited on by settling, not by the clock.** These were three fixed pauses, and this test drives
-  // all three renderers and then compares what they answered — so a host read a beat early reports a
-  // value the others do not have, and the failure says *the keyboard model diverges* about a page
-  // that had simply not finished. It failed once inside a full suite run and passed alone three times,
-  // which is the shape of a clock and not of a defect.
+  // **Each keystroke is waited on for what that keystroke changes.** This test drives all three
+  // renderers and then compares what they answered, so a host read a beat early reports a value the
+  // others do not have and the failure says *the keyboard model diverges* about a page that had
+  // simply not finished.
   //
-  // The value is polled until it stops moving. A renderer that answers at once settles at once; one
-  // that takes longer under load is waited for rather than caught mid-write.
+  // Waiting for *the value to stop moving* does not do that job for the first two presses, because
+  // neither of them moves the value: the first opens the list and the second moves the reading
+  // position inside it. A wait for something to stop changing, asked of something that has not begun
+  // to change, returns at once — it is a pause wearing the clothes of a settle, and it is the shape
+  // that fails under load and passes alone.
+  //
+  // So the opening is waited on as an opening, the move as a move, and only the last press — the one
+  // that writes — is waited on by the value coming to rest.
   const held = () => page.evaluate(({ api, mountId }) =>
     JSON.stringify((window as never as Record<string, { valueOf(i: string): Record<string, unknown> }>)[api]
       .valueOf(mountId).f ?? null),
     { api: host.api, mountId: id });
+
+  /** Where the reading position is, by whichever of the two mechanisms an anatomy uses to carry it. */
+  const readingAt = () => page.evaluate((mountId) => {
+    const root = document.querySelector(`[data-form="${mountId}"]`);
+    const active = document.activeElement;
+    const pointed = root?.querySelector("[aria-activedescendant]")?.getAttribute("aria-activedescendant") ?? "";
+    const selected = root?.querySelector("[aria-selected='true'],[aria-current='true']")?.id ?? "";
+    return `${active === null ? "" : active.id || active.className}|${pointed}|${selected}`;
+  }, id);
+
+  const became = async (holds: () => Promise<boolean>, timeout = 3_000) => {
+    const until = Date.now() + timeout;
+    for (;;) {
+      if (await holds().catch(() => false)) return true;
+      if (Date.now() >= until) return false;
+      await page.waitForTimeout(40);
+    }
+  };
 
   const settled = async () => {
     let last = await held();
@@ -75,10 +98,19 @@ async function chooseWithOneStep(
     return last;
   };
 
+  const openNow = () => page.evaluate((mountId) =>
+    document.querySelector(`[data-form="${mountId}"] [aria-expanded]`)?.getAttribute("aria-expanded") ?? "(none)", id);
+
+  const wasClosed = await openNow();
   await page.keyboard.press("Enter");
-  await settled();
+  // A kind whose popup reports no expanded state at all cannot be waited on this way; there the
+  // reading position moving is the only signal, and the next wait covers it.
+  await became(async () => wasClosed === "(none)" || (await openNow()) !== wasClosed);
+
+  const before = await readingAt();
   await page.keyboard.press("ArrowDown");
-  await settled();
+  await became(async () => (await readingAt()) !== before);
+
   await page.keyboard.press("Enter");
   await settled();
 
@@ -139,6 +171,16 @@ for (const kind of ["datepicker", "timepicker"]) {
       await page.waitForFunction((flag) => (window as never as Record<string, boolean>)[flag] === true, host.ready);
       answers[host.name] = await chooseWithOneStep(page, host, `gesture-${kind}`, kind);
     }
+
+    // The premise, which this test was missing while its sibling above carried it: the gesture chose
+    // something everywhere. Three renderers answering nothing agree perfectly, and would report three
+    // controls no keystroke reaches as one control behaving consistently.
+    const chose = Object.values(answers).filter((each) => each !== null && each !== undefined && each !== "");
+    expect(
+      chose.length,
+      `the gesture chose nothing on a ${kind} in ${HOSTS.length - chose.length} renderer(s): `
+      + `${JSON.stringify(answers)}`,
+    ).toBe(HOSTS.length);
 
     const distinct = [...new Set(Object.values(answers).map((each) => JSON.stringify(each)))];
     expect(
