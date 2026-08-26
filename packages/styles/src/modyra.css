@@ -692,7 +692,11 @@
         cursor: not-allowed;
     }
 
-    .mdy-select__arrow--open {
+    /* Which way the caret points is the `open` state the catalogue declares on the `arrow` part, and
+       every kind that draws one answers the same way. Keyed on the part's own modifier rather than on
+       an ancestor's: the caret is not always a child of the control that holds the state. */
+    .mdy-select__arrow--open,
+    .mdy-multiselect__arrow--open {
         transform: rotate(180deg);
     }
 
@@ -2057,6 +2061,7 @@
         display: inline-flex;
         align-items: center;
         justify-content: center;
+        transition: transform var(--mdy-sys-motion-duration-slow);
         /* The field behind it is the target; this says which way it opens and nothing else. A press
            that lands on the caret reaches the box, which forwards its own empty space to the
            opener. */

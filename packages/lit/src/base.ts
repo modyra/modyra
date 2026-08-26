@@ -1,6 +1,6 @@
 import {
   handleFormOf, MdyFieldHandle, type MdyFieldConstraints, type MdyValueKind } from "@modyra/core";
-import { MDY_ICONS, MDY_POPUP_OPENERS, adoptSilentWrites, applySubmissionNames, bindFormReset, groupSubmitName, submissionFor, syncSubmitValues, defaultOptionKey, messagesForLocale, widgetScopeOf, type MdyI18nMessages } from "@modyra/widgets";
+import { MDY_ICONS, MDY_POPUP_OPENERS, stateClass, type MdyStateName, adoptSilentWrites, applySubmissionNames, bindFormReset, groupSubmitName, submissionFor, syncSubmitValues, defaultOptionKey, messagesForLocale, widgetScopeOf, type MdyI18nMessages } from "@modyra/widgets";
 import { html, LitElement, nothing, PropertyDeclarations } from "lit";
 import { unsafeSVG } from "lit/directives/unsafe-svg.js";
 import {
@@ -201,6 +201,20 @@ export abstract class MdyFieldElement<T> extends LitElement {
   protected partClass(part: string): string {
     const parts = MDY_WIDGET_CONTRACTS[this.widgetKind].parts as Readonly<Record<string, { classes: readonly string[] }>>;
     return (parts[part]?.classes ?? []).join(" ");
+  }
+
+  /**
+   * The modifier a part wears in one of its states, built from the part's own first class.
+   *
+   * The first and not the join: a modifier is a suffix on one block, and a part carrying two classes
+   * would otherwise produce a name with a space in the middle that no rule can match. Empty when the
+   * state is off or the part names no class, so it can be interpolated unguarded.
+   */
+  protected partStateClass(part: string, state: MdyStateName, on: boolean): string {
+    if (!on) return "";
+    const parts = MDY_WIDGET_CONTRACTS[this.widgetKind].parts as Readonly<Record<string, { classes: readonly string[] }>>;
+    const base = parts[part]?.classes?.[0];
+    return base === undefined ? "" : stateClass(base, state);
   }
 
   /**

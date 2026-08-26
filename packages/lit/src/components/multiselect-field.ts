@@ -662,7 +662,7 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
                decoration and not a control: the whole field is what opens the list, so a caret with
                a name of its own would be a second stop on the keyboard for a gesture that already
                has one. Last, because only the commands are in an order and a drawing is in none. -->
-          <span class="${this.partClass("arrow")}" aria-hidden="true"></span>
+          ${mdyIcon("CHEVRON_DOWN", `${this.partClass("arrow")} ${this.partStateClass("arrow", "open", this._open)}`)}
           <!-- Said rather than shown: a choice lands and the strip is the only confirmation, which
                is the one a person using a screen reader does not get. -->
           <div

@@ -100,3 +100,23 @@ test("every derived class is one the catalogue actually declares", () => {
     assert.ok(declared.has(cls), `${cls} is not declared by any part`);
   }
 });
+
+test("a caret means the same thing wherever one is drawn", () => {
+  // The same mark on two kinds answering two different vocabularies is the failure this catches: the
+  // single-choice list turned its caret on `open` and the multi-choice one had no `open` to turn,
+  // because the state was declared on one and not the other. Nothing measured the difference — each
+  // contract was consistent with itself.
+  const carets = Object.entries(MDY_WIDGET_CONTRACTS)
+    .filter(([, contract]) => contract.parts.arrow !== undefined)
+    .map(([kind, contract]) => [kind, [...(contract.parts.arrow.states ?? [])].sort().join(",")]);
+
+  assert.ok(carets.length > 1, "fewer than two kinds draw a caret, so this asserts nothing");
+  const vocabularies = [...new Set(carets.map(([, states]) => states))];
+  assert.deepEqual(
+    vocabularies,
+    ["open"],
+    `kinds that draw a caret declare different states for it: ${JSON.stringify(carets)}. `
+    + "Which way a caret points is the only thing a closed control shows about its list, so a kind "
+    + "whose caret has no open state is a kind whose caret cannot say anything.",
+  );
+});

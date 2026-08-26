@@ -2059,7 +2059,9 @@
           "classes": [
             "mdy-multiselect__arrow"
           ],
-          "states": []
+          "states": [
+            "open"
+          ]
         },
         "announcement": {
           "element": "status",

@@ -223,7 +223,11 @@ import type { MdyOverlayBranch, MdyOverlayOwner } from "../../core/overlay-contr
            decoration and not a control: the whole field is what opens the list, so a caret with a
            name of its own would be a second stop on the keyboard for a gesture that already has
            one. Last, because only the commands are in an order and a drawing is in none. -->
-      <span class="mdy-multiselect__arrow" aria-hidden="true"></span>
+      <mdy-icon
+        name="CHEVRON_DOWN"
+        class="mdy-multiselect__arrow"
+        [class.mdy-multiselect__arrow--open]="open()"
+      />
       <!-- Said rather than shown: a choice lands and the strip is the only confirmation, which is
            the one a person using a screen reader does not get. -->
       <div

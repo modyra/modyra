@@ -9,6 +9,7 @@
 import { observerFor, type MdyFieldHandle, type MdyReactivity, type MdySelectOption } from "@modyra/core";
 import type { MdyDynamicOptionsField } from "@modyra/core";
 import { syncSubmitValues,
+  stateClass,
   MDY_WIDGET_CONTRACTS,
   createSelectController,
   createTypeahead,
@@ -325,7 +326,7 @@ export function renderSelectField(
     reflectOverlayOpen(popup, state.open, messages);
     // The chevron points down when closed and up when open — the stylesheet has always carried the
     // rotation, and the select was the one overlay kind that never asked for it.
-    arrow.classList.toggle("mdy-select__arrow--open", state.open);
+    arrow.classList.toggle(stateClass(parts.arrow.classes[0] ?? "", "open"), state.open);
     if (state.open) {
       positionOverlay(popup, shell.wrapper, anchoring);
       // A combobox takes focus into its input; a listbox keeps it on the trigger and drives the list

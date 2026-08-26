@@ -112,6 +112,10 @@ export function renderMultiselectField(
   // control opens the popup, so this says which way it opens rather than being the way.
   const arrow = el("span", parts.arrow.classes.join(" "));
   arrow.setAttribute("aria-hidden", "true");
+  // The same mark the single-choice list draws, from the same table. The sheet keeps a caret of its
+  // own for a host that supplies no icons, but a renderer that has them must not draw a second
+  // shape for one meaning: two marks saying "this opens" drift the moment either is redrawn.
+  setIcon(arrow, "CHEVRON_DOWN");
   // Waiting on its options: the indicator goes on the control, so the field says it is loading
   // without being opened.
   if (f.loading) {
@@ -998,6 +1002,11 @@ export function renderMultiselectField(
     // `hidden` on the popup part is the contract's; this re-states it through `reflectOverlayOpen` so
     // the popover state and the attribute cannot disagree. Positioning only runs while it is showing.
     reflectOverlayOpen(popup, state.open, messages);
+    // Which way the caret points is the only thing on a closed control that says the list is
+    // showing. The modifier is derived from the part's own class, so a rename in the catalogue moves
+    // the rule and the renderer together instead of leaving one of them addressing a class nobody
+    // writes any more.
+    arrow.classList.toggle(stateClass(parts.arrow.classes[0] ?? "", "open"), state.open);
     if (state.open) {
       positionOverlay(popup, shell.wrapper, anchoring);
       // Focus goes where the user is about to type, exactly as the select does. A search box that
