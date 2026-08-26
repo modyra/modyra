@@ -101,11 +101,35 @@ own would put a number in the alphabet that nothing else in the library ever use
 scale longer without making anything answer to it. They stay in `rem`, where a reader's own text size
 still reaches them.
 
-**A length that is arithmetic, not a measurement.** The floating label's rest position, active
-position, mid gap and bottom padding are `calc`s over the field's height and a density factor. Forcing
-a step into `calc(0.125rem + (density * 0.03125rem))` does not make the result a step — it makes the
-expression look migrated while the position is still computed, which is worse than the literal because
-it hides what kind of thing the value is.
+**A length that is arithmetic, not a measurement.** A floating label's positions are `calc`s over the
+field's height and a density factor. Forcing a step into `calc(0.125rem + (density * 0.03125rem))`
+does not make the result a step — it makes the expression look migrated while the position is still
+computed, which is worse than the literal because it hides what kind of thing the value is. These are
+`--mdy-fl-rest-y`, `--mdy-fl-active-y`, `--mdy-fl-gap-mid`, `--mdy-fl-pad-bottom` and
+`--mdy-fl-pad-top-textarea`.
+
+**Named one by one, not as the family.** The shared prefix — spelled here in prose, because written as
+a name it would be read as the exemption this paragraph argues against — would be shorter and it would
+silence a namespace rather than a set of values: a member added later that *is* a step — a border, a radius —
+would be born exempt and nobody would ever see it. Named individually, a new one is red on the day it
+arrives, and its author either migrates it or argues it here. Both of those are the outcome this
+section wants; silence is not.
+
+### The field's own height is not exempt, and that is the point
+
+The field's height token and the floating variant's — spelled without the markup that would make this
+sentence exempt them, mdy-input-height and mdy-fl-height — are `calc`s too, and they are **not** in the
+list above.
+Their base is `3.5rem` — 56px — and the control scale stops at `--mdy-control-3: max(2.75rem, 44px)`.
+So the height every single-row field takes is a number the scale does not contain.
+
+That is not a derivation hiding a step. It is the open question about what the row system is: a kind
+is in it when its height comes from the control scale, and today no kind's does, because the height
+they share is not on that scale. Exempting these two would answer that question by silence, in the
+direction of leaving it as it is — and it is the one length in the sheets whose migration would make
+three renderers stop disagreeing about which kinds are peers.
+
+So they stay counted. The gate is red on two properties, and that red is the question, not a backlog.
 
 The test that tells them apart: **would moving the scale move this?** A padding must move with it, and
 a token that did not would leave a control spaced by two systems at once. A popup's ceiling must not —
