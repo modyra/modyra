@@ -88,6 +88,30 @@ answering.
 The names are read from `modyra-scale.css` rather than listed anywhere, so a step added or renamed is
 seen without anybody remembering to record it.
 
+### Two kinds of length are not steps, and saying so is the rule
+
+Every length in the sheets is a step, except two categories. Both are named here because "not a step"
+is otherwise indistinguishable from "nobody has migrated it yet", and a list of exceptions somebody
+maintains is the thing the scale exists to replace.
+
+**A length with no scale to belong to.** A popup's maximum height is a question about the viewport and
+about how much of a list a person can take in — not about spacing, not about type. Giving
+`--mdy-select-dropdown-max-height`, `--mdy-multiselect-max-height` or `--mdy-chip-w` a step of their
+own would put a number in the alphabet that nothing else in the library ever uses, which makes the
+scale longer without making anything answer to it. They stay in `rem`, where a reader's own text size
+still reaches them.
+
+**A length that is arithmetic, not a measurement.** The floating label's rest position, active
+position, mid gap and bottom padding are `calc`s over the field's height and a density factor. Forcing
+a step into `calc(0.125rem + (density * 0.03125rem))` does not make the result a step — it makes the
+expression look migrated while the position is still computed, which is worse than the literal because
+it hides what kind of thing the value is.
+
+The test that tells them apart: **would moving the scale move this?** A padding must move with it, and
+a token that did not would leave a control spaced by two systems at once. A popup's ceiling must not —
+it is bounded by the window, which no theme changes. And a derivation moves already, through the
+terms that are steps, so pinning the constant would move it twice.
+
 ---
 
 ## Size
