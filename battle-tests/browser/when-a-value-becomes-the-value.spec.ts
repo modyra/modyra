@@ -152,7 +152,7 @@ test("a timepicker changes only on confirmation, plain", async ({ page }) => {
 });
 
 
-test("a colour field writes through on the interaction, plain", async ({ page }) => {
+test("a colour field commits what is chosen, not what is passed over, plain", async ({ page }) => {
   test.setTimeout(180_000);
   // The declared answer for this kind. `confirm` answers for the control the label names and a
   // keyboard writes into — the one a person can leave half-finished, where `#11` is not a colour.
@@ -167,15 +167,34 @@ test("a colour field writes through on the interaction, plain", async ({ page })
 
   const held = () => page.evaluate(() => (window as never as Api).battle.valueOf("c").x);
 
-  // The other control of the same field, recorded rather than asserted against the word: the native
-  // swatch writes through the moment it fires. A kind carries one word and this field has two
-  // controls, so the word answers for the typed one and this line is what the word does not cover.
-  await page.evaluate(() => {
+  // The other control of the same field, recorded rather than asserted against the word: a kind
+  // carries one word and this field has two controls, so the word answers for the typed one and
+  // these lines are what the word does not cover.
+  //
+  // The platform's own chooser says two different things and only one of them is a value. It reports
+  // every colour a pointer moves across as it moves across it, and reports a choice once. A drag is
+  // something to look at, and the place to look at it is the chooser, which is where the person's
+  // eyes already are.
+  const swatchSays = (colour: string, announcement: string) => page.evaluate(({ colour, announcement }) => {
     const swatch = document.querySelector('[data-form="c"] input[type="color"]') as HTMLInputElement;
-    swatch.value = "#445566";
-    swatch.dispatchEvent(new Event("input", { bubbles: true }));
-  });
-  await expect.poll(() => held(), { message: "the native swatch did not write through either, so this is not about the hex box", ...SETTLES }).toBe("#445566");
+    swatch.value = colour;
+    swatch.dispatchEvent(new Event(announcement, { bubbles: true }));
+  }, { colour, announcement });
+
+  // Compared against what the field held a moment earlier, not against a particular empty: a field
+  // nobody has set answers with its own idea of nothing, and asserting which one it is would be a
+  // test of that instead of of the drag.
+  const beforeTheDrag = await held();
+  await swatchSays("#778899", "input");
+  await page.waitForTimeout(260);
+  expect(
+    await held(),
+    "a colour the pointer moved across became the field's value, so abandoning the chooser would "
+    + "leave whichever one it happened to be over",
+  ).toBe(beforeTheDrag);
+
+  await swatchSays("#445566", "change");
+  await expect.poll(() => held(), { message: "a colour chosen in the platform's chooser did not reach the field, so nothing here is about the hex box", ...SETTLES }).toBe("#445566");
 
   // And the hex box, typed a character at a time, ending on a complete colour.
   const hex = page.locator('[data-form="c"] .mdy-colors__hex-input').first();

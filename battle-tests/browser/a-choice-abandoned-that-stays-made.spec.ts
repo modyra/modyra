@@ -17,14 +17,18 @@
  * what they had.
  *
  * **The chooser itself cannot be driven from here** — it belongs to the operating system, and no test
- * runner opens or cancels it. What can be driven is the mechanism the harm runs through: the native
- * element the chooser writes into, and whether what it writes lands in the field before anybody has
- * confirmed anything. A drag is that element reporting a series of values; a cancel is it reporting no
- * more. If a preview has already become the value, there is nothing left for a cancel to undo.
+ * runner opens or cancels it. What can be driven is the thing the chooser speaks through, and the
+ * distinction it makes: a drag is reported as it happens, a choice is reported once, and they are two
+ * different announcements. The property this file holds is that only the second one is a value.
  *
- * **The premise is that the preview arrived at all.** A native element that ignores what this file
- * writes into it would leave the field untouched and pass for the least interesting reason there is,
- * so the field is read after the preview and a run where nothing moved says so instead.
+ * **Both halves, or neither means anything.** A field that took nothing from the chooser at all would
+ * satisfy "a drag does not commit" perfectly, and would be broken. So the drag must leave the field
+ * where it was *and* the choice must move it. Asserting only the first is a rule a dead control keeps
+ * best of all.
+ *
+ * **What this does not settle.** If a real chooser announces a choice when a person cancels, the value
+ * it announces decides whether the distinction above is enough, and no runner knows what that is. That
+ * half waits for a person; it is not deduced here.
  *
  * Claims under attack: UI-005.
  */
@@ -42,12 +46,13 @@ const classOf = (part: string): string => {
   return (parts[part]?.classes ?? [])[0] ?? "";
 };
 
-/** What the field holds before anyone opens anything, and a colour dragged past on the way. */
+/** What the field holds, a colour dragged past on the way, and one actually chosen. */
 const HELD = "#4361ee";
 const PASSED_OVER = "#b91c1c";
+const CHOSEN = "#15803d";
 
 for (const host of HOSTS) {
-  test(`a colour dragged past and abandoned is not the field's, ${host.name}`, async ({ page }) => {
+  test(`a step of a drag is not a choice, ${host.name}`, async ({ page }) => {
     test.setTimeout(180_000);
     await page.setViewportSize({ width: 1_200, height: 800 });
     await page.goto(host.page);
@@ -77,38 +82,51 @@ for (const host of HOSTS) {
     const native = page.locator(`[data-form="abandon"] .${classOf("control")}, [data-form="abandon"] input[type="color"]`).first();
     expect(await native.count(), `${host.name} draws no native chooser for a colour field`).toBeGreaterThan(0);
 
-    // One step of the drag: the chooser writes a colour and says so, exactly as it does while moving.
-    await native.evaluate((element, passing) => {
-      (element as HTMLInputElement).value = passing;
-      element.dispatchEvent(new Event("input", { bubbles: true }));
-    }, PASSED_OVER);
+    // Steps of a drag: the chooser reports each colour the pointer moves over, as it moves over it.
+    for (const passing of [PASSED_OVER, "#a16207", PASSED_OVER]) {
+      await native.evaluate((element, colour) => {
+        (element as HTMLInputElement).value = colour;
+        element.dispatchEvent(new Event("input", { bubbles: true }));
+      }, passing);
+    }
     await page.waitForTimeout(300);
 
     const during = await value();
-    // If the preview never reached the field, the cancel below has nothing to undo and this file
-    // would pass without having asked anything.
     expect(
       during.toLowerCase(),
-      `${host.name}: a colour written into the native chooser and announced never reached the field, `
-      + `which still holds ${during}. The mechanism this file is about did not run`,
-    ).toBe(PASSED_OVER);
+      `${host.name}: a colour the pointer passed over during a drag is the field's value. It held `
+      + `${HELD}, the pointer moved across ${PASSED_OVER} without stopping, and the field holds `
+      + `${during}. Abandoning the choice now leaves whichever colour the pointer happened to be over, `
+      + "because nothing recorded what was there before and there is nothing for an abandonment to "
+      + "restore. Nothing looks wrong afterwards: the field holds a valid colour that was genuinely "
+      + "on the screen a moment earlier, and only the person who cancelled can tell.",
+    ).toBe(HELD);
 
-    // The person cancels: the chooser closes and reports nothing further. No `change`, no confirmation.
+    // The chooser closes with nothing chosen. It reports no choice, so nothing further arrives.
     await native.evaluate((element) => {
       element.dispatchEvent(new Event("blur", { bubbles: true }));
       element.dispatchEvent(new FocusEvent("focusout", { bubbles: true }));
     });
-    await page.waitForTimeout(400);
+    await page.waitForTimeout(300);
 
-    const after = await value();
     expect(
-      after.toLowerCase(),
-      `${host.name}: a colour the pointer passed over during a drag is now the field's value. `
-      + `It held ${HELD}, a drag previewed ${PASSED_OVER}, the choice was abandoned, and the field `
-      + `holds ${after}. Nothing recorded what it held before the chooser opened, so there is nothing `
-      + "for an abandonment to restore — and nothing looks wrong afterwards: the field holds a valid "
-      + "colour that was genuinely on the screen a moment earlier. Only the person who cancelled can "
-      + "tell, and only if they remember what they had.",
+      (await value()).toLowerCase(),
+      `${host.name}: the chooser closed without a choice and the field moved anyway`,
     ).toBe(HELD);
+
+    // The other half, without which the rule above is one a dead control keeps best of all: a colour
+    // actually chosen is announced once, and that one is the value.
+    await native.evaluate((element, chosen) => {
+      (element as HTMLInputElement).value = chosen;
+      element.dispatchEvent(new Event("change", { bubbles: true }));
+    }, CHOSEN);
+    await page.waitForTimeout(350);
+
+    expect(
+      (await value()).toLowerCase(),
+      `${host.name}: a colour announced as chosen did not reach the field, which still holds `
+      + `${await value()}. A control that takes nothing from the chooser keeps "a drag is not a `
+      + 'choice" perfectly and is broken, so this half is what makes the other half mean something.',
+    ).toBe(CHOSEN);
   });
 }

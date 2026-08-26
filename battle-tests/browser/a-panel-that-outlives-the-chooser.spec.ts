@@ -23,10 +23,17 @@
  * the sloppy way — focus moved away *and* the window blurred — this file reported a renderer for
  * closing on the one of the two that it is supposed to close on.
  *
- * **The premise is that the press arrived.** A door that no click reaches would leave the panel open
- * for the least interesting reason there is, so the native chooser's own element is watched, and a run
- * where nothing reached it says so instead of passing. This is the shape that has cost this suite more
- * false greens than any other: an experiment that does not perform the thing it claims to test.
+ * **The premise is that the door opened something**, and there is more than one way to open it. A page
+ * can ask the platform directly, or it can press the hidden native element the platform listens to;
+ * both are legitimate and a renderer may use either. So both are watched, and a run where neither
+ * happened says so rather than passing — a panel left open by a door that did nothing is the least
+ * interesting green there is.
+ *
+ * **A press that is cancelled opens nothing**, and it is indistinguishable from a working door by
+ * looking at the page: the button is there, it takes the press, and the platform is never asked. A
+ * guard against a cancelled press exists elsewhere in these renderers for a good reason — to stop one
+ * press reaching the native element twice — and a guard written for one element reaches whatever else
+ * is inside it. So a press that was cancelled is not counted as a press.
  *
  * **A control is not judged for a door it does not have.** A renderer that offers no way out has
  * nothing to survive and is reported as such rather than counted as healthy.
@@ -77,13 +84,28 @@ for (const host of HOSTS) {
     // for the absence of the feature this file is about.
     expect(hasDoor, `${host.name} opened a palette with no way out to the platform's chooser`).toBe(true);
 
-    // Watch the chooser's own element, so a press that reaches nothing cannot read as a press.
+    // Both ways a page can open the platform's chooser, so a renderer is judged on whether it opened
+    // one and not on which it chose.
     await page.evaluate((nativeClass) => {
-      const store = window as never as Record<string, unknown>;
+      const store = window as never as Record<string, number>;
       store.mdyChooserReached = 0;
-      for (const one of Array.from(document.querySelectorAll(`.${nativeClass}, input[type="color"]`))) {
-        one.addEventListener("click", () => { store.mdyChooserReached = (store.mdyChooserReached as number) + 1; }, true);
+
+      const asked = HTMLInputElement.prototype.showPicker;
+      if (typeof asked === "function") {
+        HTMLInputElement.prototype.showPicker = function patched(this: HTMLInputElement) {
+          store.mdyChooserReached += 1;
+          try { return asked.call(this); } catch { return undefined; }
+        };
       }
+
+      // Last in the bubble, where whether the press was cancelled is finally known. A cancelled press
+      // never reaches the platform, and counting it would make a dead door read as a live one.
+      document.addEventListener("click", (event) => {
+        const target = event.target as Element | null;
+        if (target === null || !target.matches(`.${nativeClass}, input[type="color"]`)) return;
+        if (event.defaultPrevented) return;
+        store.mdyChooserReached += 1;
+      });
     }, classOf("control"));
 
     await door.click({ timeout: 5_000 });
@@ -92,8 +114,10 @@ for (const host of HOSTS) {
     const reached = await page.evaluate(() => (window as never as Record<string, number>).mdyChooserReached);
     expect(
       reached,
-      `${host.name}: pressing the way out reached the platform's chooser ${reached} time(s), so nothing `
-      + "was opened and whether the panel survives it is a question this run did not ask",
+      `${host.name}: pressing the way out neither asked the platform for its chooser nor let a press `
+      + "reach the native element — it was cancelled, or it went nowhere. Nothing was opened, so "
+      + "whether the panel survives it is a question this run did not ask; and from outside, a door "
+      + "that opens nothing looks exactly like one that works.",
     ).toBeGreaterThan(0);
 
     // The window loses the operating system's focus. Nothing inside the page moves: that would be a
