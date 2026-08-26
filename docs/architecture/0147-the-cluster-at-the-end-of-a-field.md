@@ -147,3 +147,72 @@ happened.
 
 None. The undo reverses an act on data the person entered and is looking at; where it is drawn changes
 nothing about what is stored or sent. The accessible name repeats a value already on screen.
+
+## Amendment: the caret is not one of the controls
+
+This record counted three controls at the trailing edge and gave all three a size and a place in an
+order. **Two of those three are controls. The caret is a drawing**, and the difference decides both
+the cost of this decision and the shape of what ships.
+
+The catalogue already declares which part opens the list — `opener: "trigger"` — with the reason
+beside it: *the whole control opens the popup, and a magnifier beside the field made the opener a
+decoration rather than the control.* The stylesheet says the same of the caret's box: *the glyph's
+box, not a target's*, and it is `pointer-events: none`. The outside view, asked in ordinary words and
+told nothing of this repository, reconstructed the same thing: a caret that were a control would be a
+second name, a second keyboard stop and a second voice for a gesture that already has one, and
+
+> *a mark has no minimum size, because the rule sizes what is pressed, and here what is pressed is
+> the whole field.*
+
+Two consequences, and the expensive one is withdrawn.
+
+**"A 16×16 caret becomes 24×24 in every theme… and the screenshot baselines move with it" does not
+follow.** The caret keeps its glyph box. The baselines do not move for it, and a change that moves
+hundreds of them is evidence that something else was touched.
+
+**Only the commands are in an order**, so the order this record asked for — the way back, then the
+clear-all, then the opener — is an order of two, and the caret is drawn last because that is where a
+person looks for it. There is no structural choice to make between the order and the wide press area
+that opens the list: both are kept, and the caret is painted by the box at its own trailing edge
+rather than by the control that opens.
+
+**The gap is kept and its reason is corrected.** No published rule requires it: the target-size
+criterion sizes a target and treats surrounding space only as a way to rescue one that is too small,
+and these are large enough already. Recorded as conformance it would be a false claim. It is here
+because **the way back is the remedy for the clear-all** — it is what allows a control to discard
+everything without stopping to ask — which ties the two together and pulls them apart at once: near
+enough to find in the moment after the mistake, far enough that a thumb aimed at one cannot land on
+the other. The way back comes first for a second reason of the same kind: arriving, it grows into the
+empty space instead of pushing the destructive control sideways under a thumb already aimed at it.
+
+**The sentence was two jobs, not one label.** *"Alfa removed — Undo"* both said what had happened and
+offered the way back. The mark can do the second and cannot do the first for anybody: a person who
+does not see it perceives no arrival at all, and a person who does was looking at the chip that
+vanished — which is itself the confirmation, and a better one. So the announcement goes to the live
+region, which owes it whether or not a way back is on offer, and **the act goes into the control's
+name**.
+
+The name is composed from the same three templates the sentence uses rather than from wordings of its
+own — one reversal covers a removal, a move and a clear, and a name built around *restore* is wrong
+for the middle one.
+
+### What is not decided here
+
+The help text and the error message share one region below a field, and the outside view is that they
+must **coexist** — the instruction is most useful in the moment the error appears, so replacing it
+with the error withdraws the remedy exactly when it is needed. That is a change to every kind's shell
+and a separate decision; it is recorded as owed, not taken.
+
+## Verification of the amendment
+
+`packages/widgets/test/affordance.spec.mjs` asserts the trailing set for every kind, including that
+the caret remains the only decorative member of it. `packages/widgets/test/icons.spec.mjs` measures
+the mark against the icon grid.
+
+The claim that the baselines do not move is itself the check: a screenshot run that moves hundreds of
+images falsifies this amendment rather than confirming the change.
+
+## Security and privacy of the amendment
+
+None. Nothing here changes what is stored, sent or exposed; the accessible name repeats a value the
+person entered and can see.

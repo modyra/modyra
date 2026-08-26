@@ -2040,21 +2040,26 @@
 
     .mdy-multiselect__arrow {
         flex: 0 0 auto;
-        /* At the opener's trailing edge, where the field's other affordances are. Packed at the
-           start it sat wherever the chips left off — so the caret, the overflow and the clear-all
-           stood at three different distances from the edge and there was no column for the eye to
-           follow, which is the whole of what `DESIGN.md` asks of a trailing affordance. */
+        /* Last in the box, at the field's trailing edge, so the caret, the overflow, the way back
+           and the clear-all stand in one column for the eye to follow — which is what `DESIGN.md`
+           asks of a trailing affordance. Painted by the box rather than by the control that opens:
+           only commands have an order, and this is a drawing. */
         margin-inline-start: auto;
-        /* The glyph's box, not a target's. This is `aria-hidden` decoration inside the opener — the
-           opener is what a person presses — and sized to the 44px target it made the row 44 tall
-           inside a field of 36, which pushed everything else in the row 8px below the centre line
-           and hung the chips past the bottom edge. A target is not a size. */
-        width: var(--mdy-affordance-glyph);
-        height: var(--mdy-affordance-glyph);
+        /* The affordance box every trailing mark in a form stands in, so this caret's centre falls in
+           the same column as the single-choice sibling's and the pickers' toggles. Not the 44px
+           target: this is `aria-hidden` decoration and the whole field is what a person presses, and
+           sized to a target it made the row 44 tall inside a field of 36, which pushed everything
+           else in the row 8px below the centre line and hung the chips past the bottom edge. The
+           mark drawn inside keeps the glyph's own size — a box is not a mark, and a target is not a
+           size. */
+        width: var(--mdy-affordance-box);
+        height: var(--mdy-affordance-box);
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        /* The control behind it is the target; this says which way it opens and nothing else. */
+        /* The field behind it is the target; this says which way it opens and nothing else. A press
+           that lands on the caret reaches the box, which forwards its own empty space to the
+           opener. */
         pointer-events: none;
     }
 
@@ -2176,44 +2181,46 @@
     .mdy-multiselect__overflow[hidden] { display: none; }
     .mdy-multiselect__clear-all[hidden] { display: none; }
 
-    /* The one way back. In the page and untimed: a message that takes itself away after five
-       seconds is a time limit under WCAG 2.2.1, and an undo has no exception under it. */
-    .mdy-multiselect__way-back {
-        /* Positioned, and not for placement: the input wrapper above it is `position: relative`, so
-           it paints over the in-flow content that follows and takes the pointer with it. A row of
-           controls under a control has to join the same painting step to be pressable at all. */
-        position: relative;
-        z-index: 1;
-        display: flex;
-        align-items: center;
-        gap: var(--mdy-space-2, 0.5rem);
-        margin-top: var(--mdy-space-1, 0.25rem);
-        /* One line, reserved, whether or not anything is offered. Rendered only when there is
-           something to undo, the row makes every control below the field step down the moment a
-           value goes, and step again on the next removal — a cost that moves is one nobody can
-           learn, where a fixed one is learnt once. Its contents come and go inside the band, and
-           nothing else on the page moves. */
-        /* The literal first, the modern unit second: a browser that does not know `lh` drops the
-           second declaration and keeps the first, which is the cascade's own fallback and costs two
-           lines. Without it the band reserves nothing and the page steps down 21px again — the whole
-           point of the row. The literal is this row's own line height at the default font size.
-           Never state either through a custom property: a `var()` is valid at parse time whatever it
-           holds, so the failure moves to substitution, where it takes the *inherited* value rather
-           than the declaration above. The fallback is silently gone and the linter is green. */
-        min-height: 1.3125rem;
-        min-height: 1lh;
-        font-size: var(--mdy-font-size-sm, 0.875rem);
-        color: var(--mdy-color-text-muted, inherit);
-    }
+    /* The one way back, first of the two commands at the field's trailing edge.
 
+       Untimed: a mark that takes itself away after five seconds is a time limit under WCAG 2.2.1,
+       and an undo has no exception under it.
+
+       The gap before the clear-all is not a conformance measure — the target-size criterion sizes a
+       target and treats surrounding space only as a way to save one that is too small, and both of
+       these are large enough already. It is here because the way back is the *remedy* for the
+       clear-all: it is what lets a control discard everything without stopping to ask. That ties the
+       two together and pulls them apart at once — near enough to find the moment after the mistake,
+       far enough that a thumb aimed at one cannot land on the other. */
     .mdy-multiselect__way-back-action {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        flex: 0 0 auto;
+        /* Both commands stand in the same column as the field's other affordances. */
+        width: var(--mdy-control-1);
+        align-self: stretch;
+        padding: 0;
         border: 0;
         background: none;
-        padding: 0;
-        font: inherit;
-        color: var(--mdy-color-primary, inherit);
-        text-decoration: underline;
+        color: var(--mdy-color-text-muted, inherit);
         cursor: pointer;
+        /* The distance that says which of the two reverses the other. On this control's trailing
+           side rather than the clear-all's leading one, so it holds whether or not the offer does
+           and the clear-all keeps one position. */
+        margin-inline-end: var(--mdy-space-3, 0.75rem);
+    }
+
+    .mdy-multiselect__way-back-action:hover { color: var(--mdy-color-text, inherit); }
+
+    /* The slot is reserved: at rest the control keeps its box and gives up only its paint, so the
+       clear-all beside it stands where it stood. `display: none` would hand a person a control that
+       moves as the offer arrives — pressed meaning the other one, which discards the field.
+       `visibility` also takes it out of the tab order and out of the accessibility tree, so a
+       reserved slot is not a stop on the way to anything. */
+    .mdy-multiselect__way-back-action[hidden] {
+        display: inline-flex;
+        visibility: hidden;
     }
 
     .mdy-multiselect__placeholder {

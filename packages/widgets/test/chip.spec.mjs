@@ -13,6 +13,9 @@ import {
   settledVoice,
   MDY_CHIP_CLASSES,
   MDY_WIDGET_CONTRACTS,
+  hiddenChipCount,
+  wayBackActionName,
+  wayBackSentence,
   multiselectChipClasses,
 } from "../dist/index.js";
 
@@ -123,4 +126,85 @@ test("the closed control carries what was chosen, and the popup carries the opti
   assert.equal(parentOf("chip"), "chipRow");
   // The chip is where a value is changed, so the control that takes it off belongs to the chip.
   assert.equal(parentOf("chipRemove"), "chip");
+});
+
+/**
+ * A strip built the way the contract builds one: chips inside a row, not directly inside the strip.
+ *
+ * Boxes are stated rather than laid out, because what is under test is which elements are counted —
+ * a question a layout engine does not answer and a fake one cannot get wrong.
+ */
+function stripHolding(chips) {
+  const box = { left: 0, right: 100 };
+  const chipEls = chips.map((at) => ({
+    className: MDY_CHIP_CLASSES.block,
+    getBoundingClientRect: () => at,
+  }));
+  const row = { className: "mdy-multiselect__chip-row", getBoundingClientRect: () => ({ left: 0, right: 400 }) };
+  return {
+    scrollWidth: 400,
+    clientWidth: 100,
+    getBoundingClientRect: () => box,
+    children: [row],
+    querySelectorAll: (selector) => (selector === `.${MDY_CHIP_CLASSES.block}` ? chipEls : []),
+  };
+}
+
+test("the strip counts the chips it is not showing, not the row that holds them", () => {
+  // Three of five sit past the trailing edge.
+  const five = stripHolding([
+    { left: 0, right: 30 }, { left: 32, right: 62 },
+    { left: 110, right: 140 }, { left: 142, right: 172 }, { left: 174, right: 204 },
+  ]);
+  assert.equal(hiddenChipCount(five), 3);
+
+  // The count follows the chips rather than staying at the one row that holds them: read off the
+  // strip's own children this answers 1 for every arrangement, which is right only by coincidence
+  // when exactly one chip is out of sight.
+  const nine = stripHolding(Array.from({ length: 9 }, (_, i) => ({ left: 110 + i * 32, right: 140 + i * 32 })));
+  assert.equal(hiddenChipCount(nine), 9);
+
+  // Clipped at the leading edge counts too: the row scrolls both ways.
+  const behind = stripHolding([{ left: -40, right: -10 }, { left: 10, right: 40 }]);
+  assert.equal(hiddenChipCount(behind), 1);
+});
+
+test("a strip that shows everything it holds counts none", () => {
+  const full = stripHolding([{ left: 0, right: 30 }]);
+  full.scrollWidth = 100;
+  assert.equal(hiddenChipCount(full), 0);
+});
+
+test("the way back is named for the act it reverses, not for the word undo", () => {
+  const words = {
+    label: "Undo",
+    removed: "{value} removed",
+    moved: "{value} moved",
+    cleared: "{count} items cleared",
+  };
+  const labelOf = (key) => ({ a: "Alfa" })[key] ?? key;
+
+  // One reversal covers three acts, so a fixed name would be a button that says one thing and does
+  // three. "Restore Alfa" would be wrong for the middle one, which is why the name is built from the
+  // act's own sentence rather than from a verb of its own.
+  assert.equal(
+    wayBackActionName({ act: "remove", optionKey: "a", count: 1 }, words, labelOf),
+    "Undo: Alfa removed",
+  );
+  assert.equal(
+    wayBackActionName({ act: "move", optionKey: "a", count: 1 }, words, labelOf),
+    "Undo: Alfa moved",
+  );
+  // A clear has no value to name and says how many it took.
+  assert.equal(
+    wayBackActionName({ act: "clear", optionKey: null, count: 5 }, words, labelOf),
+    "Undo: 5 items cleared",
+  );
+
+  // The name and the announcement say the same words about the same act: one set of templates, so a
+  // translation cannot move one without the other.
+  for (const act of ["remove", "move", "clear"]) {
+    const way = { act, optionKey: act === "clear" ? null : "a", count: 5 };
+    assert.ok(wayBackActionName(way, words, labelOf).endsWith(wayBackSentence(way, words, labelOf)), act);
+  }
 });

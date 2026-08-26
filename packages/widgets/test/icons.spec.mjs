@@ -35,7 +35,19 @@ function extent(content) {
     ys.push(+m[2], +m[2] + +m[4]);
   }
   // Path data: absolute commands carry coordinates, relative ones accumulate from the last point.
+  //
+  // Only the straight-segment commands are understood, and anything else is refused rather than
+  // skipped. A curve whose coordinates this cannot follow does not make the extent approximate — it
+  // makes it *wrong in one direction*, always smaller than the glyph, so an icon that overflows its
+  // class or sits off-centre passes every check below. An instrument that cannot see a shape has to
+  // say so, not return a number.
   for (const m of content.matchAll(/ d="([^"]+)"/g)) {
+    const commands = m[1].match(/[A-Za-z]/g) ?? [];
+    for (const cmd of commands) {
+      if (!"MmLlHhVvZz".includes(cmd)) {
+        throw new Error(`path command "${cmd}" is not one this extent can measure: ${m[1]}`);
+      }
+    }
     let x = 0;
     let y = 0;
     for (const seg of m[1].matchAll(/([MmLlHhVv])\s*([-\d.\s,]*)/g)) {

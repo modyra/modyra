@@ -24,15 +24,22 @@ import { expect, test } from "@playwright/test";
  * 316px from the field's end against 19px everywhere else — a true reading of a control that is not
  * an affordance, reported as a misalignment.
  *
- * The multiselect's trailing affordance is its clear-all, which sits where the others sit and is the
- * size the others are.
+ * **Two of the five are decorations, and they are still the thing to measure here.** A caret is not a
+ * target — the control behind it is — but it is what sits at the field's inline end, and the column
+ * this page is about is a column of what the eye follows. `decorative` marks them so the target-size
+ * test below can exempt exactly those two and no others: the same fact, asked two different
+ * questions.
+ *
+ * The multiselect's edge is its caret for the same reason the single-choice sibling's is. Behind it
+ * stand the commands — the clear-all and the way back — one slot further in, which is where the
+ * decision that put them there means them to be.
  */
 const AFFORDANCES = [
-  { kind: "select", selector: ".mdy-renderer--select .mdy-select__arrow" },
-  { kind: "datepicker", selector: ".mdy-renderer--datepicker .mdy-datepicker__toggle" },
-  { kind: "timepicker", selector: ".mdy-renderer--timepicker .mdy-timepicker__toggle" },
-  { kind: "colors", selector: ".mdy-renderer--colors .mdy-colors__toggle-area" },
-  { kind: "multiselect", selector: ".mdy-renderer--multiselect .mdy-multiselect__clear-all" },
+  { kind: "select", selector: ".mdy-renderer--select .mdy-select__arrow", decorative: true },
+  { kind: "datepicker", selector: ".mdy-renderer--datepicker .mdy-datepicker__toggle", decorative: false },
+  { kind: "timepicker", selector: ".mdy-renderer--timepicker .mdy-timepicker__toggle", decorative: false },
+  { kind: "colors", selector: ".mdy-renderer--colors .mdy-colors__toggle-area", decorative: false },
+  { kind: "multiselect", selector: ".mdy-renderer--multiselect .mdy-multiselect__arrow", decorative: true },
 ];
 
 interface Placement {
@@ -100,11 +107,11 @@ test("an interactive affordance is at least the target size this project ships",
   // The target is the larger of the element and its overlay: an affordance big enough on its own needs
   // no overlay, and one that is not is measured on what the overlay gives it.
   //
-  // The select caret is exempt: it is `pointer-events: none` and the trigger behind it is the target.
+  // The carets are exempt: they are `pointer-events: none` and the control behind them is the target.
   const small = await page.evaluate((list) => {
     const out: string[] = [];
-    for (const { kind, selector } of list) {
-      if (kind === "select") continue;
+    for (const { kind, selector, decorative } of list) {
+      if (decorative) continue;
       const el = document.querySelector(selector);
       if (!(el instanceof HTMLElement)) continue;
       const own = el.getBoundingClientRect();

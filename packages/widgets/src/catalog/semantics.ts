@@ -38,8 +38,9 @@ const PART_SEMANTICS: Readonly<Record<string, MdyWidgetSemanticElement>> = Objec
   // What the chip is made of: a name, how many, and the control that takes it off.
   chipRemove: "button", chipMove: "button",
   // Taking every choice off, and putting the last destructive act back. Both are pressed, so both
-  // are buttons; the row the way back sits in is a container that holds a sentence and that button.
-  clearAll: "button", overflowCount: "button", wayBackAction: "button", wayBack: "container",
+  // are buttons, and both sit at the field's trailing edge: the way back is the remedy for the
+  // clear-all, which is what lets a control discard everything without asking first.
+  clearAll: "button", overflowCount: "button", wayBackAction: "button",
   // Text, with the role the contract declares: what a chip is called when the strip cut it short.
   chipTooltip: "text",
   // Announcements.

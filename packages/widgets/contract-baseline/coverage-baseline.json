@@ -1,9 +1,9 @@
 {
   "note": "Public names not yet asserted or not yet shown. The list may only get shorter.",
   "score": {
-    "published": 843,
-    "asserted": 587,
-    "shown": 81
+    "published": 856,
+    "asserted": 600,
+    "shown": 93
   },
   "uncovered": [
     {
@@ -4544,6 +4544,12 @@
     },
     {
       "name": "visibleErrorsOf",
+      "asserted": true,
+      "shown": false,
+      "reason": "published and never shown"
+    },
+    {
+      "name": "wayBackActionName",
       "asserted": true,
       "shown": false,
       "reason": "published and never shown"

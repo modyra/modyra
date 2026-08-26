@@ -103,6 +103,16 @@ export const MDY_ICONS = Object.freeze({
     span: "compact",
     content: `<path d="M5 5l14 14M19 5L5 19" ${STROKE}/>`
   }),
+  // An arrow that turns back on itself: the mark for putting the last act back. Drawn rather than
+  // written as a character, so what a control is called stays a property of its name and not of a
+  // glyph the text layer might read out beside it.
+  UNDO: Object.freeze({
+    viewBox: "0 0 24 24",
+    span: "compact",
+    // Squared rather than curved, like every other glyph here: the set draws circles as circles and
+    // everything else in straight segments, and one arc among them reads as a different hand.
+    content: `<path d="M5 9h14v10" ${STROKE}/><path d="M9 5L5 9l4 4" ${STROKE}/>`
+  }),
   PLUS: Object.freeze({
     viewBox: "0 0 24 24",
     span: "compact",

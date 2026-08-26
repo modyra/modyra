@@ -2028,6 +2028,17 @@
           ],
           "states": []
         },
+        "wayBackAction": {
+          "element": "button",
+          "parent": "box",
+          "optional": true,
+          "repeated": false,
+          "role": null,
+          "classes": [
+            "mdy-multiselect__way-back-action"
+          ],
+          "states": []
+        },
         "clearAll": {
           "element": "button",
           "parent": "box",
@@ -2041,7 +2052,7 @@
         },
         "arrow": {
           "element": "presentation",
-          "parent": "trigger",
+          "parent": "box",
           "optional": true,
           "repeated": false,
           "role": null,
@@ -2069,28 +2080,6 @@
           "role": "tooltip",
           "classes": [
             "mdy-chip__tooltip"
-          ],
-          "states": []
-        },
-        "wayBack": {
-          "element": "container",
-          "parent": "root",
-          "optional": true,
-          "repeated": false,
-          "role": null,
-          "classes": [
-            "mdy-multiselect__way-back"
-          ],
-          "states": []
-        },
-        "wayBackAction": {
-          "element": "button",
-          "parent": "wayBack",
-          "optional": true,
-          "repeated": false,
-          "role": null,
-          "classes": [
-            "mdy-multiselect__way-back-action"
           ],
           "states": []
         },

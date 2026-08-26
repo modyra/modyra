@@ -1,4 +1,4 @@
-import { wayBackSentence, chipTooltipOffset, hiddenChipCount, keepFocusedChipInView, chipDropIndex, chipFocusAfterRemoval, scrollChipStripByWheel, isTypeaheadCharacter, chipMovedAnnouncement, stateClass, keyBindingFor, multiselectAnnouncement, optionsWithUnrecognizedValues, overlayControlledId, projectOverlayOpenerA11y } from "@modyra/widgets";
+import { wayBackActionName, chipTooltipOffset, hiddenChipCount, keepFocusedChipInView, chipDropIndex, chipFocusAfterRemoval, scrollChipStripByWheel, isTypeaheadCharacter, chipMovedAnnouncement, stateClass, keyBindingFor, multiselectAnnouncement, optionsWithUnrecognizedValues, overlayControlledId, projectOverlayOpenerA11y } from "@modyra/widgets";
 import { MdyPartDirective } from "../../control/mdy-part.directive";
 import { NgTemplateOutlet } from "@angular/common";
 import {
@@ -20,7 +20,6 @@ import {
   MDY_WIDGET_CONTRACTS,
   multiselectOverlayAction,
   chipActionName,
-  defaultWidgetIdFactory,
   multiselectChipClasses,
   quantityAnnouncement,
   settledVoice,
@@ -182,7 +181,6 @@ import type { MdyOverlayBranch, MdyOverlayOwner } from "../../core/overlay-contr
         @if (effectiveLoading()) {
           <mdy-icon name="LOADER" class="mdy-select__loader" style="font-size: 1rem;" />
         }
-        <span class="mdy-multiselect__arrow" aria-hidden="true"></span>
       </button>
       <!-- How many chips are out of sight, and the way to all of them. ADR 0127 lets the row scroll
            only where something reaches what leaves it: the wheel is that for most people and nothing
@@ -192,9 +190,25 @@ import type { MdyOverlayBranch, MdyOverlayOwner } from "../../core/overlay-contr
           class="mdy-multiselect__overflow"
           [hidden]="hiddenChips() === 0"
           [disabled]="isDisabled() || isReadonly()"
-          [attr.aria-label]="i18n.chipsHidden.replace('{count}', hiddenChips().toString())"
+          [attr.aria-label]="hiddenChips() === 0 ? null : i18n.chipsHidden.replace('{count}', hiddenChips().toString())"
           (click)="onOverflowPress($event)"
-        >{{ i18n.chipsHiddenShort.replace("{count}", hiddenChips().toString()) }}</button>
+        >{{ hiddenChips() === 0 ? "" : i18n.chipsHiddenShort.replace("{count}", hiddenChips().toString()) }}</button>
+      <!-- The one way back, first in the cluster: arriving, it grows into the empty space instead of
+           pushing the control that discards everything sideways under a thumb already aimed at it.
+           Untimed — a mark that takes itself away after five seconds is a time limit under WCAG
+           2.2.1, and an undo has no exception under it — and the person who most needs it is the
+           slowest to reach it, because the keyboard path here runs through every chip.
+           A mark rather than a sentence: the act lives in the name, and what happened is said by the
+           live region below, which owes that announcement whether or not a way back is on offer. -->
+      <button
+        type="button"
+        class="mdy-multiselect__way-back-action"
+        [hidden]="wayBack() === null"
+        [disabled]="isDisabled() || isReadonly()"
+        [attr.aria-label]="wayBackName()"
+        [attr.title]="wayBackName()"
+        (click)="onWayBack()"
+      ><mdy-icon name="UNDO" /></button>
       <!-- Every choice off at once, beside the trigger rather than inside it: the trigger is a
            button, and a button inside a button is neither valid nor reachable. -->
       <button
@@ -205,6 +219,11 @@ import type { MdyOverlayBranch, MdyOverlayOwner } from "../../core/overlay-contr
         [disabled]="isDisabled() || isReadonly()"
         (click)="onClearAll($event)"
       ><mdy-icon name="CLOSE" /></button>
+      <!-- The mark that says the field opens, painted by the box at its own trailing edge. It is
+           decoration and not a control: the whole field is what opens the list, so a caret with a
+           name of its own would be a second stop on the keyboard for a gesture that already has
+           one. Last, because only the commands are in an order and a drawing is in none. -->
+      <span class="mdy-multiselect__arrow" aria-hidden="true"></span>
       <!-- Said rather than shown: a choice lands and the strip is the only confirmation, which is
            the one a person using a screen reader does not get. -->
       <div
@@ -227,19 +246,6 @@ import type { MdyOverlayBranch, MdyOverlayOwner } from "../../core/overlay-contr
     </div>
     </div>
 
-    <!-- The one way back, under the control. Untimed and in the page rather than in a toast: a
-         message that takes itself away after five seconds is a time limit under WCAG 2.2.1, and an
-         undo has no exception under it. It names the act, because one reversal covers three. -->
-    <div class="mdy-multiselect__way-back">
-      <span [hidden]="wayBack() === null">{{ wayBackText() }}</span>
-      <button
-        type="button"
-        class="mdy-multiselect__way-back-action"
-        [hidden]="wayBack() === null"
-        [disabled]="isDisabled() || isReadonly()"
-        (click)="onWayBack()"
-      >{{ i18n.wayBackLabel }}</button>
-    </div>
 
     <mdy-overlay-panel
       [open]="open()"
@@ -343,15 +349,17 @@ import type { MdyOverlayBranch, MdyOverlayOwner } from "../../core/overlay-contr
 
     @if (errorsRendered()) {
       <mdy-error-list [fieldId]="fieldId" [errors]="errors()" />
-    } @else if (supportingText() || describedState()) {
-      <!-- How many are chosen, in the field's own description: the state, asked for rather than
-           announced, and one of the conditions ADR 0127 lets the scrolling row exist under. -->
+    } @else if (projectedSupportingText(); as st) {
+      <!-- The two routes a field's own words arrive by, and both are tested here because the id the
+           control describes itself with is claimed for either. A branch that asks only about the
+           value leaves a projected description unrendered while the control still points at it —
+           which is not an error anywhere: the reference simply resolves to nothing and the field is
+           read out with no description at all. -->
       <div class="mdy-supporting-text" [id]="descriptionId(fieldId)">
-        @if (projectedSupportingText(); as st) {
-          <ng-container [ngTemplateOutlet]="st.template" />
-        }
-        {{ describedState() }}
+        <ng-container [ngTemplateOutlet]="st.template" />
       </div>
+    } @else if (supportingText(); as text) {
+      <div class="mdy-supporting-text" [id]="descriptionId(fieldId)">{{ text }}</div>
     }
   `,
 })
@@ -849,14 +857,8 @@ export class MdyMultiselectComponent<TValue = string>
    */
   protected override descriptionId(fieldId: string): string | null {
     if (this.errorsRendered()) return null;
-    return super.descriptionId(fieldId)
-      ?? (this.describedState() === "" ? null : defaultWidgetIdFactory.part(fieldId, "description"));
+    return super.descriptionId(fieldId);
   }
-
-  protected readonly describedState = computed(() => {
-    const count = this.chosen().length;
-    return count === 0 ? "" : this.i18n.selectionCount.replace("{count}", String(count));
-  });
 
   /** The strip's wheel behaviour is the contract's; see `scrollChipStripByWheel`. */
   protected readonly onStripWheel = scrollChipStripByWheel;
@@ -942,17 +944,20 @@ export class MdyMultiselectComponent<TValue = string>
   /** The last destructive act, or `null` when there is nothing to go back to. */
   protected readonly wayBack = computed(() => this.controller()?.state().wayBack ?? null);
 
-  /** What the way back says it is putting back — the act named, because one reversal covers three. */
-  protected readonly wayBackText = computed(() => {
+  /** What the way back is called: the act named, because one reversal covers three. */
+  protected readonly wayBackName = computed(() => {
     const offer = this.wayBack();
     if (offer === null) return "";
-    return wayBackSentence(
+    return wayBackActionName(
       offer,
-      { removed: this.i18n.wayBackRemoved, moved: this.i18n.wayBackMoved, cleared: this.i18n.wayBackCleared },
+      {
+        label: this.i18n.wayBackLabel,
+        removed: this.i18n.wayBackRemoved,
+        moved: this.i18n.wayBackMoved,
+        cleared: this.i18n.wayBackCleared,
+      },
       // Resolved against the options, not against what is chosen: the way back names the value that
-      // was just taken away, and a value that was taken away is no longer among the chosen ones. The
-      // strip therefore showed the identifier while the live region, which resolves the same key the
-      // other way, said the words.
+      // was just taken away, and a value that was taken away is no longer among the chosen ones.
       (key) => this.labelOfKey(key),
     );
   });

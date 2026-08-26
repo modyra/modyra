@@ -180,6 +180,25 @@ export function wayBackSentence(
 }
 
 /**
+ * What the one way back is called, for a reader who meets it as a mark rather than as a sentence.
+ *
+ * The offer is a control at the field's trailing edge and its mark says only that a way back exists.
+ * The name is where the act lives: what will come back, or how many will.
+ *
+ * Composed from the same three templates the sentence uses rather than from three more of its own.
+ * A second set of wordings for one fact drifts the moment either is translated again, and the act is
+ * the half that varies — one reversal covers a removal, a move and a clear, and "restore" is wrong
+ * for the middle one.
+ */
+export function wayBackActionName(
+  way: { readonly act: "remove" | "move" | "clear"; readonly optionKey: string | null; readonly count: number },
+  templates: { readonly label: string; readonly removed: string; readonly moved: string; readonly cleared: string },
+  labelOf: (key: string) => string,
+): string {
+  return `${templates.label}: ${wayBackSentence(way, templates, labelOf)}`;
+}
+
+/**
  * What a live region says when a choice lands: the change, and the new total.
  *
  * The **change**, not the list — a polite region queues rather than replaces, so announcing the whole
@@ -380,12 +399,19 @@ export function chipTooltipOffset(chip: HTMLElement, strip: HTMLElement): number
  * Measured rather than derived from the count: how many fit depends on the labels, the theme's
  * spacing and the width the host gave the field, and a renderer guessing at it would be wrong on the
  * first long name.
+ *
+ * The chips are found by their own class at any depth, not taken as the strip's immediate children.
+ * What the strip holds directly is a layout decision — a row, a grid's row element, one day
+ * something else — and counting those counts containers: a single row wider than its box is one
+ * child outside the box, so the answer is `1` however many chips are out of sight. A number that is
+ * always one is not an imprecise measurement, it is a constant wearing a measurement's clothes, and
+ * it reads as correct exactly once.
  */
 export function hiddenChipCount(strip: HTMLElement): number {
   if (strip.scrollWidth <= strip.clientWidth) return 0;
   const box = strip.getBoundingClientRect();
   let hidden = 0;
-  for (const chip of Array.from(strip.children)) {
+  for (const chip of Array.from(strip.querySelectorAll(`.${MDY_CHIP_CLASSES.block}`))) {
     const at = chip.getBoundingClientRect();
     if (at.left < box.left - 1 || at.right > box.right + 1) hidden += 1;
   }

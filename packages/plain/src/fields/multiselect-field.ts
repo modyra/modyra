@@ -33,7 +33,7 @@ import { syncSubmitValues,
   chipTooltipOffset,
   hiddenChipCount,
   keepFocusedChipInView,
-  wayBackSentence,
+  wayBackActionName,
   blocksValueChange,
   isTypeaheadCharacter,
 } from "@modyra/widgets";
@@ -119,7 +119,7 @@ export function renderMultiselectField(
     loading.setAttribute("role", "status");
     trigger.appendChild(loading);
   }
-  trigger.append(placeholder, arrow);
+  trigger.append(placeholder);
   // Said rather than shown: a choice lands and the strip is the only confirmation, which is the one
   // a person using a screen reader does not get.
   const announcement = el("div", parts.announcement.classes.join(" "));
@@ -136,16 +136,17 @@ export function renderMultiselectField(
   /**
    * The one way back, under the control.
    *
-   * Untimed and in the page rather than in a toast: a message that disappears after five seconds is
-   * a time limit under 2.2.1, and an undo has no exception under it. It stands until it is used or
-   * another act replaces it.
+   * Untimed: a message that disappears after five seconds is a time limit under 2.2.1, and an undo
+   * has no exception under it. It stands until it is used or another act replaces it — and the
+   * person who most needs it is the slowest to reach it, because the keyboard path to the field's
+   * trailing edge runs through every chip.
+   *
+   * A mark rather than a sentence, so the act lives in its accessible name. What happened is said by
+   * the live region, which owes that announcement whether or not a way back is on offer.
    */
-  const wayBack = el("div", parts.wayBack.classes.join(" "));
-  const wayBackText = el("span", "");
   const wayBackAction = el("button", parts.wayBackAction.classes.join(" ")) as HTMLButtonElement;
   wayBackAction.type = "button";
-  setText(wayBackAction, messages.wayBackLabel);
-  wayBack.append(wayBackText, wayBackAction);
+  setIcon(wayBackAction, "UNDO");
   /**
    * One tooltip for the control, not one per chip.
    *
@@ -202,7 +203,7 @@ export function renderMultiselectField(
   // the opener is the space after them. Siblings, not one inside the other — a chip carries a button
   // that takes a value off, and a control that opens something may not contain a control that
   // destroys something (ADR 0142). It is also what makes the opener a valid button again.
-  control.append(chipStrip, trigger, overflow, clearAll, announcement, chipTooltip);
+  control.append(chipStrip, trigger, overflow, wayBackAction, clearAll, arrow, announcement, chipTooltip);
 
   /**
    * The box forwards a press on its own empty space to the opener.
@@ -305,10 +306,8 @@ export function renderMultiselectField(
    * made.
    */
   /** A sentence to say once, for a change no selection delta describes — a move. */
-  /** How many distinct values are chosen, for the description to state. */
   /** Whether the popup was already showing on the previous pass, so focus is placed once. */
   let wasOpen = false;
-  let tallyCount = 0;
   let saySoon: string | null = null;
 
   /**
@@ -706,7 +705,6 @@ export function renderMultiselectField(
       chosenEls.delete(key);
     }
     placeholder.hidden = tally.size > 0;
-    tallyCount = tally.size;
     syncRoving();
   }
 
@@ -810,9 +808,6 @@ export function renderMultiselectField(
   syncGrids(controller.state().options);
 
   insertControl(shell, control);
-  // Directly under the control and before its description: the offer is about what just happened,
-  // and the description is a standing fact about the field.
-  shell.wrapper.after(wayBack);
   container.appendChild(shell.root);
   // Document-level so no scroll container or renderer frame can clip the popup, exactly as the
   // select renderer portals its own listbox.
@@ -953,16 +948,25 @@ export function renderMultiselectField(
     // still answers is disabled in appearance only.
     overflow.disabled = blocked;
     const back = state.wayBack;
-    // The slot is always in the page, empty at rest. Rendered only when there is something to undo, it makes every control below the field step down the moment a value goes, and step again on the next removal — a cost that moves is one nobody can learn, where a fixed one is learnt once. Nor may it appear inside the control: the clear-all and the caret would slide sideways as it arrived, which is the same defect on the other axis.
-    wayBackText.hidden = back === null;
+    // The slot is always in the row and keeps its width at rest, so the clear-all beside it stands
+    // where it stood whether or not a way back is on offer. A control that moves as the offer
+    // arrives is one a person presses meaning the other.
     wayBackAction.hidden = back === null;
     wayBackAction.disabled = blocked;
     if (back !== null) {
-      setText(wayBackText, wayBackSentence(
+      wayBackAction.setAttribute("aria-label", wayBackActionName(
         back,
-        { removed: messages.wayBackRemoved, moved: messages.wayBackMoved, cleared: messages.wayBackCleared },
+        {
+          label: messages.wayBackLabel,
+          removed: messages.wayBackRemoved,
+          moved: messages.wayBackMoved,
+          cleared: messages.wayBackCleared,
+        },
         (key) => state.options.find((option) => keyFor(option) === key)?.label ?? key,
       ));
+      // Sighted pointer users read the same words the name carries; the mark alone says only that a
+      // way back exists, not what it puts back.
+      wayBackAction.title = wayBackAction.getAttribute("aria-label") ?? "";
     }
     applyPart(popup, view.parts.popup);
     applyPart(search, view.parts.search);
@@ -973,12 +977,10 @@ export function renderMultiselectField(
     applyPart(overlay.grid, view.parts.group);
     syncGrids(state.options);
     applyPart(shell.description, view.parts.description);
-    // How many are chosen, in the field's own description — the state, asked for rather than
-    // announced. A person arriving at a field whose chips have scrolled out of sight has no other
-    // way to learn there are more, and ADR 0127 makes this one of the conditions the scrolling row
-    // is allowed under.
-    const counted = tallyCount === 0 ? "" : messages.selectionCount.replace("{count}", String(tallyCount));
-    const described = [f.supportingText ?? "", counted].filter((each) => each !== "").join(". ");
+    // The description says what the document gave it and nothing more. The chips are the selection,
+    // so a number beside them counts what is already on screen; the ones the strip scrolled past
+    // belong at the strip's own edge, where the count is also the way to reach them.
+    const described = f.supportingText ?? "";
     setText(shell.description, described);
     shell.description.hidden = described === "";
     applyPart(shell.errorList, view.parts.error);

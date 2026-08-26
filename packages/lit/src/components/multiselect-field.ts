@@ -13,7 +13,7 @@ import {
   chipTooltipOffset,
   hiddenChipCount,
   keepFocusedChipInView,
-  wayBackSentence,
+  wayBackActionName,
   isTypeaheadCharacter,
 } from "@modyra/widgets";
 import { type MdyFieldHandle, type MdyMultiselectMode, type MdySelectOption } from "@modyra/core";
@@ -625,7 +625,6 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
               ? html`<span class="${this.partClass("placeholder")}">${this.messages.selectPlaceholder}</span>`
               : nothing}
             ${this.loading ? mdyIcon("LOADER", "mdy-select__loader") : nothing}
-            <span class="${this.partClass("arrow")}" aria-hidden="true"></span>
           </button>
           <!-- How many chips are out of sight, and the way to all of them. ADR 0127 lets the row
                scroll only where something reaches what leaves it: the wheel is that for most people
@@ -635,7 +634,9 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
                 class="${this.partClass("overflowCount")}"
                 ?hidden=${this._hiddenChips === 0}
                 ?disabled=${handle.disabled() || handle.readonly()}
-                aria-label=${this.messages.chipsHidden.replace("{count}", String(this._hiddenChips))}
+                aria-label=${this._hiddenChips === 0
+                  ? nothing
+                  : this.messages.chipsHidden.replace("{count}", String(this._hiddenChips))}
                 @click=${(e: Event) => {
                   e.stopPropagation();
                   // The same door the trigger opens, taken the same way: the element's copy of
@@ -643,7 +644,10 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
                   // moves them together.
                   if (this.field && !this._open) { this.overlay.open(e); this.toggleOpen(this.field); }
                 }}
-              >${this.messages.chipsHiddenShort.replace("{count}", String(this._hiddenChips))}</button>`}
+              >${this._hiddenChips === 0
+                  ? nothing
+                  : this.messages.chipsHiddenShort.replace("{count}", String(this._hiddenChips))}</button>`}
+          ${this.renderWayBack(handle)}
           <!-- Every choice off at once, beside the trigger rather than inside it: the trigger is a
                button, and a button inside a button is neither valid nor reachable. -->
           ${html`<button
@@ -654,6 +658,11 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
                 aria-label=${this.messages.clearSelection}
                 @click=${() => this.fieldController?.dispatch({ type: "clear" })}
               >${mdyIcon("CLOSE", "")}</button>`}
+          <!-- The mark that says the field opens, painted by the box at its own trailing edge. It is
+               decoration and not a control: the whole field is what opens the list, so a caret with
+               a name of its own would be a second stop on the keyboard for a gesture that already
+               has one. Last, because only the commands are in an order and a drawing is in none. -->
+          <span class="${this.partClass("arrow")}" aria-hidden="true"></span>
           <!-- Said rather than shown: a choice lands and the strip is the only confirmation, which
                is the one a person using a screen reader does not get. -->
           <div
@@ -682,7 +691,6 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
           ? nothing
           : html`<div class="mdy-input-suffix"><slot name="suffix"></slot></div>`}
       </div>
-      ${this.renderWayBack(handle)}
       ${renderOverlayPanel(overlay, this._open, {
         closedId: overlayControlledId("multiselect", this.fieldId) ?? undefined,
         modal: position === "overlay",
@@ -811,44 +819,43 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
     });
   }
 
-  /** How many are chosen, in the field's own description: the state, asked for rather than announced. */
-  protected override describedState(): string {
-    const handle = this.field;
-    if (!handle) return "";
-    const count = new Set(this.held(handle).map((value) => defaultOptionKey(value))).size;
-    return count === 0 ? "" : this.messages.selectionCount.replace("{count}", String(count));
-  }
-
   /** The strip's wheel behaviour is the contract's; see `scrollChipStripByWheel`. */
   /**
    * The one way back, under the control.
    *
-   * Untimed and in the page rather than in a toast: a message that disappears after five seconds is
-   * a time limit under WCAG 2.2.1, and an undo has no exception under it. It stands until it is used
-   * or another act replaces it, and it names the act because one reversal covers three.
+   * Untimed: a message that disappears after five seconds is a time limit under WCAG 2.2.1, and an
+   * undo has no exception under it. It stands until it is used or another act replaces it — and the
+   * person who most needs it is the slowest to reach it, because the keyboard path to the field's
+   * trailing edge runs through every chip.
+   *
+   * A mark rather than a sentence, so the act lives in its accessible name; it names the act because
+   * one reversal covers three. What happened is said by the live region, which owes that
+   * announcement whether or not a way back is on offer.
    */
   private renderWayBack(handle: MdyFieldHandle<readonly unknown[]>) {
     const offer = this.fieldController?.state().wayBack ?? null;
-    const said = offer === null ? "" : wayBackSentence(
+    const named = offer === null ? "" : wayBackActionName(
       offer,
       {
+        label: this.messages.wayBackLabel,
         removed: this.messages.wayBackRemoved,
         moved: this.messages.wayBackMoved,
         cleared: this.messages.wayBackCleared,
       },
       (key) => this.labelFor(key),
     );
-    // The slot is always in the page, empty at rest. Rendered only when there is something to undo, it makes every control below the field step down the moment a value goes, and step again on the next removal — a cost that moves is one nobody can learn, where a fixed one is learnt once. Nor may it appear inside the control: the clear-all and the caret would slide sideways as it arrived, which is the same defect on the other axis.
-    return html`<div class="${this.partClass("wayBack")}">
-      <span ?hidden=${offer === null}>${said}</span>
-      <button
-        type="button"
-        class="${this.partClass("wayBackAction")}"
-        ?hidden=${offer === null}
-        ?disabled=${handle.disabled() || handle.readonly()}
-        @click=${() => this.fieldController?.dispatch({ type: "undo" })}
-      >${this.messages.wayBackLabel}</button>
-    </div>`;
+    // The slot keeps its width at rest, so the clear-all beside it stands where it stood whether or
+    // not a way back is on offer. A control that moves as the offer arrives is one a person presses
+    // meaning the other.
+    return html`<button
+      type="button"
+      class="${this.partClass("wayBackAction")}"
+      ?hidden=${offer === null}
+      ?disabled=${handle.disabled() || handle.readonly()}
+      aria-label=${named}
+      title=${named}
+      @click=${() => this.fieldController?.dispatch({ type: "undo" })}
+    >${mdyIcon("UNDO", "")}</button>`;
   }
 
   private readonly onStripWheel = scrollChipStripByWheel;
