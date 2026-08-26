@@ -75,7 +75,19 @@ import type { MdyOverlayBranch, MdyOverlayOwner } from "../../core/overlay-contr
          row system entirely: anything a theme states about the input wrapper — the frame, the
          disabled and readonly surfaces, the error underline — reached three kinds of four here. -->
     <div [class]="wrapperClasses()">
-    <div class="mdy-multiselect" #wrapper [class.mdy-multiselect--open]="open()">
+    <!-- The box forwards a press on **its own** area to the opener, and nothing else (ADR 0142).
+         The whole field is what opens the list — the caret takes no events, so a press aimed at the
+         one mark that means "this opens" lands here — and a person who points at it and gets nothing
+         has nothing else on the field telling them where to point instead.
+         Compared against the box and not against what the press crossed on the way up: a chip is a
+         span, so asking whether a button was passed lets a chip through and one press both picks a
+         chip up and opens the list. What a press does is decided by what it landed on. -->
+    <div
+      class="mdy-multiselect"
+      #wrapper
+      [class.mdy-multiselect--open]="open()"
+      (click)="onBoxPress($event)"
+    >
       <!-- The strip before the opener, and beside it rather than inside it: a chip carries a button
            that takes a value off, and a control that opens something may not contain a control that
            destroys something (ADR 0142). Read in this order too — the chips are what the field
@@ -578,6 +590,20 @@ export class MdyMultiselectComponent<TValue = string>
   protected readonly optionsGridId = computed(() => this.controller()?.view().parts.group?.id ?? null);
 
   /** The way to the chips the strip cannot show: the list, where every one of them is. */
+  /**
+   * A press on the field's own empty space, which opens the list.
+   *
+   * Focus goes to the opener before the list opens, not after: the opener is what carries the
+   * expanded state and answers the keyboard, and a list opened with focus left on the document is
+   * one the arrows cannot reach.
+   */
+  protected onBoxPress(event: Event): void {
+    if (event.target !== event.currentTarget) return;
+    if (this.isDisabled() || this.isReadonly()) return;
+    (event.currentTarget as HTMLElement).querySelector<HTMLElement>(".mdy-multiselect__trigger")?.focus();
+    this.toggleOverlay(event);
+  }
+
   protected onOverflowPress(event: Event): void {
     event.stopPropagation();
     this.openOverlay(event);
