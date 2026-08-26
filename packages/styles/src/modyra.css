@@ -2030,14 +2030,30 @@
        narrow-column one with it. */
     @container (max-width: 320px) {
         .mdy-multiselect__chips {
-            flex-wrap: wrap;
             overflow-x: visible;
             /* The cues belong to a row that scrolls. Wrapped, they paint over chips that are simply
                there. */
             background: none;
         }
 
+        /* Wrapping is stated on the element that holds the chips, which is the row and not the strip
+           that holds the row. A strip with one flex child wraps nothing however it is told to: the
+           rule reads as satisfied and the chips run off the side exactly as before, which is the
+           shape a structural change leaves behind when a rule above it keeps addressing the old
+           tree. */
+        .mdy-multiselect__chip-row {
+            flex-wrap: wrap;
+            /* As wide as the room it has, not as wide as its contents. Sized to its contents it
+               stays one long line and takes the wrapping with it. */
+            flex: 1 1 auto;
+            max-width: 100%;
+        }
+
+        /* And the chips give way. A chip that refuses to shrink makes the row as wide as its widest
+           label whatever the wrapping says, so one long value scrolls the field on its own. */
         .mdy-multiselect__chips .mdy-chip {
+            flex-shrink: 1;
+            min-width: 0;
             max-width: 100%;
         }
     }

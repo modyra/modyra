@@ -12,7 +12,7 @@
  */
 
 import { readFileSync, readdirSync } from "node:fs";
-import { MDY_CHIP_CLASSES, MDY_FIELD_SHELL_CLASSES, MDY_FIELD_STATE_CLASSES, MDY_WIDGET_CONTRACTS, partClasses, popupPlacementClass } from "../packages/widgets/dist/index.js";
+import { MDY_CHIP_CLASSES, MDY_FIELD_SHELL_CLASSES, MDY_FIELD_STATE_CLASSES, MDY_WIDGET_CONTRACTS, partClasses, popupPlacementClass, stateClass } from "../packages/widgets/dist/index.js";
 import { dirname, extname, join, relative, resolve } from "node:path";
 
 const ROOT = resolve(import.meta.dirname, "..");
@@ -427,6 +427,17 @@ function extractContractClasses(ts, kind) {
   const partModifierRe = /partClass\(\s*["'`]([A-Za-z0-9_]+)["'`]\s*\)\}--([A-Za-z0-9-]+)/g;
   while ((m = partModifierRe.exec(ts)) !== null) {
     for (const base of definition.parts[m[1]]?.classes ?? []) classes.push(`${base}--${m[2]}`);
+  }
+  // The same modifier asked of the contract rather than interpolated: `partStateClass("x", "open")`
+  // builds the name from the part's own first class and the state's modifier, so nothing about it
+  // appears here as a literal. Without this a renderer that stopped spelling a modifier reads as one
+  // that stopped emitting it, and the parity report names a class that is on the element.
+  const partStateRe = /partStateClass\(\s*["'`]([A-Za-z0-9_]+)["'`]\s*,\s*["'`]([A-Za-z0-9_]+)["'`]/g;
+  while ((m = partStateRe.exec(ts)) !== null) {
+    // Through the accessor, not a copy of its table: the modifier a state spells is the accessor's
+    // to decide, and a second copy here would answer differently the moment either moved.
+    const base = definition.parts[m[1]]?.classes?.[0];
+    if (base !== undefined) classes.push(stateClass(base, m[2]));
   }
   classes.push(...classesAskedOfTheContract(ts));
   // The chip vocabulary, when a renderer takes it from the contract instead of spelling it out.
