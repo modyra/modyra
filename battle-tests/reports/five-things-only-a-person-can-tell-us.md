@@ -67,6 +67,53 @@ person crosses in two presses has nothing to say about it.
 **Trial 5 stays on the front page**, because it needs a value chosen more than once — that is what
 draws a quantity to step — and the lab's twelve are each chosen once.
 
+## What a machine already established, and what it cannot
+
+A reader does not invent what it says: it says what the accessibility tree carries. That tree can be
+read without a person, so some of what these trials ask has an answer already — and saying which part
+is answered is what keeps a simulation from being mistaken for a result.
+
+**Measured, identical in all three renderers.** One chosen value called *Indigo*, in a strip that can
+be reordered, puts its name in **six places**:
+
+```
+row             "Indigo"                 ← the row of the grid
+gridcell        "Indigo"                 ← the cell in it
+StaticText      "Indigo"                 ← the text inside that
+button          "Move earlier Indigo"
+button          "Move later Indigo"
+button          "Remove Indigo"
+```
+
+Three nodes carry the name alone, nested one inside the other, and three more repeat it inside a
+command's name. Twelve values put it in seventy-two.
+
+The reading order matches the order of the values, in all three — so **trial 1's fear of a strip that
+reads in a different order than it holds is answered: it does not.** What remains of trial 1 is the
+other half, which is about the cursor and not the order.
+
+Crossing twelve values means hearing **68 characters of names** at minimum, before anything a reader
+adds — "row", "column", "button", the count. That is the floor of trial 4, not its answer.
+
+And after removing one value, the reading position lands somewhere named in all three, though not on
+the same thing: *Remove Cloud* in two renderers and *Cloud* in the third. Both are somewhere; whether
+either is where a person expects to be is trial 3.
+
+## What no machine can answer, and why these five still need a person
+
+- **How many of those six a reader actually says.** A grid may announce a row and its cell together,
+  or separately, or fold the text into the cell — every reader decides differently, and the decision
+  is the whole question. Six places is the *most* it can be and one is the least.
+- **How long 68 characters take to hear**, at the speed that person has set, which is often three or
+  four times faster than anyone who does not use a reader would guess.
+- **The order two announcements arrive in** when a focus move and a live region happen together, and
+  whether one cuts the other off.
+- **Whether a queue drains after the key is released**, and how far behind it falls.
+- **The moment somebody decides it is not worth it.** Nothing measures giving up.
+
+So: the trials below are not asking a person to confirm what is written above. They are asking the
+half that begins where the above ends.
+
 ## 1 — Walking a strip of chosen values with a virtual cursor
 
 A field holds several chosen values, drawn as a row of small blocks. Ask the person to **read
