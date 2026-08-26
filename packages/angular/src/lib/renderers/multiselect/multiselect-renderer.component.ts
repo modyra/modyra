@@ -79,9 +79,14 @@ import type { MdyOverlayBranch, MdyOverlayOwner } from "../../core/overlay-contr
          The whole field is what opens the list — the caret takes no events, so a press aimed at the
          one mark that means "this opens" lands here — and a person who points at it and gets nothing
          has nothing else on the field telling them where to point instead.
-         Compared against the box and not against what the press crossed on the way up: a chip is a
-         span, so asking whether a button was passed lets a chip through and one press both picks a
-         chip up and opens the list. What a press does is decided by what it landed on. -->
+         Two different things keep the other presses out, and only one of them is here. A press on a
+         control inside a chip stops where it is handled and never reaches this element at all. A
+         press on the chip's own body or its label is handled by nobody, so it arrives here, and the
+         comparison below is the only thing between it and an opened list: remove it and picking up a
+         chip also opens the popup.
+         Compared against this element and not against what the press crossed on the way up: a chip
+         is a span, so a test on whether a button was passed lets the body through. What a press does
+         is decided by what it landed on. -->
     <div
       class="mdy-multiselect"
       #wrapper
@@ -598,6 +603,7 @@ export class MdyMultiselectComponent<TValue = string>
    * one the arrows cannot reach.
    */
   protected onBoxPress(event: Event): void {
+    // The field's own area, not a descendant that nothing else handled.
     if (event.target !== event.currentTarget) return;
     if (this.isDisabled() || this.isReadonly()) return;
     (event.currentTarget as HTMLElement).querySelector<HTMLElement>(".mdy-multiselect__trigger")?.focus();
