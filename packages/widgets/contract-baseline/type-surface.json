@@ -1713,6 +1713,7 @@
     "(opaque)"
   ],
   "MdyKeyBinding": [
+    "awaits?: string",
     "by?: -1 | 1",
     "intent: \"move\" | \"step\" | \"toggle\" | \"open\" | \"commit\" | \"cancel\" | \"reorder\" | \"remove\" | \"grab\" | \"undo\"",
     "key: string",

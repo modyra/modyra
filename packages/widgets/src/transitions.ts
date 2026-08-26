@@ -159,6 +159,24 @@ export interface MdyKeyBinding {
    */
   readonly requires?: string;
   /**
+   * A transient state the field must already be in for this key to do anything.
+   *
+   * `requires` names a **capability** — something a document turned on, true for the life of the
+   * field. This names something that has **happened**, and stops being true again: the way back acts
+   * on the last destructive change, so before one there is nothing for it to put back and the key
+   * correctly does nothing.
+   *
+   * Declared because from outside the two are indistinguishable. A key that does nothing because the
+   * moment is wrong looks exactly like a key nobody implemented, and a sweep over a plainly declared
+   * control finds every such key and reports it as unanswered — which is how a table this project
+   * already fixed once came to say a kind answers four keys that a default field answers none of.
+   * Named here, a check can arrange the state before pressing, or count the key as unreached rather
+   * than unanswered, and a help panel can say *when* the key applies instead of promising it always.
+   *
+   * The value is the state as this kind's own reader names it, so the field can be asked.
+   */
+  readonly awaits?: string;
+  /**
    * The held key this binding needs, where the gesture is a shortcut rather than a bare press.
    *
    * `"primary"` is the platform's own accelerator — `Cmd` where the platform uses it, `Ctrl`
@@ -336,7 +354,7 @@ function keyboardFor(kind: MdyWidgetKind): readonly MdyKeyBinding[] {
     // appears at the field's trailing edge after a value goes, and the person who wants it back is
     // standing wherever the removal left them — which is not there. A shortcut reachable only from
     // the control it undoes the need for is a shortcut for nobody.
-    bindings.push({ key: "z", modifier: "primary", intent: "undo" });
+    bindings.push({ key: "z", modifier: "primary", intent: "undo", awaits: "wayBack" });
   }
   if (TOGGLES.includes(kind)) bindings.push({ key: " ", intent: "toggle" });
 

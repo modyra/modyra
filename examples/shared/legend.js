@@ -72,7 +72,16 @@ export function legend(host, { contracts, keyboard, title = "The controls on thi
         const needs = binding.requires === undefined || binding.requires === null
           ? ""
           : ` [needs ${binding.requires}]`;
-        return `${key}${when} → ${binding.intent}${needs}`;
+        // A key that waits on something having happened is not a key the control refuses. Listed
+        // like the others it reads as broken to anyone who presses it in a fresh field, which is the
+        // same misreading `requires` was added to stop one axis over.
+        const awaits = binding.awaits === undefined || binding.awaits === null
+          ? ""
+          : ` [after ${binding.awaits}]`;
+        // A shortcut is not a bare press, and a legend that prints the letter alone teaches the
+        // wrong gesture to the one reader who most needs telling.
+        const held = binding.modifier === "primary" ? "Ctrl/Cmd+" : "";
+        return `${held}${key}${when} → ${binding.intent}${needs}${awaits}`;
       });
 
       const row = document.createElement("tr");
