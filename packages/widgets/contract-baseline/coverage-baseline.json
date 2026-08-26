@@ -1,8 +1,8 @@
 {
   "note": "Public names not yet asserted or not yet shown. The list may only get shorter.",
   "score": {
-    "published": 859,
-    "asserted": 603,
+    "published": 860,
+    "asserted": 604,
     "shown": 93
   },
   "uncovered": [
@@ -3164,6 +3164,12 @@
     },
     {
       "name": "collectStateMatrix",
+      "asserted": true,
+      "shown": false,
+      "reason": "published and never shown"
+    },
+    {
+      "name": "colorPresetsOf",
       "asserted": true,
       "shown": false,
       "reason": "published and never shown"

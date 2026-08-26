@@ -12,7 +12,7 @@ import {
 } from "@angular/core";
 
 import { MDY_OVERLAY_PORTAL_CLASS } from "@modyra/widgets";
-import { MDY_COLOR_PRESETS, MDY_WIDGET_CONTRACTS, colorValueEquals, focusWhenShown, openPlatformChooser, keyBindingFor, rowRovingIndex, colorValueTransition, popupPlacementClass, overlayControlledId, projectOverlayOpenerA11y } from "@modyra/widgets";
+import { MDY_COLOR_PRESETS, MDY_WIDGET_CONTRACTS, colorPresetsOf, colorValueEquals, focusWhenShown, openPlatformChooser, keyBindingFor, rowRovingIndex, colorValueTransition, popupPlacementClass, overlayControlledId, projectOverlayOpenerA11y } from "@modyra/widgets";
 import { MdyErrorListComponent } from "../../control/error-list.component";
 import { MdyControlLabelComponent } from "../../control/mdy-control-label.component";
 import { MdyIconComponent } from "../../control/mdy-icon.component";
@@ -151,16 +151,16 @@ import { MdyOverlayPanelComponent } from "../../core/overlay-panel.component";
             <!-- A swatch is announced as the colour it is, and not "Select colour #hex": the option
                  role already says what pressing it does, and ten options repeating the verb is the
                  verb ten times. -->
-            @for (color of presets(); track color) {
+            @for (entry of palette(); track entry.value) {
               <button
                 type="button"
                 role="option"
                 class="mdy-color-swatch"
-                [style.--color]="color"
-                [class.mdy-color-swatch--active]="isActiveColor(color)"
-                [attr.aria-selected]="isActiveColor(color)"
-                [attr.aria-label]="color"
-                (click)="selectColor(color)"
+                [style.--color]="entry.value"
+                [class.mdy-color-swatch--active]="isActiveColor(entry.value)"
+                [attr.aria-selected]="isActiveColor(entry.value)"
+                [attr.aria-label]="entry.label"
+                (click)="selectColor(entry.value)"
               ></button>
             }
             @if (customColour(); as custom) {
@@ -216,7 +216,10 @@ export class MdyColorsComponent extends MdyOverlayControl<string> {
   protected readonly i18n = inject(MDY_I18N_MESSAGES);
 
   readonly placeholder = input<string>("#000000");
-  readonly presets = input<readonly string[]>(MDY_COLOR_PRESETS);
+  readonly presets = input<ReadonlyArray<string | { readonly value: string; readonly label?: string }>>(MDY_COLOR_PRESETS);
+
+  /** The palette as value and name, however the document spelled each entry. */
+  protected readonly palette = computed(() => colorPresetsOf(this.presets()));
 
 
   /** The id the opener names, which the projected panel has to carry. */
@@ -263,7 +266,7 @@ export class MdyColorsComponent extends MdyOverlayControl<string> {
   private landingSwatch(): HTMLButtonElement | null {
     const swatches = this.presetSwatches();
     if (swatches.length === 0) return null;
-    return swatches.find((_, index) => colorValueEquals(this.value(), this.presets()[index])) ?? swatches[0] ?? null;
+    return swatches.find((_, index) => colorValueEquals(this.value(), this.palette()[index]?.value ?? null)) ?? swatches[0] ?? null;
   }
 
   /** The swatches on the page, in the order the row draws them. */
@@ -325,7 +328,7 @@ export class MdyColorsComponent extends MdyOverlayControl<string> {
 
   protected readonly customColour = computed((): string | null => {
     const held = this.value();
-    if (typeof held === "string" && held !== "" && !this.presets().includes(held)) return held;
+    if (typeof held === "string" && held !== "" && !this.palette().some((entry) => entry.value === held)) return held;
     return this.remembered();
   });
 

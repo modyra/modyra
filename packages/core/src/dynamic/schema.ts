@@ -287,10 +287,28 @@ export interface MdyDynamicFileField extends MdyDynamicFieldBase {
   readonly multiple?: boolean;
 }
 
+/**
+ * One colour a palette offers, and what it is called.
+ *
+ * A hexadecimal is not a name. Read out, `#4361ee` is six characters somebody has to hold in their
+ * head to compare with the next one — so a panel of ten is, to anyone who cannot see it, ten strings
+ * that differ in the middle.
+ *
+ * The label is optional and this library supplies none for its own defaults, deliberately: a generic
+ * palette naming `#4361ee` would be guessing, and an approximated colour name is worse than the
+ * hexadecimal because it claims a meaning it does not have while the hexadecimal claims none. The
+ * knowledge lives where the palette does — a team's colours have names, and this is where they say
+ * them.
+ */
+export interface MdyColorPreset {
+  readonly value: string;
+  readonly label?: string;
+}
+
 /** Colour selection, optionally offering a preset palette. */
 export interface MdyDynamicColorsField extends MdyDynamicFieldBase {
   readonly kind: "colors";
-  readonly presets?: ReadonlyArray<string>;
+  readonly presets?: ReadonlyArray<string | MdyColorPreset>;
 }
 
 /** One field of a dynamic form — a serializable discriminated union. */

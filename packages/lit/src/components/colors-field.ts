@@ -1,7 +1,7 @@
 import { mdyPart } from "../mdy-part.js";
 import {
   keyBindingFor,
-  MDY_COLOR_PRESETS, MDY_WIDGET_CONTRACTS, openPlatformChooser, overlayControlledId, rowRovingIndex } from "@modyra/widgets";
+  MDY_COLOR_PRESETS, MDY_WIDGET_CONTRACTS, colorPresetsOf, openPlatformChooser, overlayControlledId, rowRovingIndex } from "@modyra/widgets";
 import { html, nothing, type PropertyDeclarations } from "lit";
 import { type MdyFieldHandle } from "@modyra/core";
 import { applyOverlayIntent, bindOutsidePointer, closeOverlayOutOfPlay } from "../widget-runtime/overlay-host.js";
@@ -174,13 +174,13 @@ export class MdyColorsFieldElement extends MdyFieldElement<string | null> {
       >
         <div class="mdy-colors__dropdown-header">${this.messages.colorPresetsHeader}</div>
         <div class="mdy-colors__presets" role="listbox" aria-label=${this.messages.colorPresetsHeader}>
-          ${this.presets.map(
-            (preset) => html`<button
+          ${colorPresetsOf(this.presets).map(
+            ({ value: preset, label }) => html`<button
               type="button"
               class="mdy-color-swatch ${handle.value() === preset ? "mdy-color-swatch--active" : ""}"
               role="option"
               aria-selected=${handle.value() === preset ? "true" : "false"}
-              aria-label=${preset}
+              aria-label=${label}
               style="background-color:${preset}"
               @click=${() => {
                 this.set(handle, preset);

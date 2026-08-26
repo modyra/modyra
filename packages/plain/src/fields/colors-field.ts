@@ -9,7 +9,7 @@ import { applyOpenerPromise } from "../opener-promise.js";
 import { observerFor, type MdyFieldHandle, type MdyReactivity } from "@modyra/core";
 import type { MdyDynamicColorsField } from "@modyra/core";
 import { applySubmissionNames,
-  MDY_COLOR_PRESETS,
+  colorPresetsOf,
   MDY_WIDGET_CONTRACTS,
   colorValueEquals,
   colorValueTransition,
@@ -46,7 +46,8 @@ export function renderColorsField(
   // How this popup attaches is the contract's, not this renderer's.
   const anchoring = overlayAnchoringFor("colors");
   const definition = MDY_WIDGET_CONTRACTS.colors;
-  const presets = f.presets && f.presets.length > 0 ? f.presets : MDY_COLOR_PRESETS;
+  const palette = colorPresetsOf(f.presets);
+  const presets = palette.map((entry) => entry.value);
   const open = reactivity.signal(false);
 
   const shell = buildFieldShell(f.label, "colors", {}, f.ariaLabel, f.name, f.supportingText);
@@ -118,10 +119,10 @@ export function renderColorsField(
     return one;
   };
 
-  const swatches = presets.map((preset) => {
-    const one = swatch(preset);
-    one.style.setProperty("background-color", preset);
-    return { preset, swatch: one };
+  const swatches = palette.map(({ value, label }) => {
+    const one = swatch(label);
+    one.style.setProperty("background-color", value);
+    return { preset: value, swatch: one };
   });
 
   /**

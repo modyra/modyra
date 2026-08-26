@@ -53,3 +53,24 @@ export function colorValueEquals(left: string | null | undefined, right: string 
   }
   return left.toLowerCase() === right.toLowerCase();
 }
+
+/**
+ * A palette as pairs of value and name, however a document spelled it.
+ *
+ * A document may write a colour as a string or as a value with a label, and every renderer needs the
+ * same two facts from either shape — the colour to paint and the words to announce. Normalised in
+ * one place so three renderers do not each decide what an unlabelled entry is called.
+ *
+ * An entry with no label is announced by its value. That is poor and it is honest: nobody has named
+ * `#4361ee`, and a name invented here would claim a meaning it does not have.
+ */
+export function colorPresetsOf(
+  presets: ReadonlyArray<string | { readonly value: string; readonly label?: string }> | undefined,
+): ReadonlyArray<{ readonly value: string; readonly label: string }> {
+  const given = presets !== undefined && presets.length > 0 ? presets : MDY_COLOR_PRESETS;
+  return Object.freeze(given.map((entry) => {
+    const value = typeof entry === "string" ? entry : entry.value;
+    const label = typeof entry === "string" ? undefined : entry.label;
+    return Object.freeze({ value, label: label === undefined || label === "" ? value : label });
+  }));
+}
