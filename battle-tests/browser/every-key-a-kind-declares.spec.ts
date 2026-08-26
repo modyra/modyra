@@ -64,6 +64,15 @@ const DECLARED = Object.entries(MDY_WIDGET_KEYBOARD)
 const partSelector = (scope: string, classes: readonly string[]) =>
   classes.length === 0 ? null : `${scope} .${classes.join(".")}`;
 
+/**
+ * The modifier a binding means by `primary`.
+ *
+ * The table declares the intent rather than the platform's spelling of it, because the two are not
+ * interchangeable: the control key with `z` is not the undo gesture on a Mac, and a table naming both
+ * would declare a key half its readers must ignore.
+ */
+const PRIMARY = process.platform === "darwin" ? "Meta" : "Control";
+
 for (const host of HOSTS) {
   test(`${host.name}: every key a kind declares does something`, async ({ page }) => {
     // Seventy-two bindings, each mounted, primed, pressed and read. The default budget is for a
@@ -361,7 +370,11 @@ for (const host of HOSTS) {
           }
 
           const before = await observe(scope);
-          await page.keyboard.press(binding.key === " " ? "Space" : binding.key);
+          // The gesture as it is declared, not the letter of it. A binding that names a modifier
+          // names it because the bare key is a different gesture — often one the platform already
+          // owns — so sending half of it presses something else and reports the half as dead.
+          const stroke = binding.key === " " ? "Space" : binding.key;
+          await page.keyboard.press(binding.modifier === "primary" ? `${PRIMARY}+${stroke}` : stroke);
           await showed(scope, before, 120);
           const after = await observe(scope);
           // Put the chip back down before the next binding is judged, or the mode leaks into it.
