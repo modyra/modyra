@@ -78,14 +78,28 @@ async function chooseWithOneStep(
    * position to move waits for something one of the two families never does — the wait then expires
    * on every run, and the keystrokes that follow land on a control that is not where they assume it
    * is. It expired silently for three runs before anything said so.
+   *
+   * **Only what carries the answer, though.** A first widening swept in every value on the page, and a
+   * list that re-draws itself changes one of them for reasons that have nothing to do with the key —
+   * so the wait was satisfied by accident. Narrowing it once was not enough: which element holds the
+   * focus changes for reasons of its own, and watching that was still enough to satisfy the wait two
+   * runs in six. An intermittent red is worse than either a steady one or none.
+   *
+   * Three anatomies carry the position three ways, and all three are watched: a list names the option
+   * in an attribute, a control of segments changes the number under a focus that stays put, and a grid
+   * of days moves the focus itself. Take any one away and the family that uses it waits for something
+   * that never happens.
+   *
+   * **The element is read by its name, not by its dress.** A class list carries state, so it changes
+   * when a control merely redraws — reading it made the wait succeed by accident two runs in six. An
+   * id is what the element is.
    */
   const readingAt = () => page.evaluate((mountId) => {
     const root = document.querySelector(`[data-form="${mountId}"]`);
     const active = document.activeElement as HTMLInputElement | null;
     const pointed = root?.querySelector("[aria-activedescendant]")?.getAttribute("aria-activedescendant") ?? "";
     const selected = root?.querySelector("[aria-selected='true'],[aria-current='true']")?.id ?? "";
-    const held = Array.from(root?.querySelectorAll("input") ?? []).map((one) => one.value).join(",");
-    return `${active === null ? "" : active.id || active.className}|${active?.value ?? ""}|${pointed}|${selected}|${held}`;
+    return `${active?.id ?? ""}|${active?.tagName ?? ""}|${active?.value ?? ""}|${pointed}|${selected}`;
   }, id);
 
   const became = async (holds: () => Promise<boolean>, timeout = 3_000) => {
