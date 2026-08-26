@@ -80,6 +80,70 @@ const classOf = (part: string): string => {
 /** The smallest a control may be, and the smallest gap that counts as a clear zone. */
 const TARGET = 24;
 
+/**
+ * The remedy arrives without moving anything else.
+ *
+ * The offer is not there until something has been taken, and the arrangement it arrives into is one a
+ * thumb has already aimed at. If its arrival pushed the other two along, a press begun before it
+ * appeared would land on a different control than the one it was aimed at — and the control it would
+ * land on is the one that discards everything. That is the reason the decision reserves the slot, and
+ * it is a property of the *arrangement* rather than of the remedy, so nothing about the remedy itself
+ * can stand in for it.
+ *
+ * The premise is that the offer really did arrive: a remedy that never appears moves nothing, and
+ * would satisfy this by never being drawn at all.
+ */
+for (const host of HOSTS) {
+  test(`the remedy arrives without moving what is already there, ${host.name}`, async ({ page }) => {
+    test.setTimeout(120_000);
+    await page.setViewportSize({ width: 1_200, height: 700 });
+    await page.goto(host.page);
+    await page.waitForFunction((flag) => (window as never as Record<string, boolean>)[flag] === true, host.ready);
+
+    await page.evaluate(({ api }) => {
+      (window as never as Api)[api].mountFields("arrive", [{
+        name: "m", kind: "multiselect", label: "Scelte", clearable: true,
+        options: [{ value: "a", label: "Alfa" }, { value: "b", label: "Beta" }],
+        initialValue: ["a", "b"],
+      }] as never);
+    }, { api: host.api });
+    await page.locator('[data-form="arrive"]').waitFor({ timeout: 5_000 });
+    await page.evaluate(({ api }) => (window as never as Api)[api].settle?.(), { api: host.api }).catch(() => undefined);
+    await page.waitForTimeout(350);
+
+    const edges = () => page.evaluate(({ clear, mark }) => {
+      const at = (one: string) => {
+        const element = document.querySelector(`[data-form="arrive"] .${one}`);
+        return element === null ? null : Math.round(element.getBoundingClientRect().left);
+      };
+      return { clearAll: at(clear), mark: at(mark) };
+    }, { clear: classOf("clearAll"), mark: classOf("arrow") });
+
+    const before = await edges();
+    await page.locator(`[data-form="arrive"] .${classOf("chipRemove")}`).first().click({ timeout: 5_000 });
+    await page.waitForTimeout(600);
+    const after = await edges();
+
+    const offer = await page.locator(`[data-form="arrive"] .${classOf("wayBackAction")}`).first()
+      .boundingBox().catch(() => null);
+    expect(
+      offer !== null && offer.width >= 1,
+      `${host.name}: nothing arrived after a value was removed, so this measured an arrangement that `
+      + "never changed and would agree with any arrangement at all",
+    ).toBe(true);
+
+    const shifted = (["clearAll", "mark"] as const)
+      .filter((one) => before[one] !== after[one])
+      .map((one) => `${one} ${before[one]} → ${after[one]}`);
+    expect(
+      shifted,
+      `${host.name}: the remedy's arrival moved ${shifted.join(", ")}. A thumb aimed at one of them `
+      + "before the offer appeared now lands somewhere else, and the somewhere else is the control "
+      + "that discards every value in the field.",
+    ).toEqual([]);
+  });
+}
+
 for (const host of HOSTS) {
   test(`a destroy and a restore are told apart by more than a margin, ${host.name}`, async ({ page }) => {
     await page.setViewportSize({ width: 1_200, height: 700 });
