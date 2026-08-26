@@ -34,6 +34,8 @@ import { syncSubmitValues,
   hiddenChipCount,
   keepFocusedChipInView,
   wayBackActionName,
+  matchesKeyGesture,
+  MDY_WIDGET_KEYBOARD,
   blocksValueChange,
   isTypeaheadCharacter,
 } from "@modyra/widgets";
@@ -853,7 +855,7 @@ export function renderMultiselectField(
 
   trigger.addEventListener("click", () => dispatch({ type: "toggleOpen" }));
   clearAll.addEventListener("click", () => dispatch({ type: "clear" }));
-  wayBackAction.addEventListener("click", () => dispatch({ type: "undo" }));
+  wayBackAction.addEventListener("click", () => undoAndLand());
   search.addEventListener("input", () => dispatch({ type: "search", query: search.value }));
   /**
    * The keyboard policy is `multiselectOverlayAction`, not a handler here.
@@ -879,6 +881,49 @@ export function renderMultiselectField(
    */
   const aimedAtTheField = (target: EventTarget | null): boolean =>
     target === trigger || !(target instanceof HTMLElement) || target.closest("button") === null;
+
+  /**
+   * The way back, from wherever the person is standing in the field.
+   *
+   * Answered from the field's root rather than from the button that offers it: a removal leaves the
+   * reading position among the chips, and a shortcut reachable only from the control at the far
+   * trailing edge is a shortcut for somebody who has already walked there.
+   *
+   * Not while a person is typing. Inside a text box the same gesture is the platform's own undo of
+   * what they have just written, and taking it would put a value back and lose a word.
+   */
+  const undoGesture = (event: KeyboardEvent): boolean => {
+    const binding = MDY_WIDGET_KEYBOARD.multiselect.find((one) => one.intent === "undo");
+    if (binding === undefined || !matchesKeyGesture(binding, event)) return false;
+    const target = event.target;
+    if (target instanceof HTMLElement && target.closest("input, textarea, [contenteditable]") !== null) return false;
+    if (controller.state().wayBack === null) return false;
+    event.preventDefault();
+    undoAndLand();
+    return true;
+  };
+
+  /**
+   * Puts the value back and leaves the reading position on what came back.
+   *
+   * The offer is withdrawn by using it, so whatever held focus is gone from the page the moment it
+   * works — and a reading position on nothing sends a keyboard back to the top of the document. The
+   * value restored is where a person is looking, so it is where they are put; a restore with nothing
+   * to land on falls back to the opener, which is the field itself.
+   */
+  const undoAndLand = (): void => {
+    const restored = controller.state().wayBack?.optionKey ?? null;
+    dispatch({ type: "undo" });
+    queueMicrotask(() => {
+      // Compared rather than selected: a value is whatever a document put in it, and a selector
+      // built from one needs escaping that not every host this runs in provides.
+      const landing = restored === null
+        ? undefined
+        : Array.from(chipStrip.querySelectorAll<HTMLElement>("[data-key]"))
+          .find((chip) => chip.dataset.key === restored);
+      (landing ?? trigger).focus();
+    });
+  };
 
   const onKeydown = (event: KeyboardEvent): void => {
     const state = controller.state();
@@ -920,6 +965,8 @@ export function renderMultiselectField(
   }
   // The guard is the box's and not the popup's: inside the popup an option *is* a button, and the
   // keys that move between options and commit one are exactly this policy's.
+  shell.root.addEventListener("keydown", (event) => { undoGesture(event); });
+  popup.addEventListener("keydown", (event) => { undoGesture(event); });
   control.addEventListener("keydown", (event) => { if (aimedAtTheField(event.target)) onKeydown(event); });
   popup.addEventListener("keydown", onKeydown);
 

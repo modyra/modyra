@@ -2339,7 +2339,8 @@
         "Home@closed:move",
         "Home@open:move",
         "Space@closed:open",
-        "Tab@open:cancel"
+        "Tab@open:cancel",
+        "z:undo"
       ]
     },
     "datepicker": {

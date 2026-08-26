@@ -1,4 +1,4 @@
-import { wayBackActionName, chipTooltipOffset, hiddenChipCount, keepFocusedChipInView, chipDropIndex, chipFocusAfterRemoval, scrollChipStripByWheel, isTypeaheadCharacter, chipMovedAnnouncement, stateClass, keyBindingFor, multiselectAnnouncement, optionsWithUnrecognizedValues, overlayControlledId, projectOverlayOpenerA11y } from "@modyra/widgets";
+import { wayBackActionName, matchesKeyGesture, MDY_WIDGET_KEYBOARD, chipTooltipOffset, hiddenChipCount, keepFocusedChipInView, chipDropIndex, chipFocusAfterRemoval, scrollChipStripByWheel, isTypeaheadCharacter, chipMovedAnnouncement, stateClass, keyBindingFor, multiselectAnnouncement, optionsWithUnrecognizedValues, overlayControlledId, projectOverlayOpenerA11y } from "@modyra/widgets";
 import { MdyPartDirective } from "../../control/mdy-part.directive";
 import { NgTemplateOutlet } from "@angular/common";
 import {
@@ -92,6 +92,7 @@ import type { MdyOverlayBranch, MdyOverlayOwner } from "../../core/overlay-contr
       #wrapper
       [class.mdy-multiselect--open]="open()"
       (click)="onBoxPress($event)"
+      (keydown)="onUndoGesture($event)"
     >
       <!-- The strip before the opener, and beside it rather than inside it: a chip carries a button
            that takes a value off, and a control that opens something may not contain a control that
@@ -643,8 +644,51 @@ export class MdyMultiselectComponent<TValue = string>
   }
 
   /** The one way back: it puts back what the last destructive act took, whichever act that was. */
+  /**
+   * Puts the value back and leaves the reading position on what came back.
+   *
+   * The offer is withdrawn by using it, so whatever held focus is gone from the page the moment it
+   * works — and a reading position on nothing sends a keyboard back to the top of the document. The
+   * value restored is where a person is looking, so it is where they are put; a restore with nothing
+   * to land on falls back to the opener, which is the field itself.
+   */
   protected onWayBack(): void {
+    const restored = this.wayBack()?.optionKey ?? null;
     this.controller()?.dispatch({ type: "undo" });
+    queueMicrotask(() => {
+      const host = this.hostRef.nativeElement as HTMLElement;
+      // Compared rather than selected: a value is whatever a document put in it, and a selector
+      // built from one needs escaping that not every host this runs in provides.
+      const landing = restored === null
+        ? undefined
+        : Array.from(host.querySelectorAll<HTMLElement>("[data-key]"))
+          .find((chip) => chip.dataset.key === restored);
+      (landing ?? host.querySelector<HTMLElement>(".mdy-multiselect__trigger"))?.focus();
+    });
+  }
+
+  /**
+   * The way back, from wherever the person is standing in the field.
+   *
+   * Answered from the field rather than from the button that offers it: a removal leaves the reading
+   * position among the chips, and a shortcut reachable only from the control at the far edge is a
+   * shortcut for somebody who has already walked there.
+   *
+   * Not while a person is typing. Inside a text box the same gesture is the platform's own undo of
+   * what they have just written, and taking it would put a value back and lose a word.
+   */
+  protected onUndoGesture(event: KeyboardEvent): void {
+    // `void`, and it is not a style choice: a template binding whose handler returns `false` has the
+    // framework cancel the event for it — so a guard clause returning `false` for "this key is not
+    // mine" would swallow every key that reached this element, and the commands inside the field
+    // would stop answering the two the platform binds to a button.
+    const binding = MDY_WIDGET_KEYBOARD.multiselect.find((one) => one.intent === "undo");
+    if (binding === undefined || !matchesKeyGesture(binding, event)) return;
+    const target = event.target;
+    if (target instanceof HTMLElement && target.closest("input, textarea, [contenteditable]") !== null) return;
+    if (this.wayBack() === null) return;
+    event.preventDefault();
+    this.onWayBack();
   }
 
   protected onToggle(optValue: TValue): void {

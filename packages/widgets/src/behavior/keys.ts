@@ -24,7 +24,9 @@ export type MdyWidgetKeyIntent =
    * Pick up whatever holds focus, or put it down — one key, because it is one state seen from both
    * ends. What is held moves with the bare arrows and goes back where it was on `Escape`.
    */
-  | { readonly type: "grab" };
+  | { readonly type: "grab" }
+  /** Put back the last destructive change, whichever act produced it. */
+  | { readonly type: "undo" };
 
 /**
  * How close to the viewport edge a popup may sit. Exported because it is part of the placement
@@ -43,6 +45,7 @@ export function widgetKeyIntent(kind: MdyWidgetKind, key: string, open: boolean)
     case "cancel": return { type: "cancel", restoreFocus: binding.restoresFocus ?? true };
     case "open": return { type: "open" };
     case "commit": return { type: "commit" };
+    case "undo": return { type: "undo" };
     case "toggle": return { type: "toggle" };
     case "step":
       return key === "ArrowUp" ? { type: "increment" } : { type: "decrement" };

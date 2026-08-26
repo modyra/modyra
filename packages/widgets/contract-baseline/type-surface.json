@@ -1714,8 +1714,9 @@
   ],
   "MdyKeyBinding": [
     "by?: -1 | 1",
-    "intent: \"move\" | \"step\" | \"toggle\" | \"open\" | \"commit\" | \"cancel\" | \"reorder\" | \"remove\" | \"grab\"",
+    "intent: \"move\" | \"step\" | \"toggle\" | \"open\" | \"commit\" | \"cancel\" | \"reorder\" | \"remove\" | \"grab\" | \"undo\"",
     "key: string",
+    "modifier?: \"primary\"",
     "on?: string",
     "requires?: string",
     "restoresFocus?: boolean",
@@ -1835,6 +1836,7 @@
     "protected onOverlaySelect(0) optValue: TValue,-> returns: void",
     "protected onStripWheel: typeof scrollChipStripByWheel",
     "protected onToggle(0) optValue: TValue,-> returns: void",
+    "protected onUndoGesture(0) event: KeyboardEvent,-> returns: void",
     "protected onWayBack-> returns: void",
     "protected openerPart: _angular_core.Signal<MdyPartContract>",
     "protected optionDomId(0) value: TValue,-> returns: string | null",
@@ -4047,6 +4049,11 @@
   "localeDateOrder": [
     "(0) locale: string",
     "-> returns: readonly [\"day\" | \"month\" | \"year\", \"day\" | \"month\" | \"year\", \"day\" | \"month\" | \"year\"]"
+  ],
+  "matchesKeyGesture": [
+    "(0) binding: MdyKeyBinding",
+    "(1) event: { readonly key: string; readonly ctrlKey?: boolean; readonly metaKey?: boolean; readonly altKey?: boolean; readonly shiftKey?: boolean; }",
+    "-> returns: boolean"
   ],
   "matchesValueShape": [
     "(0) shape: MdyValueShape",

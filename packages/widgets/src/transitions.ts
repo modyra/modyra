@@ -115,7 +115,7 @@ export interface MdyKeyBinding {
   readonly key: string;
   /** Only when the overlay is showing, only when it is not, or either way. */
   readonly when?: MdyOverlayPhase;
-  readonly intent: "move" | "step" | "toggle" | "open" | "commit" | "cancel" | "reorder" | "remove" | "grab";
+  readonly intent: "move" | "step" | "toggle" | "open" | "commit" | "cancel" | "reorder" | "remove" | "grab" | "undo";
   /**
    * Which way a `reorder` goes: `-1` earlier in the value, `1` later.
    *
@@ -158,6 +158,16 @@ export interface MdyKeyBinding {
    * carry its own list of which. A capability named here is one it can ask the field about.
    */
   readonly requires?: string;
+  /**
+   * The held key this binding needs, where the gesture is a shortcut rather than a bare press.
+   *
+   * `"primary"` is the platform's own accelerator — `Cmd` where the platform uses it, `Ctrl`
+   * everywhere else — and it is named that way because the two are not interchangeable: `Ctrl`+Z on
+   * a Mac is not the undo gesture, and a table spelling both would declare a key half its readers
+   * must ignore. `matchesKeyGesture` resolves it against an event, so the platform test is made once
+   * rather than in each renderer.
+   */
+  readonly modifier?: "primary";
 }
 
 /** Kinds whose value is chosen from a list the keyboard walks. */
@@ -321,6 +331,12 @@ function keyboardFor(kind: MdyWidgetKind): readonly MdyKeyBinding[] {
     // and `Delete` is what the platform's own lists answer to.
     bindings.push({ key: "Backspace", when: "closed", intent: "remove", on: "chip" });
     bindings.push({ key: "Delete", when: "closed", intent: "remove", on: "chip" });
+    // The way back, from the keyboard, using the gesture every application on the platform already
+    // means by it. Declared for the control rather than for the button that offers it: the offer
+    // appears at the field's trailing edge after a value goes, and the person who wants it back is
+    // standing wherever the removal left them — which is not there. A shortcut reachable only from
+    // the control it undoes the need for is a shortcut for nobody.
+    bindings.push({ key: "z", modifier: "primary", intent: "undo" });
   }
   if (TOGGLES.includes(kind)) bindings.push({ key: " ", intent: "toggle" });
 
@@ -368,6 +384,35 @@ export function keyBindingFor(
       && (binding.when === undefined || binding.when === phase)
       && ((binding.on ?? undefined) === on || (opener !== undefined && binding.on === opener)),
   ) ?? null;
+}
+
+/**
+ * Whether a keyboard event is the gesture a binding declares.
+ *
+ * The platform test lives here and not in a renderer, because "the primary modifier" is one fact
+ * about the machine and three copies of it drift the moment one is written from memory. It is read
+ * from the event rather than from a user-agent string: `metaKey` is the accelerator where the
+ * platform uses it and `ctrlKey` where it does not, and an event carries both — so a gesture is
+ * recognised by what was actually held rather than by what the platform was guessed to be.
+ *
+ * Both are accepted, and that is deliberate rather than lax. A person on a Mac with a keyboard
+ * mapped for another platform, or a remote session, holds the one their muscle memory knows; the
+ * cost of accepting the other is a shortcut firing on a combination nothing else on the page claims.
+ *
+ * A binding with no modifier is a bare press, and a bare press is not this gesture: `z` alone must
+ * not undo, or typing into a field beside the control would.
+ */
+export function matchesKeyGesture(binding: MdyKeyBinding, event: {
+  readonly key: string;
+  readonly ctrlKey?: boolean;
+  readonly metaKey?: boolean;
+  readonly altKey?: boolean;
+  readonly shiftKey?: boolean;
+}): boolean {
+  if (binding.key.toLowerCase() !== event.key.toLowerCase()) return false;
+  const held = event.ctrlKey === true || event.metaKey === true;
+  if (binding.modifier === "primary") return held && event.altKey !== true && event.shiftKey !== true;
+  return !held;
 }
 
 /**

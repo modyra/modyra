@@ -3,6 +3,8 @@ import {
   MDY_POPUP_OPENERS,
   overlayControlledId,
   keyBindingFor,
+  matchesKeyGesture,
+  MDY_WIDGET_KEYBOARD,
   chipFocusAfterRemoval,
   multiselectAnnouncement,
   multiselectOverlayAction,
@@ -569,6 +571,7 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
         <div
           class="mdy-multiselect ${this._open ? "mdy-multiselect--open" : ""}"
           @keydown=${(e: KeyboardEvent) => {
+            if (this.undoGesture(e)) return;
             // A key that reached the box was not necessarily aimed at it. The bindings this policy
             // answers name the part they belong to — `Enter` and `Space` are declared `on: "trigger"`
             // — and a command standing inside the field is a different part. Every one of them is a
@@ -744,6 +747,49 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
    * so `ArrowLeft` moves a chip *later* in a right-to-left document and a renderer reading the key
    * rather than the binding would have to know that.
    */
+  /**
+   * Puts the value back and leaves the reading position on what came back.
+   *
+   * The offer is withdrawn by using it, so whatever held focus is gone from the page the moment it
+   * works — and a reading position on nothing sends a keyboard back to the top of the document. The
+   * value restored is where a person is looking, so it is where they are put; a restore with nothing
+   * to land on falls back to the opener, which is the field itself.
+   */
+  private undoAndLand(): void {
+    const restored = this.fieldController?.state().wayBack?.optionKey ?? null;
+    this.fieldController?.dispatch({ type: "undo" });
+    void this.updateComplete.then(() => this.updateComplete).then(() => {
+      // Compared rather than selected: a value is whatever a document put in it, and a selector
+      // built from one needs escaping that not every host this runs in provides.
+      const landing = restored === null
+        ? undefined
+        : Array.from(this.querySelectorAll<HTMLElement>("[data-key]"))
+          .find((chip) => chip.dataset.key === restored);
+      (landing ?? this.querySelector<HTMLElement>(`.${this.partClass("trigger")}`))?.focus();
+    });
+  }
+
+  /**
+   * The way back, from wherever the person is standing in the field.
+   *
+   * Answered from the field rather than from the button that offers it: a removal leaves the reading
+   * position among the chips, and a shortcut reachable only from the control at the far edge is a
+   * shortcut for somebody who has already walked there.
+   *
+   * Not while a person is typing. Inside a text box the same gesture is the platform's own undo of
+   * what they have just written, and taking it would put a value back and lose a word.
+   */
+  private undoGesture(event: KeyboardEvent): boolean {
+    const binding = MDY_WIDGET_KEYBOARD.multiselect.find((one) => one.intent === "undo");
+    if (binding === undefined || !matchesKeyGesture(binding, event)) return false;
+    const target = event.target;
+    if (target instanceof HTMLElement && target.closest("input, textarea, [contenteditable]") !== null) return false;
+    if ((this.fieldController?.state().wayBack ?? null) === null) return false;
+    event.preventDefault();
+    this.undoAndLand();
+    return true;
+  }
+
   private onChipKeydown(event: KeyboardEvent, handle: MdyFieldHandle<readonly unknown[]>, optionKey: string): void {
     // A key pressed on a control the chip carries is that control's, not the chip's. The chip's own
     // bindings share `Enter` and `Space` with the platform's activation of a button, so answering
@@ -880,7 +926,7 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
       ?disabled=${handle.disabled() || handle.readonly()}
       aria-label=${named}
       title=${named}
-      @click=${() => this.fieldController?.dispatch({ type: "undo" })}
+      @click=${() => this.undoAndLand()}
     >${mdyIcon("UNDO", "")}</button>`;
   }
 
