@@ -246,7 +246,7 @@ export const MDY_WIDGET_CONTRACTS = Object.freeze({
       // optional decoration that some do and some do not.
       presentation: ["mdy-file-icon", "mdy-file-info", "mdy-file-placeholder", "mdy-file-name", "mdy-file-meta"] ,
       required: ["content"] }),
-  colors: define("colors", ["mdy-renderer", "mdy-renderer--colors"], ["root", "label", "requiredMarker", "inputWrapper", "nativePicker", "preview", "control", "hexInput", "toggle", "popup", "presets", "swatch", "inlineError", "supportingText", "errors", "errorItem"] as const, true,
+  colors: define("colors", ["mdy-renderer", "mdy-renderer--colors"], ["root", "label", "requiredMarker", "inputWrapper", "nativePicker", "preview", "control", "hexInput", "toggle", "popup", "presets", "swatch", "customEntry", "inlineError", "supportingText", "errors", "errorItem"] as const, true,
     {
       // The picker is the affordance a pointer uses to reach the colour, and the contract does not
       // say how a renderer builds one. A `<label>` wrapping the hidden `<input type=color>` and a
@@ -255,10 +255,20 @@ export const MDY_WIDGET_CONTRACTS = Object.freeze({
       //
       // The native input is therefore a sibling under the wrapper rather than a child of the
       // picker: where it sits is a rendering choice, that it exists is the contract.
-      elements: { nativePicker: "affordance" },
+      // The door to the platform's chooser, and only that. It is a button and it is **not** a swatch:
+      // a set has a total and a position within it, so a button inside the grid would announce
+      // "thirteen of thirteen" over twelve colours, put a thing of another kind into the arrow walk,
+      // and claim a role a listbox does not admit. It sits after the grid, where every menu that has
+      // one puts its way out.
+      //
+      // A colour picked by hand is a `swatch` like the twelve — selectable, re-selectable, carrying
+      // the selected mark when it is current. A square that were a door when empty and a colour when
+      // full would do different things depending on how it was set: pressed full, either the chooser
+      // opens and the tint cannot be re-picked, or it selects and the door is gone. ADR 0158.
+      elements: { nativePicker: "affordance", customEntry: "button" },
       roles: { presets: "listbox", swatch: "option" } ,
       states: { swatch: ["active"], popup: POPUP_PLACEMENT_STATES },
-      classes: { nativePicker: ["mdy-colors__primary-picker"], preview: ["mdy-colors__preview-swatch"], control: ["mdy-colors__native-hidden"], hexInput: ["mdy-colors__hex-input"], toggle: ["mdy-colors__toggle-area"], popup: ["mdy-colors__dropdown", MDY_POPUP_CLASS, MDY_POPUP_SURFACE_CLASS], presets: ["mdy-colors__presets"], swatch: ["mdy-color-swatch"] } ,
+      classes: { nativePicker: ["mdy-colors__primary-picker"], preview: ["mdy-colors__preview-swatch"], control: ["mdy-colors__native-hidden"], hexInput: ["mdy-colors__hex-input"], toggle: ["mdy-colors__toggle-area"], customEntry: ["mdy-colors__custom-entry"], popup: ["mdy-colors__dropdown", MDY_POPUP_CLASS, MDY_POPUP_SURFACE_CLASS], presets: ["mdy-colors__presets"], swatch: ["mdy-color-swatch"] } ,
       presentation: ["mdy-colors", "mdy-colors__dropdown-header", "mdy-select__arrow"] ,
       required: ["hexInput", "nativePicker", "preview", "toggle", "presets"] }),
 });

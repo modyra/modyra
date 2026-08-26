@@ -23,7 +23,7 @@ import { applySubmissionNames,
   MDY_I18N_MESSAGES_DEFAULT,
   type MdyI18nMessages,
 } from "@modyra/widgets";
-import { applyPart, el, setErrors, setIcon } from "../dom.js";
+import { applyPart, el, setErrors, setIcon, setText } from "../dom.js";
 import { buildFieldShell, insertControl } from "../field-shell.js";
 import { dismissOnOutsidePointer, positionOverlay, reflectOverlayOpen, trackOverlay } from "../overlay.js";
 
@@ -108,16 +108,51 @@ export function renderColorsField(
   presetList.setAttribute("aria-label", messages.colorPresetsHeader);
   popup.append(presetList);
 
+  const swatch = (label: string): HTMLButtonElement => {
+    const one = el("button") as HTMLButtonElement;
+    one.type = "button";
+    applyPart(one, definition.parts.swatch);
+    one.setAttribute("role", "option");
+    one.setAttribute("aria-label", label);
+    presetList.appendChild(one);
+    return one;
+  };
+
   const swatches = presets.map((preset) => {
-    const swatch = el("button") as HTMLButtonElement;
-    swatch.type = "button";
-    applyPart(swatch, definition.parts.swatch);
-    swatch.setAttribute("role", "option");
-    swatch.setAttribute("aria-label", preset);
-    swatch.style.setProperty("background-color", preset);
-    presetList.appendChild(swatch);
-    return { preset, swatch };
+    const one = swatch(preset);
+    one.style.setProperty("background-color", preset);
+    return { preset, swatch: one };
   });
+
+  /**
+   * The colour picked by hand, as a swatch of exactly the same kind as the twelve.
+   *
+   * Selectable and re-selectable: a person who tries a preset and changes their mind returns to
+   * their own colour without going back through the chooser, which is the behaviour a colour picker
+   * exists for. It is drawn only once there is one — a set is what it holds.
+   *
+   * Its name is poor and honest: nobody has named `#4361EE`, so this is the one value in the panel
+   * that cannot be described to somebody who cannot see it. An approximated colour name would be
+   * worse than the hexadecimal, because it would claim a meaning it does not have.
+   */
+  const custom = swatch("");
+  custom.hidden = true;
+
+  /**
+   * The door, after the grid and outside it.
+   *
+   * A button and never a swatch. A set has a total and a position within it, so a button among the
+   * options would announce "thirteen of thirteen" over twelve colours, put a thing of another kind
+   * into the arrow walk, and claim a place in a listbox that does not admit it. After the grid is
+   * where every menu that has a way out puts it: first the room, then the door.
+   *
+   * It never carries a tint and never carries the selected mark, because it is not a value.
+   */
+  const customEntry = el("button") as HTMLButtonElement;
+  customEntry.type = "button";
+  applyPart(customEntry, definition.parts.customEntry);
+  setText(customEntry, messages.colorCustomEntry);
+  popup.append(customEntry);
 
   insertControl(shell, picker);
   insertControl(shell, hexInput);
@@ -142,6 +177,15 @@ export function renderColorsField(
   hexInput.addEventListener("change", () => commit({ type: "text", value: hexInput.value }));
   hexInput.addEventListener("blur", () => handle.markAsTouched());
   toggle.addEventListener("click", () => open.set(!open()));
+  // The platform's chooser, reached from the panel. The hidden native input is what opens it, and
+  // clicking it from here rather than moving focus into it keeps the panel where it was: on some
+  // platforms the chooser is a separate window, and a panel that closed when focus left would take
+  // the door with it and leave nothing to come back to.
+  customEntry.addEventListener("click", () => control.click());
+  custom.addEventListener("click", () => {
+    const tint = custom.dataset.mdyTint;
+    if (tint) commit({ type: "preset", value: tint });
+  });
   for (const { preset, swatch } of swatches) {
     swatch.addEventListener("click", () => commit({ type: "preset", value: preset }));
   }
@@ -194,6 +238,9 @@ export function renderColorsField(
     if (isOpen) {
       if (presetList.childElementCount === 0) {
         for (const { swatch } of swatches) presetList.appendChild(swatch);
+        // Last among the options, because it is the newest of them and because a set a person walks
+        // should not renumber itself when they pick a colour.
+        presetList.appendChild(custom);
         // Into the row it has just shown. The keys the contract declares for an open colour field
         // are the row's, and `Tab` dismisses the palette — so a palette that left the keyboard on
         // the toggle was one no keyboard could ever reach the presets in.
@@ -208,6 +255,21 @@ export function renderColorsField(
       const selected = colorValueEquals(value || null, preset);
       swatch.classList.toggle("mdy-color-swatch--selected", selected);
       swatch.setAttribute("aria-selected", String(selected));
+    }
+    // A colour the presets do not hold is the one picked by hand, so the panel keeps it: the tint
+    // stays after a preset is tried, and going back to it is one press instead of the whole chooser
+    // again. Two colours are then lit in the sense that both are on the page — one carries the
+    // selected mark and the other is merely present, which eleven of twelve already are.
+    const isPreset = presets.some((preset) => colorValueEquals(value || null, preset));
+    if (value && !isPreset) custom.dataset.mdyTint = value;
+    const tint = custom.dataset.mdyTint;
+    custom.hidden = !tint;
+    if (tint) {
+      custom.style.setProperty("background-color", tint);
+      custom.setAttribute("aria-label", messages.colorCustomValue.replace("{value}", tint));
+      const selected = colorValueEquals(value || null, tint);
+      custom.classList.toggle("mdy-color-swatch--selected", selected);
+      custom.setAttribute("aria-selected", String(selected));
     }
     // The state-driven half of the contract. `definition.parts` is static — classes and shape — so
     // on its own it never said the colour was invalid, required, disabled or described by its

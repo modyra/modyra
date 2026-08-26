@@ -605,7 +605,7 @@ export const MDY_CANONICAL_AT_REST: Readonly<Partial<Record<MdyWidgetKind, MdyCa
     }),
     colors: Object.freeze({
       parts: Object.freeze(["root", "label", "inputWrapper", "nativePicker", "preview", "control", "hexInput", "toggle"]),
-      optional: Object.freeze(["supportingText", "requiredMarker", "popup", "presets", "swatch", "inlineError", "errors", "errorItem"]),
+      optional: Object.freeze(["supportingText", "requiredMarker", "popup", "presets", "swatch", "customEntry", "inlineError", "errors", "errorItem"]),
       relationships: Object.freeze([
         { from: "label", attribute: "for", to: "hexInput" },
         { from: "toggle", attribute: "aria-controls", to: null },

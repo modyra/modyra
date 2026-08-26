@@ -3787,6 +3787,17 @@
             "active"
           ]
         },
+        "customEntry": {
+          "element": "button",
+          "parent": "root",
+          "optional": true,
+          "repeated": false,
+          "role": null,
+          "classes": [
+            "mdy-colors__custom-entry"
+          ],
+          "states": []
+        },
         "inlineError": {
           "element": "image",
           "parent": "label",

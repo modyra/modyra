@@ -424,6 +424,7 @@
         "popup",
         "presets",
         "swatch",
+        "customEntry",
         "inlineError",
         "supportingText",
         "errors",

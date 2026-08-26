@@ -1,6 +1,6 @@
 # ADR 0158: A thirteenth that is a door
 
-Status: Proposed — the model is decided; five interaction questions are open and named below.
+Status: Accepted — the fork below was closed by the user in favour of two elements.
 
 ## Context
 
@@ -65,15 +65,26 @@ selected mark and the other is merely present, as eleven of twelve already are.
 **One mark, one meaning: this is the current value.** The door never carries it, because it is not a
 value.
 
-### The divergence, stated rather than resolved
+### The divergence, and how it closed
 
-The decision this record carries says *a bonus colour which, pressed, opens the chooser*. The answer
-above says the thing that opens the chooser **must not be the colour**. Both serve the same intent —
-both routes reachable, a typed hex visible in the panel — and they differ in whether that is one
-element or two.
+The decision as first taken said *a bonus colour which, pressed, opens the chooser*. The answer above
+said the thing that opens the chooser **must not be the colour**. Both served the same intent and
+differed only in whether that is one element or two.
 
-**It is not resolved here.** The intent is the user's and is unchanged; the form is a question that
-was put to them with this record's evidence attached.
+**Closed by the user in favour of two.** The panel holds a grid of twelve, a thirteenth swatch of the
+same kind when a colour has been picked by hand, and — after the grid, outside it — a button that is
+always and only a door.
+
+### The same shape, one level up, found while building it
+
+The affordance beside the field today is a `<label>` wrapping the preview swatch and the hidden native
+input. So it is **both** the display of the current colour **and** a door to the platform's chooser —
+the identical defect this record was written to remove from the thirteenth square, sitting in the part
+that was already shipping.
+
+**Not changed here.** Splitting it removes a way to open the chooser from a closed field, which is a
+second decision and not this one; recorded so that the next reader meets it as a known shape rather
+than discovering it as a surprise.
 
 ## Consequences
 

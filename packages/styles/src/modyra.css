@@ -750,6 +750,26 @@
         gap: 0.625rem;
     }
 
+    /* The door out of the panel, and it must not read as a thirteenth colour.
+       Not a filled square in the grid's rhythm: its own word, its own line, and a rule above it that
+       says the set has ended. The test is whether somebody squinting at the panel counts twelve
+       patches of colour or thirteen — thirteen means this has failed, whatever it is called. */
+    .mdy-colors__custom-entry {
+        display: block;
+        width: 100%;
+        margin-block-start: var(--mdy-space-2);
+        padding-block-start: var(--mdy-space-2);
+        border: 0;
+        border-block-start: var(--mdy-stroke-1) solid var(--mdy-outline-variant);
+        background: none;
+        color: var(--mdy-color-text, inherit);
+        font: inherit;
+        text-align: start;
+        cursor: pointer;
+    }
+
+    .mdy-colors__custom-entry:hover { color: var(--mdy-color-primary, inherit); }
+
     .mdy-color-swatch {
         width: var(--mdy-color-swatch-size);
         /* M3-inspired: 40px */
