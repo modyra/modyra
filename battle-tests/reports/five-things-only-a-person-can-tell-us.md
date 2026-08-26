@@ -11,6 +11,21 @@ run finds the crashes; it does not find the twenty seconds of listening that mak
 **What you need.** NVDA is free on Windows; VoiceOver is on every Mac and iPhone. Any one of them.
 Nothing needs installing on the tester's side beyond the reader they already use.
 
+The trials are written in ordinary words on purpose, because the tester should not have to learn ours.
+Where one says *the reading cursor* — the thing that walks a document, as opposed to Tab, which jumps
+between controls — that is:
+
+| reader | the reading cursor | how a control is operated |
+|---|---|---|
+| VoiceOver on a Mac | `VO`+left/right arrow | `VO`+space, or the arrow keys once inside |
+| NVDA on Windows | the arrow keys in browse mode | `Enter` to enter forms mode, then the arrow keys |
+| VoiceOver on iPhone | swipe left and right with one finger | double-tap, or swipe up and down to change a value |
+
+**All three are worth running if they can be.** They differ in the one thing trial 1 is about — how a
+reader moves through a control that also wants the arrow keys — and a strip that behaves on a Mac can
+still trap somebody on Windows. Where only one is available, say which in the answers: a result from
+one reader is a result about that reader.
+
 **How long.** Twenty minutes for all five, unhurried.
 
 **What to record.** For each: what the person tried, what they heard, what they expected to hear,
@@ -21,6 +36,37 @@ A trial that goes fine is a result. Write it down too, or the ones that fail loo
 ones anybody tried.
 
 ---
+
+## Getting to each trial, and the one that cannot be reached yet
+
+Checked against the demo as it stands, because a trial whose starting state a person has to build
+themselves is a trial that begins with them failing at something else.
+
+Start a demo and open it in the reader's own browser. Any of these serves one renderer:
+
+```sh
+npm run demo:plain        # port 4307
+npm run demo:lit          # port 4303
+npm run demo:angular
+```
+
+| trial | where | what to do first |
+|---|---|---|
+| 1 — walking the strip | **Servings** | already holds two; nothing to set up |
+| 2 — choosing an option | **Palette** | open it and choose one |
+| 3 — removing from the middle | **Palette** | choose all three first, then remove the middle one |
+| 4 — crossing twelve values | **nowhere yet** | see below |
+| 5 — holding a step key | **Servings** | it already holds the same value twice, which is what draws a quantity |
+
+**Trial 4 has no starting state.** It asks a person to cross twelve chosen values with the arrow keys
+and to be timed doing it, and the largest list any demo field offers is three. Two or three names is
+not a shorter version of the same question — the thing being measured is what happens when the
+crossing gets long enough to give up on, and it cannot be observed on a strip a person crosses in two
+presses.
+
+What it needs is one field with about twelve options and names of ordinary length. Until that exists,
+run the other four and record trial 4 as **not attempted, for want of a field to attempt it on** —
+which is a fact about us and not about the reader.
 
 ## 1 — Walking a strip of chosen values with a virtual cursor
 
