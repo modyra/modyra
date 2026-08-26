@@ -25,12 +25,17 @@
  *
  * And the caret, from the other side: the list opens and the value does not move.
  *
- * **The separation is kept before the field is reached, not after.** A press on a control inside the
- * field does not bubble out to it: the field sees such a press only if it listens on the way down.
- * That is a stronger arrangement than a field that receives every press and decides which to answer,
- * because it does not depend on the decision being right — but it is invisible from the outcome, and
- * a field that started answering presses on the way down would look, from every green check here,
- * exactly like one that had not.
+ * **Two arrangements keep the acts apart, and they cover different presses.** A press on a control
+ * that has a handler of its own stops there and never travels out to the field at all. A press on the
+ * body of a chip has no handler to stop it — a label is not a control — so it does reach the field,
+ * and what keeps the field from answering is that the field asks whether the press *landed* on it.
+ *
+ *     the remove on a chip, the steppers   stopped at the control; the field never sees it
+ *     the body of a chip                   reaches the field; only the landing test holds it back
+ *
+ * Neither one covers both, which is why both presses are made here. Reading either arrangement as the
+ * general rule leaves the other path guarded by nothing, and both are invisible from a green run: a
+ * field that lost either protection looks, from the outcome alone, exactly like one that kept it.
  *
  * **Where the press lands is asserted, not assumed.** Each press is aimed by coordinate, because the
  * question is what happens to a person aiming at what they can see, and a press by coordinate can miss
@@ -155,6 +160,57 @@ for (const host of HOSTS) {
       ).toBe(before);
     });
   }
+
+  test(`pressing the body of a chip does nothing at all, ${host.name}`, async ({ page }) => {
+    test.setTimeout(120_000);
+    await mount(page);
+
+    // Aimed a few pixels in from the leading edge: the label, not the control at the far end of it.
+    const box = await page.locator(`[data-form="act"] .${classOf("chip")}`).first().boundingBox();
+    expect(box, `${host.name} drew no chip, so there is no body here to press`).not.toBeNull();
+    const point = { x: box!.x + 6, y: box!.y + box!.height / 2 };
+    const landed = await page.evaluate(({ x, y }) => {
+      const element = document.elementFromPoint(x, y);
+      if (element === null) return "(nothing)";
+      const named = element.closest("[class*='mdy-']");
+      return named === null ? element.tagName.toLowerCase()
+        : Array.from(named.classList).find((one) => one.startsWith("mdy-")) ?? named.tagName.toLowerCase();
+    }, point);
+
+    // A press on the label is what this asks about. Landing on the remove instead would ask the
+    // question already asked above, and would answer it with the wrong control's protection.
+    expect(
+      landed,
+      `${host.name}: a press aimed at the body of a chip landed on ${landed}, which is a control `
+      + "rather than the label, so this is not the press this file is about",
+    ).toBe(classOf("chip"));
+
+    const before = await open(page);
+    await page.mouse.click(point.x, point.y);
+    await page.waitForTimeout(450);
+
+    expect(
+      await held(page),
+      `${host.name}: pressing the body of a chip changed what the field holds`,
+    ).toEqual(HELD);
+
+    expect(
+      await open(page),
+      `${host.name}: pressing the body of a chip opened the list. A label is not a control, so this `
+      + "press reaches the field, and the field answered a press that landed on something else.",
+    ).toBe(before);
+
+    // The field is alive. Without this the two negatives above are satisfied by a control that
+    // answers nothing at all, and the press that reaches the field furthest is the one this file
+    // would then be least able to see.
+    const { landed: onCaret } = await press(page, "arrow");
+    expect(onCaret, `${host.name}: the control case landed on ${onCaret}`).toBe(classOf("box"));
+    expect(
+      await open(page),
+      `${host.name}: the field did not open on a press of its own either, so it answers nothing and `
+      + "the two readings above are about a control that was never listening",
+    ).toBe("true");
+  });
 
   test(`pressing the caret opens the list and moves nothing, ${host.name}`, async ({ page }) => {
     test.setTimeout(120_000);
