@@ -30,16 +30,33 @@
  * a stroked path is exactly the case it has never been checked against. Reporting a ratio from it
  * would be inventing a measurement. It needs an instrument this suite does not have.
  *
- * Measured today, identically in all three renderers:
+ * Measured, identically in all three renderers:
  *
- *     way back   31×17   at x=93     on its own row, a thousand pixels from the others
- *     open       16×16   at x=1144
- *     clear all  28×56   at x=1160   flush against the opener — 0px between them
+ *     way back    31×17    x=93..124      on its own row, a thousand pixels from the others
+ *     opener     818×56    x=342..1160    the space the chips do not take
+ *     clear all   28×56    x=1160..1188   flush against the opener — 0px between them
+ *     (glyph)     16×16    x=1144..1160   decoration inside the opener, not a target
  *
- * So the three are not a cluster: the way back is on a separate row beneath the field, the opener is
- * two thirds of the minimum target, and the gap between the opener and the control that discards
- * every value in the field is **zero**. The order is way back, open, clear all — the destructive one
- * at the outer edge, where a thumb reaching for the end of the field arrives first.
+ * So the three are not a cluster: the way back is on a separate row beneath the field, and the gap
+ * between the opener and the control that discards every value in the field is **zero**. The order is
+ * way back, open, clear all — the destructive one at the outer edge, where a thumb reaching for the
+ * end of the field arrives first, and a press two pixels to either side of x=1160 either opens the
+ * list or throws every value away.
+ *
+ * **The opener is the wide area, and that is what the drawing above does not settle.** The mark at the
+ * trailing edge is a glyph inside the command; the command is the whole space the chips leave, which
+ * sits *before* clear-all and is 818 pixels wide. A sequence that ends with the opener therefore costs
+ * something whichever way it is reached: either the wide area moves to the outer edge and clear-all
+ * ends up inside the field rather than at its border, or the wide area stops being wide and the empty
+ * space beside the chips stops opening anything. The specification drew three marks without saying
+ * which of the three is the wide one, so this file asserts the sequence it drew and the record owes an
+ * amendment naming the cost it chose.
+ *
+ * **A correction, recorded because the retracted half is instructive.** An earlier reading of this
+ * file reported the opener as 16×16 — two thirds of the minimum target — and that was the glyph. The
+ * part whose *name* reads like an opener is decoration; the part the catalogue *declares* as the
+ * opener is the one a person presses. Reading the name instead of the declaration reports a picture's
+ * size as a target's, and it reports it in the direction that manufactures a defect.
  *
  * **The assertions are ordered, and the order is load-bearing.** Siblinghood, then sequence, then
  * size, then the two gaps. A gap measured across an arrangement that is not a cluster is a distance
@@ -61,11 +78,22 @@
  */
 
 import { expect, test } from "@playwright/test";
-import { MDY_WIDGET_CONTRACTS } from "@modyra/widgets";
+import { MDY_POPUP_OPENERS, MDY_WIDGET_CONTRACTS } from "@modyra/widgets";
 
 import { HOSTS } from "./bench";
 
 type Api = Record<string, Record<string, (...args: never[]) => unknown>>;
+
+/**
+ * The part that opens the popup, as the catalogue declares it.
+ *
+ * Not the part whose name reads like an opener. The glyph at the trailing edge is decoration inside
+ * the command — it is hidden from assistive technology and takes no pointer events — so measuring it
+ * reports the size of a picture where the question is about the size of a target. The catalogue names
+ * the responsible element for exactly this reason, and reading the declaration is the only way to
+ * measure the thing a person presses.
+ */
+const OPENER_PART = MDY_POPUP_OPENERS.multiselect?.opener ?? "";
 
 /** The contract's own class for a part, so a rename moves this file with it. */
 const classOf = (part: string): string => {
@@ -106,12 +134,18 @@ for (const host of HOSTS) {
 
     const wayBack = classOf("wayBackAction");
     const clearAll = classOf("clearAll");
-    const arrow = classOf("arrow");
+    const opener = classOf(OPENER_PART);
 
     // A part with no declared class cannot be found, and a selector built from an empty string
     // matches the whole document. Say so rather than measure the wrong elements.
     expect(
-      [wayBack, clearAll, arrow].filter((one) => one === ""),
+      OPENER_PART,
+      "the catalogue names no opener for this kind, so this file has nothing to measure as the "
+      + "command and would otherwise fall back to guessing which part opens the popup",
+    ).not.toBe("");
+
+    expect(
+      [wayBack, clearAll, opener].filter((one) => one === ""),
       "the contract declares no class for one of the three trailing parts, so this file cannot "
       + "locate them and would otherwise measure whatever the empty selector matched",
     ).toEqual([]);
@@ -131,7 +165,7 @@ for (const host of HOSTS) {
         };
       }
       return found;
-    }, { root: form, names: { wayBack, clearAll, arrow } });
+    }, { root: form, names: { wayBack, clearAll, opener } });
 
     const missing = Object.entries(reading).filter(([, box]) => box === null).map(([role]) => role);
     expect(
@@ -142,7 +176,7 @@ for (const host of HOSTS) {
 
     const back = reading.wayBack!;
     const clear = reading.clearAll!;
-    const open = reading.arrow!;
+    const open = reading.opener!;
 
     // One cluster, or three controls that merely end up near each other. Siblings are what make the
     // gaps below a property of the design rather than of where three separate boxes happened to land.
