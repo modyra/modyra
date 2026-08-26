@@ -5,16 +5,20 @@
  * where that is by a highlight; a person who cannot is told by an attribute the control carries, which
  * names the option currently under the position. The two are meant to be one fact reported twice.
  *
- * **When they part company, only one of the two audiences finds out.** The highlight moves, the arrow
- * keys work, the value that arrives is the value the person chose — everything a sighted keyboard user
- * could check is right. The attribute stays on the first option, and a screen reader announces that
- * option at every press. Somebody hears the same word four times while the selection travels past four
- * options, and then commits a value they were never told they had arrived at.
+ * **When they part company, what is left is a control that acts on a position nothing shows.** The
+ * value that arrives is the value the person meant — the arrows do reach whatever the commit reads,
+ * and it advances. Neither of the drawn reports follows it: the attribute names the first option at
+ * every press, and so does the class that highlights one. A person listening hears the same word four
+ * times while the selection travels past four options; a person watching sees the same row lit. Both
+ * then commit a value neither was told they had arrived at.
+ *
+ * That the two drawn reports fail together, and the committed value does not, says where the fault is
+ * not: the position is being kept and moved. What is not happening is anything drawing it again.
  *
  * **It is invisible to every check that watches the value.** The keystrokes reach the right option and
  * the right value is committed, so a test that presses arrows and reads what came out finds nothing.
- * Asking the question at all means comparing the two reports against each other rather than either
- * against the outcome.
+ * Asking the question at all means comparing a report against the outcome rather than the outcome
+ * against what was expected.
  *
  * The comparison is made through the control's own words: the attribute names an element, that element
  * carries a value, and pressing the commit key produces a value. Those two must be the same one. No
@@ -112,10 +116,10 @@ for (const host of HOSTS) {
     expect(
       disagreeing,
       `${host.name}: the option this control says the reading position is on is not the option it is `
-      + `on — ${disagreeing.join("; ")}. The highlight moves and the right value arrives, so nothing a `
-      + "person watching the screen could notice is wrong; what is wrong is the only report the "
-      + "person who cannot see the list receives, and they are told the same option at every press "
-      + "while the selection travels past the others.",
+      + `on — ${disagreeing.join("; ")}. The right value arrives, so the position is being kept and `
+      + "moved; what is not happening is anything drawing it again. A person is told the same option "
+      + "at every press while the selection travels past the others, and then commits one they were "
+      + "never told they had reached.",
     ).toEqual([]);
   });
 }
