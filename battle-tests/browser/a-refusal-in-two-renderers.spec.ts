@@ -145,7 +145,20 @@ for (const host of HOSTS) {
     // The control: the shape each picker does read is kept, so a failure below is the erasure rather
     // than a control that takes nothing.
     const kept = outcomes.filter((each) => each.readable);
-    expect(kept.every((each) => each.shows !== ""), JSON.stringify(kept)).toBe(true);
+
+    // A claim over many, read as one number, cannot say which — and `every` over nothing is true, so
+    // a run that collected no readable shape would satisfy the control that exists to stop exactly
+    // that. The perimeter is asserted first and the offenders are named rather than counted.
+    expect(
+      kept.length,
+      `${host.name}: no shape in ${JSON.stringify(outcomes.map((each) => each.typed))} was one this `
+      + "picker reads, so the control below has nothing to control and its silence means nothing",
+    ).toBeGreaterThan(0);
+
+    expect(
+      kept.filter((each) => each.shows === ""),
+      `${host.name} erased a shape it does read: ${JSON.stringify(kept)}`,
+    ).toEqual([]);
 
     // And the ones it cannot read are either kept for correction or explained.
     const swallowed = outcomes.filter(
