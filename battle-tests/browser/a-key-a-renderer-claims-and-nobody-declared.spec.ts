@@ -16,17 +16,27 @@
  *
  *   keys pressed    the seventeen below, and only those
  *   state           a field mounted fresh for every key, at rest, its own control focused, caret at
- *                   each end of it; no key has been pressed into it before
+ *                   each end of it; no key has been pressed into it before. The phase is read from
+ *                   the page rather than assumed, and with a fresh field it is always the closed
+ *                   one — so every binding declared `when: "open"` is **not measured here**, and a
+ *                   pass that opens the panel first is owed.
  *   signal          `defaultPrevented`; a renderer that acts without claiming is invisible here
  *
  * Claims under attack: ADP-001, KBD-002.
  */
 import { expect, test } from "@playwright/test";
-import { MDY_WIDGET_KEYBOARD, MDY_WIDGET_KINDS } from "@modyra/widgets";
+import { MDY_WIDGET_KINDS, keyBindingFor } from "@modyra/widgets";
 import { HOSTS } from "./bench";
 
 type Api = Record<string, Record<string, (...args: never[]) => unknown>>;
-const DECLARED = MDY_WIDGET_KEYBOARD as unknown as Record<string, { key: string }[]>;
+/**
+ * The library's own resolver, not a copy of its table. A binding may name one key, or admit that it
+ * has no key at all — type-ahead is declared as `*printable*` — and a check that compared key strings
+ * would call every letter undeclared while the contract declares them all. It also answers per phase:
+ * the same key can be owed with the panel open and unowed with it closed.
+ */
+const declares = (kind: string, key: string, open: boolean): boolean =>
+  (keyBindingFor as (k: string, key: string, open: boolean) => unknown)(kind, key, open) !== null;
 
 const PRESSED = ["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "Home", "End", "PageUp", "PageDown",
   "Enter", " ", "Escape", "Backspace", "Delete", "a", "1", "+", "-"];
@@ -52,6 +62,7 @@ test("a key a renderer claims and nobody declared", async ({ page }) => {
       await page.waitForFunction((flag) => (window as never as Record<string, boolean>)[flag] === true, host.ready);
 
       if (!claimed.has(kind)) claimed.set(kind, {});
+      /** Each claim carries the phase of the field it was made in: a binding is declared per phase. */
       const taken = new Set<string>();
       let reachable = false;
 
@@ -70,7 +81,7 @@ test("a key a renderer claims and nobody declared", async ({ page }) => {
           ({ id, k }) => {
             const form = document.querySelector(`[data-form="${id}"]`);
             const root = (form?.querySelector(`.mdy-renderer--${k}`) ?? form) as HTMLElement | null;
-            if (root === null) return false;
+            if (root === null) return null;
 
             let control: HTMLElement | null = null;
             for (const label of root.querySelectorAll<HTMLLabelElement>("label[for]")) {
@@ -80,7 +91,7 @@ test("a key a renderer claims and nobody declared", async ({ page }) => {
             // A group labels itself rather than one control, so the first thing a Tab would land on
             // is what a person actually types into.
             control ??= [...root.querySelectorAll<HTMLElement>("*")].find((element) => element.tabIndex >= 0) ?? null;
-            if (control === null) return false;
+            if (control === null) return null;
 
             const store = window as never as Record<string, unknown>;
             store.__claimed = [];
@@ -97,11 +108,11 @@ test("a key a renderer claims and nobody declared", async ({ page }) => {
             store.__listener = listener;
             window.addEventListener("keydown", listener);
             control.focus();
-            return true;
+            return root.querySelector('[aria-expanded="true"]') !== null;
           },
           { id: mountId, k: kind },
         );
-        if (!reached) continue;
+        if (reached === null) continue;
         reachable = true;
 
         // Pressed from each end of the control's text: a field made of segments answers ArrowLeft
@@ -118,8 +129,10 @@ test("a key a renderer claims and nobody declared", async ({ page }) => {
           }, caret);
           await page.keyboard.press(key === " " ? "Space" : key);
         }
+        // The phase belongs to this mount, not to the kind: a field is freshly mounted for every key,
+        // and one of them opening a panel says nothing about the state the next key went into.
         for (const seen of await page.evaluate(() => (window as never as Record<string, string[]>).__claimed)) {
-          taken.add(seen);
+          taken.add(`${seen}\u0000${reached}`);
         }
       }
 
@@ -133,15 +146,14 @@ test("a key a renderer claims and nobody declared", async ({ page }) => {
     .flatMap(([kind, byHost]) => HOSTS.filter((h) => byHost[h.name] === null).map((h) => `${kind} in ${h.name}`));
   expect(unreached, "no control was reached for these, so nothing was measured there").toEqual([]);
 
-  const everClaimed = [...claimed.values()].flatMap((byHost) => Object.values(byHost).flatMap((keys) => keys ?? []));
+  const everClaimed = [...claimed.values()].flatMap((byHost) => Object.values(byHost).flatMap((records) => records ?? []));
   expect(everClaimed.length, "no renderer claimed a single key, so the recorder is measuring nothing").toBeGreaterThan(0);
 
-  const undeclared = [...claimed.entries()].flatMap(([kind, byHost]) => {
-    const declared = new Set((DECLARED[kind] ?? []).map((binding) => binding.key));
-    return HOSTS.flatMap((host) => (byHost[host.name] ?? [])
-      .filter((key) => !declared.has(key))
-      .map((key) => `${kind} in ${host.name}: claims ${shown(key)}, declared [${[...declared].map(shown).join(" ") || "nothing"}]`));
-  });
+  const undeclared = [...claimed.entries()].flatMap(([kind, byHost]) =>
+    HOSTS.flatMap((host) => (byHost[host.name] ?? [])
+      .map((record) => record.split("\u0000") as [string, string])
+      .filter(([key, open]) => !declares(kind, key, open === "true"))
+      .map(([key, open]) => `${kind} in ${host.name}: claims ${shown(key)} with the panel ${open === "true" ? "open" : "closed"}`)));
 
   expect(
     undeclared,
