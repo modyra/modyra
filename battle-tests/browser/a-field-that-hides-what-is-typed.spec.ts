@@ -22,6 +22,13 @@
  * one fails on the other two. There is no single answer that passes all three by accident — and the
  * one that matters is the one a wrong answer exposes.
  *
+ * **What was typed is never read back.** Proving the box takes characters needs them typed; nothing
+ * here needs them returned, and a value declared hidden that crosses into a test process can end up
+ * in a failure message, in a run's artefacts, or in whatever reads those later. A reading layer that
+ * cannot read a concealed value is the version of this that no downstream consumer can undo — and the
+ * same rule belongs anywhere a tool collects what a field holds, where it is easier to forget because
+ * nobody is looking at that tool.
+ *
  * **What is asked is the type the browser was given, not how the masking looks.** How a platform draws
  * a hidden character is the platform's business and differs between them; that the control is the kind
  * the catalogue named is what makes the platform do any of it at all.
@@ -76,7 +83,7 @@ for (const host of HOSTS) {
       // Type into it, because a control that masks does so for what is in it — and a field that
       // refuses what is typed would satisfy any reading of "hidden" by holding nothing.
       const box = page.locator(`[data-form="${id}"] input, [data-form="${id}"] textarea`).first();
-      if (await box.count() > 0) await box.fill("Segreto123").catch(() => undefined);
+      if (await box.count() > 0) await box.fill("aaaaaaaa").catch(() => undefined);
       await page.waitForTimeout(150);
 
       const drawn = await page.evaluate((selector) => {
@@ -85,7 +92,9 @@ for (const host of HOSTS) {
         return {
           tag: control.tagName.toLowerCase(),
           type: control.getAttribute("type") ?? (control.tagName.toLowerCase() === "textarea" ? "textarea" : "text"),
-          held: control.value,
+          // Whether it holds anything, never what. Nothing below needs the characters, and a value a
+          // kind declares hidden should not cross into a process that writes failure messages.
+          holdsSomething: control.value.length > 0,
         };
       }, `[data-form="${id}"]`);
 
