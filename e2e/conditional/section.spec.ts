@@ -54,6 +54,32 @@ test("a closed section asks for nothing and is not submitted", async ({ page }) 
   expect(held.submitted).not.toContain("company");
 });
 
+test("a closed section is not announced as failing either", async ({ page }) => {
+  const name = nameInput(page);
+  const code = codeInput(page);
+
+  // The perimeter, before the verdict. "Nothing announces a refusal" is also true of a page where
+  // the section was never drawn, and that is the reading this assertion would otherwise get for
+  // free — a closed section's controls stay in the document, disabled, which is the only state in
+  // which the question means anything.
+  await expect(name).toHaveCount(1);
+  await expect(code).toHaveCount(1);
+
+  await expect(name).toHaveAttribute("aria-invalid", "false");
+  await expect(code).toHaveAttribute("aria-invalid", "false");
+
+  // The control case, in the same run. An assertion that a value is right cannot show that the
+  // attribute is read at all — a control that never announces anything passes the two lines above
+  // whatever the form does. Opening the section and leaving the required field empty is the state
+  // in which the announcement is owed, so a page that stayed silent here would fail rather than
+  // pass, and the silence above stops being free.
+  await chooseAccount(page, "Company");
+  await nameInput(page).click();
+  await nameInput(page).blur();
+
+  await expect.poll(async () => nameInput(page).getAttribute("aria-invalid")).toBe("true");
+});
+
 test("opening the section brings what it holds into play", async ({ page }) => {
   await chooseAccount(page, "Company");
 
