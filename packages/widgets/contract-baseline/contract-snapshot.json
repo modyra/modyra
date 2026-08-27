@@ -1410,6 +1410,8 @@
       "variants": {},
       "keyboard": [
         "ArrowDown:move",
+        "ArrowLeft:move",
+        "ArrowRight:move",
         "ArrowUp:move",
         "Space:toggle"
       ]
@@ -1577,6 +1579,8 @@
       "variants": {},
       "keyboard": [
         "ArrowDown:move",
+        "ArrowLeft:move",
+        "ArrowRight:move",
         "ArrowUp:move",
         "Space:toggle"
       ]

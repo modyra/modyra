@@ -288,6 +288,22 @@ function keyboardFor(kind: MdyWidgetKind): readonly MdyKeyBinding[] {
     // moves this with it.
     const isRadioGroup = Object.values(MDY_WIDGET_CONTRACTS[kind].parts)
       .some((declared) => declared.role === "radiogroup");
+    // All four arrows, on a radio group, whichever way it is laid out.
+    //
+    // **The layout is a visual choice, and somebody who cannot see it does not know it.** A screen
+    // reader announces "group, 1 of 4" and says nothing about a row or a column, so a person presses
+    // whichever arrow comes to hand and it has to work. A group answering only its own axis makes
+    // them guess an axis that was never announced.
+    //
+    // The paragraph above already said APG gives a radio group *the four arrows*, and this table
+    // declared two of them — so one renderer honoured all four and the other two did not, and the
+    // gesture somebody learned in one was gone in another. The contract was short, not the renderer
+    // long, which is the direction that decides who has to change.
+    if (isRadioGroup) {
+      for (const key of ["ArrowRight", "ArrowLeft"]) {
+        bindings.push({ key, intent: "move" });
+      }
+    }
     if (!isRadioGroup) {
       for (const key of ["Home", "End"]) {
         bindings.push({ key, ...(overlay ? { when: "open" as const } : {}), intent: "move" });
