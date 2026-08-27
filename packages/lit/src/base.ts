@@ -255,6 +255,11 @@ export abstract class MdyFieldElement<T> extends LitElement {
       // reading the state that turns it on.
       readonly: handle.readonly(),
     };
+    // The box, on the kinds whose value is read inside one. A slider's track *is* its value — there
+    // is nothing to look into — and framing it drew a surface around a control that has no inside.
+    // Asked of the contract rather than settled here: three renderers each decided separately which
+    // kinds wore it, and they disagreed. The element stays; the treatment is what it stops carrying.
+    if (MDY_WIDGET_CONTRACTS[this.widgetKind].valueSlot !== "container") return "";
     return [
       MDY_FIELD_STATE_CLASSES.control,
       ...MDY_FIELD_STATE_CLASSES.controlStates

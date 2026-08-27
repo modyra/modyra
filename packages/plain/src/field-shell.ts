@@ -61,7 +61,19 @@ export function buildFieldShell(
   const requiredMark = el("span", MDY_FIELD_SHELL_CLASSES.requiredMarker);
   setText(requiredMark, "*");
 
-  const wrapper = el("div", MDY_FIELD_SHELL_CLASSES.inputWrapper) as HTMLDivElement;
+  /**
+   * The box, on the kinds whose value is read inside one.
+   *
+   * Given to every field, it framed a slider's track and a radio group's dots — controls whose slot
+   * *is* the value, with nothing to look into. The three renderers then disagreed about which of them
+   * wore it, because each decided separately what the shell handed out unconditionally.
+   *
+   * Asked of the contract, so no renderer decides: `valueSlot` says whether this kind is read by
+   * looking inside a surface. The wrapper element stays either way — it is the row the shell lays
+   * out — and what it stops carrying is the treatment.
+   */
+  const readsInsideASurface = MDY_WIDGET_CONTRACTS[kind].valueSlot === "container";
+  const wrapper = el("div", readsInsideASurface ? MDY_FIELD_SHELL_CLASSES.inputWrapper : "") as HTMLDivElement;
   // The themes lay the wrapper out as a flex row and expect the control inside an inliner —
   // without it the control is a flex item with no basis and collapses to nothing.
   const inliner = el("div", MDY_FIELD_SHELL_CLASSES.control);
