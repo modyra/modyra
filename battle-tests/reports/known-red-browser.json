@@ -4,7 +4,7 @@
   "recordedAt": "2026-08-27",
   "openReds": 10,
   "bySeverity": {
-    "S1": 10,
+    "S1": 9,
     "S2": 1
   },
   "knownRed": [
