@@ -38,9 +38,10 @@ enforced on **one** of the two public doors:
 mounting a whole document mounts       refuses the mount
 parsing a document        6 sections   fields kept, arrangement dropped, and said so
 layout passed in code     6 sections   7 sections, in silence
+layout bound as an input  6 sections   7 sections, in silence
 ```
 
-Three behaviours for one rule, and only the third is wrong. The first two are the reader being the
+Four behaviours for one rule, and the last two are wrong. The first two are the reader being the
 reader: a document that mounts as a whole is refused as a whole, and a document read for its parts
 keeps what it can carry and reports what it dropped — which is what the parser does with every other
 malformed member, and the finding is exact:
@@ -49,7 +50,7 @@ malformed member, and the finding is exact:
 {"code":"MDY_DYNAMIC_INVALID_LAYOUT","path":"/layout/0","message":"layout nests deeper than 6 levels."}
 ```
 
-The third said nothing at all. So the same form was legal or illegal depending on how it had been
+The last two said nothing at all. So the same form was legal or illegal depending on how it had been
 written down, and the cap read as a property of the document format rather than of the framework.
 
 That makes the answer to the question sharper than the question expected: **the cap could not be
@@ -63,15 +64,26 @@ It is recorded here in those terms so that a future reader arguing about it argu
 thing — and so that measurements showing nesting is cheap are understood as beside the point rather
 than as evidence for raising it.
 
-**The limit holds at every door, in the shape that door speaks.** `assertLayoutWithinDepth` applies
-it to a layout assembled in code as a `throw` naming the depth, the path and the reason: there is no
-document to annotate, no partial result worth returning, and the caller is a programmer who can act
-on it now. A document keeps being read the way documents are read — what cannot be carried is dropped
-and reported, so a form still reaches the person with the questions it could keep.
+**The limit holds at every door, in the shape that door speaks.** There are three, and the shape
+follows from who is on the other side rather than from how the structure was built:
 
-The difference is deliberate and is not a softening. A parse produces findings for a caller that is
-going to read them; a function call produces a value for a caller that is not. Silence is the failure
-mode available only to the second, which is why only the second throws.
+| the door | how the limit refuses |
+|---|---|
+| a function call — `mountMdyForm` | **throws**, naming the depth, the path and the reason |
+| a document, read | drops the arrangement, keeps the fields, **reports the finding** |
+| an input, bound from a template | drops the arrangement, keeps the fields, **says why in the console** |
+
+The dividing line is not imperative against declarative but **whether there is anywhere to catch**.
+A function call has a caller holding the result, in a position to handle a refusal and unable to
+notice silence — so silence is the one failure mode it must not have, and it throws. A template has
+nowhere to catch: raising takes the whole view down, so the questions disappear along with the
+arrangement, and a person who would have been shown a form is shown nothing.
+
+That was not a prediction. The first version of this decision threw from the component's bound
+layout, and it did exactly that: no sections, **no fields**, and in an application the exception
+reached the installed error handler, which swallowed it — leaving a form that reported itself mounted
+with no structure and nothing said. Strictly worse than the silence it replaced, and arrived at by
+applying the right principle at the wrong door.
 
 **It is not an option, and raising it is not a per-call decision.** A cap that any caller may lift is
 a default rather than a limit: it is lifted once by whoever meets it first, in the moment they are
@@ -148,7 +160,12 @@ structure passed it — measured at 1, 5, 6, 7 and 20, with `undefined`, an empt
 non-layout as the control cases that must stay silent. `MDY_LAYOUT_MAX_DEPTH` is exported, so a check reads the number rather than
 repeating it — a test spelling `6` would keep passing after the constant moved.
 
-The browser tier holds a spec that mounts a structure through both public doors and requires the same
+`dynamic-form-depth.spec.ts` mounts a bound layout at the limit and one past it, and asserts the half
+most easily lost: past the limit **the questions still render**. Its control case is the mount at the
+limit — a component that arranged nothing at any depth would satisfy "past the limit, nothing is
+arranged" perfectly.
+
+The browser tier holds a spec that mounts a structure through the public doors and requires the same
 verdict from each, in all three renderers.
 
 The `examples/plain` nested-questionnaire demo shows the refusal happening rather than describing it:

@@ -507,9 +507,24 @@ export class MdyDynamicFormComponent {
     if (parsed === null) {
       // The branch a document never reaches, and the one the depth limit used to miss: a structure
       // bound as an input nested as deep as it liked, so the same form was legal or not depending on
-      // whether it had been written down. The guard says what the reader says, at the other door.
+      // whether it had been written down.
+      //
+      // Dropped and said aloud rather than thrown, which is what a document gets and not what a
+      // function call gets. An input is bound from a template, and a template has nowhere to catch:
+      // raising here takes the whole view down — the fields go with the arrangement, and a form that
+      // would have rendered its questions renders nothing. Worse, the exception lands in whatever
+      // error handler the application installed, which in a real page swallowed it and left a form
+      // reporting itself mounted with no structure and nothing said.
+      //
+      // So the arrangement is refused and the questions still reach the person, and the reason is
+      // stated where a developer looks. ADR 0160.
       const declared = this.layout();
-      assertLayoutWithinDepth(declared);
+      try {
+        assertLayoutWithinDepth(declared);
+      } catch (refusal) {
+        console.warn(String((refusal as Error).message));
+        return [];
+      }
       return declared;
     }
     return parsed.ok || this.parseMode() === "lenient" ? parsed.layout : [];
