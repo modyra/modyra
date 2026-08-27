@@ -1,5 +1,6 @@
 import { NgTemplateOutlet } from "@angular/common";
 import {
+  DestroyRef,
   ChangeDetectionStrategy,
   Component,
   computed,
@@ -26,7 +27,7 @@ import {
   MdySignal,
 } from "@modyra/core";
 import type { MdyTimeFormat } from "@modyra/core/datetime";
-import { layoutNodeAttributes, layoutSlotStyle, MDY_COLOR_PRESETS, MDY_LAYOUT_CLASSES, MDY_TIMEPICKER_DEFAULT_FORMAT, MDY_TIMEPICKER_INITIAL_VIEW } from "@modyra/widgets";
+import { formScopeOf, layoutNodeAttributes, layoutSlotStyle, MDY_COLOR_PRESETS, MDY_LAYOUT_CLASSES, MDY_TIMEPICKER_DEFAULT_FORMAT, MDY_TIMEPICKER_INITIAL_VIEW } from "@modyra/widgets";
 import { angularReactivity } from "../core/reactivity-angular";
 import { MdyFormSubmitEvent } from "../core/types";
 import { MdyFormComponent } from "../form/mdy-form.component";
@@ -64,6 +65,14 @@ import { MdyToggleComponent } from "../renderers/toggle/toggle-renderer.componen
  * <mdy-dynamic-form [fields]="fields" (submitted)="save($event)" />
  * ```
  */
+/**
+ * The id scopes currently claimed by a mounted form of this component.
+ *
+ * Held here rather than read from the document: two of these instantiated together compute their
+ * scopes in one pass, before either has rendered, so the page cannot yet say what is taken.
+ */
+const LIVE_SCOPES = new Set<string>();
+
 @Component({
   selector: "mdy-dynamic-form",
   standalone: true,
@@ -154,7 +163,7 @@ import { MdyToggleComponent } from "../renderers/toggle/toggle-renderer.componen
             @case ("text") {
               <mdy-control-text
                 [name]="f.name"
-                [idScope]="idScope()"
+                [idScope]="resolvedScope()"
                 [label]="f.label ?? ''"
                 [ariaLabel]="f.ariaLabel ?? null"
                 [supportingText]="f.supportingText"
@@ -166,7 +175,7 @@ import { MdyToggleComponent } from "../renderers/toggle/toggle-renderer.componen
               <mdy-control-text
                 type="email"
                 [name]="f.name"
-                [idScope]="idScope()"
+                [idScope]="resolvedScope()"
                 [label]="f.label ?? ''"
                 [ariaLabel]="f.ariaLabel ?? null"
                 [supportingText]="f.supportingText"
@@ -178,7 +187,7 @@ import { MdyToggleComponent } from "../renderers/toggle/toggle-renderer.componen
               <mdy-control-text
                 type="password"
                 [name]="f.name"
-                [idScope]="idScope()"
+                [idScope]="resolvedScope()"
                 [label]="f.label ?? ''"
                 [ariaLabel]="f.ariaLabel ?? null"
                 [supportingText]="f.supportingText"
@@ -189,7 +198,7 @@ import { MdyToggleComponent } from "../renderers/toggle/toggle-renderer.componen
             @case ("textarea") {
               <mdy-control-textarea
                 [name]="f.name"
-                [idScope]="idScope()"
+                [idScope]="resolvedScope()"
                 [label]="f.label ?? ''"
                 [ariaLabel]="f.ariaLabel ?? null"
                 [supportingText]="f.supportingText"
@@ -200,7 +209,7 @@ import { MdyToggleComponent } from "../renderers/toggle/toggle-renderer.componen
             @case ("number") {
               <mdy-control-number
                 [name]="f.name"
-                [idScope]="idScope()"
+                [idScope]="resolvedScope()"
                 [label]="f.label ?? ''"
                 [ariaLabel]="f.ariaLabel ?? null"
                 [supportingText]="f.supportingText"
@@ -214,7 +223,7 @@ import { MdyToggleComponent } from "../renderers/toggle/toggle-renderer.componen
             @case ("slider") {
               <mdy-control-slider
                 [name]="f.name"
-                [idScope]="idScope()"
+                [idScope]="resolvedScope()"
                 [label]="f.label ?? ''"
                 [ariaLabel]="f.ariaLabel ?? null"
                 [supportingText]="f.supportingText"
@@ -227,7 +236,7 @@ import { MdyToggleComponent } from "../renderers/toggle/toggle-renderer.componen
             @case ("checkbox") {
               <mdy-control-checkbox
                 [name]="f.name"
-                [idScope]="idScope()"
+                [idScope]="resolvedScope()"
                 [label]="f.label ?? ''"
                 [ariaLabel]="f.ariaLabel ?? null"
                 [supportingText]="f.supportingText"
@@ -237,7 +246,7 @@ import { MdyToggleComponent } from "../renderers/toggle/toggle-renderer.componen
             @case ("toggle") {
               <mdy-control-toggle
                 [name]="f.name"
-                [idScope]="idScope()"
+                [idScope]="resolvedScope()"
                 [label]="f.label ?? ''"
                 [ariaLabel]="f.ariaLabel ?? null"
                 [supportingText]="f.supportingText"
@@ -249,7 +258,7 @@ import { MdyToggleComponent } from "../renderers/toggle/toggle-renderer.componen
                    a filter. Unbound, a document asking for one got the other and nothing said so. -->
               <mdy-control-select
                 [name]="f.name"
-                [idScope]="idScope()"
+                [idScope]="resolvedScope()"
                 [label]="f.label ?? ''"
                 [ariaLabel]="f.ariaLabel ?? null"
                 [supportingText]="f.supportingText"
@@ -262,7 +271,7 @@ import { MdyToggleComponent } from "../renderers/toggle/toggle-renderer.componen
             @case ("radio") {
               <mdy-control-radio
                 [name]="f.name"
-                [idScope]="idScope()"
+                [idScope]="resolvedScope()"
                 [label]="f.label ?? ''"
                 [ariaLabel]="f.ariaLabel ?? null"
                 [supportingText]="f.supportingText"
@@ -275,7 +284,7 @@ import { MdyToggleComponent } from "../renderers/toggle/toggle-renderer.componen
                    declares and this template drops is a capability nobody can reach. -->
               <mdy-control-multiselect
                 [name]="f.name"
-                [idScope]="idScope()"
+                [idScope]="resolvedScope()"
                 [label]="f.label ?? ''"
                 [ariaLabel]="f.ariaLabel ?? null"
                 [supportingText]="f.supportingText"
@@ -289,7 +298,7 @@ import { MdyToggleComponent } from "../renderers/toggle/toggle-renderer.componen
             @case ("segmented") {
               <mdy-control-segmented
                 [name]="f.name"
-                [idScope]="idScope()"
+                [idScope]="resolvedScope()"
                 [label]="f.label ?? ''"
                 [ariaLabel]="f.ariaLabel ?? null"
                 [supportingText]="f.supportingText"
@@ -300,7 +309,7 @@ import { MdyToggleComponent } from "../renderers/toggle/toggle-renderer.componen
             @case ("datepicker") {
               <mdy-control-datepicker
                 [name]="f.name"
-                [idScope]="idScope()"
+                [idScope]="resolvedScope()"
                 [label]="f.label ?? ''"
                 [ariaLabel]="f.ariaLabel ?? null"
                 [supportingText]="f.supportingText"
@@ -315,7 +324,7 @@ import { MdyToggleComponent } from "../renderers/toggle/toggle-renderer.componen
                    a capability a document can ask for and no renderer hears. -->
               <mdy-control-timepicker
                 [name]="f.name"
-                [idScope]="idScope()"
+                [idScope]="resolvedScope()"
                 [label]="f.label ?? ''"
                 [ariaLabel]="f.ariaLabel ?? null"
                 [supportingText]="f.supportingText"
@@ -330,7 +339,7 @@ import { MdyToggleComponent } from "../renderers/toggle/toggle-renderer.componen
             @case ("daterange") {
               <mdy-control-daterange
                 [name]="f.name"
-                [idScope]="idScope()"
+                [idScope]="resolvedScope()"
                 [label]="f.label ?? ''"
                 [ariaLabel]="f.ariaLabel ?? null"
                 [supportingText]="f.supportingText"
@@ -342,7 +351,7 @@ import { MdyToggleComponent } from "../renderers/toggle/toggle-renderer.componen
             @case ("file") {
               <mdy-control-file
                 [name]="f.name"
-                [idScope]="idScope()"
+                [idScope]="resolvedScope()"
                 [label]="f.label ?? ''"
                 [ariaLabel]="f.ariaLabel ?? null"
                 [supportingText]="f.supportingText"
@@ -354,7 +363,7 @@ import { MdyToggleComponent } from "../renderers/toggle/toggle-renderer.componen
             @case ("colors") {
               <mdy-control-colors
                 [name]="f.name"
-                [idScope]="idScope()"
+                [idScope]="resolvedScope()"
                 [label]="f.label ?? ''"
                 [ariaLabel]="f.ariaLabel ?? null"
                 [supportingText]="f.supportingText"
@@ -451,6 +460,45 @@ export class MdyDynamicFormComponent {
    * and forwarded to every control this form renders.
    */
   readonly idScope = input<string>("");
+
+  /**
+   * This instance's identity, for the scope registry to key on.
+   *
+   * An empty object, held for the component's lifetime. What the registry needs is something that is
+   * *this form and no other* — the component itself would do, and an object with no other purpose
+   * cannot acquire one.
+   */
+  private readonly scopeIdentity = {};
+
+
+  /**
+   * The scope actually used: the one bound, or one derived when nothing was bound.
+   *
+   * The comment on `idScope` has always said the scope is taken here, at the door a document arrives
+   * through. It was not: the default was empty, so two of these on one page claimed one set of ids
+   * and every reference in the second resolved into the first — a person using a screen reader in the
+   * second form heard the help text of a field they were not looking at. The page shows nothing and
+   * nothing throws: it is answering a different question correctly.
+   *
+   * Derived the way the framework-free renderer derives it, from the same primitive, so a document
+   * behaves the same whichever renderer draws it. Only a *live* scope pushes the next one along, so a
+   * form that has gone takes its scope with it and the form that replaces it reads as the one before.
+   *
+   * A consumer binding `idScope` still decides: this fills the silence, it does not overrule.
+   *
+   * **Asked of the live set rather than of the document**, which is the difference between here and
+   * the framework-free renderer. There, mounting is a call and the first form has written its ids
+   * before the second asks. Here both are computed in one change-detection pass, before either has
+   * rendered anything — so a form looking for its neighbour's ids in the DOM finds an empty page and
+   * takes the same scope. The component knows what is live at a moment the document does not.
+   */
+  protected readonly resolvedScope = computed(() => {
+    const bound = this.idScope();
+    if (bound !== "") return bound;
+    const scope = formScopeOf(this.scopeIdentity, (candidate) => LIVE_SCOPES.has(candidate));
+    LIVE_SCOPES.add(scope);
+    return scope;
+  });
 
   /**
    * Where this form keeps what has been typed but not sent, and `undefined` for a form that keeps
@@ -608,6 +656,10 @@ export class MdyDynamicFormComponent {
   private readonly _injector = inject(Injector);
 
   constructor() {
+    // Released so the scope is reusable. A form that has gone takes its scope with it, and the one
+    // that replaces it reads as the form before rather than as a third — which keeps a page that
+    // swaps a form for an equivalent one from accumulating suffixes.
+    inject(DestroyRef).onDestroy(() => LIVE_SCOPES.delete(this.resolvedScope()));
     // Register the config validators on the inner form's registry; keyed by
     // field so config changes replace the previous set.
     effect(() => {
