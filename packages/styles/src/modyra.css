@@ -704,8 +704,13 @@
         position: absolute;
         top: 0;
         left: 0;
-        width: 100%;
-        height: 100%;
+        /* A point, not a sheet. It is what a form post and an autofill see, and it is the element
+           that opens the platform's chooser when the panel asks for it — none of which needs area.
+           Sized to the field it once sat inside, it stretches across the whole row instead, since a
+           sibling of the wrapper resolves its percentages against the wrapper. An invisible element
+           the width of a control is a thing every later change has to remember is there. */
+        width: 1px;
+        height: 1px;
         opacity: 0 !important;
         /* It used to sit inside the picker button and be its click surface, which made a focusable
            control the child of a focusable control — `nested-interactive`, and serious. It is a

@@ -270,7 +270,13 @@ export const MDY_WIDGET_CONTRACTS = Object.freeze({
       // the selected mark when it is current. A square that were a door when empty and a colour when
       // full would do different things depending on how it was set: pressed full, either the chooser
       // opens and the tint cannot be re-picked, or it selects and the door is gone. ADR 0158.
-      elements: { nativePicker: "affordance", customEntry: "button" },
+      // The caret is a drawing here, where every other kind that has one makes it a command. The
+      // filled square opens this panel, and a caret opening the same panel would be a second command
+      // for one act: two names, two keyboard stops, two things to describe. It is out of the tab
+      // order and out of the tree assistive technology reads — both, because leaving it in one of the
+      // two hides it from whoever navigates by keyboard and keeps it for whoever reads the tree.
+      // ADR 0159.
+      elements: { nativePicker: "affordance", customEntry: "button", toggle: "presentation" },
       roles: { presets: "listbox", swatch: "option" } ,
       states: { swatch: ["active"], popup: POPUP_PLACEMENT_STATES },
       classes: { nativePicker: ["mdy-colors__primary-picker"], preview: ["mdy-colors__preview-swatch"], control: ["mdy-colors__native-hidden"], hexInput: ["mdy-colors__hex-input"], toggle: ["mdy-colors__toggle-area"], customEntry: ["mdy-colors__custom-entry"], popup: ["mdy-colors__dropdown", MDY_POPUP_CLASS, MDY_POPUP_SURFACE_CLASS], presets: ["mdy-colors__presets"], swatch: ["mdy-color-swatch"] } ,

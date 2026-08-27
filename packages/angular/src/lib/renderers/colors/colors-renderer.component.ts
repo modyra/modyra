@@ -112,17 +112,20 @@ import { MdyOverlayPanelComponent } from "../../core/overlay-panel.component";
             spellcheck="false"
           />
 
-          <!-- Suffix: Presets Toggle -->
-          <button
-            type="button"
+          <!-- Suffix: a drawing, not a command. The square opens the same panel, and one act with
+               two commands costs two names, two keyboard stops and two things to describe. Out of
+               the tab order and out of the tree together — removing it from one alone hides it from
+               someone navigating by keyboard and leaves it for someone reading the tree.
+
+               It still answers a press: the area is inside the field, and a dead patch in a live
+               control reads as "sometimes it does not work". -->
+          <span
             class="mdy-input-suffix mdy-colors__toggle-area"
-            [mdyPart]="openerPart()"
-            [disabled]="isDisabled()"
-            [attr.aria-label]="i18n.colorPresetsHeader"
+            aria-hidden="true"
             (click)="toggleOverlay($event); $event.stopPropagation()"
           >
             <mdy-icon name="CHEVRON_DOWN" class="mdy-select__arrow" [class.mdy-select__arrow--open]="open()" />
-          </button>
+          </span>
         </div>
       </div>
 

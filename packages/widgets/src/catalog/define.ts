@@ -385,8 +385,13 @@ export const MDY_POPUP_OPENERS: Readonly<Partial<Record<MdyWidgetKind, MdyPopupO
   // Daterange wires its own toggle rather than following the combobox pattern its sibling does.
   daterange: Object.freeze({ opener: "toggle", controls: "popup", promises: "grid" }),
   timepicker: Object.freeze({ opener: "control", controls: "popup", role: "combobox", typeable: true, promises: "dialog" }),
-  // Colours is the exception: it has no combobox control, so its toggle really is the opener.
-  colors: Object.freeze({ opener: "toggle", controls: "popup", promises: "listbox" }),
+  // The filled square is the opener. It is the most recognisable shape on the field — every platform
+  // ships one and everybody has pressed one — and what it does is therefore the field's answer to
+  // "how do I choose a colour". A caret beside it that opened the same panel was a second command
+  // for one act: two names, two keyboard stops, two things to describe. The caret keeps taking a
+  // press, because the area is inside the field and a dead patch in a live control reads as a fault,
+  // but it is a drawing rather than a control of its own.
+  colors: Object.freeze({ opener: "nativePicker", controls: "popup", promises: "listbox" }),
 });
 
 /** Anchoring per kind; widgets with no overlay have none. */

@@ -608,7 +608,9 @@ export const MDY_CANONICAL_AT_REST: Readonly<Partial<Record<MdyWidgetKind, MdyCa
       optional: Object.freeze(["supportingText", "requiredMarker", "popup", "presets", "swatch", "customEntry", "inlineError", "errors", "errorItem"]),
       relationships: Object.freeze([
         { from: "label", attribute: "for", to: "hexInput" },
-        { from: "toggle", attribute: "aria-controls", to: null },
+        // The filled square is what opens the panel, so it is what names it. The caret beside it is
+        // a drawing: it carries no relationship because it makes no promise. ADR 0159.
+        { from: "nativePicker", attribute: "aria-controls", to: null },
       ] as readonly MdyCanonicalRelationship[]),
       overlay: "closed" as const,
       state: AT_REST,

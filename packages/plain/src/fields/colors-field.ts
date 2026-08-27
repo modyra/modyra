@@ -58,8 +58,18 @@ export function renderColorsField(
   shell.root.insertBefore(wrapper, shell.wrapper);
   wrapper.append(shell.wrapper);
 
-  const picker = el("label") as HTMLLabelElement;
+  // A button, not a label wrapping the native input. The contract admits both shapes, and the two
+  // are not equivalent from the outside: a label opens the platform's chooser, which makes the most
+  // recognisable element on the field do one thing here and another where a renderer built a button.
+  // The square opens the panel, and the panel is what leads on to every colour.
+  const picker = el("button") as HTMLButtonElement;
+  picker.type = "button";
   applyPart(picker, definition.parts.nativePicker);
+  // What it opens, asked of the contract, and a name of its own: its only content is a tint, which
+  // a screen reader cannot read. The name says what pressing it does and never carries the colour —
+  // a name that changes under the fingers is read back over the action just taken.
+  applyOpenerPromise(picker, "colors");
+  picker.setAttribute("aria-label", messages.selectColorPrefix);
   const preview = el("span") as HTMLSpanElement;
   applyPart(preview, definition.parts.preview);
   const control = el("input") as HTMLInputElement;
@@ -69,7 +79,10 @@ export function renderColorsField(
   // picker, whose text is the swatch — nothing a screen reader can read — so the name is given here.
   control.setAttribute("aria-label", f.label ? `${f.label} colour value` : "Colour value");
   applyPart(control, definition.parts.control);
-  picker.append(preview, control);
+  // The tint inside the button; the native input beside it. A focusable control inside a focusable
+  // control is `nested-interactive`, and the input's own styling already places it as a sibling that
+  // takes no pointer — the button behind it is what a press reaches.
+  picker.append(preview);
 
   const hexInput = el("input") as HTMLInputElement;
   hexInput.type = "text";
@@ -80,12 +93,16 @@ export function renderColorsField(
   hexInput.setAttribute("aria-label", `${f.label ?? "Colour"} — hex value`);
   applyPart(hexInput, definition.parts.hexInput);
 
-  const toggle = el("button") as HTMLButtonElement;
-  toggle.type = "button";
+  // A drawing, not a command: the square beside it opens the same panel, and one act with two
+  // commands costs two names, two keyboard stops and two things for a screen reader to describe.
+  //
+  // Out of both walks or neither. Removing it from the tab order alone would hide it from someone
+  // navigating by keyboard and leave it in place for someone reading with assistive technology,
+  // which browses the tree rather than that order — hidden from those who see it, present for those
+  // who do not.
+  const toggle = el("span") as HTMLSpanElement;
   applyPart(toggle, definition.parts.toggle);
-  // Asked of the contract rather than written here — see the same call in the daterange field.
-  applyOpenerPromise(toggle, "colors");
-  toggle.setAttribute("aria-label", messages.selectColorPrefix);
+  toggle.setAttribute("aria-hidden", "true");
   // The themes draw the caret on `.mdy-select__arrow`, which is where the contract nests it
   // inside this toggle — an empty button would have no size at all.
   const toggleArrow = el("span", "mdy-select__arrow");
@@ -99,7 +116,7 @@ export function renderColorsField(
   // Same relation the select has always declared: the toggle says it opens a listbox and whether
   // it is showing, so it has to say which one.
   popup.id = defaultWidgetIdFactory.part(widgetId, "popup");
-  toggle.setAttribute("aria-controls", popup.id);
+  picker.setAttribute("aria-controls", popup.id);
   applyPart(popup, definition.parts.popup);
   const presetList = el("div") as HTMLDivElement;
   applyPart(presetList, definition.parts.presets);
@@ -156,6 +173,7 @@ export function renderColorsField(
   popup.append(customEntry);
 
   insertControl(shell, picker);
+  insertControl(shell, control);
   insertControl(shell, hexInput);
   const suffix = el("div", "mdy-input-suffix") as HTMLDivElement;
   suffix.append(toggle);
@@ -190,6 +208,10 @@ export function renderColorsField(
   hexInput.addEventListener("change", () => commit({ type: "text", value: hexInput.value }));
   hexInput.addEventListener("blur", () => handle.markAsTouched());
   toggle.addEventListener("click", () => open.set(!open()));
+  // The square is the field's own opener, not a second way into the platform's chooser. Every
+  // renderer of this contract answers a press here the same way, and the route to an arbitrary
+  // colour is inside the panel this opens.
+  picker.addEventListener("click", () => open.set(!open()));
   // The platform's chooser, reached from the panel. The hidden native input is what opens it, and
   // clicking it from here rather than moving focus into it keeps the panel where it was: on some
   // platforms the chooser is a separate window, and a panel that closed when focus left would take
@@ -222,7 +244,7 @@ export function renderColorsField(
     return true;
   };
   presetList.addEventListener("keydown", (event) => { moveThroughSwatches(event); });
-  toggle.addEventListener("keydown", (event) => { moveThroughSwatches(event); });
+  picker.addEventListener("keydown", (event) => { moveThroughSwatches(event); });
 
   // Escape closes and hands focus back, from wherever the user is. This overlay does not take focus
   // when it opens, so listening on the popup alone left the palette impossible to dismiss by
@@ -231,7 +253,7 @@ export function renderColorsField(
   // panel floating over a control the user has already left. Both dismiss, and they differ in where
   // focus lands — Escape hands it back to the opener, Tab leaves it where the key was taking it.
   const onEscape = (event: KeyboardEvent) => {
-    if (event.key === "Escape") { open.set(false); toggle.focus(); }
+    if (event.key === "Escape") { open.set(false); picker.focus(); }
     // Tab is already carrying focus somewhere; pulling it back to the opener would trap the user in
     // the control they were leaving.
     else if (event.key === "Tab") open.set(false);
@@ -317,8 +339,8 @@ export function renderColorsField(
     // The element the state is about: the swatch beside it is a picker with no readable text.
     hexInput.readOnly = handle.readonly();
     hexInput.setAttribute("aria-readonly", String(handle.readonly()));
-    toggle.disabled = handle.disabled();
-    toggle.setAttribute("aria-expanded", String(isOpen));
+    picker.disabled = handle.disabled();
+    picker.setAttribute("aria-expanded", String(isOpen));
     reflectOverlayOpen(popup, isOpen, messages);
     wrapper.classList.toggle("mdy-colors--open", isOpen);
     // The themes place the panel from `--mdy-overlay-*`; the widget policy decides them.

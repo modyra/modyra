@@ -21,7 +21,11 @@ test("each kind's affordances are the ones at its trailing edge", () => {
   assert.deepEqual(partsOf("datepicker"), ["toggle"]);
   assert.deepEqual(partsOf("daterange"), ["toggle"]);
   assert.deepEqual(partsOf("timepicker"), ["toggle"]);
+  // The caret is still at the trailing edge and a theme still places it from this list. What changed
+  // is which side of the list it is on: the filled square opens the panel, so the caret says which
+  // way it opens and does nothing. ADR 0159.
   assert.deepEqual(partsOf("colors"), ["toggle"]);
+  assert.deepEqual(trailingAffordances("colors").map((a) => a.role), ["indicator"]);
   // The magnifier is gone: the control opens the popup, and what sits at the trailing edge is the
   // arrow that says which way it opens — the same affordance the single-choice sibling has.
   // The arrow, the button that takes every choice off, the one that says how many chips are out of
@@ -39,14 +43,20 @@ test("a field with nothing at its edge has none", () => {
   }
 });
 
-test("the caret is the only decorative one", () => {
-  // It is `pointer-events: none`; the trigger behind it is the target. Everything else is pressed.
+test("the carets are the decorative ones", () => {
   const indicators = kindsWithAffordances().flatMap((kind) =>
     trailingAffordances(kind).filter((a) => a.role === "indicator").map((a) => `${kind}.${a.part}`),
   );
-  // Both kinds that open a list from their own control draw one: the arrow says which way it
-  // opens and the control behind it is the target.
-  assert.deepEqual(indicators, ["select.arrow", "multiselect.arrow"]);
+  // Every kind whose caret says which way its panel opens, and none of them is what opens it.
+  //
+  // Two of the three are `pointer-events: none` with the field's own control behind them as the
+  // target. The colours caret is not: the square that opens its panel is at the other end of the
+  // field, so a caret that took no pointer would leave a patch inside a live control answering
+  // nothing — which reads as "sometimes it does not work" and is the hardest report to act on. It
+  // takes the press and has no name, no role and no keyboard stop, which is what makes it a drawing.
+  // ADR 0159.
+  assert.deepEqual(indicators.slice().sort(),
+    ["colors.toggle", "multiselect.arrow", "select.arrow"]);
 });
 
 test("a button that is not at the trailing edge is not swept in", () => {
@@ -77,12 +87,15 @@ test("the class list a theme selects on comes from the catalogue", () => {
   const control = affordanceClasses("control");
   const indicator = affordanceClasses("indicator");
 
-  assert.deepEqual(indicator.slice().sort(), ["mdy-multiselect__arrow", "mdy-select__arrow"]);
-  for (const expected of [
-    "mdy-datepicker__toggle", "mdy-timepicker__toggle", "mdy-colors__toggle-area",
-  ]) {
+  assert.deepEqual(indicator.slice().sort(),
+    ["mdy-colors__toggle-area", "mdy-multiselect__arrow", "mdy-select__arrow"]);
+  for (const expected of ["mdy-datepicker__toggle", "mdy-timepicker__toggle"]) {
     assert.ok(control.includes(expected), `missing ${expected}`);
   }
+  // The colours caret says which way the field opens and is not what opens it: the filled square is.
+  // So it is an indicator beside the other two carets, not a control — a control is a thing with a
+  // name, a keyboard stop and a role, and this has none of the three. ADR 0159.
+  assert.ok(!control.includes("mdy-colors__toggle-area"), "the colours caret is not a command");
   // No overlap: a class cannot be both pressed and decorative.
   assert.deepEqual(control.filter((c) => indicator.includes(c)), []);
 });

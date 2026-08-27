@@ -3736,7 +3736,7 @@
           "states": []
         },
         "toggle": {
-          "element": "button",
+          "element": "presentation",
           "parent": "inputWrapper",
           "optional": false,
           "repeated": false,
@@ -3860,7 +3860,7 @@
           ]
         },
         {
-          "from": "toggle",
+          "from": "nativePicker",
           "attribute": "aria-controls",
           "to": [
             "popup"

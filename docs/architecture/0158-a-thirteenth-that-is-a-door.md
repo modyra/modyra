@@ -1,6 +1,7 @@
 # ADR 0158: A thirteenth that is a door
 
-Status: Accepted — the fork below was closed by the user in favour of two elements.
+Status: Accepted, amended 2026-08-27 — the fork below was closed by the user in favour of two
+elements, and the amendment records the fact that makes two the only possible number.
 
 ## Context
 
@@ -85,6 +86,42 @@ that was already shipping.
 **Not changed here.** Splitting it removes a way to open the chooser from a closed field, which is a
 second decision and not this one; recorded so that the next reader meets it as a known shape rather
 than discovering it as a surprise.
+
+## Amendment, 2026-08-27: the square that opens the panel, and why the fork resolves
+
+This record's decision stands. What it could not settle — and said so — was the shape of the door
+itself, and one line of its reasoning has since been answered rather than contradicted.
+
+**The reasoning that was open.** This record rejected a single square that is a door when empty and a
+colour when full, because such a square *changes what it does* depending on how it was set: pressed
+full, either the chooser opens and the tint cannot be re-picked, or it selects and the door is gone.
+That objection was correct and remains the reason the naive single-element form is wrong.
+
+**What answers it.** There is a form in which the element never changes what it does:
+
+> The door is always and only a door. Pressing it opens the full chooser in every state, without
+> exception. What changes is only what it *shows*, and what it shows is not a value — it is a preview
+> of *where the chooser will open*.
+
+The tint it carries is therefore not a selection and never takes the selected mark. The contradiction
+this record identified does not arise, because the act is constant.
+
+**The cost, accepted knowingly.** Someone who picks a free colour, tries a preset, and changes their
+mind must reopen the chooser — two gestures where the two-element form needed one. That is a real
+cost on a rare path, taken in preference to an ambiguous command, which is a small cost on *every*
+path.
+
+**And a fact that settles the fork.** The preview square and the door are **two elements**, and this
+is now demonstrable rather than assumed. A state exists in which they must show different colours:
+the value is preset three, but a free colour was typed before it. The preview shows preset three,
+because it shows *the value*; the door shows the free colour, because it previews *where it would
+open*. One element cannot show two colours.
+
+It follows that they must never look alike. Two elements that look identical while showing different
+colours read as a fault — and whoever reads them that way is right.
+
+The related decision that the filled square, not the caret beside it, is what opens the panel is
+[ADR 0159](0159-the-square-is-the-opener.md).
 
 ## Consequences
 

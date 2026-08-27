@@ -50,8 +50,17 @@ export function trailingAffordances(kind: MdyWidgetKind): readonly MdyAffordance
   const found: MdyAffordance[] = [];
 
   for (const node of definition.structure.nodes) {
-    // The one decorative member: `pointer-events: none`, with the whole trigger as the target.
-    if (node.part === "arrow") {
+    // The decorative members: drawn at the trailing edge, saying which way the field opens, and
+    // never a control — a name, a keyboard stop and a role belong to whatever actually opens the
+    // panel. They are still laid out in the trailing column, which is why they are reported here at
+    // all: a theme places them from this list.
+    //
+    // Read from the contract rather than named: a part that declares itself presentation, sits in
+    // whichever box the kind lays its trailing parts out in, and holds no parts of its own. The last
+    // clause is what keeps a *container* out — the multiselect's box is presentation and sits there
+    // too, and it is the thing the ornaments are drawn inside rather than an ornament.
+    if (node.element === "presentation" && (node.parent === "inputWrapper" || node.parent === "box")
+      && !definition.structure.nodes.some((child) => child.parent === node.part)) {
       found.push({ part: node.part, role: "indicator" });
       continue;
     }

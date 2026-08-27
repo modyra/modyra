@@ -71,7 +71,9 @@ export class MdyColorsFieldElement extends MdyFieldElement<string | null> {
    * where they clicked, so this is not folded into `close`.
    */
   private restoreFocus(): void {
-    this.querySelector<HTMLElement>(".mdy-colors__toggle-area")?.focus();
+    // Back to what opened it. The caret beside the square is a drawing and takes no focus, so
+    // handing it back there would leave focus on the document body.
+    this.querySelector<HTMLElement>(".mdy-colors__primary-picker")?.focus();
   }
 
   private close(_handle: MdyFieldHandle<string | null>): void {
@@ -310,14 +312,16 @@ export class MdyColorsFieldElement extends MdyFieldElement<string | null> {
               @change=${(e: Event) => this.set(handle, (e.target as HTMLInputElement).value)}
               @blur=${() => handle.markAsTouched()}
             />
-            <button
-              type="button"
+            <!-- A drawing, not a command. The square opens the same panel, and one act with two
+                 commands costs two names, two keyboard stops and two things to describe. It is out of
+                 the tab order and out of the tree together: removing it from one alone hides it from
+                 someone navigating by keyboard and leaves it for someone reading the tree.
+
+                 It still answers a press, because the area sits inside the field and a dead patch in
+                 a live control reads as "sometimes it does not work". -->
+            <span
               class="mdy-colors__toggle-area mdy-input-suffix"
-              ?disabled=${handle.disabled()}
-              aria-haspopup=${this.popupPromise}
-              aria-expanded=${this._open ? "true" : "false"}
-              aria-controls=${overlayControlledId("colors", this.fieldId) ?? nothing}
-              aria-label=${`${this.label} — open color presets`}
+              aria-hidden="true"
               @click=${(e: Event) => {
                 if (this._open) {
                   this.close(handle);
@@ -331,7 +335,7 @@ export class MdyColorsFieldElement extends MdyFieldElement<string | null> {
               <span class="mdy-select__arrow ${this._open ? "mdy-select__arrow--open" : ""}">
                 ${mdyIcon("CHEVRON_DOWN", "")}
               </span>
-            </button>
+            </span>
           </div>
         </div>
         ${renderOverlayPanel(this.renderDropdown(handle), this._open, {

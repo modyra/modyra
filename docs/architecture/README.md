@@ -173,6 +173,7 @@ absent section reads as an oversight, and "no security impact" is a finding.
 - [ADR 0156: A panel answers both doors](0156-a-panel-answers-both-doors.md) — a list opened with the mouse answered no key, because a press leaves focus where it landed and it landed on nothing
 - [ADR 0157: A key that waits for something to have happened](0157-a-key-that-waits-for-something-to-have-happened.md) — a key that does nothing because the moment is wrong is indistinguishable from one nobody implemented
 - [ADR 0158: A thirteenth that is a door](0158-a-thirteenth-that-is-a-door.md) — a field that takes every colour offered twelve, and neither of its two routes could see the disagreement
+- [ADR 0159: The filled square is what opens the panel](0159-the-square-is-the-opener.md) — the most recognisable shape on the field did one thing in two renderers and another in the third, and a caret beside it was a second command for one act
 - [ADR 0092: A condition travels with the form](0092-a-condition-travels-with-the-form.md) — `when` and `asyncWhen` were closures, so a schema carrying one was not data and the document half could not say what the typed half said
 
 ## Security-relevant records

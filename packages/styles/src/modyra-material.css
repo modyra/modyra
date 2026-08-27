@@ -1027,12 +1027,18 @@
     }
 
     .mdy-colors__native-hidden {
+        /* A point, not a sheet, and it takes no pointer. Sized to the field, an invisible element
+           sits over the box beside it and swallows presses meant for the text — and this rule
+           restated the foundation's without restating that guard, so the two agreed on everything
+           except the one line that matters. It is what a form post and an autofill see, and what
+           opens the platform's chooser when the panel asks; none of that needs area. */
         position: absolute;
         top: 0;
         left: 0;
-        width: 100%;
-        height: 100%;
+        width: 1px;
+        height: 1px;
         opacity: 0 !important;
+        pointer-events: none;
         cursor: pointer;
         border: none;
         margin: 0;
