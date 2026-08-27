@@ -11,16 +11,16 @@
  * application picked is a matter of how it stores its forms — a document from a server, or a
  * structure built in code.
  *
- * **What is asked is that the two agree about the rule.** Not which answer is right: refusing is
- * defensible and so is accepting with a warning, and the record may settle it either way. What cannot
- * be defended is a rule that holds on one door and not the other, because then the ceiling is not a
- * property of the library — it is a property of how you happened to reach it.
+ * **What is asked is that the rule holds at both, and that neither is silent about it.** The two
+ * doors are not obliged to refuse the same way, and the record has settled that they should not: a
+ * call has a caller holding the result, who can handle a refusal and cannot notice a silence, so it
+ * refuses; a value bound into a template has nowhere to catch, so it drops the structure, keeps the
+ * questions, and says why where a developer looks. Those are different shapes of the same rule.
  *
- * **The failure has a direction, and it is the bad one.** The door that enforces is the one that
- * refuses the whole document; the door that does not is the one that quietly builds whatever it was
- * handed. So an application built the second way exceeds the limit **without any deliberation at
- * all** — nobody chose to take the risk, nobody was told there was one, and the first sign is
- * whatever the depth eventually costs.
+ * **What cannot be defended is silence.** A door that builds past the published ceiling and mentions
+ * it nowhere lets an application exceed the limit with nobody choosing to and nobody told there was
+ * one — and the first sign is whatever the depth eventually costs. So this asks two things of every
+ * door: that nothing beyond the ceiling gets built, and that something, somewhere, said so.
  *
  * **The ceiling is read, not written**, so this file moves with the contract instead of disagreeing
  * with it silently.
@@ -60,6 +60,14 @@ for (const host of HOSTS) {
     await page.setViewportSize({ width: 1_200, height: 800 });
     await page.goto(host.page);
     await page.waitForFunction((flag) => (window as never as Record<string, boolean>)[flag] === true, host.ready);
+
+    // What the page said out loud. A door may refuse, or it may keep the questions and warn; the one
+    // thing it may not do is neither.
+    const spoken: string[] = [];
+    page.on("console", (message) => {
+      if (message.type() === "warning" || message.type() === "error") spoken.push(message.text());
+    });
+    page.on("pageerror", (error) => spoken.push(error.message));
 
     /** What a door did with a layout of this depth: whether it accepted, and what it actually built. */
     const through = async (door: "document" | "structure", depth: number) => {
@@ -110,15 +118,29 @@ for (const host of HOSTS) {
       + "drew no structure, so what it does one level deeper says nothing about a ceiling",
     ).toBeGreaterThan(1);
 
+    // Nothing beyond the ceiling is built, whichever door it came through.
     expect(
-      { document: beyond.document.outcome, structure: beyond.structure.outcome },
-      `${host.name}: one door keeps the published ceiling of ${ceiling} and the other does not. `
-      + `A layout ${ceiling + 1} deep — ${JSON.stringify(beyond)}. Which answer is right is a real `
-      + "question the record may settle either way; that they differ is not an answer to it. And the "
-      + "direction is the bad one: the door that enforces refuses the whole document, and the door "
-      + "that does not quietly builds whatever it was handed — so an application built that way "
-      + "passes the limit with nobody choosing to, nobody told there was one, and the first sign is "
-      + "whatever the depth eventually costs.",
-    ).toEqual({ document: beyond.document.outcome, structure: beyond.document.outcome });
+      { document: beyond.document.built, structure: beyond.structure.built },
+      `${host.name}: a layout ${ceiling + 1} deep was built anyway — ${JSON.stringify(beyond)}. The `
+      + "ceiling is published and a consuming application reads it; a door that builds past it is a "
+      + "limit that exists only in the documentation.",
+    ).toEqual({ document: 0, structure: 0 });
+
+    // And no door is silent about having refused it. Refusing is one way to say so; keeping the
+    // questions and warning is another, and the record has settled that they need not match. What
+    // neither may do is drop the structure and mention it nowhere.
+    const mute = ([door, result]: [string, { outcome: string }]) =>
+      result.outcome !== "refused" && !spoken.some((line) => /layout|depth|nest/i.test(line))
+        ? `${door} accepted it, built nothing, and said nothing`
+        : null;
+    const silent = [["the document door", beyond.document], ["the structure door", beyond.structure]]
+      .map((pair) => mute(pair as [string, { outcome: string }])).filter((one) => one !== null);
+
+    expect(
+      silent,
+      `${host.name}: ${JSON.stringify(silent)}. A door that drops what it was handed and mentions it `
+      + "nowhere lets an application pass the published limit with nobody choosing to and nobody told "
+      + `there was one. What was said on the console: ${JSON.stringify(spoken.slice(0, 3))}`,
+    ).toEqual([]);
   });
 }

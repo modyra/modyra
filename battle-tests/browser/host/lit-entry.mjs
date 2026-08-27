@@ -105,7 +105,10 @@ window.battleLit = {
           ];
         }),
       );
-      const form = createLitForm(schema, options);
+      // The structure and its rules are this host's to build; the form does not read them, and
+      // handing them over prints a warning on the channel other specs read for warnings that matter.
+      const { layout: _layout, rules: _rules, ...forForm } = options;
+      const form = createLitForm(schema, forForm);
 
       // Lit publishes no form component: a Lit form is whatever the host writes, so the summary
       // region is an element the host places. It goes first, because a summary found by scrolling
