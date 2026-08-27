@@ -12,14 +12,18 @@
  *
  *     form two   aria-describedby="n__description"  →  form one's description
  *
- * Measured that way in all three renderers. A person filling in the second form, using a screen
- * reader, is told the first form's hint for a field they cannot see. Nothing looks wrong on screen and
- * nothing throws, because the page is not broken — it is answering a different question correctly.
+ * A person filling in the second form, using a screen reader, is told the first form's hint for a
+ * field they cannot see. Nothing looks wrong on screen and nothing throws, because the page is not
+ * broken — it is answering a different question correctly.
  *
- * **This is not one renderer's defect.** It was first reported by the conformance kit against lit
- * alone, which reads as a gap in lit's configuration. It is not: plain and angular collide on every id
- * too. The kit stayed quiet about plain because plain's own config declares an id prefix, so the kit
- * scopes what the *page* does not — a configuration masking the defect it was meant to find.
+ * **It was never one renderer's defect**, though it was first reported against one alone, which reads
+ * as a gap in that renderer's configuration. It was not: every renderer collided on every id. The
+ * report stayed quiet about the others because their own config declares an id prefix, so the kit
+ * scoped what the *page* did not — a configuration masking the defect it was meant to find.
+ *
+ * **And it was not silent where it could have been heard.** One renderer detected the collision and
+ * printed the remedy exactly, which is the worse combination to diagnose: loud in the console and
+ * wrong in the page, so somebody reading the warning believes the framework is handling it.
  *
  * Two forms of the same shape is not an exotic arrangement. It is a filter beside a form, a repeated
  * row, a comparison of two records, a dialog over a page.
