@@ -18,8 +18,9 @@ import { lifecyclePanel } from "./panels/lifecycle.js";
 import { dynamicPanel } from "./panels/dynamic.js";
 import { securityPanel } from "./panels/security.js";
 import { headlessPanel } from "./panels/headless.js";
+import { nestedPanel } from "./panels/nested.js";
 
-const PANELS = [statesPanel, validationPanel, collectionsPanel, ordersPanel, invoicesPanel, contractsPanel, lifecyclePanel, dynamicPanel, securityPanel, headlessPanel];
+const PANELS = [statesPanel, validationPanel, collectionsPanel, ordersPanel, invoicesPanel, contractsPanel, lifecyclePanel, dynamicPanel, securityPanel, headlessPanel, nestedPanel];
 
 const nav = document.querySelector("[data-lab-nav]");
 const host = document.querySelector("[data-lab-panel]");

@@ -8,7 +8,7 @@ import { expect, test } from "@playwright/test";
  * panel: it reports the previous answer with the authority of the current one. These are the checks
  * that the controls do what the panel says they do.
  */
-const PANELS = ["states", "validation", "collections", "lifecycle", "dynamic", "security", "headless"];
+const PANELS = ["states", "validation", "collections", "lifecycle", "dynamic", "security", "headless", "nested"];
 
 async function open(page: import("@playwright/test").Page, id: string) {
   const errors: string[] = [];
@@ -314,4 +314,64 @@ test("contracts: a rule about the whole collection outlives the bands being draw
   await page.locator('[data-action="Sort bands descending"]').click();
   await expect.poll(async () => (await readout(page)).readingOrder).toEqual([...before.readingOrder].reverse());
   expect((await readout(page)).bands).toEqual(before.bands);
+});
+
+/**
+ * Branches inside branches, and the parapet at the bottom of them.
+ *
+ * The three promises of a closed branch are read **separately and at one instant**, because that is
+ * where they were found disagreeing: a form can report itself valid while a field inside a closed
+ * branch still holds an answer and a payload still carries it. A check reading one of the three
+ * calls the other two proven.
+ */
+test("nested: depth costs no width", async ({ page }) => {
+  await open(page, "nested");
+  const held = await readout(page);
+
+  // The perimeter first. "Every edge is equal" is also true of a page that drew one question, which
+  // is the reading this assertion gets for free without it.
+  expect(held.sectionsDrawn).toBe(6);
+  expect(held.leftEdgeOfEachQuestion).toHaveLength(6);
+  expect(new Set(held.leftEdgeOfEachQuestion).size).toBe(1);
+});
+
+test("nested: a closed branch keeps its answers, leaves the payload, and stops being asked about", async ({ page }) => {
+  await open(page, "nested");
+  await page.getByRole("button", { name: "A conditional questionnaire" }).click();
+  await page.getByLabel("Your name", { exact: true }).fill("Ada");
+  await page.getByLabel("Company name", { exact: true }).fill("ACME");
+
+  // Open, and incomplete: the branch is in play and holds a required answer nobody gave.
+  await expect.poll(async () => (await readout(page)).formIsValid).toBe(false);
+
+  await page.getByRole("combobox", { name: "Who is answering?" }).click();
+  await page.getByRole("option", { name: "A person" }).click();
+
+  await expect.poll(async () => (await readout(page)).formIsValid).toBe(true);
+  const held = await readout(page);
+  expect(held.whatTheClosedBranchStillHolds.company).toBe("ACME");
+  expect(held.whatWouldBeSubmitted).not.toContain("company");
+  expect(held.andTheModelStillHolds).toContain("company");
+});
+
+test("nested: the limit refuses, and says so differently at each door", async ({ page }) => {
+  await open(page, "nested");
+  await page.getByRole("button", { name: "7 — from a document" }).click();
+  // Waited for rather than read straight away: a reading taken before the panel repaints returns the
+  // previous one — here the six-deep chain it opens on — and would fail towards "all is well".
+  await expect.poll(async () => (await readout(page)).levelsAsked).toBe(7);
+  const read = await readout(page);
+
+  // A document is not refused whole: what cannot be carried is dropped and reported, so the fields
+  // arrive and the arrangement does not. Both halves, or a form that mounted reads as one that worked.
+  expect(read.sectionsDrawn).toBe(0);
+  expect(read.butTheReaderSaid.join(" ")).toContain("MDY_DYNAMIC_INVALID_LAYOUT");
+
+  await page.getByRole("button", { name: "7 — from code" }).click();
+  await expect.poll(async () => (await readout(page)).refused).toBe(true);
+  const thrown = await readout(page);
+  // The depth, the place and the reason. A refusal naming only the rule leaves somebody hunting for
+  // which of their sections is the seventh.
+  expect(thrown.said).toContain("7 levels deep");
+  expect(thrown.said).toContain("/layout/0/children");
 });

@@ -12,7 +12,7 @@ import {
   untracked,
   viewChild,
 } from "@angular/core";
-import { applyDynamicRules, applyFlatValidators, assertSafeDynamicFieldNames, parseDynamicForm } from "@modyra/core";
+import { applyDynamicRules, applyFlatValidators, assertLayoutWithinDepth, assertSafeDynamicFieldNames, parseDynamicForm } from "@modyra/core";
 import {
   mdyEmptyValueFor,
   MdyDynamicField,
@@ -504,7 +504,14 @@ export class MdyDynamicFormComponent {
   /** The layout the same way, so a document that is refused arranges nothing either. */
   protected readonly renderedLayout = computed<ReadonlyArray<MdyDynamicLayoutNode>>(() => {
     const parsed = this.parsed();
-    if (parsed === null) return this.layout();
+    if (parsed === null) {
+      // The branch a document never reaches, and the one the depth limit used to miss: a structure
+      // bound as an input nested as deep as it liked, so the same form was legal or not depending on
+      // whether it had been written down. The guard says what the reader says, at the other door.
+      const declared = this.layout();
+      assertLayoutWithinDepth(declared);
+      return declared;
+    }
     return parsed.ok || this.parseMode() === "lenient" ? parsed.layout : [];
   });
 

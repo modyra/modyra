@@ -1205,6 +1205,45 @@ function layoutRefusalDiagnostic(
   };
 }
 
+/**
+ * Refuses a layout nested deeper than the cap, for a caller that built one rather than read one.
+ *
+ * The cap is a statement about people, not about machines: nesting costs nothing measurable — the
+ * tree grows by two elements a level and the indent does not grow at all — but nobody answers a
+ * question whose applicability depends on six earlier answers. It therefore has to hold wherever a
+ * structure arrives, and a document was only one of the two ways in.
+ *
+ * A caller assembling layout in code passed the cap in silence, so the limit read as a property of
+ * the document format instead of a property of the framework, and the same form was legal or illegal
+ * depending on how it had been written down. This says the same thing the parser says, at the other
+ * door, in the terms a programmer can act on: a `throw` rather than a diagnostic, because there is no
+ * document to annotate and no partial result worth returning.
+ *
+ * Deliberately not an option. Raising it is a decision about how deep a form a person can be asked to
+ * fill in, and a per-call override turns that decision into a default nobody revisits — see
+ * ADR 0160, which records what raising it would cost and what would have to be true first.
+ */
+export function assertLayoutWithinDepth(
+  layout: ReadonlyArray<unknown> | undefined,
+  cap: number = MDY_LAYOUT_MAX_DEPTH,
+): void {
+  const walk = (node: unknown, depth: number, path: string): void => {
+    if (!isRecordValue(node)) return;
+    if (depth > cap) {
+      throw new Error(
+        `[modyra] A layout nests ${depth} levels deep at ${path}, and ${cap} is the limit. `
+        + "The limit is about what a person can be asked to answer rather than what a browser can "
+        + "draw: past this depth, whether a question applies depends on more earlier answers than "
+        + "anybody holds in mind. Flatten the structure, or split the form into steps.",
+      );
+    }
+    const children = (node as { readonly children?: unknown }).children;
+    if (!Array.isArray(children)) return;
+    children.forEach((child, index) => walk(child, depth + 1, `${path}/children/${index}`));
+  };
+  (layout ?? []).forEach((node, index) => walk(node, 1, `/layout/${index}`));
+}
+
 function validLayoutNode(
   raw: unknown,
   names: ReadonlySet<string>,

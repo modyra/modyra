@@ -244,6 +244,7 @@ export {
   MDY_DYNAMIC_INVALID_FIELD,
   MDY_ID_DELIMITER,
   MDY_LAYOUT_MAX_DEPTH,
+  assertLayoutWithinDepth,
   assertNeverField,
   assertSafeDynamicFieldNames,
   buildDynamicFieldValidators,

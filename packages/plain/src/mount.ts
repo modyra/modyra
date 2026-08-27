@@ -10,7 +10,7 @@
 import type {
   MdyDynamicValidation, MdyDraftOptions } from "@modyra/core";
 import { adoptSilentWrites, bindFormReset, reportIdCollision } from "@modyra/widgets";
-import { applyDynamicRules, assertSafeDynamicFieldNames, vanillaReactivity, type MdyDynamicCollection, type MdyDynamicField, type MdyDynamicLayoutChild, type MdyDynamicLayoutNode, type MdyDynamicLayoutSlot, type MdyDynamicRule, type MdyFieldHandle, type MdyFormSchema, type MdyReactivity, type MdySubmittedValue, type MdyTypedForm } from "@modyra/core";
+import { applyDynamicRules, assertLayoutWithinDepth, assertSafeDynamicFieldNames, vanillaReactivity, type MdyDynamicCollection, type MdyDynamicField, type MdyDynamicLayoutChild, type MdyDynamicLayoutNode, type MdyDynamicLayoutSlot, type MdyDynamicRule, type MdyFieldHandle, type MdyFormSchema, type MdyReactivity, type MdySubmittedValue, type MdyTypedForm } from "@modyra/core";
 import { buildForm } from "./schema.js";
 import { formErrorsOf, formScopeOf, idSafeKey, isValidWidgetId, layoutNodeAttributes, layoutSlotStyle, MDY_FORM_SHELL_CLASSES, MDY_ID_DELIMITER, MDY_LAYOUT_CLASSES } from "@modyra/widgets";
 import { renderField } from "./fields/index.js";
@@ -139,6 +139,11 @@ export function mountMdyForm(
   options: MountMdyFormOptions = {},
 ): MdyPlainForm {
   assertMountableNames(fields, options.idPrefix);
+  // The same limit the document reader applies, at the door a document never passes through. A
+  // structure assembled in code used to nest as deep as it liked, so the cap read as a rule about
+  // the file format rather than about the form — and one form was legal or not depending on how it
+  // had been written down.
+  assertLayoutWithinDepth(options.layout);
 
 
 
