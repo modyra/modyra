@@ -1591,6 +1591,18 @@
         transition: color var(--mdy-sys-motion-duration-slow) ease;
     }
 
+    /* A refused field says so to the eye as well as to a reader.
+       The refusal was announced — every kind carries `aria-invalid` — and drawn only where the
+       control sits in a box this sheet outlines. A checkbox, a switch and a range have their own
+       wrapper class, so the box treatment names a block they do not carry and paints nothing: the
+       field looked exactly as it had a moment before, and only somebody listening was told.
+       Stated on the words rather than on the box, because the words are the one part every kind has.
+       The box keeps its own underline where there is a box; this is what reaches the kinds without
+       one, and it costs the kinds that have both nothing they did not already say. */
+    .mdy-label--has-error {
+        color: var(--mdy-error-color);
+    }
+
     .mdy-label--has-error .mdy-label__required {
         color: var(--mdy-error-color);
     }

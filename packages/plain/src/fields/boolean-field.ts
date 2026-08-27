@@ -8,7 +8,7 @@
  */
 import { observerFor, type MdyFieldHandle, type MdyReactivity } from "@modyra/core";
 import type { MdyDynamicBooleanField } from "@modyra/core";
-import { MDY_FIELD_STATE_CLASSES, MDY_WIDGET_CONTRACTS, createBooleanFieldController, fieldAccessibleName, shownErrorsOf, showsAsInvalid } from "@modyra/widgets";
+import { MDY_FIELD_STATE_CLASSES, MDY_WIDGET_CONTRACTS, createBooleanFieldController, errorsVisible, fieldAccessibleName, holdsUneditedValue, shownErrorsOf } from "@modyra/widgets";
 import { applyPart, el, setErrors, setText } from "../dom.js";
 
 export function renderBooleanField(
@@ -97,9 +97,17 @@ export function renderBooleanField(
     // After `applyPart`, which replaces everything but the base class: the label's error state is
     // the shared shell's vocabulary, and a boolean has no shared shell to apply it. The control says
     // it is wrong with `aria-invalid`, and the words beside it said nothing.
+    // The same question the shell asks for every other kind, so the answer is the same one. Asked as
+    // *is this field invalid* it is true from the moment a required box is drawn unchecked — the
+    // words go red about something nobody has been given a turn at yet, which is a refusal the page
+    // makes up. Asked as *is this refusal one to show now*, a rule waits for a turn and a refusal
+    // that arrived from elsewhere does not.
     labelText.classList.toggle(
       MDY_FIELD_STATE_CLASSES.label + "--has-error",
-      showsAsInvalid({ valid: handle.valid(), disabled: handle.disabled() }),
+      errorsVisible(
+        { disabled: handle.disabled(), touched: handle.touched(), holdsUnedited: holdsUneditedValue({ dirty: handle.dirty(), value: handle.value() }) },
+        handle.errors(),
+      ),
     );
     applyPart(submitFalse, view.parts.submitFalse);
     applyPart(input, view.parts.input);

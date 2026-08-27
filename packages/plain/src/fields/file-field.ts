@@ -171,10 +171,10 @@ export function renderFileField(
       item.append(name, meta);
       fileList.appendChild(item);
     }
-    setErrors(shell.errorList, visibleErrorsOf(handle).map((error) => error.message));
+    setErrors(shell.errorList, visibleErrorsOf(handle, "file").map((error) => error.message));
     shell.syncState({
       touched: handle.touched(), disabled: handle.disabled(), readonly: handle.readonly(),
-      hasError: visibleErrorsOf(handle).length > 0, filled: files.length > 0, required: handle.required(),
+      hasError: visibleErrorsOf(handle, "file").length > 0, filled: files.length > 0, required: handle.required(),
     });
   });
 

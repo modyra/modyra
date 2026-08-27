@@ -260,11 +260,16 @@ export function renderDaterangeField(
     // coordinates are `anchorOverlay`'s, and this only measures and applies them.
     if (state.open) positionOverlay(popup, shell.wrapper, anchoring);
     else releaseOverlayPlacement(popup);
-    setErrors(shell.errorList, visibleErrorsOf(handle).map((error) => error.message));
+    // The kind, because this one's empty is an object. Without it a value that *is* this field's
+    // nothing reads as one that arrived from somewhere — a draft, a server, a scripted write — and
+    // those are said at once rather than waiting for a turn. So a range nobody had been near stated
+    // its refusal from the first paint, and refused and untouched looked identical: the state that
+    // matters was the one that never changed.
+    setErrors(shell.errorList, visibleErrorsOf(handle, "daterange").map((error) => error.message));
     shell.syncState({
       open: state.open,
       touched: handle.touched(), disabled: handle.disabled(), readonly: handle.readonly(),
-      hasError: visibleErrorsOf(handle).length > 0, filled: value.start !== null, required: handle.required(),
+      hasError: visibleErrorsOf(handle, "daterange").length > 0, filled: value.start !== null, required: handle.required(),
     });
 
     const monthKey = `${anchor.year}-${anchor.month}`;
