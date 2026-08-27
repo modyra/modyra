@@ -17,20 +17,21 @@
  * to reach the hex box. A renderer that satisfies that has laid the two out in some workable way, and
  * one that fails it has an invisible element in front of a control, however the boxes measure.
  *
- * **The second half asserts a mechanism, and the mechanism is under decision.** Two renderers give
- * the swatch another job — it opens the list of preset colours — so the press not reaching the
- * native input is deliberate there rather than an oversight. What is not deliberate is the
- * consequence: with the swatch spoken for, a person who wants a colour that is not among the presets
- * has one way left, which is knowing that `#ff6600` is an orange and typing it.
+ * **The second half counts routes, because the mechanism it used to assert has been replaced.** The
+ * swatch now opens the field's own list of ready colours in every renderer, so a press on it no
+ * longer reaches the native input anywhere, and that is the decision rather than an oversight. What
+ * survives the decision is the consequence a person feels: from the list, is there still a way to a
+ * colour the list does not hold, or is the only one left knowing that `#ff6600` is an orange and
+ * typing it?
  *
- * So the red these two carry is a **product decision that has not been taken**, not a defect
- * awaiting repair: whether a colours field must offer a pointer route to any colour at all, or may
- * legitimately restrict a pointer to an approved set. A brand's palette is a real reason to want the
- * second.
+ * So this half asks **how many routes lead out**, which reads the same whichever way the decision had
+ * gone, and requires that no renderer answer it differently from another. One route is what the
+ * record settles on; the check that matters as much is that the three agree, because a route that
+ * exists in two of three is a capability an application loses by changing renderer.
  *
- * When it is taken, this half is rewritten in its terms — as a count of the routes to an arbitrary
- * colour, which reads the same whichever way the decision goes, and which no renderer may answer
- * differently from another without that difference being declared.
+ * **Both ways out are counted.** A page can ask the platform for its chooser directly or press the
+ * element the platform listens to, and a press that was cancelled reached nothing — from outside, a
+ * door that opens nothing looks exactly like one that works.
  *
  * Claims under attack: UI-005, A11Y-002.
  */
@@ -43,6 +44,9 @@ import { became, HOSTS } from "./bench";
 type Api = Record<string, Record<string, (...args: never[]) => unknown>>;
 
 const selectorFor = (part: string) => (partClasses("colors", part) as string[]).map((one) => `.${one}`).join("");
+
+/** How many ways each renderer leaves out of the list, filled as each one is measured. */
+const routesOut: Record<string, number> = {};
 
 for (const host of HOSTS) {
   test(`a press meant for the hex box reaches it, ${host.name}`, async ({ page }) => {
@@ -99,40 +103,58 @@ for (const host of HOSTS) {
       + "and nothing on the screen tells them why.",
     ).toBe(true);
 
-    // And the other half of the same arrangement: pressing the colour a person can see has to open
-    // the picker.
-    //
-    // **Not measured as a target size.** All three renderers set `pointer-events: none` on the
-    // native input and draw a swatch over it, so its own box is never what a pointer lands on and a
-    // rule about how big it is asks for something no renderer does. What is asked instead is whether
-    // the press arrives: something visible has to forward it, whether that is a label wrapping the
-    // input or a handler calling it.
-    const forwarded = await page.evaluate(({ wellSelector, previewSelector, toggleSelector }) => {
-      const well = document.querySelector(`[data-form="swatch"] ${wellSelector}`);
-      if (well === null) return { pressed: [] as string[], reached: false };
-      let reached = false;
-      well.addEventListener("click", () => { reached = true; }, { once: false });
-      const pressed: string[] = [];
-      for (const selector of [previewSelector, toggleSelector]) {
-        const visible = document.querySelector(`[data-form="swatch"] ${selector}`) as HTMLElement | null;
-        if (visible === null) continue;
-        pressed.push(selector);
-        visible.click();
-        if (reached) break;
+    // The other half, in the terms the decision left: from the list a person is offered, how many
+    // ways lead to a colour the list does not hold?
+    const panel = page.locator(`[data-form="swatch"] ${selectorFor("toggle")}`).first();
+    if (await panel.count() > 0) await panel.click({ timeout: 5_000 }).catch(() => undefined);
+    await page.waitForTimeout(400);
+
+    // Both doors, and a cancelled press counts as none.
+    await page.evaluate((nativeClass) => {
+      const store = window as never as Record<string, number>;
+      store.mdyOut = 0;
+      const asked = HTMLInputElement.prototype.showPicker;
+      if (typeof asked === "function") {
+        HTMLInputElement.prototype.showPicker = function patched(this: HTMLInputElement) {
+          store.mdyOut += 1;
+          try { return asked.call(this); } catch { return undefined; }
+        };
       }
-      return { pressed, reached };
-    }, { wellSelector: selectorFor("control"), previewSelector: selectorFor("preview"), toggleSelector: selectorFor("toggle") });
+      document.addEventListener("click", (event) => {
+        const target = event.target as Element | null;
+        if (target === null || !target.matches(`${nativeClass}, input[type="color"]`)) return;
+        if (event.defaultPrevented) return;
+        store.mdyOut += 1;
+      });
+    }, selectorFor("control"));
+
+    const door = page.locator(`[data-form="swatch"] ${selectorFor("customEntry")}, .${"mdy-colors__custom-entry"}`).first();
+    if (await door.count() > 0) await door.click({ timeout: 5_000 }).catch(() => undefined);
+    await page.waitForTimeout(300);
+
+    routesOut[host.name] = await page.evaluate(() => (window as never as Record<string, number>).mdyOut);
 
     expect(
-      forwarded.pressed.length,
-      `${host.name} drew nothing visible to press for a colour, so the check below asked nothing`,
+      routesOut[host.name],
+      `${host.name}: from the list of ready colours there is no way to a colour the list does not `
+      + "hold. A brand's palette is a real reason to offer ten colours; it is not a reason to make "
+      + "the eleventh reachable only by knowing that #ff6600 is an orange and typing it.",
     ).toBeGreaterThan(0);
-
-    expect(
-      forwarded.reached,
-      `${host.name}: pressing the colour a person can see does not reach the native input behind it, `
-      + `which measures ${boxes.well?.w ?? "?"}×${boxes.well?.h ?? "?"} and takes no pointer of its `
-      + "own — so the only way left to set a colour is to type its hex value",
-    ).toBe(true);
   });
 }
+
+test("every renderer offers the same number of ways out of the list", async () => {
+  const answers = Object.values(routesOut);
+  // A run that measured fewer than all of them has nothing to compare and would agree with itself.
+  expect(
+    answers.length,
+    `only ${answers.length} renderer(s) were measured: ${JSON.stringify(routesOut)}`,
+  ).toBe(HOSTS.length);
+
+  expect(
+    [...new Set(answers)].length,
+    "the number of ways out of the list of ready colours depends on who drew the field: "
+    + `${JSON.stringify(routesOut)}. A route that exists in two of three is a capability an `
+    + "application loses by changing renderer, from a document that asked for neither.",
+  ).toBe(1);
+});
