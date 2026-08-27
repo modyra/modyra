@@ -94,7 +94,11 @@ function splitTopLevel(text, separator) {
  * is the same members in a different sequence.
  */
 function normaliseType(text) {
-  const inner = String(text).trim();
+  // Documentation is not surface. A doc comment sits inside an inline object type in the emitted
+  // declaration, so rewording one changed the compared string and was reported **major** on a type
+  // whose members had not moved — the tool reading the text where the relation is what it is for.
+  // A comment cannot break a consumer; a member can, and members survive this.
+  const inner = String(text).replace(/\/\*[\s\S]*?\*\//g, " ").replace(/\s+/g, " ").trim();
   const union = splitTopLevel(inner, "|");
   if (union.length > 1) return union.map(normaliseType).sort().join(" | ");
   const object = /^\{([\s\S]*)\}$/.exec(inner);
