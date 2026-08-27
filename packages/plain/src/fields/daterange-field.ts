@@ -222,7 +222,14 @@ export function renderDaterangeField(
     const a11y = projectFieldShellA11y(
       { disabled: handle.disabled(), required: handle.required() },
       shownErrorsOf(handle),
-      { widgetId: widgetId, controlId: startInput.id },
+      {
+        widgetId: widgetId,
+        controlId: startInput.id,
+        // What is *shown*, not what is wrong. Without it the projection falls back to "there is an
+        // error at all", and both ends of a required range announce themselves as failing before
+        // anybody has been at the field, while the list beside them renders nothing.
+        errorsVisible: visibleErrorsOf(handle, "daterange").length > 0,
+      },
     );
 
     applyPart(shell.root, definition.parts.root);

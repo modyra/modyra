@@ -139,7 +139,15 @@ export function renderFileField(
     const a11y = projectFieldShellA11y(
       { disabled: handle.disabled(), required: handle.required() },
       shownErrorsOf(handle),
-      { widgetId: widgetId, controlId: control.id },
+      {
+        widgetId: widgetId,
+        controlId: control.id,
+        // What is *shown*, not what is wrong. Without it the projection falls back to "there is an
+        // error at all", and a required field nobody has reached announces itself as failing while
+        // the list beside it — asked the same question with the person's touch in it — renders
+        // nothing. One question, and the eye and the ear were given different answers.
+        errorsVisible: visibleErrorsOf(handle, "file").length > 0,
+      },
     );
     applyPart(shell.label, a11y.label);
     applyPart(shell.description, a11y.description);
