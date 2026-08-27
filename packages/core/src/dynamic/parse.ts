@@ -170,8 +170,24 @@ export type MdyDynamicLayoutNode = MdyDynamicSection | MdyDynamicColumns;
 /** The most tracks a row may declare. Beyond this a row is not a layout, it is a table. */
 const MDY_MAX_LAYOUT_COLUMNS = 12;
 
-/** Depth cap for nested layout, mirroring the schema's own guard against hostile input. */
-export const MDY_LAYOUT_MAX_DEPTH = 6;
+/**
+ * How deep a layout may nest.
+ *
+ * A bound against a structure arriving from outside — a stored document, a configuration fetched at
+ * runtime — that would otherwise drive unbounded recursion through a parse. That is the whole of
+ * what it defends, and it is why the number is a constant rather than something a caller supplies:
+ * a limit an attacker's input can raise is not a limit.
+ *
+ * It is deliberately far above any structure a person would author, and matches
+ * `MDY_MAX_EXPRESSION_DEPTH` — the same kind of guard, on the same kind of input.
+ *
+ * **It is not a limit on how much a form may ask of somebody.** It was six, on the argument that
+ * nobody answers a question whose applicability depends on six earlier answers — a good argument
+ * about the wrong axis. Nesting is *arrangement*: six groups deep is "Address → Billing →
+ * Registered office", and the field inside is active, visible and conditional on nothing. What that
+ * argument describes is a chain of *rules*, which this constant has never governed. ADR 0161.
+ */
+export const MDY_LAYOUT_MAX_DEPTH = 32;
 
 /**
  * Calendar presentation coming from a config file rather than from typed code.

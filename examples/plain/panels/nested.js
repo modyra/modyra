@@ -112,11 +112,12 @@ export const nestedPanel = {
   ],
 
   invariant:
-    `Nesting costs nothing in width: the question at level ${MDY_LAYOUT_MAX_DEPTH} begins at the same `
-    + "edge as the question at level one. A closed branch is not validated, keeps what was typed and "
-    + `is not submitted. And ${MDY_LAYOUT_MAX_DEPTH} levels is the limit at every door — a structure `
-    + "read from a document and one assembled in code are refused alike, because the limit is about "
-    + "what a person can be asked rather than about what a browser can draw.",
+    "Nesting costs nothing in width: the deepest question begins at the same edge as the first. A "
+    + "closed branch is not validated, keeps what was typed and is not submitted. And "
+    + `${MDY_LAYOUT_MAX_DEPTH} levels is the limit at every door — a structure read from a document `
+    + "and one assembled in code are refused alike. The limit guards against a structure arriving "
+    + "from outside rather than against a form asking too much: nesting is arrangement, and the "
+    + "field at the bottom of six groups is conditional on nothing.",
 
   mount(work, readout) {
     const bar = toolbar(work);
@@ -231,13 +232,18 @@ export const nestedPanel = {
       print();
     };
 
+    // Six is what a form plausibly nests, not what the framework allows: the cap is a guard against
+    // a structure arriving from outside, and drawing it would show a wall of thirty-two boxes that
+    // says nothing about the property being demonstrated. The parapet is shown at the cap itself.
+    const AUTHORED = 6;
+
     action(bar, "One level", () => showChain(1));
-    action(bar, `${MDY_LAYOUT_MAX_DEPTH} levels`, () => showChain(MDY_LAYOUT_MAX_DEPTH));
+    action(bar, `${AUTHORED} levels`, () => showChain(AUTHORED));
     action(bar, "A conditional questionnaire", () => showConditional());
     action(bar, `${MDY_LAYOUT_MAX_DEPTH + 1} — from a document`, () => showChain(MDY_LAYOUT_MAX_DEPTH + 1));
     action(bar, `${MDY_LAYOUT_MAX_DEPTH + 1} — from code`, () => showRefusal(MDY_LAYOUT_MAX_DEPTH + 1));
 
-    showChain(MDY_LAYOUT_MAX_DEPTH);
+    showChain(AUTHORED);
     return () => clear();
   },
 };

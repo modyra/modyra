@@ -1,6 +1,11 @@
 # ADR 0160: A form nests six levels deep, and the limit is about people
 
-Status: Accepted
+Status: Superseded by [ADR 0161](0161-the-ceiling-was-on-the-wrong-axis.md)
+
+The reasoning below is kept because it is what makes 0161 legible, and because the argument it
+makes is a good one that turned out to be about a different axis: it describes a chain of rules,
+which this constant never governed. The shapes of refusal it decided — a throw for a call, a
+reported drop for a document, a spoken drop for a bound input — all survive.
 
 ## Context
 

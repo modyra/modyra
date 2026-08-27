@@ -175,6 +175,7 @@ absent section reads as an oversight, and "no security impact" is a finding.
 - [ADR 0158: A thirteenth that is a door](0158-a-thirteenth-that-is-a-door.md) — a field that takes every colour offered twelve, and neither of its two routes could see the disagreement
 - [ADR 0159: The filled square is what opens the panel](0159-the-square-is-the-opener.md) — the most recognisable shape on the field did one thing in two renderers and another in the third, and a caret beside it was a second command for one act
 - [ADR 0160: A form nests six levels deep, and the limit is about people](0160-six-levels-of-nesting.md) — nesting costs the machine nothing measurable, which is why the reason had to be written down, and one of the two doors was not enforcing it
+- [ADR 0161: The nesting limit was on the wrong axis](0161-the-ceiling-was-on-the-wrong-axis.md) — the argument was about conditionality and the constant limited arrangement, which was unguarded on the axis it defended
 - [ADR 0092: A condition travels with the form](0092-a-condition-travels-with-the-form.md) — `when` and `asyncWhen` were closures, so a schema carrying one was not data and the document half could not say what the typed half said
 
 ## Security-relevant records
