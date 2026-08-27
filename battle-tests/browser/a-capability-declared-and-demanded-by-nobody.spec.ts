@@ -42,8 +42,12 @@ import { HOSTS } from "./bench";
 type Api = Record<string, Record<string, (...args: never[]) => unknown>>;
 type Contract = {
   parts: Record<string, { classes: string[] }>;
-  capabilities?: { overlay?: boolean; dismissOnFocusOutside?: boolean };
+  capabilities?: { overlay?: boolean; dismissOnFocusOutside?: boolean; dismissOnOutsidePointer?: unknown };
 };
+
+/** What the kind says a pointer landing outside does. Anything but `false` is a dismissal. */
+const dismissesOnPointer = (kind: string): boolean =>
+  (CONTRACTS[kind].capabilities?.dismissOnOutsidePointer ?? false) !== false;
 
 const CONTRACTS = MDY_WIDGET_CONTRACTS as unknown as Record<string, Contract>;
 const OVERLAY_KINDS = Object.keys(CONTRACTS).filter((kind) => CONTRACTS[kind].capabilities?.overlay === true);
@@ -69,6 +73,8 @@ for (const host of HOSTS) {
     const disagreeing: string[] = [];
     const dismissed: string[] = [];
     const neverOpened: string[] = [];
+    /** The same question asked of the other way out: a pointer landing somewhere else. */
+    const pointerDisagreeing: string[] = [];
 
     for (const kind of OVERLAY_KINDS) {
       const declared = CONTRACTS[kind].capabilities?.dismissOnFocusOutside === true;
@@ -101,6 +107,23 @@ for (const host of HOSTS) {
         disagreeing.push(`${kind} declares dismissOnFocusOutside=${declared} and ${went ? "dismisses" : "stays open"}`);
       }
 
+      // The other way out the kind declares. A press somewhere else is a different act from focus
+      // moving — dismissal is commonly hung on one or the other, and they come apart: a press on a
+      // heading moves no focus at all. So the panel is opened again and pressed away from.
+      await page.locator(`[data-form="${id}"] .${openerClass}`).first().click({ timeout: 5_000 }).catch(() => undefined);
+      await page.waitForTimeout(350);
+      if (await panel.isVisible().catch(() => false)) {
+        await page.locator("#mdy-elsewhere").click({ timeout: 5_000 }).catch(() => undefined);
+        await page.waitForTimeout(400);
+        const wentOnPointer = !(await panel.isVisible().catch(() => false));
+        const declaredPointer = dismissesOnPointer(kind);
+        if (wentOnPointer !== declaredPointer) {
+          pointerDisagreeing.push(
+            `${kind} declares a pointer outside ${declaredPointer ? "dismisses" : "does not dismiss"} `
+            + `and it ${wentOnPointer ? "does" : "does not"}`);
+        }
+      }
+
       await page.evaluate(({ api, mountId }) => {
         try { (window as never as Api)[api].dispose?.(mountId as never); } catch { /* nothing mounted */ }
       }, { api: host.api, mountId: id });
@@ -112,6 +135,14 @@ for (const host of HOSTS) {
       `${host.name} could not open ${JSON.stringify(neverOpened)} — too few panels to say anything `
       + "about how they go away",
     ).toBeLessThan(OVERLAY_KINDS.length - 1);
+
+    expect(
+      pointerDisagreeing,
+      `${host.name}: ${pointerDisagreeing.length} overlay(s) answer a press somewhere else differently `
+      + `from the way their kind declares — ${JSON.stringify(pointerDisagreeing)}. This is the other `
+      + "way out, and it is a different act from focus moving: a press on a heading moves no focus at "
+      + "all, so a control that hangs dismissal on one has not thereby answered for the other.",
+    ).toEqual([]);
 
     expect(
       disagreeing,

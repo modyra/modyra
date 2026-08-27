@@ -26,9 +26,15 @@
  * where it was *and* the choice must move it. Asserting only the first is a rule a dead control keeps
  * best of all.
  *
- * **What this does not settle.** If a real chooser announces a choice when a person cancels, the value
- * it announces decides whether the distinction above is enough, and no runner knows what that is. That
- * half waits for a person; it is not deduced here.
+ * **What a person reported, and what it settles.** Leaving the platform's chooser by pressing
+ * somewhere outside it **counts as choosing**: the colour under the pointer is taken. So that way out
+ * is a confirmation and arrives as one, which is the half this file already holds — a choice
+ * announced once becomes the value.
+ *
+ * **What it does not settle.** The chooser's own *cancel* is a different way out, and what it
+ * announces — nothing, or a choice carrying the value the field started with — is still unmeasured.
+ * No runner opens that window, so that half waits for a person rather than being deduced. If it
+ * announces a choice carrying the dragged colour, the distinction this file holds is not enough.
  *
  * Claims under attack: UI-005.
  */

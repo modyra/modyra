@@ -205,3 +205,18 @@ aprire. Se il selettore vero, all'annullamento, riscrive il valore di partenza, 
 non lo riscrive, non c'è niente da cui tornare indietro.
 
 **Come riferire.** Il colore prima, il colore dopo l'annullamento, e quale delle tre piattaforme.
+
+### Metà risposta, e da chi possiede il prodotto
+
+Una persona ha riferito che **uscire dal selettore premendo fuori conta come scegliere**: il colore
+sotto il puntatore viene preso.
+
+Quindi quella via d'uscita è una **conferma**, e arriva come tale — che è la metà che la verifica già
+tiene.
+
+**Resta l'altra metà, e la domanda si stringe:** il comando *annulla* del selettore è una via d'uscita
+diversa. Annuncia qualcosa? E se sì, con quale colore — quello su cui si stava trascinando, o quello
+che il campo aveva prima di aprire?
+
+Se annuncia una scelta che porta il colore trascinato, la distinzione fra *un passo del trascinamento*
+e *una scelta* non basta, e la riparazione va rifatta.
