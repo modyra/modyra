@@ -111,11 +111,22 @@ export function transitionsFrom(
  * a range steps it, one with two states toggles, one with an overlay opens and closes it. Declaring
  * that per kind is what stops the answer from being the same everywhere.
  */
+/**
+ * A binding that answers *any* printable character rather than one named key.
+ *
+ * Type-ahead is the gesture every list has and no single key names: typing `r` moves to the first
+ * option beginning with r. Declared as a key it would have to pick one letter and mean all of them —
+ * a table that says one thing and intends another, which a tool reads literally and a person reads
+ * charitably. This is the key field admitting it has no key.
+ */
+export const MDY_ANY_PRINTABLE_KEY = "*printable*";
+
 export interface MdyKeyBinding {
+  /** A named key, or {@link MDY_ANY_PRINTABLE_KEY} where the gesture is "type a character". */
   readonly key: string;
   /** Only when the overlay is showing, only when it is not, or either way. */
   readonly when?: MdyOverlayPhase;
-  readonly intent: "move" | "step" | "toggle" | "open" | "commit" | "cancel" | "reorder" | "remove" | "grab" | "undo";
+  readonly intent: "move" | "step" | "toggle" | "open" | "commit" | "cancel" | "reorder" | "remove" | "grab" | "undo" | "typeahead";
   /**
    * Which way a `reorder` goes: `-1` earlier in the value, `1` later.
    *
@@ -373,6 +384,29 @@ function keyboardFor(kind: MdyWidgetKind): readonly MdyKeyBinding[] {
     bindings.push({ key: "z", modifier: "primary", intent: "undo", awaits: "wayBack" });
   }
   if (TOGGLES.includes(kind)) bindings.push({ key: " ", intent: "toggle" });
+  // Type-ahead, where the kind holds a list of options to jump within.
+  //
+  // All three renderers implement it and none declared it, so a check counting what a renderer
+  // claims against what the contract says reported it as a renderer doing more than it was asked.
+  // It was the contract doing less: the gesture is what every list on every platform answers to, and
+  // a person who types `r` expects to land on an option beginning with r.
+  //
+  // Declared with the key that says it has no key, rather than picking a letter to stand for the
+  // alphabet. And `when: "open"` for the overlay kinds: a character typed at a closed control opens
+  // nothing here — what it does is the platform's business, not this contract's.
+  //
+  // Only where the kind holds a *list of named choices*, which is narrower than "navigates options":
+  // a calendar walks its cells with the arrows and has nothing to type at — a date is not a word, and
+  // typing `a` at a grid of numbers should reach the platform rather than be swallowed.
+  //
+  // Keyed on the part that *is* the list rather than on a role: the two kinds that have one give it
+  // different roles — a listbox where choices are exclusive, a group where they are not — so a role
+  // test covers one and misses the other while looking like it covers both.
+  const hasLabelledOptions = MDY_WIDGET_CONTRACTS[kind].structure.nodes
+    .some((node) => node.part === "options");
+  if (hasLabelledOptions) {
+    bindings.push({ key: MDY_ANY_PRINTABLE_KEY, ...(overlay ? { when: "open" as const } : {}), intent: "typeahead" });
+  }
 
   return Object.freeze(bindings);
 }
@@ -413,8 +447,21 @@ export function keyBindingFor(
   // opener answers a control-level question, and one declared on any other part does not: a chip's
   // keys stay the chip's, which is what keeps one key from meaning two things in one place.
   const opener = on === undefined ? MDY_POPUP_OPENERS[kind]?.opener : undefined;
+  /**
+   * Whether this binding answers this key.
+   *
+   * A named key matches itself. {@link MDY_ANY_PRINTABLE_KEY} matches any single character a person
+   * can type — which is what the type-ahead gesture is, and what no named key could stand for.
+   *
+   * A named key wins where both could answer, because `find` returns the first and the printable
+   * binding is pushed last: a kind that one day declares a letter for something of its own keeps it,
+   * and type-ahead takes the rest.
+   */
+  const answers = (binding: MdyKeyBinding): boolean =>
+    binding.key === key
+    || (binding.key === MDY_ANY_PRINTABLE_KEY && [...key].length === 1 && key !== " ");
   return MDY_WIDGET_KEYBOARD[kind].find(
-    (binding) => binding.key === key
+    (binding) => answers(binding)
       && (binding.when === undefined || binding.when === phase)
       && ((binding.on ?? undefined) === on || (opener !== undefined && binding.on === opener)),
   ) ?? null;

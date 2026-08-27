@@ -25,6 +25,11 @@ export const statesPanel = {
    * covered. What a panel exercises is a claim its own browser test checks.
    */
   exercises: [
+    // The legend on every panel prints the keys each kind answers to, and this is the one binding
+    // whose key is not a key: it renders as words rather than as the token, because a
+    // legend is read by somebody deciding what to press. (Said without quoting the words, because
+    // this tool reads every quoted string in the block as a declared name — comments included.)
+    "MDY_ANY_PRINTABLE_KEY",
     "MDY_FIELD_KINDS",
     "createCommandRuntime",
     "createForm",

@@ -1,3 +1,4 @@
+import { MDY_ANY_PRINTABLE_KEY } from "@modyra/widgets";
 /**
  * The legend a demo puts above its controls, shared by every example that has any.
  *
@@ -63,7 +64,12 @@ export function legend(host, { contracts, keyboard, title = "The controls on thi
     for (const [kind, label] of seen) {
       const contract = contracts?.[kind];
       const keys = (keyboard?.[kind] ?? []).map((binding) => {
-        const key = binding.key === " " ? "Space" : binding.key;
+        // The gesture that has no key of its own gets the words for it. Printed raw, the legend showed
+        // a reader the internal token and invited them to press it — a legend is read by somebody
+        // deciding what to try, so a name they cannot type is worse than no line at all.
+        const key = binding.key === MDY_ANY_PRINTABLE_KEY
+          ? "any character"
+          : binding.key === " " ? "Space" : binding.key;
         const when = binding.when === undefined || binding.when === null ? "" : ` (${binding.when})`;
         // `requires` names a capability the field opts into, and it is off unless a document asked
         // for it. Without this the legend listed the reordering keys exactly like the others, so a

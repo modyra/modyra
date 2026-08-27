@@ -21,6 +21,13 @@ export type MdyWidgetKeyIntent =
   /** Take off whatever holds focus. */
   | { readonly type: "remove" }
   /**
+   * A printable character typed at a list: jump to the first option that begins with it.
+   *
+   * Carries the character rather than a target, because which option it lands on depends on the
+   * labels — and the labels are the renderer's, not this layer's.
+   */
+  | { readonly type: "typeahead"; readonly character: string }
+  /**
    * Pick up whatever holds focus, or put it down — one key, because it is one state seen from both
    * ends. What is held moves with the bare arrows and goes back where it was on `Escape`.
    */
@@ -46,6 +53,11 @@ export function widgetKeyIntent(kind: MdyWidgetKind, key: string, open: boolean)
     case "open": return { type: "open" };
     case "commit": return { type: "commit" };
     case "undo": return { type: "undo" };
+    // The gesture is declared, and what to *do* with the character is the renderer's: which option a
+    // sequence of letters lands on depends on the labels, which this layer does not hold. Answering
+    // null here would say the key is unclaimed and let it fall through to the platform, which is the
+    // opposite of what the declaration means.
+    case "typeahead": return { type: "typeahead", character: key };
     case "toggle": return { type: "toggle" };
     case "step":
       return key === "ArrowUp" ? { type: "increment" } : { type: "decrement" };

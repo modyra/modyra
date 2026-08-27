@@ -1860,6 +1860,7 @@
       },
       "variants": {},
       "keyboard": [
+        "*printable*@open:typeahead",
         "ArrowDown@closed:open",
         "ArrowDown@open:move",
         "ArrowUp@closed:open",
@@ -2335,6 +2336,7 @@
         }
       },
       "keyboard": [
+        "*printable*@open:typeahead",
         "ArrowDown@closed:open",
         "ArrowDown@closed:step",
         "ArrowDown@open:move",

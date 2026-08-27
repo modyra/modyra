@@ -17,7 +17,7 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import { readFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
-import { MDY_WIDGET_CONTRACTS, MDY_WIDGET_KINDS } from "../dist/index.js";
+import { MDY_WIDGET_CONTRACTS, MDY_WIDGET_KINDS, MDY_ANY_PRINTABLE_KEY, widgetKeyIntent } from "../dist/index.js";
 
 const SHEET = readFileSync(
   resolve(dirname(new URL(import.meta.url).pathname), "../../styles/src/modyra.css"), "utf8");
@@ -112,5 +112,36 @@ test("the parts that hold a value inside a container are inside one box, not sev
     const boxes = definition.structure.nodes.filter((node) =>
       (definition.parts[node.part]?.classes ?? []).includes("mdy-input-wrapper"));
     assert.equal(boxes.length, 1, `${kind} draws ${boxes.length} boxes for one value`);
+  }
+});
+
+/**
+ * The gesture that has no key, and the two things that keeps honest.
+ *
+ * Type-ahead is what every list answers to and no single key names. Declared as a letter it would
+ * have to pick one and mean all of them — a table saying one thing and intending another, which a
+ * tool reads literally and a person reads charitably. `MDY_ANY_PRINTABLE_KEY` is the key field
+ * admitting it has no key.
+ */
+test(`a printable character (${MDY_ANY_PRINTABLE_KEY}) reaches the list, and nothing else does`, () => {
+  // Where it is owed: a list of named choices, open.
+  assert.deepEqual(widgetKeyIntent("select", "a", true), { type: "typeahead", character: "a" });
+  assert.deepEqual(widgetKeyIntent("multiselect", "r", true), { type: "typeahead", character: "r" });
+  // Any character, not the Latin alphabet: a person types in their own script.
+  assert.equal(widgetKeyIntent("select", "à", true)?.type, "typeahead");
+
+  // And the perimeter, which is what stops the binding swallowing keys it was not given.
+  // A named key still wins — the printable binding is last, and `find` returns the first.
+  assert.equal(widgetKeyIntent("select", "Escape", true)?.type, "cancel");
+  // Space is a gesture of its own everywhere it appears, never a character to search with.
+  assert.equal(widgetKeyIntent("select", " ", true), null);
+  // A closed list has nothing to jump within.
+  assert.equal(widgetKeyIntent("select", "a", false), null);
+  // A calendar walks cells with the arrows and has nothing to type at: a date is not a word, and a
+  // character typed there should reach the platform rather than be swallowed.
+  assert.equal(widgetKeyIntent("datepicker", "a", true), null);
+  // A field a person types into must never have its characters claimed.
+  for (const kind of ["text", "textarea", "number", "slider"]) {
+    assert.equal(widgetKeyIntent(kind, "a", false), null, `${kind} claims a printable character`);
   }
 });

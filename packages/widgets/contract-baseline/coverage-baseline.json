@@ -1,9 +1,9 @@
 {
   "note": "Public names not yet asserted or not yet shown. The list may only get shorter.",
   "score": {
-    "published": 861,
-    "asserted": 605,
-    "shown": 96
+    "published": 862,
+    "asserted": 606,
+    "shown": 97
   },
   "uncovered": [
     {
