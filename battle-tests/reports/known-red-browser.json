@@ -4,15 +4,15 @@
   "recordedAt": "2026-08-27",
   "openReds": 10,
   "bySeverity": {
-    "S1": 9,
+    "S1": 10,
     "S2": 1
   },
   "knownRed": [
     "a-description-that-belongs-to-another-form.spec.ts › a reference made in one form lands in that form, angular",
+    "a-field-called-wrong-before-anyone-touched-it.spec.ts › a field nobody has touched is not announced as wrong, plain",
     "a-parent-the-contract-named.spec.ts › every part sits inside the part the contract names, plain",
     "a-row-system-three-renderers-disagree-about.spec.ts › a kind is inside the row system in every renderer, or outside it in every renderer",
     "a-row-system-three-renderers-disagree-about.spec.ts › a kind is the same height in every renderer",
-    "a-state-only-a-reader-is-told-about.spec.ts › a state a person must know about is one they can see, plain",
     "a-swatch-that-covers-the-box-beside-it.spec.ts › a press meant for the hex box reaches it, angular",
     "a-swatch-that-covers-the-box-beside-it.spec.ts › a press meant for the hex box reaches it, lit",
     "one-document-two-spellings-of-a-date.spec.ts › one document is one date on the screen, whoever drew it",
