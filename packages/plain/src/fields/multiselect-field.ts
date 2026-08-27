@@ -43,6 +43,7 @@ import { applyPart, el, setErrors, setText, setIcon } from "../dom.js";
 import { buildFieldShell, insertControl } from "../field-shell.js";
 import { withControls, type MdyMountedField } from "../field-controls.js";
 import { runCommands } from "../command-runtime.js";
+import { dismissOnFocusOutside } from "../overlay.js";
 import { dismissOnOutsidePointer, positionOverlay, releaseOverlayPlacement, reflectOverlayOpen, trackOverlay } from "../overlay.js";
 
 export function renderMultiselectField(
@@ -975,6 +976,12 @@ export function renderMultiselectField(
     () => controller.state().open,
     () => dispatch({ type: "close", restoreFocus: false }),
   );
+  // The other half of how this kind says it is dismissed. A list left open behind a field somebody
+  // has tabbed away from covers the next question and answers to a keyboard that has gone.
+  const unfocusout = dismissOnFocusOutside("multiselect", [shell.root, popup],
+    () => controller.state().open,
+    () => dispatch({ type: "close", restoreFocus: false }),
+    { pointer: undismiss, markVisited: () => handle.markAsTouched() });
   const untrack = trackOverlay(popup, shell.wrapper, () => controller.state().open, anchoring);
 
   const effectRef = reactivity.effect(() => {
@@ -1145,6 +1152,7 @@ export function renderMultiselectField(
   return withControls(
     () => {
     undismiss();
+    unfocusout();
     untrack();
     effectRef.destroy();
     controller.destroy();

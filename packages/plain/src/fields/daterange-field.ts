@@ -25,6 +25,7 @@ import { applySubmissionNames,
 import { applyPart, el, setErrors, setText, setIcon } from "../dom.js";
 import { buildFieldShell, insertControl } from "../field-shell.js";
 import { withControls, type MdyMountedField } from "../field-controls.js";
+import { dismissOnFocusOutside } from "../overlay.js";
 import { dismissOnOutsidePointer, positionOverlay, releaseOverlayPlacement, reflectOverlayOpen, trackOverlay } from "../overlay.js";
 import { buildCalendarGrid, fillCalendar } from "./calendar.js";
 
@@ -184,6 +185,12 @@ export function renderDaterangeField(
   wrapper.addEventListener("keydown", onEscape);
 
   const undismiss = dismissOnOutsidePointer([wrapper], () => controller.state().open, () => dispatch({ type: "cancel" }));
+  // The other half of how this kind says it is dismissed. A calendar left open behind a field
+  // somebody has tabbed away from covers the next question and answers to a keyboard that has gone.
+  const unfocusout = dismissOnFocusOutside("daterange", [wrapper, shell.root, popup],
+    () => controller.state().open,
+    () => dispatch({ type: "cancel" }),
+    { pointer: undismiss, markVisited: () => handle.markAsTouched() });
 
   let cellEls: ReadonlyMap<string, HTMLButtonElement> = new Map();
   let renderedMonth = "";
@@ -346,6 +353,7 @@ export function renderDaterangeField(
     () => {
     untrack();
     undismiss();
+    unfocusout();
     controller.destroy();
     effectRef.destroy();
     shell.root.remove();

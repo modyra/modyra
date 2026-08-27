@@ -46,6 +46,7 @@ import { applySubmissionNames,
 import { runCommands } from "../command-runtime.js";
 import { applyPart, el, setErrors, setIcon, setText } from "../dom.js";
 import { buildFieldShell, insertControl } from "../field-shell.js";
+import { dismissOnFocusOutside } from "../overlay.js";
 import { dismissOnOutsidePointer, positionOverlay, reflectOverlayOpen, releaseOverlayPlacement, trackOverlay } from "../overlay.js";
 
 export function renderTimepickerField(
@@ -516,6 +517,12 @@ export function renderTimepickerField(
     () => controller.state().open,
     () => dispatch({ type: "close", restoreFocus: false }),
   );
+  // The other half of how this kind says it is dismissed. A dial left open behind a field somebody
+  // has tabbed away from covers the next question and answers to a keyboard that has gone.
+  const unfocusout = dismissOnFocusOutside("timepicker", [wrapper, shell.root, dialog],
+    () => controller.state().open,
+    () => dispatch({ type: "close", restoreFocus: false }),
+    { pointer: undismiss, markVisited: () => handle.markAsTouched() });
 
   const untrack = trackOverlay(dialog, shell.wrapper, () => controller.state().open, anchoring);
 
@@ -643,6 +650,7 @@ export function renderTimepickerField(
   return () => {
     untrack();
     undismiss();
+    unfocusout();
     effectRef.destroy();
     controller.destroy();
     shell.root.remove();

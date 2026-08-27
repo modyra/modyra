@@ -25,6 +25,7 @@ import { applySubmissionNames,
 } from "@modyra/widgets";
 import { applyPart, el, setErrors, setIcon, setText } from "../dom.js";
 import { buildFieldShell, insertControl } from "../field-shell.js";
+import { dismissOnFocusOutside } from "../overlay.js";
 import { dismissOnOutsidePointer, positionOverlay, reflectOverlayOpen, trackOverlay } from "../overlay.js";
 
 
@@ -368,9 +369,16 @@ export function renderColorsField(
 
   const untrack = trackOverlay(popup, shell.wrapper, () => open(), anchoring);
   const undismiss = dismissOnOutsidePointer([wrapper, popup], () => open(), () => open.set(false));
+  // The other half of how this kind says it is dismissed. A palette left open behind a field
+  // somebody has tabbed away from covers the next question and answers to a keyboard that has gone.
+  const unfocusout = dismissOnFocusOutside("colors", [wrapper, shell.root, popup],
+    () => open(),
+    () => open.set(false),
+    { pointer: undismiss, markVisited: () => handle.markAsTouched() });
 
   return () => {
     undismiss();
+    unfocusout();
     untrack();
     effectRef.destroy();
     shell.root.remove();

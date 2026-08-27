@@ -28,6 +28,7 @@ import { buildFieldShell, insertControl } from "../field-shell.js";
 import { withControls, type MdyMountedField } from "../field-controls.js";
 import { buildCalendarGrid, fillCalendar } from "./calendar.js";
 import { runCommands } from "../command-runtime.js";
+import { dismissOnFocusOutside } from "../overlay.js";
 import { dismissOnOutsidePointer, positionOverlay, releaseOverlayPlacement, reflectOverlayOpen, trackOverlay } from "../overlay.js";
 
 export function renderDatepickerField(
@@ -227,6 +228,12 @@ export function renderDatepickerField(
     () => controller.state().open,
     () => dispatch({ type: "close", restoreFocus: false }),
   );
+  // The other half of how this kind says it is dismissed. A calendar left open behind a field
+  // somebody has tabbed away from covers the next question and answers to a keyboard that has gone.
+  const unfocusout = dismissOnFocusOutside("datepicker", [wrapper, shell.root, popup],
+    () => controller.state().open,
+    () => dispatch({ type: "close", restoreFocus: false }),
+    { pointer: undismiss, markVisited: () => handle.markAsTouched() });
 
   const untrack = trackOverlay(popup, shell.wrapper, () => controller.state().open, anchoring);
 
@@ -334,6 +341,7 @@ export function renderDatepickerField(
     () => {
     untrack();
     undismiss();
+    unfocusout();
     effectRef.destroy();
     controller.destroy();
     shell.root.remove();
