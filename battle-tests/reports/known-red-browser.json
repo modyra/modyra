@@ -2,15 +2,16 @@
   "note": "Browser specs that are red because the defect they describe is open. A red listed here does not fail a build; a red that is not listed is a regression. Rewrite with `npm run battle:browser:ci -- --accept`.",
   "order": "Repair in severity order, as the node tier does. A spec's severity is the worst of the claims its header names; `unknown` is a spec that names none, which is most of them.",
   "recordedAt": "2026-08-27",
-  "openReds": 6,
+  "openReds": 7,
   "bySeverity": {
     "S1": 3,
-    "S2": 3
+    "S2": 4
   },
   "knownRed": [
     "a-capability-declared-and-demanded-by-nobody.spec.ts › an overlay dismisses the way its kind declares, angular",
     "a-capability-declared-and-demanded-by-nobody.spec.ts › an overlay dismisses the way its kind declares, lit",
     "a-capability-declared-and-demanded-by-nobody.spec.ts › an overlay dismisses the way its kind declares, plain",
+    "a-panel-anchored-the-way-it-declares.spec.ts › a panel is anchored the way its kind declares, angular",
     "a-row-system-three-renderers-disagree-about.spec.ts › a kind is inside the row system in every renderer, or outside it in every renderer",
     "a-row-system-three-renderers-disagree-about.spec.ts › a kind is the same height in every renderer",
     "one-document-two-spellings-of-a-date.spec.ts › one document is one date on the screen, whoever drew it"
