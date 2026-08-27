@@ -135,6 +135,14 @@ export interface MdyKeyBinding {
    * renderer that read the key would have to know that; reading the direction, it does not.
    */
   readonly by?: -1 | 1;
+  /**
+   * Move by a *page* rather than by one place: the next month of a calendar, not the next day.
+   *
+   * Separate from `by` rather than a third value in it, because the two compose — a page key carries
+   * a direction like any other movement, and a reader asking "which way" gets the same answer from
+   * both kinds of move.
+   */
+  readonly page?: boolean;
   /** Whether a `move` goes as far as it can rather than one place — `Home` and `End`. */
   readonly toEnd?: boolean;
   /**
@@ -280,6 +288,19 @@ function keyboardFor(kind: MdyWidgetKind): readonly MdyKeyBinding[] {
     if (!MDY_POPUP_OPENERS[kind]?.typeable) {
       bindings.push({ key: " ", when: "closed", intent: "open", ...from });
     }
+  }
+  // Turning the page of a calendar: `PageDown` to the next month, `PageUp` to the one before.
+  //
+  // All three renderers do it and none was asked to. An adapter written from the contract alone
+  // shipped a calendar that could not leave the month it opened on — the arrows walk within a month
+  // and step across its edge one day at a time, which is a long way to reach next March.
+  //
+  // Keyed on the kind having a `grid`, which is what a month *is*: a calendar has one and a list does
+  // not, so a page key means something here and nothing there.
+  const turnsAPage = MDY_WIDGET_CONTRACTS[kind].structure.nodes.some((node) => node.part === "grid");
+  if (turnsAPage) {
+    bindings.push({ key: "PageDown", when: "open", intent: "move", by: 1, page: true });
+    bindings.push({ key: "PageUp", when: "open", intent: "move", by: -1, page: true });
   }
   if (NAVIGATES_OPTIONS.includes(kind)) {
     for (const key of ["ArrowDown", "ArrowUp"]) {

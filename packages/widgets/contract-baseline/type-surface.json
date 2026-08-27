@@ -1728,6 +1728,7 @@
     "key: string",
     "modifier?: \"primary\"",
     "on?: string",
+    "page?: boolean",
     "requires?: string",
     "restoresFocus?: boolean",
     "toEnd?: boolean",
@@ -4149,7 +4150,7 @@
     "-> returns: readonly string[]"
   ],
   "multiselectOverlayAction": [
-    "(0) input: { readonly key: string; readonly open: boolean; readonly query: string; readonly activeKey: string | null; }",
+    "(0) input: { readonly key: string; readonly open: boolean; /** * What the search box holds, where the kind has one. * * Still required though nothing reads it today: it is a fact about the moment that a policy * deciding what a key means may need again, every caller already passes it, and making it optional * would move the published surface for no gain. It stopped being read when Backspace stopped * answering with a no-op. */ readonly query: string; readonly activeKey: string | null; }",
     "-> returns: MdyMultiselectOverlayAction | null"
   ],
   "multiselectValueTransition": [

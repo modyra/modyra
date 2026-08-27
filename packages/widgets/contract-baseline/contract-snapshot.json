@@ -2684,6 +2684,8 @@
         "Enter@open:commit",
         "Escape@open:cancel",
         "Home@open:move",
+        "PageDown@open:move",
+        "PageUp@open:move",
         "Tab@open:cancel"
       ]
     },
@@ -3038,6 +3040,8 @@
         "Enter@open:commit",
         "Escape@open:cancel",
         "Home@open:move",
+        "PageDown@open:move",
+        "PageUp@open:move",
         "Space@closed:open",
         "Tab@open:cancel"
       ]
