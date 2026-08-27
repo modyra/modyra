@@ -10,6 +10,7 @@
  * can ask both renderers the same question.
  */
 import { MDY_LAYOUT_CLASSES, layoutNodeAttributes } from "@modyra/widgets";
+import { assertLayoutWithinDepth } from "@modyra/core";
 import { parseDynamicForm, assertSafeDynamicFieldNames, buildDynamicFieldValidators, createLitForm, field, mdyEmptyValueFor, parseDynamicFields } from "@modyra/lit/adapter";
 import { defineMdyElements, mdyLitTagFor } from "@modyra/lit/ui";
 import { documentProbes } from "./document-probes.mjs";
@@ -141,6 +142,10 @@ window.battleLit = {
           buildLayout(node.children, group);
         }
       };
+      // The package publishes the depth rule and the check that applies it. This host is the door for
+      // Lit, and a door that does not refuse what the contract refuses measures its own permissiveness
+      // rather than the library's.
+      assertLayoutWithinDepth(options.layout ?? []);
       buildLayout(options.layout, host);
 
       for (const declared of parsed) {

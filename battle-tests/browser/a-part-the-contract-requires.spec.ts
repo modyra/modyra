@@ -83,7 +83,7 @@ test("the contract declares the trigger mandatory, in the half of it that says s
   //
   // Every declared part has a structure node and every node a part: the two counts are the same
   // number, which is what makes this one number able to describe the whole anatomy.
-  expect(nodes.length, "the contract moved; the counts in this spec describe a different surface").toBe(263);
+  expect(nodes.length, "the contract moved; the counts in this spec describe a different surface").toBe(264);
 
   // Optionality is where the contract keeps it: on the structure node, not on the part record. Every
   // node has it, so a part that does not say `optional: true` is one the contract requires.
