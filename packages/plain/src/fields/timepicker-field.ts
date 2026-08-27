@@ -19,7 +19,6 @@ import { applySubmissionNames,
   overlayAnchoringFor,
   overlayControlledId,
   visibleErrorsOf,
-  showsAsInvalid,
   stepTimeField,
   timeFieldBounds,
   dialHandLength,
@@ -545,7 +544,10 @@ export function renderTimepickerField(
     // `entryUnreadable` directly kept announcing a control nobody could touch.
     handle.reportEntry(state.entryUnreadable ? messages.entryUnreadable : null);
     setErrors(shell.errorList, visibleErrorsOf(handle).map((e) => e.message));
-    control.setAttribute("aria-invalid", String(showsAsInvalid({ valid: handle.valid(), disabled: handle.disabled() })));
+    // The same question the projection already answered. Asked as *is this field invalid* it is true
+    // from the moment a required field is drawn empty, so the control announced a refusal about a
+    // rule nobody had been given a turn at — over the contract's own answer, which said otherwise.
+    control.setAttribute("aria-invalid", String(visibleErrorsOf(handle, "timepicker").length > 0));
     shell.syncState({
       open: state.open,
       touched: handle.touched(), disabled: handle.disabled(), readonly: handle.readonly(),

@@ -288,7 +288,12 @@ export function renderSelectField(
     // renderer that told it only about `disabled` left a read-only select refusing every change and
     // saying nothing about it.
     controller.setReadonly(handle.readonly());
-    controller.setInvalid(showsAsInvalid({ valid: handle.valid(), disabled: handle.disabled() }));
+    // The same question the projection already answered, asked the same way. Asked as *is this field
+    // invalid* it is true from the moment a required field is drawn empty, so a control announced a
+    // refusal about a rule nobody had been given a turn at — and the renderer's own write landed on
+    // top of the contract's, which had said the opposite correctly. Two answers to one question, and
+    // the later one wins.
+    controller.setInvalid(visibleErrorsOf(handle, "select").length > 0);
     // The trigger describes itself by whichever of the two is on screen, and this renderer is what
     // decides that: the error list appears once the field is touched and has something to say.
     const errorsShown = handle.touched() && shownErrorsOf(handle).length > 0;

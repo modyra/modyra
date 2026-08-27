@@ -72,7 +72,7 @@ export function createFileFieldController<TFile extends MdyFileCandidate>(
       kind: "file",
       // What is shown, not what is wrong: `aria-invalid` and the error list answer one question, and
       // a rule nobody has answered yet is not news until the person has been at the field.
-      errorsVisible: errorsVisible({ disabled: current.disabled, touched: current.touched, holdsUnedited: holdsUneditedValue(current) }, handle.errors()),
+      errorsVisible: errorsVisible({ disabled: current.disabled, touched: current.touched, holdsUnedited: holdsUneditedValue(current, "file") }, handle.errors()),
     });
     const definition = MDY_WIDGET_CONTRACTS.file;
     return {

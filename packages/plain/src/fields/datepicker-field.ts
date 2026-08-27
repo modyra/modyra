@@ -13,7 +13,6 @@ import { applySubmissionNames,
   createDatepickerFieldController,
   overlayAnchoringFor,
   visibleErrorsOf,
-  showsAsInvalid,
   type MdyElementLookup,
   partClasses,
   projectCalendarPeriodCellA11y,
@@ -252,7 +251,12 @@ export function renderDatepickerField(
     // `entryUnreadable` directly kept announcing a control nobody could touch.
     handle.reportEntry(state.entryUnreadable ? messages.entryUnreadable : null);
     setErrors(shell.errorList, visibleErrorsOf(handle).map((e) => e.message));
-    control.setAttribute("aria-invalid", String(showsAsInvalid({ valid: handle.valid(), disabled: handle.disabled() })));
+    // The same question the projection already answered, asked the same way. Asked as *is this field
+    // invalid* it is true from the moment a required field is drawn empty, so a control announced a
+    // refusal about a rule nobody had been given a turn at — and the renderer's own write landed on
+    // top of the contract's, which had said the opposite correctly. Two answers to one question, and
+    // the later one wins.
+    control.setAttribute("aria-invalid", String(visibleErrorsOf(handle, "datepicker").length > 0));
     shell.syncState({
       open: state.open,
       touched: handle.touched(), disabled: handle.disabled(), readonly: handle.readonly(),
