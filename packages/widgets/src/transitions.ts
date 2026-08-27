@@ -392,8 +392,14 @@ function keyboardFor(kind: MdyWidgetKind): readonly MdyKeyBinding[] {
   // a person who types `r` expects to land on an option beginning with r.
   //
   // Declared with the key that says it has no key, rather than picking a letter to stand for the
-  // alphabet. And `when: "open"` for the overlay kinds: a character typed at a closed control opens
-  // nothing here — what it does is the platform's business, not this contract's.
+  // alphabet.
+  //
+  // **Both phases where one choice is held, open only where several are.** A closed single-choice
+  // control answers a letter by moving to that option — every native `<select>` does it, and so does
+  // the framework-free renderer — so restricting the binding to the open phase said the gesture was
+  // not owed at a control that has always offered it. Where several choices are held there is no
+  // "the" choice for a letter to move, and the strip has its own use for keys, so it stays open-only
+  // until something measures otherwise.
   //
   // Only where the kind holds a *list of named choices*, which is narrower than "navigates options":
   // a calendar walks its cells with the arrows and has nothing to type at — a date is not a word, and
@@ -405,7 +411,12 @@ function keyboardFor(kind: MdyWidgetKind): readonly MdyKeyBinding[] {
   const hasLabelledOptions = MDY_WIDGET_CONTRACTS[kind].structure.nodes
     .some((node) => node.part === "options");
   if (hasLabelledOptions) {
-    bindings.push({ key: MDY_ANY_PRINTABLE_KEY, ...(overlay ? { when: "open" as const } : {}), intent: "typeahead" });
+    const holdsOneChoice = !MDY_WIDGET_CONTRACTS[kind].structure.nodes.some((node) => node.part === "chips");
+    bindings.push({
+      key: MDY_ANY_PRINTABLE_KEY,
+      ...(overlay && !holdsOneChoice ? { when: "open" as const } : {}),
+      intent: "typeahead",
+    });
   }
 
   return Object.freeze(bindings);

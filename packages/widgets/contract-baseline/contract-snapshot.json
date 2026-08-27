@@ -1860,7 +1860,7 @@
       },
       "variants": {},
       "keyboard": [
-        "*printable*@open:typeahead",
+        "*printable*:typeahead",
         "ArrowDown@closed:open",
         "ArrowDown@open:move",
         "ArrowUp@closed:open",

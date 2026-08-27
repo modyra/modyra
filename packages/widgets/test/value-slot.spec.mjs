@@ -135,8 +135,11 @@ test(`a printable character (${MDY_ANY_PRINTABLE_KEY}) reaches the list, and not
   assert.equal(widgetKeyIntent("select", "Escape", true)?.type, "cancel");
   // Space is a gesture of its own everywhere it appears, never a character to search with.
   assert.equal(widgetKeyIntent("select", " ", true), null);
-  // A closed list has nothing to jump within.
-  assert.equal(widgetKeyIntent("select", "a", false), null);
+  // A closed single-choice control answers it too: a letter moves to that option without opening
+  // anything, which is what every native chooser does. Where several choices are held there is no
+  // "the" choice for a letter to move, so it stays open-only.
+  assert.equal(widgetKeyIntent("select", "a", false)?.type, "typeahead");
+  assert.equal(widgetKeyIntent("multiselect", "r", false), null);
   // A calendar walks cells with the arrows and has nothing to type at: a date is not a word, and a
   // character typed there should reach the platform rather than be swallowed.
   assert.equal(widgetKeyIntent("datepicker", "a", true), null);

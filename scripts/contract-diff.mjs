@@ -341,7 +341,27 @@ for (const kind of Object.keys(current.kinds).filter((k) => baseline.kinds[k])) 
     }
   }
 
+  /**
+   * A binding recorded as `Key@phase:intent`, with the phase absent where it answers in both.
+   *
+   * Dropping the phase *widens* a binding: a key that answered only while open now answers always,
+   * and nobody who relied on the open behaviour loses it. Compared as strings that reads as one
+   * binding removed and another added — a major and a minor for a change that takes nothing away.
+   *
+   * The disagreement is worth more than either verdict: the string comparison is right that the old
+   * spelling is gone, and wrong about what a consumer can survive. So the widening is recognised
+   * here rather than argued around at each call site.
+   */
+  const widens = (gone) => {
+    const [head, intent] = gone.split(":");
+    const [key] = head.split("@");
+    return head.includes("@") && now.keyboard.includes(`${key}:${intent}`);
+  };
   for (const gone of was.keyboard.filter((k) => !now.keyboard.includes(k))) {
+    if (widens(gone)) {
+      record("minor", kind, `key now answers in every phase: ${gone.split("@")[0]}`);
+      continue;
+    }
     record("major", kind, `key no longer declared: ${gone}`);
   }
   for (const added of now.keyboard.filter((k) => !was.keyboard.includes(k))) {
