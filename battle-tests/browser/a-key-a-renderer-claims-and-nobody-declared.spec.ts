@@ -15,7 +15,8 @@
  * Perimeter, because it is the whole meaning of a green:
  *
  *   keys pressed    the seventeen below, and only those
- *   state           the field at rest, its own control focused, caret at each end of it; nothing open
+ *   state           a field mounted fresh for every key, at rest, its own control focused, caret at
+ *                   each end of it; no key has been pressed into it before
  *   signal          `defaultPrevented`; a renderer that acts without claiming is invisible here
  *
  * Claims under attack: ADP-001, KBD-002.
@@ -43,65 +44,69 @@ test("a key a renderer claims and nobody declared", async ({ page }) => {
     await page.waitForFunction((flag) => (window as never as Record<string, boolean>)[flag] === true, host.ready);
 
     for (const kind of MDY_WIDGET_KINDS) {
-      const mountId = `key-${kind}`;
-      // The mount is awaited through its own promise: a host that renders asynchronously has not drawn
-      // a control at the moment the call returns, and a probe that reads too early reports an anatomy
-      // the renderer does not have.
-      await page.evaluate(
-        ({ door, id, k }) => (window as never as Api)[door].mountFields(id, [{
-          name: "campo", kind: k, label: "Etichetta",
-          options: [{ value: "a", label: "A" }, { value: "b", label: "B" }],
-        }] as never),
-        { door: host.api, id: mountId, k: kind },
-      );
-      await page.locator(`[data-form="${mountId}"]`).waitFor({ timeout: 5_000 }).catch(() => undefined);
-
-      const reached = await page.evaluate(
-        ({ id, k }) => {
-          const form = document.querySelector(`[data-form="${id}"]`);
-          const root = (form?.querySelector(`.mdy-renderer--${k}`) ?? form) as HTMLElement | null;
-          if (root === null) return false;
-
-          let control: HTMLElement | null = null;
-          for (const label of root.querySelectorAll<HTMLLabelElement>("label[for]")) {
-            const target = label.htmlFor ? document.getElementById(label.htmlFor) : null;
-            if (target !== null) { control = target; break; }
-          }
-          // A group labels itself rather than one control, so the first thing a Tab would land on is
-          // what a person actually types into.
-          control ??= [...root.querySelectorAll<HTMLElement>("*")].find((element) => element.tabIndex >= 0) ?? null;
-          if (control === null) return false;
-
-          const store = window as never as Record<string, unknown>;
-          store.__claimed = [];
-          store.__control = control;
-          // Every field mounted before this one is still on the page, and a claim made by one of them
-          // would otherwise be recorded against whichever kind is being measured now. The listener
-          // stays on the window, where `defaultPrevented` is final, and asks who the event was for.
-          const previous = store.__listener as ((event: KeyboardEvent) => void) | undefined;
-          if (previous) window.removeEventListener("keydown", previous);
-          const listener = (event: KeyboardEvent): void => {
-            const target = event.target;
-            if (!(target instanceof Node) || !root.contains(target)) return;
-            if (event.defaultPrevented) (store.__claimed as string[]).push(event.key);
-          };
-          store.__listener = listener;
-          window.addEventListener("keydown", listener);
-          control.focus();
-          return true;
-        },
-        { id: mountId, k: kind },
-      );
+      // One page per kind, and one freshly mounted field per key. Pressing seventeen keys into one
+      // field measures the first key at rest and the rest in whatever state its predecessors left:
+      // Enter opens a panel, and every key after it is answered by an open field. That made this
+      // report two claims on one run in three and none on the others, with nothing changing.
+      await page.goto(host.page);
+      await page.waitForFunction((flag) => (window as never as Record<string, boolean>)[flag] === true, host.ready);
 
       if (!claimed.has(kind)) claimed.set(kind, {});
-      if (!reached) { claimed.get(kind)![host.name] = null; continue; }
+      const taken = new Set<string>();
+      let reachable = false;
 
-      // Every key is pressed twice, once from each end of the control's text. A field made of
-      // segments answers ArrowLeft from inside a segment and not from its first character, so a run
-      // that leaves the caret where the last key dropped it claims the key on some runs and not on
-      // others while nothing has changed — and one that always starts from the same end never sees
-      // the claim at all.
-      for (const key of PRESSED) {
+      for (const [index, key] of PRESSED.entries()) {
+        const mountId = `key-${kind}-${index}`;
+        await page.evaluate(
+          ({ door, id, k }) => (window as never as Api)[door].mountFields(id, [{
+            name: "campo", kind: k, label: "Etichetta",
+            options: [{ value: "a", label: "A" }, { value: "b", label: "B" }],
+          }] as never),
+          { door: host.api, id: mountId, k: kind },
+        );
+        await page.locator(`[data-form="${mountId}"]`).waitFor({ timeout: 5_000 }).catch(() => undefined);
+
+        const reached = await page.evaluate(
+          ({ id, k }) => {
+            const form = document.querySelector(`[data-form="${id}"]`);
+            const root = (form?.querySelector(`.mdy-renderer--${k}`) ?? form) as HTMLElement | null;
+            if (root === null) return false;
+
+            let control: HTMLElement | null = null;
+            for (const label of root.querySelectorAll<HTMLLabelElement>("label[for]")) {
+              const target = label.htmlFor ? document.getElementById(label.htmlFor) : null;
+              if (target !== null) { control = target; break; }
+            }
+            // A group labels itself rather than one control, so the first thing a Tab would land on
+            // is what a person actually types into.
+            control ??= [...root.querySelectorAll<HTMLElement>("*")].find((element) => element.tabIndex >= 0) ?? null;
+            if (control === null) return false;
+
+            const store = window as never as Record<string, unknown>;
+            store.__claimed = [];
+            store.__control = control;
+            // Sixteen other fields are on this page. A claim made by one of them would otherwise be
+            // recorded against the kind being measured, so the listener asks who the event was for.
+            const previous = store.__listener as ((event: KeyboardEvent) => void) | undefined;
+            if (previous) window.removeEventListener("keydown", previous);
+            const listener = (event: KeyboardEvent): void => {
+              const target = event.target;
+              if (!(target instanceof Node) || !root.contains(target)) return;
+              if (event.defaultPrevented) (store.__claimed as string[]).push(event.key);
+            };
+            store.__listener = listener;
+            window.addEventListener("keydown", listener);
+            control.focus();
+            return true;
+          },
+          { id: mountId, k: kind },
+        );
+        if (!reached) continue;
+        reachable = true;
+
+        // Pressed from each end of the control's text: a field made of segments answers ArrowLeft
+        // from inside a segment and not from its first character, and a run that only ever starts
+        // from one end never sees the claim.
         for (const caret of ["start", "end"] as const) {
           await page.evaluate((where) => {
             const control = (window as never as Record<string, HTMLElement>).__control;
@@ -113,10 +118,12 @@ test("a key a renderer claims and nobody declared", async ({ page }) => {
           }, caret);
           await page.keyboard.press(key === " " ? "Space" : key);
         }
+        for (const seen of await page.evaluate(() => (window as never as Record<string, string[]>).__claimed)) {
+          taken.add(seen);
+        }
       }
-      claimed.get(kind)![host.name] = await page.evaluate(
-        () => [...new Set((window as never as Record<string, string[]>).__claimed)],
-      );
+
+      claimed.get(kind)![host.name] = reachable ? [...taken] : null;
     }
   }
 
