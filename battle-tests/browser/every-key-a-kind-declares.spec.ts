@@ -36,7 +36,7 @@
  */
 
 import { expect, test } from "@playwright/test";
-import { MDY_WIDGET_CONTRACTS as CONTRACTS, MDY_WIDGET_KEYBOARD } from "@modyra/widgets";
+import { MDY_ANY_PRINTABLE_KEY, MDY_WIDGET_CONTRACTS as CONTRACTS, MDY_WIDGET_KEYBOARD } from "@modyra/widgets";
 
 // **Every renderer, from the shared list.** The local list this replaced was not a scope
 // decision: the angular host published six of the twenty-two doors these specs need, so a
@@ -45,6 +45,17 @@ import { became, HOSTS, stops } from "./bench";
 
 /** Three, so "first", "next" and "last" are three different places to be. */
 const OPTIONS = [{ value: "a", label: "A" }, { value: "b", label: "B" }, { value: "c", label: "C" }];
+
+/**
+ * A binding may declare that it has no key: type-ahead answers *any* printable character, and the
+ * table says so with `MDY_ANY_PRINTABLE_KEY` rather than picking a letter to stand for the alphabet.
+ * Pressing the placeholder itself is what a spec does when it reads a declaration literally, and the
+ * page answers `Unknown key: "*printable*"`.
+ *
+ * `B` and not `A`: the reading position starts on the first option, so the letter that reaches where
+ * it already is changes nothing and reads as a binding that does not work.
+ */
+const A_PRINTABLE_CHARACTER = "b";
 
 /** Every kind that declares at least one binding, with its bindings. */
 const DECLARED = Object.entries(MDY_WIDGET_KEYBOARD)
@@ -391,7 +402,8 @@ for (const host of HOSTS) {
           // The gesture as it is declared, not the letter of it. A binding that names a modifier
           // names it because the bare key is a different gesture — often one the platform already
           // owns — so sending half of it presses something else and reports the half as dead.
-          const stroke = binding.key === " " ? "Space" : binding.key;
+          const stroke = binding.key === MDY_ANY_PRINTABLE_KEY ? A_PRINTABLE_CHARACTER
+            : binding.key === " " ? "Space" : binding.key;
           await page.keyboard.press(binding.modifier === "primary" ? `${PRIMARY}+${stroke}` : stroke);
           await showed(scope, before, 120);
           const after = await observe(scope);
