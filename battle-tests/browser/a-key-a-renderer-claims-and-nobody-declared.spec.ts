@@ -25,7 +25,7 @@
  * Claims under attack: ADP-001, KBD-002.
  */
 import { expect, test } from "@playwright/test";
-import { MDY_WIDGET_KINDS, keyBindingFor } from "@modyra/widgets";
+import { MDY_WIDGET_CONTRACTS, MDY_WIDGET_KINDS, keyBindingFor } from "@modyra/widgets";
 import { HOSTS } from "./bench";
 
 type Api = Record<string, Record<string, (...args: never[]) => unknown>>;
@@ -35,8 +35,35 @@ type Api = Record<string, Record<string, (...args: never[]) => unknown>>;
  * would call every letter undeclared while the contract declares them all. It also answers per phase:
  * the same key can be owed with the panel open and unowed with it closed.
  */
-const declares = (kind: string, key: string, open: boolean): boolean =>
-  (keyBindingFor as (k: string, key: string, open: boolean) => unknown)(kind, key, open) !== null;
+const resolve = keyBindingFor as (kind: string, key: string, open: boolean, on?: string) => { on?: string } | null;
+
+/**
+ * Asked at the control **and** where the key actually landed. A binding declared on a part is
+ * invisible from the control on purpose, so that one key can mean two things without either
+ * declaration shadowing the other — so a check that only asks the control reports a key declared on a
+ * chip as declared by nobody. Asking only the part is wrong the other way: a binding with no `on` is
+ * the control's, and it still answers when the key lands on a radio inside it.
+ */
+const declares = (kind: string, key: string, open: boolean, on: string | null): boolean =>
+  resolve(kind, key, open) !== null || (on !== null && resolve(kind, key, open, on) !== null);
+
+/**
+ * Where and when the contract does declare this key, so the message says what to compare against.
+ * The phase belongs in it: "claimed with the panel closed, declared on the control" reads as a
+ * contradiction when what it means is that the same key is owed only once the panel is open.
+ */
+const declaredOn = (kind: string, key: string): string[] => {
+  const parts = Object.keys((MDY_WIDGET_CONTRACTS as unknown as Record<string, { parts: Record<string, unknown> }>)[kind].parts);
+  return [undefined, ...parts].flatMap((part) => {
+    const phases = ([["open", true], ["closed", false]] as const).filter(([, open]) => resolve(kind, key, open, part) !== null);
+    return phases.length === 0 ? [] : [`${part ?? "the control"} when ${phases.map(([name]) => name).join(" or ")}`];
+  });
+};
+
+/** The parts of a kind, by class, so an element can say which part it is. */
+const partClassesOf = (kind: string): Record<string, string[]> => Object.fromEntries(
+  Object.entries((MDY_WIDGET_CONTRACTS as unknown as Record<string, { parts: Record<string, { classes: string[] }> }>)[kind].parts)
+    .map(([part, def]) => [part, def.classes ?? []]));
 
 const PRESSED = ["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "Home", "End", "PageUp", "PageDown",
   "Enter", " ", "Escape", "Backspace", "Delete", "a", "1", "+", "-"];
@@ -78,7 +105,7 @@ test("a key a renderer claims and nobody declared", async ({ page }) => {
         await page.locator(`[data-form="${mountId}"]`).waitFor({ timeout: 5_000 }).catch(() => undefined);
 
         const reached = await page.evaluate(
-          ({ id, k }) => {
+          ({ id, k, partClasses }) => {
             const form = document.querySelector(`[data-form="${id}"]`);
             const root = (form?.querySelector(`.mdy-renderer--${k}`) ?? form) as HTMLElement | null;
             if (root === null) return null;
@@ -100,17 +127,25 @@ test("a key a renderer claims and nobody declared", async ({ page }) => {
             // recorded against the kind being measured, so the listener asks who the event was for.
             const previous = store.__listener as ((event: KeyboardEvent) => void) | undefined;
             if (previous) window.removeEventListener("keydown", previous);
+            const partOf = (node: Node): string | null => {
+              for (let element = node instanceof Element ? node : node.parentElement; element !== null && element !== root.parentElement; element = element.parentElement) {
+                for (const [part, classes] of Object.entries(partClasses as Record<string, string[]>)) {
+                  if (classes.length > 0 && classes.every((one) => element!.classList.contains(one))) return part;
+                }
+              }
+              return null;
+            };
             const listener = (event: KeyboardEvent): void => {
               const target = event.target;
               if (!(target instanceof Node) || !root.contains(target)) return;
-              if (event.defaultPrevented) (store.__claimed as string[]).push(event.key);
+              if (event.defaultPrevented) (store.__claimed as string[]).push(`${event.key}\u0001${partOf(target) ?? ""}`);
             };
             store.__listener = listener;
             window.addEventListener("keydown", listener);
             control.focus();
             return root.querySelector('[aria-expanded="true"]') !== null;
           },
-          { id: mountId, k: kind },
+          { id: mountId, k: kind, partClasses: partClassesOf(kind) },
         );
         if (reached === null) continue;
         reachable = true;
@@ -151,9 +186,17 @@ test("a key a renderer claims and nobody declared", async ({ page }) => {
 
   const undeclared = [...claimed.entries()].flatMap(([kind, byHost]) =>
     HOSTS.flatMap((host) => (byHost[host.name] ?? [])
-      .map((record) => record.split("\u0000") as [string, string])
-      .filter(([key, open]) => !declares(kind, key, open === "true"))
-      .map(([key, open]) => `${kind} in ${host.name}: claims ${shown(key)} with the panel ${open === "true" ? "open" : "closed"}`)));
+      .map((record) => {
+        const [head, open] = record.split("\u0000");
+        const [key, part] = head.split("\u0001");
+        return { key, part: part === "" ? null : part, open: open === "true" };
+      })
+      .filter(({ key, open, part }) => !declares(kind, key, open, part))
+      .map(({ key, open, part }) => {
+        const elsewhere = declaredOn(kind, key);
+        return `${kind} in ${host.name}: claims ${shown(key)} at ${part ?? "no declared part"} with the panel ` +
+          `${open ? "open" : "closed"}${elsewhere.length > 0 ? `, declared on ${elsewhere.join(" and ")}` : ""}`;
+      })));
 
   expect(
     undeclared,
