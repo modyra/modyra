@@ -2,6 +2,7 @@
   "contractVersion": 5,
   "kinds": {
     "text": {
+      "valueSlot": "container",
       "parts": {
         "root": {
           "element": "root",
@@ -164,6 +165,7 @@
       "keyboard": []
     },
     "email": {
+      "valueSlot": "container",
       "parts": {
         "root": {
           "element": "root",
@@ -326,6 +328,7 @@
       "keyboard": []
     },
     "password": {
+      "valueSlot": "container",
       "parts": {
         "root": {
           "element": "root",
@@ -488,6 +491,7 @@
       "keyboard": []
     },
     "textarea": {
+      "valueSlot": "container",
       "parts": {
         "root": {
           "element": "root",
@@ -628,6 +632,7 @@
       "keyboard": []
     },
     "number": {
+      "valueSlot": "container",
       "parts": {
         "root": {
           "element": "root",
@@ -795,6 +800,7 @@
       ]
     },
     "slider": {
+      "valueSlot": "shape",
       "parts": {
         "root": {
           "element": "root",
@@ -947,6 +953,7 @@
       ]
     },
     "checkbox": {
+      "valueSlot": "shape",
       "parts": {
         "root": {
           "element": "root",
@@ -1089,6 +1096,7 @@
       ]
     },
     "toggle": {
+      "valueSlot": "shape",
       "parts": {
         "root": {
           "element": "root",
@@ -1249,6 +1257,7 @@
       ]
     },
     "radio": {
+      "valueSlot": "shape",
       "parts": {
         "root": {
           "element": "root",
@@ -1406,6 +1415,7 @@
       ]
     },
     "segmented": {
+      "valueSlot": "shape",
       "parts": {
         "root": {
           "element": "root",
@@ -1572,6 +1582,7 @@
       ]
     },
     "select": {
+      "valueSlot": "container",
       "parts": {
         "root": {
           "element": "root",
@@ -1859,6 +1870,7 @@
       ]
     },
     "multiselect": {
+      "valueSlot": "container",
       "parts": {
         "root": {
           "element": "root",
@@ -2344,6 +2356,7 @@
       ]
     },
     "datepicker": {
+      "valueSlot": "container",
       "parts": {
         "root": {
           "element": "root",
@@ -2669,6 +2682,7 @@
       ]
     },
     "daterange": {
+      "valueSlot": "container",
       "parts": {
         "root": {
           "element": "root",
@@ -3023,6 +3037,7 @@
       ]
     },
     "timepicker": {
+      "valueSlot": "container",
       "parts": {
         "root": {
           "element": "root",
@@ -3448,6 +3463,7 @@
       ]
     },
     "file": {
+      "valueSlot": "container",
       "parts": {
         "root": {
           "element": "root",
@@ -3632,6 +3648,7 @@
       "keyboard": []
     },
     "colors": {
+      "valueSlot": "container",
       "parts": {
         "root": {
           "element": "root",

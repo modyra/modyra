@@ -63,6 +63,10 @@ function snapshot() {
       };
     }
     kinds[kind] = {
+      // How the value is read, which decides whether the kind is drawn in a box. Public: a consumer
+      // theming a control reads it to know what to draw, and changing it changes what every renderer
+      // draws for that kind.
+      valueSlot: definition.valueSlot,
       parts,
       // Ordered as declared: a relation's `to` is a preference order, so reordering it changes
       // which element a reference resolves to and is not a cosmetic change.
@@ -217,6 +221,18 @@ if (heldShared === null) {
     for (const name of names) {
       if (!before.includes(name)) record("minor", `shared.${vocabulary}`, `class added: ${name}`);
     }
+  }
+}
+
+for (const [kind, held] of Object.entries(baseline.kinds)) {
+  const now = current.kinds[kind];
+  if (!now) continue;
+  if (held.valueSlot === undefined) {
+    record("minor", kind, `value slot now recorded: ${now.valueSlot}`);
+  } else if (held.valueSlot !== now.valueSlot) {
+    // Every renderer draws this kind differently afterwards, and a theme keyed on the box is drawing
+    // it for a control that no longer has one — or failing to for one that now does.
+    record("major", kind, `value slot changed: ${held.valueSlot} → ${now.valueSlot}`);
   }
 }
 

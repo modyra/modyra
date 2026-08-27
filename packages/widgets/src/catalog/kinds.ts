@@ -28,6 +28,39 @@ export type MdyWidgetKind = (typeof MDY_WIDGET_KINDS)[number];
  */
 export type MdyWidgetVariant = MdyMultiselectMode;
 
+/**
+ * How a kind's value is read, which is what decides whether it is drawn in a box.
+ *
+ * **Every field has one place where its value shows — its slot.** Read it by looking *inside* a
+ * surface and the field is a container: it gets the box, and it sits in the column with the others.
+ * Is the slot *itself* the value — a position, an on or an off — and there is nothing to look inside
+ * and no box. Everything around the slot is frame: buttons, openers, commands. Frame has no category.
+ *
+ * The test for which part is the slot is short: **take the part away — can the value still be seen?**
+ * If yes it was frame; if no it was the slot.
+ *
+ * **Decided by how the value is *read*, never by how it is *entered*.** Every hesitation about this
+ * table has turned out to be somebody looking at entry: a colour swatch is *pressed*, files arrive
+ * from another window, chips are *removed* one by one, a segmented row has *words* in it. None of
+ * that counts. A quantity with plus and minus reads like a container and is entered like a shape,
+ * and it is a container — by the rule rather than as an exception to it.
+ *
+ * Two consequences a renderer gets wrong without being told:
+ *
+ * - **an empty slot is still the slot.** A file field holding no file keeps its box, with words
+ *   inside saying there is nothing — otherwise the control changes shape at the first file;
+ * - **read-only does not remove the box.** A container that no longer takes writing is still a
+ *   container; that it is inert is said another way. Without its box it reads as ordinary text and
+ *   stops looking like a value of the form.
+ *
+ * Where a kind draws several boxes for one value — the two halves of a time, the segments of a date
+ * — the slot is the *set*, so there is one box with the parts inside it, not one box each.
+ *
+ * The one thing this does not decide: a control with two full slots, neither removable by any
+ * configuration, is showing its value twice. That is a fault in the control, not a case of the rule.
+ */
+export type MdyValueSlot = "container" | "shape";
+
 export interface MdyWidgetDefinition<TPart extends string = string> {
   readonly kind: MdyWidgetKind;
   readonly rootClasses: readonly string[];
@@ -66,6 +99,18 @@ export interface MdyWidgetDefinition<TPart extends string = string> {
    * The whole meaning of `password`, and the one fact that separates it from `text`.
    */
   readonly concealed?: boolean;
+  /**
+   * How this kind's value is read, which is what decides whether it is drawn in a box.
+   *
+   * `container` — the value shows inside a surface you look into, so the field carries the box and
+   * sits in the column with the others. `shape` — the slot *is* the value, a position or an on/off,
+   * so there is nothing to look inside and no box.
+   *
+   * Read, never entered: a quantity stepped with buttons is still read by looking at the number.
+   * Declared here so three renderers stop deciding it separately — the question sounds like a
+   * property of a control, and it is a property of the contract.
+   */
+  readonly valueSlot: MdyValueSlot;
   readonly capabilities: {
     /**
      * Whether this kind owns an overlay.

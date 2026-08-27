@@ -12,7 +12,7 @@ import type { MdyPartContract } from "../contract.js";
 import type { MdyStateName } from "../state.js";
 import { MDY_FIELD_SHELL_CLASSES, MDY_SHELL_PART_STATES } from "../structure.js";
 import type { MdyWidgetSemanticElement } from "../structure.js";
-import type { MdyWidgetDefinition, MdyWidgetKind, MdyWidgetVariant } from "./kinds.js";
+import type { MdyValueSlot, MdyWidgetDefinition, MdyWidgetKind, MdyWidgetVariant } from "./kinds.js";
 import { semanticElement } from "./semantics.js";
 
 function part(classes: readonly string[] = [], attributes: MdyPartContract["attributes"] = {}, states: readonly MdyStateName[] = [], role?: string): MdyPartContract {
@@ -407,6 +407,31 @@ export const MDY_POPUP_OPENERS: Readonly<Partial<Record<MdyWidgetKind, MdyPopupO
  */
 const SCROLLING_OVERLAYS: readonly MdyWidgetKind[] = Object.freeze(["select", "multiselect"]);
 
+
+const VALUE_SLOTS: Readonly<Record<MdyWidgetKind, MdyValueSlot>> = Object.freeze({
+  text: "container", email: "container", password: "container", textarea: "container",
+  // The number reads by looking at it; the steppers beside it are frame.
+  number: "container",
+  // The thumb's position *is* the number, and a track is not a surface holding one.
+  slider: "shape",
+  // A tick and a switch have two states and their shape tells them apart.
+  checkbox: "shape", toggle: "shape",
+  // The words beside a dot are the option's label, not the value: the value is *which* is lit.
+  radio: "shape", segmented: "shape",
+  select: "container",
+  // Chips are how the content is written, not another nature of control — a word can be deleted out
+  // of a text box too, and that does not make a text box a shape.
+  multiselect: "container",
+  datepicker: "container", daterange: "container", timepicker: "container",
+  // The list is the slot, and a list is looked into. That the files arrive through another window is
+  // a fact about entry, exactly as a calendar is for a date.
+  file: "container",
+  // A filled square is not a switch: a switch has two states its shape distinguishes, and a tint has
+  // sixteen million that it does not. The colour is held inside a surface. Where a field is
+  // configured with presets and no hex box, that square is the only place the value shows.
+  colors: "container",
+});
+
 const ANCHORING: Readonly<Partial<Record<MdyWidgetKind, { matchAnchorWidth: boolean; minSpace: number; minWidth?: number; alignment?: "left" | "right" }>>> = Object.freeze({
   select: { matchAnchorWidth: true, minSpace: 180, minWidth: 160, alignment: "right" },
   multiselect: { matchAnchorWidth: true, minSpace: 180, minWidth: 160, alignment: "right" },
@@ -453,7 +478,7 @@ export function define<const TPart extends string>(kind: MdyWidgetKind, rootClas
   return Object.freeze({ kind, rootClasses: Object.freeze([...rootClasses]),
     ...(shape.controlType === undefined ? {} : { controlType: shape.controlType }),
     ...(shape.concealed === undefined ? {} : { concealed: shape.concealed }),
-    parts: Object.freeze(partMap), structure: Object.freeze({ kind, nodes: Object.freeze(nodes) }), presentationClasses: Object.freeze([...(shape.presentation ?? [])]), variants, capabilities: Object.freeze({ overlay, dismissOnOutsidePointer: overlay ? "light-dismiss" as const : false, dismissOnFocusOutside: overlay, overlayScrolls: SCROLLING_OVERLAYS.includes(kind), ...(overlay && ANCHORING[kind] ? { anchoring: Object.freeze(ANCHORING[kind]) } : {}) }) });
+    parts: Object.freeze(partMap), structure: Object.freeze({ kind, nodes: Object.freeze(nodes) }), presentationClasses: Object.freeze([...(shape.presentation ?? [])]), variants, valueSlot: VALUE_SLOTS[kind], capabilities: Object.freeze({ overlay, dismissOnOutsidePointer: overlay ? "light-dismiss" as const : false, dismissOnFocusOutside: overlay, overlayScrolls: SCROLLING_OVERLAYS.includes(kind), ...(overlay && ANCHORING[kind] ? { anchoring: Object.freeze(ANCHORING[kind]) } : {}) }) });
 }
 /**
  * The semantic every part answers to, declared rather than defaulted.
