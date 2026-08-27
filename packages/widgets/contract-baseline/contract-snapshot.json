@@ -3938,5 +3938,28 @@
     "--mdy-space-8",
     "--mdy-stroke-1",
     "--mdy-stroke-2"
-  ]
+  ],
+  "shared": {
+    "sharedUi": [
+      "mdy-button",
+      "mdy-control__inline-errors-icon",
+      "mdy-control__inline-errors-tooltip",
+      "mdy-glass-effect",
+      "mdy-glass-effect--medium",
+      "mdy-inline-errors",
+      "mdy-overlay",
+      "mdy-overlay-backdrop",
+      "mdy-overlay-panel"
+    ],
+    "layout": [
+      "mdy-layout-column",
+      "mdy-layout-columns",
+      "mdy-layout-legend",
+      "mdy-layout-section"
+    ],
+    "formShell": [
+      "mdy-form__error",
+      "mdy-form__errors"
+    ]
+  }
 }

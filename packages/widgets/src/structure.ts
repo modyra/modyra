@@ -152,8 +152,15 @@ export const MDY_FIELD_STATE_CLASSES = Object.freeze({
  * Classes that belong to no single widget: the shared button, the overlay machinery, the surface
  * treatments a theme applies wherever it likes.
  *
- * Declared here because they are still contract data — a renderer may emit them and a theme may
- * rely on them — but they are not a kind's anatomy and do not belong to any one catalogue entry.
+ * Contract data, published through `@modyra/widgets/vocabulary`. They are not a kind's anatomy and
+ * belong to no catalogue entry, which is why they are declared here rather than in one — but a theme
+ * selects on them, so they are names this package promises to keep.
+ *
+ * Seven of the eight are already selected on by the themes shipped in this repository, so the
+ * promise is not hypothetical. It was, however, unguarded: `contract:diff` reaches class names
+ * through a kind's parts, so a name outside every kind was invisible to it and a rename would have
+ * been reported as an internal change while breaking every stylesheet that used one. The snapshot
+ * now records them alongside the scale, for the same reason and in the same shape.
  */
 export const MDY_SHARED_UI_CLASSES = Object.freeze([
   "mdy-button",

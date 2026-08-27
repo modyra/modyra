@@ -24,9 +24,13 @@ import { execFileSync } from "node:child_process";
 import { readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { relative, resolve } from "node:path";
 import {
+  MDY_FORM_SHELL_CLASSES, MDY_LAYOUT_CLASSES,
   MDY_WIDGET_CONTRACTS, MDY_WIDGET_CONTRACT_VERSION, MDY_WIDGET_KEYBOARD, MDY_WIDGET_KINDS,
   MDY_WIDGET_RELATIONS,
 } from "../packages/widgets/dist/index.js";
+// Through the door it is published from, not the barrel: this vocabulary belongs to the
+// `./vocabulary` subpath, and every public name in this package answers at exactly one door.
+import { MDY_SHARED_UI_CLASSES } from "../packages/widgets/dist/vocabulary.js";
 
 const root = resolve(new URL("..", import.meta.url).pathname);
 const SNAPSHOT = resolve(root, "packages/widgets/contract-baseline/contract-snapshot.json");
@@ -84,7 +88,43 @@ function snapshot() {
         .sort(),
     };
   }
-  return { contractVersion: MDY_WIDGET_CONTRACT_VERSION, kinds, scale: scaleTokens() };
+  return {
+    contractVersion: MDY_WIDGET_CONTRACT_VERSION,
+    kinds,
+    scale: scaleTokens(),
+    shared: sharedClassNames(),
+  };
+}
+
+/**
+ * The class names that belong to no kind, which are public surface all the same.
+ *
+ * Everything above is reached through a kind's anatomy, so a name outside one was invisible here:
+ * the shared button, the overlay machinery, a layout's own boxes, the form shell. Seven of them are
+ * selected on by the themes shipped in this repository, so the dependency was real while a rename
+ * would have passed as an internal change — and `contract:diff` said so, by omission.
+ *
+ * **Named one at a time, not discovered by shape.** A vocabulary is sometimes an array and sometimes
+ * a dictionary, and a flat dictionary is the degenerate case of a table with one column — a rule
+ * that reads the shape cannot tell the two apart, and quietly stops covering whichever one it did
+ * not anticipate. Adding a vocabulary here is a line; guessing at them is a rule that goes wrong in
+ * silence.
+ *
+ * **Names, not values**, for the reason the scale gives above: what a class *is* belongs to a theme,
+ * and what a consumer cannot survive is a name that stops answering.
+ */
+function sharedClassNames() {
+  const vocabularies = {
+    sharedUi: MDY_SHARED_UI_CLASSES,
+    layout: MDY_LAYOUT_CLASSES,
+    formShell: MDY_FORM_SHELL_CLASSES,
+  };
+  const named = {};
+  for (const [name, vocabulary] of Object.entries(vocabularies)) {
+    const values = Array.isArray(vocabulary) ? vocabulary : Object.values(vocabulary);
+    named[name] = [...new Set(values.flat().filter((one) => typeof one === "string"))].sort();
+  }
+  return named;
 }
 
 /**
@@ -154,6 +194,29 @@ if (heldScale === null) {
   }
   for (const step of current.scale) {
     if (!heldScale.includes(step)) record("minor", "scale", `step added: ${step}`);
+  }
+}
+
+// The same comparison for the names that belong to no kind. A class a theme selects on breaks that
+// theme when it is renamed, and whether the name sits inside a kind's anatomy makes no difference to
+// the stylesheet that stops matching.
+const heldShared = baseline.shared ?? null;
+if (heldShared === null) {
+  const counted = Object.values(current.shared).reduce((sum, names) => sum + names.length, 0);
+  record("minor", "shared", `class names outside a kind now recorded: ${counted} across `
+    + `${Object.keys(current.shared).length} vocabular(y|ies)`);
+} else {
+  for (const [vocabulary, names] of Object.entries(heldShared)) {
+    const now = current.shared[vocabulary] ?? [];
+    for (const name of names) {
+      if (!now.includes(name)) record("major", `shared.${vocabulary}`, `class removed: ${name}`);
+    }
+  }
+  for (const [vocabulary, names] of Object.entries(current.shared)) {
+    const before = heldShared[vocabulary] ?? [];
+    for (const name of names) {
+      if (!before.includes(name)) record("minor", `shared.${vocabulary}`, `class added: ${name}`);
+    }
   }
 }
 
