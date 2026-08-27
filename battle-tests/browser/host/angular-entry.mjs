@@ -106,6 +106,12 @@ window.battleAngular = {
       if (options.idPrefix !== undefined && options.idPrefix !== null) {
         reference.setInput("idScope", String(options.idPrefix));
       }
+      // The structure a caller asks for is the structure this host mounts. A host that takes the
+      // option and hands it to nobody draws a flat page while another host draws a nested one, and
+      // a spec comparing the two is comparing its own hosts.
+      if (options.layout !== undefined && options.layout !== null) {
+        reference.setInput("layout", options.layout);
+      }
       // A draft this form is asked to keep. The component takes `draftKey`; the other hosts take
       // `{ draft: { key } }` on the mount, and a host that accepted the option and passed it nowhere
       // is the "looks like it did it" shape once more.
