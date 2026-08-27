@@ -175,6 +175,15 @@ export class MdySegmentedButtonComponent<TValue = unknown> extends MdyBaseContro
   protected onKeydown(event: KeyboardEvent): void {
     if (this.isDisabled()) return;
     const opts = this.options();
+    // The arrows only. `optionNavigationIndex` also answers Home and End, which belong to a list long
+    // enough that jumping to an end is worth a key — three or four always-visible choices are crossed
+    // in three presses, and the authoring practices give a radio group the arrows and not those.
+    //
+    // Claiming them here made this renderer answer a gesture the contract does not declare and the
+    // other two do not offer, so somebody who learned it here lost it by changing renderer. The
+    // contract stays as short as the practice: the extra gesture goes rather than the two others
+    // gaining it, because nobody expects it and nobody loses it.
+    if (event.key === "Home" || event.key === "End") return;
     const next = optionNavigationIndex(event.key, Math.max(0, this.selectedIndex()), opts.length);
     if (next === null) return;
     event.preventDefault();
