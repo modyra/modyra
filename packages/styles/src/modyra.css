@@ -3174,9 +3174,16 @@
     }
 
     /* The suffix that wraps the toggle should have no extra padding —
-   the toggle itself is absolutely positioned. */
+   the toggle itself is absolutely positioned.
+
+   Colours joins them because its caret stopped being a command: the rule that tightens a slot
+   selects on it holding a button, and a drawing is not one, so the slot kept its roomier padding
+   and the caret sat 12px inside the column every other field's affordance is in. Selected by kind
+   rather than by what the slot holds — a text suffix a consumer supplies may well be an element,
+   and it is the one that must keep the roomier padding. */
     .mdy-datepicker .mdy-input-suffix,
-    .mdy-timepicker .mdy-input-suffix {
+    .mdy-timepicker .mdy-input-suffix,
+    .mdy-colors .mdy-input-suffix {
         padding: 0;
         width: calc(var(--mdy-affordance-box) + var(--mdy-affordance-inset) * 2);
         position: relative;

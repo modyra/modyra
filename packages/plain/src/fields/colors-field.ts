@@ -192,12 +192,13 @@ export function renderColorsField(
   insertControl(shell, picker);
   insertControl(shell, control);
   insertControl(shell, hexInput);
-  // The caret *is* the trailing slot, rather than sitting inside one. A box around it is a second
-  // element with its own padding between the caret and the field's edge, and the caret then stops
-  // short of the column every other field's affordance sits in — a column the eye follows down the
-  // form, and which a single field leaving it breaks for all of them.
-  toggle.classList.add("mdy-input-suffix");
-  shell.wrapper.append(toggle);
+  // Inside the trailing slot, the way every other kind with a caret builds one. Made the slot
+  // itself, it took the slot's own width and sat at the slot's own inset — a caret in the right
+  // column with the wrong box, which is a second way of leaving the column. What has to be fixed is
+  // the slot's padding, and that is the foundation's business rather than this renderer's.
+  const suffix = el("div", "mdy-input-suffix") as HTMLDivElement;
+  suffix.append(toggle);
+  shell.wrapper.append(suffix);
   wrapper.append(popup);
   container.appendChild(shell.root);
 
