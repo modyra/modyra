@@ -30,6 +30,7 @@ import { MDY_WIDGET_KINDS } from "@modyra/widgets";
 import { became, HOSTS } from "./bench";
 
 type Api = Record<string, Record<string, (...args: never[]) => unknown>>;
+type State = "plain" | "readonly" | "disabled" | "untouched" | "refused";
 
 const OPTIONS = [{ value: "a", label: "A" }, { value: "b", label: "B" }];
 
@@ -46,15 +47,34 @@ for (const host of HOSTS) {
     await page.goto(host.page);
     await page.waitForFunction((flag) => (window as never as Record<string, boolean>)[flag] === true, host.ready);
 
-    const lookOf = async (id: string, kind: string, state: "plain" | "readonly" | "disabled") => {
-      await page.evaluate(({ api, mountId, k, options }) => {
+    const lookOf = async (id: string, kind: string, state: State) => {
+      // The two refusal states carry the rule that makes a refusal possible, both of them, so that
+      // the only difference between the pair is the turn the field was given — not the rule.
+      const ruled = state === "refused" || state === "untouched";
+      await page.evaluate(({ api, mountId, k, options, ruled }) => {
         const field: Record<string, unknown> = { name: "f", kind: k, label: "L" };
         if (/select|radio|segmented/.test(k)) field.options = options;
+        if (ruled) field.validators = { required: true };
         (window as never as Api)[api].mountFields(mountId as never, [field] as never);
-      }, { api: host.api, mountId: id, k: kind, options: OPTIONS });
+      }, { api: host.api, mountId: id, k: kind, options: OPTIONS, ruled });
       await became(() => page.evaluate((sel) => (document.querySelector(sel)?.children.length ?? 0) > 0, `[data-form="${id}"]`));
 
-      if (state !== "plain") {
+      if (state === "refused") {
+        // A turn, the way a person gives one: reached and then left. A form that refuses on being
+        // left has been given what it waits for, and one that refuses at once has lost nothing.
+        const first = page.locator(`[data-form="${id}"] input, [data-form="${id}"] select, [data-form="${id}"] textarea, [data-form="${id}"] button`).first();
+        if (await first.count() > 0) {
+          await first.focus().catch(() => undefined);
+          await first.blur().catch(() => undefined);
+        }
+        // The refusal has to have arrived before the paint is read, or a renderer that says it late
+        // reads as one that never says it.
+        await became(() => page.evaluate(
+          (sel) => document.querySelector(`${sel} [aria-invalid="true"]`) !== null, `[data-form="${id}"]`))
+          .catch(() => undefined);
+      }
+
+      if (state === "readonly" || state === "disabled") {
         // The door each state is set through, named as the host publishes it: one is a verb and the
         // other is an adjective, and assuming they matched cost this file its first run.
         const door = state === "disabled" ? "disable" : "readonly";
@@ -79,6 +99,9 @@ for (const host of HOSTS) {
     const seen: string[] = [];
     let compared = 0;
 
+    /** Kinds whose refusal never arrived, so their pair says nothing either way. */
+    const neverRefused: string[] = [];
+
     for (const kind of MDY_WIDGET_KINDS) {
       const plain = await lookOf(`ro-${kind}-p`, kind, "plain");
       if (plain === null) continue;
@@ -89,10 +112,31 @@ for (const host of HOSTS) {
         if (other === plain) unseen.push(`${kind}: ${state}`);
         else seen.push(`${kind}: ${state}`);
       }
+
+      // The refusal, against the same field under the same rule before it was given a turn.
+      const untouched = await lookOf(`ro-${kind}-u`, kind, "untouched");
+      const refused = await lookOf(`ro-${kind}-x`, kind, "refused");
+      if (untouched === null || refused === null) continue;
+      const arrived = await page.evaluate(
+        (sel) => document.querySelector(`${sel} [aria-invalid="true"]`) !== null, `[data-form="ro-${kind}-x"]`);
+      // A field the form never refused has nothing to show, and reporting it as showing nothing
+      // would be a finding about this file rather than about the renderer.
+      if (!arrived) { neverRefused.push(kind); continue; }
+      compared += 1;
+      if (refused === untouched) unseen.push(`${kind}: refused`);
+      else seen.push(`${kind}: refused`);
     }
 
     // The premise: a run that compared nothing would report no invisible state and mean nothing by it.
     expect(compared, `${host.name} mounted nothing this file could compare`).toBeGreaterThan(20);
+
+    // A run where the form refused almost nothing is measuring the rule rather than the paint.
+    expect(
+      neverRefused.length,
+      `${host.name}: the form refused none of ${JSON.stringify(neverRefused)} under a required rule, `
+      + "so their refusal was never compared. A kind that cannot be made to look wrong here is one "
+      + "this file did not ask about",
+    ).toBeLessThan(MDY_WIDGET_KINDS.length - 4);
 
     // The control: states of this family *are* painted here, so a silence below is that state rather
     // than an instrument that cannot see a difference at all.
