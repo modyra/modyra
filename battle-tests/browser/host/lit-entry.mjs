@@ -9,6 +9,7 @@
  * It exposes the same shape of operations as the Plain host where they mean the same thing, so a spec
  * can ask both renderers the same question.
  */
+import { MDY_LAYOUT_CLASSES, layoutNodeAttributes } from "@modyra/widgets";
 import { parseDynamicForm, assertSafeDynamicFieldNames, buildDynamicFieldValidators, createLitForm, field, mdyEmptyValueFor, parseDynamicFields } from "@modyra/lit/adapter";
 import { defineMdyElements, mdyLitTagFor } from "@modyra/lit/ui";
 import { documentProbes } from "./document-probes.mjs";
@@ -112,6 +113,36 @@ window.battleLit = {
       summary.form = form;
       host.append(summary);
 
+      // **A structure the document asked for, built by the host because the package publishes no door
+      // that mounts one.** A grouping element carries a name and encloses what depends on it, which
+      // is what lets a person who cannot see the indentation hear where they are. A host that drops
+      // the structure draws a flat page and reports it mounted, and a check comparing this host with
+      // one that nests is comparing its own harnesses.
+      const holderFor = new Map();
+      const buildLayout = (nodes, into) => {
+        for (const node of nodes ?? []) {
+          if (typeof node === "string") { holderFor.set(node, into); continue; }
+          if (node === null || typeof node !== "object" || node.kind !== "section") continue;
+          // The dressing is the contract's, not this host's. A group the harness styles by hand gets
+          // the browser's own padding on a bare `fieldset` — twelve pixels and a border per level —
+          // and a width check then reports a renderer for what the harness put there.
+          const group = document.createElement("fieldset");
+          const dressing = layoutNodeAttributes(node);
+          group.className = dressing.className ?? MDY_LAYOUT_CLASSES.section;
+          for (const [key, value] of Object.entries(dressing.dataset ?? {})) group.dataset[key] = value;
+          for (const [key, value] of Object.entries(dressing.style ?? {})) group.style.setProperty(key, String(value));
+          if (node.label !== undefined && node.label !== null) {
+            const name = document.createElement("legend");
+            name.className = MDY_LAYOUT_CLASSES.sectionLabel;
+            name.textContent = String(node.label);
+            group.append(name);
+          }
+          into.append(group);
+          buildLayout(node.children, group);
+        }
+      };
+      buildLayout(options.layout, host);
+
       for (const declared of parsed) {
         // **The package says which element draws a kind, and says `null` for one it does not.**
         // This host kept a map of its own with a text field as the fallback, so a document
@@ -145,7 +176,8 @@ window.battleLit = {
           element[name] = value;
         }
         element.field = handleFor(form, declared.name);
-        host.append(element);
+        // Into the group the document put it in, or straight onto the form when it named none.
+        (holderFor.get(declared.name) ?? host).append(element);
       }
       mounted.set(id, { form, host, submitted: [] });
       return { mounted: true, tags: parsed.map((each) => mdyLitTagFor(each.kind)) };
@@ -227,7 +259,14 @@ window.battleLit = {
         diagnostics: parsed.diagnostics.map((each) => ({ code: each.code, path: each.path, message: each.message })),
       };
     }
-    const result = await this.mountFields(id, parsed.fields, options);
+    // The parse yields more than fields: the structure the document asked for and the rules that
+    // govern it come out of the same call. A host that forwards only the fields mounts a flat page
+    // and reports it mounted, which is the same page a document with no structure would produce.
+    const result = await this.mountFields(id, parsed.fields, {
+      ...options,
+      layout: options.layout ?? parsed.layout,
+      rules: options.rules ?? parsed.rules,
+    });
     return result.mounted === false
       ? result
       : { mounted: true, accepted: parsed.acceptedCount, rejected: parsed.rejectedCount };

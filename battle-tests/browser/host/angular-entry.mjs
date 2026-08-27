@@ -297,7 +297,14 @@ window.battleAngular = {
         diagnostics: parsed.diagnostics.map((each) => ({ code: each.code, path: each.path, message: each.message })),
       };
     }
-    const result = await this.mountFields(id, parsed.fields, options);
+    // The parse yields more than fields: the structure the document asked for and the rules that
+    // govern it come out of the same call. A host that forwards only the fields mounts a flat page
+    // and reports it mounted, which is the same page a document with no structure would produce.
+    const result = await this.mountFields(id, parsed.fields, {
+      ...options,
+      layout: options.layout ?? parsed.layout,
+      rules: options.rules ?? parsed.rules,
+    });
     return result.mounted === false
       ? result
       : { mounted: true, accepted: parsed.acceptedCount, rejected: parsed.rejectedCount };
