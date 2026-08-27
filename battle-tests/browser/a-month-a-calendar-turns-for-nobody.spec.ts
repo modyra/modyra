@@ -19,13 +19,26 @@
  * Claims under attack: ADP-001, KBD-002.
  */
 import { expect, test } from "@playwright/test";
-import { MDY_WIDGET_KEYBOARD, keyBindingFor } from "@modyra/widgets";
+import { MDY_POPUP_OPENERS, MDY_WIDGET_CONTRACTS, MDY_WIDGET_KEYBOARD, keyBindingFor } from "@modyra/widgets";
 import { HOSTS } from "./bench";
 
 type Api = Record<string, Record<string, (...args: never[]) => unknown>>;
 const resolve = keyBindingFor as (kind: string, key: string, open: boolean, on?: string) => unknown;
 
 const CALENDARS = ["datepicker", "daterange"];
+
+/**
+ * The element the contract says opens this kind. Offering the opening key to the control the label
+ * names is not the same gesture: a date range is opened from its toggle, a button, and pressing Enter
+ * into the text box beside it does nothing — which reads as a field that cannot be opened at all when
+ * what happened is that the key was given to the wrong part. The contract names the part; this asks it.
+ */
+const openerClasses = (kind: string): string[] => {
+  const opener = (MDY_POPUP_OPENERS as unknown as Record<string, { opener?: string }>)[kind]?.opener;
+  if (opener === undefined) return [];
+  return (MDY_WIDGET_CONTRACTS as unknown as Record<string, { parts: Record<string, { classes: string[] }> }>)[kind]
+    .parts[opener]?.classes ?? [];
+};
 
 /** Every key the kind declares as opening it from closed, tried in turn. */
 const opensItself = (kind: string): string[] =>
@@ -58,15 +71,19 @@ test("a month a calendar turns for nobody", async ({ page }) => {
         );
         await page.locator(`[data-form="${mountId}"]`).waitFor({ timeout: 5_000 }).catch(() => undefined);
 
-        const opened = await page.evaluate(({ id }) => {
+        const opened = await page.evaluate(({ id, classes }) => {
           const root = document.querySelector(`[data-form="${id}"]`) as HTMLElement | null;
           if (root === null) return false;
+          const declared = classes.length > 0
+            ? root.querySelector<HTMLElement>(classes.map((one) => `.${one}`).join(""))
+            : null;
+          if (declared !== null) { declared.focus(); return true; }
           for (const label of root.querySelectorAll<HTMLLabelElement>("label[for]")) {
             const target = label.htmlFor ? document.getElementById(label.htmlFor) : null;
             if (target !== null) { target.focus(); return true; }
           }
           return false;
-        }, { id: mountId });
+        }, { id: mountId, classes: openerClasses(kind) });
         if (!opened) { inert.push(`${kind} in ${host.name}: no control the label names`); continue; }
 
         // Every key the kind declares for opening itself, tried in turn: naming one here would make
@@ -124,7 +141,7 @@ test("a month a calendar turns for nobody", async ({ page }) => {
 
   expect(
     gestures,
-    `${undeclared.length} calendar gesture(s) work and are declared by nobody:\n${undeclared.join("\n")}\n\n` +
+    `${gestures.length} calendar gesture(s) work and are declared by nobody:\n${gestures.join("\n")}\n\n` +
       "A gesture the contract does not know about is one no check asks for: a renderer may drop it " +
       "with everything staying green, and an adapter written from the contract ships a calendar that " +
       "cannot leave the month it opened on.",
