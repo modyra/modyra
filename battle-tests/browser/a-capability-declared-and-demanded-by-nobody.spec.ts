@@ -129,12 +129,19 @@ for (const host of HOSTS) {
       }, { api: host.api, mountId: id });
     }
 
-    // A run that opened almost nothing has nothing to judge, and its silence would be the harness.
+    // **How many kinds this run actually judged, not merely that it passed.** A behavioural check
+    // that mounts and presses can quietly cover less than it claims: a kind that does not open is a
+    // kind not asked, and a green that does not say how many it asked reads the same whether it
+    // asked all of them or two. One kind may legitimately be unopenable — where a renderer hands its
+    // list to the platform there is no panel of ours — and that is the whole allowance.
+    const judged = OVERLAY_KINDS.length - neverOpened.length;
     expect(
-      neverOpened.length,
-      `${host.name} could not open ${JSON.stringify(neverOpened)} — too few panels to say anything `
-      + "about how they go away",
-    ).toBeLessThan(OVERLAY_KINDS.length - 1);
+      judged,
+      `${host.name} judged ${judged} of ${OVERLAY_KINDS.length} kinds that declare an overlay, `
+      + `because it could not open ${JSON.stringify(neverOpened)}. A kind that does not open is a `
+      + "kind this run never asked, and everything below would be silent about it while reading "
+      + "green.",
+    ).toBeGreaterThanOrEqual(OVERLAY_KINDS.length - 1);
 
     expect(
       pointerDisagreeing,
