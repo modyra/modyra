@@ -72,6 +72,9 @@ for (const host of HOSTS) {
 
     const disagreeing: string[] = [];
     const dismissed: string[] = [];
+    /** Kinds whose list belongs to the operating system: there is no panel of ours to dismiss. */
+    const platformOwned: string[] = [];
+    /** Kinds that should have opened and did not. Never excused: a kind not asked is a kind not asked. */
     const neverOpened: string[] = [];
     /** The same question asked of the other way out: a pointer landing somewhere else. */
     const pointerDisagreeing: string[] = [];
@@ -96,7 +99,18 @@ for (const host of HOSTS) {
 
       const panel = page.locator(`.${classOf(kind, "popup") ?? "mdy-popup"}`).first();
       const wasOpen = await panel.isVisible().catch(() => false);
-      if (!wasOpen) { neverOpened.push(`${kind} (the platform's own, or it did not open)`); continue; }
+      if (!wasOpen) {
+        // Two reasons, and only one of them is an excuse. A renderer that hands its list to the
+        // platform reports no expanded state at all — there is no panel of ours, so there is nothing
+        // to dismiss and nothing to judge. Anything else is a kind that should have opened, and
+        // folding the two together turns a named exception into a spare seat that the next failure
+        // sits in.
+        const said = await page.evaluate((selector) =>
+          document.querySelector(`${selector} [aria-expanded]`)?.getAttribute("aria-expanded") ?? "(none)",
+          `[data-form="${id}"]`);
+        (said === "(none)" ? platformOwned : neverOpened).push(kind);
+        continue;
+      }
 
       await page.evaluate(() => (document.getElementById("mdy-elsewhere") as HTMLElement).focus());
       await page.waitForTimeout(400);
@@ -134,14 +148,17 @@ for (const host of HOSTS) {
     // kind not asked, and a green that does not say how many it asked reads the same whether it
     // asked all of them or two. One kind may legitimately be unopenable — where a renderer hands its
     // list to the platform there is no panel of ours — and that is the whole allowance.
-    const judged = OVERLAY_KINDS.length - neverOpened.length;
+    // The only excuse is a named one: this kind's list is the platform's. Everything else that did
+    // not open is a kind this run never asked, and expressing that allowance as a count would leave a
+    // spare seat — a margin absorbs in silence the very case it was meant to catch.
     expect(
-      judged,
-      `${host.name} judged ${judged} of ${OVERLAY_KINDS.length} kinds that declare an overlay, `
-      + `because it could not open ${JSON.stringify(neverOpened)}. A kind that does not open is a `
-      + "kind this run never asked, and everything below would be silent about it while reading "
-      + "green.",
-    ).toBeGreaterThanOrEqual(OVERLAY_KINDS.length - 1);
+      neverOpened,
+      `${host.name} could not open ${JSON.stringify(neverOpened)}, which declare an overlay of their `
+      + `own. It judged ${OVERLAY_KINDS.length - neverOpened.length - platformOwned.length} of `
+      + `${OVERLAY_KINDS.length}, excusing ${JSON.stringify(platformOwned)} whose list belongs to the `
+      + "platform. A kind that does not open is a kind this run never asked, and everything below "
+      + "would be silent about it while reading green.",
+    ).toEqual([]);
 
     expect(
       pointerDisagreeing,
