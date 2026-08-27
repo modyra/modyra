@@ -166,28 +166,33 @@ import { MdyOverlayPanelComponent } from "../../core/overlay-panel.component";
                 (click)="selectColor(entry.value)"
               ></button>
             }
-            @if (customColour(); as custom) {
-              <button
-                type="button"
-                role="option"
-                class="mdy-color-swatch"
-                [style.--color]="custom"
-                [class.mdy-color-swatch--active]="isActiveColor(custom)"
-                [attr.aria-selected]="isActiveColor(custom)"
-                [attr.aria-label]="i18n.colorCustomValue.replace('{value}', custom)"
-                (click)="selectColor(custom)"
-              ></button>
-            }
           </div>
           <!-- The door, after the grid and outside it. A button and never a swatch: a set has a
                total and a position within it, so a button among the options would announce "thirteen
-               of thirteen" over twelve colours and claim a place a listbox does not admit. It carries
-               no tint and never the selected mark, because it is not a value. -->
+               of thirteen" over twelve colours and claim a place a listbox does not admit.
+
+               It is always and only a door: pressing it opens the full chooser in every state, and
+               it never takes the selected mark. The tint it shows is not a value — it previews where
+               the chooser will open. Which colour the field holds is the filled square on the field,
+               whose only job that is.
+
+               The mark sits beside the tint, not over it: over the fill it would have to be legible
+               on yellow and on navy at once, which no fixed colour is. Outside, it takes the panel's
+               foreground and obeys an imposed system palette, while the tint keeps its colour —
+               here the colour is the content. -->
           <button
             type="button"
             class="mdy-colors__custom-entry"
             (click)="openPlatformChooser()"
-          >{{ i18n.colorCustomEntry }}</button>
+          >
+            <span
+              class="mdy-colors__custom-tint"
+              [style.background-color]="customColour() ?? 'transparent'"
+              aria-hidden="true"
+            ></span>
+            <mdy-icon name="PLUS" aria-hidden="true" />
+            <span>{{ i18n.colorCustomEntry }}</span>
+          </button>
         </div>
       </mdy-overlay-panel>
     </div>

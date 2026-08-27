@@ -27,9 +27,15 @@ export interface MdyI18nMessages {
   /**
    * The door out of the panel, to the platform's own colour chooser.
    *
-   * The ellipsis is the convention that separates *this opens something else* from *this performs an
-   * action*, and it is the reliable half of saying so: the panel cannot describe a surface it does
-   * not draw, cannot name it, and on some platforms cannot even see it close.
+   * It names the dimension the two commands differ in, which is *how many colours you can reach* —
+   * ten against all of them — rather than "ready against custom", which describes how they were
+   * made. And the ellipsis is not decoration: it is the convention for *this opens another surface
+   * rather than performing an action*, which people read without knowing they do — and it is the
+   * reliable half of saying so, because the panel cannot describe a surface it does not draw, cannot
+   * name it, and on some platforms cannot even see it close.
+   *
+   * It stays the same when the door carries a colour. A name holding the value would say the door
+   * is a value, which is the confusion the door is built to avoid.
    */
   readonly colorCustomEntry: string;
   /**
@@ -248,7 +254,7 @@ export const MDY_I18N_MESSAGES_DEFAULT: MdyI18nMessages = Object.freeze({
   noResults: "No results",
   colorPresetsHeader: "Presets",
   selectColorPrefix: "Select color",
-  colorCustomEntry: "Custom…",
+  colorCustomEntry: "All colours…",
   colorCustomValue: "Custom, {value}",
   colorHexLabel: "Color hex value",
   timepickerOpenLabel: "Open time picker",
@@ -343,7 +349,7 @@ export const MDY_I18N_MESSAGES_IT: MdyI18nMessages = Object.freeze({
   noResults: "Nessun risultato",
   colorPresetsHeader: "Preset",
   selectColorPrefix: "Seleziona colore",
-  colorCustomEntry: "Personalizzato…",
+  colorCustomEntry: "Tutti i colori…",
   colorCustomValue: "Personalizzato, {value}",
   colorHexLabel: "Valore esadecimale del colore",
   timepickerOpenLabel: "Apri selettore orario",
@@ -431,7 +437,7 @@ export const MDY_I18N_MESSAGES_DE: MdyI18nMessages = Object.freeze({
   noResults: "Keine Ergebnisse",
   colorPresetsHeader: "Voreinstellungen",
   selectColorPrefix: "Farbe auswählen",
-  colorCustomEntry: "Benutzerdefiniert…",
+  colorCustomEntry: "Alle Farben…",
   colorCustomValue: "Benutzerdefiniert, {value}",
   colorHexLabel: "Hex-Farbwert",
   timepickerOpenLabel: "Zeitauswahl öffnen",
@@ -519,7 +525,7 @@ export const MDY_I18N_MESSAGES_FR: MdyI18nMessages = Object.freeze({
   noResults: "Aucun résultat",
   colorPresetsHeader: "Préréglages",
   selectColorPrefix: "Sélectionner la couleur",
-  colorCustomEntry: "Personnalisé…",
+  colorCustomEntry: "Toutes les couleurs…",
   colorCustomValue: "Personnalisé, {value}",
   colorHexLabel: "Valeur hexadécimale de la couleur",
   timepickerOpenLabel: "Ouvrir le sélecteur d'heure",
@@ -607,7 +613,7 @@ export const MDY_I18N_MESSAGES_ES: MdyI18nMessages = Object.freeze({
   noResults: "Sin resultados",
   colorPresetsHeader: "Preajustes",
   selectColorPrefix: "Seleccionar color",
-  colorCustomEntry: "Personalizado…",
+  colorCustomEntry: "Todos los colores…",
   colorCustomValue: "Personalizado, {value}",
   colorHexLabel: "Valor hexadecimal del color",
   timepickerOpenLabel: "Abrir selector de hora",

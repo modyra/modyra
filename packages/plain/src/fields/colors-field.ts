@@ -143,20 +143,6 @@ export function renderColorsField(
   });
 
   /**
-   * The colour picked by hand, as a swatch of exactly the same kind as the twelve.
-   *
-   * Selectable and re-selectable: a person who tries a preset and changes their mind returns to
-   * their own colour without going back through the chooser, which is the behaviour a colour picker
-   * exists for. It is drawn only once there is one — a set is what it holds.
-   *
-   * Its name is poor and honest: nobody has named `#4361EE`, so this is the one value in the panel
-   * that cannot be described to somebody who cannot see it. An approximated colour name would be
-   * worse than the hexadecimal, because it would claim a meaning it does not have.
-   */
-  const custom = swatch("");
-  custom.hidden = true;
-
-  /**
    * The door, after the grid and outside it.
    *
    * A button and never a swatch. A set has a total and a position within it, so a button among the
@@ -164,12 +150,42 @@ export function renderColorsField(
    * into the arrow walk, and claim a place in a listbox that does not admit it. After the grid is
    * where every menu that has a way out puts it: first the room, then the door.
    *
-   * It never carries a tint and never carries the selected mark, because it is not a value.
+   * **It is always and only a door.** Pressing it opens the full chooser in every state, without
+   * exception, and it never carries the selected mark. The tint it shows is not a value: it is a
+   * preview of *where the chooser will open*, which is why it is worth showing at all.
+   *
+   * That costs something, and the cost is real: somebody who picks a free colour, tries a ready one
+   * and changes their mind reopens the chooser rather than pressing back. It is a cost on a rare
+   * path, taken in preference to an element that does one thing when empty and another when full —
+   * which is a cost on every path, and which nobody can predict from looking at it.
+   *
+   * Where the current colour *is* shown is the filled square on the field, whose only job that is.
    */
   const customEntry = el("button") as HTMLButtonElement;
   customEntry.type = "button";
   applyPart(customEntry, definition.parts.customEntry);
-  setText(customEntry, messages.colorCustomEntry);
+  /**
+   * The mark, drawn always — including when the door carries a colour.
+   *
+   * Shown only while empty, it would be absent in exactly the state where the door looks most like
+   * one of the ready colours, which is where it is needed. It is also the only thing that tells the
+   * two apart when someone has asked their system to replace every colour with their own: the tints
+   * keep theirs because here the colour *is* the content, and a mark that obeys the palette is then
+   * the sole remaining difference.
+   */
+  const customMark = el("span");
+  setIcon(customMark, "PLUS");
+  customMark.setAttribute("aria-hidden", "true");
+  const customTint = el("span");
+  applyPart(customTint, definition.parts.customTint);
+  customTint.setAttribute("aria-hidden", "true");
+  const customLabel = el("span");
+  setText(customLabel, messages.colorCustomEntry);
+  // Beside the tint, never inside it. A mark drawn over the fill would have to be legible on yellow
+  // and on navy at once, which no fixed colour is; outside it, the mark takes the panel's own
+  // foreground and stays readable whatever the door is showing — and where a system palette is
+  // imposed it obeys that palette, while the tint, which is the content here, keeps its colour.
+  customEntry.append(customTint, customMark, customLabel);
   popup.append(customEntry);
 
   insertControl(shell, picker);
@@ -220,10 +236,6 @@ export function renderColorsField(
   // platforms the chooser is a separate window, and a panel that closed when focus left would take
   // the door with it and leave nothing to come back to.
   customEntry.addEventListener("click", () => control.click());
-  custom.addEventListener("click", () => {
-    const tint = custom.dataset.mdyTint;
-    if (tint) commit({ type: "preset", value: tint });
-  });
   for (const { preset, swatch } of swatches) {
     swatch.addEventListener("click", () => commit({ type: "preset", value: preset }));
   }
@@ -276,9 +288,6 @@ export function renderColorsField(
     if (isOpen) {
       if (presetList.childElementCount === 0) {
         for (const { swatch } of swatches) presetList.appendChild(swatch);
-        // Last among the options, because it is the newest of them and because a set a person walks
-        // should not renumber itself when they pick a colour.
-        presetList.appendChild(custom);
         // Into the row it has just shown. The keys the contract declares for an open colour field
         // are the row's, and `Tab` dismisses the palette — so a palette that left the keyboard on
         // the toggle was one no keyboard could ever reach the presets in.
@@ -294,21 +303,17 @@ export function renderColorsField(
       swatch.classList.toggle("mdy-color-swatch--selected", selected);
       swatch.setAttribute("aria-selected", String(selected));
     }
-    // A colour the presets do not hold is the one picked by hand, so the panel keeps it: the tint
-    // stays after a preset is tried, and going back to it is one press instead of the whole chooser
-    // again. Two colours are then lit in the sense that both are on the page — one carries the
-    // selected mark and the other is merely present, which eleven of twelve already are.
+    // A colour the ready ones do not hold is the last one picked by hand, and the door shows it: not
+    // as a value, but as where the chooser will open. The name stays put whatever it shows — a name
+    // carrying the value would say this is a value, which is the confusion the door exists without,
+    // and a name that changes under the fingers is read back over the action just taken.
     const isPreset = presets.some((preset) => colorValueEquals(value || null, preset));
-    if (value && !isPreset) custom.dataset.mdyTint = value;
-    const tint = custom.dataset.mdyTint;
-    custom.hidden = !tint;
-    if (tint) {
-      custom.style.setProperty("background-color", tint);
-      custom.setAttribute("aria-label", messages.colorCustomValue.replace("{value}", tint));
-      const selected = colorValueEquals(value || null, tint);
-      custom.classList.toggle("mdy-color-swatch--selected", selected);
-      custom.setAttribute("aria-selected", String(selected));
-    }
+    if (value && !isPreset) customEntry.dataset.mdyTint = value;
+    const tint = customEntry.dataset.mdyTint;
+    // Transparent rather than a second class: the square's own ground shows through when nothing
+    // has been picked by hand, and an opaque tint covers it when something has. One value carries
+    // both states, so there is no pair to keep in step.
+    customTint.style.setProperty("background-color", tint || "transparent");
     // The state-driven half of the contract. `definition.parts` is static — classes and shape — so
     // on its own it never said the colour was invalid, required, disabled or described by its
     // errors. Merged into the static part rather than applied after it, because a second

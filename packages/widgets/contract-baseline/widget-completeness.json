@@ -425,6 +425,7 @@
         "presets",
         "swatch",
         "customEntry",
+        "customTint",
         "inlineError",
         "supportingText",
         "errors",

@@ -605,7 +605,7 @@ export const MDY_CANONICAL_AT_REST: Readonly<Partial<Record<MdyWidgetKind, MdyCa
     }),
     colors: Object.freeze({
       parts: Object.freeze(["root", "label", "inputWrapper", "nativePicker", "preview", "control", "hexInput", "toggle"]),
-      optional: Object.freeze(["supportingText", "requiredMarker", "popup", "presets", "swatch", "customEntry", "inlineError", "errors", "errorItem"]),
+      optional: Object.freeze(["supportingText", "requiredMarker", "popup", "presets", "swatch", "customEntry", "customTint", "inlineError", "errors", "errorItem"]),
       relationships: Object.freeze([
         { from: "label", attribute: "for", to: "hexInput" },
         // The filled square is what opens the panel, so it is what names it. The caret beside it is

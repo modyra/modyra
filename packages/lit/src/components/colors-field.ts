@@ -190,33 +190,32 @@ export class MdyColorsFieldElement extends MdyFieldElement<string | null> {
               }}
             ></button>`,
           )}
-          ${this._custom === null ? nothing : html`<button
-            type="button"
-            class="mdy-color-swatch ${handle.value() === this._custom ? "mdy-color-swatch--active" : ""}"
-            role="option"
-            aria-selected=${handle.value() === this._custom ? "true" : "false"}
-            aria-label=${this.messages.colorCustomValue.replace("{value}", this._custom)}
-            style="background-color:${this._custom}"
-            @click=${() => { this.set(handle, this._custom!); this.close(handle); }}
-          ></button>`}
         </div>
         <!-- The door, after the grid and outside it. A button and never a swatch: a set has a total
              and a position within it, so a button among the options would announce "thirteen of
-             thirteen" over twelve colours and claim a place a listbox does not admit. It carries no
-             tint and never the selected mark, because it is not a value. -->
+             thirteen" over twelve colours and claim a place a listbox does not admit.
+
+             It is always and only a door: pressing it opens the full chooser in every state, and it
+             never takes the selected mark. The tint it shows is not a value — it previews where the
+             chooser will open. Which colour the field currently holds is the filled square on the
+             field itself, whose only job that is.
+
+             The mark sits beside the tint rather than over it: over the fill it would have to be
+             legible on yellow and on navy at once, which no fixed colour is. Outside, it takes the
+             panel's foreground, and where a system palette is imposed it obeys that palette while
+             the tint keeps its colour, because here the colour is the content. -->
         <button
           type="button"
           class="${this.partClass("customEntry")}"
           @click=${() => openPlatformChooser(this.querySelector<HTMLInputElement>(`.${this.partClass("control")}`))}
-        >${this.messages.colorCustomEntry}</button>
-        <button
-          type="button"
-          class="mdy-button"
-          @click=${() => {
-            this.querySelector<HTMLInputElement>("input[type=color]")?.showPicker?.();
-          }}
         >
-          Custom…
+          <span
+            class="${this.partClass("customTint")}"
+            aria-hidden="true"
+            style="background-color:${this._custom ?? "transparent"}"
+          ></span>
+          <span aria-hidden="true">${mdyIcon("PLUS", "")}</span>
+          <span>${this.messages.colorCustomEntry}</span>
         </button>
       </div>
     `;

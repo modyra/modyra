@@ -3798,6 +3798,17 @@
           ],
           "states": []
         },
+        "customTint": {
+          "element": "presentation",
+          "parent": "customEntry",
+          "optional": true,
+          "repeated": false,
+          "role": null,
+          "classes": [
+            "mdy-colors__custom-tint"
+          ],
+          "states": []
+        },
         "inlineError": {
           "element": "image",
           "parent": "label",

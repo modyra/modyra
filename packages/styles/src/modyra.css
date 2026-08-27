@@ -760,7 +760,8 @@
        says the set has ended. The test is whether somebody squinting at the panel counts twelve
        patches of colour or thirteen — thirteen means this has failed, whatever it is called. */
     .mdy-colors__custom-entry {
-        display: block;
+        display: flex;
+        align-items: center;
         width: 100%;
         margin-block-start: var(--mdy-space-2);
         padding-block-start: var(--mdy-space-2);
@@ -774,6 +775,53 @@
     }
 
     .mdy-colors__custom-entry:hover { color: var(--mdy-color-primary, inherit); }
+
+    /* The door's own square, and why it does not look like one of the ready colours.
+
+       Three differences at once, because one is not enough to read at a glance: a mark drawn over
+       the tint, an outline where the ready ones are fill and nothing else, and the rule above
+       setting it apart from the row. The test is to look at the panel with the eyes half closed —
+       counting one more patch of colour than there are colours means it has failed.
+
+       The mark is drawn whatever the tint. Shown only while empty, it would be missing in exactly
+       the state where the door looks most like a colour, and it is also the one thing that tells
+       them apart for somebody whose system replaces every colour with their own. */
+    .mdy-colors__custom-tint {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        inline-size: var(--mdy-color-swatch-size);
+        block-size: var(--mdy-color-swatch-size);
+        margin-inline-end: var(--mdy-space-2);
+        vertical-align: middle;
+        border-radius: var(--mdy-corner-small);
+        /* An outline, where a ready colour is fill alone. */
+        outline: var(--mdy-stroke-1) solid var(--mdy-outline);
+        outline-offset: calc(var(--mdy-stroke-1) * -1);
+        /* Shown through a transparent tint, so nothing picked by hand yet reads as "no colour"
+           rather than as a wrong one. An opaque tint covers it. One value carries both states. */
+        background-image: linear-gradient(
+            135deg,
+            var(--mdy-surface-container-highest) 0%,
+            var(--mdy-surface-container) 100%);
+    }
+
+    /* A real shape inheriting the text colour, never a background cut into a shape: where a system
+       palette is imposed the background it would be cut from is replaced, and the mark disappears
+       leaving a hole. Inheriting the colour is also what keeps it obeying that palette while the
+       tint beside it does not — the tint is the content here, and the mark says what the thing is.
+
+       Selected structurally rather than by a class of its own: it is the door's only mark, it is
+       announced to nobody, and a class here would be one more name the contract has to keep stable
+       for something no consumer can usefully address. */
+    .mdy-colors__custom-entry > [aria-hidden="true"]:not(.mdy-colors__custom-tint) {
+        display: inline-flex;
+        flex: none;
+        inline-size: var(--mdy-size-4);
+        block-size: var(--mdy-size-4);
+        margin-inline-end: var(--mdy-space-1);
+        color: currentcolor;
+    }
 
     .mdy-color-swatch {
         width: var(--mdy-color-swatch-size);

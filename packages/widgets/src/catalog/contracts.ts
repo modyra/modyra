@@ -246,7 +246,7 @@ export const MDY_WIDGET_CONTRACTS = Object.freeze({
       // optional decoration that some do and some do not.
       presentation: ["mdy-file-icon", "mdy-file-info", "mdy-file-placeholder", "mdy-file-name", "mdy-file-meta"] ,
       required: ["content"] }),
-  colors: define("colors", ["mdy-renderer", "mdy-renderer--colors"], ["root", "label", "requiredMarker", "inputWrapper", "nativePicker", "preview", "control", "hexInput", "toggle", "popup", "presets", "swatch", "customEntry", "inlineError", "supportingText", "errors", "errorItem"] as const, true,
+  colors: define("colors", ["mdy-renderer", "mdy-renderer--colors"], ["root", "label", "requiredMarker", "inputWrapper", "nativePicker", "preview", "control", "hexInput", "toggle", "popup", "presets", "swatch", "customEntry", "customTint", "inlineError", "supportingText", "errors", "errorItem"] as const, true,
     {
       // The picker is the affordance a pointer uses to reach the colour, and the contract does not
       // say how a renderer builds one. A `<label>` wrapping the hidden `<input type=color>` and a
@@ -259,7 +259,7 @@ export const MDY_WIDGET_CONTRACTS = Object.freeze({
       // grid is a place inside the panel, not beside the field. Left undeclared it reads as a child
       // of the root, and a record that describes an anatomy the renderers do not build is a record
       // that will be believed by somebody who cannot see the page.
-      parents: { customEntry: "popup" },
+      parents: { customEntry: "popup", customTint: "customEntry" },
       // The door to the platform's chooser, and only that. It is a button and it is **not** a swatch:
       // a set has a total and a position within it, so a button inside the grid would announce
       // "thirteen of thirteen" over twelve colours, put a thing of another kind into the arrow walk,
@@ -276,10 +276,13 @@ export const MDY_WIDGET_CONTRACTS = Object.freeze({
       // order and out of the tree assistive technology reads — both, because leaving it in one of the
       // two hides it from whoever navigates by keyboard and keeps it for whoever reads the tree.
       // ADR 0159.
-      elements: { nativePicker: "affordance", customEntry: "button", toggle: "presentation" },
+      // What the door previews, declared because it is what makes the door legible rather than a
+      // detail of one theme's taste: without it the door is a line of text among ten colours, and
+      // with it looking like a colour it needs a shape of its own to not be counted as an eleventh.
+      elements: { nativePicker: "affordance", customEntry: "button", toggle: "presentation", customTint: "presentation" },
       roles: { presets: "listbox", swatch: "option" } ,
       states: { swatch: ["active"], popup: POPUP_PLACEMENT_STATES },
-      classes: { nativePicker: ["mdy-colors__primary-picker"], preview: ["mdy-colors__preview-swatch"], control: ["mdy-colors__native-hidden"], hexInput: ["mdy-colors__hex-input"], toggle: ["mdy-colors__toggle-area"], customEntry: ["mdy-colors__custom-entry"], popup: ["mdy-colors__dropdown", MDY_POPUP_CLASS, MDY_POPUP_SURFACE_CLASS], presets: ["mdy-colors__presets"], swatch: ["mdy-color-swatch"] } ,
+      classes: { nativePicker: ["mdy-colors__primary-picker"], preview: ["mdy-colors__preview-swatch"], control: ["mdy-colors__native-hidden"], hexInput: ["mdy-colors__hex-input"], toggle: ["mdy-colors__toggle-area"], customEntry: ["mdy-colors__custom-entry"], customTint: ["mdy-colors__custom-tint"], popup: ["mdy-colors__dropdown", MDY_POPUP_CLASS, MDY_POPUP_SURFACE_CLASS], presets: ["mdy-colors__presets"], swatch: ["mdy-color-swatch"] } ,
       presentation: ["mdy-colors", "mdy-colors__dropdown-header", "mdy-select__arrow"] ,
       required: ["hexInput", "nativePicker", "preview", "toggle", "presets"] }),
 });
