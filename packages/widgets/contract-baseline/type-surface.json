@@ -1240,6 +1240,7 @@
     "constraints?: MdyFieldConstraints",
     "controlId?: string",
     "descriptionVisible?: boolean",
+    "errorsReserved?: boolean",
     "errorsVisible?: boolean",
     "invalid?: boolean",
     "kind?: string",
@@ -3897,6 +3898,10 @@
   "fieldCommandHandlers": [
     "(0) handle: MdyCommandTarget",
     "-> returns: MdyWidgetCommandHandlers"
+  ],
+  "fieldDescribedBy": [
+    "(0) parts: { readonly errorId: string; readonly descriptionId: string; readonly errorsPresent: boolean; readonly descriptionPresent: boolean; }",
+    "-> returns: string | null"
   ],
   "fieldShellPartIds": [
     "(0) widgetId: string",

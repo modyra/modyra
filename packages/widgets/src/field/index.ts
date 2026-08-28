@@ -13,6 +13,7 @@ export type {
 
 export {
   fieldShellPartIds,
+  fieldDescribedBy,
   projectFieldShellA11y,
 } from "./shell-a11y.js";
 

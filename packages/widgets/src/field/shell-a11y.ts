@@ -95,6 +95,18 @@ export interface MdyFieldShellA11yOptions {
    */
   readonly descriptionVisible?: boolean;
   /**
+   * Whether the error container is on the page, whether or not it holds a message.
+   *
+   * Distinct from {@link MdyFieldShellA11yOptions.errorsVisible}, which is about the message. A
+   * renderer reserving the container under every field that can fail a rule passes this and keeps one
+   * reference that never changes — and a reference that never changes has no moment at which it can
+   * point at an element not yet drawn, or one already gone.
+   *
+   * Defaults to `errorsVisible`, so a renderer that draws the container only when it has something to
+   * say is unaffected.
+   */
+  readonly errorsReserved?: boolean;
+  /**
    * The kind whose control this is, so the shell knows which native constraints it can carry.
    */
   readonly kind?: string;
@@ -180,9 +192,15 @@ export function projectFieldShellA11y(
   // painted the refusal and an icon stated it. `aria-invalid` follows the verdict; `aria-describedby`
   // follows what exists to point at.
   const told = options.invalid ?? errorsVisible;
-  const describedBy = errorsVisible
-    ? errorId
-    : (options.descriptionVisible ?? true) ? descriptionId : null;
+  const describedBy = fieldDescribedBy({
+    errorId,
+    descriptionId,
+    // The error container is pointed at whenever it is on the page, which is not the same as
+    // whenever it holds a message: a renderer that reserves it at rest keeps one stable reference
+    // instead of writing one when a message arrives and withdrawing it when the message clears.
+    errorsPresent: options.errorsReserved ?? errorsVisible,
+    descriptionPresent: options.descriptionVisible ?? true,
+  });
 
   return {
     label: {
@@ -247,4 +265,29 @@ export function projectFieldShellA11y(
       },
     },
   };
+}
+
+/**
+ * What describes a control: its error, then its help, both when both are there.
+ *
+ * Not one or the other. An error message does not take the place of the instruction that would have
+ * prevented it — losing the help at the moment it is most useful — and a description is a list, so
+ * both fit. The error goes first because it is the new thing, and somebody who moves on after the
+ * first sentence has heard the one that mattered.
+ *
+ * An element with no text contributes nothing to the description: it is not read as a pause or as
+ * "empty", it is as though the reference were absent, until text appears inside it. That is what
+ * makes a permanently-present reference cheaper than a correct one.
+ */
+export function fieldDescribedBy(parts: {
+  readonly errorId: string;
+  readonly descriptionId: string;
+  readonly errorsPresent: boolean;
+  readonly descriptionPresent: boolean;
+}): string | null {
+  const named = [
+    parts.errorsPresent ? parts.errorId : null,
+    parts.descriptionPresent ? parts.descriptionId : null,
+  ].filter((id): id is string => id !== null);
+  return named.length > 0 ? named.join(" ") : null;
 }

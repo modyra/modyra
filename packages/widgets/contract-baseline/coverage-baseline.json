@@ -1,8 +1,8 @@
 {
   "note": "Public names not yet asserted or not yet shown. The list may only get shorter.",
   "score": {
-    "published": 875,
-    "asserted": 615,
+    "published": 876,
+    "asserted": 616,
     "shown": 98
   },
   "uncovered": [
@@ -3482,6 +3482,12 @@
     },
     {
       "name": "fieldCanBeInvalid",
+      "asserted": true,
+      "shown": false,
+      "reason": "published and never shown"
+    },
+    {
+      "name": "fieldDescribedBy",
       "asserted": true,
       "shown": false,
       "reason": "published and never shown"
