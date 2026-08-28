@@ -1,7 +1,7 @@
 {
   "note": "What each renderer consumes today. These numbers may rise and may not fall.",
   "score": {
-    "controllers": 42,
+    "controllers": 44,
     "controllersOffered": 51,
     "projections": 48,
     "projectionsOffered": 48
@@ -188,7 +188,7 @@
       "projection": true
     },
     "plain:file": {
-      "controller": false,
+      "controller": true,
       "projection": true
     },
     "angular:file": {
@@ -196,7 +196,7 @@
       "projection": true
     },
     "lit:file": {
-      "controller": false,
+      "controller": true,
       "projection": true
     },
     "plain:colors": {

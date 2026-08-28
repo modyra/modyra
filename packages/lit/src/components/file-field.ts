@@ -1,7 +1,7 @@
 import { mdyPart } from "../mdy-part.js";
 import { html, nothing, type PropertyDeclarations } from "lit";
 import { type MdyFieldHandle } from "@modyra/core";
-import { blocksValueChange, MDY_WIDGET_CONTRACTS, clearFileSelection, fileSelectionTransition } from "@modyra/widgets";
+import { createFileFieldController, MDY_WIDGET_CONTRACTS, clearFileSelection, type MdyFileFieldController } from "@modyra/widgets";
 import { MdyFieldElement, mdyIcon } from "../base.js";
 
 export class MdyFileFieldElement extends MdyFieldElement<readonly File[] | null> {
@@ -25,6 +25,21 @@ export class MdyFileFieldElement extends MdyFieldElement<readonly File[] | null>
   private _dragOver = false;
   /** What the last pick turned away — not part of the value, and the only record that it happened. */
   private _rejected: readonly File[] = [];
+  private _fileController?: MdyFileFieldController<File>;
+
+  /**
+   * Built once and kept: a controller made per render would lose what the last pick turned away,
+   * which is the one piece of state that outlives a render and is not the value.
+   */
+  private fileController(handle: MdyFieldHandle<readonly File[] | null>): MdyFileFieldController<File> {
+    this._fileController ??= createFileFieldController<File>({
+      widgetId: this.fieldId,
+      handle: handle as never,
+      ...(this.accept === undefined ? {} : { accept: this.accept }),
+      multiple: this.multiple,
+    });
+    return this._fileController;
+  }
 
   protected override get useWrapper(): boolean {
     return false;
@@ -41,22 +56,14 @@ export class MdyFileFieldElement extends MdyFieldElement<readonly File[] | null>
     // the accept tokens take, how many, and what the field ends up holding. Choosing here instead
     // meant an element that ignored `accept` on a drop and wrote a bare `File`, which is not the
     // shape `MDY_VALUE_CONTRACTS.file` declares.
+    // The rules a pick goes through are the contract's: what is accepted, what is turned away, and
+    // that the guard belongs on the model rather than on the button — a file still arrives by being
+    // dropped, by a script, or through an assistive technology driving the input.
+    const controller = this.fileController(handle);
     const pick = (picked: readonly File[]): void => {
-      // Asked of the model, not of the affordance. Disabling the button stops a pointer and nothing
-      // else: a file still arrives by being dropped on the field, by a script, or through an
-      // assistive technology driving the input — and each of those wrote a value the application had
-      // declared unchangeable. A guard on a door is not a lock.
-      if (blocksValueChange(handle.interactivity())) return;
-      const transition = fileSelectionTransition(picked, {
-        accept: this.accept,
-        multiple: this.multiple,
-      });
-      this._rejected = transition.rejected;
+      controller.dispatch({ type: "select", files: picked });
+      this._rejected = controller.state().rejected;
       this.requestUpdate();
-      if (transition.value === undefined) return;
-      handle.set(transition.value);
-      handle.markAsDirty();
-      if (transition.touched) handle.markAsTouched();
     };
     return html`
       <div

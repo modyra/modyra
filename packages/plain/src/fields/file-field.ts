@@ -8,10 +8,9 @@
  */
 import { observerFor, type MdyFieldHandle, type MdyReactivity } from "@modyra/core";
 import type { MdyDynamicFileField } from "@modyra/core";
-import { blocksValueChange,
+import {
+  createFileFieldController,
   MDY_WIDGET_CONTRACTS,
-  clearFileSelection,
-  fileSelectionTransition,
   projectFieldShellA11y,
   shownErrorsOf,
   fieldCanBeInvalid,
@@ -45,7 +44,6 @@ export function renderFileField(
 ): () => void {
   reactivity = observerFor(handle, reactivity);
   const definition = MDY_WIDGET_CONTRACTS.file;
-  const selectionOptions = { accept: f.accept, multiple: Boolean(f.multiple) };
 
   const shell = buildFieldShell(f.label, "file", {}, f.ariaLabel, f.name, f.supportingText);
   // A file field has no input wrapper in the contract: the drop zone is what holds the control.
@@ -83,38 +81,31 @@ export function renderFileField(
   dropzone.append(control, content);
   shell.root.insertBefore(dropzone, shell.description);
 
-  const selected = reactivity.signal<readonly File[]>([]);
-  // What the last pick turned away. Held separately from the value because it is not part of it:
-  // the field is valid holding what it accepted, and this is the answer to what the person just did.
-  const turnedAway = reactivity.signal<readonly File[]>([]);
-
-  function commit(candidates: readonly File[]): void {
-    // Asked of the model, not of the affordance. Disabling the button stops a pointer and nothing
-    // else: a file still arrives by being dropped on the field, by a script, or through an assistive
-    // technology driving the input — and each of those wrote a value the application had declared
-    // unchangeable. A guard on a door is not a lock.
-    if (blocksValueChange(handle.interactivity())) return;
-    const transition = fileSelectionTransition(candidates, selectionOptions);
-    turnedAway.set(transition.rejected);
-    if (transition.value === undefined) return;
-    const next = transition.value ?? [];
-    selected.set(next);
-    handle.set(next);
-    handle.markAsDirty();
-    if (transition.touched) handle.markAsTouched();
-  }
+  /**
+   * What the field holds and what it turned away, from the contract rather than from here.
+   *
+   * The rules the controller applies were already this renderer's — `fileSelectionTransition`, the
+   * guard on `interactivity`, the separate list of refusals — written out beside it. What it adds is
+   * that the same three renderers now get the same answers, including the ones nobody thought to
+   * repeat: a refusal is not part of the value, and a guard on a button is not a lock, because a file
+   * still arrives by being dropped, by a script, or through an assistive technology.
+   */
+  const controller = createFileFieldController<File>({
+    widgetId,
+    handle: handle as unknown as MdyFieldHandle<readonly File[]>,
+    ...(f.accept === undefined ? {} : { accept: f.accept }),
+    multiple: Boolean(f.multiple),
+  }, reactivity);
 
   browse.addEventListener("click", () => control.click());
-  control.addEventListener("change", () => commit(Array.from(control.files ?? [])));
-  control.addEventListener("blur", () => handle.markAsTouched());
+  control.addEventListener("change", () =>
+    controller.dispatch({ type: "select", files: Array.from(control.files ?? []) }));
+  control.addEventListener("blur", () => controller.dispatch({ type: "blur" }));
   clear.addEventListener("click", () => {
-    const transition = clearFileSelection<File>();
-    selected.set([]);
-    turnedAway.set([]);
+    controller.dispatch({ type: "clear" });
+    // The element's own text, which no model owns: a file input keeps the last pick's name until it
+    // is told otherwise, and a cleared field showing one is a field claiming a value it does not have.
     control.value = "";
-    handle.set(transition.value ?? []);
-    handle.markAsDirty();
-    handle.markAsTouched();
   });
   // The drop zone is the same policy as the picker, so a dropped file that the accept tokens
   // reject is rejected identically.
@@ -127,12 +118,11 @@ export function renderFileField(
     event.preventDefault();
     dropzone.classList.remove(DRAGOVER_CLASS);
     const dropped = (event as DragEvent).dataTransfer?.files;
-    if (dropped) commit(Array.from(dropped));
+    if (dropped) controller.dispatch({ type: "select", files: Array.from(dropped) });
   });
 
   const effectRef = reactivity.effect(() => {
-    const files = selected();
-    const refused = turnedAway();
+    const { files, rejected: refused } = controller.state();
     // The state-driven half of the contract. `definition.parts` is static — classes and shape — so
     // on its own it never said the field was invalid, required, disabled or described by its
     // errors. Merged into the static part rather than applied after it, because a second
