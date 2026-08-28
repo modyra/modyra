@@ -8,6 +8,7 @@
           "element": "root",
           "parent": null,
           "optional": false,
+          "presentWhen": null,
           "repeated": false,
           "role": null,
           "classes": [
@@ -23,6 +24,7 @@
           "element": "label",
           "parent": "root",
           "optional": true,
+          "presentWhen": "documentDeclaresIt",
           "repeated": false,
           "role": null,
           "classes": [
@@ -38,6 +40,7 @@
           "element": "text",
           "parent": "label",
           "optional": true,
+          "presentWhen": "fieldIsRequired",
           "repeated": false,
           "role": null,
           "classes": [
@@ -51,6 +54,7 @@
           "element": "group",
           "parent": "root",
           "optional": false,
+          "presentWhen": null,
           "repeated": false,
           "role": null,
           "classes": [
@@ -66,6 +70,7 @@
           "element": "group",
           "parent": "inputWrapper",
           "optional": true,
+          "presentWhen": "documentDeclaresIt",
           "repeated": false,
           "role": null,
           "classes": [
@@ -77,6 +82,7 @@
           "element": "input",
           "parent": "inputWrapper",
           "optional": false,
+          "presentWhen": null,
           "repeated": false,
           "role": null,
           "classes": [],
@@ -86,6 +92,7 @@
           "element": "group",
           "parent": "inputWrapper",
           "optional": true,
+          "presentWhen": "documentDeclaresIt",
           "repeated": false,
           "role": null,
           "classes": [
@@ -97,6 +104,7 @@
           "element": "image",
           "parent": "label",
           "optional": true,
+          "presentWhen": "errorsAreVisible",
           "repeated": false,
           "role": null,
           "classes": [
@@ -108,6 +116,7 @@
           "element": "text",
           "parent": "root",
           "optional": true,
+          "presentWhen": "documentDeclaresIt",
           "repeated": false,
           "role": null,
           "classes": [
@@ -119,6 +128,7 @@
           "element": "status",
           "parent": "root",
           "optional": true,
+          "presentWhen": "fieldCanBeInvalid",
           "repeated": false,
           "role": null,
           "classes": [
@@ -130,6 +140,7 @@
           "element": "status",
           "parent": "errors",
           "optional": true,
+          "presentWhen": "errorsAreVisible",
           "repeated": true,
           "role": null,
           "classes": [
@@ -171,6 +182,7 @@
           "element": "root",
           "parent": null,
           "optional": false,
+          "presentWhen": null,
           "repeated": false,
           "role": null,
           "classes": [
@@ -186,6 +198,7 @@
           "element": "label",
           "parent": "root",
           "optional": true,
+          "presentWhen": "documentDeclaresIt",
           "repeated": false,
           "role": null,
           "classes": [
@@ -201,6 +214,7 @@
           "element": "text",
           "parent": "label",
           "optional": true,
+          "presentWhen": "fieldIsRequired",
           "repeated": false,
           "role": null,
           "classes": [
@@ -214,6 +228,7 @@
           "element": "group",
           "parent": "root",
           "optional": false,
+          "presentWhen": null,
           "repeated": false,
           "role": null,
           "classes": [
@@ -229,6 +244,7 @@
           "element": "group",
           "parent": "inputWrapper",
           "optional": true,
+          "presentWhen": "documentDeclaresIt",
           "repeated": false,
           "role": null,
           "classes": [
@@ -240,6 +256,7 @@
           "element": "input",
           "parent": "inputWrapper",
           "optional": false,
+          "presentWhen": null,
           "repeated": false,
           "role": null,
           "classes": [],
@@ -249,6 +266,7 @@
           "element": "group",
           "parent": "inputWrapper",
           "optional": true,
+          "presentWhen": "documentDeclaresIt",
           "repeated": false,
           "role": null,
           "classes": [
@@ -260,6 +278,7 @@
           "element": "image",
           "parent": "label",
           "optional": true,
+          "presentWhen": "errorsAreVisible",
           "repeated": false,
           "role": null,
           "classes": [
@@ -271,6 +290,7 @@
           "element": "text",
           "parent": "root",
           "optional": true,
+          "presentWhen": "documentDeclaresIt",
           "repeated": false,
           "role": null,
           "classes": [
@@ -282,6 +302,7 @@
           "element": "status",
           "parent": "root",
           "optional": true,
+          "presentWhen": "fieldCanBeInvalid",
           "repeated": false,
           "role": null,
           "classes": [
@@ -293,6 +314,7 @@
           "element": "status",
           "parent": "errors",
           "optional": true,
+          "presentWhen": "errorsAreVisible",
           "repeated": true,
           "role": null,
           "classes": [
@@ -334,6 +356,7 @@
           "element": "root",
           "parent": null,
           "optional": false,
+          "presentWhen": null,
           "repeated": false,
           "role": null,
           "classes": [
@@ -349,6 +372,7 @@
           "element": "label",
           "parent": "root",
           "optional": true,
+          "presentWhen": "documentDeclaresIt",
           "repeated": false,
           "role": null,
           "classes": [
@@ -364,6 +388,7 @@
           "element": "text",
           "parent": "label",
           "optional": true,
+          "presentWhen": "fieldIsRequired",
           "repeated": false,
           "role": null,
           "classes": [
@@ -377,6 +402,7 @@
           "element": "group",
           "parent": "root",
           "optional": false,
+          "presentWhen": null,
           "repeated": false,
           "role": null,
           "classes": [
@@ -392,6 +418,7 @@
           "element": "group",
           "parent": "inputWrapper",
           "optional": true,
+          "presentWhen": "documentDeclaresIt",
           "repeated": false,
           "role": null,
           "classes": [
@@ -403,6 +430,7 @@
           "element": "input",
           "parent": "inputWrapper",
           "optional": false,
+          "presentWhen": null,
           "repeated": false,
           "role": null,
           "classes": [],
@@ -412,6 +440,7 @@
           "element": "group",
           "parent": "inputWrapper",
           "optional": true,
+          "presentWhen": "documentDeclaresIt",
           "repeated": false,
           "role": null,
           "classes": [
@@ -423,6 +452,7 @@
           "element": "image",
           "parent": "label",
           "optional": true,
+          "presentWhen": "errorsAreVisible",
           "repeated": false,
           "role": null,
           "classes": [
@@ -434,6 +464,7 @@
           "element": "text",
           "parent": "root",
           "optional": true,
+          "presentWhen": "documentDeclaresIt",
           "repeated": false,
           "role": null,
           "classes": [
@@ -445,6 +476,7 @@
           "element": "status",
           "parent": "root",
           "optional": true,
+          "presentWhen": "fieldCanBeInvalid",
           "repeated": false,
           "role": null,
           "classes": [
@@ -456,6 +488,7 @@
           "element": "status",
           "parent": "errors",
           "optional": true,
+          "presentWhen": "errorsAreVisible",
           "repeated": true,
           "role": null,
           "classes": [
@@ -497,6 +530,7 @@
           "element": "root",
           "parent": null,
           "optional": false,
+          "presentWhen": null,
           "repeated": false,
           "role": null,
           "classes": [
@@ -512,6 +546,7 @@
           "element": "label",
           "parent": "root",
           "optional": true,
+          "presentWhen": "documentDeclaresIt",
           "repeated": false,
           "role": null,
           "classes": [
@@ -527,6 +562,7 @@
           "element": "text",
           "parent": "label",
           "optional": true,
+          "presentWhen": "fieldIsRequired",
           "repeated": false,
           "role": null,
           "classes": [
@@ -540,6 +576,7 @@
           "element": "group",
           "parent": "root",
           "optional": false,
+          "presentWhen": null,
           "repeated": false,
           "role": null,
           "classes": [
@@ -555,6 +592,7 @@
           "element": "input",
           "parent": "inputWrapper",
           "optional": false,
+          "presentWhen": null,
           "repeated": false,
           "role": null,
           "classes": [],
@@ -564,6 +602,7 @@
           "element": "image",
           "parent": "label",
           "optional": true,
+          "presentWhen": "errorsAreVisible",
           "repeated": false,
           "role": null,
           "classes": [
@@ -575,6 +614,7 @@
           "element": "text",
           "parent": "root",
           "optional": true,
+          "presentWhen": "documentDeclaresIt",
           "repeated": false,
           "role": null,
           "classes": [
@@ -586,6 +626,7 @@
           "element": "status",
           "parent": "root",
           "optional": true,
+          "presentWhen": "fieldCanBeInvalid",
           "repeated": false,
           "role": null,
           "classes": [
@@ -597,6 +638,7 @@
           "element": "status",
           "parent": "errors",
           "optional": true,
+          "presentWhen": "errorsAreVisible",
           "repeated": true,
           "role": null,
           "classes": [
@@ -638,6 +680,7 @@
           "element": "root",
           "parent": null,
           "optional": false,
+          "presentWhen": null,
           "repeated": false,
           "role": null,
           "classes": [
@@ -653,6 +696,7 @@
           "element": "label",
           "parent": "root",
           "optional": true,
+          "presentWhen": "documentDeclaresIt",
           "repeated": false,
           "role": null,
           "classes": [
@@ -668,6 +712,7 @@
           "element": "text",
           "parent": "label",
           "optional": true,
+          "presentWhen": "fieldIsRequired",
           "repeated": false,
           "role": null,
           "classes": [
@@ -681,6 +726,7 @@
           "element": "group",
           "parent": "root",
           "optional": false,
+          "presentWhen": null,
           "repeated": false,
           "role": null,
           "classes": [
@@ -696,6 +742,7 @@
           "element": "input",
           "parent": "inputWrapper",
           "optional": false,
+          "presentWhen": null,
           "repeated": false,
           "role": null,
           "classes": [],
@@ -705,6 +752,7 @@
           "element": "button",
           "parent": "inputWrapper",
           "optional": true,
+          "presentWhen": null,
           "repeated": false,
           "role": null,
           "classes": [
@@ -717,6 +765,7 @@
           "element": "button",
           "parent": "inputWrapper",
           "optional": true,
+          "presentWhen": null,
           "repeated": false,
           "role": null,
           "classes": [
@@ -729,6 +778,7 @@
           "element": "image",
           "parent": "label",
           "optional": true,
+          "presentWhen": "errorsAreVisible",
           "repeated": false,
           "role": null,
           "classes": [
@@ -740,6 +790,7 @@
           "element": "text",
           "parent": "root",
           "optional": true,
+          "presentWhen": "documentDeclaresIt",
           "repeated": false,
           "role": null,
           "classes": [
@@ -751,6 +802,7 @@
           "element": "status",
           "parent": "root",
           "optional": true,
+          "presentWhen": "fieldCanBeInvalid",
           "repeated": false,
           "role": null,
           "classes": [
@@ -762,6 +814,7 @@
           "element": "status",
           "parent": "errors",
           "optional": true,
+          "presentWhen": "errorsAreVisible",
           "repeated": true,
           "role": null,
           "classes": [
@@ -806,6 +859,7 @@
           "element": "root",
           "parent": null,
           "optional": false,
+          "presentWhen": null,
           "repeated": false,
           "role": null,
           "classes": [
@@ -821,6 +875,7 @@
           "element": "label",
           "parent": "root",
           "optional": true,
+          "presentWhen": "documentDeclaresIt",
           "repeated": false,
           "role": null,
           "classes": [
@@ -836,6 +891,7 @@
           "element": "text",
           "parent": "label",
           "optional": true,
+          "presentWhen": "fieldIsRequired",
           "repeated": false,
           "role": null,
           "classes": [
@@ -849,6 +905,7 @@
           "element": "group",
           "parent": "root",
           "optional": false,
+          "presentWhen": null,
           "repeated": false,
           "role": null,
           "classes": [
@@ -860,6 +917,7 @@
           "element": "input",
           "parent": "track",
           "optional": false,
+          "presentWhen": null,
           "repeated": false,
           "role": null,
           "classes": [
@@ -871,6 +929,7 @@
           "element": "text",
           "parent": "track",
           "optional": false,
+          "presentWhen": null,
           "repeated": false,
           "role": null,
           "classes": [
@@ -882,6 +941,7 @@
           "element": "image",
           "parent": "label",
           "optional": true,
+          "presentWhen": "errorsAreVisible",
           "repeated": false,
           "role": null,
           "classes": [
@@ -893,6 +953,7 @@
           "element": "text",
           "parent": "root",
           "optional": true,
+          "presentWhen": "documentDeclaresIt",
           "repeated": false,
           "role": null,
           "classes": [
@@ -904,6 +965,7 @@
           "element": "status",
           "parent": "root",
           "optional": true,
+          "presentWhen": "fieldCanBeInvalid",
           "repeated": false,
           "role": null,
           "classes": [
@@ -915,6 +977,7 @@
           "element": "status",
           "parent": "errors",
           "optional": true,
+          "presentWhen": "errorsAreVisible",
           "repeated": true,
           "role": null,
           "classes": [
@@ -959,6 +1022,7 @@
           "element": "root",
           "parent": null,
           "optional": false,
+          "presentWhen": null,
           "repeated": false,
           "role": null,
           "classes": [
@@ -974,6 +1038,7 @@
           "element": "container",
           "parent": "root",
           "optional": false,
+          "presentWhen": null,
           "repeated": false,
           "role": null,
           "classes": [
@@ -985,6 +1050,7 @@
           "element": "input",
           "parent": "inputWrapper",
           "optional": false,
+          "presentWhen": null,
           "repeated": false,
           "role": "checkbox",
           "classes": [
@@ -996,6 +1062,7 @@
           "element": "submission",
           "parent": "inputWrapper",
           "optional": true,
+          "presentWhen": null,
           "repeated": false,
           "role": null,
           "classes": [],
@@ -1005,6 +1072,7 @@
           "element": "presentation",
           "parent": "label",
           "optional": false,
+          "presentWhen": null,
           "repeated": false,
           "role": null,
           "classes": [
@@ -1016,6 +1084,7 @@
           "element": "label",
           "parent": "inputWrapper",
           "optional": true,
+          "presentWhen": "documentDeclaresIt",
           "repeated": false,
           "role": null,
           "classes": [
@@ -1031,6 +1100,7 @@
           "element": "text",
           "parent": "label",
           "optional": true,
+          "presentWhen": "fieldIsRequired",
           "repeated": false,
           "role": null,
           "classes": [
@@ -1044,6 +1114,7 @@
           "element": "text",
           "parent": "root",
           "optional": true,
+          "presentWhen": "documentDeclaresIt",
           "repeated": false,
           "role": null,
           "classes": [
@@ -1055,6 +1126,7 @@
           "element": "status",
           "parent": "root",
           "optional": true,
+          "presentWhen": "fieldCanBeInvalid",
           "repeated": false,
           "role": null,
           "classes": [
@@ -1066,6 +1138,7 @@
           "element": "status",
           "parent": "errors",
           "optional": true,
+          "presentWhen": "errorsAreVisible",
           "repeated": true,
           "role": null,
           "classes": [
@@ -1102,6 +1175,7 @@
           "element": "root",
           "parent": null,
           "optional": false,
+          "presentWhen": null,
           "repeated": false,
           "role": null,
           "classes": [
@@ -1117,6 +1191,7 @@
           "element": "container",
           "parent": "root",
           "optional": false,
+          "presentWhen": null,
           "repeated": false,
           "role": null,
           "classes": [
@@ -1128,6 +1203,7 @@
           "element": "input",
           "parent": "inputWrapper",
           "optional": false,
+          "presentWhen": null,
           "repeated": false,
           "role": "switch",
           "classes": [
@@ -1139,6 +1215,7 @@
           "element": "submission",
           "parent": "inputWrapper",
           "optional": true,
+          "presentWhen": null,
           "repeated": false,
           "role": null,
           "classes": [],
@@ -1148,6 +1225,7 @@
           "element": "group",
           "parent": "label",
           "optional": false,
+          "presentWhen": null,
           "repeated": false,
           "role": null,
           "classes": [
@@ -1159,6 +1237,7 @@
           "element": "presentation",
           "parent": "track",
           "optional": false,
+          "presentWhen": null,
           "repeated": false,
           "role": null,
           "classes": [
@@ -1170,6 +1249,7 @@
           "element": "label",
           "parent": "inputWrapper",
           "optional": true,
+          "presentWhen": "documentDeclaresIt",
           "repeated": false,
           "role": null,
           "classes": [
@@ -1181,6 +1261,7 @@
           "element": "text",
           "parent": "label",
           "optional": true,
+          "presentWhen": "fieldIsRequired",
           "repeated": false,
           "role": null,
           "classes": [
@@ -1194,6 +1275,7 @@
           "element": "image",
           "parent": "label",
           "optional": true,
+          "presentWhen": "errorsAreVisible",
           "repeated": false,
           "role": null,
           "classes": [
@@ -1205,6 +1287,7 @@
           "element": "text",
           "parent": "root",
           "optional": true,
+          "presentWhen": "documentDeclaresIt",
           "repeated": false,
           "role": null,
           "classes": [
@@ -1216,6 +1299,7 @@
           "element": "status",
           "parent": "root",
           "optional": true,
+          "presentWhen": "fieldCanBeInvalid",
           "repeated": false,
           "role": null,
           "classes": [
@@ -1227,6 +1311,7 @@
           "element": "status",
           "parent": "errors",
           "optional": true,
+          "presentWhen": "errorsAreVisible",
           "repeated": true,
           "role": null,
           "classes": [
@@ -1263,6 +1348,7 @@
           "element": "root",
           "parent": null,
           "optional": false,
+          "presentWhen": null,
           "repeated": false,
           "role": null,
           "classes": [
@@ -1278,6 +1364,7 @@
           "element": "label",
           "parent": "root",
           "optional": true,
+          "presentWhen": "documentDeclaresIt",
           "repeated": false,
           "role": null,
           "classes": [
@@ -1293,6 +1380,7 @@
           "element": "text",
           "parent": "label",
           "optional": true,
+          "presentWhen": "fieldIsRequired",
           "repeated": false,
           "role": null,
           "classes": [
@@ -1306,6 +1394,7 @@
           "element": "group",
           "parent": "root",
           "optional": false,
+          "presentWhen": null,
           "repeated": false,
           "role": "radiogroup",
           "classes": [
@@ -1319,6 +1408,7 @@
           "element": "label",
           "parent": "group",
           "optional": false,
+          "presentWhen": null,
           "repeated": true,
           "role": null,
           "classes": [
@@ -1332,6 +1422,7 @@
           "element": "presentation",
           "parent": "option",
           "optional": false,
+          "presentWhen": null,
           "repeated": false,
           "role": null,
           "classes": [
@@ -1343,6 +1434,7 @@
           "element": "text",
           "parent": "option",
           "optional": false,
+          "presentWhen": null,
           "repeated": true,
           "role": null,
           "classes": [
@@ -1354,6 +1446,7 @@
           "element": "text",
           "parent": "root",
           "optional": true,
+          "presentWhen": "documentDeclaresIt",
           "repeated": false,
           "role": null,
           "classes": [
@@ -1365,6 +1458,7 @@
           "element": "status",
           "parent": "root",
           "optional": true,
+          "presentWhen": "fieldCanBeInvalid",
           "repeated": false,
           "role": null,
           "classes": [
@@ -1376,6 +1470,7 @@
           "element": "status",
           "parent": "errors",
           "optional": true,
+          "presentWhen": "errorsAreVisible",
           "repeated": true,
           "role": null,
           "classes": [
@@ -1423,6 +1518,7 @@
           "element": "root",
           "parent": null,
           "optional": false,
+          "presentWhen": null,
           "repeated": false,
           "role": null,
           "classes": [
@@ -1438,6 +1534,7 @@
           "element": "label",
           "parent": "root",
           "optional": true,
+          "presentWhen": "documentDeclaresIt",
           "repeated": false,
           "role": null,
           "classes": [
@@ -1453,6 +1550,7 @@
           "element": "text",
           "parent": "label",
           "optional": true,
+          "presentWhen": "fieldIsRequired",
           "repeated": false,
           "role": null,
           "classes": [
@@ -1466,6 +1564,7 @@
           "element": "group",
           "parent": "root",
           "optional": false,
+          "presentWhen": null,
           "repeated": false,
           "role": "radiogroup",
           "classes": [
@@ -1477,6 +1576,7 @@
           "element": "label",
           "parent": "group",
           "optional": false,
+          "presentWhen": null,
           "repeated": true,
           "role": null,
           "classes": [
@@ -1490,6 +1590,7 @@
           "element": "radio",
           "parent": "option",
           "optional": false,
+          "presentWhen": null,
           "repeated": false,
           "role": null,
           "classes": [
@@ -1501,6 +1602,7 @@
           "element": "presentation",
           "parent": "option",
           "optional": false,
+          "presentWhen": null,
           "repeated": true,
           "role": null,
           "classes": [
@@ -1512,6 +1614,7 @@
           "element": "text",
           "parent": "option",
           "optional": false,
+          "presentWhen": null,
           "repeated": false,
           "role": null,
           "classes": [
@@ -1523,6 +1626,7 @@
           "element": "text",
           "parent": "root",
           "optional": true,
+          "presentWhen": "documentDeclaresIt",
           "repeated": false,
           "role": null,
           "classes": [
@@ -1534,6 +1638,7 @@
           "element": "status",
           "parent": "root",
           "optional": true,
+          "presentWhen": "fieldCanBeInvalid",
           "repeated": false,
           "role": null,
           "classes": [
@@ -1545,6 +1650,7 @@
           "element": "status",
           "parent": "errors",
           "optional": true,
+          "presentWhen": "errorsAreVisible",
           "repeated": true,
           "role": null,
           "classes": [
@@ -1592,6 +1698,7 @@
           "element": "root",
           "parent": null,
           "optional": false,
+          "presentWhen": null,
           "repeated": false,
           "role": null,
           "classes": [
@@ -1607,6 +1714,7 @@
           "element": "label",
           "parent": "root",
           "optional": true,
+          "presentWhen": "documentDeclaresIt",
           "repeated": false,
           "role": null,
           "classes": [
@@ -1622,6 +1730,7 @@
           "element": "text",
           "parent": "label",
           "optional": true,
+          "presentWhen": "fieldIsRequired",
           "repeated": false,
           "role": null,
           "classes": [
@@ -1635,6 +1744,7 @@
           "element": "group",
           "parent": "root",
           "optional": false,
+          "presentWhen": null,
           "repeated": false,
           "role": null,
           "classes": [
@@ -1650,6 +1760,7 @@
           "element": "input",
           "parent": "inputWrapper",
           "optional": false,
+          "presentWhen": null,
           "repeated": false,
           "role": "combobox",
           "classes": [
@@ -1667,6 +1778,7 @@
           "element": "text",
           "parent": "trigger",
           "optional": true,
+          "presentWhen": null,
           "repeated": false,
           "role": null,
           "classes": [
@@ -1678,6 +1790,7 @@
           "element": "text",
           "parent": "trigger",
           "optional": true,
+          "presentWhen": "documentDeclaresIt",
           "repeated": false,
           "role": null,
           "classes": [
@@ -1689,6 +1802,7 @@
           "element": "presentation",
           "parent": "inputWrapper",
           "optional": true,
+          "presentWhen": null,
           "repeated": false,
           "role": null,
           "classes": [
@@ -1702,6 +1816,7 @@
           "element": "popup",
           "parent": "root",
           "optional": true,
+          "presentWhen": "overlayIsOpen",
           "repeated": false,
           "role": null,
           "classes": [
@@ -1719,6 +1834,7 @@
           "element": "input",
           "parent": "popup",
           "optional": true,
+          "presentWhen": null,
           "repeated": false,
           "role": null,
           "classes": [
@@ -1730,6 +1846,7 @@
           "element": "listbox",
           "parent": "popup",
           "optional": false,
+          "presentWhen": null,
           "repeated": false,
           "role": "listbox",
           "classes": [
@@ -1743,6 +1860,7 @@
           "element": "option",
           "parent": "options",
           "optional": true,
+          "presentWhen": null,
           "repeated": true,
           "role": "option",
           "classes": [
@@ -1759,6 +1877,7 @@
           "element": "status",
           "parent": "inputWrapper",
           "optional": true,
+          "presentWhen": null,
           "repeated": false,
           "role": null,
           "classes": [
@@ -1770,6 +1889,7 @@
           "element": "status",
           "parent": "popup",
           "optional": true,
+          "presentWhen": null,
           "repeated": false,
           "role": null,
           "classes": [
@@ -1781,6 +1901,7 @@
           "element": "image",
           "parent": "label",
           "optional": true,
+          "presentWhen": "errorsAreVisible",
           "repeated": false,
           "role": null,
           "classes": [
@@ -1792,6 +1913,7 @@
           "element": "text",
           "parent": "root",
           "optional": true,
+          "presentWhen": "documentDeclaresIt",
           "repeated": false,
           "role": null,
           "classes": [
@@ -1803,6 +1925,7 @@
           "element": "status",
           "parent": "root",
           "optional": true,
+          "presentWhen": "fieldCanBeInvalid",
           "repeated": false,
           "role": null,
           "classes": [
@@ -1814,6 +1937,7 @@
           "element": "status",
           "parent": "errors",
           "optional": true,
+          "presentWhen": "errorsAreVisible",
           "repeated": true,
           "role": null,
           "classes": [
@@ -1881,6 +2005,7 @@
           "element": "root",
           "parent": null,
           "optional": false,
+          "presentWhen": null,
           "repeated": false,
           "role": null,
           "classes": [
@@ -1896,6 +2021,7 @@
           "element": "label",
           "parent": "root",
           "optional": true,
+          "presentWhen": "documentDeclaresIt",
           "repeated": false,
           "role": null,
           "classes": [
@@ -1911,6 +2037,7 @@
           "element": "text",
           "parent": "label",
           "optional": true,
+          "presentWhen": "fieldIsRequired",
           "repeated": false,
           "role": null,
           "classes": [
@@ -1924,6 +2051,7 @@
           "element": "group",
           "parent": "root",
           "optional": false,
+          "presentWhen": null,
           "repeated": false,
           "role": null,
           "classes": [
@@ -1939,6 +2067,7 @@
           "element": "presentation",
           "parent": "inputWrapper",
           "optional": true,
+          "presentWhen": null,
           "repeated": false,
           "role": null,
           "classes": [
@@ -1950,6 +2079,7 @@
           "element": "group",
           "parent": "box",
           "optional": true,
+          "presentWhen": null,
           "repeated": false,
           "role": "grid",
           "classes": [
@@ -1961,6 +2091,7 @@
           "element": "group",
           "parent": "chips",
           "optional": true,
+          "presentWhen": null,
           "repeated": false,
           "role": "row",
           "classes": [
@@ -1972,6 +2103,7 @@
           "element": "container",
           "parent": "chipRow",
           "optional": true,
+          "presentWhen": null,
           "repeated": true,
           "role": "gridcell",
           "classes": [
@@ -1988,6 +2120,7 @@
           "element": "button",
           "parent": "chip",
           "optional": true,
+          "presentWhen": null,
           "repeated": false,
           "role": null,
           "classes": [
@@ -1999,6 +2132,7 @@
           "element": "button",
           "parent": "chip",
           "optional": true,
+          "presentWhen": null,
           "repeated": false,
           "role": null,
           "classes": [
@@ -2010,6 +2144,7 @@
           "element": "input",
           "parent": "box",
           "optional": false,
+          "presentWhen": null,
           "repeated": false,
           "role": "combobox",
           "classes": [
@@ -2027,6 +2162,7 @@
           "element": "text",
           "parent": "trigger",
           "optional": true,
+          "presentWhen": "documentDeclaresIt",
           "repeated": false,
           "role": null,
           "classes": [
@@ -2038,6 +2174,7 @@
           "element": "button",
           "parent": "box",
           "optional": true,
+          "presentWhen": null,
           "repeated": false,
           "role": null,
           "classes": [
@@ -2049,6 +2186,7 @@
           "element": "button",
           "parent": "box",
           "optional": true,
+          "presentWhen": null,
           "repeated": false,
           "role": null,
           "classes": [
@@ -2060,6 +2198,7 @@
           "element": "button",
           "parent": "box",
           "optional": true,
+          "presentWhen": null,
           "repeated": false,
           "role": null,
           "classes": [
@@ -2071,6 +2210,7 @@
           "element": "presentation",
           "parent": "box",
           "optional": true,
+          "presentWhen": null,
           "repeated": false,
           "role": null,
           "classes": [
@@ -2084,6 +2224,7 @@
           "element": "status",
           "parent": "box",
           "optional": false,
+          "presentWhen": null,
           "repeated": false,
           "role": null,
           "classes": [
@@ -2095,6 +2236,7 @@
           "element": "text",
           "parent": "box",
           "optional": true,
+          "presentWhen": null,
           "repeated": false,
           "role": "tooltip",
           "classes": [
@@ -2106,6 +2248,7 @@
           "element": "popup",
           "parent": "root",
           "optional": true,
+          "presentWhen": "overlayIsOpen",
           "repeated": false,
           "role": "dialog",
           "classes": [
@@ -2124,6 +2267,7 @@
           "element": "input",
           "parent": "popup",
           "optional": true,
+          "presentWhen": null,
           "repeated": false,
           "role": null,
           "classes": [
@@ -2135,6 +2279,7 @@
           "element": "group",
           "parent": "popup",
           "optional": false,
+          "presentWhen": null,
           "repeated": false,
           "role": "group",
           "classes": [
@@ -2147,6 +2292,7 @@
           "element": "group",
           "parent": "options",
           "optional": true,
+          "presentWhen": null,
           "repeated": true,
           "role": null,
           "classes": [
@@ -2158,6 +2304,7 @@
           "element": "presentation",
           "parent": "optionWrapper",
           "optional": false,
+          "presentWhen": null,
           "repeated": true,
           "role": null,
           "classes": [
@@ -2173,6 +2320,7 @@
           "element": "presentation",
           "parent": "option",
           "optional": true,
+          "presentWhen": null,
           "repeated": true,
           "role": null,
           "classes": [
@@ -2184,6 +2332,7 @@
           "element": "button",
           "parent": "option",
           "optional": true,
+          "presentWhen": null,
           "repeated": true,
           "role": null,
           "classes": [
@@ -2195,6 +2344,7 @@
           "element": "text",
           "parent": "option",
           "optional": false,
+          "presentWhen": null,
           "repeated": true,
           "role": null,
           "classes": [
@@ -2206,6 +2356,7 @@
           "element": "text",
           "parent": "option",
           "optional": true,
+          "presentWhen": null,
           "repeated": true,
           "role": null,
           "classes": [
@@ -2217,6 +2368,7 @@
           "element": "status",
           "parent": "inputWrapper",
           "optional": true,
+          "presentWhen": null,
           "repeated": false,
           "role": null,
           "classes": [
@@ -2228,6 +2380,7 @@
           "element": "status",
           "parent": "popup",
           "optional": true,
+          "presentWhen": null,
           "repeated": false,
           "role": null,
           "classes": [
@@ -2239,6 +2392,7 @@
           "element": "image",
           "parent": "label",
           "optional": true,
+          "presentWhen": "errorsAreVisible",
           "repeated": false,
           "role": null,
           "classes": [
@@ -2250,6 +2404,7 @@
           "element": "text",
           "parent": "root",
           "optional": true,
+          "presentWhen": "documentDeclaresIt",
           "repeated": false,
           "role": null,
           "classes": [
@@ -2261,6 +2416,7 @@
           "element": "status",
           "parent": "root",
           "optional": true,
+          "presentWhen": "fieldCanBeInvalid",
           "repeated": false,
           "role": null,
           "classes": [
@@ -2272,6 +2428,7 @@
           "element": "status",
           "parent": "errors",
           "optional": true,
+          "presentWhen": "errorsAreVisible",
           "repeated": true,
           "role": null,
           "classes": [
@@ -2368,6 +2525,7 @@
           "element": "root",
           "parent": null,
           "optional": false,
+          "presentWhen": null,
           "repeated": false,
           "role": null,
           "classes": [
@@ -2383,6 +2541,7 @@
           "element": "label",
           "parent": "root",
           "optional": true,
+          "presentWhen": "documentDeclaresIt",
           "repeated": false,
           "role": null,
           "classes": [
@@ -2398,6 +2557,7 @@
           "element": "text",
           "parent": "label",
           "optional": true,
+          "presentWhen": "fieldIsRequired",
           "repeated": false,
           "role": null,
           "classes": [
@@ -2411,6 +2571,7 @@
           "element": "group",
           "parent": "root",
           "optional": false,
+          "presentWhen": null,
           "repeated": false,
           "role": null,
           "classes": [
@@ -2426,6 +2587,7 @@
           "element": "input",
           "parent": "inputWrapper",
           "optional": false,
+          "presentWhen": null,
           "repeated": false,
           "role": "combobox",
           "classes": [
@@ -2437,6 +2599,7 @@
           "element": "button",
           "parent": "inputWrapper",
           "optional": false,
+          "presentWhen": null,
           "repeated": false,
           "role": null,
           "classes": [
@@ -2448,6 +2611,7 @@
           "element": "popup",
           "parent": "root",
           "optional": true,
+          "presentWhen": "overlayIsOpen",
           "repeated": false,
           "role": null,
           "classes": [
@@ -2465,6 +2629,7 @@
           "element": "group",
           "parent": "calendar",
           "optional": true,
+          "presentWhen": null,
           "repeated": false,
           "role": null,
           "classes": [
@@ -2476,6 +2641,7 @@
           "element": "popup",
           "parent": "popup",
           "optional": false,
+          "presentWhen": null,
           "repeated": false,
           "role": null,
           "classes": [
@@ -2487,6 +2653,7 @@
           "element": "grid",
           "parent": "calendar",
           "optional": true,
+          "presentWhen": null,
           "repeated": false,
           "role": "grid",
           "classes": [
@@ -2498,6 +2665,7 @@
           "element": "group",
           "parent": "grid",
           "optional": true,
+          "presentWhen": null,
           "repeated": false,
           "role": "row",
           "classes": [
@@ -2509,6 +2677,7 @@
           "element": "columnheader",
           "parent": "weekdays",
           "optional": true,
+          "presentWhen": null,
           "repeated": true,
           "role": "columnheader",
           "classes": [
@@ -2520,6 +2689,7 @@
           "element": "group",
           "parent": "grid",
           "optional": true,
+          "presentWhen": null,
           "repeated": true,
           "role": "row",
           "classes": [
@@ -2531,6 +2701,7 @@
           "element": "gridcell",
           "parent": "row",
           "optional": true,
+          "presentWhen": null,
           "repeated": true,
           "role": "gridcell",
           "classes": [
@@ -2551,6 +2722,7 @@
           "element": "grid",
           "parent": "calendar",
           "optional": true,
+          "presentWhen": null,
           "repeated": false,
           "role": "grid",
           "classes": [
@@ -2562,6 +2734,7 @@
           "element": "gridcell",
           "parent": "monthPicker",
           "optional": true,
+          "presentWhen": null,
           "repeated": true,
           "role": "gridcell",
           "classes": [
@@ -2575,6 +2748,7 @@
           "element": "grid",
           "parent": "calendar",
           "optional": true,
+          "presentWhen": null,
           "repeated": false,
           "role": "grid",
           "classes": [
@@ -2586,6 +2760,7 @@
           "element": "gridcell",
           "parent": "yearPicker",
           "optional": true,
+          "presentWhen": null,
           "repeated": true,
           "role": "gridcell",
           "classes": [
@@ -2599,6 +2774,7 @@
           "element": "image",
           "parent": "label",
           "optional": true,
+          "presentWhen": "errorsAreVisible",
           "repeated": false,
           "role": null,
           "classes": [
@@ -2610,6 +2786,7 @@
           "element": "text",
           "parent": "root",
           "optional": true,
+          "presentWhen": "documentDeclaresIt",
           "repeated": false,
           "role": null,
           "classes": [
@@ -2621,6 +2798,7 @@
           "element": "status",
           "parent": "root",
           "optional": true,
+          "presentWhen": "fieldCanBeInvalid",
           "repeated": false,
           "role": null,
           "classes": [
@@ -2632,6 +2810,7 @@
           "element": "status",
           "parent": "errors",
           "optional": true,
+          "presentWhen": "errorsAreVisible",
           "repeated": true,
           "role": null,
           "classes": [
@@ -2696,6 +2875,7 @@
           "element": "root",
           "parent": null,
           "optional": false,
+          "presentWhen": null,
           "repeated": false,
           "role": null,
           "classes": [
@@ -2712,6 +2892,7 @@
           "element": "label",
           "parent": "root",
           "optional": true,
+          "presentWhen": "documentDeclaresIt",
           "repeated": false,
           "role": null,
           "classes": [
@@ -2727,6 +2908,7 @@
           "element": "text",
           "parent": "label",
           "optional": true,
+          "presentWhen": "fieldIsRequired",
           "repeated": false,
           "role": null,
           "classes": [
@@ -2740,6 +2922,7 @@
           "element": "group",
           "parent": "root",
           "optional": false,
+          "presentWhen": null,
           "repeated": false,
           "role": null,
           "classes": [
@@ -2755,6 +2938,7 @@
           "element": "input",
           "parent": "inputWrapper",
           "optional": false,
+          "presentWhen": null,
           "repeated": false,
           "role": null,
           "classes": [
@@ -2768,6 +2952,7 @@
           "element": "text",
           "parent": "inputWrapper",
           "optional": false,
+          "presentWhen": null,
           "repeated": false,
           "role": null,
           "classes": [
@@ -2779,6 +2964,7 @@
           "element": "input",
           "parent": "inputWrapper",
           "optional": false,
+          "presentWhen": null,
           "repeated": false,
           "role": null,
           "classes": [
@@ -2792,6 +2978,7 @@
           "element": "button",
           "parent": "inputWrapper",
           "optional": false,
+          "presentWhen": null,
           "repeated": false,
           "role": null,
           "classes": [
@@ -2803,6 +2990,7 @@
           "element": "popup",
           "parent": "root",
           "optional": true,
+          "presentWhen": "overlayIsOpen",
           "repeated": false,
           "role": null,
           "classes": [
@@ -2821,6 +3009,7 @@
           "element": "group",
           "parent": "calendar",
           "optional": true,
+          "presentWhen": null,
           "repeated": false,
           "role": null,
           "classes": [
@@ -2832,6 +3021,7 @@
           "element": "popup",
           "parent": "popup",
           "optional": false,
+          "presentWhen": null,
           "repeated": false,
           "role": null,
           "classes": [
@@ -2843,6 +3033,7 @@
           "element": "grid",
           "parent": "calendar",
           "optional": true,
+          "presentWhen": null,
           "repeated": false,
           "role": "grid",
           "classes": [
@@ -2854,6 +3045,7 @@
           "element": "group",
           "parent": "grid",
           "optional": true,
+          "presentWhen": null,
           "repeated": false,
           "role": "row",
           "classes": [
@@ -2865,6 +3057,7 @@
           "element": "columnheader",
           "parent": "weekdays",
           "optional": true,
+          "presentWhen": null,
           "repeated": true,
           "role": "columnheader",
           "classes": [
@@ -2876,6 +3069,7 @@
           "element": "group",
           "parent": "grid",
           "optional": true,
+          "presentWhen": null,
           "repeated": true,
           "role": "row",
           "classes": [
@@ -2887,6 +3081,7 @@
           "element": "gridcell",
           "parent": "row",
           "optional": true,
+          "presentWhen": null,
           "repeated": true,
           "role": "gridcell",
           "classes": [
@@ -2907,6 +3102,7 @@
           "element": "grid",
           "parent": "calendar",
           "optional": true,
+          "presentWhen": null,
           "repeated": false,
           "role": "grid",
           "classes": [
@@ -2918,6 +3114,7 @@
           "element": "gridcell",
           "parent": "monthPicker",
           "optional": true,
+          "presentWhen": null,
           "repeated": true,
           "role": "gridcell",
           "classes": [
@@ -2931,6 +3128,7 @@
           "element": "grid",
           "parent": "calendar",
           "optional": true,
+          "presentWhen": null,
           "repeated": false,
           "role": "grid",
           "classes": [
@@ -2942,6 +3140,7 @@
           "element": "gridcell",
           "parent": "yearPicker",
           "optional": true,
+          "presentWhen": null,
           "repeated": true,
           "role": "gridcell",
           "classes": [
@@ -2955,6 +3154,7 @@
           "element": "image",
           "parent": "label",
           "optional": true,
+          "presentWhen": "errorsAreVisible",
           "repeated": false,
           "role": null,
           "classes": [
@@ -2966,6 +3166,7 @@
           "element": "text",
           "parent": "root",
           "optional": true,
+          "presentWhen": "documentDeclaresIt",
           "repeated": false,
           "role": null,
           "classes": [
@@ -2977,6 +3178,7 @@
           "element": "status",
           "parent": "root",
           "optional": true,
+          "presentWhen": "fieldCanBeInvalid",
           "repeated": false,
           "role": null,
           "classes": [
@@ -2988,6 +3190,7 @@
           "element": "status",
           "parent": "errors",
           "optional": true,
+          "presentWhen": "errorsAreVisible",
           "repeated": true,
           "role": null,
           "classes": [
@@ -3053,6 +3256,7 @@
           "element": "root",
           "parent": null,
           "optional": false,
+          "presentWhen": null,
           "repeated": false,
           "role": null,
           "classes": [
@@ -3068,6 +3272,7 @@
           "element": "label",
           "parent": "root",
           "optional": true,
+          "presentWhen": "documentDeclaresIt",
           "repeated": false,
           "role": null,
           "classes": [
@@ -3083,6 +3288,7 @@
           "element": "text",
           "parent": "label",
           "optional": true,
+          "presentWhen": "fieldIsRequired",
           "repeated": false,
           "role": null,
           "classes": [
@@ -3096,6 +3302,7 @@
           "element": "group",
           "parent": "root",
           "optional": false,
+          "presentWhen": null,
           "repeated": false,
           "role": null,
           "classes": [
@@ -3111,6 +3318,7 @@
           "element": "input",
           "parent": "inputWrapper",
           "optional": false,
+          "presentWhen": null,
           "repeated": false,
           "role": "combobox",
           "classes": [
@@ -3122,6 +3330,7 @@
           "element": "button",
           "parent": "inputWrapper",
           "optional": false,
+          "presentWhen": null,
           "repeated": false,
           "role": null,
           "classes": [
@@ -3133,6 +3342,7 @@
           "element": "popup",
           "parent": "root",
           "optional": true,
+          "presentWhen": "overlayIsOpen",
           "repeated": false,
           "role": "dialog",
           "classes": [
@@ -3149,6 +3359,7 @@
           "element": "dialog",
           "parent": "popup",
           "optional": true,
+          "presentWhen": null,
           "repeated": false,
           "role": null,
           "classes": [
@@ -3160,6 +3371,7 @@
           "element": "group",
           "parent": "popup",
           "optional": false,
+          "presentWhen": null,
           "repeated": false,
           "role": null,
           "classes": [
@@ -3171,6 +3383,7 @@
           "element": "group",
           "parent": "container",
           "optional": true,
+          "presentWhen": null,
           "repeated": false,
           "role": null,
           "classes": [
@@ -3182,6 +3395,7 @@
           "element": "group",
           "parent": "content",
           "optional": true,
+          "presentWhen": null,
           "repeated": false,
           "role": null,
           "classes": [
@@ -3193,6 +3407,7 @@
           "element": "group",
           "parent": "header",
           "optional": true,
+          "presentWhen": null,
           "repeated": false,
           "role": null,
           "classes": [
@@ -3208,6 +3423,7 @@
           "element": "input",
           "parent": "hour",
           "optional": true,
+          "presentWhen": null,
           "repeated": false,
           "role": null,
           "classes": [
@@ -3221,6 +3437,7 @@
           "element": "group",
           "parent": "header",
           "optional": true,
+          "presentWhen": null,
           "repeated": false,
           "role": null,
           "classes": [
@@ -3236,6 +3453,7 @@
           "element": "input",
           "parent": "minute",
           "optional": true,
+          "presentWhen": null,
           "repeated": false,
           "role": null,
           "classes": [
@@ -3249,6 +3467,7 @@
           "element": "group",
           "parent": "header",
           "optional": true,
+          "presentWhen": null,
           "repeated": false,
           "role": null,
           "classes": [
@@ -3262,6 +3481,7 @@
           "element": "button",
           "parent": "period",
           "optional": true,
+          "presentWhen": null,
           "repeated": false,
           "role": null,
           "classes": [
@@ -3275,6 +3495,7 @@
           "element": "popup",
           "parent": "content",
           "optional": true,
+          "presentWhen": null,
           "repeated": false,
           "role": null,
           "classes": [
@@ -3288,6 +3509,7 @@
           "element": "presentation",
           "parent": "clock",
           "optional": true,
+          "presentWhen": null,
           "repeated": false,
           "role": null,
           "classes": [
@@ -3299,6 +3521,7 @@
           "element": "presentation",
           "parent": "dialFace",
           "optional": true,
+          "presentWhen": null,
           "repeated": false,
           "role": null,
           "classes": [
@@ -3310,6 +3533,7 @@
           "element": "presentation",
           "parent": "dialUnavailable",
           "optional": true,
+          "presentWhen": null,
           "repeated": false,
           "role": null,
           "classes": [
@@ -3321,6 +3545,7 @@
           "element": "presentation",
           "parent": "dialFace",
           "optional": true,
+          "presentWhen": null,
           "repeated": false,
           "role": null,
           "classes": [
@@ -3335,6 +3560,7 @@
           "element": "presentation",
           "parent": "dialFace",
           "optional": true,
+          "presentWhen": null,
           "repeated": true,
           "role": null,
           "classes": [
@@ -3349,6 +3575,7 @@
           "element": "button",
           "parent": "actions",
           "optional": true,
+          "presentWhen": null,
           "repeated": false,
           "role": null,
           "classes": [
@@ -3360,6 +3587,7 @@
           "element": "group",
           "parent": "container",
           "optional": true,
+          "presentWhen": null,
           "repeated": false,
           "role": null,
           "classes": [
@@ -3371,6 +3599,7 @@
           "element": "button",
           "parent": "actions",
           "optional": true,
+          "presentWhen": null,
           "repeated": true,
           "role": null,
           "classes": [
@@ -3384,6 +3613,7 @@
           "element": "image",
           "parent": "label",
           "optional": true,
+          "presentWhen": "errorsAreVisible",
           "repeated": false,
           "role": null,
           "classes": [
@@ -3395,6 +3625,7 @@
           "element": "text",
           "parent": "root",
           "optional": true,
+          "presentWhen": "documentDeclaresIt",
           "repeated": false,
           "role": null,
           "classes": [
@@ -3406,6 +3637,7 @@
           "element": "status",
           "parent": "root",
           "optional": true,
+          "presentWhen": "fieldCanBeInvalid",
           "repeated": false,
           "role": null,
           "classes": [
@@ -3417,6 +3649,7 @@
           "element": "status",
           "parent": "errors",
           "optional": true,
+          "presentWhen": "errorsAreVisible",
           "repeated": true,
           "role": null,
           "classes": [
@@ -3479,6 +3712,7 @@
           "element": "root",
           "parent": null,
           "optional": false,
+          "presentWhen": null,
           "repeated": false,
           "role": null,
           "classes": [
@@ -3494,6 +3728,7 @@
           "element": "label",
           "parent": "root",
           "optional": true,
+          "presentWhen": "documentDeclaresIt",
           "repeated": false,
           "role": null,
           "classes": [
@@ -3509,6 +3744,7 @@
           "element": "text",
           "parent": "label",
           "optional": true,
+          "presentWhen": "fieldIsRequired",
           "repeated": false,
           "role": null,
           "classes": [
@@ -3522,6 +3758,7 @@
           "element": "group",
           "parent": "root",
           "optional": false,
+          "presentWhen": null,
           "repeated": false,
           "role": null,
           "classes": [
@@ -3535,6 +3772,7 @@
           "element": "input",
           "parent": "dropzone",
           "optional": false,
+          "presentWhen": null,
           "repeated": false,
           "role": null,
           "classes": [
@@ -3546,6 +3784,7 @@
           "element": "group",
           "parent": "dropzone",
           "optional": false,
+          "presentWhen": null,
           "repeated": false,
           "role": null,
           "classes": [
@@ -3557,6 +3796,7 @@
           "element": "group",
           "parent": "content",
           "optional": true,
+          "presentWhen": null,
           "repeated": false,
           "role": null,
           "classes": [
@@ -3568,6 +3808,7 @@
           "element": "group",
           "parent": "fileList",
           "optional": true,
+          "presentWhen": null,
           "repeated": true,
           "role": null,
           "classes": [
@@ -3579,6 +3820,7 @@
           "element": "button",
           "parent": "content",
           "optional": true,
+          "presentWhen": null,
           "repeated": false,
           "role": null,
           "classes": [
@@ -3590,6 +3832,7 @@
           "element": "status",
           "parent": "content",
           "optional": true,
+          "presentWhen": null,
           "repeated": false,
           "role": "status",
           "classes": [
@@ -3601,6 +3844,7 @@
           "element": "text",
           "parent": "root",
           "optional": true,
+          "presentWhen": "documentDeclaresIt",
           "repeated": false,
           "role": null,
           "classes": [
@@ -3612,6 +3856,7 @@
           "element": "status",
           "parent": "root",
           "optional": true,
+          "presentWhen": "fieldCanBeInvalid",
           "repeated": false,
           "role": null,
           "classes": [
@@ -3623,6 +3868,7 @@
           "element": "status",
           "parent": "errors",
           "optional": true,
+          "presentWhen": "errorsAreVisible",
           "repeated": true,
           "role": null,
           "classes": [
@@ -3664,6 +3910,7 @@
           "element": "root",
           "parent": null,
           "optional": false,
+          "presentWhen": null,
           "repeated": false,
           "role": null,
           "classes": [
@@ -3679,6 +3926,7 @@
           "element": "label",
           "parent": "root",
           "optional": true,
+          "presentWhen": "documentDeclaresIt",
           "repeated": false,
           "role": null,
           "classes": [
@@ -3694,6 +3942,7 @@
           "element": "text",
           "parent": "label",
           "optional": true,
+          "presentWhen": "fieldIsRequired",
           "repeated": false,
           "role": null,
           "classes": [
@@ -3707,6 +3956,7 @@
           "element": "group",
           "parent": "root",
           "optional": false,
+          "presentWhen": null,
           "repeated": false,
           "role": null,
           "classes": [
@@ -3722,6 +3972,7 @@
           "element": "affordance",
           "parent": "inputWrapper",
           "optional": false,
+          "presentWhen": null,
           "repeated": false,
           "role": null,
           "classes": [
@@ -3733,6 +3984,7 @@
           "element": "presentation",
           "parent": "nativePicker",
           "optional": false,
+          "presentWhen": null,
           "repeated": false,
           "role": null,
           "classes": [
@@ -3744,6 +3996,7 @@
           "element": "input",
           "parent": "inputWrapper",
           "optional": false,
+          "presentWhen": null,
           "repeated": false,
           "role": null,
           "classes": [
@@ -3755,6 +4008,7 @@
           "element": "input",
           "parent": "inputWrapper",
           "optional": false,
+          "presentWhen": null,
           "repeated": false,
           "role": null,
           "classes": [
@@ -3766,6 +4020,7 @@
           "element": "presentation",
           "parent": "inputWrapper",
           "optional": false,
+          "presentWhen": null,
           "repeated": false,
           "role": null,
           "classes": [
@@ -3777,6 +4032,7 @@
           "element": "popup",
           "parent": "root",
           "optional": true,
+          "presentWhen": "overlayIsOpen",
           "repeated": false,
           "role": null,
           "classes": [
@@ -3794,6 +4050,7 @@
           "element": "listbox",
           "parent": "popup",
           "optional": false,
+          "presentWhen": null,
           "repeated": false,
           "role": "listbox",
           "classes": [
@@ -3805,6 +4062,7 @@
           "element": "option",
           "parent": "presets",
           "optional": true,
+          "presentWhen": null,
           "repeated": true,
           "role": "option",
           "classes": [
@@ -3818,6 +4076,7 @@
           "element": "button",
           "parent": "popup",
           "optional": true,
+          "presentWhen": null,
           "repeated": false,
           "role": null,
           "classes": [
@@ -3829,6 +4088,7 @@
           "element": "presentation",
           "parent": "customEntry",
           "optional": true,
+          "presentWhen": null,
           "repeated": false,
           "role": null,
           "classes": [
@@ -3840,6 +4100,7 @@
           "element": "image",
           "parent": "label",
           "optional": true,
+          "presentWhen": "errorsAreVisible",
           "repeated": false,
           "role": null,
           "classes": [
@@ -3851,6 +4112,7 @@
           "element": "text",
           "parent": "root",
           "optional": true,
+          "presentWhen": "documentDeclaresIt",
           "repeated": false,
           "role": null,
           "classes": [
@@ -3862,6 +4124,7 @@
           "element": "status",
           "parent": "root",
           "optional": true,
+          "presentWhen": "fieldCanBeInvalid",
           "repeated": false,
           "role": null,
           "classes": [
@@ -3873,6 +4136,7 @@
           "element": "status",
           "parent": "errors",
           "optional": true,
+          "presentWhen": "errorsAreVisible",
           "repeated": true,
           "role": null,
           "classes": [

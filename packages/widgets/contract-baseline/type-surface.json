@@ -329,7 +329,9 @@
     "widgetId: string"
   ],
   "MdyCalendarViewMode": [
-    "(opaque)"
+    "\"days\"",
+    "\"months\"",
+    "\"years\""
   ],
   "MdyCanonicalExpectation": [
     "focusOwner?: string | null",
@@ -1209,7 +1211,23 @@
     "(opaque)"
   ],
   "MdyFieldKind": [
-    "(opaque)"
+    "\"checkbox\"",
+    "\"colors\"",
+    "\"datepicker\"",
+    "\"daterange\"",
+    "\"email\"",
+    "\"file\"",
+    "\"multiselect\"",
+    "\"number\"",
+    "\"password\"",
+    "\"radio\"",
+    "\"segmented\"",
+    "\"select\"",
+    "\"slider\"",
+    "\"text\"",
+    "\"textarea\"",
+    "\"timepicker\"",
+    "\"toggle\""
   ],
   "MdyFieldOptions": [
     "-> MdyFieldOptions$1"
@@ -1756,7 +1774,15 @@
     "(opaque)"
   ],
   "MdyLifecycleTransition": [
-    "(opaque)"
+    "\"disable\"",
+    "\"mount\"",
+    "\"remount\"",
+    "\"reset\"",
+    "\"unmount\"",
+    "\"update-locale\"",
+    "\"update-schema\"",
+    "\"update-theme\"",
+    "\"update-value\""
   ],
   "MdyLightDismiss": [
     "click: (target: unknown) => void",
@@ -2193,7 +2219,10 @@
     "contains: boolean"
   ],
   "MdyPaintBeat": [
-    "(opaque)"
+    "\"host\"",
+    "\"microtask\"",
+    "\"synchronous\"",
+    "\"task\""
   ],
   "MdyPartContract": [
     "attributes: Readonly<Record<string, string | number | boolean | null | undefined>>",
@@ -2205,6 +2234,16 @@
   ],
   "MdyPartMap": [
     "-> Readonly"
+  ],
+  "MdyPartPresence": [
+    "\"documentDeclaresIt\"",
+    "\"errorsAreVisible\"",
+    "\"fieldCanBeInvalid\"",
+    "\"fieldIsRequired\"",
+    "\"kindOffersIt\"",
+    "\"overlayIsOpen\"",
+    "\"valueIsPresent\"",
+    "\"viewIsActive\""
   ],
   "MdyPartState": [
     "-> Partial"
@@ -3190,7 +3229,23 @@
     "(opaque)"
   ],
   "MdyWidgetKind": [
-    "(opaque)"
+    "\"checkbox\"",
+    "\"colors\"",
+    "\"datepicker\"",
+    "\"daterange\"",
+    "\"email\"",
+    "\"file\"",
+    "\"multiselect\"",
+    "\"number\"",
+    "\"password\"",
+    "\"radio\"",
+    "\"segmented\"",
+    "\"select\"",
+    "\"slider\"",
+    "\"text\"",
+    "\"textarea\"",
+    "\"timepicker\"",
+    "\"toggle\""
   ],
   "MdyWidgetPart": [
     "(opaque)"
@@ -3235,7 +3290,17 @@
     "\"text\""
   ],
   "MdyWidgetState": [
-    "(opaque)"
+    "\"disabled\"",
+    "\"empty\"",
+    "\"filled\"",
+    "\"focused\"",
+    "\"invalid\"",
+    "\"loading\"",
+    "\"open\"",
+    "\"pristine\"",
+    "\"readonly\"",
+    "\"selected\"",
+    "\"touched\""
   ],
   "MdyWidgetStateContract": [
     "aria?: { readonly attribute: string; readonly value: string; }",
@@ -3254,6 +3319,7 @@
     "order: number",
     "parent?: TPart",
     "part: TPart",
+    "presentWhen?: MdyPartPresence",
     "repeated?: boolean"
   ],
   "MdyWidgetTransition": [

@@ -214,7 +214,20 @@ function membersOf(node) {
  * object types, or an alias of another type entirely — records `["(opaque)"]`: enough for the alias
  * being withdrawn to fail, and no claim about what is inside it.
  */
-function unionMembersOf(type) {
+function unionMembersOf(type, sourceFile) {
+  // `(typeof SOME_TUPLE)[number]` — a union derived from the array that declares it rather than
+  // written out beside it. Read as syntax it is an indexed access and nothing else, so the members
+  // read as removed the moment a union stops being spelled twice, which is the opposite of what the
+  // change did. Resolved here from the tuple in the same file: the members are right there.
+  if (ts.isIndexedAccessTypeNode(type) && type.indexType?.kind === ts.SyntaxKind.NumberKeyword) {
+    // The parentheses in `(typeof X)[number]` are a node of their own, and they are not optional in
+    // the emitted declaration — indexing an unparenthesised `typeof` does not parse.
+    const object = ts.isParenthesizedTypeNode(type.objectType) ? type.objectType.type : type.objectType;
+    if (ts.isTypeQueryNode(object)) {
+      const members = tupleMembersNamed(object.exprName.getText?.(), sourceFile);
+      if (members) return members;
+    }
+  }
   // A union narrowed to one member stops being a union node. Recording it as a single literal keeps
   // the last step of a narrowing readable as what it is, rather than as the alias going opaque.
   if (ts.isLiteralTypeNode(type)) return [type.literal.getText?.() ?? String(type.literal.text)];
@@ -228,6 +241,34 @@ function unionMembersOf(type) {
     members.push(member.literal.getText?.() ?? String(member.literal.text));
   }
   return members.sort();
+}
+
+/**
+ * The literals in `export const NAME = [...] as const`, or null when there is no such tuple.
+ *
+ * Syntax again, deliberately: this audit reads declarations rather than asking the checker, so that
+ * what it records is what a reader of the `.d.ts` sees. The tuple is in the same file as the alias
+ * that indexes it, because that is the only form this resolves.
+ */
+function tupleMembersNamed(name, sourceFile) {
+  if (!name || !sourceFile) return null;
+  for (const statement of sourceFile.statements) {
+    if (!ts.isVariableStatement(statement)) continue;
+    for (const declaration of statement.declarationList.declarations) {
+      if (declaration.name.getText?.() !== name) continue;
+      // `readonly [...]` is an operator wrapping the tuple, and every `as const` array declares one.
+      const declared = declaration.type;
+      const type = declared && ts.isTypeOperatorNode(declared) ? declared.type : declared;
+      if (!type || !ts.isTupleTypeNode(type)) return null;
+      const members = [];
+      for (const member of type.elements) {
+        if (!ts.isLiteralTypeNode(member)) return null;
+        members.push(member.literal.getText?.() ?? String(member.literal.text));
+      }
+      return members.sort();
+    }
+  }
+  return null;
 }
 
 /**
@@ -374,7 +415,7 @@ for (const entry of ENTRIES) {
       // which is finding K's shape one level down: the audit reported a number that looked like
       // coverage. Anything that is not a union of literals is recorded as present but opaque, so
       // its disappearance is still caught while its contents make no claim.
-      surface[node.name.text] = unionMembersOf(node.type);
+      surface[node.name.text] = unionMembersOf(node.type, node.getSourceFile());
     } else if (exported && ts.isClassDeclaration(node) && node.name) {
       surface[node.name.text] = classMembersOf(node);
       classNames.add(node.name.text);

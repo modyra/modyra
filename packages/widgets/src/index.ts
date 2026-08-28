@@ -16,6 +16,8 @@ export {
   MDY_FIELD_STATE_CLASSES,
   MDY_FORM_SHELL_CLASSES,
   MDY_FORM_SHELL_STRUCTURE,
+  MDY_PART_PRESENCE,
+  MDY_PART_PRESENCES,
   MDY_WIDGET_CONTRACT_VERSION,
 } from "./structure.js";
 export type {
@@ -23,6 +25,7 @@ export type {
   MdyFormShellPart,
   MdyWidgetSemanticElement,
   MdyWidgetStructure,
+  MdyPartPresence,
   MdyWidgetStructureNode,
 } from "./structure.js";
 

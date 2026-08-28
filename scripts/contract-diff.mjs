@@ -56,6 +56,7 @@ function snapshot() {
         element: node.element,
         parent: node.parent ?? null,
         optional: node.optional === true,
+        presentWhen: node.presentWhen ?? null,
         repeated: node.repeated === true,
         role: part.role ?? null,
         classes: [...(part.classes ?? [])].sort(),
@@ -270,6 +271,19 @@ for (const kind of Object.keys(current.kinds).filter((k) => baseline.kinds[k])) 
     // which no consumer that already met it can notice.
     if (a.optional !== b.optional) {
       record(b.optional ? "minor" : "major", at, `presence changed: ${a.optional ? "optional" : "required"} → ${b.optional ? "optional" : "required"}`);
+    }
+    // When an optional part is on the page. Gaining a condition tells a renderer something it was
+    // deciding for itself, and breaks nothing it already does. Changing one moves the moment it has
+    // to build the part; losing one takes back a rule a renderer was reading. Both are breaking, and
+    // this field was invisible here while every optional node in the contract gained one.
+    // A snapshot taken before this field existed has no key for it, so both sides are normalised:
+    // `undefined` from an older snapshot and `null` from a node that states no condition are the same
+    // absence, and comparing them raw reports a change on every node in the contract.
+    const wasWhen = a.presentWhen ?? null;
+    const nowWhen = b.presentWhen ?? null;
+    if (wasWhen !== nowWhen) {
+      record(wasWhen === null ? "minor" : "major", at,
+        `presence condition: ${wasWhen ?? "unstated"} → ${nowWhen ?? "unstated"}`);
     }
 
     for (const gone of a.classes.filter((c) => !b.classes.includes(c))) {

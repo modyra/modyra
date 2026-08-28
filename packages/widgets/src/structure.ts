@@ -31,6 +31,79 @@ export type MdyWidgetSemanticElement =
   | "listbox" | "option" | "radio" | "dialog" | "grid" | "gridcell" | "container"
   | "presentation" | "popup" | "text" | "affordance" | "columnheader" | "image";
 
+/**
+ * The conditions under which an optional part is on the page.
+ *
+ * Closed, and each entry is a question a renderer can already answer without asking the contract
+ * anything further. Free text would be unreadable to a check, and a check is the whole point: an
+ * unwritten condition is what let the same optional part appear under three different rules.
+ */
+export const MDY_PART_PRESENCES = Object.freeze([
+  /** The document supplied the content — a label, help text, an affix. */
+  "documentDeclaresIt",
+  /** The field is required. */
+  "fieldIsRequired",
+  /**
+   * The field has constraints, so it can fail one.
+   *
+   * The error container is reserved at rest under exactly these fields, and stays reserved after a
+   * correction. A container that appears with the first message moves everything below it at the
+   * moment a person is reaching for the next field — which is the field that moves. Reserved, that
+   * jump is gone; and taking the reservation back when the message clears is the same jump upward.
+   *
+   * Read from the field, never from its kind: an optional note with a length limit has a constraint,
+   * and a checkbox that must be ticked has one.
+   */
+  "fieldCanBeInvalid",
+  /** There are errors to show, by the rules that decide when an error is shown. */
+  "errorsAreVisible",
+  /** The widget's overlay is open. */
+  "overlayIsOpen",
+  /** The field holds a value. */
+  "valueIsPresent",
+  /** The kind's own configuration turns this part on. */
+  "kindOffersIt",
+  /** The view this part belongs to is the one showing. */
+  "viewIsActive",
+] as const);
+
+/**
+ * Derived from the list above rather than written twice.
+ *
+ * A union restated beside the array it mirrors is a second declaration, and a check reading the
+ * restatement passes while the array grows past it — which is how a vocabulary comes to have two
+ * lengths. A test can only read the array, so the array is what everything reads.
+ */
+export type MdyPartPresence = (typeof MDY_PART_PRESENCES)[number];
+
+/**
+ * When each optional part is on the page, by part name.
+ *
+ * Keyed by name because the anatomy is declared twice — derived per kind, and written out once for
+ * the shell every field shares — and a table is the only shape in which the two cannot disagree. A part
+ * called
+ * `supportingText` is the same part wherever it appears, and a table is the only shape in which
+ * seventeen kinds cannot disagree about it.
+ *
+ * A name missing from here is a part whose condition has not been decided. That is a gap, and the
+ * audit records it — but a *wrong* entry is worse than a missing one, because it tells a renderer to
+ * build something at a moment when it is not wanted and nothing notices until it is on the page.
+ */
+export const MDY_PART_PRESENCE: Readonly<Record<string, MdyPartPresence>> = Object.freeze({
+  label: "documentDeclaresIt",
+  supportingText: "documentDeclaresIt",
+  prefix: "documentDeclaresIt",
+  suffix: "documentDeclaresIt",
+  placeholder: "documentDeclaresIt",
+  requiredMarker: "fieldIsRequired",
+  // Reserved at rest under every field that can fail a constraint, and still reserved after a
+  // correction: taking the space back when the message clears is the same jump as giving it, upward.
+  errors: "fieldCanBeInvalid",
+  errorItem: "errorsAreVisible",
+  inlineError: "errorsAreVisible",
+  popup: "overlayIsOpen",
+});
+
 /** One node in a widget's framework-independent structural anatomy. */
 export interface MdyWidgetStructureNode<TPart extends string = string> {
   readonly part: TPart;
@@ -54,6 +127,17 @@ export interface MdyWidgetStructureNode<TPart extends string = string> {
    * same sentence from the part's side, where a reader deciding what to build actually looks.
    */
   readonly optional?: boolean;
+  /**
+   * What has to be true for an optional part to be on the page.
+   *
+   * `optional` says a renderer *may* leave a part out and stops there, so three renderers decided
+   * three times when to build it and conformance had nothing to ask. A part that is present under a
+   * condition nobody wrote is a part each adapter invents a rule for.
+   *
+   * Named `presentWhen` rather than `when` because `when` already means the overlay phase on a key
+   * binding, and one word carrying two meanings is how a declaration comes to be read two ways.
+   */
+  readonly presentWhen?: MdyPartPresence;
   readonly repeated?: boolean;
 }
 
@@ -181,10 +265,26 @@ export const MDY_SHARED_UI_CLASSES = Object.freeze([
   "mdy-glass-effect--medium",
 ]);
 
+/**
+ * Attaches each optional node's presence condition from the one table.
+ *
+ * Derived rather than written beside each node: this anatomy is declared twice — here, and again per
+ * kind where the catalogue builds it — and a condition copied into both is a condition that drifts
+ * the first time one of them is edited.
+ */
+function withPresence<TPart extends string>(
+  nodes: readonly MdyWidgetStructureNode<TPart>[],
+): readonly MdyWidgetStructureNode<TPart>[] {
+  return Object.freeze(nodes.map((node) => {
+    const presentWhen = node.optional === true ? MDY_PART_PRESENCE[node.part] : undefined;
+    return Object.freeze(presentWhen === undefined ? node : { ...node, presentWhen });
+  }));
+}
+
 /** Base field anatomy. Widget-specific contracts extend this ordered tree. */
 export const MDY_FIELD_SHELL_STRUCTURE = deepFreeze({
   kind: "field-shell",
-  nodes: Object.freeze([
+  nodes: withPresence([
     { part: "root", element: "root", order: 0 },
     { part: "label", element: "label", parent: "root", order: 0, optional: true },
     { part: "requiredMarker", element: "text", parent: "label", order: 0, optional: true },

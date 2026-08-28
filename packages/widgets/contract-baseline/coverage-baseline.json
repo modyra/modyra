@@ -1,8 +1,8 @@
 {
   "note": "Public names not yet asserted or not yet shown. The list may only get shorter.",
   "score": {
-    "published": 871,
-    "asserted": 613,
+    "published": 874,
+    "asserted": 614,
     "shown": 98
   },
   "uncovered": [
@@ -170,6 +170,18 @@
     },
     {
       "name": "MDY_OVERLAY_VIEWPORT_MARGIN",
+      "asserted": true,
+      "shown": false,
+      "reason": "published and never shown"
+    },
+    {
+      "name": "MDY_PART_PRESENCE",
+      "asserted": false,
+      "shown": false,
+      "reason": "published, neither asserted nor shown"
+    },
+    {
+      "name": "MDY_PART_PRESENCES",
       "asserted": true,
       "shown": false,
       "reason": "published and never shown"
@@ -2045,6 +2057,12 @@
       "asserted": true,
       "shown": false,
       "reason": "published and never shown"
+    },
+    {
+      "name": "MdyPartPresence",
+      "asserted": false,
+      "shown": false,
+      "reason": "published, neither asserted nor shown"
     },
     {
       "name": "MdyPartState",

@@ -10,7 +10,7 @@
  */
 import type { MdyPartContract } from "../contract.js";
 import type { MdyStateName } from "../state.js";
-import { MDY_FIELD_SHELL_CLASSES, MDY_SHELL_PART_STATES } from "../structure.js";
+import { MDY_FIELD_SHELL_CLASSES, MDY_PART_PRESENCE, MDY_SHELL_PART_STATES } from "../structure.js";
 import type { MdyWidgetSemanticElement } from "../structure.js";
 import type { MdyValueSlot, MdyWidgetDefinition, MdyWidgetKind, MdyWidgetVariant } from "./kinds.js";
 import { semanticElement } from "./semantics.js";
@@ -92,6 +92,7 @@ export const PARENT_CANDIDATES: Readonly<Record<string, readonly string[]>> = Ob
   rejected: ["dropzone"],
   errorItem: ["errors"],
 });
+
 /** Parts an adapter must always render — the control, and whatever physically holds it. */
 const REQUIRED_PARTS: ReadonlySet<string> = new Set(["control", "startControl", "endControl", "trigger", "group", "inputWrapper", "dropzone", "track"]);
 
@@ -473,7 +474,9 @@ export function define<const TPart extends string>(kind: MdyWidgetKind, rootClas
       ?? (PARENT_CANDIDATES[name] ?? []).find((candidate) => declared.has(candidate)) ?? "root";
     const order = siblingCount.get(parent) ?? 0;
     siblingCount.set(parent, order + 1);
-    return Object.freeze({ part: name, element: shape.elements?.[name] ?? semanticElement(name), parent: parent as TPart, order, optional: !(REQUIRED_PARTS.has(name) || shape.required?.includes(name)), repeated: REPEATED_PARTS.has(name) });
+    const optional = !(REQUIRED_PARTS.has(name) || shape.required?.includes(name));
+    const presentWhen = optional ? MDY_PART_PRESENCE[name] : undefined;
+    return Object.freeze({ part: name, element: shape.elements?.[name] ?? semanticElement(name), parent: parent as TPart, order, optional, ...(presentWhen === undefined ? {} : { presentWhen }), repeated: REPEATED_PARTS.has(name) });
   });
   return Object.freeze({ kind, rootClasses: Object.freeze([...rootClasses]),
     ...(shape.controlType === undefined ? {} : { controlType: shape.controlType }),
