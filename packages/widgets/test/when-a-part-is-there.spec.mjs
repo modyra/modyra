@@ -57,6 +57,17 @@ test("every optional part says when it is there", () => {
     + "MDY_PART_PRESENCES a word for the fact it is present under");
 });
 
+test("every word in the vocabulary is a condition some part is under", () => {
+  // A word nothing uses is a word nobody had to get right. `viewIsActive` sat unused while the
+  // calendar's three views were all declared `overlayIsOpen` — true of all six parts at once, and
+  // contradicted by the page: with the day view up, the month and year pickers are hidden and their
+  // cells are not built. The unused word was the missing declaration, seen from the other end.
+  const used = new Set(everyOptionalNode().map((node) => node.presentWhen));
+  assert.deepEqual(MDY_PART_PRESENCES.filter((word) => !used.has(word)), [],
+    "a condition is published that no part is present under. Either a part should carry it and does "
+    + "not, or the vocabulary has a word it does not need");
+});
+
 test("every condition that is declared is one the contract knows", () => {
   const invented = everyOptionalNode()
     .filter((n) => n.presentWhen !== undefined && !CONDITIONS.has(n.presentWhen));

@@ -2653,7 +2653,7 @@
           "element": "grid",
           "parent": "calendar",
           "optional": true,
-          "presentWhen": "overlayIsOpen",
+          "presentWhen": "viewIsActive",
           "repeated": false,
           "role": "grid",
           "classes": [
@@ -2665,7 +2665,7 @@
           "element": "group",
           "parent": "grid",
           "optional": true,
-          "presentWhen": "overlayIsOpen",
+          "presentWhen": "viewIsActive",
           "repeated": false,
           "role": "row",
           "classes": [
@@ -2677,7 +2677,7 @@
           "element": "columnheader",
           "parent": "weekdays",
           "optional": true,
-          "presentWhen": "overlayIsOpen",
+          "presentWhen": "viewIsActive",
           "repeated": true,
           "role": "columnheader",
           "classes": [
@@ -2689,7 +2689,7 @@
           "element": "group",
           "parent": "grid",
           "optional": true,
-          "presentWhen": "overlayIsOpen",
+          "presentWhen": "viewIsActive",
           "repeated": true,
           "role": "row",
           "classes": [
@@ -2701,7 +2701,7 @@
           "element": "gridcell",
           "parent": "row",
           "optional": true,
-          "presentWhen": "overlayIsOpen",
+          "presentWhen": "viewIsActive",
           "repeated": true,
           "role": "gridcell",
           "classes": [
@@ -2722,7 +2722,7 @@
           "element": "grid",
           "parent": "calendar",
           "optional": true,
-          "presentWhen": "overlayIsOpen",
+          "presentWhen": "viewIsActive",
           "repeated": false,
           "role": "grid",
           "classes": [
@@ -2734,7 +2734,7 @@
           "element": "gridcell",
           "parent": "monthPicker",
           "optional": true,
-          "presentWhen": "overlayIsOpen",
+          "presentWhen": "viewIsActive",
           "repeated": true,
           "role": "gridcell",
           "classes": [
@@ -2748,7 +2748,7 @@
           "element": "grid",
           "parent": "calendar",
           "optional": true,
-          "presentWhen": "overlayIsOpen",
+          "presentWhen": "viewIsActive",
           "repeated": false,
           "role": "grid",
           "classes": [
@@ -2760,7 +2760,7 @@
           "element": "gridcell",
           "parent": "yearPicker",
           "optional": true,
-          "presentWhen": "overlayIsOpen",
+          "presentWhen": "viewIsActive",
           "repeated": true,
           "role": "gridcell",
           "classes": [
@@ -3033,7 +3033,7 @@
           "element": "grid",
           "parent": "calendar",
           "optional": true,
-          "presentWhen": "overlayIsOpen",
+          "presentWhen": "viewIsActive",
           "repeated": false,
           "role": "grid",
           "classes": [
@@ -3045,7 +3045,7 @@
           "element": "group",
           "parent": "grid",
           "optional": true,
-          "presentWhen": "overlayIsOpen",
+          "presentWhen": "viewIsActive",
           "repeated": false,
           "role": "row",
           "classes": [
@@ -3057,7 +3057,7 @@
           "element": "columnheader",
           "parent": "weekdays",
           "optional": true,
-          "presentWhen": "overlayIsOpen",
+          "presentWhen": "viewIsActive",
           "repeated": true,
           "role": "columnheader",
           "classes": [
@@ -3069,7 +3069,7 @@
           "element": "group",
           "parent": "grid",
           "optional": true,
-          "presentWhen": "overlayIsOpen",
+          "presentWhen": "viewIsActive",
           "repeated": true,
           "role": "row",
           "classes": [
@@ -3081,7 +3081,7 @@
           "element": "gridcell",
           "parent": "row",
           "optional": true,
-          "presentWhen": "overlayIsOpen",
+          "presentWhen": "viewIsActive",
           "repeated": true,
           "role": "gridcell",
           "classes": [
@@ -3102,7 +3102,7 @@
           "element": "grid",
           "parent": "calendar",
           "optional": true,
-          "presentWhen": "overlayIsOpen",
+          "presentWhen": "viewIsActive",
           "repeated": false,
           "role": "grid",
           "classes": [
@@ -3114,7 +3114,7 @@
           "element": "gridcell",
           "parent": "monthPicker",
           "optional": true,
-          "presentWhen": "overlayIsOpen",
+          "presentWhen": "viewIsActive",
           "repeated": true,
           "role": "gridcell",
           "classes": [
@@ -3128,7 +3128,7 @@
           "element": "grid",
           "parent": "calendar",
           "optional": true,
-          "presentWhen": "overlayIsOpen",
+          "presentWhen": "viewIsActive",
           "repeated": false,
           "role": "grid",
           "classes": [
@@ -3140,7 +3140,7 @@
           "element": "gridcell",
           "parent": "yearPicker",
           "optional": true,
-          "presentWhen": "overlayIsOpen",
+          "presentWhen": "viewIsActive",
           "repeated": true,
           "role": "gridcell",
           "classes": [

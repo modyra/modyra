@@ -158,6 +158,19 @@ export const MDY_PART_PRESENCE: Readonly<Record<string, MdyPartPresence>> = Obje
   // contents follow the refusals.
   formErrors: "kindOffersIt",
   formErrorItem: "errorsAreVisible",
+  // A calendar shows one view at a time. `overlayIsOpen` is true of all six of these at once, which
+  // the page contradicts: with the day view up, the month and year pickers are hidden and their cells
+  // are not built. The condition is the sharper one, and it implies the popup is open — a view cannot
+  // be the one showing inside a panel that is not there.
+  grid: "viewIsActive",
+  weekdays: "viewIsActive",
+  weekday: "viewIsActive",
+  row: "viewIsActive",
+  gridcell: "viewIsActive",
+  monthPicker: "viewIsActive",
+  monthCell: "viewIsActive",
+  yearPicker: "viewIsActive",
+  yearCell: "viewIsActive",
   overflowCount: "valuesOverflow",
   wayBackAction: "undoIsOnOffer",
   rejected: "inputWasRefused",
