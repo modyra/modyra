@@ -50,9 +50,14 @@ function snapshot() {
   for (const kind of MDY_WIDGET_KINDS) {
     const definition = MDY_WIDGET_CONTRACTS[kind];
     const parts = {};
-    for (const node of definition.structure.nodes) {
+    for (const [at, node] of definition.structure.nodes.entries()) {
       const part = definition.parts[node.part] ?? {};
       parts[node.part] = {
+        // Where the part sits among its siblings, which `contracts.ts` states is the reading order.
+        // Recorded because moving a name inside the list changes what a screen reader says next on a
+        // widget that has already shipped, and nothing else in this entry moves when it does: every
+        // other field describes the part itself, and a reorder changes none of them.
+        order: at,
         element: node.element,
         parent: node.parent ?? null,
         optional: node.optional === true,
@@ -284,6 +289,14 @@ for (const kind of Object.keys(current.kinds).filter((k) => baseline.kinds[k])) 
     if (wasWhen !== nowWhen) {
       record(wasWhen === null ? "minor" : "major", at,
         `presence condition: ${wasWhen ?? "unstated"} → ${nowWhen ?? "unstated"}`);
+    }
+
+    // The reading order. A snapshot taken before this field existed has no key for it, and an absent
+    // order is not order zero — comparing raw would report a move on every part in the contract the
+    // first time this runs. Breaking either way: a person hears the parts in the order they are in,
+    // and both directions change what they hear.
+    if (a.order !== undefined && b.order !== undefined && a.order !== b.order) {
+      record("major", at, `reading order: position ${a.order} → ${b.order}`);
     }
 
     for (const gone of a.classes.filter((c) => !b.classes.includes(c))) {

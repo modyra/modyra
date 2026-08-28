@@ -30,6 +30,9 @@ const ROOT = resolve(new URL("..", import.meta.url).pathname);
 const PACKAGES = ["core", "widgets", "plain", "styles"];
 
 let failures = 0;
+/** Names reachable from more than one subpath — counted apart, because each finding here has its
+ *  own repair and one closing sentence for all three sent a reader looking for the wrong thing. */
+let ambiguous = 0;
 /** Per package: name → the subpaths that publish it. */
 const published = new Map();
 for (const pkg of PACKAGES) {
@@ -76,7 +79,7 @@ for (const pkg of PACKAGES) {
   );
   for (const [name, subpaths] of multi) {
     console.log(`  ${name}  ←  ${subpaths.join(", ")}`);
-    failures += 1;
+    ambiguous += 1;
   }
 }
 
@@ -130,11 +133,59 @@ if (unresolved.length > 0) {
   console.log(`Every ${PACKAGES.map((p) => `@modyra/${p}`).join(", ")} import in the repository resolves.`);
 }
 
-if (failures > 0) {
+/**
+ * The third question, and the one the other two cannot ask: **is anything behind no door at all?**
+ *
+ * A field controller is what a renderer adopts to stop deciding a kind's behaviour for itself, and
+ * the adoption audit counts how many have been. Three of them were written, tested and never
+ * exported: their types were published, so a consumer could name the interface and had no way to
+ * build one, and the adoption bench reported "none offered" — correctly, because from the public
+ * door nothing was.
+ *
+ * Nothing said so. The duplicate-door check above guards the opposite problem, the type surface only
+ * compares what is exported, and their own specs reach them by deep path into `dist/`, which is the
+ * house habit and therefore not a signal.
+ *
+ * Narrow on purpose: only `create*FieldController`. A helper exported for a sibling module to use is
+ * an ordinary internal, but a field controller exists to be adopted, and one that cannot be reached
+ * is a promise the package does not keep.
+ */
+const controllerDoors = published.get("widgets") ?? new Map();
+const unreachable = [];
+const fieldDir = resolve(ROOT, "packages/widgets/src/field");
+if (existsSync(fieldDir)) {
+  for (const file of readdirSync(fieldDir)) {
+    if (!file.endsWith("-controller.ts")) continue;
+    const source = readFileSync(join(fieldDir, file), "utf8");
+    for (const [, name] of source.matchAll(/export function (create\w*FieldController)\b/g)) {
+      if (!controllerDoors.has(name)) unreachable.push([`packages/widgets/src/field/${file}`, name]);
+    }
+  }
+}
+if (unreachable.length > 0) {
+  console.log(`\n${unreachable.length} field controller(s) written and published by no door:`);
+  for (const [file, name] of unreachable) console.log(`  ${file}: ${name} is not exported by @modyra/widgets`);
+  console.log(
+    "\nA renderer cannot adopt what it cannot import, and the adoption bench will report the kind as\n" +
+      "offering nothing — which is true, and says nothing about the controller sitting behind it.",
+  );
+  failures += unreachable.length;
+}
+
+// Three questions, three repairs. One sentence for all of them sent a reader looking for a second
+// door when the finding was that there was none, or for a missing export when an import had simply
+// been renamed.
+if (unreachable.length > 0) {
+  console.log("\nPUBLISHED BY NO DOOR — export the controller from the package barrel, or delete it.");
+}
+if (unresolved.length > 0) {
+  console.log("\nIMPORT NAMES NOTHING — the subpath resolves and the name it asks for is not there.");
+}
+if (ambiguous > 0) {
   console.log(
     "\nPUBLIC DOORS AMBIGUOUS — publish each name from one subpath. An aggregate that re-exports a\n" +
       "granular subpath means one of the two is redundant; keep whichever names a domain.",
   );
-  process.exit(1);
 }
+if (failures + ambiguous > 0) process.exit(1);
 console.log("PUBLIC DOORS UNAMBIGUOUS");

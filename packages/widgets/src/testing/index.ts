@@ -32,3 +32,4 @@ export type { MdyPaintBeat } from "./paint-beat.js";
  */
 export { selectTransitionFixtures } from "../select/fixtures/transitions.js";
 export type { MdySelectTransitionFixture } from "../select/fixtures/transitions.js";
+export { MDY_TESTING_VOCABULARIES, type MdyTestingVocabulary } from "./vocabularies.js";

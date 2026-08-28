@@ -2740,6 +2740,12 @@
     "ɵdir: _angular_core.ɵɵDirectiveDeclaration<MdySupportingTextDirective, \"[mdySupportingText]\", never, {}, {}, never, never, true, never>",
     "ɵfac: _angular_core.ɵɵFactoryDeclaration<MdySupportingTextDirective, never>"
   ],
+  "MdyTestingVocabulary": [
+    "door: \"./testing\"",
+    "name: string",
+    "shape: \"list\" | \"names\" | \"keyed-by-kind\" | \"table\" | \"data\"",
+    "value: unknown"
+  ],
   "MdyTextComponent": [
     "autocomplete: _angular_core.InputSignal<string | null>",
     "ngOnInit-> returns: void",

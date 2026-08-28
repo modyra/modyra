@@ -12,7 +12,9 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import * as published from "../dist/index.js";
 import * as vocabulary from "../dist/vocabulary.js";
+import * as testingDoor from "../dist/testing/index.js";
 import { MDY_CONTRACT_VOCABULARIES } from "../dist/index.js";
+import { MDY_TESTING_VOCABULARIES } from "../dist/testing/index.js";
 
 /**
  * What a vocabulary looks like from outside: a shouting name holding a collection.
@@ -81,4 +83,52 @@ test("a consumer reaches every kind through the index", () => {
     assert.ok(value.text !== undefined || value.select !== undefined,
       `${name} is indexed as keyed by kind and is keyed by something else`);
   }
+});
+
+/**
+ * The third door, and the reason it has an index of its own rather than a line in the first.
+ *
+ * `./testing` publishes the tables the adapters' fixtures compare against — what a kind holds when it
+ * is empty, what it looks like at rest, which beats a paint takes. A fourth adapter's author needs
+ * them as much as the contract's own catalogues. They are not in the contract's index and must not
+ * be: reaching them from the main barrel would put fixtures and comparison tables in the bundle of
+ * somebody who only wanted to draw a field.
+ *
+ * Two indexes, no third list. The alternative — one index plus a ledger naming what it deliberately
+ * omits — is the shape that goes stale in silence, and two such ledgers once hid five undeclared
+ * classes between them.
+ */
+test("the testing door names every collection it publishes", () => {
+  const found = Object.keys(testingDoor)
+    .filter((name) => name.startsWith("MDY_") && isACollection(testingDoor[name]))
+    .filter((name) => name !== "MDY_TESTING_VOCABULARIES")
+    .sort();
+  const indexed = MDY_TESTING_VOCABULARIES.map((one) => one.name).sort();
+
+  assert.ok(found.length > 8, `only ${found.length} collections behind this door — the derivation has stopped reaching them`);
+  assert.deepEqual(found.filter((name) => !indexed.includes(name)), [],
+    "a collection this door publishes is in no index. It was published and unindexed for as long as "
+    + "the contract's index claimed to cover the package, which it never did — it covers two doors of three");
+  assert.deepEqual(indexed.filter((name) => !found.includes(name)), [],
+    "the index names something this door does not publish");
+});
+
+test("the two indexes do not overlap, and between them nothing is unindexed", () => {
+  const contract = new Set(MDY_CONTRACT_VOCABULARIES.map((one) => one.name));
+  const testing = MDY_TESTING_VOCABULARIES.map((one) => one.name);
+  assert.deepEqual(testing.filter((name) => contract.has(name)), [],
+    "a collection is in both indexes, so a tool walking both counts it twice and a reader has to "
+    + "check whether the two entries describe the same thing");
+
+  // The property that makes two indexes as good as one: asked of every door together, nothing
+  // published anywhere is missing from both. This is what a ledger of exemptions would have to
+  // promise and could not.
+  const everywhere = { ...published, ...vocabulary, ...testingDoor };
+  const unindexed = Object.keys(everywhere)
+    .filter((name) => name.startsWith("MDY_") && isACollection(everywhere[name]))
+    .filter((name) => name !== "MDY_CONTRACT_VOCABULARIES" && name !== "MDY_TESTING_VOCABULARIES")
+    .filter((name) => !contract.has(name) && !testing.includes(name));
+  assert.deepEqual(unindexed, [],
+    "published by some door and named by no index — a tool reading either one believes it has seen "
+    + "the whole surface, so the collection nobody added is the one it silently does not cover");
 });

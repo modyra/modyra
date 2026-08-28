@@ -1,7 +1,7 @@
 {
   "note": "Public names not yet asserted or not yet shown. The list may only get shorter.",
   "score": {
-    "published": 889,
+    "published": 890,
     "asserted": 573,
     "shown": 98
   },
@@ -2276,27 +2276,27 @@
     },
     {
       "name": "MdySelectController",
-      "asserted": true,
+      "asserted": false,
       "shown": false,
-      "reason": "published and never shown"
+      "reason": "published, neither asserted nor shown"
     },
     {
       "name": "MdySelectControllerOptions",
+      "asserted": false,
+      "shown": false,
+      "reason": "published, neither asserted nor shown"
+    },
+    {
+      "name": "MdySelectFieldController",
       "asserted": true,
       "shown": false,
       "reason": "published and never shown"
     },
     {
-      "name": "MdySelectFieldController",
-      "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
-    },
-    {
       "name": "MdySelectFieldControllerOptions",
-      "asserted": false,
+      "asserted": true,
       "shown": false,
-      "reason": "published, neither asserted nor shown"
+      "reason": "published and never shown"
     },
     {
       "name": "MdySelectIntent",
@@ -2471,6 +2471,12 @@
       "asserted": true,
       "shown": false,
       "reason": "published and never shown"
+    },
+    {
+      "name": "MdyTestingVocabulary",
+      "asserted": false,
+      "shown": false,
+      "reason": "published, neither asserted nor shown"
     },
     {
       "name": "MdyTextComponent",
