@@ -14,7 +14,7 @@
  * **The control is in the same run.** Bare Escape must close it too. Without that, a panel that never
  * opened, or a renderer whose panel closes on its own, passes by having nothing to refuse.
  *
- * Claims under attack: UI-002, A11Y-006.
+ * Claims under attack: UI-002, A11Y-002.
  */
 
 import { expect, test } from "@playwright/test";

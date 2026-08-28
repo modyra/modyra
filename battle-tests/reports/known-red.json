@@ -1,14 +1,17 @@
 {
   "note": "Battles that are red because the defect they describe is open. A red listed here does not fail a build; a red that is not listed is a regression. Rewrite with `npm run battle:ci -- --accept`.",
   "order": "Repair in severity order: every S0, then every S1, then S2 and below. `bySeverity` is the count at each, and `knownRed` is sorted the same way, so the top of the list is the next work.",
-  "recordedAt": "2026-08-25T20:50:14Z",
+  "recordedAt": "2026-08-28T21:24:48Z",
   "seed": "(none — the run drew a fresh seed, so this list is one walk of many)",
   "runs": "(default)",
-  "openReds": 1,
+  "openReds": 3,
   "bySeverity": {
-    "S2": 1
+    "S2": 2,
+    "S3": 1
   },
   "knownRed": [
-    "[S2][UI-005] a token below the scale holds a step, not a number"
+    "[S2][ADP-001] an adapter that wraps every controller wraps every controller",
+    "[S2][UI-005] a token below the scale holds a step, not a number",
+    "[S3][DOC-001] a claim nobody registered"
   ]
 }

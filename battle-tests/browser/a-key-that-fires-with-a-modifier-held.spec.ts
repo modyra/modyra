@@ -23,7 +23,7 @@
  * no key at all satisfies the claim by being dead. And a binding that *does* declare a modifier must
  * not fire without it, which is the same rule read from the other end.
  *
- * Claims under attack: UI-002, A11Y-006.
+ * Claims under attack: UI-002, A11Y-002.
  */
 
 import { expect, test } from "@playwright/test";
