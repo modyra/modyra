@@ -752,7 +752,7 @@
           "element": "button",
           "parent": "inputWrapper",
           "optional": true,
-          "presentWhen": null,
+          "presentWhen": "kindOffersIt",
           "repeated": false,
           "role": null,
           "classes": [
@@ -765,7 +765,7 @@
           "element": "button",
           "parent": "inputWrapper",
           "optional": true,
-          "presentWhen": null,
+          "presentWhen": "kindOffersIt",
           "repeated": false,
           "role": null,
           "classes": [
@@ -1802,7 +1802,7 @@
           "element": "presentation",
           "parent": "inputWrapper",
           "optional": true,
-          "presentWhen": null,
+          "presentWhen": "kindOffersIt",
           "repeated": false,
           "role": null,
           "classes": [
@@ -2067,7 +2067,7 @@
           "element": "presentation",
           "parent": "inputWrapper",
           "optional": true,
-          "presentWhen": null,
+          "presentWhen": "kindOffersIt",
           "repeated": false,
           "role": null,
           "classes": [
@@ -2079,7 +2079,7 @@
           "element": "group",
           "parent": "box",
           "optional": true,
-          "presentWhen": null,
+          "presentWhen": "valueIsPresent",
           "repeated": false,
           "role": "grid",
           "classes": [
@@ -2091,7 +2091,7 @@
           "element": "group",
           "parent": "chips",
           "optional": true,
-          "presentWhen": null,
+          "presentWhen": "valueIsPresent",
           "repeated": false,
           "role": "row",
           "classes": [
@@ -2210,7 +2210,7 @@
           "element": "presentation",
           "parent": "box",
           "optional": true,
-          "presentWhen": null,
+          "presentWhen": "kindOffersIt",
           "repeated": false,
           "role": null,
           "classes": [
@@ -3796,7 +3796,7 @@
           "element": "group",
           "parent": "content",
           "optional": true,
-          "presentWhen": null,
+          "presentWhen": "kindOffersIt",
           "repeated": false,
           "role": null,
           "classes": [

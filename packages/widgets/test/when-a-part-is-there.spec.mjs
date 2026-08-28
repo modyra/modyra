@@ -44,10 +44,31 @@ function everyOptionalNode() {
 const silent = [...new Set(everyOptionalNode().filter((n) => n.presentWhen === undefined)
   .map((n) => n.part))].sort();
 
+/**
+ * What each remaining part is actually present under, in the words of the renderer that draws it.
+ *
+ * Written down because the condition is known and the *word* for it is not: each of these holds
+ * under a runtime fact of its own, and six words each used once is a list rather than a vocabulary.
+ * Recorded here so whoever adds the word does not have to rediscover the rule first.
+ */
+const WHAT_IT_IS_ACTUALLY_UNDER = {
+  chipTooltip: "the pointer is over a chip",
+  overflowCount: "more chips are chosen than the strip can show",
+  wayBackAction: "an undo is on offer, from a destructive action just taken",
+  rejected: "a file was refused",
+  loading: "the field says it is loading",
+  submitFalse: "unmeasured: absent in every state this suite reaches",
+  formErrors: "unmeasured: the form shell, which no per-kind fixture mounts",
+  formErrorItem: "unmeasured: the form shell, which no per-kind fixture mounts",
+};
+
 if (process.argv.includes("--write")) {
   writeFileSync(BASELINE, `${JSON.stringify({
     note: "Optional parts whose presence condition has not been decided. This list may only ever shrink.",
+    reason: "Each is present under a runtime fact of its own, named below. What is missing is a word "
+      + "for it in MDY_PART_PRESENCES, not knowledge of the rule.",
     parts: silent,
+    under: Object.fromEntries(silent.map((part) => [part, WHAT_IT_IS_ACTUALLY_UNDER[part] ?? "unread"])),
   }, null, 2)}\n`);
   console.log(`Recorded ${silent.length} part(s) without a condition.`);
 }

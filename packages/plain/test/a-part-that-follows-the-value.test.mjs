@@ -28,17 +28,41 @@ const WITH_A_VALUE = {
   select: { options: OPTIONS, initialValue: "a" },
 };
 
+/**
+ * The parts of a page whose class vocabulary reaches them and nothing else.
+ *
+ * `option` and `chip` both carry `mdy-chip` — one in the popup's grid, one in the value strip — and
+ * `optionLabel` reaches a chip's label the same way. A lookup by class answers for whichever comes
+ * first and calls it either.
+ *
+ * Measured on the page rather than derived from the class lists: the overlaps are structural, one
+ * part's selector reaching elements that belong to another, and comparing the declarations misses
+ * that shape. A reading that cannot tell two parts apart must not become an assertion about one of
+ * them, and resolving it with a scoped selector would put a copy of the renderer's containment in
+ * this file, to be kept in step by hand.
+ */
+function unambiguouslyShown(host, kind) {
+  const reached = new Map();
+  for (const [part, contract] of Object.entries(MDY_WIDGET_CONTRACTS[kind].parts)) {
+    if (contract.classes.length === 0) continue;
+    const found = [...host.querySelectorAll(contract.classes.map((one) => `.${one}`).join(""))];
+    if (found.length > 0) reached.set(part, found);
+  }
+  const shown = new Set();
+  for (const [part, found] of reached) {
+    const alsoReached = [...reached].some(([other, theirs]) =>
+      other !== part && theirs.some((element) => found.includes(element)));
+    if (alsoReached) continue;
+    if (found.some((element) => !element.hidden)) shown.add(part);
+  }
+  return shown;
+}
+
 function shownParts(kind, extra) {
   const host = document.createElement("div");
   document.body.append(host);
   const form = mountMdyForm(host, [{ name: "f", kind, label: "F", ...extra }], { submitLabel: null });
-  const shown = new Set();
-  for (const [part, contract] of Object.entries(MDY_WIDGET_CONTRACTS[kind].parts)) {
-    const selector = contract.classes.map((one) => `.${one}`).join("");
-    if (selector === "") continue;
-    const element = host.querySelector(selector);
-    if (element && !element.hidden) shown.add(part);
-  }
+  const shown = unambiguouslyShown(host, kind);
   form.dispose();
   host.remove();
   return shown;
@@ -83,6 +107,40 @@ for (const [kind, withValue] of Object.entries(WITH_A_VALUE)) {
       assert.equal(holding.has(part), false,
         `${kind}.${part} stayed on screen once the field held a value — a placeholder beside the `
         + "thing it stands in for");
+    }
+  });
+}
+
+/**
+ * The other direction, and the one that cannot be escaped by weakening a declaration.
+ *
+ * The checks above hold the page to what the contract says. On their own they are half a guard: a
+ * part declared `valueIsPresent` and then re-declared as something else leaves the set they look at
+ * and passes, which is how a wrong declaration slips past a check written from the declaration's
+ * side. So this reads the page first — a part that appears only once the field holds a value — and
+ * asks the contract what it says about it.
+ */
+for (const [kind, withValue] of Object.entries(WITH_A_VALUE)) {
+  test(`${kind}: a part the page shows only with a value is declared that way`, () => {
+    const { options, initialValue: _drop, ...empty } = withValue;
+    const atRest = shownParts(kind, { ...empty, ...(options ? { options } : {}) });
+    const holding = shownParts(kind, withValue);
+    const declared = new Map(
+      MDY_WIDGET_CONTRACTS[kind].structure.nodes.map((node) => [node.part, node.presentWhen]),
+    );
+
+    // Only the optional ones. A required part carries no condition by design — the contract has six
+    // kinds declaring a required part inside an optional popup, and `optionLabel` is one: it is
+    // always there while its option is, and asking what state brings it about has no answer.
+    const optional = new Set(MDY_WIDGET_CONTRACTS[kind].structure.nodes
+      .filter((node) => node.optional === true).map((node) => node.part));
+    const followsTheValue = [...holding].filter((part) => !atRest.has(part) && optional.has(part));
+    assert.ok(followsTheValue.length > 0,
+      `${kind}: no part appeared when the field took a value, so this check saw nothing`);
+    for (const part of followsTheValue) {
+      assert.equal(declared.get(part), "valueIsPresent",
+        `${kind}.${part} appears only once the field holds a value and the contract says `
+        + `"${declared.get(part) ?? "nothing"}". A renderer reading that builds it at the wrong moment`);
     }
   });
 }

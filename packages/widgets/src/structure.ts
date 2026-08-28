@@ -105,7 +105,11 @@ export const MDY_PART_PRESENCE: Readonly<Record<string, MdyPartPresence>> = Obje
   requiredMarker: "fieldIsRequired",
   // Shown in place of a value, so the document supplying the words is only half of it.
   placeholder: "valueIsAbsent",
-  // A value drawn as a chip, and everything a chip carries: they exist per chosen value.
+  // A value drawn as a chip, and everything a chip carries: they exist per chosen value — the strip
+  // and its row included. Read once as containers built with the control and kept, which the page
+  // contradicts: with nothing chosen there is no strip, not an empty one.
+  chips: "valueIsPresent",
+  chipRow: "valueIsPresent",
   chip: "valueIsPresent",
   chipRemove: "valueIsPresent",
   chipMove: "valueIsPresent",
@@ -116,6 +120,15 @@ export const MDY_PART_PRESENCE: Readonly<Record<string, MdyPartPresence>> = Obje
   // Taking the value away is offered once there is one to take.
   clearAll: "valueIsPresent",
   clear: "valueIsPresent",
+  // Drawn because the kind has them, not because of anything the field is doing: a chooser's arrow,
+  // a multiselect's own layout box, a number's steppers, the list a file field puts its entries in.
+  // The condition is not vacuous — it says a renderer that draws this kind another way is still
+  // conformant, which is what `optional` alone left each of them to decide privately.
+  arrow: "kindOffersIt",
+  box: "kindOffersIt",
+  increment: "kindOffersIt",
+  decrement: "kindOffersIt",
+  fileList: "kindOffersIt",
   // Reserved at rest under every field that can fail a constraint, and still reserved after a
   // correction: taking the space back when the message clears is the same jump as giving it, upward.
   errors: "fieldCanBeInvalid",
