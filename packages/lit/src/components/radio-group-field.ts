@@ -2,7 +2,6 @@ import { html, nothing, type PropertyDeclarations } from "lit";
 import { type MdySelectOption } from "@modyra/core";
 import {
   createOptionFieldController,
-  shownErrorsOf,
   type MdyOptionFieldController,
   defaultOptionKey,
 } from "@modyra/widgets";
@@ -65,7 +64,7 @@ export class MdyRadioGroupFieldElement extends MdyOptionsFieldElement<unknown | 
         aria-describedby=${groupAttrs?.["aria-describedby"] ?? nothing}
         aria-disabled=${groupAttrs?.["aria-disabled"] ?? nothing}
         aria-readonly=${groupAttrs?.["aria-readonly"] ?? nothing}
-        aria-invalid=${groupAttrs?.["aria-invalid"] ?? (shownErrorsOf(handle).length > 0 ? "true" : "false")}
+        aria-invalid=${groupAttrs?.["aria-invalid"] ?? (this.showErrors(handle) ? "true" : "false")}
         aria-required=${groupAttrs?.["aria-required"] ?? (handle.required() ? "true" : "false")}
       >
         ${this.options.map(

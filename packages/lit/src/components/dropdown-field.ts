@@ -4,7 +4,6 @@ import { capabilityOf,
   createLightDismiss,
   listboxNextIndex,
   overlayLifecycleTransition,
-  shownErrorsOf,
 } from "@modyra/widgets";
 import { mdyIcon } from "../base.js";
 import { MdyOptionsFieldElement } from "./options-field.js";
@@ -189,7 +188,7 @@ export abstract class MdyDropdownFieldElement<T> extends MdyOptionsFieldElement<
           aria-haspopup=${this.popupPromise}
           aria-expanded=${this._open ? "true" : "false"}
           aria-labelledby=${this.labelId}
-          aria-invalid=${shownErrorsOf(handle).length > 0 ? "true" : "false"}
+          aria-invalid=${this.showErrors(handle) ? "true" : "false"}
           aria-required=${handle.required() ? "true" : "false"}
           ?disabled=${handle.disabled()}
           @click=${() => this.toggleOpen(handle)}

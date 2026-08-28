@@ -6,7 +6,7 @@ import {
   createTypeahead,
   isTypeaheadCharacter,
   optionsWithUnrecognizedValue,
-  shownErrorsOf, selectKeyboardAction, listboxNextIndex, focusWhenShown } from "@modyra/widgets";
+  selectKeyboardAction, listboxNextIndex, focusWhenShown } from "@modyra/widgets";
 import { MdyLitSelectAdapter } from "../widget-runtime/index.js";
 import { MdyDropdownFieldElement } from "./dropdown-field.js";
 import {
@@ -521,7 +521,7 @@ export class MdySelectFieldElement extends MdyDropdownFieldElement<unknown | nul
             aria-activedescendant=${trigger.attributes["aria-activedescendant"] ?? nothing}
             aria-disabled=${trigger.attributes["aria-disabled"] === "true" ? "true" : nothing}
             aria-readonly=${handle.readonly() ? "true" : nothing}
-            aria-invalid=${shownErrorsOf(handle).length > 0 ? "true" : "false"}
+            aria-invalid=${this.showErrors(handle) ? "true" : "false"}
             aria-required=${handle.required() ? "true" : "false"}
             aria-label=${this.label || nothing}
             ?disabled=${handle.disabled()}

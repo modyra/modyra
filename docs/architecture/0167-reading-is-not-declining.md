@@ -1,0 +1,112 @@
+# ADR 0167: Reading a form is not declining it
+
+Status: Accepted
+
+## Context
+
+ADR 0165 settled *when* a required field speaks: silent while it is empty and nobody has reached it,
+speaking once a person has been there and left it that way. It did not settle what "has been there"
+means, and three renderers had quietly answered it three ways.
+
+Two doors existed for the same verdict. One filters refusals by whether the field is out of play; the
+other also asks whether anybody has been at it. Three controls in one renderer reached for the first,
+so a required select announced itself invalid on the first paint — the exact behaviour 0165 was
+written to stop, in the renderer whose adoption produced 0165.
+
+Underneath that, a wider divergence: a person tabbing through a form reached some kinds and not
+others. A kind whose control is a plain box hears its own blur; a kind whose control is a button that
+opens a panel had nobody bound to the trigger, so focus passing through it was never noticed at all.
+Which kinds noticed differed by renderer.
+
+The obvious repair — notice the leaving in one place per renderer, so every kind hears it — was built,
+measured green across all three, and is **not** what this record decides. Asked outside the
+repository what a form should say to somebody who tabs through a required field and leaves it empty,
+the answer was that it should say nothing, and the reasoning inverted the question.
+
+## Decision
+
+**A form speaks when the value has been touched, never when only focus has.**
+
+Focus arriving and leaving is an act on attention, not on the value. **Tab is how a person reads a
+form** — the same way eyes scroll it. A sighted person scrolling past twenty required fields gets no
+red borders; somebody tabbing past them must not get twenty announcements of "invalid". Reading is
+not declining, and treating it as declining does not spare the person bad news at the end: it moves
+false news to the start, on fields they were about to fill in.
+
+So the test for "has this person been at this field" is **did the value change while they were
+there**. Empty to empty is nothing happening. Empty to something to empty is something happening, and
+the field may speak.
+
+**Opening a panel and closing it without choosing is an act on the value.** It is the panel's version
+of typing and deleting: the person saw the options and took none. The same holds for a calendar and
+for a colour palette — engaging with the value space and leaving it empty is one act across every
+kind that has one, which is what makes it a rule rather than a per-kind decision.
+
+**A panel is inside its field's focus scope wherever it is rendered.** A field's focus has left when
+it has left the control *and* is not inside the panel. Where the panel lives in the document is a
+rendering decision taken for clipping reasons and must not reach behaviour — so the scope follows the
+declared `aria-controls` link from the control to the panel, not DOM containment. A renderer that
+decides by containment answers differently from one that renders its panel in place, which is the
+divergence class this repository keeps producing.
+
+```
+focus in, focus out, value unchanged        nothing — reading is not declining
+value changed, then focus out               speaks
+panel opened and closed, nothing chosen     an act on the value; speaks on leaving
+panel open, focus inside it                 still in the field; not a leaving
+panel rendered elsewhere                    the same, by aria-controls rather than the tree
+submit                                      everything, once, focus to the first
+```
+
+## Consequences
+
+**The repository contradicts this today, and this record does not fix it.** `errorsVisible` keys off
+`touched` — focus has been here — and every kind whose control is an ordinary box marks touched on
+blur. Measured: a required text, checkbox, datepicker, timepicker or daterange, focused and left
+without typing, announces itself invalid. The kinds that stayed silent were right by accident, and
+the repair that would have made them all speak was the wrong repair.
+
+What the rule needs is the distinction between **touched** — focus has been here — and **dirty** —
+the value has changed — with the verdict keying off the second. Both flags exist on a field handle.
+Changing which one `errorsVisible` reads redefines documented behaviour for every kind in every
+renderer at once, so it is a batch of its own and not a line in this one.
+
+The panel-as-focus-scope rule has no implementation yet either. Each renderer decides containment its
+own way today, and at least one decides it by the document tree.
+
+**What this record does settle** is the direction, so the next person does not relitigate it from the
+symptom. A check that finds "this kind stays silent where that one speaks" now has an answer to which
+one is wrong, and it is usually the one that speaks.
+
+## Alternatives rejected
+
+**Announce on leaving, whatever the person did.** The case for it is honesty about where the form
+stands, and the cost is paid by the person who reads before writing — which is how a form is read by
+anybody who cannot see all of it at once. It is the option the repository half-implements today.
+
+**Announce only on submit.** True but late, and it withholds a correction from somebody who has just
+made one and could fix it while it is still in mind.
+
+**Leave each kind to answer for itself.** This is what produced the divergence: the same contract,
+answered at different moments depending on whether a kind's control happened to have a blur handler.
+
+## Verification
+
+- `packages/lit/test/a-field-nobody-has-reached.test.mjs` asserts across every kind that can be
+  required and empty that none announces itself invalid before anybody reaches it, and — as its
+  perimeter — that each one still can announce it, so a renderer that never writes the attribute
+  cannot pass by silence.
+- Mutation: restoring the door that does not ask about touching, at the one control that used it,
+  turns that kind red. Worth stating that the first attempt at this mutation *survived*: it changed
+  the native control's path, which the fixture never renders because it asks for the custom combobox.
+  A mutation that survives is a statement about coverage, and that path has none.
+- The consequence above — that ordinary kinds speak on a bare traversal — is **not** guarded. There
+  is no check that fails today, because the behaviour it would guard is the behaviour that ships.
+
+## Security and privacy
+
+None. This decides when a message a person is entitled to see is shown to them; no data crosses a
+boundary, and nothing here is reachable by anyone who cannot already see the form. Worth one line on
+the adjacent risk: a verdict shown too early trains people to ignore it, and an ignored verdict on a
+field that later holds something genuinely wrong is a correctness problem wearing an accessibility
+one's clothes.
