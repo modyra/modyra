@@ -74,6 +74,31 @@ export function severitiesByFile(files, claimsSource) {
   return found;
 }
 
+/**
+ * The claim ids a spec names that the registry does not have.
+ *
+ * A file citing one live id and one dead one ranks by the live one, and the dead one is dropped
+ * without a word — so the header reads as two claims covered and is one. Where every id is dead the
+ * file ranks `unknown` and recording already refuses it; this is the mixed case, which looks ranked.
+ *
+ * Reported rather than refused: the citation is wrong in the header, not in the run, and a red build
+ * here would stop a tier over a line of prose. `a-claim-nobody-registered` is the check that holds
+ * the whole suite to it.
+ */
+export function unresolvedClaimsByFile(files, claimsSource) {
+  const registered = new Set(
+    claimsSource.split(/\bid:\s*"/).slice(1).map((block) => block.slice(0, block.indexOf('"'))),
+  );
+  const found = {};
+  for (const [file, source] of Object.entries(files)) {
+    const cited = [...new Set((source.match(/Claims under attack:([^\n]*)/) ?? ["", ""])[1]
+      .match(/\b[A-Z0-9]{2,4}-\d{3}\b/g) ?? [])];
+    const dangling = cited.filter((id) => !registered.has(id));
+    if (dangling.length > 0) found[file] = dangling;
+  }
+  return found;
+}
+
 function readBaselineFile() {
   if (!existsSync(BASELINE_FILE)) return [];
   const parsed = JSON.parse(readFileSync(BASELINE_FILE, "utf8"));
@@ -171,6 +196,25 @@ function severitiesFor(names) {
     files[file] = existsSync(path) ? readFileSync(path, "utf8") : "";
   }
   return severitiesByFile(files, readFileSync(join(BATTLE_ROOT, "models", "claims.mjs"), "utf8"));
+}
+
+/** Says which of a red spec's claims name nothing, since ranking hides it. */
+function reportUnresolvedClaims(names) {
+  const files = {};
+  for (const name of names) {
+    const file = specFileOf(name);
+    if (files[file] !== undefined) continue;
+    const path = join(BATTLE_ROOT, "browser", file);
+    files[file] = existsSync(path) ? readFileSync(path, "utf8") : "";
+  }
+  const dangling = unresolvedClaimsByFile(files, readFileSync(join(BATTLE_ROOT, "models", "claims.mjs"), "utf8"));
+  const entries = Object.entries(dangling);
+  if (entries.length === 0) return;
+  console.warn(
+    `browser baseline check: ${entries.length} red spec(s) name a claim the registry does not have, ` +
+      "and were ranked by the rest:\n  " +
+      entries.map(([file, ids]) => `${file}: ${ids.join(", ")}`).join("\n  "),
+  );
 }
 
 /**
@@ -314,6 +358,7 @@ function main() {
   }
 
   const severities = severitiesFor([...run.failed]);
+  reportUnresolvedClaims([...run.failed]);
 
   if (accept) {
     assertRedsAreRanked(run.failed, severities);
