@@ -62,8 +62,15 @@ battle(
     title: "an index that knows every vocabulary",
     environments: ["node"],
   },
-  async () => {
+  async (ctx) => {
     const published = publishedNames();
+
+    // What was swept, recorded: a battle that inspects rather than drives still has to say what
+    // population it looked at, or a green means "found nothing" and "looked at nothing" alike.
+    ctx.log.note("the MDY_ names both doors publish", {
+      total: published.size,
+      collections: [...published.values()].filter(({ value }) => isCollection(value)).length,
+    });
 
     // The premise: a package that published nothing satisfies every comparison below.
     expectClaim(published.size >= 10, {
@@ -82,6 +89,10 @@ battle(
     });
 
     const known = new Set(catalogue.map((one) => one.name));
+    ctx.log.note("the index found, and what it knows", {
+      entries: catalogue.length,
+      shapes: [...new Set(catalogue.map((one) => one.shape))].sort(),
+    });
 
     // A shape beside each name is what makes the index usable by a tool rather than by a reader: a
     // catalogue keyed by kind and a flat list of names are read by different code.

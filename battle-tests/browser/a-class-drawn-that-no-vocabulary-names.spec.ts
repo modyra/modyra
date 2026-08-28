@@ -30,10 +30,18 @@ type Api = Record<string, Record<string, (...args: never[]) => unknown>>;
 /** Every `mdy-` name any published door spells, whether it is written down or computed. */
 const published = ((): Set<string> => {
   const names = new Set<string>();
+  // The set of objects already walked is not an optimisation. The published index of the
+  // vocabularies contains its own entry — an index that omitted itself would publish a collection it
+  // does not cover — so a walk without it reaches itself and never returns, and a spec file that
+  // never finishes loading takes the whole suite's collection with it.
+  const walked = new WeakSet<object>();
   const collect = (value: unknown): void => {
     if (typeof value === "string") { if (value.startsWith("mdy-")) names.add(value); return; }
+    if (value === null || typeof value !== "object") return;
+    if (walked.has(value)) return;
+    walked.add(value);
     if (Array.isArray(value)) { value.forEach(collect); return; }
-    if (value !== null && typeof value === "object") Object.values(value).forEach(collect);
+    Object.values(value).forEach(collect);
   };
 
   for (const door of [index, vocabulary] as unknown as Array<Record<string, unknown>>) {
