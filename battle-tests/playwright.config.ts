@@ -15,16 +15,21 @@ export default defineConfig({
   testMatch: "**/*.spec.ts",
   fullyParallel: false,
   /**
-   * Eight of this machine's ten cores. Playwright's default is half, which left the suite
-   * worker-bound rather than floor-bound: measured, 5 workers took 405s and 8 took 277s for the same
-   * 850 tests and the same 20 reds — the set compared name by name, not counted. Above eight the
-   * return falls off (7.3 of 8 were busy) and the races a fuller machine exposes are not worth it.
+   * Four fifths of whatever machine is running, not a count. Playwright's default is half, which
+   * left the suite worker-bound rather than floor-bound: measured here, 5 workers took 405s and 8
+   * took 277s for the same 850 tests and the same 20 reds — the set compared name by name, not
+   * counted. Above that the return falls off: 7.3 of the 8 were busy.
+   *
+   * **A ratio and not `8`, because eight was measured on ten cores.** The workflow runs on a hosted
+   * runner with a fraction of them, and eight browser processes on two cores is slower than two and
+   * exposes the races a contended machine already showed once. The ratio is the thing that was
+   * measured; the number it resolves to is the machine's business.
    *
    * A run on a contended machine took 472s and flipped one load-sensitive test; that is the cost of
    * sharing the machine, not of this number, and it is why the two waits that test depends on are
    * generous rather than tight.
    */
-  workers: 8,
+  workers: "80%",
   /**
    * A ceiling, not a budget. The slowest single test is 33.5s, so this accuses nothing today — it is
    * here for the next one: a spec that waits for something that cannot happen, once per item of a
