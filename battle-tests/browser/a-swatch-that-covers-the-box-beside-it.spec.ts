@@ -46,6 +46,14 @@ type Api = Record<string, Record<string, (...args: never[]) => unknown>>;
 const selectorFor = (part: string) => (partClasses("colors", part) as string[]).map((one) => `.${one}`).join("");
 
 /** How many ways each renderer leaves out of the list, filled as each one is measured. */
+// **These tests must run in one worker, in order, and this says so.** The last one compares what
+// the per-renderer tests measured, so it reads what they wrote — a dependency that is real and was
+// implicit, held up only by the suite's `fullyParallel: false`. Turning that on for other reasons
+// put each test in its own process and the comparison found an empty table: it failed honestly,
+// saying it had measured one renderer of three, but it failed for a reason no reader of this file
+// could have predicted. Declared here, the file is correct whatever the suite is configured to do.
+test.describe.configure({ mode: "serial" });
+
 const routesOut: Record<string, number> = {};
 
 for (const host of HOSTS) {
