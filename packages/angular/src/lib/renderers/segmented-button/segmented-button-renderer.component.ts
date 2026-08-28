@@ -4,7 +4,8 @@ import {
   createOptionFieldController,
   MDY_WIDGET_CONTRACTS,
   optionNavigationIndex,
-  } from "@modyra/widgets";
+  defaultWidgetIdFactory,
+} from "@modyra/widgets";
 import { MdyPartDirective } from "../../control/mdy-part.directive";
 import { MdyBaseControl } from "../../control/control.directive";
 import { MdyErrorListComponent } from "../../control/error-list.component";
@@ -28,7 +29,7 @@ import { MdySelectOption } from "../../core/types";
     <!-- Group labelled via aria-labelledby: the label gets a real id (B33). -->
     <mdy-control-label
       [label]="label()"
-      [labelId]="fieldId + '-label'"
+      [labelId]="labelId"
       [hasError]="paintsAsInvalid()"
       [required]="isRequired()"
       [filled]="value() !== null"
@@ -41,7 +42,7 @@ import { MdySelectOption } from "../../core/types";
       class="mdy-segmented"
       role="radiogroup"
       [mdyPart]="controlPart()"
-      [attr.aria-labelledby]="label() ? fieldId + '-label' : null"
+      [attr.aria-labelledby]="label() ? labelId : null"
       (pointerdown)="onTrackPointerDown($event)"
       (pointermove)="onTrackPointerMove($event)"
       (pointerup)="onTrackPointerUp()"
@@ -102,6 +103,15 @@ import { MdySelectOption } from "../../core/types";
   `,
 })
 export class MdySegmentedButtonComponent<TValue = unknown> extends MdyBaseControl<TValue | null> {
+  /**
+   * The group's label, named through the id factory rather than joined by hand.
+   *
+   * Every id this library publishes is `scope__part`, and a consumer that knows the scope composes
+   * a part name the same way. A hyphen still yields a unique id and still works — and is unreachable
+   * by anybody who builds the name instead of reading it off the element.
+   */
+  protected readonly labelId = defaultWidgetIdFactory.part(this.fieldId, "label");
+
   protected readonly widgetContract = MDY_WIDGET_CONTRACTS.segmented;
   protected override readonly widgetKind = "segmented" as const;
   protected readonly widgetHasRootClass = this.widgetContract.rootClasses.includes("mdy-renderer");

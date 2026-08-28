@@ -12,7 +12,7 @@ import {
 } from "@angular/core";
 
 import { MDY_OVERLAY_PORTAL_CLASS } from "@modyra/widgets";
-import { MDY_COLOR_PRESETS, MDY_WIDGET_CONTRACTS, colorPresetsOf, colorValueEquals, focusWhenShown, openPlatformChooser, keyBindingFor, rowRovingIndex, colorValueTransition, popupPlacementClass, overlayControlledId, projectOverlayOpenerA11y } from "@modyra/widgets";
+import { MDY_COLOR_PRESETS, MDY_WIDGET_CONTRACTS, defaultWidgetIdFactory, colorPresetsOf, colorValueEquals, focusWhenShown, openPlatformChooser, keyBindingFor, rowRovingIndex, colorValueTransition, popupPlacementClass, overlayControlledId, projectOverlayOpenerA11y } from "@modyra/widgets";
 import { MdyErrorListComponent } from "../../control/error-list.component";
 import { MdyControlLabelComponent } from "../../control/mdy-control-label.component";
 import { MdyIconComponent } from "../../control/mdy-icon.component";
@@ -237,7 +237,7 @@ export class MdyColorsComponent extends MdyOverlayControl<string> {
   protected readonly openerPart = computed(
     () => projectOverlayOpenerA11y("colors", { widgetId: this.fieldId, open: this.open() })!,
   );
-  protected readonly hexInputId = `${this.fieldId}-hex`;
+  protected readonly hexInputId = defaultWidgetIdFactory.part(this.fieldId, "hex");
 
   /**
    * Which side the palette ended up on, named by the catalog rather than spelled here.

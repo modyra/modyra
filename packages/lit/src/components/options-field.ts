@@ -1,5 +1,6 @@
 import { type PropertyDeclarations } from "lit";
 import { type MdyFieldHandle, type MdySelectOption } from "@modyra/core";
+import { defaultWidgetIdFactory } from "@modyra/widgets";
 import { MdyFieldElement } from "../base.js";
 
 // ─── Option-based ────────────────────────────────────────────────────────────
@@ -25,7 +26,9 @@ export abstract class MdyOptionsFieldElement<T> extends MdyFieldElement<T> {
   }
 
   protected get labelId(): string {
-    return `${this.fieldId}-label`;
+    // Through the factory, so the id is one a consumer can compose from the scope rather than one
+    // only this renderer knows how to spell.
+    return defaultWidgetIdFactory.part(this.fieldId, "label");
   }
 
   /** Group label: real id, no `for` (there is no single input to point to). */

@@ -1,5 +1,5 @@
 import { mdyPart } from "../mdy-part.js";
-import {
+import { defaultWidgetIdFactory,
   keyBindingFor,
   MDY_WIDGET_CONTRACTS, overlayControlledId, partClasses, calendarViewOnToggle,
   createDaterangeFieldController,
@@ -190,7 +190,10 @@ export class MdyDaterangeFieldElement extends MdyFieldElement<MdyDateRange | nul
   }
 
   private get startInputId(): string {
-    return `${this.fieldId}-start`;
+    // Through the factory: every id this library publishes is `scope__part`, and a consumer that
+    // knows the scope composes a part name the same way. A hyphen still yields a unique id and still
+    // works — and is unreachable by anybody who builds the name instead of reading it off the element.
+    return defaultWidgetIdFactory.part(this.fieldId, "start");
   }
 
   protected override get labelForId(): string {

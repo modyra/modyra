@@ -1,6 +1,6 @@
 import { NgTemplateOutlet } from "@angular/common";
 import { ChangeDetectionStrategy, Component, input } from "@angular/core";
-import { createOptionFieldController, MDY_WIDGET_CONTRACTS } from "@modyra/widgets";
+import { createOptionFieldController, defaultWidgetIdFactory, MDY_WIDGET_CONTRACTS } from "@modyra/widgets";
 import { MdyPartDirective } from "../../control/mdy-part.directive";
 import { MdyBaseControl } from "../../control/control.directive";
 import { MdyErrorListComponent } from "../../control/error-list.component";
@@ -22,7 +22,7 @@ import { MdySelectOption } from "../../core/types";
          gets a real id and no [for] (there is no single input to point to, B33). -->
     <mdy-control-label
       [label]="label()"
-      [labelId]="fieldId + '-label'"
+      [labelId]="labelId"
       [hasError]="paintsAsInvalid()"
       [required]="isRequired()"
       [filled]="value() !== null"
@@ -35,7 +35,7 @@ import { MdySelectOption } from "../../core/types";
       [class.mdy-radio-group--horizontal]="layout() === 'horizontal'"
       role="radiogroup"
       [mdyPart]="controlPart()"
-      [attr.aria-labelledby]="label() ? fieldId + '-label' : null"
+      [attr.aria-labelledby]="label() ? labelId : null"
     >
       @for (opt of options(); track opt.value) {
         <label class="mdy-radio-item" [class.mdy-radio-item--disabled]="isDisabled()">
@@ -68,6 +68,15 @@ import { MdySelectOption } from "../../core/types";
   `,
 })
 export class MdyRadioGroupComponent<TValue = unknown> extends MdyBaseControl<TValue | null> {
+  /**
+   * The group's label, named through the id factory rather than joined by hand.
+   *
+   * Every id this library publishes is `scope__part`, and a consumer that knows the scope composes
+   * a part name the same way. A hyphen still yields a unique id and still works — and is unreachable
+   * by anybody who builds the name instead of reading it off the element.
+   */
+  protected readonly labelId = defaultWidgetIdFactory.part(this.fieldId, "label");
+
   protected readonly widgetContract = MDY_WIDGET_CONTRACTS.radio;
   protected override readonly widgetKind = "radio" as const;
   protected readonly widgetHasRootClass = this.widgetContract.rootClasses.includes("mdy-renderer");

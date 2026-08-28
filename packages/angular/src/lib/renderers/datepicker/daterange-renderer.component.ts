@@ -20,6 +20,7 @@ import {
   MDY_WIDGET_CONTRACTS,
   dateRangeValueTransition,
   overlayControlledId, projectOverlayOpenerA11y, createDaterangeFieldController } from "@modyra/widgets";
+import { defaultWidgetIdFactory } from "@modyra/widgets";
 import { MdyErrorListComponent } from "../../control/error-list.component";
 import { MdyControlLabelComponent } from "../../control/mdy-control-label.component";
 import { MdyIconComponent } from "../../control/mdy-icon.component";
@@ -54,7 +55,7 @@ import { inputText, isoDateText } from "../renderer-projection";
     @if (label()) {
       <mdy-control-label
         [label]="label()"
-        [forId]="fieldId + '-start'"
+        [forId]="startId"
         [hasError]="paintsAsInvalid()"
       [widgetId]="fieldId"
         [required]="isRequired()"
@@ -70,7 +71,7 @@ import { inputText, isoDateText } from "../renderer-projection";
           <input
             #startInput
             type="text"
-            [id]="fieldId + '-start'"
+            [id]="startId"
             class="mdy-datepicker__input mdy-daterange__input mdy-daterange__input--start"
             [value]="displayStart()"
             [disabled]="isDisabled()"
@@ -96,7 +97,7 @@ import { inputText, isoDateText } from "../renderer-projection";
           <input
             #endInput
             type="text"
-            [id]="fieldId + '-end'"
+            [id]="endId"
             class="mdy-datepicker__input mdy-daterange__input mdy-daterange__input--end"
             [value]="displayEnd()"
             [disabled]="isDisabled()"
@@ -185,6 +186,17 @@ import { inputText, isoDateText } from "../renderer-projection";
 export class MdyDateRangePickerComponent extends MdyOverlayControl<MdyDateRange | null> {
   /* The popup wears what the catalogue says it wears. Restated in the template, a class added
      to the contract reached the renderers that derive and stopped at this one. */
+  /**
+   * The two ends, named through the id factory rather than joined by hand.
+   *
+   * A hand-joined `field-start` uses a separator the factory does not: every id this library
+   * publishes is `scope__part`, and a consumer that knows the scope reaches a part by composing the
+   * same way. Spelled with a hyphen, the id is still unique and still works — and is unreachable by
+   * anybody who builds the name instead of reading it off the element.
+   */
+  protected readonly startId = defaultWidgetIdFactory.part(this.fieldId, "start");
+  protected readonly endId = defaultWidgetIdFactory.part(this.fieldId, "end");
+
   protected readonly popupClass = MDY_WIDGET_CONTRACTS.daterange.parts.popup.classes.join(" ");
   /** The widget this draws: its popup's room, width and edge come from the catalog. */
   protected override readonly overlayKind = "daterange" as const;

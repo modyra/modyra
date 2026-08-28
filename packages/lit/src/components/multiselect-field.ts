@@ -1,4 +1,4 @@
-import {
+import { defaultWidgetIdFactory,
   MDY_WIDGET_CONTRACTS,
   MDY_POPUP_OPENERS,
   overlayControlledId,
@@ -517,7 +517,9 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
     this.syncStateClasses(handle);
     this.classList.toggle("mdy-renderer--open", this._open);
 
-    const triggerId = `${this.fieldId}-trigger`;
+    // Composed by the factory, so the id is one a consumer can build from the scope. See the note in
+    // the range field: a hyphen is unique and unreachable.
+    const triggerId = defaultWidgetIdFactory.part(this.fieldId, "trigger");
     const position = this.overlay.state.position;
     const alignment = this.overlay.state.alignment;
 
