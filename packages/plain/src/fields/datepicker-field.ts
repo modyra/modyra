@@ -178,7 +178,7 @@ export function renderDatepickerField(
   // one, and a renderer choosing its own keys is how the three of them come to answer differently.
   control.addEventListener("keydown", (event) => {
     const open = controller.state().open;
-    if (open || !keyMeans("datepicker", event.key, "open", open)) return;
+    if (open || !keyMeans("datepicker", event, "open", open)) return;
     event.preventDefault();
     dispatch({ type: "open" });
   });
@@ -196,7 +196,7 @@ export function renderDatepickerField(
   grid.addEventListener("keydown", (event) => {
     if (["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown", "PageUp", "PageDown", "Home", "End", "Enter", " ", "Escape"].includes(event.key)) {
       event.preventDefault();
-      dispatch({ type: "keydown", key: event.key, shiftKey: event.shiftKey });
+      dispatch({ type: "keydown", key: event.key, shiftKey: event.shiftKey, ctrlKey: event.ctrlKey, metaKey: event.metaKey });
     }
   });
 

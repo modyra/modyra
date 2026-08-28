@@ -238,7 +238,7 @@ export abstract class MdyOverlayControl<TValue> extends MdyBaseControl<TValue> {
    */
   protected openOnDeclaredKey(event: KeyboardEvent): void {
     if (this.open() || this.overlayKind === null) return;
-    if (!keyMeans(this.overlayKind, event.key, "open", false)) return;
+    if (!keyMeans(this.overlayKind, event, "open", false)) return;
     event.preventDefault();
     this.openOverlay(event);
   }
@@ -259,7 +259,7 @@ export abstract class MdyOverlayControl<TValue> extends MdyBaseControl<TValue> {
    */
   protected closeOnDeclaredKey(event: KeyboardEvent): void {
     if (!this.open() || this.overlayKind === null || event.key !== "Tab") return;
-    if (!keyMeans(this.overlayKind, event.key, "cancel", true)) return;
+    if (!keyMeans(this.overlayKind, event, "cancel", true)) return;
     this.closeOverlay();
   }
 

@@ -250,7 +250,7 @@ export function renderSelectField(
       return;
     }
     const action = selectKeyboardAction({
-      key: event.key,
+      key: event,
       open: state.open,
       searchFocused: event.target === search,
       activeKey: state.activeKey,

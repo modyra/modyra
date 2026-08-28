@@ -36,11 +36,18 @@ test("the question is asked of the catalogue, not of a list beside it", () => {
   assert.deepEqual(withActions, ["timepicker"]);
 });
 
-test("Escape still cancels, and still takes focus back", () => {
+test("Escape still cancels, still takes focus back, and answers whatever is held with it", () => {
   // The two dismissals differ and both are needed: Tab is now movement inside the dialog, so Escape
   // is the only way out — and a keyboard user who cannot leave is worse off than one who cannot commit.
+  //
+  // `modifier: "any"` is the same sentence carried one step further. A binding that declares no
+  // modifier is bare-only, because opening and committing *add* something a press may not have been
+  // aimed at — `Cmd`+Space switches the input source, `Cmd`+Enter submits a form. A dismissal is the
+  // other way round: answering one wrongly costs a reopen, refusing one leaves somebody inside the
+  // dialog with the only way out not working, under a modifier nobody thinks to test.
   const escape = MDY_WIDGET_KEYBOARD.timepicker.find((b) => b.key === "Escape" && b.when === "open");
-  assert.deepEqual(escape, { key: "Escape", when: "open", intent: "cancel", restoresFocus: true });
+  assert.deepEqual(escape,
+    { key: "Escape", when: "open", intent: "cancel", restoresFocus: true, modifier: "any" });
 });
 
 test("each field names the control that carries its focus", () => {

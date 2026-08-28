@@ -1,7 +1,7 @@
 {
   "note": "Public names not yet asserted or not yet shown. The list may only get shorter.",
   "score": {
-    "published": 890,
+    "published": 891,
     "asserted": 573,
     "shown": 98
   },
@@ -1706,6 +1706,12 @@
     },
     {
       "name": "MdyKeyBinding",
+      "asserted": false,
+      "shown": false,
+      "reason": "published, neither asserted nor shown"
+    },
+    {
+      "name": "MdyKeyOrPress",
       "asserted": false,
       "shown": false,
       "reason": "published, neither asserted nor shown"

@@ -256,7 +256,7 @@ export function renderColorsField(
    */
   const moveThroughSwatches = (event: KeyboardEvent): boolean => {
     if (!isOpen()) return false;
-    const binding = keyBindingFor("colors", event.key, true);
+    const binding = keyBindingFor("colors", event, true);
     if (!binding || binding.intent !== "move") return false;
     const order = swatches.map(({ swatch }) => swatch);
     const to = rowRovingIndex(event.key, order.indexOf(document.activeElement as HTMLButtonElement), order.length, binding.by);

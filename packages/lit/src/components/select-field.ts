@@ -222,7 +222,7 @@ export class MdySelectFieldElement extends MdyDropdownFieldElement<unknown | nul
    */
   protected override onKeydown(e: KeyboardEvent, _handle: MdyFieldHandle<unknown | null>): void {
     const action = selectKeyboardAction({
-      key: e.key,
+      key: e,
       open: this._open,
       // Whether the *search field* has focus, not merely that the select can search: the opener
       // and the search box answer `Home` differently, which is the distinction the policy takes.

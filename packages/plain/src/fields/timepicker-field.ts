@@ -254,7 +254,7 @@ export function renderTimepickerField(
   // one, and a renderer choosing its own keys is how the three of them come to answer differently.
   control.addEventListener("keydown", (event) => {
     const open = controller.state().open;
-    if (open || !keyMeans("timepicker", event.key, "open", open)) return;
+    if (open || !keyMeans("timepicker", event, "open", open)) return;
     event.preventDefault();
     dispatch({ type: "open" });
   });
@@ -372,14 +372,17 @@ export function renderTimepickerField(
     // would then also confirm — so this speaks only for the rest of the dialog, which is where a
     // person setting the time with the keyboard actually stands.
     if (
-      event.key === "Enter"
-      && controller.state().open
+      controller.state().open
       && !event.defaultPrevented
       // Asked of the element rather than of its constructor: `instanceof` answers false across the
       // document boundaries some test environments render in, and the guard would then be off
       // exactly where a button is focused.
       && (event.target as Element | null)?.closest?.("button") == null
-      && keyMeans("timepicker", "Enter", "commit", true)
+      // Asked with the press, not with a name. Comparing the key by hand and then asking the table
+      // about a literal is two half-questions: the first cannot see what was held, and the second is
+      // not about what happened. `Cmd`+Enter submits a form in half the products people use, and
+      // committing a time under it chooses a value nobody picked.
+      && keyMeans("timepicker", event, "commit", true)
     ) {
       event.preventDefault();
       dispatch({ type: "confirm" });

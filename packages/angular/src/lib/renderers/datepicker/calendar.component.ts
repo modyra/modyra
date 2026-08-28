@@ -205,7 +205,7 @@ export class MdyCalendarComponent {
       event.preventDefault();
       const controller = this.controller();
       // Moving the focus and paging the month it crosses into were two writes and are one intent.
-      if (controller) controller.dispatch({ type: "keydown", key: event.key, shiftKey: event.shiftKey });
+      if (controller) controller.dispatch({ type: "keydown", key: event.key, shiftKey: event.shiftKey, ctrlKey: event.ctrlKey, metaKey: event.metaKey });
       else this.viewState.focus(next);
     }
   }

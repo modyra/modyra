@@ -290,7 +290,7 @@ export class MdyRangeCalendarComponent {
       // Moving the focus, paging the month it crosses into and following it with the preview were
       // three writes and are one intent.
       if (controller) {
-        controller.dispatch({ type: "keydown", key: event.key, shiftKey: event.shiftKey });
+        controller.dispatch({ type: "keydown", key: event.key, shiftKey: event.shiftKey, ctrlKey: event.ctrlKey, metaKey: event.metaKey });
         return;
       }
       this.viewState.focus(next);

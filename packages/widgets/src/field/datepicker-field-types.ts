@@ -96,7 +96,22 @@ export type MdyDatepickerFieldIntent =
   | { readonly type: "select-month"; readonly month: number }
   /** Choose a year from the year view; narrows to its months. */
   | { readonly type: "select-year"; readonly year: number }
-  | { readonly type: "keydown"; readonly key: string; readonly shiftKey?: boolean }
+  | {
+      readonly type: "keydown";
+      readonly key: string;
+      readonly shiftKey?: boolean;
+      /**
+       * Whether the platform's accelerator was held with the press.
+       *
+       * Carried because the calendar decides what a key does, and without this it decided as though
+       * every press were bare: `Cmd`+ArrowDown reaches the end of a document and `Cmd`+Enter submits
+       * a form in half the products people use, and both also moved or committed a date. A gesture
+       * that *adds* something does not answer a press that may have been aimed elsewhere; `Escape`
+       * does, because refusing a dismissal leaves somebody inside a panel with the way out shut.
+       */
+      readonly ctrlKey?: boolean;
+      readonly metaKey?: boolean;
+    }
   | { readonly type: "select-date"; readonly iso: string }
   /**
    * The person typed something and left the control.

@@ -528,7 +528,7 @@ export class MdySelectComponent<TValue = string>
     }
 
     const action = selectKeyboardAction({
-      key: event.key,
+      key: event,
       open: this.open(),
       searchFocused: this.searchInputRef()?.nativeElement === document.activeElement,
       activeKey: this.selectAdapter()?.state().activeKey ?? null,

@@ -415,7 +415,7 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
     // Which keys open it comes from the table, not from a list written here: a renderer that keeps
     // its own copy answers three of the four the contract declares, and the missing one is invisible
     // until somebody presses it.
-    if (!this._open && keyMeans("multiselect", e.key, "open", false)) {
+    if (!this._open && keyMeans("multiselect", e, "open", false)) {
       e.preventDefault();
       this.overlay.open();
       this._open = true;
@@ -427,7 +427,7 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
     // cursor there was nowhere to send them, so a person who opened the list could reach the search
     // and nothing else.
     const action = multiselectOverlayAction({
-      key: e.key,
+      key: e,
       open: this._open,
       query: this._query,
       activeKey: this.fieldController?.state().activeKey ?? null,

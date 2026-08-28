@@ -15,7 +15,7 @@
  * instead of copied.
  */
 import { MDY_WIDGET_CONTRACTS, MDY_WIDGET_KINDS, type MdyWidgetKind } from "./catalog.js";
-import { keyBindingFor, MDY_WIDGET_KEYBOARD, type MdyKeyBinding } from "./transitions.js";
+import { keyBindingFor, MDY_WIDGET_KEYBOARD, type MdyKeyBinding, type MdyKeyOrPress } from "./transitions.js";
 
 /**
  * Whether `value` is a kind this contract knows.
@@ -37,7 +37,7 @@ export function isWidgetKind(value: unknown): value is MdyWidgetKind {
  */
 export function keyMeans(
   kind: MdyWidgetKind,
-  key: string,
+  key: MdyKeyOrPress,
   intent: MdyKeyBinding["intent"],
   open: boolean,
   /** The part the person is on, where a key means one thing there and another at the control. */

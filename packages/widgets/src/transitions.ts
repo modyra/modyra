@@ -203,8 +203,19 @@ export interface MdyKeyBinding {
    * a Mac is not the undo gesture, and a table spelling both would declare a key half its readers
    * must ignore. `matchesKeyGesture` resolves it against an event, so the platform test is made once
    * rather than in each renderer.
+   *
+   * Absent means *bare*, and that is a refusal as much as a requirement: a binding that opens a
+   * panel or commits a value does not answer a press with the accelerator held, because both of
+   * those **add** something the person did not ask for, and the press may have been aimed at the
+   * platform — `Cmd`+Space switches the input source, `Cmd`+ArrowDown reaches the end of a document.
+   *
+   * `"any"` is for the gestures that **remove**. Answering one wrongly costs a reopen; refusing one
+   * wrongly leaves somebody inside a panel with the way out not working, and that is a keyboard trap
+   * — the one class of defect with no exception to argue about. `Escape` in particular is the key a
+   * control does not get to reinterpret: its meaning is *stop*, no modifier changes that on any
+   * platform, and where the system claims a modified `Escape` it takes it before the page sees it.
    */
-  readonly modifier?: "primary";
+  readonly modifier?: "primary" | "any";
 }
 
 /** Kinds whose value is chosen from a list the keyboard walks. */
@@ -221,7 +232,9 @@ function keyboardFor(kind: MdyWidgetKind): readonly MdyKeyBinding[] {
   const bindings: MdyKeyBinding[] = [];
 
   if (overlay) {
-    bindings.push({ key: "Escape", when: "open", intent: "cancel", restoresFocus: true });
+    // Whatever is held with it. Refusing the way out because somebody's hand was on a modifier is a
+    // keyboard trap, and one that survives testing because nobody presses Escape with Command down.
+    bindings.push({ key: "Escape", when: "open", intent: "cancel", restoresFocus: true, modifier: "any" });
     // Tab dismisses without taking focus back. Leaving it undeclared did not make the list stay
     // open — it made the *table* disagree with the policy the renderers actually call, so a renderer
     // built from the declared bindings alone left a popup floating over a form the user had left.
@@ -367,7 +380,7 @@ function keyboardFor(kind: MdyWidgetKind): readonly MdyKeyBinding[] {
     bindings.push({ key: "Enter", when: "closed", intent: "grab", on: "chip", requires: "reorderable" });
     // Putting it back. Only while something is held: the popup is closed by then — a grab cannot
     // begin while it is open — so this cannot be the same press that dismisses an overlay.
-    bindings.push({ key: "Escape", when: "closed", intent: "cancel", on: "chip", requires: "reorderable" });
+    bindings.push({ key: "Escape", when: "closed", intent: "cancel", on: "chip", requires: "reorderable", modifier: "any" });
     // The arrows are declared once, below, as what moves the reading position. Held, they carry the
     // chip instead — the same movement with the grab's subject rather than the cursor's. Declaring
     // them twice and telling the two apart by the grab would put a state the table cannot see into
@@ -461,9 +474,28 @@ export const MDY_WIDGET_KEYBOARD: Readonly<Record<MdyWidgetKind, readonly MdyKey
   );
 
 /** What this kind does with this key in this phase, or `null` if it does not claim it. */
+/**
+ * A key, or the press of one.
+ *
+ * A renderer asking "does this kind declare anything for Tab" has a literal and no press. A renderer
+ * deciding what somebody just did has the event, and the two are not the same question: a binding
+ * declared without a modifier does not answer a press with one held, and a caller that flattens the
+ * press to `event.key` throws away the only fact that distinguishes them.
+ *
+ * Both spellings are accepted so the call site says which question it is asking, and so the string
+ * form keeps meaning what it always meant.
+ */
+export type MdyKeyOrPress = string | {
+  readonly key: string;
+  readonly ctrlKey?: boolean;
+  readonly metaKey?: boolean;
+  readonly altKey?: boolean;
+  readonly shiftKey?: boolean;
+};
+
 export function keyBindingFor(
   kind: MdyWidgetKind,
-  key: string,
+  key: MdyKeyOrPress,
   open: boolean,
   /**
    * Where the person is. Absent means the control, which is what answers a key by default.
@@ -474,6 +506,12 @@ export function keyBindingFor(
   on?: string,
 ): MdyKeyBinding | null {
   const phase: MdyOverlayPhase = open ? "open" : "closed";
+  // A press carries what was held with it; a literal carries nothing and is treated as the bare key
+  // it names. `matchesKeyGesture` is what decides the modifier, and this is the road it was missing:
+  // published as the answer to this question, it was reachable from no path that asked it, so a
+  // binding declared bare answered `Cmd+Space` and `Cmd+ArrowDown` as though they were plain.
+  const press = typeof key === "string" ? null : key;
+  const name = typeof key === "string" ? key : key.key;
   // Asked without a part, the question is "what does this key do at the control" — and the part a
   // person opens this kind with *is* the control for that purpose. So a binding declared on the
   // opener answers a control-level question, and one declared on any other part does not: a chip's
@@ -489,9 +527,12 @@ export function keyBindingFor(
    * binding is pushed last: a kind that one day declares a letter for something of its own keeps it,
    * and type-ahead takes the rest.
    */
-  const answers = (binding: MdyKeyBinding): boolean =>
-    binding.key === key
-    || (binding.key === MDY_ANY_PRINTABLE_KEY && [...key].length === 1 && key !== " ");
+  const answers = (binding: MdyKeyBinding): boolean => {
+    const named = binding.key === name
+      || (binding.key === MDY_ANY_PRINTABLE_KEY && [...name].length === 1 && name !== " ");
+    if (!named) return false;
+    return press === null || matchesKeyGesture(binding, press);
+  };
   return MDY_WIDGET_KEYBOARD[kind].find(
     (binding) => answers(binding)
       && (binding.when === undefined || binding.when === phase)
@@ -524,6 +565,7 @@ export function matchesKeyGesture(binding: MdyKeyBinding, event: {
 }): boolean {
   if (binding.key.toLowerCase() !== event.key.toLowerCase()) return false;
   const held = event.ctrlKey === true || event.metaKey === true;
+  if (binding.modifier === "any") return true;
   if (binding.modifier === "primary") return held && event.altKey !== true && event.shiftKey !== true;
   return !held;
 }

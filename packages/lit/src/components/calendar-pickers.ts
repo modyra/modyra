@@ -109,7 +109,8 @@ export function calendarGridKey(
   event: KeyboardEvent,
   viewMode: MdyCalendarViewMode,
   send: (intent: { readonly type: "set-view-mode"; readonly mode: MdyCalendarViewMode }
-    | { readonly type: "keydown"; readonly key: string; readonly shiftKey: boolean }) => void,
+    | { readonly type: "keydown"; readonly key: string; readonly shiftKey: boolean;
+        readonly ctrlKey?: boolean; readonly metaKey?: boolean }) => void,
   close: () => void,
 ): void {
   if (event.key === "Escape") {
@@ -120,5 +121,5 @@ export function calendarGridKey(
   }
   if (viewMode !== "days") return;
   event.preventDefault();
-  send({ type: "keydown", key: event.key, shiftKey: event.shiftKey });
+  send({ type: "keydown", key: event.key, shiftKey: event.shiftKey, ctrlKey: event.ctrlKey, metaKey: event.metaKey });
 }

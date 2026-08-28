@@ -159,7 +159,7 @@ export function renderDaterangeField(
   grid.addEventListener("keydown", (event) => {
     if (["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown", "PageUp", "PageDown", "Home", "End", "Enter", " ", "Escape"].includes(event.key)) {
       event.preventDefault();
-      dispatch({ type: "keydown", key: event.key, shiftKey: event.shiftKey });
+      dispatch({ type: "keydown", key: event.key, shiftKey: event.shiftKey, ctrlKey: event.ctrlKey, metaKey: event.metaKey });
     }
   });
   // Escape dismisses from wherever the user is. This overlay does not take focus when it opens, so

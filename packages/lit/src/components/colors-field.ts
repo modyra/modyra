@@ -168,7 +168,7 @@ export class MdyColorsFieldElement extends MdyFieldElement<string | null> {
 
   private moveThroughSwatches(event: KeyboardEvent): void {
     if (!this._open) return;
-    const binding = keyBindingFor("colors", event.key, true);
+    const binding = keyBindingFor("colors", event, true);
     if (!binding || binding.intent !== "move") return;
     const order = Array.from(this.querySelectorAll<HTMLButtonElement>(`.${this.partClass("swatch")}`));
     const to = rowRovingIndex(event.key, order.indexOf(document.activeElement as HTMLButtonElement), order.length, binding.by);

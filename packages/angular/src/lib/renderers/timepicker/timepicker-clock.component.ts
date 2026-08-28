@@ -388,10 +388,13 @@ export class MdyTimepickerClockComponent {
     // otherwise also confirm — so this speaks for the rest of the dialog, which is where somebody
     // setting the time from the keyboard stands.
     if (
-      event.key === "Enter"
-      && !event.defaultPrevented
+      !event.defaultPrevented
       && (event.target as Element | null)?.closest?.("button") == null
-      && keyMeans("timepicker", "Enter", "commit", true)
+      // Asked with the press, not with a name. Comparing the key by hand and then asking the table
+      // about a literal is two half-questions: the first cannot see what was held, and the second is
+      // not about what happened. `Cmd`+Enter submits a form in half the products people use, and
+      // committing a time under it chooses a value nobody picked.
+      && keyMeans("timepicker", event, "commit", true)
     ) {
       event.preventDefault();
       this.confirmClicked.emit();

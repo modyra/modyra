@@ -22,6 +22,7 @@ import { observerFor, type MdyReactivity, type MdySignal } from "@modyra/core";
 import { dateRangeValueTransition, type MdyDateRangeValue } from "../behavior.js";
 import type { MdyUiCommand } from "../commands.js";
 import type { MdyWidgetController, MdyWidgetViewContract } from "../contract.js";
+import { keyBindingFor } from "../transitions.js";
 import { blocksValueChange } from "../interactivity.js";
 import { projectDaterangeFieldA11y } from "./daterange-field-a11y.js";
 import type {
@@ -374,10 +375,23 @@ export function createDaterangeFieldController(
         return [];
       }
       case "keydown": {
-        if (intent.key === "Escape") {
+        // What survives a held accelerator is read from the catalogue, not decided here. A binding
+        // that declares no modifier is bare-only, because opening and committing *add* something the
+        // press may not have been aimed at; a dismissal declares `"any"`, because refusing one leaves
+        // somebody inside a panel with the way out shut. Naming `Escape` in this line would be a
+        // second copy of that rule, and the copy is what stops moving when the declaration does.
+        const declared = keyBindingFor("daterange", {
+          key: intent.key,
+          ctrlKey: intent.ctrlKey,
+          metaKey: intent.metaKey,
+          shiftKey: intent.shiftKey,
+        }, true);
+        const acceleratorHeld = (intent.ctrlKey === true || intent.metaKey === true) && declared === null;
+        if (declared?.intent === "cancel") {
           draft.set(handle.value() ?? EMPTY);
           return closePicker(true);
         }
+        if (acceleratorHeld) return [];
         if (intent.key === "Enter" || intent.key === " ") return pick(focusedDate());
         const focused = parseIsoDate(focusedDate()) ?? today();
         const target = calendarKeyboardTarget(intent.key, focused, intent.shiftKey ?? false);

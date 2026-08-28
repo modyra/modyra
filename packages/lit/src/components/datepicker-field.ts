@@ -537,7 +537,7 @@ export class MdyDatepickerFieldElement extends MdyFieldElement<string | null> {
             // The keys this kind declares, read from the table rather than listed here. The contract
             // names the *control* as the opener, and a control that only opens under a pointer is
             // one a keyboard cannot reach the calendar through at all.
-            if (this._open || !keyMeans("datepicker", e.key, "open", false)) return;
+            if (this._open || !keyMeans("datepicker", e, "open", false)) return;
             e.preventDefault();
             this.openPopup(handle, e);
           }}

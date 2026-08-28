@@ -15,6 +15,7 @@ import { fieldCanBeInvalid } from "./verdict.js";
  * calls `setValue` on confirm. Month and year drill-down views are likewise the host's, built on the
  * same grid and keyboard behaviour.
  */
+import { keyBindingFor } from "../transitions.js";
 import { blocksValueChange } from "../interactivity.js";
 import { closeOverlayWhenOutOfPlay } from "./leaving-play.js";
 import type { MdyReactivity, MdySignal } from "@modyra/core";
@@ -301,7 +302,20 @@ export function createDatepickerFieldController(
         return [];
       }
       case "keydown": {
-        if (intent.key === "Escape") return closePicker(true);
+        // What survives a held accelerator is read from the catalogue, not decided here. A binding
+        // that declares no modifier is bare-only, because opening and committing *add* something the
+        // press may not have been aimed at; a dismissal declares `"any"`, because refusing one leaves
+        // somebody inside a panel with the way out shut. Naming `Escape` in this line would be a
+        // second copy of that rule, and the copy is what stops moving when the declaration does.
+        const declared = keyBindingFor("datepicker", {
+          key: intent.key,
+          ctrlKey: intent.ctrlKey,
+          metaKey: intent.metaKey,
+          shiftKey: intent.shiftKey,
+        }, true);
+        const acceleratorHeld = (intent.ctrlKey === true || intent.metaKey === true) && declared === null;
+        if (declared?.intent === "cancel") return closePicker(true);
+        if (acceleratorHeld) return [];
         if (intent.key === "Enter" || intent.key === " ") return commitDate(focusedDate());
         const focused = parseIsoDate(focusedDate()) ?? today();
         const target = calendarKeyboardTarget(intent.key, focused, intent.shiftKey ?? false);

@@ -895,7 +895,7 @@ export function renderMultiselectField(
   const onKeydown = (event: KeyboardEvent): void => {
     const state = controller.state();
     const action = multiselectOverlayAction({
-      key: event.key,
+      key: event,
       open: state.open,
       query: search.value,
       activeKey: state.activeKey,

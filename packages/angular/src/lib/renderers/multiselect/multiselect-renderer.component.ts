@@ -480,7 +480,7 @@ export class MdyMultiselectComponent<TValue = string>
 
   protected onOverlayKeydown(event: KeyboardEvent): void {
     const action = multiselectOverlayAction({
-      key: event.key,
+      key: event,
       open: this.open(),
       query: this.searchQuery(),
       activeKey: this.activeOverlayKey(),

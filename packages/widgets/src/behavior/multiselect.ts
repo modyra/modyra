@@ -1,6 +1,7 @@
 /** Choosing many: what a pick does to a value, and when the overlay has served its purpose. */
 import type { MdyMultiselectMode } from "@modyra/core";
 import type { MdyOptionNavigationTarget } from "./keys.js";
+import { keyBindingFor, type MdyKeyOrPress } from "../transitions.js";
 export type MdyMultiselectValueIntent<T> =
   | { readonly type: "toggle"; readonly value: T }
   | { readonly type: "increment"; readonly value: T }
@@ -35,7 +36,7 @@ export type MdyMultiselectOverlayAction =
 
 /** Canonical multiselect overlay policy. The host only supplies event facts and executes the action. */
 export function multiselectOverlayAction(input: {
-  readonly key: string;
+  readonly key: MdyKeyOrPress;
   readonly open: boolean;
   /**
    * What the search box holds, where the kind has one.
@@ -48,7 +49,24 @@ export function multiselectOverlayAction(input: {
   readonly query: string;
   readonly activeKey: string | null;
 }): MdyMultiselectOverlayAction | null {
-  const { key, open, activeKey } = input;
+  const { open, activeKey } = input;
+  // A press with the platform's accelerator held is the platform's — `Cmd+Space` switches the input
+  // source, `Cmd+ArrowDown` reaches the end of a document — so a gesture that *adds* something does
+  // not answer it. `Escape` does, and that is the whole of the distinction: answering a dismissal
+  // wrongly costs a reopen, refusing one leaves somebody inside a panel with the way out not
+  // working. A caller passing a bare key name is asking what the kind declares, and gets that.
+  const pressed = typeof input.key === "string" ? null : input.key;
+  const key = typeof input.key === "string" ? input.key : input.key.key;
+  // Which gestures survive a held accelerator is read from the catalogue, never named here. The
+  // binding carries it: absent means bare, so opening and committing refuse a press that may have
+  // been aimed at the platform; `"any"` is what a dismissal declares, because refusing one leaves
+  // somebody inside a panel with the way out shut. Naming `Escape` in this line instead would be a
+  // second copy of that rule, and the copy is what stops moving when the declaration does.
+  if (pressed !== null && (pressed.ctrlKey === true || pressed.metaKey === true)
+    && keyBindingFor("multiselect", pressed, open) === null) {
+    return null;
+  }
+
   if (key === "Escape" && open) return { type: "close", restoreFocus: true };
   if (key === "Enter") {
     if (!open) return { type: "open" };

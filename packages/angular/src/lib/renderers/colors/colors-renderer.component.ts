@@ -317,7 +317,7 @@ export class MdyColorsComponent extends MdyOverlayControl<string> {
    * `ArrowLeft` as "back" is wrong in a right-to-left document.
    */
   protected onPresetKeydown(event: KeyboardEvent): void {
-    const binding = keyBindingFor("colors", event.key, true);
+    const binding = keyBindingFor("colors", event, true);
     if (!binding || binding.intent !== "move") return;
     const order = this.presetSwatches();
     const to = rowRovingIndex(event.key, order.indexOf(document.activeElement as HTMLButtonElement), order.length, binding.by);

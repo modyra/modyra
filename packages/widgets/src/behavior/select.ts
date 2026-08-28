@@ -1,4 +1,5 @@
 import type { MdyOptionNavigationTarget } from "./keys.js";
+import { keyBindingFor, type MdyKeyOrPress } from "../transitions.js";
 /** The select's keyboard policy: one place, so three renderers cannot agree on the easy keys only. */
 export type MdySelectKeyboardAction =
   | { readonly type: "move"; readonly target: MdyOptionNavigationTarget }
@@ -14,13 +15,30 @@ export type MdySelectKeyboardAction =
 
 /** Canonical select keyboard policy. The host only prevents the native event and executes the action. */
 export function selectKeyboardAction(input: {
-  readonly key: string;
+  readonly key: MdyKeyOrPress;
   readonly open: boolean;
   readonly searchFocused: boolean;
   readonly activeKey: string | null;
   readonly createAvailable: boolean;
 }): MdySelectKeyboardAction | null {
-  const { key, open, searchFocused, activeKey, createAvailable } = input;
+  const { open, searchFocused, activeKey, createAvailable } = input;
+  // A press with the platform's accelerator held is the platform's — `Cmd+Space` switches the input
+  // source, `Cmd+ArrowDown` reaches the end of a document — so a gesture that *adds* something does
+  // not answer it. `Escape` does, and that is the whole of the distinction: answering a dismissal
+  // wrongly costs a reopen, refusing one leaves somebody inside a panel with the way out not
+  // working. A caller passing a bare key name is asking what the kind declares, and gets that.
+  const pressed = typeof input.key === "string" ? null : input.key;
+  const key = typeof input.key === "string" ? input.key : input.key.key;
+  // Which gestures survive a held accelerator is read from the catalogue, never named here. The
+  // binding carries it: absent means bare, so opening and committing refuse a press that may have
+  // been aimed at the platform; `"any"` is what a dismissal declares, because refusing one leaves
+  // somebody inside a panel with the way out shut. Naming `Escape` in this line instead would be a
+  // second copy of that rule, and the copy is what stops moving when the declaration does.
+  if (pressed !== null && (pressed.ctrlKey === true || pressed.metaKey === true)
+    && keyBindingFor("select", pressed, open) === null) {
+    return null;
+  }
+
   const move: Record<string, MdyOptionNavigationTarget | undefined> = {
     ArrowDown: "next",
     ArrowUp: "previous",
