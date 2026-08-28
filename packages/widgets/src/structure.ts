@@ -61,6 +61,14 @@ export const MDY_PART_PRESENCES = Object.freeze([
   "overlayIsOpen",
   /** The field holds a value. */
   "valueIsPresent",
+  /**
+   * The field holds no value.
+   *
+   * The other half of the same question, and it needs saying: a placeholder is not present because a
+   * document supplied the words for it — that is necessary and not enough. It is present because the
+   * words were supplied *and* there is nothing yet to show instead.
+   */
+  "valueIsAbsent",
   /** The kind's own configuration turns this part on. */
   "kindOffersIt",
   /** The view this part belongs to is the one showing. */
@@ -94,8 +102,20 @@ export const MDY_PART_PRESENCE: Readonly<Record<string, MdyPartPresence>> = Obje
   supportingText: "documentDeclaresIt",
   prefix: "documentDeclaresIt",
   suffix: "documentDeclaresIt",
-  placeholder: "documentDeclaresIt",
   requiredMarker: "fieldIsRequired",
+  // Shown in place of a value, so the document supplying the words is only half of it.
+  placeholder: "valueIsAbsent",
+  // A value drawn as a chip, and everything a chip carries: they exist per chosen value.
+  chip: "valueIsPresent",
+  chipRemove: "valueIsPresent",
+  chipMove: "valueIsPresent",
+  // One entry per chosen file. The list that holds them is built once and is not this.
+  fileItem: "valueIsPresent",
+  // What a chosen value is shown as, where the control is not a text box.
+  value: "valueIsPresent",
+  // Taking the value away is offered once there is one to take.
+  clearAll: "valueIsPresent",
+  clear: "valueIsPresent",
   // Reserved at rest under every field that can fail a constraint, and still reserved after a
   // correction: taking the space back when the message clears is the same jump as giving it, upward.
   errors: "fieldCanBeInvalid",

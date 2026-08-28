@@ -3,16 +3,10 @@
   "parts": [
     "arrow",
     "box",
-    "chip",
-    "chipMove",
-    "chipRemove",
     "chipRow",
     "chipTooltip",
     "chips",
-    "clear",
-    "clearAll",
     "decrement",
-    "fileItem",
     "fileList",
     "formErrorItem",
     "formErrors",
@@ -21,7 +15,6 @@
     "overflowCount",
     "rejected",
     "submitFalse",
-    "value",
     "wayBackAction"
   ]
 }

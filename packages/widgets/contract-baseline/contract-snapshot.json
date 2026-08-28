@@ -1778,7 +1778,7 @@
           "element": "text",
           "parent": "trigger",
           "optional": true,
-          "presentWhen": null,
+          "presentWhen": "valueIsPresent",
           "repeated": false,
           "role": null,
           "classes": [
@@ -1790,7 +1790,7 @@
           "element": "text",
           "parent": "trigger",
           "optional": true,
-          "presentWhen": "documentDeclaresIt",
+          "presentWhen": "valueIsAbsent",
           "repeated": false,
           "role": null,
           "classes": [
@@ -2103,7 +2103,7 @@
           "element": "container",
           "parent": "chipRow",
           "optional": true,
-          "presentWhen": null,
+          "presentWhen": "valueIsPresent",
           "repeated": true,
           "role": "gridcell",
           "classes": [
@@ -2120,7 +2120,7 @@
           "element": "button",
           "parent": "chip",
           "optional": true,
-          "presentWhen": null,
+          "presentWhen": "valueIsPresent",
           "repeated": false,
           "role": null,
           "classes": [
@@ -2132,7 +2132,7 @@
           "element": "button",
           "parent": "chip",
           "optional": true,
-          "presentWhen": null,
+          "presentWhen": "valueIsPresent",
           "repeated": false,
           "role": null,
           "classes": [
@@ -2162,7 +2162,7 @@
           "element": "text",
           "parent": "trigger",
           "optional": true,
-          "presentWhen": "documentDeclaresIt",
+          "presentWhen": "valueIsAbsent",
           "repeated": false,
           "role": null,
           "classes": [
@@ -2198,7 +2198,7 @@
           "element": "button",
           "parent": "box",
           "optional": true,
-          "presentWhen": null,
+          "presentWhen": "valueIsPresent",
           "repeated": false,
           "role": null,
           "classes": [
@@ -3808,7 +3808,7 @@
           "element": "group",
           "parent": "fileList",
           "optional": true,
-          "presentWhen": null,
+          "presentWhen": "valueIsPresent",
           "repeated": true,
           "role": null,
           "classes": [
@@ -3820,7 +3820,7 @@
           "element": "button",
           "parent": "content",
           "optional": true,
-          "presentWhen": null,
+          "presentWhen": "valueIsPresent",
           "repeated": false,
           "role": null,
           "classes": [
