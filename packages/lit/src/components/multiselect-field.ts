@@ -503,6 +503,7 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
         id=${overlayControlledId("multiselect", this.fieldId) ?? nothing}
         role=${this.partRole("popup")}
         aria-labelledby="${this.fieldId}__label"
+        @keydown=${(e: KeyboardEvent) => this.onKeydown(e, handle)}
       >
       ${this.searchable
         ? html`<input

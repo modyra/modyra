@@ -100,8 +100,27 @@ answered at different moments depending on whether a kind's control happened to 
   turns that kind red. Worth stating that the first attempt at this mutation *survived*: it changed
   the native control's path, which the fixture never renders because it asks for the custom combobox.
   A mutation that survives is a statement about coverage, and that path has none.
+- `packages/lit/test/where-focus-is-after-a-panel-closes.test.mjs` and its counterpart in `plain`
+  assert the one invariant this record produces that needs no contract change: after any panel
+  closes, focus is inside the field and never on the document. Both press the close from *inside* the
+  panel, because a close with focus still on the opener cannot send it anywhere — the first version
+  did that and passed against a renderer that restored nothing.
+
+  The check found the divergence this record names. One renderer's multiselect panel is drawn outside
+  the element that binds its keys, so `Escape` from the search box inside it reached no handler at
+  all: a person who opened the list, narrowed it and changed their mind was left with no keyboard way
+  out. Every other kind closed. The panel now hears the same keys the field does.
+
+  Mutations: removing that binding, and removing the focus restore, each turn it red — in both
+  renderers. Two earlier mutations *survived* and both were coverage statements rather than passes:
+  one changed a path `Escape` does not take, the other a control the fixture never mounts.
+
 - The consequence above — that ordinary kinds speak on a bare traversal — is **not** guarded. There
   is no check that fails today, because the behaviour it would guard is the behaviour that ships.
+
+- One order is stated in this record and not enforced anywhere: focus moves back to the opener
+  *before* the panel is removed. At least one renderer closes first and focuses after, which is safe
+  only because its panel is built once and hidden rather than removed. Nothing fails if that changes.
 
 ## Security and privacy
 
