@@ -6,9 +6,12 @@
  * test drove a field that was invalid **and** disabled, and no page could be put into that state by
  * hand — so it was wrong in one kind for as long as it took someone to notice by eye.
  *
- * - **Asserted**: the name appears in a test. That is weaker than "there is a check that fails when
- *   the behaviour changes" — `mutation-suite.spec.mjs` is where that is proved for the DOM contract.
- *   This is the floor: a public name no test mentions has never run outside the build.
+ * - **Asserted**: the name appears in the *body* of a test — not in a comment, and not in an import
+ *   line. Both used to count, and fifty names stood on one of them alone: prose about a name is not
+ *   an exercise of it, and importing something is what you do before you use it, not the use. This
+ *   is still weaker than "there is a check that fails when the behaviour changes" —
+ *   `mutation-suite.spec.mjs` is where that is proved, for eight names. This is the floor: a public
+ *   name no test *runs* has never run outside the build.
  * - **Shown**: the name appears in a demo. Weaker than it sounds, and measured: a page that drives
  *   validation, drafts, collections and a parsed document through `createForm` and `renderField`
  *   moved this number by two, because the types and codes those behaviours are made of are never
@@ -79,8 +82,57 @@ function collect(dir, out = []) {
   return out;
 }
 
+/**
+ * A test file with the parts that are not the test removed.
+ *
+ * Comments and import lines were counted for as long as this audit existed, and fifty names were
+ * *asserted* on one of them alone — a name written in prose above a test that never touches it, or
+ * listed in an import beside the ones the test does use. Both read as exercise and are not: the
+ * question here is whether anything ever ran this name, and a sentence about it never runs.
+ *
+ * **A block comment is recognised only where one is written: at the start of a line.** Stripping
+ * `/*` … `*​/` anywhere with a regex is the obvious way and it is wrong — `accept: "image/*,.pdf"`
+ * opens one inside a string, and everything up to the next `*​/` disappears with it. Measured on
+ * `packages/widgets/test/behavior.spec.mjs`, that swallowed a whole `test(...)` block, and the count
+ * it produced was lower for a reason that had nothing to do with prose.
+ *
+ * Then whole-line imports and re-exports, including the members of a multi-line `import { … } from`
+ * list; then trailing `//`. A string containing `//` — a URL — loses its tail, which costs nothing
+ * here: a public name is not a URL.
+ */
+const withoutProse = (source) => {
+  const kept = [];
+  let inComment = false;
+  let inImport = false;
+  for (const line of source.split("\n")) {
+    const trimmed = line.trim();
+    if (inComment) {
+      if (trimmed.includes("*/")) inComment = false;
+      continue;
+    }
+    if (/^\/\*/.test(trimmed)) {
+      inComment = !trimmed.includes("*/");
+      continue;
+    }
+    if (inImport) {
+      if (/\bfrom\b|["'];?\s*$/.test(trimmed)) inImport = false;
+      continue;
+    }
+    // Only the forms that *move* names, never `export const` or `export function`: a test's own
+    // helper is written that way, and dropping the line takes the body with it. Caught by planting
+    // a name into `export const helper = () => …` and watching the count not move.
+    if (/^import\b/.test(trimmed) || /^export\s+(type\s+)?[{*]/.test(trimmed)) {
+      inImport = !/\bfrom\b.*["']|["'];\s*$/.test(trimmed) && trimmed.includes("{") && !trimmed.includes("}");
+      continue;
+    }
+    if (/^(\/\/|\*)/.test(trimmed)) continue;
+    kept.push(line.replace(/\/\/.*$/, ""));
+  }
+  return kept.join("\n");
+};
+
 const corpus = (roots) =>
-  roots.flatMap((r) => collect(join(root, r))).map((f) => readFileSync(f, "utf8")).join("\n");
+  roots.flatMap((r) => collect(join(root, r))).map((f) => withoutProse(readFileSync(f, "utf8"))).join("\n");
 
 const tests = corpus(TEST_ROOTS);
 
