@@ -1434,6 +1434,25 @@
         opacity: var(--mdy-toggle-state-layer-opacity, 0.12);
     }
 
+    /* A refusal reaches the eye on these two the way it does everywhere else: in the error colour,
+       on the edge a person is looking at.
+
+       Everywhere else `aria-invalid` sits on the element that is drawn, so `[aria-invalid="true"]`
+       reaches it. Here the attribute belongs to the control — a native input the eye never meets,
+       because the track and the box are what is painted — so the rule landed on nothing. The field
+       announced itself refused to a screen reader and looked exactly like one that works: a person
+       who can see it tries it, gets nothing, and is told nothing.
+
+       Written through the control rather than on it, which is the same shape the checked state uses
+       two rules below. */
+    .mdy-toggle:has(.mdy-toggle__control[aria-invalid="true"]) .mdy-toggle__track {
+        border-color: var(--mdy-error-color);
+    }
+
+    .mdy-checkbox:has(.mdy-checkbox__control[aria-invalid="true"]) .mdy-checkbox__indicator {
+        border-color: var(--mdy-error-color);
+    }
+
     .mdy-toggle:has(.mdy-toggle__control:checked) .mdy-toggle__track {
         background: var(--mdy-toggle-bg-checked);
         border: var(--mdy-toggle-border-checked);
