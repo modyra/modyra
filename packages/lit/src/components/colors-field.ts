@@ -184,7 +184,7 @@ export class MdyColorsFieldElement extends MdyFieldElement<string | null> {
         class="${this.popupClass(position)} mdy-overlay"
         id=${overlayControlledId("colors", this.fieldId) ?? nothing}
         @keydown=${(e: KeyboardEvent) => {
-          if (e.key === "Escape") {
+          if (keyMeans(this.widgetKind, e, "cancel", true)) {
             e.preventDefault();
             this.close(handle);
             this.restoreFocus();
@@ -260,7 +260,7 @@ export class MdyColorsFieldElement extends MdyFieldElement<string | null> {
         @keydown=${(e: KeyboardEvent) => {
           // The palette handles Escape inside itself and does not take focus when it opens, so from
           // the control the palette could be opened and not dismissed.
-          if (e.key === "Escape" && this._open) {
+          if (keyMeans(this.widgetKind, e, "cancel", true) && this._open) {
             e.preventDefault();
             this.close(handle);
             this.restoreFocus();

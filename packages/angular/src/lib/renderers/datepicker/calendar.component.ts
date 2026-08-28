@@ -1,4 +1,4 @@
-import { type MdyDatepickerFieldController } from "@modyra/widgets";
+import { type MdyDatepickerFieldController , keyMeans } from "@modyra/widgets";
 import {
   afterNextRender,
   ChangeDetectionStrategy,
@@ -174,7 +174,11 @@ export class MdyCalendarComponent {
 
   protected onKeydown(event: KeyboardEvent): void {
     if (this.view() !== "days") {
-      if (event.key === "Escape") {
+      // Asked of the catalogue. The binding declares that a dismissal answers whatever is held with
+      // it, and a condition naming the key is a second copy of that rule — the copy is what keeps
+      // answering after the declaration changes, which is how every renderer here stayed correct
+      // for its own reasons rather than the contract's. ADR 0168.
+      if (keyMeans("datepicker", event, "cancel", true)) {
         event.preventDefault();
         const controller = this.controller();
         if (controller) controller.dispatch({ type: "set-view-mode", mode: "days" });

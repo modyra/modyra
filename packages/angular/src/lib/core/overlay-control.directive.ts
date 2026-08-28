@@ -665,7 +665,13 @@ export abstract class MdyOverlayControl<TValue> extends MdyBaseControl<TValue> {
 
   /** Escape closes the open overlay regardless of where focus is (R19). */
   private readonly handleDocumentKeydown = (event: KeyboardEvent): void => {
-    if (event.key === "Escape") this.applyLifecycle({ type: "escape" });
+    // Asked of the catalogue. The binding declares that a dismissal answers whatever is held with
+    // it, and a condition naming the key is a second copy of that rule — the copy is what keeps
+    // answering after the declaration changes, which is how every renderer here stayed correct
+    // for its own reasons rather than the contract's. ADR 0168.
+    if (this.overlayKind !== null && keyMeans(this.overlayKind, event, "cancel", true)) {
+      this.applyLifecycle({ type: "escape" });
+    }
   };
 
   /**

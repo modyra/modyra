@@ -366,7 +366,11 @@ export function renderTimepickerField(
   // panel floating over a control the user has already left. Both dismiss, and they differ in where
   // focus lands — Escape hands it back to the opener, Tab leaves it where the key was taking it.
   const onEscape = (event: KeyboardEvent) => {
-    if (event.key === "Escape") dispatch({ type: "cancel" });
+    // Asked of the catalogue, not named here. The binding declares that a dismissal answers whatever
+    // is held with it, and a condition naming the key is a second copy of that rule — the copy is
+    // what keeps answering after the declaration changes, which is how this stayed correct while
+    // being correct for its own reasons. ADR 0168.
+    if (keyMeans("timepicker", event, "cancel", true)) dispatch({ type: "cancel" });
     // Enter commits the draft, which is what the table says a dialog's Enter does. A button answers
     // it for itself — the platform turns Enter on a focused button into a click, and cancelling
     // would then also confirm — so this speaks only for the rest of the dialog, which is where a

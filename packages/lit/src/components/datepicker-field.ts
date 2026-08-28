@@ -212,7 +212,7 @@ export class MdyDatepickerFieldElement extends MdyFieldElement<string | null> {
 
   /** The calendar keyboard, which the controller answers — moving, paging and picking alike. */
   private onGridKeydown(e: KeyboardEvent, handle: MdyFieldHandle<string | null>): void {
-    calendarGridKey(e, this.view.viewMode, (intent) => this.send(intent), () => this.closePopup(handle));
+    calendarGridKey(e, "datepicker", this.view.viewMode, (intent) => this.send(intent), () => this.closePopup(handle));
   }
 
   protected override updated(changed: Map<string, unknown>): void {

@@ -207,7 +207,11 @@ export function renderDatepickerField(
   // of the behaviour rather than a convenience.
   const onEscape = (event: KeyboardEvent): void => {
     if (!controller.state().open) return;
-    if (event.key === "Escape") dispatch({ type: "close", restoreFocus: true });
+    // Asked of the catalogue, not named here. The binding declares that a dismissal answers whatever
+    // is held with it, and a condition naming the key is a second copy of that rule — the copy is
+    // what keeps answering after the declaration changes, which is how this stayed correct while
+    // being correct for its own reasons. ADR 0168.
+    if (keyMeans("datepicker", event, "cancel", true)) dispatch({ type: "close", restoreFocus: true });
     // Tab is already carrying focus somewhere; pulling it back would trap the user in the control
     // they were leaving.
     else if (event.key === "Tab") dispatch({ type: "close", restoreFocus: false });

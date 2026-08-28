@@ -11,8 +11,8 @@ import { buildMonthGrid, type CalendarCell } from "@modyra/core/datetime";
 import {
   projectCalendarPeriodCellA11y,
   projectCalendarViewA11y,
-  type MdyCalendarViewMode,
-} from "@modyra/widgets";
+  keyMeans,
+  type MdyCalendarViewMode } from "@modyra/widgets";
 import { mdyPart } from "../mdy-part.js";
 
 /** Which calendar is asking: its catalogue entry names the classes. */
@@ -107,13 +107,19 @@ export function calendarRows(year: number, month: number, weekStart: number): Ca
  */
 export function calendarGridKey(
   event: KeyboardEvent,
+  /** Whose grid this is, so the dismissal is read from that kind's declaration rather than named. */
+  kind: "datepicker" | "daterange",
   viewMode: MdyCalendarViewMode,
   send: (intent: { readonly type: "set-view-mode"; readonly mode: MdyCalendarViewMode }
     | { readonly type: "keydown"; readonly key: string; readonly shiftKey: boolean;
         readonly ctrlKey?: boolean; readonly metaKey?: boolean }) => void,
   close: () => void,
 ): void {
-  if (event.key === "Escape") {
+  // Asked of the catalogue. The binding declares that a dismissal answers whatever is held with it,
+  // and a condition naming the key is a second copy of that rule — the copy is what keeps answering
+  // after the declaration changes, which is how every renderer stayed correct for its own reasons.
+  // ADR 0168.
+  if (keyMeans(kind, event, "cancel", true)) {
     event.preventDefault();
     if (viewMode !== "days") send({ type: "set-view-mode", mode: "days" });
     else close();

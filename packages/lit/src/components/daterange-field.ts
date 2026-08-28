@@ -350,7 +350,7 @@ export class MdyDaterangeFieldElement extends MdyFieldElement<MdyDateRange | nul
    * every renderer that asks.
    */
   private onGridKeydown(e: KeyboardEvent, handle: MdyFieldHandle<MdyDateRange | null>): void {
-    calendarGridKey(e, this.view.viewMode, (intent) => this.send(intent), () => this.closePopup(handle));
+    calendarGridKey(e, "daterange", this.view.viewMode, (intent) => this.send(intent), () => this.closePopup(handle));
   }
 
   protected override updated(changed: Map<string, unknown>): void {

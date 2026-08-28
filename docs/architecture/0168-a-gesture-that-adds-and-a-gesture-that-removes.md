@@ -94,9 +94,18 @@ the answer elsewhere.
 - Mutation, and this is the one that matters: planting `return true` in `matchesKeyGesture` used to
   move nothing in either tier. It now turns checks red in all three renderers. Removing
   `modifier: "any"` from the dismissal bindings turns five kinds red.
-- **`colors` is the sixth and its dismissal is still a hand comparison in one renderer.** It behaves
-  correctly and does not read the declaration, so the mutation above leaves it green. Recorded rather
-  than swept.
+- **Correction: it was not one kind, it was almost all of them.** This record first said `colors` was
+  the only kind not reading the declaration. Measured properly — counting test *names* rather than
+  the lines a runner repeats in its summary — removing `modifier: "any"` reddened two kinds in one
+  renderer and nothing at all in the other two. Every other kind closed correctly by comparing the
+  key by hand: correct, and correct for its own reasons, so the catalogue could have lost the line
+  and nothing anywhere would have moved.
+
+  Fourteen such comparisons across the three renderers now ask the catalogue. Removing the
+  declaration reddens four kinds in the framework-free renderer, all six in the web-component one,
+  and the contract check in all three. The two that stay green there are the kinds whose opener is a
+  button: a key does not open them outside a browser, so the dismissal is never reached, and the
+  browser tier is what covers them.
 - **Correction to what this record first said.** It claimed the contract snapshot does not cover the
   keyboard catalogue. It does — asserted from `contract:diff` answering `patch` without opening the
   snapshot, which is the same mistake this whole record is about. What it recorded was

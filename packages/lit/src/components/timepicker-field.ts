@@ -783,7 +783,7 @@ export class MdyTimepickerFieldElement extends MdyFieldElement<string | null> {
       <div
         class="mdy-timepicker-container ${this.view.viewMode === "dial" ? "mdy-timepicker--dial" : ""}"
         @keydown=${(e: KeyboardEvent) => {
-          if (e.key === "Escape") {
+          if (keyMeans(this.widgetKind, e, "cancel", true)) {
             e.preventDefault();
             this.closePopup(handle);
             return;
@@ -870,7 +870,7 @@ export class MdyTimepickerFieldElement extends MdyFieldElement<string | null> {
           // The popup handles Escape inside itself, but it does not take focus when it opens — so
           // from the control, which is where the keyboard actually is, the picker could be opened
           // and not dismissed.
-          if (e.key === "Escape" && this._open) {
+          if (keyMeans(this.widgetKind, e, "cancel", true) && this._open) {
             e.preventDefault();
             this.closePopup(handle);
           }

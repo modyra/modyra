@@ -3,8 +3,8 @@ import { type MdyFieldHandle } from "@modyra/core";
 import { capabilityOf,
   createLightDismiss,
   listboxNextIndex,
-  overlayLifecycleTransition,
-} from "@modyra/widgets";
+  keyMeans,
+  overlayLifecycleTransition } from "@modyra/widgets";
 import { mdyIcon } from "../base.js";
 import { MdyOptionsFieldElement } from "./options-field.js";
 import { outsideDismissDeclared } from "../widget-runtime/overlay-host.js";
@@ -157,7 +157,7 @@ export abstract class MdyDropdownFieldElement<T> extends MdyOptionsFieldElement<
       const option = this.listOptions[this._activeIndex];
       if (option) this.pick(handle, option.value);
       if (!this.multiselectable) this.close(handle);
-    } else if (e.key === "Escape") {
+    } else if (keyMeans(this.widgetKind, e, "cancel", true)) {
       e.preventDefault();
       this.applyLifecycle(handle, { type: "escape" });
     }

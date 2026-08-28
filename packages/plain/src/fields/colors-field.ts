@@ -15,6 +15,7 @@ import {
   colorValueEquals,
   defaultWidgetIdFactory,
   keyBindingFor,
+  keyMeans,
   overlayAnchoringFor,
   rowRovingIndex,
   projectFieldShellA11y,
@@ -275,7 +276,11 @@ export function renderColorsField(
   // panel floating over a control the user has already left. Both dismiss, and they differ in where
   // focus lands — Escape hands it back to the opener, Tab leaves it where the key was taking it.
   const onEscape = (event: KeyboardEvent) => {
-    if (event.key === "Escape") { setOpen(false); picker.focus(); }
+    // Asked of the catalogue, not named here. The binding declares that a dismissal answers whatever
+    // is held with it, and a condition naming the key is a second copy of that rule — the copy is
+    // what keeps answering after the declaration changes, which is how this stayed correct while
+    // being correct for its own reasons. ADR 0168.
+    if (keyMeans("colors", event, "cancel", true)) { setOpen(false); picker.focus(); }
     // Tab is already carrying focus somewhere; pulling it back to the opener would trap the user in
     // the control they were leaving.
     else if (event.key === "Tab") setOpen(false);

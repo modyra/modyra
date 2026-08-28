@@ -1,6 +1,6 @@
 import { Component } from "@angular/core";
 import { TestBed } from "@angular/core/testing";
-import { MDY_POPUP_OPENERS, partClasses } from "@modyra/widgets";
+import { MDY_POPUP_OPENERS, MDY_WIDGET_KEYBOARD, partClasses } from "@modyra/widgets";
 import { field, mdyForm } from "../core/typed-form";
 import { MdyFormComponent } from "../form/mdy-form.component";
 import { MdyColorsComponent } from "./colors/colors-renderer.component";
@@ -92,6 +92,22 @@ describe("a key pressed with the platform's modifier held", () => {
       }
     });
   }
+
+  it("Escape closes whatever is held with it, and the catalogue is what says so", () => {
+    // The rule is not symmetrical with the one above, and the asymmetry is the decision: a gesture
+    // that *adds* is refused under the accelerator, one that *removes* is honoured whatever is held.
+    // Answering a dismissal wrongly costs a reopen; refusing one leaves somebody inside a panel with
+    // the way out not working, under a modifier nobody thinks to test.
+    //
+    // Read from the contract as well as performed, because every renderer here closed on a modified
+    // Escape *and kept closing with the declaration deleted* — each compared the key by hand. The
+    // behaviour was theirs rather than the contract's, and the next renderer had no reason to agree.
+    for (const kind of Object.keys(MDY_POPUP_OPENERS)) {
+      const escape = (MDY_WIDGET_KEYBOARD as Record<string, ReadonlyArray<{ key: string; when?: string; modifier?: string }>>)[kind]
+        ?.find((binding) => binding.key === "Escape" && binding.when === "open");
+      expect(`${kind}: ${escape?.modifier ?? "no way out declared"}`).toBe(`${kind}: any`);
+    }
+  });
 
   it("and a bare press really does open something here", () => {
     // The anti-tautology control for the whole file: if nothing opens, every refusal above is a

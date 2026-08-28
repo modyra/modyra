@@ -404,7 +404,7 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
     e: KeyboardEvent,
     handle: MdyFieldHandle<readonly unknown[]>,
   ): void {
-    if (e.key === "Escape") {
+    if (keyMeans(this.widgetKind, e, "cancel", true)) {
       if (this._open) {
         e.preventDefault();
         this.close(handle);
