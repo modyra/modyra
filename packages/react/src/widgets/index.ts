@@ -22,6 +22,24 @@ export type {
   UseMdyBooleanFieldOptions,
 } from "./boolean-field.js";
 
+export { useMdyFileField } from "./file-field.js";
+export type {
+  MdyReactFileFieldApi,
+  UseMdyFileFieldOptions,
+} from "./file-field.js";
+
+export { useMdySelectField } from "./select-field.js";
+export type {
+  MdyReactSelectFieldApi,
+  UseMdySelectFieldOptions,
+} from "./select-field.js";
+
+export { useMdyColorsField } from "./colors-field.js";
+export type {
+  MdyReactColorsFieldApi,
+  UseMdyColorsFieldOptions,
+} from "./colors-field.js";
+
 export { useMdyOptionField } from "./option-field.js";
 export type {
   MdyReactOptionFieldApi,

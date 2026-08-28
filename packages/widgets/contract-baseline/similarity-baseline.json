@@ -7,8 +7,8 @@
     {
       "id": "angular:isCellRangeEndpoint ≡ lit:isCellRangeEndpoint",
       "score": 1,
-      "left": "packages/angular/src/lib/renderers/datepicker/range-calendar-grid.component.ts:155",
-      "right": "packages/lit/src/components/daterange-field.ts:326",
+      "left": "packages/angular/src/lib/renderers/datepicker/range-calendar-grid.component.ts:184",
+      "right": "packages/lit/src/components/daterange-field.ts:363",
       "reason": "recorded, not yet accounted for"
     }
   ]
