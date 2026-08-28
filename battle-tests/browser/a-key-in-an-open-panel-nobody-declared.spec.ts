@@ -66,11 +66,17 @@ test("a key in an open panel nobody declared", async ({ page }) => {
       const classes = openerClasses(kind);
       if (keys.length === 0 || classes.length === 0) continue;
 
+      // One page per kind, and a **fresh field** per key. The state a previous key left — a panel it
+      // closed, a choice it made — belongs to the field, so a new field is enough to be rid of it;
+      // reloading the page as well cost this sweep 264 seconds of a 455-second suite, one worker held
+      // for more than half the run, to discard a document that was never dirty.
+      await page.goto(host.page);
+      await page.waitForFunction((flag) => (window as never as Record<string, boolean>)[flag] === true, host.ready);
+
+      /** The declared opener that actually works here, learned on the first key and reused. */
+      let opensWith: string | null | undefined = undefined;
+
       for (const [index, key] of PRESSED.entries()) {
-        // A fresh page per key: a panel that a previous key closed, or a choice a previous key made,
-        // is the state the next key would be judged in.
-        await page.goto(host.page);
-        await page.waitForFunction((flag) => (window as never as Record<string, boolean>)[flag] === true, host.ready);
         const mountId = `open-${kind}-${index}`;
         await page.evaluate(
           ({ door, id, k }) => (window as never as Api)[door].mountFields(id, [{
@@ -91,14 +97,26 @@ test("a key in an open panel nobody declared", async ({ page }) => {
         }, { id: mountId, opener: classes });
         if (!focused) { unopened.push(`${kind} in ${host.name}: no ${OPENERS[kind]?.opener ?? "opener"} to focus`); continue; }
 
+        // **Which key opens this kind is asked once, not once per key pressed.** Trying every declared
+        // opener for every one of the seventeen keys means paying the failed ones' timeout seventeen
+        // times over — and a kind that opens for none of them pays all of it to learn nothing new.
+        // That single line was most of a four-minute spec.
+        if (opensWith === undefined) {
+          opensWith = null;
+          for (const opener of keys) {
+            await page.keyboard.press(opener === " " ? "Space" : opener);
+            const worked = await page
+              .waitForSelector('[aria-expanded="true"]', { timeout: 1_200 })
+              .then(() => true)
+              .catch(() => false);
+            if (worked) { opensWith = opener; break; }
+          }
+        }
         let open = false;
-        for (const opener of keys) {
-          await page.keyboard.press(opener === " " ? "Space" : opener);
-          open = await page
-            .waitForSelector('[aria-expanded="true"]', { timeout: 1_200 })
-            .then(() => true)
-            .catch(() => false);
-          if (open) break;
+        if (opensWith !== null) {
+          await page.keyboard.press(opensWith === " " ? "Space" : opensWith);
+          open = await page.waitForSelector('[aria-expanded="true"]', { timeout: 1_200 })
+            .then(() => true).catch(() => false);
         }
         if (!open) { unopened.push(`${kind} in ${host.name}: [${keys.map(shown).join(" ")}] opened nothing`); continue; }
 

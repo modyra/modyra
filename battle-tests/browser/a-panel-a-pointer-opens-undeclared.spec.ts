@@ -51,24 +51,27 @@ test("a panel a pointer opens undeclared", async ({ page }) => {
       if (openers.length === 0) continue;
       const openerClasses = openers.map((part) => CONTRACTS[kind].parts[part]?.classes ?? []);
 
-      for (const [part, definition] of Object.entries(CONTRACTS[kind].parts)) {
-        if ((definition.classes ?? []).length === 0) continue;
+      // One page per kind. A panel a previous click left open is the state the next would be judged
+      // in — but that state lives in the field, so a fresh field per part is enough. Reloading the
+      // document for every part made this the second most expensive spec in the suite.
+      await page.goto(host.page);
+      await page.waitForFunction((flag) => (window as never as Record<string, boolean>)[flag] === true, host.ready);
 
-        // A fresh page per part: a panel left open by the previous click is the state the next one is
-        // judged in, and a part that closes it would read as a part that opens nothing.
-        await page.goto(host.page);
-        await page.waitForFunction((flag) => (window as never as Record<string, boolean>)[flag] === true, host.ready);
+      for (const [index, [part, definition]] of Object.entries(CONTRACTS[kind].parts).entries()) {
+        if ((definition.classes ?? []).length === 0) continue;
+        const mountId = `gesture-${index}`;
+
         await page.evaluate(
-          ({ door, k }) => (window as never as Api)[door].mountFields("gesture", [{
+          ({ door, k, id }) => (window as never as Api)[door].mountFields(id, [{
             name: "campo", kind: k, label: "Etichetta",
             options: [{ value: "a", label: "A" }, { value: "b", label: "B" }],
           }] as never),
-          { door: host.api, k: kind },
+          { door: host.api, k: kind, id: mountId },
         );
-        await page.locator('[data-form="gesture"]').waitFor({ timeout: 5_000 }).catch(() => undefined);
+        await page.locator(`[data-form="${mountId}"]`).waitFor({ timeout: 5_000 }).catch(() => undefined);
 
-        const attempt = await page.evaluate(({ classes, declaredClasses }) => {
-          const root = document.querySelector('[data-form="gesture"]') as HTMLElement | null;
+        const attempt = await page.evaluate(({ classes, declaredClasses, id }) => {
+          const root = document.querySelector(`[data-form="${id}"]`) as HTMLElement | null;
           if (root === null) return null;
           const element = root.querySelector<HTMLElement>(classes.map((one: string) => `.${one}`).join(""));
           if (element === null) return null;
@@ -89,14 +92,14 @@ test("a panel a pointer opens undeclared", async ({ page }) => {
           const before = root.querySelector("[aria-expanded]")?.getAttribute("aria-expanded") ?? "-";
           element.click();
           return before;
-        }, { classes: definition.classes, declaredClasses: openerClasses });
+        }, { classes: definition.classes, declaredClasses: openerClasses, id: mountId });
 
         if (attempt === null) continue;
         if (attempt === "non-clickable") { unclickable.push(`${kind}.${part} in ${host.name}`); continue; }
         clicked += 1;
         await page.waitForTimeout(200);
-        const after = await page.evaluate(() =>
-          document.querySelector('[data-form="gesture"]')?.querySelector("[aria-expanded]")?.getAttribute("aria-expanded") ?? "-");
+        const after = await page.evaluate((id) =>
+          document.querySelector(`[data-form="${id}"]`)?.querySelector("[aria-expanded]")?.getAttribute("aria-expanded") ?? "-", mountId);
 
         if (attempt !== after) {
           undeclared.push(`${kind} in ${host.name}: clicking ${part} takes it from ${attempt} to ${after}, ` +
