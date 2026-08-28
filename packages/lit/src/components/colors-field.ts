@@ -1,5 +1,7 @@
 import { mdyPart } from "../mdy-part.js";
-import { capabilityOf, keyMeans,
+import {
+  createColorsFieldController,
+  type MdyColorsFieldController, capabilityOf, keyMeans,
   keyBindingFor,
   MDY_COLOR_PRESETS, colorPresetsOf, openPlatformChooser, overlayControlledId, rowRovingIndex } from "@modyra/widgets";
 import { html, nothing, type PropertyDeclarations } from "lit";
@@ -58,10 +60,27 @@ export class MdyColorsFieldElement extends MdyFieldElement<string | null> {
     if (handle) closeOverlayOutOfPlay(this, handle.interactivity(), () => this.overlay.close());
   }
 
+  /**
+   * What counts as a colour is the contract's rule, not a regular expression written here.
+   *
+   * The one that was here accepted `#ffff`, `#fffff`, `#ffffffff` and `#12345` — lengths no colour
+   * has — and stored them as the value, while refusing `fff` and a value with spaces around it,
+   * which the contract accepts and normalises. Five strings where this field disagreed with the same
+   * field drawn by another renderer, in both directions.
+   */
   private set(handle: MdyFieldHandle<string | null>, value: string): void {
-    const v = value.trim();
-    handle.set(/^#[0-9a-fA-F]{3,8}$/.test(v) ? v : v === "" ? null : handle.value());
-    handle.markAsDirty();
+    this.colorsController(handle).dispatch({ type: "text", value });
+  }
+
+  private _colors?: MdyColorsFieldController;
+
+  private colorsController(handle: MdyFieldHandle<string | null>): MdyColorsFieldController {
+    this._colors ??= createColorsFieldController({
+      widgetId: this.fieldId,
+      handle: handle as never,
+      presets: colorPresetsOf(this.presets).map((entry) => entry.value),
+    });
+    return this._colors;
   }
 
   /**

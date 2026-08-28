@@ -8,11 +8,11 @@
 import { applyOpenerPromise } from "../opener-promise.js";
 import { observerFor, type MdyFieldHandle, type MdyReactivity } from "@modyra/core";
 import type { MdyDynamicColorsField } from "@modyra/core";
-import { applySubmissionNames,
+import {
+  createColorsFieldController, applySubmissionNames,
   colorPresetsOf,
   MDY_WIDGET_CONTRACTS,
   colorValueEquals,
-  colorValueTransition,
   defaultWidgetIdFactory,
   keyBindingFor,
   overlayAnchoringFor,
@@ -20,7 +20,6 @@ import { applySubmissionNames,
   projectFieldShellA11y,
   fieldCanBeInvalid,
   visibleErrorsOf,
-  type MdyColorValueIntent,
   MDY_I18N_MESSAGES_DEFAULT,
   type MdyI18nMessages,
 } from "@modyra/widgets";
@@ -50,7 +49,22 @@ export function renderColorsField(
   const definition = MDY_WIDGET_CONTRACTS.colors;
   const palette = colorPresetsOf(f.presets);
   const presets = palette.map((entry) => entry.value);
-  const open = reactivity.signal(false);
+
+  /**
+   * The value, the text being typed and whether the panel is up, from the contract.
+   *
+   * Three doors and one value, and the reason this needs a controller is that they do not agree on
+   * when a value is a decision: choosing a preset answers the question the panel was opened to ask,
+   * typing does not — `#0` is on its way to being a colour, and a field that committed or rejected on
+   * every keystroke would take a half-typed value away from the person typing it.
+   */
+  const colors = createColorsFieldController({
+    widgetId,
+    handle: handle as unknown as MdyFieldHandle<string>,
+    presets,
+  }, reactivity);
+  const isOpen = (): boolean => colors.state().open;
+  const setOpen = (up: boolean): void => { colors.dispatch({ type: up ? "open" : "close" }); };
 
   const shell = buildFieldShell(f.label, "colors", {}, f.ariaLabel, f.name, f.supportingText);
   // The themes lay this control out from the outside in — `.mdy-colors` *contains* the input
@@ -203,16 +217,6 @@ export function renderColorsField(
   wrapper.append(popup);
   container.appendChild(shell.root);
 
-  function commit(intent: MdyColorValueIntent): void {
-    const transition = colorValueTransition(intent);
-    if (transition.value === undefined) return;
-    handle.set(transition.value);
-    handle.markAsDirty();
-    if (transition.touched) handle.markAsTouched();
-    // The policy decides this, not the renderer: choosing a preset answers the question the popup
-    // was opened to ask, typing a hex value does not.
-    if (transition.close) open.set(false);
-  }
 
   /**
    * The platform's chooser reports the choice, not the dragging.
@@ -226,21 +230,21 @@ export function renderColorsField(
    * person settled on, and the colour they are dragging past is shown by the chooser itself, which
    * is where they are looking. ADR 0158.
    */
-  control.addEventListener("change", () => commit({ type: "native", value: control.value }));
-  hexInput.addEventListener("change", () => commit({ type: "text", value: hexInput.value }));
+  control.addEventListener("change", () => colors.dispatch({ type: "native", value: control.value }));
+  hexInput.addEventListener("change", () => colors.dispatch({ type: "text", value: hexInput.value }));
   hexInput.addEventListener("blur", () => handle.markAsTouched());
-  toggle.addEventListener("click", () => open.set(!open()));
+  toggle.addEventListener("click", () => setOpen(!isOpen()));
   // The square is the field's own opener, not a second way into the platform's chooser. Every
   // renderer of this contract answers a press here the same way, and the route to an arbitrary
   // colour is inside the panel this opens.
-  picker.addEventListener("click", () => open.set(!open()));
+  picker.addEventListener("click", () => setOpen(!isOpen()));
   // The platform's chooser, reached from the panel. The hidden native input is what opens it, and
   // clicking it from here rather than moving focus into it keeps the panel where it was: on some
   // platforms the chooser is a separate window, and a panel that closed when focus left would take
   // the door with it and leave nothing to come back to.
   customEntry.addEventListener("click", () => control.click());
   for (const { preset, swatch } of swatches) {
-    swatch.addEventListener("click", () => commit({ type: "preset", value: preset }));
+    swatch.addEventListener("click", () => colors.dispatch({ type: "preset", value: preset }));
   }
   /**
    * Walking the swatches, which are a listbox and answer like one.
@@ -251,7 +255,7 @@ export function renderColorsField(
    * right-to-left document.
    */
   const moveThroughSwatches = (event: KeyboardEvent): boolean => {
-    if (!open()) return false;
+    if (!isOpen()) return false;
     const binding = keyBindingFor("colors", event.key, true);
     if (!binding || binding.intent !== "move") return false;
     const order = swatches.map(({ swatch }) => swatch);
@@ -271,24 +275,24 @@ export function renderColorsField(
   // panel floating over a control the user has already left. Both dismiss, and they differ in where
   // focus lands — Escape hands it back to the opener, Tab leaves it where the key was taking it.
   const onEscape = (event: KeyboardEvent) => {
-    if (event.key === "Escape") { open.set(false); picker.focus(); }
+    if (event.key === "Escape") { setOpen(false); picker.focus(); }
     // Tab is already carrying focus somewhere; pulling it back to the opener would trap the user in
     // the control they were leaving.
-    else if (event.key === "Tab") open.set(false);
+    else if (event.key === "Tab") setOpen(false);
   };
   popup.addEventListener("keydown", onEscape);
   wrapper.addEventListener("keydown", onEscape);
 
   const effectRef = reactivity.effect(() => {
     const value = typeof handle.value() === "string" ? (handle.value() as string) : "";
-    const isOpen = open();
+    const panelUp = isOpen();
     if (document.activeElement !== hexInput) hexInput.value = value;
     if (value) control.value = value;
     preview.style.setProperty("background-color", value || "transparent");
     // A closed palette offers nothing. The popup stays — built once, alive as long as the field —
     // and its swatches are buttons: a Tab key walks through them and a screen reader counts them as
     // options in a listbox nobody opened. They go back in when it opens.
-    if (isOpen) {
+    if (panelUp) {
       if (presetList.childElementCount === 0) {
         for (const { swatch } of swatches) presetList.appendChild(swatch);
         // Into the row it has just shown. The keys the contract declares for an open colour field
@@ -296,7 +300,7 @@ export function renderColorsField(
         // the toggle was one no keyboard could ever reach the presets in.
         const landing = swatches.find(({ preset }) => colorValueEquals(value || null, preset))?.swatch
           ?? swatches[0]?.swatch;
-        queueMicrotask(() => { if (open()) landing?.focus(); });
+        queueMicrotask(() => { if (isOpen()) landing?.focus(); });
       }
     } else if (presetList.childElementCount > 0) {
       presetList.replaceChildren();
@@ -357,15 +361,15 @@ export function renderColorsField(
     hexInput.readOnly = handle.readonly();
     hexInput.setAttribute("aria-readonly", String(handle.readonly()));
     picker.disabled = handle.disabled();
-    picker.setAttribute("aria-expanded", String(isOpen));
-    reflectOverlayOpen(popup, isOpen, messages);
-    wrapper.classList.toggle("mdy-colors--open", isOpen);
+    picker.setAttribute("aria-expanded", String(panelUp));
+    reflectOverlayOpen(popup, panelUp, messages);
+    wrapper.classList.toggle("mdy-colors--open", panelUp);
     // The themes place the panel from `--mdy-overlay-*`; the widget policy decides them.
-    if (isOpen) queueMicrotask(() => positionOverlay(popup, shell.wrapper, anchoring));
-    toggleArrow.classList.toggle("mdy-select__arrow--open", isOpen);
+    if (panelUp) queueMicrotask(() => positionOverlay(popup, shell.wrapper, anchoring));
+    toggleArrow.classList.toggle("mdy-select__arrow--open", panelUp);
     setErrors(shell.errorList, visibleErrorsOf(handle).map((error) => error.message));
     shell.syncState({
-      open: isOpen,
+      open: panelUp,
       touched: handle.touched(), disabled: handle.disabled(), readonly: handle.readonly(),
       hasError: visibleErrorsOf(handle).length > 0, filled: Boolean(value), required: handle.required(), constraints: handle.constraints?.() ?? null,
     });
@@ -375,13 +379,13 @@ export function renderColorsField(
     applySubmissionNames(shell.root, "colors", f.name);
   });
 
-  const untrack = trackOverlay(popup, shell.wrapper, () => open(), anchoring);
-  const undismiss = dismissOnOutsidePointer([wrapper, popup], () => open(), () => open.set(false));
+  const untrack = trackOverlay(popup, shell.wrapper, () => isOpen(), anchoring);
+  const undismiss = dismissOnOutsidePointer([wrapper, popup], () => isOpen(), () => setOpen(false));
   // The other half of how this kind says it is dismissed. A palette left open behind a field
   // somebody has tabbed away from covers the next question and answers to a keyboard that has gone.
   const unfocusout = dismissOnFocusOutside("colors", [wrapper, shell.root, popup],
-    () => open(),
-    () => open.set(false),
+    () => isOpen(),
+    () => setOpen(false),
     { pointer: undismiss, markVisited: () => handle.markAsTouched() });
 
   return () => {
