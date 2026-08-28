@@ -53,14 +53,15 @@ const openerClasses = (kind: string): string[] => {
   return opener === undefined ? [] : CONTRACTS[kind].parts[opener]?.classes ?? [];
 };
 
-test("a key in an open panel nobody declared", async ({ page }) => {
+for (const only of HOSTS) {
+test(`a key in an open panel nobody declared, ${only.name}`, async ({ page }) => {
   test.setTimeout(1_200_000);
   const undeclared: string[] = [];
   /** Kinds whose open phase could not be reached: printed, so a green is not read as coverage. */
   const unopened: string[] = [];
   let pressed = 0;
 
-  for (const host of HOSTS) {
+  for (const host of [only]) {
     for (const kind of MDY_WIDGET_KINDS) {
       const keys = openingKeys(kind);
       const classes = openerClasses(kind);
@@ -167,3 +168,4 @@ test("a key in an open panel nobody declared", async ({ page }) => {
       "is a gesture the other renderers do not owe and no check asks for.",
   ).toEqual([]);
 });
+}

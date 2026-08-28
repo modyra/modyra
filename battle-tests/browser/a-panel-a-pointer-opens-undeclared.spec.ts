@@ -38,14 +38,15 @@ const declaredOpeners = (kind: string): string[] =>
     .filter((transition) => transition.trigger.type === "pointer" && transition.trigger.part !== undefined)
     .map((transition) => transition.trigger.part as string);
 
-test("a panel a pointer opens undeclared", async ({ page }) => {
+for (const only of HOSTS) {
+test(`a panel a pointer opens undeclared, ${only.name}`, async ({ page }) => {
   test.setTimeout(900_000);
   const undeclared: string[] = [];
   /** Drawn, and not reachable by a scripted click — printed rather than counted as a door that is shut. */
   const unclickable: string[] = [];
   let clicked = 0;
 
-  for (const host of HOSTS) {
+  for (const host of [only]) {
     for (const kind of MDY_WIDGET_KINDS) {
       const openers = declaredOpeners(kind);
       if (openers.length === 0) continue;
@@ -120,3 +121,4 @@ test("a panel a pointer opens undeclared", async ({ page }) => {
       "transition names it or the renderer stops offering it.",
   ).toEqual([]);
 });
+}
