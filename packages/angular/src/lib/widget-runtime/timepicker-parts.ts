@@ -1,6 +1,7 @@
 import { ElementRef } from "@angular/core";
 import type { MdyTimeFormat } from "@modyra/core/datetime";
-import { timepickerPartSelector, timepickerTabOrder } from "@modyra/widgets";
+import {
+  partSelector, timepickerPartSelector, timepickerTabOrder } from "@modyra/widgets";
 
 /**
  * The elements a timepicker command may name, resolved through the contract's own selectors.
@@ -16,7 +17,7 @@ export function timepickerCommandElements(
   format: MdyTimeFormat,
 ): ReadonlyMap<string, ElementRef<HTMLElement>> {
   const found = new Map<string, ElementRef<HTMLElement>>();
-  found.set("trigger", new ElementRef(root.querySelector<HTMLElement>(".mdy-timepicker__toggle") ?? root));
+  found.set("trigger", new ElementRef(root.querySelector<HTMLElement>(partSelector("timepicker", "toggle") ?? "\0") ?? root));
   for (const part of timepickerTabOrder(format)) {
     const selector = timepickerPartSelector(part);
     const el = selector ? root.querySelector<HTMLElement>(selector) : null;

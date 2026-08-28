@@ -11,7 +11,8 @@ import {
   signal,
 } from "@angular/core";
 
-import { MDY_OVERLAY_PORTAL_CLASS } from "@modyra/widgets";
+import {
+  partSelector, MDY_OVERLAY_PORTAL_CLASS } from "@modyra/widgets";
 import { MDY_COLOR_PRESETS, MDY_WIDGET_CONTRACTS, defaultWidgetIdFactory, colorPresetsOf, colorValueEquals, focusWhenShown, openPlatformChooser, keyBindingFor, rowRovingIndex, colorValueTransition, popupPlacementClass, overlayControlledId, projectOverlayOpenerA11y } from "@modyra/widgets";
 import { MdyErrorListComponent } from "../../control/error-list.component";
 import { MdyControlLabelComponent } from "../../control/mdy-control-label.component";
@@ -349,8 +350,12 @@ export class MdyColorsComponent extends MdyOverlayControl<string> {
   protected openPlatformChooser(): void {
     const held = this.value();
     if (typeof held === "string" && held !== "") this.remembered.set(held);
-    openPlatformChooser((this.hostElement.nativeElement as HTMLElement)
-      .querySelector<HTMLInputElement>(".mdy-colors__native-hidden"));
+    // `null` where the kind declares no class for the part, which is not this part — but the
+    // selector says so rather than being trusted, because a part that loses its class stops being
+    // findable and an unguarded `querySelector("")` throws instead of missing.
+    const selector = partSelector("colors", "control");
+    openPlatformChooser(selector === null ? null
+      : (this.hostElement.nativeElement as HTMLElement).querySelector<HTMLInputElement>(selector));
   }
 
   protected selectColor(color: string): void {

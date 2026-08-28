@@ -230,7 +230,6 @@ export class MdyDateRangePickerComponent extends MdyOverlayControl<MdyDateRange 
   );
   readonly dateFilter = input<((date: string) => boolean) | null>(null);
 
-  protected override readonly minSpace = 450;
 
 
   /** The id the opener names, which the projected panel has to carry. */

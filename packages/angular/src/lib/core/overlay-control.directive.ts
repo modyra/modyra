@@ -298,6 +298,14 @@ export abstract class MdyOverlayControl<TValue> extends MdyBaseControl<TValue> {
   protected readonly overlayKind: MdyWidgetKind | null = null;
 
   /** Minimum space required below or above to anchor the overlay. Default 128px. */
+  /**
+   * What a control falls back to when the catalogue does not know it.
+   *
+   * Not an override point any more. Four renderers carried their own number here — 450 three times
+   * and 250 once — beside a spread of `overlayAnchoringFor` that lands *after* them and wins, so the
+   * literals decided nothing and read as though they did. A number that looks authoritative and is
+   * shadowed is worse than no number: the next reader changes it and nothing moves.
+   */
   protected readonly minSpace: number = 128;
 
   /** Preferred vertical position. Defaults to 'below'. */

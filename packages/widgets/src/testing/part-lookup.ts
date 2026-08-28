@@ -12,7 +12,7 @@
  * elements that share their classes, rather than by a harness counting to two.
  */
 import { MDY_POPUP_OPENERS, MDY_WIDGET_CONTRACTS, type MdyWidgetKind } from "../catalog.js";
-import type { MdyPartContract } from "../contract.js";
+import { escapeForSelector, partSelector } from "../part-classes.js";
 import { dynamicParts } from "../ssr.js";
 import { MDY_SEMANTIC_ELEMENTS, partsSharingClassesWith } from "./dom-tests.js";
 
@@ -23,26 +23,8 @@ import { MDY_SEMANTIC_ELEMENTS, partsSharingClassesWith } from "./dom-tests.js";
  * deliberately generic over all of them — a lookup that only accepted one kind's names could not
  * serve a harness iterating the catalogue.
  */
-const partsOf = (kind: MdyWidgetKind): Readonly<Record<string, MdyPartContract | undefined>> =>
-  MDY_WIDGET_CONTRACTS[kind].parts as Readonly<Record<string, MdyPartContract | undefined>>;
 
-/**
- * Escapes a class name for use in a selector.
- *
- * Hand-rolled rather than `CSS.escape`, which is a browser global this package must not require:
- * `@modyra/widgets` loads and computes in a process with no DOM, and a bare `CSS.escape` reference
- * turns that into a `ReferenceError` the moment a selector is built.
- */
-function escapeClassName(name: string): string {
-  return name.replace(/[^\w-]/g, (character) => `\\${character}`);
-}
 
-/** The CSS selector the contract's declared classes amount to, or `null` where it declares none. */
-export function partSelector(kind: MdyWidgetKind, part: string): string | null {
-  const classes = partsOf(kind)[part]?.classes ?? [];
-  if (classes.length === 0) return null;
-  return classes.map((name) => `.${escapeClassName(name)}`).join("");
-}
 
 /**
  * This widget's popup, when the renderer lifted it out of the field.
@@ -65,7 +47,7 @@ function portalledPopup(
   if (!id) return null;
 
   for (const scope of portalRoots) {
-    const controlled = scope.querySelector(`#${escapeClassName(id)}`);
+    const controlled = scope.querySelector(`#${escapeForSelector(id)}`);
     if (!controlled) continue;
     // The opener may name the listbox inside the popup rather than the popup itself; the part being
     // looked up can be either, so the whole overlay container is the scope.

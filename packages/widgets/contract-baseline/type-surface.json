@@ -4459,8 +4459,9 @@
     "-> returns: readonly string[]"
   ],
   "partSelector": [
-    "(0) kind: MdyWidgetKind",
-    "(1) part: string",
+    "(0) kind: K",
+    "(1) part: MdyWidgetPart<K> | string",
+    "(2) states?: MdyPartState",
     "-> returns: string | null"
   ],
   "partStates": [

@@ -11,7 +11,10 @@ import { test } from "node:test";
 import { installDomGlobals } from "../../plain/test/support/dom-env.mjs";
 
 installDomGlobals();
-const { findPartElement, partSelector } = await import("../dist/testing/index.js");
+const { findPartElement } = await import("../dist/testing/index.js");
+// `partSelector` moved to the package's own door: finding a part by its classes is not a testing
+// question, and the renderers that could not import it wrote the class name out as a literal.
+const { partSelector } = await import("../dist/index.js");
 
 /** A field root with the classes a kind's parts declare, built by hand so the DOM is the fixture. */
 function html(markup) {

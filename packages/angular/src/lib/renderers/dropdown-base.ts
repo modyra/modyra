@@ -21,7 +21,6 @@ export abstract class MdyDropdownBase<TValue, TOptionValue = unknown>
 
   protected readonly injector = inject(Injector);
 
-  protected override readonly minSpace = 250;
 
   readonly selectionChange = output<MdySelectOption<TOptionValue>>();
 

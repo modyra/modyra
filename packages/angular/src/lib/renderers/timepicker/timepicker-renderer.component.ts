@@ -199,7 +199,6 @@ export class MdyTimepickerComponent extends MdyOverlayControl<string | null> {
   readonly animateHand = input<boolean>(false);
   /** Whether the dial shows which stretches of its ring carry no selectable time. Off by default. */
   readonly showUnavailable = input<boolean>(false);
-  protected override readonly minSpace = 450;
 
   protected readonly effectivePlaceholder = computed(() =>
     this.placeholder() || timepickerPlaceholder(this.format()),

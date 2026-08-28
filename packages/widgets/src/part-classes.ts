@@ -91,3 +91,45 @@ export function widgetStateClasses(kind: MdyWidgetKind): readonly string[] {
   }
   return Object.freeze([...out].sort());
 }
+
+/**
+ * Escapes a name for use in a selector — a class or an id, the rule is the same.
+ *
+ * Exported from this module and not from the package's door: it is how a selector is built here, not
+ * a question a consumer asks.
+ *
+ * Hand-rolled rather than `CSS.escape`, which is a browser global this package must not require:
+ * this package loads and computes in a process with no DOM, and a bare `CSS.escape` reference turns
+ * that into a `ReferenceError` the moment a selector is built.
+ */
+export function escapeForSelector(name: string): string {
+  return name.replace(/[^\w-]/g, (character) => `\\${character}`);
+}
+
+/**
+ * The CSS selector the contract's declared classes amount to, or `null` where it declares none.
+ *
+ * Moved here from the testing door, which was the only place it was published. Finding a part by its
+ * classes is not a testing question — every renderer asks it, and the ones that could not import it
+ * wrote the class name out as a literal instead. A selector written by hand is a copy of the
+ * vocabulary no rename reaches: the class moves, the selector matches nothing, and the only symptom
+ * is a part that quietly stops being found.
+ *
+ * `null` and not `""` for a part with no classes of its own — five controls have none. An empty
+ * selector string is not "matches nothing", it is a syntax error in `querySelector`.
+ *
+ * `null` too for a part the kind does not have, where `partClasses` raises. A caller asking "where is
+ * this part" is often sweeping every part name there is, and for that question "this kind has no such
+ * part" is an answer rather than a mistake.
+ */
+export function partSelector<K extends MdyWidgetKind>(
+  kind: K,
+  part: MdyWidgetPart<K> | string,
+  states: MdyPartState = {},
+): string | null {
+  const declared = MDY_WIDGET_CONTRACTS[kind]?.parts as Readonly<Record<string, unknown>> | undefined;
+  if (declared?.[part as string] === undefined) return null;
+  const classes = partClasses(kind, part as MdyWidgetPart<K>, states);
+  if (classes.length === 0) return null;
+  return classes.map((name) => `.${escapeForSelector(name)}`).join("");
+}

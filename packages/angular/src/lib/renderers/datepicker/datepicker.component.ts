@@ -188,7 +188,6 @@ export class MdyDatePickerComponent extends MdyOverlayControl<string | null> {
   }
   readonly displayFormat = input<"iso" | "localized">("localized");
 
-  protected override readonly minSpace = 450;
 
   private readonly injector = inject(Injector);
 

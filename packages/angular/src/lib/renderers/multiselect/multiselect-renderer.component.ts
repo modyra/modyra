@@ -1,4 +1,5 @@
 import {
+  partSelector,
   beginChipReorder, wayBackActionName, matchesKeyGesture, MDY_WIDGET_KEYBOARD, chipTooltipOffset, hiddenChipCount, keepFocusedChipInView, chipFocusAfterRemoval, scrollChipStripByWheel, isTypeaheadCharacter, chipMovedAnnouncement, stateClass, keyBindingFor, multiselectAnnouncement, optionsWithUnrecognizedValues, overlayControlledId, projectOverlayOpenerA11y } from "@modyra/widgets";
 import { MdyPartDirective } from "../../control/mdy-part.directive";
 import { NgTemplateOutlet } from "@angular/common";
@@ -38,6 +39,16 @@ import { MDY_OPTIONS_CONTROL } from "../../core/tokens";
 import { MdyOptionsControl } from "../../core/types";
 import { MdyDropdownBase } from "../dropdown-base";
 import type { MdyOverlayBranch, MdyOverlayOwner } from "../../core/overlay-control.directive";
+
+/**
+ * The selectors this renderer reaches its own parts by, taken from the contract once.
+ *
+ * `partSelector` answers `null` for a part a kind does not declare a class for; these two are
+ * declared, and asserting it here rather than at each of the eight call sites keeps the guard in one
+ * place where it can be read.
+ */
+const TRIGGER = partSelector("multiselect", "trigger") ?? "";
+const CHIPS = partSelector("multiselect", "chips") ?? "";
 
 @Component({
   selector: "mdy-control-multiselect",
@@ -492,7 +503,7 @@ export class MdyMultiselectComponent<TValue = string>
       // The action says whether focus comes back. Escape hands it to the button that opened the
       // list; Tab is already on its way elsewhere, and pulling it back traps the user in the field.
       if (action.restoreFocus) {
-        this.hostRef.nativeElement.querySelector(".mdy-multiselect__trigger")?.focus();
+        this.hostRef.nativeElement.querySelector(TRIGGER)?.focus();
       }
       return;
     }
@@ -608,7 +619,7 @@ export class MdyMultiselectComponent<TValue = string>
     // The field's own area, not a descendant that nothing else handled.
     if (event.target !== event.currentTarget) return;
     if (this.isDisabled() || this.isReadonly()) return;
-    (event.currentTarget as HTMLElement).querySelector<HTMLElement>(".mdy-multiselect__trigger")?.focus();
+    (event.currentTarget as HTMLElement).querySelector<HTMLElement>(TRIGGER)?.focus();
     this.toggleOverlay(event);
   }
 
@@ -628,7 +639,7 @@ export class MdyMultiselectComponent<TValue = string>
     // After the paint that drew the chips, not during the pass that decided them: `scrollWidth` on a
     // strip that has not been laid out yet answers about the previous state.
     queueMicrotask(() => {
-      const strip = this.hostRef.nativeElement.querySelector(".mdy-multiselect__chips") as HTMLElement | null;
+      const strip = this.hostRef.nativeElement.querySelector(CHIPS) as HTMLElement | null;
       if (strip === null) return;
       // The affordance takes its width out of the strip, so a chip the browser scrolled to on focus
       // is outside again by about that width. Whatever the strip ends up as wide as, the focused
@@ -664,7 +675,7 @@ export class MdyMultiselectComponent<TValue = string>
         ? undefined
         : Array.from(host.querySelectorAll<HTMLElement>("[data-key]"))
           .find((chip) => chip.dataset.key === restored);
-      (landing ?? host.querySelector<HTMLElement>(".mdy-multiselect__trigger"))?.focus();
+      (landing ?? host.querySelector<HTMLElement>(TRIGGER))?.focus();
     });
   }
 
@@ -970,9 +981,9 @@ export class MdyMultiselectComponent<TValue = string>
     afterNextRender(() => {
       const host = this.hostRef.nativeElement;
       const landing = next === null
-        ? host.querySelector(".mdy-multiselect__trigger")
+        ? host.querySelector(TRIGGER)
         : host.querySelector(`[data-key="${next}"] .${MDY_CHIP_CLASSES.remove}`);
-      ((landing ?? host.querySelector(".mdy-multiselect__trigger")) as HTMLElement | null)?.focus();
+      ((landing ?? host.querySelector(TRIGGER)) as HTMLElement | null)?.focus();
     }, { injector: this.injector });
   }
 
@@ -1025,7 +1036,7 @@ export class MdyMultiselectComponent<TValue = string>
 
   protected revealChipName(event: Event, key: string): void {
     const chip = event.currentTarget as HTMLElement;
-    const strip = this.hostRef.nativeElement.querySelector(".mdy-multiselect__chips") as HTMLElement | null;
+    const strip = this.hostRef.nativeElement.querySelector(CHIPS) as HTMLElement | null;
     this.chipTipAt.set(strip === null ? 0 : chipTooltipOffset(chip, strip));
     this.namedChip.set(key);
   }
@@ -1038,7 +1049,7 @@ export class MdyMultiselectComponent<TValue = string>
    * can see is a keyboard trap.
    */
   protected onChipFocused(): void {
-    const strip = this.hostRef.nativeElement.querySelector(".mdy-multiselect__chips") as HTMLElement | null;
+    const strip = this.hostRef.nativeElement.querySelector(CHIPS) as HTMLElement | null;
     if (strip === null) return;
     requestAnimationFrame(() => keepFocusedChipInView(strip));
   }
