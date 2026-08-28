@@ -28,6 +28,32 @@ import { battle } from "../../harness/battle.mjs";
 import { expectClaim, expectEqual } from "../../harness/assertions.mjs";
 
 const HERE = dirname(new URL(import.meta.url).pathname);
+/**
+ * Whether the guide names this controller as one it leaves unwrapped on purpose.
+ *
+ * **A word in the prose is not a declaration.** Searching the whole document for the kind's name
+ * exempted every kind whose name is an ordinary English word — `file`, `select`, `text`, `option`
+ * all appear in that guide as English, so the branch excused exactly the kinds most likely to be
+ * forgotten, a common word being what a common kind is called. Three controllers shipped without a
+ * wrapper and this reported one.
+ *
+ * So the exemption is read where it is argued — the section that states the division — and it has to
+ * be written as code rather than used as a word: the kind in a code span, or the hook that is missing
+ * by name. A sentence that happens to contain "file" cannot excuse the file controller.
+ */
+const SECTION = "## A widget controller without a wrapper";
+
+export function documentsTheGap(guide, controller) {
+  const from = guide.indexOf(SECTION);
+  if (from === -1) return false;
+  const rest = guide.slice(from + SECTION.length);
+  const to = rest.indexOf("\n## ");
+  const section = to === -1 ? rest : rest.slice(0, to);
+  const kind = controller.replace(/^create/, "").replace(/FieldController$|Controller$/, "");
+  const spans = [...section.matchAll(/`([^`\n]+)`/g)].map(([, inner]) => inner.toLowerCase());
+  return spans.includes(kind.toLowerCase()) || spans.includes(hookNameFor(controller).toLowerCase());
+}
+
 const GUIDE = resolve(HERE, "..", "..", "..", "docs", "guides", "headless-recipes.md");
 
 /**
@@ -73,11 +99,7 @@ battle(
       unwrapped: unwrapped.map((controller) => ({ controller, expected: hookNameFor(controller) })),
     });
 
-    // A kind the guide names as one react does not wrap is a documented exception, not a gap.
-    const undocumented = unwrapped.filter((controller) => {
-      const kind = controller.replace(/^create/, "").replace(/FieldController$|Controller$/, "").toLowerCase();
-      return !guide.toLowerCase().includes(kind);
-    });
+    const undocumented = unwrapped.filter((controller) => !documentsTheGap(guide, controller));
 
     expectEqual(undocumented, [], {
       claimIds: ["ADP-001"],
