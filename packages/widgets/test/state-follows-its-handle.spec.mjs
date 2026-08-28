@@ -24,7 +24,7 @@ import {
 } from "../dist/index.js";
 // Not on the entry: no renderer consumes it yet, and a name goes public with the implementation
 // that uses it. Reached from its module, which is where the tests import it from.
-import { createColorsFieldController } from "../dist/field/colors-field-controller.js";
+import { createColorsFieldController } from "../dist/index.js";
 
 function handleFor(initial) {
   const rx = vanillaReactivity();

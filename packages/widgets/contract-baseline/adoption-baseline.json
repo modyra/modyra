@@ -1,8 +1,8 @@
 {
   "note": "What each renderer consumes today. These numbers may rise and may not fall.",
   "score": {
-    "controllers": 45,
-    "controllersOffered": 45,
+    "controllers": 42,
+    "controllersOffered": 51,
     "projections": 48,
     "projectionsOffered": 48
   },
@@ -128,15 +128,15 @@
       "projection": true
     },
     "plain:select": {
-      "controller": true,
+      "controller": false,
       "projection": "none offered"
     },
     "angular:select": {
-      "controller": true,
+      "controller": false,
       "projection": "none offered"
     },
     "lit:select": {
-      "controller": true,
+      "controller": false,
       "projection": "none offered"
     },
     "plain:multiselect": {
@@ -188,27 +188,27 @@
       "projection": true
     },
     "plain:file": {
-      "controller": "none offered",
+      "controller": false,
       "projection": true
     },
     "angular:file": {
-      "controller": "none offered",
+      "controller": false,
       "projection": true
     },
     "lit:file": {
-      "controller": "none offered",
+      "controller": false,
       "projection": true
     },
     "plain:colors": {
-      "controller": "none offered",
+      "controller": false,
       "projection": true
     },
     "angular:colors": {
-      "controller": "none offered",
+      "controller": false,
       "projection": true
     },
     "lit:colors": {
-      "controller": "none offered",
+      "controller": false,
       "projection": true
     }
   }

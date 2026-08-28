@@ -1,8 +1,8 @@
 {
   "note": "Public names not yet asserted or not yet shown. The list may only get shorter.",
   "score": {
-    "published": 877,
-    "asserted": 618,
+    "published": 880,
+    "asserted": 621,
     "shown": 98
   },
   "uncovered": [
@@ -3271,10 +3271,22 @@
       "reason": "published and never shown"
     },
     {
+      "name": "createColorsFieldController",
+      "asserted": true,
+      "shown": false,
+      "reason": "published and never shown"
+    },
+    {
       "name": "createConsoleDiagnostics",
       "asserted": false,
       "shown": false,
       "reason": "published, neither asserted nor shown"
+    },
+    {
+      "name": "createFileFieldController",
+      "asserted": true,
+      "shown": false,
+      "reason": "published and never shown"
     },
     {
       "name": "createFocusCustodian",
@@ -3302,6 +3314,12 @@
     },
     {
       "name": "createPointerDrag",
+      "asserted": true,
+      "shown": false,
+      "reason": "published and never shown"
+    },
+    {
+      "name": "createSelectFieldController",
       "asserted": true,
       "shown": false,
       "reason": "published and never shown"

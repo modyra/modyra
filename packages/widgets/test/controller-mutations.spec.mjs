@@ -16,9 +16,9 @@ import { createForm, field, required, vanillaReactivity } from "@modyra/core";
 import {
   createDaterangeFieldController,
 } from "../dist/field/index.js";
-import { createColorsFieldController } from "../dist/field/colors-field-controller.js";
-import { createFileFieldController } from "../dist/field/file-field-controller.js";
-import { createSelectFieldController } from "../dist/field/select-field-controller.js";
+import { createColorsFieldController } from "../dist/index.js";
+import { createFileFieldController } from "../dist/index.js";
+import { createSelectFieldController } from "../dist/index.js";
 
 const drained = () => new Promise((resolve) => { setTimeout(resolve, 0); });
 

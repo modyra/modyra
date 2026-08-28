@@ -38,12 +38,16 @@ const CONTROLLER = {
   textarea: "createTextFieldController", number: "createTextFieldController", slider: "createTextFieldController",
   checkbox: "createBooleanFieldController", toggle: "createBooleanFieldController",
   radio: "createOptionFieldController", segmented: "createOptionFieldController",
-  select: "createSelectController",
+  // The *field* controller, not the standalone one. Both exist: the standalone takes options and a
+  // callback, the field one takes a handle and reads it, and the second was written to close the
+  // split between the two idioms. Measuring the standalone counted a renderer that wraps it by hand
+  // as having adopted the contract.
+  select: "createSelectFieldController",
   multiselect: "createMultiselectFieldController",
   datepicker: "createDatepickerFieldController",
   timepicker: "createTimepickerFieldController",
   daterange: "createDaterangeFieldController",
-  colors: null, file: null,
+  colors: "createColorsFieldController", file: "createFileFieldController",
 };
 
 const PROJECTION = {

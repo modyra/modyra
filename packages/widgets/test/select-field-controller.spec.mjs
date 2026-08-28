@@ -9,7 +9,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { createForm, field, required, vanillaReactivity } from "@modyra/core";
-import { createSelectFieldController } from "../dist/field/select-field-controller.js";
+import { createSelectFieldController } from "../dist/index.js";
 
 const OPTIONS = [
   { value: "fr", label: "France" },

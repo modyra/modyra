@@ -70,6 +70,14 @@ export type {
 
 export { createMultiselectFieldController } from "./multiselect-field-controller.js";
 export type { MdyMultiselectFieldController } from "./multiselect-field-controller.js";
+// The door was half open: these three types were published and the functions that build them were
+// not. A consumer could name a `MdySelectFieldController` and had no way to make one — and the file
+// that declares it says in its own first line that it exists to close a split between two idioms.
+// Their suites reached the functions by deep path into `dist`, so they passed and read as consumed
+// while no adapter could import them.
+export { createSelectFieldController } from "./select-field-controller.js";
+export { createColorsFieldController } from "./colors-field-controller.js";
+export { createFileFieldController } from "./file-field-controller.js";
 
 export {
   multiselectFieldPartIds,

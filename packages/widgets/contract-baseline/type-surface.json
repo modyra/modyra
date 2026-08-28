@@ -385,7 +385,7 @@
   "MdyCheckboxComponent": [
     "protected onBlur-> returns: void",
     "protected onChange(0) event: Event,-> returns: void",
-    "protected widgetContract: _modyra_widgets.MdyWidgetDefinition<\"root\" | \"label\" | \"requiredMarker\" | \"inputWrapper\" | \"control\" | \"supportingText\" | \"errors\" | \"errorItem\" | \"indicator\" | \"submitFalse\">",
+    "protected widgetContract: _modyra_widgets.MdyWidgetDefinition<\"errors\" | \"root\" | \"label\" | \"control\" | \"errorItem\" | \"indicator\" | \"inputWrapper\" | \"requiredMarker\" | \"submitFalse\" | \"supportingText\">",
     "protected widgetHasRootClass: boolean",
     "protected widgetKind: (inferred)",
     "ɵcmp: _angular_core.ɵɵComponentDeclaration<MdyCheckboxComponent, \"mdy-control-checkbox\", never, {}, {}, never, never, true, never>",
@@ -444,7 +444,7 @@
     "protected popupClass: string",
     "protected popupId: _angular_core.Signal<string>",
     "protected selectColor(0) color: string,-> returns: void",
-    "protected widgetContract: _modyra_widgets.MdyWidgetDefinition<\"root\" | \"label\" | \"popup\" | \"requiredMarker\" | \"inputWrapper\" | \"control\" | \"inlineError\" | \"supportingText\" | \"errors\" | \"errorItem\" | \"toggle\" | \"customEntry\" | \"customTint\" | \"hexInput\" | \"nativePicker\" | \"presets\" | \"preview\" | \"swatch\">",
+    "protected widgetContract: _modyra_widgets.MdyWidgetDefinition<\"errors\" | \"root\" | \"label\" | \"toggle\" | \"control\" | \"errorItem\" | \"inputWrapper\" | \"requiredMarker\" | \"supportingText\" | \"popup\" | \"inlineError\" | \"customEntry\" | \"customTint\" | \"hexInput\" | \"nativePicker\" | \"presets\" | \"preview\" | \"swatch\">",
     "protected widgetHasRootClass: boolean",
     "protected widgetKind: \"colors\"",
     "ɵcmp: _angular_core.ɵɵComponentDeclaration<MdyColorsComponent, \"mdy-control-colors\", never, { \"placeholder\": { \"alias\": \"placeholder\"; \"required\": false; \"isSignal\": true; }; \"presets\": { \"alias\": \"presets\"; \"required\": false; \"isSignal\": true; }; }, {}, never, never, true, never>",
@@ -613,7 +613,7 @@
     "protected parsedSelectedDate: _angular_core.Signal<CalendarDate | null>",
     "protected popupClass: string",
     "protected popupId: _angular_core.Signal<string>",
-    "protected widgetContract: _modyra_widgets.MdyWidgetDefinition<\"root\" | \"label\" | \"grid\" | \"gridcell\" | \"popup\" | \"requiredMarker\" | \"inputWrapper\" | \"control\" | \"inlineError\" | \"supportingText\" | \"errors\" | \"errorItem\" | \"toggle\" | \"calendar\" | \"dialogHeader\" | \"monthCell\" | \"monthPicker\" | \"row\" | \"weekday\" | \"weekdays\" | \"yearCell\" | \"yearPicker\">",
+    "protected widgetContract: _modyra_widgets.MdyWidgetDefinition<\"errors\" | \"root\" | \"row\" | \"label\" | \"toggle\" | \"control\" | \"errorItem\" | \"inputWrapper\" | \"requiredMarker\" | \"supportingText\" | \"popup\" | \"inlineError\" | \"calendar\" | \"dialogHeader\" | \"grid\" | \"gridcell\" | \"monthCell\" | \"monthPicker\" | \"weekday\" | \"weekdays\" | \"yearCell\" | \"yearPicker\">",
     "protected widgetHasRootClass: boolean",
     "protected widgetKind: \"datepicker\"",
     "variant: _angular_core.InputSignal<\"docked\" | \"modal\">",
@@ -648,7 +648,7 @@
     "protected endId: string",
     "protected forceModalPlacement-> returns: boolean",
     "protected i18n: _modyra_widgets.MdyI18nMessages",
-    "protected lastFocused: _angular_core.WritableSignal<\"start\" | \"end\">",
+    "protected lastFocused: _angular_core.WritableSignal<\"end\" | \"start\">",
     "protected minSpace: (inferred)",
     "protected modalDisplayValue: _angular_core.Signal<string>",
     "protected onBeforeOpen-> returns: void",
@@ -664,7 +664,7 @@
     "protected popupClass: string",
     "protected popupId: _angular_core.Signal<string>",
     "protected startId: string",
-    "protected widgetContract: _modyra_widgets.MdyWidgetDefinition<\"root\" | \"label\" | \"grid\" | \"gridcell\" | \"popup\" | \"requiredMarker\" | \"inputWrapper\" | \"inlineError\" | \"supportingText\" | \"errors\" | \"errorItem\" | \"toggle\" | \"calendar\" | \"dialogHeader\" | \"monthCell\" | \"monthPicker\" | \"row\" | \"weekday\" | \"weekdays\" | \"yearCell\" | \"yearPicker\" | \"endControl\" | \"separator\" | \"startControl\">",
+    "protected widgetContract: _modyra_widgets.MdyWidgetDefinition<\"errors\" | \"root\" | \"row\" | \"label\" | \"toggle\" | \"errorItem\" | \"inputWrapper\" | \"requiredMarker\" | \"supportingText\" | \"popup\" | \"inlineError\" | \"calendar\" | \"dialogHeader\" | \"grid\" | \"gridcell\" | \"monthCell\" | \"monthPicker\" | \"weekday\" | \"weekdays\" | \"yearCell\" | \"yearPicker\" | \"endControl\" | \"separator\" | \"startControl\">",
     "protected widgetHasRootClass: boolean",
     "protected widgetKind: \"daterange\"",
     "startPlaceholder: _angular_core.InputSignal<string>",
@@ -1305,7 +1305,7 @@
     "protected onDrop(0) event: DragEvent,-> returns: void",
     "protected onFileChange(0) event: Event,-> returns: void",
     "protected rejectedNames: _angular_core.WritableSignal<readonly string[]>",
-    "protected widgetContract: _modyra_widgets.MdyWidgetDefinition<\"root\" | \"label\" | \"requiredMarker\" | \"control\" | \"supportingText\" | \"errors\" | \"errorItem\" | \"content\" | \"clear\" | \"dropzone\" | \"fileItem\" | \"fileList\" | \"rejected\">",
+    "protected widgetContract: _modyra_widgets.MdyWidgetDefinition<\"errors\" | \"root\" | \"label\" | \"control\" | \"errorItem\" | \"requiredMarker\" | \"supportingText\" | \"content\" | \"clear\" | \"dropzone\" | \"fileItem\" | \"fileList\" | \"rejected\">",
     "protected widgetHasRootClass: boolean",
     "protected widgetKind: \"file\"",
     "ɵcmp: _angular_core.ɵɵComponentDeclaration<MdyFileComponent, \"mdy-control-file\", never, { \"accept\": { \"alias\": \"accept\"; \"required\": false; \"isSignal\": true; }; \"multiple\": { \"alias\": \"multiple\"; \"required\": false; \"isSignal\": true; }; \"maxFileSize\": { \"alias\": \"maxFileSize\"; \"required\": false; \"isSignal\": true; }; \"maxFiles\": { \"alias\": \"maxFiles\"; \"required\": false; \"isSignal\": true; }; }, { \"fileSelected\": \"fileSelected\"; \"filesRejected\": \"filesRejected\"; }, never, never, true, never>",
@@ -1895,7 +1895,7 @@
     "protected overlayKind: \"multiselect\"",
     "protected overlayOwner-> returns: MdyOverlayOwner | undefined",
     "protected paintedOptions: _angular_core.Signal<readonly _modyra_core.MdySelectOption<TValue>[]>",
-    "protected parts: Readonly<Record<\"root\" | \"label\" | \"option\" | \"popup\" | \"requiredMarker\" | \"inputWrapper\" | \"inlineError\" | \"supportingText\" | \"errors\" | \"errorItem\" | \"loading\" | \"optionLabel\" | \"optionCheck\" | \"arrow\" | \"empty\" | \"options\" | \"placeholder\" | \"search\" | \"trigger\" | \"announcement\" | \"box\" | \"chip\" | \"chipMove\" | \"chipRemove\" | \"chipRow\" | \"chipTooltip\" | \"chips\" | \"clearAll\" | \"optionCount\" | \"optionStep\" | \"optionWrapper\" | \"overflowCount\" | \"wayBackAction\", MdyPartContract>>",
+    "protected parts: Readonly<Record<\"errors\" | \"option\" | \"root\" | \"loading\" | \"label\" | \"search\" | \"errorItem\" | \"inputWrapper\" | \"requiredMarker\" | \"supportingText\" | \"popup\" | \"inlineError\" | \"arrow\" | \"empty\" | \"options\" | \"placeholder\" | \"trigger\" | \"optionLabel\" | \"announcement\" | \"box\" | \"chip\" | \"chipMove\" | \"chipRemove\" | \"chipRow\" | \"chipTooltip\" | \"chips\" | \"clearAll\" | \"optionCheck\" | \"optionCount\" | \"optionStep\" | \"optionWrapper\" | \"overflowCount\" | \"wayBackAction\", MdyPartContract>>",
     "protected popupClass: string",
     "protected popupId: _angular_core.Signal<string>",
     "protected removeChip(0) optionKey: string,(1) value: TValue,(2) direction?: \"forward\" | \"backward\",-> returns: void",
@@ -1907,7 +1907,7 @@
     "protected valueChipClasses-> returns: string",
     "protected wayBack: _angular_core.Signal<_modyra_widgets.MdyMultiselectWayBack | null>",
     "protected wayBackName: _angular_core.Signal<string>",
-    "protected widgetContract: _modyra_widgets.MdyWidgetDefinition<\"root\" | \"label\" | \"option\" | \"popup\" | \"requiredMarker\" | \"inputWrapper\" | \"inlineError\" | \"supportingText\" | \"errors\" | \"errorItem\" | \"loading\" | \"optionLabel\" | \"optionCheck\" | \"arrow\" | \"empty\" | \"options\" | \"placeholder\" | \"search\" | \"trigger\" | \"announcement\" | \"box\" | \"chip\" | \"chipMove\" | \"chipRemove\" | \"chipRow\" | \"chipTooltip\" | \"chips\" | \"clearAll\" | \"optionCount\" | \"optionStep\" | \"optionWrapper\" | \"overflowCount\" | \"wayBackAction\">",
+    "protected widgetContract: _modyra_widgets.MdyWidgetDefinition<\"errors\" | \"option\" | \"root\" | \"loading\" | \"label\" | \"search\" | \"errorItem\" | \"inputWrapper\" | \"requiredMarker\" | \"supportingText\" | \"popup\" | \"inlineError\" | \"arrow\" | \"empty\" | \"options\" | \"placeholder\" | \"trigger\" | \"optionLabel\" | \"announcement\" | \"box\" | \"chip\" | \"chipMove\" | \"chipRemove\" | \"chipRow\" | \"chipTooltip\" | \"chips\" | \"clearAll\" | \"optionCheck\" | \"optionCount\" | \"optionStep\" | \"optionWrapper\" | \"overflowCount\" | \"wayBackAction\">",
     "protected widgetHasRootClass: boolean",
     "protected widgetKind: \"multiselect\"",
     "reorderable: _angular_core.InputSignalWithTransform<boolean, unknown>",
@@ -1979,7 +1979,7 @@
     "placeholder: _angular_core.InputSignal<string>",
     "protected narrowedConstraints-> returns: Partial<MdyFieldConstraints>",
     "protected onInput(0) event: Event,-> returns: void",
-    "protected widgetContract: _modyra_widgets.MdyWidgetDefinition<\"root\" | \"label\" | \"requiredMarker\" | \"inputWrapper\" | \"control\" | \"inlineError\" | \"supportingText\" | \"errors\" | \"errorItem\" | \"decrement\" | \"increment\">",
+    "protected widgetContract: _modyra_widgets.MdyWidgetDefinition<\"errors\" | \"root\" | \"label\" | \"control\" | \"increment\" | \"decrement\" | \"errorItem\" | \"inputWrapper\" | \"requiredMarker\" | \"supportingText\" | \"inlineError\">",
     "protected widgetHasRootClass: boolean",
     "protected widgetKind: (inferred)",
     "showSpinButtons: _angular_core.InputSignal<boolean>",
@@ -2311,7 +2311,7 @@
     "protected labelId: string",
     "protected onBlur-> returns: void",
     "protected onSelectionChange(0) value: TValue,-> returns: void",
-    "protected widgetContract: _modyra_widgets.MdyWidgetDefinition<\"root\" | \"label\" | \"group\" | \"option\" | \"requiredMarker\" | \"supportingText\" | \"errors\" | \"errorItem\" | \"optionControl\" | \"optionLabel\">",
+    "protected widgetContract: _modyra_widgets.MdyWidgetDefinition<\"errors\" | \"option\" | \"root\" | \"group\" | \"label\" | \"errorItem\" | \"requiredMarker\" | \"supportingText\" | \"optionControl\" | \"optionLabel\">",
     "protected widgetHasRootClass: boolean",
     "protected widgetKind: \"radio\"",
     "ɵcmp: _angular_core.ɵɵComponentDeclaration<MdyRadioGroupComponent<any>, \"mdy-control-radio\", never, { \"options\": { \"alias\": \"options\"; \"required\": false; \"isSignal\": true; }; \"layout\": { \"alias\": \"layout\"; \"required\": false; \"isSignal\": true; }; }, {}, never, never, true, never>",
@@ -2480,7 +2480,7 @@
     "protected onTrackPointerUp-> returns: void",
     "protected segmentsCount: _angular_core.Signal<number>",
     "protected tabIndexFor(0) index: number,-> returns: number",
-    "protected widgetContract: _modyra_widgets.MdyWidgetDefinition<\"root\" | \"label\" | \"group\" | \"option\" | \"requiredMarker\" | \"supportingText\" | \"errors\" | \"errorItem\" | \"optionControl\" | \"optionCheck\" | \"optionText\">",
+    "protected widgetContract: _modyra_widgets.MdyWidgetDefinition<\"errors\" | \"option\" | \"root\" | \"group\" | \"label\" | \"errorItem\" | \"requiredMarker\" | \"supportingText\" | \"optionControl\" | \"optionCheck\" | \"optionText\">",
     "protected widgetHasRootClass: boolean",
     "protected widgetKind: \"segmented\"",
     "ɵcmp: _angular_core.ɵɵComponentDeclaration<MdySegmentedButtonComponent<any>, \"mdy-control-segmented\", never, { \"options\": { \"alias\": \"options\"; \"required\": false; \"isSignal\": true; }; \"fullWidth\": { \"alias\": \"fullWidth\"; \"required\": false; \"isSignal\": true; }; }, {}, never, never, true, never>",
@@ -2539,7 +2539,7 @@
     "protected selectedOption: _angular_core.Signal<MdySelectOption<TValue> | null>",
     "protected showCreateOption: _angular_core.Signal<boolean>",
     "protected triggerId-> returns: string",
-    "protected widgetContract: _modyra_widgets.MdyWidgetDefinition<\"root\" | \"label\" | \"option\" | \"popup\" | \"requiredMarker\" | \"inputWrapper\" | \"inlineError\" | \"supportingText\" | \"errors\" | \"errorItem\" | \"loading\" | \"value\" | \"arrow\" | \"empty\" | \"options\" | \"placeholder\" | \"search\" | \"trigger\">",
+    "protected widgetContract: _modyra_widgets.MdyWidgetDefinition<\"value\" | \"errors\" | \"option\" | \"root\" | \"loading\" | \"label\" | \"search\" | \"errorItem\" | \"inputWrapper\" | \"requiredMarker\" | \"supportingText\" | \"popup\" | \"inlineError\" | \"arrow\" | \"empty\" | \"options\" | \"placeholder\" | \"trigger\">",
     "protected widgetHasRootClass: boolean",
     "protected widgetKind: \"select\"",
     "resetSelection-> returns: void",
@@ -2649,7 +2649,7 @@
     "protected narrowedConstraints-> returns: Partial<MdyFieldConstraints>",
     "protected onChange(0) _event: Event,-> returns: void",
     "protected onInput(0) event: Event,-> returns: void",
-    "protected widgetContract: _modyra_widgets.MdyWidgetDefinition<\"root\" | \"label\" | \"requiredMarker\" | \"control\" | \"inlineError\" | \"supportingText\" | \"errors\" | \"errorItem\" | \"value\" | \"track\">",
+    "protected widgetContract: _modyra_widgets.MdyWidgetDefinition<\"value\" | \"errors\" | \"root\" | \"label\" | \"track\" | \"control\" | \"errorItem\" | \"requiredMarker\" | \"supportingText\" | \"inlineError\">",
     "protected widgetHasRootClass: boolean",
     "protected widgetKind: \"slider\"",
     "showValue: _angular_core.InputSignal<boolean>",
@@ -2745,7 +2745,7 @@
     "placeholder: _angular_core.InputSignal<string>",
     "protected onBlur-> returns: void",
     "protected onInput(0) event: Event,-> returns: void",
-    "protected widgetContract: _modyra_widgets.MdyWidgetDefinition<\"root\" | \"label\" | \"requiredMarker\" | \"inputWrapper\" | \"prefix\" | \"control\" | \"suffix\" | \"inlineError\" | \"supportingText\" | \"errors\" | \"errorItem\">",
+    "protected widgetContract: _modyra_widgets.MdyWidgetDefinition<\"errors\" | \"root\" | \"label\" | \"control\" | \"errorItem\" | \"inputWrapper\" | \"requiredMarker\" | \"supportingText\" | \"inlineError\" | \"prefix\" | \"suffix\">",
     "protected widgetHasRootClass: boolean",
     "protected widgetKind: (inferred)",
     "type: _angular_core.InputSignal<string>",
@@ -2784,7 +2784,7 @@
   "MdyTextareaComponent": [
     "placeholder: _angular_core.InputSignal<string>",
     "protected onInput(0) event: Event,-> returns: void",
-    "protected widgetContract: _modyra_widgets.MdyWidgetDefinition<\"root\" | \"label\" | \"requiredMarker\" | \"inputWrapper\" | \"control\" | \"inlineError\" | \"supportingText\" | \"errors\" | \"errorItem\">",
+    "protected widgetContract: _modyra_widgets.MdyWidgetDefinition<\"errors\" | \"root\" | \"label\" | \"control\" | \"errorItem\" | \"inputWrapper\" | \"requiredMarker\" | \"supportingText\" | \"inlineError\">",
     "protected widgetHasRootClass: boolean",
     "protected widgetKind: (inferred)",
     "rows: _angular_core.InputSignal<number>",
@@ -2870,7 +2870,7 @@
     "protected send(0) intent: MdyTimepickerFieldIntent,-> returns: void",
     "protected shownField: _angular_core.Signal<\"hour\" | \"minute\">",
     "protected shownViewMode: _angular_core.Signal<MdyTimepickerViewMode$1>",
-    "protected widgetContract: _modyra_widgets.MdyWidgetDefinition<\"root\" | \"label\" | \"dialog\" | \"container\" | \"popup\" | \"requiredMarker\" | \"inputWrapper\" | \"control\" | \"inlineError\" | \"supportingText\" | \"errors\" | \"errorItem\" | \"toggle\" | \"action\" | \"actions\" | \"clock\" | \"content\" | \"dialFace\" | \"dialHand\" | \"dialNumber\" | \"dialUnavailable\" | \"dialUnavailableArc\" | \"header\" | \"hour\" | \"hourControl\" | \"minute\" | \"minuteControl\" | \"modeToggle\" | \"period\" | \"periodOption\">",
+    "protected widgetContract: _modyra_widgets.MdyWidgetDefinition<\"errors\" | \"root\" | \"dialog\" | \"header\" | \"label\" | \"toggle\" | \"control\" | \"errorItem\" | \"inputWrapper\" | \"requiredMarker\" | \"supportingText\" | \"content\" | \"popup\" | \"inlineError\" | \"action\" | \"actions\" | \"clock\" | \"container\" | \"dialFace\" | \"dialHand\" | \"dialNumber\" | \"dialUnavailable\" | \"dialUnavailableArc\" | \"hour\" | \"hourControl\" | \"minute\" | \"minuteControl\" | \"modeToggle\" | \"period\" | \"periodOption\">",
     "protected widgetHasRootClass: boolean",
     "protected widgetKind: \"timepicker\"",
     "showUnavailable: _angular_core.InputSignal<boolean>",
@@ -2958,7 +2958,7 @@
   "MdyToggleComponent": [
     "protected onBlur-> returns: void",
     "protected onChange(0) event: Event,-> returns: void",
-    "protected widgetContract: _modyra_widgets.MdyWidgetDefinition<\"root\" | \"label\" | \"requiredMarker\" | \"inputWrapper\" | \"control\" | \"inlineError\" | \"supportingText\" | \"errors\" | \"errorItem\" | \"track\" | \"submitFalse\" | \"thumb\">",
+    "protected widgetContract: _modyra_widgets.MdyWidgetDefinition<\"errors\" | \"root\" | \"label\" | \"track\" | \"control\" | \"errorItem\" | \"inputWrapper\" | \"requiredMarker\" | \"submitFalse\" | \"supportingText\" | \"inlineError\" | \"thumb\">",
     "protected widgetHasRootClass: boolean",
     "protected widgetKind: (inferred)",
     "ɵcmp: _angular_core.ɵɵComponentDeclaration<MdyToggleComponent, \"mdy-control-toggle\", never, {}, {}, never, never, true, never>",
@@ -3690,6 +3690,11 @@
     "(1) reactivity?: MdyReactivity",
     "-> returns: MdyWidgetController<MdyCatalogWidgetState, MdyCatalogWidgetIntent>"
   ],
+  "createColorsFieldController": [
+    "(0) options: MdyColorsFieldControllerOptions",
+    "(1) reactivity?: MdyReactivity",
+    "-> returns: MdyColorsFieldController"
+  ],
   "createCommandRuntime": [
     "(0) options: MdyCommandRuntimeOptions",
     "-> returns: MdyCommandRuntime"
@@ -3706,6 +3711,11 @@
     "(0) options: MdyDaterangeFieldControllerOptions",
     "(1) reactivity?: MdyReactivity",
     "-> returns: MdyDaterangeFieldController"
+  ],
+  "createFileFieldController": [
+    "(0) options: MdyFileFieldControllerOptions<TFile>",
+    "(1) reactivity?: MdyReactivity",
+    "-> returns: MdyFileFieldController<TFile>"
   ],
   "createFocusCustodian": [
     "(0) root: () => Element | null",
@@ -3746,6 +3756,11 @@
     "(0) options: MdySelectControllerOptions<TValue>",
     "(1) reactivity?: MdyReactivity",
     "-> returns: MdySelectController<TValue>"
+  ],
+  "createSelectFieldController": [
+    "(0) options: MdySelectFieldControllerOptions<TValue>",
+    "(1) reactivity?: MdyReactivity",
+    "-> returns: MdySelectFieldController<TValue>"
   ],
   "createSilentDiagnostics": [
     "-> returns: MdyDiagnostics"
