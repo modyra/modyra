@@ -13,7 +13,7 @@ import {
 
 import {
   partSelector, MDY_OVERLAY_PORTAL_CLASS } from "@modyra/widgets";
-import { MDY_COLOR_PRESETS, MDY_WIDGET_CONTRACTS, defaultWidgetIdFactory, colorPresetsOf, colorValueEquals, focusWhenShown, openPlatformChooser, keyBindingFor, rowRovingIndex, colorValueTransition, popupPlacementClass, overlayControlledId, projectOverlayOpenerA11y } from "@modyra/widgets";
+import { MDY_COLOR_PRESETS, MDY_WIDGET_CONTRACTS, createColorsFieldController, defaultWidgetIdFactory, colorPresetsOf, colorValueEquals, focusWhenShown, openPlatformChooser, keyBindingFor, rowRovingIndex, popupPlacementClass, overlayControlledId, projectOverlayOpenerA11y } from "@modyra/widgets";
 import { MdyErrorListComponent } from "../../control/error-list.component";
 import { MdyControlLabelComponent } from "../../control/mdy-control-label.component";
 import { MdyIconComponent } from "../../control/mdy-icon.component";
@@ -230,6 +230,23 @@ export class MdyColorsComponent extends MdyOverlayControl<string> {
   /** The palette as value and name, however the document spelled each entry. */
   protected readonly palette = computed(() => colorPresetsOf(this.presets()));
 
+  /**
+   * The kind's own controller, holding the handle and deciding what a colour act does.
+   *
+   * The transition, the write, the touch and whether the palette closes were four decisions taken
+   * here; they are one dispatch. Keeping them here meant this renderer could answer differently from
+   * the two that already asked the contract — and `colorValueTransition` being shared is not the same
+   * as the *sequence* around it being shared, which is where a renderer drifts.
+   */
+  private readonly colors = this.adoptFieldController(
+    (handle, widgetId) => createColorsFieldController({
+      widgetId,
+      handle: handle as never,
+      presets: this.palette().map((entry) => entry.value),
+    }),
+    (controller) => controller.setReadonly(this.fieldState().readonly()),
+  );
+
 
   /** The id the opener names, which the projected panel has to carry. */
   protected readonly popupId = computed(() => overlayControlledId("colors", this.fieldId) ?? "");
@@ -260,6 +277,11 @@ export class MdyColorsComponent extends MdyOverlayControl<string> {
    */
   protected override openOverlay(event?: Event): void {
     super.openOverlay(event);
+    // The controller is told, not merely obeyed. It decides whether choosing a colour has served the
+    // palette's purpose, and it can only answer that about a palette it knows is up: opened behind
+    // its back, it reported nothing to close and a swatch chosen left the palette standing over the
+    // field a person had just finished with.
+    this.colors()?.dispatch({ type: "open" });
     // After the render that draws the row — and the row is portalled, so on a real page it is not
     // there yet when the render this opening triggers completes. Tried again on the next frame for
     // that reason, and given up after it rather than looping: a palette that never drew is a
@@ -367,12 +389,20 @@ export class MdyColorsComponent extends MdyOverlayControl<string> {
     return colorValueEquals(this.value(), color);
   }
 
+  public override closeOverlay(): void {
+    super.closeOverlay();
+    // Told in this direction too, and told about a close it did not ask for: dismissing by pointer or
+    // by Escape is the renderer's to detect and the controller's to know about, or the next thing it
+    // decides is decided about a palette that is no longer there.
+    this.colors()?.dispatch({ type: "close" });
+  }
+
   private applyColorIntent(type: "native" | "text" | "preset", value: string): void {
-    const transition = colorValueTransition({ type, value });
-    if (transition.value !== undefined && transition.value !== this.value()) {
-      this.dispatchValueIntent<string | null>("colors", { type: "select", value: transition.value });
+    // The controller writes through the handle, marks the field and says whether the palette has
+    // served its purpose. What is left here is the one thing only this renderer knows: where its
+    // overlay is and how to shut it.
+    for (const command of this.colors()?.dispatch({ type, value }) ?? []) {
+      if (command.type === "close-overlay") this.closeOverlay();
     }
-    if (transition.touched) this.dispatchValueBlur("colors");
-    if (transition.close) this.closeOverlay();
   }
 }

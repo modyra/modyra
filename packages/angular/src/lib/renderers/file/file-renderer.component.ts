@@ -1,6 +1,6 @@
 import { NgTemplateOutlet } from "@angular/common";
 import { ChangeDetectionStrategy, Component, computed, ElementRef, inject, input, output, signal, viewChild } from "@angular/core";
-import { MDY_WIDGET_CONTRACTS, clearFileSelection, fileSelectionTransition } from "@modyra/widgets";
+import { MDY_WIDGET_CONTRACTS, createFileFieldController } from "@modyra/widgets";
 import { MdyPartDirective } from "../../control/mdy-part.directive";
 import { MdyBaseControl } from "../../control/control.directive";
 import { MdyErrorListComponent } from "../../control/error-list.component";
@@ -126,6 +126,25 @@ export class MdyFileComponent extends MdyBaseControl<readonly File[] | null> {
   readonly fileSelected = output<readonly File[] | null>();
   readonly filesRejected = output<ReadonlyArray<File>>();
 
+  /**
+   * The kind's own controller, holding the handle and deciding what a pick does.
+   *
+   * The rule for which candidates are taken is shared already; the sequence around it was not — what
+   * gets written, whether the field is marked, what the value becomes when it is cleared. This
+   * renderer answered the last one with `null` where the contract answers `[]`, on a field declared
+   * as a list, so a host reading it got a shape the type does not allow.
+   */
+  private readonly files = this.adoptFieldController(
+    (handle, widgetId) => createFileFieldController<File>({
+      widgetId,
+      handle: handle as never,
+      accept: this.accept(),
+      multiple: this.multiple(),
+      maxFileSize: this.maxFileSize(),
+      maxFiles: this.maxFiles(),
+    }),
+  );
+
   /** What the field holds, and what its last pick turned away — a list either way. */
   protected readonly chosen = computed<readonly File[]>(() => this.value() ?? []);
   protected readonly rejectedNames = signal<readonly string[]>([]);
@@ -155,28 +174,31 @@ export class MdyFileComponent extends MdyBaseControl<readonly File[] | null> {
 
   protected clear(): void {
     if (this.isDisabled()) return;
-    clearFileSelection<File>();
+    this.files()?.dispatch({ type: "clear" });
     this.rejectedNames.set([]);
-    this.dispatchValueIntent<readonly File[] | null>("file", { type: "select", value: null });
+    // The one thing only this renderer has: the native input keeps its own copy of the choice, and a
+    // field cleared from the model with that copy left in place refuses to fire `change` when the
+    // same file is picked again.
     if (this.fileInput()) this.fileInput()!.nativeElement.value = "";
     this.fileSelected.emit(null);
   }
 
   private processFiles(files: FileList | null): void {
-    const transition = fileSelectionTransition(Array.from(files ?? []), {
-      accept: this.accept(),
-      multiple: this.multiple(),
-      maxFileSize: this.maxFileSize(),
-      maxFiles: this.maxFiles(),
-    });
-    // Shown as well as emitted: turning a file away in silence leaves no evidence it happened.
-    this.rejectedNames.set(transition.rejected.map((file) => file.name));
-    if (transition.rejected.length > 0) this.filesRejected.emit(transition.rejected);
-    if (transition.value === undefined) return;
-    // The transition's answer, not a second one built here: a bare file is a shape the engine refuses.
-    const value = transition.value ?? [];
-    this.dispatchValueIntent<readonly File[] | null>("file", { type: "select", value });
-    if (transition.touched) this.dispatchValueBlur("file");
-    this.fileSelected.emit(value);
+    const controller = this.files();
+    const before = this.value() ?? [];
+    controller?.dispatch({ type: "select", files: Array.from(files ?? []) });
+
+    // Shown as well as emitted: turning a file away in silence leaves no evidence it happened. Read
+    // from the controller's state rather than recomputed here — the rule for what is refused is the
+    // contract's, and a second reading of it is a second rule the day one of them changes.
+    const refused = controller?.state().rejected ?? [];
+    this.rejectedNames.set(refused.map((file: File) => file.name));
+    if (refused.length > 0) this.filesRejected.emit(refused);
+
+    // Announced only where something was taken. Compared rather than assumed, because a pick that
+    // was entirely refused writes nothing, and a host told "these are your files" after a refusal
+    // would show the previous choice as though it had just been made.
+    const after = this.value() ?? [];
+    if (after !== before) this.fileSelected.emit(after);
   }
 }

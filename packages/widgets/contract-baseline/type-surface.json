@@ -422,6 +422,7 @@
     "value: string | undefined"
   ],
   "MdyColorsComponent": [
+    "closeOverlay-> returns: void",
     "placeholder: _angular_core.InputSignal<string>",
     "presets: _angular_core.InputSignal<readonly (string | { readonly value: string; readonly label?: string; })[]>",
     "protected customColour: _angular_core.Signal<string | null>",
