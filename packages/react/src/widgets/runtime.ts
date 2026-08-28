@@ -21,7 +21,6 @@ export type { MdyWidgetCommandHandlers as MdyReactCommandHandlers };
 
 /** React commits before the next frame, and focusing inside the commit moves focus to a node React is about to replace. */
 const runtime = createCommandRuntime({
-  announcerId: "mdy-react-announcer",
   defer: (run) => { requestAnimationFrame(run); },
 });
 

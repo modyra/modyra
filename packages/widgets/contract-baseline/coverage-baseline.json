@@ -1,8 +1,8 @@
 {
   "note": "Public names not yet asserted or not yet shown. The list may only get shorter.",
   "score": {
-    "published": 869,
-    "asserted": 611,
+    "published": 871,
+    "asserted": 613,
     "shown": 98
   },
   "uncovered": [
@@ -194,6 +194,18 @@
     },
     {
       "name": "MDY_SEMANTICS_REQUIRING_NAME",
+      "asserted": true,
+      "shown": false,
+      "reason": "published and never shown"
+    },
+    {
+      "name": "MDY_SHARED_REGION_ATTRIBUTE",
+      "asserted": true,
+      "shown": false,
+      "reason": "published and never shown"
+    },
+    {
+      "name": "MDY_SHARED_REGION_ID",
       "asserted": true,
       "shown": false,
       "reason": "published and never shown"

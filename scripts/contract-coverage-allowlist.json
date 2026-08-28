@@ -43,13 +43,6 @@
     "mdy-timepicker__popup--above": "derived by popupPlacementClass/popupAlignmentClass and emitted by the renderers; no theme reacts to it yet. A placement class only earns a rule where the popup has a top/bottom or left/right asymmetry to answer \u2014 the select and multiselect flip their search box, a calendar has nothing to flip.",
     "mdy-timepicker__popup--right": "derived by popupPlacementClass/popupAlignmentClass and emitted by the renderers; no theme reacts to it yet. A placement class only earns a rule where the popup has a top/bottom or left/right asymmetry to answer \u2014 the select and multiselect flip their search box, a calendar has nothing to flip."
   },
-  "mdy-angular-announcer": {
-    "kind": "unstyled",
-    "adapters": [
-      "angular"
-    ],
-    "themes": []
-  },
   "mdy-color-swatch--selected": {
     "kind": "unstyled",
     "adapters": [
@@ -436,13 +429,6 @@
     ],
     "themes": []
   },
-  "mdy-lit-announcer": {
-    "kind": "unstyled",
-    "adapters": [
-      "lit"
-    ],
-    "themes": []
-  },
   "mdy-multiselect--open": {
     "kind": "unstyled",
     "adapters": [
@@ -474,13 +460,6 @@
     "themes": []
   },
   "mdy-plain": {
-    "kind": "unstyled",
-    "adapters": [
-      "plain"
-    ],
-    "themes": []
-  },
-  "mdy-plain-announcer": {
     "kind": "unstyled",
     "adapters": [
       "plain"

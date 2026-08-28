@@ -17,7 +17,6 @@ export type { MdyWidgetCommandHandlers as MdySolidCommandHandlers };
 
 /** Solid applies DOM effects synchronously, so a microtask is already after them. */
 const runtime = createCommandRuntime({
-  announcerId: "mdy-solid-announcer",
   defer: (run) => { queueMicrotask(run); },
 });
 

@@ -17,7 +17,6 @@ export type { MdyWidgetCommandHandlers as MdySvelteCommandHandlers };
 
 /** Svelte's own flush lands before the microtask queue drains. */
 const runtime = createCommandRuntime({
-  announcerId: "mdy-svelte-announcer",
   defer: (run) => { queueMicrotask(run); },
 });
 

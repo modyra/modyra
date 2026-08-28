@@ -131,38 +131,94 @@ export interface MdyAnnouncer {
   announce(message: string): void;
 }
 
-/**
- * Creates a lazy-initialized live region with the given element id.
- * Multiple callers with the same id share the same DOM element.
- */
-/** What marks a live region as shared by the whole renderer rather than owned by one widget. */
+/** What marks a live region as shared by the whole page rather than owned by one widget. */
 export const MDY_SHARED_REGION_ATTRIBUTE = "data-mdy-shared-region";
 
-export function createMdyAnnouncer(elementId: string): MdyAnnouncer {
+/**
+ * The one live region on the page, named by the contract rather than by each renderer.
+ *
+ * Eight adapters each spelled their own — `mdy-plain-announcer`, `mdy-lit-announcer`, six more — so a
+ * page carrying two of them carried two polite regions. Two regions speaking in the same instant are
+ * read in an order nothing specifies: every screen reader has its own policy, and one announcement
+ * cuts the other off partway. The loss is the same with one region, but with one there is somewhere
+ * to put the queue that prevents it.
+ *
+ * Identity belongs in the message, not in the region: a reader speaks the text, never who wrote it.
+ * Two regions saying "open" leave a person hearing "open" twice with nothing to attach it to, which
+ * is why "Città: elenco aperto" is the fix and a second region is not.
+ */
+export const MDY_SHARED_REGION_ID = "mdy-live-region";
+
+/**
+ * The queue, and why announcing is not just writing text.
+ *
+ * A screen reader announces a *change* to a region it already knows. Three consequences the plain
+ * write does not have:
+ *
+ * - **The region must exist before the first message.** Created and filled in the same instant, it is
+ *   often skipped: the reader meets it already full and there is no change to read. So it is created
+ *   empty, and written after.
+ * - **The same text twice running is not a change.** "Errore corretto" written over "Errore corretto"
+ *   is silent. Cleared first, then written, with a turn of the loop in between.
+ * - **Two messages in one instant overwrite each other.** One is lost. Serialised, they are both
+ *   heard.
+ */
+const SPOKEN_GAP_MS = 150;
+const queue: string[] = [];
+let draining = false;
+
+function liveRegion(elementId: string): HTMLElement {
+  const existing = document.getElementById(elementId);
+  if (existing) return existing;
+  const region = document.createElement("div");
+  region.id = elementId;
+  region.setAttribute(
+    "style",
+    "position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0;",
+  );
+  region.setAttribute("aria-live", "polite");
+  region.setAttribute("aria-atomic", "true");
+  // Marked as the page's own. One region serves every widget and has to outlive each of them — a
+  // region created and removed around a message is a region the reader was not watching when the
+  // text arrived — so a teardown check has to tell it apart from an element an instance left behind.
+  region.setAttribute(MDY_SHARED_REGION_ATTRIBUTE, "");
+  document.body.appendChild(region);
+  return region;
+}
+
+function drain(elementId: string): void {
+  const next = queue.shift();
+  if (next === undefined) {
+    draining = false;
+    return;
+  }
+  const region = liveRegion(elementId);
+  // Cleared, then written a turn later. The clear is what makes a repeat of the same words a change;
+  // without it the second "3 results" after a first is silence.
+  region.textContent = "";
+  setTimeout(() => {
+    region.textContent = next;
+    setTimeout(() => drain(elementId), SPOKEN_GAP_MS);
+  }, 100);
+}
+
+/**
+ * Creates the page's live region if it is not there yet, and announces through it.
+ *
+ * The id is the contract's. It is still accepted so a renderer outside this repository keeps
+ * working, but passing one means keeping a second region on the page, with everything above.
+ */
+export function createMdyAnnouncer(elementId: string = MDY_SHARED_REGION_ID): MdyAnnouncer {
+  // Created here rather than at the first message: a region the reader has never seen is a region it
+  // does not yet watch, and the first announcement of a page is the one most likely to be lost.
+  if (typeof document !== "undefined") liveRegion(elementId);
   return {
     announce(message: string): void {
       if (typeof document === "undefined") return;
-      let el = document.getElementById(elementId);
-      if (!el) {
-        el = document.createElement("div");
-        el.id = elementId;
-        el.setAttribute(
-          "style",
-          "position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0;",
-        );
-        el.setAttribute("aria-live", "polite");
-        el.setAttribute("aria-atomic", "true");
-        // Marked as the renderer's own. One live region serves every widget on the page and has to
-        // outlive each of them — a region created and removed around a message is a region the
-        // screen reader was not watching when the text arrived — so a teardown check has to be able
-        // to tell it apart from an element an instance left behind.
-        el.setAttribute(MDY_SHARED_REGION_ATTRIBUTE, "");
-        document.body.appendChild(el);
-      }
-      el.textContent = "";
-      setTimeout(() => {
-        if (el) el.textContent = message;
-      }, 100);
+      queue.push(message);
+      if (draining) return;
+      draining = true;
+      drain(elementId);
     },
   };
 }
@@ -178,8 +234,14 @@ export function createMdyAnnouncer(elementId: string): MdyAnnouncer {
 export type MdyCommandDefer = (run: () => void) => void;
 
 export interface MdyCommandRuntimeOptions {
-  /** The live region this host announces through. Idempotent by id, so one per host costs nothing. */
-  readonly announcerId: string;
+  /**
+   * A live region of this host's own, where it must not share the page's.
+   *
+   * Omitted, the host announces through {@link MDY_SHARED_REGION_ID} — one region for the page,
+   * which is what a person listening to two renderers at once needs. Naming one here gives this host
+   * a second region, and two regions speaking at once are read in an order nothing specifies.
+   */
+  readonly announcerId?: string;
   readonly defer: MdyCommandDefer;
 }
 

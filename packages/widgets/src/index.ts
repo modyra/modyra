@@ -98,6 +98,8 @@ export type {
 export {
   createCommandRuntime,
   createMdyAnnouncer,
+  MDY_SHARED_REGION_ATTRIBUTE,
+  MDY_SHARED_REGION_ID,
   processWidgetCommands,
 } from "./command-runtime.js";
 export type {

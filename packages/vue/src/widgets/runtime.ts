@@ -17,7 +17,6 @@ export type { MdyWidgetCommandHandlers as MdyVueCommandHandlers };
 
 /** Vue's scheduler has flushed by the time a microtask runs. */
 const runtime = createCommandRuntime({
-  announcerId: "mdy-vue-announcer",
   defer: (run) => { queueMicrotask(run); },
 });
 

@@ -35,14 +35,13 @@ export function executeLitCommands(
   handlers: MdyWidgetCommandHandlers,
 ): void {
   createCommandRuntime({
-    announcerId: "mdy-lit-announcer",
     defer: (run) => { void host.updateComplete.then(run); },
   }).execute(commands, lookup, handlers);
 }
 
 /** Visually hidden live region for screen reader announcements. */
 export function announceLit(message: string): void {
-  createMdyAnnouncer("mdy-lit-announcer").announce(message);
+  createMdyAnnouncer().announce(message);
 }
 
 export type { MdyElementLookup } from "@modyra/widgets";

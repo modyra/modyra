@@ -52,7 +52,6 @@ export class MdyWidgetRuntime {
    * microtask would fire while the view is still the previous one.
    */
   private readonly runtime = createCommandRuntime({
-    announcerId: "mdy-angular-announcer",
     defer: (run) => { afterNextRender(run, { injector: this.injector }); },
   });
 

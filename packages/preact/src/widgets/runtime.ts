@@ -21,7 +21,6 @@ export type { MdyWidgetCommandHandlers as MdyPreactCommandHandlers };
 
 /** Same reasoning as the framework this adapter mirrors: the commit finishes before the frame. */
 const runtime = createCommandRuntime({
-  announcerId: "mdy-preact-announcer",
   defer: (run) => { requestAnimationFrame(run); },
 });
 
