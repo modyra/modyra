@@ -16,7 +16,7 @@ import {
   untracked,
   viewChild,
 } from "@angular/core";
-import { filterOptionsByQuery,
+import { capabilityOf, filterOptionsByQuery,
   defaultWidgetIdFactory,
 } from "@modyra/widgets";
 import { MDY_OVERLAY_PORTAL_CLASS } from "@modyra/widgets";
@@ -501,7 +501,7 @@ export class MdySelectComponent<TValue = string>
   protected onBlur(event: FocusEvent): void {
     const next = event.relatedTarget as Node | null;
     if (next && this.wrapperRef()?.nativeElement.contains(next)) return;
-    if (!MDY_WIDGET_CONTRACTS.select.capabilities.dismissOnFocusOutside) return;
+    if (!capabilityOf("select", "dismissOnFocusOutside")) return;
     if (this.interactionFromInside()) {
       this.markAsTouched();
       return;

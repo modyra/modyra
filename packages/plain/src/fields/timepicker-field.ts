@@ -11,7 +11,7 @@
 import type { MdyDynamicDateField } from "@modyra/core";
 import { observerFor, type MdyFieldHandle, type MdyReactivity } from "@modyra/core";
 import { formatTimeAs, hourToAngle, minuteToAngle, parseAnyTime, pointerAngle, to24Hour, type MdyTimeFormat } from "@modyra/core/datetime";
-import { applySubmissionNames,
+import { keyMeans, applySubmissionNames,
   MDY_I18N_MESSAGES_DEFAULT,
   MDY_WIDGET_CONTRACTS,
   acceptTimeField,
@@ -38,7 +38,6 @@ import { applySubmissionNames,
   timepickerTabTarget,
   type MdyElementLookup,
   type MdyI18nMessages,
-  keyBindingFor,
   MDY_TIMEPICKER_DEFAULT_FORMAT,
   timepickerPlaceholder,
   type MdyUiCommand,
@@ -255,7 +254,7 @@ export function renderTimepickerField(
   // one, and a renderer choosing its own keys is how the three of them come to answer differently.
   control.addEventListener("keydown", (event) => {
     const open = controller.state().open;
-    if (open || keyBindingFor("timepicker", event.key, open)?.intent !== "open") return;
+    if (open || !keyMeans("timepicker", event.key, "open", open)) return;
     event.preventDefault();
     dispatch({ type: "open" });
   });
@@ -380,7 +379,7 @@ export function renderTimepickerField(
       // document boundaries some test environments render in, and the guard would then be off
       // exactly where a button is focused.
       && (event.target as Element | null)?.closest?.("button") == null
-      && keyBindingFor("timepicker", "Enter", true)?.intent === "commit"
+      && keyMeans("timepicker", "Enter", "commit", true)
     ) {
       event.preventDefault();
       dispatch({ type: "confirm" });

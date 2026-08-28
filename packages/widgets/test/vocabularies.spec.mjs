@@ -15,18 +15,30 @@ import * as vocabulary from "../dist/vocabulary.js";
 import { MDY_CONTRACT_VOCABULARIES } from "../dist/index.js";
 
 /**
- * What a vocabulary looks like from outside: a frozen object or array of contract data, exported
- * under a shouting name. Recognised by the name because that is the convention the package keeps —
- * and the alternative, recognising it by shape, is the guess this index exists to remove.
+ * What a vocabulary looks like from outside: a shouting name holding a collection.
+ *
+ * Derived, not listed. An earlier version of this check recognised six name endings — CLASSES,
+ * CONTRACTS, KEYBOARD, OPENERS, STRUCTURE, RELATIONS — and so could only ever find what already
+ * matched the vocabularies somebody had thought of. Twenty-five collections sat outside it, published
+ * and unindexed, and the check was green throughout: a recogniser narrower than the thing it guards
+ * reports the absence of what it cannot see.
+ *
+ * A scalar is excluded because it is not a collection — one gap, one delimiter, one version number.
+ * Nothing else is: any `MDY_` export holding members is a collection a consumer can read, and the
+ * index either covers it or does not.
  */
-const LOOKS_LIKE_A_VOCABULARY = /^MDY_[A-Z0-9_]*(CLASSES|CONTRACTS|KEYBOARD|OPENERS|STRUCTURE|RELATIONS)$/;
+function isACollection(value) {
+  if (value === null || typeof value !== "object") return false;
+  return Object.keys(value).length > 0;
+}
 
-test("the index names every vocabulary the package publishes", () => {
+test("the index names every collection the package publishes", () => {
   const everywhere = { ...published, ...vocabulary };
-  const found = Object.keys(everywhere).filter((name) => LOOKS_LIKE_A_VOCABULARY.test(name)).sort();
+  const found = Object.keys(everywhere)
+    .filter((name) => name.startsWith("MDY_") && isACollection(everywhere[name])).sort();
   const indexed = MDY_CONTRACT_VOCABULARIES.map((one) => one.name).sort();
 
-  assert.ok(found.length > 5, `only ${found.length} vocabularies found — the pattern above has stopped matching`);
+  assert.ok(found.length > 30, `only ${found.length} collections found — the derivation above has stopped reaching them`);
   assert.deepEqual(found.filter((name) => !indexed.includes(name)), [],
     "a published vocabulary is missing from the index. A tool reading the index believes it has seen "
     + "the whole contract, so the one nobody added is the one it silently does not cover");
@@ -41,6 +53,11 @@ test("each entry says what shape it is, and says it truly", () => {
       assert.ok(Array.isArray(value), `${name} is indexed as a list and is not one`);
       continue;
     }
+    // `data` is the shape for a collection that is not a vocabulary — translations, colour presets,
+    // icon paths. It claims nothing beyond "there is something here", which is the honest claim: a
+    // consumer walking the index to enumerate the contract must be able to tell those apart from the
+    // catalogues that *are* the contract, and no rule reading the data can make that distinction.
+    if (shape === "data") continue;
     assert.ok(!Array.isArray(value), `${name} is indexed as ${shape} and is an array`);
     // The one distinction a tool cannot make for itself, which is why it is declared: a flat
     // dictionary is the degenerate case of a table with one column, so `names` and `table` look

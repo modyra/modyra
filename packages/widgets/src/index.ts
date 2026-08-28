@@ -210,3 +210,5 @@ export type { MdyOverlayOpenerA11yOptions } from "./opener-a11y.js";
 
 export { MDY_CONTRACT_VOCABULARIES } from "./vocabularies.js";
 export type { MdyVocabulary, MdyVocabularyShape } from "./vocabularies.js";
+
+export { bindingForIntent, capabilityOf, isWidgetKind, keyMeans } from "./ask.js";

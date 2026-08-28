@@ -1,4 +1,4 @@
-import { MDY_POPUP_OPENERS, keyBindingFor, partClasses, projectOverlayOpenerA11y, type MdyPartContract } from "@modyra/widgets";
+import { keyMeans, MDY_POPUP_OPENERS, partClasses, projectOverlayOpenerA11y, type MdyPartContract } from "@modyra/widgets";
 import {
   DestroyRef,
   Directive,
@@ -238,7 +238,7 @@ export abstract class MdyOverlayControl<TValue> extends MdyBaseControl<TValue> {
    */
   protected openOnDeclaredKey(event: KeyboardEvent): void {
     if (this.open() || this.overlayKind === null) return;
-    if (keyBindingFor(this.overlayKind, event.key, false)?.intent !== "open") return;
+    if (!keyMeans(this.overlayKind, event.key, "open", false)) return;
     event.preventDefault();
     this.openOverlay(event);
   }
@@ -259,7 +259,7 @@ export abstract class MdyOverlayControl<TValue> extends MdyBaseControl<TValue> {
    */
   protected closeOnDeclaredKey(event: KeyboardEvent): void {
     if (!this.open() || this.overlayKind === null || event.key !== "Tab") return;
-    if (keyBindingFor(this.overlayKind, event.key, true)?.intent !== "cancel") return;
+    if (!keyMeans(this.overlayKind, event.key, "cancel", true)) return;
     this.closeOverlay();
   }
 

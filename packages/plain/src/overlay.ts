@@ -5,7 +5,7 @@
  * coordinates that follow — is `anchorOverlay` in `@modyra/widgets`. This file measures the anchor
  * and writes the `--mdy-overlay-*` properties it returns, and decides nothing of its own.
  */
-import { applyOverlayProperties, trackAnchoredOverlay, bindLightDismiss, setOverlayOpen, syncOverlayBackdrop, type MdyI18nMessages } from "@modyra/widgets";
+import { capabilityOf, applyOverlayProperties, trackAnchoredOverlay, bindLightDismiss, setOverlayOpen, syncOverlayBackdrop, type MdyI18nMessages } from "@modyra/widgets";
 import { anchorOverlay, createLightDismiss, MDY_WIDGET_CONTRACTS, overlayLifecycleTransition, popupPlacementClass, type MdyOverlayDecision, type MdyPopupWidgetKind, type MdyWidgetKind } from "@modyra/widgets";
 
 import { announcePlain } from "./command-runtime.js";
@@ -273,7 +273,7 @@ export function dismissOnFocusOutside(
 ): () => void {
   // Asked of the kind rather than of any kind: they all declare it today, and a kind that stops
   // declaring it must stop being closed this way without anybody editing a renderer.
-  if (MDY_WIDGET_CONTRACTS[kind].capabilities.dismissOnFocusOutside !== true) return noop;
+  if (!capabilityOf(kind, "dismissOnFocusOutside")) return noop;
   if (typeof document === "undefined") return noop;
 
   /**

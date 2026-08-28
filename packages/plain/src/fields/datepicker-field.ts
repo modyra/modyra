@@ -7,7 +7,7 @@
 import { observerFor, type MdyFieldHandle, type MdyReactivity } from "@modyra/core";
 import { buildDateLocale, formatIsoDate, parseLocalizedDate, calendarYearRange, isMonthOutOfRange, isYearOutOfRange, parseIsoDate } from "@modyra/core/datetime";
 import type { MdyDynamicDateField } from "@modyra/core";
-import { applySubmissionNames,
+import { keyMeans, applySubmissionNames,
   syncSubmitValues,
   MDY_WIDGET_CONTRACTS,
   createDatepickerFieldController,
@@ -21,7 +21,6 @@ import { applySubmissionNames,
   type MdyCalendarViewMode,
   MDY_I18N_MESSAGES_DEFAULT,
   type MdyI18nMessages,
-  keyBindingFor,
 } from "@modyra/widgets";
 import { applyPart, el, setErrors, setText, setIcon } from "../dom.js";
 import { buildFieldShell, insertControl } from "../field-shell.js";
@@ -179,7 +178,7 @@ export function renderDatepickerField(
   // one, and a renderer choosing its own keys is how the three of them come to answer differently.
   control.addEventListener("keydown", (event) => {
     const open = controller.state().open;
-    if (open || keyBindingFor("datepicker", event.key, open)?.intent !== "open") return;
+    if (open || !keyMeans("datepicker", event.key, "open", open)) return;
     event.preventDefault();
     dispatch({ type: "open" });
   });

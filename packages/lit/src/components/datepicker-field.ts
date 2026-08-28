@@ -1,6 +1,5 @@
 import { mdyPart } from "../mdy-part.js";
-import {
-  MDY_WIDGET_CONTRACTS,
+import { capabilityOf, keyMeans,
   createDatepickerFieldController,
   overlayControlledId,
   type MdyDatepickerFieldController,
@@ -9,7 +8,6 @@ import {
   partClasses,
   calendarViewOnToggle,
   subscribeController,
-  keyBindingFor,
 } from "@modyra/widgets";
 import { html, nothing, type PropertyDeclarations } from "lit";
 import { observerFor, type MdyFieldHandle } from "@modyra/core";
@@ -297,7 +295,7 @@ export class MdyDatepickerFieldElement extends MdyFieldElement<string | null> {
    */
   protected override tabbedAway(): void {
     if (!this._open) return;
-    if (keyBindingFor("datepicker", "Tab", true)?.intent !== "cancel") return;
+    if (!keyMeans("datepicker", "Tab", "cancel", true)) return;
     const handle = this.field;
     if (handle) this.closePopup(handle, false);
   }
@@ -305,7 +303,7 @@ export class MdyDatepickerFieldElement extends MdyFieldElement<string | null> {
   /** Closed when the keyboard moves on, which this kind's contract asks for. */
   protected override focusLeft(): void {
     if (!this._open) return;
-    if (!MDY_WIDGET_CONTRACTS.datepicker.capabilities.dismissOnFocusOutside) return;
+    if (!capabilityOf("datepicker", "dismissOnFocusOutside")) return;
     const handle = this.field;
     if (handle) this.closePopup(handle, false);
   }
@@ -539,7 +537,7 @@ export class MdyDatepickerFieldElement extends MdyFieldElement<string | null> {
             // The keys this kind declares, read from the table rather than listed here. The contract
             // names the *control* as the opener, and a control that only opens under a pointer is
             // one a keyboard cannot reach the calendar through at all.
-            if (this._open || keyBindingFor("datepicker", e.key, false)?.intent !== "open") return;
+            if (this._open || !keyMeans("datepicker", e.key, "open", false)) return;
             e.preventDefault();
             this.openPopup(handle, e);
           }}

@@ -23,7 +23,7 @@ import {
   pointerAngle,
   to24Hour,
 } from "@modyra/core/datetime";
-import {
+import { keyMeans,
   createPointerDrag,
   dragPointOf,
   timeClockTransition,
@@ -50,7 +50,6 @@ import {
   MDY_TIMEPICKER_DEFAULT_FORMAT,
   MDY_TIMEPICKER_INITIAL_VIEW,
   type MdyTimepickerViewMode,
-  keyBindingFor,
 } from "@modyra/widgets";
 import { MDY_I18N_MESSAGES } from "../../core/i18n";
 import { MdyTimepickerHeaderComponent } from "./timepicker-header.component";
@@ -392,7 +391,7 @@ export class MdyTimepickerClockComponent {
       event.key === "Enter"
       && !event.defaultPrevented
       && (event.target as Element | null)?.closest?.("button") == null
-      && keyBindingFor("timepicker", "Enter", true)?.intent === "commit"
+      && keyMeans("timepicker", "Enter", "commit", true)
     ) {
       event.preventDefault();
       this.confirmClicked.emit();

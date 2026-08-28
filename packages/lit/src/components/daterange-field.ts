@@ -1,7 +1,6 @@
 import { mdyPart } from "../mdy-part.js";
-import { defaultWidgetIdFactory,
-  keyBindingFor,
-  MDY_WIDGET_CONTRACTS, overlayControlledId, partClasses, calendarViewOnToggle,
+import { capabilityOf, keyMeans, defaultWidgetIdFactory,
+  overlayControlledId, partClasses, calendarViewOnToggle,
   createDaterangeFieldController,
   subscribeController,
   type MdyDaterangeFieldController,
@@ -380,7 +379,7 @@ export class MdyDaterangeFieldElement extends MdyFieldElement<MdyDateRange | nul
    */
   protected override tabbedAway(): void {
     if (!this._open) return;
-    if (keyBindingFor("daterange", "Tab", true)?.intent !== "cancel") return;
+    if (!keyMeans("daterange", "Tab", "cancel", true)) return;
     const handle = this.field;
     if (handle) this.closePopup(handle, false);
   }
@@ -388,7 +387,7 @@ export class MdyDaterangeFieldElement extends MdyFieldElement<MdyDateRange | nul
   /** Closed when the keyboard moves on, which this kind's contract asks for. */
   protected override focusLeft(): void {
     if (!this._open) return;
-    if (!MDY_WIDGET_CONTRACTS.daterange.capabilities.dismissOnFocusOutside) return;
+    if (!capabilityOf("daterange", "dismissOnFocusOutside")) return;
     const handle = this.field;
     if (handle) this.closePopup(handle, false);
   }

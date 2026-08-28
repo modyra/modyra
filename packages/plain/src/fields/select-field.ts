@@ -8,7 +8,7 @@
  */
 import { observerFor, type MdyFieldHandle, type MdyReactivity, type MdySelectOption } from "@modyra/core";
 import type { MdyDynamicOptionsField } from "@modyra/core";
-import { syncSubmitValues,
+import { capabilityOf, syncSubmitValues,
   stateClass,
   MDY_WIDGET_CONTRACTS,
   createSelectController,
@@ -215,7 +215,7 @@ export function renderSelectField(
   const onFocusOut = (event: FocusEvent): void => {
     const next = event.relatedTarget as Node | null;
     if (next !== null && typeof next.nodeType === "number" && (wrapper.contains(next) || popup.contains(next))) return;
-    if (!MDY_WIDGET_CONTRACTS.select.capabilities.dismissOnFocusOutside) return;
+    if (!capabilityOf("select", "dismissOnFocusOutside")) return;
     if (undismiss.interactionFromInside()) {
       handle.markAsTouched();
       return;

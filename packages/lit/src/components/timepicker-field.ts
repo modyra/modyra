@@ -1,11 +1,9 @@
 import { mdyPart } from "../mdy-part.js";
-import {
+import { capabilityOf, keyMeans,
   projectTimepickerFieldA11y,
   type MdyPartContract,
-  MDY_WIDGET_CONTRACTS,
   createPointerDrag,
   dragPointOf,
-  keyBindingFor,
   overlayControlledId,
   MDY_TIMEPICKER_DEFAULT_FORMAT,
   MDY_TIMEPICKER_INITIAL_VIEW,
@@ -270,7 +268,7 @@ export class MdyTimepickerFieldElement extends MdyFieldElement<string | null> {
   /** Closed when the keyboard moves on, which this kind's contract asks for. */
   protected override focusLeft(): void {
     if (!this._open) return;
-    if (!MDY_WIDGET_CONTRACTS.timepicker.capabilities.dismissOnFocusOutside) return;
+    if (!capabilityOf("timepicker", "dismissOnFocusOutside")) return;
     const handle = this.field;
     if (handle) this.closePopup(handle);
   }
@@ -798,7 +796,7 @@ export class MdyTimepickerFieldElement extends MdyFieldElement<string | null> {
             e.key === "Enter"
             && !e.defaultPrevented
             && (e.target as Element | null)?.closest?.("button") == null
-            && keyBindingFor("timepicker", "Enter", true)?.intent === "commit"
+            && keyMeans("timepicker", "Enter", "commit", true)
           ) {
             e.preventDefault();
             // Kept inside the dialog: the element's own handler opens the picker on Enter, and the
@@ -877,7 +875,7 @@ export class MdyTimepickerFieldElement extends MdyFieldElement<string | null> {
           // written here. The control is this kind's declared opener and the toggle beside it is
           // not a tab stop, so a control that answers no key is a picker no keyboard can open —
           // the value can still be typed, by someone who knows the format the field wants.
-          if (!this._open && keyBindingFor("timepicker", e.key, false)?.intent === "open") {
+          if (!this._open && keyMeans("timepicker", e.key, "open", false)) {
             e.preventDefault();
             this.openPopup(handle, e);
           }
@@ -909,7 +907,7 @@ export class MdyTimepickerFieldElement extends MdyFieldElement<string | null> {
               // The keys this kind declares, read from the table rather than listed here. The
               // contract names the *control* as the opener, and a control that only opens under a
               // pointer is one a keyboard cannot reach the clock through at all.
-              if (this._open || keyBindingFor("timepicker", e.key, false)?.intent !== "open") return;
+              if (this._open || !keyMeans("timepicker", e.key, "open", false)) return;
               e.preventDefault();
               this.send({ type: "open" });
             }}

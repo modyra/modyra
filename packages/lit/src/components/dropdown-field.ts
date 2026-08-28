@@ -1,7 +1,6 @@
 import { html, nothing, type PropertyDeclarations } from "lit";
 import { type MdyFieldHandle } from "@modyra/core";
-import {
-  MDY_WIDGET_CONTRACTS,
+import { capabilityOf,
   createLightDismiss,
   listboxNextIndex,
   overlayLifecycleTransition,
@@ -96,7 +95,7 @@ export abstract class MdyDropdownFieldElement<T> extends MdyOptionsFieldElement<
     const next = event.relatedTarget as Node | null;
     if (next !== null && typeof next === "object"
       && typeof (next as { nodeType?: unknown }).nodeType === "number" && this.contains(next)) return;
-    if (!MDY_WIDGET_CONTRACTS.select.capabilities.dismissOnFocusOutside) return;
+    if (!capabilityOf("select", "dismissOnFocusOutside")) return;
     if (this.dismissal.interactionFromInside()) {
       handle.markAsTouched();
       return;

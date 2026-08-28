@@ -1,8 +1,8 @@
 {
   "note": "Public names not yet asserted or not yet shown. The list may only get shorter.",
   "score": {
-    "published": 865,
-    "asserted": 607,
+    "published": 869,
+    "asserted": 611,
     "shown": 98
   },
   "uncovered": [
@@ -3001,6 +3001,12 @@
       "reason": "published and never shown"
     },
     {
+      "name": "bindingForIntent",
+      "asserted": true,
+      "shown": false,
+      "reason": "published and never shown"
+    },
+    {
       "name": "blocksFocus",
       "asserted": true,
       "shown": false,
@@ -3110,6 +3116,12 @@
     },
     {
       "name": "canonicalWidgetSnapshot",
+      "asserted": true,
+      "shown": false,
+      "reason": "published and never shown"
+    },
+    {
+      "name": "capabilityOf",
       "asserted": true,
       "shown": false,
       "reason": "published and never shown"
@@ -3727,6 +3739,12 @@
       "reason": "published and never shown"
     },
     {
+      "name": "isWidgetKind",
+      "asserted": true,
+      "shown": false,
+      "reason": "published and never shown"
+    },
+    {
       "name": "isYearOutOfRange",
       "asserted": true,
       "shown": false,
@@ -3746,6 +3764,12 @@
     },
     {
       "name": "keyBindingFor",
+      "asserted": true,
+      "shown": false,
+      "reason": "published and never shown"
+    },
+    {
+      "name": "keyMeans",
       "asserted": true,
       "shown": false,
       "reason": "published and never shown"

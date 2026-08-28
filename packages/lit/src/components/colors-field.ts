@@ -1,7 +1,7 @@
 import { mdyPart } from "../mdy-part.js";
-import {
+import { capabilityOf, keyMeans,
   keyBindingFor,
-  MDY_COLOR_PRESETS, MDY_WIDGET_CONTRACTS, colorPresetsOf, openPlatformChooser, overlayControlledId, rowRovingIndex } from "@modyra/widgets";
+  MDY_COLOR_PRESETS, colorPresetsOf, openPlatformChooser, overlayControlledId, rowRovingIndex } from "@modyra/widgets";
 import { html, nothing, type PropertyDeclarations } from "lit";
 import { type MdyFieldHandle } from "@modyra/core";
 import { applyOverlayIntent, bindOutsidePointer, closeOverlayOutOfPlay } from "../widget-runtime/overlay-host.js";
@@ -98,7 +98,7 @@ export class MdyColorsFieldElement extends MdyFieldElement<string | null> {
    */
   protected override tabbedAway(): void {
     if (!this._open) return;
-    if (keyBindingFor("colors", "Tab", true)?.intent !== "cancel") return;
+    if (!keyMeans("colors", "Tab", "cancel", true)) return;
     const handle = this.field;
     if (handle) this.close(handle);
   }
@@ -106,7 +106,7 @@ export class MdyColorsFieldElement extends MdyFieldElement<string | null> {
   /** Closed when the keyboard moves on, which this kind's contract asks for. */
   protected override focusLeft(): void {
     if (!this._open) return;
-    if (!MDY_WIDGET_CONTRACTS.colors.capabilities.dismissOnFocusOutside) return;
+    if (!capabilityOf("colors", "dismissOnFocusOutside")) return;
     const handle = this.field;
     if (handle) this.close(handle);
   }

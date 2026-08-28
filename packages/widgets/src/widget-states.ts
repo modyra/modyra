@@ -9,6 +9,7 @@
  * Declared from the contract's point of view, deliberately not by reading what any renderer emits:
  * a specification written from the implementation only ever ratifies it.
  */
+import { deepFreeze } from "./freeze.js";
 import { MDY_POPUP_OPENERS, type MdyWidgetKind, type MdyWidgetPart } from "./catalog.js";
 import { dynamicParts } from "./ssr.js";
 
@@ -55,7 +56,9 @@ export interface MdyWidgetStateContract {
 }
 
 export const MDY_WIDGET_STATE_CONTRACTS: Readonly<Record<MdyWidgetState, MdyWidgetStateContract>> =
-  Object.freeze({
+  // All the way down: a one-level freeze leaves every member a page-wide write target, and a
+  // contract a page can rewrite is read by every renderer afterwards.
+  deepFreeze({
     pristine: {},
     touched: {},
     empty: {},

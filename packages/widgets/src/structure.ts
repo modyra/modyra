@@ -1,3 +1,4 @@
+import { deepFreeze } from "./freeze.js";
 import { MDY_STATE_MODIFIERS, stateClass, type MdyStateName } from "./state.js";
 
 /**
@@ -181,7 +182,7 @@ export const MDY_SHARED_UI_CLASSES = Object.freeze([
 ]);
 
 /** Base field anatomy. Widget-specific contracts extend this ordered tree. */
-export const MDY_FIELD_SHELL_STRUCTURE = Object.freeze({
+export const MDY_FIELD_SHELL_STRUCTURE = deepFreeze({
   kind: "field-shell",
   nodes: Object.freeze([
     { part: "root", element: "root", order: 0 },

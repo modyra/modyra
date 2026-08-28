@@ -1,5 +1,4 @@
-import { defaultWidgetIdFactory,
-  MDY_WIDGET_CONTRACTS,
+import { capabilityOf, keyMeans, defaultWidgetIdFactory,
   MDY_POPUP_OPENERS,
   overlayControlledId,
   keyBindingFor,
@@ -405,7 +404,7 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
    */
   protected override tabbedAway(): void {
     if (!this._open) return;
-    if (keyBindingFor("multiselect", "Tab", true)?.intent !== "cancel") return;
+    if (!keyMeans("multiselect", "Tab", "cancel", true)) return;
     const handle = this.field;
     if (handle) this.close(handle);
   }
@@ -413,7 +412,7 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
   /** Closed when the keyboard moves on, which this kind's contract asks for. */
   protected override focusLeft(): void {
     if (!this._open) return;
-    if (!MDY_WIDGET_CONTRACTS.multiselect.capabilities.dismissOnFocusOutside) return;
+    if (!capabilityOf("multiselect", "dismissOnFocusOutside")) return;
     const handle = this.field;
     if (handle) this.close(handle);
   }
@@ -444,7 +443,7 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
     // Which keys open it comes from the table, not from a list written here: a renderer that keeps
     // its own copy answers three of the four the contract declares, and the missing one is invisible
     // until somebody presses it.
-    if (!this._open && keyBindingFor("multiselect", e.key, false)?.intent === "open") {
+    if (!this._open && keyMeans("multiselect", e.key, "open", false)) {
       e.preventDefault();
       this.overlay.open();
       this._open = true;
