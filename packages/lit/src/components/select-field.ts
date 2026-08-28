@@ -1,5 +1,5 @@
 import { type MdyFieldHandle, type MdySelectOption } from "@modyra/core";
-import { defaultOptionKey, fieldDescribedBy, filterOptionsByQuery } from "@modyra/widgets";
+import { defaultOptionKey, fieldDescribedBy, filterOptionsByQuery, stepOutOfOverlay } from "@modyra/widgets";
 import { html, nothing, type PropertyDeclarations, type PropertyValueMap } from "lit";
 import { MdyFieldElement, mdyIcon } from "../base.js";
 import {
@@ -239,7 +239,19 @@ export class MdySelectFieldElement extends MdyDropdownFieldElement<unknown | nul
       createAvailable: this.createAvailable(),
     });
 
-    if (action) {
+    if (!action) return;
+    // Tab is the way out and keeps the browser's meaning: focus moves to the trigger and the panel
+    // closes after it, so the browser's own Tab carries on from a control that still exists. Closing
+    // first left focus on an element being removed, and the browser put it on the body — from which
+    // the next press starts over at the top of the document.
+    if (e.key === "Tab") {
+      stepOutOfOverlay(
+        this.querySelector<HTMLElement>(".mdy-select__trigger"),
+        () => { this.overlay.close(); this.selectAdapter?.dispatch({ type: "close", restoreFocus: false }); },
+      );
+      return;
+    }
+    {
       e.preventDefault();
       switch (action.type) {
         case "open":

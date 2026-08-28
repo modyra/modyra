@@ -6,7 +6,8 @@
  * renderer owns the handle<->controller sync itself (mirrors how
  * packages/lit's select-field.ts does the same thing).
  */
-import { observerFor, type MdyFieldHandle, type MdyReactivity, type MdySelectOption } from "@modyra/core";
+import {
+  observerFor, type MdyFieldHandle, type MdyReactivity, type MdySelectOption } from "@modyra/core";
 import type { MdyDynamicOptionsField } from "@modyra/core";
 import { capabilityOf, syncSubmitValues,
   stateClass,
@@ -25,7 +26,7 @@ import { capabilityOf, syncSubmitValues,
   MDY_I18N_MESSAGES_DEFAULT,
   type MdyI18nMessages,
   defaultOptionKey,
-} from "@modyra/widgets";
+  stepOutOfOverlay,} from "@modyra/widgets";
 import { applyPart, el, setErrors, setText, setIcon } from "../dom.js";
 import { buildFieldShell, insertControl } from "../field-shell.js";
 import { runCommands } from "../command-runtime.js";
@@ -260,8 +261,15 @@ export function renderSelectField(
       createAvailable: false,
     });
     if (!action) return;
-    // Tab must keep its native meaning — the list closes and focus carries on to the next control.
-    if (event.key !== "Tab") event.preventDefault();
+    // Tab keeps its native meaning, and keeping it takes an order rather than an exemption: the
+    // focus moves to the trigger and the list closes after, so the browser's own Tab carries on from
+    // a control that still exists. Closing first left it on an element being removed, and the trigger
+    // became the destination instead of the doorway.
+    if (event.key === "Tab") {
+      stepOutOfOverlay(trigger, () => dispatch({ type: "close", restoreFocus: false }));
+      return;
+    }
+    event.preventDefault();
     // The intent records *how* the list was opened, which the action does not carry: it answers
     // what to do, and this answers who asked. `create` is not offered by this renderer — it has no
     // "add this option" affordance — so the contract never returns it here.

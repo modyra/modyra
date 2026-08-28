@@ -193,3 +193,32 @@ export function applyOverlayProperties(
     element.style.setProperty(property, value);
   }
 }
+
+/**
+ * Leaving an open overlay with Tab, in the order that makes it work.
+ *
+ * Tab is the one key that means the same thing everywhere: *go to the next control*. Inside a panel
+ * the arrows choose and Enter commits and Escape cancels, and Tab still has to be the way out — a
+ * panel that takes it to do something else has made a keyboard trap.
+ *
+ * **Move the focus first, close after.** The other order is not a choice anybody made: the panel
+ * closes while the focused element is inside it, the browser is left with an active element that no
+ * longer exists, and it puts focus on the body. From the body the next Tab starts again at the top of
+ * the document, so the person has lost their place in the form and nothing told them why. That is
+ * what two of three renderers did.
+ *
+ * The opener is **crossed, not stopped at**. Focus lands on it and the browser's own Tab carries on
+ * from there to the next field, which is where the person asked to go — one press, one move. Leaving
+ * focus on the opener costs a second press and puts them *back* on the control they were leaving,
+ * which reads as the key not working.
+ *
+ * The default is not prevented: from the opener the browser knows what the next control is, and from
+ * inside a panel drawn outside the field it does not.
+ *
+ * Tab does not choose. A highlighted option stays unchosen, because a shortcut that commits on the
+ * way out removes the ability to leave without choosing.
+ */
+export function stepOutOfOverlay(opener: HTMLElement | null | undefined, close: () => void): void {
+  opener?.focus();
+  close();
+}

@@ -1,8 +1,8 @@
 {
   "note": "Public names not yet asserted or not yet shown. The list may only get shorter.",
   "score": {
-    "published": 880,
-    "asserted": 621,
+    "published": 881,
+    "asserted": 622,
     "shown": 98
   },
   "uncovered": [
@@ -4424,6 +4424,12 @@
     },
     {
       "name": "staticParts",
+      "asserted": true,
+      "shown": false,
+      "reason": "published and never shown"
+    },
+    {
+      "name": "stepOutOfOverlay",
       "asserted": true,
       "shown": false,
       "reason": "published and never shown"
