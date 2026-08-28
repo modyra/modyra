@@ -129,11 +129,16 @@ async function chooseWithOneStep(
   await page.keyboard.press("Enter");
   // A kind whose popup reports no expanded state at all cannot be waited on this way; there the
   // reading position moving is the only signal, and the next wait covers it.
-  const opened = await became(async () => wasClosed === "(none)" || (await openNow()) !== wasClosed);
+  // Generous on purpose, against `became`'s short default. That default is short because most of its
+  // callers pay it on a premise that does not hold — a kind this renderer builds from a native
+  // control — and there a long wait is the expensive path. Here the opposite is true: the panel is
+  // expected to open, so the wait is paid only when the machine is busy, and 400ms under a full suite
+  // is short enough that this reported "the list did not open" on a page that was merely late.
+  const opened = await became(async () => wasClosed === "(none)" || (await openNow()) !== wasClosed, { timeout: 4_000 });
 
   const before = await readingAt();
   await page.keyboard.press("ArrowDown");
-  const moved = await became(async () => (await readingAt()) !== before);
+  const moved = await became(async () => (await readingAt()) !== before, { timeout: 4_000 });
 
   // **A wait that gave up is not a state that arrived.** Both of these are bounded, and under load a
   // renderer can exceed the bound — at which point the keystrokes that follow land on a control that
