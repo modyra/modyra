@@ -17,6 +17,9 @@ import {
   type MdyWidgetKind,
   trackAnchoredOverlay,
   applyOverlayProperties,
+  inlineDirectionOf,
+  measureOverlayContent,
+  viewportSize,
 } from "@modyra/widgets";
 
 /** Visually hidden native input used as the platform picker behind a styled control. */
@@ -121,7 +124,7 @@ export function computeOverlayPanelState(
   const rect = anchorEl.getBoundingClientRect();
   const anchoring = anchorOverlay(
     rect,
-    { width: document.documentElement.clientWidth, height: document.documentElement.clientHeight },
+    viewportSize(document),
     {
       minSpace: config?.minSpace,
       minWidth: config?.minWidth,
@@ -130,10 +133,7 @@ export function computeOverlayPanelState(
       ...(config?.forceModal ? { forceModal: true } : {}),
       // The widget declares which *inline* edge its popup hangs from; only the live direction says
       // which physical edge that is.
-      direction:
-        anchorEl.ownerDocument.defaultView?.getComputedStyle(anchorEl).direction === "rtl"
-          ? "rtl"
-          : "ltr",
+      direction: inlineDirectionOf(anchorEl),
       pointerX: config?.clickX,
       // Measured by the controller when the panel is in the DOM: with it the popup goes where its
       // content shows whole, without it the minimum-space rule stands.
@@ -193,16 +193,6 @@ type OverlayHost = HTMLElement & {
  * `scrollWidth` answer exactly that. Returns null when nothing is laid out yet, because a guessed
  * size would be placed against as if it had been measured.
  */
-function measurePopupContent(popup: HTMLElement | null | undefined): { height: number; width: number } | null {
-  if (!popup || popup.hidden) return null;
-  const height = popup.scrollHeight;
-  const width = popup.scrollWidth;
-  if (height === 0 && width === 0) return null;
-  return {
-    height: height + Math.max(0, popup.offsetHeight - popup.clientHeight),
-    width: width + Math.max(0, popup.offsetWidth - popup.clientWidth),
-  };
-}
 
 /**
  * Shared overlay tracker for Lit renderers.
@@ -328,7 +318,7 @@ export class MdyLitOverlayController {
     if (!anchor) return;
     // Measured once, when the panel first exists; re-measuring while open would feed the clamped
     // box back into the decision that clamped it.
-    this.content ??= measurePopupContent(this.getPopup());
+    this.content ??= measureOverlayContent(this.getPopup());
     this._state = computeOverlayPanelState(anchor, {
       // The widget's own anchoring, from the catalog: how much room its popup wants, how wide it
       // is and which edge it hangs from. A renderer that overrides one of these says so explicitly

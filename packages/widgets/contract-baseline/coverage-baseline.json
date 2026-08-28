@@ -1,8 +1,8 @@
 {
   "note": "Public names not yet asserted or not yet shown. The list may only get shorter.",
   "score": {
-    "published": 881,
-    "asserted": 622,
+    "published": 884,
+    "asserted": 625,
     "shown": 98
   },
   "uncovered": [
@@ -3661,6 +3661,12 @@
       "reason": "published and never shown"
     },
     {
+      "name": "inlineDirectionOf",
+      "asserted": true,
+      "shown": false,
+      "reason": "published and never shown"
+    },
+    {
       "name": "inspectCalendarWeekStart",
       "asserted": true,
       "shown": false,
@@ -3914,6 +3920,12 @@
     },
     {
       "name": "mdyFormSnapshot",
+      "asserted": true,
+      "shown": false,
+      "reason": "published and never shown"
+    },
+    {
+      "name": "measureOverlayContent",
       "asserted": true,
       "shown": false,
       "reason": "published and never shown"
@@ -4658,6 +4670,12 @@
     },
     {
       "name": "vanillaReactivity",
+      "asserted": true,
+      "shown": false,
+      "reason": "published and never shown"
+    },
+    {
+      "name": "viewportSize",
       "asserted": true,
       "shown": false,
       "reason": "published and never shown"

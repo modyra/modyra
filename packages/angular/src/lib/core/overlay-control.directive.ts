@@ -1,4 +1,4 @@
-import { keyMeans, MDY_POPUP_OPENERS, partClasses, projectOverlayOpenerA11y, type MdyPartContract } from "@modyra/widgets";
+import { inlineDirectionOf, keyMeans, MDY_POPUP_OPENERS, measureOverlayContent, partClasses, projectOverlayOpenerA11y, viewportSize, type MdyPartContract } from "@modyra/widgets";
 import {
   DestroyRef,
   Directive,
@@ -313,17 +313,9 @@ export abstract class MdyOverlayControl<TValue> extends MdyBaseControl<TValue> {
    */
   private panelContent: { height: number; width: number } | null = null;
 
-  private measurePanel(): { height: number; width: number } | null {
+  private measurePanel(): { readonly height: number; readonly width: number } | null {
     const host = this.hostRef.nativeElement as HTMLElement;
-    const panel = host.querySelector<HTMLElement>(".mdy-overlay-panel");
-    if (!panel) return null;
-    const height = panel.scrollHeight;
-    const width = panel.scrollWidth;
-    if (height === 0 && width === 0) return null;
-    return {
-      height: height + Math.max(0, panel.offsetHeight - panel.clientHeight),
-      width: width + Math.max(0, panel.offsetWidth - panel.clientWidth),
-    };
+    return measureOverlayContent(host.querySelector<HTMLElement>(".mdy-overlay-panel"));
   }
 
   /**
@@ -346,7 +338,7 @@ export abstract class MdyOverlayControl<TValue> extends MdyBaseControl<TValue> {
     const content = this.panelContent;
     const anchoring = anchorOverlay(
       rect,
-      { width: document.documentElement.clientWidth, height: document.documentElement.clientHeight },
+      viewportSize(document),
       {
         minSpace: this.minSpace,
         minWidth: this.minWidth(),
@@ -517,8 +509,7 @@ export abstract class MdyOverlayControl<TValue> extends MdyBaseControl<TValue> {
 
   /** The writing direction the anchor is laid out in, read rather than assumed. */
   private overlayDirection(): "ltr" | "rtl" {
-    const el = this.wrapperRef()?.nativeElement ?? this.hostRef.nativeElement;
-    return el?.ownerDocument?.defaultView?.getComputedStyle(el).direction === "rtl" ? "rtl" : "ltr";
+    return inlineDirectionOf(this.wrapperRef()?.nativeElement ?? this.hostRef.nativeElement);
   }
 
 

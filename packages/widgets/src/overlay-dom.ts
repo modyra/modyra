@@ -222,3 +222,56 @@ export function stepOutOfOverlay(opener: HTMLElement | null | undefined, close: 
   opener?.focus();
   close();
 }
+
+/**
+ * The three measurements an anchoring decision is made from, taken from the document.
+ *
+ * `anchorOverlay` declares what it needs — a viewport, a direction, a content size — and has never
+ * said how to obtain them, so each renderer gathered them itself. The three gatherings were
+ * character-for-character identical: one answer written where three people had to write it.
+ *
+ * They live here rather than inside `anchorOverlay` because that function is pure and is exercised
+ * against rectangles no document ever held. What is shared is the *reading*, not the decision.
+ */
+
+/** The space a popup has to fit in: the layout viewport, not the visual one a pinch-zoom leaves. */
+export function viewportSize(document: Document): { readonly width: number; readonly height: number } {
+  return { width: document.documentElement.clientWidth, height: document.documentElement.clientHeight };
+}
+
+/**
+ * The direction an element is actually laid out in.
+ *
+ * Read, never assumed. A widget declares which *inline* edge its popup hangs from, and only the live
+ * direction says which physical edge that is.
+ */
+export function inlineDirectionOf(element: Element): "ltr" | "rtl" {
+  return element.ownerDocument?.defaultView?.getComputedStyle(element).direction === "rtl" ? "rtl" : "ltr";
+}
+
+/**
+ * How much room a popup's content wants, or `null` when it is not laid out yet.
+ *
+ * The scroll size plus the border box: `scrollHeight` stops at the padding edge, so a popup with a
+ * border reports a size its own outline does not fit in, and every decision made from it clamps a few
+ * pixels short.
+ *
+ * `null` rather than zero for a popup with no layout. A guessed size is worse than none — a decision
+ * made from zero looks like a decision, and the caller cannot tell it from one made on a measurement.
+ *
+ * A hidden popup answers `null` for the same reason, and so does a missing one: the three renderers
+ * that wrote this each guarded a different subset of "there is nothing here to measure", and the
+ * shared answer is the union of what they guarded rather than the smallest of them.
+ */
+export function measureOverlayContent(
+  popup: HTMLElement | null | undefined,
+): { readonly height: number; readonly width: number } | null {
+  if (!popup || popup.hidden) return null;
+  const height = popup.scrollHeight;
+  const width = popup.scrollWidth;
+  if (height === 0 && width === 0) return null;
+  return {
+    height: height + Math.max(0, popup.offsetHeight - popup.clientHeight),
+    width: width + Math.max(0, popup.offsetWidth - popup.clientWidth),
+  };
+}

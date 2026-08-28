@@ -5,7 +5,7 @@
  * coordinates that follow — is `anchorOverlay` in `@modyra/widgets`. This file measures the anchor
  * and writes the `--mdy-overlay-*` properties it returns, and decides nothing of its own.
  */
-import { capabilityOf, applyOverlayProperties, trackAnchoredOverlay, bindLightDismiss, setOverlayOpen, syncOverlayBackdrop, type MdyI18nMessages } from "@modyra/widgets";
+import { capabilityOf, applyOverlayProperties, inlineDirectionOf, measureOverlayContent, trackAnchoredOverlay, bindLightDismiss, setOverlayOpen, syncOverlayBackdrop, viewportSize, type MdyI18nMessages } from "@modyra/widgets";
 import { anchorOverlay, createLightDismiss, MDY_WIDGET_CONTRACTS, overlayLifecycleTransition, popupPlacementClass, type MdyOverlayDecision, type MdyPopupWidgetKind, type MdyWidgetKind } from "@modyra/widgets";
 
 import { announcePlain } from "./command-runtime.js";
@@ -112,15 +112,6 @@ export function releaseOverlayPlacement(popup: HTMLElement): void {
  * Measured once, when the popup opens — re-measuring on every scroll frame would feed the clamped
  * width back into the decision that clamped it.
  */
-function measureContent(popup: HTMLElement): MdyContentSize | null {
-  const height = popup.scrollHeight;
-  const width = popup.scrollWidth;
-  // Nothing laid out: a popup still hidden has no size, and a guessed one is worse than none.
-  if (height === 0 && width === 0) return null;
-  const borderY = Math.max(0, popup.offsetHeight - popup.clientHeight);
-  const borderX = Math.max(0, popup.offsetWidth - popup.clientWidth);
-  return { height: height + borderY, width: width + borderX };
-}
 
 /** Positions `popup` against `anchor` by applying the contract's anchoring, and returns its decision. */
 export function positionOverlay(
@@ -132,7 +123,7 @@ export function positionOverlay(
   const held = heldDecisions.get(popup);
   // Measured on the way up, so the popup is placed where its content shows whole; kept afterwards,
   // so following the anchor never re-measures a box the placement has already clamped.
-  const content = held ? held.content : measureContent(popup);
+  const content = held ? held.content : measureOverlayContent(popup);
   // Every coordinate, the placement and the height come from `anchorOverlay`; this renderer only
   // measures and writes. Passing the decision it is already holding keeps an open popup's shape
   // steady while the anchor moves.
@@ -142,16 +133,13 @@ export function positionOverlay(
     // scrollbars, while the coordinates written back are laid out against the viewport without
     // them. A right-hung popup then gets `right: innerWidth - anchor.right`, which is a scrollbar
     // too much, and every popup on a scrolling page sits ~15px left of its control.
-    { width: document.documentElement.clientWidth, height: document.documentElement.clientHeight },
+    viewportSize(document),
     {
       ...options,
       // The direction the field is actually laid out in, read from the DOM rather than assumed.
       // The widget declares which *inline* edge its popup hangs from; only the live direction can
       // say which physical edge that is.
-      direction:
-        anchor.ownerDocument.defaultView?.getComputedStyle(anchor).direction === "rtl"
-          ? "rtl"
-          : "ltr",
+      direction: inlineDirectionOf(anchor),
       current: held?.decision ?? null,
       ...(content ? { contentHeight: content.height, contentWidth: content.width } : {}),
     },
