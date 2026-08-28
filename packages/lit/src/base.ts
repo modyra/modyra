@@ -843,8 +843,8 @@ export abstract class MdyFieldElement<T> extends LitElement {
           ${this.renderAffix("suffix")}
         </div>`
         : control}
-      ${showBlockErrors ? this.renderErrors(handle) : nothing}
       ${this.renderSupportingText()}
+      ${showBlockErrors ? this.renderErrors(handle) : nothing}
     `;
   }
 }

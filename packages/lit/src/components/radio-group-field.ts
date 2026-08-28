@@ -105,7 +105,8 @@ export class MdyRadioGroupFieldElement extends MdyOptionsFieldElement<unknown | 
           },
         )}
       </div>
-      ${showBlockErrors ? this.renderErrors(handle) : this.renderSupportingText()}
+      ${this.renderSupportingText()}
+      ${showBlockErrors ? this.renderErrors(handle) : nothing}
     `;
   }
 }

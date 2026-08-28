@@ -537,7 +537,8 @@ export class MdySelectFieldElement extends MdyDropdownFieldElement<unknown | nul
           panelDisplayContents: true,
         })}
       </div>
-      ${showBlockErrors ? this.renderErrors(handle) : this.renderSupportingText()}
+      ${this.renderSupportingText()}
+      ${showBlockErrors ? this.renderErrors(handle) : nothing}
     `;
   }
 }

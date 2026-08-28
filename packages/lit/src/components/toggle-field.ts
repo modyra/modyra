@@ -80,8 +80,8 @@ export class MdyToggleFieldElement extends MdyFieldElement<boolean> {
         -->
         <input ${mdyPart(submitFalsePart(handle.path, { disabled: handle.disabled(), checked: handle.value() === true }))} />
       </div>
-      ${this.renderErrors(handle)}
       ${this.renderSupportingText()}
+      ${this.renderErrors(handle)}
     `;
   }
 }
