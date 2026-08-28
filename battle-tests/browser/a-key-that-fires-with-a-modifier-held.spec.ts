@@ -79,11 +79,24 @@ for (const host of HOSTS) {
       return element !== null && root?.contains(document.activeElement) === true;
     }, { mountId: id, sel: selector });
 
-    const isOpen = (id: string) => page.evaluate((mountId) => {
+    /**
+     * Whether *this* field's panel is open, asked of the field rather than of the page.
+     *
+     * A page-wide search for an overlay answers about whichever panel any earlier mount left behind,
+     * and reports it as this one. The opener says whether it is expanded, and where it does not, the
+     * link it declares to its panel is followed — which is the contract's own way of naming a panel
+     * wherever a renderer chooses to draw it.
+     */
+    const isOpen = (id: string, selector: string) => page.evaluate(({ mountId, sel }) => {
       const root = document.querySelector(`[data-form="${mountId}"]`);
-      return root?.querySelector('[aria-expanded="true"]') !== null
-        || document.querySelector('[data-mdy-overlay], .mdy-overlay-panel, [role="dialog"]') !== null;
-    }, id);
+      const opener = root?.querySelector(sel) ?? root?.querySelector("[aria-expanded]") ?? null;
+      if (opener?.getAttribute("aria-expanded") === "true") return true;
+      if (opener?.getAttribute("aria-expanded") === "false") return false;
+      const controls = opener?.getAttribute("aria-controls");
+      if (controls === null || controls === undefined) return false;
+      const panel = document.getElementById(controls);
+      return panel !== null && panel.getBoundingClientRect().height > 0;
+    }, { mountId: id, sel: selector });
 
     // What the platform does to a button of its own, with nothing of this library attached.
     const platformActivatesOnHeldSpace = await (async () => {
@@ -120,7 +133,7 @@ for (const host of HOSTS) {
         if (!(await focusOpener(bare, selector))) { unreachable.push(`${kind}/${press}`); continue; }
         await page.keyboard.press(press);
         await page.waitForTimeout(250);
-        if (await isOpen(bare)) opened.push(`${kind}/${press}`);
+        if (await isOpen(bare, selector)) opened.push(`${kind}/${press}`);
         await page.keyboard.press("Escape");
         await page.waitForTimeout(150);
 
@@ -134,7 +147,7 @@ for (const host of HOSTS) {
         }
         await page.keyboard.press(`${PRIMARY}+${press}`);
         await page.waitForTimeout(250);
-        if (await isOpen(held)) openedWithModifier.push(`${kind}/${PRIMARY}+${press}`);
+        if (await isOpen(held, selector)) openedWithModifier.push(`${kind}/${PRIMARY}+${press}`);
         await page.keyboard.press("Escape");
         await page.waitForTimeout(150);
       }
