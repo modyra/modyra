@@ -1,11 +1,11 @@
 {
   "note": "Browser specs that are red because the defect they describe is open. A red listed here does not fail a build; a red that is not listed is a regression. Rewrite with `npm run battle:browser:ci -- --accept`.",
   "order": "Repair in severity order, as the node tier does. A spec's severity is the worst of the claims its header names; `unknown` is a spec that names none, which is most of them.",
-  "recordedAt": "2026-08-28T19:38:13Z",
-  "openReds": 28,
+  "recordedAt": "2026-08-28T20:32:37Z",
+  "openReds": 27,
   "bySeverity": {
     "S1": 16,
-    "S2": 12
+    "S2": 11
   },
   "knownRed": [
     "a-capability-declared-and-demanded-by-nobody.spec.ts › an overlay dismisses the way its kind declares, angular",
@@ -29,7 +29,6 @@
     "a-key-in-an-open-panel-nobody-declared.spec.ts › a key in an open panel nobody declared, lit",
     "a-key-in-an-open-panel-nobody-declared.spec.ts › a key in an open panel nobody declared, plain",
     "a-key-that-fires-with-a-modifier-held.spec.ts › a key declared bare does not act with a modifier held, angular",
-    "a-key-that-fires-with-a-modifier-held.spec.ts › a key declared bare does not act with a modifier held, lit",
     "a-key-that-fires-with-a-modifier-held.spec.ts › a key declared bare does not act with a modifier held, plain",
     "a-panel-anchored-the-way-it-declares.spec.ts › a panel is anchored the way its kind declares, angular",
     "a-panel-where-the-library-says.spec.ts › a panel opens where the library's own policy says, lit",

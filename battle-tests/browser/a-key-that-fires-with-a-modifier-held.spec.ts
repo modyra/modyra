@@ -11,6 +11,14 @@
  * not. Each kind's opener is asked of `MDY_POPUP_OPENERS` and its key of the keyboard table rather
  * than guessed, and the key is pressed at the part the table names.
  *
+ * **Space on a button is the platform's, not ours.** A browser activates a focused button on a held
+ * Space exactly as on a bare one — it fires a click, and a click carries no record of the keys that
+ * were down. Refusing it would mean suppressing the activation of an ordinary button, making this the
+ * one button on the page that does not answer where every other one does. The exemption is measured
+ * here rather than written down: a bare button is put in the page and pressed, and Space is exempt
+ * only for as long as that button activates. A browser that stops doing it takes the exemption with
+ * it.
+ *
  * **Both directions, in the same run.** The plain press must open — otherwise a control that answers
  * no key at all satisfies the claim by being dead. And a binding that *does* declare a modifier must
  * not fire without it, which is the same rule read from the other end.
@@ -77,7 +85,25 @@ for (const host of HOSTS) {
         || document.querySelector('[data-mdy-overlay], .mdy-overlay-panel, [role="dialog"]') !== null;
     }, id);
 
+    // What the platform does to a button of its own, with nothing of this library attached.
+    const platformActivatesOnHeldSpace = await (async () => {
+      await page.evaluate(() => {
+        const button = document.createElement("button");
+        button.id = "mdy-platform-probe";
+        (window as never as Record<string, boolean>).mdyProbeClicked = false;
+        button.addEventListener("click", () => { (window as never as Record<string, boolean>).mdyProbeClicked = true; });
+        document.body.append(button);
+      });
+      await page.locator("#mdy-platform-probe").focus();
+      await page.keyboard.press(`${PRIMARY}+Space`);
+      await page.waitForTimeout(120);
+      const clicked = await page.evaluate(() => (window as never as Record<string, boolean>).mdyProbeClicked === true);
+      await page.evaluate(() => document.querySelector("#mdy-platform-probe")?.remove());
+      return clicked;
+    })();
+
     const opened: string[] = [];
+    const platformsOwn: string[] = [];
     const openedWithModifier: string[] = [];
     const unreachable: string[] = [];
 
@@ -101,6 +127,11 @@ for (const host of HOSTS) {
         const held = `held_${kind}_${press}`;
         await mount(held, kind);
         if (!(await focusOpener(held, selector))) continue;
+        const onAButton = await page.evaluate(() => document.activeElement?.tagName.toLowerCase() === "button");
+        if (press === "Space" && onAButton && platformActivatesOnHeldSpace) {
+          platformsOwn.push(`${kind}/${PRIMARY}+Space`);
+          continue;
+        }
         await page.keyboard.press(`${PRIMARY}+${press}`);
         await page.waitForTimeout(250);
         if (await isOpen(held)) openedWithModifier.push(`${kind}/${PRIMARY}+${press}`);
@@ -121,7 +152,10 @@ for (const host of HOSTS) {
       `${host.name} opens on ${JSON.stringify(openedWithModifier)} — a gesture the keyboard table does `
       + "not declare. A binding that names no modifier is the bare key, and a person holding one is "
       + "reaching for something else: their own undo, the browser's find, a screen reader's command. "
-      + "Answering both means the press does two things and the second one was not asked for.",
+      + "Answering both means the press does two things and the second one was not asked for. "
+      + (platformsOwn.length > 0
+        ? `Left to the platform, which activates a bare button the same way: ${JSON.stringify(platformsOwn)}.`
+        : "The platform activates no button of its own on a held Space here, so nothing was exempt."),
     ).toEqual([]);
   });
 }
