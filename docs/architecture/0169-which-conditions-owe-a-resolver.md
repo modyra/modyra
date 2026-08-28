@@ -68,9 +68,20 @@ The three not owed become a stated exemption rather than an absence. A condition
 a resolver should say so where the condition is declared, or the next person counting resolvers
 reports three gaps that are decisions.
 
-**This decides what is owed; it does not build it.** A record that decides and ships nothing is half
-of the shape it criticises, and the honest form of that is to say which half is left rather than to
-imply the work is done.
+**Amended: the seven are built.** The record decided and shipped one name, which is half of the shape
+it criticises; the other half followed. `valueIsPresent` is derived from `MDY_VALUE_CONTRACTS` rather
+than from a table of empties — `nullable` is what separates a number field whose empty is `null` from
+a slider whose empty is where it starts, and `Boolean(value)` gets both wrong.
+
+One case it refuses to answer: a non-nullable numeric value has no absent state, and this function is
+not handed the floor. It does not guess at zero. What makes the refusal safe is a check asserting that
+no kind of that shape declares a part under the condition — so the branch is unreachable rather than
+wrong, and if one ever does, that check fails instead of the rule quietly answering for a slider
+sitting at its minimum.
+
+`fieldIsRequired` is the one that is not the field it is named after: `handle.required()` alone puts a
+marker on a field nobody can fill in, where the same asterisk that means "you must" reads as a demand
+that cannot be met.
 
 ## Alternatives rejected
 

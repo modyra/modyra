@@ -117,7 +117,9 @@ export type MdyPartPresence = (typeof MDY_PART_PRESENCES)[number];
  * over it would put a call between a consumer and a fact in their hand. Left as a blank they read as
  * gaps, and the next person counting resolvers reports three findings that are decisions.
  *
- * `owed` is what is missing: seven conditions a renderer must currently work out alone. ADR 0169.
+ * `owed` is the third state, and there is nothing in it today. It is kept in the shape because a
+ * condition added to the contract arrives owed, and the table has to be able to say so rather than
+ * force whoever adds it to invent an answer on the spot. ADR 0169.
  */
 export const MDY_PRESENCE_RESOLUTION: Readonly<Record<MdyPartPresence, {
   /** The published name that answers it, or `null` where nothing does. */
@@ -132,13 +134,13 @@ export const MDY_PRESENCE_RESOLUTION: Readonly<Record<MdyPartPresence, {
   // the resolver finds none and writes a second one beside the function that already answers.
   valuesOverflow: { resolver: "hiddenChipCount", because: "answered" },
 
-  undoIsOnOffer: { resolver: null, because: "owed" },
-  valueIsPresent: { resolver: null, because: "owed" },
-  valueIsAbsent: { resolver: null, because: "owed" },
-  fieldIsRequired: { resolver: null, because: "owed" },
-  viewIsActive: { resolver: null, because: "owed" },
-  inputWasRefused: { resolver: null, because: "owed" },
-  workIsInFlight: { resolver: null, because: "owed" },
+  undoIsOnOffer: { resolver: "undoIsOnOffer", because: "answered" },
+  valueIsPresent: { resolver: "valueIsPresent", because: "answered" },
+  valueIsAbsent: { resolver: "valueIsAbsent", because: "answered" },
+  fieldIsRequired: { resolver: "fieldIsRequired", because: "answered" },
+  viewIsActive: { resolver: "viewIsActive", because: "answered" },
+  inputWasRefused: { resolver: "inputWasRefused", because: "answered" },
+  workIsInFlight: { resolver: "workIsInFlight", because: "answered" },
 
   documentDeclaresIt: {
     resolver: null,

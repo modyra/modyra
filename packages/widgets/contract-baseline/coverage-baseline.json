@@ -1,8 +1,8 @@
 {
   "note": "Public names not yet asserted or not yet shown. The list may only get shorter.",
   "score": {
-    "published": 892,
-    "asserted": 574,
+    "published": 899,
+    "asserted": 582,
     "shown": 98
   },
   "uncovered": [
@@ -1067,12 +1067,6 @@
       "asserted": false,
       "shown": false,
       "reason": "published, neither asserted nor shown"
-    },
-    {
-      "name": "MdyDraftOptions",
-      "asserted": false,
-      "shown": true,
-      "reason": "published and never asserted"
     },
     {
       "name": "MdyDraftStorage",
@@ -3613,6 +3607,12 @@
       "reason": "published and never shown"
     },
     {
+      "name": "fieldIsRequired",
+      "asserted": true,
+      "shown": false,
+      "reason": "published and never shown"
+    },
+    {
       "name": "fieldShellPartIds",
       "asserted": false,
       "shown": false,
@@ -3758,6 +3758,12 @@
     },
     {
       "name": "inlineDirectionOf",
+      "asserted": true,
+      "shown": false,
+      "reason": "published and never shown"
+    },
+    {
+      "name": "inputWasRefused",
       "asserted": true,
       "shown": false,
       "reason": "published and never shown"
@@ -4747,6 +4753,12 @@
       "reason": "published and never shown"
     },
     {
+      "name": "undoIsOnOffer",
+      "asserted": true,
+      "shown": false,
+      "reason": "published and never shown"
+    },
+    {
       "name": "validateExpression",
       "asserted": true,
       "shown": false,
@@ -4765,6 +4777,18 @@
       "reason": "published and never shown"
     },
     {
+      "name": "valueIsAbsent",
+      "asserted": true,
+      "shown": false,
+      "reason": "published and never shown"
+    },
+    {
+      "name": "valueIsPresent",
+      "asserted": true,
+      "shown": false,
+      "reason": "published and never shown"
+    },
+    {
       "name": "valueShape",
       "asserted": true,
       "shown": false,
@@ -4772,6 +4796,12 @@
     },
     {
       "name": "vanillaReactivity",
+      "asserted": true,
+      "shown": false,
+      "reason": "published and never shown"
+    },
+    {
+      "name": "viewIsActive",
       "asserted": true,
       "shown": false,
       "reason": "published and never shown"
@@ -4838,6 +4868,12 @@
     },
     {
       "name": "withFacts",
+      "asserted": true,
+      "shown": false,
+      "reason": "published and never shown"
+    },
+    {
+      "name": "workIsInFlight",
       "asserted": true,
       "shown": false,
       "reason": "published and never shown"

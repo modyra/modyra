@@ -219,3 +219,5 @@ export { MDY_CONTRACT_VOCABULARIES } from "./vocabularies.js";
 export type { MdyVocabulary, MdyVocabularyShape } from "./vocabularies.js";
 
 export { bindingForIntent, capabilityOf, isWidgetKind, keyMeans } from "./ask.js";
+
+export { fieldIsRequired, inputWasRefused, undoIsOnOffer, valueIsAbsent, valueIsPresent, viewIsActive, workIsInFlight } from "./presence.js";
