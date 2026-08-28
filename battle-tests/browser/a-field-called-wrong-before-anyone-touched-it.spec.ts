@@ -1,40 +1,33 @@
 /**
  * Whether a form calls a field wrong before anybody has done anything to it.
  *
- * A person opens a form. Nothing has been typed, nothing chosen, nothing skipped. A reader moving
- * through it announces each field in turn — and on some of them it says **invalid**.
+ * A person opens a form. Nothing typed, nothing chosen, nothing skipped. A required field that is
+ * empty is not a mistake; it is a field somebody has not reached. *Is this value acceptable* and *is
+ * there a refusal to show this person now* are two questions, and only the second has an answer at
+ * the moment a form is drawn.
  *
- * **Nothing is wrong yet.** A required field that is empty is not a mistake; it is a field somebody
- * has not reached. The distinction is the whole of it: *is this field's value acceptable* and *is
- * there a refusal to show this person now* are two questions, and only the second one has an answer
- * at the moment a form is drawn. A control that answers the first when it was asked the second is
- * wrong from birth — before it can possibly know.
+ * **Two channels, read apart.** `aria-invalid` is heard and nothing else; the drawn error item is
+ * seen and nothing else. Either one alone is the whole defect for the person who has only that
+ * channel, and a field that paints a refusal while announcing itself valid hands two people two
+ * different documents — so a check that reads one channel calls the other correct by not looking.
  *
- * **It falls entirely on people who cannot see the form.** Nothing is painted, because nothing is
- * meant to be painted yet; the claim exists only in what is announced. Someone reading the page hears
- * a form that is already failing and cannot tell which of those complaints is about something they
- * did. Someone looking at it sees a clean form. The two are given different documents.
+ * **The control is an act on the value, not a visit.** The same field is typed into and emptied
+ * again, which must speak; focus arriving and leaving must not, so it cannot serve as the control
+ * without demanding the behaviour this suite calls a defect elsewhere. The typing is verified to have
+ * moved the control's value, so a `fill` a kind ignores cannot pass for an act.
  *
- * **And it makes the real refusal worth less.** A reader who is told *invalid* on arrival learns that
- * the word means nothing here, which is exactly the cost of announcing it early: the announcement
- * that matters arrives later and sounds the same.
- *
- * **The control is what makes the silence mean something.** A renderer that announces no refusal ever
- * would pass this by having nothing to say, so the same fields are given a turn and the refusal must
- * then arrive. Absence before, presence after: one without the other is satisfied by a control that
- * is broken in the opposite direction.
- *
- * Claims under attack: A11Y-004, UI-005.
+ * Claims under attack: A11Y-004, UI-009.
  */
 
 import { expect, test } from "@playwright/test";
 import { MDY_WIDGET_KINDS } from "@modyra/widgets";
 
-import { became, HOSTS } from "./bench";
+import { HOSTS } from "./bench";
 
 type Api = Record<string, Record<string, (...args: never[]) => unknown>>;
 
 const OPTIONS = [{ value: "a", label: "A" }, { value: "b", label: "B" }];
+const TYPED = "12/03/2026";
 
 for (const host of HOSTS) {
   test(`a field nobody has touched is not announced as wrong, ${host.name}`, async ({ page }) => {
@@ -43,66 +36,69 @@ for (const host of HOSTS) {
     await page.goto(host.page);
     await page.waitForFunction((flag) => (window as never as Record<string, boolean>)[flag] === true, host.ready);
 
-    const claimsWrong = (id: string) => page.evaluate(
-      (selector) => document.querySelector(`${selector} [aria-invalid="true"]`) !== null, `[data-form="${id}"]`);
-
     const mount = async (id: string, kind: string) => {
       await page.evaluate(({ api, mountId, k, options }) => {
-        const field: Record<string, unknown> = {
-          name: "f", kind: k, label: "L", validators: { required: true },
-        };
-        if (/select|radio|segmented/.test(k)) field.options = options;
-        (window as never as Api)[api].mountFields(mountId as never, [field] as never);
+        (window as never as Api)[api].mountFields(mountId, [{
+          name: "f", kind: k, label: "L", validators: { required: true }, options,
+        }] as never);
       }, { api: host.api, mountId: id, k: kind, options: OPTIONS });
-      await became(() => page.evaluate(
-        (selector) => (document.querySelector(selector)?.children.length ?? 0) > 0, `[data-form="${id}"]`))
-        .catch(() => undefined);
+      await page.locator(`[data-form="${id}"]`).waitFor({ timeout: 5_000 }).catch(() => undefined);
       await page.waitForTimeout(120);
     };
 
+    const verdict = (id: string) => page.evaluate((mountId) => {
+      const root = document.querySelector(`[data-form="${mountId}"]`);
+      const item = root?.querySelector(".mdy-control__error") ?? null;
+      return {
+        announced: root !== null && root.querySelector('[aria-invalid="true"]') !== null,
+        painted: item !== null && item.getBoundingClientRect().height > 0,
+      };
+    }, id);
+
     const fromBirth: string[] = [];
-    const afterATurn: string[] = [];
+    const spokeAfterAnAct: string[] = [];
+    const silentAfterAnAct: string[] = [];
 
     for (const kind of MDY_WIDGET_KINDS) {
-      const untouched = `birth-${kind}`;
+      const untouched = `birth_${kind}`;
       await mount(untouched, kind);
-      if (await claimsWrong(untouched)) fromBirth.push(kind);
-
-      // The same field, given the turn a person gives one: reached, and then left.
-      const turned = `turn-${kind}`;
-      await mount(turned, kind);
-      const first = page.locator(
-        `[data-form="${turned}"] input, [data-form="${turned}"] select, [data-form="${turned}"] textarea, [data-form="${turned}"] button`,
-      ).first();
-      if (await first.count() > 0) {
-        await first.focus().catch(() => undefined);
-        await first.blur().catch(() => undefined);
+      const born = await verdict(untouched);
+      if (born.announced || born.painted) {
+        fromBirth.push(`${kind}${born.announced ? " announced" : ""}${born.painted ? " painted" : ""}`);
       }
-      await page.waitForTimeout(200);
-      if (await claimsWrong(turned)) afterATurn.push(kind);
 
-      await page.evaluate(({ api, a, b }) => {
-        (window as never as Api)[api].dispose?.(a as never);
-        (window as never as Api)[api].dispose?.(b as never);
-      }, { api: host.api, a: untouched, b: turned });
+      const acted = `acted_${kind}`;
+      await mount(acted, kind);
+      const box = page.locator(`[data-form="${acted}"] input, [data-form="${acted}"] textarea`).first();
+      if (await box.count() > 0) {
+        const before = await box.inputValue().catch(() => null);
+        await box.fill(TYPED).catch(() => undefined);
+        const during = await box.inputValue().catch(() => null);
+        const moved = before !== null && during !== null && during !== before;
+        await box.fill("").catch(() => undefined);
+        await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur());
+        if (moved) {
+          await page.waitForTimeout(150);
+          const after = await verdict(acted);
+          (after.announced || after.painted ? spokeAfterAnAct : silentAfterAnAct).push(kind);
+        }
+      }
     }
 
-    // Without this, a renderer that never announces a refusal at all passes by saying nothing, and
-    // the silence above would be the instrument rather than the control.
     expect(
-      afterATurn.length,
-      `${host.name} announces no refusal on any kind even after the field has been given a turn, so `
-      + "this run cannot tell a control that waits from one that never speaks",
-    ).toBeGreaterThan(3);
+      spokeAfterAnAct.length,
+      `${host.name} shows no refusal on any kind even after a value was typed and taken away again `
+      + `(${silentAfterAnAct.length} kinds took a value and stayed silent), so the silence measured `
+      + "above is this run's own, not the renderer's answer",
+    ).toBeGreaterThan(2);
 
     expect(
       fromBirth,
-      `${host.name} announces ${JSON.stringify(fromBirth)} as invalid on a form nobody has touched. `
-      + "A required field that is empty is not a mistake — it is a field somebody has not reached "
-      + "yet, and whether its value is acceptable is a different question from whether there is a "
-      + "refusal to show this person now. Nothing is painted, so a person looking at the form sees it "
-      + "clean and a person reading it hears it already failing: the two are given different "
-      + "documents. And the refusal that does matter arrives later sounding exactly the same.",
+      `${host.name} calls ${fromBirth.length} of ${MDY_WIDGET_KINDS.length} kinds wrong on a form `
+      + `nobody has touched: ${JSON.stringify(fromBirth)}. A required field that is empty is not a `
+      + "mistake — it is a field somebody has not reached yet. Where the two channels disagree the "
+      + "form is worse than wrong: one person sees a refusal the other is told is not there, and the "
+      + "refusal that does matter arrives later looking and sounding exactly the same.",
     ).toEqual([]);
   });
 }

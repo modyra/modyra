@@ -18,6 +18,8 @@
  *
  * Presence in the document is what this asks, not a box: a part that is emitted and hidden is still an
  * emitted part, and the structural question is whether the element exists at all.
+ *
+ * Claims under attack: UI-009.
  */
 import { expect, test } from "@playwright/test";
 import { MDY_WIDGET_CONTRACTS, MDY_WIDGET_KINDS, overlayOnlyParts } from "@modyra/widgets";
