@@ -7,6 +7,7 @@
  * is what a pressed toggle already means.
  */
 import { MDY_WIDGET_CONTRACTS } from "../catalog.js";
+import { fieldDescribedBy } from "./shell-a11y.js";
 import { projectOverlayOpenerA11y } from "../opener-a11y.js";
 import { blocksFocus } from "../interactivity.js";
 import type { MdyFieldError } from "@modyra/core";
@@ -19,6 +20,17 @@ import type { MdyMultiselectFieldState } from "./multiselect-field-types.js";
 import { errorsVisible, holdsUneditedValue, shownErrors } from "./verdict.js";
 
 export interface MdyMultiselectFieldA11yOptions {
+  /**
+   * Whether the error container is on the page, whether or not it holds a message.
+   *
+   * A renderer that keeps it under every field that can fail a rule passes this, and the control's
+   * description then names one element that never changes — no moment at which the reference can
+   * point at something not yet drawn, or already gone.
+   *
+   * Defaults to whether there are errors to show, so a renderer that draws the container only when it
+   * has something to say is unaffected.
+   */
+  readonly errorsReserved?: boolean;
   readonly widgetId: string;
 }
 
@@ -127,7 +139,15 @@ export function projectMultiselectFieldA11y<TValue>(
   // What the catalogue says a chip in the strip is. Read once here rather than at each renderer,
   // which is how one of them came to carry a role the other two did not.
   const chipRole = MDY_WIDGET_CONTRACTS.multiselect.parts.chip.role;
-  const describedBy = hasErrors ? errorId : descriptionId;
+  // Both, error first — an error does not take the place of the instruction that would have
+  // prevented it. The container is pointed at while it is on the page, which is not the same as
+  // while it holds a message: a renderer that reserves it keeps one reference that never changes.
+  const describedBy = fieldDescribedBy({
+    errorId,
+    descriptionId,
+    errorsPresent: options.errorsReserved ?? hasErrors,
+    descriptionPresent: true,
+  });
 
   return {
     root: {

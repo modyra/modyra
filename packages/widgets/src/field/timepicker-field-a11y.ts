@@ -2,6 +2,7 @@
  * Accessibility projection for the timepicker field widget.
  */
 import { partClasses } from "../part-classes.js";
+import { fieldDescribedBy } from "./shell-a11y.js";
 import { MDY_WIDGET_CONTRACTS } from "../catalog.js";
 import { projectOverlayOpenerA11y } from "../opener-a11y.js";
 import type { MdyFieldError } from "@modyra/core";
@@ -15,6 +16,17 @@ import { errorsVisible, holdsUneditedValue, shownErrors } from "./verdict.js";
 import { fieldShellRootClasses } from "./shell-a11y.js";
 
 export interface MdyTimepickerFieldA11yOptions {
+  /**
+   * Whether the error container is on the page, whether or not it holds a message.
+   *
+   * A renderer that keeps it under every field that can fail a rule passes this, and the control's
+   * description then names one element that never changes — no moment at which the reference can
+   * point at something not yet drawn, or already gone.
+   *
+   * Defaults to whether there are errors to show, so a renderer that draws the container only when it
+   * has something to say is unaffected.
+   */
+  readonly errorsReserved?: boolean;
   readonly widgetId: string;
 }
 
@@ -68,7 +80,15 @@ export function projectTimepickerFieldA11y(
   // it is said.
   const tellingThem = errorsVisible({ disabled: state.disabled, touched: state.touched, holdsUnedited: holdsUneditedValue(state, "timepicker") }, errors);
 
-  const describedBy = hasErrors ? errorId : descriptionId;
+  // Both, error first — an error does not take the place of the instruction that would have
+  // prevented it. The container is pointed at while it is on the page, which is not the same as
+  // while it holds a message: a renderer that reserves it keeps one reference that never changes.
+  const describedBy = fieldDescribedBy({
+    errorId,
+    descriptionId,
+    errorsPresent: options.errorsReserved ?? hasErrors,
+    descriptionPresent: true,
+  });
 
   return {
     root: {
