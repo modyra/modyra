@@ -17,6 +17,7 @@
  * host owns. A renderer names those elements; it does not re-derive the portal.
  */
 import { portalRootFor } from "./portal.js";
+import { MDY_BACKDROP_ATTRIBUTE } from "./overlay-dom.js";
 
 /**
  * Anything that can answer whether a node is beneath it.
@@ -51,6 +52,12 @@ function asNode(target: unknown): Node | null {
   return typeof (target as { nodeType?: unknown }).nodeType === "number" ? (target as Node) : null;
 }
 
+/** Whether a node is the veil a panel dims the page with, or lies inside it. */
+function isTheBackdrop(node: Node): boolean {
+  const element = asElement(node) ?? (node.parentElement as Element | null);
+  return element?.closest?.(`[${MDY_BACKDROP_ATTRIBUTE}]`) != null;
+}
+
 /**
  * Whether `target` lies within the overlay's logical branch.
  *
@@ -61,6 +68,11 @@ function asNode(target: unknown): Node | null {
 export function overlayBranchContains(branch: MdyOverlayBranch, target: unknown): boolean {
   const node = asNode(target);
   if (node === null) return false;
+  // The dimming veil is the canonical outside. It is drawn as the panel's sibling inside the same
+  // portal, so the containment test below says "inside" about it — and a press on the darkened area
+  // is the gesture a person expects to close the panel with. Answered "inside", the panel has no
+  // pointer way out at all and only `Escape` remains, which not everybody knows.
+  if (isTheBackdrop(node)) return false;
   const { root } = branch;
   if (root?.contains(node)) return true;
   const element = asElement(root);

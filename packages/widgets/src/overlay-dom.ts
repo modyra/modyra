@@ -63,6 +63,14 @@ export function setOverlayOpen(popup: HTMLElement, open: boolean, modal = false)
 }
 
 /** Marks the backdrop this module owns, so it is never confused with one a renderer drew itself. */
+/**
+ * The attribute marking the dimming veil a panel draws behind itself.
+ *
+ * Published because the veil sits inside the panel's portal, as its sibling, and every rule that
+ * asks "did this happen inside the overlay" would otherwise say yes to a press on it.
+ */
+export const MDY_BACKDROP_ATTRIBUTE = "data-mdy-overlay-backdrop";
+
 const BACKDROP_OWNER = "mdyOverlayBackdrop";
 
 /**

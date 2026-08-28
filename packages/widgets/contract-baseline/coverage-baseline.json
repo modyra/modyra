@@ -1,8 +1,8 @@
 {
   "note": "Public names not yet asserted or not yet shown. The list may only get shorter.",
   "score": {
-    "published": 876,
-    "asserted": 617,
+    "published": 877,
+    "asserted": 618,
     "shown": 98
   },
   "uncovered": [
@@ -26,6 +26,12 @@
     },
     {
       "name": "MDY_ASYNC_FEATURE_DISABLED",
+      "asserted": true,
+      "shown": false,
+      "reason": "published and never shown"
+    },
+    {
+      "name": "MDY_BACKDROP_ATTRIBUTE",
       "asserted": true,
       "shown": false,
       "reason": "published and never shown"
