@@ -21,6 +21,7 @@ import { keyMeans, applySubmissionNames,
   type MdyCalendarViewMode,
   MDY_I18N_MESSAGES_DEFAULT,
   type MdyI18nMessages,
+  keyBindingFor,
 } from "@modyra/widgets";
 import { applyPart, el, setErrors, setText, setIcon } from "../dom.js";
 import { buildFieldShell, insertControl } from "../field-shell.js";
@@ -211,10 +212,14 @@ export function renderDatepickerField(
     // is held with it, and a condition naming the key is a second copy of that rule — the copy is
     // what keeps answering after the declaration changes, which is how this stayed correct while
     // being correct for its own reasons. ADR 0168.
-    if (keyMeans("datepicker", event, "cancel", true)) dispatch({ type: "close", restoreFocus: true });
-    // Tab is already carrying focus somewhere; pulling it back would trap the user in the control
-    // they were leaving.
-    else if (event.key === "Tab") dispatch({ type: "close", restoreFocus: false });
+    // The binding, not the intent. Both dismissals are declared `cancel` and they differ in where
+    // focus lands — `restoresFocus` is the field that says which — so asking only for the intent
+    // answers `Tab` with `Escape`'s rule and hands the keyboard back to the control it was leaving.
+    // The phase is asked rather than assumed: a shut control asked about the open phase answers with
+    // the bindings of a panel that is not there. ADR 0168.
+    const binding = keyBindingFor("datepicker", event, controller.state().open);
+    if (binding?.intent !== "cancel") return;
+    dispatch({ type: "close", restoreFocus: binding.restoresFocus === true });
   };
   wrapper.addEventListener("keydown", onEscape);
   popup.addEventListener("keydown", onEscape);

@@ -11,8 +11,9 @@ import { buildMonthGrid, type CalendarCell } from "@modyra/core/datetime";
 import {
   projectCalendarPeriodCellA11y,
   projectCalendarViewA11y,
-  keyMeans,
-  type MdyCalendarViewMode } from "@modyra/widgets";
+  keyBindingFor,
+  type MdyCalendarViewMode,
+} from "@modyra/widgets";
 import { mdyPart } from "../mdy-part.js";
 
 /** Which calendar is asking: its catalogue entry names the classes. */
@@ -119,8 +120,12 @@ export function calendarGridKey(
   // and a condition naming the key is a second copy of that rule — the copy is what keeps answering
   // after the declaration changes, which is how every renderer stayed correct for its own reasons.
   // ADR 0168.
-  if (keyMeans(kind, event, "cancel", true)) {
-    event.preventDefault();
+  const dismissal = keyBindingFor(kind, event, true);
+  if (dismissal?.intent === "cancel") {
+    // Only where the binding says the panel keeps the key. `Tab` is a dismissal too and is already
+    // carrying the keyboard to the next field; cancelling it strands the person in a grid being
+    // taken away, and no check outside a browser sees it because there is no native Tab to prevent.
+    if (dismissal.restoresFocus === true) event.preventDefault();
     if (viewMode !== "days") send({ type: "set-view-mode", mode: "days" });
     else close();
     return;

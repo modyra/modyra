@@ -404,9 +404,18 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
     e: KeyboardEvent,
     handle: MdyFieldHandle<readonly unknown[]>,
   ): void {
-    if (keyMeans(this.widgetKind, e, "cancel", true)) {
+    /**
+     * The binding, not the intent. Both dismissals are declared `cancel` and they differ in what a
+     * renderer may do with the key: `Escape` is the panel's to take, `Tab` is already carrying the
+     * keyboard to the next field and cancelling it strands the person in a panel being torn down.
+     * `restoresFocus` is the field that tells them apart. Asked by intent alone, this called
+     * `preventDefault` on `Tab` — which no check outside a browser can see, because there is no
+     * native Tab to prevent. ADR 0168.
+     */
+    const dismissal = keyBindingFor(this.widgetKind, e, this._open);
+    if (dismissal?.intent === "cancel") {
       if (this._open) {
-        e.preventDefault();
+        if (dismissal.restoresFocus === true) e.preventDefault();
         this.close(handle);
         this.restoreFocus();
       }

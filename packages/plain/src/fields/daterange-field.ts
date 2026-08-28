@@ -22,7 +22,7 @@ import { applySubmissionNames,
   type MdyDateRangeValue,
   MDY_I18N_MESSAGES_DEFAULT,
   type MdyI18nMessages,
-  keyMeans,
+  keyBindingFor,
 } from "@modyra/widgets";
 import { applyPart, el, setErrors, setText, setIcon } from "../dom.js";
 import { buildFieldShell, insertControl } from "../field-shell.js";
@@ -178,10 +178,14 @@ export function renderDaterangeField(
     // is held with it, and a condition naming the key is a second copy of that rule — the copy is
     // what keeps answering after the declaration changes, which is how this stayed correct while
     // being correct for its own reasons. ADR 0168.
-    if (keyMeans("daterange", event, "cancel", true)) dispatch({ type: "cancel" });
-    // And Tab lets go: it is already carrying the keyboard onward, and taking it back is the trap
-    // this dismissal exists to avoid.
-    else if (event.key === "Tab") dispatch({ type: "cancel", restoreFocus: false });
+    // The binding, not the intent. Both dismissals are declared `cancel` and they differ in where
+    // focus lands — `restoresFocus` is the field that says which — so asking only for the intent
+    // answers `Tab` with `Escape`'s rule and hands the keyboard back to the control it was leaving.
+    // The phase is asked rather than assumed: a shut control asked about the open phase answers with
+    // the bindings of a panel that is not there. ADR 0168.
+    const binding = keyBindingFor("daterange", event, controller.state().open);
+    if (binding?.intent !== "cancel") return;
+    dispatch({ type: "cancel", restoreFocus: binding.restoresFocus === true });
   };
   popup.addEventListener("keydown", onEscape);
   // Leaving the calendar ends the preview: the highlight belongs to where the pointer is, and a

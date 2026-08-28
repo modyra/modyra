@@ -15,7 +15,6 @@ import {
   colorValueEquals,
   defaultWidgetIdFactory,
   keyBindingFor,
-  keyMeans,
   overlayAnchoringFor,
   rowRovingIndex,
   projectFieldShellA11y,
@@ -276,14 +275,22 @@ export function renderColorsField(
   // panel floating over a control the user has already left. Both dismiss, and they differ in where
   // focus lands — Escape hands it back to the opener, Tab leaves it where the key was taking it.
   const onEscape = (event: KeyboardEvent) => {
-    // Asked of the catalogue, not named here. The binding declares that a dismissal answers whatever
-    // is held with it, and a condition naming the key is a second copy of that rule — the copy is
-    // what keeps answering after the declaration changes, which is how this stayed correct while
-    // being correct for its own reasons. ADR 0168.
-    if (keyMeans("colors", event, "cancel", true)) { setOpen(false); picker.focus(); }
-    // Tab is already carrying focus somewhere; pulling it back to the opener would trap the user in
-    // the control they were leaving.
-    else if (event.key === "Tab") setOpen(false);
+    /**
+     * The binding, not the key and not the intent alone.
+     *
+     * Both dismissals are declared `cancel`, and asking only for the intent answers them the same
+     * way — which took `Tab`, a key already carrying focus to the next field, and handed the reading
+     * position back to the control the person was leaving. Forty stops inside a *closed* field with
+     * nothing on screen to explain why the key had stopped working.
+     *
+     * `restoresFocus` is the field that tells them apart, and the phase is asked rather than assumed:
+     * a shut control asked about the open phase answers with the bindings of a panel that is not
+     * there. ADR 0168.
+     */
+    const binding = keyBindingFor("colors", event, isOpen());
+    if (binding?.intent !== "cancel") return;
+    setOpen(false);
+    if (binding.restoresFocus === true) picker.focus();
   };
   popup.addEventListener("keydown", onEscape);
   wrapper.addEventListener("keydown", onEscape);

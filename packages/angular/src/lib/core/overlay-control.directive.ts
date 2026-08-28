@@ -1,4 +1,4 @@
-import { inlineDirectionOf, keyMeans, MDY_POPUP_OPENERS, measureOverlayContent, partClasses, projectOverlayOpenerA11y, viewportSize, type MdyPartContract } from "@modyra/widgets";
+import { inlineDirectionOf, keyMeans, MDY_POPUP_OPENERS, measureOverlayContent, partClasses, projectOverlayOpenerA11y, viewportSize, type MdyPartContract, keyBindingFor } from "@modyra/widgets";
 import {
   DestroyRef,
   Directive,
@@ -669,7 +669,12 @@ export abstract class MdyOverlayControl<TValue> extends MdyBaseControl<TValue> {
     // it, and a condition naming the key is a second copy of that rule — the copy is what keeps
     // answering after the declaration changes, which is how every renderer here stayed correct
     // for its own reasons rather than the contract's. ADR 0168.
-    if (this.overlayKind !== null && keyMeans(this.overlayKind, event, "cancel", true)) {
+    if (this.overlayKind === null) return;
+    // Only the dismissal that takes the reading position back. `Tab` is declared `cancel` too and is
+    // already carrying the keyboard onward — answering it here would close the panel *and* pull
+    // focus to the opener, which is the trap this listener exists to avoid rather than cause.
+    const dismissal = keyBindingFor(this.overlayKind, event, true);
+    if (dismissal?.intent === "cancel" && dismissal.restoresFocus === true) {
       this.applyLifecycle({ type: "escape" });
     }
   };

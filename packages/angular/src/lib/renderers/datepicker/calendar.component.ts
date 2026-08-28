@@ -1,4 +1,4 @@
-import { type MdyDatepickerFieldController , keyMeans } from "@modyra/widgets";
+import { type MdyDatepickerFieldController , keyBindingFor } from "@modyra/widgets";
 import {
   afterNextRender,
   ChangeDetectionStrategy,
@@ -178,8 +178,14 @@ export class MdyCalendarComponent {
       // it, and a condition naming the key is a second copy of that rule — the copy is what keeps
       // answering after the declaration changes, which is how every renderer here stayed correct
       // for its own reasons rather than the contract's. ADR 0168.
-      if (keyMeans("datepicker", event, "cancel", true)) {
-        event.preventDefault();
+      const dismissal = keyBindingFor("datepicker", event, true);
+      if (dismissal?.intent === "cancel") {
+        // The binding, not the intent. Both dismissals are declared `cancel` and they differ in
+        // what a renderer may do with the key: `Escape` is the panel's to take, `Tab` is already
+        // carrying the keyboard to the next field and cancelling it strands the person in a grid
+        // being taken away. `restoresFocus` is the field that tells them apart, and no check outside
+        // a browser sees the difference because there is no native Tab to prevent. ADR 0168.
+        if (dismissal.restoresFocus === true) event.preventDefault();
         const controller = this.controller();
         if (controller) controller.dispatch({ type: "set-view-mode", mode: "days" });
         else this.viewState.reset(this.focusedDate());

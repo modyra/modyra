@@ -3,8 +3,9 @@ import { type MdyFieldHandle } from "@modyra/core";
 import { capabilityOf,
   createLightDismiss,
   listboxNextIndex,
-  keyMeans,
-  overlayLifecycleTransition } from "@modyra/widgets";
+  keyBindingFor,
+  overlayLifecycleTransition,
+} from "@modyra/widgets";
 import { mdyIcon } from "../base.js";
 import { MdyOptionsFieldElement } from "./options-field.js";
 import { outsideDismissDeclared } from "../widget-runtime/overlay-host.js";
@@ -157,8 +158,12 @@ export abstract class MdyDropdownFieldElement<T> extends MdyOptionsFieldElement<
       const option = this.listOptions[this._activeIndex];
       if (option) this.pick(handle, option.value);
       if (!this.multiselectable) this.close(handle);
-    } else if (keyMeans(this.widgetKind, e, "cancel", true)) {
-      e.preventDefault();
+    } else if (keyBindingFor(this.widgetKind, e, true)?.intent === "cancel") {
+      // Only where the binding says the panel keeps the key. `Tab` is declared a dismissal too, and
+      // it is already carrying the keyboard onward — cancelling it strands the person in a panel
+      // being torn down, which no check outside a browser can see because there is no native Tab to
+      // prevent. ADR 0168.
+      if (keyBindingFor(this.widgetKind, e, true)?.restoresFocus === true) e.preventDefault();
       this.applyLifecycle(handle, { type: "escape" });
     }
   }
