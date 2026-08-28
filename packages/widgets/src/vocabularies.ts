@@ -46,7 +46,7 @@ import {
 } from "./structure.js";
 
 import { MDY_WIDGET_KEYBOARD, MDY_WIDGET_TRANSITIONS } from "./transitions.js";
-import { MDY_PART_PRESENCE, MDY_PART_PRESENCES } from "./structure.js";
+import { MDY_PART_PRESENCE, MDY_PART_PRESENCES, MDY_PRESENCE_RESOLUTION } from "./structure.js";
 import { MDY_EVERY_TIME } from "./time-granularity.js";
 import { deepFreeze } from "./freeze.js";
 
@@ -168,6 +168,8 @@ const CATALOGUES: MdyVocabulary[] = [
     describes: "the conditions under which an optional part is on the page" },
   { name: "MDY_PART_PRESENCE", shape: "names", value: MDY_PART_PRESENCE, door: ".",
     describes: "which of those conditions each optional part is present under" },
+  { name: "MDY_PRESENCE_RESOLUTION", shape: "table", value: MDY_PRESENCE_RESOLUTION, door: ".",
+    describes: "who decides each of those conditions, and why the three that will never have a resolver do not owe one" },
   { name: "MDY_EVERY_TIME", shape: "data", value: MDY_EVERY_TIME, door: ".",
     describes: "the step a clock advances by when a document asks for no coarser one" },
 ];

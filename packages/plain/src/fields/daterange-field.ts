@@ -174,10 +174,6 @@ export function renderDaterangeField(
     // focus to the start input, so every Tab inside this field pulled the keyboard back to where it
     // began — two boxes and no way out of them.
     if (!controller.state().open) return;
-    // Asked of the catalogue, not named here. The binding declares that a dismissal answers whatever
-    // is held with it, and a condition naming the key is a second copy of that rule — the copy is
-    // what keeps answering after the declaration changes, which is how this stayed correct while
-    // being correct for its own reasons. ADR 0168.
     // The binding, not the intent. Both dismissals are declared `cancel` and they differ in where
     // focus lands — `restoresFocus` is the field that says which — so asking only for the intent
     // answers `Tab` with `Escape`'s rule and hands the keyboard back to the control it was leaving.

@@ -183,6 +183,7 @@ absent section reads as an oversight, and "no security impact" is a finding.
 - [ADR 0166: A key is data, not syntax](0166-a-key-is-data-not-syntax.md) — a key derived from a value is compared, never interpolated into a selector, and the order the chips are in is asked of the contract by name
 - [ADR 0167: Reading a form is not declining it](0167-reading-is-not-declining.md) — a form speaks when the value has been touched, never when only focus has; a panel is inside its field's focus scope wherever it is rendered
 - [ADR 0168: A gesture that adds, and a gesture that removes](0168-a-gesture-that-adds-and-a-gesture-that-removes.md) — a gesture that adds is refused under a held accelerator, one that removes is honoured whatever is held, and the rule is declared rather than coded
+- [ADR 0169: Which presence conditions owe a resolver](0169-which-conditions-owe-a-resolver.md) — a condition owes one when two renderers could disagree from the same state; where the answer restates an input the renderer holds, a resolver is ceremony
 - [ADR 0092: A condition travels with the form](0092-a-condition-travels-with-the-form.md) — `when` and `asyncWhen` were closures, so a schema carrying one was not data and the document half could not say what the typed half said
 
 ## Security-relevant records

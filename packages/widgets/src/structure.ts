@@ -105,6 +105,59 @@ export const MDY_PART_PRESENCES = Object.freeze([
 export type MdyPartPresence = (typeof MDY_PART_PRESENCES)[number];
 
 /**
+ * Who decides each presence condition, and where a consumer goes to ask.
+ *
+ * A condition with no way to decide it is a declaration each renderer interprets for itself, which is
+ * how one of these came to mean one thing where chips are drawn and another where they are not. The
+ * three the package answers today carry 85 of the 185 declarations, and that is the direction of the
+ * causation rather than a coincidence: a condition a consumer can ask about is the one consumers read.
+ *
+ * Three will never have a resolver, and saying so here is the point of the table. A condition whose
+ * answer restates an input the renderer already holds cannot be got wrong by anybody, and a function
+ * over it would put a call between a consumer and a fact in their hand. Left as a blank they read as
+ * gaps, and the next person counting resolvers reports three findings that are decisions.
+ *
+ * `owed` is what is missing: seven conditions a renderer must currently work out alone. ADR 0169.
+ */
+export const MDY_PRESENCE_RESOLUTION: Readonly<Record<MdyPartPresence, {
+  /** The published name that answers it, or `null` where nothing does. */
+  readonly resolver: string | null;
+  /** Why nothing answers it — `"owed"`, or the reason no answer is possible or needed. */
+  readonly because: string;
+}>> = Object.freeze({
+  overlayIsOpen: { resolver: "overlayOnlyParts", because: "answered" },
+  errorsAreVisible: { resolver: "errorsVisible", because: "answered" },
+  fieldCanBeInvalid: { resolver: "fieldCanBeInvalid", because: "answered" },
+  // Decides it, and was not named as deciding it — which is worse than a gap: a consumer looking for
+  // the resolver finds none and writes a second one beside the function that already answers.
+  valuesOverflow: { resolver: "hiddenChipCount", because: "answered" },
+
+  undoIsOnOffer: { resolver: null, because: "owed" },
+  valueIsPresent: { resolver: null, because: "owed" },
+  valueIsAbsent: { resolver: null, because: "owed" },
+  fieldIsRequired: { resolver: null, because: "owed" },
+  viewIsActive: { resolver: null, because: "owed" },
+  inputWasRefused: { resolver: null, because: "owed" },
+  workIsInFlight: { resolver: null, because: "owed" },
+
+  documentDeclaresIt: {
+    resolver: null,
+    because: "the renderer was handed the label, the text, the prefix — a resolver would return "
+      + "`input !== undefined` and put a call between a consumer and a fact in their hand",
+  },
+  kindOffersIt: {
+    resolver: null,
+    because: "the catalogue a renderer already reads to know the part exists is the answer; a "
+      + "resolver would restate `MDY_WIDGET_CONTRACTS[kind].parts`",
+  },
+  pointerIsOnAValue: {
+    resolver: null,
+    because: "only the renderer knows where a pointer is, and the contract should say so rather "
+      + "than promise an answer no controller can give",
+  },
+});
+
+/**
  * When each optional part is on the page, by part name.
  *
  * Keyed by name because the anatomy is declared twice — derived per kind, and written out once for
