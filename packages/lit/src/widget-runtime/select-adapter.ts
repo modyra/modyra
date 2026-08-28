@@ -8,9 +8,9 @@
 import type { MdySelectOption } from "@modyra/core";
 import { vanillaReactivity } from "@modyra/core";
 import {
-  createSelectController,
-  type MdySelectController,
-  type MdySelectControllerOptions,
+  createSelectFieldController,
+  type MdySelectFieldController,
+  type MdySelectFieldControllerOptions,
   type MdySelectIntent,
   type MdySelectState,
 } from "@modyra/widgets";
@@ -22,14 +22,17 @@ import {
   type MdyLitCommandHandlers,
 } from "./widget-runtime.js";
 
-export interface MdyLitSelectAdapterOptions<TValue>
-  extends Omit<MdySelectControllerOptions<TValue>, "onChange"> {
-  readonly onChange?: (value: TValue | null) => void;
-}
+/**
+ * What this adapter needs, which is now what the field controller needs.
+ *
+ * `onChange` is gone with the standalone controller: the field controller holds the handle and
+ * writes through it, so a caller supplying its own writer would be a second thing owning the value.
+ */
+export type MdyLitSelectAdapterOptions<TValue> = MdySelectFieldControllerOptions<TValue>;
 
 export class MdyLitSelectAdapter<TValue = unknown> {
   private readonly host: LitElement;
-  private readonly controller: MdySelectController<TValue>;
+  private readonly controller: MdySelectFieldController<TValue>;
   private readonly lookup: MdyElementLookup;
   private handlers: MdyLitCommandHandlers = {
     setOpen: () => undefined, // replaced by the host element
@@ -42,14 +45,18 @@ export class MdyLitSelectAdapter<TValue = unknown> {
   ) {
     this.host = host;
     this.lookup = lookup;
-    this.controller = createSelectController(options, vanillaReactivity());
+    // The field controller, which holds the handle and reads it, rather than the standalone one
+    // driven by setters. The setters are not less typing to skip: they are a window between a value
+    // changing anywhere else — a draft restored, a server correction, a cross-field rule — and
+    // somebody in this file remembering to push it in.
+    this.controller = createSelectFieldController(options, vanillaReactivity());
   }
 
   get state(): MdySelectState<TValue> {
     return this.controller.state();
   }
 
-  get view(): ReturnType<MdySelectController<TValue>["view"]> {
+  get view(): ReturnType<MdySelectFieldController<TValue>["view"]> {
     return this.controller.view();
   }
 
@@ -58,9 +65,6 @@ export class MdyLitSelectAdapter<TValue = unknown> {
     executeLitCommands(this.host, commands, this.lookup, this.handlers);
   }
 
-  setValue(value: TValue | null): void {
-    this.controller.setValue(value);
-  }
 
   setOptions(options: readonly MdySelectOption<TValue>[]): void {
     this.controller.setOptions(options);
@@ -70,9 +74,6 @@ export class MdyLitSelectAdapter<TValue = unknown> {
     this.controller.setOpen(open);
   }
 
-  setDisabled(disabled: boolean): void {
-    this.controller.setDisabled(disabled);
-  }
 
   setReadonly(readonly: boolean): void {
     this.controller.setReadonly(readonly);
@@ -87,9 +88,6 @@ export class MdyLitSelectAdapter<TValue = unknown> {
     this.controller.setDescribedBy(next);
   }
 
-  setInvalid(invalid: boolean): void {
-    this.controller.setInvalid(invalid);
-  }
 
   setLoading(loading: boolean): void {
     this.controller.setLoading(loading);

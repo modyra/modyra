@@ -45,10 +45,23 @@ test("the form drives the widget, not only the other way round", async () => {
   controller.destroy(); form.destroy();
 });
 
-test("out of play, no verdict — read from the handle rather than taken on trust", async () => {
+test("out of play, no verdict — and no verdict before a turn either", async () => {
   const { controller, form } = setup({ validators: [required()] });
   await drained();
-  assert.equal(controller.state().invalid, true);
+  // Empty, required, and nobody has touched it. It used to answer `true` here, on the reading where
+  // "invalid" means *the form would refuse this*. `aria-invalid` does not mean that: it says this
+  // field contains something wrong, and an empty field contains nothing. `required` is the word for
+  // what is missing, and a screen reader already says it — adding "invalid" says two things of which
+  // one is false, and on a long form it says it twenty times before the first real error. ADR 0165.
+  assert.equal(controller.state().invalid, false,
+    "a required field nobody has reached announced itself as containing something wrong");
+
+  // A value that arrived already wrong is a different case and speaks at once: nobody has taken a
+  // turn, and there is still something there that does not work. A draft nobody is told about is a
+  // draft that gets resent.
+  form.f.s.set("nope");
+  form.f.s.markAsDirty();
+  await drained();
 
   form.setDisabled("s", () => true);
   await drained();

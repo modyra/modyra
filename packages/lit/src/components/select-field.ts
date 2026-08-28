@@ -113,16 +113,9 @@ export class MdySelectFieldElement extends MdyDropdownFieldElement<unknown | nul
       this,
       {
         widgetId: this.fieldId,
+        handle: handle as never,
         options: this.renderedOptions(handle.value()),
-        value: handle.value(),
-        disabled: handle.disabled(),
-        readonly: false,
-        invalid: shownErrorsOf(handle).length > 0,
         loading: this.loading,
-        onChange: (value) => {
-          handle.set(value);
-          handle.markAsDirty();
-        },
       },
       (part: string, key: string | undefined) => {
         const view = this.selectAdapter?.view;
@@ -180,11 +173,11 @@ export class MdySelectFieldElement extends MdyDropdownFieldElement<unknown | nul
     super.willUpdate(changedProperties);
     const handle = this.field;
     if (!this.selectAdapter || !handle) return;
-    this.selectAdapter.setDisabled(handle.disabled());
+
     // What the form says, not a constant. This controller holds no handle, so `false` here made a
     // read-only select one that refuses every change and reports itself editable.
     this.selectAdapter.setReadonly(handle.readonly());
-    this.selectAdapter.setInvalid(shownErrorsOf(handle).length > 0);
+
     this.selectAdapter.setLoading(this.loading);
     // Keep the local open flag in sync with the controller before rendering.
     this._open = this.selectAdapter.state.open;

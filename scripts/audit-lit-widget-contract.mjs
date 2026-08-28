@@ -61,7 +61,10 @@ const CONSUMES = {
   "components/text-field.ts": "createTextFieldController",
   "components/checkbox-field.ts": "createBooleanFieldController",
   "components/radio-group-field.ts": "createOptionFieldController",
-  "widget-runtime/select-adapter.ts": "createSelectController",
+  // The *field* controller, which holds the handle and reads it. The standalone one is still
+  // published for a host with no form, and naming it here was what this gate had been asking for —
+  // so a renderer moving to the better of the two failed a check meant to keep it on the contract.
+  "widget-runtime/select-adapter.ts": "createSelectFieldController",
   "components/select-field.ts": "selectKeyboardAction",
   "components/multiselect-field.ts": "multiselectChipClasses",
   "components/datepicker-field.ts": "overlayControlledId",

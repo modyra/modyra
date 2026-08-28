@@ -80,7 +80,7 @@ const MUTATIONS = [
   {
     rule: "out of play, no verdict — read, not taken on trust",
     kind: "select",
-    detail: "the standalone controller takes `invalid` from its caller, so a select is only as right about a disabled field as whoever wired it",
+    detail: "the standalone controller takes `invalid` from its caller, so a select is only as right about a disabled field as whoever wired it — and about an untouched one as whoever remembered that empty is not wrong",
     async run() {
       const rx = vanillaReactivity();
       const form = createForm({ s: field(null, [required()]) }, { reactivity: rx });
@@ -93,7 +93,11 @@ const MUTATIONS = [
       c.destroy(); form.destroy();
       return observed;
     },
-    correct: { failing: true, outOfPlay: false },
+    // `failing: false` for a required field nobody has touched. It was `true`, which is the reading
+    // where "invalid" means *the form would refuse this*. `aria-invalid` does not mean that: it means
+    // this field contains something wrong, and an empty field contains nothing. `required` is the
+    // word for what is missing, and the reader already says it. ADR 0165.
+    correct: { failing: false, outOfPlay: false },
   },
 ];
 

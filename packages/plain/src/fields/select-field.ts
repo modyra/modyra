@@ -12,7 +12,7 @@ import type { MdyDynamicOptionsField } from "@modyra/core";
 import { capabilityOf, syncSubmitValues,
   stateClass,
   MDY_WIDGET_CONTRACTS,
-  createSelectController,
+  createSelectFieldController,
   createTypeahead,
   fieldShellPartIds,
   isTypeaheadCharacter,
@@ -20,7 +20,6 @@ import { capabilityOf, syncSubmitValues,
   selectKeyboardAction,
   shownErrorsOf,
   visibleErrorsOf,
-  showsAsInvalid,
   type MdyElementLookup,
   typeaheadMatch,
   MDY_I18N_MESSAGES_DEFAULT,
@@ -63,19 +62,16 @@ export function renderSelectField(
    */
   const keyFor = (option: MdySelectOption<unknown>) => defaultOptionKey(option.value);
 
-  const controller = createSelectController<unknown>(
-    {
-      widgetId: widgetId,
-      options,
-      keyFor,
-      value: handle.value(),
-      disabled: handle.disabled(),
-      invalid: showsAsInvalid({ valid: handle.valid(), disabled: handle.disabled() }),
-      onChange: (value) => {
-        handle.set(value);
-        handle.markAsDirty();
-      },
-    },
+  /**
+   * The field's controller, not the standalone one driven by setters.
+   *
+   * The standalone takes a value, a verdict and a callback and has to be told when each changes; this
+   * one holds the handle and reads it. What that removes is not typing: it is the window between a
+   * value changing anywhere else — a draft restored, a server correction, a cross-field rule — and
+   * somebody remembering to push it in here.
+   */
+  const controller = createSelectFieldController<unknown>(
+    { widgetId, handle: handle as MdyFieldHandle<unknown>, options, keyFor },
     reactivity,
   );
 
@@ -290,18 +286,9 @@ export function renderSelectField(
   );
 
   const effectRef = reactivity.effect(() => {
-    controller.setValue(handle.value());
-    controller.setDisabled(handle.disabled());
-    // The other half of the same value. This controller is host-driven — it holds no handle — so a
-    // renderer that told it only about `disabled` left a read-only select refusing every change and
-    // saying nothing about it.
-    controller.setReadonly(handle.readonly());
-    // The same question the projection already answered, asked the same way. Asked as *is this field
-    // invalid* it is true from the moment a required field is drawn empty, so a control announced a
-    // refusal about a rule nobody had been given a turn at — and the renderer's own write landed on
-    // top of the contract's, which had said the opposite correctly. Two answers to one question, and
-    // the later one wins.
-    controller.setInvalid(visibleErrorsOf(handle, "select").length > 0);
+    // The value, the verdict, `disabled` and `readonly` all come from the handle the controller
+    // holds. What is left here is the one thing it cannot know: which of the two texts under the
+    // field is on screen, because that is this renderer's decision.
     // The trigger describes itself by whichever of the two is on screen, and this renderer is what
     // decides that: the error list appears once the field is touched and has something to say.
     const errorsShown = handle.touched() && shownErrorsOf(handle).length > 0;

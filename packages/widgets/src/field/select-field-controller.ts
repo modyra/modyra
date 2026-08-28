@@ -20,7 +20,7 @@ import type { MdyUiCommand } from "../commands.js";
 import type { MdyWidgetController, MdyWidgetViewContract } from "../contract.js";
 import { createSelectController } from "../select/select-controller.js";
 import type { MdySelectIntent, MdySelectState } from "../select/select-types.js";
-import { showsAsInvalid } from "./verdict.js";
+import { visibleErrorsOf } from "./verdict.js";
 
 export interface MdySelectFieldControllerOptions<TValue> {
   readonly widgetId: string;
@@ -34,6 +34,12 @@ export interface MdySelectFieldControllerOptions<TValue> {
 
 export interface MdySelectFieldController<TValue>
   extends MdyWidgetController<MdySelectState<TValue>, MdySelectIntent> {
+  /** Which of the two texts under the field the trigger describes itself by. */
+  setDescribedBy(shown: { readonly errorsVisible?: boolean; readonly descriptionVisible?: boolean }): void;
+  /** Whether the panel is up. */
+  setOpen(open: boolean): void;
+  /** Whether the panel's contents are in the document — a renderer may build them only on open. */
+  setPopupRendered(rendered: boolean): void;
   /** Replace the offered options — a list that arrives after the control is on screen. */
   setOptions(options: readonly MdySelectOption<TValue>[]): void;
   setLoading(loading: boolean): void;
@@ -54,8 +60,9 @@ export function createSelectFieldController<TValue>(
     value: handle.value(),
     disabled: handle.disabled(),
     readonly: handle.readonly() || (options.readonly ?? false),
-    // Out of play, no verdict — read from the handle rather than taken on trust from a caller.
-    invalid: showsAsInvalid({ valid: handle.valid(), disabled: handle.disabled() }),
+    // What is *shown*, not what is wrong — the same question the binding below asks, so the first
+    // paint and every one after it agree. See ADR 0165.
+    invalid: visibleErrorsOf(handle, "select").length > 0,
     loading: options.loading ?? false,
     onChange: (value) => {
       handle.set(value);
@@ -74,7 +81,12 @@ export function createSelectFieldController<TValue>(
     inner.setValue(handle.value());
     inner.setDisabled(handle.disabled());
     inner.setReadonly(handle.readonly() || (options.readonly ?? false));
-    inner.setInvalid(showsAsInvalid({ valid: handle.valid(), disabled: handle.disabled() }));
+    // `aria-invalid` is a verdict on an act, not a state. A field that is empty and never touched
+    // holds nothing, so there is nothing wrong with it — it is not filled in yet, and `required` is
+    // the word for that. A field that arrived already holding something wrong says so at once,
+    // touched or not, because a draft nobody is told about is a draft that gets resent. Both are
+    // `visibleErrorsOf`, which is why it is one call rather than two rules. ADR 0165.
+    inner.setInvalid(visibleErrorsOf(handle, "select").length > 0);
   });
 
   const state: MdySignal<MdySelectState<TValue>> = inner.state;
@@ -89,6 +101,17 @@ export function createSelectFieldController<TValue>(
     },
     setOptions: inner.setOptions,
     setLoading: inner.setLoading,
+    /**
+     * The three facts only the renderer has, forwarded rather than decided.
+     *
+     * Which of the two texts under the field is on screen; whether the panel is up; whether the
+     * panel's contents are in the document at all — a renderer that builds them on open has nothing
+     * for `aria-controls` to name while closed. None of the three is a contract question, and not
+     * forwarding them is what kept every renderer on the standalone controller.
+     */
+    setDescribedBy: inner.setDescribedBy,
+    setOpen: inner.setOpen,
+    setPopupRendered: inner.setPopupRendered,
     setReadonly(readonly: boolean): void {
       inner.setReadonly(handle.readonly() || readonly);
     },

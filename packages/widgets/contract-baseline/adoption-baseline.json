@@ -1,7 +1,7 @@
 {
   "note": "What each renderer consumes today. These numbers may rise and may not fall.",
   "score": {
-    "controllers": 46,
+    "controllers": 48,
     "controllersOffered": 51,
     "projections": 48,
     "projectionsOffered": 48
@@ -128,7 +128,7 @@
       "projection": true
     },
     "plain:select": {
-      "controller": false,
+      "controller": true,
       "projection": "none offered"
     },
     "angular:select": {
@@ -136,7 +136,7 @@
       "projection": "none offered"
     },
     "lit:select": {
-      "controller": false,
+      "controller": true,
       "projection": "none offered"
     },
     "plain:multiselect": {

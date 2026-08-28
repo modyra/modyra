@@ -179,6 +179,7 @@ absent section reads as an oversight, and "no security impact" is a finding.
 - [ADR 0162: A renderer writes no class of its own](0162-a-renderer-writes-no-class-of-its-own.md) — five undeclared classes outlived the stylesheet that used them, exempted from the conformance gate by an option the gate's green result never showed
 - [ADR 0163: One live region for the page](0163-one-live-region-for-the-page.md) — eight adapters each named a region of their own; two regions speaking at once are read in an order nothing specifies, and a queue can only stand in front of one
 - [ADR 0164: When an optional part is there](0164-when-an-optional-part-is-there.md) — 193 optional nodes and not one said when; the error container is reserved under fields that can fail, and the reservation stays after the correction
+- [ADR 0165: Empty is not wrong](0165-empty-is-not-wrong.md) — `aria-invalid` is a verdict on an act, not a state; a required field nobody has reached contains nothing, and a value that arrived already wrong speaks at once
 - [ADR 0092: A condition travels with the form](0092-a-condition-travels-with-the-form.md) — `when` and `asyncWhen` were closures, so a schema carrying one was not data and the document half could not say what the typed half said
 
 ## Security-relevant records

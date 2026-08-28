@@ -2570,8 +2570,11 @@
     "widgetId: string"
   ],
   "MdySelectFieldController": [
+    "setDescribedBy: void",
     "setLoading: void",
+    "setOpen: void",
     "setOptions: void",
+    "setPopupRendered: void",
     "setReadonly: void"
   ],
   "MdySelectFieldControllerOptions": [
