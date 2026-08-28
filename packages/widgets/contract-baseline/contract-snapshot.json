@@ -1834,7 +1834,7 @@
           "element": "input",
           "parent": "popup",
           "optional": true,
-          "presentWhen": null,
+          "presentWhen": "overlayIsOpen",
           "repeated": false,
           "role": null,
           "classes": [
@@ -1860,7 +1860,7 @@
           "element": "option",
           "parent": "options",
           "optional": true,
-          "presentWhen": null,
+          "presentWhen": "overlayIsOpen",
           "repeated": true,
           "role": "option",
           "classes": [
@@ -1889,7 +1889,7 @@
           "element": "status",
           "parent": "popup",
           "optional": true,
-          "presentWhen": null,
+          "presentWhen": "overlayIsOpen",
           "repeated": false,
           "role": null,
           "classes": [
@@ -2267,7 +2267,7 @@
           "element": "input",
           "parent": "popup",
           "optional": true,
-          "presentWhen": null,
+          "presentWhen": "overlayIsOpen",
           "repeated": false,
           "role": null,
           "classes": [
@@ -2292,7 +2292,7 @@
           "element": "group",
           "parent": "options",
           "optional": true,
-          "presentWhen": null,
+          "presentWhen": "overlayIsOpen",
           "repeated": true,
           "role": null,
           "classes": [
@@ -2320,7 +2320,7 @@
           "element": "presentation",
           "parent": "option",
           "optional": true,
-          "presentWhen": null,
+          "presentWhen": "overlayIsOpen",
           "repeated": true,
           "role": null,
           "classes": [
@@ -2332,7 +2332,7 @@
           "element": "button",
           "parent": "option",
           "optional": true,
-          "presentWhen": null,
+          "presentWhen": "overlayIsOpen",
           "repeated": true,
           "role": null,
           "classes": [
@@ -2356,7 +2356,7 @@
           "element": "text",
           "parent": "option",
           "optional": true,
-          "presentWhen": null,
+          "presentWhen": "overlayIsOpen",
           "repeated": true,
           "role": null,
           "classes": [
@@ -2380,7 +2380,7 @@
           "element": "status",
           "parent": "popup",
           "optional": true,
-          "presentWhen": null,
+          "presentWhen": "overlayIsOpen",
           "repeated": false,
           "role": null,
           "classes": [
@@ -2629,7 +2629,7 @@
           "element": "group",
           "parent": "calendar",
           "optional": true,
-          "presentWhen": null,
+          "presentWhen": "overlayIsOpen",
           "repeated": false,
           "role": null,
           "classes": [
@@ -2653,7 +2653,7 @@
           "element": "grid",
           "parent": "calendar",
           "optional": true,
-          "presentWhen": null,
+          "presentWhen": "overlayIsOpen",
           "repeated": false,
           "role": "grid",
           "classes": [
@@ -2665,7 +2665,7 @@
           "element": "group",
           "parent": "grid",
           "optional": true,
-          "presentWhen": null,
+          "presentWhen": "overlayIsOpen",
           "repeated": false,
           "role": "row",
           "classes": [
@@ -2677,7 +2677,7 @@
           "element": "columnheader",
           "parent": "weekdays",
           "optional": true,
-          "presentWhen": null,
+          "presentWhen": "overlayIsOpen",
           "repeated": true,
           "role": "columnheader",
           "classes": [
@@ -2689,7 +2689,7 @@
           "element": "group",
           "parent": "grid",
           "optional": true,
-          "presentWhen": null,
+          "presentWhen": "overlayIsOpen",
           "repeated": true,
           "role": "row",
           "classes": [
@@ -2701,7 +2701,7 @@
           "element": "gridcell",
           "parent": "row",
           "optional": true,
-          "presentWhen": null,
+          "presentWhen": "overlayIsOpen",
           "repeated": true,
           "role": "gridcell",
           "classes": [
@@ -2722,7 +2722,7 @@
           "element": "grid",
           "parent": "calendar",
           "optional": true,
-          "presentWhen": null,
+          "presentWhen": "overlayIsOpen",
           "repeated": false,
           "role": "grid",
           "classes": [
@@ -2734,7 +2734,7 @@
           "element": "gridcell",
           "parent": "monthPicker",
           "optional": true,
-          "presentWhen": null,
+          "presentWhen": "overlayIsOpen",
           "repeated": true,
           "role": "gridcell",
           "classes": [
@@ -2748,7 +2748,7 @@
           "element": "grid",
           "parent": "calendar",
           "optional": true,
-          "presentWhen": null,
+          "presentWhen": "overlayIsOpen",
           "repeated": false,
           "role": "grid",
           "classes": [
@@ -2760,7 +2760,7 @@
           "element": "gridcell",
           "parent": "yearPicker",
           "optional": true,
-          "presentWhen": null,
+          "presentWhen": "overlayIsOpen",
           "repeated": true,
           "role": "gridcell",
           "classes": [
@@ -3009,7 +3009,7 @@
           "element": "group",
           "parent": "calendar",
           "optional": true,
-          "presentWhen": null,
+          "presentWhen": "overlayIsOpen",
           "repeated": false,
           "role": null,
           "classes": [
@@ -3033,7 +3033,7 @@
           "element": "grid",
           "parent": "calendar",
           "optional": true,
-          "presentWhen": null,
+          "presentWhen": "overlayIsOpen",
           "repeated": false,
           "role": "grid",
           "classes": [
@@ -3045,7 +3045,7 @@
           "element": "group",
           "parent": "grid",
           "optional": true,
-          "presentWhen": null,
+          "presentWhen": "overlayIsOpen",
           "repeated": false,
           "role": "row",
           "classes": [
@@ -3057,7 +3057,7 @@
           "element": "columnheader",
           "parent": "weekdays",
           "optional": true,
-          "presentWhen": null,
+          "presentWhen": "overlayIsOpen",
           "repeated": true,
           "role": "columnheader",
           "classes": [
@@ -3069,7 +3069,7 @@
           "element": "group",
           "parent": "grid",
           "optional": true,
-          "presentWhen": null,
+          "presentWhen": "overlayIsOpen",
           "repeated": true,
           "role": "row",
           "classes": [
@@ -3081,7 +3081,7 @@
           "element": "gridcell",
           "parent": "row",
           "optional": true,
-          "presentWhen": null,
+          "presentWhen": "overlayIsOpen",
           "repeated": true,
           "role": "gridcell",
           "classes": [
@@ -3102,7 +3102,7 @@
           "element": "grid",
           "parent": "calendar",
           "optional": true,
-          "presentWhen": null,
+          "presentWhen": "overlayIsOpen",
           "repeated": false,
           "role": "grid",
           "classes": [
@@ -3114,7 +3114,7 @@
           "element": "gridcell",
           "parent": "monthPicker",
           "optional": true,
-          "presentWhen": null,
+          "presentWhen": "overlayIsOpen",
           "repeated": true,
           "role": "gridcell",
           "classes": [
@@ -3128,7 +3128,7 @@
           "element": "grid",
           "parent": "calendar",
           "optional": true,
-          "presentWhen": null,
+          "presentWhen": "overlayIsOpen",
           "repeated": false,
           "role": "grid",
           "classes": [
@@ -3140,7 +3140,7 @@
           "element": "gridcell",
           "parent": "yearPicker",
           "optional": true,
-          "presentWhen": null,
+          "presentWhen": "overlayIsOpen",
           "repeated": true,
           "role": "gridcell",
           "classes": [
@@ -3359,7 +3359,7 @@
           "element": "dialog",
           "parent": "popup",
           "optional": true,
-          "presentWhen": null,
+          "presentWhen": "overlayIsOpen",
           "repeated": false,
           "role": null,
           "classes": [
@@ -3383,7 +3383,7 @@
           "element": "group",
           "parent": "container",
           "optional": true,
-          "presentWhen": null,
+          "presentWhen": "overlayIsOpen",
           "repeated": false,
           "role": null,
           "classes": [
@@ -3395,7 +3395,7 @@
           "element": "group",
           "parent": "content",
           "optional": true,
-          "presentWhen": null,
+          "presentWhen": "overlayIsOpen",
           "repeated": false,
           "role": null,
           "classes": [
@@ -3407,7 +3407,7 @@
           "element": "group",
           "parent": "header",
           "optional": true,
-          "presentWhen": null,
+          "presentWhen": "overlayIsOpen",
           "repeated": false,
           "role": null,
           "classes": [
@@ -3423,7 +3423,7 @@
           "element": "input",
           "parent": "hour",
           "optional": true,
-          "presentWhen": null,
+          "presentWhen": "overlayIsOpen",
           "repeated": false,
           "role": null,
           "classes": [
@@ -3437,7 +3437,7 @@
           "element": "group",
           "parent": "header",
           "optional": true,
-          "presentWhen": null,
+          "presentWhen": "overlayIsOpen",
           "repeated": false,
           "role": null,
           "classes": [
@@ -3453,7 +3453,7 @@
           "element": "input",
           "parent": "minute",
           "optional": true,
-          "presentWhen": null,
+          "presentWhen": "overlayIsOpen",
           "repeated": false,
           "role": null,
           "classes": [
@@ -3467,7 +3467,7 @@
           "element": "group",
           "parent": "header",
           "optional": true,
-          "presentWhen": null,
+          "presentWhen": "overlayIsOpen",
           "repeated": false,
           "role": null,
           "classes": [
@@ -3481,7 +3481,7 @@
           "element": "button",
           "parent": "period",
           "optional": true,
-          "presentWhen": null,
+          "presentWhen": "overlayIsOpen",
           "repeated": false,
           "role": null,
           "classes": [
@@ -3495,7 +3495,7 @@
           "element": "popup",
           "parent": "content",
           "optional": true,
-          "presentWhen": null,
+          "presentWhen": "overlayIsOpen",
           "repeated": false,
           "role": null,
           "classes": [
@@ -3509,7 +3509,7 @@
           "element": "presentation",
           "parent": "clock",
           "optional": true,
-          "presentWhen": null,
+          "presentWhen": "overlayIsOpen",
           "repeated": false,
           "role": null,
           "classes": [
@@ -3521,7 +3521,7 @@
           "element": "presentation",
           "parent": "dialFace",
           "optional": true,
-          "presentWhen": null,
+          "presentWhen": "overlayIsOpen",
           "repeated": false,
           "role": null,
           "classes": [
@@ -3533,7 +3533,7 @@
           "element": "presentation",
           "parent": "dialUnavailable",
           "optional": true,
-          "presentWhen": null,
+          "presentWhen": "overlayIsOpen",
           "repeated": false,
           "role": null,
           "classes": [
@@ -3545,7 +3545,7 @@
           "element": "presentation",
           "parent": "dialFace",
           "optional": true,
-          "presentWhen": null,
+          "presentWhen": "overlayIsOpen",
           "repeated": false,
           "role": null,
           "classes": [
@@ -3560,7 +3560,7 @@
           "element": "presentation",
           "parent": "dialFace",
           "optional": true,
-          "presentWhen": null,
+          "presentWhen": "overlayIsOpen",
           "repeated": true,
           "role": null,
           "classes": [
@@ -3575,7 +3575,7 @@
           "element": "button",
           "parent": "actions",
           "optional": true,
-          "presentWhen": null,
+          "presentWhen": "overlayIsOpen",
           "repeated": false,
           "role": null,
           "classes": [
@@ -3587,7 +3587,7 @@
           "element": "group",
           "parent": "container",
           "optional": true,
-          "presentWhen": null,
+          "presentWhen": "overlayIsOpen",
           "repeated": false,
           "role": null,
           "classes": [
@@ -3599,7 +3599,7 @@
           "element": "button",
           "parent": "actions",
           "optional": true,
-          "presentWhen": null,
+          "presentWhen": "overlayIsOpen",
           "repeated": true,
           "role": null,
           "classes": [
@@ -4062,7 +4062,7 @@
           "element": "option",
           "parent": "presets",
           "optional": true,
-          "presentWhen": null,
+          "presentWhen": "overlayIsOpen",
           "repeated": true,
           "role": "option",
           "classes": [
@@ -4076,7 +4076,7 @@
           "element": "button",
           "parent": "popup",
           "optional": true,
-          "presentWhen": null,
+          "presentWhen": "overlayIsOpen",
           "repeated": false,
           "role": null,
           "classes": [
@@ -4088,7 +4088,7 @@
           "element": "presentation",
           "parent": "customEntry",
           "optional": true,
-          "presentWhen": null,
+          "presentWhen": "overlayIsOpen",
           "repeated": false,
           "role": null,
           "classes": [

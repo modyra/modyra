@@ -25,6 +25,12 @@ function described(root: Element): { ref: string | null; text: string | null } {
 }
 
 describe("aria-describedby", () => {
+  /**
+   * The kinds whose control carries the reference itself. The composites put it on a trigger or a
+   * group, so the control not carrying one is their shape rather than a defect.
+   */
+  const REFERENCE_ON_THE_CONTROL = ["text", "textarea", "number", "email", "password", "checkbox", "toggle"];
+
   it("names an element that exists while the field is invalid but untouched", () => {
     // Every control in the host is `mdyRequired` and starts empty, so every field is invalid from
     // the first render — and none has been touched, so no message is shown yet. This is the state
@@ -41,8 +47,18 @@ describe("aria-describedby", () => {
     for (const { kind, selector } of CATALOG_KINDS) {
       const root = fixture.nativeElement.querySelector(selector) as Element;
       const { ref } = described(root);
-      if (ref === null) continue;
-      for (const id of ref.split(" ")) {
+      // The reference must **be there**, not merely be valid where it exists. The older form of this
+      // check demanded `null` and so held that ground by construction: a kind emitting nothing was
+      // conformant with the expected state, and the failure it would have hidden — the text kinds
+      // emitting no reference at all — is half of why this file was written. When an assertion that
+      // something is absent becomes an assertion that it is valid, the grip on "it exists" has to be
+      // said out loud or only half the axis is covered.
+      //
+      // The composites route the reference through a trigger or put it on a group, which is why they
+      // are not held to carrying it on the control.
+      if (!REFERENCE_ON_THE_CONTROL.includes(kind)) continue;
+      expect(`${kind}: ${ref === null ? "no aria-describedby" : "named"}`).toBe(`${kind}: named`);
+      for (const id of (ref ?? "").split(" ")) {
         expect(`${kind}: ${id} resolves: ${Boolean(root.ownerDocument?.getElementById(id))}`)
           .toBe(`${kind}: ${id} resolves: true`);
       }

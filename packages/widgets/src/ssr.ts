@@ -15,49 +15,20 @@
  * Both are conformant, and the choice is what this split makes expressible — it is not made here.
  */
 import { MDY_WIDGET_CONTRACTS, type MdyWidgetKind } from "./catalog.js";
-import type { MdyWidgetStructureNode } from "./structure.js";
-
-/** Every part reachable from `roots` by following `parent`, the roots included. */
-function subtree(nodes: readonly MdyWidgetStructureNode[], roots: readonly string[]): ReadonlySet<string> {
-  const inside = new Set(roots);
-  // The anatomy is a flat list of parent references, so containment is transitive and a single
-  // pass is not enough: a gridcell's parent is a grid whose parent is the popup. Iterating to a
-  // fixed point costs nothing at this size and does not depend on the list being ordered.
-  for (let changed = true; changed; ) {
-    changed = false;
-    for (const node of nodes) {
-      if (node.parent !== undefined && inside.has(node.parent) && !inside.has(node.part)) {
-        inside.add(node.part);
-        changed = true;
-      }
-    }
-  }
-  return inside;
-}
+import { dynamicPartsOf } from "./structure.js";
 
 /**
- * The parts of a kind that only exist alongside an overlay: the popup and its whole subtree.
- *
- * Empty for a kind that has no popup, which is most of them.
+ * The derivation itself lives with the anatomy it reads, so the catalogue can apply it while it is
+ * being built — a part inside a popup is present when the popup is, and that is a fact about the
+ * shape rather than about servers. Re-exported here because this is the door it was published from.
  */
+export { dynamicPartsOf } from "./structure.js";
+
+/** The parts of a kind that exist only once its overlay does. */
 export function dynamicParts(kind: MdyWidgetKind): readonly string[] {
   return dynamicPartsOf(MDY_WIDGET_CONTRACTS[kind].structure.nodes);
 }
 
-/**
- * The same derivation over a bare node list, so it can be exercised on anatomies the catalogue does
- * not contain — in particular ones whose nodes are not listed parent-before-child.
- *
- * The catalogue's are, today, which is exactly why this exists: a derivation that only works on
- * sorted input would pass every test in this repository and put a part that lives inside a popup
- * into the half a server is told to emit.
- */
-export function dynamicPartsOf(nodes: readonly MdyWidgetStructureNode[]): readonly string[] {
-  const popups = nodes.filter((node) => node.element === "popup").map((node) => node.part);
-  if (popups.length === 0) return [];
-  const inside = subtree(nodes, popups);
-  return nodes.map((node) => node.part).filter((part) => inside.has(part));
-}
 
 /**
  * The parts of a kind a server can emit: the closed control.

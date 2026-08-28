@@ -342,3 +342,36 @@ export const MDY_FORM_SHELL_STRUCTURE: MdyWidgetStructure<MdyFormShellPart> = Ob
 // `MdyPartMap` lives with `MdyPartContract`, in `contract.ts`. It was the only thing this module took
 // from there, and taking it closed a cycle between the package's two hubs — neither of which could
 // then be read, or extracted, on its own. A map of a thing belongs beside the thing.
+
+/** Every part reachable from `roots` by following `parent`, the roots included. */
+function subtree(nodes: readonly MdyWidgetStructureNode[], roots: readonly string[]): ReadonlySet<string> {
+  const inside = new Set(roots);
+  // The anatomy is a flat list of parent references, so containment is transitive and a single
+  // pass is not enough: a gridcell's parent is a grid whose parent is the popup. Iterating to a
+  // fixed point costs nothing at this size and does not depend on the list being ordered.
+  for (let changed = true; changed; ) {
+    changed = false;
+    for (const node of nodes) {
+      if (node.parent !== undefined && inside.has(node.parent) && !inside.has(node.part)) {
+        inside.add(node.part);
+        changed = true;
+      }
+    }
+  }
+  return inside;
+}
+
+/**
+ * The same derivation over a bare node list, so it can be exercised on anatomies the catalogue does
+ * not contain — in particular ones whose nodes are not listed parent-before-child.
+ *
+ * The catalogue's are, today, which is exactly why this exists: a derivation that only works on
+ * sorted input would pass every test in this repository and put a part that lives inside a popup
+ * into the half a server is told to emit.
+ */
+export function dynamicPartsOf(nodes: readonly MdyWidgetStructureNode[]): readonly string[] {
+  const popups = nodes.filter((node) => node.element === "popup").map((node) => node.part);
+  if (popups.length === 0) return [];
+  const inside = subtree(nodes, popups);
+  return nodes.map((node) => node.part).filter((part) => inside.has(part));
+}

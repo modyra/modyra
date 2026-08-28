@@ -135,11 +135,17 @@ export function buildFieldShell(
     description,
     errorList,
     syncState({ touched, disabled, hasError, filled, required, constraints, open, readonly }) {
-      // The error container holds its place under any field that can fail a rule, and only there.
-      // Present under a field with no rule at all it is a line of scrolling on every screen, bought
-      // for a message that cannot arrive; absent under one that can fail, its arrival pushes down the
-      // field somebody is already reaching for.
-      errorList.hidden = !fieldCanBeInvalid({ required, constraints, disabled });
+      // Two questions, and only one of them is about the field's rules.
+      //
+      // The container **holds its place** under any field that can fail a rule of its own, so a
+      // message arriving does not push down the field somebody is already reaching for. Under a field
+      // with no rule that is a line of scrolling bought for nothing.
+      //
+      // But a field with no local rule can still be told it is wrong: a server answers about a value
+      // it alone can judge, and that refusal has to land somewhere. Reserved-or-not decides whether
+      // the box waits empty; **having something to say decides whether the box exists at all**, and
+      // reading only the first hid a message the form was holding.
+      errorList.hidden = !hasError && !fieldCanBeInvalid({ required, constraints, disabled });
       root.classList.toggle("mdy-renderer--touched", Boolean(touched));
       // The other state a renderer root carries, and the one nothing was applying. The contract
       // lists `open` beside `touched` in `MDY_FIELD_STATE_CLASSES.fieldStates` and names the class

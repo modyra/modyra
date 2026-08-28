@@ -10,7 +10,9 @@
  */
 import type { MdyPartContract } from "../contract.js";
 import type { MdyStateName } from "../state.js";
-import { MDY_FIELD_SHELL_CLASSES, MDY_PART_PRESENCE, MDY_SHELL_PART_STATES } from "../structure.js";
+import {
+  dynamicPartsOf, MDY_FIELD_SHELL_CLASSES, MDY_PART_PRESENCE, MDY_SHELL_PART_STATES,
+} from "../structure.js";
 import type { MdyWidgetSemanticElement } from "../structure.js";
 import type { MdyValueSlot, MdyWidgetDefinition, MdyWidgetKind, MdyWidgetVariant } from "./kinds.js";
 import { semanticElement } from "./semantics.js";
@@ -467,16 +469,33 @@ export function define<const TPart extends string>(kind: MdyWidgetKind, rootClas
   ));
   const declared = new Set<string>(partNames);
   const siblingCount = new Map<string, number>();
-  const nodes = partNames.map((name) => {
-    if (name === "root") return Object.freeze({ part: name, element: shape.elements?.[name] ?? semanticElement(name), order: 0, optional: false });
+  // Built in two passes. Containment is what says a part lives inside the overlay, and containment
+  // is only readable once every node has its parent — so the shape is laid out first, and the
+  // presence conditions are attached to it after.
+  const laidOut = partNames.map((name) => {
+    if (name === "root") return { part: name, element: shape.elements?.[name] ?? semanticElement(name), order: 0, optional: false };
     const override = shape.parents?.[name];
     const parent = (override && declared.has(override) ? override : undefined)
       ?? (PARENT_CANDIDATES[name] ?? []).find((candidate) => declared.has(candidate)) ?? "root";
     const order = siblingCount.get(parent) ?? 0;
     siblingCount.set(parent, order + 1);
-    const optional = !(REQUIRED_PARTS.has(name) || shape.required?.includes(name));
-    const presentWhen = optional ? MDY_PART_PRESENCE[name] : undefined;
-    return Object.freeze({ part: name, element: shape.elements?.[name] ?? semanticElement(name), parent: parent as TPart, order, optional, ...(presentWhen === undefined ? {} : { presentWhen }), repeated: REPEATED_PARTS.has(name) });
+    return {
+      part: name, element: shape.elements?.[name] ?? semanticElement(name), parent: parent as TPart,
+      order, optional: !(REQUIRED_PARTS.has(name) || shape.required?.includes(name)),
+      repeated: REPEATED_PARTS.has(name),
+    };
+  });
+  // A part inside the popup is present when the popup is, and the anatomy already answers which
+  // those are — the same derivation the server split reads. Declared in the table instead it would
+  // be a second answer to a settled question, going stale the first time a kind grows a part inside
+  // its overlay. The table still wins where it names one, so a part with a sharper condition than
+  // "the overlay is open" keeps it.
+  const insideAPopup = new Set(dynamicPartsOf(laidOut));
+  const nodes = laidOut.map((node) => {
+    const presentWhen = node.optional
+      ? MDY_PART_PRESENCE[node.part] ?? (insideAPopup.has(node.part) ? "overlayIsOpen" as const : undefined)
+      : undefined;
+    return Object.freeze(presentWhen === undefined ? node : { ...node, presentWhen });
   });
   return Object.freeze({ kind, rootClasses: Object.freeze([...rootClasses]),
     ...(shape.controlType === undefined ? {} : { controlType: shape.controlType }),
