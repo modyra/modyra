@@ -294,7 +294,32 @@ export class MdySelectComponent<TValue = string>
   readonly optionCreated = output<string>();
   public override readonly isDisabled = computed(() => this.disabled() || this.fieldState().disabled());
   private readonly runtime = inject(MdyWidgetRuntime);
-  private selectAdapter!: MdyAngularSelectAdapter<TValue>;
+  /**
+   * Built on the first read rather than in the constructor, because it is built *on a handle* and a
+   * `name` form has none until the registry resolves it. A renderer that latched before the handle
+   * arrived cached nothing for the life of the component and every later interaction went nowhere.
+   */
+  private readonly selectAdapter = this.adoptFieldController((handle, widgetId) => {
+    const adapter = new MdyAngularSelectAdapter<TValue>(
+      { widgetId, handle: handle as never, options: this.renderedOptions() },
+      this.runtime,
+      this.injector,
+    );
+    adapter.connectHandlers({
+      setOpen: (open) => open ? this.openOverlay() : this.closeOverlay(),
+      onChange: () => undefined,
+      onTouched: () => this.dispatchValueBlur("select"),
+      onDirty: () => undefined,
+    });
+    return adapter;
+  }, (adapter) => {
+    // What a reactive input feeds the controller. Value, disabled and the verdict are not here: the
+    // controller holds the handle and reads all three from it, so telling it again would be a second
+    // thing owning them, and the one that spoke last would win.
+    adapter.setOptions(this.renderedOptions());
+    adapter.setReadonly(this.fieldState().readonly());
+    adapter.setLoading(this.effectiveLoading());
+  });
   private readonly parkedValue = signal<TValue | null>(null);
 
   /**
@@ -313,42 +338,6 @@ export class MdySelectComponent<TValue = string>
   constructor() {
     super();
 
-    this.selectAdapter = new MdyAngularSelectAdapter<TValue>(
-      {
-        widgetId: this.fieldId,
-        options: [],
-        value: null,
-        disabled: false,
-        readonly: false,
-        invalid: false,
-        loading: false,
-        onChange: (value: TValue | null) => {
-          if (value !== this.value()) {
-            this.dispatchValueIntent<TValue | null>("select", { type: "select", value });
-            const opt = this.optionFor(value);
-            if (opt) this.selectionChange.emit(opt);
-          }
-        },
-      },
-      this.runtime,
-      this.injector,
-    );
-
-    this.selectAdapter.connectHandlers({
-      setOpen: (open) => open ? this.openOverlay() : this.closeOverlay(),
-      onChange: () => undefined,
-      onTouched: () => this.dispatchValueBlur("select"),
-      onDirty: () => undefined,
-    });
-
-    effect(() => {
-      this.selectAdapter.setOptions(this.renderedOptions());
-      this.selectAdapter.setValue(this.value());
-      this.selectAdapter.setDisabled(this.isDisabled());
-      this.selectAdapter.setReadonly(this.fieldState().readonly());
-      this.selectAdapter.setInvalid(this.hasErrors());
-      this.selectAdapter.setLoading(this.effectiveLoading());
-    }, { injector: this.injector });
 
     effect(() => {
       const current = { value: this.value(), parkedValue: this.parkedValue() };
@@ -387,7 +376,7 @@ export class MdySelectComponent<TValue = string>
   }
 
   protected activeOptionId(): string | null {
-    const key = this.selectAdapter.state().activeKey;
+    const key = this.selectAdapter()?.state().activeKey ?? null;
     return key === null ? null : defaultWidgetIdFactory.item(this.fieldId, "option", key);
   }
 
@@ -423,7 +412,7 @@ export class MdySelectComponent<TValue = string>
   );
 
   protected readonly activeIndex = computed(() => {
-    const key = this.selectAdapter.state().activeKey;
+    const key = this.selectAdapter()?.state().activeKey ?? null;
     if (key === null) return -1;
     return this.filteredOptions().findIndex((o) => this.optionKey(o.value) === key);
   });
@@ -437,7 +426,7 @@ export class MdySelectComponent<TValue = string>
   );
 
   protected readonly filteredOptions = computed(() =>
-    filterOptionsByQuery(this.renderedOptions(), this.selectAdapter.state().query),
+    filterOptionsByQuery(this.renderedOptions(), this.selectAdapter()?.state().query ?? ""),
   );
 
   protected readonly showCreateOption = computed(() => {
@@ -469,13 +458,13 @@ export class MdySelectComponent<TValue = string>
     //
     // `setOpen` is still what the command runtime calls back into: the intent's own `open-overlay`
     // command arrives here, finds the list already showing, and stops.
-    if (!this.selectAdapter.open()) this.selectAdapter.dispatch({ type: "open", source: "keyboard" });
-    this.selectAdapter.setOpen(true);
+    if (this.selectAdapter()?.open() !== true) this.selectAdapter()?.dispatch({ type: "open", source: "keyboard" });
+    this.selectAdapter()?.setOpen(true);
   }
 
   public override closeOverlay(): void {
     super.closeOverlay();
-    this.selectAdapter.setOpen(false);
+    this.selectAdapter()?.setOpen(false);
   }
 
   protected override onBeforeOpen(): void {
@@ -487,7 +476,16 @@ export class MdySelectComponent<TValue = string>
   }
 
   protected selectOption(opt: MdySelectOption<TValue>): void {
-    this.selectAdapter.dispatch({ type: "select", optionKey: this.optionKey(opt.value) });
+    const before = this.value();
+    this.selectAdapter()?.dispatch({ type: "select", optionKey: this.optionKey(opt.value) });
+    // Which option, not only that the value moved. A host reads this to reach the label, the group
+    // and whatever else it hung on the option; from the value alone it would have to repeat the
+    // widget's own key comparison to get back there.
+    //
+    // Read after the dispatch and compared, because the panel is not the only way to choose: the
+    // native control the platform draws announces from its own handler, and the two have to mean the
+    // same thing. Announcing unconditionally would make this one say so where that one stays quiet.
+    if (this.value() !== before) this.selectionChange.emit(opt);
     this.closeOverlay();
   }
 
@@ -506,7 +504,7 @@ export class MdySelectComponent<TValue = string>
       this.markAsTouched();
       return;
     }
-    this.selectAdapter.dispatch({ type: "blur" });
+    this.selectAdapter()?.dispatch({ type: "blur" });
   }
 
   /**
@@ -525,7 +523,7 @@ export class MdySelectComponent<TValue = string>
       const match = typeaheadMatch(this.options(), this.typeahead.push(event.key));
       if (match) {
         event.preventDefault();
-        this.selectAdapter.dispatch({ type: "activate", optionKey: this.optionKey(match.value) });
+        this.selectAdapter()?.dispatch({ type: "activate", optionKey: this.optionKey(match.value) });
       }
       return;
     }
@@ -534,7 +532,7 @@ export class MdySelectComponent<TValue = string>
       key: event.key,
       open: this.open(),
       searchFocused: this.searchInputRef()?.nativeElement === document.activeElement,
-      activeKey: this.selectAdapter.state().activeKey,
+      activeKey: this.selectAdapter()?.state().activeKey ?? null,
       createAvailable: this.showCreateOption(),
     });
     if (!action) return;
@@ -554,18 +552,19 @@ export class MdySelectComponent<TValue = string>
     // and this renderer used to open on a `move` it could not perform — which meant the keyboard
     // worked while the policy that describes it was wrong, and a regression in the contract stayed
     // invisible from the outside.
-    this.selectAdapter.dispatch(action);
+    this.selectAdapter()?.dispatch(action);
   }
 
   protected override onSearchInput(event: Event): void {
     const value = (event.target as HTMLInputElement).value;
     this.searchQuery.set(value);
     this.searchChanged.emit(value);
-    this.selectAdapter.dispatch({ type: "search", query: value });
+    this.selectAdapter()?.dispatch({ type: "search", query: value });
   }
 
   public resetSelection(): void {
-    this.selectAdapter.setValue(null);
+    // One write. The controller reads the value from the handle, so clearing the field is the whole
+    // act — telling the controller as well would be a second owner of the same value.
     this.dispatchValueIntent<TValue | null>("select", { type: "select", value: null });
   }
 

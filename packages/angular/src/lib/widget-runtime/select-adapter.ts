@@ -14,9 +14,9 @@ import {
 } from "@angular/core";
 import type { MdySelectOption } from "@modyra/core";
 import {
-  createSelectController,
-  type MdySelectController,
-  type MdySelectControllerOptions,
+  createSelectFieldController,
+  type MdySelectFieldController,
+  type MdySelectFieldControllerOptions,
   type MdySelectIntent,
   type MdySelectState,
 } from "@modyra/widgets";
@@ -27,20 +27,23 @@ import {
   MdyWidgetRuntime,
 } from "./widget-runtime";
 
-export interface MdyAngularSelectAdapterOptions<TValue>
-  extends Omit<MdySelectControllerOptions<TValue>, "onChange"> {
-  readonly onChange?: (value: TValue | null) => void;
-}
+/**
+ * What this adapter needs, which is what the field controller needs.
+ *
+ * `onChange` is gone with the standalone controller: the field controller holds the handle and
+ * writes through it, so a caller supplying its own writer would be a second thing owning the value.
+ */
+export type MdyAngularSelectAdapterOptions<TValue> = MdySelectFieldControllerOptions<TValue>;
 
 export class MdyAngularSelectAdapter<TValue = string> {
-  private readonly controller: MdySelectController<TValue>;
+  private readonly controller: MdySelectFieldController<TValue>;
   private readonly runtime: MdyWidgetRuntime;
 
   /** Reactive Angular signal wrapping the controller state. */
   readonly state: Signal<MdySelectState<TValue>>;
 
   /** Reactive Angular signal wrapping the view/ARIA contract. */
-  readonly view: Signal<ReturnType<MdySelectController<TValue>["view"]>>;
+  readonly view: Signal<ReturnType<MdySelectFieldController<TValue>["view"]>>;
 
   /** Current open state, useful for binding to the overlay panel. */
   readonly open: Signal<boolean>;
@@ -62,7 +65,7 @@ export class MdyAngularSelectAdapter<TValue = string> {
     this.runtime = runtime;
 
     const reactivity = angularReactivity(injector);
-    this.controller = createSelectController(options, reactivity);
+    this.controller = createSelectFieldController(options, reactivity);
 
     // Bridge Modyra signals to Angular signals so templates can read them
     // idiomatically.
@@ -97,11 +100,6 @@ export class MdyAngularSelectAdapter<TValue = string> {
     );
   }
 
-  /** Set the selected value programmatically. */
-  setValue(value: TValue | null): void {
-    this.controller.setValue(value);
-  }
-
   /** Replace the option list. */
   setOptions(options: readonly MdySelectOption<TValue>[]): void {
     this.controller.setOptions(options);
@@ -112,19 +110,19 @@ export class MdyAngularSelectAdapter<TValue = string> {
     this.controller.setOpen(open);
   }
 
-  /** Update the disabled state. */
-  setDisabled(disabled: boolean): void {
-    this.controller.setDisabled(disabled);
-  }
-
   /** Update the readonly state. */
   setReadonly(readonly: boolean): void {
     this.controller.setReadonly(readonly);
   }
 
-  /** Update the invalid state. */
-  setInvalid(invalid: boolean): void {
-    this.controller.setInvalid(invalid);
+  /** Which of the two texts under the field the trigger describes itself by. */
+  setDescribedBy(shown: { readonly errorsVisible?: boolean; readonly descriptionVisible?: boolean }): void {
+    this.controller.setDescribedBy(shown);
+  }
+
+  /** Whether the panel's contents are in the document — this renderer builds them on open. */
+  setPopupRendered(rendered: boolean): void {
+    this.controller.setPopupRendered(rendered);
   }
 
   /** Update the loading state. */

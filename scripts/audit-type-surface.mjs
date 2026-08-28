@@ -118,7 +118,63 @@ function normaliseType(text) {
   return inner;
 }
 
+
+/**
+ * The newest modification time under a directory, or 0 where there is nothing to read.
+ *
+ * Used to answer one question — is the artifact this audit reads older than the source it was built
+ * from — so it walks for a maximum rather than collecting anything.
+ */
+function newestUnder(dir) {
+  if (!existsSync(dir)) return 0;
+  let newest = 0;
+  const walk = (at) => {
+    for (const entry of readdirSync(at, { withFileTypes: true })) {
+      if (entry.name === "node_modules" || entry.name.startsWith(".")) continue;
+      const full = join(at, entry.name);
+      if (entry.isDirectory()) walk(full);
+      else newest = Math.max(newest, statSync(full).mtimeMs);
+    }
+  };
+  walk(dir);
+  return newest;
+}
+
+/**
+ * A built artifact older than its own source measures the past.
+ *
+ * This audit compares declarations, and for a package that emits them through a build it reads the
+ * build. Nothing in the suite that runs this rebuilds them, so a package whose `dist/` was written
+ * weeks ago is compared against itself and reported unchanged — the exact answer a consumer would
+ * get from a gate that had not run at all, delivered with a gate's authority. Three weeks of one
+ * package's public surface went unwatched that way, including a removed member.
+ *
+ * Refused rather than rebuilt: building here would make an audit that reads a tree also write one,
+ * and the command that repairs it belongs to whoever runs the audit.
+ */
+function refuseStaleArtifacts() {
+  const stale = [];
+  for (const pkg of PACKAGES) {
+    const dist = resolve(ROOT, `packages/${pkg}/dist`);
+    if (!existsSync(resolve(dist, "package.json"))) continue;
+    const source = newestUnder(resolve(ROOT, `packages/${pkg}/src`));
+    const built = newestUnder(dist);
+    if (source > built) stale.push({ pkg, behindBy: source - built });
+  }
+  if (stale.length === 0) return;
+  console.error("\nSTALE BUILD — this audit reads declarations that are older than their source.\n");
+  for (const { pkg, behindBy } of stale) {
+    const days = behindBy / 86_400_000;
+    const how = days >= 1 ? `${Math.round(days)} day(s)` : "less than a day";
+    console.error(`  packages/${pkg}/dist is ${how} behind packages/${pkg}/src`);
+  }
+  console.error("\nRebuild the package, then run this again. Comparing a stale build reports"
+    + "\n\"unchanged\" for changes it cannot see.\n");
+  process.exit(1);
+}
+
 function publicNames() {
+  refuseStaleArtifacts();
   const reachable = new Set();
   for (const pkg of PACKAGES) {
     // A package that builds into `dist/` publishes a manifest there, and that one is the truth about
