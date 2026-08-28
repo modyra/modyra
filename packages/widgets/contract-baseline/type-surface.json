@@ -3653,6 +3653,10 @@
     "(1) strip: HTMLElement",
     "-> returns: number"
   ],
+  "chosenKeyOrder": [
+    "(0) state: { readonly counts: ReadonlyMap<string, number>; }",
+    "-> returns: readonly string[]"
+  ],
   "clearFileSelection": [
     "-> returns: MdyFileSelectionTransition<TFile>"
   ],
@@ -3880,6 +3884,12 @@
   "dynamicParts": [
     "(0) kind: MdyWidgetKind",
     "-> returns: readonly string[]"
+  ],
+  "elementByDataKey": [
+    "(0) root: ParentNode",
+    "(1) attribute: \"key\" | \"option-key\"",
+    "(2) key: string",
+    "-> returns: HTMLElement | null"
   ],
   "errorsVisible": [
     "(0) flags: { readonly disabled: boolean; readonly touched: boolean; /** * Whether the field holds a value nobody at this page typed — filled on arrival and not edited * since. * * The second half of the same principle the origins carry, and the half no origin can express: a * refusal about `150` in a field whose maximum is `50` is a rule, so its origin is `validation`, * and it is still about a value that is *already there*. `required` on an empty field is about * something not done yet; a bound broken by a value that arrived from a draft, a server or a * scripted write is about something the person can neither have caused nor understand unless it * is said. * * Optional: a caller that cannot tell says nothing, and gets the touched rule alone. */ readonly holdsUnedited?: boolean; }",

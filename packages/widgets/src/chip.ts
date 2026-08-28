@@ -461,6 +461,49 @@ export function hiddenChipCount(strip: HTMLElement): number {
  * Called after the measurement that may have changed the box, so the rule is: whatever the strip
  * ends up as wide as, the focused chip is inside it.
  */
+/**
+ * The chosen values as the strip lays them out: distinct, in the order the value has them.
+ *
+ * The order a strip draws is the order the value holds, not the order the options were declared in —
+ * a person who moves a chip has rearranged their own answer, and a strip reading the offer would
+ * put it back on the next paint. Repeats collapse to one chip carrying a count, so the sequence is
+ * of *distinct* keys.
+ *
+ * Derived here rather than in each renderer because the key is the contract's: it is what
+ * `keyFor` produced, which for an object value is a structural key and not `String(value)`. A
+ * renderer deriving its own has a second key function, and the two agree on strings and part ways
+ * on everything else — every object collapsing to one entry, so a strip of five chips reorders as
+ * if it held one.
+ */
+export function chosenKeyOrder(state: { readonly counts: ReadonlyMap<string, number> }): readonly string[] {
+  return [...state.counts.keys()];
+}
+
+/**
+ * The element carrying a key, found by comparing rather than by selecting.
+ *
+ * A key is derived from a value, and a value is whatever the document put in it. Inside an attribute
+ * selector it stops being data and becomes syntax: a quote closes the selector and the browser
+ * throws `SyntaxError`, which for a structural key — the shape an object value takes — is every
+ * time. The gesture does not misbehave, it raises, and it takes the surrounding handler with it.
+ *
+ * Escaping would work and is not what this does. `CSS.escape` is a browser global this package must
+ * not require — it computes in processes with no DOM — and a hand-rolled escape for attribute values
+ * is a second set of rules to keep correct. Comparing needs neither: the key is read back from the
+ * dataset as the string it was written as.
+ */
+export function elementByDataKey(
+  root: ParentNode,
+  attribute: "key" | "option-key",
+  key: string,
+): HTMLElement | null {
+  const dataProperty = attribute === "key" ? "key" : "optionKey";
+  for (const candidate of Array.from(root.querySelectorAll<HTMLElement>(`[data-${attribute}]`))) {
+    if (candidate.dataset[dataProperty] === key) return candidate;
+  }
+  return null;
+}
+
 export function keepFocusedChipInView(strip: HTMLElement): void {
   const focused = strip.ownerDocument.activeElement;
   if (!(focused instanceof HTMLElement) || !strip.contains(focused)) return;

@@ -32,6 +32,7 @@ import {
   stateClass,
   scrollChipStripByWheel,
   chipTooltipOffset,
+  chosenKeyOrder,
   hiddenChipCount,
   keepFocusedChipInView,
   wayBackActionName,
@@ -723,8 +724,7 @@ export function renderMultiselectField(
 
   /** The chips in the order the value has them, which is the order the strip draws. */
   function stripOrder(): readonly string[] {
-    return [...new Set(controller.state().selectedValues.map((value) =>
-      keyFor({ value } as MdySelectOption<unknown>)))];
+    return chosenKeyOrder(controller.state());
   }
 
   /**

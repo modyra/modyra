@@ -1,6 +1,6 @@
 import {
   partSelector,
-  beginChipReorder, wayBackActionName, matchesKeyGesture, MDY_WIDGET_KEYBOARD, chipTooltipOffset, hiddenChipCount, keepFocusedChipInView, chipFocusAfterRemoval, scrollChipStripByWheel, isTypeaheadCharacter, chipMovedAnnouncement, stateClass, keyBindingFor, multiselectAnnouncement, optionsWithUnrecognizedValues, overlayControlledId, projectOverlayOpenerA11y } from "@modyra/widgets";
+  beginChipReorder, chosenKeyOrder, elementByDataKey, wayBackActionName, matchesKeyGesture, MDY_WIDGET_KEYBOARD, chipTooltipOffset, hiddenChipCount, keepFocusedChipInView, chipFocusAfterRemoval, scrollChipStripByWheel, isTypeaheadCharacter, chipMovedAnnouncement, stateClass, keyBindingFor, multiselectAnnouncement, optionsWithUnrecognizedValues, overlayControlledId, projectOverlayOpenerA11y } from "@modyra/widgets";
 import { MdyPartDirective } from "../../control/mdy-part.directive";
 import { NgTemplateOutlet } from "@angular/common";
 import {
@@ -726,6 +726,17 @@ export class MdyMultiselectComponent<TValue = string>
   });
 
   /**
+   * The chip keys in strip order — the contract's answer, not a second reading of the tally.
+   *
+   * `chosen` above carries labels and counts for painting; this is the sequence a move, a drag and a
+   * removal index into. Both are the same order, and taking it from the controller is what keeps
+   * them one order rather than two that happen to agree.
+   */
+  protected readonly chipOrder = computed(
+    () => chosenKeyOrder(this.controller()?.state() ?? { counts: new Map<string, number>() }),
+  );
+
+  /**
    * Rearranging what was chosen, from the chip a person is looking at.
    *
    * The keys are the contract's, and so is the direction: the strip runs in the writing direction,
@@ -758,7 +769,7 @@ export class MdyMultiselectComponent<TValue = string>
     // The chip's keys are the chip's. Left to bubble, the control's own handler answers the same
     // keys a second time and its answer lands on top of this one.
     event.stopPropagation();
-    const order = this.chosen().map((c) => c.key);
+    const order = this.chipOrder();
 
     if (binding.intent === "move") {
       event.preventDefault();
@@ -838,11 +849,11 @@ export class MdyMultiselectComponent<TValue = string>
   protected startChipDrag(event: PointerEvent, optionKey: string): void {
     if (!this.reorderable()) return;
     const chip = event.currentTarget as HTMLElement;
-    const order = (): readonly string[] => this.chosen().map((c) => c.key);
+    const order = (): readonly string[] => this.chipOrder();
     beginChipReorder(event, chip, {
       draggingClass: stateClass(MDY_CHIP_CLASSES.block, "dragging"),
       midpoints: () => order().map((each) => {
-        const box = this.hostRef.nativeElement.querySelector(`[data-key="${each}"]`)?.getBoundingClientRect();
+        const box = elementByDataKey(this.hostRef.nativeElement, "key", each)?.getBoundingClientRect();
         return box ? box.left + box.width / 2 : 0;
       }),
       from: () => order().indexOf(optionKey),
@@ -905,7 +916,10 @@ export class MdyMultiselectComponent<TValue = string>
     const key = this.activeOverlayKey();
     if (!key) return;
     afterNextRender(
-      () => (this.hostRef.nativeElement.querySelector(`[data-option-key="${key}"] button, [data-option-key="${key}"]`) as HTMLElement | null)?.focus(),
+      () => {
+        const chip = elementByDataKey(this.hostRef.nativeElement, "option-key", key);
+        (chip?.querySelector<HTMLElement>("button") ?? chip)?.focus();
+      },
       { injector: this.injector },
     );
   }
@@ -934,7 +948,7 @@ export class MdyMultiselectComponent<TValue = string>
    * hold and drag has no way to reorder otherwise, and Alt plus the arrows does not discharge it.
    */
   protected moveByPointer(optionKey: string, by: -1 | 1): void {
-    const order = this.chosen().map((c) => c.key);
+    const order = this.chipOrder();
     const to = Math.max(0, Math.min(order.length - 1, order.indexOf(optionKey) + by));
     this.saySoon = chipMovedAnnouncement(
       this.i18n.selectionMoved,
@@ -955,7 +969,7 @@ export class MdyMultiselectComponent<TValue = string>
    */
   protected readonly activeChipKey = signal<string | null>(null);
   protected readonly activeChip = computed(() => {
-    const order = this.chosen().map((c) => c.key);
+    const order = this.chipOrder();
     const held = this.activeChipKey();
     return held !== null && order.includes(held) ? held : order[0] ?? null;
   });
@@ -964,7 +978,7 @@ export class MdyMultiselectComponent<TValue = string>
     if (key === undefined) return;
     this.activeChipKey.set(key);
     afterNextRender(
-      () => (this.hostRef.nativeElement.querySelector(`[data-key="${key}"]`) as HTMLElement | null)?.focus(),
+      () => elementByDataKey(this.hostRef.nativeElement, "key", key)?.focus(),
       { injector: this.injector },
     );
   }
@@ -976,13 +990,13 @@ export class MdyMultiselectComponent<TValue = string>
    * one exists, and the document at the end of the strip.
    */
   protected removeChip(optionKey: string, value: TValue, direction: "forward" | "backward" = "forward"): void {
-    const next = chipFocusAfterRemoval(this.chosen().map((c) => c.key), optionKey, direction);
+    const next = chipFocusAfterRemoval(this.chipOrder(), optionKey, direction);
     this.onToggle(value);
     afterNextRender(() => {
       const host = this.hostRef.nativeElement;
       const landing = next === null
         ? host.querySelector(TRIGGER)
-        : host.querySelector(`[data-key="${next}"] .${MDY_CHIP_CLASSES.remove}`);
+        : elementByDataKey(host, "key", next)?.querySelector(`.${MDY_CHIP_CLASSES.remove}`) ?? null;
       ((landing ?? host.querySelector(TRIGGER)) as HTMLElement | null)?.focus();
     }, { injector: this.injector });
   }
@@ -1059,7 +1073,7 @@ export class MdyMultiselectComponent<TValue = string>
   }
 
   protected readonly announcementText = computed(() => {
-    const now = this.chosen().map((c) => c.key);
+    const now = this.chipOrder();
     if (this.saidLast === null) { this.saidLast = now; return ""; }
     // Reads only. A computed that writes a signal is NG0600 — the pass throws, the binding keeps
     // what it had, and the live region freezes on the sentence before the one that mattered.

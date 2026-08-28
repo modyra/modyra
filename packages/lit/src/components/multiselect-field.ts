@@ -13,6 +13,8 @@ import {
   stateClass,
   scrollChipStripByWheel,
   chipTooltipOffset,
+  chosenKeyOrder,
+  elementByDataKey,
   hiddenChipCount,
   keepFocusedChipInView,
   wayBackActionName,
@@ -64,14 +66,14 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
    * moves a pixel. `pointercancel` puts it back untouched — the browser taking the gesture is not a
    * decision the person made.
    */
-  private startChipDrag(event: PointerEvent, handle: MdyFieldHandle<readonly unknown[]>, optionKey: string): void {
+  private startChipDrag(event: PointerEvent, optionKey: string): void {
     if (!this.reorderable) return;
     const chip = event.currentTarget as HTMLElement;
-    const order = (): readonly string[] => [...new Set(this.held(handle).map((v) => String(v)))];
+    const order = (): readonly string[] => chosenKeyOrder(this.fieldController?.state() ?? { counts: new Map() });
     beginChipReorder(event, chip, {
       draggingClass: stateClass(MDY_CHIP_CLASSES.block, "dragging"),
       midpoints: () => order().map((each) => {
-        const box = this.querySelector(`[data-key="${each}"]`)?.getBoundingClientRect();
+        const box = elementByDataKey(this, "key", each)?.getBoundingClientRect();
         return box ? box.left + box.width / 2 : 0;
       }),
       from: () => order().indexOf(optionKey),
@@ -89,8 +91,8 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
    * WCAG 2.5.7 asks for a single-pointer path independently of the keyboard's: somebody who cannot
    * hold and drag has no way to reorder otherwise, and `Alt`+arrows does not discharge it.
    */
-  private moveByPointer(handle: MdyFieldHandle<readonly unknown[]>, optionKey: string, by: -1 | 1): void {
-    const order = [...new Set(this.held(handle).map((v) => String(v)))];
+  private moveByPointer(optionKey: string, by: -1 | 1): void {
+    const order = chosenKeyOrder(this.fieldController?.state() ?? { counts: new Map() });
     const to = Math.max(0, Math.min(order.length - 1, order.indexOf(optionKey) + by));
     this._saySoon = chipMovedAnnouncement(this.messages.selectionMoved, this.labelFor(optionKey), to + 1, order.length);
     this.fieldController?.dispatch({ type: "move-selected", optionKey, to });
@@ -182,24 +184,25 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
     return Array.isArray(value) ? value : [value];
   }
 
-  private selectedSet(handle: MdyFieldHandle<readonly unknown[]>): Set<string> {
-    return new Set(this.held(handle).map((v) => String(v)));
-  }
-
-  private counts(handle: MdyFieldHandle<readonly unknown[]>): Map<string, number> {
-    const map = new Map<string, number>();
-    for (const v of this.held(handle)) {
-      const key = String(v);
-      map.set(key, (map.get(key) ?? 0) + 1);
-    }
-    return map;
+  /**
+   * What is chosen and how much of it — read from the controller rather than recounted here.
+   *
+   * Counting again means keying again, and a key the contract did not produce agrees with it on
+   * strings and parts ways on objects: every one collapses to a single entry, so a strip of five
+   * chips behaves as if it held one.
+   */
+  private chosen(): { readonly keys: ReadonlySet<string>; readonly counts: ReadonlyMap<string, number> } {
+    const state = this.fieldController?.state();
+    return { keys: state?.selectedKeys ?? new Set(), counts: state?.counts ?? new Map() };
   }
 
   protected override isSelected(
-    handle: MdyFieldHandle<readonly unknown[]>,
+    // The base declares the handle; the answer comes from the controller bound to it, so this one
+    // is the signature's and not the body's.
+    _handle: MdyFieldHandle<readonly unknown[]>,
     value: unknown,
   ): boolean {
-    return this.selectedSet(handle).has(defaultOptionKey(value));
+    return this.chosen().keys.has(defaultOptionKey(value));
   }
 
   /**
@@ -301,7 +304,7 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
     value: unknown,
     direction: "forward" | "backward" = "forward",
   ): void {
-    const order = [...new Set(this.held(handle).map((v) => String(v)))];
+    const order = chosenKeyOrder(this.fieldController?.state() ?? { counts: new Map() });
     const next = chipFocusAfterRemoval(order, defaultOptionKey(value), direction);
     // The stop moves with the focus, or the next Tab returns to a chip that is no longer there.
     if (next !== null) this._activeChip = next;
@@ -315,7 +318,7 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
       // element and the keyboard standing on another.
       const landing = next === null
         ? this.querySelector<HTMLElement>(`.${this.partClass("trigger")}`)
-        : this.querySelector<HTMLElement>(`[data-key="${next}"]`);
+        : elementByDataKey(this, "key", next);
       (landing ?? this.querySelector<HTMLElement>(`.${this.partClass("trigger")}`))?.focus();
     });
   }
@@ -474,7 +477,8 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
     const key = this.fieldController?.state().activeKey;
     if (!key) return;
     void this.updateComplete.then(() => {
-      this.querySelector<HTMLElement>(`[data-option-key="${key}"] button, [data-option-key="${key}"]`)?.focus();
+      const chip = elementByDataKey(this, "option-key", key);
+      (chip?.querySelector<HTMLElement>("button") ?? chip)?.focus();
     });
   }
 
@@ -778,7 +782,7 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
     // keys a second time and its answer lands on top of this one.
     event.stopPropagation();
     // The order the value has, not the order the options are in.
-    const order = [...new Set(this.held(handle).map((v) => String(v)))];
+    const order = chosenKeyOrder(this.fieldController?.state() ?? { counts: new Map() });
 
     if (binding.intent === "move") {
       event.preventDefault();
@@ -850,8 +854,8 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
    * A roving index: one stop for the whole strip. One stop per chip made the cost of tabbing past
    * the field grow with what it holds — twelve chosen values were twenty-six presses.
    */
-  private activeChip(handle: MdyFieldHandle<readonly unknown[]>): string | null {
-    const order = [...new Set(this.held(handle).map((v) => String(v)))];
+  private activeChip(): string | null {
+    const order = chosenKeyOrder(this.fieldController?.state() ?? { counts: new Map() });
     if (this._activeChip !== null && order.includes(this._activeChip)) return this._activeChip;
     return order[0] ?? null;
   }
@@ -861,7 +865,7 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
     this._activeChip = key;
     this.requestUpdate();
     void this.updateComplete.then(() => {
-      this.querySelector<HTMLElement>(`[data-key="${key}"]`)?.focus();
+      elementByDataKey(this, "key", key)?.focus();
     });
   }
 
@@ -967,7 +971,7 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
     }
     return [...tally.values()].map(({ value, label, count }, index) => html`<span
       class=${multiselectChipClasses({ mode: this.mode, role: "value", selected: true }).join(" ")}
-      tabindex=${this.activeChip(handle) === defaultOptionKey(value) ? "0" : "-1"}
+      tabindex=${this.activeChip() === defaultOptionKey(value) ? "0" : "-1"}
       role=${this.partRole("chip")}
       @focus=${(e: FocusEvent) => {
         this._activeChip = defaultOptionKey(value);
@@ -979,7 +983,7 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
       @pointerleave=${() => this.hideChipName()}
       @blur=${() => this.hideChipName()}
       aria-describedby=${this._namedChip === defaultOptionKey(value) ? `${this.fieldId}__chiptip` : nothing}
-      @pointerdown=${(e: PointerEvent) => this.startChipDrag(e, handle, defaultOptionKey(value))}
+      @pointerdown=${(e: PointerEvent) => this.startChipDrag(e, defaultOptionKey(value))}
       @keydown=${(e: KeyboardEvent) => this.onChipKeydown(e, handle, defaultOptionKey(value))}
       aria-label=${count > 1 ? `${label}, ${count}` : label}
       title=${label}
@@ -992,7 +996,7 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
             class=${MDY_CHIP_CLASSES.move}
             tabindex="-1"
             aria-label=${chipActionName(this.messages.chipMoveEarlierLabel, label)}
-            @click=${(e: Event) => { e.stopPropagation(); this.moveByPointer(handle, defaultOptionKey(value), -1); }}
+            @click=${(e: Event) => { e.stopPropagation(); this.moveByPointer(defaultOptionKey(value), -1); }}
           ></button>`
         : nothing}
       ${this.mode === "multi"
@@ -1021,7 +1025,7 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
             class=${MDY_CHIP_CLASSES.move}
             tabindex="-1"
             aria-label=${chipActionName(this.messages.chipMoveLaterLabel, label)}
-            @click=${(e: Event) => { e.stopPropagation(); this.moveByPointer(handle, defaultOptionKey(value), 1); }}
+            @click=${(e: Event) => { e.stopPropagation(); this.moveByPointer(defaultOptionKey(value), 1); }}
           ></button>`
         : nothing}
       <button
@@ -1095,7 +1099,7 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
     option: MdySelectOption<unknown>,
   ): unknown {
     if (this.mode === "multi") {
-      const count = this.counts(handle).get(defaultOptionKey(option.value)) ?? 0;
+      const count = this.chosen().counts.get(defaultOptionKey(option.value)) ?? 0;
       return html`<div ${mdyPart(this.optionPart(option))}>
         <button
           type="button"

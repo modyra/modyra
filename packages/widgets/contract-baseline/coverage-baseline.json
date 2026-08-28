@@ -1,8 +1,8 @@
 {
   "note": "Public names not yet asserted or not yet shown. The list may only get shorter.",
   "score": {
-    "published": 887,
-    "asserted": 571,
+    "published": 889,
+    "asserted": 573,
     "shown": 98
   },
   "uncovered": [
@@ -3265,6 +3265,12 @@
       "reason": "published and never shown"
     },
     {
+      "name": "chosenKeyOrder",
+      "asserted": true,
+      "shown": false,
+      "reason": "published and never shown"
+    },
+    {
       "name": "clearFileSelection",
       "asserted": true,
       "shown": false,
@@ -3524,6 +3530,12 @@
     },
     {
       "name": "eachOneOf",
+      "asserted": true,
+      "shown": false,
+      "reason": "published and never shown"
+    },
+    {
+      "name": "elementByDataKey",
       "asserted": true,
       "shown": false,
       "reason": "published and never shown"
