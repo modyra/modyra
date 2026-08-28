@@ -2,23 +2,24 @@
  * Every optional part says when it is there.
  *
  * `optional` said a renderer *may* leave a part out and stopped. So three renderers each decided when
- * to build it, and conformance had nothing to ask — you cannot check a rule nobody wrote. 193 nodes
- * were optional and not one carried a condition.
+ * to build it, and conformance had nothing to ask — you cannot check a rule nobody wrote. All 195
+ * optional nodes were silent; all 195 now answer.
  *
- * The baseline below may only ever shrink, which is the shape this repository uses for a gap it is
- * closing in batches. A *wrong* condition is worse than a missing one: it tells a renderer to build
- * something at a moment when it is not wanted, and nothing notices until it is on the page. So a name
- * is declared only when the contract itself justifies it, and the rest stay listed here.
+ * This was a baseline that could only shrink while the gap was being closed in batches, which is the
+ * right shape for a gap and the wrong one for a closed gap: a list of exceptions leaves somewhere to
+ * put the next one. It is a floor now.
+ *
+ * A *wrong* condition is worse than a missing one — it tells a renderer to build something at a
+ * moment when it is not wanted, and nothing notices until it is on the page — so every condition
+ * here was read out of the renderer that draws the part and then confirmed against a rendered page,
+ * never reasoned to. Twice the obvious reading was contradicted by the page.
  */
 import assert from "node:assert/strict";
-import { readFileSync, writeFileSync } from "node:fs";
 import { test } from "node:test";
 import {
   MDY_FORM_SHELL_STRUCTURE, MDY_PART_PRESENCES, MDY_WIDGET_CONTRACTS, MDY_WIDGET_KINDS,
 } from "../dist/index.js";
 import { MDY_FIELD_SHELL_STRUCTURE } from "../dist/vocabulary.js";
-
-const BASELINE = new URL("../contract-baseline/parts-without-a-when.json", import.meta.url);
 
 /**
  * The vocabulary a condition may be drawn from, read rather than restated.
@@ -28,6 +29,7 @@ const BASELINE = new URL("../contract-baseline/parts-without-a-when.json", impor
  */
 const CONDITIONS = new Set(MDY_PART_PRESENCES);
 
+/** Every optional node in the contract, from each kind and from the two shells. */
 function everyOptionalNode() {
   const found = [];
   const take = (structure, owner) => {
@@ -41,48 +43,18 @@ function everyOptionalNode() {
   return found;
 }
 
-const silent = [...new Set(everyOptionalNode().filter((n) => n.presentWhen === undefined)
-  .map((n) => n.part))].sort();
-
-/**
- * What each remaining part is actually present under, in the words of the renderer that draws it.
- *
- * Written down because the condition is known and the *word* for it is not: each of these holds
- * under a runtime fact of its own, and six words each used once is a list rather than a vocabulary.
- * Recorded here so whoever adds the word does not have to rediscover the rule first.
- */
-const WHAT_IT_IS_ACTUALLY_UNDER = {
-  chipTooltip: "the pointer is over a chip",
-  overflowCount: "more chips are chosen than the strip can show",
-  wayBackAction: "an undo is on offer, from a destructive action just taken",
-  rejected: "a file was refused",
-  loading: "the field says it is loading",
-  submitFalse: "unmeasured: absent in every state this suite reaches",
-  formErrors: "unmeasured: the form shell, which no per-kind fixture mounts",
-  formErrorItem: "unmeasured: the form shell, which no per-kind fixture mounts",
-};
-
-if (process.argv.includes("--write")) {
-  writeFileSync(BASELINE, `${JSON.stringify({
-    note: "Optional parts whose presence condition has not been decided. This list may only ever shrink.",
-    reason: "Each is present under a runtime fact of its own, named below. What is missing is a word "
-      + "for it in MDY_PART_PRESENCES, not knowledge of the rule.",
-    parts: silent,
-    under: Object.fromEntries(silent.map((part) => [part, WHAT_IT_IS_ACTUALLY_UNDER[part] ?? "unread"])),
-  }, null, 2)}\n`);
-  console.log(`Recorded ${silent.length} part(s) without a condition.`);
-}
-
-test("no optional part loses a condition it already had", () => {
-  const recorded = JSON.parse(readFileSync(BASELINE, "utf8")).parts;
-  const regressed = silent.filter((part) => !recorded.includes(part));
-  assert.deepEqual(regressed, [],
-    "an optional part stopped saying when it is there. The list may only shrink: a part whose "
-    + "condition is removed goes back to three renderers deciding it three ways");
-  const stale = recorded.filter((part) => !silent.includes(part));
-  assert.deepEqual(stale, [],
-    `${stale.length} part(s) now carry a condition and are still listed as silent — rerun with `
-    + "--write. A baseline longer than the truth hides the next regression inside its own slack");
+test("every optional part says when it is there", () => {
+  // Absolute, not a list that shrinks. It was a shrinking baseline while 81 of them were undecided,
+  // and a baseline is the right shape for a gap being closed in batches — but it is the wrong shape
+  // once the gap is closed, because it leaves a place to put the next one.
+  //
+  // `optional` on its own says a renderer *may* leave a part out and stops there, so each renderer
+  // decided when to build it and conformance had nothing to ask. A part added without a condition
+  // reopens that, one part at a time and silently.
+  const silentParts = everyOptionalNode().filter((node) => node.presentWhen === undefined);
+  assert.deepEqual(silentParts.map((node) => `${node.owner}.${node.part}`), [],
+    "an optional part does not say when it is on the page. Add it to MDY_PART_PRESENCE, or give "
+    + "MDY_PART_PRESENCES a word for the fact it is present under");
 });
 
 test("every condition that is declared is one the contract knows", () => {

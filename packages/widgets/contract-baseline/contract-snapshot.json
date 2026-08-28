@@ -1062,7 +1062,7 @@
           "element": "submission",
           "parent": "inputWrapper",
           "optional": true,
-          "presentWhen": null,
+          "presentWhen": "kindOffersIt",
           "repeated": false,
           "role": null,
           "classes": [],
@@ -1215,7 +1215,7 @@
           "element": "submission",
           "parent": "inputWrapper",
           "optional": true,
-          "presentWhen": null,
+          "presentWhen": "kindOffersIt",
           "repeated": false,
           "role": null,
           "classes": [],
@@ -1877,7 +1877,7 @@
           "element": "status",
           "parent": "inputWrapper",
           "optional": true,
-          "presentWhen": null,
+          "presentWhen": "workIsInFlight",
           "repeated": false,
           "role": null,
           "classes": [
@@ -2174,7 +2174,7 @@
           "element": "button",
           "parent": "box",
           "optional": true,
-          "presentWhen": null,
+          "presentWhen": "valuesOverflow",
           "repeated": false,
           "role": null,
           "classes": [
@@ -2186,7 +2186,7 @@
           "element": "button",
           "parent": "box",
           "optional": true,
-          "presentWhen": null,
+          "presentWhen": "undoIsOnOffer",
           "repeated": false,
           "role": null,
           "classes": [
@@ -2236,7 +2236,7 @@
           "element": "text",
           "parent": "box",
           "optional": true,
-          "presentWhen": null,
+          "presentWhen": "pointerIsOnAValue",
           "repeated": false,
           "role": "tooltip",
           "classes": [
@@ -2368,7 +2368,7 @@
           "element": "status",
           "parent": "inputWrapper",
           "optional": true,
-          "presentWhen": null,
+          "presentWhen": "workIsInFlight",
           "repeated": false,
           "role": null,
           "classes": [
@@ -3832,7 +3832,7 @@
           "element": "status",
           "parent": "content",
           "optional": true,
-          "presentWhen": null,
+          "presentWhen": "inputWasRefused",
           "repeated": false,
           "role": "status",
           "classes": [

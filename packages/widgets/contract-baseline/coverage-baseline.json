@@ -2,7 +2,7 @@
   "note": "Public names not yet asserted or not yet shown. The list may only get shorter.",
   "score": {
     "published": 876,
-    "asserted": 616,
+    "asserted": 617,
     "shown": 98
   },
   "uncovered": [
@@ -176,9 +176,9 @@
     },
     {
       "name": "MDY_PART_PRESENCE",
-      "asserted": false,
+      "asserted": true,
       "shown": false,
-      "reason": "published, neither asserted nor shown"
+      "reason": "published and never shown"
     },
     {
       "name": "MDY_PART_PRESENCES",

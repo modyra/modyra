@@ -73,6 +73,26 @@ export const MDY_PART_PRESENCES = Object.freeze([
   "kindOffersIt",
   /** The view this part belongs to is the one showing. */
   "viewIsActive",
+  /**
+   * More values are chosen than the control can show at once.
+   *
+   * Distinct from holding a value: the count that says "and four more" is meaningless while all of
+   * them fit, and it is not a property of how many there are but of how many are on screen.
+   */
+  "valuesOverflow",
+  /** A destructive action can still be taken back. */
+  "undoIsOnOffer",
+  /**
+   * Something offered to the field was rejected before it could become a value.
+   *
+   * Not an error about the value — there is no value. A file of the wrong type never entered, and
+   * saying so is a different message in a different place from a rule the value broke.
+   */
+  "inputWasRefused",
+  /** The pointer is resting on one of the chosen values. */
+  "pointerIsOnAValue",
+  /** The field is waiting on something and says so. */
+  "workIsInFlight",
 ] as const);
 
 /**
@@ -129,6 +149,20 @@ export const MDY_PART_PRESENCE: Readonly<Record<string, MdyPartPresence>> = Obje
   increment: "kindOffersIt",
   decrement: "kindOffersIt",
   fileList: "kindOffersIt",
+  // The hidden companion a native submit reads when the box is unticked. Carries no class of its
+  // own, which is why a sweep by class reports it absent: it is there, and it is there because this
+  // shape participates in native submission at all.
+  submitFalse: "kindOffersIt",
+  // The form's own refusals — a failed call, a service that is down — which name no field. A form
+  // can always be refused, so the container is part of the shape rather than of any state; only its
+  // contents follow the refusals.
+  formErrors: "kindOffersIt",
+  formErrorItem: "errorsAreVisible",
+  overflowCount: "valuesOverflow",
+  wayBackAction: "undoIsOnOffer",
+  rejected: "inputWasRefused",
+  chipTooltip: "pointerIsOnAValue",
+  loading: "workIsInFlight",
   // Reserved at rest under every field that can fail a constraint, and still reserved after a
   // correction: taking the space back when the message clears is the same jump as giving it, upward.
   errors: "fieldCanBeInvalid",
@@ -366,9 +400,11 @@ export const MDY_FORM_SHELL_CLASSES = Object.freeze({
  */
 export const MDY_FORM_SHELL_STRUCTURE: MdyWidgetStructure<MdyFormShellPart> = Object.freeze({
   kind: "form-shell",
-  nodes: Object.freeze<readonly MdyWidgetStructureNode<MdyFormShellPart>[]>([
-    Object.freeze({ part: "formErrors", element: "status", order: 0, optional: true }),
-    Object.freeze({ part: "formErrorItem", element: "text", parent: "formErrors", order: 0, optional: true, repeated: true }),
+  // Through the same table as every other anatomy: this shell is small enough to have been written
+  // out by hand twice over, which is exactly how two declarations of one rule start.
+  nodes: withPresence<MdyFormShellPart>([
+    { part: "formErrors", element: "status", order: 0, optional: true },
+    { part: "formErrorItem", element: "text", parent: "formErrors", order: 0, optional: true, repeated: true },
   ]),
 });
 

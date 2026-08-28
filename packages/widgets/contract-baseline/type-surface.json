@@ -2253,11 +2253,16 @@
     "\"errorsAreVisible\"",
     "\"fieldCanBeInvalid\"",
     "\"fieldIsRequired\"",
+    "\"inputWasRefused\"",
     "\"kindOffersIt\"",
     "\"overlayIsOpen\"",
+    "\"pointerIsOnAValue\"",
+    "\"undoIsOnOffer\"",
     "\"valueIsAbsent\"",
     "\"valueIsPresent\"",
-    "\"viewIsActive\""
+    "\"valuesOverflow\"",
+    "\"viewIsActive\"",
+    "\"workIsInFlight\""
   ],
   "MdyPartState": [
     "-> Partial"
