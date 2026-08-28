@@ -1,10 +1,10 @@
 {
   "note": "Browser specs that are red because the defect they describe is open. A red listed here does not fail a build; a red that is not listed is a regression. Rewrite with `npm run battle:browser:ci -- --accept`.",
   "order": "Repair in severity order, as the node tier does. A spec's severity is the worst of the claims its header names; `unknown` is a spec that names none, which is most of them.",
-  "recordedAt": "2026-08-28T21:00:52Z",
-  "openReds": 25,
+  "recordedAt": "2026-08-28T22:29:34Z",
+  "openReds": 27,
   "bySeverity": {
-    "S1": 16,
+    "S1": 18,
     "S2": 9
   },
   "knownRed": [
@@ -22,6 +22,8 @@
     "a-role-a-renderer-writes-and-nobody-declared.spec.ts › a role a renderer writes and nobody declared",
     "a-row-system-three-renderers-disagree-about.spec.ts › a kind is inside the row system in every renderer, or outside it in every renderer",
     "a-row-system-three-renderers-disagree-about.spec.ts › a kind is the same height in every renderer",
+    "a-value-only-a-mouse-can-produce.spec.ts › a keyboard alone puts a value in every kind that opens, lit",
+    "a-value-only-a-mouse-can-produce.spec.ts › a keyboard alone puts a value in every kind that opens, plain",
     "an-aria-promise-that-depends-on-the-adapter.spec.ts › an aria promise that depends on the adapter",
     "an-id-no-factory-can-write.spec.ts › an id no factory can write",
     "a-key-a-renderer-claims-and-nobody-declared.spec.ts › a key a renderer claims and nobody declared",
