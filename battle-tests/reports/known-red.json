@@ -4,11 +4,12 @@
   "recordedAt": "2026-08-25T20:50:14Z",
   "seed": "(none — the run drew a fresh seed, so this list is one walk of many)",
   "runs": "(default)",
-  "openReds": 1,
+  "openReds": 2,
   "bySeverity": {
-    "S2": 1
+    "S2": 2
   },
   "knownRed": [
+    "[S2][ADP-001] an index that knows every vocabulary",
     "[S2][UI-005] a token below the scale holds a step, not a number"
   ]
 }
