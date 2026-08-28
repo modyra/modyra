@@ -17,6 +17,13 @@
  * reports "nothing happened" for a field that holds a value. `valueOf` is what the form has, which is
  * what a submission would carry.
  *
+ * **A kind is driven until it stops answering, not once.** A range holds two dates and writes
+ * neither until both are chosen: one move and one commit leave it exactly as it was, so a run that
+ * pressed the act once reported a range as unfillable in two renderers and fillable in the third,
+ * where the loop happened to commit twice inside one open panel. The act is repeated while the panel
+ * stays open and the value keeps changing, which is what a person does and what makes the number of
+ * commits the kind's business rather than this file's.
+ *
  * **The control is the field left alone.** Every kind is also mounted and left untouched for as long
  * as the driven one is worked, and must still hold what it held: a value that arrives on its own
  * would make every change below attributable to nothing. What counts as empty is never spelled out
@@ -110,13 +117,18 @@ for (const host of HOSTS) {
         for (const move of moves) {
           await page.keyboard.press(press(opening));
           await page.waitForTimeout(200);
-          await page.keyboard.press(press(move));
-          await page.waitForTimeout(160);
-          for (const commit of commits) {
-            await page.keyboard.press(press(commit));
-            await page.waitForTimeout(180);
+          // Up to four times: a value made of parts is written when the last of them is chosen, and
+          // stopping at one asks a range for half of itself.
+          for (let attempt = 0; attempt < 4; attempt += 1) {
+            await page.keyboard.press(press(move));
+            await page.waitForTimeout(160);
+            for (const commit of commits) {
+              await page.keyboard.press(press(commit));
+              await page.waitForTimeout(180);
+            }
+            if (await held(driven) !== before) { landed = true; break; }
           }
-          if (await held(driven) !== before) { landed = true; break; }
+          if (landed) break;
           await page.keyboard.press("Escape");
           await page.waitForTimeout(120);
           await reach(driven, kind);
