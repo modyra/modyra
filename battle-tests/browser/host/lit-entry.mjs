@@ -126,16 +126,27 @@ window.battleLit = {
       const buildLayout = (nodes, into) => {
         for (const node of nodes ?? []) {
           if (typeof node === "string") { holderFor.set(node, into); continue; }
-          if (node === null || typeof node !== "object" || node.kind !== "section") continue;
+          if (node === null || typeof node !== "object" || !Array.isArray(node.children)) continue;
+          // **Every grouping node, not only the one this host was written for.** `columns` is a layout
+          // kind the contract dresses like any other, and a host that skips the kinds it does not
+          // recognise drops the fields inside them: a document mounts short, and a check reads the
+          // missing fields as the renderer's doing rather than the harness's.
+          //
           // The dressing is the contract's, not this host's. A group the harness styles by hand gets
           // the browser's own padding on a bare `fieldset` — twelve pixels and a border per level —
           // and a width check then reports a renderer for what the harness put there.
-          const group = document.createElement("fieldset");
+          //
+          // The label decides the element, not the kind's name: a `<legend>` is only a group's name
+          // inside a `<fieldset>`, and put in a `<div>` it is invalid and announces nothing. A
+          // grouping that names nothing is a `<div>`, because an unnamed `fieldset` announces a group
+          // a person is then given no way to identify.
+          const named = node.label !== undefined && node.label !== null;
+          const group = document.createElement(named ? "fieldset" : "div");
           const dressing = layoutNodeAttributes(node);
           group.className = dressing.className ?? MDY_LAYOUT_CLASSES.section;
           for (const [key, value] of Object.entries(dressing.dataset ?? {})) group.dataset[key] = value;
           for (const [key, value] of Object.entries(dressing.style ?? {})) group.style.setProperty(key, String(value));
-          if (node.label !== undefined && node.label !== null) {
+          if (named) {
             const name = document.createElement("legend");
             name.className = MDY_LAYOUT_CLASSES.sectionLabel;
             name.textContent = String(node.label);
