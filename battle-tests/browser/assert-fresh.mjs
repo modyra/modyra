@@ -62,7 +62,7 @@ function newestUnder(directory, extensions) {
 }
 
 const ROOT = fileURLToPath(new URL("../../", import.meta.url));
-const HOST = join(ROOT, "battle-tests/.tmp-browser");
+const HOST = process.env.MDY_HOST_OUT ?? join(ROOT, "battle-tests/.tmp-browser");
 
 /**
  * The packages whose source the hosts bundle, and the artefact each is bundled from.

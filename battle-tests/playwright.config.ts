@@ -10,6 +10,9 @@ import { defineConfig } from "@playwright/test";
  *
  * Build the host first: `node battle-tests/browser/build.mjs` (or `npm run battle:browser`).
  */
+/** Where the bundled host is served from. Overridden to serve a host built from a mutated copy. */
+const HOST_DIR = process.env.MDY_HOST_OUT ?? "battle-tests/.tmp-browser";
+
 export default defineConfig({
   testDir: "./browser",
   testMatch: "**/*.spec.ts",
@@ -46,7 +49,11 @@ export default defineConfig({
   },
   projects: [{ name: "plain-chromium", use: { browserName: "chromium" } }],
   webServer: {
-    command: "node battle-tests/browser/assert-fresh.mjs && node scripts/serve-static.mjs battle-tests/.tmp-browser 4399",
+    // The host directory is written into the command rather than left to the environment: the
+    // command is a shell line this config composes, and what the server process inherits is not
+    // this process's environment.
+    command: `MDY_HOST_OUT=${HOST_DIR} node battle-tests/browser/assert-fresh.mjs `
+      + `&& node scripts/serve-static.mjs ${HOST_DIR} 4399`,
     url: "http://127.0.0.1:4399/index.html",
     cwd: "..",
     // **Never reused, locally included.** The freshness guard runs as the first half of the command

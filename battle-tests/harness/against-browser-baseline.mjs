@@ -242,7 +242,11 @@ function assertPageIsCurrent() {
     process.exit(2);
   }
 
-  const host = join(BATTLE_ROOT, ".tmp-browser", "host.js");
+  // The host directory is overridable so a run can measure a page built from a copy of a package
+  // carrying a planted defect. Read here as well as in the guard: this comparison is the one that
+  // runs first, and pointed at the default it answers about a page this run did not build.
+  const hostDir = process.env.MDY_HOST_OUT ?? join(BATTLE_ROOT, ".tmp-browser");
+  const host = join(hostDir, "host.js");
   if (!existsSync(host)) {
     console.error(
       "browser baseline check: there is no host page to run against. Build it with " +

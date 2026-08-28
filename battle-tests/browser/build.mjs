@@ -13,7 +13,23 @@ import { build } from "esbuild";
 
 const BATTLE_ROOT = resolve(dirname(new URL(import.meta.url).pathname), "..");
 const REPO_ROOT = resolve(BATTLE_ROOT, "..");
-const OUT_DIR = join(BATTLE_ROOT, ".tmp-browser");
+// Where the host is written, and which package it is built from.
+//
+// Both are overridable so a host can be built from a copy of a package carrying a planted defect,
+// into a directory of its own. A mutated host written over the shared one would be picked up by any
+// run started beside it, and its greens would be about a bundle nobody in that run built.
+const OUT_DIR = process.env.MDY_HOST_OUT ?? join(BATTLE_ROOT, ".tmp-browser");
+/**
+ * `@modyra/<name>=<path to a copy of that package's build>`, applied to every bundle in this build.
+ *
+ * The value is the directory: a subpath import is remapped by appending to it, so an alias pointing
+ * at a file resolves `@modyra/core/datetime` inside `index.js` and the build stops.
+ */
+const [MUTANT_PKG, MUTANT_ENTRY] = (process.env.MDY_HOST_ALIAS ?? "=").split("=");
+const withMutant = (alias) => (MUTANT_ENTRY === "" ? alias : { ...alias, [MUTANT_PKG]: MUTANT_ENTRY });
+// A copy lives outside the workspace, so its own `@modyra/*` neighbours do not resolve from where it
+// sits. They are looked up in the root's links, which is where a consumer's would be found.
+const NODE_PATHS = MUTANT_ENTRY === "" ? undefined : [join(REPO_ROOT, "node_modules")];
 
 mkdirSync(OUT_DIR, { recursive: true });
 
@@ -63,7 +79,8 @@ await build({
   // `@modyra/plain` is a private workspace package with no root dependency, so it resolves from its
   // build output — the same alias the demos are built with. The host's source keeps the specifier a
   // consumer would write.
-  alias: { "@modyra/plain": join(REPO_ROOT, "packages", "plain", "dist", "index.js") },
+  nodePaths: NODE_PATHS,
+  alias: withMutant({ "@modyra/plain": join(REPO_ROOT, "packages", "plain", "dist", "index.js") }),
   logLevel: "warning",
 });
 
@@ -76,7 +93,9 @@ await build({
   format: "esm",
   target: "es2022",
   // `@modyra/lit` is a root dependency, so its published subpaths resolve as a consumer's would —
-  // no alias, which is what keeps this a consumer build.
+  // nothing is aliased here, which is what keeps this a consumer build.
+  nodePaths: NODE_PATHS,
+  alias: withMutant({}),
   logLevel: "warning",
 });
 
@@ -93,10 +112,11 @@ await build({
   bundle: true,
   format: "esm",
   target: "es2022",
-  alias: {
+  nodePaths: NODE_PATHS,
+  alias: withMutant({
     "@modyra/angular/ui": join(REPO_ROOT, "packages", "angular", "dist", "fesm2022", "modyra-angular-ui.mjs"),
     "@modyra/angular": join(REPO_ROOT, "packages", "angular", "dist", "fesm2022", "modyra-angular.mjs"),
-  },
+  }),
   logLevel: "warning",
 });
 
