@@ -46,7 +46,6 @@ test("a file field with a file chosen conforms, and renders the item", async () 
       // The popup-less kinds still declare a placeholder, which a filled field hides.
       absentParts: ["placeholder"],
       strictClasses: true,
-      adapterPrefix: "mdy-plain-",
     }),
     [],
   );
@@ -76,7 +75,6 @@ test("a text field with a prefix and a suffix conforms, and renders both", async
     inspectWidgetDom(root, "text", {
       parts: partsOf(root, "text"),
       strictClasses: true,
-      adapterPrefix: "mdy-plain-",
     }),
     [],
   );
@@ -146,7 +144,6 @@ test("a counter-mode multiselect renders its steppers and count, and conforms", 
     // two modes agree on — and they no longer agree about what a chip announces as.
     variant: "multi",
     strictClasses: true,
-    adapterPrefix: "mdy-plain-",
   });
   assert.deepEqual(issues, []);
 });

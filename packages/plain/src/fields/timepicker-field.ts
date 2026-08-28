@@ -200,7 +200,7 @@ export function renderTimepickerField(
   dialogContainer.append(content, actions);
   dialog.appendChild(dialogContainer);
 
-  const wrapper = el("div", "mdy-timepicker mdy-plain-timepicker");
+  const wrapper = el("div", "mdy-timepicker");
   wrapper.append(control, toggle, dialog);
   insertControl(shell, wrapper);
   container.appendChild(shell.root);

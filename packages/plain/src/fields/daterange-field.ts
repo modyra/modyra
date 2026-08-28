@@ -72,7 +72,7 @@ export function renderDaterangeField(
   );
 
   const shell = buildFieldShell(f.label, "daterange", {}, f.ariaLabel, f.name, f.supportingText);
-  const wrapper = el("div", "mdy-datepicker mdy-plain-daterange");
+  const wrapper = el("div", "mdy-datepicker");
   const startInput = el("input", definition.parts.startControl.classes.join(" ")) as HTMLInputElement;
   startInput.type = "text";
   startInput.autocomplete = "off";

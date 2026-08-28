@@ -55,7 +55,7 @@ export function renderColorsField(
   // The themes lay this control out from the outside in — `.mdy-colors` *contains* the input
   // wrapper (`.mdy-colors .mdy-input-wrapper` is a flex row with no padding), which is how the
   // contract nests it that way too. Building it the other way round collapses the row to nothing.
-  const wrapper = el("div", "mdy-colors mdy-plain-colors") as HTMLDivElement;
+  const wrapper = el("div", "mdy-colors") as HTMLDivElement;
   shell.root.insertBefore(wrapper, shell.wrapper);
   wrapper.append(shell.wrapper);
 

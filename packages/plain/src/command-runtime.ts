@@ -19,14 +19,23 @@ import {
   type MdyWidgetCommandHandlers,
 } from "@modyra/widgets";
 
+/**
+ * The live region everything spoken by this renderer passes through.
+ *
+ * One per renderer, and each renderer spells its own — which is a decision the contract should be
+ * making rather than three adapters agreeing by coincidence. Held here so the two places that need
+ * it cannot spell it apart.
+ */
+const ANNOUNCER_ID = "mdy-plain-announcer";
+
 const runtime = createCommandRuntime({
-  announcerId: "mdy-plain-announcer",
+  announcerId: ANNOUNCER_ID,
   defer: (run) => queueMicrotask(run),
 });
 
 /** This renderer's live region, so anything that has to be said reaches the same place. */
 export function announcePlain(message: string): void {
-  createMdyAnnouncer("mdy-plain-announcer").announce(message);
+  createMdyAnnouncer(ANNOUNCER_ID).announce(message);
 }
 
 export function runCommands(

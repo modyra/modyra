@@ -30,7 +30,6 @@ test("every rendered field conforms to its widget DOM contract", () => {
       // The class vocabulary is contract data: a theme can only style what it can enumerate.
       strictClasses: true,
       // Classes this renderer namespaces as its own; the contract has no opinion on them.
-      adapterPrefix: "mdy-plain-",
     });
     // Exact match, both ways: a new violation fails, and so does a stale entry left behind by a
     // renderer batch that already fixed it.

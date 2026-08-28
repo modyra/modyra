@@ -192,7 +192,7 @@ test("datepicker: opening shows a 42-cell grid, clicking a day commits an ISO va
   const container = document.createElement("div");
   const { form, reactivity, dispose } = mountMdyForm(container, fields);
 
-  const wrapper = container.querySelector(".mdy-plain-datepicker");
+  const wrapper = container.querySelector(".mdy-renderer--datepicker:not(.mdy-renderer--daterange)");
   const trigger = wrapper.querySelector("button");
   trigger.dispatchEvent(new Event("click"));
   await reactivity.flush();
@@ -215,7 +215,7 @@ test("timepicker: setting hour/minute and confirming commits a formatted value",
   const container = document.createElement("div");
   const { form, dispose } = mountMdyForm(container, fields);
 
-  const wrapper = container.querySelector(".mdy-plain-timepicker");
+  const wrapper = container.querySelector(".mdy-renderer--timepicker");
   const [trigger, hourInput, minuteInput, , confirmButton] = [
     wrapper.querySelector("button"),
     ...wrapper.querySelectorAll('input[type="number"]'),
@@ -442,8 +442,7 @@ test("mount marks the host as a themed dynamic form and dispose restores it", ()
   document.body.append(host);
   const mounted = mountMdyForm(host, [{ name: "name", kind: "text", label: "Name" }], { submitLabel: null });
   assert.equal(host.classList.contains("mdy-dynamic-form"), true);
-  assert.equal(host.classList.contains("mdy-plain-form"), true);
-  mounted.dispose();
+    mounted.dispose();
   assert.equal(host.classList.contains("mdy-dynamic-form"), false);
   host.remove();
 });
@@ -530,7 +529,7 @@ test("daterange: the calendar picks a range and only a complete one commits", as
   document.body.append(host);
   const { form, reactivity, dispose } = mountMdyForm(host, [{ name: "stay", kind: "daterange", label: "Stay" }], { submitLabel: null });
 
-  const wrapper = host.querySelector(".mdy-plain-daterange");
+  const wrapper = host.querySelector(".mdy-renderer--daterange");
   wrapper.querySelector(".mdy-datepicker__toggle").dispatchEvent(new Event("click"));
   await reactivity.flush();
 
@@ -759,8 +758,8 @@ test("a pointer outside an open overlay dismisses it, in every widget that owns 
   const openers = [
     // Resolved through aria-controls: several suites portal a select popup into this same body.
     [".mdy-select__trigger", () => document.getElementById(host.querySelector(".mdy-select__trigger").getAttribute("aria-controls")).closest(".mdy-select__dropdown")],
-    [".mdy-datepicker__toggle", () => host.querySelector(".mdy-plain-datepicker .mdy-datepicker__popup")],
-    [".mdy-plain-daterange .mdy-datepicker__toggle", () => host.querySelector(".mdy-plain-daterange .mdy-datepicker__popup")],
+    [".mdy-datepicker__toggle", () => host.querySelector(".mdy-renderer--datepicker:not(.mdy-renderer--daterange) .mdy-datepicker__popup")],
+    [".mdy-renderer--daterange .mdy-datepicker__toggle", () => host.querySelector(".mdy-renderer--daterange .mdy-datepicker__popup")],
     [".mdy-timepicker__toggle", () => host.querySelector(".mdy-timepicker__popup")],
     [".mdy-colors__toggle-area", () => host.querySelector(".mdy-colors__dropdown")],
     [".mdy-multiselect__trigger", () => document.getElementById(host.querySelector(".mdy-multiselect__trigger").getAttribute("aria-controls"))],

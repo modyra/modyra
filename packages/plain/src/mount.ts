@@ -148,7 +148,7 @@ export function mountMdyForm(
 
 
   container.replaceChildren();
-  container.classList.add("mdy-dynamic-form", "mdy-plain-form");
+  container.classList.add("mdy-dynamic-form");
 
   // The form's own refusals, first, before the fields — a summary a person has to scroll past their
   // whole form to find is one they do not read. A `status` rather than a field's error list: it
@@ -376,7 +376,7 @@ export function mountMdyForm(
     submitButton?.remove();
     form.deactivate();
     container.replaceChildren();
-    container.classList.remove("mdy-dynamic-form", "mdy-plain-form");
+    container.classList.remove("mdy-dynamic-form");
   }
 
   return { form, reactivity, dispose };

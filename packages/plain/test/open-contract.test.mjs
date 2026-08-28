@@ -77,7 +77,6 @@ test("every overlay kind conforms while it is open", async () => {
         parts,
         absentParts: ABSENT_WHILE_OPEN[field.kind] ?? [],
         strictClasses: true,
-        adapterPrefix: "mdy-plain-",
         // The overlay is showing, so the parts that only exist inside it are required of this run.
         open: true,
       });

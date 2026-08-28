@@ -487,41 +487,6 @@
     ],
     "themes": []
   },
-  "mdy-plain-colors": {
-    "kind": "unstyled",
-    "adapters": [
-      "plain"
-    ],
-    "themes": []
-  },
-  "mdy-plain-datepicker": {
-    "kind": "unstyled",
-    "adapters": [
-      "plain"
-    ],
-    "themes": []
-  },
-  "mdy-plain-daterange": {
-    "kind": "unstyled",
-    "adapters": [
-      "plain"
-    ],
-    "themes": []
-  },
-  "mdy-plain-form": {
-    "kind": "unstyled",
-    "adapters": [
-      "plain"
-    ],
-    "themes": []
-  },
-  "mdy-plain-timepicker": {
-    "kind": "unstyled",
-    "adapters": [
-      "plain"
-    ],
-    "themes": []
-  },
   "mdy-segmented__button--first": {
     "kind": "unstyled",
     "adapters": [

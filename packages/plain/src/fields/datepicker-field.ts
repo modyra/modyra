@@ -107,7 +107,7 @@ export function renderDatepickerField(
   calendar.append(header, grid, monthPicker, yearPicker);
   popup.append(calendar);
 
-  const wrapper = el("div", "mdy-datepicker mdy-plain-datepicker");
+  const wrapper = el("div", "mdy-datepicker");
   wrapper.append(control, toggle, popup);
   insertControl(shell, wrapper);
   container.appendChild(shell.root);
