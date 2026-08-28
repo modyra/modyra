@@ -68,6 +68,7 @@ for (const host of HOSTS) {
 
     const closed: string[] = [];
     const unopened: string[] = [];
+    const survivedAnOutsidePress: string[] = [];
 
     for (const kind of KINDS) {
       const id = `pop-${kind}`;
@@ -125,18 +126,29 @@ for (const host of HOSTS) {
       await page.waitForTimeout(250);
 
       if (await page.locator(`[data-form="${id}"] [aria-expanded="true"]`).count() === 0) closed.push(kind);
-    }
 
-    // The control that the first version lacked: a press *outside* has to dismiss. If it does not,
-    // every "still open" above is about a press nothing received rather than a rule that held.
-    const survivedAnOutsidePress: string[] = [];
-    for (const kind of KINDS) {
-      const id = `pop-${kind}`;
-      if (await page.locator(`[data-form="${id}"] [aria-expanded="true"]`).count() === 0) continue;
+      // **The control, and it runs here rather than after the sweep.** It used to press outside once
+      // per kind at the end, by which time every kind's popup was open at once: seven overlays on one
+      // page, and which of them receives a press in the corner depends on how they happen to be laid
+      // out. A stylesheet that made fields shorter changed that layout and this reported "the popup
+      // survived an outside press" about a press another overlay had taken — a page arrangement read
+      // as a dismissal rule. Dismissing each before opening the next removes the arrangement from the
+      // question, and the control asserts the same thing it always did.
+      // What is under the press is reported with the failure, because "an outside press did not
+      // dismiss" and "the press landed on something that ate it" are different findings and the
+      // message has to say which. A backdrop is the canonical outside press — a person clicking the
+      // dimmed area expects the panel to close — so landing on one is not an excuse.
+      const under = await page.evaluate(() => {
+        const at = document.elementFromPoint(2, 2);
+        return `${at?.tagName.toLowerCase()}.${String(at?.className).split(/\s+/)[0] || "(no class)"}`;
+      });
       await page.mouse.click(2, 2);
       await page.waitForTimeout(250);
-      if (await page.locator(`[data-form="${id}"] [aria-expanded="true"]`).count() > 0) survivedAnOutsidePress.push(kind);
+      if (await page.locator(`[data-form="${id}"] [aria-expanded="true"]`).count() > 0) {
+        survivedAnOutsidePress.push(`${kind} (the press landed on ${under})`);
+      }
     }
+
     expect(
       survivedAnOutsidePress,
       "a press in the corner of the page did not dismiss an open popup, so the presses in this spec "
