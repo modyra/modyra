@@ -1,16 +1,17 @@
 {
   "note": "Browser specs that are red because the defect they describe is open. A red listed here does not fail a build; a red that is not listed is a regression. Rewrite with `npm run battle:browser:ci -- --accept`.",
   "order": "Repair in severity order, as the node tier does. A spec's severity is the worst of the claims its header names; `unknown` is a spec that names none, which is most of them.",
-  "recordedAt": "2026-08-28T23:05:31Z",
-  "openReds": 25,
+  "recordedAt": "2026-08-28T23:39:29Z",
+  "openReds": 26,
   "bySeverity": {
-    "S1": 16,
+    "S1": 17,
     "S2": 9
   },
   "knownRed": [
     "a-capability-declared-and-demanded-by-nobody.spec.ts › an overlay dismisses the way its kind declares, angular",
     "a-capability-declared-and-demanded-by-nobody.spec.ts › an overlay dismisses the way its kind declares, lit",
     "a-capability-declared-and-demanded-by-nobody.spec.ts › an overlay dismisses the way its kind declares, plain",
+    "a-control-with-no-name-at-all.spec.ts › every control is announced as something, angular",
     "a-field-called-wrong-before-anyone-touched-it.spec.ts › a field nobody has touched is not announced as wrong, angular",
     "a-field-called-wrong-before-anyone-touched-it.spec.ts › a field nobody has touched is not announced as wrong, plain",
     "a-field-that-speaks-because-somebody-looked.spec.ts › a required field a person only read stays silent, angular",
