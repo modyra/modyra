@@ -1,6 +1,8 @@
 import {
   handleFormOf, MdyFieldHandle, type MdyFieldConstraints, type MdyValueKind } from "@modyra/core";
-import { MDY_ICONS, MDY_POPUP_OPENERS, idSafeKey, stateClass, type MdyStateName, adoptSilentWrites, applySubmissionNames, bindFormReset, groupSubmitName, submissionFor, syncSubmitValues, defaultOptionKey, messagesForLocale, widgetScopeOf, type MdyI18nMessages } from "@modyra/widgets";
+import { MDY_ICONS, MDY_POPUP_OPENERS, idSafeKey, stateClass, type MdyStateName, adoptSilentWrites, applySubmissionNames, bindFormReset, groupSubmitName, submissionFor, syncSubmitValues, defaultOptionKey, messagesForLocale, widgetScopeOf, type MdyI18nMessages,
+  shellStateClasses,
+} from "@modyra/widgets";
 import { html, LitElement, nothing, PropertyDeclarations } from "lit";
 import { unsafeSVG } from "lit/directives/unsafe-svg.js";
 import {
@@ -65,6 +67,17 @@ let nextId = 0;
  * Subclasses implement {@link renderControl} (the widget inside the
  * wrapper) and declare their `rendererClass` modifier.
  */
+/**
+ * The class names a state answer turned on.
+ *
+ * The shared answer names every class, on or off, because a renderer toggling them needs to know what
+ * to take away as much as what to add. A template that builds a `class` attribute from scratch has
+ * already taken everything away, so it wants only the half that is on.
+ */
+function onlyOn(named: Readonly<Record<string, boolean>>): readonly string[] {
+  return Object.entries(named).filter(([, isOn]) => isOn).map(([name]) => name);
+}
+
 export abstract class MdyFieldElement<T> extends LitElement {
   static properties: PropertyDeclarations = {
     field: { attribute: false },
@@ -668,7 +681,7 @@ export abstract class MdyFieldElement<T> extends LitElement {
     // the field's label — `aria-labelledby="<widget>__label"` — and a label with no id left every one
     // of those references pointing at nothing the moment a person opened the view that uses it.
     return html`<label
-      class="${SHELL.label} ${filled ? `${SHELL.label}--filled` : ""} ${hasError ? `${SHELL.label}--has-error` : ""}"
+      class="${[SHELL.label, ...onlyOn(shellStateClasses({ filled, error: hasError }).label)].join(" ")}"
       id=${labelId || `${this.fieldId}__label`}
       for=${labelId ? nothing : forId}
     >
@@ -848,7 +861,12 @@ export abstract class MdyFieldElement<T> extends LitElement {
    * toggle their own class.
    */
   protected syncStateClasses(handle: MdyFieldHandle<T>): void {
-    this.classList.toggle("mdy-renderer--touched", handle.touched());
+    // Which class a state carries is the contract's answer, and it names the ones that are *off* as
+    // well — so a state that goes away takes its class with it rather than leaving the element saying
+    // something that stopped being true.
+    for (const [className, isOn] of Object.entries(shellStateClasses({ touched: handle.touched() }).field)) {
+      this.classList.toggle(className, isOn);
+    }
     this.classList.toggle("mdy-floating-label", this.floatingLabel);
     this.classList.toggle("mdy-inline-errors", this.inlineErrors);
   }

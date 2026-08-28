@@ -4663,6 +4663,10 @@
     "(1) options?: { readonly delayMs?: number; readonly schedule?: (run: () => void, ms: number) => unknown; readonly cancel?: (handle: unknown) => void; }",
     "-> returns: { announce: (sentence: string) => void; stop: () => void; }"
   ],
+  "shellStateClasses": [
+    "(0) state: { readonly open?: boolean; readonly touched?: boolean; readonly disabled?: boolean; readonly readonly?: boolean; /** Failing: `--error` on the wrapper, `--has-error` on the label. One state, two names. */ readonly error?: boolean; readonly filled?: boolean; /** The label stands in for a name the document never wrote. */ readonly unwritten?: boolean; }",
+    "-> returns: { readonly field: Readonly<Record<string, boolean>>; readonly control: Readonly<Record<string, boolean>>; readonly label: Readonly<Record<string, boolean>>; }"
+  ],
   "shouldCloseMultiselectOverlay": [
     "(0) mode: MdyMultiselectMode",
     "(1) remainingResultCount: number",

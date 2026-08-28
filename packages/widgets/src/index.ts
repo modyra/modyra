@@ -18,6 +18,7 @@ export {
   MDY_FORM_SHELL_STRUCTURE,
   MDY_PART_PRESENCE,
   MDY_PART_PRESENCES,
+  shellStateClasses,
   MDY_WIDGET_CONTRACT_VERSION,
 } from "./structure.js";
 export type {

@@ -457,3 +457,44 @@ export function dynamicPartsOf(nodes: readonly MdyWidgetStructureNode[]): readon
   const inside = subtree(nodes, popups);
   return nodes.map((node) => node.part).filter((part) => inside.has(part));
 }
+
+/**
+ * Which shell classes a field's state puts on, derived from the table that declares them.
+ *
+ * `MDY_FIELD_STATE_CLASSES` has always said which base each shell part carries and which states it
+ * admits. What it never said is the answer — *given these flags, which classes are on* — so every
+ * renderer wrote that out, and wrote the class names as string literals beside lines that read the
+ * vocabulary properly. One of them spells the same state raw in one place and derives it in another.
+ *
+ * One state, two spellings, which is the part a renderer gets wrong: a failing field takes `--error`
+ * on its wrapper and `--has-error` on its label. Both were declared and nothing composed them.
+ *
+ * **Every class is named, on or off.** A list of only the ones that are on tells a renderer what to
+ * add and not what to take away, so a field that stops failing keeps the class that says it is —
+ * which is the shape of a control stuck looking wrong after it was corrected. Returned per part
+ * because they land on three elements, and a flat list makes the caller work out which is which.
+ */
+export function shellStateClasses(state: {
+  readonly open?: boolean;
+  readonly touched?: boolean;
+  readonly disabled?: boolean;
+  readonly readonly?: boolean;
+  /** Failing: `--error` on the wrapper, `--has-error` on the label. One state, two names. */
+  readonly error?: boolean;
+  readonly filled?: boolean;
+  /** The label stands in for a name the document never wrote. */
+  readonly unwritten?: boolean;
+}): {
+  readonly field: Readonly<Record<string, boolean>>;
+  readonly control: Readonly<Record<string, boolean>>;
+  readonly label: Readonly<Record<string, boolean>>;
+} {
+  const shell = MDY_FIELD_STATE_CLASSES;
+  const on = (base: string, pairs: readonly (readonly [string, boolean | undefined])[]) =>
+    Object.freeze(Object.fromEntries(pairs.map(([suffix, flag]) => [`${base}--${suffix}`, flag === true])));
+  return Object.freeze({
+    field: on(shell.field, [["open", state.open], ["touched", state.touched]]),
+    control: on(shell.control, [["disabled", state.disabled], ["error", state.error], ["readonly", state.readonly]]),
+    label: on(shell.label, [["filled", state.filled], ["has-error", state.error], ["unwritten", state.unwritten]]),
+  });
+}

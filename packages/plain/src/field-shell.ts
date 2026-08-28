@@ -6,7 +6,7 @@
  *
  * Renderers build the control themselves and insert it into the wrapper.
  */
-import { MDY_FIELD_SHELL_CLASSES, MDY_FIELD_STATE_CLASSES, MDY_WIDGET_CONTRACTS, fieldAccessibleName, type MdyWidgetKind } from "@modyra/widgets";
+import { MDY_FIELD_SHELL_CLASSES, MDY_WIDGET_CONTRACTS, fieldAccessibleName, type MdyWidgetKind, shellStateClasses } from "@modyra/widgets";
 import type { MdyFieldConstraints } from "@modyra/core";
 import { fieldCanBeInvalid } from "@modyra/widgets";
 import { el, setText } from "./dom.js";
@@ -146,20 +146,14 @@ export function buildFieldShell(
       // the box waits empty; **having something to say decides whether the box exists at all**, and
       // reading only the first hid a message the form was holding.
       errorList.hidden = !hasError && !fieldCanBeInvalid({ required, constraints, disabled });
-      root.classList.toggle("mdy-renderer--touched", Boolean(touched));
-      // The other state a renderer root carries, and the one nothing was applying. The contract
-      // lists `open` beside `touched` in `MDY_FIELD_STATE_CLASSES.fieldStates` and names the class
-      // it takes, so a theme can style a field while its popup is showing — and a field whose popup
-      // was open looked exactly like one whose popup was not.
-      root.classList.toggle(MDY_FIELD_STATE_CLASSES.rendererOpen, Boolean(open));
-      wrapper.classList.toggle("mdy-input-wrapper--disabled", Boolean(disabled));
-      // A different refusal from `disabled` and it has to look like one: the field is in play,
-      // focusable and submitted, and locked. Unpainted, a form held for review was indistinguishable
-      // from one waiting to be filled in.
-      wrapper.classList.toggle("mdy-input-wrapper--readonly", Boolean(readonly));
-      wrapper.classList.toggle("mdy-input-wrapper--error", Boolean(hasError));
-      label.classList.toggle("mdy-label--filled", Boolean(filled));
-      label.classList.toggle("mdy-label--has-error", Boolean(hasError));
+      // Which class a state puts on is the contract's answer, not this file's — including that a
+      // failing field is `--error` on its wrapper and `--has-error` on its label, two spellings a
+      // reader had to know were one state. `readonly` is a different refusal from `disabled` and has
+      // to look like one, or a form held for review reads as one waiting to be filled in.
+      const shell = shellStateClasses({ touched, open, disabled, readonly, error: hasError, filled });
+      for (const [element, wanted] of [[root, shell.field], [wrapper, shell.control], [label, shell.label]] as const) {
+        for (const [className, isOn] of Object.entries(wanted)) element.classList.toggle(className, isOn);
+      }
       // Present only where it applies. Hidden was not enough: the element was still in the label
       // for anything asking whether this field is marked — a test, a tool, a stylesheet — so an
       // optional field carried the marker of a required one and only `display: none` said otherwise.

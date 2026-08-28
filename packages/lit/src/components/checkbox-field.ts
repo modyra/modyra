@@ -1,6 +1,6 @@
 import { mdyPart } from "../mdy-part.js";
 import { html, nothing } from "lit";
-import { createBooleanFieldController, submitFalsePart, type MdyBooleanFieldController } from "@modyra/widgets";
+import { createBooleanFieldController, submitFalsePart, type MdyBooleanFieldController, MDY_FIELD_STATE_CLASSES, shellStateClasses } from "@modyra/widgets";
 import { MdyFieldElement } from "../base.js";
 
 // ─── Boolean ─────────────────────────────────────────────────────────────────
@@ -62,7 +62,7 @@ export class MdyCheckboxFieldElement extends MdyFieldElement<boolean> {
              rather than through the shared renderLabel, because the control sits inside it, and the classes
              have to come from the same vocabulary either way. -->
         <label
-          class="mdy-label ${this.showErrors(handle) ? "mdy-label--has-error" : ""}"
+          class="${[MDY_FIELD_STATE_CLASSES.label, ...Object.entries(shellStateClasses({ error: this.showErrors(handle) }).label).filter(([, on]) => on).map(([name]) => name)].join(" ")}"
           id="${this.fieldId}__label"
           for=${this.fieldId}
         >
