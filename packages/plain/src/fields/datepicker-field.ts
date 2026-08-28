@@ -266,7 +266,7 @@ export function renderDatepickerField(
     shell.syncState({
       open: state.open,
       touched: handle.touched(), disabled: handle.disabled(), readonly: handle.readonly(),
-      hasError: visibleErrorsOf(handle).length > 0, filled: Boolean(state.selectedDate), required: handle.required(),
+      hasError: visibleErrorsOf(handle).length > 0, filled: Boolean(state.selectedDate), required: handle.required(), constraints: handle.constraints?.() ?? null,
     });
 
     // The input mirrors the committed value, except while the person is typing — and except while it

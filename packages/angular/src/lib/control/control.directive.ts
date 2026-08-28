@@ -44,7 +44,7 @@ declare const ngDevMode: boolean | undefined;
 import { MdyPrefixDirective } from "./prefix.directive";
 import { MdySuffixDirective } from "./suffix.directive";
 import { MdySupportingTextDirective } from "./supporting-text.directive";
-import { MDY_FIELD_STATE_CLASSES, blocksValueChange, errorsVisible, fieldAccessibleName, holdsUneditedValue, keepKeyboardInPlay, reportIdCollision, shownErrors, showsAsInvalid, stateClass } from "@modyra/widgets";
+import { MDY_FIELD_STATE_CLASSES, blocksValueChange, errorsVisible, fieldAccessibleName, fieldCanBeInvalid, fieldDescribedBy, holdsUneditedValue, keepKeyboardInPlay, reportIdCollision, shownErrors, showsAsInvalid, stateClass } from "@modyra/widgets";
 import type { MdyValueKind } from "@modyra/core";
 
 /** Global counter for generating unique field IDs. */
@@ -539,6 +539,29 @@ export abstract class MdyBaseControl<TValue = unknown> implements OnInit {
    * list — `aria-describedby` above all — cannot disagree with whether it was rendered. An invalid
    * but untouched field is the common case: it has errors and shows none.
    */
+  /**
+   * Whether the error list is in the DOM, whether or not it holds a message.
+   *
+   * What the templates guard on. The container is reserved under any field that can fail a rule,
+   * because one that appears with the first message pushes down the field below it — the field
+   * somebody leaving is moving toward, at the moment they are already moving. It stays once a message
+   * clears: taking the space back is the same jump, upward.
+   *
+   * Distinct from {@link errorsRendered}, which stays "there is something to show". Supporting text
+   * is displayed when no errors are, and folding the two together would hide the help at rest under
+   * every field with a rule — an error must not take the place of the instruction that prevents it.
+   */
+  protected readonly errorsReserved: Signal<boolean> = computed(
+    () =>
+      !this.inlineErrors
+      && (this.errorsRendered()
+        || fieldCanBeInvalid({
+          required: this.isRequired(),
+          constraints: this.fieldState().constraints(),
+          disabled: this.isDisabled(),
+        })),
+  );
+
   protected readonly errorsRendered: Signal<boolean> = computed(
     () =>
       !this.inlineErrors &&
@@ -589,9 +612,9 @@ export abstract class MdyBaseControl<TValue = unknown> implements OnInit {
    */
   protected descriptionId(fieldId: string): string | null {
     // Rendered in the branch the error list does not occupy, so the two are never both present.
-    return !this.errorsRendered() && this.hasSupportingText()
-      ? defaultWidgetIdFactory.part(fieldId, "description")
-      : null;
+    // Named whenever it is on the page. It used to be withheld while errors were shown, which is the
+    // error taking the place of the help at the moment the help is most useful.
+    return this.hasSupportingText() ? defaultWidgetIdFactory.part(fieldId, "description") : null;
   }
 
   /**
@@ -602,9 +625,15 @@ export abstract class MdyBaseControl<TValue = unknown> implements OnInit {
    * by nothing — never by an id no element holds.
    */
   protected describedById(fieldId: string): string | null {
-    // The shared factory, so this and the elements it names cannot spell the same relation two ways.
-    if (this.errorsRendered()) return defaultWidgetIdFactory.part(fieldId, "errors");
-    return this.descriptionId(fieldId);
+    // Both, error first — an error does not take the place of the instruction that would have
+    // prevented it, and a description is a list. The shared factory mints the ids, so this and the
+    // elements it names cannot spell the same relation two ways.
+    return fieldDescribedBy({
+      errorId: defaultWidgetIdFactory.part(fieldId, "errors"),
+      descriptionId: defaultWidgetIdFactory.part(fieldId, "description"),
+      errorsPresent: this.errorsReserved(),
+      descriptionPresent: this.hasSupportingText(),
+    });
   }
 
   /**
@@ -675,6 +704,9 @@ export abstract class MdyBaseControl<TValue = unknown> implements OnInit {
         kind: this.widgetKind,
         constraints: narrowConstraints(this.fieldState().constraints(), this.narrowedConstraints()),
         errorsVisible: this.errorsRendered(),
+        // The container is pointed at while it is on the page, not while it holds a message: the
+        // templates guard on the same signal, so the reference and the element cannot disagree.
+        errorsReserved: this.errorsReserved(),
         // What the control says about itself, which is not the same as which element holds the
         // words: with inline errors there is no list to point at and the field is still refused.
         invalid: this.paintsAsInvalid(),

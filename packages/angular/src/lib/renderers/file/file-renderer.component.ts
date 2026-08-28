@@ -100,7 +100,7 @@ import { MDY_I18N_MESSAGES } from "../../core/i18n";
            projecting them. A document has no template to project. -->
       <div class="mdy-supporting-text" [id]="descriptionId(fieldId)">{{ text }}</div>
     }
-    @if (errorsRendered()) {
+    @if (errorsReserved()) {
       <mdy-error-list [fieldId]="fieldId" [errors]="errors()" />
     }
   `,

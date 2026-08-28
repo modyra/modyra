@@ -15,6 +15,7 @@ import { capabilityOf, keyMeans, defaultWidgetIdFactory,
   hiddenChipCount,
   keepFocusedChipInView,
   wayBackActionName,
+  fieldDescribedBy,
   isTypeaheadCharacter,
 } from "@modyra/widgets";
 import { type MdyFieldHandle, type MdyMultiselectMode, type MdySelectOption } from "@modyra/core";
@@ -641,7 +642,11 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
             aria-readonly=${handle.readonly() ? "true" : nothing}
             aria-controls=${overlayControlledId("multiselect", this.fieldId) ?? nothing}
             aria-activedescendant=${this.activeDescendant() ?? nothing}
-            aria-describedby=${this.showErrors(handle) && !this.inlineErrors ? this.errorsId : this.descriptionId}
+            aria-describedby=${fieldDescribedBy({
+              errorId: this.errorsId, descriptionId: this.descriptionId,
+              errorsPresent: !this.inlineErrors && (this.showErrors(handle) || this.errorsReserved(handle)),
+              descriptionPresent: true,
+            }) ?? nothing}
             aria-invalid=${String(this.showErrors(handle))}
             @blur=${() => { handle.markAsTouched(); this.requestUpdate(); }}
             aria-disabled=${String(handle.disabled())}
@@ -722,8 +727,8 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
         alignment,
         position,
       })}
-      ${showBlockErrors ? this.renderErrors(handle) : nothing}
       ${this.renderSupportingText()}
+      ${showBlockErrors || this.errorsReserved(handle) ? this.renderErrors(handle) : nothing}
     `;
   }
 

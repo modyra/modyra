@@ -369,7 +369,7 @@ import type { MdyOverlayBranch, MdyOverlayOwner } from "../../core/overlay-contr
     </mdy-overlay-panel>
 
 
-    @if (errorsRendered()) {
+    @if (errorsReserved()) {
       <mdy-error-list [fieldId]="fieldId" [errors]="errors()" />
     } @else if (projectedSupportingText(); as st) {
       <!-- The two routes a field's own words arrive by, and both are tested here because the id the

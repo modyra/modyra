@@ -223,7 +223,13 @@ export function nameIsAFallback(sources: {
 export function fieldCanBeInvalid(field: {
   readonly required?: boolean;
   readonly constraints?: MdyFieldConstraints | null;
+  /** Out of play — disabled by a binding, or inside a section a condition has closed. */
+  readonly disabled?: boolean;
 }): boolean {
+  // A field the form is not asking about paints no verdict, so it has no message to make room for.
+  // Reserving under it would hold space for something that cannot arrive, and — worse — would leave
+  // the control describing itself by an error list it will never fill.
+  if (field.disabled === true) return false;
   if (field.required === true) return true;
   const constraints = field.constraints as Readonly<Record<string, unknown>> | null | undefined;
   if (!constraints) return false;

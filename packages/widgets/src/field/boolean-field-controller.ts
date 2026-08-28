@@ -8,6 +8,7 @@ import { observerFor } from "@modyra/core";
 
 import type { MdyUiCommand } from "../commands.js";
 import type { MdyWidgetController, MdyWidgetViewContract } from "../contract.js";
+import { fieldCanBeInvalid } from "./verdict.js";
 import { projectBooleanFieldA11y } from "./boolean-field-a11y.js";
 import { showsAsInvalid } from "./verdict.js";
 import type {
@@ -62,6 +63,18 @@ export function createBooleanFieldController(
   const view: MdySignal<MdyWidgetViewContract> = reactivity.computed(() => {
     const a11y = projectBooleanFieldA11y(state(), handle.errors(), {
       widgetId,
+      // The error container is reserved under any field that can fail a rule, which is a fact about
+      // the field and not about the renderer — so the description names one element that never
+      // changes, in every renderer, without each deciding it again.
+      // Asked defensively: a handle is not obliged to offer either, and a controller that reads
+      // both unguarded stops working for one that offers neither — which is a crash where the honest
+      // answer is "this field declares no rule I can see".
+      errorsReserved: fieldCanBeInvalid({
+        required: handle.required?.() ?? false,
+        constraints: handle.constraints?.() ?? null,
+        disabled: handle.disabled?.() ?? false,
+      }),
+
       variant,
       // The key a native submit reads this control's value under, taken from the handle: it is what
       // knows the field's place in the form, and a renderer passing it separately could pass another.

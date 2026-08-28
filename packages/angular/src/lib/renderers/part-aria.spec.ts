@@ -48,10 +48,18 @@ describe("the aria a renderer no longer spells", () => {
     fixture.detectChanges();
     const input = fixture.nativeElement.querySelector("input") as HTMLInputElement;
 
-    // Nothing describes it yet: the error list is deferred until the field is touched, and no
-    // supporting text was projected. Naming an element that is not in the document is the defect
-    // this rule exists to avoid.
-    expect(input.getAttribute("aria-describedby")).toBeNull();
+    // The reference is already there and already resolves. It used to be absent, because the error
+    // container appeared with the first message; the container is now reserved under any field that
+    // can fail a rule, so the reference never changes — and a reference that never changes has no
+    // moment at which it can name an element not yet drawn, which is the defect this rule exists to
+    // avoid. What the container holds is the next assertions' business; that it is nameable is this
+    // one's.
+    const before = input.getAttribute("aria-describedby");
+    expect(before).not.toBeNull();
+    for (const id of (before ?? "").split(" ")) {
+      expect(`${id} resolves: ${Boolean(document.getElementById(id))}`).toBe(`${id} resolves: true`);
+    }
+
 
     fixture.componentInstance.form.f.name.markAsTouched();
     fixture.detectChanges();

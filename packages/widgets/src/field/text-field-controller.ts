@@ -6,6 +6,7 @@
  */
 
 import { blocksValueChange } from "../interactivity.js";
+import { fieldCanBeInvalid } from "./verdict.js";
 import type { MdyReactivity, MdySignal } from "@modyra/core";
 import { observerFor } from "@modyra/core";
 
@@ -88,6 +89,13 @@ export function createTextFieldController<TValue>(
       // follow the next reference. Read on every projection, because a host may supply the text
       // after the control was built.
       descriptionVisible: options.describes?.() ?? true,
+      // The error container is reserved under any field that can fail a rule — a fact about the
+      // field, so every renderer answers it from the same predicate rather than each deciding.
+      errorsReserved: fieldCanBeInvalid({
+        required: handle.required?.() ?? false,
+        constraints: handle.constraints?.() ?? null,
+        disabled: handle.disabled?.() ?? false,
+      }),
       // The key a native submit reads this control's value under. Taken from the handle rather than
       // asked of the renderer: the handle is what knows the field's place in the form, and a
       // renderer passing it separately is a renderer that can pass a different one.

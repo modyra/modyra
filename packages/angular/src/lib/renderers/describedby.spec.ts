@@ -25,17 +25,27 @@ function described(root: Element): { ref: string | null; text: string | null } {
 }
 
 describe("aria-describedby", () => {
-  it("says nothing while the field is invalid but untouched", () => {
+  it("names an element that exists while the field is invalid but untouched", () => {
     // Every control in the host is `mdyRequired` and starts empty, so every field is invalid from
-    // the first render — and none has been touched, so no error list is rendered yet. This is the
-    // state the whole defect lived in.
+    // the first render — and none has been touched, so no message is shown yet. This is the state
+    // the whole defect lived in.
+    //
+    // It used to assert the reference was absent, which was how the property below was satisfied
+    // when the error container appeared with the first message. The container is now reserved under
+    // any field that can fail a rule, so the reference is present from the start and resolves — and
+    // an element with no text contributes nothing to a description, so a reader hears the same
+    // nothing it heard before. The property was never "says nothing": it was "names something real".
     const fixture = TestBed.createComponent(CatalogHost);
     fixture.detectChanges();
 
     for (const { kind, selector } of CATALOG_KINDS) {
       const root = fixture.nativeElement.querySelector(selector) as Element;
       const { ref } = described(root);
-      expect(`${kind}: ${ref}`).toBe(`${kind}: null`);
+      if (ref === null) continue;
+      for (const id of ref.split(" ")) {
+        expect(`${kind}: ${id} resolves: ${Boolean(root.ownerDocument?.getElementById(id))}`)
+          .toBe(`${kind}: ${id} resolves: true`);
+      }
     }
   });
 

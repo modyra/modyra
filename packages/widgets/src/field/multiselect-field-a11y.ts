@@ -21,6 +21,14 @@ import { errorsVisible, holdsUneditedValue, shownErrors } from "./verdict.js";
 
 export interface MdyMultiselectFieldA11yOptions {
   /**
+   * Whether the supporting text is on the page.
+   *
+   * Named unconditionally, the description points at an element a renderer may not have drawn — the
+   * reference resolves to nothing and the control is described by an id rather than by words.
+   * Defaults to true, which is what every caller relied on before it could say otherwise.
+   */
+  readonly descriptionVisible?: boolean;
+  /**
    * Whether the error container is on the page, whether or not it holds a message.
    *
    * A renderer that keeps it under every field that can fail a rule passes this, and the control's
@@ -146,7 +154,7 @@ export function projectMultiselectFieldA11y<TValue>(
     errorId,
     descriptionId,
     errorsPresent: options.errorsReserved ?? hasErrors,
-    descriptionPresent: true,
+    descriptionPresent: options.descriptionVisible ?? true,
   });
 
   return {

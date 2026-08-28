@@ -18,6 +18,7 @@ import { applySubmissionNames,
   overlayAnchoringFor,
   rowRovingIndex,
   projectFieldShellA11y,
+  fieldCanBeInvalid,
   visibleErrorsOf,
   type MdyColorValueIntent,
   MDY_I18N_MESSAGES_DEFAULT,
@@ -331,6 +332,12 @@ export function renderColorsField(
         // no way to tell "there are none" from "the person is not being told yet", and marked the
         // control wrong over a rule nobody had answered.
         errorsVisible: visibleErrorsOf(handle).length > 0,
+        // The container is pointed at while it is on the page, not only while it holds a message.
+        errorsReserved: visibleErrorsOf(handle).length > 0 || fieldCanBeInvalid({
+          required: handle.required?.() ?? false,
+          constraints: handle.constraints?.() ?? null,
+          disabled: handle.disabled?.() ?? false,
+        }),
       },
     );
     applyPart(shell.label, a11y.label);
@@ -360,7 +367,7 @@ export function renderColorsField(
     shell.syncState({
       open: isOpen,
       touched: handle.touched(), disabled: handle.disabled(), readonly: handle.readonly(),
-      hasError: visibleErrorsOf(handle).length > 0, filled: Boolean(value), required: handle.required(),
+      hasError: visibleErrorsOf(handle).length > 0, filled: Boolean(value), required: handle.required(), constraints: handle.constraints?.() ?? null,
     });
     // The key a native submit reads this control's value under, after the parts are applied: the
     // shared control projection writes `name: null` for a field it was not given a name for, and a

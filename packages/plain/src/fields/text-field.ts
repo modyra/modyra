@@ -222,7 +222,7 @@ export function renderTextField(
       // different stories about itself.
       hasError: visibleErrorsOf(handle).length > 0,
       filled: Boolean(handle.value()),
-      required: handle.required(),
+      required: handle.required(), constraints: handle.constraints?.() ?? null,
     });
     const stringValue = state.value === undefined || state.value === null ? "" : String(state.value);
     if (input.value !== stringValue) input.value = stringValue;

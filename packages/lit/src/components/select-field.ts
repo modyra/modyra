@@ -1,5 +1,5 @@
 import { type MdyFieldHandle, type MdySelectOption } from "@modyra/core";
-import { defaultOptionKey, filterOptionsByQuery } from "@modyra/widgets";
+import { defaultOptionKey, fieldDescribedBy, filterOptionsByQuery } from "@modyra/widgets";
 import { html, nothing, type PropertyDeclarations, type PropertyValueMap } from "lit";
 import { MdyFieldElement, mdyIcon } from "../base.js";
 import {
@@ -327,7 +327,11 @@ export class MdySelectFieldElement extends MdyDropdownFieldElement<unknown | nul
       aria-invalid=${this.showErrors(handle) ? "true" : "false"}
       aria-readonly=${handle.readonly() ? "true" : nothing}
       aria-required=${String(handle.required())}
-      aria-describedby=${this.showErrors(handle) ? this.errorsId : this.descriptionId}
+      aria-describedby=${fieldDescribedBy({
+        errorId: this.errorsId, descriptionId: this.descriptionId,
+        errorsPresent: this.showErrors(handle) || this.errorsReserved(handle),
+        descriptionPresent: true,
+      }) ?? nothing}
       @change=${(event: Event) => {
         // Matched by what the element reports rather than by where it sits: the entry for "nothing
         // chosen" comes and goes with the state, so an index into this closure's list is an index
@@ -408,9 +412,12 @@ export class MdySelectFieldElement extends MdyDropdownFieldElement<unknown | nul
     // it has to tell the projection before reading the trigger back out of it. `aria-describedby`
     // must name an element that exists.
     const blockErrors = !this.inlineErrors && this.showErrors(handle);
+    // Both, not one or the other. The container is named while it is on the page — which is under any
+    // field that can fail a rule, not only while it holds a message — and the help is named whenever
+    // this element drew it. An error does not take the place of the instruction that prevents it.
     this.selectAdapter.setDescribedBy({
-      errorsVisible: blockErrors,
-      descriptionVisible: !blockErrors,
+      errorsVisible: !this.inlineErrors && (blockErrors || this.errorsReserved(handle)),
+      descriptionVisible: this.hasDescription(),
     });
     // The same rule for the other reference the trigger carries: this element builds its listbox on
     // open, so while closed there is nothing for `aria-controls` to name.
@@ -538,7 +545,7 @@ export class MdySelectFieldElement extends MdyDropdownFieldElement<unknown | nul
         })}
       </div>
       ${this.renderSupportingText()}
-      ${showBlockErrors ? this.renderErrors(handle) : nothing}
+      ${showBlockErrors || this.errorsReserved(handle) ? this.renderErrors(handle) : nothing}
     `;
   }
 }

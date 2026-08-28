@@ -16,6 +16,7 @@ import {
   keepKeyboardInPlay,
   reportIdCollision,
   holdsUneditedValue,
+  fieldCanBeInvalid,
   shownErrorsOf,
   type MdyOverlayAlignment,
   type MdyOverlayPlacement,
@@ -717,6 +718,9 @@ export abstract class MdyFieldElement<T> extends LitElement {
         // value rather than on the rules.
         value: typeof handle.value() === "number" ? (handle.value() as number) : null,
         errorsVisible: this.showErrors(handle),
+        // Pointed at while the container is on the page, not while it holds a message: one reference
+        // that never changes, instead of one written when a message arrives and withdrawn when it goes.
+        errorsReserved: this.showErrors(handle) || this.errorsReserved(handle),
         // Only where there is something at the other end of the reference.
         descriptionVisible: this.hasDescription(),
         // The key a native submit reads this control's value under: the field's path, not the
@@ -801,18 +805,41 @@ export abstract class MdyFieldElement<T> extends LitElement {
     >${[this.supportingText, own].filter(Boolean).join(". ")}<slot name="supporting-text"></slot></div>`;
   }
 
-  /** Error list block (rendered only once the field was touched). */
+  /**
+   * The error list block, and the empty container that holds its place.
+   *
+   * Present under any field that can fail a rule, and it stays once a message clears. Rendered only
+   * when there is something to say, it appears under the field somebody has just left, pushing down
+   * the field they are already moving toward; taking the space back on a correction is the same jump,
+   * upward. Its contents follow the errors; only the box follows the rules.
+   */
   protected renderErrors(handle: MdyFieldHandle<T>): unknown {
-    if (!this.showErrors(handle)) return nothing;
+    const showing = this.showErrors(handle);
+    if (!showing && !this.errorsReserved(handle)) return nothing;
     return html`<ul
       class="${SHELL.errors}"
       id=${this.errorsId}
       aria-live="polite"
     >
-      ${[...this.controlErrors(), ...shownErrorsOf(handle).map((er) => er.message)].map(
-        (message) => html`<li class="${SHELL.errorItem}">${message}</li>`,
-      )}
+      ${showing
+        ? [...this.controlErrors(), ...shownErrorsOf(handle).map((er) => er.message)].map(
+          (message) => html`<li class="${SHELL.errorItem}">${message}</li>`,
+        )
+        : nothing}
     </ul>`;
+  }
+
+  /**
+   * Whether the error container is on the page, whether or not it holds a message.
+   *
+   * A fact about the field, not about this renderer: the contract declares the container present
+   * under any field that can fail a rule, so every renderer answers it the same way from the same
+   * predicate rather than each deciding.
+   */
+  protected errorsReserved(handle: MdyFieldHandle<T>): boolean {
+    return fieldCanBeInvalid({
+      required: handle.required(), constraints: handle.constraints(), disabled: handle.disabled(),
+    });
   }
 
   /**
@@ -844,7 +871,7 @@ export abstract class MdyFieldElement<T> extends LitElement {
         </div>`
         : control}
       ${this.renderSupportingText()}
-      ${showBlockErrors ? this.renderErrors(handle) : nothing}
+      ${showBlockErrors || this.errorsReserved(handle) ? this.renderErrors(handle) : nothing}
     `;
   }
 }

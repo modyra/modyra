@@ -165,7 +165,7 @@ import { MdyTimepickerClockComponent } from "./timepicker-clock.component";
            projecting them. A document has no template to project. -->
       <div class="mdy-supporting-text" [id]="descriptionId(fieldId)">{{ text }}</div>
     }
-    @if (errorsRendered()) {
+    @if (errorsReserved()) {
       <mdy-error-list [fieldId]="fieldId" [errors]="errors()" />
     }
   `,

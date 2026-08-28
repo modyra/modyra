@@ -99,7 +99,7 @@ export class MdySegmentedFieldElement extends MdyOptionsFieldElement<unknown | n
         })}
       </div>
       ${this.renderSupportingText()}
-      ${showBlockErrors ? this.renderErrors(handle) : nothing}
+      ${showBlockErrors || this.errorsReserved(handle) ? this.renderErrors(handle) : nothing}
     `;
   }
 }

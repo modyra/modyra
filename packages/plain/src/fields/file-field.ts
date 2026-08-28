@@ -14,6 +14,7 @@ import { blocksValueChange,
   fileSelectionTransition,
   projectFieldShellA11y,
   shownErrorsOf,
+  fieldCanBeInvalid,
   visibleErrorsOf,
   type MdyFileCandidate,
   MDY_I18N_MESSAGES_DEFAULT,
@@ -147,6 +148,12 @@ export function renderFileField(
         // the list beside it — asked the same question with the person's touch in it — renders
         // nothing. One question, and the eye and the ear were given different answers.
         errorsVisible: visibleErrorsOf(handle, "file").length > 0,
+        // The container is pointed at while it is on the page, not only while it holds a message.
+        errorsReserved: visibleErrorsOf(handle, "file").length > 0 || fieldCanBeInvalid({
+          required: handle.required?.() ?? false,
+          constraints: handle.constraints?.() ?? null,
+          disabled: handle.disabled?.() ?? false,
+        }),
       },
     );
     applyPart(shell.label, a11y.label);
@@ -182,7 +189,7 @@ export function renderFileField(
     setErrors(shell.errorList, visibleErrorsOf(handle, "file").map((error) => error.message));
     shell.syncState({
       touched: handle.touched(), disabled: handle.disabled(), readonly: handle.readonly(),
-      hasError: visibleErrorsOf(handle, "file").length > 0, filled: files.length > 0, required: handle.required(),
+      hasError: visibleErrorsOf(handle, "file").length > 0, filled: files.length > 0, required: handle.required(), constraints: handle.constraints?.() ?? null,
     });
   });
 

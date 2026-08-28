@@ -3,6 +3,7 @@
  */
 
 import type { MdyFieldError } from "@modyra/core";
+import { fieldDescribedBy } from "./shell-a11y.js";
 import { assertUsableWidgetId } from "../ids.js";
 import type { MdyPartContract } from "../contract.js";
 import { MDY_CSS_PROPERTIES } from "../css.js";
@@ -14,6 +15,15 @@ import type {
 } from "./option-field-types.js";
 
 export interface MdyOptionFieldA11yOptions {
+  /**
+   * Whether the error container is on the page, whether or not it holds a message.
+   *
+   * Defaults to {@link errorsVisible}, so a renderer that draws it only when it has something to say
+   * is unaffected. A renderer that reserves it gets a reference that never changes.
+   */
+  readonly errorsReserved?: boolean;
+  /** Whether the supporting text is on the page. Named unconditionally it would point at nothing. */
+  readonly descriptionVisible?: boolean;
   readonly widgetId: string;
   readonly variant: MdyOptionFieldVariant;
   /** How many options the group renders. The segmented theme sizes its tick gutter from it. */
@@ -96,7 +106,15 @@ export function projectOptionFieldA11y<TValue>(
   const tellingThem = errorsVisible({ disabled: state.disabled, touched: state.touched, holdsUnedited: holdsUneditedValue(state) }, errors);
 
   // What the group describes itself by depends on what was *rendered*, not on what is wrong.
-  const describedBy = (options.errorsVisible ?? hasErrors) ? errorId : descriptionId;
+  // Both, error first — an error does not take the place of the instruction that would have
+  // prevented it. The container is pointed at while it is on the page, which is not the same as while
+  // it holds a message: a renderer that reserves it keeps one reference that never changes.
+  const describedBy = fieldDescribedBy({
+    errorId,
+    descriptionId,
+    errorsPresent: options.errorsReserved ?? options.errorsVisible ?? hasErrors,
+    descriptionPresent: options.descriptionVisible ?? true,
+  });
 
   return {
     root: {

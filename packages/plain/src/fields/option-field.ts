@@ -112,7 +112,7 @@ export function renderOptionField(
       readonly: handle.readonly(),
 
       filled: handle.value() !== null && handle.value() !== undefined,
-      required: handle.required(),
+      required: handle.required(), constraints: handle.constraints?.() ?? null,
     });
     applyPart(shell.label, view.parts.label);
     applyPart(group, view.parts.group);

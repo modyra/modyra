@@ -7,6 +7,8 @@
  * Renderers build the control themselves and insert it into the wrapper.
  */
 import { MDY_FIELD_SHELL_CLASSES, MDY_FIELD_STATE_CLASSES, MDY_WIDGET_CONTRACTS, fieldAccessibleName, type MdyWidgetKind } from "@modyra/widgets";
+import type { MdyFieldConstraints } from "@modyra/core";
+import { fieldCanBeInvalid } from "@modyra/widgets";
 import { el, setText } from "./dom.js";
 
 export interface FieldShell {
@@ -23,7 +25,12 @@ export interface FieldShell {
   /** The field's own name — the last thing left to name a control with. */
   readonly fieldName?: string;
   /** Reflects state the themes key off: touched on the root, disabled/error on the wrapper. */
-  syncState(state: { touched?: boolean; disabled?: boolean; hasError?: boolean; filled?: boolean; required?: boolean; open?: boolean; readonly?: boolean }): void;
+  syncState(state: {
+    touched?: boolean; disabled?: boolean; hasError?: boolean; filled?: boolean;
+    required?: boolean; open?: boolean; readonly?: boolean;
+    /** The field's rules, so the shell can tell a field that can fail from one that cannot. */
+    constraints?: MdyFieldConstraints | null;
+  }): void;
 }
 
 export interface FieldShellAffixes {
@@ -127,7 +134,12 @@ export function buildFieldShell(
     wrapper,
     description,
     errorList,
-    syncState({ touched, disabled, hasError, filled, required, open, readonly }) {
+    syncState({ touched, disabled, hasError, filled, required, constraints, open, readonly }) {
+      // The error container holds its place under any field that can fail a rule, and only there.
+      // Present under a field with no rule at all it is a line of scrolling on every screen, bought
+      // for a message that cannot arrive; absent under one that can fail, its arrival pushes down the
+      // field somebody is already reaching for.
+      errorList.hidden = !fieldCanBeInvalid({ required, constraints, disabled });
       root.classList.toggle("mdy-renderer--touched", Boolean(touched));
       // The other state a renderer root carries, and the one nothing was applying. The contract
       // lists `open` beside `touched` in `MDY_FIELD_STATE_CLASSES.fieldStates` and names the class

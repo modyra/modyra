@@ -39,6 +39,13 @@ export interface MdyTextFieldA11yOptions {
    */
   readonly descriptionVisible?: boolean;
   /**
+   * Whether the error container is on the page, whether or not it holds a message.
+   *
+   * Defaults to whether errors are being shown, so a renderer that draws it only when it has
+   * something to say is unaffected.
+   */
+  readonly errorsReserved?: boolean;
+  /**
    * The key this control sends its value under when the browser submits the form it sits in.
    *
    * The field's path, not its widget id: the id carries a per-form scope so two forms on one page do
@@ -140,6 +147,9 @@ export function projectTextFieldA11y<TValue>(
             kind: options.kind ?? options.inputType,
             constraints: options.constraints,
             errorsVisible: tellingThem,
+            // The container is pointed at while it is on the page, not while it holds a message: a
+            // renderer that reserves it keeps one reference that never changes.
+            errorsReserved: options.errorsReserved ?? tellingThem,
             descriptionVisible: options.descriptionVisible ?? true,
             // Asked of the shell rather than written here: this projection spreads the shell's
             // attributes over its own, so a name written on both sides is decided by the spread

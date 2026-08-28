@@ -10,6 +10,7 @@
  * `filterOptionsByQuery`, shared with select so one search behaves the same in both.
  */
 import { blocksFocus, blocksValueChange } from "../interactivity.js";
+import { fieldCanBeInvalid } from "./verdict.js";
 import { closeOverlayWhenOutOfPlay } from "./leaving-play.js";
 import type { MdyReactivity, MdySelectOption, MdySignal } from "@modyra/core";
 import { observerFor } from "@modyra/core";
@@ -186,7 +187,20 @@ export function createMultiselectFieldController<TValue>(
 
   const view: MdySignal<MdyWidgetViewContract> = reactivity.computed(() => {
     const currentState = state();
-    const a11y = projectMultiselectFieldA11y(currentState, handle.errors(), { widgetId });
+    const a11y = projectMultiselectFieldA11y(currentState, handle.errors(), {
+      widgetId,
+      // The error container is reserved under any field that can fail a rule, which is a fact about
+      // the field and not about the renderer — so the description names one element that never
+      // changes, in every renderer, without each deciding it again.
+      // Asked defensively: a handle is not obliged to offer either, and a controller that reads
+      // both unguarded stops working for one that offers neither — which is a crash where the honest
+      // answer is "this field declares no rule I can see".
+      errorsReserved: fieldCanBeInvalid({
+        required: handle.required?.() ?? false,
+        constraints: handle.constraints?.() ?? null,
+        disabled: handle.disabled?.() ?? false,
+      }),
+    });
 
     // A null prototype, because these keys are data: an option valued `__proto__` assigned into a
     // plain object sets that object's prototype instead of adding a member, so the part vanished and

@@ -54,7 +54,7 @@ import { MdySelectOption } from "../../core/types";
       }
     </div>
 
-    @if (errorsRendered()) {
+    @if (errorsReserved()) {
       <mdy-error-list [fieldId]="fieldId" [errors]="errors()" />
     } @else if (projectedSupportingText(); as st) {
       <div class="mdy-supporting-text" [id]="descriptionId(fieldId)">

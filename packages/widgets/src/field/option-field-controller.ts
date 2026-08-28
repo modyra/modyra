@@ -3,6 +3,7 @@
  */
 
 import { blocksFocus, blocksValueChange } from "../interactivity.js";
+import { fieldCanBeInvalid } from "./verdict.js";
 import { optionsWithUnrecognizedValue } from "../options-reconciliation.js";
 import type { MdyReactivity, MdySelectOption, MdySignal } from "@modyra/core";
 import { observerFor } from "@modyra/core";
@@ -130,6 +131,16 @@ export function createOptionFieldController<TValue>(
       ariaLabel: options.ariaLabel ?? null,
       fieldName: options.fieldName ?? handle.path ?? null,
       ...(options.errorsVisible ? { errorsVisible: options.errorsVisible(currentState) } : {}),
+      // The error container is reserved under any field that can fail a rule — a fact about the
+      // field, not about the renderer, so every renderer answers it from the same predicate.
+      // Asked defensively: a handle is not obliged to offer either, and a controller that reads
+      // both unguarded stops working for one that offers neither — which is a crash where the honest
+      // answer is "this field declares no rule I can see".
+      errorsReserved: fieldCanBeInvalid({
+        required: handle.required?.() ?? false,
+        constraints: handle.constraints?.() ?? null,
+        disabled: handle.disabled?.() ?? false,
+      }),
     });
 
     // A null prototype, because these keys are data: an option valued `__proto__` assigned into a

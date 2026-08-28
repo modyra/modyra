@@ -313,7 +313,7 @@ export function renderSelectField(
       readonly: handle.readonly(),
 
       filled: handle.value() !== null && handle.value() !== undefined,
-      required: handle.required(),
+      required: handle.required(), constraints: handle.constraints?.() ?? null,
     });
 
     const state = controller.state();

@@ -17,6 +17,7 @@ import { applySubmissionNames,
   overlayAnchoringFor,
   projectFieldShellA11y,
   shownErrorsOf,
+  fieldCanBeInvalid,
   visibleErrorsOf,
   type MdyDateRangeValue,
   MDY_I18N_MESSAGES_DEFAULT,
@@ -236,6 +237,12 @@ export function renderDaterangeField(
         // error at all", and both ends of a required range announce themselves as failing before
         // anybody has been at the field, while the list beside them renders nothing.
         errorsVisible: visibleErrorsOf(handle, "daterange").length > 0,
+        // The container is pointed at while it is on the page, not only while it holds a message.
+        errorsReserved: visibleErrorsOf(handle, "daterange").length > 0 || fieldCanBeInvalid({
+          required: handle.required?.() ?? false,
+          constraints: handle.constraints?.() ?? null,
+          disabled: handle.disabled?.() ?? false,
+        }),
       },
     );
 
@@ -283,7 +290,7 @@ export function renderDaterangeField(
     shell.syncState({
       open: state.open,
       touched: handle.touched(), disabled: handle.disabled(), readonly: handle.readonly(),
-      hasError: visibleErrorsOf(handle, "daterange").length > 0, filled: value.start !== null, required: handle.required(),
+      hasError: visibleErrorsOf(handle, "daterange").length > 0, filled: value.start !== null, required: handle.required(), constraints: handle.constraints?.() ?? null,
     });
 
     const monthKey = `${anchor.year}-${anchor.month}`;
