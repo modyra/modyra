@@ -1,9 +1,9 @@
 {
   "note": "Public names not yet asserted or not yet shown. The list may only get shorter.",
   "score": {
-    "published": 862,
-    "asserted": 606,
-    "shown": 97
+    "published": 865,
+    "asserted": 607,
+    "shown": 98
   },
   "uncovered": [
     {
@@ -2714,6 +2714,18 @@
     },
     {
       "name": "MdyViewportSize",
+      "asserted": false,
+      "shown": false,
+      "reason": "published, neither asserted nor shown"
+    },
+    {
+      "name": "MdyVocabulary",
+      "asserted": false,
+      "shown": false,
+      "reason": "published, neither asserted nor shown"
+    },
+    {
+      "name": "MdyVocabularyShape",
       "asserted": false,
       "shown": false,
       "reason": "published, neither asserted nor shown"

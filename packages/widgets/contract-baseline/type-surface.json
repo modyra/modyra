@@ -3124,6 +3124,19 @@
     "height: number",
     "width: number"
   ],
+  "MdyVocabulary": [
+    "describes: string",
+    "door: \".\" | \"./vocabulary\"",
+    "name: string",
+    "shape: MdyVocabularyShape",
+    "value: unknown"
+  ],
+  "MdyVocabularyShape": [
+    "\"keyed-by-kind\"",
+    "\"list\"",
+    "\"names\"",
+    "\"table\""
+  ],
   "MdyWebStorageLike": [
     "getItem: string | null",
     "removeItem: void",

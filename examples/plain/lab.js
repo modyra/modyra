@@ -6,7 +6,18 @@
  * one states the invariant it demonstrates, so a reader knows what would be wrong if the panel
  * looked wrong.
  */
-import { MDY_WIDGET_CONTRACTS, MDY_WIDGET_KEYBOARD } from "@modyra/widgets";
+import { MDY_CONTRACT_VOCABULARIES } from "@modyra/widgets";
+
+/**
+ * The two catalogues the legend reads, taken from the index rather than imported by name.
+ *
+ * A page that names the exports it wants is a tool that has chosen a subset of the contract, which is
+ * how an enumerator came to report findings about catalogues it was not reading. Asked of the index,
+ * a catalogue added tomorrow is reachable here without an edit.
+ */
+const vocabularyNamed = (name) => MDY_CONTRACT_VOCABULARIES.find((one) => one.name === name)?.value;
+const MDY_WIDGET_CONTRACTS = vocabularyNamed("MDY_WIDGET_CONTRACTS");
+const MDY_WIDGET_KEYBOARD = vocabularyNamed("MDY_WIDGET_KEYBOARD");
 import { legend } from "./panels/shell.js";
 import { statesPanel } from "./panels/states.js";
 import { validationPanel } from "./panels/validation.js";
