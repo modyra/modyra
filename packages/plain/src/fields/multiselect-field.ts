@@ -9,7 +9,8 @@
  */
 import { observerFor, type MdyFieldHandle, type MdyMultiselectMode, type MdyReactivity, type MdySelectOption } from "@modyra/core";
 import type { MdyDynamicOptionsField } from "@modyra/core";
-import { syncSubmitValues,
+import {
+  beginChipReorder, syncSubmitValues,
   MDY_WIDGET_CONTRACTS,
   createMultiselectFieldController,
   chipActionName,
@@ -27,7 +28,7 @@ import { syncSubmitValues,
   chipFocusAfterRemoval,
   multiselectAnnouncement,
   chipMovedAnnouncement,
-  chipDropIndex,
+
   stateClass,
   scrollChipStripByWheel,
   chipTooltipOffset,
@@ -540,55 +541,20 @@ export function renderMultiselectField(
        * the person made.
        */
       chip.addEventListener("pointerdown", (event) => {
-        if (event.button !== 0) return;
-        // A drag may start anywhere on the chip, its own controls included: they cover most of it,
-        // and a chip draggable only by its bare edges is a chip nobody can drag. What separates the
-        // two is travel — a press that stays put is the button's, and one that moves is the strip's.
-        const startX = event.clientX;
-        let dragging = false;
-        const onMove = (moveEvent: PointerEvent) => {
-          if (!dragging && Math.abs(moveEvent.clientX - startX) < 6) return;
-          dragging = true;
-          chip.classList.add(stateClass(parts.chip.classes[0]!, "dragging"));
-        };
-        const onUp = (upEvent: PointerEvent) => {
-          detach();
-          if (!dragging) return;
-          // The press began on a control and ended as a gesture, so the click it is about to
-          // produce is not one anybody asked for. Swallowed once, in the capture phase, before it
-          // reaches the button underneath.
-          view.addEventListener("click", (click) => { click.stopPropagation(); click.preventDefault(); }, { capture: true, once: true });
-          const order = stripOrder();
-          const midpoints = order.map((each) => {
+        beginChipReorder(event, chip, {
+          draggingClass: stateClass(parts.chip.classes[0]!, "dragging"),
+          midpoints: () => stripOrder().map((each) => {
             const box = chosenEls.get(each)?.getBoundingClientRect();
             return box ? box.left + box.width / 2 : 0;
-          });
-          const to = chipDropIndex(midpoints, upEvent.clientX, order.indexOf(key));
-          if (to === order.indexOf(key)) return;
-          saySoon = chipMovedAnnouncement(messages.selectionMoved, labelOfChip(key), to + 1, order.length);
-          dispatch({ type: "move-selected", optionKey: key, to });
-          activeChip = key;
-          syncRoving();
-        };
-        const onCancel = () => detach();
-        /**
-         * Tracked on the document rather than by capturing the pointer.
-         *
-         * `setPointerCapture` would follow the gesture anywhere — and retarget every later pointer
-         * event, including the one that becomes a `click`, to the capturing element. The chip's own
-         * buttons then stopped receiving their clicks entirely: found, pressed, nothing happened.
-         * Listening on the document follows the gesture just as far and leaves the buttons alone.
-         */
-        const view = chip.ownerDocument;
-        function detach(): void {
-          view.removeEventListener("pointermove", onMove);
-          view.removeEventListener("pointerup", onUp);
-          view.removeEventListener("pointercancel", onCancel);
-          chip.classList.remove(stateClass(parts.chip.classes[0]!, "dragging"));
-        }
-        view.addEventListener("pointermove", onMove);
-        view.addEventListener("pointerup", onUp);
-        view.addEventListener("pointercancel", onCancel);
+          }),
+          from: () => stripOrder().indexOf(key),
+          onDrop: (to) => {
+            saySoon = chipMovedAnnouncement(messages.selectionMoved, labelOfChip(key), to + 1, stripOrder().length);
+            dispatch({ type: "move-selected", optionKey: key, to });
+            activeChip = key;
+            syncRoving();
+          },
+        });
       });
       chip.appendChild(move(-1, messages.chipMoveEarlierLabel));
     }

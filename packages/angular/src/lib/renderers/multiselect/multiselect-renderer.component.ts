@@ -1,4 +1,5 @@
-import { wayBackActionName, matchesKeyGesture, MDY_WIDGET_KEYBOARD, chipTooltipOffset, hiddenChipCount, keepFocusedChipInView, chipDropIndex, chipFocusAfterRemoval, scrollChipStripByWheel, isTypeaheadCharacter, chipMovedAnnouncement, stateClass, keyBindingFor, multiselectAnnouncement, optionsWithUnrecognizedValues, overlayControlledId, projectOverlayOpenerA11y } from "@modyra/widgets";
+import {
+  beginChipReorder, wayBackActionName, matchesKeyGesture, MDY_WIDGET_KEYBOARD, chipTooltipOffset, hiddenChipCount, keepFocusedChipInView, chipFocusAfterRemoval, scrollChipStripByWheel, isTypeaheadCharacter, chipMovedAnnouncement, stateClass, keyBindingFor, multiselectAnnouncement, optionsWithUnrecognizedValues, overlayControlledId, projectOverlayOpenerA11y } from "@modyra/widgets";
 import { MdyPartDirective } from "../../control/mdy-part.directive";
 import { NgTemplateOutlet } from "@angular/common";
 import {
@@ -824,59 +825,26 @@ export class MdyMultiselectComponent<TValue = string>
    * moves a pixel. `pointercancel` puts it back untouched.
    */
   protected startChipDrag(event: PointerEvent, optionKey: string): void {
-    if (!this.reorderable() || event.button !== 0) return;
-    // A drag may start anywhere on the chip, its own controls included: they cover most of it, and
-    // a chip draggable only by its bare edges is a chip nobody can drag. What separates the two is
-    // travel — a press that stays put is the button's, and one that moves is the strip's.
+    if (!this.reorderable()) return;
     const chip = event.currentTarget as HTMLElement;
-    const startX = event.clientX;
-    let dragging = false;
-    const dragClass = stateClass(MDY_CHIP_CLASSES.block, "dragging");
-    const onMove = (moveEvent: PointerEvent) => {
-      if (!dragging && Math.abs(moveEvent.clientX - startX) < 6) return;
-      dragging = true;
-      chip.classList.add(dragClass);
-    };
-    /**
-     * Tracked on the document rather than by capturing the pointer.
-     *
-     * `setPointerCapture` follows the gesture anywhere — and retargets every later pointer event,
-     * including the one that becomes a `click`, to the capturing element. The chip's own buttons
-     * then stop receiving their clicks entirely. Listening on the document follows it just as far
-     * and leaves the buttons alone.
-     */
-    const view = chip.ownerDocument;
-    const done = () => {
-      view.removeEventListener("pointermove", onMove);
-      view.removeEventListener("pointerup", onUp);
-      view.removeEventListener("pointercancel", done);
-      chip.classList.remove(dragClass);
-    };
-    const onUp = (upEvent: PointerEvent) => {
-      const wasDragging = dragging;
-      done();
-      if (!wasDragging) return;
-      // The press began on a control and ended as a gesture, so the click it is about to produce is
-      // not one anybody asked for. Swallowed once, in the capture phase.
-      view.addEventListener("click", (click) => { click.stopPropagation(); click.preventDefault(); }, { capture: true, once: true });
-      const order = this.chosen().map((c) => c.key);
-      const midpoints = order.map((each) => {
+    const order = (): readonly string[] => this.chosen().map((c) => c.key);
+    beginChipReorder(event, chip, {
+      draggingClass: stateClass(MDY_CHIP_CLASSES.block, "dragging"),
+      midpoints: () => order().map((each) => {
         const box = this.hostRef.nativeElement.querySelector(`[data-key="${each}"]`)?.getBoundingClientRect();
         return box ? box.left + box.width / 2 : 0;
-      });
-      const to = chipDropIndex(midpoints, upEvent.clientX, order.indexOf(optionKey));
-      if (to === order.indexOf(optionKey)) return;
-      this.saySoon = chipMovedAnnouncement(
-        this.i18n.selectionMoved,
-        this.chosen().find((c) => c.key === optionKey)?.label ?? optionKey,
-        to + 1, order.length,
-      );
-      this.controller()?.dispatch({ type: "move-selected", optionKey, to });
-      this.activeChipKey.set(optionKey);
-    };
-    view.addEventListener("pointermove", onMove);
-    view.addEventListener("pointerup", onUp);
-    view.addEventListener("pointercancel", done);
+      }),
+      from: () => order().indexOf(optionKey),
+      onDrop: (to) => {
+        this.saySoon = chipMovedAnnouncement(
+          this.i18n.selectionMoved,
+          this.chosen().find((c) => c.key === optionKey)?.label ?? optionKey,
+          to + 1, order().length,
+        );
+        this.controller()?.dispatch({ type: "move-selected", optionKey, to });
+        this.activeChipKey.set(optionKey);
+      },
+    });
   }
 
   /**

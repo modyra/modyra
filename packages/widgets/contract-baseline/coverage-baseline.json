@@ -1,8 +1,8 @@
 {
   "note": "Public names not yet asserted or not yet shown. The list may only get shorter.",
   "score": {
-    "published": 885,
-    "asserted": 626,
+    "published": 887,
+    "asserted": 571,
     "shown": 98
   },
   "uncovered": [
@@ -38,6 +38,12 @@
     },
     {
       "name": "MDY_CHIP_CLASSES",
+      "asserted": true,
+      "shown": false,
+      "reason": "published and never shown"
+    },
+    {
+      "name": "MDY_CHIP_DRAG_THRESHOLD",
       "asserted": true,
       "shown": false,
       "reason": "published and never shown"
@@ -350,9 +356,9 @@
     },
     {
       "name": "MdyAccessibleNameSource",
-      "asserted": true,
+      "asserted": false,
       "shown": false,
-      "reason": "published and never shown"
+      "reason": "published, neither asserted nor shown"
     },
     {
       "name": "MdyActivationError",
@@ -410,9 +416,9 @@
     },
     {
       "name": "MdyAnnouncer",
-      "asserted": true,
+      "asserted": false,
       "shown": false,
-      "reason": "published and never shown"
+      "reason": "published, neither asserted nor shown"
     },
     {
       "name": "MdyAnyArrayDescriptor",
@@ -740,27 +746,27 @@
     },
     {
       "name": "MdyCommandDefer",
-      "asserted": true,
+      "asserted": false,
       "shown": false,
-      "reason": "published and never shown"
+      "reason": "published, neither asserted nor shown"
     },
     {
       "name": "MdyCommandRuntime",
-      "asserted": true,
+      "asserted": false,
       "shown": false,
-      "reason": "published and never shown"
+      "reason": "published, neither asserted nor shown"
     },
     {
       "name": "MdyCommandRuntimeOptions",
-      "asserted": true,
+      "asserted": false,
       "shown": false,
-      "reason": "published and never shown"
+      "reason": "published, neither asserted nor shown"
     },
     {
       "name": "MdyCommandTarget",
-      "asserted": true,
+      "asserted": false,
       "shown": false,
-      "reason": "published and never shown"
+      "reason": "published, neither asserted nor shown"
     },
     {
       "name": "MdyComputedOptions",
@@ -776,9 +782,9 @@
     },
     {
       "name": "MdyContextRef",
-      "asserted": true,
+      "asserted": false,
       "shown": false,
-      "reason": "published and never shown"
+      "reason": "published, neither asserted nor shown"
     },
     {
       "name": "MdyControlComponent",
@@ -806,9 +812,9 @@
     },
     {
       "name": "MdyControllerNotify",
-      "asserted": true,
+      "asserted": false,
       "shown": false,
-      "reason": "published and never shown"
+      "reason": "published, neither asserted nor shown"
     },
     {
       "name": "MdyCoreFormOptions",
@@ -818,9 +824,9 @@
     },
     {
       "name": "MdyCrossRuntimeObservationError",
-      "asserted": true,
+      "asserted": false,
       "shown": false,
-      "reason": "published and never shown"
+      "reason": "published, neither asserted nor shown"
     },
     {
       "name": "MdyCvaDirective",
@@ -956,21 +962,21 @@
     },
     {
       "name": "MdyDaterangeFieldControllerOptions",
-      "asserted": true,
+      "asserted": false,
       "shown": false,
-      "reason": "published and never shown"
+      "reason": "published, neither asserted nor shown"
     },
     {
       "name": "MdyDaterangeFieldIntent",
-      "asserted": true,
+      "asserted": false,
       "shown": false,
-      "reason": "published and never shown"
+      "reason": "published, neither asserted nor shown"
     },
     {
       "name": "MdyDaterangeFieldState",
-      "asserted": true,
+      "asserted": false,
       "shown": false,
-      "reason": "published and never shown"
+      "reason": "published, neither asserted nor shown"
     },
     {
       "name": "MdyDeclarativeAdapter",
@@ -1057,6 +1063,18 @@
       "reason": "published, neither asserted nor shown"
     },
     {
+      "name": "MdyDraftOptions",
+      "asserted": false,
+      "shown": true,
+      "reason": "published and never asserted"
+    },
+    {
+      "name": "MdyDraftStorage",
+      "asserted": false,
+      "shown": true,
+      "reason": "published and never asserted"
+    },
+    {
       "name": "MdyDragPoint",
       "asserted": false,
       "shown": false,
@@ -1130,9 +1148,9 @@
     },
     {
       "name": "MdyDynamicFlatForm",
-      "asserted": true,
+      "asserted": false,
       "shown": false,
-      "reason": "published and never shown"
+      "reason": "published, neither asserted nor shown"
     },
     {
       "name": "MdyDynamicFormComponent",
@@ -1292,9 +1310,9 @@
     },
     {
       "name": "MdyElementTarget",
-      "asserted": true,
+      "asserted": false,
       "shown": false,
-      "reason": "published and never shown"
+      "reason": "published, neither asserted nor shown"
     },
     {
       "name": "MdyEmailDirective",
@@ -1328,9 +1346,9 @@
     },
     {
       "name": "MdyExpressionScope",
-      "asserted": true,
+      "asserted": false,
       "shown": false,
-      "reason": "published and never shown"
+      "reason": "published, neither asserted nor shown"
     },
     {
       "name": "MdyFieldConfig",
@@ -1370,9 +1388,9 @@
     },
     {
       "name": "MdyFieldKind",
-      "asserted": true,
+      "asserted": false,
       "shown": false,
-      "reason": "published and never shown"
+      "reason": "published, neither asserted nor shown"
     },
     {
       "name": "MdyFieldOptions",
@@ -1400,9 +1418,9 @@
     },
     {
       "name": "MdyFieldShellPart",
-      "asserted": true,
+      "asserted": false,
       "shown": false,
-      "reason": "published and never shown"
+      "reason": "published, neither asserted nor shown"
     },
     {
       "name": "MdyFieldState",
@@ -1549,10 +1567,22 @@
       "reason": "published and never shown"
     },
     {
+      "name": "MdyFormResetBinding",
+      "asserted": false,
+      "shown": true,
+      "reason": "published and never asserted"
+    },
+    {
       "name": "MdyFormSchema",
       "asserted": true,
       "shown": false,
       "reason": "published and never shown"
+    },
+    {
+      "name": "MdyFormShellPart",
+      "asserted": false,
+      "shown": true,
+      "reason": "published and never asserted"
     },
     {
       "name": "MdyFormState",
@@ -1610,9 +1640,9 @@
     },
     {
       "name": "MdyGranularityProblem",
-      "asserted": true,
+      "asserted": false,
       "shown": false,
-      "reason": "published and never shown"
+      "reason": "published, neither asserted nor shown"
     },
     {
       "name": "MdyGroupDescriptor",
@@ -1988,9 +2018,9 @@
     },
     {
       "name": "MdyOverlayGeometry",
-      "asserted": true,
+      "asserted": false,
       "shown": false,
-      "reason": "published and never shown"
+      "reason": "published, neither asserted nor shown"
     },
     {
       "name": "MdyOverlayLifecycleIntent",
@@ -2012,9 +2042,9 @@
     },
     {
       "name": "MdyOverlayOpenerA11yOptions",
-      "asserted": true,
+      "asserted": false,
       "shown": false,
-      "reason": "published and never shown"
+      "reason": "published, neither asserted nor shown"
     },
     {
       "name": "MdyOverlayPhase",
@@ -2036,15 +2066,15 @@
     },
     {
       "name": "MdyOverlayProperty",
-      "asserted": true,
+      "asserted": false,
       "shown": false,
-      "reason": "published and never shown"
+      "reason": "published, neither asserted nor shown"
     },
     {
       "name": "MdyOverlayRoot",
-      "asserted": true,
+      "asserted": false,
       "shown": false,
-      "reason": "published and never shown"
+      "reason": "published, neither asserted nor shown"
     },
     {
       "name": "MdyPaintBeat",
@@ -2060,9 +2090,9 @@
     },
     {
       "name": "MdyPartMap",
-      "asserted": true,
+      "asserted": false,
       "shown": false,
-      "reason": "published and never shown"
+      "reason": "published, neither asserted nor shown"
     },
     {
       "name": "MdyPartPresence",
@@ -2174,9 +2204,9 @@
     },
     {
       "name": "MdyRelationAttribute",
-      "asserted": true,
+      "asserted": false,
       "shown": false,
-      "reason": "published and never shown"
+      "reason": "published, neither asserted nor shown"
     },
     {
       "name": "MdyRequiredDirective",
@@ -2186,9 +2216,15 @@
     },
     {
       "name": "MdyRootRef",
-      "asserted": true,
+      "asserted": false,
       "shown": false,
-      "reason": "published and never shown"
+      "reason": "published, neither asserted nor shown"
+    },
+    {
+      "name": "MdySanitizeProfile",
+      "asserted": false,
+      "shown": true,
+      "reason": "published and never asserted"
     },
     {
       "name": "MdySanitizer",
@@ -2203,10 +2239,16 @@
       "reason": "published, neither asserted nor shown"
     },
     {
+      "name": "MdySecurityViolation",
+      "asserted": false,
+      "shown": true,
+      "reason": "published and never asserted"
+    },
+    {
       "name": "MdySecurityViolationKind",
-      "asserted": true,
+      "asserted": false,
       "shown": false,
-      "reason": "published and never shown"
+      "reason": "published, neither asserted nor shown"
     },
     {
       "name": "MdySegmentedButtonComponent",
@@ -2252,9 +2294,9 @@
     },
     {
       "name": "MdySelectFieldControllerOptions",
-      "asserted": true,
+      "asserted": false,
       "shown": false,
-      "reason": "published and never shown"
+      "reason": "published, neither asserted nor shown"
     },
     {
       "name": "MdySelectIntent",
@@ -2282,9 +2324,9 @@
     },
     {
       "name": "MdySelectReconciliationState",
-      "asserted": true,
+      "asserted": false,
       "shown": false,
-      "reason": "published and never shown"
+      "reason": "published, neither asserted nor shown"
     },
     {
       "name": "MdySelectState",
@@ -2300,9 +2342,9 @@
     },
     {
       "name": "MdySelfRef",
-      "asserted": true,
+      "asserted": false,
       "shown": false,
-      "reason": "published and never shown"
+      "reason": "published, neither asserted nor shown"
     },
     {
       "name": "MdyServerValidatorOptions",
@@ -2321,6 +2363,12 @@
       "asserted": true,
       "shown": false,
       "reason": "published and never shown"
+    },
+    {
+      "name": "MdySilentWriteBinding",
+      "asserted": false,
+      "shown": true,
+      "reason": "published and never asserted"
     },
     {
       "name": "MdySliderComponent",
@@ -2389,6 +2437,12 @@
       "reason": "published, neither asserted nor shown"
     },
     {
+      "name": "MdySubmissionShape",
+      "asserted": false,
+      "shown": true,
+      "reason": "published and never asserted"
+    },
+    {
       "name": "MdySubmitMode",
       "asserted": true,
       "shown": false,
@@ -2396,9 +2450,9 @@
     },
     {
       "name": "MdySubmittedItemValue",
-      "asserted": true,
+      "asserted": false,
       "shown": false,
-      "reason": "published and never shown"
+      "reason": "published, neither asserted nor shown"
     },
     {
       "name": "MdySubmittedValue",
@@ -2522,9 +2576,9 @@
     },
     {
       "name": "MdyTimeWindow",
-      "asserted": true,
+      "asserted": false,
       "shown": false,
-      "reason": "published and never shown"
+      "reason": "published, neither asserted nor shown"
     },
     {
       "name": "MdyTimepickerComponent",
@@ -2534,15 +2588,15 @@
     },
     {
       "name": "MdyTimepickerDialArc",
-      "asserted": true,
+      "asserted": false,
       "shown": false,
-      "reason": "published and never shown"
+      "reason": "published, neither asserted nor shown"
     },
     {
       "name": "MdyTimepickerDialGhost",
-      "asserted": true,
+      "asserted": false,
       "shown": false,
-      "reason": "published and never shown"
+      "reason": "published, neither asserted nor shown"
     },
     {
       "name": "MdyTimepickerDialKeyResult",
@@ -2558,9 +2612,9 @@
     },
     {
       "name": "MdyTimepickerDialPick",
-      "asserted": true,
+      "asserted": false,
       "shown": false,
-      "reason": "published and never shown"
+      "reason": "published, neither asserted nor shown"
     },
     {
       "name": "MdyTimepickerEntry",
@@ -2594,9 +2648,9 @@
     },
     {
       "name": "MdyTimepickerFieldState",
-      "asserted": true,
+      "asserted": false,
       "shown": false,
-      "reason": "published and never shown"
+      "reason": "published, neither asserted nor shown"
     },
     {
       "name": "MdyTimepickerViewMode",
@@ -2654,9 +2708,9 @@
     },
     {
       "name": "MdyTypedWidgetViewContract",
-      "asserted": true,
+      "asserted": false,
       "shown": false,
-      "reason": "published and never shown"
+      "reason": "published, neither asserted nor shown"
     },
     {
       "name": "MdyUiCommand",
@@ -2678,9 +2732,9 @@
     },
     {
       "name": "MdyValidationMessages",
-      "asserted": true,
+      "asserted": false,
       "shown": false,
-      "reason": "published and never shown"
+      "reason": "published, neither asserted nor shown"
     },
     {
       "name": "MdyValidatorBaseDirective",
@@ -2767,6 +2821,12 @@
       "reason": "published, neither asserted nor shown"
     },
     {
+      "name": "MdyWebStorageLike",
+      "asserted": false,
+      "shown": true,
+      "reason": "published and never asserted"
+    },
+    {
       "name": "MdyWiden",
       "asserted": true,
       "shown": false,
@@ -2774,15 +2834,15 @@
     },
     {
       "name": "MdyWidgetCommandContext",
-      "asserted": true,
+      "asserted": false,
       "shown": false,
-      "reason": "published and never shown"
+      "reason": "published, neither asserted nor shown"
     },
     {
       "name": "MdyWidgetCommandExecutor",
-      "asserted": true,
+      "asserted": false,
       "shown": false,
-      "reason": "published and never shown"
+      "reason": "published, neither asserted nor shown"
     },
     {
       "name": "MdyWidgetCommandHandlers",
@@ -2804,9 +2864,9 @@
     },
     {
       "name": "MdyWidgetIdFactory",
-      "asserted": true,
+      "asserted": false,
       "shown": false,
-      "reason": "published and never shown"
+      "reason": "published, neither asserted nor shown"
     },
     {
       "name": "MdyWidgetKeyIntent",
@@ -2828,9 +2888,9 @@
     },
     {
       "name": "MdyWidgetRelation",
-      "asserted": true,
+      "asserted": false,
       "shown": false,
-      "reason": "published and never shown"
+      "reason": "published, neither asserted nor shown"
     },
     {
       "name": "MdyWidgetRuntime",
@@ -2840,21 +2900,21 @@
     },
     {
       "name": "MdyWidgetRuntimeCapabilities",
-      "asserted": true,
+      "asserted": false,
       "shown": false,
-      "reason": "published and never shown"
+      "reason": "published, neither asserted nor shown"
     },
     {
       "name": "MdyWidgetSemanticElement",
-      "asserted": true,
+      "asserted": false,
       "shown": false,
-      "reason": "published and never shown"
+      "reason": "published, neither asserted nor shown"
     },
     {
       "name": "MdyWidgetState",
-      "asserted": true,
+      "asserted": false,
       "shown": false,
-      "reason": "published and never shown"
+      "reason": "published, neither asserted nor shown"
     },
     {
       "name": "MdyWidgetStateContract",
@@ -2864,15 +2924,15 @@
     },
     {
       "name": "MdyWidgetStructure",
-      "asserted": true,
+      "asserted": false,
       "shown": false,
-      "reason": "published and never shown"
+      "reason": "published, neither asserted nor shown"
     },
     {
       "name": "MdyWidgetStructureNode",
-      "asserted": true,
+      "asserted": false,
       "shown": false,
-      "reason": "published and never shown"
+      "reason": "published, neither asserted nor shown"
     },
     {
       "name": "MdyWidgetTransition",
@@ -2888,9 +2948,9 @@
     },
     {
       "name": "MdyWidgetViewContract",
-      "asserted": true,
+      "asserted": false,
       "shown": false,
-      "reason": "published and never shown"
+      "reason": "published, neither asserted nor shown"
     },
     {
       "name": "MdyWizardStepComponent",
@@ -3029,6 +3089,12 @@
       "asserted": false,
       "shown": false,
       "reason": "published, neither asserted nor shown"
+    },
+    {
+      "name": "beginChipReorder",
+      "asserted": true,
+      "shown": false,
+      "reason": "published and never shown"
     },
     {
       "name": "bindLightDismiss",
@@ -3170,9 +3236,9 @@
     },
     {
       "name": "chipDropIndex",
-      "asserted": true,
+      "asserted": false,
       "shown": false,
-      "reason": "published and never shown"
+      "reason": "published, neither asserted nor shown"
     },
     {
       "name": "chipFocusAfterRemoval",

@@ -483,3 +483,86 @@ export function chipStripWheelDelta(
   if (scrollWidth <= clientWidth) return 0;
   return Math.abs(deltaX) > Math.abs(deltaY) ? deltaX : deltaY;
 }
+
+/**
+ * A chip dragged along its strip, from the press that starts it to the index it lands on.
+ *
+ * Written out identically wherever a strip is drawn, down to the six pixels and the swallowed click.
+ * The renderer still binds the press its own way — that is the part a framework owns — and this is
+ * everything between the press and the drop.
+ *
+ * **The threshold is the whole design.** A drag may start anywhere on the chip, its own buttons
+ * included: they cover most of it, and a chip draggable only by its bare edges is a chip nobody can
+ * drag. What separates a press from a drag is travel, so a press that stays put belongs to the button
+ * under it and one that moves belongs to the strip.
+ *
+ * **The click is swallowed once, in the capture phase.** A press that began on a button and ended as
+ * a gesture still produces a click, and nobody asked for it. Taken before it reaches the button, once,
+ * so the next real press on that button still works.
+ *
+ * **Tracked on the document, not by capturing the pointer.** `setPointerCapture` follows the gesture
+ * just as far and retargets every later pointer event — the one that becomes a `click` included — to
+ * the capturing element, at which point the chip's own buttons stop receiving their clicks entirely:
+ * found, pressed, nothing happens.
+ */
+export interface MdyChipReorderOptions {
+  /** The class a chip wears while it is being dragged. */
+  readonly draggingClass: string;
+  /** Horizontal travel, in pixels, that turns a press into a drag. */
+  readonly threshold?: number;
+  /** The horizontal centre of each chip in the strip, in the order they are shown. */
+  midpoints(): readonly number[];
+  /** Where the dragged chip sits now. */
+  from(): number;
+  /** Called only when the chip lands somewhere else. */
+  onDrop(to: number): void;
+}
+
+export function beginChipReorder(
+  press: { readonly button: number; readonly clientX: number },
+  chip: HTMLElement,
+  options: MdyChipReorderOptions,
+): void {
+  if (press.button !== 0) return;
+  const view = chip.ownerDocument;
+  if (!view) return;
+  const travel = options.threshold ?? MDY_CHIP_DRAG_THRESHOLD;
+  const startX = press.clientX;
+  let dragging = false;
+
+  const onMove = (move: PointerEvent): void => {
+    if (!dragging && Math.abs(move.clientX - startX) < travel) return;
+    dragging = true;
+    chip.classList.add(options.draggingClass);
+  };
+  const onUp = (up: PointerEvent): void => {
+    detach();
+    if (!dragging) return;
+    view.addEventListener("click", (click) => { click.stopPropagation(); click.preventDefault(); },
+      { capture: true, once: true });
+    const from = options.from();
+    const to = chipDropIndex(options.midpoints(), up.clientX, from);
+    if (to !== from) options.onDrop(to);
+  };
+  const onCancel = (): void => detach();
+
+  function detach(): void {
+    view.removeEventListener("pointermove", onMove);
+    view.removeEventListener("pointerup", onUp);
+    view.removeEventListener("pointercancel", onCancel);
+    chip.classList.remove(options.draggingClass);
+  }
+
+  view.addEventListener("pointermove", onMove);
+  view.addEventListener("pointerup", onUp);
+  view.addEventListener("pointercancel", onCancel);
+}
+
+/**
+ * How far a press travels before it is a drag.
+ *
+ * Published because it is the number that decides whether a chip's own buttons still work: too small
+ * and a steady finger reorders the strip instead of pressing what it is on, too large and a drag has
+ * to be exaggerated before anything moves.
+ */
+export const MDY_CHIP_DRAG_THRESHOLD = 6;

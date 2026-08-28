@@ -3497,6 +3497,12 @@
     "(0) structure: MdyWidgetStructure",
     "-> returns: void"
   ],
+  "beginChipReorder": [
+    "(0) press: { readonly button: number; readonly clientX: number; }",
+    "(1) chip: HTMLElement",
+    "(2) options: MdyChipReorderOptions",
+    "-> returns: void"
+  ],
   "bindFormReset": [
     "(0) binding: MdyFormResetBinding",
     "-> returns: () => void"
