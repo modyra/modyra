@@ -93,8 +93,22 @@ function snapshot() {
       // The bindings themselves, not `Object.keys` of the array — that recorded "0", "1", "2", so the
       // diff compared how *many* keys a kind declared and never which. Renaming Escape to Enter was
       // invisible; declaring Tab reported "key declared: 8".
+      // Every field a binding carries, not the three it used to. A binding says which key, in which
+      // phase, at which part, with what held, and what happens to focus — and only the first three
+      // were recorded, so `Escape` gaining `modifier: "any"` moved nothing here while it changed
+      // whether a person can leave a panel with a modifier down. A gesture nobody can perform any
+      // more is a break, and a field that decides whether it can be performed belongs in the record.
       keyboard: (MDY_WIDGET_KEYBOARD[kind] ?? [])
-        .map((b) => `${b.key === " " ? "Space" : b.key}${b.when ? `@${b.when}` : ""}:${b.intent}`)
+        .map((b) => [
+          `${b.key === " " ? "Space" : b.key}${b.when ? `@${b.when}` : ""}:${b.intent}`,
+          b.on === undefined ? "" : ` on=${b.on}`,
+          b.modifier === undefined ? "" : ` mod=${b.modifier}`,
+          b.by === undefined ? "" : ` by=${b.by}`,
+          b.toEnd === true ? " toEnd" : "",
+          b.restoresFocus === undefined ? "" : ` focus=${b.restoresFocus}`,
+          b.requires === undefined ? "" : ` requires=${b.requires}`,
+          b.awaits === undefined ? "" : ` awaits=${b.awaits}`,
+        ].join(""))
         .sort(),
     };
   }
@@ -369,30 +383,61 @@ for (const kind of Object.keys(current.kinds).filter((k) => baseline.kinds[k])) 
   }
 
   /**
-   * A binding recorded as `Key@phase:intent`, with the phase absent where it answers in both.
+   * A binding is identified by the gesture — which key, in which phase, at which part — and the rest
+   * of what it declares are that gesture's attributes.
    *
+   * Compared as one string, enriching the record reads as every binding removed and a different one
+   * declared: eighty findings, with a real removal invisible among them, which is the failure this
+   * entry exists to prevent. So membership is asked of the gesture, and what it *does* is compared
+   * separately.
+   */
+  const gestureOf = (entry) => entry.split(" ").filter((part) => !part.includes("=") && part !== "toEnd").join(" ");
+  const attributesOf = (entry) => entry.slice(gestureOf(entry).length).trim();
+  const wasByGesture = new Map(was.keyboard.map((entry) => [gestureOf(entry), entry]));
+  const recordsNoAttributes = was.keyboard.every((entry) => attributesOf(entry) === "");
+  const nowByGesture = new Map(now.keyboard.map((entry) => [gestureOf(entry), entry]));
+
+  /**
    * Dropping the phase *widens* a binding: a key that answered only while open now answers always,
    * and nobody who relied on the open behaviour loses it. Compared as strings that reads as one
    * binding removed and another added — a major and a minor for a change that takes nothing away.
    *
    * The disagreement is worth more than either verdict: the string comparison is right that the old
-   * spelling is gone, and wrong about what a consumer can survive. So the widening is recognised
-   * here rather than argued around at each call site.
+   * spelling is gone, and wrong about what a consumer can survive.
    */
   const widens = (gone) => {
     const [head, intent] = gone.split(":");
     const [key] = head.split("@");
-    return head.includes("@") && now.keyboard.includes(`${key}:${intent}`);
+    return head.includes("@") && nowByGesture.has(`${key}:${intent}`);
   };
-  for (const gone of was.keyboard.filter((k) => !now.keyboard.includes(k))) {
-    if (widens(gone)) {
-      record("minor", kind, `key now answers in every phase: ${gone.split("@")[0]}`);
+
+  for (const [gesture] of wasByGesture) {
+    if (nowByGesture.has(gesture)) continue;
+    if (widens(gesture)) {
+      record("minor", kind, `key now answers in every phase: ${gesture.split("@")[0]}`);
       continue;
     }
-    record("major", kind, `key no longer declared: ${gone}`);
+    record("major", kind, `key no longer declared: ${gesture}`);
   }
-  for (const added of now.keyboard.filter((k) => !was.keyboard.includes(k))) {
-    record("minor", kind, `key declared: ${added}`);
+  for (const [gesture, entry] of nowByGesture) {
+    if (!wasByGesture.has(gesture)) {
+      record("minor", kind, `key declared: ${entry}`);
+      continue;
+    }
+    const before = attributesOf(wasByGesture.get(gesture));
+    const after = attributesOf(entry);
+    if (before === after) continue;
+    // A snapshot taken before a binding's attributes were recorded has none for any of them, and an
+    // absence there means "not written down", not "declared nothing". Compared raw it reports every
+    // binding in the contract as changed, which buries the one that did. The guard removes itself:
+    // the next snapshot carries attributes, and this is never true again.
+    if (recordsNoAttributes) continue;
+    // What the gesture *does* has changed: where focus lands, which part answers, what may be held
+    // with it. Breaking by default — somebody who could perform it may no longer be able to, or it
+    // now does something else — except a modifier widening to `any`, which only accepts more.
+    const widened = !before.includes("mod=") && after.includes("mod=any");
+    record(widened ? "minor" : "major", kind,
+      `key changed: ${gesture} — ${before || "(nothing)"} → ${after || "(nothing)"}`);
   }
 
   // Variants, over the union of both sides — a withdrawn one is not there to iterate on the current

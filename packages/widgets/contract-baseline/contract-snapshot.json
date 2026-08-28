@@ -2109,17 +2109,17 @@
       "variants": {},
       "keyboard": [
         "*printable*:typeahead",
-        "ArrowDown@closed:open",
+        "ArrowDown@closed:open on=trigger",
         "ArrowDown@open:move",
-        "ArrowUp@closed:open",
+        "ArrowUp@closed:open on=trigger",
         "ArrowUp@open:move",
         "End@open:move",
-        "Enter@closed:open",
+        "Enter@closed:open on=trigger",
         "Enter@open:commit",
-        "Escape@open:cancel",
+        "Escape@open:cancel mod=any focus=true",
         "Home@open:move",
-        "Space@closed:open",
-        "Tab@open:cancel"
+        "Space@closed:open on=trigger",
+        "Tab@open:cancel focus=false"
       ]
     },
     "multiselect": {
@@ -2651,28 +2651,28 @@
       },
       "keyboard": [
         "*printable*@open:typeahead",
-        "ArrowDown@closed:open",
-        "ArrowDown@closed:step",
+        "ArrowDown@closed:open on=trigger",
+        "ArrowDown@closed:step on=chip",
         "ArrowDown@open:move",
-        "ArrowLeft@closed:move",
-        "ArrowRight@closed:move",
-        "ArrowUp@closed:open",
-        "ArrowUp@closed:step",
+        "ArrowLeft@closed:move on=chip by=-1",
+        "ArrowRight@closed:move on=chip by=1",
+        "ArrowUp@closed:open on=trigger",
+        "ArrowUp@closed:step on=chip",
         "ArrowUp@open:move",
-        "Backspace@closed:remove",
-        "Delete@closed:remove",
-        "End@closed:move",
+        "Backspace@closed:remove on=chip",
+        "Delete@closed:remove on=chip",
+        "End@closed:move on=chip by=1 toEnd",
         "End@open:move",
-        "Enter@closed:grab",
-        "Enter@closed:open",
+        "Enter@closed:grab on=chip requires=reorderable",
+        "Enter@closed:open on=trigger",
         "Enter@open:commit",
-        "Escape@closed:cancel",
-        "Escape@open:cancel",
-        "Home@closed:move",
+        "Escape@closed:cancel on=chip mod=any requires=reorderable",
+        "Escape@open:cancel mod=any focus=true",
+        "Home@closed:move on=chip by=-1 toEnd",
         "Home@open:move",
-        "Space@closed:open",
-        "Tab@open:cancel",
-        "z:undo"
+        "Space@closed:open on=trigger",
+        "Tab@open:cancel focus=false",
+        "z:undo mod=primary awaits=wayBack"
       ]
     },
     "datepicker": {
@@ -3038,13 +3038,13 @@
         "ArrowDown@open:move",
         "ArrowUp@open:move",
         "End@open:move",
-        "Enter@closed:open",
+        "Enter@closed:open on=control",
         "Enter@open:commit",
-        "Escape@open:cancel",
+        "Escape@open:cancel mod=any focus=true",
         "Home@open:move",
-        "PageDown@open:move",
-        "PageUp@open:move",
-        "Tab@open:cancel"
+        "PageDown@open:move by=1",
+        "PageUp@open:move by=-1",
+        "Tab@open:cancel focus=false"
       ]
     },
     "daterange": {
@@ -3442,14 +3442,14 @@
         "ArrowDown@open:move",
         "ArrowUp@open:move",
         "End@open:move",
-        "Enter@closed:open",
+        "Enter@closed:open on=toggle",
         "Enter@open:commit",
-        "Escape@open:cancel",
+        "Escape@open:cancel mod=any focus=true",
         "Home@open:move",
-        "PageDown@open:move",
-        "PageUp@open:move",
-        "Space@closed:open",
-        "Tab@open:cancel"
+        "PageDown@open:move by=1",
+        "PageUp@open:move by=-1",
+        "Space@closed:open on=toggle",
+        "Tab@open:cancel focus=false"
       ]
     },
     "timepicker": {
@@ -3931,9 +3931,9 @@
         "ArrowDown@open:move",
         "ArrowUp@open:move",
         "End@open:move",
-        "Enter@closed:open",
+        "Enter@closed:open on=control",
         "Enter@open:commit",
-        "Escape@open:cancel",
+        "Escape@open:cancel mod=any focus=true",
         "Home@open:move",
         "Tab@open:move"
       ]
@@ -4450,12 +4450,12 @@
         "ArrowDown@open:move",
         "ArrowUp@open:move",
         "End@open:move",
-        "Enter@closed:open",
+        "Enter@closed:open on=nativePicker",
         "Enter@open:commit",
-        "Escape@open:cancel",
+        "Escape@open:cancel mod=any focus=true",
         "Home@open:move",
-        "Space@closed:open",
-        "Tab@open:cancel"
+        "Space@closed:open on=nativePicker",
+        "Tab@open:cancel focus=false"
       ]
     }
   },

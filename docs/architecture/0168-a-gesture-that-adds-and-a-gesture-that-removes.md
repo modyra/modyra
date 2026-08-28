@@ -97,9 +97,18 @@ the answer elsewhere.
 - **`colors` is the sixth and its dismissal is still a hand comparison in one renderer.** It behaves
   correctly and does not read the declaration, so the mutation above leaves it green. Recorded rather
   than swept.
-- The contract snapshot does **not** cover the keyboard catalogue. This change altered a published
-  binding and `contract:diff` reported `patch` — the differ compares parts, classes, states, order
-  and presence, and no keyboard declaration is among them.
+- **Correction to what this record first said.** It claimed the contract snapshot does not cover the
+  keyboard catalogue. It does — asserted from `contract:diff` answering `patch` without opening the
+  snapshot, which is the same mistake this whole record is about. What it recorded was
+  `key@phase:intent` and nothing else, so `modifier`, `on`, `by`, `toEnd`, `restoresFocus`,
+  `requires` and `awaits` were all invisible: `Escape` gaining `modifier: "any"` moved nothing while
+  it changed whether a person can leave a panel with a modifier down.
+
+  The record now carries every field a binding declares. A binding is identified by its gesture and
+  the rest are compared as that gesture's attributes — compared as one string, enriching the record
+  read as every binding removed and a different one declared, eighty findings with a real removal
+  invisible among them. Both mutations are seen now and classified major: removing
+  `modifier: "any"`, and removing the binding outright.
 
 ## Security and privacy
 
