@@ -54,7 +54,6 @@ import { MdyDropdownBase } from "../dropdown-base";
     class: "mdy-renderer mdy-renderer--select",
     "[class.mdy-renderer]": "widgetHasRootClass",
     "[class.mdy-inline-errors]": "inlineErrors",
-    "[class.mdy-renderer--touched]": "touched()",
     "(keydown)": "onKeydown($event)",
   },
   template: `

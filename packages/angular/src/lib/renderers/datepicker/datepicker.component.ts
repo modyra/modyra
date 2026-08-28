@@ -53,7 +53,6 @@ import { MdyCalendarComponent } from "./calendar.component";
     class: "mdy-renderer mdy-renderer--datepicker",
     "[class.mdy-renderer]": "widgetHasRootClass",
     "[class.mdy-inline-errors]": "inlineErrors",
-    "[class.mdy-renderer--touched]": "touched()",
   },
   template: `
     <mdy-control-label

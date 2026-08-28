@@ -17,7 +17,6 @@ import { MDY_I18N_MESSAGES } from "../../core/i18n";
     class: "mdy-renderer mdy-renderer--file",
     "[class.mdy-renderer]": "widgetHasRootClass",
     "[class.mdy-inline-errors]": "inlineErrors",
-    "[class.mdy-renderer--touched]": "touched()",
   },
   template: `
     <mdy-control-label

@@ -49,7 +49,6 @@ import { inputText, isoDateText } from "../renderer-projection";
     class: "mdy-renderer mdy-renderer--datepicker mdy-renderer--daterange",
     "[class.mdy-renderer]": "widgetHasRootClass",
     "[class.mdy-inline-errors]": "inlineErrors",
-    "[class.mdy-renderer--touched]": "touched()",
   },
   template: `
     @if (label()) {

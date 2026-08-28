@@ -14,7 +14,6 @@ import { MdyInlineErrorIconComponent } from "../../control/inline-error-icon.com
   host: {
     class: "mdy-renderer mdy-renderer--toggle",
     "[class.mdy-renderer]": "widgetHasRootClass",
-    "[class.mdy-renderer--touched]": "touched()",
   },
   template: `
     <div class="mdy-toggle">

@@ -53,7 +53,6 @@ import { MdyTimepickerClockComponent } from "./timepicker-clock.component";
     class: "mdy-renderer mdy-renderer--timepicker",
     "[class.mdy-renderer]": "widgetHasRootClass",
     "[class.mdy-inline-errors]": "inlineErrors",
-    "[class.mdy-renderer--touched]": "touched()",
   },
   template: `
     <mdy-control-label

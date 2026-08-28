@@ -17,7 +17,6 @@ import { inputText } from "../renderer-projection";
     class: "mdy-renderer mdy-renderer--textarea",
     "[class.mdy-renderer]": "widgetHasRootClass",
     "[class.mdy-inline-errors]": "inlineErrors",
-    "[class.mdy-renderer--touched]": "touched()",
   },
   template: `
     <mdy-control-label

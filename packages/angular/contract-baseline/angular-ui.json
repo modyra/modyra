@@ -484,7 +484,6 @@
         "mdy-part",
         "mdy-renderer",
         "mdy-renderer--checkbox",
-        "mdy-renderer--touched",
         "mdy-supporting-text"
       ],
       "aria": [
@@ -524,7 +523,6 @@
         "mdy-part",
         "mdy-renderer",
         "mdy-renderer--colors",
-        "mdy-renderer--touched",
         "mdy-select__arrow",
         "mdy-select__arrow--open",
         "mdy-supporting-text"
@@ -638,7 +636,6 @@
         "mdy-part",
         "mdy-renderer",
         "mdy-renderer--datepicker",
-        "mdy-renderer--touched",
         "mdy-supporting-text"
       ],
       "aria": [
@@ -682,7 +679,6 @@
         "mdy-renderer",
         "mdy-renderer--datepicker",
         "mdy-renderer--daterange",
-        "mdy-renderer--touched",
         "mdy-supporting-text"
       ],
       "aria": [
@@ -792,7 +788,6 @@
         "mdy-part",
         "mdy-renderer",
         "mdy-renderer--file",
-        "mdy-renderer--touched",
         "mdy-supporting-text"
       ],
       "aria": [
@@ -837,7 +832,6 @@
         "mdy-part",
         "mdy-renderer",
         "mdy-renderer--multiselect",
-        "mdy-renderer--touched",
         "mdy-select__loader",
         "mdy-select__loading-content",
         "mdy-supporting-text"
@@ -874,7 +868,6 @@
         "mdy-part",
         "mdy-renderer",
         "mdy-renderer--number",
-        "mdy-renderer--touched",
         "mdy-spin-btn",
         "mdy-supporting-text"
       ],
@@ -914,7 +907,6 @@
         "mdy-radio-label",
         "mdy-renderer",
         "mdy-renderer--radio-group",
-        "mdy-renderer--touched",
         "mdy-supporting-text"
       ],
       "aria": [
@@ -933,7 +925,6 @@
         "mdy-part",
         "mdy-renderer",
         "mdy-renderer--segmented",
-        "mdy-renderer--touched",
         "mdy-segmented",
         "mdy-segmented__button",
         "mdy-segmented__button--first",
@@ -969,7 +960,6 @@
         "mdy-part",
         "mdy-renderer",
         "mdy-renderer--select",
-        "mdy-renderer--touched",
         "mdy-select",
         "mdy-select__arrow",
         "mdy-select__arrow--open",
@@ -1015,7 +1005,6 @@
         "mdy-part",
         "mdy-renderer",
         "mdy-renderer--slider",
-        "mdy-renderer--touched",
         "mdy-slider",
         "mdy-slider-container",
         "mdy-slider-value",
@@ -1038,7 +1027,6 @@
         "mdy-part",
         "mdy-renderer",
         "mdy-renderer--text",
-        "mdy-renderer--touched",
         "mdy-supporting-text"
       ],
       "aria": [
@@ -1061,7 +1049,6 @@
         "mdy-part",
         "mdy-renderer",
         "mdy-renderer--textarea",
-        "mdy-renderer--touched",
         "mdy-supporting-text"
       ],
       "aria": [
@@ -1147,7 +1134,6 @@
         "mdy-part",
         "mdy-renderer",
         "mdy-renderer--timepicker",
-        "mdy-renderer--touched",
         "mdy-supporting-text",
         "mdy-timepicker",
         "mdy-timepicker-clock",
@@ -1197,7 +1183,6 @@
         "mdy-part",
         "mdy-renderer",
         "mdy-renderer--toggle",
-        "mdy-renderer--touched",
         "mdy-supporting-text",
         "mdy-toggle",
         "mdy-toggle__label",

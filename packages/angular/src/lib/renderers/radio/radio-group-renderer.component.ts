@@ -15,7 +15,6 @@ import { MdySelectOption } from "../../core/types";
   host: {
     class: "mdy-renderer mdy-renderer--radio-group",
     "[class.mdy-renderer]": "widgetHasRootClass",
-    "[class.mdy-renderer--touched]": "touched()",
   },
   template: `
     <!-- The group is labelled via aria-labelledby on the radiogroup: the label

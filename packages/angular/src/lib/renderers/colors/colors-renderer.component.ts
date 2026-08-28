@@ -38,7 +38,6 @@ import { MdyOverlayPanelComponent } from "../../core/overlay-panel.component";
     class: "mdy-renderer mdy-renderer--colors",
     "[class.mdy-renderer]": "widgetHasRootClass",
     "[class.mdy-inline-errors]": "inlineErrors",
-    "[class.mdy-renderer--touched]": "touched()",
   },
 
   template: `

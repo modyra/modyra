@@ -21,7 +21,6 @@ import { MdySelectOption } from "../../core/types";
   host: {
     class: "mdy-renderer mdy-renderer--segmented",
     "[class.mdy-renderer]": "widgetHasRootClass",
-    "[class.mdy-renderer--touched]": "touched()",
     "[style.width]": "fullWidth() ? '100%' : 'fit-content'",
     "[style.--mdy-segments-count]": "segmentsCount()"
   },

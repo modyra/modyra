@@ -13,7 +13,6 @@ import { MdyErrorListComponent } from "../../control/error-list.component";
   host: {
     class: "mdy-renderer mdy-renderer--checkbox",
     "[class.mdy-renderer]": "widgetHasRootClass",
-    "[class.mdy-renderer--touched]": "touched()",
   },
   template: `
     <div class="mdy-checkbox">
