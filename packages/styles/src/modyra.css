@@ -4729,6 +4729,27 @@
 
            So the line is drawn as a border on the element, and the handle is painted where the
            platform actually puts it. */
+        /* A field's edge is an inset `box-shadow`, and a forced palette drops shadows outright —
+           along with the wrapper's own background, which is repainted the surface colour. So the box
+           a person uses to see where the input is has no edge at all, in the one mode chosen by
+           people who need edges most.
+
+           What survives is a border, the same answer the slider's track needed one rule below. Drawn
+           only on the block end, because that is the edge this shape has: a filled field is a
+           surface with a line under it, not a box.
+
+           Found through the error list rather than here: that list is transparent and absolutely
+           placed over this edge, so the sweep photographed the wrapper's underline through it and
+           named the loss after the box in front. */
+        .mdy-input-wrapper {
+            border-block-end: 1px solid CanvasText;
+        }
+
+        .mdy-input-wrapper:focus-within,
+        .mdy-input-wrapper--error {
+            border-block-end-width: 2px;
+        }
+
         .mdy-slider {
             border-block-end: var(--mdy-slider-track-height, 4px) solid CanvasText;
         }
