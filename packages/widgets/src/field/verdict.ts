@@ -15,6 +15,7 @@
  * wrong, it was being shown to someone who could not act on it.
  */
 import { MDY_VALUE_CONTRACTS, mdyEmptyValueFor, type MdyFieldError, type MdyFormError, type MdyValueKind } from "@modyra/core";
+import type { MdyFieldConstraints } from "@modyra/core";
 
 /** The errors a field may show, given whether the form is asking about it. */
 export function shownErrors(
@@ -198,4 +199,35 @@ export function nameIsAFallback(sources: {
     (typeof sources.ariaLabel === "string" && sources.ariaLabel.trim().length > 0) ||
     (typeof sources.label === "string" && sources.label.trim().length > 0)
   );
+}
+
+/**
+ * Whether a field can fail a rule, and so whether its error container is reserved at rest.
+ *
+ * The reservation is not for the field that is failing — it is for the field *below* it. Someone
+ * leaving a field is moving toward the next one, and that is exactly what drops when a message
+ * appears under the field they just left. The jump from no line to one line lands under a thumb
+ * already travelling.
+ *
+ * It does not stop every movement and must not be believed to: a two-line message moves things
+ * anyway, a long one wraps on a narrow screen, and a validation arriving while focus is elsewhere
+ * defeats it entirely. It closes the frequent case, which is validate-on-blur.
+ *
+ * Read from the field, never from its kind. An optional note with a length limit can fail a rule; a
+ * checkbox that must be ticked can; a free-text note with no rule at all cannot, and reserving a
+ * line under it is a line of scrolling bought for nothing.
+ *
+ * The container stays reserved once a message clears. Taking the space back is the same jump,
+ * upward, under the same thumb — so it depends on the field's rules and never on its errors.
+ */
+export function fieldCanBeInvalid(field: {
+  readonly required?: boolean;
+  readonly constraints?: MdyFieldConstraints | null;
+}): boolean {
+  if (field.required === true) return true;
+  const constraints = field.constraints as Readonly<Record<string, unknown>> | null | undefined;
+  if (!constraints) return false;
+  // A constraint present and undefined is a constraint nobody set: `{ max: undefined }` is what a
+  // narrowing leaves behind, and counting the key would reserve a line under every field it touched.
+  return Object.values(constraints).some((rule) => rule !== undefined && rule !== null);
 }

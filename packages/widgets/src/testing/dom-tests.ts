@@ -14,6 +14,7 @@ import { overlayOnlyParts } from "../widget-states.js";
 import { inspectWidgetStructure } from "./structure-tests.js";
 
 export type MdyDomContractIssueCode =
+  | "EXEMPTION_ACTIVE"
   | "ROOT_CLASS_MISSING"
   | "ABSENT_PART_NOT_OPTIONAL"
   | "ABSENT_PART_PRESENT"
@@ -72,9 +73,15 @@ export interface MdyDomContractOptions {
   /**
    * Prefix an adapter uses to namespace classes of its own, such as `mdy-<adapter>-`.
    *
-   * A renderer may need a hook the contract has no opinion on. Namespacing it is what keeps that
-   * distinguishable from inventing a contract class, and the prefix is declared rather than the
-   * individual names so the check stays a rule instead of a list.
+   * **Passing this reports `EXEMPTION_ACTIVE` for every class it skips.** It suspends a rule, and a
+   * result that does not say a rule was suspended reads exactly like one where the rule held — while
+   * the person who passed the option and the person who later reads the green are not the same
+   * person. Five undeclared classes lived for months behind this, in a repository whose conformance
+   * check fails on undeclared classes, and the check was green the whole time.
+   *
+   * The option stays because a renderer outside this repository may rely on it. What it no longer
+   * does is stay quiet: either the class is reported as invented, or the exemption is reported as
+   * active. There is no combination that reports nothing.
    */
   readonly adapterPrefix?: string;
   /**
@@ -834,7 +841,14 @@ export function inspectWidgetDom(
     for (const element of scope) {
       for (const className of classesOf(element)) {
         if (!className.startsWith("mdy-")) continue;
-        if (options.adapterPrefix && className.startsWith(options.adapterPrefix)) continue;
+        if (options.adapterPrefix && className.startsWith(options.adapterPrefix)) {
+          issues.push({
+            code: "EXEMPTION_ACTIVE", part: "root",
+            message: `${className} was not checked against the ${kind} contract: adapterPrefix `
+              + `"${options.adapterPrefix}" suspends the class rule for it`,
+          });
+          continue;
+        }
         if (canonical.has(className) || isModifierOf(className, canonical, declared)) continue;
         issues.push({ code: "INVENTED_CLASS", part: "root", message: `${className} is not part of the ${kind} contract` });
       }
