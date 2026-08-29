@@ -5,44 +5,9 @@
     "published": 904,
     "asserted": 904,
     "showable": 399,
-    "shown": 374
+    "shown": 387
   },
   "uncovered": [
-    {
-      "name": "MdyActivationError",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "MdyAdapterContractError",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "MdyCrossRuntimeObservationError",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "MdyDestroyedScopeError",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "MdyUnsupportedCapabilityError",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
     {
       "name": "assertNeverField",
       "asserted": true,
@@ -65,21 +30,7 @@
       "reason": "published and never shown"
     },
     {
-      "name": "createCatalogWidgetController",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
       "name": "createValueWidgetController",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "dialHandLength",
       "asserted": true,
       "shown": false,
       "showable": true,
@@ -107,20 +58,6 @@
       "reason": "published and never shown"
     },
     {
-      "name": "focusWhenShown",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "openPlatformChooser",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
       "name": "projectDaterangeFieldA11y",
       "asserted": true,
       "shown": false,
@@ -142,35 +79,7 @@
       "reason": "published and never shown"
     },
     {
-      "name": "stepOutOfOverlay",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
       "name": "timeClockTransition",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "timeInputTransition",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "timepickerDialGhost",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "timepickerDialKeyIntent",
       "asserted": true,
       "shown": false,
       "showable": true,

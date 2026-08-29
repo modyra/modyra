@@ -24,6 +24,11 @@ import {
   draftShapeMatches,
   field as mdyField,
   handleFormOf,
+  MdyActivationError,
+  MdyAdapterContractError,
+  MdyCrossRuntimeObservationError,
+  MdyDestroyedScopeError,
+  MdyUnsupportedCapabilityError,
   valueShape,
   createConsoleDiagnostics,
   eachOneOf,
@@ -59,6 +64,14 @@ import {
   timepickerDialNumbers,
   bindingForIntent,
   calendarViewAfterPick,
+  createCatalogWidgetController,
+  dialHandLength,
+  focusWhenShown,
+  openPlatformChooser,
+  stepOutOfOverlay,
+  timeInputTransition,
+  timepickerDialGhost,
+  timepickerDialKeyIntent,
   chipDropIndex,
   fieldCommandHandlers,
   MDY_I18N_MESSAGES_DEFAULT,
@@ -197,9 +210,14 @@ export const rendererPanel = {
     "MDY_WIDGET_KINDS",
     "MDY_WIDGET_RELATIONS",
     "MDY_WIDGET_TRANSITIONS",
+    "MdyActivationError",
+    "MdyAdapterContractError",
+    "MdyCrossRuntimeObservationError",
+    "MdyDestroyedScopeError",
     "MdyFormEngine",
     "MdyTypedForm",
     "MdyTypedFormBase",
+    "MdyUnsupportedCapabilityError",
     "NO_CONSTRAINTS",
     "affordanceClasses",
     "bindingForIntent",
@@ -212,6 +230,7 @@ export const rendererPanel = {
     "comparableControllerOptions",
     "completeRange",
     "composeFirst",
+    "createCatalogWidgetController",
     "createCommandRuntime",
     "createConsoleDiagnostics",
     "createFocusCustodian",
@@ -222,6 +241,7 @@ export const rendererPanel = {
     "dateDraftTransition",
     "dateRangeDraftTransition",
     "defaultWidgetIdFactory",
+    "dialHandLength",
     "dialNumberAngle",
     "draftShapeMatches",
     "dragPointOf",
@@ -236,6 +256,7 @@ export const rendererPanel = {
     "fieldCommandHandlers",
     "fileSelectionTransition",
     "focusTrigger",
+    "focusWhenShown",
     "formScopeOf",
     "handleFormOf",
     "inputWasRefused",
@@ -258,6 +279,7 @@ export const rendererPanel = {
     "minutesOfDay",
     "oneOf",
     "openOverlay",
+    "openPlatformChooser",
     "optionNavigationIndex",
     "overlayCloseCommands",
     "overlayOnlyParts",
@@ -279,10 +301,15 @@ export const rendererPanel = {
     "stateCarriers",
     "stateClass",
     "staticParts",
+    "stepOutOfOverlay",
+    "stepTimeField",
     "submissionDefects",
     "submitFalsePart",
     "timeDraftTransition",
     "timeFieldBounds",
+    "timeInputTransition",
+    "timepickerDialGhost",
+    "timepickerDialKeyIntent",
     "timepickerDialNumbers",
     "timepickerDialPick",
     "timepickerDialTolerance",
@@ -317,6 +344,12 @@ export const rendererPanel = {
     let kind = "select";
     // One field, so the questions a handle answers have a handle to be asked of.
     const aHandle = createForm({ example: mdyField("") }).f.example;
+
+    // Three doors that act on the page rather than answer about it, so each is behind a command: a
+    // demonstration that fires on load is a page doing things to somebody who only opened it.
+    action(bar, "step out", () => stepOutOfOverlay(work, () => undefined));
+    action(bar, "focus when shown", () => focusWhenShown(() => work.querySelector("button")));
+    action(bar, "platform chooser", () => openPlatformChooser(work.querySelector("input")));
 
     // One command per kind rather than a chooser, so the page states its own alphabet: a reader sees
     // every kind the catalogue has without opening anything.
@@ -463,6 +496,24 @@ export const rendererPanel = {
       // Where a dragged chip would land, and the selector for a segment of the clock.
       chipWouldLandAt: chipDropIndex([0, 20, 40], 25, 0),
       clockSegment: timepickerPartSelector("hourControl"),
+      // What the library throws, and what each refusal is called. A consumer catching one wants to
+      // know the name before it happens, not after.
+      refusals: [
+        new MdyActivationError("a widget was used before it was activated").name,
+        new MdyAdapterContractError("plain", "an adapter answered for a door it does not have").name,
+        new MdyCrossRuntimeObservationError("a", "b").name,
+        new MdyDestroyedScopeError("a scope answered after it was destroyed").name,
+        new MdyUnsupportedCapabilityError("select", "a capability this kind does not offer").name,
+      ],
+      // The clock, asked what a key means on its face and where a half-made pick would show.
+      clock: {
+        typed: timeInputTransition("10:30", (value) => value),
+        arrowUpOnTheHour: timepickerDialKeyIntent("ArrowUp", "hour", "24h", 10),
+        ghostAtThirty: timepickerDialGhost(30, { value: 5, angle: 30, ring: "outer" }) === null ? "none" : "shown",
+        handLength: Math.round(dialHandLength(work)),
+      },
+      // A controller with no field behind it — the shape an adapter wraps.
+      catalogController: typeof createCatalogWidgetController(kind),
       references: {
         path: isPathRef({ path: "total" }),
         root: isRootRef({ root: "total" }),
