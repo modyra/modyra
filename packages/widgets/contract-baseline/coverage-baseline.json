@@ -5,7 +5,7 @@
     "published": 904,
     "asserted": 904,
     "showable": 399,
-    "shown": 360
+    "shown": 374
   },
   "uncovered": [
     {
@@ -65,27 +65,6 @@
       "reason": "published and never shown"
     },
     {
-      "name": "chipDropIndex",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "completeRange",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "composeFirst",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
       "name": "createCatalogWidgetController",
       "asserted": true,
       "shown": false,
@@ -107,21 +86,7 @@
       "reason": "published and never shown"
     },
     {
-      "name": "eachOneOf",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
       "name": "explainGranularityProblem",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "fieldCommandHandlers",
       "asserted": true,
       "shown": false,
       "showable": true,
@@ -143,41 +108,6 @@
     },
     {
       "name": "focusWhenShown",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "handleFormOf",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "integer",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "max",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "min",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "oneOf",
       "asserted": true,
       "shown": false,
       "showable": true,
@@ -248,34 +178,6 @@
     },
     {
       "name": "timepickerDialRing",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "timepickerPartSelector",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "valueShape",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "widgetKeyGuide",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "widgetScopeOf",
       "asserted": true,
       "shown": false,
       "showable": true,
