@@ -4,7 +4,7 @@
     "published": 903,
     "asserted": 903,
     "showable": 398,
-    "shown": 203
+    "shown": 271
   },
   "uncovered": [
     {
@@ -36,27 +36,6 @@
       "reason": "published and never shown"
     },
     {
-      "name": "MdyFormEngine",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "MdyTypedForm",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "MdyTypedFormBase",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
       "name": "MdyUnsupportedCapabilityError",
       "asserted": true,
       "shown": false,
@@ -78,28 +57,7 @@
       "reason": "published and never shown"
     },
     {
-      "name": "applyFieldValidators",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "applyValueSecurity",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
       "name": "assertNeverField",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "assertUsableWidgetId",
       "asserted": true,
       "shown": false,
       "showable": true,
@@ -113,27 +71,6 @@
       "reason": "published and never shown"
     },
     {
-      "name": "blocksFocus",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "booleanFieldPartIds",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "booleanFieldRootClasses",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
       "name": "browserRuntimeCapabilities",
       "asserted": true,
       "shown": false,
@@ -141,28 +78,7 @@
       "reason": "published and never shown"
     },
     {
-      "name": "buildDynamicFieldValidators",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
       "name": "buildDynamicFormSchema",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "buildDynamicValidators",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "buildForm",
       "asserted": true,
       "shown": false,
       "showable": true,
@@ -274,13 +190,6 @@
       "reason": "published and never shown"
     },
     {
-      "name": "createSelectController",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
       "name": "createSilentDiagnostics",
       "asserted": true,
       "shown": false,
@@ -330,34 +239,6 @@
       "reason": "published and never shown"
     },
     {
-      "name": "datepickerFieldPartIds",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "datepickerFieldRootClasses",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "decideOverlayAlignment",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "decideOverlayPlacement",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
       "name": "dialHandLength",
       "asserted": true,
       "shown": false,
@@ -366,13 +247,6 @@
     },
     {
       "name": "dialNumberAngle",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "dialRingOf",
       "asserted": true,
       "shown": false,
       "showable": true,
@@ -428,13 +302,6 @@
       "reason": "published and never shown"
     },
     {
-      "name": "explainValueMismatch",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
       "name": "expressionContextKeys",
       "asserted": true,
       "shown": false,
@@ -449,20 +316,6 @@
       "reason": "published and never shown"
     },
     {
-      "name": "factsOf",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "factsOfAll",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
       "name": "fieldCommandHandlers",
       "asserted": true,
       "shown": false,
@@ -470,28 +323,7 @@
       "reason": "published and never shown"
     },
     {
-      "name": "fieldDescribedBy",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "fieldShellRootClasses",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
       "name": "fileSelectionTransition",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "filterOptionsByQuery",
       "asserted": true,
       "shown": false,
       "showable": true,
@@ -520,13 +352,6 @@
     },
     {
       "name": "focusWhenShown",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "getFieldHandleOwner",
       "asserted": true,
       "shown": false,
       "showable": true,
@@ -582,21 +407,7 @@
       "reason": "published and never shown"
     },
     {
-      "name": "isPrimaryInteraction",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
       "name": "isRootRef",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "isSafeFieldPath",
       "asserted": true,
       "shown": false,
       "showable": true,
@@ -666,21 +477,7 @@
       "reason": "published and never shown"
     },
     {
-      "name": "matchesValueShape",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
       "name": "max",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "mergeFacts",
       "asserted": true,
       "shown": false,
       "showable": true,
@@ -701,35 +498,7 @@
       "reason": "published and never shown"
     },
     {
-      "name": "multiselectFieldPartIds",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "multiselectFieldRootClasses",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
       "name": "multiselectOverlayAction",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "multiselectValueTransition",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "nativeConstraintAttributes",
       "asserted": true,
       "shown": false,
       "showable": true,
@@ -757,42 +526,7 @@
       "reason": "published and never shown"
     },
     {
-      "name": "optionFieldPartIds",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "optionFieldRootClasses",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
       "name": "optionNavigationIndex",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "optionsWithUnrecognizedValue",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "optionsWithUnrecognizedValues",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "overlayBranchContains",
       "asserted": true,
       "shown": false,
       "showable": true,
@@ -827,13 +561,6 @@
       "reason": "published and never shown"
     },
     {
-      "name": "parseDynamicFields",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
       "name": "partSelector",
       "asserted": true,
       "shown": false,
@@ -862,70 +589,7 @@
       "reason": "published and never shown"
     },
     {
-      "name": "portalRootFor",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "processWidgetCommands",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "projectBooleanFieldA11y",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "projectDatepickerFieldA11y",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
       "name": "projectDaterangeFieldA11y",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "projectMultiselectFieldA11y",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "projectOptionFieldA11y",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "projectSelectA11y",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "projectTextFieldA11y",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "projectTimepickerFieldA11y",
       "asserted": true,
       "shown": false,
       "showable": true,
@@ -940,69 +604,6 @@
     },
     {
       "name": "reconcileSelectValue",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "registerHandleForm",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "registerHandleOwner",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "renderBooleanField",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "renderDatepickerField",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "renderMultiselectField",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "renderOptionField",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "renderSelectField",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "renderTextField",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "renderTimepickerField",
       "asserted": true,
       "shown": false,
       "showable": true,
@@ -1058,27 +659,6 @@
       "reason": "published and never shown"
     },
     {
-      "name": "shownErrors",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "showsAsInvalid",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "stabilizeOverlayPlacement",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
       "name": "stableControllerOptions",
       "asserted": true,
       "shown": false,
@@ -1122,20 +702,6 @@
     },
     {
       "name": "submitFalsePart",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "textFieldPartIds",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "textFieldRootClasses",
       "asserted": true,
       "shown": false,
       "showable": true,
@@ -1212,20 +778,6 @@
       "reason": "published and never shown"
     },
     {
-      "name": "timepickerFieldPartIds",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "timepickerFieldRootClasses",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
       "name": "timepickerFocusPart",
       "asserted": true,
       "shown": false,
@@ -1234,13 +786,6 @@
     },
     {
       "name": "timepickerPartSelector",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "timepickerSegmentAria",
       "asserted": true,
       "shown": false,
       "showable": true,
@@ -1303,13 +848,6 @@
       "reason": "published and never shown"
     },
     {
-      "name": "validationMessagesForLocale",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
       "name": "valueShape",
       "asserted": true,
       "shown": false,
@@ -1318,13 +856,6 @@
     },
     {
       "name": "viewIsActive",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "wayBackSentence",
       "asserted": true,
       "shown": false,
       "showable": true,
@@ -1353,13 +884,6 @@
     },
     {
       "name": "widgetStateClasses",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "withFacts",
       "asserted": true,
       "shown": false,
       "showable": true,
