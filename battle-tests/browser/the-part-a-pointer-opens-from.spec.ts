@@ -21,7 +21,7 @@
  */
 
 import { expect, test } from "@playwright/test";
-import { MDY_WIDGET_TRANSITIONS } from "@modyra/widgets";
+import { MDY_POPUP_OPENERS, MDY_WIDGET_CONTRACTS, MDY_WIDGET_TRANSITIONS } from "@modyra/widgets";
 
 // **Every renderer, from the shared list.** The local list this replaced was not a scope
 // decision: the angular host published six of the twenty-two doors these specs need, so a
@@ -40,13 +40,24 @@ const OPENERS = Object.entries(MDY_WIDGET_TRANSITIONS)
  * Where a part lives in a rendered field.
  *
  * `control` is the element the value is entered into; the other three name the button beside it.
- * The contract's own part table carries no classes for either, so this is the mapping every renderer
- * shares rather than one renderer's markup.
+ *
+ * **Asked of the kind, not taken by position.** A field holds more buttons than the one that opens
+ * it — a counter, the commands that clear it and put a value back — and which comes first in the
+ * document is a layout decision that moves. "The first button" pointed at whichever part a
+ * rearrangement put in front, and the run failed on an element carrying `hidden` rather than on the
+ * opener. Where the contract names no classes for a part the old mapping still stands, because that
+ * is a gap in the table rather than a choice made here.
  */
-const selectorFor = (id: string, part: string) =>
-  part === "control"
-    ? `[data-form="${id}"] input, [data-form="${id}"] textarea`
+const CONTRACTS = MDY_WIDGET_CONTRACTS as unknown as Record<string, { parts: Record<string, { classes: string[] }> }>;
+const POPUPS = MDY_POPUP_OPENERS as unknown as Record<string, { opener?: string } | undefined>;
+
+const selectorFor = (id: string, part: string, kind: string) => {
+  if (part === "control") return `[data-form="${id}"] input, [data-form="${id}"] textarea`;
+  const declared = CONTRACTS[kind]?.parts[POPUPS[kind]?.opener ?? ""]?.classes ?? [];
+  return declared.length > 0
+    ? `[data-form="${id}"] ${declared.map((one) => `.${one}`).join("")}`
     : `[data-form="${id}"] button`;
+};
 
 for (const host of HOSTS) {
   test(`a pointer on the declared part opens the popup, ${host.name}`, async ({ page }) => {
@@ -77,7 +88,7 @@ for (const host of HOSTS) {
         continue;
       }
 
-      const target = page.locator(selectorFor(id, part!)).first();
+      const target = page.locator(selectorFor(id, part!, kind)).first();
 
       // The premise: the field rendered the part the table names. A missing one is a different
       // finding from a part that does not open.
