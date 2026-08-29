@@ -40,7 +40,12 @@ export const absentParts = contractParts.ABSENT;
  */
 export const declaresRules = true;
 
-export const variants = { multiselect: ["single", "multi"] };
+// A renderer declares the shapes *it* draws, not every shape the kind has. This one draws the
+// combobox whichever way the field is configured — deliberately, and the reason six cross-renderer
+// findings looked like divergences: two renderers hand a non-filtering select to the platform and
+// this one does not. Listing `native` here would report it non-conforming for a shape it never
+// claims to render.
+export const variants = { multiselect: ["single", "multi"], select: ["custom"] };
 
 
 const { mountMdyForm } = await import("./dist/index.js");

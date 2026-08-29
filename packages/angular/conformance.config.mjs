@@ -96,7 +96,9 @@ export const absentParts = {};
  */
 export const declaresRules = true;
 
-export const variants = { multiselect: ["single", "multi"] };
+// Both shapes: this renderer hands a non-filtering select to the platform, which has no trigger and
+// no popup, and draws the combobox when it filters.
+export const variants = { multiselect: ["single", "multi"], select: ["native", "custom"] };
 
 /**
  * What a kind holds when it holds something.
@@ -149,7 +151,13 @@ async function mountKind(kind, { variant, idPrefix, validators = true, rules, va
   host.id = hostId;
   dom.window.document.body.append(host);
 
-  const modeInput = mode ? ` [mode]="mode"` : "";
+  const modeInput = mode && kind !== "select" ? ` [mode]="mode"` : "";
+  // A select's presentation is decided by whether it filters, so the variant name says which shape
+  // and this puts the element into it: `custom` keeps the `searchable` the declaration carries,
+  // `native` takes it away and the platform's chooser is what renders.
+  const attrs = kind === "select" && variant === "native"
+    ? control.attrs.replace(/\bsearchable\b/, "")
+    : control.attrs;
   /**
    * Validators are on by default, and the resting comparison turns them off.
    *
@@ -200,7 +208,7 @@ async function mountKind(kind, { variant, idPrefix, validators = true, rules, va
       ng[control.component],
     ],
     template: `<mdy-form [adapter]="adapter">`
-      + `<${control.tag} name="${fieldName}" label="Field" ${validation} ${control.attrs}${modeInput} />`
+      + `<${control.tag} name="${fieldName}" label="Field" ${validation} ${attrs}${modeInput} />`
       + `</mdy-form>`,
   })(ConformanceHost);
 

@@ -124,8 +124,17 @@ export function mount(kind, { validators = true, variant, rules, value } = {}) {
     ...(value !== undefined ? { initialValue: value } : {}),
     ...(NEEDS_OPTIONS.has(kind) ? { options: OPTIONS } : {}),
     // A kind whose anatomy depends on configuration is mounted per variant, or the suite reports
-    // full coverage having rendered one of them. The variant name *is* the config value.
-    ...(variant ? { mode: variant } : {}),
+    // full coverage having rendered one of them.
+    //
+    // The name is the config value for the kind that keys on it: a multiselect's `mode` carries the
+    // word itself, and a select's presentation is decided by whether it filters — `custom` is the
+    // combobox, `native` the platform's chooser. Two axes, one vocabulary, and this is where a name
+    // becomes the configuration its own kind reads.
+    ...(variant === undefined
+      ? {}
+      : kind === "select"
+        ? { searchable: variant === "custom" }
+        : { mode: variant }),
     ...extra,
   });
   let mounted = mountMdyForm(host, [fieldFor({})], { submitLabel: null });

@@ -61,4 +61,7 @@ export const mountScoped = (kind, scope) => mount(kind, { idScope: scope });
  */
 export const declaresRules = true;
 
-export const variants = { multiselect: ["single", "multi"] };
+// Both shapes, because this renderer draws both: a select that filters is the combobox and one that
+// does not is the platform's chooser, which has no trigger and no popup and is the better control
+// for a plain list.
+export const variants = { multiselect: ["single", "multi"], select: ["native", "custom"] };

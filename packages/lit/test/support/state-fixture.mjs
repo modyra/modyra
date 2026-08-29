@@ -192,9 +192,12 @@ export async function mount(kind, { validators: withValidators = true, variant, 
     // deliberately, so a non-searchable list gets the platform's typeahead. Its overlay contract
     // cannot be driven at all in that mode, so the suites that check one ask for the custom combobox.
     if (kind === "select" || kind === "multiselect") el.searchable = true;
-    // A kind whose anatomy depends on configuration is mounted per variant; the variant name is the
-    // property's own value, so nothing here translates between two vocabularies.
+    // A kind whose anatomy depends on configuration is mounted per variant. A multiselect's name is
+    // the property's own value; a select's presentation is decided by whether it filters, so the
+    // name says which shape and this says how the element is put into it. `native` is the only place
+    // the default above is undone.
     if (variant && kind === "multiselect") el.mode = variant;
+    if (variant && kind === "select") el.searchable = variant === "custom";
   });
 
   return {
