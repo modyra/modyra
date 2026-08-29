@@ -85,8 +85,13 @@ import { MDY_I18N_MESSAGES } from "../../core/i18n";
             (click)="clear()"
             [attr.aria-disabled]="cannotPick() || chosen().length === 0"
             [attr.aria-label]="i18n.fileClearSelection"
+            [title]="i18n.fileClearSelection"
           >
-            &times;
+            <!-- The mark is a drawing made of a character, so it is out of the tree: left in, a
+                 reader says "multiplication sign" before the name. The title is the word itself —
+                 somebody driving by voice says what they can see, and a glyph is not something a
+                 person says. -->
+            <span aria-hidden="true">&times;</span>
           </button>
         </div>
       </div>

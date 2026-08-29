@@ -4,6 +4,19 @@ import { type MdyFieldHandle } from "@modyra/core";
 import { createFileFieldController, MDY_WIDGET_CONTRACTS, clearFileSelection, type MdyFileFieldController , chipActionName } from "@modyra/widgets";
 import { MdyFieldElement, mdyIcon } from "../base.js";
 
+/**
+ * What one chosen item is called, for a value that is not a file.
+ *
+ * A form's value is whatever was put in it — a draft restored from storage, a server's answer, a
+ * default written by hand — and only a picker produces `File`s. Anything else has no `name`, and a
+ * control named after one crashed the field on its first paint rather than drawing a row without a
+ * caption. Empty is the honest answer: the row shows nothing where the name goes, and the control
+ * beside it falls back to its bare verb.
+ */
+function fileName(file: File): string {
+  return typeof file?.name === "string" ? file.name : "";
+}
+
 export class MdyFileFieldElement extends MdyFieldElement<readonly File[] | null> {
   static override properties: PropertyDeclarations = {
     multiple: { type: Boolean },
@@ -110,11 +123,12 @@ export class MdyFileFieldElement extends MdyFieldElement<readonly File[] | null>
               : html`<ul class="mdy-file-list">
                   ${files.map(
                     (f, i) => html`<li class="mdy-file-item">
-                      <span class="mdy-file-name">${f.name}</span>
+                      <span class="mdy-file-name">${fileName(f)}</span>
                       <button
                         type="button"
                         class="mdy-file-remove"
-                        aria-label=${chipActionName(this.messages.chipRemoveLabel, f.name)}
+                        aria-label=${chipActionName(this.messages.chipRemoveLabel, fileName(f))}
+                        title=${chipActionName(this.messages.chipRemoveLabel, fileName(f))}
                         @click=${(e: Event) => {
                           e.preventDefault();
                           const rest = files.filter((_, j) => j !== i);
@@ -123,7 +137,7 @@ export class MdyFileFieldElement extends MdyFieldElement<readonly File[] | null>
                           handle.markAsDirty();
                         }}
                       >
-                        ✕
+                        <span aria-hidden="true">✕</span>
                       </button>
                     </li>`,
                   )}
@@ -133,12 +147,16 @@ export class MdyFileFieldElement extends MdyFieldElement<readonly File[] | null>
               class="mdy-file-clear ${this.partStateClass("clear", "disabled", files.length === 0 || handle.disabled() || handle.readonly())}"
               aria-disabled=${String(files.length === 0 || handle.disabled() || handle.readonly())}
               aria-label=${this.messages.fileClearSelection}
+              title=${this.messages.fileClearSelection}
               @click=${(e: Event) => {
                 e.preventDefault();
                 if ((e.currentTarget as HTMLElement).getAttribute("aria-disabled") === "true") return;
                 this.fileController(handle).dispatch({ type: "clear" });
               }}
-            >&times;</button>
+            ><!-- The mark is a drawing made of a character, so it is out of the tree: left in, a
+                 reader says "multiplication sign" before the name. The title is the word itself —
+                 somebody driving by voice says what they can see, and a glyph is not something a
+                 person says. --><span aria-hidden="true">&times;</span></button>
           </div>
           ${this._rejected.length === 0
             ? nothing

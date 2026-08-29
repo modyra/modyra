@@ -2274,8 +2274,51 @@
           ],
           "states": []
         },
-        "trigger": {
+        "overflowCount": {
           "order": 10,
+          "element": "button",
+          "parent": "box",
+          "optional": true,
+          "presentWhen": "valuesOverflow",
+          "repeated": false,
+          "role": null,
+          "classes": [
+            "mdy-multiselect__overflow"
+          ],
+          "states": []
+        },
+        "wayBackAction": {
+          "order": 11,
+          "element": "button",
+          "parent": "box",
+          "optional": false,
+          "presentWhen": null,
+          "repeated": false,
+          "role": null,
+          "classes": [
+            "mdy-multiselect__way-back-action"
+          ],
+          "states": [
+            "disabled"
+          ]
+        },
+        "clearAll": {
+          "order": 12,
+          "element": "button",
+          "parent": "box",
+          "optional": false,
+          "presentWhen": null,
+          "repeated": false,
+          "role": null,
+          "classes": [
+            "mdy-multiselect__clear-all"
+          ],
+          "states": [
+            "disabled"
+          ]
+        },
+        "trigger": {
+          "order": 13,
           "element": "input",
           "parent": "box",
           "optional": false,
@@ -2294,7 +2337,7 @@
           ]
         },
         "placeholder": {
-          "order": 11,
+          "order": 14,
           "element": "text",
           "parent": "trigger",
           "optional": true,
@@ -2305,49 +2348,6 @@
             "mdy-multiselect__placeholder"
           ],
           "states": []
-        },
-        "overflowCount": {
-          "order": 12,
-          "element": "button",
-          "parent": "box",
-          "optional": true,
-          "presentWhen": "valuesOverflow",
-          "repeated": false,
-          "role": null,
-          "classes": [
-            "mdy-multiselect__overflow"
-          ],
-          "states": []
-        },
-        "wayBackAction": {
-          "order": 13,
-          "element": "button",
-          "parent": "box",
-          "optional": false,
-          "presentWhen": null,
-          "repeated": false,
-          "role": null,
-          "classes": [
-            "mdy-multiselect__way-back-action"
-          ],
-          "states": [
-            "disabled"
-          ]
-        },
-        "clearAll": {
-          "order": 14,
-          "element": "button",
-          "parent": "box",
-          "optional": false,
-          "presentWhen": null,
-          "repeated": false,
-          "role": null,
-          "classes": [
-            "mdy-multiselect__clear-all"
-          ],
-          "states": [
-            "disabled"
-          ]
         },
         "arrow": {
           "order": 15,

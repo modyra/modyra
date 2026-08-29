@@ -60,6 +60,19 @@ the rest stayed 38. The target is an overlay — centred, out of flow, affecting
 **Stacked steppers take WCAG 2.5.8's 24px** (`--mdy-affordance-target-stacked`). Two controls inside
 one 3.5rem field cannot both be 44px; this is an exception with a reason, not an oversight.
 
+**The column carries one affordance, and it is the same one on every kind**: the control that opens
+the field. A constant position is what lets a person operate a form without reading it, and under
+400% magnification, where a window is a few fields tall, that column is one of the two anchors saying
+they are still in the same form. A command that only sometimes applies — clear everything, put back
+what was removed — stands **with the value it acts on**, not in that column: present and disabled is
+the answer to whether a control exists, and a dimmed thing in the column dilutes the one signal the
+column carries. Sized at the stacked floor above, not at the column's width. ADR 0172.
+
+**A button whose visible content is a mark is named by its action, and the mark is hidden from the
+accessibility tree.** `×` and `↶` are drawings made of characters; a reader that sees them announces
+"multiplication sign" before the name. The same control carries a `title` with the words of its name,
+because somebody driving by voice can only say what they can read.
+
 **Only the select caret is decorative.** It is `pointer-events: none` and the trigger behind it is the
 target. Everything else is pressed, and the set is derived from the catalogue by
 `trailingAffordances()` rather than listed.

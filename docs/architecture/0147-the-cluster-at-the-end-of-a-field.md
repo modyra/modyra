@@ -1,6 +1,6 @@
 # ADR 0147: The cluster at the end of a field
 
-Status: Accepted
+Status: Superseded by ADR 0172
 
 Supersedes [ADR 0144](0144-a-slot-that-is-always-there.md).
 

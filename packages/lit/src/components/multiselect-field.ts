@@ -604,6 +604,44 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
               role=${this.partRole("chipRow")}
               aria-rowindex="1"
             >${this.renderValueChips(handle)}</span></span>`}
+          <!-- How many chips are out of sight, and the way to all of them. ADR 0127 lets the row
+               scroll only where something reaches what leaves it: the wheel is that for most people
+               and nothing at all for a pointer with no horizontal axis. -->
+          ${html`<button
+                type="button"
+                class="${this.partClass("overflowCount")}"
+                ?hidden=${this._hiddenChips === 0}
+                ?disabled=${handle.disabled() || handle.readonly()}
+                aria-label=${this._hiddenChips === 0
+                  ? nothing
+                  : this.messages.chipsHidden.replace("{count}", String(this._hiddenChips))}
+                @click=${(e: Event) => {
+                  e.stopPropagation();
+                  // The same door the trigger opens, taken the same way: the element's copy of
+                  // `open` and the overlay's own state both have to move, and `toggleOpen` is what
+                  // moves them together.
+                  if (this.field && !this._open) { this.overlay.open(e); this.toggleOpen(this.field); }
+                }}
+              >${this._hiddenChips === 0
+                  ? nothing
+                  : this.messages.chipsHiddenShort.replace("{count}", String(this._hiddenChips))}</button>`}
+          ${this.renderWayBack(handle)}
+          <!-- Every choice off at once, beside the trigger rather than inside it: the trigger is a
+               button, and a button inside a button is neither valid nor reachable. -->
+          <!-- Drawn whether or not there is anything to discard, and dimmed when there is not: a
+               control that comes and goes with what the field holds moves the one beside it under
+               the hands of whoever is aiming at it. ADR 0171. -->
+          ${html`<button
+                type="button"
+                class="${this.partClass("clearAll")} ${this.partStateClass("clearAll", "disabled", this.held(handle).length === 0 || handle.disabled() || handle.readonly())}"
+                aria-disabled=${String(this.held(handle).length === 0 || handle.disabled() || handle.readonly())}
+                aria-label=${this.messages.clearSelection}
+                title=${this.messages.clearSelection}
+                @click=${() => {
+                  if (this.held(handle).length === 0 || handle.disabled() || handle.readonly()) return;
+                  this.fieldController?.dispatch({ type: "clear" });
+                }}
+              >${mdyIcon("CLOSE", "")}</button>`}
           <button
             type="button"
             id=${triggerId}
@@ -638,43 +676,7 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
               : nothing}
             ${this.loading ? mdyIcon("LOADER", "mdy-select__loader") : nothing}
           </button>
-          <!-- How many chips are out of sight, and the way to all of them. ADR 0127 lets the row
-               scroll only where something reaches what leaves it: the wheel is that for most people
-               and nothing at all for a pointer with no horizontal axis. -->
-          ${html`<button
-                type="button"
-                class="${this.partClass("overflowCount")}"
-                ?hidden=${this._hiddenChips === 0}
-                ?disabled=${handle.disabled() || handle.readonly()}
-                aria-label=${this._hiddenChips === 0
-                  ? nothing
-                  : this.messages.chipsHidden.replace("{count}", String(this._hiddenChips))}
-                @click=${(e: Event) => {
-                  e.stopPropagation();
-                  // The same door the trigger opens, taken the same way: the element's copy of
-                  // `open` and the overlay's own state both have to move, and `toggleOpen` is what
-                  // moves them together.
-                  if (this.field && !this._open) { this.overlay.open(e); this.toggleOpen(this.field); }
-                }}
-              >${this._hiddenChips === 0
-                  ? nothing
-                  : this.messages.chipsHiddenShort.replace("{count}", String(this._hiddenChips))}</button>`}
-          ${this.renderWayBack(handle)}
-          <!-- Every choice off at once, beside the trigger rather than inside it: the trigger is a
-               button, and a button inside a button is neither valid nor reachable. -->
-          <!-- Drawn whether or not there is anything to discard, and dimmed when there is not: a
-               control that comes and goes with what the field holds moves the one beside it under
-               the hands of whoever is aiming at it. ADR 0171. -->
-          ${html`<button
-                type="button"
-                class="${this.partClass("clearAll")} ${this.partStateClass("clearAll", "disabled", this.held(handle).length === 0 || handle.disabled() || handle.readonly())}"
-                aria-disabled=${String(this.held(handle).length === 0 || handle.disabled() || handle.readonly())}
-                aria-label=${this.messages.clearSelection}
-                @click=${() => {
-                  if (this.held(handle).length === 0 || handle.disabled() || handle.readonly()) return;
-                  this.fieldController?.dispatch({ type: "clear" });
-                }}
-              >${mdyIcon("CLOSE", "")}</button>`}
+
           <!-- The mark that says the field opens, painted by the box at its own trailing edge. It is
                decoration and not a control: the whole field is what opens the list, so a caret with
                a name of its own would be a second stop on the keyboard for a gesture that already

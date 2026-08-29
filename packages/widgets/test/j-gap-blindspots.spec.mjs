@@ -235,7 +235,7 @@ function multiselectWithChip(chip, variant) {
   // and go with what is in it. ADR 0171.
   const wayBackAction = el("button", "mdy-multiselect__way-back-action", { "aria-disabled": "true" });
   const clearAll = el("button", "mdy-multiselect__clear-all", { "aria-disabled": "true" });
-  box.append(chips, trigger, wayBackAction, clearAll, arrow, announcement);
+  box.append(chips, wayBackAction, clearAll, trigger, arrow, announcement);
   wrapper.append(box);
 
   // Open, because the subject is the option chip and options live in the popup. The grid is both

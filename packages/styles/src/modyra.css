@@ -1999,9 +1999,10 @@
            `height` here made the box exactly the token where its siblings are the token *plus their
            border* — two pixels short in a renderer that draws one. */
         max-height: var(--mdy-input-height);
-        /* A row: the trigger takes what is left and the clear-all sits at the trailing edge beside
-           it. As a block, the button had nowhere to go but under the control, where it overflowed
-           the field's box and the text below painted over it — drawn, and not pressable. */
+        /* A row: the chips first, then the two commands about them, then the trigger taking what is
+           left, and the caret alone at the trailing edge. As a block, a button had nowhere to go but
+           under the control, where it overflowed the field's box and the text below painted over it
+           — drawn, and not pressable. */
         display: flex;
         align-items: center;
         /* And the row is the field's, not the chips'. This box is itself a flex item of the wrapper,
@@ -2175,10 +2176,11 @@
 
     .mdy-multiselect__arrow {
         flex: 0 0 auto;
-        /* Last in the box, at the field's trailing edge, so the caret, the overflow, the way back
-           and the clear-all stand in one column for the eye to follow — which is what `DESIGN.md`
-           asks of a trailing affordance. Painted by the box rather than by the control that opens:
-           only commands have an order, and this is a drawing. */
+        /* Last in the box, at the field's trailing edge, and alone there: every kind puts one
+           affordance in that column and it is always the one that opens the field, which is what
+           lets a person operate a form without reading it. The commands about the value stand with
+           the value instead. Painted by the box rather than by the control that opens: only commands
+           have an order, and this is a drawing. */
         margin-inline-start: auto;
         /* The affordance box every trailing mark in a form stands in, so this caret's centre falls in
            the same column as the single-choice sibling's and the pickers' toggles. Not the 44px
@@ -2244,8 +2246,11 @@
         margin: -1px;
     }
 
-    /* The clear-all, in the column of trailing controls. It is a button, so it carries the target
-       size the rest of that column has rather than the size of the glyph inside it. */
+    /* The clear-all, with the chips rather than in the column at the field's trailing edge. It is a
+       command about what the field holds, so it stands where its subject is; the column carries one
+       affordance on every kind — the mark that opens the field — and a command that only sometimes
+       applies dilutes the single thing that column says. It is a button, so it carries a target size
+       rather than the size of the glyph inside it. */
     /* The box and the two controls the contract declares beside it. The spinner is the positioning
        context and the buttons stack at the trailing edge; their size and colour are the shared
        affordance rules above, which is where a trailing control's geometry is named. */
@@ -2272,15 +2277,11 @@
         align-items: center;
         justify-content: center;
         flex: 0 0 auto;
-        /* As wide as the other affordances in the column. At the target's 44 its centre sat 8px
-           further in than theirs, so the column bent around one kind — and the target is the overlay
-           below, which needs no width from the box it belongs to. */
-        width: var(--mdy-control-1);
-        /* The row's own height. `height: 100%` is a share of a line the content decides, so it
-           shrank with the line rather than setting it; stretching takes the height the box gives the
-           row. Sized to a *target* instead — 44 in a field of 36 — it made the row taller than the
-           box that holds it, and pushed every other part 8px below the centre line. */
-        align-self: stretch;
+        /* Square at the floor a stacked control takes, not the width of the trailing column: it no
+           longer stands in that column, and taking its width would put a second thing on the line a
+           person reads as "here is how you operate this field". */
+        width: var(--mdy-affordance-target-stacked, 1.5rem);
+        height: var(--mdy-affordance-target-stacked, 1.5rem);
         padding: 0;
         border: 0;
         background: none;
@@ -2332,9 +2333,10 @@
         align-items: center;
         justify-content: center;
         flex: 0 0 auto;
-        /* Both commands stand in the same column as the field's other affordances. */
-        width: var(--mdy-control-1);
-        align-self: stretch;
+        /* The same square as the clear-all it reverses: the pair reads as one thing at the end of
+           the selection, and neither is in the trailing column. */
+        width: var(--mdy-affordance-target-stacked, 1.5rem);
+        height: var(--mdy-affordance-target-stacked, 1.5rem);
         padding: 0;
         border: 0;
         background: none;

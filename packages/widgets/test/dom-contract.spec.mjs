@@ -301,7 +301,7 @@ function buildCompactMultiselect({ chipClasses = "mdy-chip mdy-chip--value" } = 
   const clearAll = el("button", "mdy-multiselect__clear-all", { "aria-disabled": "true" });
   // The arrow after the two, as the contract's order says: it is the box's child, and the fixture
   // had it nested in the trigger — invisible while the two beside it were optional.
-  box.append(chips, trigger, wayBackAction, clearAll, arrow, announcement);
+  box.append(chips, wayBackAction, clearAll, trigger, arrow, announcement);
   wrapper.append(box);
   root.append(wrapper);
   document.body.append(root);

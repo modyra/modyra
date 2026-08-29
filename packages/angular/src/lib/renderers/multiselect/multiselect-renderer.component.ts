@@ -186,31 +186,6 @@ const CHIPS = partSelector("multiselect", "chips") ?? "";
           </span>
         </span>
         }
-      <!-- The control a person presses, holding what was chosen. The label names it and the
-           combobox role sits here, because this is what holds the field's value — a magnifier
-           beside the field carried the role and none of the value. -->
-      <button
-        type="button"
-        class="mdy-multiselect__trigger"
-        [id]="fieldId"
-        [mdyPart]="openerPart()"
-        [disabled]="isDisabled()"
-        (click)="toggleOverlay($event)"
-        (keydown)="onOverlayKeydown($event)"
-        [attr.aria-invalid]="paintsAsInvalid()"
-        [attr.aria-disabled]="effectiveAriaDisabled()"
-        [attr.aria-readonly]="isReadonly() ? 'true' : null"
-        [attr.aria-describedby]="describedById(fieldId)"
-        [attr.aria-label]="controlAriaLabel()"
-        [attr.aria-activedescendant]="activeDescendant()"
-      >
-        @if (chosen().length === 0) {
-          <span class="mdy-multiselect__placeholder">{{ label() }}</span>
-        }
-        @if (effectiveLoading()) {
-          <mdy-icon name="LOADER" class="mdy-select__loader" style="font-size: 1rem;" />
-        }
-      </button>
       <!-- How many chips are out of sight, and the way to all of them. ADR 0127 lets the row scroll
            only where something reaches what leaves it: the wheel is that for most people and nothing
            at all for a pointer with no horizontal axis, which is most desktop mice. -->
@@ -246,8 +221,35 @@ const CHIPS = partSelector("multiselect", "chips") ?? "";
         [class.mdy-multiselect__clear-all--disabled]="chosen().length === 0 || isDisabled() || isReadonly()"
         [attr.aria-disabled]="chosen().length === 0 || isDisabled() || isReadonly()"
         [attr.aria-label]="i18n.clearSelection"
+        [title]="i18n.clearSelection"
         (click)="onClearAll($event)"
       ><mdy-icon name="CLOSE" /></button>
+      <!-- The control a person presses, holding what was chosen. The label names it and the
+           combobox role sits here, because this is what holds the field's value — a magnifier
+           beside the field carried the role and none of the value. -->
+      <button
+        type="button"
+        class="mdy-multiselect__trigger"
+        [id]="fieldId"
+        [mdyPart]="openerPart()"
+        [disabled]="isDisabled()"
+        (click)="toggleOverlay($event)"
+        (keydown)="onOverlayKeydown($event)"
+        [attr.aria-invalid]="paintsAsInvalid()"
+        [attr.aria-disabled]="effectiveAriaDisabled()"
+        [attr.aria-readonly]="isReadonly() ? 'true' : null"
+        [attr.aria-describedby]="describedById(fieldId)"
+        [attr.aria-label]="controlAriaLabel()"
+        [attr.aria-activedescendant]="activeDescendant()"
+      >
+        @if (chosen().length === 0) {
+          <span class="mdy-multiselect__placeholder">{{ label() }}</span>
+        }
+        @if (effectiveLoading()) {
+          <mdy-icon name="LOADER" class="mdy-select__loader" style="font-size: 1rem;" />
+        }
+      </button>
+
       <!-- The mark that says the field opens, painted by the box at its own trailing edge. It is
            decoration and not a control: the whole field is what opens the list, so a caret with a
            name of its own would be a second stop on the keyboard for a gesture that already has
