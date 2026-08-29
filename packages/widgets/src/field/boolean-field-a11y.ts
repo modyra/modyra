@@ -167,14 +167,23 @@ export function projectBooleanFieldA11y(
         // a payload saying `on` describes the box, not the answer.
         name: options.submitName ?? null,
         value: options.submitName === undefined ? null : "true",
+        // The switch's, and not the box's. `role="switch"` has no host-language state to read, so
+        // the attribute is the only thing that says whether it is on. A native `<input
+        // type="checkbox">` maps its own `checked` into the accessibility tree, and writing the
+        // attribute beside it is a second source for one fact — the two can disagree, and when they
+        // do the ARIA one wins and can be the stale one. Renderers already disagreed about it here,
+        // which is what a redundant attribute invites.
+        //
         // One of the tokens the attribute is allowed to hold, never `String(whatever arrived)`.
         // This projection is published, so the state is the caller's to supply and its shape is not
         // ours to guarantee — but the attribute's value is, and `aria-checked="undefined"` maps to
-        // nothing in any assistive technology, on the single attribute that says whether the box is
-        // ticked. `mixed` is not produced: `MdyBooleanFieldState.checked` is a boolean and no field
-        // in the engine has an indeterminate value, so emitting a third token would describe a state
+        // nothing in any assistive technology, on the single attribute that says whether a switch is
+        // on. `mixed` is not produced: `MdyBooleanFieldState.checked` is a boolean and no field in
+        // the engine has an indeterminate value, so emitting a third token would describe a state
         // nothing can be in.
-        "aria-checked": state.checked === true ? "true" : "false",
+        ...(options.variant === "switch"
+          ? { "aria-checked": state.checked === true ? "true" : "false" }
+          : {}),
         "aria-invalid": String(tellingThem),
         "aria-required": String(state.required),
         // `aria-disabled` reflects `disabled` alone. A read-only control is not disabled: it takes

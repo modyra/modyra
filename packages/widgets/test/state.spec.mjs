@@ -184,20 +184,28 @@ test("a kind projects read-only only when its contract has the state", () => {
   assert.equal(custom.input.attributes["aria-readonly"], "true");
 });
 
-test("aria-checked holds one of the three values the standard allows", () => {
+test("aria-checked is the switch's, and holds one of the values the standard allows", () => {
   // The projection is published, so the state is the caller's to supply — but the attribute's value
   // is this contract's, and `aria-checked="undefined"` maps to nothing in any assistive technology,
-  // on the single attribute that says whether the box is ticked.
+  // on the single attribute that says whether a switch is on.
   const base = { readonly: false, disabled: false, invalid: false, required: false, errorIds: [], describedBy: null };
   for (const checked of [undefined, null, "indeterminate", 0, "", "true"]) {
-    const projected = projectBooleanFieldA11y({ ...base, checked }, [], { widgetId: "w", variant: "checkbox" });
+    const projected = projectBooleanFieldA11y({ ...base, checked }, [], { widgetId: "w", variant: "switch" });
     assert.ok(
       ["true", "false", "mixed"].includes(projected.input.attributes["aria-checked"]),
       `checked ${JSON.stringify(checked)} projected aria-checked=${JSON.stringify(projected.input.attributes["aria-checked"])}`,
     );
   }
-  assert.equal(projectBooleanFieldA11y({ ...base, checked: true }, [], { widgetId: "w", variant: "checkbox" }).input.attributes["aria-checked"], "true");
-  assert.equal(projectBooleanFieldA11y({ ...base, checked: false }, [], { widgetId: "w", variant: "checkbox" }).input.attributes["aria-checked"], "false");
+  assert.equal(projectBooleanFieldA11y({ ...base, checked: true }, [], { widgetId: "w", variant: "switch" }).input.attributes["aria-checked"], "true");
+  assert.equal(projectBooleanFieldA11y({ ...base, checked: false }, [], { widgetId: "w", variant: "switch" }).input.attributes["aria-checked"], "false");
+
+  // And not the box's. A native `<input type="checkbox">` puts its own `checked` into the
+  // accessibility tree; the attribute beside it is a second source for one fact, and when the two
+  // disagree the ARIA one wins and is the one that went stale. Three renderers disagreed about
+  // writing it, which is what a redundant attribute invites.
+  const box = projectBooleanFieldA11y({ ...base, checked: true }, [], { widgetId: "w", variant: "checkbox" });
+  assert.equal(box.input.attributes["aria-checked"], undefined);
+  assert.equal(box.input.attributes.checked, true, "the box still says it is ticked, in the way HTML says it");
 });
 
 test("a disabled widget can still be left, and is not left holding an overlay", () => {
