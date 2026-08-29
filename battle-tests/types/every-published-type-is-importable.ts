@@ -103,6 +103,7 @@ import type {
   MdyMultiselectValueIntent,
   MdyMultiselectWayBack,
   MdyNativeAttributes,
+  MdyOpenModality,
   MdyOptionFieldA11yOptions,
   MdyOptionFieldController,
   MdyOptionFieldControllerOptions,
@@ -872,3 +873,5 @@ declare const heldSnapshotMismatch: typeof MDY_SSR_SNAPSHOT_MISMATCH;
 void heldSnapshotMismatch;
 declare const heldScrollOption: typeof scrollOptionIntoView;
 void heldScrollOption;
+declare const heldOpenModality: MdyOpenModality;
+void heldOpenModality;
