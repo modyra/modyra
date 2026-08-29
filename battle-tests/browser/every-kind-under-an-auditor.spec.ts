@@ -39,6 +39,15 @@ const KINDS = [...MDY_WIDGET_KINDS];
 
 const needsOptions = (kind: string) => /select|radio|segmented/.test(kind);
 
+/**
+ * The shape this file drives, said rather than defaulted.
+ *
+ * A select that names no shape is the platform's own chooser: it has no trigger of the library's to
+ * click and no listbox of its own, so a sweep that opens one and reads its options is asking the
+ * browser's popup a question it cannot answer.
+ */
+const asksForSearch = (kind: string) => kind === "select";
+
 const settled = async (page: import("@playwright/test").Page) => {
   await page.evaluate(
     () => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve(null)))),
@@ -50,6 +59,7 @@ async function mountEveryKind(page: import("@playwright/test").Page, { required 
     const field: Record<string, unknown> = { name: kind, kind, label: `Label ${kind}` };
     if (required) field.validators = { required: true };
     if (needsOptions(kind)) field.options = [{ value: "a", label: "A" }, { value: "b", label: "B" }];
+    if (asksForSearch(kind)) field.searchable = true;
     const mounted = await page.evaluate(
       ({ id, declared }) => window.battle.mountFields(id, [declared] as never),
       { id: `k-${kind}`, declared: field },

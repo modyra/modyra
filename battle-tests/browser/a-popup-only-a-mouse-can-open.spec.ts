@@ -33,6 +33,10 @@ const settled = async (page: import("@playwright/test").Page) => {
 async function opensWith(page: import("@playwright/test").Page, kind: string, key: string, id: string) {
   const field: Record<string, unknown> = { name: "f", kind, label: "F" };
   if (/select/.test(kind)) field.options = [{ value: "a", label: "A" }, { value: "b", label: "B" }];
+  // The shape with a popup, said rather than defaulted: a select that names none is the platform's
+  // own chooser, whose list the browser draws and no attribute in the page describes. There is no
+  // popup of the library's to open, so this file has nothing to ask it.
+  if (kind === "select") field.searchable = true;
 
   await page.evaluate(
     ({ mountId, declared }) => window.battle.mountFields(mountId, [declared] as never),
@@ -63,11 +67,16 @@ test("a mouse opens every popup, which is what makes the keyboard the question",
     const id = `mouse-${index}`;
     const field: Record<string, unknown> = { name: "f", kind, label: "F" };
     if (/select/.test(kind)) field.options = [{ value: "a", label: "A" }];
+    if (kind === "select") field.searchable = true;
     await page.evaluate(
       ({ mountId, declared }) => window.battle.mountFields(mountId, [declared] as never),
       { mountId: id, declared: field },
     );
     await settled(page);
+    // The panel the previous kind opened is still standing, and a renderer that draws it outside the
+    // field leaves it over this one: the click lands on the panel before instead of the trigger here.
+    await page.keyboard.press("Escape");
+    await page.waitForTimeout(90);
 
     await page.locator(`[data-form="${id}"] [aria-haspopup]`).first().click();
     await page.waitForTimeout(120);

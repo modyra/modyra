@@ -39,7 +39,7 @@ test.beforeEach(async ({ page }) => {
 test("a label, a placeholder and an option a document chose are text, not markup", async ({ page }) => {
   const fields = [
     { name: "one", kind: "text", label: PAYLOAD, placeholder: PAYLOAD },
-    { name: "two", kind: "select", label: "Pick", options: [{ value: "a", label: PAYLOAD }] },
+    { name: "two", kind: "select", searchable: true, label: "Pick", options: [{ value: "a", label: PAYLOAD }] },
   ];
 
   // Counted before anything is mounted: the page carries its own module script, and a check that

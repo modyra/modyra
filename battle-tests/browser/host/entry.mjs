@@ -31,6 +31,10 @@ const fieldsFor = (key) => [
   {
     name: `rows.${key}.plan`,
     kind: "select",
+    // The shape this fixture means, said rather than defaulted. A select that names none is the
+    // platform's own chooser, which draws no trigger, no listbox and no options of its own — and a
+    // suite written against the combobox then looks for parts nothing drew and reports the renderer.
+    searchable: true,
     label: "Plan",
     options: [
       { value: "basic", label: "Basic" },

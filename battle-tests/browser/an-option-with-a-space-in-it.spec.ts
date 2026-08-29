@@ -63,7 +63,7 @@ const pointing = (page: import("@playwright/test").Page) =>
 
 async function openCityPicker(page: import("@playwright/test").Page, options: Array<Record<string, string>>) {
   await page.evaluate(
-    (opts) => window.battle.mountFields("city", [{ name: "city", kind: "select", label: "City", options: opts }] as never),
+    (opts) => window.battle.mountFields("city", [{ name: "city", kind: "select", searchable: true, label: "City", options: opts }] as never),
     options,
   );
   await settled(page);

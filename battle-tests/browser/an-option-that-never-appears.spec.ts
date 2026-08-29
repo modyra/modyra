@@ -45,7 +45,7 @@ test("a list of distinct options renders all of them", async ({ page }) => {
   // The control. Three options that differ in value render as three, so what happens below is the
   // duplicate rather than a renderer that drops the third of anything.
   await page.evaluate(
-    (options) => window.battle.mountFields("clean", [{ name: "s", kind: "select", label: "Plan", options }] as never),
+    (options) => window.battle.mountFields("clean", [{ name: "s", kind: "select", searchable: true, label: "Plan", options }] as never),
     [
       { value: "pro-monthly", label: "Pro monthly" },
       { value: "pro-yearly", label: "Pro yearly" },
@@ -62,7 +62,7 @@ test("a list of distinct options renders all of them", async ({ page }) => {
 
 test("every option a document declares is one a person can choose", async ({ page }) => {
   await page.evaluate(
-    (options) => window.battle.mountFields("dup", [{ name: "s", kind: "select", label: "Plan", options }] as never),
+    (options) => window.battle.mountFields("dup", [{ name: "s", kind: "select", searchable: true, label: "Plan", options }] as never),
     PLANS,
   );
   await settled(page);

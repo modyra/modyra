@@ -50,7 +50,11 @@ const OPTIONS = [
 const TODAY: Record<string, { asked: boolean; shape: "the platform's" | "one built of markup" }[]> = {
   plain: [
     { asked: true, shape: "one built of markup" },
-    { asked: false, shape: "one built of markup" },
+    // Moved, and by a record rather than quietly: ADR 0176 says a select that asks for nothing in
+    // particular is the platform's own chooser, and all three now draw that. The difference this
+    // file was watching is settled, so the photograph is of agreement — which it still watches,
+    // because agreement can move as silently as divergence did.
+    { asked: false, shape: "the platform's" },
   ],
   lit: [
     { asked: true, shape: "one built of markup" },
