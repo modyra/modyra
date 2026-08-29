@@ -60,6 +60,14 @@ const contribution = (page: import("@playwright/test").Page, scope: string) => p
   });
   const inside = reachable.flatMap((element) => Array.from(element.querySelectorAll("*")));
   const tabbable = inside.filter((element) => {
+    // **Reachable, not merely focusable-shaped.** `hidden` on an ancestor takes a whole subtree out
+    // of the tab order, and the stylesheet backs it with `display: none` so a theme cannot beat it —
+    // but a filter that asks each element about itself sees a button with a tabindex and counts it.
+    // The panel of a closed picker is exactly that subtree, so the check reported a calendar behind a
+    // closed picker that no key could reach. Layout is the honest witness: an element with no
+    // offsetParent is not on the page.
+    if (element.closest("[hidden]") !== null) return false;
+    if ((element as HTMLElement).offsetParent === null) return false;
     const index = element.getAttribute("tabindex");
     if (index !== null) return Number(index) >= 0;
     return /^(BUTTON|INPUT|SELECT|TEXTAREA|A)$/.test(element.tagName)
