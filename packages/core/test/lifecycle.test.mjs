@@ -71,8 +71,7 @@ test("engine destroy releases effects and timers under churn", async () => {
 });
 
 /**
- * Milestone 8 (piano-modyra-reactivity-adapter-api.md §17, "leak tests e
- * teardown ripetuto"): churns the reactivity-plan's own new machinery
+ * Churns the reactivity machinery
  * (root scope, mutate(), undo()/redo(), batch()) instead of just the
  * pre-existing draft/history/async-validator paths the test above covers.
  */

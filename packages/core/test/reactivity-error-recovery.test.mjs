@@ -1,9 +1,8 @@
 /**
  * Error recovery / corruption resistance for vanillaReactivity's effect
- * scheduler (piano-modyra-reactivity-adapter-api.md §18 checklist:
- * "Errori non corrompono l'adapter"). Found while auditing that checklist
- * item: the M3 shared-drain redesign (reactivity-batch-flush-observe
- * tests) never exercised what happens when an effect actually throws.
+ * scheduler: an effect that throws must not corrupt the adapter. The
+ * shared-drain scheduler covered by the reactivity-batch-flush-observe
+ * tests never exercised what happens when an effect actually throws.
  */
 import assert from "node:assert/strict";
 import { test } from "node:test";

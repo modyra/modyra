@@ -1,6 +1,6 @@
 /**
- * Construction/activation separation (piano-modyra-reactivity-adapter-api.md
- * §10.5/§10.7): `autoActivate: false` must keep construction pure (no
+ * Construction/activation separation:
+ * `autoActivate: false` must keep construction pure (no
  * timers, no storage reads) until `activate()` runs, and `deactivate()`
  * must pause effect-dependent features without losing any state — the
  * property React/Preact's useMdyForm needs for Strict Mode/SSR safety.

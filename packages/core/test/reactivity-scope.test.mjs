@@ -1,9 +1,8 @@
 /**
- * Milestone 2 (piano-modyra-reactivity-adapter-api.md §5): proves the form's
- * root scope is a REAL ownership boundary, not just a decoration — draft,
- * history and async-validator effects must actually die when the scope is
- * destroyed directly, independent of MdyFormEngine's own explicit destroy()
- * calls in its manager classes.
+ * Proves the form's root scope is a REAL ownership boundary, not just a
+ * decoration — draft, history and async-validator effects must actually
+ * die when the scope is destroyed directly, independent of MdyFormEngine's
+ * own explicit destroy() calls in its manager classes.
  */
 import assert from "node:assert/strict";
 import { test } from "node:test";

@@ -268,13 +268,13 @@ interface DraftManagerDeps {
    * Form-owned scope (when the reactivity adapter provides one). The draft
    * effect registers with it so destroying the scope tears the effect down
    * too — a backstop alongside the explicit {@link MdyDraftManager.destroy}
-   * call, per piano-modyra-reactivity-adapter-api.md §5.
+   * call.
    */
   readonly scope?: MdyReactiveScope;
   /**
    * True while the owning {@link import("./form-engine.js").MdyFormEngine}
    * is deactivated (constructed with `autoActivate: false`, or paused via
-   * `deactivate()`) — see piano §10.5. While true, `enableDraft()` only
+   * `deactivate()`). While true, `enableDraft()` only
    * records the config: it defers reading storage, restoring a value and
    * starting the write effect until `resume()` — construction must stay
    * pure and storage-free (SSR-safe) until activation.
@@ -424,7 +424,7 @@ export class MdyDraftManager {
     }
     if (this._isDeactivated()) {
       // Construction must stay pure and storage-free until activation
-      // (piano §10.5/§10.7) — record the config, do nothing else yet. The value is read, which
+      // — record the config, do nothing else yet. The value is read, which
       // touches no storage: it is the baseline the start would have taken had it happened here.
       this._pendingOptions = options;
       this._deferredBaseline = this._serialize(

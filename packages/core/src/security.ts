@@ -58,9 +58,8 @@ export interface MdySecurityViolation {
 }
 
 /**
- * Form-level security policy. Sanitization is opt-in (`"off"` by default)
- * in 0.x to avoid breaking existing forms; it will become secure-by-default
- * at 1.0. The structural checks (draft shape, server-error paths) are
+ * Form-level security policy. Sanitization is opt-in (`"off"` by default).
+ * The structural checks (draft shape, server-error paths) are
  * always on and not configurable — they only ever drop data that could
  * never have been produced by the form itself.
  */

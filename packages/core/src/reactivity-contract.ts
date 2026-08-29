@@ -56,12 +56,12 @@ export interface MdyEffectOptions {
 }
 
 /**
- * Garanzie osservabili di un adapter (Livello B, piano §4.3) — devono
+ * Garanzie osservabili di un adapter (Livello B) — devono
  * riflettere comportamento reale, mai la sola presenza di un metodo
- * (§8.1 "nessuna capability fittizia").
+ * (nessuna capability fittizia).
  */
 /**
- * Optional Level-B capability (piano §6.1): a real runtime-coalescing
+ * Optional Level-B capability: a real runtime-coalescing
  * `batch()`, distinct from `MdyFormEngine.mutate()`'s domain-level
  * coalescing (history/notifications) — `mutate()` delegates to this when
  * an adapter reports `capabilities.batching: true`, and works correctly
@@ -71,7 +71,7 @@ export interface MdyBatchingCapability {
   batch<T>(fn: () => T): T;
 }
 
-/** Optional Level-B capability (piano §6.2): a deterministic settle point. */
+/** Optional Level-B capability: a deterministic settle point. */
 export interface MdyFlushCapability {
   flush(): void | Promise<void>;
 }
@@ -82,11 +82,11 @@ export interface MdyObserveOptions<T> {
 }
 
 /**
- * Optional Level-B capability (piano §6.3): a selector-based subscription
+ * Optional Level-B capability: a selector-based subscription
  * that only notifies on an actual change (per `equal`), skipping the
  * initial run. Must be executed by the runtime that owns the observed
  * signals — never bridged through an unrelated reactivity instance
- * (piano §10.1's cross-runtime rule applies here too).
+ * (the cross-runtime rule applies here too).
  */
 export interface MdyObserveCapability {
   observe<T>(
@@ -151,7 +151,7 @@ export interface MdyScopeOptions {
   parent?: MdyReactiveScope;
 }
 
-/** Ownership/lifecycle boundary — see piano §5. */
+/** Ownership/lifecycle boundary. */
 export interface MdyReactiveScope {
   readonly id: symbol;
   readonly destroyed: boolean;
@@ -189,7 +189,7 @@ export interface MdyReactivity {
   ): MdyEffectRef;
   untracked<T>(fn: () => T): T;
 
-  /** Optional until every adapter implements ownership (piano Milestone 2-4). */
+  /** Optional until every adapter implements ownership. */
   createScope?(options?: MdyScopeOptions): MdyReactiveScope;
 
 }

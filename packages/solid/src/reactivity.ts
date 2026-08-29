@@ -242,8 +242,7 @@ export function solidReactivity(): MdyReactivity &
   };
 }
 
-// ─── Scope: an explicit parent/child tree over Solid's own disposal roots
-// (piano §5) ─────────────────────────────────────────────────────────────
+// ─── Scope: an explicit parent/child tree over Solid's own disposal roots ──
 //
 // createRoot() always creates an independent root, not nested under
 // whatever owner is currently active — unlike Vue's effectScope(), Solid

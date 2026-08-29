@@ -524,9 +524,9 @@ export interface MdyCoreFormOptions<
   /**
    * Injection-prevention policy for field values: sanitization profiles
    * (`"text"`/`"strict"` or a custom function), string length caps and a
-   * violation telemetry hook. Opt-in in 0.x (`sanitize` defaults to
-   * `"off"`); the structural checks (draft shape, server-error paths) are
-   * always on. See docs/guides/security.md.
+   * violation telemetry hook. Sanitization is opt-in (`sanitize` defaults
+   * to `"off"`); the structural checks (draft shape, server-error paths)
+   * are always on. See docs/guides/security.md.
    */
   readonly security?: MdySecurityPolicy;
   /**

@@ -254,7 +254,7 @@ export interface MdyFormEngineOptions {
   /**
    * `false` defers every effect-dependent feature (draft, history, async
    * validators) until {@link MdyFormEngine.activate} is called instead of
-   * starting them at construction time — piano §10.5/§10.7: construction
+   * starting them at construction time — construction
    * stays pure (no timers, no storage/network reads), so it's safe during
    * SSR and tolerant of React/Preact Strict Mode's dev-only double-invoke.
    * Default `true` (today's behavior: effects start immediately).
@@ -509,8 +509,8 @@ export class MdyFormEngine
   private readonly _historyManager: MdyHistoryManager;
   /**
    * Root ownership scope for this form (undefined when the adapter hasn't
-   * implemented `createScope` yet — piano-modyra-reactivity-adapter-api.md
-   * Milestone 2). Draft/history/async-validator effects register with it
+   * implemented `createScope` yet). Draft/history/async-validator effects
+   * register with it
    * as a backstop alongside their existing explicit `destroy()` calls.
    */
   private readonly _scope: MdyReactiveScope | undefined;
@@ -538,7 +538,7 @@ export class MdyFormEngine
    * are paused — either constructed with `autoActivate: false` and never
    * {@link activate}d yet, or paused via {@link deactivate}. Field state,
    * undo/redo stacks and the draft baseline all survive; only the running
-   * effects/timers stop. See piano §10.5/§10.7.
+   * effects/timers stop.
    */
   private _deactivated: boolean;
 
@@ -1645,7 +1645,7 @@ export class MdyFormEngine
    * (when history is enabled), regardless of whether the reactivity
    * adapter's effects run synchronously or are scheduler-deferred.
    * Delegates to the adapter's own `batch()`
-   * when it reports the capability (none do yet — piano Milestone 3); works
+   * when it reports the capability (none do yet); works
    * correctly without it either way.
    *
    * ```ts

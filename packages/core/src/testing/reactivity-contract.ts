@@ -1,6 +1,5 @@
 /**
- * Shared MdyReactivity conformance suite (piano-modyra-reactivity-adapter-api.md
- * §14 — "Suite universale di conformità").
+ * Shared MdyReactivity conformance suite.
  *
  * Framework-free and test-runner-agnostic on purpose: it takes `test`/`assert`
  * as parameters (same shape as `@modyra/widgets/testing`'s
@@ -41,7 +40,7 @@ function asObserve(rx: MdyReactivity): MdyObserveCapability | undefined {
     : undefined;
 }
 
-/** One harness instance per test — see piano §14.1. */
+/** One harness instance per test. */
 export interface MdyReactivityTestHarness {
   readonly reactivity: MdyReactivity;
   /** Resolves once any pending effects have settled (a no-op if effects are synchronous). */
@@ -190,7 +189,7 @@ export function runReactivityContractTests(
     destroy();
   });
 
-  // ─── Optional, capability-gated checks (piano §14.2-§14.3) ─────────────────
+  // ─── Optional, capability-gated checks ─────────────────────────────────────
   // Adapters that haven't migrated to the extended contract yet have no
   // `capabilities`/`createScope`, and these are skipped for them rather than
   // failed — additive, not a regression gate, until each adapter's own

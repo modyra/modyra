@@ -1,8 +1,7 @@
 /**
  * Proves @modyra/core/testing's harness-based API works standalone, not
  * directly, rather than only via the adapters that consume it. The backward-compat shim other
- * adapter packages still use (piano-modyra-reactivity-adapter-api.md
- * Milestone 7).
+ * adapter packages still use.
  */
 import assert from "node:assert/strict";
 import { test } from "node:test";

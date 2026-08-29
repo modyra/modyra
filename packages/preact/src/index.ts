@@ -53,8 +53,8 @@ export interface MdyStore {
  * wrappers over it.
  *
  * `reactivity` must be the runtime that actually owns `signals` — observing
- * them from an unrelated instance is the cross-runtime bug
- * piano-modyra-reactivity-adapter-api.md §10.1 forbids. Defaults to a fresh
+ * them from an unrelated instance is the cross-runtime observation bug.
+ * Defaults to a fresh
  * `vanillaReactivity()` only for direct callers that don't have a handle to
  * resolve an owner from (matches this function's pre-M5 behavior).
  */
@@ -137,7 +137,7 @@ export function createFieldStore(
  * <input value={email.value} onChange={(e) => form.f.email.set(e.currentTarget.value)} />
  * ```
  *
- * Construction stays pure (`autoActivate: false` — piano §10.5/§10.7): no
+ * Construction stays pure (`autoActivate: false`): no
  * timer, storage read or network call happens until the component actually
  * mounts. `useEffect` calls `form.activate()` on mount and `form.deactivate()`
  * on cleanup instead of `form.destroy()` — this makes the hook tolerant of

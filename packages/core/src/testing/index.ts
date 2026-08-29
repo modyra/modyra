@@ -1,6 +1,5 @@
 /**
- * Conformance testing kit for Modyra reactivity adapters
- * (piano-modyra-reactivity-adapter-api.md §14 — Milestone 7).
+ * Conformance testing kit for Modyra reactivity adapters.
  */
 
 export { runReactivityContractTests } from "./reactivity-contract.js";

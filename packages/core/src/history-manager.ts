@@ -28,8 +28,8 @@ interface HistoryManagerDeps {
   readonly isMutating: () => boolean;
   /**
    * True while the owning `MdyFormEngine` is deactivated (constructed with
-   * `autoActivate: false`, or paused via `deactivate()`) — see piano
-   * §10.5. `enableHistory()` records the config but defers starting the
+   * `autoActivate: false`, or paused via `deactivate()`).
+   * `enableHistory()` records the config but defers starting the
    * snapshot effect until `resume()`.
    */
   readonly isDeactivated: () => boolean;

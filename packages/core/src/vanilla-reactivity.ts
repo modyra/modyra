@@ -44,7 +44,7 @@ let activeConsumer: Consumer | null = null;
  */
 let activeComputed: object | null = null;
 
-// ─── Shared effect scheduler (piano §6.1/§6.2: batch()/flush()) ───────────────
+// ─── Shared effect scheduler (batch()/flush()) ──────────────────────────
 //
 // Every VanillaEffect schedules itself into one shared pending set instead of
 // queueing its own microtask. This is what makes batch() and flush() real:
@@ -302,9 +302,8 @@ export function vanillaReactivity(): MdyReactivity &
   return {
     id: Symbol("vanilla"),
     kind: "vanilla",
-    // graphInspection/serverSnapshots are not implemented
-    // (out of scope per piano §6.4-§6.5/§10.7 — reporting them true would
-    // be exactly the "fictitious capability" the plan's §8.1 forbids).
+    // graphInspection/serverSnapshots are not implemented — reporting them
+    // true would be a fictitious capability.
     capabilities: {
       effects: true,
       effectOwnership: true,
@@ -313,7 +312,7 @@ export function vanillaReactivity(): MdyReactivity &
       // consumer's `Object.is` on the returned value still short-circuits),
       // but staleness already propagated synchronously at write time before
       // the equality check runs — this does NOT stop a downstream
-      // computed/effect from re-running. Best-effort per piano §4.2, not a
+      // computed/effect from re-running. Best-effort, not a
       // full glitch-free guarantee, so this stays false.
       computedEquality: false,
       batching: true,
@@ -387,7 +386,7 @@ export function vanillaReactivity(): MdyReactivity &
     ): MdyEffectRef {
       // `options.timing` is accepted but not differentiated: vanilla only
       // has one timing model (microtask-scheduled, same as effect()) —
-      // best-effort per piano §4.2 rather than rejecting the option.
+      // best-effort rather than rejecting the option.
       const equal = options?.equal ?? Object.is;
       let hasPrevious = false;
       let previous: T;

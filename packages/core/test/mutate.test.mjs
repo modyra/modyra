@@ -1,6 +1,6 @@
 /**
- * Milestone 6 (piano-modyra-reactivity-adapter-api.md §12.1): form.mutate()
- * must coalesce a burst of field writes into exactly one history entry,
+ * form.mutate() must coalesce a burst of field writes into exactly one
+ * history entry,
  * regardless of whether the reactivity adapter's effects run synchronously
  * synchronously or are scheduler-deferred.
  */

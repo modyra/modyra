@@ -10,8 +10,7 @@
  *
  * Form state becomes @vue/reactivity state (shallowRef/computed), so
  * templates and watchers react to it natively. `effect()` runs on a real
- * scheduler (piano §6.1/§6.2, same shared-drain design as vanilla's own
- * Milestone 3), so `batch()`/`flush()` are real, not aliases for
+ * scheduler (same shared-drain design as vanilla's own), so `batch()`/`flush()` are real, not aliases for
  * `Promise.resolve()`; `createScope()` wraps Vue's own `effectScope()`
  * rather than a hand-rolled tree, so nesting/cascade-on-dispose is Vue's
  * own, native behavior.
@@ -135,7 +134,7 @@ class VueScheduledEffect {
   }
 }
 
-// ─── Scope: wraps Vue's own effectScope() (piano §5) ───────────────────────
+// ─── Scope: wraps Vue's own effectScope() ──────────────────────────────────
 //
 // A child created via `parent.run(() => effectScope())` is automatically
 // captured by Vue's own scope tree, so `parent.destroy()` cascading to it is
@@ -190,7 +189,7 @@ export function vueReactivity(): MdyReactivity &
       effectOwnership: true,
       // shallowRef's own setter already skips a same-value write; wrapped
       // below so a *custom* `options.equal` is honored too, not
-      // silently ignored (piano §4.2's rule on accepted-but-unhonored options).
+      // silently ignored.
       signalEquality: true,
       // This host's computed() has no public custom-comparator hook. Declared false rather than
       // reimplemented by hand around a raw effect(), which would stop being this host's own

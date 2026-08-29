@@ -1,11 +1,11 @@
 /**
  * Associates a field/array handle with the {@link MdyReactivity} runtime
- * that created its signals — piano-modyra-reactivity-adapter-api.md §7.
+ * that created its signals.
  *
  * Bindings (React/Preact's `createFieldStore`) must observe a handle
  * through the runtime that actually owns it, never by constructing a
  * fresh, unrelated reactivity instance — that's the cross-runtime
- * observation bug §10.1 names. A `WeakMap` keyed by the handle object
+ * observation rule. A `WeakMap` keyed by the handle object
  * (not individual signals) is cheap: one entry per field, not per signal,
  * and it's tagged once at handle-construction time in `typed-form.ts`.
  */
