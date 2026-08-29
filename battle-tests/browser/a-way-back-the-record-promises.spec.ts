@@ -148,17 +148,18 @@ for (const host of HOSTS) {
 
     // The premise: nothing has been taken, so the state the gesture waits for is absent.
     //
-    // **Asked as "is it on offer", not "is it there".** The remedy keeps a place in the cluster whether
-    // or not it has anything to offer, so that nothing shifts sideways when it arrives — which means
-    // the element is in the document from the start and counting it finds one every time. What tells
-    // the two apart is whether it has been given a box.
-    const standing = await page.locator(`[data-form="awaits"] .${classOf("wayBackAction")}`).first()
-      .boundingBox().catch(() => null);
+    // **Asked as "is it on offer", not "is it there", and the two are told apart by what the control
+    // announces.** Whether the remedy exists is a fact about the field's design and does not change as
+    // somebody works; whether it can act right now is a fact about the moment. So the element is in
+    // the document from the start — counting it finds one every time, and measuring its box finds one
+    // too — and what says it has nothing to offer is that it announces itself unable to act.
+    const offered = await page.locator(`[data-form="awaits"] .${classOf("wayBackAction")}`).first()
+      .getAttribute("aria-disabled").catch(() => null);
     expect(
-      standing === null || standing.width < 1 || standing.height < 1,
+      offered,
       `${host.name}: a remedy is on offer before anything was removed, so the state the gesture waits `
       + "for is already here and its silence below would say nothing",
-    ).toBe(true);
+    ).toBe("true");
 
     const untouched = await value(page, "awaits");
     await page.keyboard.press(PLATFORM_UNDO);
