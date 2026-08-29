@@ -71,6 +71,8 @@ for (const host of HOSTS) {
     });
 
     const disagreeing: string[] = [];
+    /** A panel filling the window leaves nowhere to press that is not itself. */
+    const unpressable: string[] = [];
     const dismissed: string[] = [];
     /** Kinds whose list belongs to the operating system: there is no panel of ours to dismiss. */
     const platformOwned: string[] = [];
@@ -127,7 +129,27 @@ for (const host of HOSTS) {
       await page.locator(`[data-form="${id}"] .${openerClass}`).first().click({ timeout: 5_000 }).catch(() => undefined);
       await page.waitForTimeout(350);
       if (await panel.isVisible().catch(() => false)) {
-        await page.locator("#mdy-elsewhere").click({ timeout: 5_000 }).catch(() => undefined);
+        // **Pressed at a place, not at an element.** An open panel covers what is behind it, so
+        // asking the driver to click a button outside the field is asking it to click something it
+        // can see is obscured — it refuses, the refusal was swallowed, and a press that never
+        // happened was reported as a panel that would not go away. A person's finger has no such
+        // scruple: it lands where it lands, on the panel's backdrop if there is one, and that is the
+        // gesture the capability is about. The press is asserted rather than attempted.
+        // Outside the field **and** outside the panel: a panel that opens upward sits where "just
+        // above the field" is, and a press inside it is not a press somewhere else — it would be
+        // asking the control to dismiss on a press on itself, which nothing declares.
+        const field = await page.locator(`[data-form="${id}"]`).boundingBox();
+        const opened = await panel.boundingBox().catch(() => null);
+        const away = await page.evaluate(({ a, b }) => {
+          const clear = (x: number, y: number) => [a, b].every((box) => box === null
+            || x < box.x || x > box.x + box.width || y < box.y || y > box.y + box.height);
+          const corners = [[8, 8], [window.innerWidth - 8, 8], [8, window.innerHeight - 8],
+            [window.innerWidth - 8, window.innerHeight - 8]];
+          const found = corners.find(([x, y]) => clear(x, y));
+          return found === undefined ? null : { x: found[0], y: found[1] };
+        }, { a: field, b: opened });
+        if (away === null) { unpressable.push(kind); continue; }
+        await page.mouse.click(away.x, away.y);
         await page.waitForTimeout(400);
         const wentOnPointer = !(await panel.isVisible().catch(() => false));
         const declaredPointer = dismissesOnPointer(kind);
