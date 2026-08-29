@@ -239,6 +239,13 @@ const score = {
 if (process.argv.includes("--write")) {
   writeFileSync(BASELINE, `${JSON.stringify({
     note: "Public names not yet asserted or not yet shown. The list may only get shorter.",
+    shownCeiling:
+      "`shown` counts a name a panel was measured to run, not one a list claims. What is left is not "
+      + "all reachable: a file chooser and the platform's colour picker are windows outside the "
+      + "document, so the names behind them cannot be executed by any scripted run — that is a fact "
+      + "about the instrument's reach, not a gap in the demos. The rest — a chip dragged, a clock "
+      + "face, a range completed — a demo could drive and none does yet. Raising the number by "
+      + "listing a name a panel does not run would make it stop meaning what it says.",
     score,
     uncovered: uncovered.map((u) => ({
       ...u,

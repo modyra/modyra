@@ -27,6 +27,13 @@
  * reported. The field is made to speak — a value typed and taken away, or a submission refused —
  * before the last reading.
  *
+ * **`aria-hidden` is not a promise and is left out.** Every attribute here says something to a reader
+ * except that one, which says the opposite: this element is not for you. Measured, it sits on an icon
+ * and on the `×` of a clear button in two renderers and on nothing in the third — so what it tracks
+ * is whether a renderer draws a decorative mark at all, which is a drawing decision the contract does
+ * not make. Counted as a promise, six kinds read as a divergence in what they tell a reader when the
+ * difference is what they draw.
+ *
  * Read as *which attributes are written at all* on a kind, not their values: a value differs for
  * honest reasons, a promise being absent does not.
  *
@@ -69,7 +76,10 @@ test("an aria promise that depends on the adapter", async ({ page }) => {
         const names = new Set<string>();
         const take = (where: Element) => {
           for (const element of where.querySelectorAll("*")) {
-            for (const name of element.getAttributeNames()) if (name.startsWith("aria-")) names.add(name);
+            for (const name of element.getAttributeNames()) {
+            if (name === "aria-hidden") continue;
+            if (name.startsWith("aria-")) names.add(name);
+          }
           }
         };
         take(root);
