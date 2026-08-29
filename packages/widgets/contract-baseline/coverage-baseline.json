@@ -5,7 +5,7 @@
     "published": 904,
     "asserted": 904,
     "showable": 399,
-    "shown": 387
+    "shown": 390
   },
   "uncovered": [
     {
@@ -65,28 +65,7 @@
       "reason": "published and never shown"
     },
     {
-      "name": "quantityAnnouncement",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
       "name": "scrollChipStripByWheel",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "timeClockTransition",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "timepickerDialRing",
       "asserted": true,
       "shown": false,
       "showable": true,
