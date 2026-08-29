@@ -34,6 +34,44 @@ import { HOSTS } from "./bench";
 
 const OPTIONS = [{ value: "a", label: "Alpha" }, { value: "b", label: "Bravo" }];
 
+
+/**
+ * Whether this driver can move a `<select>` with an arrow at all.
+ *
+ * The platform's chooser is navigated by the browser, not by the page, and a driver that presses
+ * keys at the document does not necessarily reach that navigation: an ordinary `<select>` built here
+ * with nothing else on the page does not move under `ArrowDown` in this one. So a shape that does not
+ * move proves nothing about the shape until the gesture is shown to work on a control nobody wrote.
+ *
+ * The control is built and pressed in the page under test, not assumed from a browser name — the
+ * answer differs by driver and would rot as a constant.
+ */
+const arrowsMoveANativeSelect = async (page: import("@playwright/test").Page): Promise<boolean> => {
+  const id = "__il-controllo-nudo";
+  await page.evaluate((elementId) => {
+    document.getElementById(elementId)?.remove();
+    const box = document.createElement("select");
+    box.id = elementId;
+    for (const value of ["", "uno", "due"]) {
+      const option = document.createElement("option");
+      option.value = value;
+      option.textContent = value === "" ? "Pick" : value;
+      box.append(option);
+    }
+    document.body.append(box);
+  }, id);
+  await page.locator(`#${id}`).focus();
+  await page.locator(`#${id}`).press("ArrowDown");
+  await page.waitForTimeout(120);
+  const moved = await page.evaluate((elementId) => {
+    const box = document.getElementById(elementId) as HTMLSelectElement | null;
+    const value = box?.value ?? "";
+    box?.remove();
+    return value !== "";
+  }, id);
+  return moved;
+};
+
 for (const host of HOSTS) {
   for (const searchable of [false, true]) {
     test(`a select can be chosen from by keyboard alone, searchable=${searchable}, ${host.name}`, async ({ page }) => {
@@ -81,11 +119,21 @@ for (const host of HOSTS) {
       }
       const after = await held();
 
+      // The gesture, before the verdict on the gesture. Where the driver cannot press a `<select>`,
+      // a shape that did not move has not been asked — and naming a renderer for it reports the tool.
+      const canPress = await arrowsMoveANativeSelect(page);
+      if (after === before && !canPress) {
+        console.log(`[unasked] ${host.name} searchable=${searchable}: this driver cannot arrow a native `
+          + "select, so whether a keyboard moves this shape is unmeasured rather than answered");
+        return;
+      }
+
       expect(
         after,
         `a keyboard could not change this select (searchable=${searchable}). It held ${JSON.stringify(before)} ` +
-          "before and after, so the shape a document gets when it does not ask for search is one a " +
-          "person without a pointer cannot operate",
+          "before and after, and an ordinary `<select>` built alongside it does move under the same " +
+          "press, so the shape a document gets when it does not ask for search is one a person " +
+          "without a pointer cannot operate",
       ).not.toBe(before);
 
       // And what it landed on is a value the document declared, spelled the contract's way. A shape
