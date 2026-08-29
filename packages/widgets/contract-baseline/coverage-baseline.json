@@ -5,7 +5,7 @@
     "published": 904,
     "asserted": 904,
     "showable": 399,
-    "shown": 309
+    "shown": 316
   },
   "uncovered": [
     {
@@ -184,13 +184,6 @@
       "reason": "published and never shown"
     },
     {
-      "name": "dialNumberAngle",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
       "name": "draftShapeMatches",
       "asserted": true,
       "shown": false,
@@ -359,27 +352,6 @@
       "reason": "published and never shown"
     },
     {
-      "name": "optionNavigationIndex",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "overlayCloseCommands",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "overlayStyleProperties",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
       "name": "partSelector",
       "asserted": true,
       "shown": false,
@@ -388,13 +360,6 @@
     },
     {
       "name": "partStates",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "popupAlignmentClass",
       "asserted": true,
       "shown": false,
       "showable": true,
@@ -534,13 +499,6 @@
       "reason": "published and never shown"
     },
     {
-      "name": "timepickerDialTolerance",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
       "name": "timepickerDialUnavailableArcs",
       "asserted": true,
       "shown": false,
@@ -584,13 +542,6 @@
     },
     {
       "name": "validateExpression",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "validateTimeGranularity",
       "asserted": true,
       "shown": false,
       "showable": true,

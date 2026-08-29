@@ -24,6 +24,7 @@ import {
 } from "@modyra/core";
 import {
   browserRuntimeCapabilities,
+  dialNumberAngle,
   dynamicParts,
   isFullyServerRenderable,
   isWidgetKind,
@@ -34,6 +35,13 @@ import {
   stateCarriers,
   trailingAffordances,
   transitionsFrom,
+  optionNavigationIndex,
+  overlayCloseCommands,
+  overlayStyleProperties,
+  popupAlignmentClass,
+  timepickerDialNumbers,
+  timepickerDialTolerance,
+  validateTimeGranularity,
   widgetStateClasses,
 } from "@modyra/widgets";
 
@@ -53,23 +61,33 @@ export const rendererPanel = {
     "createConsoleDiagnostics",
     "createMdyAnnouncer",
     "createSilentDiagnostics",
+    "dialNumberAngle",
     "dynamicParts",
     "isContextRef",
     "isExpression",
     "isFullyServerRenderable",
+    "isOnStep",
     "isPathRef",
     "isRootRef",
     "isSelfRef",
     "isWidgetKind",
     "kindsWithAffordances",
+    "optionNavigationIndex",
+    "overlayCloseCommands",
     "overlayOnlyParts",
+    "overlayStyleProperties",
     "partsRequiringName",
+    "popupAlignmentClass",
     "stateCarriers",
     "stateClass",
     "staticParts",
+    "timeFieldBounds",
+    "timepickerDialNumbers",
+    "timepickerDialTolerance",
     "timepickerPlaceholder",
     "trailingAffordances",
     "transitionsFrom",
+    "validateTimeGranularity",
     "widgetStateClasses",
   ],
 
@@ -110,6 +128,17 @@ export const rendererPanel = {
       diagnosticsDoors: [typeof createConsoleDiagnostics().warn, typeof createSilentDiagnostics().warn],
       // How a rule written in a document names what it is about — the four kinds of reference an
       // expression can hold, told apart by the package rather than by reading the object's shape.
+      // The arithmetic a renderer does not have to invent: where a panel goes once its anchor has been
+      // measured, where a hand points, which option an arrow lands on, how close a finger has to be.
+      arithmetic: {
+        panelAt: overlayStyleProperties({ top: 10, left: 20, width: 100, height: 40, placement: "below", alignment: "start" }),
+        alignmentClass: popupAlignmentClass(isWidgetKind(kind) ? kind : "select", "start"),
+        onClose: overlayCloseCommands(true).map((one) => one.type),
+        handAt: dialNumberAngle(timepickerDialNumbers("24h")[1]),
+        withinAFinger: Math.round(timepickerDialTolerance("outer", 100)),
+        arrowLandsOn: optionNavigationIndex("End", 0, 5),
+        granularityProblems: validateTimeGranularity({ hour: 1, minute: 5 }).length,
+      },
       references: {
         path: isPathRef({ path: "total" }),
         root: isRootRef({ root: "total" }),
