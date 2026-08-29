@@ -43,6 +43,10 @@ const FIELDS = [
   {
     name: "country",
     kind: "select",
+    // The combobox this library builds, which is the shape this page has always shown and the one
+    // the specs about filtering, the caret and the portalled list are written against. A select with
+    // nothing said about filtering is the platform's own chooser. ADR 0176.
+    searchable: true,
     initialValue: "it",
     label: "Country",
     options: [

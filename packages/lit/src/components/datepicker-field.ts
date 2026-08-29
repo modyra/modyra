@@ -510,16 +510,6 @@ export class MdyDatepickerFieldElement extends MdyFieldElement<string | null> {
 
   protected override renderControl(handle: MdyFieldHandle<string | null>): unknown {
     this.classList.toggle("mdy-renderer--open", this._open);
-    // The role, the popup relation and the caption this control is named by are the projection's,
-    // and were literals here answering what the contract already says. `aria-controls` stays the
-    // renderer's: the projection names the day grid, and choosing a month or a year replaces it, so
-    // a fixed reference names an element that has been taken away.
-    // Without its id: this element already carries the one the caption points at with `for`, and a
-    // part applied over it renames the control out from under that reference.
-    const projected = this.fieldController?.view().parts.trigger;
-    const trigger = projected === undefined
-      ? undefined
-      : { ...projected, id: undefined } as typeof projected;
     return html`
       <div class="mdy-datepicker">
         <input
@@ -531,7 +521,11 @@ export class MdyDatepickerFieldElement extends MdyFieldElement<string | null> {
           ?disabled=${handle.disabled()}
           ?readonly=${handle.readonly()}
           ${mdyPart(this.controlPart(handle))}
-          ${trigger ? mdyPart(trigger) : nothing}
+          role="combobox"
+          aria-haspopup=${this.popupPromise}
+          aria-labelledby=${this.namedBy().labelledby}
+          aria-label=${this.namedBy().label}
+          aria-expanded=${this._open ? "true" : "false"}
           aria-controls=${this.controlledViewId()}
           @change=${(e: Event) => {
             // The text goes over as text. Parsing here and writing the value back was the erasure:

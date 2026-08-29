@@ -3,22 +3,19 @@ import { expect, test } from "@playwright/test";
 /**
  * Typing reaches the list, driven as a user drives it.
  *
- * The buffer is unit-tested, and that proves the algorithm rather than that a renderer feeds it —
- * which is the distinction this change exists to fix. Three adapters implementing one behaviour
- * produced three behaviours, and the one that diverged was the one nothing drove.
+ * **This file used to test a shape that no longer exists.** It drove an incremental-search buffer at
+ * the trigger of a combobox with no filter box — the model a select had when `searchable` was unset.
+ * ADR 0176 gives that configuration to the platform's own chooser, which brings its own typeahead,
+ * so there is no longer a control in this renderer where a buffer at the trigger is the answer. The
+ * buffer itself is still unit-tested; what has no shape left is a page that drives it.
  *
- * Written against the demo's actual list rather than around it. A conditional skip here would be a
- * test that reports success having asserted nothing, which is the failure the rule is about.
+ * What a filtering select does with typing is a different act and is what this asserts now: the
+ * keystrokes go into the field at the top of the popup, and the list narrows to what matches.
+ * Typing over the trigger's own text would hide the committed value while somebody looks for
+ * another one, which is why the filter box exists rather than the trigger accepting text.
  */
 const TRIGGER = ".mdy-renderer--select .mdy-select__trigger";
-
-/** What the trigger says is active — the reading position, which is what a listbox moves. */
-const activeLabel = (page: import("@playwright/test").Page) =>
-  page.evaluate(() => {
-    const id = document.querySelector(".mdy-renderer--select .mdy-select__trigger")
-      ?.getAttribute("aria-activedescendant");
-    return id ? document.getElementById(id)?.textContent?.trim() ?? null : null;
-  });
+const OPTION = ".mdy-select__list .mdy-select__option:not([hidden])";
 
 test.beforeEach(async ({ page }) => {
   await page.goto("/");
@@ -27,35 +24,34 @@ test.beforeEach(async ({ page }) => {
   await expect(trigger).toHaveAttribute("aria-expanded", "true");
 });
 
-test("a listbox has no filter box, and typing moves the reading position", async ({ page }) => {
-  // The model the contract now names: `searchable` is unset, so this select is a listbox.
-  await expect(page.locator(".mdy-select__search")).toHaveCount(0);
+test("a select that filters has a field to filter in, and the keyboard is in it", async ({ page }) => {
+  const search = page.locator(".mdy-select__search");
+  await expect(search).toHaveCount(1);
+  // Where the typing goes has to be where the keyboard already is, or the first keystroke is lost
+  // to whatever had focus instead.
+  await expect(search).toBeFocused();
+});
 
-  // `fr` rather than `f`: one character is what the broken implementation could already match, so a
-  // single key would pass against the defect this replaces.
+test("typing narrows the list rather than moving through it", async ({ page }) => {
+  const before = await page.locator(OPTION).count();
+  expect(before).toBeGreaterThan(1);
+
+  // Two characters, not one: a single letter is what a broken filter could already match, so it
+  // would pass against the defect this guards.
   await page.keyboard.press("f");
   await page.keyboard.press("r");
 
-  await expect.poll(() => activeLabel(page), { message: 'typing "fr" must reach France' }).toBe("France");
+  await expect.poll(() => page.locator(OPTION).count(), { message: 'typing "fr" must narrow the list' })
+    .toBeLessThan(before);
+  await expect(page.locator(OPTION).first()).toHaveText(/France/);
 });
 
-test("a second character narrows rather than replaces", async ({ page }) => {
-  // Germany and France both exist; `g` then `e` must stay on Germany rather than jump to whatever
-  // `e` alone would match. This is the assertion the replace-not-accumulate bug fails.
+test("a second character narrows further rather than starting again", async ({ page }) => {
   await page.keyboard.press("g");
-  await expect.poll(() => activeLabel(page)).toBe("Germany");
+  const afterOne = await page.locator(OPTION).count();
   await page.keyboard.press("e");
-  await expect.poll(() => activeLabel(page), { message: '"ge" must still be Germany' }).toBe("Germany");
-});
 
-test("the buffer expires, so a pause starts a new word", async ({ page }) => {
-  await page.keyboard.press("g");
-  await expect.poll(() => activeLabel(page)).toBe("Germany");
-
-  // Past the idle interval. Without it the buffer reads "gi", which matches nothing, and the active
-  // option would stay on Germany — passing for the wrong reason.
-  await page.waitForTimeout(1200);
-  await page.keyboard.press("i");
-
-  await expect.poll(() => activeLabel(page), { message: "the second query must not inherit the first" }).toBe("Italy");
+  await expect.poll(() => page.locator(OPTION).count(), { message: '"ge" must not read as "e"' })
+    .toBeLessThanOrEqual(afterOne);
+  await expect(page.locator(OPTION).first()).toHaveText(/Germany/);
 });

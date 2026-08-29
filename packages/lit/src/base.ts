@@ -14,6 +14,7 @@ import {
   popupPlacementClass,
   projectFieldShellA11y,
   fieldAccessibleName,
+  fieldNameAttributes,
   errorsVisible,
   focusIsInsideField,
   keepKeyboardInPlay,
@@ -838,6 +839,32 @@ export abstract class MdyFieldElement<T> extends LitElement {
   /** Id the controllers point `aria-describedby` at when the field has no errors. */
   protected get descriptionId(): string {
     return ID.part(this.fieldId, "description");
+  }
+
+  /** The caption's id, through the factory rather than spelled here. */
+  protected get labelId(): string {
+    return ID.part(this.fieldId, "label");
+  }
+
+  /**
+   * Which attribute names this control, asked of the contract rather than answered per element.
+   *
+   * Two names on one element is not two names: the computation takes `aria-labelledby` and stops, so
+   * an `aria-label` beside it is text nobody hears — and a control named by neither is announced by
+   * its own text, which for a typeable date is whatever was last typed into it. `nothing` where the
+   * contract says the attribute is absent, so lit removes it. ADR 0175.
+   */
+  protected namedBy(): { readonly labelledby: string | typeof nothing; readonly label: string | typeof nothing } {
+    const named = fieldNameAttributes({
+      ariaLabel: this._pendingName,
+      label: this.label,
+      name: this.field?.path,
+      labelId: this.labelId,
+    });
+    return {
+      labelledby: named["aria-labelledby"] ?? nothing,
+      label: named["aria-label"] ?? nothing,
+    };
   }
 
   /** Helper text slot rendered when no block errors are shown. It carries the id the widget
