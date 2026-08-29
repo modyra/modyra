@@ -121,6 +121,33 @@ export type MdyPartPresence = (typeof MDY_PART_PRESENCES)[number];
  * condition added to the contract arrives owed, and the table has to be able to say so rather than
  * force whoever adds it to invent an answer on the spot. ADR 0169.
  */
+/**
+ * Which message names a part that no relation points at.
+ *
+ * Most parts are named by being pointed at: a caption's `for`, an opener's `aria-controls`. Five are
+ * not, and they are not machinery — a person types in a panel's search box, in the second date of a
+ * range, in each half of a time. Nothing declared what those are called, so each renderer chose, and
+ * they chose differently: one built `"<caption> — end"` by hand where another read `daterangeEndLabel`
+ * from the message table, and a page in Italian said "end".
+ *
+ * The words already existed in the table for every one of them. What was missing was the sentence
+ * saying which word belongs to which part — so this is a binding rather than a vocabulary, and the
+ * translation of a control's name stops being a decision a renderer takes on its own.
+ *
+ * Keyed `kind.part`. A part named by a relation is not here and must not be: two ways to name one
+ * element is the divergence this removes.
+ */
+export const MDY_PART_NAMES: Readonly<Record<string, string>> = Object.freeze({
+  "select.search": "searchOptionsLabel",
+  "multiselect.search": "searchOptionsLabel",
+  // The first of the two is named by the caption's `for` — a range's caption belongs to where the
+  // range starts — so only the second is unclaimed. Binding both would be two ways to name one
+  // element, which is what this table removes.
+  "daterange.endControl": "daterangeEndLabel",
+  "timepicker.hourControl": "timepickerHourLabel",
+  "timepicker.minuteControl": "timepickerMinuteLabel",
+});
+
 export const MDY_PRESENCE_RESOLUTION: Readonly<Record<MdyPartPresence, {
   /** The published name that answers it, or `null` where nothing does. */
   readonly resolver: string | null;

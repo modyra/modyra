@@ -23,6 +23,7 @@ import { applySubmissionNames,
   MDY_I18N_MESSAGES_DEFAULT,
   type MdyI18nMessages,
   keyBindingFor,
+  MDY_PART_NAMES,
 } from "@modyra/widgets";
 import { applyPart, el, setErrors, setText, setIcon } from "../dom.js";
 import { buildFieldShell, insertControl } from "../field-shell.js";
@@ -78,15 +79,19 @@ export function renderDaterangeField(
   const startInput = el("input", definition.parts.startControl.classes.join(" ")) as HTMLInputElement;
   startInput.type = "text";
   startInput.autocomplete = "off";
-  startInput.setAttribute("aria-label", `${f.label ?? "Range"} — start`);
-  startInput.placeholder = f.placeholder ?? "Start";
+  // The caption names this one, through its `for` — a range's caption belongs to where the range
+  // starts, and the contract says so with that relation. A second name here would be two answers to
+  // one question, and this one was built from an English word a translated page still said.
+  startInput.placeholder = f.placeholder ?? messages.daterangeStartLabel;
   const separator = el("span", definition.parts.separator.classes.join(" "));
   separator.setAttribute("aria-hidden", "true");
   setText(separator, "–");
   const endInput = el("input", definition.parts.endControl.classes.join(" ")) as HTMLInputElement;
   endInput.type = "text";
   endInput.autocomplete = "off";
-  endInput.setAttribute("aria-label", `${f.label ?? "Range"} — end`);
+  // Nothing points at this one — the caption is spent on the first — so the contract says which
+  // message names it rather than each renderer building a phrase of its own. `MDY_PART_NAMES`.
+  endInput.setAttribute("aria-label", messages[MDY_PART_NAMES["daterange.endControl"] as keyof typeof messages] as string);
   endInput.placeholder = messages.daterangeEndLabel;
   const toggle = el("button", definition.parts.toggle.classes.join(" ")) as HTMLButtonElement;
   setIcon(toggle, "CALENDAR");

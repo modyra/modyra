@@ -1,8 +1,8 @@
 {
   "note": "Public names not yet asserted or not yet shown. The list may only get shorter.",
   "score": {
-    "published": 899,
-    "asserted": 582,
+    "published": 900,
+    "asserted": 583,
     "shown": 98
   },
   "uncovered": [
@@ -182,6 +182,12 @@
     },
     {
       "name": "MDY_OVERLAY_VIEWPORT_MARGIN",
+      "asserted": true,
+      "shown": false,
+      "reason": "published and never shown"
+    },
+    {
+      "name": "MDY_PART_NAMES",
       "asserted": true,
       "shown": false,
       "reason": "published and never shown"
