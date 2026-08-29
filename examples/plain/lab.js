@@ -30,8 +30,9 @@ import { dynamicPanel } from "./panels/dynamic.js";
 import { securityPanel } from "./panels/security.js";
 import { headlessPanel } from "./panels/headless.js";
 import { nestedPanel } from "./panels/nested.js";
+import { rendererPanel } from "./panels/renderer.js";
 
-const PANELS = [statesPanel, validationPanel, collectionsPanel, ordersPanel, invoicesPanel, contractsPanel, lifecyclePanel, dynamicPanel, securityPanel, headlessPanel, nestedPanel];
+const PANELS = [statesPanel, validationPanel, collectionsPanel, ordersPanel, invoicesPanel, contractsPanel, lifecyclePanel, dynamicPanel, securityPanel, headlessPanel, nestedPanel, rendererPanel];
 
 const nav = document.querySelector("[data-lab-nav]");
 const host = document.querySelector("[data-lab-panel]");

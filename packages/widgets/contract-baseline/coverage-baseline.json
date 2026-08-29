@@ -5,7 +5,7 @@
     "published": 904,
     "asserted": 904,
     "showable": 399,
-    "shown": 290
+    "shown": 301
   },
   "uncovered": [
     {
@@ -226,13 +226,6 @@
       "reason": "published and never shown"
     },
     {
-      "name": "dynamicParts",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
       "name": "eachOneOf",
       "asserted": true,
       "shown": false,
@@ -352,13 +345,6 @@
       "reason": "published and never shown"
     },
     {
-      "name": "isFullyServerRenderable",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
       "name": "isPathRef",
       "asserted": true,
       "shown": false,
@@ -374,20 +360,6 @@
     },
     {
       "name": "isSelfRef",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "isWidgetKind",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "kindsWithAffordances",
       "asserted": true,
       "shown": false,
       "showable": true,
@@ -457,13 +429,6 @@
       "reason": "published and never shown"
     },
     {
-      "name": "overlayOnlyParts",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
       "name": "overlayStyleProperties",
       "asserted": true,
       "shown": false,
@@ -479,13 +444,6 @@
     },
     {
       "name": "partStates",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "partsRequiringName",
       "asserted": true,
       "shown": false,
       "showable": true,
@@ -556,20 +514,6 @@
     },
     {
       "name": "stableControllerOptions",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "stateCarriers",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "staticParts",
       "asserted": true,
       "shown": false,
       "showable": true,
@@ -681,20 +625,6 @@
       "reason": "published and never shown"
     },
     {
-      "name": "trailingAffordances",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "transitionsFrom",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
       "name": "typeaheadMatch",
       "asserted": true,
       "shown": false,
@@ -752,13 +682,6 @@
     },
     {
       "name": "widgetScopeOf",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "widgetStateClasses",
       "asserted": true,
       "shown": false,
       "showable": true,

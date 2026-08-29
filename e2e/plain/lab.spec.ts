@@ -8,7 +8,7 @@ import { expect, test } from "@playwright/test";
  * panel: it reports the previous answer with the authority of the current one. These are the checks
  * that the controls do what the panel says they do.
  */
-const PANELS = ["states", "validation", "collections", "lifecycle", "dynamic", "security", "headless", "nested"];
+const PANELS = ["states", "validation", "collections", "lifecycle", "dynamic", "security", "headless", "nested", "renderer"];
 
 async function open(page: import("@playwright/test").Page, id: string) {
   const errors: string[] = [];
@@ -379,4 +379,18 @@ test("nested: the limit refuses, and says so differently at each door", async ({
   // which of their sections is the seventh.
   expect(thrown.said).toContain("levels deep");
   expect(thrown.said).toContain("/layout/0/children");
+});
+
+test("renderer: the contract answers about every kind it declares", async ({ page }) => {
+  // A page that asks the contract is only worth having if it asks about all of them: a reader
+  // choosing a kind and getting the previous one's answer is the readout-one-state-behind defect
+  // this suite exists for.
+  await open(page, "renderer");
+  const first = await readout(page);
+  expect(first.always.length, "a kind must have parts it always draws").toBeGreaterThan(0);
+  await page.locator('[data-panel="renderer"] button', { hasText: "timepicker" }).first().click();
+  await page.waitForTimeout(120);
+  const second = await readout(page);
+  expect(second.kind, "picking a kind changes what the page answers about").toBe("timepicker");
+  expect(second.always, "two kinds do not draw the same parts").not.toEqual(first.always);
 });
