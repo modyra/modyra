@@ -14,6 +14,19 @@
  * page next to it, and no reading of the contract says which one is right — which is exactly why it is
  * the contract that owes the answer.
  *
+ * **Read in the state each part lives in.** A renderer that builds its panel and hides it carries the
+ * panel's attributes at rest; one that builds the panel when it opens carries none of them until it
+ * does. Swept at rest alone, that difference reads as one renderer promising what another withholds —
+ * two thirds of what this once reported was that, and none of it was a promise. So each kind is read
+ * closed and again open, and the panel is followed by the link the opener declares rather than by
+ * document containment, because a panel rendered elsewhere is still the field's.
+ *
+ * **And in the state where a refusal exists.** The error list is where `aria-live` lives, and a field
+ * with nothing to say has no error list: swept silent, one renderer's container is there because it
+ * builds it and hides it, and the other two have not built theirs. That was a third of what this
+ * reported. The field is made to speak — a value typed and taken away, or a submission refused —
+ * before the last reading.
+ *
  * Read as *which attributes are written at all* on a kind, not their values: a value differs for
  * honest reasons, a promise being absent does not.
  *
@@ -23,8 +36,8 @@
  * Claims under attack: ADP-001, A11Y-004.
  */
 import { expect, test } from "@playwright/test";
-import { MDY_WIDGET_KINDS } from "@modyra/widgets";
-import { HOSTS } from "./bench";
+import { MDY_POPUP_OPENERS, MDY_WIDGET_CONTRACTS, MDY_WIDGET_KINDS, partClasses } from "@modyra/widgets";
+import { HOSTS, madeToSpeak } from "./bench";
 
 type Api = Record<string, Record<string, (...args: never[]) => unknown>>;
 
@@ -43,22 +56,50 @@ test("an aria promise that depends on the adapter", async ({ page }) => {
       const mountId = `aria-${kind}`;
       await page.evaluate(
         ({ door, id, k }) => (window as never as Api)[door].mountFields(id, [{
-          name: "campo", kind: k, label: "Etichetta",
+          name: "campo", kind: k, label: "Etichetta", validators: { required: true },
           options: [{ value: "a", label: "A" }, { value: "b", label: "B" }],
         }] as never),
         { door: host.api, id: mountId, k: kind },
       );
       await page.locator(`[data-form="${mountId}"]`).waitFor({ timeout: 5_000 }).catch(() => undefined);
 
-      const found = await page.evaluate(({ id }) => {
+      const sweep = () => page.evaluate(({ id }) => {
         const root = document.querySelector(`[data-form="${id}"]`) as HTMLElement | null;
         if (root === null) return [];
         const names = new Set<string>();
-        for (const element of root.querySelectorAll<HTMLElement>("*")) {
-          for (const name of element.getAttributeNames()) if (name.startsWith("aria-")) names.add(name);
+        const take = (where: Element) => {
+          for (const element of where.querySelectorAll("*")) {
+            for (const name of element.getAttributeNames()) if (name.startsWith("aria-")) names.add(name);
+          }
+        };
+        take(root);
+        // The panel wherever the renderer put it, named by the link rather than found by containment.
+        for (const opener of root.querySelectorAll("[aria-controls]")) {
+          const panel = document.getElementById(opener.getAttribute("aria-controls") ?? "");
+          if (panel !== null) take(panel);
         }
         return [...names];
       }, { id: mountId });
+
+      const atRest = await sweep();
+      // Opened, because the parts that carry half of these attributes do not exist until it is.
+      // A kind with no panel names no opener, and asking for the classes of a part it does not have
+      // raises rather than answering — so the question is only put where there is one.
+      const opener = (MDY_POPUP_OPENERS as unknown as Record<string, { opener?: string } | undefined>)[kind]?.opener;
+      const openerClasses = opener === undefined
+        ? []
+        : (partClasses(kind, opener) as string[] | undefined) ?? [];
+      if (openerClasses.length > 0) {
+        await page.locator(`[data-form="${mountId}"] ${openerClasses.map((one) => `.${one}`).join("")}`)
+          .first().click({ timeout: 3_000 }).catch(() => undefined);
+        await page.waitForTimeout(350);
+      }
+      const opened = await sweep();
+      await page.keyboard.press("Escape").catch(() => undefined);
+      await page.waitForTimeout(120);
+      await madeToSpeak(page, `[data-form="${mountId}"]`, host.api);
+      const speaking = await sweep();
+      const found = [...new Set([...atRest, ...opened, ...speaking])];
 
       seen += found.length;
       if (!written.has(kind)) written.set(kind, {});
