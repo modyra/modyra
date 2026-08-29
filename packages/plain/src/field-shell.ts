@@ -24,6 +24,8 @@ export interface FieldShell {
   readonly labelText?: string;
   /** The field's own name — the last thing left to name a control with. */
   readonly fieldName?: string;
+  /** The kind, so the shell can ask the catalogue which element is this field's control. */
+  readonly kind: MdyWidgetKind;
   /** Reflects state the themes key off: touched on the root, disabled/error on the wrapper. */
   syncState(state: {
     touched?: boolean; disabled?: boolean; hasError?: boolean; filled?: boolean;
@@ -129,6 +131,7 @@ export function buildFieldShell(
     ariaLabel,
     labelText,
     fieldName,
+    kind,
     root,
     label,
     wrapper,
@@ -200,19 +203,25 @@ export function insertControl(shell: FieldShell, control: HTMLElement): void {
   // chosen values while the combobox beside it carried the same word. One name, two things, and the
   // renderer that did it was the only one of three that did.
   const operable = "input, select, textarea, button";
-  // And **one** control, not the first of several. A radio group hands over a container holding one
-  // input per option, and the first match is an arbitrary option — so the field's caption was
-  // announced as the name of "Small" while every other option had none. The same shape as the chip
-  // strip above and the same rule: a container of many controls is the thing being named, and the
-  // group's own role says so once it is applied.
-  const inside = control.matches(operable)
-    ? [control]
-    : Array.from(control.querySelectorAll<HTMLElement>(operable));
+  // **The element the contract calls this kind's control**, not the first one that happens to match.
+  // A file field hands over a container whose first control is the hidden picker — which is the
+  // control — and a radio group hands over a container whose first control is an arbitrary option,
+  // where the caption was announced as the name of "Small" and every other option had none. Counting
+  // them does not tell the two apart; the catalogue does, because a kind that has a `control` part
+  // says which element it is and a kind that has none is named as a whole.
+  const declared = MDY_WIDGET_CONTRACTS[shell.kind].parts as Record<string, { classes: readonly string[] } | undefined>;
+  const controlClass = declared.control?.classes[0];
+  // No `CSS.escape`: it is absent in some of the environments this runs in, and these class names
+  // are the catalogue's own — a fixed vocabulary with nothing in it a selector has to be protected
+  // from.
+  const named = controlClass ? control.querySelector<HTMLElement>(`.${controlClass}`) : null;
   const operated = control.matches(`${operable}, [role]`)
     ? control
-    : inside.length === 1
-      ? inside[0]!
-      : control.querySelector<HTMLElement>("[role]") ?? control;
+    : named
+      ?? control.querySelector<HTMLElement>("[role]")
+      ?? (control.querySelectorAll(operable).length === 1
+        ? control.querySelector<HTMLElement>(operable)!
+        : control);
   if (name) operated.setAttribute("aria-label", name);
   (shell.wrapper.querySelector(`.${MDY_FIELD_SHELL_CLASSES.control}`) ?? shell.wrapper).appendChild(control);
 }
