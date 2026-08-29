@@ -11,7 +11,7 @@
 import type { MdyPartContract } from "../contract.js";
 import type { MdyStateName } from "../state.js";
 import {
-  dynamicPartsOf, MDY_FIELD_SHELL_CLASSES, MDY_PART_PRESENCE, MDY_SHELL_PART_STATES,
+  dynamicPartsOf, MDY_FIELD_SHELL_CLASSES, MDY_PART_PRESENCE, MDY_PART_REQUIRES, MDY_SHELL_PART_STATES,
 } from "../structure.js";
 import type { MdyWidgetSemanticElement } from "../structure.js";
 import type { MdyValueSlot, MdyWidgetDefinition, MdyWidgetKind, MdyWidgetVariant } from "./kinds.js";
@@ -495,7 +495,16 @@ export function define<const TPart extends string>(kind: MdyWidgetKind, rootClas
     const presentWhen = node.optional
       ? MDY_PART_PRESENCE[node.part] ?? (insideAPopup.has(node.part) ? "overlayIsOpen" as const : undefined)
       : undefined;
-    return Object.freeze(presentWhen === undefined ? node : { ...node, presentWhen });
+    // What the kind has to have been *given* before the presence question applies. Read without it,
+    // this contract owed a reorder grip to every multiselect holding a value; every renderer drew it
+    // only where a document asked for reordering, which is a rule none of them could point at.
+    const requires = MDY_PART_REQUIRES[node.part];
+    if (presentWhen === undefined && requires === undefined) return node;
+    return Object.freeze({
+      ...node,
+      ...(presentWhen === undefined ? {} : { presentWhen }),
+      ...(requires === undefined ? {} : { requires }),
+    });
   });
   return Object.freeze({ kind, rootClasses: Object.freeze([...rootClasses]),
     ...(shape.controlType === undefined ? {} : { controlType: shape.controlType }),

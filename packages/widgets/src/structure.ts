@@ -199,6 +199,22 @@ export const MDY_PRESENCE_RESOLUTION: Readonly<Record<MdyPartPresence, {
  * audit records it — but a *wrong* entry is worse than a missing one, because it tells a renderer to
  * build something at a moment when it is not wanted and nothing notices until it is on the page.
  */
+/**
+ * What a part needs the kind to have been *given* before its presence question applies at all.
+ *
+ * `presentWhen` says when a part is on the page. This says whether the question is asked — a reorder
+ * grip is present when there is a value, and only where a document asked for reordering, which is not
+ * a state the widget is in but something the page decided before it existed.
+ *
+ * One entry today, and it is a correction rather than an addition: read without it the contract owed
+ * a drag handle to every multiselect holding a value, and all three renderers drew it only where
+ * reordering was asked for. Three adapters agreeing against a declaration is the evidence that the
+ * declaration is what is wrong.
+ */
+export const MDY_PART_REQUIRES: Readonly<Record<string, string>> = Object.freeze({
+  chipMove: "reorderable",
+});
+
 export const MDY_PART_PRESENCE: Readonly<Record<string, MdyPartPresence>> = Object.freeze({
   label: "documentDeclaresIt",
   supportingText: "documentDeclaresIt",
@@ -300,6 +316,23 @@ export interface MdyWidgetStructureNode<TPart extends string = string> {
    * binding, and one word carrying two meanings is how a declaration comes to be read two ways.
    */
   readonly presentWhen?: MdyPartPresence;
+  /**
+   * A capability the kind must have been given before the part is owed at all.
+   *
+   * `presentWhen` says *when* a part is on the page; this says *whether the question applies*. A
+   * multiselect's reorder grip is present when there is a value — and only where a document asked
+   * for reordering, which no condition can express because it is not a state the widget is in, it is
+   * something the page decided before the widget existed.
+   *
+   * Read literally without it, the contract owed a drag handle to every multiselect holding a value.
+   * All three renderers drew it only where reordering was asked for, which is right and was a rule
+   * none of them could point at — the shape where three adapters agree against the declaration and
+   * the declaration is what is wrong.
+   *
+   * The same word a key binding uses, deliberately: `requires` there gates a gesture on the same
+   * facts, and one vocabulary for one idea is what keeps a reader from checking whether they differ.
+   */
+  readonly requires?: string;
   readonly repeated?: boolean;
 }
 
@@ -439,7 +472,13 @@ function withPresence<TPart extends string>(
 ): readonly MdyWidgetStructureNode<TPart>[] {
   return Object.freeze(nodes.map((node) => {
     const presentWhen = node.optional === true ? MDY_PART_PRESENCE[node.part] : undefined;
-    return Object.freeze(presentWhen === undefined ? node : { ...node, presentWhen });
+    const requires = MDY_PART_REQUIRES[node.part];
+    if (presentWhen === undefined && requires === undefined) return node;
+    return Object.freeze({
+      ...node,
+      ...(presentWhen === undefined ? {} : { presentWhen }),
+      ...(requires === undefined ? {} : { requires }),
+    });
   }));
 }
 

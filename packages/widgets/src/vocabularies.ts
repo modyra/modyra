@@ -46,7 +46,7 @@ import {
 } from "./structure.js";
 
 import { MDY_WIDGET_KEYBOARD, MDY_WIDGET_TRANSITIONS } from "./transitions.js";
-import { MDY_PART_NAMES, MDY_PART_PRESENCE, MDY_PART_PRESENCES, MDY_PRESENCE_RESOLUTION } from "./structure.js";
+import { MDY_PART_NAMES, MDY_PART_PRESENCE, MDY_PART_REQUIRES, MDY_PART_PRESENCES, MDY_PRESENCE_RESOLUTION } from "./structure.js";
 import { MDY_EVERY_TIME } from "./time-granularity.js";
 import { deepFreeze } from "./freeze.js";
 
@@ -168,6 +168,8 @@ const CATALOGUES: MdyVocabulary[] = [
     describes: "the conditions under which an optional part is on the page" },
   { name: "MDY_PART_PRESENCE", shape: "names", value: MDY_PART_PRESENCE, door: ".",
     describes: "which of those conditions each optional part is present under" },
+  { name: "MDY_PART_REQUIRES", shape: "names", value: MDY_PART_REQUIRES, door: ".",
+    describes: "what a kind must have been given before a part's presence question applies at all" },
   { name: "MDY_PART_NAMES", shape: "names", value: MDY_PART_NAMES, door: ".",
     describes: "which message names a part that no relation points at" },
   { name: "MDY_PRESENCE_RESOLUTION", shape: "table", value: MDY_PRESENCE_RESOLUTION, door: ".",

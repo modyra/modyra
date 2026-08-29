@@ -3353,7 +3353,8 @@
     "parent?: TPart",
     "part: TPart",
     "presentWhen?: MdyPartPresence",
-    "repeated?: boolean"
+    "repeated?: boolean",
+    "requires?: string"
   ],
   "MdyWidgetTransition": [
     "from: MdyOverlayPhase",
