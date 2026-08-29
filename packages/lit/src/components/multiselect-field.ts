@@ -460,26 +460,12 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
   }
 
   /**
-   * Puts DOM focus on the option the cursor is on, where there is no filter box to name it.
-   *
-   * With a search box the cursor is announced through `aria-activedescendant` and focus stays where
-   * a person is typing. Without one there is no element to carry that reference, so the cursor and
-   * focus have to be the same thing.
-   */
-  /**
-   * Which option the cursor is on, named from wherever focus actually is.
-   *
-   * Focus stays on the control while the list is open here, so the cursor has no element of its own
-   * to be announced from: without this it moves and nothing says so. `aria-activedescendant` is how
-   * a control points at something it does not contain focus for.
-   */
-  /**
    * Which option the cursor is on, named on **the element that holds focus**.
    *
-   * A reference on an element a person is not standing on says nothing: opening this list moves the
-   * keyboard into the filter box, and the trigger carried the reference — so the cursor moved and the
-   * one element that could have announced it was not the one being read. Where there is no filter box
-   * the trigger keeps focus and keeps the reference.
+   * A reference on an element a person is not standing on says nothing. With a filter box the
+   * keyboard is in it, so the filter box carries the reference; without one the trigger keeps focus
+   * and carries it. `aria-activedescendant` is how a control points at something it does not
+   * contain focus for, and it only speaks from where the person is reading.
    */
   private activeDescendant(): string | null {
     // The controller's `open`, not this element's copy of it: the two settle on different renders,
@@ -489,6 +475,13 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
     return this.fieldController?.view().parts[state.activeKey]?.id ?? null;
   }
 
+  /**
+   * Puts DOM focus on the option the cursor is on, where there is no filter box to name it.
+   *
+   * With a filter box the cursor is announced through `aria-activedescendant` and focus stays where
+   * a person is typing. Without one there is no element to carry that reference, so the cursor and
+   * focus have to be the same thing.
+   */
   private followCursor(): void {
     if (this.searchable) return;
     const key = this.fieldController?.state().activeKey;
