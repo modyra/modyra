@@ -11,7 +11,7 @@
  * same functions.
  */
 import type { MdyReactivity, MdySignal } from "@modyra/core";
-import { fieldCanBeInvalid } from "./verdict.js";
+import { engageValue, fieldCanBeInvalid } from "./verdict.js";
 import { observerFor } from "@modyra/core";
 import {
   to24Hour,
@@ -298,22 +298,19 @@ export function createTimepickerFieldController(
     if (value !== null) {
       entryText.set(null);
       setValue(value);
-      handle.markAsDirty();
-      handle.markAsTouched();
+      engageValue(handle);
       return [{ type: "mark-dirty" }, { type: "mark-touched" }];
     }
     entryText.set(text);
     handle.set(null);
-    handle.markAsDirty();
-    handle.markAsTouched();
+    engageValue(handle);
     return [{ type: "mark-dirty" }, { type: "mark-touched" }];
   }
 
   function clearTime(): readonly MdyUiCommand[] {
     entryText.set(null);
     handle.set(null);
-    handle.markAsDirty();
-    handle.markAsTouched();
+    engageValue(handle);
     return [{ type: "mark-dirty" }, { type: "mark-touched" }];
   }
 
@@ -325,17 +322,17 @@ export function createTimepickerFieldController(
     // the field was invalid the moment it was answered, and the payload carried a notation nothing
     // downstream parses. The notation belongs to the control, which reads it back from `display`.
     handle.set(formatTimeAs(draft(), "24h"));
-    handle.markAsDirty();
-    handle.markAsTouched();
+    engageValue(handle);
     open.set(false);
     return [{ type: "mark-dirty" }, { type: "mark-touched" }, { type: "close-overlay" }];
   }
 
   function dispatch(intent: MdyTimepickerFieldIntent): readonly MdyUiCommand[] {
-    if (intent.type === "blur") {
-      handle.markAsTouched();
-      return [{ type: "mark-touched" }];
-    }
+    // A leaving is not an answer. Focus arriving and going is an act on attention: Tab is how a
+    // person reads a form, and a form that treats reading as declining moves false news onto the
+    // fields somebody was about to fill in. What makes this field answerable is a change to its
+    // value, which `engageValue` records. ADR 0167.
+    if (intent.type === "blur") return [];
     if (intent.type === "focus") return [];
 
     if (blocksValueChange(state().interactivity)) return [];

@@ -238,8 +238,11 @@ export function createSelectController<TValue>(
   function selectKey(key: string | null, commands: MdyUiCommand[]): void {
     if (key !== null && optionByKey.get(key)?.disabled) return;
     selectedKey.set(key);
+    // One act, two flags: the value is no longer what it arrived as, and the field has had an
+    // answer — which is what decides whether a refusal is shown to anybody yet. ADR 0167.
     dirty.set(true);
-    commands.push({ type: "emit-change" });
+    touched.set(true);
+    commands.push({ type: "emit-change" }, { type: "mark-touched" });
     onChange?.(valueForKey(key));
   }
 
@@ -260,13 +263,7 @@ export function createSelectController<TValue>(
   function dispatch(intent: MdySelectIntent): readonly MdyUiCommand[] {
     const commands: MdyUiCommand[] = [];
 
-    if (disabled() || readonly()) {
-      if (intent.type === "blur") {
-        touched.set(true);
-        commands.push({ type: "mark-touched" });
-      }
-      return commands;
-    }
+    if (disabled() || readonly()) return commands;
 
     switch (intent.type) {
       case "open": {
@@ -335,13 +332,15 @@ export function createSelectController<TValue>(
         break;
       }
       case "blur": {
-        touched.set(true);
+        // A leaving is not an answer: focus arriving and going is an act on attention, and a form
+        // that treats a traversal as a decision announces "invalid" to somebody who is reading it.
+        // What makes this field answerable is a change to its value. ADR 0167.
+        //
         // Closes without restoring focus. Focus has already gone where the user sent it — a Tab, a
         // click on another control — and pulling it back to the trigger takes it off whatever they
         // just reached for. Escape is the opposite case and restores deliberately: there the user
         // is still in the widget and has nowhere else to be.
         close(false, commands);
-        commands.push({ type: "mark-touched" });
         break;
       }
       case "focus": {

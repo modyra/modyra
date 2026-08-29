@@ -155,8 +155,10 @@ test("a read-only range opens and picks nothing", () => {
   const commands = controller.dispatch({ type: "select-date", iso: "2026-07-10" });
   assert.deepEqual(commands, []);
   assert.deepEqual(controller.state().draft, { start: null, end: null });
-  // Read-only blocks the write and not the reach: blur still marks touched.
-  assert.deepEqual(controller.dispatch({ type: "blur" }), [{ type: "mark-touched" }]);
+  // Read-only blocks the write; leaving answers nothing, here as everywhere — a traversal is how a
+  // person reads a form, and a field they cannot write is one they are most likely only reading.
+  // ADR 0167.
+  assert.deepEqual(controller.dispatch({ type: "blur" }), []);
   controller.destroy(); form.destroy();
 });
 

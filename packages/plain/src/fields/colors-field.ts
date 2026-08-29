@@ -243,7 +243,6 @@ export function renderColorsField(
    */
   control.addEventListener("change", () => colors.dispatch({ type: "native", value: control.value }));
   hexInput.addEventListener("change", () => colors.dispatch({ type: "text", value: hexInput.value }));
-  hexInput.addEventListener("blur", () => handle.markAsTouched());
   toggle.addEventListener("click", () => setOpen(!isOpen()));
   // The square is the field's own opener, not a second way into the platform's chooser. Every
   // renderer of this contract answers a press here the same way, and the route to an arbitrary

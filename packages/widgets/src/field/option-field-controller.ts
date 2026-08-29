@@ -3,7 +3,7 @@
  */
 
 import { blocksFocus, blocksValueChange } from "../interactivity.js";
-import { fieldCanBeInvalid } from "./verdict.js";
+import { engageValue, fieldCanBeInvalid } from "./verdict.js";
 import { optionsWithUnrecognizedValue } from "../options-reconciliation.js";
 import type { MdyReactivity, MdySelectOption, MdySignal } from "@modyra/core";
 import { observerFor } from "@modyra/core";
@@ -197,8 +197,7 @@ export function createOptionFieldController<TValue>(
     const option = optionByKey.get(key);
     if (!option || option.disabled) return [];
     handle.set(option.value);
-    handle.markAsDirty();
-    handle.markAsTouched();
+    engageValue(handle);
     return [{ type: "mark-dirty" }, { type: "mark-touched" }];
   }
 
@@ -227,10 +226,11 @@ export function createOptionFieldController<TValue>(
   }
 
   function dispatch(intent: MdyOptionFieldIntent): readonly MdyUiCommand[] {
-    if (intent.type === "blur") {
-      handle.markAsTouched();
-      return [{ type: "mark-touched" }];
-    }
+    // A leaving is not an answer. Focus arriving and going is an act on attention: Tab is how a
+    // person reads a form, and a form that treats reading as declining moves false news onto the
+    // fields somebody was about to fill in. What makes this field answerable is a change to its
+    // value, which `engageValue` records. ADR 0167.
+    if (intent.type === "blur") return [];
 
     if (blocksValueChange(state().interactivity)) {
       return [];

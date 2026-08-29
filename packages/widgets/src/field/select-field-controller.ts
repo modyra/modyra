@@ -20,7 +20,7 @@ import type { MdyUiCommand } from "../commands.js";
 import type { MdyWidgetController, MdyWidgetViewContract } from "../contract.js";
 import { createSelectController } from "../select/select-controller.js";
 import type { MdySelectIntent, MdySelectState } from "../select/select-types.js";
-import { visibleErrorsOf } from "./verdict.js";
+import { engageValue, visibleErrorsOf } from "./verdict.js";
 
 export interface MdySelectFieldControllerOptions<TValue> {
   readonly widgetId: string;
@@ -66,8 +66,7 @@ export function createSelectFieldController<TValue>(
     loading: options.loading ?? false,
     onChange: (value) => {
       handle.set(value);
-      handle.markAsDirty();
-      handle.markAsTouched();
+      engageValue(handle);
     },
   }, rx);
 
@@ -96,7 +95,6 @@ export function createSelectFieldController<TValue>(
     state,
     view,
     dispatch(intent: MdySelectIntent): readonly MdyUiCommand[] {
-      if (intent.type === "blur") handle.markAsTouched();
       return inner.dispatch(intent);
     },
     setOptions: inner.setOptions,

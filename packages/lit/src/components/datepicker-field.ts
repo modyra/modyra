@@ -531,7 +531,6 @@ export class MdyDatepickerFieldElement extends MdyFieldElement<string | null> {
             // an entry the field could not read left nothing on screen to correct.
             this.send({ type: "type", text: (e.target as HTMLInputElement).value });
           }}
-          @blur=${() => handle.markAsTouched()}
           @click=${(e: Event) => { if (!this._open) this.openPopup(handle, e); }}
           @keydown=${(e: KeyboardEvent) => {
             // The keys this kind declares, read from the table rather than listed here. The contract

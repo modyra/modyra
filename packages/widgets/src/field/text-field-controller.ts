@@ -6,7 +6,7 @@
  */
 
 import { blocksValueChange } from "../interactivity.js";
-import { fieldCanBeInvalid } from "./verdict.js";
+import { engageValue, fieldCanBeInvalid } from "./verdict.js";
 import type { MdyReactivity, MdySignal } from "@modyra/core";
 import { observerFor } from "@modyra/core";
 
@@ -114,10 +114,11 @@ export function createTextFieldController<TValue>(
   });
 
   function dispatch(intent: MdyTextFieldIntent<TValue>): readonly MdyUiCommand[] {
-    if (intent.type === "blur") {
-      handle.markAsTouched();
-      return [{ type: "mark-touched" }];
-    }
+    // A leaving is not an answer. Focus arriving and going is an act on attention: Tab is how a
+    // person reads a form, and a form that treats reading as declining moves false news onto the
+    // fields somebody was about to fill in. What makes this field answerable is a change to its
+    // value, which `engageValue` records. ADR 0167.
+    if (intent.type === "blur") return [];
 
     // A write: blocked for read-only as well as disabled.
     if (blocksValueChange(state().interactivity)) {
@@ -130,7 +131,7 @@ export function createTextFieldController<TValue>(
       }
       case "input": {
         handle.set(intent.value);
-        handle.markAsDirty();
+        engageValue(handle);
         return [{ type: "mark-dirty" }];
       }
     }

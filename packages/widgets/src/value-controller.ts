@@ -64,16 +64,18 @@ export function createValueWidgetController<T>(
 
   function commit(next: T): readonly MdyUiCommand[] {
     value.set(next);
+    // One act, two flags: the value is no longer what it arrived as, and the field has had an
+    // answer — which is what decides whether a refusal is shown to anybody yet. ADR 0167.
     dirty.set(true);
+    touched.set(true);
     options.onChange?.(next);
-    return [{ type: "emit-change" }, { type: "mark-dirty" }];
+    return [{ type: "emit-change" }, { type: "mark-dirty" }, { type: "mark-touched" }];
   }
 
   function dispatch(intent: MdyValueWidgetIntent<T>): readonly MdyUiCommand[] {
-    if (intent.type === "blur") {
-      touched.set(true);
-      return [{ type: "mark-touched" }];
-    }
+    // A leaving is not an answer. Tab is how a person reads a form, and reading is not declining.
+    // ADR 0167.
+    if (intent.type === "blur") return [];
     if (intent.type === "focus") return [];
     if (disabled() || readonly()) return [];
     if (intent.type === "input" || intent.type === "select") return commit(intent.value);

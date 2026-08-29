@@ -1,5 +1,5 @@
 import { calendarDayId } from "../ids.js";
-import { fieldCanBeInvalid } from "./verdict.js";
+import { engageValue, fieldCanBeInvalid } from "./verdict.js";
 /**
  * Date-range field controller.
  *
@@ -252,9 +252,13 @@ export function createDaterangeFieldController(
       entry.set(null);
       const next = dateRangeValueTransition({ ...held, [which]: null } as MdyDateRangeValue, bounds());
       draft.set(next);
+      // Empty to empty is nothing happening. Leaving the field commits whatever is in the box, so a
+      // person who tabbed through an untouched range arrives here with an empty string for an end
+      // that was already empty — and marking that as an act is how a traversal came to be read as a
+      // decision. ADR 0167.
+      if (next.start === held.start && next.end === held.end) return [];
       handle.set(next);
-      handle.markAsDirty();
-      handle.markAsTouched();
+      engageValue(handle);
       return [{ type: "mark-dirty" }, { type: "mark-touched" }];
     }
     const iso = options.parseEntry?.(trimmed) ?? null;
@@ -265,8 +269,7 @@ export function createDaterangeFieldController(
       const next = dateRangeValueTransition({ ...held, [which]: null } as MdyDateRangeValue, bounds());
       draft.set(next);
       handle.set(next);
-      handle.markAsDirty();
-      handle.markAsTouched();
+      engageValue(handle);
       return [{ type: "mark-dirty" }, { type: "mark-touched" }];
     }
     entry.set(null);
@@ -276,8 +279,7 @@ export function createDaterangeFieldController(
     const next = dateRangeValueTransition({ ...held, [which]: iso } as MdyDateRangeValue, bounds());
     draft.set(next);
     handle.set(next);
-    handle.markAsDirty();
-    handle.markAsTouched();
+    engageValue(handle);
     moveFocus(parsed);
     return [{ type: "mark-dirty" }, { type: "mark-touched" }];
   }
@@ -300,8 +302,7 @@ export function createDaterangeFieldController(
     const next = dateRangeValueTransition(ordered(draft().start, iso), bounds());
     draft.set(next);
     handle.set(next);
-    handle.markAsDirty();
-    handle.markAsTouched();
+    engageValue(handle);
     return [{ type: "mark-dirty" }, { type: "mark-touched" }, ...closePicker(true)];
   }
 
@@ -324,10 +325,11 @@ export function createDaterangeFieldController(
   }
 
   function dispatch(intent: MdyDaterangeFieldIntent): readonly MdyUiCommand[] {
-    if (intent.type === "blur") {
-      handle.markAsTouched();
-      return [{ type: "mark-touched" }];
-    }
+    // A leaving is not an answer. Focus arriving and going is an act on attention: Tab is how a
+    // person reads a form, and a form that treats reading as declining moves false news onto the
+    // fields somebody was about to fill in. What makes this field answerable is a change to its
+    // value, which `engageValue` records. ADR 0167.
+    if (intent.type === "blur") return [];
     if (intent.type === "focus") return [];
 
     if (blocksValueChange(state().interactivity)) return [];
@@ -346,8 +348,7 @@ export function createDaterangeFieldController(
         if (current.start === null || current.end === null) return closePicker(true);
         const next = dateRangeValueTransition(current, bounds());
         handle.set(next);
-        handle.markAsDirty();
-        handle.markAsTouched();
+        engageValue(handle);
         return [{ type: "mark-dirty" }, { type: "mark-touched" }, ...closePicker(true)];
       }
       case "navigate-month": {
@@ -413,8 +414,7 @@ export function createDaterangeFieldController(
         draft.set(EMPTY);
         preview.set(null);
         handle.set(EMPTY);
-        handle.markAsDirty();
-        handle.markAsTouched();
+        engageValue(handle);
         return [{ type: "mark-dirty" }, { type: "mark-touched" }];
       }
     }

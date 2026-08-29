@@ -73,7 +73,6 @@ import { MdySelectOption } from "../../core/types";
             [disabled]="isDisabled()"
             [attr.data-seg-index]="i"
             (change)="onSelect(opt.value)"
-            (blur)="markAsTouched()"
             [attr.aria-checked]="value() === opt.value"
             [attr.aria-disabled]="isDisabled()"
             [attr.aria-readonly]="isReadonly() ? 'true' : null"

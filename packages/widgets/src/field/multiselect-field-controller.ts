@@ -10,7 +10,7 @@
  * `filterOptionsByQuery`, shared with select so one search behaves the same in both.
  */
 import { blocksFocus, blocksValueChange } from "../interactivity.js";
-import { fieldCanBeInvalid } from "./verdict.js";
+import { engageValue, fieldCanBeInvalid } from "./verdict.js";
 import { closeOverlayWhenOutOfPlay } from "./leaving-play.js";
 import type { MdyReactivity, MdySelectOption, MdySignal } from "@modyra/core";
 import { observerFor } from "@modyra/core";
@@ -272,8 +272,7 @@ export function createMultiselectFieldController<TValue>(
     const option = indexOf(effectiveOptions()).get(key);
     if (!option || option.disabled) return [];
     const commands = run(option);
-    handle.markAsDirty();
-    handle.markAsTouched();
+    engageValue(handle);
     return commands;
   }
 
@@ -336,8 +335,7 @@ export function createMultiselectFieldController<TValue>(
     if (index === -1) return [];
     values.splice(index, 1);
     handle.set(values);
-    handle.markAsDirty();
-    handle.markAsTouched();
+    engageValue(handle);
     return [{ type: "mark-dirty" }, { type: "mark-touched" }];
   }
 
@@ -368,8 +366,7 @@ export function createMultiselectFieldController<TValue>(
     order.splice(from, 1);
     order.splice(target, 0, optionKey);
     handle.set(order.flatMap((k) => groups.get(k) ?? []));
-    handle.markAsDirty();
-    handle.markAsTouched();
+    engageValue(handle);
     return [{ type: "mark-dirty" }, { type: "mark-touched" }];
   }
 
@@ -378,8 +375,7 @@ export function createMultiselectFieldController<TValue>(
     if (before.length === 0) return [];
     handle.set([]);
     wayBack.set({ act: "clear", optionKey: null, count: before.length, value: before });
-    handle.markAsDirty();
-    handle.markAsTouched();
+    engageValue(handle);
     return [{ type: "mark-dirty" }, { type: "mark-touched" }];
   }
 
@@ -405,8 +401,7 @@ export function createMultiselectFieldController<TValue>(
       offered.has(keyFor({ value } as MdySelectOption<TValue>)));
     handle.set(restorable as typeof offer.value);
     wayBack.set(null);
-    handle.markAsDirty();
-    handle.markAsTouched();
+    engageValue(handle);
     return [{ type: "mark-dirty" }, { type: "mark-touched" }];
   }
 
@@ -452,10 +447,11 @@ export function createMultiselectFieldController<TValue>(
   }
 
   function dispatch(intent: MdyMultiselectFieldIntent): readonly MdyUiCommand[] {
-    if (intent.type === "blur") {
-      handle.markAsTouched();
-      return [{ type: "mark-touched" }];
-    }
+    // A leaving is not an answer. Focus arriving and going is an act on attention: Tab is how a
+    // person reads a form, and a form that treats reading as declining moves false news onto the
+    // fields somebody was about to fill in. What makes this field answerable is a change to its
+    // value, which `engageValue` records. ADR 0167.
+    if (intent.type === "blur") return [];
     if (intent.type === "search") {
       query.set(intent.query);
       // The cursor cannot survive a filter that may not contain what it was on. Cleared rather than

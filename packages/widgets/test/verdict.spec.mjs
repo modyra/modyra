@@ -191,3 +191,23 @@ test("the shared shell answers the same as the kinds that sit in it", () => {
   assert.ok(!outOfPlay.invalid.some((v) => v === "true" || v === true));
   assert.ok(!outOfPlay.describedBy.some((v) => String(v).includes("error")));
 });
+
+/**
+ * One act, two flags.
+ *
+ * The pair was written out at twenty-seven call sites and one of them set only half: a text field
+ * marked dirty and not touched, so a person who typed and cleared it again got no verdict while the
+ * kinds beside it did. The divergence is not that a flag was forgotten — it is that two flags set by
+ * one event were two decisions, and a call site could take one of them.
+ */
+test("engaging a value marks it changed and marks the field answered", async () => {
+  // Reached by its own path: the helper is this package's, for the controllers it ships, and is not
+  // on the barrel — a consumer writing a form uses the controllers, not the rule inside them.
+  const { engageValue } = await import("../dist/field/verdict.js");
+  const marks = [];
+  engageValue({
+    markAsDirty: () => marks.push("dirty"),
+    markAsTouched: () => marks.push("touched"),
+  });
+  assert.deepEqual(marks, ["dirty", "touched"]);
+});

@@ -333,7 +333,6 @@ export class MdyColorsFieldElement extends MdyFieldElement<string | null> {
               ?disabled=${handle.disabled()}
               ?readonly=${handle.readonly()}
               @change=${(e: Event) => this.set(handle, (e.target as HTMLInputElement).value)}
-              @blur=${() => handle.markAsTouched()}
             />
             <!-- A drawing, not a command. The square opens the same panel, and one act with two
                  commands costs two names, two keyboard stops and two things to describe. It is out of

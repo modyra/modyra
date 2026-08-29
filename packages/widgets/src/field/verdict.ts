@@ -30,6 +30,27 @@ export function showsAsInvalid(flags: { readonly disabled: boolean; readonly val
   return !flags.valid && !flags.disabled;
 }
 
+/**
+ * A change to the value, recorded as the thing that makes a field answerable.
+ *
+ * Two flags, one act. `dirty` says the value is no longer what it arrived as, which is what a guard
+ * against losing work reads; `touched` says this field has had an answer, which is what decides
+ * whether a refusal is shown to somebody yet.
+ *
+ * They are set together because they are set by the same event, and separating them is what produced
+ * the divergence ADR 0167 records: a kind whose control heard its own blur marked touched for a
+ * person who only tabbed past, and a kind whose control was a button heard nothing at all, so the
+ * same form answered differently depending on which kinds it happened to contain.
+ *
+ * Focus is deliberately not one of the events. Tab is how a person reads a form — the same way eyes
+ * scroll it — and a form that answers a reading has moved false news to the start, onto fields
+ * somebody was about to fill in.
+ */
+export function engageValue(handle: { markAsDirty(): void; markAsTouched(): void }): void {
+  handle.markAsDirty();
+  handle.markAsTouched();
+}
+
 /** What a field handle offers when asked for its verdict. */
 export interface MdyFieldVerdictSource {
   errors(): ReadonlyArray<MdyFieldError>;

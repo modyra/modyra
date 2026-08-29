@@ -641,7 +641,6 @@ export class MdyDaterangeFieldElement extends MdyFieldElement<MdyDateRange | nul
                 // and no way to learn that anything was wrong with what was in it.
                 if (iso !== null || raw.length === 0) input.value = iso ?? "";
               }}
-              @blur=${() => handle.markAsTouched()}
             />
           </span>
           <span class="mdy-daterange__sep" aria-hidden="true">–</span>
@@ -667,7 +666,6 @@ export class MdyDaterangeFieldElement extends MdyFieldElement<MdyDateRange | nul
                 this.commitRange(handle, current.start, iso);
                 if (iso !== null || raw.length === 0) input.value = iso ?? "";
               }}
-              @blur=${() => handle.markAsTouched()}
             />
           </span>
           <div class="mdy-input-suffix">

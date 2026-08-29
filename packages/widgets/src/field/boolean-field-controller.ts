@@ -8,7 +8,7 @@ import { observerFor } from "@modyra/core";
 
 import type { MdyUiCommand } from "../commands.js";
 import type { MdyWidgetController, MdyWidgetViewContract } from "../contract.js";
-import { fieldCanBeInvalid } from "./verdict.js";
+import { engageValue, fieldCanBeInvalid } from "./verdict.js";
 import { projectBooleanFieldA11y } from "./boolean-field-a11y.js";
 import { showsAsInvalid } from "./verdict.js";
 import type {
@@ -94,10 +94,11 @@ export function createBooleanFieldController(
   });
 
   function dispatch(intent: MdyBooleanFieldIntent): readonly MdyUiCommand[] {
-    if (intent.type === "blur") {
-      handle.markAsTouched();
-      return [{ type: "mark-touched" }];
-    }
+    // A leaving is not an answer. Focus arriving and going is an act on attention: Tab is how a
+    // person reads a form, and a form that treats reading as declining moves false news onto the
+    // fields somebody was about to fill in. What makes this field answerable is a change to its
+    // value, which `engageValue` records. ADR 0167.
+    if (intent.type === "blur") return [];
 
     if (blocksValueChange(state().interactivity)) {
       return [];
@@ -106,17 +107,17 @@ export function createBooleanFieldController(
     switch (intent.type) {
       case "check": {
         handle.set(true);
-        handle.markAsDirty();
+        engageValue(handle);
         return [{ type: "mark-dirty" }];
       }
       case "uncheck": {
         handle.set(false);
-        handle.markAsDirty();
+        engageValue(handle);
         return [{ type: "mark-dirty" }];
       }
       case "toggle": {
         handle.set(!handle.value());
-        handle.markAsDirty();
+        engageValue(handle);
         return [{ type: "mark-dirty" }];
       }
     }

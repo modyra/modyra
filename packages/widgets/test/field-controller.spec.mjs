@@ -94,23 +94,28 @@ test("input intent updates value and marks dirty", () => {
   assert.ok(commands.some((c) => c.type === "mark-dirty"));
 });
 
-test("blur intent marks touched", () => {
+// A leaving is not an answer: Tab is how a person reads a form, so a traversal that changed
+// nothing leaves the field silent. What makes it answerable is a change to the value.
+// ADR 0167.
+test("a blur intent marks nothing, and typing marks both", () => {
   const { controller, handle } = setupText();
   const commands = controller.dispatch({ type: "blur" });
-  assert.strictEqual(controller.state().touched, true);
+  assert.strictEqual(handle.touched(), false);
+  assert.deepEqual(commands, []);
+  // The perimeter: one act sets both flags, so a field that has had an answer can still say so.
+  controller.dispatch({ type: "input", value: "x" });
   assert.strictEqual(handle.touched(), true);
-  assert.ok(commands.some((c) => c.type === "mark-touched"));
+  assert.strictEqual(handle.dirty(), true);
 });
 
-test("disabled controller ignores input but still marks touched on blur", () => {
+test("a disabled controller ignores input, and leaving it marks nothing either", () => {
   const { controller, handle } = setupMockHandle();
   handle.disabled.set(true);
   const inputCommands = controller.dispatch({ type: "input", value: "x" });
   assert.strictEqual(inputCommands.length, 0);
   assert.strictEqual(handle.value(), "");
-  const blurCommands = controller.dispatch({ type: "blur" });
-  assert.ok(blurCommands.some((c) => c.type === "mark-touched"));
-  assert.strictEqual(handle.touched(), true);
+  assert.deepEqual(controller.dispatch({ type: "blur" }), []);
+  assert.strictEqual(handle.touched(), false);
 });
 
 test("readonly controller ignores input", () => {
@@ -123,9 +128,11 @@ test("readonly controller ignores input", () => {
 
 test("view exposes ARIA contract", () => {
   const { controller } = setupText();
-  // Touched, because a verdict is announced to somebody who has been at the field: `aria-invalid`
+  // Answered, because a verdict is announced to somebody who has been at the *value*: `aria-invalid`
   // and the error list say the same thing, and neither says it about a rule nobody has answered yet.
-  controller.dispatch({ type: "blur" });
+  // Typing and clearing is that answer — a traversal is not. ADR 0167.
+  controller.dispatch({ type: "input", value: "x" });
+  controller.dispatch({ type: "input", value: "" });
   const view = controller.view();
   assert.strictEqual(view.parts.input.attributes.type, "email");
   assert.strictEqual(view.parts.input.attributes["aria-invalid"], "true");
@@ -157,9 +164,11 @@ test("out of play, no verdict: a disabled field reports no failure to show", () 
   const controller = createTextFieldController({ widgetId: "email", handle: form.f.email, inputType: "email" });
 
   assert.equal(controller.state().invalid, true, "an empty required field is failing");
-  // Announced once the person has been there. The state is the verdict; the attribute is whether
-  // they are being told, and those are two questions with one answer only after a touch.
-  controller.dispatch({ type: "blur" });
+  // Announced once the person has answered the field. The state is the verdict; the attribute is
+  // whether they are being told, and those are two questions with one answer only after an act on
+  // the value — typing and clearing it again is one. ADR 0167.
+  controller.dispatch({ type: "input", value: "x" });
+  controller.dispatch({ type: "input", value: "" });
   assert.equal(controller.view().parts.input.attributes["aria-invalid"], "true");
 
   form.setDisabled("email", () => true);

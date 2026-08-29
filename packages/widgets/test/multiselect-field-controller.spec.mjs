@@ -146,12 +146,15 @@ test("clear resets to an empty array", () => {
   assert.deepStrictEqual(handle.value(), []);
 });
 
-test("blur marks touched without altering the value", () => {
+// A leaving is not an answer: Tab is how a person reads a form, so a traversal that changed
+// nothing leaves the field silent. What makes it answerable is a change to the value. ADR 0167.
+test("leaving alters neither the value nor the verdict", () => {
   const { controller, handle } = setup();
+  const before = handle.value();
   const commands = controller.dispatch({ type: "blur" });
-  assert.strictEqual(handle.touched(), true);
-  assert.deepStrictEqual(handle.value(), []);
-  assert.ok(commands.some((c) => c.type === "mark-touched"));
+  assert.strictEqual(handle.touched(), false);
+  assert.deepEqual(handle.value(), before);
+  assert.deepEqual(commands, []);
 });
 
 test("search filters filteredOptions by label, case-insensitive, without touching selection", () => {

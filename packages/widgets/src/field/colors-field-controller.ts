@@ -24,7 +24,7 @@ import type {
   MdyColorsFieldPreset,
   MdyColorsFieldState,
 } from "./colors-field-types.js";
-import { errorsVisible, holdsUneditedValue, showsAsInvalid } from "./verdict.js";
+import { engageValue, errorsVisible, holdsUneditedValue, showsAsInvalid } from "./verdict.js";
 
 export interface MdyColorsFieldController
   extends MdyWidgetController<MdyColorsFieldState, MdyColorsFieldIntent> {
@@ -126,12 +126,11 @@ export function createColorsFieldController(
 
   function commit(value: string, close: boolean, touched: boolean): readonly MdyUiCommand[] {
     handle.set(value);
-    handle.markAsDirty();
+    engageValue(handle);
+    // Both are told: a change to the value marks the field answerable, which is one act and two
+    // flags. The parameter now decides only whether the host hears about the second.
     const commands: MdyUiCommand[] = [{ type: "mark-dirty" }];
-    if (touched) {
-      handle.markAsTouched();
-      commands.push({ type: "mark-touched" });
-    }
+    if (touched) commands.push({ type: "mark-touched" });
     if (close && open()) {
       open.set(false);
       commands.push({ type: "close-overlay" }, { type: "restore-focus", target: { part: "toggle" } });
@@ -140,10 +139,11 @@ export function createColorsFieldController(
   }
 
   function dispatch(intent: MdyColorsFieldIntent): readonly MdyUiCommand[] {
-    if (intent.type === "blur") {
-      handle.markAsTouched();
-      return [{ type: "mark-touched" }];
-    }
+    // A leaving is not an answer. Focus arriving and going is an act on attention: Tab is how a
+    // person reads a form, and a form that treats reading as declining moves false news onto the
+    // fields somebody was about to fill in. What makes this field answerable is a change to its
+    // value, which `engageValue` records. ADR 0167.
+    if (intent.type === "blur") return [];
     if (intent.type === "focus") return [];
     if (blocksValueChange(state().interactivity)) return [];
 

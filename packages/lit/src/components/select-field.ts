@@ -354,7 +354,7 @@ export class MdySelectFieldElement extends MdyDropdownFieldElement<unknown | nul
         handle.markAsTouched();
       }}
       @keydown=${(event: KeyboardEvent) => this.stepNative(event, handle, options)}
-      @blur=${() => { handle.markAsTouched(); this.requestUpdate(); }}
+      @blur=${() => this.requestUpdate()}
     >
       ${offersEmpty
         ? html`<option

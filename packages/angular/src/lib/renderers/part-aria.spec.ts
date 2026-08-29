@@ -35,9 +35,14 @@ describe("the aria a renderer no longer spells", () => {
     const input = fixture.nativeElement.querySelector("input") as HTMLInputElement;
 
     expect(input.getAttribute("aria-required")).toBe("true");
-    // Touched first: `aria-invalid` says what the error list says, and neither says it about a rule
-    // the person has not been given a chance to answer.
-    input.dispatchEvent(new Event("blur"));
+    // Answered first: `aria-invalid` says what the error list says, and neither says it about a rule
+    // the person has not been given a chance to answer. Typing and clearing again is that answer;
+    // a traversal is not one. ADR 0167.
+    input.value = "x";
+    input.dispatchEvent(new Event("input"));
+    fixture.detectChanges();
+    input.value = "";
+    input.dispatchEvent(new Event("input"));
     fixture.detectChanges();
     expect(input.getAttribute("aria-invalid")).toBe("true");
     expect(input.getAttribute("aria-disabled")).toBe("false");

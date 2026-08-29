@@ -105,7 +105,6 @@ export class MdyFileFieldElement extends MdyFieldElement<readonly File[] | null>
           ?disabled=${handle.disabled() || handle.readonly()}
           ${mdyPart(this.controlPart(handle))}
           @change=${(e: Event) => pick(Array.from((e.target as HTMLInputElement).files ?? []))}
-          @blur=${() => handle.markAsTouched()}
         />
         <div class="mdy-file-content">
           <button

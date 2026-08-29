@@ -74,13 +74,20 @@ test("select disabled option is ignored", () => {
   assert.deepStrictEqual(changes, []);
 });
 
-test("blur marks touched and closes", () => {
+// A leaving is not an answer: Tab is how a person reads a form, so a traversal that changed
+// nothing leaves the field silent. What makes it answerable is a change to the value.
+// ADR 0167.
+test("blur closes the list and answers nothing", () => {
   const { controller } = setup();
   controller.dispatch({ type: "open", source: "keyboard" });
   const commands = controller.dispatch({ type: "blur" });
-  assert.strictEqual(controller.state().touched, true);
+  assert.strictEqual(controller.state().touched, false);
   assert.strictEqual(controller.state().open, false);
-  assert.ok(commands.some((c) => c.type === "mark-touched"));
+  assert.ok(!commands.some((c) => c.type === "mark-touched"));
+  // The perimeter: choosing is an answer, and it says so.
+  controller.dispatch({ type: "open", source: "keyboard" });
+  controller.dispatch({ type: "select", optionKey: "a" });
+  assert.strictEqual(controller.state().touched, true);
 });
 
 test("blur does not pull focus back to the trigger", () => {

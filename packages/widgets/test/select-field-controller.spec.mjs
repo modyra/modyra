@@ -108,9 +108,13 @@ test("the options a host binds with are its own type", () => {
   assert.equal("loading" in options, true);
 });
 
-test("blur marks touched even where the choice does not", () => {
+// A leaving is not an answer: Tab is how a person reads a form, so a traversal that changed
+// nothing leaves the field silent. What makes it answerable is a change to the value. ADR 0167.
+test("blur answers nothing, and a choice answers for the form", () => {
   const { controller, form } = setup();
   controller.dispatch({ type: "blur" });
+  assert.equal(form.f.s.touched(), false);
+  controller.dispatch({ type: "select", optionKey: "a" });
   assert.equal(form.f.s.touched(), true);
   controller.destroy(); form.destroy();
 });

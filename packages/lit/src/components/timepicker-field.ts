@@ -904,7 +904,6 @@ export class MdyTimepickerFieldElement extends MdyFieldElement<string | null> {
               // `14:30` in a 12-hour control left nothing on screen to correct.
               this.send({ type: "type", text: (e.target as HTMLInputElement).value });
             }}
-            @blur=${() => handle.markAsTouched()}
             @click=${() => { if (!this._open) this.send({ type: "open" }); }}
             @keydown=${(e: KeyboardEvent) => {
               // The keys this kind declares, read from the table rather than listed here. The

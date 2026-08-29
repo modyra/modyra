@@ -23,7 +23,7 @@ import type {
   MdyFileFieldIntent,
   MdyFileFieldState,
 } from "./file-field-types.js";
-import { errorsVisible, holdsUneditedValue, showsAsInvalid } from "./verdict.js";
+import { engageValue, errorsVisible, holdsUneditedValue, showsAsInvalid } from "./verdict.js";
 
 export interface MdyFileFieldController<TFile extends MdyFileCandidate>
   extends MdyWidgetController<MdyFileFieldState<TFile>, MdyFileFieldIntent<TFile>> {
@@ -103,10 +103,11 @@ export function createFileFieldController<TFile extends MdyFileCandidate>(
   });
 
   function dispatch(intent: MdyFileFieldIntent<TFile>): readonly MdyUiCommand[] {
-    if (intent.type === "blur") {
-      handle.markAsTouched();
-      return [{ type: "mark-touched" }];
-    }
+    // A leaving is not an answer. Focus arriving and going is an act on attention: Tab is how a
+    // person reads a form, and a form that treats reading as declining moves false news onto the
+    // fields somebody was about to fill in. What makes this field answerable is a change to its
+    // value, which `engageValue` records. ADR 0167.
+    if (intent.type === "blur") return [];
     if (intent.type === "focus") return [];
 
     if (intent.type === "dragover") {
@@ -124,8 +125,7 @@ export function createFileFieldController<TFile extends MdyFileCandidate>(
       rejected.set([]);
       dragover.set(false);
       handle.set((cleared.value ?? []) as readonly TFile[]);
-      handle.markAsDirty();
-      handle.markAsTouched();
+      engageValue(handle);
       return [{ type: "mark-dirty" }, { type: "mark-touched" }];
     }
 
@@ -138,12 +138,11 @@ export function createFileFieldController<TFile extends MdyFileCandidate>(
     if (next.value === undefined) return [];
 
     handle.set((Array.isArray(next.value) ? next.value : [next.value]) as readonly TFile[]);
-    handle.markAsDirty();
+    engageValue(handle);
+    // Both flags are set by `engageValue` above: one act, two flags. This decides only whether the
+    // host is told about the second.
     const commands: MdyUiCommand[] = [{ type: "mark-dirty" }];
-    if (next.touched) {
-      handle.markAsTouched();
-      commands.push({ type: "mark-touched" });
-    }
+    if (next.touched) commands.push({ type: "mark-touched" });
     return commands;
   }
 

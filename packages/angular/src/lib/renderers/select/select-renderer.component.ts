@@ -224,7 +224,6 @@ import { MdyDropdownBase } from "../dropdown-base";
             [value]="value() ?? ''"
             [disabled]="isDisabled()"
             (change)="onNativeChange($event)"
-            (blur)="markAsTouched()"
             [attr.aria-invalid]="paintsAsInvalid()"
             [attr.aria-describedby]="describedById(fieldId)"
             [attr.aria-label]="controlAriaLabel()"

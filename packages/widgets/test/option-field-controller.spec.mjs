@@ -96,11 +96,16 @@ test("select disabled option is ignored", () => {
   assert.strictEqual(handle.dirty(), false);
 });
 
-test("blur marks touched", () => {
+// A leaving is not an answer: Tab is how a person reads a form, so a traversal that changed
+// nothing leaves the field silent. What makes it answerable is a change to the value. ADR 0167.
+test("blur answers nothing, and choosing answers", () => {
   const { controller, handle } = setup();
-  const commands = controller.dispatch({ type: "blur" });
+  assert.deepEqual(controller.dispatch({ type: "blur" }), []);
+  assert.strictEqual(handle.touched(), false);
+  // The perimeter: the flag is reachable, so the silence above is an answer rather than a controller
+  // that never marks anything.
+  controller.dispatch({ type: "select", optionKey: "small" });
   assert.strictEqual(handle.touched(), true);
-  assert.ok(commands.some((c) => c.type === "mark-touched"));
 });
 
 test("move changes active key within enabled options", () => {

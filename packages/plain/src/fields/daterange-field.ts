@@ -151,10 +151,12 @@ export function renderDaterangeField(
     // One end at a time, as text. A range is written one box at a time, and committing only a whole
     // readable range threw away a half-written one on the way out of the field.
     input.addEventListener("change", () => { typing = false; dispatch({ type: "type", end: which, text: input.value }); });
+    // Leaving commits what is in the box — a half-written range must survive the way out of the
+    // field — and commits nothing else: a traversal is not an answer, so it does not make the field
+    // speak. ADR 0167.
     input.addEventListener("blur", () => {
       typing = false;
       dispatch({ type: "type", end: which, text: input.value });
-      handle.markAsTouched();
     });
   }
   prevButton.addEventListener("click", () => dispatch({ type: "navigate-month", delta: -1 }));

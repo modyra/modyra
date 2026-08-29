@@ -256,12 +256,15 @@ test("clear resets the committed value to null", () => {
   assert.strictEqual(handle.dirty(), true);
 });
 
-test("blur marks touched without altering the value", () => {
-  const { controller, handle } = setup({ initialValue: "02:30 PM" });
+// A leaving is not an answer: Tab is how a person reads a form, so a traversal that changed
+// nothing leaves the field silent. What makes it answerable is a change to the value. ADR 0167.
+test("leaving alters neither the value nor the verdict", () => {
+  const { controller, handle } = setup();
+  const before = handle.value();
   const commands = controller.dispatch({ type: "blur" });
-  assert.strictEqual(handle.touched(), true);
-  assert.strictEqual(handle.value(), "02:30 PM");
-  assert.ok(commands.some((c) => c.type === "mark-touched"));
+  assert.strictEqual(handle.touched(), false);
+  assert.deepEqual(handle.value(), before);
+  assert.deepEqual(commands, []);
 });
 
 test("disabled controller ignores open/confirm/set-hour", () => {

@@ -87,11 +87,18 @@ test("toggle inverts value", () => {
   assert.strictEqual(handle.value(), false);
 });
 
-test("blur marks touched", () => {
+// A leaving is not an answer: Tab is how a person reads a form, so a traversal that changed
+// nothing leaves the field silent. What makes it answerable is a change to the value.
+// ADR 0167.
+test("blur leaves an untouched field untouched, and a change marks it", () => {
   const { controller, handle } = setup();
   const commands = controller.dispatch({ type: "blur" });
+  assert.strictEqual(handle.touched(), false);
+  assert.deepEqual(commands, []);
+  // The perimeter: the flag is still reachable, so the silence above is an answer rather than a
+  // controller that never marks anything.
+  controller.dispatch({ type: "check" });
   assert.strictEqual(handle.touched(), true);
-  assert.ok(commands.some((c) => c.type === "mark-touched"));
 });
 
 test("disabled controller ignores check", () => {
