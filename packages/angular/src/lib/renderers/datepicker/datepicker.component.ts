@@ -197,10 +197,13 @@ export class MdyDatePickerComponent extends MdyOverlayControl<string | null> {
       // What this control can read, told to the controller rather than kept here. Parsing locally
       // and dropping what did not parse left the controller believing the field was empty while a
       // person was looking at their own text, so nothing reported that it could not be read.
+      // How a date is *written* here is this control's choice; what a person may *type* is not one.
+      // Reading only the canonical spelling when the field displays one refused `01/02/2026` from
+      // somebody looking at a form that shows dates that way elsewhere — and the other two renderers
+      // read both, so one document was two spellings depending on which adapter drew it.
+      // `parseLocalizedDate` tries the canonical form first and the locale's order after it.
       parseEntry: (text: string) => {
-        const parsed = this.displayFormat() === "localized"
-          ? parseLocalizedDate(text, this.locale.locale)
-          : parseIsoDate(text);
+        const parsed = parseLocalizedDate(text, this.locale.locale);
         return parsed ? formatIsoDate(parsed) : null;
       } }),
     (c) => c.setBounds(this.minDate(), this.maxDate()),

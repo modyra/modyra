@@ -133,21 +133,24 @@ would be born exempt and nobody would ever see it. Named individually, a new one
 arrives, and its author either migrates it or argues it here. Both of those are the outcome this
 section wants; silence is not.
 
-### The field's own height is not exempt, and that is the point
+### The field's own height is on the scale, which is the answer to what the row system is
 
 The field's height token and the floating variant's — spelled without the markup that would make this
-sentence exempt them, mdy-input-height and mdy-fl-height — are `calc`s too, and they are **not** in the
-list above.
-Their base is `3.5rem` — 56px — and the control scale stops at `--mdy-control-3: max(2.75rem, 44px)`.
-So the height every single-row field takes is a number the scale does not contain.
+sentence exempt them, mdy-input-height and mdy-fl-height — are `calc`s, and their base used to be the
+literal `3.5rem` while the control scale stopped at `--mdy-control-3: max(2.75rem, 44px)`. So the
+height every single-row field took was a number the scale did not contain, and a theme moving the
+scale moved everything around a fixed 56.
 
-That is not a derivation hiding a step. It is the open question about what the row system is: a kind
-is in it when its height comes from the control scale, and today no kind's does, because the height
-they share is not on that scale. Exempting these two would answer that question by silence, in the
-direction of leaving it as it is — and it is the one length in the sheets whose migration would make
-three renderers stop disagreeing about which kinds are peers.
+That was recorded here as the open question about what the row system is: **a kind is in it when its
+height comes from the control scale**, and no kind's did. It is answered in the direction of the
+system rather than of leaving it alone — `--mdy-control-4: max(3.5rem, 56px)` is that height, the
+same number reachable by the same kind of name as every other step, and both `calc`s read it.
 
-So they stay counted. The gate is red on two properties, and that red is the question, not a backlog.
+What that buys is the thing the question was about: a theme that changes the scale now changes the
+field with it, and the disagreement between three renderers about which kinds are peers has one place
+to be settled rather than a literal in two rules. What it costs is a fourth step on a scale whose
+first three are pointer targets and whose fourth is a row — a step that is not a target size, which
+is a distinction this document now has to keep making.
 
 **The properties this section exempts:**
 
