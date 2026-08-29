@@ -49,7 +49,7 @@ provisional key rather than by position, so a row survives sorting and
 filtering, and the controls of one row may be mounted apart:
 
 ```ts
-import { field, group, record } from "@modyra/core";
+import { field, group, min, record } from "@modyra/core";
 
 const form = createForm({
   lines: record(group({ name: field(""), qty: field<number>(1, [min(1)]) })),
@@ -133,9 +133,10 @@ and how completely each implements the contract, is published in the
 
 ## Security notes
 
-- Drafts are versioned envelopes with a 7-day TTL; `File`/`Blob`/`BigInt`
-  values are refused, quota errors never crash the form, and prototype-
-  pollution paths (`__proto__` & co.) in tampered storage are discarded.
+- Drafts are versioned envelopes; expiry is opt-in via `ttlMs`.
+  `File`/`Blob`/`BigInt` values are refused, quota errors never crash the
+  form, and prototype-pollution paths (`__proto__` & co.) in tampered
+  storage are discarded.
 - The framework-agnostic devtools panel masks sensitive-looking paths and
   escapes every rendered value.
 - Zero runtime dependencies, SSR-safe (no `window`/`document` access in

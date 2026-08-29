@@ -62,7 +62,8 @@ Every interception is reported to `onViolation`:
 
 ```ts
 interface MdySecurityViolation {
-  kind: "sanitized" | "max-length" | "draft-shape" | "error-path";
+  kind: "sanitized" | "max-length" | "draft-shape" | "error-path"
+      | "sanitizer-error";
   path: string;   // dotted field path
   detail: string; // human-readable, for logs
 }
@@ -145,13 +146,13 @@ can drive the form and gate the API**:
 // shared/order-schema.ts — one schema, both sides
 import { z } from "zod";
 export const orderSchema = z.object({
-  plan: z.enum(["one", "two"]),
-  qty: z.number().int().min(1).max(10),
+  plan: z.enum(["one", "two"]).default("one"),
+  qty: z.number().int().min(1).max(10).default(1),
 });
 
-// client: schema-driven form (@modyra/zod)
+// client: schema-driven form (@modyra/zod) — initials come from the schema's defaults
 import { createZodForm } from "@modyra/zod";
-const form = createZodForm(orderSchema, { initial: { plan: "one", qty: 1 } });
+const form = createZodForm(orderSchema);
 
 // server: the SAME schema gates the payload
 app.post("/order", (req, res) => {

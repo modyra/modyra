@@ -37,6 +37,12 @@ conformance CLI is what judges a renderer against it.
 
 Three renderers are judged by that suite today: Angular, Lit and Plain.
 
+An optional part also declares *when* it is on the page: a `MdyWidgetStructureNode` carries
+`presentWhen`, drawn from the closed vocabulary `MDY_PART_PRESENCES`. The error container is the
+case that forced the rule — it is reserved under any field that can fail a constraint, and its
+contents appear when errors are visible, so the message does not move the field someone is reaching
+for. An optional part with no condition declared is undecided, not always-on.
+
 ## Naming a control that has no visible label
 
 A cell in a table, a control in a toolbar: the column header or the icon says what it is to someone
@@ -120,7 +126,7 @@ function loadFields(raw: unknown): MdyDynamicField[] {
   // v0 legacy payloads used `type` instead of `kind` — migrate, then parse.
   const migrated = Array.isArray(raw)
     ? {
-        version: 1 as const,
+        version: 2 as const,
         fields: raw.map((f) => ({
           kind: (f as { type?: string }).type,
           ...(f as object),
@@ -131,9 +137,9 @@ function loadFields(raw: unknown): MdyDynamicField[] {
 }
 ```
 
-`parseDynamicFields` accepts a bare array or a `{ version: 1, fields }`
-envelope; unknown envelope versions are rejected wholesale (fail closed),
-while individually malformed fields are dropped item-by-item.
+`parseDynamicFields` accepts a bare array or a versioned envelope (v2, v3
+or v4); any other declared version, v1 included, is rejected wholesale (fail
+closed), while individually malformed fields are dropped item-by-item.
 
 ## A value the options do not contain
 

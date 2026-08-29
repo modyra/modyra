@@ -92,7 +92,7 @@ read one.
 
 **Contract data** is what a renderer implements: the catalogue
 (`MDY_WIDGET_CONTRACTS`), the relations, the keyboard bindings, the projections
-(`projectFieldA11y`, `projectOverlayOpenerA11y`, …), the id policy, the state
+(`projectFieldShellA11y`, `projectOverlayOpenerA11y`, …), the id policy, the state
 and class vocabularies. If a renderer ignores any of it, it renders a different
 widget. Read these.
 

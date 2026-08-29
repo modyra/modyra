@@ -33,7 +33,8 @@ The parser accepts a bounded set of field kinds, validator options, layout nodes
 ## The JSON contract
 
 Either a bare array of fields, or a versioned envelope
-(`{ "version": 1, "fields": [...] }` — unknown versions are rejected).
+(`{ "version": 4, "fields": [...] }` — versions 2, 3 and 4 are accepted;
+anything else, including a declared version 1, is rejected wholesale).
 
 Common field properties:
 
@@ -70,7 +71,7 @@ You generate form configurations as JSON for a strict renderer.
 
 OUTPUT RULES
 - Respond with a single JSON object, no markdown fences, no commentary:
-  { "version": 1, "fields": [ ... ] }
+  { "version": 4, "fields": [ ... ] }
 - Every field: { "name", "kind", "label", "placeholder"?, "initialValue"?,
   "validators"? }.
 - "name" must be a unique camelCase identifier. No dots, never
@@ -101,7 +102,7 @@ A (simulated) model response — deliberately containing four mistakes:
 import { parseDynamicFields } from "@modyra/core";
 
 const llmResponse = JSON.stringify({
-  version: 1,
+  version: 4,
   fields: [
     { kind: "text", name: "fullName", label: "Full name",
       validators: { required: true, minLength: 2 } },
@@ -198,7 +199,9 @@ HTML fragments, or arbitrary URLs.
 A layout node is a `section` (with `children`) or a `columns` row (with
 `columns`). A slot holds either a field name or another layout node, so a
 column row can sit inside a section. Two constraints the parser enforces:
-nesting is capped at `MDY_LAYOUT_MAX_DEPTH` (6), and **a field may be placed
+nesting is capped at `MDY_LAYOUT_MAX_DEPTH` (32) — a guard against hostile
+input that bounds recursion through an arrangement arriving from outside, not
+a limit on how much a form may ask — and **a field may be placed
 only once** — the same field in two slots would render twice and bind one
 value to both controls.
 
@@ -276,7 +279,8 @@ fields survive and diagnostics explain rejected fields, layout nodes, and
 rules. Use `mode: "strict"` before publishing a stored contract or accepting
 it into an API registry: any diagnostic makes `ok` false and returns no
 renderable fields. `parseDynamicFields()` remains backward compatible and
-accepts v1, v2, v3 and the legacy bare field array.
+accepts v2, v3, v4 and the legacy bare field array; a declared v1 envelope is
+refused wholesale, with a warning naming the version to set.
 
 The machine-readable schema is `spec/dynamic-form-v4.schema.json` (v3 is `spec/dynamic-form-v3.schema.json`, and a v3 document is a v4 document with the version raised), with
 `spec/dynamic-form-v2.schema.json` for documents that stay on v2. Point a
@@ -387,8 +391,11 @@ must round-trip a list declares `array()` in its own schema.
 Contract v2 can use a recursive root `schema` instead of the legacy flat
 `fields` list. A group maps named children to dotted paths; an array repeats
 a field/group item descriptor and expands its initial rows to indexed paths.
-The parser enforces a maximum depth of 8, 500 total nodes, and 100 initial
-array rows before anything reaches the renderer.
+A nested document has no depth limit, deliberately — a form's shape is the
+author's business. What the parser does bound is what expansion costs: no
+generated path may exceed `MDY_MAX_DYNAMIC_PATH_LENGTH` (512) characters, and
+the declaration walk itself stops at `MDY_MAX_DECLARATION_WALK` (100,000) so
+a shape nothing has validated cannot run without end.
 
 ```json
 {

@@ -43,17 +43,19 @@ in `@modyra/widgets`:
 
 | Kind | Controller | Real DOM |
 |---|---|---|
-| `text`, `textarea`, `email`, `password`, `number`, `slider` | `createFieldController` | native `<input>`/`<textarea>` |
+| `text`, `textarea`, `email`, `password`, `number`, `slider` | `createTextFieldController` | native `<input>`/`<textarea>` |
 | `checkbox`, `toggle` | `createBooleanFieldController` | native `<input type=checkbox>` |
 | `radio`, `segmented` | `createOptionFieldController` | native `<input type=radio>` group |
 | `select` | `createSelectController` | combobox trigger + listbox popup |
 | `multiselect` | `createMultiselectFieldController` | search input + toggle/counter chips |
 | `datepicker` | `createDatepickerFieldController` | trigger + 42-cell calendar grid, arrow-key nav |
 | `timepicker` | `createTimepickerFieldController` | trigger + hour/minute inputs, draft/commit |
+| `daterange` | `createDaterangeFieldController` | two date inputs + shared calendar popup |
+| `colors` | `createColorsFieldController` | native colour input behind a preview swatch, hex field beside it |
+| `file` | `createFileFieldController` | drop zone around a visually-hidden native `<input type=file>` |
 
 `slider` needs no distinct controller — it is structurally just a numeric
-field rendered as `<input type=range>`. `daterange`, `colors` and `file` are
-not implemented here yet; `@modyra/lit`'s catalog covers them.
+field rendered as `<input type=range>`.
 
 ## Layout
 

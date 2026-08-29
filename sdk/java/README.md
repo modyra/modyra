@@ -35,7 +35,7 @@ source of truth, not a hand-copied approximation. This includes
 reference reason Rust rejects it).
 
 **Scope**: parses the flat field-list envelope (a bare JSON array, or
-`{"version": 1|2, "fields": [...]}`, same as `parseDynamicFields()` in
+`{"version": 2|3|4, "fields": [...]}`, same as `parseDynamicFields()` in
 TS) and the v2 recursive `{"version": 2, "schema": {...}}` envelope
 (nested `group`/`array`/`field` nodes, flattened to dotted/indexed
 paths exactly like `flattenDynamicSchema` in TS, including array-row
@@ -60,6 +60,7 @@ OpenJDK 17 during development).
 
 ## Contract versions
 
-This SDK reads and writes **Contract v2**. `@modyra/core` accepts v1, v2 and v3; v3 adds
+This SDK reads and writes **Contract v2**. `@modyra/core` accepts v2, v3 and v4 envelopes plus the
+legacy bare field array — a declared `version: 1` is refused. v3 adds
 per-breakpoint placement for a single layout slot and changes nothing else, so a v2 document this
 SDK produces is valid input everywhere.

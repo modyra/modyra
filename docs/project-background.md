@@ -81,9 +81,10 @@ Principle 3 applies to this page too.
 - Compatibility floors: Node 22+, Angular 21+, React 18+, Vue reactivity 3.4+, Lit 3+, Solid 1.8+,
   Preact 10.19+, Svelte 4+, Zod 3.25+.
 
-Still undecided, and tracked in [the roadmap](../ROADMAP.md): the deprecation policy for the
-packages that are not yet 1.0; the final error, diagnostic and server-validation result shapes; the
-Studio project format and its migration policy; React Native integration.
+Still undecided: the deprecation policy for the packages that are not yet 1.0, and the final error,
+diagnostic and server-validation result shapes. [The roadmap](../ROADMAP.md) carries the Studio
+project format and its migration policy as unsettled, and lists React Native integration as not
+planned.
 
 There are no customers, testimonials, case studies, adoption numbers, pricing or hosted service, and
 no benchmark result that is not reproducible from a script in this repository. Anything claiming

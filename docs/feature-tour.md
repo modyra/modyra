@@ -65,7 +65,7 @@ const form = createForm({
 form.f.items.push({ sku: "A-1", qty: 2 });
 form.f.items.insert(0, { sku: "A-0", qty: 1 });
 form.f.items.move(0, 1);
-form.f.items.removeAt(1);
+form.f.items.remove(1);
 
 form.f.items.length();          // number
 form.f.items.rows()[0].sku.value();

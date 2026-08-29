@@ -5,8 +5,8 @@ are not fully closed and says who each one affects. The full register — every 
 and the reasoning behind its status — is [`docs/contract-gaps.md`](https://github.com/modyra/modyra/blob/main/docs/contract-gaps.md)
 in the repository.
 
-Thirty-six findings have been filed. Twenty-six are fixed, two were closed deliberately, five are
-partly fixed, and three are open.
+Thirty-eight findings have been filed. Twenty-nine are fixed, two were closed deliberately, five are
+partly fixed, and two are open.
 
 ## Open
 

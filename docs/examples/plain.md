@@ -15,7 +15,7 @@ markup in. `@modyra/angular` and `@modyra/lit` do too; the other five adapters a
 `@modyra/plain` does **not** implement the [shared checkout scenario](checkout-scenario.md), and this
 page does not pretend otherwise.
 
-`mountMdyForm` builds a form from a **flat** field list. Two of the scenario's six requirements have
+`mountMdyForm` builds a form from a **flat** field list. One of the scenario's six requirements has
 no expression in that input:
 
 | Scenario requirement | Plain |
@@ -25,10 +25,10 @@ no expression in that input:
 | A cross-field dependency | Yes — same |
 | Submit with server errors | Yes — `onSubmit` returns field errors, same contract as `form.submit()` |
 | **A typed array with row add/remove** | **No** — the field list has no repeater, so there is no `items` handle to push to |
-| **Drafts** | **No** — `mountMdyForm` takes no draft option |
+| Drafts | Yes — `MountMdyFormOptions.draft` takes a key or the full `MdyDraftOptions`, passed to the form this mount builds |
 
-Both are limits of this renderer's *input shape*, not of the engine. A host that builds its own
-`MdyTypedForm` gets arrays and drafts and can render individual fields with `renderField`; what
+That is a limit of this renderer's *input shape*, not of the engine. A host that builds its own
+`MdyTypedForm` gets the array handle and can render individual fields with `renderField`; what
 `mountMdyForm` offers instead is that a contract alone is enough to get a running form.
 
 That distinction is the point of the page. [Limits stay visible](../guides/usage-modes.md): an

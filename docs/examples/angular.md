@@ -22,7 +22,7 @@ import {
   MdySelectComponent,
   MdyTextComponent,
 } from "@modyra/angular/ui";
-import type { MdySelectOption } from "@modyra/angular/ui";
+import type { MdySelectOption } from "@modyra/angular/adapter";
 import {
   crossField, min, pattern, required, serverValidator,
 } from "@modyra/core";

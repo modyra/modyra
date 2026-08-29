@@ -1110,7 +1110,7 @@ the estimate turned out to be faithful to a metric that was itself wrong.
 weights blue at a fourteenth of green and therefore rates dark text on saturated colour far above
 what a reader experiences. [ADR 0015](architecture/0015-light-text-while-it-is-readable.md) replaces
 it: **light text while light clears a floor, the higher ratio below that.** The same defect was in
-`onColorFor` in `@modyra/core/color-utils`, which is exact rather than estimated — so precomputing
+`onColorFor` in `packages/styles/src/color-utils.ts`, which is exact rather than estimated — so precomputing
 the palette would not have fixed it, and both implementations changed.
 
 **Still open: the estimate, and where it runs.**

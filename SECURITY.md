@@ -55,7 +55,9 @@ comes first.
   only — the server must re-validate; the engine runs in Node so one
   schema can drive the form and gate the API (isomorphic pattern in
   `docs/guides/security.md`).
-- **Runtime dependencies** are minimal by policy: `tslib` only; `zod` and
-  `@angular/forms` are optional peers scoped to their entry points.
+- **Runtime dependencies** are minimal by policy: `@modyra/core` declares
+  none, `@modyra/widgets` declares exactly one (`@modyra/core`), and `tslib`
+  appears only in `@modyra/angular`. `zod` and `@angular/forms` are optional
+  peers scoped to their entry points.
   Dependency audits run via `pnpm audit` (production audit must be clean
   at release).

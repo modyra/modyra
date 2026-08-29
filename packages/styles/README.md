@@ -50,8 +50,8 @@ theme, or restyle the classes directly:
 
 ```css
 :root {
-  --mdy-color-primary: #6458ef;
-  --mdy-radius-md: 10px;
+  --mdy-sys-color-primary: #6458ef;
+  --mdy-sys-shape-corner-medium: 10px;
 }
 ```
 

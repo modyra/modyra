@@ -38,7 +38,7 @@ would be a promise about the parts least ready to make one.
 
 ### Reduce the drift between the contract and the themes
 
-`scripts/audit-contract-style-coverage.mjs` currently reports **102 off-contract classes** and **34
+`scripts/audit-contract-style-coverage.mjs` currently reports **76 off-contract classes** and **39
 contract classes no theme paints**, every one of them allowlisted. The allowlist may only shrink,
 and today it is not shrinking. Each entry needs a verdict: it belongs in the contract, it belongs to
 a theme, or it should be deleted.
