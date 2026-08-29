@@ -99,9 +99,10 @@ export function renderDaterangeField(
   const endInput = el("input", definition.parts.endControl.classes.join(" ")) as HTMLInputElement;
   endInput.type = "text";
   endInput.autocomplete = "off";
-  // Nothing points at this one — the caption is spent on the first — so the contract says which
-  // message names it rather than each renderer building a phrase of its own. `MDY_PART_NAMES`.
+  // Each end says its own role, from the table that holds those words rather than from a phrase a
+  // renderer builds. The caption names the group the two stand in. ADR 0175, `MDY_PART_NAMES`.
   endInput.setAttribute("aria-label", messages[MDY_PART_NAMES["daterange.endControl"] as keyof typeof messages] as string);
+  startInput.setAttribute("aria-label", messages[MDY_PART_NAMES["daterange.startControl"] as keyof typeof messages] as string);
   endInput.placeholder = messages.daterangeEndLabel;
   const toggle = el("button", definition.parts.toggle.classes.join(" ")) as HTMLButtonElement;
   setIcon(toggle, "CALENDAR");

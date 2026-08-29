@@ -200,11 +200,19 @@ export function insertControl(shell: FieldShell, control: HTMLElement): void {
   // chosen values while the combobox beside it carried the same word. One name, two things, and the
   // renderer that did it was the only one of three that did.
   const operable = "input, select, textarea, button";
+  // And **one** control, not the first of several. A radio group hands over a container holding one
+  // input per option, and the first match is an arbitrary option — so the field's caption was
+  // announced as the name of "Small" while every other option had none. The same shape as the chip
+  // strip above and the same rule: a container of many controls is the thing being named, and the
+  // group's own role says so once it is applied.
+  const inside = control.matches(operable)
+    ? [control]
+    : Array.from(control.querySelectorAll<HTMLElement>(operable));
   const operated = control.matches(`${operable}, [role]`)
     ? control
-    : control.querySelector<HTMLElement>(operable)
-      ?? control.querySelector<HTMLElement>("[role]")
-      ?? control;
+    : inside.length === 1
+      ? inside[0]!
+      : control.querySelector<HTMLElement>("[role]") ?? control;
   if (name) operated.setAttribute("aria-label", name);
   (shell.wrapper.querySelector(`.${MDY_FIELD_SHELL_CLASSES.control}`) ?? shell.wrapper).appendChild(control);
 }

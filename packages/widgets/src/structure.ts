@@ -151,6 +151,10 @@ export const MDY_PART_NAMES: Readonly<Record<string, string>> = Object.freeze({
   // The first of the two is named by the caption's `for` — a range's caption belongs to where the
   // range starts — so only the second is unclaimed. Binding both would be two ways to name one
   // element, which is what this table removes.
+  // Both ends, each saying its own role. The caption names the group the two stand in — a part
+  // pointed at the caption gets the name of the whole, and both boxes then say the same words.
+  // ADR 0175.
+  "daterange.startControl": "daterangeStartLabel",
   "daterange.endControl": "daterangeEndLabel",
   "timepicker.hourControl": "timepickerHourLabel",
   "timepicker.minuteControl": "timepickerMinuteLabel",

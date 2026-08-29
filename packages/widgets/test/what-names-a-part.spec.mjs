@@ -68,7 +68,12 @@ test("a part is named by a relation or by a message, never by both and never by 
       if (!pointed.has(node.part) && !bound) neither.push(key);
     }
   }
-  assert.deepEqual(both, [],
+  // The one part in both, and it earns it. A caption over *several* controls names the group they
+  // stand in, and each control says its own role — so the range's first box is bound to a message
+  // like its sibling. The caption still points at it, and that pointer is doing a different job:
+  // clicking the words puts the cursor in the first box. A `for` that moves focus and a name are two
+  // relations wearing one attribute, and only the second is what this rule is about. ADR 0175.
+  assert.deepEqual(both, ["daterange.startControl"],
     "a part is named twice, by a relation and by a message. Two ways to name one element is the "
     + "divergence this binding removes, not a redundancy that makes it safer");
   assert.deepEqual(neither, ["colors.control"],

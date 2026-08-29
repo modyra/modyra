@@ -15,7 +15,7 @@ import { installDomGlobals } from "./support/dom-env.mjs";
 
 installDomGlobals();
 const { mountMdyForm } = await import("../dist/index.js");
-const { MDY_I18N_PRESETS, MDY_PART_NAMES } = await import("@modyra/widgets");
+const { MDY_I18N_PRESETS, MDY_PART_NAMES, MDY_I18N_MESSAGES_DEFAULT } = await import("@modyra/widgets");
 
 function ranged(locale) {
   const host = document.createElement("div");
@@ -59,19 +59,25 @@ test("and it says it in the language the field speaks", async () => {
   host.remove();
 });
 
-test("and the first box says the caption, not a phrase built around it", async () => {
-  // The other direction, and not the one it first asserted. The shell names every kind's control from
-  // the caption, so the first box carrying an `aria-label` is the house pattern rather than a second
-  // answer — what mattered was that the phrase around it is gone: `"Quando — start"` was a sentence
-  // no table held and no translation reached.
+test("and the first box says its own role, inside a group the caption names", async () => {
+  // Rewritten with ADR 0175, and the rule it replaces was the one that made both boxes say the same
+  // thing. The caption names the *pair*; each box says which end it is, from the table that holds
+  // those words. A box pointed at the caption gets the name of the whole — and `aria-labelledby`
+  // wins the computation, so the name beside it never speaks.
   const { host, reactivity, dispose } = ranged("en");
   await reactivity.flush();
 
   const start = host.querySelector(".mdy-daterange__input:not(.mdy-daterange__input--end)");
   assert.ok(start !== null, "no first box");
-  assert.equal(start.getAttribute("aria-label"), "Quando",
-    "the first box is named by something other than the caption, so a reader hears a phrase the "
-    + "document did not write");
+  assert.equal(start.getAttribute("aria-label"), MDY_I18N_MESSAGES_DEFAULT.daterangeStartLabel,
+    "the first box does not say which end it is, so a reader moving between the two hears the same "
+    + "words twice");
+
+  // And the pair is grouped, with the caption's words on the group.
+  const group = host.querySelector('[role="group"]');
+  assert.ok(group !== null, "nothing groups the two ends");
+  assert.equal(group.getAttribute("aria-label"), "Quando",
+    "the group does not carry the caption, so neither box says what it is an end of");
 
   dispose?.();
   host.remove();
