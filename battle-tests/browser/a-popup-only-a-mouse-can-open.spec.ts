@@ -1,5 +1,7 @@
 import { expect, test } from "@playwright/test";
 
+import { panelsHome } from "./bench";
+
 /**
  * The popups a keyboard can open, and the ones it cannot.
  *
@@ -73,10 +75,9 @@ test("a mouse opens every popup, which is what makes the keyboard the question",
       { mountId: id, declared: field },
     );
     await settled(page);
-    // The panel the previous kind opened is still standing, and a renderer that draws it outside the
-    // field leaves it over this one: the click lands on the panel before instead of the trigger here.
-    await page.keyboard.press("Escape");
-    await page.waitForTimeout(90);
+    // The panel the previous kind opened is still standing where a renderer draws it over the page,
+    // and the click would land on it instead of on this field's trigger.
+    await panelsHome(page);
 
     await page.locator(`[data-form="${id}"] [aria-haspopup]`).first().click();
     await page.waitForTimeout(120);

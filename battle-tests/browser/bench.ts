@@ -323,3 +323,26 @@ export async function madeToSpeak(page: Page, root: string, api = "battle"): Pro
   if (sent) await page.waitForTimeout(240);
   return sent;
 }
+
+/**
+ * Sends every open panel home, and says whether one would not go.
+ *
+ * A fresh field per case is not a fresh page. A renderer that draws its overlay inside the field
+ * takes its panel down with the field; one that draws it over the page leaves it standing, and the
+ * next case is then measured through somebody else's panel — a press answered by the field before,
+ * a click landing on a backdrop, a reading position inside a list this field does not own. Three
+ * different specs reported three different defects that were all this.
+ *
+ * Asks the page whether anything is still open rather than assuming Escape worked: a panel that will
+ * not close is a finding of its own and the caller is told, not left to read a stale measurement as
+ * a fresh one.
+ */
+export async function panelsHome(page: Page, tries = 3): Promise<boolean> {
+  for (let attempt = 0; attempt < tries; attempt += 1) {
+    const open = await page.evaluate(() => document.querySelector('[aria-expanded="true"]') !== null);
+    if (!open) return true;
+    await page.keyboard.press("Escape");
+    await page.waitForTimeout(90);
+  }
+  return await page.evaluate(() => document.querySelector('[aria-expanded="true"]') === null);
+}

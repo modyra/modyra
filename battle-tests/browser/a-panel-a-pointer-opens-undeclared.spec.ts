@@ -25,7 +25,7 @@
  */
 import { expect, test } from "@playwright/test";
 import { MDY_POPUP_OPENERS, MDY_WIDGET_CONTRACTS, MDY_WIDGET_KINDS, MDY_WIDGET_TRANSITIONS, variantOf } from "@modyra/widgets";
-import { HOSTS, stops } from "./bench";
+import { HOSTS, panelsHome, stops } from "./bench";
 
 type Api = Record<string, Record<string, (...args: never[]) => unknown>>;
 const CONTRACTS = MDY_WIDGET_CONTRACTS as unknown as Record<string, { parts: Record<string, { classes: string[] }> }>;
@@ -95,8 +95,7 @@ test(`a panel a pointer opens undeclared, ${only.name}`, async ({ page }) => {
         // A panel a previous press left open is not always the previous field's business: a renderer
         // that draws its overlay outside the field leaves it standing over the page, and the next
         // press is then read as the gesture that dismisses it rather than the one that opens.
-        await page.keyboard.press("Escape");
-        await page.waitForTimeout(80);
+        await panelsHome(page);
 
         const attempt = await page.evaluate(({ classes, declaredClasses, id }) => {
           const root = document.querySelector(`[data-form="${id}"]`) as HTMLElement | null;

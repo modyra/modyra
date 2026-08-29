@@ -30,7 +30,7 @@ import { expect, test } from "@playwright/test";
 import {
   MDY_POPUP_OPENERS, MDY_WIDGET_CONTRACTS, MDY_WIDGET_KEYBOARD, MDY_WIDGET_KINDS, keyBindingFor,
 } from "@modyra/widgets";
-import { HOSTS } from "./bench";
+import { HOSTS, panelsHome } from "./bench";
 
 type Api = Record<string, Record<string, (...args: never[]) => unknown>>;
 const CONTRACTS = MDY_WIDGET_CONTRACTS as unknown as Record<string, { parts: Record<string, { classes: string[] }> }>;
@@ -100,13 +100,7 @@ test(`a key in an open panel nobody declared, ${only.name}`, async ({ page }) =>
         // the field it is over this one too: the reading position is inside it, and a key pressed now
         // is answered by the field before rather than the field under test. Sent home first, and the
         // page is asked whether anything is still open rather than assumed shut.
-        for (let tries = 0; tries < 3; tries += 1) {
-          const anyOpen = await page.evaluate(() => document.querySelector('[aria-expanded="true"]') !== null);
-          if (!anyOpen) break;
-          await page.keyboard.press("Escape");
-          await page.waitForTimeout(90);
-        }
-        stillOpen += await page.evaluate(() => document.querySelector('[aria-expanded="true"]') === null ? 0 : 1);
+        if (!(await panelsHome(page))) stillOpen += 1;
 
         const focused = await page.evaluate(({ id, opener }) => {
           const root = document.querySelector(`[data-form="${id}"]`) as HTMLElement | null;
