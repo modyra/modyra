@@ -1,20 +1,19 @@
 /**
- * An optional part is one the structure permits to be absent. For fifty-six of them the contract also
- * says *when* absence is permitted — `overlayOnlyParts` names the parts that exist only while a panel
- * is open, and that single declaration is what makes them checkable: a check can open the panel and
- * demand them.
+ * An optional part is one the structure permits to be absent. A part permitted to be absent and never
+ * told when is a question with no answer: a renderer that draws it and a renderer that does not both
+ * conform, and the difference between them is invisible to every check in the suite.
  *
- * For the rest there is no such declaration. The structure says the part may exist; nothing says in
- * which state it is owed. So a renderer that draws it and a renderer that does not are both conforming,
- * and the difference between them is invisible to every check in the suite.
+ * So the contract owes a condition for every one of them, and this holds that line in two places.
  *
- * This measures that difference on a field at rest — a label, no supporting text, no errors, one option
- * where a choice is needed — and splits it in two:
+ *   the declaration   every optional part outside a panel says when it is owed, either by naming a
+ *                     condition or by being one of the parts that exist only while a panel is open.
+ *                     A part added without one is the defect, and it is a contract defect.
+ *   the drawing       for any part that has no condition anyway, what the renderers do with it. Some
+ *                     drawing it and some not is three answers to a question nobody asked; neither
+ *                     answer is wrong, which is the finding.
  *
- *   drawn by all three   an optional part that is universal in practice. Nothing demands it, so a
- *                        renderer may drop it tomorrow and the suite stays green. Held here.
- *   drawn by some        three answers to a question nobody asked. Neither answer is wrong, which is
- *                        the finding: the contract owes a condition, not the renderers a repair.
+ * A part *with* a condition is not asked about here. It is owed when the condition holds and gone
+ * when it does not, both directions driven from a document, and that is a different check.
  *
  * Presence in the document is what this asks, not a box: a part that is emitted and hidden is still an
  * emitted part, and the structural question is whether the element exists at all.
@@ -28,15 +27,16 @@ import { HOSTS } from "./bench";
 type Api = Record<string, Record<string, (...args: never[]) => unknown>>;
 type Contract = {
   parts: Record<string, { classes: string[] }>;
-  structure: { nodes: { part: string; optional?: boolean }[] };
+  structure: { nodes: { part: string; optional?: boolean; presentWhen?: string }[] };
 };
 const CONTRACTS = MDY_WIDGET_CONTRACTS as unknown as Record<string, Contract>;
 
-/** The parts this asks about: optional, and without the one condition the contract does declare. */
+/** The parts this asks about: optional, and with nothing anywhere saying when they are owed. */
 const unconditionedParts = (kind: string): string[] => {
   const conditioned = new Set(overlayOnlyParts(kind as never));
   return CONTRACTS[kind].structure.nodes
-    .filter((node) => node.part !== "root" && node.optional !== false && !conditioned.has(node.part))
+    .filter((node) => node.part !== "root" && node.optional !== false
+      && !conditioned.has(node.part) && node.presentWhen === undefined)
     .map((node) => node.part)
     .filter((part) => (CONTRACTS[kind].parts[part]?.classes ?? []).length > 0);
 };
@@ -89,6 +89,13 @@ const censusOf = async (page: import("@playwright/test").Page, api: string): Pro
 
 test("a part drawn that nothing asks for", async ({ page }) => {
   test.setTimeout(900_000);
+
+  // The declaration, asked of the contract before any page is opened: a part permitted to be absent
+  // and never told when is unfalsifiable by construction, so the absence of one is the whole finding.
+  const owedACondition = (MDY_WIDGET_KINDS as unknown as string[])
+    .flatMap((kind) => unconditionedParts(kind).map((part) => `${kind}.${part}`))
+    .sort();
+
   const census = new Map<string, Set<string>>();
   for (const host of HOSTS) {
     await page.goto(host.page);
@@ -96,19 +103,31 @@ test("a part drawn that nothing asks for", async ({ page }) => {
     census.set(host.name, await censusOf(page, host.api));
   }
 
-  const everywhere = [...census.values()].reduce((all, one) => new Set([...all, ...one]));
+  const everywhere = [...census.values()].reduce((all, one) => new Set([...all, ...one]), new Set<string>());
   const divergent = [...everywhere]
     .filter((part) => ![...census.values()].every((drawn) => drawn.has(part)))
     .map((part) => `${part}: ${[...census].filter(([, drawn]) => drawn.has(part)).map(([name]) => name).join("+")}`)
     .sort();
 
   // A page that mounted nothing draws nothing, and "nothing diverges" is what that looks like from
-  // here. The census has to be shown alive before its emptiness means anything.
-  for (const [name, drawn] of census) {
-    expect(drawn.size, `${name} drew no optional part at all - the census is measuring a dead page`).toBeGreaterThan(0);
+  // here. Where there is something to count, the census has to be shown alive before its emptiness
+  // means anything; where there is nothing, the line above is what this spec is asserting.
+  if (owedACondition.length > 0) {
+    for (const [name, drawn] of census) {
+      expect(drawn.size, `${name} drew no optional part at all - the census is measuring a dead page`).toBeGreaterThan(0);
+    }
   }
 
-  // The finding: a part some renderers draw and others do not, with nothing in the contract to settle
-  // it. Both answers conform, so this is owed a condition rather than a repair.
-  expect(divergent, "optional parts with no declared condition, drawn by some renderers and not others").toEqual([]);
+  expect(
+    divergent,
+    "optional parts with no declared condition, drawn by some renderers and not others",
+  ).toEqual([]);
+
+  expect(
+    owedACondition,
+    `${owedACondition.length} optional part(s) are permitted to be absent with nothing saying when:\n`
+    + `${owedACondition.join("\n")}\n\nA renderer that draws one and a renderer that does not both `
+    + "conform, so no check in this suite can tell them apart. The condition is owed by the contract, "
+    + "not the drawing by a renderer.",
+  ).toEqual([]);
 });
