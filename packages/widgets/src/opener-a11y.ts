@@ -92,7 +92,9 @@ export function focusIsInsideField(root: Element, node: Node | null): boolean {
   // Every opener in the field, not only the first: a kind may draw more than one control over the
   // same panel — a typeable box and the button beside it — and asking only one of them makes the
   // panel foreign the moment the other is what opened it.
-  for (const opener of root.querySelectorAll("[aria-controls]")) {
+  // `Array.from` rather than a spread: the two compilers this package is built with disagree
+  // about whether a `NodeListOf` is iterable, and only one of them says so.
+  for (const opener of Array.from(root.querySelectorAll("[aria-controls]"))) {
     for (const id of (opener.getAttribute("aria-controls") ?? "").split(/\s+/)) {
       if (id === "") continue;
       const controlled = owner.getElementById(id);
