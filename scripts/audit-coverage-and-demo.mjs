@@ -245,7 +245,11 @@ if (process.argv.includes("--write")) {
       + "document, so the names behind them cannot be executed by any scripted run — that is a fact "
       + "about the instrument's reach, not a gap in the demos. The rest — a chip dragged, a clock "
       + "face, a range completed — a demo could drive and none does yet. Raising the number by "
-      + "listing a name a panel does not run would make it stop meaning what it says.",
+      + "listing a name a panel does not run would make it stop meaning what it says. Measured three "
+      + "ways and the answer held: what is left is not code the run failed to reach but code the "
+      + "demos do not contain — bundling the lab and looking for those names finds most of them "
+      + "absent, shaken out because nothing imports them. Raising this number means writing a demo "
+      + "that uses them, not driving the ones there harder.",
     score,
     uncovered: uncovered.map((u) => ({
       ...u,
