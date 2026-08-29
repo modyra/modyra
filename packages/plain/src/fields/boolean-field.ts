@@ -8,8 +8,8 @@
  */
 import { observerFor, type MdyFieldHandle, type MdyReactivity } from "@modyra/core";
 import type { MdyDynamicBooleanField } from "@modyra/core";
-import { MDY_FIELD_STATE_CLASSES, MDY_WIDGET_CONTRACTS, createBooleanFieldController, errorsVisible, fieldAccessibleName, holdsUneditedValue, visibleErrorsOf } from "@modyra/widgets";
-import { applyPart, el, setErrors, setPresent, setText } from "../dom.js";
+import { MDY_FIELD_STATE_CLASSES, MDY_WIDGET_CONTRACTS, createBooleanFieldController, errorsVisible, fieldAccessibleName, holdsUneditedValue, shownErrorsOf } from "@modyra/widgets";
+import { applyPart, el, setErrors, setText } from "../dom.js";
 
 export function renderBooleanField(
   container: HTMLElement,
@@ -44,10 +44,8 @@ export function renderBooleanField(
   if (f.label) setText(labelText, f.label);
   const requiredMark = el("span", definition.parts.requiredMarker.classes.join(" "));
   setText(requiredMark, "*");
-  // Built here and put on the page only where the field is required: the contract says the mark is
-  // present *when* the field is, and an element kept and hidden is a part drawn while its condition
-  // is false.
-
+  requiredMark.hidden = true;
+  labelText.appendChild(requiredMark);
 
   // A boolean's visible words sit beside the box rather than in a `<label for>`, so the control is
   // named here. A label is optional in a document by design, and the field's own name is what is
@@ -119,12 +117,8 @@ export function renderBooleanField(
     if (input.id) labelText.htmlFor = input.id;
     applyPart(description, view.parts.description);
     applyPart(errorList, view.parts.error);
-    // What is being shown, not what exists: `shownErrorsOf` answers which refusals there are, and a
-    // list painted from it printed "required" under a field nobody had answered — beside an
-    // `aria-invalid` that said false, because the attribute had been taught the rule and the text
-    // had not. One field, two verdicts, and the one a sighted person reads was the wrong one.
-    setErrors(errorList, visibleErrorsOf(handle, f.kind).map((e) => e.message));
-    setPresent(requiredMark, labelText, null, state.required);
+    setErrors(errorList, shownErrorsOf(handle).map((e) => e.message));
+    requiredMark.hidden = !state.required;
     // The "checked" content attribute (set by applyPart above) only sets the initial
     // state; the live IDL property is what the browser actually renders/toggles after
     // the first user interaction, so it needs setting explicitly, same reasoning as

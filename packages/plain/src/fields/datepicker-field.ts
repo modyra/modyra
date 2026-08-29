@@ -7,7 +7,7 @@
 import { observerFor, type MdyFieldHandle, type MdyReactivity } from "@modyra/core";
 import { buildDateLocale, formatIsoDate, parseLocalizedDate, calendarYearRange, isMonthOutOfRange, isYearOutOfRange, parseIsoDate } from "@modyra/core/datetime";
 import type { MdyDynamicDateField } from "@modyra/core";
-import { fieldAccessibleName, keyMeans, applySubmissionNames,
+import { keyMeans, applySubmissionNames,
   syncSubmitValues,
   MDY_WIDGET_CONTRACTS,
   createDatepickerFieldController,
@@ -105,14 +105,6 @@ export function renderDatepickerField(
   // the themes give this element the column flow the header and grid sit in, so a popup holding them
   // directly is a picker the shipped themes cannot arrange.
   const calendar = el("div", MDY_WIDGET_CONTRACTS.datepicker.parts.calendar.classes.join(" "));
-  // What the opener promises, carried by the thing it opens. The other two renderers wrote the role
-  // here and this one wrote it nowhere, so a person was told a dialog had appeared and met an
-  // unnamed `<div>`. Read from the catalogue rather than spelled again.
-  applyPart(calendar, MDY_WIDGET_CONTRACTS.datepicker.parts.calendar);
-  // A dialog owes a name: announced as "dialog" and nothing else, a person is told a panel has
-  // appeared and not what it is for. The field's own words where there are any, the kind's sentence
-  // otherwise — the same order the other two renderers use.
-  calendar.setAttribute("aria-label", fieldAccessibleName({ label: f.label, name: f.name }) || messages.datepickerChooseDate);
   calendar.append(header, grid, monthPicker, yearPicker);
   popup.append(calendar);
 

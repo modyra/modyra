@@ -56,23 +56,25 @@ const VALUE: Record<string, unknown> = {
 
 for (const host of HOSTS) {
 /**
- * What the shape this renderer actually drew requires, or `null` for a kind that declares no shapes.
+ * Whether the shape this renderer drew carries its parts as elements of its own.
  *
- * Which document asks for which shape is not published, so the shape is read back from the page. A
- * platform control is recognised by the platform's own element, because the parts a variant requires
- * do not separate the two: a native control is styled with the same arrow as a custom trigger.
+ * A shape built out of the platform's own control has no element to carry a part the custom anatomy
+ * draws: the value is inside the selected option, the placeholder is an option, and neither wears a
+ * class. Demanding them of it reports the shape as a control with a piece removed.
+ *
+ * Only that shape is exempt. A shape a renderer draws itself owes every part its condition asks for,
+ * whatever else the variant says: a variant names which parts a shape has, and a state condition says
+ * when a part the shape has is there. The two answer different questions and neither replaces the
+ * other — `value` and `placeholder` are the same shape in two states, which no single list can hold.
+ *
+ * Which document asks for which shape is not published, so the shape is read back from the page, off
+ * the platform element: both shapes wear the same arrow, so the required parts separate neither.
  */
-const drawnVariantRequires = async (page: Page, id: string, kind: string): Promise<string[] | null> => {
-  const variants = (CONTRACTS[kind] as { variants?: Record<string, { required?: string[] }> }).variants ?? {};
-  const names = Object.keys(variants);
-  if (names.length === 0) return null;
-  if (names.includes("native")) {
-    const native = await page.evaluate(({ id }) =>
-      document.querySelector(`[data-form="${id}"] select`) !== null, { id });
-    return [...(variants[native ? "native" : "custom"]?.required ?? [])];
-  }
-  const drawn = names.filter((name) => (variants[name]?.required ?? []).length > 0);
-  return drawn.length === 1 ? [...(variants[drawn[0]]?.required ?? [])] : null;
+const drawsItsOwnParts = async (page: Page, id: string, kind: string): Promise<boolean> => {
+  const variants = (CONTRACTS[kind] as { variants?: Record<string, unknown> }).variants ?? {};
+  if (!Object.keys(variants).includes("native")) return true;
+  return !(await page.evaluate(({ id }) =>
+    document.querySelector(`[data-form="${id}"] select`) !== null, { id }));
 };
 
   test(`a part is there when its condition holds and gone when it does not, ${host.name}`, async ({ page }) => {
@@ -145,13 +147,11 @@ const drawnVariantRequires = async (page: Page, id: string, kind: string): Promi
         // part conditioned on a value is owed by the shape that lists it and by no other. A platform
         // control has no element to carry a part the custom anatomy draws, and demanding one of it
         // reports the shape as a missing piece.
-        const shapeRequires = await drawnVariantRequires(page, onId, kind);
-        const owedWhenHolding = shapeRequires === null
-          ? partIsOwed(node as never, {
+        const owedWhenHolding = await drawsItsOwnParts(page, onId, kind)
+          && partIsOwed(node as never, {
             holds: (condition: string) => condition === node.presentWhen,
             offers: () => false,
-          } as never)
-          : shapeRequires.includes(node.part);
+          } as never);
         if (owedWhenHolding && !(await drawn(onId, classes))) {
           missingWhenOwed.push(`${kind}.${node.part} (${node.presentWhen})`);
         }

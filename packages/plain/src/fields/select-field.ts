@@ -26,7 +26,7 @@ import { focusIsInsideField, capabilityOf, syncSubmitValues,
   type MdyI18nMessages,
   defaultOptionKey,
   stepOutOfOverlay,} from "@modyra/widgets";
-import { applyPart, el, setErrors, setText, setIcon, setPresent } from "../dom.js";
+import { applyPart, el, setErrors, setText, setIcon } from "../dom.js";
 import { buildFieldShell, insertControl } from "../field-shell.js";
 import { runCommands } from "../command-runtime.js";
 import { dismissOnOutsidePointer, positionOverlay, releaseOverlayPlacement, reflectOverlayOpen, trackOverlay } from "../overlay.js";
@@ -345,11 +345,8 @@ export function renderSelectField(
     // The trigger always shows the committed value: nothing the user types can hide it.
     const selected = state.options[state.optionKeys.indexOf(state.selectedKey ?? "")];
     setText(valueText, selected?.label ?? "");
-    // On the page under its condition, not kept and hidden: the value is present when there is one
-    // and the placeholder when there is not, which is what the contract declares and what a checker
-    // reading the anatomy sees. Order is the contract's too, so each goes back where it belongs.
-    setPresent(valueText, trigger, trigger.firstChild, Boolean(selected));
-    setPresent(placeholderText, trigger, null, !selected);
+    valueText.hidden = !selected;
+    placeholderText.hidden = Boolean(selected);
     for (const [key, li] of optionEls) {
       // The part carries `hidden` when the query filters the option out — no second filter here.
       const part = view.parts[key];

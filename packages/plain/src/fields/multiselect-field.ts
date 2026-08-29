@@ -41,7 +41,7 @@ import {
   blocksValueChange,
   isTypeaheadCharacter,
 } from "@modyra/widgets";
-import { applyPart, el, setErrors, setText, setIcon, setPresent } from "../dom.js";
+import { applyPart, el, setErrors, setText, setIcon } from "../dom.js";
 import { buildFieldShell, insertControl } from "../field-shell.js";
 import { withControls, type MdyMountedField } from "../field-controls.js";
 import { runCommands } from "../command-runtime.js";
@@ -701,9 +701,7 @@ export function renderMultiselectField(
       chosenEls.get(key)?.remove();
       chosenEls.delete(key);
     }
-    // On the page while there is nothing chosen, and off it once there is: the contract says present
-    // *when*, and an element kept and hidden is a part drawn while its condition is false.
-    setPresent(placeholder, trigger, null, tally.size === 0);
+    placeholder.hidden = tally.size > 0;
     syncRoving();
   }
 

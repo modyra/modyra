@@ -9,8 +9,8 @@
 import { applyOpenerPromise } from "../opener-promise.js";
 import { observerFor, type MdyFieldHandle, type MdyReactivity } from "@modyra/core";
 import type { MdyDynamicDaterangeField } from "@modyra/core";
-import { buildDateLocale, formatIsoDate, parseLocalizedDate, today } from "@modyra/core/datetime";
-import { fieldAccessibleName, applySubmissionNames,
+import { buildDateLocale, formatIsoDate, parseLocalizedDate } from "@modyra/core/datetime";
+import { applySubmissionNames,
   MDY_WIDGET_CONTRACTS,
   createDaterangeFieldController,
   defaultWidgetIdFactory,
@@ -75,16 +75,6 @@ export function renderDaterangeField(
   );
 
   const shell = buildFieldShell(f.label, "daterange", {}, f.ariaLabel, f.name, f.supportingText);
-  // The two boxes together are what the caption names: a person entering hears it once, then each
-  // box's own role. Pointing the boxes at the caption instead gave a part the name of the whole, and
-  // both ends announced the same words. ADR 0175.
-  shell.wrapper.setAttribute("role", "group");
-  // The caption's words rather than a reference to it: a reference is one more thing that can point
-  // at nothing — a label a document did not ask for is not drawn — and a reader hears the same
-  // sentence either way.
-  if (typeof f.label === "string" && f.label.trim() !== "") {
-    shell.wrapper.setAttribute("aria-label", f.label);
-  }
   const wrapper = el("div", "mdy-datepicker");
   const startInput = el("input", definition.parts.startControl.classes.join(" ")) as HTMLInputElement;
   startInput.type = "text";
@@ -99,10 +89,9 @@ export function renderDaterangeField(
   const endInput = el("input", definition.parts.endControl.classes.join(" ")) as HTMLInputElement;
   endInput.type = "text";
   endInput.autocomplete = "off";
-  // Each end says its own role, from the table that holds those words rather than from a phrase a
-  // renderer builds. The caption names the group the two stand in. ADR 0175, `MDY_PART_NAMES`.
+  // Nothing points at this one — the caption is spent on the first — so the contract says which
+  // message names it rather than each renderer building a phrase of its own. `MDY_PART_NAMES`.
   endInput.setAttribute("aria-label", messages[MDY_PART_NAMES["daterange.endControl"] as keyof typeof messages] as string);
-  startInput.setAttribute("aria-label", messages[MDY_PART_NAMES["daterange.startControl"] as keyof typeof messages] as string);
   endInput.placeholder = messages.daterangeEndLabel;
   const toggle = el("button", definition.parts.toggle.classes.join(" ")) as HTMLButtonElement;
   setIcon(toggle, "CALENDAR");
@@ -133,14 +122,6 @@ export function renderDaterangeField(
   const grid = buildCalendarGrid("daterange");
   // Same frame as the single-date picker: the popup positions, the calendar lays out.
   const calendar = el("div", MDY_WIDGET_CONTRACTS.daterange.parts.calendar.classes.join(" "));
-  // What the opener promises, carried by the thing it opens. The other two renderers wrote the role
-  // here and this one wrote it nowhere, so a person was told a dialog had appeared and met an
-  // unnamed `<div>`. Read from the catalogue rather than spelled again.
-  applyPart(calendar, MDY_WIDGET_CONTRACTS.daterange.parts.calendar);
-  // A dialog owes a name: announced as "dialog" and nothing else, a person is told a panel has
-  // appeared and not what it is for. The field's own words where there are any, the kind's sentence
-  // otherwise — the same order the other two renderers use.
-  calendar.setAttribute("aria-label", fieldAccessibleName({ label: f.label, name: f.name }) || messages.daterangeChooseRange);
   calendar.append(header, grid);
   popup.append(calendar);
 
@@ -298,11 +279,7 @@ export function renderDaterangeField(
       // A read-only range refuses the typed date and the calendar's choice alike; the native
       // attribute stops the typing and the ARIA says why.
       input.readOnly = handle.readonly();
-      // Present only while it is true, which is what the projection declares: `aria-readonly="false"`
-      // is a claim about a state the control is not in, and the contract emits the attribute or
-      // nothing rather than the word "false". ADR 0165's rule about verdicts, applied to a state.
-      if (handle.readonly()) input.setAttribute("aria-readonly", "true");
-      else input.removeAttribute("aria-readonly");
+      input.setAttribute("aria-readonly", String(handle.readonly()));
     }
 
     // Each end under its own key, after the parts are applied: the shared control projection writes
@@ -363,12 +340,6 @@ export function renderDaterangeField(
       button.classList.toggle("mdy-datepicker__cell--in-range", cell.inRange);
       button.classList.toggle("mdy-datepicker__cell--selected", cell.rangeStart || cell.rangeEnd);
       button.setAttribute("aria-selected", String(cell.rangeStart || cell.rangeEnd));
-      // The day a calendar is always asked about, said and painted. The single-date sibling gets it
-      // from the same door; this grid marked it in neither channel.
-      const isToday = iso === formatIsoDate(today());
-      button.classList.toggle("mdy-datepicker__cell--today", isToday);
-      if (isToday) button.setAttribute("aria-current", "date");
-      else button.removeAttribute("aria-current");
       // Where the keyboard is standing, which the controller answers and this grid was not painting:
       // the arrows moved a cursor nothing showed and nothing followed, so the calendar answered a
       // pointer and no key at all. One tab stop, on the cell the cursor is on.

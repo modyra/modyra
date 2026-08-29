@@ -127,13 +127,6 @@
         --mdy-control-1: max(1.75rem, 28px);
         --mdy-control-2: max(2.25rem, 36px);
         --mdy-control-3: max(2.75rem, 44px);
-        /* The height a single-row field takes, which is a step of this scale and was a literal in two
-           `calc`s that a theme could not move. `DESIGN.md` recorded that as an open question about
-           what the row system is — a kind is in it when its height comes from this scale, and no
-           kind's did, because the height they all share was not on it. It is now: the same number,
-           reachable by the same name as every other control step, so a theme changing the scale moves
-           the field with it instead of moving everything around a fixed 56. */
-        --mdy-control-4: max(3.5rem, 56px);
 
         /* ── focus ───────────────────────────────────────────────────────────────
            One ring, everywhere. A focus indicator that varies by component is something a person has

@@ -381,10 +381,7 @@ export function renderColorsField(
     hexInput.disabled = handle.disabled();
     // The element the state is about: the swatch beside it is a picker with no readable text.
     hexInput.readOnly = handle.readonly();
-    // Present only while it is true, which is what the projection declares: `aria-readonly="false"`
-    // is a claim about a state the control is not in.
-    if (handle.readonly()) hexInput.setAttribute("aria-readonly", "true");
-    else hexInput.removeAttribute("aria-readonly");
+    hexInput.setAttribute("aria-readonly", String(handle.readonly()));
     picker.disabled = handle.disabled();
     picker.setAttribute("aria-expanded", String(panelUp));
     reflectOverlayOpen(popup, panelUp, messages);
