@@ -5,7 +5,7 @@
     "published": 904,
     "asserted": 904,
     "showable": 399,
-    "shown": 337
+    "shown": 349
   },
   "uncovered": [
     {
@@ -79,20 +79,6 @@
       "reason": "published and never shown"
     },
     {
-      "name": "chipStripWheelDelta",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "clearFileSelection",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
       "name": "closeOverlay",
       "asserted": true,
       "shown": false,
@@ -121,35 +107,7 @@
       "reason": "published and never shown"
     },
     {
-      "name": "createFocusCustodian",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "createPointerDrag",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
       "name": "createValueWidgetController",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "dateDraftTransition",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "dateRangeDraftTransition",
       "asserted": true,
       "shown": false,
       "showable": true,
@@ -170,21 +128,7 @@
       "reason": "published and never shown"
     },
     {
-      "name": "dragPointOf",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
       "name": "eachOneOf",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "elementByDataKey",
       "asserted": true,
       "shown": false,
       "showable": true,
@@ -199,13 +143,6 @@
     },
     {
       "name": "fieldCommandHandlers",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "fileSelectionTransition",
       "asserted": true,
       "shown": false,
       "showable": true,
@@ -303,13 +240,6 @@
       "reason": "published and never shown"
     },
     {
-      "name": "reconcileSelectValue",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
       "name": "restoreFocusTrigger",
       "asserted": true,
       "shown": false,
@@ -331,13 +261,6 @@
       "reason": "published and never shown"
     },
     {
-      "name": "shouldCloseMultiselectOverlay",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
       "name": "stepOutOfOverlay",
       "asserted": true,
       "shown": false,
@@ -353,13 +276,6 @@
     },
     {
       "name": "timeClockTransition",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "timeDraftTransition",
       "asserted": true,
       "shown": false,
       "showable": true,
