@@ -29,7 +29,7 @@
  */
 
 import { expect, test, type Page } from "@playwright/test";
-import { MDY_PRESENCE_RESOLUTION, MDY_WIDGET_CONTRACTS, MDY_WIDGET_KINDS, partIsOwed } from "@modyra/widgets";
+import { MDY_PRESENCE_RESOLUTION, MDY_WIDGET_CONTRACTS, MDY_WIDGET_KINDS, partIsOwed, variantOf } from "@modyra/widgets";
 
 import { HOSTS } from "./bench";
 
@@ -56,7 +56,7 @@ const VALUE: Record<string, unknown> = {
 
 for (const host of HOSTS) {
 /**
- * Whether the shape this renderer drew carries its parts as elements of its own.
+ * Whether the shape this document asks for carries its parts as elements of its own.
  *
  * A shape built out of the platform's own control has no element to carry a part the custom anatomy
  * draws: the value is inside the selected option, the placeholder is an option, and neither wears a
@@ -67,15 +67,12 @@ for (const host of HOSTS) {
  * when a part the shape has is there. The two answer different questions and neither replaces the
  * other — `value` and `placeholder` are the same shape in two states, which no single list can hold.
  *
- * Which document asks for which shape is not published, so the shape is read back from the page, off
- * the platform element: both shapes wear the same arrow, so the required parts separate neither.
+ * Which shape a document asks for is `variantOf`'s question, so it is asked rather than read off the
+ * page: a renderer drawing the other shape is a divergence of its own and belongs in the report that
+ * names it, not in this one as a part gone missing.
  */
-const drawsItsOwnParts = async (page: Page, id: string, kind: string): Promise<boolean> => {
-  const variants = (CONTRACTS[kind] as { variants?: Record<string, unknown> }).variants ?? {};
-  if (!Object.keys(variants).includes("native")) return true;
-  return !(await page.evaluate(({ id }) =>
-    document.querySelector(`[data-form="${id}"] select`) !== null, { id }));
-};
+const drawsItsOwnParts = (kind: string, spec: Record<string, unknown>): boolean =>
+  variantOf(kind as never, spec as never) !== "native";
 
   test(`a part is there when its condition holds and gone when it does not, ${host.name}`, async ({ page }) => {
     test.setTimeout(300_000);
@@ -147,7 +144,7 @@ const drawsItsOwnParts = async (page: Page, id: string, kind: string): Promise<b
         // part conditioned on a value is owed by the shape that lists it and by no other. A platform
         // control has no element to carry a part the custom anatomy draws, and demanding one of it
         // reports the shape as a missing piece.
-        const owedWhenHolding = await drawsItsOwnParts(page, onId, kind)
+        const owedWhenHolding = drawsItsOwnParts(kind, yes)
           && partIsOwed(node as never, {
             holds: (condition: string) => condition === node.presentWhen,
             offers: () => false,

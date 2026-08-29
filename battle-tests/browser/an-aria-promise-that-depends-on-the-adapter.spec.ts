@@ -43,7 +43,7 @@
  * Claims under attack: ADP-001, A11Y-004.
  */
 import { expect, test } from "@playwright/test";
-import { MDY_POPUP_OPENERS, MDY_WIDGET_CONTRACTS, MDY_WIDGET_KINDS, partClasses } from "@modyra/widgets";
+import { MDY_POPUP_OPENERS, MDY_WIDGET_CONTRACTS, MDY_WIDGET_KINDS, partClasses, variantOf } from "@modyra/widgets";
 import { HOSTS, madeToSpeak } from "./bench";
 
 type Api = Record<string, Record<string, (...args: never[]) => unknown>>;
@@ -61,9 +61,9 @@ const variantParts = (kind: string): Array<[string, string[][]]> =>
 /**
  * What the sweep mounts: one field per kind, and one per shape for a kind that declares more than one.
  *
- * The document that picks a shape is not in the contract — it names the shapes and not what chooses
- * between them — so the property is named here, and a renderer that draws the other shape anyway is
- * the finding rather than the mount being wrong.
+ * The property that picks a shape is the document's own word for it, and `variantOf` is what turns
+ * that word into a shape — so what each mount asks for is asked of the contract rather than assumed,
+ * and a renderer that draws the other shape anyway is the finding rather than the mount being wrong.
  */
 const SUBJECTS: Array<{ kind: string; name: string; extra: Record<string, unknown> }> =
   MDY_WIDGET_KINDS.flatMap((kind) =>
@@ -71,6 +71,10 @@ const SUBJECTS: Array<{ kind: string; name: string; extra: Record<string, unknow
       ? [{ kind, name: "select asked plainly", extra: { searchable: false } },
          { kind, name: "select asked searchable", extra: { searchable: true } }]
       : [{ kind, name: kind, extra: {} }]);
+
+/** What each subject's document asks for, in the contract's own words. `undefined` for one anatomy. */
+const asksFor = (kind: string, extra: Record<string, unknown>): string | undefined =>
+  variantOf(kind as never, extra as never);
 
 
 test("an aria promise that depends on the adapter", async ({ page }) => {
@@ -153,6 +157,7 @@ test("an aria promise that depends on the adapter", async ({ page }) => {
         if (variants.some(([name]) => name === "native")) {
           return root.querySelector("select") === null ? "custom" : "native";
         }
+
         const drawn = variants.filter(([, required]) =>
           required.length > 0 && required.every((classes) => classes.some((one) => root.querySelector(`.${one}`) !== null)));
         return drawn.length === 1 ? drawn[0][0] : `${drawn.length} of them at once`;
@@ -176,8 +181,11 @@ test("an aria promise that depends on the adapter", async ({ page }) => {
   // symptom. Reported on its own so the cause is not read six times as six defects.
   const shapeSplits = [...shapes.entries()]
     .filter(([, byHost]) => new Set(HOSTS.map((host) => byHost[host.name]).filter((one) => one !== undefined)).size > 1)
-    .map(([subject, byHost]) =>
-      `${subject}: drawn as ${HOSTS.map((host) => `${byHost[host.name] ?? "nothing"} by ${host.name}`).join(", ")}`);
+    .map(([subject, byHost]) => {
+      const asked = SUBJECTS.find((one) => one.name === subject);
+      return `${subject}: asked for ${asksFor(asked?.kind ?? "", asked?.extra ?? {}) ?? "its one shape"}, `
+        + `drawn as ${HOSTS.map((host) => `${byHost[host.name] ?? "nothing"} by ${host.name}`).join(", ")}`;
+    });
 
   const disagreements = [...shapeSplits, ...[...written.entries()].flatMap(([kind, byHost]) => {
     const everywhere = new Set(HOSTS.flatMap((host) => byHost[host.name] ?? []));
