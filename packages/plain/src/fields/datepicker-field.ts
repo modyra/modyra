@@ -291,10 +291,7 @@ export function renderDatepickerField(
     const display = state.entryText ?? (state.selectedDate || "");
     if (!typing && control.value !== display) control.value = display;
     reflectOverlayOpen(popup, state.open, messages);
-    // Anchored by the contract, like every other overlay: the placement, the size and the
-    // coordinates are `anchorOverlay`'s, and this only measures and applies them.
-    if (state.open) positionOverlay(popup, shell.wrapper, anchoring);
-    else releaseOverlayPlacement(popup);
+    if (!state.open) releaseOverlayPlacement(popup);
     // The same words in every view, which is what the other renderers of this contract show.
     //
     // A header that reads `2026` while the years are on screen is a button whose text is identical
@@ -344,6 +341,20 @@ export function renderDatepickerField(
       button.disabled = cell.disabled;
       if (cell.focused && state.open && document.activeElement !== button) button.focus();
     }
+    /**
+     * Anchored by the contract, like every other overlay — and **after the month is in it.**
+     *
+     * The placement, the size and the coordinates are `anchorOverlay`'s; this measures and applies
+     * them. What it measures has to be the panel a person will see: positioned before the cells
+     * exist, the calendar measures 54px against a content height of 276, so the policy is asked
+     * whether a box a fifth of the real size fits below the field. It does, so the panel is placed
+     * below and then drawn at its full height — clipped, where the policy answers "above" on the
+     * same rect.
+     *
+     * And the wrong number does not correct itself: the measurement is held for the whole opening,
+     * so nothing later in the panel's life re-asks. One pass, in the right order, is the fix.
+     */
+    if (state.open) positionOverlay(popup, shell.wrapper, anchoring);
     // The key a native submit reads this control's value under, after the parts are applied: the
     // shared control projection writes `name: null` for a field it was not given a name for, and a
     // part carrying `null` removes the attribute.

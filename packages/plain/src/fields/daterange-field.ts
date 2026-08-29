@@ -314,8 +314,7 @@ export function renderDaterangeField(
     reflectOverlayOpen(popup, state.open, messages);
     // Anchored by the contract, like every other overlay: the placement, the size and the
     // coordinates are `anchorOverlay`'s, and this only measures and applies them.
-    if (state.open) positionOverlay(popup, shell.wrapper, anchoring);
-    else releaseOverlayPlacement(popup);
+    if (!state.open) releaseOverlayPlacement(popup);
     // The kind, because this one's empty is an object. Without it a value that *is* this field's
     // nothing reads as one that arrived from somewhere — a draft, a server, a scripted write — and
     // those are said at once rather than waiting for a turn. So a range nobody had been near stated
@@ -376,6 +375,16 @@ export function renderDaterangeField(
       button.tabIndex = cell.focused ? 0 : -1;
       button.disabled = cell.disabled;
     }
+
+    /**
+     * Anchored after the month is in it.
+     *
+     * The panel measured before its cells exist is a fraction of the one a person sees, so the
+     * policy is asked whether a box that size fits below the field — it does, and the calendar is
+     * then drawn at full height where there was never room for it. The measurement is held for the
+     * whole opening, so nothing later re-asks. One pass, in the right order.
+     */
+    if (state.open) positionOverlay(popup, shell.wrapper, anchoring);
 
     // A calendar takes focus into its grid when it opens, which its own datepicker sibling already
     // did and this one did not: a grid the keyboard cannot reach is a grid only a mouse can use.
