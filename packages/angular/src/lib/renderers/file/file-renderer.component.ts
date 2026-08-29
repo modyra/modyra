@@ -41,6 +41,7 @@ import { MDY_I18N_MESSAGES } from "../../core/i18n";
         type="file"
         class="mdy-file-input"
         [id]="fieldId"
+        [attr.aria-label]="controlAriaLabel()"
         [accept]="accept()"
         [multiple]="multiple()"
         [disabled]="cannotPick()"

@@ -35,6 +35,7 @@ import { inputText } from "../renderer-projection";
         type="range"
         class="mdy-slider"
         [id]="fieldId"
+        [attr.aria-label]="controlAriaLabel()"
         [value]="value() ?? effectiveMin()"
         [disabled]="isDisabled()"
         (input)="onInput($event)"

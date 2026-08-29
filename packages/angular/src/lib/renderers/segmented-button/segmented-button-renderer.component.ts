@@ -25,7 +25,9 @@ import { MdySelectOption } from "../../core/types";
     "[style.--mdy-segments-count]": "segmentsCount()"
   },
   template: `
-    <!-- Group labelled via aria-labelledby: the label gets a real id (B33). -->
+    <!-- And a spoken name where there is no caption to point at: a group with neither is
+         announced as its role and nothing else, which says there is a set of choices here
+         and not what it is asking. Group labelled via aria-labelledby: the label gets a real id (B33). -->
     <mdy-control-label
       [label]="label()"
       [labelId]="labelId"
@@ -42,6 +44,7 @@ import { MdySelectOption } from "../../core/types";
       role="radiogroup"
       [mdyPart]="controlPart()"
       [attr.aria-labelledby]="label() ? labelId : null"
+      [attr.aria-label]="label() ? null : controlAriaLabel()"
       (pointerdown)="onTrackPointerDown($event)"
       (pointermove)="onTrackPointerMove($event)"
       (pointerup)="onTrackPointerUp()"

@@ -910,6 +910,7 @@
         "mdy-supporting-text"
       ],
       "aria": [
+        "aria-label",
         "aria-labelledby"
       ],
       "selectors": [
@@ -939,6 +940,7 @@
         "aria-checked",
         "aria-disabled",
         "aria-hidden",
+        "aria-label",
         "aria-labelledby",
         "aria-readonly"
       ],
@@ -1010,7 +1012,9 @@
         "mdy-slider-value",
         "mdy-supporting-text"
       ],
-      "aria": [],
+      "aria": [
+        "aria-label"
+      ],
       "selectors": [
         "mdy-control-slider"
       ]
