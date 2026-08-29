@@ -64,3 +64,24 @@ export function setErrors(container: HTMLElement, messages: ReadonlyArray<string
     container.appendChild(li);
   }
 }
+
+/**
+ * A part that is on the page under a condition, and off it otherwise.
+ *
+ * `hidden` is not the same claim. The contract says a part is *present when* its condition holds,
+ * and a checker reading the anatomy finds a hidden element and sees a part drawn while its condition
+ * is false — which is what two of the three renderers avoid by building the element only when it is
+ * owed. An element kept and hidden also stays in `textContent`, so anything deriving words from the
+ * control reads a placeholder that is not on screen.
+ *
+ * `before` fixes where it goes back: the contract's part order is the reading order, and an element
+ * re-appended after a removal would join the end of its parent instead.
+ */
+export function setPresent(node: HTMLElement, parent: HTMLElement, before: Node | null, present: boolean): void {
+  if (!present) {
+    node.remove();
+    return;
+  }
+  if (node.parentElement === parent) return;
+  parent.insertBefore(node, before);
+}

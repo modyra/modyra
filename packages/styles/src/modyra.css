@@ -880,7 +880,7 @@
         gap: var(--mdy-renderer-gap);
         margin-bottom: var(--mdy-renderer-margin-bottom);
         /* Density-aware height: density 0 = 56px, density -4 = 40px (same scale as floating label) */
-        --mdy-input-height: calc(3.5rem + (var(--mdy-floating-density) * 0.25rem));
+        --mdy-input-height: calc(var(--mdy-control-4) + (var(--mdy-floating-density) * 0.25rem));
         /* One line of validation feedback is reserved up front, and the error list is painted into
            that band rather than laid out in it. A message appearing on blur must not grow the
            field and push the rest of the form down — validating must never move the control the
@@ -4554,7 +4554,7 @@
         --mdy-fl-label-height: var(--mdy-size-1);
 
         /* Height shrinks with density: 56px at 0, 40px at -3. */
-        --mdy-fl-height: calc(3.5rem + (var(--mdy-fl-density-val) * 0.25rem));
+        --mdy-fl-height: calc(var(--mdy-control-4) + (var(--mdy-fl-density-val) * 0.25rem));
         --mdy-fl-input-height: var(--mdy-fl-height);
         /* Kept as the name Material's own rules and the colours renderer already read. */
         --mdy-floating-input-height: var(--mdy-fl-input-height);

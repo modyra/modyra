@@ -54,7 +54,7 @@ import { inputText, isoDateText } from "../renderer-projection";
     @if (label()) {
       <mdy-control-label
         [label]="label()"
-        [forId]="startId"
+        [forId]="startId()"
         [hasError]="paintsAsInvalid()"
       [widgetId]="fieldId"
         [required]="isRequired()"
@@ -74,7 +74,7 @@ import { inputText, isoDateText } from "../renderer-projection";
           <input
             #startInput
             type="text"
-            [id]="startId"
+            [id]="startId()"
             class="mdy-datepicker__input mdy-daterange__input mdy-daterange__input--start"
             [value]="displayStart()"
             [disabled]="isDisabled()"
@@ -100,7 +100,7 @@ import { inputText, isoDateText } from "../renderer-projection";
           <input
             #endInput
             type="text"
-            [id]="endId"
+            [id]="endId()"
             class="mdy-datepicker__input mdy-daterange__input mdy-daterange__input--end"
             [value]="displayEnd()"
             [disabled]="isDisabled()"
@@ -199,8 +199,11 @@ export class MdyDateRangePickerComponent extends MdyOverlayControl<MdyDateRange 
    */
   // The parts' own names. `"start"` and `"end"` were shorter spellings of `startControl` and
   // `endControl`, so the ids on the page were ones no published factory could write.
-  protected readonly startId = defaultWidgetIdFactory.part(this.fieldId, "startControl");
-  protected readonly endId = defaultWidgetIdFactory.part(this.fieldId, "endControl");
+  // Computed rather than captured: `fieldId` is settled by the host after construction, so a field
+  // initializer spells the id the component had before it was given one — which is why these read
+  // one lower than the field they belong to.
+  protected readonly startId = computed(() => defaultWidgetIdFactory.part(this.fieldId, "startControl"));
+  protected readonly endId = computed(() => defaultWidgetIdFactory.part(this.fieldId, "endControl"));
 
   protected readonly popupClass = MDY_WIDGET_CONTRACTS.daterange.parts.popup.classes.join(" ");
   /** The widget this draws: its popup's room, width and edge come from the catalog. */

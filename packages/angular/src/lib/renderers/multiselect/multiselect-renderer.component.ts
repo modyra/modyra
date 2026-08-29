@@ -277,7 +277,7 @@ const CHIPS = partSelector("multiselect", "chips") ?? "";
            control, not one per chip: a child of the chip is part of the chip's own text. -->
       <span
         class="mdy-chip__tooltip"
-        [id]="chipTooltipId"
+        [id]="chipTooltipId()"
         role="tooltip"
         [style.inset-inline-start.px]="chipTipAt()"
         [hidden]="namedChip() === null"
@@ -443,7 +443,10 @@ export class MdyMultiselectComponent<TValue = string>
   /** The id the opener names, which the projected panel has to carry. */
   // Spelled by the factory rather than by hand: `__chiptip` is a name nothing else in the library
   // can derive, so a reference to it built from the contract pointed at no element.
-  protected readonly chipTooltipId = defaultWidgetIdFactory.part(this.fieldId, "chipTooltip");
+  // Computed rather than captured: `fieldId` is settled by the host after construction, so a field
+  // initializer spells the id the component had before it was given one — which is why these read
+  // one lower than the field they belong to.
+  protected readonly chipTooltipId = computed(() => defaultWidgetIdFactory.part(this.fieldId, "chipTooltip"));
   /**
    * The caption's id, which names the trigger where a document wrote a caption.
    *

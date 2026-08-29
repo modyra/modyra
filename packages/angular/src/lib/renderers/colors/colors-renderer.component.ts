@@ -43,7 +43,7 @@ import { MdyOverlayPanelComponent } from "../../core/overlay-panel.component";
   template: `
     <mdy-control-label
       [label]="label()"
-      [forId]="hexInputId"
+      [forId]="hexInputId()"
       [hasError]="paintsAsInvalid()"
       [widgetId]="fieldId"
       [required]="isRequired()"
@@ -93,7 +93,7 @@ import { MdyOverlayPanelComponent } from "../../core/overlay-panel.component";
 
           <!-- Input: HEX (accessible control) -->
           <input
-            [id]="hexInputId"
+            [id]="hexInputId()"
             type="text"
             [value]="value() ?? ''"
             [placeholder]="placeholder()"
@@ -256,7 +256,10 @@ export class MdyColorsComponent extends MdyOverlayControl<string> {
   // The part's own name, which is what a factory can spell. `"hex"` was a fourth spelling of
   // `hexInput` — the id resolved on the page and no published factory could write it, so anything
   // deriving the same id from the contract pointed at nothing.
-  protected readonly hexInputId = defaultWidgetIdFactory.part(this.fieldId, "hexInput");
+  // Computed rather than captured: `fieldId` is settled by the host after construction, so a field
+  // initializer spells the id the component had before it was given one — which is why these read
+  // one lower than the field they belong to.
+  protected readonly hexInputId = computed(() => defaultWidgetIdFactory.part(this.fieldId, "hexInput"));
 
   /**
    * Which side the palette ended up on, named by the catalog rather than spelled here.
