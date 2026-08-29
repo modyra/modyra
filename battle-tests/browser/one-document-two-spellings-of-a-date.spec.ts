@@ -37,7 +37,33 @@
 
 import { expect, test } from "@playwright/test";
 
+import { existsSync, readFileSync } from "node:fs";
+import { join } from "node:path";
+
 import { HOSTS } from "./bench";
+
+/**
+ * The decision this measures, read from the record that takes it.
+ *
+ * Agreement alone was the property while nothing had been decided, and it is the weaker half: plain
+ * and lit already agree on the value's own notation, so a check that asks only for agreement passes
+ * the state the decision was taken to leave. While the record stands, the display is also owed the
+ * shape it names.
+ */
+const DECIDED = (() => {
+  const path = join(process.cwd(), "docs", "architecture", "0178-a-date-a-person-can-read-aloud.md");
+  const text = existsSync(path) ? readFileSync(path, "utf8") : null;
+  if (text === null || !/^Status:\s*Accepted\s*$/m.test(text)) return null;
+  return text.includes("A date is displayed with its month named, in the reader's language and order.")
+    ? "the month named, in the reader's language and order"
+    : null;
+})();
+
+/** A display that could be read as two different days depending on where the reader is. */
+const isAmbiguous = (shown: string) => /^\d{1,2}[/.-]\d{1,2}[/.-]\d{2,4}$/.test(shown.trim());
+
+/** The value's own notation: unambiguous, and not a thing a person says out loud. */
+const isTheValue = (shown: string) => /^\d{4}-\d{2}-\d{2}$/.test(shown.trim());
 
 type Api = Record<string, Record<string, (...args: never[]) => unknown>>;
 
@@ -94,9 +120,24 @@ test("one document is one date on the screen, whoever drew it", async ({ page })
     spellings.length,
     "one document, drawn by each renderer, puts a different date on the screen: "
     + `${Object.entries(shown).map(([name, value]) => `${name} reads "${value}"`).join(", ")}. `
-    + "Nothing in the document asked for either spelling, so this is a default rather than a "
-    + "decision — and an application that changes renderer changes what its users read. Which way "
-    + "they should agree is a real question with more than one good answer; that they disagree is "
-    + "not an answer to it.",
+    + "Two people comparing screens and seeing different text for the same day will, at least once, "
+    + "conclude they hold different days — and under a numeric format they will actually have read "
+    + "different days.",
   ).toBe(1);
+
+  // The record is read rather than restated: while it stands, a display is owed the shape it names,
+  // and if it is superseded this falls back to agreement without anybody editing this file.
+  if (DECIDED === null) return;
+
+  const wrong = Object.entries(shown)
+    .filter(([, value]) => isAmbiguous(value) || isTheValue(value))
+    .map(([name, value]) => `${name} reads "${value}"`);
+
+  expect(
+    wrong,
+    `${wrong.length} renderer(s) display a date as digits where the record calls for ${DECIDED}:\n`
+    + `${wrong.join("\n")}\n\n`
+    + "A numeric triple is two dates and which one it is depends on who is reading; the value's own "
+    + "notation is unambiguous and not a thing anybody says out loud. Only a named month is both.",
+  ).toEqual([]);
 });
