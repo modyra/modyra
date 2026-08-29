@@ -449,6 +449,55 @@ function sidebarCoverage() {
 
 const unlisted = sidebarCoverage();
 
+// ─── 8. Abandoned status phrasings stay abandoned ────────────────────────────
+
+/**
+ * ADR 0028: a status sentence names the packages it covers and the version they are at — "pre-1.0"
+ * and its kin describe a milestone, not the present, and they read as current forever. The record's
+ * own Verification section named the failure mode: a release that ships without touching prose,
+ * with nothing to stop it. This check is what stops it.
+ *
+ * The phrasing list is the one the record's grep names. Two places quote the phrasings on purpose
+ * and are excluded: the decision records themselves, and CONTRIBUTING.md, which states the rule by
+ * quoting what it forbids. ROADMAP.md's "toward 1.0" heading is a roadmap speaking about the
+ * future — its register — and is not a status sentence; it is not on the list.
+ *
+ * The site's own components are scanned too: the same sentence in a footer rots exactly as it does
+ * in markdown, and no markdown walker would ever see it.
+ */
+const ABANDONED_STATUS = [/\bpre-1\.0\b/i, /has not reached 1\.0/i, /are at \*\*1\.0\.0\*\*/i];
+
+function abandonedStatusPhrasings() {
+  const problems = [];
+  const files = [...markdown(ROOT)];
+  const siteSrc = join(ROOT, "site", "src");
+  if (existsSync(siteSrc)) {
+    for (const entry of readdirSync(siteSrc, { recursive: true })) {
+      const name = String(entry);
+      if (/\.(astro|mdx|html)$/.test(name)) files.push(join(siteSrc, name));
+    }
+  }
+  for (const file of files) {
+    // A page version control ignores is not published anywhere; its phrasings are this working
+    // tree's own business — the same rule check 1 applies to ignored pages' links.
+    if (isIgnored(file)) continue;
+    if (/\/docs\/architecture\//.test(file) || /CONTRIBUTING\.md$/.test(file)) continue;
+    if (/\/site\/src\/content\//.test(file)) continue;
+    const source = readFileSync(file, "utf8");
+    for (const pattern of ABANDONED_STATUS) {
+      const found = source.match(pattern);
+      if (found) {
+        problems.push(
+          `${relative(ROOT, file)} uses the abandoned phrasing "${found[0]}" — a status sentence names its packages and their versions (ADR 0028)`,
+        );
+      }
+    }
+  }
+  return problems;
+}
+
+const abandonedStatus = abandonedStatusPhrasings();
+
 // ─── Report ──────────────────────────────────────────────────────────────────
 
 console.log("# Documentation checks\n");
@@ -477,8 +526,11 @@ for (const problem of adrs) console.log(`  ${problem}`);
 console.log(`\ndocs/ pages missing from the site sidebar: ${unlisted.length}`);
 for (const problem of unlisted) console.log(`  ${problem}`);
 
+console.log(`\nAbandoned status phrasings (ADR 0028): ${abandonedStatus.length}`);
+for (const problem of abandonedStatus) console.log(`  ${problem}`);
+
 if (!check) process.exit(0);
-if (brokenLinks.length || gapProblems.length || missingCitations.length || orphans.length || inverted.length || unlicensed.length || adrs.length || unlisted.length) {
+if (brokenLinks.length || gapProblems.length || missingCitations.length || orphans.length || inverted.length || unlicensed.length || adrs.length || unlisted.length || abandonedStatus.length) {
   console.error("\nDOCUMENTATION CHECKS FAILED");
   process.exit(1);
 }

@@ -117,7 +117,8 @@ argument aimed at a reviewer. Why a decision was taken belongs in an
 Before opening a pull request that touches documentation:
 
 ```sh
-npm run test:docs                  # links, orphans, dependency direction, decision records
+npm run test:docs                  # links, orphans, dependency direction, decision records,
+                                   # abandoned status phrasings (ADR 0028)
 npm run docs:sync && npm run docs:build
 ```
 
