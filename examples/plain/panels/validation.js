@@ -138,6 +138,7 @@ export const validationPanel = {
     "applyPart",
     "assertUsableWidgetId",
     "blocksFocus",
+    "blocksValueChange",
     "compose",
     "createCommandRuntime",
     "createForm",

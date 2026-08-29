@@ -1,10 +1,10 @@
 {
   "note": "Public names not yet asserted or not yet shown. The list may only get shorter.",
   "score": {
-    "published": 903,
-    "asserted": 903,
-    "showable": 398,
-    "shown": 271
+    "published": 904,
+    "asserted": 904,
+    "showable": 399,
+    "shown": 288
   },
   "uncovered": [
     {
@@ -37,13 +37,6 @@
     },
     {
       "name": "MdyUnsupportedCapabilityError",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "acceptTimeField",
       "asserted": true,
       "shown": false,
       "showable": true,
@@ -92,13 +85,6 @@
       "reason": "published and never shown"
     },
     {
-      "name": "calendarKeyboardTarget",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
       "name": "calendarViewAfterPick",
       "asserted": true,
       "shown": false,
@@ -128,13 +114,6 @@
     },
     {
       "name": "closeOverlay",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "colorValueTransition",
       "asserted": true,
       "shown": false,
       "showable": true,
@@ -212,13 +191,6 @@
     },
     {
       "name": "dateRangeDraftTransition",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "dateRangeValueTransition",
       "asserted": true,
       "shown": false,
       "showable": true,
@@ -421,28 +393,7 @@
       "reason": "published and never shown"
     },
     {
-      "name": "isTypeaheadCharacter",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
       "name": "isWidgetKind",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "keyBindingFor",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "keyMeans",
       "asserted": true,
       "shown": false,
       "showable": true,
@@ -457,20 +408,6 @@
     },
     {
       "name": "layoutSlotStyle",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "listboxNextIndex",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "matchesKeyGesture",
       "asserted": true,
       "shown": false,
       "showable": true,
@@ -492,13 +429,6 @@
     },
     {
       "name": "minutesOfDay",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "multiselectOverlayAction",
       "asserted": true,
       "shown": false,
       "showable": true,
@@ -534,13 +464,6 @@
     },
     {
       "name": "overlayCloseCommands",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "overlayLifecycleTransition",
       "asserted": true,
       "shown": false,
       "showable": true,
@@ -617,13 +540,6 @@
       "reason": "published and never shown"
     },
     {
-      "name": "rowRovingIndex",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
       "name": "sameControllerOptions",
       "asserted": true,
       "shown": false,
@@ -639,13 +555,6 @@
     },
     {
       "name": "scrollOptionIntoView",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "selectKeyboardAction",
       "asserted": true,
       "shown": false,
       "showable": true,
@@ -681,13 +590,6 @@
     },
     {
       "name": "stepOutOfOverlay",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "stepTimeField",
       "asserted": true,
       "shown": false,
       "showable": true,
@@ -765,20 +667,6 @@
     },
     {
       "name": "timepickerDialUnavailableArcs",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "timepickerEntry",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "timepickerFocusPart",
       "asserted": true,
       "shown": false,
       "showable": true,

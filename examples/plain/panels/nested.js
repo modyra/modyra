@@ -198,6 +198,7 @@ export const nestedPanel = {
     "assertUsableWidgetId",
     "bindFormReset",
     "bindLightDismiss",
+    "blocksValueChange",
     "buildDynamicFieldValidators",
     "buildDynamicValidations",
     "buildDynamicValidators",

@@ -117,6 +117,7 @@ export const lifecyclePanel = {
     "applyPart",
     "assertUsableWidgetId",
     "bindFormReset",
+    "blocksValueChange",
     "createCommandRuntime",
     "createForm",
     "createTextFieldController",
