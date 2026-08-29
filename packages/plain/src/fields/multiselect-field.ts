@@ -929,8 +929,10 @@ export function renderMultiselectField(
     if (!action) return;
     // Tab keeps its native meaning: the list closes and focus carries on to the next control.
     if (event.key !== "Tab") event.preventDefault();
-    dispatch(action);
-    if (action.type === "move") followCursor();
+    // This handler is a keydown, so a panel it opens is about to be given a keypress and opens with
+    // somewhere for that press to land. ADR 0179.
+    dispatch(action.type === "open" ? { ...action, by: "keyboard" } : action);
+    if (action.type === "move" || action.type === "open") followCursor();
   };
 
   /**

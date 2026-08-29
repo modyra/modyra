@@ -8,6 +8,7 @@
  */
 import type { MdyInteractivity, MdyMultiselectMode } from "@modyra/core";
 import type { MdyFieldHandle, MdySelectOption } from "@modyra/core";
+import type { MdyOpenModality } from "../overlay.js";
 
 export interface MdyMultiselectFieldControllerOptions<TValue> {
   /** Stable identity for the widget instance. */
@@ -123,9 +124,18 @@ export type MdyMultiselectFieldIntent =
    * same keystrokes.
    */
   | { readonly type: "typeahead"; readonly character: string }
-  | { readonly type: "open" }
+  /**
+   * Opens the panel, and says what raised it.
+   *
+   * The modality is what decides where the keyboard goes next, and a controller cannot infer it: a
+   * pointer event with no coordinates is what a keyboard-activated button produces on some platforms
+   * and not others, so reading it from the event is a guess that fails silently. The host knows what
+   * it handled. Omitting it is the pointer answer — the panel opens and nothing is singled out —
+   * which is silence read as a default rather than as a neutral position. ADR 0179.
+   */
+  | { readonly type: "open"; readonly by?: MdyOpenModality }
   | { readonly type: "close"; readonly restoreFocus?: boolean }
-  | { readonly type: "toggleOpen" }
+  | { readonly type: "toggleOpen"; readonly by?: MdyOpenModality }
   | { readonly type: "clear" }
   /**
    * Puts back what the last destructive act took, and offers nothing when there was none.

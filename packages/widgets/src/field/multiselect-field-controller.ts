@@ -142,6 +142,24 @@ export function createMultiselectFieldController<TValue>(
     return Array.isArray(held) ? held as ReadonlyArray<TValue> : [held as TValue];
   };
 
+  /**
+   * Where the cursor stands when the list is shown, and why it is not simply the top.
+   *
+   * The first value already chosen, where one of them is on screen. Somebody opening a field that
+   * already holds values is most likely there to change one of them, so landing on the first chosen
+   * leaves the rest an arrow away; landing at the top when the chosen values are fortieth makes them
+   * walk. With nothing chosen — or with a filter hiding every chosen value — the first visible
+   * option is the only sensible start, and pointing at one the filter has hidden would name
+   * something not on screen.
+   */
+  const cursorOnOpening = (): string | null => {
+    const visible = filteredOptions();
+    if (visible.length === 0) return null;
+    const chosen = new Set(keysOf(heldValues(), indexOf(effectiveOptions())));
+    const landed = visible.find((option) => chosen.has(keyFor(option))) ?? visible[0];
+    return landed ? keyFor(landed) : null;
+  };
+
   const state: MdySignal<MdyMultiselectFieldState<TValue>> = reactivity.computed(() => {
     const selectedValues = heldValues();
     const options = effectiveOptions();
@@ -498,6 +516,15 @@ export function createMultiselectFieldController<TValue>(
     if (intent.type === "open" || intent.type === "toggleOpen" || intent.type === "close") {
       activeKey.set(null);
       typeahead.clear();
+    }
+    // A panel raised from the keyboard is about to be given a keypress, so it opens with somewhere
+    // for that press to land. Empty, the first arrow is spent picking a starting point — a gesture
+    // that shows nothing, and that a person listening cannot tell from an arrow that did not work —
+    // and the key meaning "choose this one" has no target at all. Raised by a pointer it stays
+    // empty: the next thing is a click, and a cursor would put a ring on an option nobody touched.
+    // ADR 0179.
+    if ((intent.type === "open" || intent.type === "toggleOpen") && intent.by === "keyboard") {
+      activeKey.set(cursorOnOpening());
     }
     if (intent.type === "open") return overlay({ type: "open", disabled, available: true });
     if (intent.type === "toggleOpen") return overlay({ type: "toggle", disabled, available: true });

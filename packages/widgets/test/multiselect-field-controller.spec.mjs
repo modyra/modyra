@@ -325,3 +325,53 @@ test("a live-mode kind writes through on the interaction itself", () => {
 
   assert.notDeepStrictEqual(handle.value(), before, "the interaction did not reach the field");
 });
+
+/**
+ * Where the cursor stands the moment the list is shown. ADR 0179.
+ *
+ * A panel raised from the keyboard is about to be given a keypress, so it opens with somewhere for
+ * that press to land. Empty, the first arrow is spent picking a starting point — showing nothing,
+ * and indistinguishable by ear from an arrow that did not work — and the key meaning "choose this
+ * one" has no target at all, which is what two renderers were answering from the trigger instead.
+ */
+test("a keyboard opening leaves the cursor on the first value already chosen", () => {
+  const { controller } = setup("single", ["medium"]);
+  controller.dispatch({ type: "open", by: "keyboard" });
+  assert.strictEqual(controller.state().activeKey, "medium",
+    "the cursor did not land on the value this person already has, so changing it costs them the "
+    + "walk down the list that opening on it was meant to save");
+});
+
+test("with nothing chosen it is the first option on screen", () => {
+  const { controller } = setup("single", []);
+  controller.dispatch({ type: "open", by: "keyboard" });
+  assert.strictEqual(controller.state().activeKey, "small");
+});
+
+test("a pointer opening leaves nothing singled out", () => {
+  const { controller } = setup("single", ["medium"]);
+  controller.dispatch({ type: "open", by: "pointer" });
+  assert.strictEqual(controller.state().activeKey, null,
+    "a click was about to be followed by another click, and the control drew a ring on an option "
+    + "nobody touched");
+});
+
+test("saying nothing is the pointer answer, not a third one", () => {
+  const { controller } = setup("single", ["medium"]);
+  controller.dispatch({ type: "open" });
+  assert.strictEqual(controller.state().activeKey, null);
+});
+
+test("the cursor is primed afresh each showing, never carried over", () => {
+  const { controller } = setup("single", []);
+  controller.dispatch({ type: "open", by: "keyboard" });
+  controller.dispatch({ type: "move", target: "last" });
+  const walked = controller.state().activeKey;
+  assert.notStrictEqual(walked, "small", "the move did not move, so nothing below is being tested");
+
+  controller.dispatch({ type: "close" });
+  controller.dispatch({ type: "open", by: "keyboard" });
+  assert.strictEqual(controller.state().activeKey, "small",
+    "the next showing started where the last one was left, which is a position this person never "
+    + "chose in this one");
+});

@@ -28,6 +28,16 @@ import { MDY_CSS_PROPERTIES } from "./css.js";
 
 export const MDY_OVERLAY_VIEWPORT_MARGIN = 12;
 
+/**
+ * What raised a panel, because it decides where the keyboard goes next.
+ *
+ * A keyboard open is followed by a keypress, so focus must be where that press will land. A pointer
+ * open is followed by a click, and moving focus into the panel scrolls it under the pointer and
+ * draws a ring on something nobody touched. One rule reading the modality, rather than two
+ * behaviours for one control. ADR 0179.
+ */
+export type MdyOpenModality = "keyboard" | "pointer";
+
 export interface MdyOverlayGeometry {
   readonly viewportWidth: number;
   readonly viewportHeight: number;

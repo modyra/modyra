@@ -428,7 +428,9 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
       e.preventDefault();
       this.overlay.open();
       this._open = true;
-      this.fieldController?.dispatch({ type: "open" });
+      // Raised from a key, so the cursor opens on a choice rather than nowhere. ADR 0179.
+      this.fieldController?.dispatch({ type: "open", by: "keyboard" });
+      this.followCursor();
       return;
     }
     // Moving through the options and taking one, from wherever the keyboard is — which with a
