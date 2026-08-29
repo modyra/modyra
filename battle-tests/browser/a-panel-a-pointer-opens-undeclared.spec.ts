@@ -24,19 +24,30 @@
  * Claims under attack: ADP-001, UI-011.
  */
 import { expect, test } from "@playwright/test";
-import { MDY_WIDGET_CONTRACTS, MDY_WIDGET_KINDS, MDY_WIDGET_TRANSITIONS } from "@modyra/widgets";
-import { HOSTS } from "./bench";
+import { MDY_POPUP_OPENERS, MDY_WIDGET_CONTRACTS, MDY_WIDGET_KINDS, MDY_WIDGET_TRANSITIONS, variantOf } from "@modyra/widgets";
+import { HOSTS, stops } from "./bench";
 
 type Api = Record<string, Record<string, (...args: never[]) => unknown>>;
 const CONTRACTS = MDY_WIDGET_CONTRACTS as unknown as Record<string, { parts: Record<string, { classes: string[] }> }>;
+const OPENERS = MDY_POPUP_OPENERS as unknown as Record<string, { alsoOpensFrom?: string }>;
 const TRANSITIONS = MDY_WIDGET_TRANSITIONS as unknown as
   Record<string, Array<{ trigger: { type: string; part?: string } }>>;
 
-/** The parts this kind declares a pointer opens it from. */
-const declaredOpeners = (kind: string): string[] =>
-  (TRANSITIONS[kind] ?? [])
+/**
+ * The parts this kind declares a pointer opens it from.
+ *
+ * Two declarations, because a kind may have two doors and only one of them carries the relation: the
+ * transitions name the opener that says whether the overlay is showing, and `alsoOpensFrom` names the
+ * part beside it that a pointer may open from and that announces nothing — a second element claiming
+ * `aria-expanded` for one overlay would say there are two comboboxes for one list.
+ */
+const declaredOpeners = (kind: string): string[] => {
+  const fromTransitions = (TRANSITIONS[kind] ?? [])
     .filter((transition) => transition.trigger.type === "pointer" && transition.trigger.part !== undefined)
     .map((transition) => transition.trigger.part as string);
+  const second = OPENERS[kind]?.alsoOpensFrom;
+  return second === undefined ? fromTransitions : [...fromTransitions, second];
+};
 
 for (const only of HOSTS) {
 test(`a panel a pointer opens undeclared, ${only.name}`, async ({ page }) => {
@@ -44,7 +55,10 @@ test(`a panel a pointer opens undeclared, ${only.name}`, async ({ page }) => {
   const undeclared: string[] = [];
   /** Drawn, and not reachable by a scripted click — printed rather than counted as a door that is shut. */
   const unclickable: string[] = [];
+  /** A part the kind declares a pointer opens it from, pressed, and the panel stayed shut. */
+  const silent: string[] = [];
   let clicked = 0;
+  let opened = 0;
 
   for (const host of [only]) {
     for (const kind of MDY_WIDGET_KINDS) {
@@ -70,6 +84,19 @@ test(`a panel a pointer opens undeclared, ${only.name}`, async ({ page }) => {
           { door: host.api, k: kind, id: mountId },
         );
         await page.locator(`[data-form="${mountId}"]`).waitFor({ timeout: 5_000 }).catch(() => undefined);
+        // In the document is not yet listening. A field whose framework binds on a later tick is
+        // drawn, answers a query and ignores a press, and a page carrying twenty of them takes long
+        // enough about it that a press sent on arrival lands on nothing. Settled, not merely present.
+        await stops(() => page.evaluate(({ id }) => {
+          const root = document.querySelector(`[data-form="${id}"]`);
+          return root === null ? "" : `${root.childElementCount}:${root.innerHTML.length}`;
+        }, { id: mountId }), { window: 150, timeout: 3_000 });
+
+        // A panel a previous press left open is not always the previous field's business: a renderer
+        // that draws its overlay outside the field leaves it standing over the page, and the next
+        // press is then read as the gesture that dismisses it rather than the one that opens.
+        await page.keyboard.press("Escape");
+        await page.waitForTimeout(80);
 
         const attempt = await page.evaluate(({ classes, declaredClasses, id }) => {
           const root = document.querySelector(`[data-form="${id}"]`) as HTMLElement | null;
@@ -80,9 +107,18 @@ test(`a panel a pointer opens undeclared, ${only.name}`, async ({ page }) => {
           if (box.width < 1 || box.height < 1) return null;
           if (element.tagName === "LABEL" || element.closest("label") !== null) return null;
 
-          for (let parent: HTMLElement | null = element; parent !== null && parent !== root.parentElement; parent = parent.parentElement) {
-            for (const set of declaredClasses as string[][]) {
-              if (set.length > 0 && set.every((one) => parent!.classList.contains(one))) return null;
+          // The element itself being a declared opener is not a skip but the control case: pressing
+          // it is what shows this sweep can open anything at all, and a declaration whose part does
+          // not open is a lie the sweep would otherwise pass over in silence.
+          let itself = false;
+          for (const set of declaredClasses as string[][]) {
+            if (set.length > 0 && set.every((one) => element.classList.contains(one))) itself = true;
+          }
+          if (!itself) {
+            for (let parent = element.parentElement; parent !== null && parent !== root.parentElement; parent = parent.parentElement) {
+              for (const set of declaredClasses as string[][]) {
+                if (set.length > 0 && set.every((one) => parent!.classList.contains(one))) return null;
+              }
             }
           }
 
@@ -92,26 +128,46 @@ test(`a panel a pointer opens undeclared, ${only.name}`, async ({ page }) => {
           if (typeof (element as { click?: unknown }).click !== "function") return "non-clickable";
           const before = root.querySelector("[aria-expanded]")?.getAttribute("aria-expanded") ?? "-";
           element.click();
-          return before;
+          return itself ? `declared:${before}` : before;
         }, { classes: definition.classes, declaredClasses: openerClasses, id: mountId });
 
         if (attempt === null) continue;
         if (attempt === "non-clickable") { unclickable.push(`${kind}.${part} in ${host.name}`); continue; }
-        clicked += 1;
+        const isDeclared = attempt.startsWith("declared:");
+        const before = isDeclared ? attempt.slice("declared:".length) : attempt;
+        if (isDeclared) opened += 1; else clicked += 1;
         await page.waitForTimeout(200);
         const after = await page.evaluate((id) =>
           document.querySelector(`[data-form="${id}"]`)?.querySelector("[aria-expanded]")?.getAttribute("aria-expanded") ?? "-", mountId);
 
-        if (attempt !== after) {
-          undeclared.push(`${kind} in ${host.name}: clicking ${part} takes it from ${attempt} to ${after}, ` +
+        if (isDeclared) {
+          // A shape built out of the platform's own control opens a list the browser draws, which no
+          // attribute in the page announces. Pressing it is a real gesture with nothing to read, so
+          // it is not evidence either way.
+          if (before === after && variantOf(kind as never, {} as never) !== "native") {
+            silent.push(`${kind} in ${host.name}: ${part} is declared to open it and pressing it left ${before}`);
+          }
+          continue;
+        }
+        if (before !== after) {
+          undeclared.push(`${kind} in ${host.name}: clicking ${part} takes it from ${before} to ${after}, ` +
             `and only [${openers.join(" ")}] ${openers.length === 1 ? "is" : "are"} declared`);
         }
       }
     }
   }
 
-  // The premise: nothing was clickable, so nothing opened, so nothing is undeclared.
-  expect(clicked, "no part was clickable outside a declared opener, so this pressed nothing").toBeGreaterThan(20);
+  // The premise, and it can no longer be met by the parts under attack: every clickable part outside
+  // a declared opener may legitimately be none, now that a kind can name the second door it has. So
+  // what is shown alive is the sweep's own gesture — the declared openers pressed, and opening.
+  expect(opened, "no declared opener was pressed, so this sweep never opened anything").toBeGreaterThan(8);
+
+  expect(
+    silent,
+    `${silent.length} declared opener(s) did not open what they say they open:\n${silent.join("\n")}\n\n` +
+      "A declaration a renderer does not honour is worse than one that is missing: a person told to " +
+      "press there presses there.",
+  ).toEqual([]);
   if (unclickable.length > 0) console.log(`[not clickable from script] ${unclickable.length}: ${unclickable.slice(0, 6).join(" | ")}`);
 
   expect(
