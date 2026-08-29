@@ -131,7 +131,11 @@ export function mount(kind, { validators = true, variant, rules, value } = {}) {
     // combobox, `native` the platform's chooser. Two axes, one vocabulary, and this is where a name
     // becomes the configuration its own kind reads.
     ...(variant === undefined
-      ? {}
+      ? // `MDY_WIDGET_STATE_SUPPORT` is keyed by kind, and the states it declares for `select`
+        // include `open` — which belongs to the combobox this library builds, not to the chooser
+        // the platform draws and owns the popup of. Asked for a select without naming a shape, the
+        // state matrix means the one whose states it is describing.
+        (kind === "select" ? { searchable: true } : {})
       : kind === "select"
         ? { searchable: variant === "custom" }
         : { mode: variant }),

@@ -10,6 +10,7 @@ import type { MdyUiCommand } from "../commands.js";
 import type { MdyWidgetController, MdyWidgetViewContract } from "../contract.js";
 import { defaultWidgetIdFactory } from "../ids.js";
 import { projectSelectA11y } from "./select-a11y.js";
+import { variantOf } from "../structure.js";
 import { selectNextActiveKey } from "./select-keyboard.js";
 import { optionsWithUnrecognizedValue } from "../options-reconciliation.js";
 import type { MdySelectOption } from "@modyra/core";
@@ -209,6 +210,13 @@ export function createSelectController<TValue>(
       errorsVisible: errorsVisible(),
       descriptionVisible: descriptionVisible(),
       popupRendered: popupRendered(),
+      // Only where the caller said. Read from a `searchable` nobody set, `variantOf` answers
+      // "native" — which is the contract's answer for a select that does not filter, and the wrong
+      // answer for a renderer that has not been told to draw one yet: it would take the combobox
+      // relation off a combobox still on the page.
+      ...(options.searchable === undefined
+        ? {}
+        : { variant: variantOf("select", { searchable: options.searchable }) }),
     });
 
     // A null prototype, because these keys are data: an option valued `__proto__` assigned into a

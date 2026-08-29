@@ -17,7 +17,11 @@ export const FIELDS = [
   { name: "h", kind: "toggle", label: "H" },
   { name: "i", kind: "radio", label: "I", options: [option] },
   { name: "j", kind: "segmented", label: "J", options: [option] },
+  // Both of the kind's shapes, because the contract declares both and a harness walking one of them
+  // reports the other conforming without having looked at it. `k` is the platform's chooser, which
+  // is what a select with no opinion is; `k2` is the combobox this library builds. ADR 0176.
   { name: "k", kind: "select", label: "K", options: [option] },
+  { name: "k2", kind: "select", label: "K2", searchable: true, options: [option] },
   { name: "l", kind: "multiselect", label: "L", options: [option] },
   { name: "m", kind: "datepicker", label: "M" },
   { name: "n", kind: "timepicker", label: "N" },

@@ -25,7 +25,9 @@ const OPTIONS = [{ value: "a", label: "A" }, { value: "b", label: "B" }];
 /** A kind this renderer can mount, and a value it accepts. */
 const WITH_A_VALUE = {
   multiselect: { options: OPTIONS, initialValue: ["a"] },
-  select: { options: OPTIONS, initialValue: "a" },
+  // The combobox, which is the shape that has a `value` part to follow: the chooser the platform
+  // draws shows what it holds itself, with no element of its own for the text. ADR 0176.
+  select: { options: OPTIONS, searchable: true, initialValue: "a" },
 };
 
 /**

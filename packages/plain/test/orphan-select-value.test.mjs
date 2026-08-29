@@ -36,7 +36,7 @@ const host = () => {
   return el;
 };
 
-const config = (extra = {}) => ({ name: "category", kind: "select", label: "Category", options, ...extra });
+const config = (extra = {}) => ({ name: "category", kind: "select", label: "Category", searchable: true, options, ...extra });
 
 test("the value stays in the form and appears among the options", async () => {
   const rx = vanillaReactivity();

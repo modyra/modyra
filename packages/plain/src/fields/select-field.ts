@@ -25,7 +25,8 @@ import { focusIsInsideField, capabilityOf, syncSubmitValues,
   MDY_I18N_MESSAGES_DEFAULT,
   type MdyI18nMessages,
   defaultOptionKey,
-  stepOutOfOverlay,} from "@modyra/widgets";
+  stepOutOfOverlay,
+  variantOf,} from "@modyra/widgets";
 import { applyPart, el, setErrors, setText, setIcon, setPresent } from "../dom.js";
 import { buildFieldShell, insertControl } from "../field-shell.js";
 import { runCommands } from "../command-runtime.js";
@@ -45,12 +46,18 @@ export function renderSelectField(
   messages: MdyI18nMessages = MDY_I18N_MESSAGES_DEFAULT,
 ): () => void {
   reactivity = observerFor(handle, reactivity);
-  // How this popup attaches is the contract's, not this renderer's.
-  const anchoring = overlayAnchoringFor("select");
   const options = f.options as ReadonlyArray<MdySelectOption<unknown>>;
   // The two interaction models the contract declares: a listbox that jumps as you type, or a
   // combobox that filters. Unset is a listbox, which is what a select without a stated opinion is.
   const searchable = (f as { readonly searchable?: boolean }).searchable === true;
+  // Which of the kind's two shapes this is, asked of the contract rather than decided here. ADR
+  // 0176: a select that filters is the combobox below; anything else is the platform's own chooser,
+  // which already has the typeahead, the keyboard model and the picker a phone puts up.
+  if (variantOf("select", { searchable }) === "native") {
+    return renderNativeSelectField(container, f, handle, reactivity, widgetId, messages);
+  }
+  // How this popup attaches is the contract's, not this renderer's.
+  const anchoring = overlayAnchoringFor("select");
   const typeahead = createTypeahead();
   /**
    * The key the contract derives, not `String()`.
@@ -363,6 +370,173 @@ export function renderSelectField(
     effectRef.destroy();
     controller.destroy();
     popup.remove();
+    shell.root.remove();
+  };
+}
+
+/**
+ * The select the platform draws, for a field that does not filter.
+ *
+ * A custom combobox with no filter box gives a keyboard user the arrows and nothing else — no way to
+ * type towards an option, which a list of fifty needs. Building an incremental-search buffer is one
+ * answer; using the control that already has one, along with the platform's keyboard model and the
+ * picker a phone puts up, is the other. It is what the other two renderers draw, and what the
+ * contract declares for this variant.
+ *
+ * The ARIA is the projection's in both shapes. Written here instead, this branch would be a second
+ * copy of the field's own verdict, drifting from the combobox above the moment either moved.
+ */
+function renderNativeSelectField(
+  container: HTMLElement,
+  f: MdyDynamicOptionsField,
+  handle: MdyFieldHandle<unknown>,
+  reactivity: MdyReactivity,
+  widgetId: string,
+  messages: MdyI18nMessages,
+): () => void {
+  const options = f.options as ReadonlyArray<MdySelectOption<unknown>>;
+  const keyFor = (option: MdySelectOption<unknown>) => defaultOptionKey(option.value);
+  const controller = createSelectFieldController<unknown>(
+    { widgetId, handle, options, keyFor, searchable: false },
+    reactivity,
+  );
+
+  const parts = MDY_WIDGET_CONTRACTS.select.parts;
+  const shell = buildFieldShell(f.label, "select", {}, f.ariaLabel, f.name, f.supportingText);
+  const wrapper = el("div", "mdy-select");
+  const chooser = el("select") as HTMLSelectElement;
+  // The name a native submit reads. This shape is a real form control, so the browser sends it
+  // without the hidden inputs the combobox above has to keep in step.
+  chooser.name = f.name;
+  /**
+   * The entry for "nothing chosen", which a native chooser can only show by having one.
+   *
+   * Without it index 0 is a real option: the control reads the first label while the form holds
+   * `null` — a field that looks answered and is not — and the first press of a key lands on the
+   * option already showing, so the platform's keyboard model appears to do nothing. Disabled, so it
+   * cannot be chosen back into.
+   */
+  const empty = el("option", parts.placeholder.classes.join(" ")) as HTMLOptionElement;
+  empty.value = "";
+  empty.disabled = true;
+  setText(empty, f.placeholder ?? messages.selectPlaceholder);
+
+  const arrow = el("span", parts.arrow.classes.join(" "));
+  setIcon(arrow, "CHEVRON_DOWN");
+  arrow.setAttribute("aria-hidden", "true");
+  // The foundation takes the platform's own arrow off every native chooser so a form of them reads
+  // as one form, and a kind that removes an affordance owes one back. Beside the control rather than
+  // inside it — an `<option>` is the only thing a `<select>` may contain.
+  wrapper.append(chooser, arrow);
+  // On the control, where it is visible without opening the list it is waiting for. It replaces the
+  // arrow, which has nothing to point at yet. After the arrow is in the document: `replaceWith` on a
+  // node with no parent does nothing, and the indicator would simply never appear.
+  if (f.loading) {
+    const loading = el("span", parts.loading.classes.join(" "));
+    loading.setAttribute("role", "status");
+    arrow.replaceWith(loading);
+  }
+  insertControl(shell, wrapper);
+  container.appendChild(shell.root);
+
+  const optionEls = new Map<string, HTMLOptionElement>();
+  /**
+   * Brings the entries in line with the list the controller says it paints.
+   *
+   * That list is not fixed: the declared options can be replaced, and a held value the options do
+   * not contain is painted as an entry of its own so a person can see it and replace it.
+   */
+  function syncOptions(painted: readonly MdySelectOption<unknown>[], keys: readonly string[]): void {
+    const wanted = new Set<string>();
+    for (const [index, option] of painted.entries()) {
+      const key = keys[index];
+      if (key === undefined) continue;
+      wanted.add(key);
+      let entry = optionEls.get(key);
+      if (!entry) {
+        entry = el("option") as HTMLOptionElement;
+        optionEls.set(key, entry);
+      }
+      // The contract's key, never `String()`. An `<option>`'s value is a string, so an
+      // object-valued list writes `[object Object]` on every one of them: the browser cannot tell
+      // them apart and the lookup below answers with whichever comes first — the second choice
+      // putting the first in the model, silently.
+      entry.value = key;
+      entry.disabled = option.disabled === true;
+      setText(entry, option.label);
+      chooser.append(entry);
+    }
+    for (const [key, entry] of optionEls) {
+      if (wanted.has(key)) continue;
+      entry.remove();
+      optionEls.delete(key);
+    }
+  }
+
+  chooser.append(empty);
+  syncOptions(controller.state().options, controller.state().optionKeys);
+
+  const lookup: MdyElementLookup = (part, key) => {
+    if (part === "trigger") return chooser;
+    if (part === "option" && key) return optionEls.get(key);
+    return undefined;
+  };
+  chooser.addEventListener("change", () => {
+    const commands = controller.dispatch({ type: "select", optionKey: chooser.value });
+    runCommands(commands, lookup, {
+      setOpen: () => undefined,
+      onTouched: () => handle.markAsTouched(),
+      onDirty: () => handle.markAsDirty(),
+    });
+  });
+  chooser.addEventListener("blur", () => handle.markAsTouched());
+
+  // The select projection has no label, description or error parts — the shell's own ids are given
+  // to both ends of each relation explicitly, or the trigger's `aria-describedby` points at nothing.
+  const shellIds = fieldShellPartIds(widgetId);
+  shell.label.htmlFor = controller.view().parts.trigger.id ?? "";
+  shell.label.id = shellIds.labelId;
+  shell.description.id = shellIds.descriptionId;
+  shell.errorList.id = shellIds.errorId;
+  shell.errorList.setAttribute("aria-live", "assertive");
+
+  const effectRef = reactivity.effect(() => {
+    const state = controller.state();
+    const view = controller.view();
+    controller.setDescribedBy({
+      errorsVisible: shownErrorsOf(handle).length > 0,
+      descriptionVisible: Boolean(f.supportingText),
+    });
+    applyPart(chooser, view.parts.trigger);
+    syncOptions(state.options, state.optionKeys);
+    setErrors(shell.errorList, visibleErrorsOf(handle).map((e) => e.message));
+    shell.syncState({
+      touched: handle.touched(),
+      disabled: handle.disabled(),
+      hasError: shownErrorsOf(handle).length > 0,
+      // Locked against change, which is not the same refusal as disabled and must not look like it:
+      // the field is still focusable, still submitted, and a person can select what it holds.
+      readonly: handle.readonly(),
+      filled: handle.value() !== null && handle.value() !== undefined,
+      required: handle.required(),
+      constraints: handle.constraints?.() ?? null,
+    });
+    // A `<select>` has no read-only state of its own, so the refusal is made true rather than only
+    // said: without this the control still opens and still commits while the field says it cannot.
+    chooser.disabled = handle.disabled() || handle.readonly();
+
+    const held = handle.value();
+    const nothingChosen = held === null || held === undefined || held === "";
+    // Kept while it is the state, or while a placeholder gives it words. Once something is chosen
+    // and there is nothing to say about the absence, the entry goes: a list still offering
+    // "nothing" after a choice has a row nobody can use.
+    setPresent(empty, chooser, chooser.firstChild, nothingChosen || Boolean(f.placeholder));
+    chooser.value = nothingChosen ? "" : (state.selectedKey ?? "");
+  });
+
+  return () => {
+    effectRef.destroy();
+    controller.destroy();
     shell.root.remove();
   };
 }

@@ -21,8 +21,8 @@ const OPTIONS = [
 
 /** Two of each kind that owns a popup — the case a single-instance fixture cannot express. */
 const TWO_OF_EACH = [
-  { name: "selectOne", kind: "select", label: "Select one", options: OPTIONS },
-  { name: "selectTwo", kind: "select", label: "Select two", options: OPTIONS },
+  { name: "selectOne", kind: "select", label: "Select one", searchable: true, options: OPTIONS },
+  { name: "selectTwo", kind: "select", label: "Select two", searchable: true, options: OPTIONS },
   { name: "multiOne", kind: "multiselect", label: "Multi one", options: OPTIONS },
   { name: "multiTwo", kind: "multiselect", label: "Multi two", options: OPTIONS },
   { name: "dateOne", kind: "datepicker", label: "Date one" },

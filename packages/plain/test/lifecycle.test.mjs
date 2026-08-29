@@ -24,7 +24,7 @@ const OPTIONS = [{ value: "a", label: "A" }, { value: "b", label: "B" }];
 /** Kinds that portal, plus a plain one — a teardown is only interesting where something was lifted out. */
 const FIELDS = [
   { name: "name", kind: "text", label: "Name" },
-  { name: "pick", kind: "select", label: "Pick", options: OPTIONS },
+  { name: "pick", kind: "select", label: "Pick", searchable: true, options: OPTIONS },
   { name: "many", kind: "multiselect", label: "Many", options: OPTIONS },
   { name: "when", kind: "datepicker", label: "When" },
   { name: "clock", kind: "timepicker", label: "Clock" },

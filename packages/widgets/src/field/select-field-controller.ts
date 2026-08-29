@@ -30,6 +30,8 @@ export interface MdySelectFieldControllerOptions<TValue> {
   /** Whether options are still arriving. Not a form state, so it stays a parameter. */
   readonly loading?: boolean;
   readonly readonly?: boolean;
+  /** Whether this select filters, which decides which of the kind's two shapes it is. ADR 0176. */
+  readonly searchable?: boolean;
 }
 
 export interface MdySelectFieldController<TValue>
@@ -65,6 +67,7 @@ export function createSelectFieldController<TValue>(
     invalid: visibleErrorsOf(handle, "select").length > 0,
     required: handle.required(),
     loading: options.loading ?? false,
+    ...(options.searchable === undefined ? {} : { searchable: options.searchable }),
     onChange: (value) => {
       handle.set(value);
       engageValue(handle);

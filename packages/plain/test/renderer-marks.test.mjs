@@ -28,7 +28,7 @@ const FIELDS = [
   { name: "span", kind: "daterange", label: "Span" },
   { name: "hour", kind: "timepicker", label: "Hour" },
   { name: "note", kind: "text", label: "Note" },
-  { name: "pick", kind: "select", label: "Pick", options: [{ value: "a", label: "A" }] },
+  { name: "pick", kind: "select", label: "Pick", searchable: true, options: [{ value: "a", label: "A" }] },
   { name: "many", kind: "multiselect", label: "Many", options: [{ value: "a", label: "A" }] },
   { name: "agree", kind: "checkbox", label: "Agree" },
 ];

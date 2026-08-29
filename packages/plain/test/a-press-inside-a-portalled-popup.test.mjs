@@ -27,7 +27,7 @@ test("a press inside a portalled popup does not dismiss it", async () => {
   document.body.appendChild(host);
   const mounted = mountMdyForm(
     host,
-    [{ name: "c", kind: "select", label: "C", options: [{ value: "IT", label: "Italy" }] }],
+    [{ name: "c", kind: "select", label: "C", searchable: true, options: [{ value: "IT", label: "Italy" }] }],
     { submitLabel: null },
   );
 

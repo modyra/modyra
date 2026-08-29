@@ -12,6 +12,7 @@ import { installDomGlobals } from "./support/dom-env.mjs";
 installDomGlobals();
 const { mountMdyForm } = await import("../dist/index.js");
 const { inspectWidgetDom } = await import("../../widgets/dist/testing/index.js");
+const { variantOf } = await import("../../widgets/dist/index.js");
 const { ABSENT, FIELDS, KNOWN_DIVERGENCES, partsOf } = await import("./contract-parts.mjs");
 
 
@@ -29,6 +30,11 @@ test("every rendered field conforms to its widget DOM contract", () => {
       absentParts: ABSENT[field.kind] ?? [],
       // The class vocabulary is contract data: a theme can only style what it can enumerate.
       strictClasses: true,
+      // Which shape this field is, asked of the contract rather than assumed. A varianted kind
+      // states its element per configuration — a native select's placeholder is an `<option>`, not
+      // a text — and checking it against the shared declaration reads a conforming renderer as a
+      // divergent one.
+      ...(variantOf(field.kind, field) === undefined ? {} : { variant: variantOf(field.kind, field) }),
       // Classes this renderer namespaces as its own; the contract has no opinion on them.
     });
     // Exact match, both ways: a new violation fails, and so does a stale entry left behind by a

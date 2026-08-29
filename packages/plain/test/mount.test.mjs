@@ -26,6 +26,9 @@ const fields = [
   {
     name: "country",
     kind: "select",
+    // The combobox this library builds, which is what the assertions below are about. A select with
+    // nothing said about filtering is the platform's chooser and has no popup to open. ADR 0176.
+    searchable: true,
     label: "Country",
     options: [{ value: "IT", label: "Italy" }, { value: "FR", label: "France" }],
   },
@@ -107,7 +110,7 @@ test("radio selection updates the real form value", () => {
   dispose();
 });
 
-test("select: clicking the trigger opens the listbox, clicking an option commits the value", async () => {
+test("select: clicking the trigger opens the options, clicking one commits the value", async () => {
   const container = document.createElement("div");
   const { form, reactivity, dispose } = mountMdyForm(container, fields);
 
@@ -121,9 +124,10 @@ test("select: clicking the trigger opens the listbox, clicking an option commits
   assert.ok(listbox);
   assert.equal(selectWrapper.contains(popup), false, "the popup is portalled out of the field");
   assert.equal(popup.hidden, false);
-  // Filtering happens in the popup's own field, not over the trigger's text.
-  // A listbox has no filter box. The combobox model is asserted by the searchable test below.
-  assert.equal(popup.querySelector(".mdy-select__search"), null);
+  // Filtering happens in the popup's own field, not over the trigger's text: typing over the
+  // display would hide the committed value while somebody looks for another one.
+  assert.ok(popup.querySelector(".mdy-select__search") !== null);
+  assert.equal(selectWrapper.querySelector("input.mdy-select__trigger"), null);
 
   const franceOption = [...listbox.querySelectorAll("li")].find((li) => li.textContent === "France");
   franceOption.dispatchEvent(new Event("click"));
@@ -452,7 +456,7 @@ test("mount marks the host as a themed dynamic form and dispose restores it", ()
 test("select listbox is portalled to document.body and removed on dispose", () => {
   const host = document.createElement("div");
   document.body.append(host);
-  const mounted = mountMdyForm(host, [{ name: "country", kind: "select", label: "Country", options: [{ value: "IT", label: "Italy" }] }], { submitLabel: null });
+  const mounted = mountMdyForm(host, [{ name: "country", kind: "select", label: "Country", searchable: true, options: [{ value: "IT", label: "Italy" }] }], { submitLabel: null });
   const portals = document.body.querySelectorAll(".mdy-select__dropdown.mdy-overlay");
   const listbox = portals[portals.length - 1];
   assert.ok(listbox);
@@ -642,7 +646,7 @@ test("a committed value is shown by the control that opened the overlay", async 
   document.body.append(host);
   const { form, reactivity, dispose } = mountMdyForm(host, [
     { name: "birthdate", kind: "datepicker", label: "Birthdate" },
-    { name: "country", kind: "select", label: "Country", options: [{ value: "IT", label: "Italy" }, { value: "FR", label: "France" }] },
+    { name: "country", kind: "select", label: "Country", searchable: true, options: [{ value: "IT", label: "Italy" }, { value: "FR", label: "France" }] },
   ], { submitLabel: null });
 
   // Committing restores focus to the trigger, so a focus-guarded sync used to skip these two.
@@ -732,7 +736,7 @@ test("a pointer outside an open overlay dismisses it, in every widget that owns 
   const host = document.createElement("div");
   document.body.append(host);
   const { reactivity, dispose } = mountMdyForm(host, [
-    { name: "country", kind: "select", label: "Country", options: [{ value: "it", label: "Italy" }] },
+    { name: "country", kind: "select", label: "Country", searchable: true, options: [{ value: "it", label: "Italy" }] },
     { name: "birthdate", kind: "datepicker", label: "Birthdate" },
     { name: "stay", kind: "daterange", label: "Stay" },
     { name: "meeting", kind: "timepicker", label: "Meeting" },

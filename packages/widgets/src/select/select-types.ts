@@ -23,6 +23,14 @@ export interface MdySelectControllerOptions<TValue> {
   readonly required?: boolean;
   /** Whether options are loading. */
   readonly loading?: boolean;
+  /**
+   * Whether this select filters, which is what decides which of the kind's two shapes it is.
+   *
+   * A filtering select is the combobox this library builds; anything else is the platform's own
+   * chooser, and the two do not carry the same relations — the platform owns its popup. Read through
+   * `variantOf` rather than compared here, so one answer serves every renderer. ADR 0176.
+   */
+  readonly searchable?: boolean;
   /** Called when the value changes. */
   readonly onChange?: (value: TValue | null) => void;
 }

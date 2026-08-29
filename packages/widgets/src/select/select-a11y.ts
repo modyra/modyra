@@ -49,6 +49,19 @@ export interface MdySelectA11yOptions {
    * lazily-mounted one does not exist until it opens. Defaults to true.
    */
   readonly popupRendered?: boolean;
+  /**
+   * Which of the kind's two shapes this is, as `variantOf` answers it.
+   *
+   * The custom combobox is a control this library builds, so it carries the whole opener relation —
+   * expanded, controls, the cursor it points at. The native chooser is the platform's, and the
+   * platform owns that popup: those attributes describe a list this projection does not draw, and
+   * on an element whose role does not admit them they are dropped without a word. What both shapes
+   * share is the field's own verdict — wrong, required, described by, out of play — and that is
+   * what stays unconditional. ADR 0176.
+   *
+   * Defaults to the custom shape, which is what every caller drew before the variants were declared.
+   */
+  readonly variant?: string;
 }
 
 export interface MdySelectA11yProjection {
@@ -68,13 +81,20 @@ export function projectSelectA11y(
     ? errorId
     : (options.descriptionVisible ?? true) ? descriptionId : null;
 
+  const native = options.variant === "native";
   const trigger: MdyPartContract = {
     id: idFactory.part(widgetId, "trigger"),
-    role: "combobox",
+    // A `<select>` carries the role already, from being one. Naming it again is at best a repetition
+    // and at worst a disagreement with the element underneath.
+    ...(native ? {} : { role: "combobox" as const }),
     classes: buildTriggerClasses(open, disabled, readonly, invalid, loading),
     attributes: {
-      ...projectOverlayOpenerA11y("select", { widgetId, open, controlsRendered: options.popupRendered ?? true })?.attributes,
-      "aria-activedescendant": activeKey ? idFactory.item(widgetId, "option", activeKey) : undefined,
+      ...(native
+        ? {}
+        : {
+            ...projectOverlayOpenerA11y("select", { widgetId, open, controlsRendered: options.popupRendered ?? true })?.attributes,
+            "aria-activedescendant": activeKey ? idFactory.item(widgetId, "option", activeKey) : undefined,
+          }),
       "aria-invalid": String(invalid),
       ...(options.required === undefined ? {} : { "aria-required": String(options.required) }),
       // The relation every other kind's projection already made, and this one did not: without it a

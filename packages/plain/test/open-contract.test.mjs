@@ -14,7 +14,7 @@ import { installDomGlobals } from "./support/dom-env.mjs";
 installDomGlobals();
 const { mountMdyForm } = await import("../dist/index.js");
 const { inspectWidgetDom, } = await import("../../widgets/dist/testing/index.js");
-const { MDY_POPUP_OPENERS, MDY_WIDGET_CONTRACTS, overlayOnlyParts } = await import("../../widgets/dist/index.js");
+const { MDY_POPUP_OPENERS, MDY_WIDGET_CONTRACTS, overlayOnlyParts, variantOf } = await import("../../widgets/dist/index.js");
 const { FIELDS, partsOf } = await import("./contract-parts.mjs");
 
 /** The element that opens this kind's overlay — one kind, one part, so no other kind's class matches. */
@@ -24,7 +24,11 @@ const openerOf = (root, kind) => {
   return classes.length === 0 ? null : root.querySelector(classes.map((cls) => `.${cls}`).join(""));
 };
 
-const OVERLAY_FIELDS = FIELDS.filter((f) => MDY_WIDGET_CONTRACTS[f.kind].capabilities.overlay);
+const OVERLAY_FIELDS = FIELDS.filter((f) => MDY_WIDGET_CONTRACTS[f.kind].capabilities.overlay)
+  // The capability belongs to the kind; whether *this* field draws the popup belongs to its shape. A
+  // select the platform draws has one, and it is the platform's — no element of it is in the
+  // document, so the contract's overlay parts are not there to be found.
+  .filter((f) => variantOf(f.kind, f) !== "native");
 
 /**
  * Parts that stay absent even with the overlay open, per kind.

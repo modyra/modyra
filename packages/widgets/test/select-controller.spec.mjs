@@ -218,3 +218,59 @@ test("an option value that is an object is matched by identity, never by its tex
   const normalized = reconcileSelectValue({ value: "1", parkedValue: null }, [{ value: 1, label: "One" }]);
   assert.strictEqual(normalized.value, 1);
 });
+
+/**
+ * The kind's two shapes, and what each one may say about itself. ADR 0176.
+ *
+ * A select that filters is a combobox this library builds, so it carries the whole opener relation:
+ * the role, whether it is expanded, the list it controls, the option it points at. A select that
+ * does not filter is the platform's own chooser, and the platform owns that popup — those
+ * attributes describe a list the projection does not draw, and on a `<select>`, whose role does not
+ * admit them, they are dropped without a word. A renderer reading them looks right in its source and
+ * says nothing on the page.
+ *
+ * What both shapes carry is the field's own verdict, which is a fact about the field rather than
+ * about the popup.
+ */
+test("a select that filters carries the opener relation", () => {
+  const controller = createSelectController({ widgetId: "city", options, searchable: true });
+  const trigger = controller.view().parts.trigger;
+
+  assert.strictEqual(trigger.role, "combobox");
+  assert.strictEqual(trigger.attributes["aria-expanded"], "false");
+  assert.ok(trigger.attributes["aria-controls"], "the combobox names no list, so nothing points at its options");
+});
+
+test("a select the platform draws carries none of it", () => {
+  const controller = createSelectController({ widgetId: "city", options, searchable: false });
+  const trigger = controller.view().parts.trigger;
+
+  assert.strictEqual(trigger.role, undefined,
+    "a `<select>` carries the role from being one, and naming it again either repeats the element "
+    + "or disagrees with it");
+  assert.strictEqual(trigger.attributes["aria-expanded"], undefined,
+    "the projection said whether a popup it does not draw is open");
+  assert.strictEqual(trigger.attributes["aria-controls"], undefined);
+  assert.strictEqual(trigger.attributes["aria-activedescendant"], undefined);
+});
+
+test("both shapes say what the field itself is", () => {
+  for (const searchable of [true, false]) {
+    const controller = createSelectController({
+      widgetId: "city", options, searchable, required: true, invalid: true,
+    });
+    const trigger = controller.view().parts.trigger;
+    assert.strictEqual(trigger.attributes["aria-invalid"], "true", `${searchable} lost the verdict`);
+    assert.strictEqual(trigger.attributes["aria-required"], "true", `${searchable} lost the rule`);
+    assert.ok(trigger.attributes["aria-describedby"], `${searchable} describes itself by nothing`);
+  }
+});
+
+test("a caller that says nothing keeps the shape it was already drawing", () => {
+  // Silence is not a third shape. `variantOf` answers "native" for a select that does not filter,
+  // and a renderer that has not been told to draw one is still drawing a combobox: reading the
+  // absence as an answer would take the relation off a control still on the page.
+  const trigger = createSelectController({ widgetId: "city", options }).view().parts.trigger;
+  assert.strictEqual(trigger.role, "combobox");
+  assert.strictEqual(trigger.attributes["aria-expanded"], "false");
+});
