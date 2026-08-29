@@ -674,18 +674,33 @@ export abstract class MdyFieldElement<T> extends LitElement {
     forId = this.labelForId,
     labelId = "",
   ): unknown {
-    if (!this.label) return nothing;
+    /**
+     * Drawn even when a document writes no caption, and hidden when it does not.
+     *
+     * Everything inside a field is named by pointing at this element: a panel's `aria-labelledby`
+     * resolves here, and a reference that lands on nothing announces the role and nothing else — two
+     * of the dialogs here were "dialog" and no more on a caption-less document. So the element exists
+     * always, carries what the resolver chooses, and where those words are the field's own key rather
+     * than a person's, it is taken out of sight. A name is owed to a screen reader; a heading is not.
+     */
+    const written = fieldAccessibleName({
+      ariaLabel: this._pendingName,
+      label: this.label,
+      name: this.field?.path,
+    });
+    if (!written) return nothing;
+    const unwritten = !this.label;
     const filled = this.isFilled(handle);
     const hasError = this.showErrors(handle);
     // The label always carries the id the projections name it by. A popup's inner view is labelled by
     // the field's label — `aria-labelledby="<widget>__label"` — and a label with no id left every one
     // of those references pointing at nothing the moment a person opened the view that uses it.
     return html`<label
-      class="${[SHELL.label, ...onlyOn(shellStateClasses({ filled, error: hasError }).label)].join(" ")}"
+      class="${[SHELL.label, ...onlyOn(shellStateClasses({ filled, error: hasError, unwritten }).label)].join(" ")}"
       id=${labelId || `${this.fieldId}__label`}
       for=${labelId ? nothing : forId}
     >
-      ${this.label}
+      ${written}
       ${handle.required()
         ? html`<span
           class="${SHELL.requiredMarker} ${filled ? `${SHELL.requiredMarker}--filled` : ""}"

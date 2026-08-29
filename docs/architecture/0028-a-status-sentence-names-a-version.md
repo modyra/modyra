@@ -1,6 +1,6 @@
 # ADR 0028: A status sentence names a version
 
-Status: Accepted
+Status: Accepted — amended 2026-08-29, see **Amendment: the grep is a gate now**
 
 ## Context
 
@@ -76,6 +76,12 @@ What exists instead:
 This leaves the decision guarded by process rather than by a gate. Naming that is the point of the
 section: the next reader knows the failure mode is a release that ships without touching prose, and
 that nothing will stop it.
+
+**Amendment: the grep is a gate now.** The phrasing list above runs as a check in
+`scripts/audit-docs.mjs` (`npm run test:docs`), over the hand-written markdown and the site's own
+components — the footer carried "has not reached 1.0" long after the prose was cleaned, which is
+the same failure mode one surface over. What a gate still cannot do is notice a *versioned* sentence
+gone stale; that stays with the release runbook.
 
 ## Security and privacy
 
