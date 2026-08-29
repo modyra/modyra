@@ -235,8 +235,16 @@ import { MdyDropdownBase } from "../dropdown-base";
             @if (placeholder() || value() === null || value() === undefined) {
               <!-- The entry for "nothing chosen", which is not an option the document declared. It
                    wears the placeholder part so a reader can tell the two apart by the contract
-                   rather than by guessing at an empty label. -->
-              <option class="mdy-select__placeholder" value="" disabled [selected]="value() === null || value() === undefined">
+                   rather than by guessing at an empty label.
+
+                   The attribute as well as the property: the property is what the current selection
+                   *is*, and a document reports index 0 as selected whether anybody said so, so the
+                   element declared nothing. With no option declaring itself selected the browser
+                   rests on index 0 — this entry, which is disabled — and arrowing off an option that
+                   cannot be chosen is not a move it makes, so the control answers no key at all. -->
+              <option class="mdy-select__placeholder" value="" disabled
+                      [selected]="value() === null || value() === undefined"
+                      [attr.selected]="value() === null || value() === undefined ? '' : null">
                 {{ placeholder() || ' ' }}
               </option>
             }

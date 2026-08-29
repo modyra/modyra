@@ -366,6 +366,8 @@
         "aria-describedby",
         "aria-disabled",
         "aria-invalid",
+        "aria-label",
+        "aria-labelledby",
         "aria-required"
       ],
       "selectors": []
@@ -646,6 +648,7 @@
         "aria-disabled",
         "aria-invalid",
         "aria-label",
+        "aria-labelledby",
         "aria-readonly",
         "aria-required"
       ],

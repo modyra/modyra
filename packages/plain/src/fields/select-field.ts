@@ -532,6 +532,17 @@ function renderNativeSelectField(
     // "nothing" after a choice has a row nobody can use.
     setPresent(empty, chooser, chooser.firstChild, nothingChosen || Boolean(f.placeholder));
     chooser.value = nothingChosen ? "" : (state.selectedKey ?? "");
+    // Said on the entry itself, as an attribute, and not only through the control's value.
+    //
+    // With no option marked selected the browser rests on index 0 — which is this entry, and it is
+    // disabled — and arrowing off an option that cannot be chosen is not a move the platform makes.
+    // The control then answers no key at all: a field a person without a pointer cannot fill in.
+    //
+    // The attribute rather than the property: the property is what the current selection *is*, and
+    // a document already carries it for index 0 whether anybody said so, so setting it changes
+    // nothing about what the element declares. `defaultSelected` is the declaration.
+    empty.defaultSelected = nothingChosen;
+    empty.selected = nothingChosen;
   });
 
   return () => {

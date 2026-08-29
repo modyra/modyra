@@ -44,7 +44,7 @@ declare const ngDevMode: boolean | undefined;
 import { MdyPrefixDirective } from "./prefix.directive";
 import { MdySuffixDirective } from "./suffix.directive";
 import { MdySupportingTextDirective } from "./supporting-text.directive";
-import { MDY_FIELD_STATE_CLASSES, blocksValueChange, errorsVisible, fieldAccessibleName, fieldCanBeInvalid, fieldDescribedBy, holdsUneditedValue, keepKeyboardInPlay, reportIdCollision, shownErrors, showsAsInvalid, stateClass } from "@modyra/widgets";
+import { MDY_FIELD_STATE_CLASSES, blocksValueChange, errorsVisible, fieldAccessibleName, fieldCanBeInvalid, fieldDescribedBy, fieldNameAttributes, fieldShellPartIds, holdsUneditedValue, keepKeyboardInPlay, reportIdCollision, shownErrors, showsAsInvalid, stateClass } from "@modyra/widgets";
 import type { MdyValueKind } from "@modyra/core";
 
 /** Global counter for generating unique field IDs. */
@@ -250,6 +250,23 @@ export abstract class MdyBaseControl<TValue = unknown> implements OnInit {
       label: this.label(),
       name: this.effectiveName(),
     }) || null,
+  );
+
+  /**
+   * Which attribute names this control, asked of the contract rather than answered per renderer.
+   *
+   * Two names on one element is not two names: the computation takes `aria-labelledby` and stops, so
+   * an `aria-label` beside it is text nobody hears — and a renderer writing `aria-label` where the
+   * field has a visible caption replaces the words a person is reading with words only a reader
+   * hears. ADR 0175.
+   */
+  protected readonly namedBy: Signal<Readonly<Record<string, string | null>>> = computed(
+    () => fieldNameAttributes({
+      ariaLabel: this.ariaLabel(),
+      label: this.label(),
+      name: this.effectiveName(),
+      labelId: fieldShellPartIds(this.fieldId).labelId,
+    }),
   );
 
   /** Opt-in or opt-out of floating labels on a per-control basis, overriding the form-level directive. */

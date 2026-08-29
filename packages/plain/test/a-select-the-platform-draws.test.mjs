@@ -132,3 +132,28 @@ test("an object-valued option puts that object in the model, not the first one",
   dispose();
   host.remove();
 });
+
+/**
+ * The platform moves through the list only if it knows where it is standing.
+ *
+ * With nothing marked selected the browser rests on index 0 — the entry for the absence, which is
+ * disabled — and arrowing off an option that cannot be chosen is not a move it makes. The control
+ * then answers no key at all, which is a field a person without a pointer cannot fill in: worse
+ * than the combobox it replaced, in the shape a document gets by default.
+ */
+test("the entry for the absence is where the control is standing", async () => {
+  const { host, reactivity, dispose } = mounted({ name: "city", kind: "select", options: OPTIONS });
+  await reactivity.flush();
+
+  const chooser = host.querySelector("select");
+  assert.equal(chooser.selectedIndex, 0, "the control rests on no option at all");
+  // The attribute, not the property. A document reports index 0 as selected whether or not anybody
+  // said so, so reading the property cannot tell a declared selection from the default one — a
+  // check that passed with the declaration taken out, which is how this assertion was first written.
+  assert.equal(chooser.options[0].hasAttribute("selected"), true,
+    "no option declares itself selected, so the platform has no place to move from and every arrow "
+    + "does nothing");
+
+  dispose();
+  host.remove();
+});
