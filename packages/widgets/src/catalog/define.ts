@@ -321,6 +321,20 @@ export const CALENDAR_PERIOD_CELL_STATES: readonly MdyStateName[] = Object.freez
 export interface MdyPopupOpener {
   /** The part the user operates to open the overlay, and the one that must carry the relation. */
   readonly opener: string;
+  /**
+   * A second part a pointer opens the same overlay from, where the kind has one.
+   *
+   * The calendar button beside a typeable date, the clock beside a typed time, the box a
+   * multiselect's chips sit in, the swatch beside a colour. All three renderers answer a press on
+   * these and none was asked to: the door worked everywhere, nothing declared it, and a renderer
+   * could have lost it with every suite green.
+   *
+   * It carries no relation. `aria-expanded` and `aria-controls` belong to the part that *holds the
+   * value* — one control says whether the overlay is showing, and a second element claiming it
+   * announces two comboboxes for one list. This says a pointer may open from here, which is what a
+   * check needs to press and what a renderer needs to know it owes. ADR 0177.
+   */
+  readonly alsoOpensFrom?: string;
   /** The part the relation names — the element carrying the overlay's role. */
   readonly controls: string;
   /**
@@ -391,22 +405,22 @@ export const MDY_POPUP_OPENERS: Readonly<Partial<Record<MdyWidgetKind, MdyPopupO
   // The whole control opens the popup, as the single-choice sibling's `trigger` does. A magnifier
   // beside the field made the opener a decoration rather than the control, so the role that says
   // "this is what holds the value" sat on a button holding none of it.
-  multiselect: Object.freeze({ opener: "trigger", controls: "popup", role: "combobox", promises: "dialog" }),
+  multiselect: Object.freeze({ opener: "trigger", controls: "popup", role: "combobox", promises: "dialog", alsoOpensFrom: "box" }),
   // The pickers follow the combobox pattern: the typeable control is what carries `role=combobox`,
   // `aria-expanded` and `aria-controls`, and the calendar/clock button beside it is a second
   // affordance for the same popup. The opener is therefore the control, not the button — naming the
   // button here would ask for the relation in a place the pattern does not put it.
-  datepicker: Object.freeze({ opener: "control", controls: "grid", role: "combobox", typeable: true, promises: "grid" }),
+  datepicker: Object.freeze({ opener: "control", controls: "grid", role: "combobox", typeable: true, promises: "grid", alsoOpensFrom: "toggle" }),
   // Daterange wires its own toggle rather than following the combobox pattern its sibling does.
   daterange: Object.freeze({ opener: "toggle", controls: "popup", promises: "grid" }),
-  timepicker: Object.freeze({ opener: "control", controls: "popup", role: "combobox", typeable: true, promises: "dialog" }),
+  timepicker: Object.freeze({ opener: "control", controls: "popup", role: "combobox", typeable: true, promises: "dialog", alsoOpensFrom: "toggle" }),
   // The filled square is the opener. It is the most recognisable shape on the field — every platform
   // ships one and everybody has pressed one — and what it does is therefore the field's answer to
   // "how do I choose a colour". A caret beside it that opened the same panel was a second command
   // for one act: two names, two keyboard stops, two things to describe. The caret keeps taking a
   // press, because the area is inside the field and a dead patch in a live control reads as a fault,
   // but it is a drawing rather than a control of its own.
-  colors: Object.freeze({ opener: "nativePicker", controls: "popup", promises: "listbox" }),
+  colors: Object.freeze({ opener: "nativePicker", controls: "popup", promises: "listbox", alsoOpensFrom: "toggle" }),
 });
 
 /** Anchoring per kind; widgets with no overlay have none. */

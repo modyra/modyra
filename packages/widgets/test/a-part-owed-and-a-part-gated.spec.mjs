@@ -133,3 +133,29 @@ test("a document's own words say which shape a kind is drawn in", () => {
       `${kind} answers ${name} for ${JSON.stringify(spec)} and declares no such shape`);
   }
 });
+
+/**
+ * The second door, declared so a renderer can be asked for it.
+ *
+ * A calendar button beside a typeable date, a clock beside a typed time, the box a multiselect's
+ * chips sit in. All three renderers answer a press on these and none was asked to — the door worked
+ * everywhere, nothing declared it, and a renderer could have lost it with every suite green. Three
+ * implementations agreeing where the declaration is silent is evidence about the declaration.
+ */
+test("a second door names a part the kind declares, and never carries the relation", () => {
+  let declared = 0;
+  for (const [kind, relation] of Object.entries(MDY_POPUP_OPENERS)) {
+    const second = relation?.alsoOpensFrom;
+    if (second === undefined) continue;
+    declared += 1;
+    assert.ok(second in MDY_WIDGET_CONTRACTS[kind].parts,
+      `${kind} opens from ${second} and declares no such part, so nothing can press it`);
+    assert.notEqual(second, relation.opener,
+      `${kind}'s second door is the first one, which says nothing`);
+    // The relation stays on the part that holds the value. A second element carrying
+    // `aria-expanded` announces two comboboxes for one list.
+    assert.notEqual(second, relation.controls,
+      `${kind} opens from the very thing it controls`);
+  }
+  assert.ok(declared >= 4, `only ${declared} kinds declare a second door; four answer one today`);
+});
