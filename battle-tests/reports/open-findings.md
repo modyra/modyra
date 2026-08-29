@@ -4,9 +4,8 @@
 
 ```
 S0     0      the whole of it before any S1
-S2     1
       --
-       1      open node reds, 2026-08-25 20:50:14 UTC
+       0      open node reds, 2026-08-29 14:38:00 UTC
               the browser tier keeps its own count, in known-red-browser.json
 ```
 
