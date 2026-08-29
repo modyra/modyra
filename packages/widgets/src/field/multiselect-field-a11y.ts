@@ -185,6 +185,9 @@ export function projectMultiselectFieldA11y<TValue>(
       ...(opener?.role ? { role: opener.role } : {}),
       attributes: {
         ...opener?.attributes,
+        // The caption, and only the caption: a control carrying `aria-labelledby` *and* a name of
+        // its own says the first and nothing else, because the reference wins the computation. One
+        // mechanism, so three renderers cannot each pick a different one. ADR 0175.
         "aria-labelledby": labelId,
         "aria-invalid": String(tellingThem),
         "aria-required": String(state.required),

@@ -853,6 +853,7 @@
         "aria-disabled",
         "aria-invalid",
         "aria-label",
+        "aria-labelledby",
         "aria-live",
         "aria-pressed",
         "aria-readonly",

@@ -204,7 +204,8 @@ const CHIPS = partSelector("multiselect", "chips") ?? "";
         [attr.aria-required]="isRequired()"
         [attr.aria-readonly]="isReadonly() ? 'true' : null"
         [attr.aria-describedby]="describedById(fieldId)"
-        [attr.aria-label]="controlAriaLabel()"
+        [attr.aria-labelledby]="label() ? labelId() : null"
+        [attr.aria-label]="label() ? null : controlAriaLabel()"
         [attr.aria-activedescendant]="activeDescendant()"
       >
         @if (chosen().length === 0) {
@@ -443,6 +444,16 @@ export class MdyMultiselectComponent<TValue = string>
   // Spelled by the factory rather than by hand: `__chiptip` is a name nothing else in the library
   // can derive, so a reference to it built from the contract pointed at no element.
   protected readonly chipTooltipId = defaultWidgetIdFactory.part(this.fieldId, "chipTooltip");
+  /**
+   * The caption's id, which names the trigger where a document wrote a caption.
+   *
+   * Computed rather than captured: `fieldId` is settled by the host after construction, and a field
+   * initializer spells the id the component had before it was given one.
+   *
+   * One name, never two: with a caption the trigger points at it, without one it says the words it
+   * can reach. A control carrying both says only the reference. ADR 0175.
+   */
+  protected readonly labelId = computed(() => defaultWidgetIdFactory.part(this.fieldId, "label"));
   protected readonly popupId = computed(
     () => overlayControlledId("multiselect", this.fieldId) ?? "",
   );
