@@ -11,6 +11,11 @@
  * gesture or a runtime state and belong with the checks that make those — an overlay's parts are
  * asked by the spec that opens one.
  *
+ * **Owed is asked, not derived.** A node carries more than the condition it is present under: a part
+ * may also want a capability the field was never given, and a run that read `presentWhen` alone
+ * demanded a reorder grip from a multiselect nobody may reorder. `partIsOwed` takes both halves, so
+ * what this compares is the contract's own answer rather than half of it read carefully.
+ *
  * **Both sides, always.** A part that is always drawn passes "present when the condition holds" and a
  * part that is never drawn passes "absent when it does not"; only the pair says the renderer read the
  * declaration. What is reported names which side failed, because they are different defects: drawn
@@ -24,7 +29,7 @@
  */
 
 import { expect, test } from "@playwright/test";
-import { MDY_PRESENCE_RESOLUTION, MDY_WIDGET_CONTRACTS, MDY_WIDGET_KINDS } from "@modyra/widgets";
+import { MDY_PRESENCE_RESOLUTION, MDY_WIDGET_CONTRACTS, MDY_WIDGET_KINDS, partIsOwed } from "@modyra/widgets";
 
 import { HOSTS } from "./bench";
 
@@ -113,7 +118,15 @@ for (const host of HOSTS) {
         await mount(offId, kind, no);
         compared += 1;
 
-        if (!(await drawn(onId, classes))) missingWhenOwed.push(`${kind}.${node.part} (${node.presentWhen})`);
+        // The field is mounted with no capability beyond its kind, so a part that wants one is not
+        // owed here whatever its condition says.
+        const owedWhenHolding = partIsOwed(node as never, {
+          holds: (condition: string) => condition === node.presentWhen,
+          offers: () => false,
+        } as never);
+        if (owedWhenHolding && !(await drawn(onId, classes))) {
+          missingWhenOwed.push(`${kind}.${node.part} (${node.presentWhen})`);
+        }
         if (await drawn(offId, classes)) drawnWithoutIt.push(`${kind}.${node.part} (${node.presentWhen})`);
       }
     }
