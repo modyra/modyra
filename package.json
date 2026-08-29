@@ -2,7 +2,7 @@
   "name": "modyra-workspace",
   "version": "0.1.0",
   "private": true,
-  "description": "Modyra monorepo — a typed form engine: one form contract, every framework, any backend.",
+  "description": "Modyra monorepo \u2014 a typed form engine: one form contract, every framework, any backend.",
   "scripts": {
     "setup": "pnpm install && pnpm run build:packages && pnpm run build:angular",
     "start": "npm run demo:angular",
@@ -70,7 +70,7 @@
     "battle": "npm run build:packages && npm run build:plain && npm run battle:audit && node --test \"battle-tests/**/*.test.mjs\"",
     "battle:quick": "node --test \"battle-tests/adversarial/**/*.test.mjs\"",
     "battle:audit": "node battle-tests/harness/black-box-audit.mjs",
-    "battle:ci": "npm run build:packages && npm run build:plain && npm run build:studio && npm run battle:audit && node battle-tests/harness/against-baseline.mjs",
+    "battle:ci": "npm run build:packages && npm run build:plain && npm run build:studio && npm run battle:audit && npm run test:battle-types && node battle-tests/harness/against-baseline.mjs",
     "battle:generative": "node --test \"battle-tests/generative/**/*.test.mjs\"",
     "battle:angular": "npm run build:angular && node --test \"battle-tests/angular/*.battle.mjs\"",
     "battle:browser": "npm run build:core && npm run build:styles && npm run build:plain && node scripts/tsc7.mjs packages/lit/tsconfig.json && node battle-tests/browser/build.mjs && playwright test -c battle-tests/playwright.config.ts",
@@ -105,7 +105,8 @@
     "test:angular-renderer-ownership": "node scripts/audit-angular-renderer-ownership.mjs",
     "test:public-doors": "node scripts/audit-public-doors.mjs",
     "test:commit-affordance": "node scripts/audit-commit-affordance.mjs",
-    "test:styles": "npm run build:styles && node --test packages/styles/test/*.test.mjs"
+    "test:styles": "npm run build:styles && node --test packages/styles/test/*.test.mjs",
+    "test:battle-types": "tsc --noEmit -p battle-tests/types/tsconfig.json"
   },
   "devDependencies": {
     "@angular-devkit/build-angular": "^21.2.19",

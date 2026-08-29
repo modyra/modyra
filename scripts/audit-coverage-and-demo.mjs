@@ -40,6 +40,10 @@ const TEST_ROOTS = [
   // test had ever mentioned.
   "packages/angular/src/lib", "packages/angular/zod/src", "packages/angular/testing/src",
   "docs/examples", "e2e",
+  // The adversarial suite exercises the same published names through the same doors a consumer uses,
+  // and leaving it out measured the packages' own tests while calling the answer "asserted anywhere".
+  // Its type assertions are compiled by `battle:ci`; a name written there is checked, not mentioned.
+  "battle-tests",
 ];
 /**
  * Where a name is *shown* — declared by a panel, and checked by that panel's own browser test.
@@ -131,8 +135,20 @@ const withoutProse = (source) => {
   return kept.join("\n");
 };
 
+/**
+ * The corpus, with prose left out of it twice.
+ *
+ * `withoutProse` takes the comments out of a source file; this takes out the files that are prose all
+ * the way down. A findings report names the symbols it is about — that is what makes it readable —
+ * and counting those names as exercise turned eighteen names asserted by nobody into names the audit
+ * called asserted. A document is not a test whatever directory it sits in.
+ */
+const isCode = (file) => /\.(ts|mts|tsx|js|mjs|jsx|svelte|vue)$/.test(file);
+
 const corpus = (roots) =>
-  roots.flatMap((r) => collect(join(root, r))).map((f) => withoutProse(readFileSync(f, "utf8"))).join("\n");
+  roots.flatMap((r) => collect(join(root, r)))
+    .filter((file) => isCode(file) || !file.includes("/battle-tests/"))
+    .map((f) => withoutProse(readFileSync(f, "utf8"))).join("\n");
 
 const tests = corpus(TEST_ROOTS);
 
