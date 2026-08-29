@@ -131,9 +131,11 @@ test("select: clicking the trigger opens the listbox, clicking an option commits
 
   assert.equal(form.f.country.value(), "FR");
   assert.equal(popup.hidden, true); // selecting closes the popup
-  // The value and the placeholder are two parts; the committed one is the visible one.
+  // The value and the placeholder are two parts, each on the page under its own condition: with
+  // something chosen the value is there and the placeholder is gone. Kept and hidden, the placeholder
+  // was a part drawn while its condition was false — and its words stayed in the trigger's text.
   assert.equal(selectWrapper.querySelector(".mdy-select__value").textContent, "France");
-  assert.equal(selectWrapper.querySelector(".mdy-select__placeholder").hidden, true);
+  assert.equal(selectWrapper.querySelector(".mdy-select__placeholder"), null);
   dispose();
 });
 
