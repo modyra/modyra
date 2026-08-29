@@ -18,7 +18,7 @@
  */
 
 import { expect, test } from "@playwright/test";
-import { MDY_WIDGET_TRANSITIONS, partClasses } from "@modyra/widgets";
+import { MDY_POPUP_OPENERS, MDY_WIDGET_TRANSITIONS, partClasses } from "@modyra/widgets";
 
 // **Every renderer, from the shared list.** The local list this replaced was not a scope
 // decision: the angular host published six of the twenty-two doors these specs need, so a
@@ -69,10 +69,36 @@ for (const host of HOSTS) {
         (selector) => (document.querySelector(selector)?.children.length ?? 0) > 0, `[data-form="${id}"]`));
 
       const scope = `[data-form="${id}"]`;
-      const expanded = () => page.evaluate(
-        (selector) => document.querySelector(`${selector} [aria-expanded]`)?.getAttribute("aria-expanded") ?? null,
-        scope,
-      );
+
+      /**
+       * What the field says about its phase, asked of the part that says it.
+       *
+       * The first `[aria-expanded]` in the field is whichever part the document happens to put in
+       * front, and a rearrangement moves it. The kind names its opener, so the statement is read
+       * there — and where the opener makes none, the link it declares to the thing it controls is
+       * followed: a popup that is in the document with a box is open. Which part that is differs by
+       * kind, which is why it is read from the declaration rather than named here.
+       */
+      const popup = MDY_POPUP_OPENERS as unknown as Record<string, { opener?: string; controls?: string } | undefined>;
+      const openerSelector = ((partClasses(kind, popup[kind]?.opener ?? "") as string[] | undefined) ?? [])
+        .map((one) => `.${one}`).join("");
+      const controlsSelector = ((partClasses(kind, popup[kind]?.controls ?? "") as string[] | undefined) ?? [])
+        .map((one) => `.${one}`).join("");
+
+      const expanded = () => page.evaluate(({ selector, opener, controls }) => {
+        const field = document.querySelector(selector);
+        if (field === null) return null;
+        const said = (opener === "" ? null : field.querySelector(opener))
+          ?? field.querySelector("[aria-expanded]");
+        const stated = said?.getAttribute("aria-expanded") ?? null;
+        if (stated !== null) return stated;
+        if (controls === "") return null;
+        const named = said?.getAttribute("aria-controls");
+        const panel = (named === null || named === undefined ? null : document.getElementById(named))
+          ?? document.querySelector(controls);
+        if (panel === null) return null;
+        return panel.getBoundingClientRect().height > 0 ? "true" : "false";
+      }, { selector: scope, opener: openerSelector, controls: controlsSelector });
 
       if (await expanded() === null) {
         undriveable.push(`${kind}: nothing on the page reports aria-expanded`);
