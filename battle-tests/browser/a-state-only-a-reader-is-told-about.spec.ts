@@ -27,7 +27,7 @@
 import { expect, test } from "@playwright/test";
 import { MDY_WIDGET_KINDS } from "@modyra/widgets";
 
-import { became, HOSTS } from "./bench";
+import { HOSTS, became, madeToSpeak } from "./bench";
 
 type Api = Record<string, Record<string, (...args: never[]) => unknown>>;
 type State = "plain" | "readonly" | "disabled" | "untouched" | "refused";
@@ -62,11 +62,8 @@ for (const host of HOSTS) {
       if (state === "refused") {
         // A turn, the way a person gives one: reached and then left. A form that refuses on being
         // left has been given what it waits for, and one that refuses at once has lost nothing.
-        const first = page.locator(`[data-form="${id}"] input, [data-form="${id}"] select, [data-form="${id}"] textarea, [data-form="${id}"] button`).first();
-        if (await first.count() > 0) {
-          await first.focus().catch(() => undefined);
-          await first.blur().catch(() => undefined);
-        }
+        // An act on the value, not a visit: a field only looked at has nothing to report.
+        await madeToSpeak(page, `[data-form="${id}"]`, host.api);
         // The refusal has to have arrived before the paint is read, or a renderer that says it late
         // reads as one that never says it.
         await became(() => page.evaluate(

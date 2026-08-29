@@ -1,10 +1,10 @@
 {
   "note": "Browser specs that are red because the defect they describe is open. A red listed here does not fail a build; a red that is not listed is a regression. Rewrite with `npm run battle:browser:ci -- --accept`.",
   "order": "Repair in severity order, as the node tier does. A spec's severity is the worst of the claims its header names; `unknown` is a spec that names none, which is most of them.",
-  "recordedAt": "2026-08-29T11:50:20Z",
-  "openReds": 27,
+  "recordedAt": "2026-08-29T13:36:16Z",
+  "openReds": 26,
   "bySeverity": {
-    "S1": 19,
+    "S1": 18,
     "S2": 8
   },
   "knownRed": [
@@ -14,7 +14,6 @@
     "a-field-called-wrong-before-anyone-touched-it.spec.ts › a field nobody has touched is not announced as wrong, angular",
     "a-field-called-wrong-before-anyone-touched-it.spec.ts › a field nobody has touched is not announced as wrong, plain",
     "a-field-that-speaks-because-somebody-looked.spec.ts › a required field a person only read stays silent, angular",
-    "a-field-that-speaks-because-somebody-looked.spec.ts › a required field a person only read stays silent, lit",
     "a-field-that-speaks-because-somebody-looked.spec.ts › a required field a person only read stays silent, plain",
     "a-panel-a-pointer-opens-undeclared.spec.ts › a panel a pointer opens undeclared, angular",
     "a-panel-a-pointer-opens-undeclared.spec.ts › a panel a pointer opens undeclared, lit",

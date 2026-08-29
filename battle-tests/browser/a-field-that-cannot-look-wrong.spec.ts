@@ -38,7 +38,7 @@ const SHIPPED = resolve(HERE, "..", "..", "packages", "styles", "dist");
 // doors these specs need, so a spec that wanted one it lacked left the renderer out, and the
 // next reader copied the list. Sixty-eight files came to exclude it that way. The doors are
 // open now.
-import { HOSTS } from "./bench";
+import { HOSTS, madeToSpeak } from "./bench";
 
 const KINDS = ["text", "number", "checkbox", "toggle", "segmented", "radio", "select", "multiselect", "file"];
 const OPTIONS = [{ value: "a", label: "A" }, { value: "b", label: "B" }];
@@ -92,12 +92,9 @@ for (const host of HOSTS) {
       );
       await page.waitForTimeout(140);
 
-      // Give it a turn, the way a person does, so a renderer that waits for that has had it.
-      const first = page.locator(`[data-form="${id}"] input, [data-form="${id}"] select, [data-form="${id}"] button`).first();
-      if (await first.count() > 0) {
-        await first.focus().catch(() => undefined);
-        await first.blur().catch(() => undefined);
-      }
+      // Answered and unanswered, the way a person does — a turn of focus is not an act on the
+      // value and a renderer that waits for one has not had it.
+      await madeToSpeak(page, `[data-form="${id}"]`, host.api);
       await page.waitForTimeout(200);
 
       const seen = await page.evaluate(({ sel, rules }) => {

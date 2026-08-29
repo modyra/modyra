@@ -23,7 +23,7 @@ import { fieldAccessibleName, nameIsAFallback, showsAsInvalid } from "@modyra/wi
 // **Every renderer, from the shared list.** The local list this replaced was not a scope
 // decision: the angular host published six of the twenty-two doors these specs need, so a
 // spec wanting one it lacked left the renderer out and the next reader copied the list.
-import { HOSTS } from "./bench";
+import { HOSTS, madeToSpeak } from "./bench";
 
 for (const host of HOSTS) {
   test(`a field that cannot be fixed does not report itself wrong, ${host.name}`, async ({ page }) => {
@@ -52,10 +52,10 @@ for (const host of HOSTS) {
     });
 
     // Put it in the state the rule is about: wrong, and the user can do something about it.
-    const control = page.locator('[data-form="d"] input').first();
-    await control.focus();
-    await control.blur();
-    await page.waitForTimeout(340);
+    // An act on the value, not a visit: focus arriving and leaving says nothing about the value, so
+    // a field that has only been looked at has nothing to report.
+    const spoke = await madeToSpeak(page, '[data-form="d"]', host.api);
+    expect(spoke, "nothing here could be typed into or submitted, so the field was never asked").toBe(true);
 
     const wrong = await state();
     expect(wrong.ariaInvalid, "the field did not report itself invalid, so switching it off proves nothing").toBe("true");

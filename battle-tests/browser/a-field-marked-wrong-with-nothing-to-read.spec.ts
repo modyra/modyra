@@ -29,7 +29,7 @@ import { MDY_WIDGET_KINDS } from "@modyra/widgets";
 // doors these specs need, so a spec that wanted one it lacked left the renderer out, and the
 // next reader copied the list. Sixty-eight files came to exclude it that way. The doors are
 // open now.
-import { became, HOSTS, stops } from "./bench";
+import { HOSTS, became, madeToSpeak, stops } from "./bench";
 
 const OPTIONS = [{ value: "a", label: "A" }, { value: "b", label: "B" }];
 
@@ -60,10 +60,8 @@ for (const host of HOSTS) {
       const control = page.locator(
         `[data-form="${id}"] [aria-invalid], [data-form="${id}"] input:not([type="hidden"]), [data-form="${id}"] select`,
       ).first();
-      if (await became(() => control.count().then((found) => found > 0))) {
-        await control.focus({ timeout: 500 }).catch(() => undefined);
-        await control.blur().catch(() => undefined);
-      }
+      // An act on the value, not a visit: a field only looked at has nothing to report.
+      await madeToSpeak(page, `[data-form="${id}"]`, host.api);
 
       // The refusal is the premise of the whole reading; the missing message is the finding, and a
       // finding that is an absence has nothing to poll for, so what is waited on after it is the

@@ -23,7 +23,7 @@ import { expect, test } from "@playwright/test";
 // **Every renderer, from the shared list.** The local list this replaced was not a scope
 // decision: the angular host published six of the twenty-two doors these specs need, so a
 // spec wanting one it lacked left the renderer out and the next reader copied the list.
-import { HOSTS } from "./bench";
+import { HOSTS, madeToSpeak } from "./bench";
 
 for (const host of HOSTS) {
   test(`three states on one field settle the way the rules say, ${host.name}`, async ({ page }) => {
@@ -39,9 +39,8 @@ for (const host of HOSTS) {
       }, { mountId: id, api: host.api });
       await page.waitForTimeout(200);
 
-      const control = page.locator(`[data-form="${id}"] input`).first();
-      await control.focus();
-      await control.blur();
+      // An act on the value, not a visit.
+      await madeToSpeak(page, `[data-form="${id}"]`, host.api);
       await page.waitForTimeout(280);
 
       if (states.readonly === true) {

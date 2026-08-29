@@ -45,7 +45,7 @@ import { MDY_FIELD_STATE_CLASSES, MDY_STATE_EXPRESSION, MDY_WIDGET_TRANSITIONS }
 // **Every renderer, from the shared list.** The local list this replaced was not a scope
 // decision: the angular host published six of the twenty-two doors these specs need, so a
 // spec wanting one it lacked left the renderer out and the next reader copied the list.
-import { became, HOSTS, stops } from "./bench";
+import { HOSTS, became, madeToSpeak, stops } from "./bench";
 
 /** The kinds whose state is supposed to arrive as a modifier on the shared wrapper. */
 const BY_CLASS = Object.entries(MDY_STATE_EXPRESSION)
@@ -92,11 +92,8 @@ for (const host of HOSTS) {
       // Waited for rather than counted once: the control has to have been drawn before it can be
       // left. But the wait is bounded and its failure is ordinary — several kinds render nothing a
       // person can focus, and letting the locator's own timeout discover that costs a second each.
-      const first = page.locator(FOCUSABLE.map((tag) => `[data-form="${id}"] ${tag}`).join(", ")).first();
-      if (await became(() => first.count().then((found) => found > 0))) {
-        await first.focus({ timeout: 500 }).catch(() => undefined);
-        await first.blur().catch(() => undefined);
-      }
+      // An act on the value, not a visit: a field only looked at has nothing to report.
+      await madeToSpeak(page, `[data-form="${id}"]`, host.api);
 
       // The refusal is the premise of everything below: a kind this form did not refuse is skipped,
       // so waiting for it costs nothing on a kind that is about to be skipped anyway.
@@ -167,11 +164,8 @@ for (const host of HOSTS) {
       // Waited for rather than counted once: the control has to have been drawn before it can be
       // left. But the wait is bounded and its failure is ordinary — several kinds render nothing a
       // person can focus, and letting the locator's own timeout discover that costs a second each.
-      const first = page.locator(FOCUSABLE.map((tag) => `[data-form="${id}"] ${tag}`).join(", ")).first();
-      if (await became(() => first.count().then((found) => found > 0))) {
-        await first.focus({ timeout: 500 }).catch(() => undefined);
-        await first.blur().catch(() => undefined);
-      }
+      // An act on the value, not a visit: a field only looked at has nothing to report.
+      await madeToSpeak(page, `[data-form="${id}"]`, host.api);
 
       // The refusal is the premise of everything below: a kind this form did not refuse is skipped,
       // so waiting for it costs nothing on a kind that is about to be skipped anyway.

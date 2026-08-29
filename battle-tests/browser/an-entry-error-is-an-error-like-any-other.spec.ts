@@ -23,7 +23,7 @@ import { expect, test } from "@playwright/test";
 // **Every renderer, from the shared list.** The local list this replaced was not a scope
 // decision: the angular host published six of the twenty-two doors these specs need, so a
 // spec wanting one it lacked left the renderer out and the next reader copied the list.
-import { HOSTS } from "./bench";
+import { HOSTS, madeToSpeak } from "./bench";
 
 for (const host of HOSTS) {
   test(`an entry a field cannot read is an error like any other, ${host.name}`, async ({ page }) => {
@@ -56,9 +56,7 @@ for (const host of HOSTS) {
 
     // The control: a field made wrong the ordinary way obeys the rule in this renderer, in this run.
     await mount("ordinary", { name: "x", kind: "text", label: "X", validators: { required: true } });
-    const ordinary = page.locator('[data-form="ordinary"] input').first();
-    await ordinary.focus();
-    await ordinary.blur();
+    await madeToSpeak(page, '[data-form="ordinary"]', host.api);
     await page.waitForTimeout(340);
     expect((await state("ordinary")).ariaInvalid, "a required field left empty did not report itself wrong").toBe("true");
     await disable("ordinary");

@@ -275,3 +275,47 @@ export function distinguishing(name: string, values: readonly unknown[], least =
   ).toBeGreaterThanOrEqual(least);
   return values;
 }
+
+/**
+ * Puts a required field into the state where it reports itself wrong, the way a person does.
+ *
+ * **Focus arriving and leaving is not that way.** Tab is how somebody reads a form, so a field that
+ * has only been looked at has nothing to say — which means a spec that reached "wrong" by focusing
+ * and blurring now reaches nothing, and its premise fires instead of its claim. Seven of them did,
+ * in one afternoon, each having written the old gesture in its own words.
+ *
+ * The act is on the value: something is typed and taken away again, which is a person answering the
+ * field and then unanswering it. Where no box takes text, the fallback is the other channel the rule
+ * names — a submission the form refuses — because a control with no keyboard entry still owes its
+ * verdict once the form has been sent.
+ *
+ * Returns whether the field ended up saying anything, so a caller can refuse to continue rather than
+ * measure a silence it caused itself.
+ */
+export async function madeToSpeak(page: Page, root: string, api = "battle"): Promise<boolean> {
+  const box = page.locator(`${root} input:not([type="hidden"]), ${root} textarea`).first();
+  if (await box.count() > 0) {
+    const before = await box.inputValue().catch(() => null);
+    await box.fill("x").catch(() => undefined);
+    const during = await box.inputValue().catch(() => null);
+    await box.fill("").catch(() => undefined);
+    await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur());
+    if (before !== null && during !== null && during !== before) {
+      await page.waitForTimeout(240);
+      return true;
+    }
+  }
+  // The other channel, and the only one a kind with no box has: a submission asks every field for
+  // its verdict at once. Every host answers to `submit`, so this does not have to know which
+  // renderer it is driving.
+  const id = /\[data-form="([^"]+)"\]/.exec(root)?.[1];
+  if (id === undefined) return false;
+  const sent = await page.evaluate(async ({ api, mountId }) => {
+    const door = (window as never as Record<string, { submit?(one: string): Promise<unknown> }>)[api];
+    if (typeof door?.submit !== "function") return false;
+    await door.submit(mountId);
+    return true;
+  }, { api, mountId: id }).catch(() => false);
+  if (sent) await page.waitForTimeout(240);
+  return sent;
+}
