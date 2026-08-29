@@ -187,6 +187,7 @@ absent section reads as an oversight, and "no security impact" is a finding.
 - [ADR 0170: A caption nobody wrote](0170-a-caption-nobody-wrote.md) — the caption element always exists so every reference resolves, carries the field's key where a document wrote none, and is taken out of sight rather than out of the tree
 - [ADR 0171: Absent for configuration, disabled for state](0171-absent-for-configuration-disabled-for-state.md) — a control that is part of a field is always present and announces when it cannot act; absence is for what a configuration left out
 - [ADR 0172: The trailing column carries one thing](0172-the-trailing-column-carries-one-thing.md) — the field's trailing edge holds only the affordance every kind has; commands about the value stand with the value, and a glyph-only button is named by its action
+- [ADR 0173: A position may depend on the field, never on the value](0173-a-position-may-depend-on-the-field-never-on-the-value.md) — a control that stands beside a variable-length value moves under the hand that is reaching for it; the commands return to the trailing edge with the opener outermost and a full target of space between them
 - [ADR 0092: A condition travels with the form](0092-a-condition-travels-with-the-form.md) — `when` and `asyncWhen` were closures, so a schema carrying one was not data and the document half could not say what the typed half said
 
 ## Security-relevant records

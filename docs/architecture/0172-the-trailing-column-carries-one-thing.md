@@ -1,6 +1,6 @@
 # ADR 0172: The trailing column carries one thing
 
-Status: Accepted
+Status: Superseded by ADR 0173
 
 Supersedes [ADR 0147](0147-the-cluster-at-the-end-of-a-field.md).
 

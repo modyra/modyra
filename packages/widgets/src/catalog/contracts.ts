@@ -107,12 +107,17 @@ export const MDY_WIDGET_CONTRACTS = Object.freeze({
   // these names happen to be written in. What the control shows for the current selection comes
   // before the affordance that changes it: the chips, or the placeholder standing in for them while
   // nothing is chosen, then the header with its search button.
-  // The two commands come after the chips and before the trigger, which is where their subject is:
-  // the way back first, then the clear-all it reverses. The field's trailing edge carries one thing
-  // only — the mark that says it opens — because that column is the same on every kind, and what a
-  // person reads there is "this is how you operate a field", not "this is how you sometimes operate
-  // this one". The caret is decoration and is drawn last because that is where a person looks for
-  // it, not because it takes a place in a sequence.
+  // At the trailing edge the two commands come before the caret: the way back first, then the
+  // clear-all it reverses, then the mark that says the field opens.
+  //
+  // A command's position may depend on the field and never on the value. Standing them with the
+  // chips put them after a row whose width is the length of what was chosen, so both slid every time
+  // a value arrived or left — and a thumb aimed at the way back after a removal landed on the
+  // clear-all, which discards everything. Proximity to the subject is a discoverability rule; not
+  // moving under a hand is a safety rule, and where they disagree the safety rule decides.
+  //
+  // Only the commands are in an order — the caret is decoration, and it is drawn last because that
+  // is where a person looks for it, not because it takes a place in a sequence.
   // The option chips use the shared chip vocabulary — `mdy-chip` with a check, a label and, in
   // counter mode, the two step buttons and a count. That vocabulary is the contract, which is what
   // makes an option look the same whichever renderer drew it.
@@ -121,7 +126,7 @@ export const MDY_WIDGET_CONTRACTS = Object.freeze({
   // showing value chips (`chips`/`chip`/`placeholder`) is the compact alternative, so those parts
   // stay declared and optional. Which classes a chip carries is `multiselectChipClasses`, never a
   // string in a renderer.
-  multiselect: define("multiselect", ["mdy-renderer", "mdy-renderer--multiselect"], ["root", "label", "requiredMarker", "inputWrapper", "box", "chips", "chipRow", "chip", "chipMove", "chipRemove", "overflowCount", "wayBackAction", "clearAll", "trigger", "placeholder", "arrow", "announcement", "chipTooltip", "popup", "search", "options", "optionWrapper", "option", "optionCheck", "optionStep", "optionLabel", "optionCount", "loading", "empty", "inlineError", "supportingText", "errors", "errorItem"] as const, true,
+  multiselect: define("multiselect", ["mdy-renderer", "mdy-renderer--multiselect"], ["root", "label", "requiredMarker", "inputWrapper", "box", "chips", "chipRow", "chip", "chipMove", "chipRemove", "trigger", "placeholder", "overflowCount", "wayBackAction", "clearAll", "arrow", "announcement", "chipTooltip", "popup", "search", "options", "optionWrapper", "option", "optionCheck", "optionStep", "optionLabel", "optionCount", "loading", "empty", "inlineError", "supportingText", "errors", "errorItem"] as const, true,
     { parents: { trigger: "box", arrow: "box", options: "popup", optionWrapper: "options", option: "optionWrapper", chips: "box", chipRow: "chips", chip: "chipRow", chipRemove: "chip", chipMove: "chip", chipTooltip: "box", placeholder: "trigger", overflowCount: "box", clearAll: "box", announcement: "box", wayBackAction: "box", search: "popup" },
       // This widget is a grid of chips, not a listbox, and the chip's element depends on the mode:
       // a <button> in toggle mode, a <div> carrying its own +/- step buttons in counter mode. The

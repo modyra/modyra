@@ -604,6 +604,42 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
               role=${this.partRole("chipRow")}
               aria-rowindex="1"
             >${this.renderValueChips(handle)}</span></span>`}
+
+          <button
+            type="button"
+            id=${triggerId}
+            class="${this.partClass("trigger")}"
+            ?disabled=${handle.disabled()}
+            @click=${(e: Event) => {
+              // On the control itself. The box around it deliberately ignores clicks that land on a
+              // button inside it — a chip, a stepper — and the control is a button, so a handler
+              // only on the box never heard the one press that matters.
+              if (!this._open) this.overlay.open(e);
+              this.toggleOpen(handle);
+            }}
+            aria-label=${this.label || nothing}
+            role=${MDY_POPUP_OPENERS.multiselect?.role ?? nothing}
+            aria-haspopup=${this.popupPromise}
+            aria-expanded=${this._open ? "true" : "false"}
+            aria-required=${String(handle.required())}
+            aria-readonly=${handle.readonly() ? "true" : nothing}
+            aria-controls=${overlayControlledId("multiselect", this.fieldId) ?? nothing}
+            aria-activedescendant=${this.activeDescendant() ?? nothing}
+            aria-describedby=${fieldDescribedBy({
+              errorId: this.errorsId, descriptionId: this.descriptionId,
+              errorsPresent: !this.inlineErrors && (this.showErrors(handle) || this.errorsReserved(handle)),
+              descriptionPresent: true,
+            }) ?? nothing}
+            aria-invalid=${String(this.showErrors(handle))}
+            @blur=${() => { handle.markAsTouched(); this.requestUpdate(); }}
+            aria-disabled=${String(handle.disabled())}
+          >
+            ${this.held(handle).length === 0
+              ? html`<span class="${this.partClass("placeholder")}">${this.messages.selectPlaceholder}</span>`
+              : nothing}
+            ${this.loading ? mdyIcon("LOADER", "mdy-select__loader") : nothing}
+          </button>
+
           <!-- How many chips are out of sight, and the way to all of them. ADR 0127 lets the row
                scroll only where something reaches what leaves it: the wheel is that for most people
                and nothing at all for a pointer with no horizontal axis. -->
@@ -642,41 +678,6 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
                   this.fieldController?.dispatch({ type: "clear" });
                 }}
               >${mdyIcon("CLOSE", "")}</button>`}
-          <button
-            type="button"
-            id=${triggerId}
-            class="${this.partClass("trigger")}"
-            ?disabled=${handle.disabled()}
-            @click=${(e: Event) => {
-              // On the control itself. The box around it deliberately ignores clicks that land on a
-              // button inside it — a chip, a stepper — and the control is a button, so a handler
-              // only on the box never heard the one press that matters.
-              if (!this._open) this.overlay.open(e);
-              this.toggleOpen(handle);
-            }}
-            aria-label=${this.label || nothing}
-            role=${MDY_POPUP_OPENERS.multiselect?.role ?? nothing}
-            aria-haspopup=${this.popupPromise}
-            aria-expanded=${this._open ? "true" : "false"}
-            aria-required=${String(handle.required())}
-            aria-readonly=${handle.readonly() ? "true" : nothing}
-            aria-controls=${overlayControlledId("multiselect", this.fieldId) ?? nothing}
-            aria-activedescendant=${this.activeDescendant() ?? nothing}
-            aria-describedby=${fieldDescribedBy({
-              errorId: this.errorsId, descriptionId: this.descriptionId,
-              errorsPresent: !this.inlineErrors && (this.showErrors(handle) || this.errorsReserved(handle)),
-              descriptionPresent: true,
-            }) ?? nothing}
-            aria-invalid=${String(this.showErrors(handle))}
-            @blur=${() => { handle.markAsTouched(); this.requestUpdate(); }}
-            aria-disabled=${String(handle.disabled())}
-          >
-            ${this.held(handle).length === 0
-              ? html`<span class="${this.partClass("placeholder")}">${this.messages.selectPlaceholder}</span>`
-              : nothing}
-            ${this.loading ? mdyIcon("LOADER", "mdy-select__loader") : nothing}
-          </button>
-
           <!-- The mark that says the field opens, painted by the box at its own trailing edge. It is
                decoration and not a control: the whole field is what opens the list, so a caret with
                a name of its own would be a second stop on the keyboard for a gesture that already

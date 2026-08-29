@@ -60,13 +60,18 @@ the rest stayed 38. The target is an overlay — centred, out of flow, affecting
 **Stacked steppers take WCAG 2.5.8's 24px** (`--mdy-affordance-target-stacked`). Two controls inside
 one 3.5rem field cannot both be 44px; this is an exception with a reason, not an oversight.
 
-**The column carries one affordance, and it is the same one on every kind**: the control that opens
-the field. A constant position is what lets a person operate a form without reading it, and under
-400% magnification, where a window is a few fields tall, that column is one of the two anchors saying
-they are still in the same form. A command that only sometimes applies — clear everything, put back
-what was removed — stands **with the value it acts on**, not in that column: present and disabled is
-the answer to whether a control exists, and a dimmed thing in the column dilutes the one signal the
-column carries. Sized at the stacked floor above, not at the column's width. ADR 0172.
+**A control's position may depend on the field, never on the value.** The value changes under a
+person's hands; the field does not. A command placed after a variable-length row — a strip of chosen
+values, a wrapping list — moves whenever that row does, and the control that arrives where another
+one was is pressed by a hand that is already there. Standing a command beside its subject is a
+discoverability rule; not moving under a hand is a safety rule, and where they disagree the safety
+rule decides. ADR 0173.
+
+**The opener is outermost in the trailing column, on every kind.** That is the one affordance every
+field draws there, so the eye's line down the form lands on openers whatever a kind draws inboard of
+them. Where two commands share that column, a full target of empty space separates a destructive one
+from the control that reverses it — these carry no target overlay, so the box is the target and the
+gap between hit areas is the margin.
 
 **A button whose visible content is a mark is named by its action, and the mark is hidden from the
 accessibility tree.** `×` and `↶` are drawings made of characters; a reader that sees them announces

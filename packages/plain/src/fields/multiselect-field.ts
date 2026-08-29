@@ -215,7 +215,7 @@ export function renderMultiselectField(
   // the opener is the space after them. Siblings, not one inside the other — a chip carries a button
   // that takes a value off, and a control that opens something may not contain a control that
   // destroys something (ADR 0142). It is also what makes the opener a valid button again.
-  control.append(chipStrip, overflow, wayBackAction, clearAll, trigger, arrow, announcement, chipTooltip);
+  control.append(chipStrip, trigger, overflow, wayBackAction, clearAll, arrow, announcement, chipTooltip);
 
   /**
    * The box forwards a press on its own empty space to the opener.
@@ -691,8 +691,7 @@ export function renderMultiselectField(
       // it — "column 3 of 12".
       chipStrip.setAttribute("aria-colcount", String(tally.size));
       chipStrip.setAttribute("aria-rowcount", "1");
-      // First in the box, before the commands that act on it and the control that opens the list:
-      // the reading order is the contract's, and the strip is what the field holds.
+      // First in the box: the reading order is the contract's, and the strip is what the field holds.
       if (chipStrip.parentElement === null) control.insertBefore(chipStrip, control.firstChild);
     } else {
       chipStrip.remove();

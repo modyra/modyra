@@ -1999,10 +1999,10 @@
            `height` here made the box exactly the token where its siblings are the token *plus their
            border* — two pixels short in a renderer that draws one. */
         max-height: var(--mdy-input-height);
-        /* A row: the chips first, then the two commands about them, then the trigger taking what is
-           left, and the caret alone at the trailing edge. As a block, a button had nowhere to go but
-           under the control, where it overflowed the field's box and the text below painted over it
-           — drawn, and not pressable. */
+        /* A row: the trigger takes what is left and the commands stand at the trailing edge beside
+           it, the caret outermost. As a block, a button had nowhere to go but under the control,
+           where it overflowed the field's box and the text below painted over it — drawn, and not
+           pressable. */
         display: flex;
         align-items: center;
         /* And the row is the field's, not the chips'. This box is itself a flex item of the wrapper,
@@ -2176,11 +2176,11 @@
 
     .mdy-multiselect__arrow {
         flex: 0 0 auto;
-        /* Last in the box, at the field's trailing edge, and alone there: every kind puts one
-           affordance in that column and it is always the one that opens the field, which is what
-           lets a person operate a form without reading it. The commands about the value stand with
-           the value instead. Painted by the box rather than by the control that opens: only commands
-           have an order, and this is a drawing. */
+        /* Last in the box, at the field's trailing edge, and outermost of what stands there: the
+           mark that says a field opens is the one thing every kind puts in that column, so the eye's
+           straight line down the form lands on openers whatever else a kind draws inboard of them.
+           Painted by the box rather than by the control that opens: only commands have an order, and
+           this is a drawing. */
         margin-inline-start: auto;
         /* The affordance box every trailing mark in a form stands in, so this caret's centre falls in
            the same column as the single-choice sibling's and the pickers' toggles. Not the 44px
@@ -2246,11 +2246,14 @@
         margin: -1px;
     }
 
-    /* The clear-all, with the chips rather than in the column at the field's trailing edge. It is a
-       command about what the field holds, so it stands where its subject is; the column carries one
-       affordance on every kind — the mark that opens the field — and a command that only sometimes
-       applies dilutes the single thing that column says. It is a button, so it carries a target size
-       rather than the size of the glyph inside it. */
+    /* The clear-all, in the column of trailing controls. It is a button, so it carries the target
+       size the rest of that column has rather than the size of the glyph inside it.
+
+       Here and not with the chips it acts on: a command's position may depend on the field and never
+       on the value. Beside the chips it stood after a row whose width is the length of what was
+       chosen, so it moved every time a value arrived or left — and it moved into the place the way
+       back had just been, which is a destructive control taking a remedial one's position under a
+       hand that is already there. ADR 0173. */
     /* The box and the two controls the contract declares beside it. The spinner is the positioning
        context and the buttons stack at the trailing edge; their size and colour are the shared
        affordance rules above, which is where a trailing control's geometry is named. */
@@ -2277,11 +2280,14 @@
         align-items: center;
         justify-content: center;
         flex: 0 0 auto;
-        /* Square at the floor a stacked control takes, not the width of the trailing column: it no
-           longer stands in that column, and taking its width would put a second thing on the line a
-           person reads as "here is how you operate this field". */
-        width: var(--mdy-affordance-target-stacked, 1.5rem);
-        height: var(--mdy-affordance-target-stacked, 1.5rem);
+        /* As wide as the other affordances in the column. At the target's 44 its centre sat 8px
+           further in than theirs, so the column bent around one kind — and the box is the target
+           here, which needs no width from anything else. */
+        width: var(--mdy-control-1);
+        /* The row's own height. `height: 100%` is a share of a line the content decides, so it
+           shrank with the line rather than setting it; stretching takes the height the box gives the
+           row. */
+        align-self: stretch;
         padding: 0;
         border: 0;
         background: none;
@@ -2333,19 +2339,20 @@
         align-items: center;
         justify-content: center;
         flex: 0 0 auto;
-        /* The same square as the clear-all it reverses: the pair reads as one thing at the end of
-           the selection, and neither is in the trailing column. */
-        width: var(--mdy-affordance-target-stacked, 1.5rem);
-        height: var(--mdy-affordance-target-stacked, 1.5rem);
+        /* Both commands stand in the same column as the field's other affordances. */
+        width: var(--mdy-control-1);
+        align-self: stretch;
         padding: 0;
         border: 0;
         background: none;
         color: var(--mdy-color-text-muted, inherit);
         cursor: pointer;
-        /* The distance that says which of the two reverses the other. On this control's trailing
-           side rather than the clear-all's leading one, so it holds whether or not the offer does
-           and the clear-all keeps one position. */
-        margin-inline-end: var(--mdy-space-3, 0.75rem);
+        /* A full target of nothing between the two hit areas — these controls have no overlay, so
+           the box is the target and this margin is the whole gap. A finger that pressed the way back
+           and presses again in the same place must land on the way back or on nothing, never on the
+           control that discards the field. On this control's trailing side rather than the
+           clear-all's leading one, so the clear-all keeps one position. */
+        margin-inline-end: var(--mdy-affordance-target-stacked, 1.5rem);
     }
 
     .mdy-multiselect__way-back-action:hover { color: var(--mdy-color-text, inherit); }
