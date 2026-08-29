@@ -2119,6 +2119,7 @@
         "Escape@open:cancel mod=any focus=true",
         "Home@open:move",
         "Space@closed:open on=trigger",
+        "Space@open:commit on=option",
         "Tab@open:cancel focus=false"
       ]
     },
@@ -2675,6 +2676,7 @@
         "Home@closed:move on=chip by=-1 toEnd",
         "Home@open:move",
         "Space@closed:open on=trigger",
+        "Space@open:toggle on=option",
         "Tab@open:cancel focus=false",
         "z:undo mod=primary awaits=wayBack"
       ]
@@ -3050,6 +3052,7 @@
         "Home@open:move",
         "PageDown@open:move by=1",
         "PageUp@open:move by=-1",
+        "Space@open:commit on=gridcell",
         "Tab@open:cancel focus=false"
       ]
     },
@@ -3457,6 +3460,7 @@
         "PageDown@open:move by=1",
         "PageUp@open:move by=-1",
         "Space@closed:open on=toggle",
+        "Space@open:commit on=gridcell",
         "Tab@open:cancel focus=false"
       ]
     },

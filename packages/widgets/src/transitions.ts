@@ -11,6 +11,7 @@
  * `transitions.spec.mjs` holds {@link overlayLifecycleTransition} — the one every renderer routes
  * through — and {@link widgetKeyIntent} to it.
  */
+import { MDY_VALUE_CONTRACTS } from "@modyra/core";
 import { MDY_POPUP_OPENERS, MDY_WIDGET_CONTRACTS, type MdyWidgetKind } from "./catalog.js";
 
 /** What the user did. */
@@ -260,6 +261,30 @@ function keyboardFor(kind: MdyWidgetKind): readonly MdyKeyBinding[] {
     const from = opensFrom === undefined ? {} : { on: opensFrom };
     bindings.push({ key: "Enter", when: "closed", intent: "open", ...from });
     bindings.push({ key: "Enter", when: "open", intent: "commit" });
+    // Space, whose meaning is a function of the part it lands on rather than of the kind.
+    //
+    // In a text box it is a character — a date being typed, a filter being written — so no binding
+    // claims it there, and the platform keeps it. On a thing with a highlight it is *this one*: the
+    // day the reading position is on, the option under it. That is the distinction Enter does not
+    // carry: **Enter means done, Space means this one**, and they collapse only where choosing is
+    // being done. A range picker is where they come apart, which is why they are two bindings even
+    // on the kinds where they do the same thing today.
+    //
+    // Declared on the part, so a kind whose panel holds a filter box answers Space with a space
+    // while the same key over its options answers with a choice. ADR 0174.
+    // `toggle` where the field can hold more than one — pick, move, pick, and the list stays open —
+    // and `commit` where it holds one, because there choosing *is* being done. Asked of the value
+    // contract's own shape rather than of a list of kinds.
+    const holdsSeveral = (MDY_VALUE_CONTRACTS[kind]?.shape ?? "").endsWith("[]");
+    for (const part of ["gridcell", "option"]) {
+      if (!MDY_WIDGET_CONTRACTS[kind].structure.nodes.some((node) => node.part === part)) continue;
+      bindings.push({
+        key: " ",
+        when: "open",
+        intent: part === "option" && holdsSeveral ? "toggle" : "commit",
+        on: part,
+      });
+    }
     // The combobox pattern, and only for a kind that is one: pressing an arrow on a closed control
     // opens it rather than doing nothing, which is how a keyboard user reaches the list at all.
     //
