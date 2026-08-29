@@ -520,7 +520,7 @@ export class MdySelectFieldElement extends MdyDropdownFieldElement<unknown | nul
             aria-controls=${trigger.attributes["aria-controls"]}
             aria-describedby=${trigger.attributes["aria-describedby"] ?? nothing}
             aria-activedescendant=${trigger.attributes["aria-activedescendant"] ?? nothing}
-            aria-disabled=${trigger.attributes["aria-disabled"] === "true" ? "true" : nothing}
+            aria-disabled=${trigger.attributes["aria-disabled"] ?? nothing}
             aria-readonly=${handle.readonly() ? "true" : nothing}
             aria-invalid=${this.showErrors(handle) ? "true" : "false"}
             aria-required=${handle.required() ? "true" : "false"}

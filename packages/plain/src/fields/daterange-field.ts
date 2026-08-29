@@ -287,7 +287,11 @@ export function renderDaterangeField(
       // A read-only range refuses the typed date and the calendar's choice alike; the native
       // attribute stops the typing and the ARIA says why.
       input.readOnly = handle.readonly();
-      input.setAttribute("aria-readonly", String(handle.readonly()));
+      // Present only while it is true, which is what the projection declares: `aria-readonly="false"`
+      // is a claim about a state the control is not in, and the contract emits the attribute or
+      // nothing rather than the word "false". ADR 0165's rule about verdicts, applied to a state.
+      if (handle.readonly()) input.setAttribute("aria-readonly", "true");
+      else input.removeAttribute("aria-readonly");
     }
 
     // Each end under its own key, after the parts are applied: the shared control projection writes
