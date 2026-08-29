@@ -60,7 +60,7 @@
  * property observed, and this file is now the first kind resting on the second rather than on its own
  * confidence.
  *
- * Claims under attack: A11Y-004, KBD-001.
+ * Claims under attack: A11Y-004, UI-002.
  */
 
 import { expect, test } from "@playwright/test";

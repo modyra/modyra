@@ -32,7 +32,7 @@
  * kept. Sixty-four parts across seventeen kinds survive the correct reading, which the premise below
  * holds it to.
  *
- * Claims under attack: WID-001, ADP-001.
+ * Claims under attack: UI-009, ADP-001.
  */
 
 import { expect, test } from "@playwright/test";

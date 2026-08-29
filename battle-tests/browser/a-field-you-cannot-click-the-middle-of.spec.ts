@@ -19,7 +19,7 @@
  * of a control's own text area belongs to that text area. It says nothing about where a button
  * should be, because there is more than one right answer to that and only one wrong one.
  *
- * Claims under attack: UI-011, A11Y-006.
+ * Claims under attack: UI-011.
  */
 
 import { expect, test } from "@playwright/test";

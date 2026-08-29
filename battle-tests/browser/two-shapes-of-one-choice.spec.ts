@@ -26,7 +26,7 @@
  * the check that notices plain never enters the native shape. ADR 0139 records that as an open
  * difference, and it is a contract decision rather than a defect for a battle to fail on.
  *
- * Claims under attack: A11Y-006, UI-011, ADP-001.
+ * Claims under attack: UI-011, ADP-001.
  */
 
 import { expect, test } from "@playwright/test";

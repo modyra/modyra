@@ -23,7 +23,7 @@
  * other**, so it fails while they disagree and passes on whichever convention is chosen — the
  * decision belongs to the contract, and a battle that picked one would be legislating.
  *
- * Claims under attack: ADP-001, A11Y-006, UI-011.
+ * Claims under attack: ADP-001, UI-011.
  */
 
 import { expect, test } from "@playwright/test";

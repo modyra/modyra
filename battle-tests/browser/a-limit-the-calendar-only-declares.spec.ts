@@ -18,7 +18,7 @@
  * The first can be satisfied by a renderer that greys a cell and still answers it. The second cannot
  * be satisfied by anything except refusing the choice, which is why both are here.
  *
- * Claims under attack: DYN-001, UI-011, A11Y-006.
+ * Claims under attack: DYN-001, UI-011.
  */
 
 import { expect, test } from "@playwright/test";

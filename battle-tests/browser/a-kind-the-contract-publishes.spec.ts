@@ -15,7 +15,7 @@
  * The bar is the bare form element plus anything visible inside it. A renderer that mounts, throws
  * nothing, and leaves an empty form is the exact failure this exists to name.
  *
- * Claims under attack: WID-001, ADP-001.
+ * Claims under attack: UI-009, ADP-001.
  */
 
 import { expect, test } from "@playwright/test";

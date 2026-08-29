@@ -16,7 +16,7 @@
  * Read as a **change to the calendar**, not as `defaultPrevented`: a renderer that turns the month
  * without claiming the key has the gesture just the same, and the contract owes it either way.
  *
- * Claims under attack: ADP-001, KBD-002.
+ * Claims under attack: ADP-001, UI-002.
  */
 import { expect, test } from "@playwright/test";
 import { MDY_POPUP_OPENERS, MDY_WIDGET_CONTRACTS, MDY_WIDGET_KEYBOARD, keyBindingFor } from "@modyra/widgets";

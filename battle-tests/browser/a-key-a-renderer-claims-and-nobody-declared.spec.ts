@@ -22,7 +22,7 @@
  *                   pass that opens the panel first is owed.
  *   signal          `defaultPrevented`; a renderer that acts without claiming is invisible here
  *
- * Claims under attack: ADP-001, KBD-002.
+ * Claims under attack: ADP-001, UI-002.
  */
 import { expect, test } from "@playwright/test";
 import { MDY_WIDGET_CONTRACTS, MDY_WIDGET_KINDS, keyBindingFor } from "@modyra/widgets";

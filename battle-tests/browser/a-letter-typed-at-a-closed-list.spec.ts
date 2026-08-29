@@ -31,7 +31,7 @@
  * search field answers a letter by filtering, which is the same capability by another route and is
  * measured in `two-shapes-of-one-choice`.
  *
- * Claims under attack: A11Y-006, UI-011, ADP-001.
+ * Claims under attack: UI-011, ADP-001.
  */
 
 import { expect, test } from "@playwright/test";

@@ -24,7 +24,7 @@
  *   signal     `defaultPrevented`; a renderer that acts without claiming is invisible here, as in the
  *              closed sweep, and for the same reason
  *
- * Claims under attack: ADP-001, KBD-002.
+ * Claims under attack: ADP-001, UI-002.
  */
 import { expect, test } from "@playwright/test";
 import {
