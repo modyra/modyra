@@ -1,19 +1,17 @@
 {
   "note": "Browser specs that are red because the defect they describe is open. A red listed here does not fail a build; a red that is not listed is a regression. Rewrite with `npm run battle:browser:ci -- --accept`.",
   "order": "Repair in severity order, as the node tier does. A spec's severity is the worst of the claims its header names; `unknown` is a spec that names none, which is most of them.",
-  "recordedAt": "2026-08-29T20:37:49Z",
-  "openReds": 9,
+  "recordedAt": "2026-08-29T23:07:23Z",
+  "openReds": 7,
   "bySeverity": {
     "S1": 3,
-    "S2": 6
+    "S2": 4
   },
   "knownRed": [
     "a-row-system-three-renderers-disagree-about.spec.ts › a kind is inside the row system in every renderer, or outside it in every renderer",
     "a-row-system-three-renderers-disagree-about.spec.ts › a kind is the same height in every renderer",
     "an-aria-promise-that-depends-on-the-adapter.spec.ts › an aria promise that depends on the adapter",
     "a-key-a-renderer-claims-and-nobody-declared.spec.ts › a key a renderer claims and nobody declared",
-    "a-key-in-an-open-panel-nobody-declared.spec.ts › a key in an open panel nobody declared, angular",
-    "a-key-in-an-open-panel-nobody-declared.spec.ts › a key in an open panel nobody declared, lit",
     "a-panel-where-the-library-says.spec.ts › a panel opens where the library's own policy says, lit",
     "a-panel-where-the-library-says.spec.ts › a panel opens where the library's own policy says, plain",
     "one-document-two-spellings-of-a-date.spec.ts › one document is one date on the screen, whoever drew it"
