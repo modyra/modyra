@@ -22,6 +22,12 @@
  * is how an earlier version of this file compared nothing at all in two of three renderers and said so
  * as a failure.
  *
+ * **A single mark is not a visible label.** Asked outside: nobody says "click multiplication sign",
+ * so a button drawn as one glyph carries no words for the criterion to bite on, and requiring its
+ * name to contain the mark would demand a name nobody can speak. What such a button owes instead is
+ * that its words are reachable some other way — a title carrying the same words as its name — which
+ * is a different claim and not this one.
+ *
  * Only controls that carry both are compared: a control with no visible text has nothing to be said
  * to it, and one with no name is a different defect that a different file reports.
  *
@@ -147,6 +153,8 @@ for (const host of HOSTS) {
           }
 
           if (visible === "" || name === "") return;
+          // One mark is a glyph, not a caption: `×`, `+`, `‹`. A word, or several, is a label.
+          if (/^[^\p{L}\p{N}]$/u.test(visible)) return;
           seen += 1;
           if (!name.includes(visible)) out.push(`a control reads "${visible}" and answers to "${name}"`);
         });

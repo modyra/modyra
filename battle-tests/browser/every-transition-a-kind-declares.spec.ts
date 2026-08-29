@@ -18,7 +18,7 @@
  */
 
 import { expect, test } from "@playwright/test";
-import { MDY_WIDGET_TRANSITIONS } from "@modyra/widgets";
+import { MDY_WIDGET_TRANSITIONS, partClasses } from "@modyra/widgets";
 
 // **Every renderer, from the shared list.** The local list this replaced was not a scope
 // decision: the angular host published six of the twenty-two doors these specs need, so a
@@ -85,7 +85,16 @@ for (const host of HOSTS) {
         const trigger = move.trigger as unknown as { type: string; part?: string; key?: string };
 
         // Put it in `from`. "closed" is where a fresh mount is; "open" takes one click.
-        const toggle = page.locator(`${scope} button`).first();
+        // **The part the table names, not the first button in the field.** A field holds more
+        // buttons than the one that opens it, and which comes first in the document is a layout
+        // decision that moves: taking the first one drove a hidden counter, the click was refused,
+        // and the transition was reported as one the page does not make.
+        const named = trigger.type === "pointer" && typeof trigger.part === "string"
+          ? (partClasses(kind, trigger.part) as string[] | undefined) ?? []
+          : [];
+        const toggle = page.locator(
+          named.length > 0 ? `${scope} ${named.map((one) => `.${one}`).join("")}` : `${scope} button`,
+        ).first();
         if (await toggle.count() === 0) {
           undriveable.push(`${kind}: no button to drive it with`);
           break;
