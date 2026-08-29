@@ -95,8 +95,25 @@ for (const host of HOSTS) {
 
         const measured = await page.evaluate(({ selector, popupClass, anchorClass }) => {
           const anchor = document.querySelector(`${selector} .${anchorClass}`) as HTMLElement | null;
-          const panel = (Array.from(document.querySelectorAll(`.${popupClass}`)) as HTMLElement[])
-            .find((one) => one.getBoundingClientRect().width >= 1);
+          // This field's panel, followed from the link this field declares to it. A renderer may draw
+          // the panel outside the field, so it cannot be found by containment — but a page-wide search
+          // by class finds whichever panel any earlier field left standing, and measures that one
+          // against this one's anchor. The relation is what says which panel is whose.
+          const named = document.querySelector(`${selector} [aria-controls]`)?.getAttribute("aria-controls");
+          // The relation names the thing inside the panel a reader is sent to — a grid, a list — and
+          // not the panel itself, so the panel is the one holding it. Measuring the grid would answer
+          // a question about the panel with a box that is nearly but not the same.
+          const controlled = named === null || named === undefined ? null : document.getElementById(named);
+          const linked = controlled === null
+            ? null
+            : (controlled.classList.contains(popupClass) ? controlled : controlled.closest(`.${popupClass}`) as HTMLElement | null);
+          const showing = (Array.from(document.querySelectorAll(`.${popupClass}`)) as HTMLElement[])
+            .filter((one) => one.getBoundingClientRect().width >= 1);
+          // Without a link, only an unambiguous page answers: two panels showing and no way to say
+          // which is this field's is a measurement that cannot be made, not one to guess at.
+          const panel = linked !== null && linked.getBoundingClientRect().width >= 1
+            ? linked
+            : (showing.length === 1 ? showing[0] : undefined);
           if (anchor === null || panel === undefined) return null;
           const a = anchor.getBoundingClientRect();
           const p = panel.getBoundingClientRect();
