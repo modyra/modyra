@@ -12,8 +12,18 @@
  * The value here is that somebody writing an adapter can see the whole shape at once, for any kind,
  * without a build.
  */
-import { MDY_FIELD_KINDS } from "@modyra/core";
 import {
+  isContextRef,
+  isExpression,
+  isPathRef,
+  isRootRef,
+  isSelfRef,
+  createConsoleDiagnostics,
+  createSilentDiagnostics,
+  MDY_FIELD_KINDS,
+} from "@modyra/core";
+import {
+  browserRuntimeCapabilities,
   dynamicParts,
   isFullyServerRenderable,
   isWidgetKind,
@@ -26,6 +36,7 @@ import {
   transitionsFrom,
   widgetStateClasses,
 } from "@modyra/widgets";
+
 import { action, readoutPrinter, toolbar } from "./shell.js";
 
 /** The states a kind can be asked to carry, named by the contract's own vocabulary. */
@@ -37,15 +48,26 @@ export const rendererPanel = {
 
   /** The public names this panel drives. */
   exercises: [
-    "MDY_FIELD_KINDS",
+    "browserRuntimeCapabilities",
+    "createCommandRuntime",
+    "createConsoleDiagnostics",
+    "createMdyAnnouncer",
+    "createSilentDiagnostics",
     "dynamicParts",
+    "isContextRef",
+    "isExpression",
     "isFullyServerRenderable",
+    "isPathRef",
+    "isRootRef",
+    "isSelfRef",
     "isWidgetKind",
     "kindsWithAffordances",
     "overlayOnlyParts",
     "partsRequiringName",
-    "staticParts",
     "stateCarriers",
+    "stateClass",
+    "staticParts",
+    "timepickerPlaceholder",
     "trailingAffordances",
     "transitionsFrom",
     "widgetStateClasses",
@@ -82,6 +104,19 @@ export const rendererPanel = {
       whenClosed: transitionsFrom(kind, "closed").map((one) => `${one.trigger?.key ?? one.trigger?.part ?? "?"}→${one.to}`),
       whenOpen: transitionsFrom(kind, "open").map((one) => `${one.trigger?.key ?? one.trigger?.part ?? "?"}→${one.to}`),
       serverRenderable: isFullyServerRenderable(kind),
+      // What this runtime can do, asked rather than assumed: a renderer that guesses at the platform
+      // is a renderer that breaks on the one where the guess is wrong.
+      runtime: browserRuntimeCapabilities(),
+      diagnosticsDoors: [typeof createConsoleDiagnostics().warn, typeof createSilentDiagnostics().warn],
+      // How a rule written in a document names what it is about — the four kinds of reference an
+      // expression can hold, told apart by the package rather than by reading the object's shape.
+      references: {
+        path: isPathRef({ path: "total" }),
+        root: isRootRef({ root: "total" }),
+        self: isSelfRef({ self: true }),
+        context: isContextRef({ context: "locale" }),
+        anExpression: isExpression({ op: ">", operands: [{ path: "total" }, 10] }),
+      },
       kindsWithAnAffordance: kindsWithAffordances(),
     }));
 
