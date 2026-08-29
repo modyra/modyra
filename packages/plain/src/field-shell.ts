@@ -150,7 +150,14 @@ export function buildFieldShell(
       // failing field is `--error` on its wrapper and `--has-error` on its label, two spellings a
       // reader had to know were one state. `readonly` is a different refusal from `disabled` and has
       // to look like one, or a form held for review reads as one waiting to be filled in.
-      const shell = shellStateClasses({ touched, open, disabled, readonly, error: hasError, filled });
+      // `unwritten` among them, and it is not cosmetic: the caption a document did not write carries
+      // the field's own key, and the class is what keeps that key out of sight while leaving it where
+      // a reader can follow a reference to it. Left out of this call, the toggle below turned off the
+      // class the shell had just switched on — so a page showed `rows.0.code` in the position and
+      // styling of a caption somebody meant, which is worse than showing nothing at all.
+      const shell = shellStateClasses({
+        touched, open, disabled, readonly, error: hasError, filled, unwritten: !labelText,
+      });
       for (const [element, wanted] of [[root, shell.field], [wrapper, shell.control], [label, shell.label]] as const) {
         for (const [className, isOn] of Object.entries(wanted)) element.classList.toggle(className, isOn);
       }
