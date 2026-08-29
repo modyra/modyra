@@ -60,8 +60,8 @@ export class MdyRadioGroupFieldElement extends MdyOptionsFieldElement<unknown | 
       <div
         class="${this.partClass("group")} ${this.layout === "horizontal" ? "mdy-radio-group--horizontal" : ""}"
         role="radiogroup"
-        aria-labelledby=${this.label ? this.labelId : nothing}
-        aria-label=${this.label ? nothing : this.fallbackName()}
+        aria-labelledby=${this.namedBy().labelledby}
+        aria-label=${this.namedBy().label}
         aria-describedby=${groupAttrs?.["aria-describedby"] ?? nothing}
         aria-disabled=${groupAttrs?.["aria-disabled"] ?? nothing}
         aria-readonly=${groupAttrs?.["aria-readonly"] ?? nothing}

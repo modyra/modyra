@@ -833,7 +833,7 @@ export abstract class MdyFieldElement<T> extends LitElement {
   }
 
   /** The name given through the host's `aria-label`, kept once the attribute is taken off it. */
-  private _pendingName: string | null = null;
+  protected _pendingName: string | null = null;
 
   /** Id the controllers point `aria-describedby` at when the field has no errors. */
   protected get descriptionId(): string {

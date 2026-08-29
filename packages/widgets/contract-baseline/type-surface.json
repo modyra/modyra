@@ -1904,7 +1904,7 @@
     "protected overlayKind: \"multiselect\"",
     "protected overlayOwner-> returns: MdyOverlayOwner | undefined",
     "protected paintedOptions: _angular_core.Signal<readonly _modyra_core.MdySelectOption<TValue>[]>",
-    "protected parts: Readonly<Record<\"search\" | \"errors\" | \"option\" | \"root\" | \"loading\" | \"label\" | \"errorItem\" | \"inputWrapper\" | \"requiredMarker\" | \"supportingText\" | \"popup\" | \"inlineError\" | \"arrow\" | \"empty\" | \"options\" | \"placeholder\" | \"trigger\" | \"optionLabel\" | \"announcement\" | \"box\" | \"chip\" | \"chipMove\" | \"chipRemove\" | \"chipRow\" | \"chipTooltip\" | \"chips\" | \"clearAll\" | \"optionCheck\" | \"optionCount\" | \"optionStep\" | \"optionWrapper\" | \"overflowCount\" | \"wayBackAction\", MdyPartContract>>",
+    "protected parts: Readonly<Record<\"errors\" | \"option\" | \"root\" | \"loading\" | \"label\" | \"search\" | \"errorItem\" | \"inputWrapper\" | \"requiredMarker\" | \"supportingText\" | \"popup\" | \"inlineError\" | \"arrow\" | \"empty\" | \"options\" | \"placeholder\" | \"trigger\" | \"optionLabel\" | \"announcement\" | \"box\" | \"chip\" | \"chipMove\" | \"chipRemove\" | \"chipRow\" | \"chipTooltip\" | \"chips\" | \"clearAll\" | \"optionCheck\" | \"optionCount\" | \"optionStep\" | \"optionWrapper\" | \"overflowCount\" | \"wayBackAction\", MdyPartContract>>",
     "protected popupClass: string",
     "protected popupId: _angular_core.Signal<string>",
     "protected removeChip(0) optionKey: string,(1) value: TValue,(2) direction?: \"forward\" | \"backward\",-> returns: void",
@@ -1916,7 +1916,7 @@
     "protected valueChipClasses-> returns: string",
     "protected wayBack: _angular_core.Signal<_modyra_widgets.MdyMultiselectWayBack | null>",
     "protected wayBackName: _angular_core.Signal<string>",
-    "protected widgetContract: _modyra_widgets.MdyWidgetDefinition<\"search\" | \"errors\" | \"option\" | \"root\" | \"loading\" | \"label\" | \"errorItem\" | \"inputWrapper\" | \"requiredMarker\" | \"supportingText\" | \"popup\" | \"inlineError\" | \"arrow\" | \"empty\" | \"options\" | \"placeholder\" | \"trigger\" | \"optionLabel\" | \"announcement\" | \"box\" | \"chip\" | \"chipMove\" | \"chipRemove\" | \"chipRow\" | \"chipTooltip\" | \"chips\" | \"clearAll\" | \"optionCheck\" | \"optionCount\" | \"optionStep\" | \"optionWrapper\" | \"overflowCount\" | \"wayBackAction\">",
+    "protected widgetContract: _modyra_widgets.MdyWidgetDefinition<\"errors\" | \"option\" | \"root\" | \"loading\" | \"label\" | \"search\" | \"errorItem\" | \"inputWrapper\" | \"requiredMarker\" | \"supportingText\" | \"popup\" | \"inlineError\" | \"arrow\" | \"empty\" | \"options\" | \"placeholder\" | \"trigger\" | \"optionLabel\" | \"announcement\" | \"box\" | \"chip\" | \"chipMove\" | \"chipRemove\" | \"chipRow\" | \"chipTooltip\" | \"chips\" | \"clearAll\" | \"optionCheck\" | \"optionCount\" | \"optionStep\" | \"optionWrapper\" | \"overflowCount\" | \"wayBackAction\">",
     "protected widgetHasRootClass: boolean",
     "protected widgetKind: \"multiselect\"",
     "reorderable: _angular_core.InputSignalWithTransform<boolean, unknown>",
@@ -2321,6 +2321,7 @@
     "layout: _angular_core.InputSignal<\"horizontal\" | \"vertical\">",
     "options: _angular_core.InputSignal<readonly MdySelectOption<TValue>[]>",
     "protected labelId: string",
+    "protected namedBy: _angular_core.Signal<Readonly<Record<string, string | null>>>",
     "protected onBlur-> returns: void",
     "protected onSelectionChange(0) value: TValue,-> returns: void",
     "protected widgetContract: _modyra_widgets.MdyWidgetDefinition<\"errors\" | \"option\" | \"root\" | \"group\" | \"label\" | \"errorItem\" | \"requiredMarker\" | \"supportingText\" | \"optionControl\" | \"optionLabel\">",
@@ -2485,6 +2486,7 @@
     "fullWidth: InputSignalWithTransform<boolean, unknown>",
     "options: _angular_core.InputSignal<readonly MdySelectOption<TValue>[]>",
     "protected labelId: string",
+    "protected namedBy: _angular_core.Signal<Readonly<Record<string, string | null>>>",
     "protected onKeydown(0) event: KeyboardEvent,-> returns: void",
     "protected onSelect(0) value: TValue,-> returns: void",
     "protected onTrackPointerDown(0) event: PointerEvent,-> returns: void",
@@ -2553,7 +2555,7 @@
     "protected selectedOption: _angular_core.Signal<MdySelectOption<TValue> | null>",
     "protected showCreateOption: _angular_core.Signal<boolean>",
     "protected triggerId-> returns: string",
-    "protected widgetContract: _modyra_widgets.MdyWidgetDefinition<\"search\" | \"value\" | \"errors\" | \"option\" | \"root\" | \"loading\" | \"label\" | \"errorItem\" | \"inputWrapper\" | \"requiredMarker\" | \"supportingText\" | \"popup\" | \"inlineError\" | \"arrow\" | \"empty\" | \"options\" | \"placeholder\" | \"trigger\">",
+    "protected widgetContract: _modyra_widgets.MdyWidgetDefinition<\"value\" | \"errors\" | \"option\" | \"root\" | \"loading\" | \"label\" | \"search\" | \"errorItem\" | \"inputWrapper\" | \"requiredMarker\" | \"supportingText\" | \"popup\" | \"inlineError\" | \"arrow\" | \"empty\" | \"options\" | \"placeholder\" | \"trigger\">",
     "protected widgetHasRootClass: boolean",
     "protected widgetKind: \"select\"",
     "resetSelection-> returns: void",
@@ -3984,6 +3986,10 @@
   "fieldIsRequired": [
     "(0) field: { readonly required: boolean; readonly interactivity: MdyInteractivity; }",
     "-> returns: boolean"
+  ],
+  "fieldNameAttributes": [
+    "(0) sources: { readonly ariaLabel?: string | null; readonly label?: string | null; readonly name?: string | null; /** The caption's id, where the caption has words. */ readonly labelId: string; }",
+    "-> returns: Readonly<Record<string, string | null>>"
   ],
   "fieldShellPartIds": [
     "(0) widgetId: string",

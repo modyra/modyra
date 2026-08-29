@@ -17,7 +17,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import {
-  booleanFieldRootClasses, datepickerFieldRootClasses, fieldShellRootClasses,
+  booleanFieldRootClasses, datepickerFieldRootClasses, fieldNameAttributes, fieldShellRootClasses,
   MDY_FIELD_STATE_CLASSES, multiselectFieldRootClasses, optionFieldRootClasses,
   shellStateClasses, textFieldRootClasses, timepickerFieldRootClasses,
 } from "../dist/index.js";
@@ -102,4 +102,34 @@ test("every kind's root-class door answers the same as the others", () => {
       `${kind}'s root classes differ from the shell rule every other kind reads. One kind's fields `
       + "carry a state class the rest do not, and nothing between them says which is right");
   }
+});
+
+/**
+ * Which attribute carries a control's name, and why it is one door rather than a rule per renderer.
+ *
+ * Two names on one element is not two names: the computation takes `aria-labelledby` and stops, so
+ * an `aria-label` beside it is text nobody will ever hear — and where the two disagree, the one a
+ * developer reads in the source is the one that does not speak. Written out at each site, the pair
+ * is what gets emitted by accident.
+ */
+test("a captioned field is named by its caption and by nothing else", () => {
+  const named = fieldNameAttributes({ label: "Country", name: "country", labelId: "f__label" });
+  assert.equal(named["aria-labelledby"], "f__label");
+  assert.equal(named["aria-label"], null,
+    "the control carries both, so the words beside the reference are never announced and can drift "
+    + "from the caption a person is reading");
+});
+
+test("a field with no caption carries the words it has", () => {
+  const named = fieldNameAttributes({ ariaLabel: "Where you live", name: "country", labelId: "f__label" });
+  assert.equal(named["aria-label"], "Where you live");
+  assert.equal(named["aria-labelledby"], null,
+    "it points at a caption that has no words, which is a name resolving to nothing");
+});
+
+test("a caption of blank space is not a caption", () => {
+  const named = fieldNameAttributes({ label: "   ", name: "country", labelId: "f__label" });
+  assert.equal(named["aria-labelledby"], null);
+  assert.equal(named["aria-label"], "country",
+    "the field fell back to nothing at all, so the control is announced by its role alone");
 });

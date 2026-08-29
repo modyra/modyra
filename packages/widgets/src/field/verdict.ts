@@ -211,6 +211,33 @@ export function fieldAccessibleName(sources: {
   return "";
 }
 
+/**
+ * Which attribute carries a control's name, and it is never both.
+ *
+ * Two names on one element is not two names: the computation takes `aria-labelledby` and stops, so
+ * an `aria-label` beside it is text nobody will ever hear — and where the two disagree, the one a
+ * developer is reading in the source is the one that does not speak.
+ *
+ * The caption wins where there is one, because it is on the page: a person hearing it and a person
+ * reading it get the same words, and a caption that changes changes both. Where there is none, the
+ * words are whatever the field can offer, and a reference to an empty element would be a name that
+ * resolves to nothing.
+ *
+ * Returned as the attributes to apply rather than as a choice to act on, so a renderer cannot write
+ * the pair by accident. ADR 0175.
+ */
+export function fieldNameAttributes(sources: {
+  readonly ariaLabel?: string | null;
+  readonly label?: string | null;
+  readonly name?: string | null;
+  /** The caption's id, where the caption has words. */
+  readonly labelId: string;
+}): Readonly<Record<string, string | null>> {
+  const captioned = typeof sources.label === "string" && sources.label.trim().length > 0;
+  if (captioned) return { "aria-labelledby": sources.labelId, "aria-label": null };
+  return { "aria-labelledby": null, "aria-label": fieldAccessibleName(sources) || null };
+}
+
 /** Whether the name a control carries came from the field's own name rather than from words for a person. */
 export function nameIsAFallback(sources: {
   readonly ariaLabel?: string | null;

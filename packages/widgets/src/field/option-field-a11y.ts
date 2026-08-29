@@ -8,7 +8,7 @@ import { assertUsableWidgetId } from "../ids.js";
 import type { MdyPartContract } from "../contract.js";
 import { MDY_CSS_PROPERTIES } from "../css.js";
 import { MDY_FIELD_STATE_CLASSES, MDY_FIELD_SHELL_CLASSES } from "../structure.js";
-import { errorsVisible, fieldAccessibleName, holdsUneditedValue, shownErrors } from "./verdict.js";
+import { errorsVisible, fieldNameAttributes, holdsUneditedValue, shownErrors } from "./verdict.js";
 import type {
   MdyOptionFieldState,
   MdyOptionFieldVariant,
@@ -102,7 +102,6 @@ export function projectOptionFieldA11y<TValue>(
   // A rule they have not answered waits for them to reach the field; a refusal about the value
   // already there does not, because they can neither cause it by inaction nor see the reason unless
   // it is said.
-  const hasLabel = typeof options.label === "string" && options.label.trim() !== "";
   const tellingThem = errorsVisible({ disabled: state.disabled, touched: state.touched, holdsUnedited: holdsUneditedValue(state) }, errors);
 
   // What the group describes itself by depends on what was *rendered*, not on what is wrong.
@@ -133,15 +132,14 @@ export function projectOptionFieldA11y<TValue>(
       classes: options.variant === "segmented" ? ["mdy-segmented"] : ["mdy-radio-group"],
       attributes: {
         role: "radiogroup",
-        // Named by the label where the label has words, and by what is left otherwise: pointing at
-        // an empty element is a name that resolves to nothing.
-        ...(hasLabel
-          ? { "aria-labelledby": labelId }
-          : { "aria-label": fieldAccessibleName({
-              ariaLabel: options.ariaLabel,
-              label: options.label,
-              name: options.fieldName,
-            }) || null }),
+        // Which attribute carries the name is one rule, asked once. Written out per kind, it is the
+        // rule three renderers each answered separately.
+        ...fieldNameAttributes({
+          ariaLabel: options.ariaLabel,
+          label: options.label,
+          name: options.fieldName,
+          labelId,
+        }),
         "aria-invalid": String(tellingThem),
         "aria-required": String(state.required),
         // `aria-disabled` reflects `disabled` alone. A read-only control is not disabled: it takes

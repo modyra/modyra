@@ -1,6 +1,6 @@
 import { NgTemplateOutlet } from "@angular/common";
-import { ChangeDetectionStrategy, Component, input } from "@angular/core";
-import { createOptionFieldController, defaultWidgetIdFactory, MDY_WIDGET_CONTRACTS } from "@modyra/widgets";
+import { ChangeDetectionStrategy, Component, computed, input } from "@angular/core";
+import { createOptionFieldController, defaultWidgetIdFactory, fieldNameAttributes, MDY_WIDGET_CONTRACTS } from "@modyra/widgets";
 import { MdyPartDirective } from "../../control/mdy-part.directive";
 import { MdyBaseControl } from "../../control/control.directive";
 import { MdyErrorListComponent } from "../../control/error-list.component";
@@ -36,8 +36,8 @@ import { MdySelectOption } from "../../core/types";
       [class.mdy-radio-group--horizontal]="layout() === 'horizontal'"
       role="radiogroup"
       [mdyPart]="controlPart()"
-      [attr.aria-labelledby]="label() ? labelId : null"
-      [attr.aria-label]="label() ? null : controlAriaLabel()"
+      [attr.aria-labelledby]="namedBy()['aria-labelledby']"
+      [attr.aria-label]="namedBy()['aria-label']"
     >
       @for (opt of options(); track opt.value) {
         <label class="mdy-radio-item" [class.mdy-radio-item--disabled]="isDisabled()">
@@ -78,6 +78,22 @@ export class MdyRadioGroupComponent<TValue = unknown> extends MdyBaseControl<TVa
    * by anybody who builds the name instead of reading it off the element.
    */
   protected readonly labelId = defaultWidgetIdFactory.part(this.fieldId, "label");
+
+  /**
+   * Which attribute names the group, asked of the contract rather than answered here.
+   *
+   * Two names on one element is not two names: the computation takes `aria-labelledby` and stops, so
+   * an `aria-label` beside it is text nobody hears. Spelled out per template, the pair is what gets
+   * written by accident — and what three renderers each answered separately. ADR 0175.
+   */
+  protected readonly namedBy = computed(() =>
+    fieldNameAttributes({
+      ariaLabel: this.ariaLabel(),
+      label: this.label(),
+      name: this.effectiveName(),
+      labelId: this.labelId,
+    }),
+  );
 
   protected readonly widgetContract = MDY_WIDGET_CONTRACTS.radio;
   protected override readonly widgetKind = "radio" as const;
