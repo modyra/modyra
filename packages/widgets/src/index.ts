@@ -22,6 +22,7 @@ export {
   MDY_PART_REQUIRES,
   MDY_PRESENCE_RESOLUTION,
   partIsOwed,
+  variantOf,
   shellStateClasses,
   MDY_WIDGET_CONTRACT_VERSION,
 } from "./structure.js";

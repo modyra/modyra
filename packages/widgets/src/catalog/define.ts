@@ -362,13 +362,25 @@ export interface MdyPopupOpener {
    * popup holding a composite — a search field beside a chooser, a clock face — is a `dialog`.
    */
   readonly promises?: "listbox" | "grid" | "dialog" | "menu" | "tree";
+  /**
+   * The shape of the kind this relation belongs to, where the kind has more than one.
+   *
+   * A select drawn as the platform's own chooser opens nothing this contract can see: a `<select>`
+   * carrying `aria-expanded`, `aria-controls` or `aria-haspopup` is claiming to be a combobox, which
+   * is a lie about what it is and what a reader will find. The relation is the combobox's.
+   *
+   * Absent means the relation holds for every shape the kind has, which is every other kind here.
+   * ADR 0176 records the decision and named this as the half nothing enforced; this is the
+   * declaration a checker reads to enforce it.
+   */
+  readonly variant?: MdyWidgetVariant;
 }
 
 export const MDY_POPUP_OPENERS: Readonly<Partial<Record<MdyWidgetKind, MdyPopupOpener>>> = Object.freeze({
   // `controls` is the part the relation names, and it is not always the popup: ARIA points at the
   // element carrying the role — a listbox, a grid, a dialog — which for some kinds sits inside the
   // popup rather than being it.
-  select: Object.freeze({ opener: "trigger", controls: "options", role: "combobox", promises: "listbox" }),
+  select: Object.freeze({ opener: "trigger", controls: "options", role: "combobox", promises: "listbox", variant: "custom" }),
   // A combobox like its single-choice sibling: the opener holds the field's value, so it is what
   // carries `aria-invalid` and `aria-required`, and neither belongs on a role that has no value to
   // be wrong about. Declared nowhere, the states were being written onto a bare `<button>`, where

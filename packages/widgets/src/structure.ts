@@ -439,6 +439,32 @@ export function partIsOwed(
   return facts.holds(node.presentWhen);
 }
 
+/**
+ * Which shape a document asks a kind to be drawn in.
+ *
+ * A kind with two anatomies is only half declared while nothing says *which one a given field
+ * selects*: the catalogue named the select's two shapes and published no way to ask which one a
+ * document picks, so a renderer drawing one of them and ignoring the property was violating nothing
+ * stated, and a checker had to guess or hard-code the rule.
+ *
+ * The two axes, and both are the document's own words rather than a translation:
+ *
+ * - a **multiselect** is drawn by its `mode` — a toggle set or a bag;
+ * - a **select** is drawn by whether it `searchable`: filtering is the combobox, not filtering is the
+ *   platform's own chooser, which is a different control to anyone not using a pointer.
+ *
+ * `undefined` for a kind with one anatomy, which is every other kind: a variant asked of a kind that
+ * has none is a question about a shape that does not exist.
+ */
+export function variantOf(
+  kind: string,
+  spec: { readonly mode?: string; readonly searchable?: boolean } = {},
+): string | undefined {
+  if (kind === "multiselect") return (spec.mode ?? "single") as string;
+  if (kind === "select") return spec.searchable === true ? "custom" : "native";
+  return undefined;
+}
+
 /** Ordered structural anatomy for a widget. This is metadata, not a virtual DOM. */
 export interface MdyWidgetStructure<TPart extends string = string> {
   readonly kind: string;

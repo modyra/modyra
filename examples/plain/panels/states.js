@@ -17,6 +17,7 @@ import {
   nameIsAFallback,
   partIsOwed,
   sliderTrack,
+  variantOf,
   valueIsAbsent,
   valueIsPresent,
 } from "@modyra/widgets";
@@ -222,6 +223,9 @@ export const statesPanel = {
     "overlayLifecycleTransition",
     "partClasses",
     "partIsOwed",
+    // Which shape a document asks a kind to be drawn in, printed beside what each kind owes: the
+    // panel mounts a select with no `searchable`, which is the platform's chooser.
+    "variantOf",
     "popupPlacementClass",
     "portalRootFor",
     "processWidgetCommands",
@@ -336,6 +340,12 @@ export const statesPanel = {
       // asked through the one door: a capability the page asked for before the widget existed, and a
       // state the widget is in. This panel asks for no capabilities, so a reorder grip is owed to
       // nothing here however many values a multiselect holds.
+      // Which shape each kind is drawn in, from the document's own words rather than from a rule
+      // each reader keeps for itself.
+      shapes: KINDS
+        .map(([kind]) => [kind, variantOf(kind, {})])
+        .filter(([, shape]) => shape !== undefined)
+        .map(([kind, shape]) => `${kind}: ${shape}`),
       partsOwed: KINDS
         .map(([kind]) => [kind, MDY_WIDGET_CONTRACTS[kind].structure.nodes.filter((node) => partIsOwed(node, {
           holds: (condition) => {

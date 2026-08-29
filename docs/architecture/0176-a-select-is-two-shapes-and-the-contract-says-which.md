@@ -66,8 +66,19 @@ lit, searchable       as custom  clean      as native  the placeholder is not an
 
 — which is what a variant is for, and what "one kind, two anatomies" could not say before.
 
-The opener relation belongs to the custom shape. This record states that; the relation table is not
-variant-aware, so nothing enforces it yet, and that is the weakest part of this decision.
+The opener relation belongs to the custom shape, and `MDY_POPUP_OPENERS.select` says so — a
+`variant` on the relation, absent everywhere else because every other kind has one shape.
+
+**Which shape a document asks for is published**, which is the half this record first shipped without
+and the peer's measurement made unavoidable: the catalogue named two shapes and nothing at runtime
+said which one a given field selects, so a renderer drawing one and ignoring the property violated
+nothing stated. `variantOf(kind, spec)` answers from the document's own words — a multiselect's
+`mode`, a select's `searchable` — so a renderer and a checker read one rule.
+
+That makes a real divergence visible rather than arguable: Plain draws the combobox for every select,
+including one a document did not ask to filter, where the other two hand it to the platform. Stated
+this way it is a renderer that implements one of two declared shapes, which is a finding somebody can
+act on; before, it was three renderers disagreeing about six attributes with nothing to appeal to.
 
 ## Alternatives rejected
 
@@ -91,10 +102,14 @@ other, in both directions, which is the check that the two are actually distingu
 
 `contract:diff` classified the two declarations as minor and they are accepted in the snapshot.
 
-Not verified: that every renderer states the right variant to every checker. The kit takes it as an
-option and no gate demands it, so a fixture that omits it is measured against the shared anatomy —
-which is what happens today and is why this record does not claim the six findings are closed on the
-browser tier until that tier passes the variant.
+Each renderer's conformance config now declares the shapes **it** draws and the kit mounts one run
+per shape: lit and Angular declare both, Plain declares the combobox, which is the only one it makes.
+Planting a fixture that ignores the variant — mounting the combobox for the `native` run — turns that
+run red, so the declaration is exercised rather than merely written.
+
+Not verified: that Plain's single shape is the right answer. This record makes it measurable and does
+not settle it — a renderer may legitimately implement one shape, and whether this one should draw the
+platform's chooser when a document does not ask to filter is a decision about that renderer.
 
 ## Security and privacy
 

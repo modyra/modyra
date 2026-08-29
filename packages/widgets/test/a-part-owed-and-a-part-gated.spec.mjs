@@ -10,7 +10,7 @@
  */
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { MDY_WIDGET_CONTRACTS, partIsOwed } from "../dist/index.js";
+import { MDY_POPUP_OPENERS, MDY_WIDGET_CONTRACTS, partIsOwed, variantOf } from "../dist/index.js";
 
 const nodeFor = (kind, part) =>
   MDY_WIDGET_CONTRACTS[kind].structure.nodes.find((one) => one.part === part);
@@ -76,4 +76,60 @@ test("a gate declared for one kind reaches that kind and no other", () => {
   // A slider's readout is a part of the same name as a select's and shares nothing with it.
   assert.equal(nodeFor("slider", "value").requires, undefined);
   assert.equal(partIsOwed(nodeFor("slider", "value"), { holds: () => false, offers: () => false }), true);
+});
+
+/**
+ * A relation that belongs to one shape of a kind says so.
+ *
+ * A select drawn as the platform's chooser opens nothing this contract can see. A `<select>` carrying
+ * `aria-expanded`, `aria-controls` or `aria-haspopup` claims to be a combobox — a lie about what it
+ * is, and one no renderer can be told not to tell if the relation is declared for the kind as a
+ * whole. ADR 0176 named this as the half nothing enforced.
+ */
+test("an opener relation names the shape it belongs to, or holds for every shape", () => {
+  const select = MDY_POPUP_OPENERS.select;
+  assert.ok(select, "the select declares no opener relation; this check is about it");
+  assert.equal(select.variant, "custom",
+    "the relation is declared for the kind as a whole, so a native <select> is owed combobox "
+    + "attributes it must not carry");
+  assert.ok(MDY_WIDGET_CONTRACTS.select.variants[select.variant],
+    "the relation names a shape the kind does not declare, so nothing can act on it");
+
+  // Every other kind has one shape, and a relation naming a variant there would be a promise about
+  // an anatomy that does not exist.
+  for (const [kind, relation] of Object.entries(MDY_POPUP_OPENERS)) {
+    if (relation?.variant === undefined) continue;
+    assert.ok(Object.keys(MDY_WIDGET_CONTRACTS[kind].variants).length > 0,
+      `${kind}'s opener relation names a shape and the kind declares none`);
+  }
+});
+
+/**
+ * Which shape a document asks for, answered by the contract rather than by each reader.
+ *
+ * A kind with two anatomies is half declared while nothing says which one a given field selects. The
+ * catalogue named the select's two shapes and published no way to ask, so a renderer drawing one and
+ * ignoring the property violated nothing stated, and a checker had to hard-code the rule or guess.
+ */
+test("a document's own words say which shape a kind is drawn in", () => {
+  // The select's axis is whether it filters. The default is the platform's chooser, which is the
+  // control a plain list should be.
+  assert.equal(variantOf("select", {}), "native");
+  assert.equal(variantOf("select", { searchable: false }), "native");
+  assert.equal(variantOf("select", { searchable: true }), "custom");
+
+  // The multiselect's axis is its mode, and the name is the document's own value.
+  assert.equal(variantOf("multiselect", {}), "single");
+  assert.equal(variantOf("multiselect", { mode: "multi" }), "multi");
+
+  // A kind with one anatomy has no shape to ask about.
+  assert.equal(variantOf("text", { searchable: true }), undefined);
+
+  // And every answer names a shape the kind actually declares, or it is a promise about nothing.
+  for (const [kind, spec] of [["select", {}], ["select", { searchable: true }],
+    ["multiselect", {}], ["multiselect", { mode: "multi" }]]) {
+    const name = variantOf(kind, spec);
+    assert.ok(MDY_WIDGET_CONTRACTS[kind].variants[name],
+      `${kind} answers ${name} for ${JSON.stringify(spec)} and declares no such shape`);
+  }
 });
