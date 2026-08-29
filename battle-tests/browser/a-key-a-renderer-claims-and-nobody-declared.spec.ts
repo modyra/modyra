@@ -74,6 +74,8 @@ test("a key a renderer claims and nobody declared", async ({ page }) => {
   test.setTimeout(900_000);
 
   /** kind → renderer → the keys that renderer claimed, or null where its control was never reached. */
+  /** A key stopped where nothing moved: the platform lost it and the widget did not take it. */
+  const refused: string[] = [];
   const claimed = new Map<string, Record<string, string[] | null>>();
 
   for (const host of HOSTS) {
@@ -153,6 +155,21 @@ test("a key a renderer claims and nobody declared", async ({ page }) => {
         // Pressed from each end of the control's text: a field made of segments answers ArrowLeft
         // from inside a segment and not from its first character, and a run that only ever starts
         // from one end never sees the claim.
+        // What the field is, before the key. A renderer that stops a character the platform would
+        // have inserted has taken a key away from the platform and given it to nobody — legitimate,
+        // and not a gesture. Answering one is: the value moves, the phase changes, the marker or the
+        // reading position moves. Both come back as `defaultPrevented` and they are not the same act.
+        const shapeOf = () => page.evaluate(({ id }) => {
+          const root = document.querySelector(`[data-form="${id}"]`);
+          if (root === null) return "";
+          const values = [...root.querySelectorAll<HTMLInputElement>("input, select, textarea")]
+            .map((box) => `${box.value}/${box.checked}`).join("|");
+          const marker = root.querySelector("[aria-activedescendant]")?.getAttribute("aria-activedescendant") ?? "";
+          const open = root.querySelector("[aria-expanded]")?.getAttribute("aria-expanded") ?? "";
+          return `${values}~${marker}~${open}~${document.activeElement?.className ?? ""}`;
+        }, { id: mountId });
+        const shapeBefore = await shapeOf();
+
         for (const caret of ["start", "end"] as const) {
           await page.evaluate((where) => {
             const control = (window as never as Record<string, HTMLElement>).__control;
@@ -166,8 +183,10 @@ test("a key a renderer claims and nobody declared", async ({ page }) => {
         }
         // The phase belongs to this mount, not to the kind: a field is freshly mounted for every key,
         // and one of them opening a panel says nothing about the state the next key went into.
+        const moved = (await shapeOf()) !== shapeBefore;
         for (const seen of await page.evaluate(() => (window as never as Record<string, string[]>).__claimed)) {
-          taken.add(`${seen}\u0000${reached}`);
+          if (moved) taken.add(`${seen}\u0000${reached}`);
+          else refused.push(`${kind} in ${host.name}: refuses ${key === " " ? "Space" : key}, and nothing moved`);
         }
       }
 
@@ -177,6 +196,11 @@ test("a key a renderer claims and nobody declared", async ({ page }) => {
 
   // The premise, in two halves. A control that was never focused claims nothing, and a recorder that
   // was never wired records nothing; both look exactly like a renderer that takes no keys.
+  if (refused.length > 0) {
+    console.log(`[stopped, and nothing moved] ${refused.length}: `
+      + [...new Set(refused)].slice(0, 8).join(" | "));
+  }
+
   const unreached = [...claimed.entries()]
     .flatMap(([kind, byHost]) => HOSTS.filter((h) => byHost[h.name] === null).map((h) => `${kind} in ${h.name}`));
   expect(unreached, "no control was reached for these, so nothing was measured there").toEqual([]);
