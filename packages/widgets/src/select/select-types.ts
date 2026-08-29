@@ -19,6 +19,8 @@ export interface MdySelectControllerOptions<TValue> {
   readonly readonly?: boolean;
   /** Whether the widget is invalid. */
   readonly invalid?: boolean;
+  /** Whether the form is asking for an answer here. A combobox carries no rule of its own. */
+  readonly required?: boolean;
   /** Whether options are loading. */
   readonly loading?: boolean;
   /** Called when the value changes. */

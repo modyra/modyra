@@ -63,6 +63,7 @@ export function createSelectFieldController<TValue>(
     // What is *shown*, not what is wrong — the same question the binding below asks, so the first
     // paint and every one after it agree. See ADR 0165.
     invalid: visibleErrorsOf(handle, "select").length > 0,
+    required: handle.required(),
     loading: options.loading ?? false,
     onChange: (value) => {
       handle.set(value);
@@ -86,6 +87,9 @@ export function createSelectFieldController<TValue>(
     // touched or not, because a draft nobody is told about is a draft that gets resent. Both are
     // `visibleErrorsOf`, which is why it is one call rather than two rules. ADR 0165.
     inner.setInvalid(visibleErrorsOf(handle, "select").length > 0);
+    // The field's own rule, told to a control that has none: a combobox is not a native input and
+    // announces nothing about being required unless it is said.
+    inner.setRequired(handle.required());
   });
 
   const state: MdySignal<MdySelectState<TValue>> = inner.state;

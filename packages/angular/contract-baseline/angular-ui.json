@@ -856,6 +856,7 @@
         "aria-live",
         "aria-pressed",
         "aria-readonly",
+        "aria-required",
         "aria-rowcount",
         "aria-rowindex"
       ],

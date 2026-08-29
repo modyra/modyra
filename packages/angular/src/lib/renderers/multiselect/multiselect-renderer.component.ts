@@ -201,6 +201,7 @@ const CHIPS = partSelector("multiselect", "chips") ?? "";
         (keydown)="onOverlayKeydown($event)"
         [attr.aria-invalid]="paintsAsInvalid()"
         [attr.aria-disabled]="effectiveAriaDisabled()"
+        [attr.aria-required]="isRequired()"
         [attr.aria-readonly]="isReadonly() ? 'true' : null"
         [attr.aria-describedby]="describedById(fieldId)"
         [attr.aria-label]="controlAriaLabel()"

@@ -34,6 +34,14 @@ export interface MdySelectController<TValue>
   setReadonly(readonly: boolean): void;
   /** Update the invalid state. */
   setInvalid(invalid: boolean): void;
+  /**
+   * Whether the form is asking for an answer here.
+   *
+   * A combobox carries none of a field's rules on its own, so a required select announced nothing
+   * about being required while its two siblings said so — each renderer deciding for itself what
+   * the contract had not.
+   */
+  setRequired(required: boolean): void;
   /** Update the loading state. */
   setLoading(loading: boolean): void;
   /** Which of the field's descriptions are on screen, so the trigger names one that exists. */
@@ -153,6 +161,7 @@ export function createSelectController<TValue>(
   const disabled = reactivity.signal(initialDisabled);
   const readonly = reactivity.signal(initialReadonly);
   const invalid = reactivity.signal(initialInvalid);
+  const required = reactivity.signal(options.required ?? false);
   const touched = reactivity.signal(false);
   const dirty = reactivity.signal(false);
   const loading = reactivity.signal(initialLoading);
@@ -193,6 +202,7 @@ export function createSelectController<TValue>(
       disabled: disabled(),
       readonly: readonly(),
       invalid: invalid(),
+      required: required(),
       loading: loading(),
       idFactory,
       visibleKeys: visibleKeys(q),
@@ -395,6 +405,10 @@ export function createSelectController<TValue>(
     readonly.set(nextReadonly);
   }
 
+  function setRequired(next: boolean): void {
+    required.set(next);
+  }
+
   function setInvalid(nextInvalid: boolean): void {
     invalid.set(nextInvalid);
   }
@@ -426,6 +440,7 @@ export function createSelectController<TValue>(
     setDisabled,
     setReadonly,
     setInvalid,
+    setRequired,
     setLoading,
     setDescribedBy,
     setPopupRendered,

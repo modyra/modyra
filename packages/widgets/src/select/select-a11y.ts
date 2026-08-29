@@ -19,6 +19,16 @@ export interface MdySelectA11yOptions {
   readonly disabled: boolean;
   readonly readonly: boolean;
   readonly invalid: boolean;
+  /**
+   * Whether the form is asking for an answer here.
+   *
+   * A combobox is not a native control and carries none of a field's rules on its own: without this
+   * a required select announced nothing about being required, while its two siblings said so — and
+   * the renderers that said it were each deciding for themselves what the contract had not.
+   *
+   * Optional so a caller with no field behind the widget says nothing rather than guessing.
+   */
+  readonly required?: boolean;
   readonly loading: boolean;
   readonly idFactory: typeof defaultWidgetIdFactory;
   /** Keys of options currently visible to the user. */
@@ -66,6 +76,7 @@ export function projectSelectA11y(
       ...projectOverlayOpenerA11y("select", { widgetId, open, controlsRendered: options.popupRendered ?? true })?.attributes,
       "aria-activedescendant": activeKey ? idFactory.item(widgetId, "option", activeKey) : undefined,
       "aria-invalid": String(invalid),
+      ...(options.required === undefined ? {} : { "aria-required": String(options.required) }),
       // The relation every other kind's projection already made, and this one did not: without it a
       // select's errors reach no assistive technology at all.
       "aria-describedby": describedBy,
