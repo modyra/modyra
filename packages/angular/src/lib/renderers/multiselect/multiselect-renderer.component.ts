@@ -206,7 +206,7 @@ const CHIPS = partSelector("multiselect", "chips") ?? "";
         [attr.aria-describedby]="describedById(fieldId)"
         [attr.aria-labelledby]="label() ? labelId() : null"
         [attr.aria-label]="label() ? null : controlAriaLabel()"
-        [attr.aria-activedescendant]="activeDescendant()"
+        [attr.aria-activedescendant]="searchable() ? null : activeDescendant()"
       >
         @if (chosen().length === 0) {
           <span class="mdy-multiselect__placeholder">{{ label() }}</span>
@@ -313,6 +313,7 @@ const CHIPS = partSelector("multiselect", "chips") ?? "";
           [placeholder]="i18n.searchPlaceholder"
           [attr.aria-label]="i18n.searchOptionsLabel"
           [attr.aria-controls]="optionsGridId()"
+          [attr.aria-activedescendant]="activeDescendant()"
           autocomplete="off"
           [value]="searchQuery()"
           (input)="onSearchInput($event)"
@@ -530,6 +531,13 @@ export class MdyMultiselectComponent<TValue = string>
     }
     if (action.type === "open") {
       this.openOverlay();
+      // This handler is a keydown, so the panel it raises is about to be given a keypress and opens
+      // with somewhere for that press to land: the controller primes its cursor on the first value
+      // already chosen. Without it the first arrow was spent picking a starting point and the key
+      // meaning "choose this one" had no target, which this renderer answered from the trigger.
+      // ADR 0179.
+      this.controller()?.dispatch({ type: "open", by: "keyboard" });
+      this.followCursor();
       return;
     }
     if (action.type === "move" || action.type === "select") {
