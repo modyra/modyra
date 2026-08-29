@@ -42,6 +42,8 @@
  *
  * Claims under attack: ADP-001, A11Y-004.
  */
+import { existsSync, readFileSync } from "node:fs";
+import { join } from "node:path";
 import { expect, test } from "@playwright/test";
 import { MDY_POPUP_OPENERS, MDY_WIDGET_CONTRACTS, MDY_WIDGET_KINDS, partClasses, variantOf } from "@modyra/widgets";
 import { HOSTS, madeToSpeak } from "./bench";
@@ -71,6 +73,38 @@ const SUBJECTS: Array<{ kind: string; name: string; extra: Record<string, unknow
       ? [{ kind, name: "select asked plainly", extra: { searchable: false } },
          { kind, name: "select asked searchable", extra: { searchable: true } }]
       : [{ kind, name: kind, extra: {} }]);
+
+/**
+ * A difference a decision record argues is not a difference, read from the record that argues it.
+ *
+ * An exemption held in a test is an exemption nobody can find and nobody can overturn: the reasoning
+ * lives in one place and the silence it buys lives in another, and the two drift. So each entry names
+ * the record, and the sentence in it that makes the argument. The row is dropped only while that
+ * record is on disk, still `Accepted`, and still saying that sentence — a record superseded, retired
+ * or rewritten brings the row back, which is the point.
+ */
+const DISMISSED: Array<{ row: string; record: string; argues: string }> = [
+  {
+    row: "file: aria-label",
+    record: "0177-what-the-contract-declines-to-say.md",
+    argues: "Naming a control by the caption's reference or by its words is one answer, not two",
+  },
+];
+
+/** The rows a live record excuses, and why each other one is not excused. */
+const excused = (): { rows: Set<string>; lapsed: string[] } => {
+  const rows = new Set<string>();
+  const lapsed: string[] = [];
+  for (const one of DISMISSED) {
+    const path = join(process.cwd(), "docs", "architecture", one.record);
+    const text = existsSync(path) ? readFileSync(path, "utf8") : null;
+    if (text === null) { lapsed.push(`${one.row}: ${one.record} is not on disk`); continue; }
+    if (!/^Status:\s*Accepted\s*$/m.test(text)) { lapsed.push(`${one.row}: ${one.record} is no longer Accepted`); continue; }
+    if (!text.includes(one.argues)) { lapsed.push(`${one.row}: ${one.record} no longer argues it`); continue; }
+    rows.add(one.row);
+  }
+  return { rows, lapsed };
+};
 
 /** What each subject's document asks for, in the contract's own words. `undefined` for one anatomy. */
 const asksFor = (kind: string, extra: Record<string, unknown>): string | undefined =>
@@ -195,9 +229,20 @@ test("an aria promise that depends on the adapter", async ({ page }) => {
       .map((name) => `${kind}: ${name} written by ${HOSTS.filter((host) => (byHost[host.name] ?? []).includes(name)).map((host) => host.name).join(" and ")}`);
   })];
 
+  const { rows: dismissed, lapsed } = excused();
+  const standing = disagreements.filter((one) => ![...dismissed].some((row) => one.startsWith(row)));
+
+  // A record that stopped arguing its exemption is louder than the row it was excusing: the silence
+  // outlives the reasoning otherwise, and nobody reading the sweep would know why the row is absent.
   expect(
-    disagreements,
-    `${disagreements.length} ARIA promise(s) are made by some renderers and not others:\n${disagreements.join("\n")}\n\n` +
+    lapsed,
+    `${lapsed.length} dismissal(s) name a record that no longer makes their case:\n${lapsed.join("\n")}`,
+  ).toEqual([]);
+
+  expect(
+    standing,
+    `${standing.length} ARIA promise(s) are made by some renderers and not others:\n${standing.join("\n")}\n\n` +
+      `${dismissed.size > 0 ? `Not counted, argued by a record: ${[...dismissed].join(", ")}.\n\n` : ""}` +
       "A shape row above an attribute row is the cause of it: renderers that drew different anatomies " +
       "from one document have no ARIA defect between them until they agree on what they are drawing. " +
       "Which shape a document asks for is not published — the catalogue names the shapes and nothing " +
