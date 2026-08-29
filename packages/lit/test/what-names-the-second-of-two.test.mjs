@@ -45,21 +45,32 @@ test("the second box says what the contract binds to it, and nothing around it",
   mounted.dispose();
 });
 
-test("and the first is named by the caption that already points at it", async () => {
-  // The other direction, and the one that makes the removal safe: taking the composed phrase off the
-  // first box is only correct because something else names it. Without this, that removal reads as a
-  // tidy-up and ships a nameless control.
+test("and the first box names itself, inside a group the caption names", async () => {
+  // This replaces a rule that said the opposite, and the measurement is why. The first box used to
+  // point at the caption *and* carry its own name; `aria-labelledby` wins the computation, so both
+  // boxes announced the field's words and neither said which end it was. Pointing a box at the
+  // caption gives a part the name of the whole.
+  //
+  // What carries "of what" is the group around the pair, said once on entry. ADR 0175.
   const mounted = await fixture.mount("daterange");
   await mounted.settle();
 
   const start = mounted.root.querySelector(".mdy-daterange__input--start");
   assert.ok(start !== null, "no first box");
-  assert.notEqual(announced(start, mounted.root), "",
-    "the first box is announced as nothing: the phrase that named it is gone and the caption does "
-    + "not reach it");
-  assert.equal(start.getAttribute("aria-label"), null,
-    "the first box carries a name of its own beside the caption pointing at it, which is two answers "
-    + "to one question");
+  assert.equal(start.getAttribute("aria-label"),
+    MDY_I18N_MESSAGES_DEFAULT[MDY_PART_NAMES["daterange.startControl"]] ?? "Start date",
+    "the first box says nothing of its own, so a reader hears the same words on both ends");
+  assert.equal(start.getAttribute("aria-labelledby"), null,
+    "the first box points at the caption as well, which wins the name computation and silences the "
+    + "name beside it");
+
+  // The pair is a group and the caption's words are its name — the words rather than a reference to
+  // them, because a reference is one more thing that can point at nothing when a document wrote no
+  // caption, and a reader hears the same sentence either way.
+  const group = mounted.root.querySelector('[role="group"]');
+  assert.ok(group !== null, "nothing groups the two ends, so neither says what it is an end of");
+  assert.equal(group.getAttribute("aria-label"), mounted.root.label,
+    "the group does not carry the caption's words, so neither box says what it is an end of");
 
   mounted.dispose();
 });

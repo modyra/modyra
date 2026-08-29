@@ -65,7 +65,11 @@ import { inputText, isoDateText } from "../renderer-projection";
     }
 
     <div class="mdy-datepicker" #wrapper>
-      <div [class]="wrapperClasses() + ' mdy-daterange__group'">
+      <div
+        [class]="wrapperClasses() + ' mdy-daterange__group'"
+        role="group"
+        [attr.aria-label]="label() || null"
+      >
         <span class="mdy-daterange__input-sizer" [attr.data-value]="displayStart() || startPlaceholder()">
           <input
             #startInput

@@ -75,6 +75,16 @@ export function renderDaterangeField(
   );
 
   const shell = buildFieldShell(f.label, "daterange", {}, f.ariaLabel, f.name, f.supportingText);
+  // The two boxes together are what the caption names: a person entering hears it once, then each
+  // box's own role. Pointing the boxes at the caption instead gave a part the name of the whole, and
+  // both ends announced the same words. ADR 0175.
+  shell.wrapper.setAttribute("role", "group");
+  // The caption's words rather than a reference to it: a reference is one more thing that can point
+  // at nothing — a label a document did not ask for is not drawn — and a reader hears the same
+  // sentence either way.
+  if (typeof f.label === "string" && f.label.trim() !== "") {
+    shell.wrapper.setAttribute("aria-label", f.label);
+  }
   const wrapper = el("div", "mdy-datepicker");
   const startInput = el("input", definition.parts.startControl.classes.join(" ")) as HTMLInputElement;
   startInput.type = "text";

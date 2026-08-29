@@ -41,6 +41,13 @@ export interface MdyDaterangeFieldA11yOptions {
   readonly errorsReserved?: boolean;
   readonly widgetId: string;
   /** How each end is named, for a host that translates. Defaults are English and deliberate. */
+  /**
+   * The caption a document wrote, which names the pair rather than either box.
+   *
+   * The two ends together are the thing the author named; each box has a name of its own that says
+   * its role in the pair. Given here, the group says the author's word once on entry. ADR 0175.
+   */
+  readonly label?: string;
   readonly startLabel?: string;
   readonly endLabel?: string;
   /**
@@ -85,6 +92,8 @@ export function projectDaterangeFieldA11y(
 ): {
   readonly root: MdyPartContract;
   readonly label: MdyPartContract;
+  /** The box holding both ends, which is what the caption names. ADR 0175. */
+  readonly inputWrapper: MdyPartContract;
   readonly startControl: MdyPartContract;
   readonly endControl: MdyPartContract;
   readonly toggle: MdyPartContract;
@@ -128,9 +137,10 @@ export function projectDaterangeFieldA11y(
       // What a native submit reads. Absent leaves the end unserialised, which is what a form does
       // with a control that has no name: it sends nothing at all rather than sending it empty.
       name: name ?? null,
-      "aria-labelledby": labelId,
-      // Named as well as labelled: two boxes under one label are two boxes a screen-reader user
-      // cannot tell apart, and "Stay" twice is not an answer to "which end am I in".
+      // Its own name and nothing else. Pointing a box at the caption gives a *part* the name of the
+      // *whole*: `aria-labelledby` wins the name computation, so both boxes announced the field's
+      // words — "Stay", "Stay" — and each box's own name never spoke. What carries "of what" is the
+      // group around them, which the caption names once, on entry. ADR 0175.
       "aria-label": label,
       "aria-invalid": String(tellingThem),
       "aria-required": String(state.required),
@@ -156,6 +166,16 @@ export function projectDaterangeFieldA11y(
       // The label points at the start, which is where a click on it should land: the first thing
       // a person fills. Pointing it at the wrapper would name neither.
       attributes: { for: startId },
+    },
+    // The two boxes together are the thing the caption names. A person entering hears "Stay, group"
+    // once and then each box's own role — which is the reading a sighted person gets from the
+    // layout, and the only one that says both which end this is and what it is an end of.
+    inputWrapper: {
+      classes: [],
+      // The caption's words, not a reference to it: a reference is one more thing that can point at
+      // nothing — a label a document did not ask for is never drawn — and a reader hears the same
+      // sentence either way.
+      attributes: { role: "group", ...(options.label ? { "aria-label": options.label } : {}) },
     },
     startControl: end(startId, options.startLabel ?? "Start date", definition.parts.startControl.classes, submitNames.startControl),
     endControl: end(endId, options.endLabel ?? "End date", definition.parts.endControl.classes, submitNames.endControl),

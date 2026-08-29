@@ -2,6 +2,7 @@ import { mdyPart } from "../mdy-part.js";
 import { capabilityOf, keyMeans, defaultWidgetIdFactory,
   overlayControlledId, partClasses, calendarViewOnToggle,
   createDaterangeFieldController,
+  projectDaterangeFieldA11y,
   subscribeController,
   type MdyDaterangeFieldController,
   type MdyDaterangeFieldIntent,
@@ -616,7 +617,11 @@ export class MdyDaterangeFieldElement extends MdyFieldElement<MdyDateRange | nul
     const range = handle.value() ?? { start: null, end: null };
     return html`
       <div class="mdy-datepicker">
-        <div class="${this.wrapperClass(handle)} mdy-daterange__group">
+        <div
+          class="${this.wrapperClass(handle)} mdy-daterange__group"
+          role="group"
+          aria-label=${this.label || nothing}
+        >
           <span
             class="mdy-daterange__input-sizer"
             data-value=${range.start ?? this.startPlaceholder}
@@ -629,7 +634,7 @@ export class MdyDaterangeFieldElement extends MdyFieldElement<MdyDateRange | nul
               .value=${range.start ?? ""}
               ?disabled=${handle.disabled()}
               ?readonly=${handle.readonly()}
-              ${mdyPart(this.controlPart(handle))}
+              ${mdyPart(this.endPart(handle, "startControl"))}
               autocomplete="off"
               @change=${(e: Event) => {
                 const input = e.target as HTMLInputElement;
@@ -656,7 +661,7 @@ export class MdyDaterangeFieldElement extends MdyFieldElement<MdyDateRange | nul
               .value=${range.end ?? ""}
               ?disabled=${handle.disabled()}
               ?readonly=${handle.readonly()}
-              ${mdyPart(this.controlPart(handle))}
+              ${mdyPart(this.endPart(handle, "endControl"))}
               autocomplete="off"
               @change=${(e: Event) => {
                 const input = e.target as HTMLInputElement;
@@ -701,6 +706,17 @@ export class MdyDaterangeFieldElement extends MdyFieldElement<MdyDateRange | nul
         })}
       </div>
     `;
+  }
+
+  /**
+   * What one end carries: its own name and the states this kind knows, from the kind's projection.
+   *
+   * The shell answers what every field has and cannot say which of two boxes this is — it has no
+   * word for an end, and none for a range a person may read and not write. The caption names the
+   * group around the pair; each box names itself. ADR 0175.
+   */
+  private endPart(handle: MdyFieldHandle<MdyDateRange | null>, part: "startControl" | "endControl") {
+    return projectDaterangeFieldA11y(this.view, handle.errors(), { widgetId: this.fieldId })[part];
   }
 
   override render(): unknown {

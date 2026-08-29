@@ -189,6 +189,7 @@ absent section reads as an oversight, and "no security impact" is a finding.
 - [ADR 0172: The trailing column carries one thing](0172-the-trailing-column-carries-one-thing.md) — the field's trailing edge holds only the affordance every kind has; commands about the value stand with the value, and a glyph-only button is named by its action
 - [ADR 0173: A position may depend on the field, never on the value](0173-a-position-may-depend-on-the-field-never-on-the-value.md) — a control that stands beside a variable-length value moves under the hand that is reaching for it; the commands return to the trailing edge with the opener outermost and a full target of space between them
 - [ADR 0174: A key means what the part under it means](0174-a-key-means-what-the-part-under-it-means.md) — the space bar is a character in a text box, "this one" on a highlighted day or option, and a press on a button; the meaning is the part's, not the kind's
+- [ADR 0175: The caption names the group, each control names itself](0175-the-caption-names-the-group-each-control-names-itself.md) — one caption over two boxes named both boxes the same thing; the caption names the pair and each box says its own role
 - [ADR 0092: A condition travels with the form](0092-a-condition-travels-with-the-form.md) — `when` and `asyncWhen` were closures, so a schema carrying one was not data and the document half could not say what the typed half said
 
 ## Security-relevant records
