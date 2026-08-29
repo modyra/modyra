@@ -35,8 +35,13 @@
  * filling, by growing, or by pushing the column with a spacer, and all three are the same answer to
  * the eye.
  *
- * The tolerance is the declared inset plus a pixel of rounding, and nothing else — a rule that
- * allowed "close enough" would be satisfied by the arrangement it exists to forbid.
+ * The tolerance is the declared inset plus a pixel of rounding, plus the separation the stylesheet
+ * declares between two stacked commands — and nothing else, because a rule that allowed "close
+ * enough" would be satisfied by the arrangement it exists to forbid. That separation is deliberate
+ * and documented: two commands that carry no target overlay are their own hit areas, so the space
+ * between them is what stops a finger that pressed one from pressing the other. It is read from the
+ * page's own token rather than written here, so a column stays one column at whatever the design
+ * decides that distance is.
  *
  * Claims under attack: UI-005.
  */
@@ -107,6 +112,7 @@ for (const host of HOSTS) {
           widest: Math.round(Math.max(...boxes.map((rect) => rect.width))),
           count: boxes.length,
           inset: getComputedStyle(field).getPropertyValue("--mdy-affordance-inset").trim(),
+          stacked: getComputedStyle(field).getPropertyValue("--mdy-affordance-target-stacked").trim(),
           width: Math.round(box.width),
         };
       }, { selector: root, declared });
@@ -119,7 +125,15 @@ for (const host of HOSTS) {
       const insetPx = measured.inset?.endsWith("rem") === true
         ? Math.round(parseFloat(measured.inset) * 16)
         : Math.round(parseFloat(measured.inset ?? "4"));
-      const allowed = (Number.isNaN(insetPx) ? 4 : insetPx) + 2;
+      // The token is written as a `max()` of two units, which no single parse reads: every length in
+      // it is converted and the largest taken, which is what `max()` means. Read wrongly it would
+      // fall back to a number written here, and the point of reading it is that it can change.
+      const lengths = [...(measured.stacked ?? "").matchAll(/([\d.]+)(rem|px)/g)]
+        .map(([, size, unit]) => (unit === "rem" ? Number(size) * 16 : Number(size)))
+        .filter((one) => Number.isFinite(one));
+      const stackedPx = lengths.length > 0 ? Math.round(Math.max(...lengths)) : 24;
+      const separations = Math.max((measured.count ?? 1) - 1, 0) * stackedPx;
+      const allowed = (Number.isNaN(insetPx) ? 4 : insetPx) + 2 + separations;
 
       // One column: every affordance within a few of its own widths of the last. A generous bound —
       // it forbids a control stranded beside the value without prescribing the gaps between them.

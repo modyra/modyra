@@ -77,8 +77,22 @@ const classOf = (part: string): string => {
   return declared[0] ?? "";
 };
 
-/** The smallest a control may be, and the smallest gap that counts as a clear zone. */
+/**
+ * The smallest a control may be, and the smallest gap that counts as a clear zone.
+ *
+ * A fallback, not the number: the page declares it as `--mdy-affordance-target-stacked` and the run
+ * reads it there, so a design that raises the distance raises what this demands. Written here alone
+ * it would be a copy of a decision, green at whatever the page did.
+ */
 const TARGET = 24;
+
+/** Every length in a token, in pixels — the value is a `max()` of two units, which no single parse reads. */
+const largestLength = (token: string): number => {
+  const lengths = [...token.matchAll(/([\d.]+)(rem|px)/g)]
+    .map(([, size, unit]) => (unit === "rem" ? Number(size) * 16 : Number(size)))
+    .filter((one) => Number.isFinite(one));
+  return lengths.length > 0 ? Math.round(Math.max(...lengths)) : TARGET;
+};
 
 /**
  * The remedy arrives without moving anything else.
@@ -246,6 +260,29 @@ for (const host of HOSTS) {
 
     const beforeDestroy = clear.x - back.right;
     const afterDestroy = after.x - clear.right;
+
+    // What the page says a stacked control's clear zone is, rather than what this file guesses.
+    const declaredToken = await page.evaluate((selector) => {
+      const field = document.querySelector(selector);
+      return field === null ? "" : getComputedStyle(field).getPropertyValue("--mdy-affordance-target-stacked").trim();
+    }, form);
+    // A token the page does not carry would leave the demand below equal to a number written here,
+    // and the run would hold whatever the design did.
+    expect(declaredToken, "the page declares no clear zone for a stacked control, so this would be "
+      + "asserting a number of its own").not.toBe("");
+    const declaredTarget = largestLength(declaredToken);
+
+    // **The gap is a target, not a margin.** Neither command carries a target overlay, so the box a
+    // finger hits is the box that is drawn and the space between the two boxes is the whole of what
+    // separates restoring one value from discarding every one of them. A finger that pressed the way
+    // back and presses again a moment later must not land on the destroy.
+    expect(
+      beforeDestroy,
+      `${beforeDestroy}px separates the way back from clear-all, and a stacked control's clear zone `
+      + `is declared as ${declaredTarget}px. These two carry no target overlay, so this gap is the `
+      + "distance between hit areas — a finger that pressed the remedy and presses again lands on the "
+      + "control that discards every value in the field.",
+    ).toBeGreaterThanOrEqual(declaredTarget);
 
     // Not a conformance threshold — no published criterion asks for this, and recording it as one
     // would record something false. The way back is the remedy for clear-all, which is what makes
