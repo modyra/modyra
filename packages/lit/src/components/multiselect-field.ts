@@ -473,6 +473,14 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
    * to be announced from: without this it moves and nothing says so. `aria-activedescendant` is how
    * a control points at something it does not contain focus for.
    */
+  /**
+   * Which option the cursor is on, named on **the element that holds focus**.
+   *
+   * A reference on an element a person is not standing on says nothing: opening this list moves the
+   * keyboard into the filter box, and the trigger carried the reference — so the cursor moved and the
+   * one element that could have announced it was not the one being read. Where there is no filter box
+   * the trigger keeps focus and keeps the reference.
+   */
   private activeDescendant(): string | null {
     // The controller's `open`, not this element's copy of it: the two settle on different renders,
     // and reading the copy left the reference absent on exactly the pass that first had a cursor.
@@ -523,6 +531,7 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
             placeholder=${this.messages.searchPlaceholder}
             aria-label=${this.messages.searchOptionsLabel}
             aria-controls=${this.fieldController?.view().parts.group?.id ?? nothing}
+            aria-activedescendant=${this.activeDescendant() ?? nothing}
           />`
         : nothing}
       ${this.optionTemplate
@@ -624,7 +633,7 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
             aria-required=${String(handle.required())}
             aria-readonly=${handle.readonly() ? "true" : nothing}
             aria-controls=${overlayControlledId("multiselect", this.fieldId) ?? nothing}
-            aria-activedescendant=${this.activeDescendant() ?? nothing}
+            aria-activedescendant=${this.searchable ? nothing : (this.activeDescendant() ?? nothing)}
             aria-describedby=${fieldDescribedBy({
               errorId: this.errorsId, descriptionId: this.descriptionId,
               errorsPresent: !this.inlineErrors && (this.showErrors(handle) || this.errorsReserved(handle)),
