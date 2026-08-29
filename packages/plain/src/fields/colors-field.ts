@@ -90,10 +90,21 @@ export function renderColorsField(
   applyPart(preview, definition.parts.preview);
   const control = el("input") as HTMLInputElement;
   control.type = "color";
-  // The native colour input is visually hidden behind the swatch, so it has no visible label of its
-  // own and axe reported it as a control with no accessible name. The <label> that wraps it is the
-  // picker, whose text is the swatch — nothing a screen reader can read — so the name is given here.
-  control.setAttribute("aria-label", f.label ? `${f.label} colour value` : "Colour value");
+  /**
+   * Out of the tree rather than named in it.
+   *
+   * An auditor reported this as a control with no accessible name and the first answer was to give it
+   * one, in English, here — a name the contract does not ask for and a translated page still said in
+   * English. The contract puts this element in no naming relation at all: the caption points `for` at
+   * the hex input, the swatch points `aria-controls` at the popup, and nothing points here.
+   *
+   * It is the platform's chooser, opened by the swatch beside it, and a person operates that. Named,
+   * it puts a second colour control in the tree that nothing described; hidden, it is the machinery
+   * it is. Not tabbable, so hiding it strands nobody, and an auditor is green on a field that hides
+   * it and critical on one that leaves it standing there unnamed.
+   */
+  control.setAttribute("aria-hidden", "true");
+  control.tabIndex = -1;
   applyPart(control, definition.parts.control);
   // The tint inside the button; the native input beside it. A focusable control inside a focusable
   // control is `nested-interactive`, and the input's own styling already places it as a sibling that

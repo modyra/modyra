@@ -297,10 +297,16 @@ export class MdyColorsFieldElement extends MdyFieldElement<string | null> {
             <!-- Beside the button, not inside it: a control nested in a control is invalid HTML and
                  reachable only by accident — the outer one swallows the press, and what a pointer
                  lands on depends on which browser is asked. -->
+            <!-- The contract puts this element in no naming relation: the caption points at the hex
+                 input, the swatch points at the popup, and nothing points here. It is the platform's
+                 chooser, opened by the swatch beside it, and a person operates that. Named, it puts a
+                 second colour control in the tree the contract never described; hidden, it is
+                 machinery. Not tabbable, so hiding it strands nobody. -->
             <input
               type="color"
               class="mdy-colors__native-hidden"
               ${mdyPart(this.controlPart(handle))}
+              aria-hidden="true"
               tabindex="-1"
               style=${NATIVE_HIDDEN_STYLE}
               .value=${handle.value() ?? "#000000"}
