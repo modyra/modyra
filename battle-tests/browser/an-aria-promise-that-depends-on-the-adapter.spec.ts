@@ -48,25 +48,54 @@ import { HOSTS, madeToSpeak } from "./bench";
 
 type Api = Record<string, Record<string, (...args: never[]) => unknown>>;
 
+/**
+ * Every shape a kind declares, with the classes that identify each one's required parts.
+ *
+ * A variant that requires nothing cannot be recognised by what is on the page — it is what is left
+ * when no other shape's parts are there.
+ */
+const variantParts = (kind: string): Array<[string, string[][]]> =>
+  Object.entries((MDY_WIDGET_CONTRACTS[kind as never] as { variants?: Record<string, { required?: string[] }> }).variants ?? {})
+    .map(([name, variant]) => [name, (variant.required ?? []).map((part) => [...partClasses(kind, part)])]);
+
+/**
+ * What the sweep mounts: one field per kind, and one per shape for a kind that declares more than one.
+ *
+ * The document that picks a shape is not in the contract — it names the shapes and not what chooses
+ * between them — so the property is named here, and a renderer that draws the other shape anyway is
+ * the finding rather than the mount being wrong.
+ */
+const SUBJECTS: Array<{ kind: string; name: string; extra: Record<string, unknown> }> =
+  MDY_WIDGET_KINDS.flatMap((kind) =>
+    kind === "select"
+      ? [{ kind, name: "select asked plainly", extra: { searchable: false } },
+         { kind, name: "select asked searchable", extra: { searchable: true } }]
+      : [{ kind, name: kind, extra: {} }]);
+
+
 test("an aria promise that depends on the adapter", async ({ page }) => {
   test.setTimeout(600_000);
 
   /** kind → renderer → the ARIA attributes written anywhere in the field. */
+
   const written = new Map<string, Record<string, string[]>>();
+  const shapes = new Map<string, Record<string, string>>();
   let seen = 0;
 
   for (const host of HOSTS) {
     await page.goto(host.page);
     await page.waitForFunction((flag) => (window as never as Record<string, boolean>)[flag] === true, host.ready);
 
-    for (const kind of MDY_WIDGET_KINDS) {
-      const mountId = `aria-${kind}`;
+    for (const subject of SUBJECTS) {
+      const { kind, extra, name: subjectName } = subject;
+      const mountId = `aria-${subjectName}`;
       await page.evaluate(
-        ({ door, id, k }) => (window as never as Api)[door].mountFields(id, [{
+        ({ door, id, k, extra }) => (window as never as Api)[door].mountFields(id, [{
           name: "campo", kind: k, label: "Etichetta", validators: { required: true },
           options: [{ value: "a", label: "A" }, { value: "b", label: "B" }],
+          ...extra,
         }] as never),
-        { door: host.api, id: mountId, k: kind },
+        { door: host.api, id: mountId, k: kind, extra },
       );
       await page.locator(`[data-form="${mountId}"]`).waitFor({ timeout: 5_000 }).catch(() => undefined);
 
@@ -111,26 +140,61 @@ test("an aria promise that depends on the adapter", async ({ page }) => {
       const speaking = await sweep();
       const found = [...new Set([...atRest, ...opened, ...speaking])];
 
+      // Which of the shapes this kind declares was actually drawn, read from the parts a variant
+      // says it requires. Two renderers handed the same document can draw different shapes, and
+      // comparing the ARIA of one against the ARIA of the other reports the shape as an attribute
+      // defect — six rows for one divergence, none of them the thing that is wrong.
+      const shape = await page.evaluate(({ id, variants }) => {
+        const root = document.querySelector(`[data-form="${id}"]`) as HTMLElement | null;
+        if (root === null || variants.length === 0) return null;
+        // A shape the platform draws is read off the platform's own element, because the required
+        // parts do not separate these two: a `<select>` is styled with the same arrow as a custom
+        // trigger, so the part is there in both and tells them apart in neither.
+        if (variants.some(([name]) => name === "native")) {
+          return root.querySelector("select") === null ? "custom" : "native";
+        }
+        const drawn = variants.filter(([, required]) =>
+          required.length > 0 && required.every((classes) => classes.some((one) => root.querySelector(`.${one}`) !== null)));
+        return drawn.length === 1 ? drawn[0][0] : `${drawn.length} of them at once`;
+      }, { id: mountId, variants: variantParts(kind) });
+
       seen += found.length;
-      if (!written.has(kind)) written.set(kind, {});
-      written.get(kind)![host.name] = found;
+      if (!written.has(subjectName)) written.set(subjectName, {});
+      written.get(subjectName)![host.name] = found;
+      if (shape !== null) {
+        if (!shapes.has(subjectName)) shapes.set(subjectName, {});
+        shapes.get(subjectName)![host.name] = shape;
+      }
     }
   }
 
   // The premise: a page that wrote no ARIA at all has three renderers agreeing perfectly about nothing.
   expect(seen, "no renderer wrote a single ARIA attribute, so this compared nothing").toBeGreaterThan(30);
 
-  const disagreements = [...written.entries()].flatMap(([kind, byHost]) => {
+  // A shape disagreement first: renderers handed one document that drew different anatomies do not
+  // have an ARIA defect between them, they have this one, and every attribute row below it is a
+  // symptom. Reported on its own so the cause is not read six times as six defects.
+  const shapeSplits = [...shapes.entries()]
+    .filter(([, byHost]) => new Set(HOSTS.map((host) => byHost[host.name]).filter((one) => one !== undefined)).size > 1)
+    .map(([subject, byHost]) =>
+      `${subject}: drawn as ${HOSTS.map((host) => `${byHost[host.name] ?? "nothing"} by ${host.name}`).join(", ")}`);
+
+  const disagreements = [...shapeSplits, ...[...written.entries()].flatMap(([kind, byHost]) => {
     const everywhere = new Set(HOSTS.flatMap((host) => byHost[host.name] ?? []));
     return [...everywhere]
       .filter((name) => HOSTS.some((host) => !(byHost[host.name] ?? []).includes(name)))
       .sort()
       .map((name) => `${kind}: ${name} written by ${HOSTS.filter((host) => (byHost[host.name] ?? []).includes(name)).map((host) => host.name).join(" and ")}`);
-  });
+  })];
 
   expect(
     disagreements,
     `${disagreements.length} ARIA promise(s) are made by some renderers and not others:\n${disagreements.join("\n")}\n\n` +
+      "A shape row above an attribute row is the cause of it: renderers that drew different anatomies " +
+      "from one document have no ARIA defect between them until they agree on what they are drawing. " +
+      "Which shape a document asks for is not published — the catalogue names the shapes and nothing " +
+      "at runtime says what chooses between them — so the mount names the property and a renderer " +
+      "that draws the other shape anyway is what this reports.\n\n" +
       "The same document should say the same things to a screen reader whoever drew it. Which answer " +
       "is right is not in the contract — seven of the nineteen attributes in play are declared at all — " +
       "so this is a declaration owed, not a renderer to blame.",

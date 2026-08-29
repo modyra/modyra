@@ -293,12 +293,16 @@ export function distinguishing(name: string, values: readonly unknown[], least =
  * measure a silence it caused itself.
  */
 export async function madeToSpeak(page: Page, root: string, api = "battle"): Promise<boolean> {
-  const box = page.locator(`${root} input:not([type="hidden"]), ${root} textarea`).first();
+  // Visible, and typed into under a clock. A kind whose only box lives inside a closed panel has one
+  // that is in the document and cannot be typed into, and `fill` waits for it to become usable rather
+  // than refusing — so the catch never runs and the wait is the whole test's timeout. Bounded, the
+  // gesture falls through to the other channel instead of spending the run on one field.
+  const box = page.locator(`${root} input:not([type="hidden"]):visible, ${root} textarea:visible`).first();
   if (await box.count() > 0) {
     const before = await box.inputValue().catch(() => null);
-    await box.fill("x").catch(() => undefined);
+    await box.fill("x", { timeout: 2_000 }).catch(() => undefined);
     const during = await box.inputValue().catch(() => null);
-    await box.fill("").catch(() => undefined);
+    await box.fill("", { timeout: 2_000 }).catch(() => undefined);
     await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur());
     if (before !== null && during !== null && during !== before) {
       await page.waitForTimeout(240);
