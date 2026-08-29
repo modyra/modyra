@@ -15,6 +15,7 @@ import {
   projectFieldShellA11y,
   fieldAccessibleName,
   errorsVisible,
+  focusIsInsideField,
   keepKeyboardInPlay,
   reportIdCollision,
   holdsUneditedValue,
@@ -367,7 +368,10 @@ export abstract class MdyFieldElement<T> extends LitElement {
     // reading that as leaving closed the popup on the click that was operating it.
     const isNode = typeof next === "object" && next !== null
       && typeof (next as { nodeType?: unknown }).nodeType === "number";
-    if (isNode && !this.contains(next as Node)) this.focusLeft();
+    // Asked of the contract rather than of the tree: a panel drawn outside this element to escape a
+    // scrolling ancestor is still part of the field, and `contains` alone called that a leaving.
+    // ADR 0167.
+    if (isNode && !focusIsInsideField(this, next as Node)) this.focusLeft();
     if (next !== null) return;
     queueMicrotask(() => {
       if (this.field?.disabled() !== true) return;

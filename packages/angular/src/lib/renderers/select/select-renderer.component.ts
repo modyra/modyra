@@ -306,7 +306,10 @@ export class MdySelectComponent<TValue = string>
     adapter.connectHandlers({
       setOpen: (open) => open ? this.openOverlay() : this.closeOverlay(),
       onChange: () => undefined,
-      onTouched: () => this.dispatchValueBlur("select"),
+      // The runtime says the field has had an answer; this is who it reaches. It used to send a
+      // blur intent back into the controller, which worked only while a blur was what marked a field
+      // touched — a loop that answered the question by asking it again. ADR 0167.
+      onTouched: () => this.valueOwnerCallbacks().onTouched(),
       onDirty: () => undefined,
     });
     return adapter;

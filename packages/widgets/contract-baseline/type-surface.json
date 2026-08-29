@@ -637,6 +637,7 @@
     "state: MdyDateRangeDraftState"
   ],
   "MdyDateRangePickerComponent": [
+    "closeOverlay-> returns: void",
     "dateFilter: _angular_core.InputSignal<((date: string) => boolean) | null>",
     "endPlaceholder: _angular_core.InputSignal<string>",
     "maxDate: _angular_core.InputSignal<string | null>",
@@ -4014,6 +4015,11 @@
   "flattenDynamicSchema": [
     "(0) schema: MdyDynamicGroupNode",
     "-> returns: MdyDynamicField[]"
+  ],
+  "focusIsInsideField": [
+    "(0) root: Element",
+    "(1) node: Node | null",
+    "-> returns: boolean"
   ],
   "focusTrigger": [
     "-> returns: MdyUiCommand"

@@ -317,6 +317,16 @@ export class MdyDateRangePickerComponent extends MdyOverlayControl<MdyDateRange 
     }, { injector: this.injector });
   }
 
+  /**
+   * Told to the controller, which is where closing-without-choosing is recorded as an act on the
+   * value. Closing through the overlay directive alone left this kind answering a question its
+   * siblings answer through the contract. ADR 0167.
+   */
+  public override closeOverlay(): void {
+    super.closeOverlay();
+    this.controller()?.dispatch({ type: "close", restoreFocus: false });
+  }
+
   protected onRangePicked(range: {
     readonly start: CalendarDate;
     readonly end: CalendarDate;

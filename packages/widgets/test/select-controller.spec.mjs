@@ -77,17 +77,19 @@ test("select disabled option is ignored", () => {
 // A leaving is not an answer: Tab is how a person reads a form, so a traversal that changed
 // nothing leaves the field silent. What makes it answerable is a change to the value.
 // ADR 0167.
-test("blur closes the list and answers nothing", () => {
+test("leaving a closed list answers nothing; leaving an open one closes it, which is an answer", () => {
   const { controller } = setup();
+  // Nothing was opened: this is a person tabbing through, and a traversal is not a decision.
+  assert.deepEqual(controller.dispatch({ type: "blur" }), []);
+  assert.strictEqual(controller.state().touched, false);
+
+  // Opened and left: they saw what was on offer and took none of it, which is the panel's version of
+  // typing and deleting. ADR 0167.
   controller.dispatch({ type: "open", source: "keyboard" });
   const commands = controller.dispatch({ type: "blur" });
-  assert.strictEqual(controller.state().touched, false);
   assert.strictEqual(controller.state().open, false);
-  assert.ok(!commands.some((c) => c.type === "mark-touched"));
-  // The perimeter: choosing is an answer, and it says so.
-  controller.dispatch({ type: "open", source: "keyboard" });
-  controller.dispatch({ type: "select", optionKey: "a" });
   assert.strictEqual(controller.state().touched, true);
+  assert.ok(commands.some((c) => c.type === "mark-touched"));
 });
 
 test("blur does not pull focus back to the trigger", () => {
@@ -106,7 +108,8 @@ test("Escape still restores focus — the user is still in the widget", () => {
   const { controller } = setup();
   controller.dispatch({ type: "open", source: "keyboard" });
   const commands = controller.dispatch({ type: "close", restoreFocus: true });
-  assert.deepStrictEqual(commands.map((c) => c.type), ["close-overlay", "restore-focus"]);
+  // And it carries the mark, because closing without choosing is an act on the value. ADR 0167.
+  assert.deepStrictEqual(commands.map((c) => c.type), ["close-overlay", "mark-touched", "restore-focus"]);
 });
 
 test("search filters options and activates first match", () => {

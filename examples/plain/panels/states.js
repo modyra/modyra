@@ -9,7 +9,7 @@
 import { createForm, field as mdyField, group as mdyGroup, required as mdyRequired } from "@modyra/core";
 import { renderField } from "@modyra/plain";
 import { KINDS } from "./kinds.js";
-import { fieldAccessibleName, nameIsAFallback, sliderTrack } from "@modyra/widgets";
+import { fieldAccessibleName, focusIsInsideField, nameIsAFallback, sliderTrack } from "@modyra/widgets";
 import { grid, paintedAsFailing, readoutPrinter, toggle, toolbar } from "./shell.js";
 
 export const statesPanel = {
@@ -44,6 +44,9 @@ export const statesPanel = {
     "sliderTrack",
     "nameIsAFallback",
     "fieldAccessibleName",
+    // Which field the keyboard is in, printed live: a panel drawn outside its field still belongs to
+    // it, and the readout says so while the pointer or the keyboard is inside one.
+    "focusIsInsideField",
     "errorsVisible",
     "shownErrorsOf",
     // The calendar's three views: a date picker that only pages a month at a time puts a birth date
@@ -108,6 +111,16 @@ export const statesPanel = {
       // they are not being shown to someone who cannot act on them.
       errorsHeld: KINDS.reduce((n, [kind]) => n + form.f.all[kind].errors().length, 0),
       partsPaintedAsFailing: paintedAsFailing(area),
+      // Which field the keyboard is in, asked of the contract rather than of the document tree. A
+      // panel drawn outside its field — to escape a scrolling ancestor — is still part of that
+      // field, and the link that says so is the opener's `aria-controls`. Open a picker, put the
+      // keyboard inside it, and the field named here is still the one that opened it.
+      focusIsInside: KINDS
+        .map(([kind]) => kind)
+        .filter((kind) => {
+          const root = area.querySelector(`[data-mdy-field="${kind}"]`);
+          return root !== null && focusIsInsideField(root, work.ownerDocument.activeElement);
+        }),
       // The track a slider is drawn on, printed beside what the form holds. A slider spans something
       // whether or not a document declares a range, and the default is not a licence to
       // misrepresent: a value past it widens the track rather than moving the thumb somewhere the

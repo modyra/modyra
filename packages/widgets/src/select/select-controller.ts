@@ -251,7 +251,12 @@ export function createSelectController<TValue>(
     open.set(false);
     activeKey.set(null);
     query.set("");
-    commands.push({ type: "close-overlay" });
+    // Opening the list and closing it without choosing is an act on the value — the panel's version
+    // of typing and deleting. The person saw what was on offer and took none of it, which is an
+    // answer, where merely passing through the field is not. Touched and not dirty: nothing about
+    // the value changed. ADR 0167.
+    touched.set(true);
+    commands.push({ type: "close-overlay" }, { type: "mark-touched" });
     if (restoreFocus) {
       commands.push({
         type: "restore-focus",

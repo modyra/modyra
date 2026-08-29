@@ -817,10 +817,17 @@ export const MDY_CANONICAL_FILLED_OBSERVATION: Readonly<Partial<Record<MdyWidget
  * it is a design choice: the opener the user activated is the obvious answer, and a range picker
  * putting them back in its start field so they can keep typing is a defensible one.
  *
- * **Abandoning an interaction does not touch the field.** A user who opens a picker, changes their
- * mind and presses Escape has decided nothing, and must not be shown a "required" error for a field
- * they never filled. Closing an overlay is therefore not a validation event, which is why the state
- * here is the resting one.
+ * **Opening a panel and closing it is an act on the value.** It is the panel's version of typing and
+ * deleting: the person saw what was on offer and took none of it, which is a decision, where merely
+ * passing through the field is not. So the state here is the resting one plus `touched` — and not
+ * `dirty`, because nothing about the value changed.
+ *
+ * This reverses what this table said before, and the reversal is the point. It read "abandoning an
+ * interaction does not touch the field", which is the right answer to a different question: a person
+ * who *tabs past* a required field has decided nothing, and that is now answered where it belongs —
+ * a bare traversal marks nothing at all, in any kind. Once traversal is silent, the panel is no
+ * longer the thing that might speak too early; it is the one gesture on these kinds that corresponds
+ * to filling a box and clearing it again. ADR 0167.
  */
 export const MDY_CANONICAL_AFTER_ESCAPE: Readonly<Partial<Record<MdyWidgetKind, MdyCanonicalExpectation>>> =
   Object.freeze(Object.fromEntries(
@@ -828,7 +835,11 @@ export const MDY_CANONICAL_AFTER_ESCAPE: Readonly<Partial<Record<MdyWidgetKind, 
       .filter(([kind, rest]) => rest.overlay !== "absent" && MDY_POPUP_OPENERS[kind as MdyWidgetKind])
       .map(([kind, rest]) => [
         kind,
-        Object.freeze({ ...rest, focusOwner: MDY_FOCUS_WITHIN }),
+        Object.freeze({
+          ...rest,
+          focusOwner: MDY_FOCUS_WITHIN,
+          state: Object.freeze([...new Set([...(rest.state ?? []), "touched"])]),
+        }),
       ]),
   ));
 

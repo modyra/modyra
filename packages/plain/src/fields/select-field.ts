@@ -9,7 +9,7 @@
 import {
   observerFor, type MdyFieldHandle, type MdyReactivity, type MdySelectOption } from "@modyra/core";
 import type { MdyDynamicOptionsField } from "@modyra/core";
-import { capabilityOf, syncSubmitValues,
+import { focusIsInsideField, capabilityOf, syncSubmitValues,
   stateClass,
   MDY_WIDGET_CONTRACTS,
   createSelectFieldController,
@@ -211,12 +211,13 @@ export function renderSelectField(
   // the user has been here either way.
   const onFocusOut = (event: FocusEvent): void => {
     const next = event.relatedTarget as Node | null;
-    if (next !== null && typeof next.nodeType === "number" && (wrapper.contains(next) || popup.contains(next))) return;
+    // The control and the panel its opener names, asked of the contract rather than of two elements
+    // this file happens to hold. ADR 0167.
+    if (focusIsInsideField(wrapper, next) || popup.contains(next as Node)) return;
     if (!capabilityOf("select", "dismissOnFocusOutside")) return;
-    if (undismiss.interactionFromInside()) {
-      handle.markAsTouched();
-      return;
-    }
+    // A drag begun inside the panel is not a leaving, and not an answer either: nothing about the
+    // value changed.
+    if (undismiss.interactionFromInside()) return;
     dispatch({ type: "blur" });
   };
   trigger.addEventListener("focusout", onFocusOut);

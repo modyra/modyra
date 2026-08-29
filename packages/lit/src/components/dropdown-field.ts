@@ -1,6 +1,6 @@
 import { html, nothing, type PropertyDeclarations } from "lit";
 import { type MdyFieldHandle } from "@modyra/core";
-import { capabilityOf,
+import { focusIsInsideField, capabilityOf,
   createLightDismiss,
   listboxNextIndex,
   keyBindingFor,
@@ -93,13 +93,13 @@ export abstract class MdyDropdownFieldElement<T> extends MdyOptionsFieldElement<
    */
   protected onFocusOut(event: FocusEvent, handle: MdyFieldHandle<T>): void {
     const next = event.relatedTarget as Node | null;
-    if (next !== null && typeof next === "object"
-      && typeof (next as { nodeType?: unknown }).nodeType === "number" && this.contains(next)) return;
+    // The field's scope is the control and the panel its opener names, wherever that panel is drawn.
+    // ADR 0167.
+    if (focusIsInsideField(this, next)) return;
     if (!capabilityOf("select", "dismissOnFocusOutside")) return;
-    if (this.dismissal.interactionFromInside()) {
-      handle.markAsTouched();
-      return;
-    }
+    // A drag that began inside the panel is not a leaving and not an answer either: nothing about
+    // the value changed, so there is nothing for the field to say yet.
+    if (this.dismissal.interactionFromInside()) return;
     this.close(handle);
   }
 

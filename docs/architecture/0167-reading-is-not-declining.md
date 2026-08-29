@@ -122,6 +122,50 @@ answered at different moments depending on whether a kind's control happened to 
   *before* the panel is removed. At least one renderer closes first and focuses after, which is safe
   only because its panel is built once and hidden rather than removed. Nothing fails if that changes.
 
+## Amendment: implemented, and where the implementation departs from this record
+
+This record shipped saying the repository contradicted it and that the repair was a batch of its own.
+That batch has run; what follows is what was built and the two places it does not match the words
+above, so the difference is read rather than discovered.
+
+**What sets the flag changed, not what reads it.** The record proposes that the verdict key off
+`dirty` rather than `touched`. That version breaks the submit channel: a refused submit shows a
+form's refusals only through `markAllTouched`, so a verdict keyed off `dirty` says nothing at the one
+moment the form has been asked and refused, and repairing it means a new flag on the field handle.
+Instead a bare blur no longer marks anything, in any controller or renderer, and every path that
+changes the value marks `touched` together with `dirty`. `touched` therefore means *this field has
+had an answer* rather than *focus has been here*, one flag, no new surface, and the submit channel
+is asserted rather than assumed.
+
+**"Speaks on leaving" is not implemented as a separate condition.** The table above says a panel
+opened and closed speaks *on leaving*; what ships shows the verdict from the moment the panel closes,
+which is when the act is recorded. This is deliberate: every other act on a value — typing, clearing,
+choosing — shows its verdict at once, and a second rule that delays one kind of act would be the
+per-kind divergence this record was written against. The cost is that somebody who opens a picker,
+presses Escape and stays on the field sees the message while still standing there.
+
+**The panel is a field's focus scope, by the declared link.** `focusIsInsideField` reads the
+opener's `aria-controls` and answers for the panel wherever it is drawn. Three renderers answered by
+containment before it, which is the divergence this record names — a portalled panel read as
+"outside" and an in-place one as "inside", from one contract.
+
+**A contradiction resolved rather than left standing.** The canonical after-Escape expectation said
+the opposite of this record in prose — *"abandoning an interaction does not touch the field"* — and
+was the right answer to a different question: a person who *tabs past* a field has decided nothing,
+which is now answered where it belongs. Once a traversal is silent, opening a panel and closing it is
+the one gesture on these kinds that corresponds to filling a box and clearing it again, and the table
+says so.
+
+**Verification of the batch.** `npm run test`, `test:conformance` and `test:angular` are green. The
+new checks are one per renderer — focus in, focus out, nothing typed, and a perimeter proving the
+field can still speak — plus the submit channel in Angular and a contract-level check that a
+portalled panel belongs to its field. Mutations: restoring `markAsTouched` on blur in one controller
+turns three kinds red; replacing the paired mark with `markAsDirty` alone turns three checks red;
+answering the focus scope by containment alone turns the portalled case red.
+
+**Still not guarded**: that focus moves back to the opener *before* the panel is removed. It was
+unenforced when this record shipped and it is unenforced now.
+
 ## Security and privacy
 
 None. This decides when a message a person is entitled to see is shown to them; no data crosses a

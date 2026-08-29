@@ -675,7 +675,11 @@ export abstract class MdyOverlayControl<TValue> extends MdyBaseControl<TValue> {
     // focus to the opener, which is the trap this listener exists to avoid rather than cause.
     const dismissal = keyBindingFor(this.overlayKind, event, true);
     if (dismissal?.intent === "cancel" && dismissal.restoresFocus === true) {
-      this.applyLifecycle({ type: "escape" });
+      // Through the closing door a component may override, not past it. Straight to the lifecycle,
+      // a renderer that tells its controller about a close — because closing without choosing is an
+      // act on the value — was told about every close except the one a person makes with Escape,
+      // which is the commonest of them. ADR 0167.
+      this.closeOverlay(true);
     }
   };
 

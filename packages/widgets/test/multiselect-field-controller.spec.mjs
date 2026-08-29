@@ -211,9 +211,11 @@ test("the options live in an overlay the trigger controls", () => {
   controller.dispatch({ type: "toggle", optionKey: "small" });
   assert.strictEqual(controller.state().open, true);
 
+  // Closing carries the mark: opening the list and leaving it is an act on the value, the panel's
+  // version of typing and deleting. ADR 0167.
   const closed = controller.dispatch({ type: "close", restoreFocus: true });
   assert.strictEqual(controller.state().open, false);
-  assert.deepStrictEqual(closed.map((c) => c.type), ["close-overlay", "restore-focus"]);
+  assert.deepStrictEqual(closed.map((c) => c.type), ["close-overlay", "mark-touched", "restore-focus"]);
 });
 
 test("closing clears the filter so reopening shows every option", () => {

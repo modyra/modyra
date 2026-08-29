@@ -95,9 +95,13 @@ export class MdyColorsFieldElement extends MdyFieldElement<string | null> {
     this.querySelector<HTMLElement>(".mdy-colors__primary-picker")?.focus();
   }
 
-  private close(_handle: MdyFieldHandle<string | null>): void {
+  private close(handle: MdyFieldHandle<string | null>): void {
     if (!this._open) return;
     applyOverlayIntent(this, { type: "close" });
+    // Told to the controller, which is where closing-without-choosing is recorded as an act on the
+    // value. Flipping the element's own flag and stopping there left this kind answering a question
+    // the other five answer through the contract. ADR 0167.
+    this.colorsController(handle).dispatch({ type: "close", restoreFocus: false });
     this.overlay.close();
   }
 

@@ -66,3 +66,38 @@ export function overlayControlledId(kind: MdyWidgetKind, widgetId: string): stri
   const relation = MDY_POPUP_OPENERS[kind];
   return relation ? idFactory.part(widgetId, relation.controls) : null;
 }
+
+/**
+ * Whether focus is still inside a field, given where it went.
+ *
+ * A field's focus has left when it has left the control **and** is not inside the panel the control
+ * opened. Where that panel lives in the document is a rendering decision — taken for clipping
+ * reasons, so a list is not cut off by a scrolling ancestor — and a rendering decision must not
+ * reach behaviour. A renderer that answers by containment says focus left the moment it entered a
+ * panel drawn elsewhere; a renderer that draws its panel in place says it did not. Same contract,
+ * two behaviours, decided by where a `<div>` was appended.
+ *
+ * So the scope follows the link the opener declares: `aria-controls` names the element, and that
+ * element and everything inside it belongs to the field wherever it is drawn. ADR 0167.
+ *
+ * `null` — focus went nowhere at all — is not a leaving here and is deliberately the caller's
+ * question: re-rendering an element removes whatever was focused and blurs it into nowhere, and a
+ * calendar cell replaced when the view changes must not read as somebody walking out of the field.
+ */
+export function focusIsInsideField(root: Element, node: Node | null): boolean {
+  if (node === null) return false;
+  if (root.contains(node)) return true;
+  const owner = root.ownerDocument;
+  if (owner === null) return false;
+  // Every opener in the field, not only the first: a kind may draw more than one control over the
+  // same panel — a typeable box and the button beside it — and asking only one of them makes the
+  // panel foreign the moment the other is what opened it.
+  for (const opener of root.querySelectorAll("[aria-controls]")) {
+    for (const id of (opener.getAttribute("aria-controls") ?? "").split(/\s+/)) {
+      if (id === "") continue;
+      const controlled = owner.getElementById(id);
+      if (controlled !== null && (controlled === node || controlled.contains(node))) return true;
+    }
+  }
+  return false;
+}
