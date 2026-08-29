@@ -3,7 +3,7 @@ import {
   createColorsFieldController,
   type MdyColorsFieldController, capabilityOf, keyMeans,
   keyBindingFor,
-  MDY_COLOR_PRESETS, colorPresetsOf, openPlatformChooser, overlayControlledId, rowRovingIndex } from "@modyra/widgets";
+  MDY_COLOR_PRESETS, colorPresetsOf, openPlatformChooser, overlayControlledId, rowRovingIndex  } from "@modyra/widgets";
 import { html, nothing, type PropertyDeclarations } from "lit";
 import { type MdyFieldHandle } from "@modyra/core";
 import { applyOverlayIntent, bindOutsidePointer, closeOverlayOutOfPlay } from "../widget-runtime/overlay-host.js";
@@ -279,7 +279,6 @@ export class MdyColorsFieldElement extends MdyFieldElement<string | null> {
               aria-expanded=${this._open ? "true" : "false"}
               aria-haspopup=${this.popupPromise}
               aria-controls=${overlayControlledId("colors", this.fieldId) ?? nothing}
-              aria-label=${this.label || "Color"}
               @click=${(e: Event) => {
                 if (this._open) {
                   this.close(handle);

@@ -511,7 +511,7 @@ export class MdyDaterangeFieldElement extends MdyFieldElement<MdyDateRange | nul
   private modalDisplayValue(): string {
     const start = parseIsoDate(this.view.draft.start);
     const end = parseIsoDate(this.view.draft.end);
-    if (!start) return this.label || "Select range";
+    if (!start) return this.label || this.messages.daterangeSelectFallback;
     const fmt = (d: CalendarDate): string => {
       try {
         return new Intl.DateTimeFormat(this.resolvedLocale, { month: "short", day: "numeric" }).format(
@@ -535,7 +535,7 @@ export class MdyDaterangeFieldElement extends MdyFieldElement<MdyDateRange | nul
       this.overlay.state.position === "overlay"
         ? html`
             <div class="mdy-datepicker__modal-header">
-              <span class="mdy-datepicker__modal-label">${this.label || "Select range"}</span>
+              <span class="mdy-datepicker__modal-label">${this.label || this.messages.daterangeSelectFallback}</span>
               <span class="mdy-datepicker__modal-value">${this.modalDisplayValue()}</span>
             </div>
           `
@@ -545,7 +545,7 @@ export class MdyDaterangeFieldElement extends MdyFieldElement<MdyDateRange | nul
       <div
         class="mdy-datepicker__calendar"
         role="dialog"
-        aria-label=${this.label || "Choose date range"}
+        aria-label=${this.label || this.messages.daterangeChooseRange}
         @keydown=${(e: KeyboardEvent) => this.onGridKeydown(e, handle)}
       >
         ${modalHeader}

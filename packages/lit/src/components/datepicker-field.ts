@@ -425,7 +425,7 @@ export class MdyDatepickerFieldElement extends MdyFieldElement<string | null> {
   private modalDisplayValue(): string {
     // The committed value: with `commit: "live"` there is no draft to show instead.
     const parsed = parseIsoDate(this.field?.value() ?? "");
-    if (!parsed) return this.label || "Select date";
+    if (!parsed) return this.label || this.messages.datepickerSelectFallback;
     try {
       return new Intl.DateTimeFormat(this.resolvedLocale, {
         weekday: "short",
@@ -445,7 +445,7 @@ export class MdyDatepickerFieldElement extends MdyFieldElement<string | null> {
       this.overlay.state.position === "overlay"
         ? html`
             <div class="mdy-datepicker__modal-header">
-              <span class="mdy-datepicker__modal-label">${this.label || "Select date"}</span>
+              <span class="mdy-datepicker__modal-label">${this.label || this.messages.datepickerSelectFallback}</span>
               <span class="mdy-datepicker__modal-value">${this.modalDisplayValue()}</span>
             </div>
           `
@@ -455,7 +455,7 @@ export class MdyDatepickerFieldElement extends MdyFieldElement<string | null> {
       <div
         class="mdy-datepicker__calendar"
         role="dialog"
-        aria-label=${this.label || "Choose date"}
+        aria-label=${this.label || this.messages.datepickerChooseDate}
         @keydown=${(e: KeyboardEvent) => this.onGridKeydown(e, handle)}
       >
         ${modalHeader}

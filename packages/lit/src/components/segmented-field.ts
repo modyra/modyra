@@ -49,6 +49,7 @@ export class MdySegmentedFieldElement extends MdyOptionsFieldElement<unknown | n
         role="radiogroup"
         ${mdyPart(this.controlPart(handle))}
         aria-labelledby=${this.label ? this.labelId : nothing}
+        aria-label=${this.label ? nothing : this.fallbackName()}
         style=${styleMap(view?.parts.group?.style ?? {})}
       >
         ${this.options.map((option, index) => {

@@ -759,9 +759,13 @@ export abstract class MdyFieldElement<T> extends LitElement {
       this._pendingName = named;
       this.removeAttribute("aria-label");
     }
-    const control = this.querySelector<HTMLElement>(
-      "input, select, textarea, [role='combobox'], [role='listbox']",
-    );
+    // The element a person operates, asked of the contract before being guessed at by role. A kind
+    // whose control is a plain button — a swatch that opens a palette — matched none of the roles
+    // below, so this never named it and the component wrote its own English fallback beside the
+    // resolver. The catalogue says which part opens each kind; a list of roles cannot.
+    const opener = MDY_POPUP_OPENERS[this.widgetKind]?.opener;
+    const control = (opener === undefined ? null : this.querySelector<HTMLElement>(`.${this.partClass(opener)}`))
+      ?? this.querySelector<HTMLElement>("input, select, textarea, [role='combobox'], [role='listbox']");
     if (!control) return;
     // A label is optional in a document by design, and a control with no accessible name is
     // announced as its role and nothing else. `fieldAccessibleName` holds the order so this renderer
@@ -773,6 +777,25 @@ export abstract class MdyFieldElement<T> extends LitElement {
     });
     if (name) control.setAttribute("aria-label", name);
     else control.removeAttribute("aria-label");
+  }
+
+  /**
+   * The name for a control this element cannot reach imperatively.
+   *
+   * A group is named by pointing at its caption, and on a document that writes none there is nothing
+   * to point at — `aria-labelledby` resolves to `nothing` and the group is announced as its role,
+   * which says there is a set of choices here and not what it is asking. The imperative naming above
+   * finds a single control; a `role="radiogroup"` is not one of those and cannot be, because naming
+   * the group means naming the container rather than any input inside it.
+   *
+   * So a template asks for the same answer the resolver gives, rather than writing a word beside it.
+   */
+  protected fallbackName(): string | typeof nothing {
+    return fieldAccessibleName({
+      ariaLabel: this._pendingName,
+      label: this.label,
+      name: this.field?.path,
+    }) || nothing;
   }
 
   /** The name given through the host's `aria-label`, kept once the attribute is taken off it. */
