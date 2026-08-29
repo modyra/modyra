@@ -4,408 +4,9 @@
     "published": 903,
     "asserted": 903,
     "showable": 398,
-    "shown": 87
+    "shown": 203
   },
   "uncovered": [
-    {
-      "name": "MDY_ADAPTER_CONTRACT_VIOLATION",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "MDY_ASYNC_FEATURE_DISABLED",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "MDY_BACKDROP_ATTRIBUTE",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "MDY_CHIP_CLASSES",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "MDY_CHIP_DRAG_THRESHOLD",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "MDY_COLOR_PRESETS",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "MDY_CROSS_RUNTIME_OBSERVATION",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "MDY_CSS_PROPERTIES",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "MDY_DISABLED_BLOCKS_TRANSITIONS",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "MDY_DRAFT_KEY_IN_USE",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "MDY_DRAFT_NOT_RESTORED",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "MDY_DYNAMIC_FIELD_KINDS",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "MDY_DYNAMIC_MEMBERS",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "MDY_EFFECTS_UNAVAILABLE",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "MDY_EVERY_TIME",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "MDY_FIELD_SHELL_CLASSES",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "MDY_FIELD_STATE_CLASSES",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "MDY_ID_DELIMITER",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "MDY_LAYOUT_BREAKPOINTS",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "MDY_LAYOUT_COLUMN_COUNT_PROPERTIES",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "MDY_LAYOUT_COLUMN_COUNT_PROPERTY",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "MDY_LAYOUT_COLUMN_DISPLAY_PROPERTIES",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "MDY_LAYOUT_COLUMN_START_PROPERTIES",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "MDY_MARKS_REQUIRED",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "MDY_MAX_EXPRESSION_DEPTH",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "MDY_OVERLAY_GAP",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "MDY_OVERLAY_PORTAL_CLASS",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "MDY_OVERLAY_VIEWPORT_MARGIN",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "MDY_PART_NAMES",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "MDY_PART_PRESENCE",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "MDY_PART_PRESENCES",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "MDY_PART_REQUIRES",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "MDY_POPUP_CLASS",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "MDY_POPUP_OPENERS",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "MDY_PRESENCE_RESOLUTION",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "MDY_SCOPE_DESTROYED",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "MDY_SEMANTICS_REQUIRING_NAME",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "MDY_SHARED_REGION_ATTRIBUTE",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "MDY_SHARED_REGION_ID",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "MDY_SSR_SNAPSHOT_MISMATCH",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "MDY_STATE_EXPRESSION",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "MDY_TIMEPICKER_ADVANCE_MS",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "MDY_TIMEPICKER_INITIAL_VIEW",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "MDY_TIMEPICKER_INNER_RING",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "MDY_TIMEPICKER_NUMBER_SIZE",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "MDY_TIMEPICKER_RING_BAND",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "MDY_TYPEAHEAD_IDLE_MS",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "MDY_UNSUPPORTED_ADAPTER_OPTION",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "MDY_VALIDATION_MESSAGES",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "MDY_VALIDATION_MESSAGES_DEFAULT",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "MDY_VALUE_CONTRACTS",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "MDY_WIDGET_CONTRACTS",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "MDY_WIDGET_CONTRACT_VERSION",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "MDY_WIDGET_KEYBOARD",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "MDY_WIDGET_KINDS",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "MDY_WIDGET_RELATIONS",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "MDY_WIDGET_TRANSITIONS",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
     {
       "name": "MdyActivationError",
       "asserted": true,
@@ -463,13 +64,6 @@
       "reason": "published and never shown"
     },
     {
-      "name": "NO_CONSTRAINTS",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
       "name": "acceptTimeField",
       "asserted": true,
       "shown": false,
@@ -484,13 +78,6 @@
       "reason": "published and never shown"
     },
     {
-      "name": "anchorOverlay",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
       "name": "applyFieldValidators",
       "asserted": true,
       "shown": false,
@@ -498,14 +85,7 @@
       "reason": "published and never shown"
     },
     {
-      "name": "applyOverlayProperties",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "applyPart",
+      "name": "applyValueSecurity",
       "asserted": true,
       "shown": false,
       "showable": true,
@@ -519,28 +99,7 @@
       "reason": "published and never shown"
     },
     {
-      "name": "assertSafeDynamicFieldNames",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
       "name": "assertUsableWidgetId",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "beginChipReorder",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "bindLightDismiss",
       "asserted": true,
       "shown": false,
       "showable": true,
@@ -555,13 +114,6 @@
     },
     {
       "name": "blocksFocus",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "blocksValueChange",
       "asserted": true,
       "shown": false,
       "showable": true,
@@ -603,13 +155,6 @@
       "reason": "published and never shown"
     },
     {
-      "name": "buildDynamicValidations",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
       "name": "buildDynamicValidators",
       "asserted": true,
       "shown": false,
@@ -631,13 +176,6 @@
       "reason": "published and never shown"
     },
     {
-      "name": "calendarDayId",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
       "name": "calendarKeyboardTarget",
       "asserted": true,
       "shown": false,
@@ -645,21 +183,7 @@
       "reason": "published and never shown"
     },
     {
-      "name": "calendarViewOnToggle",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "capabilityOf",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "chipActionName",
+      "name": "calendarViewAfterPick",
       "asserted": true,
       "shown": false,
       "showable": true,
@@ -673,35 +197,7 @@
       "reason": "published and never shown"
     },
     {
-      "name": "chipFocusAfterRemoval",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "chipMovedAnnouncement",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
       "name": "chipStripWheelDelta",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "chipTooltipOffset",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "chosenKeyOrder",
       "asserted": true,
       "shown": false,
       "showable": true,
@@ -716,20 +212,6 @@
     },
     {
       "name": "closeOverlay",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "colorPresetsOf",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "colorValueEquals",
       "asserted": true,
       "shown": false,
       "showable": true,
@@ -771,21 +253,7 @@
       "reason": "published and never shown"
     },
     {
-      "name": "createColorsFieldController",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
       "name": "createConsoleDiagnostics",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "createFileFieldController",
       "asserted": true,
       "shown": false,
       "showable": true,
@@ -799,20 +267,6 @@
       "reason": "published and never shown"
     },
     {
-      "name": "createLightDismiss",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "createMdyAnnouncer",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
       "name": "createPointerDrag",
       "asserted": true,
       "shown": false,
@@ -820,7 +274,7 @@
       "reason": "published and never shown"
     },
     {
-      "name": "createSelectFieldController",
+      "name": "createSelectController",
       "asserted": true,
       "shown": false,
       "showable": true,
@@ -828,13 +282,6 @@
     },
     {
       "name": "createSilentDiagnostics",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "createTypeahead",
       "asserted": true,
       "shown": false,
       "showable": true,
@@ -905,20 +352,6 @@
     },
     {
       "name": "decideOverlayPlacement",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "defaultOptionKey",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "defaultWidgetIdFactory",
       "asserted": true,
       "shown": false,
       "showable": true,
@@ -1016,6 +449,13 @@
       "reason": "published and never shown"
     },
     {
+      "name": "factsOf",
+      "asserted": true,
+      "shown": false,
+      "showable": true,
+      "reason": "published and never shown"
+    },
+    {
       "name": "factsOfAll",
       "asserted": true,
       "shown": false,
@@ -1023,7 +463,7 @@
       "reason": "published and never shown"
     },
     {
-      "name": "fieldCanBeInvalid",
+      "name": "fieldCommandHandlers",
       "asserted": true,
       "shown": false,
       "showable": true,
@@ -1031,13 +471,6 @@
     },
     {
       "name": "fieldDescribedBy",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "fieldShellPartIds",
       "asserted": true,
       "shown": false,
       "showable": true,
@@ -1093,13 +526,6 @@
       "reason": "published and never shown"
     },
     {
-      "name": "formScopeOf",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
       "name": "getFieldHandleOwner",
       "asserted": true,
       "shown": false,
@@ -1108,34 +534,6 @@
     },
     {
       "name": "handleFormOf",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "hiddenChipCount",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "holdsUneditedValue",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "idSafeKey",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "inlineDirectionOf",
       "asserted": true,
       "shown": false,
       "showable": true,
@@ -1171,13 +569,6 @@
     },
     {
       "name": "isFullyServerRenderable",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "isOnStep",
       "asserted": true,
       "shown": false,
       "showable": true,
@@ -1226,28 +617,7 @@
       "reason": "published and never shown"
     },
     {
-      "name": "isValidWidgetId",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
       "name": "isWidgetKind",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "keepFocusedChipInView",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "keepKeyboardInPlay",
       "asserted": true,
       "shown": false,
       "showable": true,
@@ -1269,13 +639,6 @@
     },
     {
       "name": "kindsWithAffordances",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "layoutNodeAttributes",
       "asserted": true,
       "shown": false,
       "showable": true,
@@ -1317,14 +680,7 @@
       "reason": "published and never shown"
     },
     {
-      "name": "mdyEmptyValueFor",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "measureOverlayContent",
+      "name": "mergeFacts",
       "asserted": true,
       "shown": false,
       "showable": true,
@@ -1339,20 +695,6 @@
     },
     {
       "name": "minutesOfDay",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "multiselectAnnouncement",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "multiselectChipClasses",
       "asserted": true,
       "shown": false,
       "showable": true,
@@ -1381,13 +723,6 @@
     },
     {
       "name": "multiselectValueTransition",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "narrowConstraints",
       "asserted": true,
       "shown": false,
       "showable": true,
@@ -1457,13 +792,6 @@
       "reason": "published and never shown"
     },
     {
-      "name": "overlayAnchoringFor",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
       "name": "overlayBranchContains",
       "asserted": true,
       "shown": false,
@@ -1472,13 +800,6 @@
     },
     {
       "name": "overlayCloseCommands",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "overlayControlledId",
       "asserted": true,
       "shown": false,
       "showable": true,
@@ -1513,13 +834,6 @@
       "reason": "published and never shown"
     },
     {
-      "name": "partClasses",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
       "name": "partSelector",
       "asserted": true,
       "shown": false,
@@ -1542,13 +856,6 @@
     },
     {
       "name": "popupAlignmentClass",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "popupPlacementClass",
       "asserted": true,
       "shown": false,
       "showable": true,
@@ -1604,13 +911,6 @@
       "reason": "published and never shown"
     },
     {
-      "name": "projectOverlayOpenerA11y",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
       "name": "projectSelectA11y",
       "asserted": true,
       "shown": false,
@@ -1633,13 +933,6 @@
     },
     {
       "name": "quantityAnnouncement",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "reactivityRunsEffects",
       "asserted": true,
       "shown": false,
       "showable": true,
@@ -1716,13 +1009,6 @@
       "reason": "published and never shown"
     },
     {
-      "name": "reportIdCollision",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
       "name": "restoreFocusTrigger",
       "asserted": true,
       "shown": false,
@@ -1765,27 +1051,6 @@
       "reason": "published and never shown"
     },
     {
-      "name": "setOverlayOpen",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "settledVoice",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "shellStateClasses",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
       "name": "shouldCloseMultiselectOverlay",
       "asserted": true,
       "shown": false,
@@ -1793,14 +1058,14 @@
       "reason": "published and never shown"
     },
     {
-      "name": "sliderFillRatio",
+      "name": "shownErrors",
       "asserted": true,
       "shown": false,
       "showable": true,
       "reason": "published and never shown"
     },
     {
-      "name": "ssrRuntimeCapabilities",
+      "name": "showsAsInvalid",
       "asserted": true,
       "shown": false,
       "showable": true,
@@ -1828,13 +1093,6 @@
       "reason": "published and never shown"
     },
     {
-      "name": "stateClass",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
       "name": "staticParts",
       "asserted": true,
       "shown": false,
@@ -1856,7 +1114,14 @@
       "reason": "published and never shown"
     },
     {
-      "name": "syncOverlayBackdrop",
+      "name": "submissionDefects",
+      "asserted": true,
+      "shown": false,
+      "showable": true,
+      "reason": "published and never shown"
+    },
+    {
+      "name": "submitFalsePart",
       "asserted": true,
       "shown": false,
       "showable": true,
@@ -1891,21 +1156,7 @@
       "reason": "published and never shown"
     },
     {
-      "name": "timeFieldBounds",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
       "name": "timeInputTransition",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "timeStepsAt",
       "asserted": true,
       "shown": false,
       "showable": true,
@@ -1920,13 +1171,6 @@
     },
     {
       "name": "timepickerDialKeyIntent",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "timepickerDialNumbers",
       "asserted": true,
       "shown": false,
       "showable": true,
@@ -1968,13 +1212,6 @@
       "reason": "published and never shown"
     },
     {
-      "name": "timepickerEntryText",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
       "name": "timepickerFieldPartIds",
       "asserted": true,
       "shown": false,
@@ -2010,20 +1247,6 @@
       "reason": "published and never shown"
     },
     {
-      "name": "timepickerSelectedDialValue",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "timepickerSelectedRing",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
       "name": "timepickerTabOrder",
       "asserted": true,
       "shown": false,
@@ -2032,13 +1255,6 @@
     },
     {
       "name": "timepickerTabTarget",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "trackAnchoredOverlay",
       "asserted": true,
       "shown": false,
       "showable": true,
@@ -2101,35 +1317,7 @@
       "reason": "published and never shown"
     },
     {
-      "name": "vanillaReactivity",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
       "name": "viewIsActive",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "viewportSize",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "visibleErrorsOf",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "wayBackActionName",
       "asserted": true,
       "shown": false,
       "showable": true,
