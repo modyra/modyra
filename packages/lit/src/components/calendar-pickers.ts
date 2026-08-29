@@ -131,6 +131,19 @@ export function calendarGridKey(
     return;
   }
   if (viewMode !== "days") return;
+  // Only the keys this kind declares on a day, and the part is what makes that answerable: a
+  // reading position standing on a cell answers what `gridcell` declares, which is not what the
+  // control answers. Everything else is the platform's — typed unprevented, so a person can still
+  // reach their browser's own shortcuts from inside a calendar.
+  //
+  // Preventing every key here claimed `+`, `-`, `1`, `a`, `Backspace` and `Delete` on a cell, none
+  // of them declared and none of them answered: a key taken and unanswered is worse than one nothing
+  // claims, because the platform's own meaning is gone too.
+  // The cell's own declaration first, the control's after it: a binding with no `on` is what the
+  // kind answers wherever nothing more specific does, and the arrows that walk a month are declared
+  // that way. Asking only the part loses them; asking only the control loses what the cell declares.
+  const answered = keyBindingFor(kind, event, true, "gridcell") ?? keyBindingFor(kind, event, true);
+  if (answered === null) return;
   event.preventDefault();
   send({ type: "keydown", key: event.key, shiftKey: event.shiftKey, ctrlKey: event.ctrlKey, metaKey: event.metaKey });
 }
