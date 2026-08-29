@@ -5,7 +5,7 @@
     "published": 904,
     "asserted": 904,
     "showable": 399,
-    "shown": 349
+    "shown": 360
   },
   "uncovered": [
     {
@@ -65,21 +65,7 @@
       "reason": "published and never shown"
     },
     {
-      "name": "calendarViewAfterPick",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
       "name": "chipDropIndex",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "closeOverlay",
       "asserted": true,
       "shown": false,
       "showable": true,
@@ -121,13 +107,6 @@
       "reason": "published and never shown"
     },
     {
-      "name": "draftShapeMatches",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
       "name": "eachOneOf",
       "asserted": true,
       "shown": false,
@@ -157,13 +136,6 @@
     },
     {
       "name": "flattenDynamicSchema",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "focusTrigger",
       "asserted": true,
       "shown": false,
       "showable": true,
@@ -212,13 +184,6 @@
       "reason": "published and never shown"
     },
     {
-      "name": "openOverlay",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
       "name": "openPlatformChooser",
       "asserted": true,
       "shown": false,
@@ -240,13 +205,6 @@
       "reason": "published and never shown"
     },
     {
-      "name": "restoreFocusTrigger",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
       "name": "scrollChipStripByWheel",
       "asserted": true,
       "shown": false,
@@ -254,21 +212,7 @@
       "reason": "published and never shown"
     },
     {
-      "name": "scrollOptionIntoView",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
       "name": "stepOutOfOverlay",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "submissionDefects",
       "asserted": true,
       "shown": false,
       "showable": true,
@@ -303,13 +247,6 @@
       "reason": "published and never shown"
     },
     {
-      "name": "timepickerDialPick",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
       "name": "timepickerDialRing",
       "asserted": true,
       "shown": false,
@@ -317,21 +254,7 @@
       "reason": "published and never shown"
     },
     {
-      "name": "timepickerDialUnavailableArcs",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
       "name": "timepickerPartSelector",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "timepickerTabTarget",
       "asserted": true,
       "shown": false,
       "showable": true,
