@@ -346,3 +346,40 @@ export async function panelsHome(page: Page, tries = 3): Promise<boolean> {
   }
   return await page.evaluate(() => document.querySelector('[aria-expanded="true"]') === null);
 }
+
+/**
+ * Whether this driver can move a `<select>` with an arrow at all.
+ *
+ * The platform's chooser is navigated by the browser, not by the page, and a driver that presses
+ * keys at the document does not necessarily reach that navigation: an ordinary `<select>` built here
+ * with nothing else on the page does not move under `ArrowDown` in this one. So a shape that does not
+ * move proves nothing about the shape until the gesture is shown to work on a control nobody wrote.
+ *
+ * The control is built and pressed in the page under test, not assumed from a browser name — the
+ * answer differs by driver and would rot as a constant.
+ */
+export const arrowsMoveANativeSelect = async (page: Page): Promise<boolean> => {
+  const id = "__il-controllo-nudo";
+  await page.evaluate((elementId) => {
+    document.getElementById(elementId)?.remove();
+    const box = document.createElement("select");
+    box.id = elementId;
+    for (const value of ["", "uno", "due"]) {
+      const option = document.createElement("option");
+      option.value = value;
+      option.textContent = value === "" ? "Pick" : value;
+      box.append(option);
+    }
+    document.body.append(box);
+  }, id);
+  await page.locator(`#${id}`).focus();
+  await page.locator(`#${id}`).press("ArrowDown");
+  await page.waitForTimeout(120);
+  const moved = await page.evaluate((elementId) => {
+    const box = document.getElementById(elementId) as HTMLSelectElement | null;
+    const value = box?.value ?? "";
+    box?.remove();
+    return value !== "";
+  }, id);
+  return moved;
+};

@@ -34,9 +34,9 @@
  */
 
 import { expect, test } from "@playwright/test";
-import { MDY_POPUP_OPENERS, MDY_WIDGET_CONTRACTS, MDY_WIDGET_KEYBOARD } from "@modyra/widgets";
+import { MDY_POPUP_OPENERS, MDY_WIDGET_CONTRACTS, MDY_WIDGET_KEYBOARD , variantOf } from "@modyra/widgets";
 
-import { HOSTS } from "./bench";
+import { HOSTS, arrowsMoveANativeSelect } from "./bench";
 
 type Api = Record<string, Record<string, (...args: never[]) => unknown>>;
 type Binding = { key: string; when?: string; intent?: string; modifier?: string };
@@ -93,6 +93,10 @@ for (const host of HOSTS) {
     }, { mountId: id, classes: CONTRACTS[kind].parts[OPENERS[kind]?.opener ?? ""]?.classes ?? [] });
 
     const empty: string[] = [];
+
+    /** A kind whose gesture this driver cannot perform, so its silence is not an answer. */
+
+    const unasked: string[] = [];
     const unreachable: string[] = [];
     const movedOnItsOwn: string[] = [];
     const atRest = new Map<string, string>();
@@ -136,7 +140,17 @@ for (const host of HOSTS) {
         if (landed) break;
       }
 
-      if (await held(driven) === before) empty.push(kind);
+      // Where the shape a document got is the platform's own chooser, the keys that move inside it
+      // are the browser's and not the page's, and this driver does not reach them: an ordinary
+      // `<select>` built alongside does not move under the same press. A kind that did not move has
+      // not been asked, and putting it in the list would name a renderer for a gesture nobody made.
+      if (await held(driven) === before) {
+        if (variantOf(kind as never, {} as never) === "native" && !(await arrowsMoveANativeSelect(page))) {
+          unasked.push(kind);
+        } else {
+          empty.push(kind);
+        }
+      }
 
       // The same field, mounted at the same moment and never touched: whatever it holds now, it held
       // before, or a change means nothing.
@@ -148,6 +162,10 @@ for (const host of HOSTS) {
       `${host.name} changed the value of ${JSON.stringify(movedOnItsOwn)} with nobody touching it, so `
       + "a change below cannot be attributed to the keys that were pressed",
     ).toEqual([]);
+    if (unasked.length > 0) {
+      console.log(`[unasked] ${host.name}: ${unasked.join(" ")} — the platform draws this shape's list and `
+        + "this driver cannot press into it, so whether a keyboard fills it is unmeasured");
+    }
 
     expect(
       empty,

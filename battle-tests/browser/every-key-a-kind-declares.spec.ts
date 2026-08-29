@@ -273,6 +273,14 @@ for (const host of HOSTS) {
           continue;
         }
 
+        // Type-ahead on the platform's own chooser is the platform's: a letter jumps the selection
+        // inside a list this document does not hold, and nothing in the page reports that it did.
+        // Recording it as a binding nobody answers would name a renderer for the browser's work.
+        if (binding.intent === "typeahead" && await page.locator(`${scope} select`).count() > 0) {
+          unreached.push(`${kind} ${binding.key}: jumps inside a list the browser draws outside the document`);
+          continue;
+        }
+
         // Reset to closed, then reach the state the binding names.
         if ((await observe(scope))?.expanded === "true") {
           await page.keyboard.press("Escape");
