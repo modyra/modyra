@@ -1,3 +1,4 @@
+import { projectCalendarDayCellA11y } from "./calendar-view-a11y.js";
 import { calendarDayId } from "../ids.js";
 import { engageValue, fieldCanBeInvalid } from "./verdict.js";
 /**
@@ -225,10 +226,16 @@ export function createDaterangeFieldController(
         ...(cell.disabled ? ["mdy-datepicker__cell--disabled"] : []),
       ],
       attributes: {
-        role: "gridcell",
-        "aria-selected": String(cell.rangeStart || cell.rangeEnd),
-        "aria-disabled": String(cell.disabled),
-        tabindex: cell.focused ? 0 : -1,
+        ...projectCalendarDayCellA11y(
+          {
+            selected: cell.rangeStart || cell.rangeEnd,
+            disabled: cell.disabled,
+            today: cell.iso === formatIsoDate(today()),
+            focused: cell.focused,
+            outside: !cell.inMonth,
+          },
+          { kind: "daterange", widgetId },
+        ).attributes,
       },
     };
   }

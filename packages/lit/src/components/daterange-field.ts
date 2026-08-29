@@ -497,6 +497,7 @@ export class MdyDaterangeFieldElement extends MdyFieldElement<MdyDateRange | nul
               role="gridcell"
               tabindex=${this.isCellFocused(cell) ? "0" : "-1"}
               aria-selected=${rangeEndpoint ? "true" : "false"}
+              aria-current=${this.isCellToday(cell) ? "date" : nothing}
               ?disabled=${disabled}
               @click=${() => this.onDatePicked(handle, cell.date)}
               @mouseenter=${() => this.onDateHovered(cell.date)}

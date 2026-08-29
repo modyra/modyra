@@ -9,7 +9,7 @@
 import { applyOpenerPromise } from "../opener-promise.js";
 import { observerFor, type MdyFieldHandle, type MdyReactivity } from "@modyra/core";
 import type { MdyDynamicDaterangeField } from "@modyra/core";
-import { buildDateLocale, formatIsoDate, parseLocalizedDate } from "@modyra/core/datetime";
+import { buildDateLocale, formatIsoDate, parseLocalizedDate, today } from "@modyra/core/datetime";
 import { fieldAccessibleName, applySubmissionNames,
   MDY_WIDGET_CONTRACTS,
   createDaterangeFieldController,
@@ -362,6 +362,12 @@ export function renderDaterangeField(
       button.classList.toggle("mdy-datepicker__cell--in-range", cell.inRange);
       button.classList.toggle("mdy-datepicker__cell--selected", cell.rangeStart || cell.rangeEnd);
       button.setAttribute("aria-selected", String(cell.rangeStart || cell.rangeEnd));
+      // The day a calendar is always asked about, said and painted. The single-date sibling gets it
+      // from the same door; this grid marked it in neither channel.
+      const isToday = iso === formatIsoDate(today());
+      button.classList.toggle("mdy-datepicker__cell--today", isToday);
+      if (isToday) button.setAttribute("aria-current", "date");
+      else button.removeAttribute("aria-current");
       // Where the keyboard is standing, which the controller answers and this grid was not painting:
       // the arrows moved a cursor nothing showed and nothing followed, so the calendar answered a
       // pointer and no key at all. One tab stop, on the cell the cursor is on.
