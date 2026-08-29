@@ -80,7 +80,13 @@ function collect(dir, out = []) {
   for (const entry of entries) {
     if (SKIP.has(entry)) continue;
     const path = join(dir, entry);
-    if (statSync(path).isDirectory()) collect(path, out);
+    // A build's scratch directory is written and swept while this walks, so a name read a moment ago
+    // may be gone by the time it is asked about. A file that vanishes mid-walk is not a finding and
+    // must not read as one: the alternative is a run that fails for a reason neither the code nor
+    // this audit has anything to do with.
+    let entryStat;
+    try { entryStat = statSync(path); } catch { continue; }
+    if (entryStat.isDirectory()) collect(path, out);
     else if (TEXT.test(entry)) out.push(path);
   }
   return out;
@@ -148,7 +154,7 @@ const isCode = (file) => /\.(ts|mts|tsx|js|mjs|jsx|svelte|vue)$/.test(file);
 const corpus = (roots) =>
   roots.flatMap((r) => collect(join(root, r)))
     .filter((file) => isCode(file) || !file.includes("/battle-tests/"))
-    .map((f) => withoutProse(readFileSync(f, "utf8"))).join("\n");
+    .map((f) => { try { return withoutProse(readFileSync(f, "utf8")); } catch { return ""; } }).join("\n");
 
 const tests = corpus(TEST_ROOTS);
 
