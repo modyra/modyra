@@ -18,6 +18,12 @@
  * element, `label[for]` and a wrapping `label` are resolved, and what is compared is the text a person
  * would hear.
  *
+ * **The control is the one the kind declares, not the first focusable thing in the field.** A field
+ * holds more than its control — a counter, the commands that clear it and put a value back — and
+ * which of them comes first in the document is a layout decision that moves. Taking the first match
+ * of a selector list measured whichever part a rearrangement put in front, and reported the field as
+ * nameless when what it had found was a counter that is not a control at all.
+ *
  * **The control is the same form with a label.** A renderer that names nothing at all would pass the
  * claim by having no controls this can find, so every kind is mounted a second time with a label
  * declared and must be named then.
@@ -26,7 +32,7 @@
  */
 
 import { expect, test } from "@playwright/test";
-import { MDY_WIDGET_KINDS } from "@modyra/widgets";
+import { MDY_POPUP_OPENERS, MDY_WIDGET_CONTRACTS, MDY_WIDGET_KINDS } from "@modyra/widgets";
 
 import { HOSTS } from "./bench";
 
@@ -54,10 +60,20 @@ for (const host of HOSTS) {
     };
 
     /** What a person would hear, resolved the way the platform resolves it. */
-    const announced = (id: string) => page.evaluate((mountId) => {
+    /** The classes the kind's own opener, or its control, is drawn with. */
+    const controlClasses = (kind: string): string[] => {
+      const contract = (MDY_WIDGET_CONTRACTS as unknown as Record<string, { parts: Record<string, { classes: string[] }> }>)[kind];
+      const opener = (MDY_POPUP_OPENERS as unknown as Record<string, { opener?: string } | undefined>)[kind]?.opener;
+      return contract.parts[opener ?? ""]?.classes ?? contract.parts.control?.classes ?? [];
+    };
+
+    const announced = (id: string, classes: string[]) => page.evaluate(({ mountId, classes }) => {
       const root = document.querySelector(`[data-form="${mountId}"]`);
-      const control = root?.querySelector<HTMLElement>(
-        'input, textarea, select, [role="slider"], [role="radiogroup"], [role="combobox"], [role="group"], button',
+      const declared = classes.length > 0
+        ? root?.querySelector<HTMLElement>(classes.map((one) => `.${one}`).join("")) ?? null
+        : null;
+      const control = declared ?? root?.querySelector<HTMLElement>(
+        'input, textarea, select, [role="slider"], [role="radiogroup"], [role="combobox"], [role="group"]',
       ) ?? null;
       if (control === null) return null;
       const fromReference = (control.getAttribute("aria-labelledby") ?? "")
@@ -69,8 +85,9 @@ for (const host of HOSTS) {
         ? (document.querySelector(`label[for="${CSS.escape(control.id)}"]`)?.textContent ?? "").trim()
         : "";
       const fromWrapping = (control.closest("label")?.textContent ?? "").trim();
-      return fromReference || fromAttribute || fromFor || fromWrapping;
-    }, id);
+      const fromTitle = (control.getAttribute("title") ?? "").trim();
+      return fromReference || fromAttribute || fromFor || fromWrapping || fromTitle;
+    }, { mountId: id, classes });
 
     const nameless: string[] = [];
     const namedWithALabel: string[] = [];
@@ -79,13 +96,13 @@ for (const host of HOSTS) {
     for (const kind of MDY_WIDGET_KINDS) {
       const bare = `bare_${kind}`;
       await mount(bare, kind, undefined);
-      const heard = await announced(bare);
+      const heard = await announced(bare, controlClasses(kind));
       if (heard === null) noControl.push(kind);
       else if (heard === "") nameless.push(kind);
 
       const captioned = `said_${kind}`;
       await mount(captioned, kind, "Città");
-      if ((await announced(captioned) ?? "") !== "") namedWithALabel.push(kind);
+      if ((await announced(captioned, controlClasses(kind)) ?? "") !== "") namedWithALabel.push(kind);
     }
 
     expect(
