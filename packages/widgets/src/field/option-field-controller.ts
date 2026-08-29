@@ -183,7 +183,12 @@ export function createOptionFieldController<TValue>(
       ],
       attributes: {
         role: "radio",
-        "aria-checked": String(selected),
+        // Not `aria-checked`. Every renderer draws this option as a native `<input type="radio">` —
+        // a segmented button is one wearing a styled label — and a native radio maps its own
+        // `checked` into the accessibility tree. The attribute beside it is a second source for one
+        // fact, and when the two disagree the ARIA one wins and is the one that went stale. `null`
+        // rather than an absent key: this contract says "no attribute" that way.
+        "aria-checked": null,
         "aria-disabled": String(option.disabled || blocksFocus(currentState.interactivity)),
         // The native attribute asks the focus question. An option group has no read-only rendering,
         // so this differs from `aria-disabled` above only when a host sets the state directly.

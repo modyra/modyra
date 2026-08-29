@@ -113,8 +113,12 @@ test("move changes active key within enabled options", () => {
   controller.dispatch({ type: "move", target: "next" });
   assert.strictEqual(controller.state().selectedKey, null); // selection not changed
   const view = controller.view();
-  assert.strictEqual(view.parts.small.attributes["aria-checked"], "false");
-  assert.strictEqual(view.parts.medium.attributes["aria-checked"], "false");
+  // Not `aria-checked`: every renderer draws an option as a native `<input type="radio">` — a
+  // segmented button is one wearing a styled label — and a native radio maps its own `checked`
+  // into the accessibility tree. What is selected is read from the state, and the part says
+  // `null` where a second source for that fact used to be.
+  assert.strictEqual(view.parts.small.attributes["aria-checked"], null);
+  assert.strictEqual(controller.state().selectedKey, null);
 });
 
 test("disabled controller ignores select", () => {
@@ -131,8 +135,12 @@ test("radio view exposes ARIA contract", () => {
   assert.strictEqual(view.parts.group.attributes.role, "radiogroup");
   assert.strictEqual(view.parts.group.classes.includes("mdy-radio-group"), true);
   assert.strictEqual(view.parts.medium.attributes.role, "radio");
-  assert.strictEqual(view.parts.medium.attributes["aria-checked"], "true");
-  assert.strictEqual(view.parts.small.attributes["aria-checked"], "false");
+  // Not `aria-checked`: every renderer draws an option as a native `<input type="radio">` — a
+  // segmented button is one wearing a styled label — and a native radio maps its own `checked`
+  // into the accessibility tree. What is selected is read from the state, and the part says
+  // `null` where a second source for that fact used to be.
+  assert.strictEqual(view.parts.medium.attributes["aria-checked"], null);
+  assert.strictEqual(controller.state().selectedKey, "medium");
   assert.strictEqual(view.parts.large.attributes["aria-disabled"], "true");
 });
 
@@ -141,8 +149,12 @@ test("segmented view exposes ARIA contract", () => {
   const view = controller.view();
   assert.strictEqual(view.parts.group.classes.includes("mdy-segmented"), true);
   assert.strictEqual(view.parts.small.attributes.role, "radio");
-  assert.strictEqual(view.parts.small.attributes["aria-checked"], "true");
-  assert.strictEqual(view.parts.medium.attributes["aria-checked"], "false");
+  // Not `aria-checked`: every renderer draws an option as a native `<input type="radio">` — a
+  // segmented button is one wearing a styled label — and a native radio maps its own `checked`
+  // into the accessibility tree. What is selected is read from the state, and the part says
+  // `null` where a second source for that fact used to be.
+  assert.strictEqual(view.parts.small.attributes["aria-checked"], null);
+  assert.strictEqual(controller.state().selectedKey, "small");
 });
 
 test("setValue updates selectedKey", () => {
@@ -177,9 +189,11 @@ test("replacing the options moves everything derived from them", () => {
 
   // Keyboard navigation moves within the new list, not the one it was built with.
   controller.dispatch({ type: "move", target: "last" });
-  const active = Object.entries(controller.view().parts).find(
-    ([, part]) => part.attributes?.["tabindex"] === "0" || part.attributes?.["aria-checked"] === "true",
-  );
+  // Reachable means the keyboard can land on it: the roving stop, or the option the state says is
+  // chosen. Not `aria-checked` — a native radio carries that itself and the part no longer says it.
+  const parts = controller.view().parts;
+  const active = Object.entries(parts).find(([, part]) => part.attributes?.["tabindex"] === "0")
+    ?? (controller.state().selectedKey !== null ? [controller.state().selectedKey] : undefined);
   assert.ok(active, "some option is reachable after the list changed");
 });
 

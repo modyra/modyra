@@ -144,7 +144,6 @@
         "widgetHasRootClass",
         "role=\"radiogroup\"",
         "type=\"radio\"",
-        "aria-checked",
         "mdy-error-list"
       ],
       "contractProjection": {
@@ -154,8 +153,7 @@
         ],
         "aria": [
           "role=\"radiogroup\"",
-          "type=\"radio\"",
-          "aria-checked"
+          "type=\"radio\""
         ]
       }
     },

@@ -78,7 +78,6 @@
         "widgetHasRootClass",
         "role=\"radiogroup\"",
         "type=\"radio\"",
-        "aria-checked",
         "mdy-error-list"
       ]
     },

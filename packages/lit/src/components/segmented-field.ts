@@ -57,8 +57,6 @@ export class MdySegmentedFieldElement extends MdyOptionsFieldElement<unknown | n
           // through it, so every option of an object-valued list read the *same* projection entry —
           // and a group with one value held marked every option as the chosen one.
           const key = defaultOptionKey(option.value);
-          const optionView = view?.parts[key];
-          const optionAttrs = optionView?.attributes;
           const selected = this.isChosen(handle.value(), option.value);
           const classes = [
             "mdy-segmented__button",
@@ -76,7 +74,6 @@ export class MdySegmentedFieldElement extends MdyOptionsFieldElement<unknown | n
               class="${this.partClass("optionControl")}"
               .value=${String(key)}
               .checked=${selected}
-              aria-checked=${optionAttrs?.["aria-checked"] ?? (selected ? "true" : "false")}
               ?disabled=${handle.disabled() || option.disabled === true}
               @change=${() => {
                 if (this.fieldController) {
