@@ -1,7 +1,6 @@
 /**
- * Generates the reactivity adapter capability matrix
- * (piano-modyra-reactivity-adapter-api.md §15: "non deve essere mantenuta
- * manualmente... generarla dalle capability dichiarate").
+ * Generates the reactivity adapter capability matrix from the capabilities
+ * each adapter declares — generated, never hand-maintained.
  *
  * Reads `capabilities` straight off each adapter's real `MdyReactivity`
  * instance instead of a hand-maintained table, so the doc can't silently
@@ -29,9 +28,9 @@ const CAPABILITY_ORDER = [
   "batching",
   "deterministicFlush",
   "directObservation",
-  "writableComputed",
   "graphInspection",
   "serverSnapshots",
+  "pureComputeds",
 ];
 
 /** @type {Array<{ name: string, capabilities: Record<string, boolean> | undefined, note?: string }>} */
@@ -62,7 +61,7 @@ rows.push({
     batching: false,
     deterministicFlush: false,
     directObservation: false,
-    writableComputed: false,
+    pureComputeds: true,
     graphInspection: false,
     serverSnapshots: false,
   },
@@ -78,7 +77,7 @@ rows.push({
     batching: false,
     deterministicFlush: false,
     directObservation: false,
-    writableComputed: false,
+    pureComputeds: true,
     graphInspection: false,
     serverSnapshots: false,
   },
@@ -131,7 +130,7 @@ const lines = rows.map((row) => {
 
 const doc = `<!--
   GENERATED FILE — do not edit by hand.
-  Run \`node scripts/reactivity-capability-matrix.mjs\` to regenerate.
+  To regenerate: \`npm run build:packages\` (+ \`npm run build:lib\` for the Angular row), then \`npm run docs:reactivity-matrix\`.
   Source: each adapter's own \`MdyReactivity.capabilities\`; see docs/guides/reactivity-adapter-guide.md.
 -->
 
