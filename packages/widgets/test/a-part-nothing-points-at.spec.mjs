@@ -89,3 +89,49 @@ test("no part renders a control the contract names nobody for, beyond the six re
   assert.deepEqual(Object.keys(NAMED_BY_NOBODY).filter((part) => !unnamed.includes(part)), [],
     "a recorded part is now in a relation, so the record is stale — take it out and the rule covers it");
 });
+
+/**
+ * A part recorded as machinery is a claim that nobody types there.
+ *
+ * Without this the ratchet can shorten by *reclassification* rather than by repair: a gap moved into
+ * the machinery column stops being counted, and the entry that excuses it is a sentence nothing
+ * checks. So the claim is held to the contract — machinery is a part no relation names *and* a part
+ * no renderer offers as a stop for the keyboard.
+ *
+ * Read from the three renderers' own output rather than from their source, because "is this
+ * focusable" is a question about a page. A part drawn with a positive tab index somewhere is a part a
+ * person reaches, whatever this file calls it.
+ */
+test("what is recorded as machinery is reachable by nobody", async () => {
+  const machinery = Object.entries(NAMED_BY_NOBODY)
+    .filter(([, why]) => why.startsWith("machinery"))
+    .map(([part]) => part);
+  assert.ok(machinery.length > 0, "nothing is recorded as machinery, so this asserts nothing");
+
+  const { installDomGlobals } = await import("../../plain/test/support/dom-env.mjs");
+  installDomGlobals();
+  const { mountMdyForm } = await import("../../plain/dist/index.js");
+
+  for (const entry of machinery) {
+    const [kind, part] = entry.split(".");
+    const host = document.createElement("div");
+    document.body.append(host);
+    const { reactivity, dispose } = mountMdyForm(
+      host,
+      [{ name: "f", kind, label: "F", options: [{ value: "a", label: "A" }] }],
+      { submitLabel: null },
+    );
+    await reactivity.flush();
+
+    const classes = MDY_WIDGET_CONTRACTS[kind].parts[part]?.classes ?? [];
+    assert.ok(classes.length > 0, `${entry}: the contract gives this part no class, so it cannot be found`);
+    const drawn = host.querySelector(`.${classes[0]}`);
+    assert.ok(drawn !== null, `${entry}: recorded as machinery and not on the page, so the claim is untested`);
+    assert.notEqual(drawn.getAttribute("tabindex"), "0",
+      `${entry} is recorded as machinery and the keyboard stops on it. Either it is a control and the `
+      + "contract owes a relation saying what names it, or the tab index is wrong");
+
+    dispose?.();
+    host.remove();
+  }
+});
