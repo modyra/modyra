@@ -25,7 +25,7 @@
     "build:packages": "npm run build:core && node scripts/tsc7.mjs packages/widgets/tsconfig.json packages/zod/tsconfig.json packages/standard-schema/tsconfig.json packages/vue/tsconfig.json packages/react/tsconfig.json packages/lit/tsconfig.json packages/solid/tsconfig.json packages/preact/tsconfig.json packages/svelte/tsconfig.json packages/eslint-plugin/tsconfig.json && npm run build:styles",
     "build:styles": "cd packages/styles && npm run build",
     "test:adapters": "npm run build:packages && node --test packages/zod/test/*.test.mjs packages/standard-schema/test/*.test.mjs packages/vue/test/*.test.mjs packages/react/test/*.test.mjs packages/lit/test/*.test.mjs packages/preact/test/*.test.mjs packages/svelte/test/*.test.mjs && node --conditions=browser --test packages/solid/test/*.test.mjs",
-    "test:widgets": "npm run build:packages && node --test packages/widgets/test/*.spec.mjs",
+    "test:widgets": "npm run build:packages && npm run build:plain && node --test packages/widgets/test/*.spec.mjs",
     "test:guides": "npm run build:packages && node --test docs/examples/*/*.test.mjs",
     "test:themes": "node scripts/audit-theme-classes.mjs --check && npm run test:styles-architecture",
     "test:e2e": "node scripts/audit-baseline-parity.mjs && npm run build:demo && npm run build:examples && playwright test",

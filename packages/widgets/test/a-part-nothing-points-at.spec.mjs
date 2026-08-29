@@ -101,6 +101,11 @@ test("no part renders a control the contract names nobody for, beyond the six re
  * Read from the three renderers' own output rather than from their source, because "is this
  * focusable" is a question about a page. A part drawn with a positive tab index somewhere is a part a
  * person reaches, whatever this file calls it.
+ *
+ * That makes this one check need a renderer built, which is why `test:widgets` builds Plain: the gate
+ * ran green on a machine where a previous run had left that build behind and failed on a clean one,
+ * which is a check that measures the machine it runs on. The package graph is untouched — nothing in
+ * `src` names a renderer, and the independence audit still says so.
  */
 test("what is recorded as machinery is reachable by nobody", async () => {
   const machinery = Object.entries(NAMED_BY_NOBODY)
