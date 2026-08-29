@@ -8,7 +8,10 @@
  */
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { MDY_ASYNC_FEATURE_DISABLED, createForm, field, group, pattern, required, vanillaReactivity } from "../dist/index.js";
+import {
+  MDY_ADAPTER_CONTRACT_VIOLATION, MDY_ASYNC_FEATURE_DISABLED, MDY_UNSUPPORTED_ADAPTER_OPTION,
+  createForm, field, group, pattern, required, vanillaReactivity,
+} from "../dist/index.js";
 
 /** Runs `body` with console.warn captured. */
 function warnings(body) {
@@ -168,4 +171,60 @@ test("a sink takes the place of the console rather than doubling it", async () =
   } finally {
     console.warn = realWarn;
   }
+});
+
+/**
+ * An option a form does not read, said as an event rather than only to a console.
+ *
+ * The library grows, so an unknown key is reported rather than refused — which makes the report the
+ * only thing standing between a consumer and a setting that silently does nothing. A host routing
+ * degradations to its own telemetry asked for this one too, and it was the single degradation that
+ * could only ever reach a console.
+ */
+test("an option a form does not read reaches the sink, not the console", () => {
+  const said = [];
+  const realWarn = console.warn;
+  console.warn = (...parts) => said.push(parts.join(" "));
+  const reports = [];
+  try {
+    const form = createForm(
+      { a: field("") },
+      { reactivity: vanillaReactivity(), diagnostics: { report: (entry) => reports.push(entry) }, sanitize: true },
+    );
+    form.destroy();
+  } finally {
+    console.warn = realWarn;
+  }
+
+  assert.deepEqual(reports.map((entry) => entry.code), [MDY_UNSUPPORTED_ADAPTER_OPTION]);
+  assert.match(reports[0].message, /"sanitize"/,
+    "the report does not name the key that was ignored, so it tells a host that something was "
+    + "wrong and not what");
+  assert.deepEqual(said, [],
+    "the same degradation went to the console as well, doubling every report into a channel the "
+    + "consumer did not ask for");
+});
+
+/**
+ * Two controls on one name, which is a mistake about the form and not about a value.
+ *
+ * They share one field state, so whichever writes last wins and neither is told. It carries the
+ * contract-violation code because that is what it is: nothing the person did produced it, and no
+ * value they can type will make it go away.
+ */
+test("two controls claiming one name is reported as a contract violation", () => {
+  const reports = [];
+  const form = createForm(
+    { a: field("") },
+    { reactivity: vanillaReactivity(), diagnostics: { report: (entry) => reports.push(entry) }, devWarnings: false },
+  );
+
+  form.claimField("a");
+  assert.deepEqual(reports, [], "one control on one name is not a violation of anything");
+
+  form.claimField("a");
+  assert.deepEqual(reports.map((entry) => entry.code), [MDY_ADAPTER_CONTRACT_VIOLATION]);
+  assert.equal(reports[0].severity, "warning");
+  assert.match(reports[0].message, /"a"/, "the report does not name the field two controls share");
+  form.destroy();
 });

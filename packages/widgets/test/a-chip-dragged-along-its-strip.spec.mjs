@@ -17,7 +17,7 @@ import { test } from "node:test";
 import { installDomGlobals } from "../../plain/test/support/dom-env.mjs";
 
 installDomGlobals();
-const { beginChipReorder, MDY_CHIP_DRAG_THRESHOLD } = await import("../dist/index.js");
+const { beginChipReorder, chipDropIndex, MDY_CHIP_DRAG_THRESHOLD } = await import("../dist/index.js");
 
 function aStrip() {
   const strip = document.createElement("div");
@@ -117,4 +117,47 @@ test("a press that is not the primary button is nobody's gesture", () => {
   document.dispatchEvent(up(95));
   assert.equal(dropped, null, "a right-click began a drag");
   strip.remove();
+});
+
+/**
+ * Where a dragged chip lands, asked of the arithmetic rather than of a gesture.
+ *
+ * The drag above answers with a landing place; this is the rule underneath it, and it has three
+ * properties a pointer test cannot isolate.
+ *
+ * The midpoints arrive in drawing order, so a strip whose text runs right to left hands them over
+ * descending. Reading the direction from the numbers is what lets one rule serve both, and a
+ * renderer that had to know which way its own text runs is a renderer that gets it wrong in one
+ * language.
+ */
+test("a chip lands where the pointer passed a midpoint, in either direction", () => {
+  const ltr = [10, 30, 50];
+  assert.equal(chipDropIndex(ltr, 5, 0), 0, "before every midpoint is the first place");
+  assert.equal(chipDropIndex(ltr, 100, 0), 2, "past every midpoint is the last place");
+  assert.equal(chipDropIndex(ltr, 20, 2), 1,
+    "a pointer that has passed one midpoint lands after one chip, and it answered otherwise");
+  assert.equal(chipDropIndex(ltr, 5, 2), 0,
+    "a chip dragged back past every midpoint did not land first");
+
+  // The same strip drawn right to left: the midpoints descend, and the answers must not change.
+  const rtl = [50, 30, 10];
+  assert.equal(chipDropIndex(rtl, 100, 0), 0);
+  assert.equal(chipDropIndex(rtl, 5, 0), 2,
+    "the descending strip was read with the ascending comparison, so a right-to-left row drops "
+    + "every chip at the wrong end");
+});
+
+test("a chip's own slot is not a place it can land on", () => {
+  // Dragged rightwards, a chip passes its own midpoint on the way, which counts one place further
+  // than the eye reads.
+  assert.equal(chipDropIndex([10, 30, 50], 35, 0), 1,
+    "the chip counted its own midpoint, so every rightward drag overshoots by one");
+  assert.equal(chipDropIndex([10, 30, 50], 35, 2), 2,
+    "dragged leftwards the same pointer answers differently, because the slot left behind is below "
+    + "it rather than above");
+});
+
+test("a strip with nothing in it leaves the chip where it was", () => {
+  assert.equal(chipDropIndex([], 999, 3), 3,
+    "an empty strip answered with a place that does not exist");
 });

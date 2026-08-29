@@ -16,7 +16,11 @@
  */
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { MDY_FIELD_STATE_CLASSES, shellStateClasses } from "../dist/index.js";
+import {
+  booleanFieldRootClasses, datepickerFieldRootClasses, fieldShellRootClasses,
+  MDY_FIELD_STATE_CLASSES, multiselectFieldRootClasses, optionFieldRootClasses,
+  shellStateClasses, textFieldRootClasses, timepickerFieldRootClasses,
+} from "../dist/index.js";
 
 test("one state, two spellings, and both are named", () => {
   const { control, label } = shellStateClasses({ error: true });
@@ -65,4 +69,37 @@ test("the states named are the ones the contract admits", () => {
   assert.deepEqual(suffixes("field", MDY_FIELD_STATE_CLASSES.field), [...MDY_FIELD_STATE_CLASSES.fieldStates].sort());
   assert.deepEqual(suffixes("control", MDY_FIELD_STATE_CLASSES.control), [...MDY_FIELD_STATE_CLASSES.controlStates].sort());
   assert.deepEqual(suffixes("label", MDY_FIELD_STATE_CLASSES.label), [...MDY_FIELD_STATE_CLASSES.labelStates].sort());
+});
+
+/**
+ * The six per-kind doors onto the same rule.
+ *
+ * Every kind publishes a root-class function of its own, and each one hands the field's state to the
+ * same shell rule. Six names for one answer is the shape that drifts: a state added to one kind's
+ * door and not the other five leaves five kinds looking right and one looking wrong, and the kind
+ * nobody edited is the one nobody notices.
+ *
+ * So the claim is agreement, asked of a state that turns something on — asking it of an empty state
+ * would be satisfied by six functions that all return the base class and read nothing.
+ */
+test("every kind's root-class door answers the same as the others", () => {
+  const doors = {
+    boolean: booleanFieldRootClasses,
+    datepicker: datepickerFieldRootClasses,
+    multiselect: multiselectFieldRootClasses,
+    option: optionFieldRootClasses,
+    text: textFieldRootClasses,
+    timepicker: timepickerFieldRootClasses,
+  };
+  const state = Object.fromEntries(MDY_FIELD_STATE_CLASSES.fieldStates.map((name) => [name, true]));
+
+  const expected = [...fieldShellRootClasses(state)];
+  assert.ok(expected.length > 1,
+    "the shell rule answered with the base class alone, so six doors agreeing about it proves nothing");
+
+  for (const [kind, door] of Object.entries(doors)) {
+    assert.deepEqual([...door(state)], expected,
+      `${kind}'s root classes differ from the shell rule every other kind reads. One kind's fields `
+      + "carry a state class the rest do not, and nothing between them says which is right");
+  }
 });
