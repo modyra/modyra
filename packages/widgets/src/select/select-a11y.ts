@@ -95,6 +95,26 @@ export function projectSelectA11y(
             ...projectOverlayOpenerA11y("select", { widgetId, open, controlsRendered: options.popupRendered ?? true })?.attributes,
             "aria-activedescendant": activeKey ? idFactory.item(widgetId, "option", activeKey) : undefined,
           }),
+      /**
+       * The caption, then what the field holds — in that order, and only on the shape that needs it.
+       *
+       * A `<label for>` names a button, and that is the problem rather than the fix: the computation
+       * takes the caption and stops, so the button's own content — which for this control *is* the
+       * chosen value — is never appended. A person reaching the field hears what it asks and not
+       * what it holds.
+       *
+       * Two references solve it, the second being the trigger itself: a self-reference in
+       * `aria-labelledby` contributes the element's own content, so the name reads "Country, France"
+       * without the value needing an id of its own. The `<label for>` stays — it no longer supplies
+       * the name, but it is what makes clicking the caption reach the control.
+       *
+       * The platform's own chooser needs none of this. A `<select>` has a value the reader announces
+       * separately, so `for` alone gives "Country, combo box, France", and overriding it would take
+       * apart what the platform already does right.
+       */
+      ...(native
+        ? {}
+        : { "aria-labelledby": `${fieldShellPartIds(widgetId).labelId} ${idFactory.part(widgetId, "trigger")}` }),
       "aria-invalid": String(invalid),
       ...(options.required === undefined ? {} : { "aria-required": String(options.required) }),
       // The relation every other kind's projection already made, and this one did not: without it a

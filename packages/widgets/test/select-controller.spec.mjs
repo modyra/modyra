@@ -274,3 +274,33 @@ test("a caller that says nothing keeps the shape it was already drawing", () => 
   assert.strictEqual(trigger.role, "combobox");
   assert.strictEqual(trigger.attributes["aria-expanded"], "false");
 });
+
+/**
+ * What a person hears when they reach the field: what it asks, then what it holds. ADR 0175.
+ *
+ * A `<label for>` names a button, and that is the defect rather than the fix — the computation takes
+ * the caption and stops, so the button's own content, which for this control *is* the chosen value,
+ * is never appended. A self-reference in `aria-labelledby` contributes it back without the value
+ * needing an id of its own.
+ */
+test("the combobox is named by its caption and by what it holds", () => {
+  const controller = createSelectController({ widgetId: "city", options, searchable: true });
+  const named = controller.view().parts.trigger.attributes["aria-labelledby"];
+
+  assert.ok(named, "the trigger is named by nothing, so a caption tied with `for` supplies the whole "
+    + "name and the value is never heard");
+  const ids = named.split(/\s+/);
+  assert.equal(ids.length, 2, "one reference is one name: either the caption without the value, or "
+    + "the value without the caption");
+  assert.equal(ids[0], "city__label", "the value is announced before what the field is asking");
+  assert.equal(ids[1], controller.view().parts.trigger.id,
+    "the second reference is not the trigger itself, so it contributes no content and the name is "
+    + "the caption alone");
+});
+
+test("the platform's chooser is left to the platform", () => {
+  const controller = createSelectController({ widgetId: "city", options, searchable: false });
+  assert.equal(controller.view().parts.trigger.attributes["aria-labelledby"], undefined,
+    "a `<select>` has a value the reader announces on its own, so a reference here takes apart what "
+    + "the platform already does right");
+});
