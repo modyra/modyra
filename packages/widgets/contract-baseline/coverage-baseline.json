@@ -5,7 +5,7 @@
     "published": 904,
     "asserted": 904,
     "showable": 399,
-    "shown": 316
+    "shown": 325
   },
   "uncovered": [
     {
@@ -38,13 +38,6 @@
     },
     {
       "name": "MdyUnsupportedCapabilityError",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "affordanceClasses",
       "asserted": true,
       "shown": false,
       "showable": true,
@@ -212,28 +205,7 @@
       "reason": "published and never shown"
     },
     {
-      "name": "evaluateExpression",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
       "name": "explainGranularityProblem",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "expressionContextKeys",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "expressionPaths",
       "asserted": true,
       "shown": false,
       "showable": true,
@@ -318,13 +290,6 @@
     },
     {
       "name": "min",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "minutesOfDay",
       "asserted": true,
       "shown": false,
       "showable": true,
@@ -443,13 +408,6 @@
       "reason": "published and never shown"
     },
     {
-      "name": "submitFalsePart",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
       "name": "timeClockTransition",
       "asserted": true,
       "shown": false,
@@ -513,13 +471,6 @@
       "reason": "published and never shown"
     },
     {
-      "name": "timepickerTabOrder",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
       "name": "timepickerTabTarget",
       "asserted": true,
       "shown": false,
@@ -527,21 +478,7 @@
       "reason": "published and never shown"
     },
     {
-      "name": "typeaheadMatch",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
       "name": "undoIsOnOffer",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "validateExpression",
       "asserted": true,
       "shown": false,
       "showable": true,

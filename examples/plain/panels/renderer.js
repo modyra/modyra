@@ -18,11 +18,22 @@ import {
   isPathRef,
   isRootRef,
   isSelfRef,
+  composeFirst,
   createConsoleDiagnostics,
+  eachOneOf,
+  evaluateExpression,
+  expressionContextKeys,
+  expressionPaths,
+  integer,
+  max,
+  min,
+  oneOf,
+  validateExpression,
   createSilentDiagnostics,
   MDY_FIELD_KINDS,
 } from "@modyra/core";
 import {
+  affordanceClasses,
   browserRuntimeCapabilities,
   dialNumberAngle,
   dynamicParts,
@@ -40,7 +51,11 @@ import {
   overlayStyleProperties,
   popupAlignmentClass,
   timepickerDialNumbers,
+  minutesOfDay,
+  submitFalsePart,
   timepickerDialTolerance,
+  timepickerTabOrder,
+  typeaheadMatch,
   validateTimeGranularity,
   widgetStateClasses,
 } from "@modyra/widgets";
@@ -56,6 +71,7 @@ export const rendererPanel = {
 
   /** The public names this panel drives. */
   exercises: [
+    "affordanceClasses",
     "browserRuntimeCapabilities",
     "createCommandRuntime",
     "createConsoleDiagnostics",
@@ -63,15 +79,22 @@ export const rendererPanel = {
     "createSilentDiagnostics",
     "dialNumberAngle",
     "dynamicParts",
+    "evaluateExpression",
+    "expressionContextKeys",
+    "expressionPaths",
+    "factsOf",
     "isContextRef",
     "isExpression",
     "isFullyServerRenderable",
     "isOnStep",
     "isPathRef",
     "isRootRef",
+    "isSafeFieldPath",
     "isSelfRef",
     "isWidgetKind",
     "kindsWithAffordances",
+    "mergeFacts",
+    "minutesOfDay",
     "optionNavigationIndex",
     "overlayCloseCommands",
     "overlayOnlyParts",
@@ -81,14 +104,19 @@ export const rendererPanel = {
     "stateCarriers",
     "stateClass",
     "staticParts",
+    "submitFalsePart",
     "timeFieldBounds",
     "timepickerDialNumbers",
     "timepickerDialTolerance",
     "timepickerPlaceholder",
+    "timepickerTabOrder",
     "trailingAffordances",
     "transitionsFrom",
+    "typeaheadMatch",
+    "validateExpression",
     "validateTimeGranularity",
     "widgetStateClasses",
+    "withFacts",
   ],
 
   invariant:
@@ -139,6 +167,32 @@ export const rendererPanel = {
         arrowLandsOn: optionNavigationIndex("End", 0, 5),
         granularityProblems: validateTimeGranularity({ hour: 1, minute: 5 }).length,
       },
+      // The rules a document may put on a value, asked what they say about three of them. A validator
+      // is a function from a value to a complaint or to nothing, so calling one is using it.
+      rules: (() => {
+        const between = composeFirst(integer(), min(3), max(9));
+        const say = (rule, value) => (rule(value) === null ? "accepted" : "refused");
+        return {
+          threeToNine: [2, 5, 12].map((one) => `${one}:${say(between, one)}`),
+          fromTheList: ["a", "z"].map((one) => `${one}:${say(oneOf(["a", "b"]), one)}`),
+          everyOneFromTheList: [["a"], ["a", "z"]].map((one) => `${one.join("+")}:${say(eachOneOf(["a", "b"]), one)}`),
+        };
+      })(),
+      // A rule written in a document, read by the three doors that read one: what it is about, what
+      // it needs from the surroundings, whether it is well formed, and what it answers today.
+      rule: {
+        wellFormed: validateExpression({ op: "and", operands: [{ path: "total" }, true] }).length === 0,
+        malformed: validateExpression({ op: "gt", operands: [{ path: "total" }, 1] }),
+        about: expressionPaths({ op: "and", operands: [{ path: "total" }, true] }),
+        needs: expressionContextKeys({ op: "and", operands: [{ context: "locale" }, true] }),
+        answersToday: evaluateExpression({ op: "and", operands: [{ path: "total" }, true] }, { total: true }),
+      },
+      // Three more a renderer asks and nothing else answers.
+      indicatorClasses: affordanceClasses("indicator"),
+      clockTabOrder: timepickerTabOrder("24h"),
+      hiddenFalse: submitFalsePart(kind) === undefined ? "none" : "declared",
+      halfPastTen: minutesOfDay("10:30"),
+      typedAl: typeaheadMatch([{ value: "a", label: "Alpha" }, { value: "b", label: "Beta" }], "al", 0)?.label ?? "no match",
       references: {
         path: isPathRef({ path: "total" }),
         root: isRootRef({ root: "total" }),
