@@ -574,8 +574,7 @@
       ],
       "aria": [
         "aria-controls",
-        "aria-label",
-        "aria-labelledby"
+        "aria-label"
       ],
       "selectors": [
         "mdy-calendar-grid"
@@ -730,7 +729,6 @@
         "aria-current",
         "aria-disabled",
         "aria-label",
-        "aria-labelledby",
         "aria-selected"
       ],
       "selectors": [

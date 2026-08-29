@@ -496,7 +496,7 @@ export class MdyDatepickerFieldElement extends MdyFieldElement<string | null> {
               class="mdy-datepicker__grid"
               role="grid"
               id=${overlayControlledId("datepicker", this.fieldId) ?? nothing}
-              aria-labelledby="${this.fieldId}__label"
+              aria-label="${monthLabel} ${this.view.viewYear}"
             >
               ${this.renderCalendarGrid(handle)}
             </div>`

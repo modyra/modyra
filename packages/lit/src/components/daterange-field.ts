@@ -588,7 +588,7 @@ export class MdyDaterangeFieldElement extends MdyFieldElement<MdyDateRange | nul
           ? html`<div
               class="mdy-datepicker__grid"
               role="grid"
-              aria-labelledby="${this.fieldId}__label"
+              aria-label="${monthLabel} ${this.view.viewYear}"
             >
               ${this.renderCalendarGrid(handle)}
             </div>

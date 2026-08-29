@@ -1,4 +1,4 @@
-import { calendarDayId, defaultWidgetIdFactory } from "@modyra/widgets";
+import { calendarDayId } from "@modyra/widgets";
 import {
   ChangeDetectionStrategy,
   Component,
@@ -35,7 +35,7 @@ import { MDY_DATE_LOCALE } from "../../core/date-locale";
     // A grid is one of the roles ARIA requires to be named, and the name a calendar takes is the
     // field's own label: it is the words the person read to know what date they are choosing. Left
     // off, a screen reader announces a grid of forty-two cells belonging to nothing.
-    "[attr.aria-labelledby]": "labelledBy() || null",
+    "[attr.aria-label]": "gridName()",
     role: "grid",
   },
   template: `
@@ -95,9 +95,16 @@ export class MdyRangeCalendarGridComponent {
   /** Whether the popup holding this grid is showing. A closed calendar draws no cells. */
   readonly showCells = input<boolean>(true);
 
-  /** The label naming this grid — the field's own, which is the name the projections point at. */
-  protected readonly labelledBy = computed(() =>
-    this.widgetId() ? defaultWidgetIdFactory.part(this.widgetId(), "label") : "",
+  /**
+   * The month on screen, which is what a calendar grid is called.
+   *
+   * The field's caption already names the dialog around it; naming the grid with the same words says
+   * nothing a reader did not just hear, and says nothing about *which month they are in* — which is
+   * the one thing that changes as they page. The published grid pattern names it this way, and one
+   * renderer already did.
+   */
+  protected readonly gridName = computed(
+    () => `${this.locale.monthNamesLong[this.month() - 1]} ${this.year()}`,
   );
 
 
