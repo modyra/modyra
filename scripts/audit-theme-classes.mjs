@@ -12,10 +12,52 @@
  */
 
 import { readFileSync, readdirSync } from "node:fs";
-import { MDY_CHIP_CLASSES, MDY_FIELD_SHELL_CLASSES, MDY_FIELD_STATE_CLASSES, MDY_WIDGET_CONTRACTS, partClasses, popupPlacementClass, stateClass } from "../packages/widgets/dist/index.js";
+import { MDY_CHIP_CLASSES, MDY_CONTRACT_VOCABULARIES, MDY_FIELD_SHELL_CLASSES, MDY_FIELD_STATE_CLASSES, MDY_WIDGET_CONTRACTS, partClasses, popupPlacementClass, stateClass } from "../packages/widgets/dist/index.js";
 import { dirname, extname, join, relative, resolve } from "node:path";
 
 const ROOT = resolve(import.meta.dirname, "..");
+
+/**
+ * Every class name the contract publishes, derived from its own index of vocabularies.
+ *
+ * Derived rather than listed, for the reason the index exists: a list kept beside it covers the
+ * collections somebody thought of, and the one nobody added is the one this audit silently keeps
+ * calling a divergence. `MDY_FIELD_STATE_CLASSES` names bases and states separately, so a state
+ * class is composed the way a renderer composes it rather than only its two halves being collected.
+ */
+const CONTRACT_CLASSES = (() => {
+  const found = new Set();
+  // A catalogue may point back at one it is reachable from, so the walk remembers where it has been.
+  const seen = new Set();
+  const take = (value) => {
+    if (typeof value === "string") {
+      if (value.startsWith("mdy-") && !value.endsWith("-")) found.add(value);
+      return;
+    }
+    if (Array.isArray(value)) {
+      if (seen.has(value)) return;
+      seen.add(value);
+      for (const one of value) take(one);
+      return;
+    }
+    if (value !== null && typeof value === "object") {
+      if (seen.has(value)) return;
+      seen.add(value);
+      for (const one of Object.values(value)) take(one);
+    }
+  };
+  for (const { value } of MDY_CONTRACT_VOCABULARIES) take(value);
+
+  const S = MDY_FIELD_STATE_CLASSES;
+  for (const [key, base] of Object.entries(S)) {
+    if (typeof base !== "string" || !base.startsWith("mdy-")) continue;
+    const states = S[`${key}States`];
+    if (!Array.isArray(states)) continue;
+    for (const state of states) found.add(`${base}--${state}`);
+  }
+  return found;
+})();
+
 
 const ANGULAR_DIR = join(ROOT, "packages/angular/src/lib");
 const ANGULAR_RENDERER_DIR = join(ANGULAR_DIR, "renderers");
@@ -579,12 +621,20 @@ function buildMatrix(angularVocab, litVocab, themeVocab, allowlist) {
     const lit = litVocab.get(kind) ?? new Set();
     const allowed = allowlist.get(kind) ?? new Set();
     const aAll = defectsA(angular, lit);
-    const a = aAll.filter((c) => !allowed.has(c));
-    const aPending = aAll.filter((c) => allowed.has(c));
-    const aStale = [...allowed].filter((c) => !aAll.includes(c)).sort();
+    // A class the contract itself declares is not a divergence between two renderers, whichever of
+    // them still spells it out. This audit reads source files, so it can only see a literal — and a
+    // renderer that takes the class from the shared vocabulary at runtime stops writing one. Read as
+    // a difference, that is a renderer *losing* a class at the moment it stopped keeping its own
+    // copy, so the audit gets more wrong the further the migration succeeds. Whether the class
+    // reaches the page is a question about the page and is answered there.
+    const aContract = aAll.filter((c) => CONTRACT_CLASSES.has(c));
+    const aOwn = aAll.filter((c) => !CONTRACT_CLASSES.has(c));
+    const a = aOwn.filter((c) => !allowed.has(c));
+    const aPending = aOwn.filter((c) => allowed.has(c));
+    const aStale = [...allowed].filter((c) => !aOwn.includes(c)).sort();
     const b = defectsB(lit, angular, themeVocab.all);
     const c = defectsC(themeVocab.all, angular, lit);
-    matrix.push({ kind, a, aPending, aStale, b, c });
+    matrix.push({ kind, a, aContract, aPending, aStale, b, c });
   }
   return matrix;
 }
@@ -598,7 +648,9 @@ function printMatrix(matrix) {
   let totalC = 0;
   let totalPending = 0;
   let totalStale = 0;
-  for (const { kind, a, aPending, aStale, b, c } of matrix) {
+  let totalContract = 0;
+  for (const { kind, a, aContract, aPending, aStale, b, c } of matrix) {
+    totalContract += aContract.length;
     totalA += a.length;
     totalB += b.length;
     totalC += c.length;
@@ -608,6 +660,10 @@ function printMatrix(matrix) {
     if (a.length) {
       console.log(`  (a) Angular classes missing in Lit (${a.length}):`);
       for (const cls of a) console.log(`      - ${cls}`);
+    }
+    if (aContract.length) {
+      console.log(`  (a°) Declared by the contract, so not a renderer's to diverge on (${aContract.length}):`);
+      for (const cls of aContract) console.log(`      - ${cls}`);
     }
     if (aPending.length) {
       console.log(`  (a*) Known pending parity gaps, allowlisted (${aPending.length}):`);
@@ -629,6 +685,7 @@ function printMatrix(matrix) {
   }
   console.log(
     `Totals: (a) ${totalA}, (b) ${totalB}, (c) ${totalC}` +
+      (totalContract ? `, declared by the contract ${totalContract}` : "") +
       (totalPending ? `, pending allowlisted ${totalPending}` : "") +
       (totalStale ? `, stale allowlist ${totalStale}` : ""),
   );
