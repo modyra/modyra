@@ -98,6 +98,34 @@ test(`a key in an open panel nobody declared, ${only.name}`, async ({ page }) =>
         }, { id: mountId, opener: classes });
         if (!focused) { unopened.push(`${kind} in ${host.name}: no ${OPENERS[kind]?.opener ?? "opener"} to focus`); continue; }
 
+        /**
+         * Whether *this* field is open, asked of its own opener.
+         *
+         * A page-wide `[aria-expanded="true"]` answers about whichever panel an earlier kind left
+         * behind — every kind here mounts a field of its own and none is taken down, so the first
+         * one that opens makes every later one look open. The opener states its own phase, and
+         * where it states none the link it declares to its panel is followed.
+         */
+        const opened = async (id: string) => {
+          // Polled, not read once: the panel arrives a frame or two after the key, and a single look
+          // taken immediately measures how fast this file is rather than whether the field opened.
+          const reads = async () => await page.evaluate(({ mountId }) => {
+            const root = document.querySelector(`[data-form="${mountId}"]`);
+            if (root === null) return false;
+            // Inside this field, not across the page: any part of it may carry the statement, and a
+            // renderer that portals its panel still leaves the opener behind saying so.
+            if (root.querySelector('[aria-expanded="true"]') !== null) return true;
+            const named = root.querySelector("[aria-controls]")?.getAttribute("aria-controls");
+            const panel = named === null || named === undefined ? null : document.getElementById(named);
+            return panel !== null && panel.getBoundingClientRect().height > 0;
+          }, { mountId: id });
+          for (let waited = 0; waited < 1_200; waited += 100) {
+            if (await reads()) return true;
+            await page.waitForTimeout(100);
+          }
+          return false;
+        };
+
         // **Which key opens this kind is asked once, not once per key pressed.** Trying every declared
         // opener for every one of the seventeen keys means paying the failed ones' timeout seventeen
         // times over — and a kind that opens for none of them pays all of it to learn nothing new.
@@ -106,18 +134,14 @@ test(`a key in an open panel nobody declared, ${only.name}`, async ({ page }) =>
           opensWith = null;
           for (const opener of keys) {
             await page.keyboard.press(opener === " " ? "Space" : opener);
-            const worked = await page
-              .waitForSelector('[aria-expanded="true"]', { timeout: 1_200 })
-              .then(() => true)
-              .catch(() => false);
+            const worked = await opened(mountId);
             if (worked) { opensWith = opener; break; }
           }
         }
         let open = false;
         if (opensWith !== null) {
           await page.keyboard.press(opensWith === " " ? "Space" : opensWith);
-          open = await page.waitForSelector('[aria-expanded="true"]', { timeout: 1_200 })
-            .then(() => true).catch(() => false);
+          open = await opened(mountId);
         }
         if (!open) { unopened.push(`${kind} in ${host.name}: [${keys.map(shown).join(" ")}] opened nothing`); continue; }
 
