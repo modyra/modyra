@@ -155,7 +155,7 @@ import { MdyCalendarComponent } from "./calendar.component";
       <div class="mdy-supporting-text" [id]="descriptionId(fieldId)">{{ text }}</div>
     }
     @if (errorsReserved()) {
-      <mdy-error-list [fieldId]="fieldId" [errors]="errors()" />
+      <mdy-error-list [fieldId]="fieldId" [errors]="errorsOnScreen()" />
     }
   `,
 })

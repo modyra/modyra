@@ -455,6 +455,21 @@ export abstract class MdyBaseControl<TValue = unknown> implements OnInit {
   );
 
   /**
+   * The messages a person is reading right now, which is not the same list as the ones that exist.
+   *
+   * `errors` answers *which refusals there are*; this answers *whether they are being told yet*, and
+   * a renderer painting a list is asking the second. Bound to the first, every kind printed
+   * "required" under a field nobody had answered — while `aria-invalid` beside it said `false`,
+   * because that one had been taught the rule and this had not. One field, two verdicts, and the one
+   * a sighted person reads was the wrong one.
+   *
+   * The container stays reserved either way: a message arriving must not push the page down.
+   */
+  protected readonly errorsOnScreen: Signal<ReadonlyArray<MdyFieldError>> = computed(
+    () => (this.errorsRendered() ? this.errors() : []),
+  );
+
+  /**
    * Whether the control announces itself as failing — the one answer for `aria-invalid`.
    *
    * Named for the question because eight templates were answering it and one of them answered

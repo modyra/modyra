@@ -151,6 +151,7 @@
     "protected effectiveAriaDisabled: Signal<boolean>",
     "protected effectiveName: Signal<string>",
     "protected errors: Signal<ReadonlyArray<MdyFieldError>>",
+    "protected errorsOnScreen: Signal<ReadonlyArray<MdyFieldError>>",
     "protected errorsRendered: Signal<boolean>",
     "protected errorsReserved: Signal<boolean>",
     "protected fieldId: string",

@@ -112,7 +112,7 @@ import { MDY_I18N_MESSAGES } from "../../core/i18n";
       <div class="mdy-supporting-text" [id]="descriptionId(fieldId)">{{ text }}</div>
     }
     @if (errorsReserved()) {
-      <mdy-error-list [fieldId]="fieldId" [errors]="errors()" />
+      <mdy-error-list [fieldId]="fieldId" [errors]="errorsOnScreen()" />
     }
   `,
 })

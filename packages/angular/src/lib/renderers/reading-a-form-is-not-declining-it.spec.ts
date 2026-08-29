@@ -14,6 +14,7 @@
  */
 import { TestBed } from "@angular/core/testing";
 import { CATALOG_KINDS, CatalogHost } from "./catalog-host.spec";
+import { MDY_FIELD_SHELL_CLASSES } from "@modyra/widgets";
 
 /** Whatever a Tab lands on: the box for the kinds that have one, the opener for the rest. */
 function focusable(root: Element): HTMLElement | null {
@@ -22,6 +23,21 @@ function focusable(root: Element): HTMLElement | null {
 }
 
 const saysWrong = (root: Element): boolean => root.querySelectorAll('[aria-invalid="true"]').length > 0;
+
+/**
+ * The other channel, and the one a sighted person actually reads.
+ *
+ * `aria-invalid` and the message under the field answer one question — is this person being told —
+ * and they were computed from two different rules: the attribute learned that a traversal is not an
+ * answer while the text was painted from "which refusals exist". Sixteen of seventeen kinds said
+ * `false` and printed "required" at the same time.
+ */
+const saysWrongInWords = (root: Element): boolean =>
+  Array.from(root.querySelectorAll(
+    `.${MDY_FIELD_SHELL_CLASSES.errors}, .${MDY_FIELD_SHELL_CLASSES.errorItem}, .${MDY_FIELD_SHELL_CLASSES.inlineError}`,
+  ))
+    .map((element) => (element.textContent ?? "").trim())
+    .filter((text) => text !== "").length > 0;
 
 describe("reading a form is not declining it", () => {
   for (const { kind, selector } of CATALOG_KINDS) {
@@ -42,6 +58,8 @@ describe("reading a form is not declining it", () => {
 
       expect(`${kind} after a bare traversal: ${saysWrong(root!)}`)
         .toBe(`${kind} after a bare traversal: false`);
+      expect(`${kind} prints a refusal after a bare traversal: ${saysWrongInWords(root!)}`)
+        .toBe(`${kind} prints a refusal after a bare traversal: false`);
     });
   }
 
@@ -61,5 +79,12 @@ describe("reading a form is not declining it", () => {
     });
     expect(`kinds speaking after a refused submit: ${spoke.length > 0}`)
       .toBe("kinds speaking after a refused submit: true");
+    // In words too: an attribute nobody can see is not the field saying it.
+    const printed = CATALOG_KINDS.filter(({ selector }) => {
+      const root = fixture.nativeElement.querySelector(selector) as Element | null;
+      return root !== null && saysWrongInWords(root);
+    });
+    expect(`kinds printing a refusal after a refused submit: ${printed.length > 0}`)
+      .toBe("kinds printing a refusal after a refused submit: true");
   });
 });

@@ -262,7 +262,7 @@ import { MdyDropdownBase } from "../dropdown-base";
     }
 
     @if (errorsReserved()) {
-      <mdy-error-list [fieldId]="fieldId" [errors]="errors()" />
+      <mdy-error-list [fieldId]="fieldId" [errors]="errorsOnScreen()" />
     } @else if (projectedSupportingText(); as st) {
       <div class="mdy-supporting-text" [id]="descriptionId(fieldId)">
         <ng-container [ngTemplateOutlet]="st.template" />

@@ -15,6 +15,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { installDomGlobals } from "./support/dom-env.mjs";
+import { MDY_FIELD_SHELL_CLASSES } from "@modyra/widgets";
 
 installDomGlobals();
 const fixture = await import("./support/state-fixture.mjs");
@@ -25,6 +26,21 @@ const NEVER_EMPTY = new Set(["slider", "toggle", "number"]);
 function saidWrong(root) {
   return [...root.querySelectorAll('[aria-invalid="true"]')].length > 0;
 }
+
+/**
+ * The other channel, and the one a sighted person actually reads.
+ *
+ * `aria-invalid` and the message under the field answer one question — is this person being told —
+ * and they were computed from two different rules: the attribute learned that a traversal is not an
+ * answer while the text was painted from "which refusals exist". A field said `false` and printed
+ * "required" at the same time.
+ */
+const saysWrongInWords = (root) =>
+  [...root.querySelectorAll(
+    `.${MDY_FIELD_SHELL_CLASSES.errors}, .${MDY_FIELD_SHELL_CLASSES.errorItem}, .${MDY_FIELD_SHELL_CLASSES.inlineError}`,
+  )]
+    .map((element) => (element.textContent ?? "").trim())
+    .filter((text) => text !== "").length > 0;
 
 for (const kind of fixture.KINDS.filter((one) => !NEVER_EMPTY.has(one))) {
   test(`${kind}: focus in, focus out, nothing typed — it says nothing`, async () => {
@@ -49,6 +65,8 @@ for (const kind of fixture.KINDS.filter((one) => !NEVER_EMPTY.has(one))) {
 
     assert.equal(saidWrong(mounted.root), false,
       `${kind} calls itself wrong after a bare traversal. Reading a form is not declining it — ADR 0167`);
+    assert.equal(saysWrongInWords(mounted.root), false,
+      `${kind} prints a refusal after a bare traversal, whatever its attribute says — ADR 0167`);
 
     // The perimeter: the same field can still say it, so the silence above is an answer rather than
     // a renderer that never writes the attribute.
@@ -56,6 +74,8 @@ for (const kind of fixture.KINDS.filter((one) => !NEVER_EMPTY.has(one))) {
     await mounted.settle();
     assert.equal(saidWrong(mounted.root), true,
       `${kind} never says a field is wrong, so the check above asserts nothing`);
+    assert.equal(saysWrongInWords(mounted.root), true,
+      `${kind} never prints a refusal, so the words check above asserts nothing`);
 
     mounted.dispose();
   });

@@ -384,7 +384,7 @@ const CHIPS = partSelector("multiselect", "chips") ?? "";
 
 
     @if (errorsReserved()) {
-      <mdy-error-list [fieldId]="fieldId" [errors]="errors()" />
+      <mdy-error-list [fieldId]="fieldId" [errors]="errorsOnScreen()" />
     } @else if (projectedSupportingText(); as st) {
       <!-- The two routes a field's own words arrive by, and both are tested here because the id the
            control describes itself with is claimed for either. A branch that asks only about the
