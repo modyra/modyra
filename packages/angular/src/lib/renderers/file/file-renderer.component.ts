@@ -63,6 +63,25 @@ import { MDY_I18N_MESSAGES } from "../../core/i18n";
           {{ multiple() ? i18n.fileSelectMultiple : i18n.fileSelect }}
         </button>
 
+        <!-- Beside the control that picks, and outside the branch that draws the list: a control that
+             is part of the field is always there and says when it cannot act, and its place is the
+             field's rather than the value's — below the list it moved every time a file arrived or
+             left. ADR 0171, ADR 0173. -->
+        <button
+          type="button"
+          class="mdy-file-clear"
+          [class.mdy-file-clear--disabled]="cannotPick() || chosen().length === 0"
+          (click)="clear()"
+          [attr.aria-disabled]="cannotPick() || chosen().length === 0"
+          [attr.aria-label]="i18n.fileClearSelection"
+          [title]="i18n.fileClearSelection"
+        >
+        <!-- The mark is a drawing made of a character, so it is out of the tree: left in, a
+               reader says "multiplication sign" before the name. The title is the word itself —
+               somebody driving by voice says what they can see, and a glyph is not something a
+               person says. -->
+          <span aria-hidden="true">&times;</span>
+        </button>
         <div class="mdy-file-info">
           @if (chosen().length > 0) {
             <ul class="mdy-file-list">
@@ -75,24 +94,7 @@ import { MDY_I18N_MESSAGES } from "../../core/i18n";
           } @else {
             <span class="mdy-file-placeholder">{{ i18n.fileNoneSelected }}</span>
           }
-          <!-- Outside the branch: a control that is part of the field is always there and says when it
-               cannot act. Inside it, the number of tab stops changed as somebody filled the field in,
-               and their focus was on the button at the moment it went. ADR 0171. -->
-          <button
-            type="button"
-            class="mdy-file-clear"
-            [class.mdy-file-clear--disabled]="cannotPick() || chosen().length === 0"
-            (click)="clear()"
-            [attr.aria-disabled]="cannotPick() || chosen().length === 0"
-            [attr.aria-label]="i18n.fileClearSelection"
-            [title]="i18n.fileClearSelection"
-          >
-            <!-- The mark is a drawing made of a character, so it is out of the tree: left in, a
-                 reader says "multiplication sign" before the name. The title is the word itself —
-                 somebody driving by voice says what they can see, and a glyph is not something a
-                 person says. -->
-            <span aria-hidden="true">&times;</span>
-          </button>
+
         </div>
       </div>
       @if (rejectedNames().length > 0) {

@@ -4035,34 +4035,8 @@
           ],
           "states": []
         },
-        "fileList": {
-          "order": 6,
-          "element": "group",
-          "parent": "content",
-          "optional": true,
-          "presentWhen": "kindOffersIt",
-          "repeated": false,
-          "role": null,
-          "classes": [
-            "mdy-file-list"
-          ],
-          "states": []
-        },
-        "fileItem": {
-          "order": 7,
-          "element": "group",
-          "parent": "fileList",
-          "optional": true,
-          "presentWhen": "valueIsPresent",
-          "repeated": true,
-          "role": null,
-          "classes": [
-            "mdy-file-item"
-          ],
-          "states": []
-        },
         "clear": {
-          "order": 8,
+          "order": 6,
           "element": "button",
           "parent": "content",
           "optional": false,
@@ -4075,6 +4049,32 @@
           "states": [
             "disabled"
           ]
+        },
+        "fileList": {
+          "order": 7,
+          "element": "group",
+          "parent": "content",
+          "optional": true,
+          "presentWhen": "kindOffersIt",
+          "repeated": false,
+          "role": null,
+          "classes": [
+            "mdy-file-list"
+          ],
+          "states": []
+        },
+        "fileItem": {
+          "order": 8,
+          "element": "group",
+          "parent": "fileList",
+          "optional": true,
+          "presentWhen": "valueIsPresent",
+          "repeated": true,
+          "role": null,
+          "classes": [
+            "mdy-file-item"
+          ],
+          "states": []
         },
         "rejected": {
           "order": 9,

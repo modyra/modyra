@@ -101,6 +101,26 @@ nothing separates the two hit areas — is a browser-tier check and is what foun
 record does not claim it has been re-run; the numbers above are the peer's, on the arrangement this
 record replaces.
 
+## Amendment: the rule is not about one field's commands
+
+Recorded after the peer's tier came back green, because the title of this record undersells it.
+
+*A position may depend on the field, never on the value* is a constraint on every control this
+library draws, not a placement for a multiselect's two commands. Anything sitting between a
+variable-length part and free space is on the same conveyor belt, and a chip strip is not the only
+variable-length part here.
+
+The second instance, found by looking rather than by a defect report: the `file` field's clear stands
+after the list of chosen files, in a column. Its position is the number of files chosen — every
+addition pushes it down, every removal pulls it up, and a person removing several one at a time is
+pressing into a place that moves between presses. It has been moved to stand with the control that
+picks files, which is the part of that field that does not change with what is in it.
+
+What is demonstrated and what is not: the dependence is structural and certain — a column whose
+earlier sibling has a variable number of rows. That the clear lands precisely where a per-file
+remove was is **not** demonstrated; the two are aligned differently within the row, and no
+measurement here says how close they come.
+
 ## Security and privacy
 
 No impact. Placement and spacing only; no control gains an act, and nothing crosses a boundary it did

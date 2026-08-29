@@ -249,7 +249,7 @@ export const MDY_WIDGET_CONTRACTS = Object.freeze({
       // one renderer puts it on the popup, the other on this container — so requiring the `dialog`
       // part would require an element neither of them draws.
       required: ["toggle", "container"] }),
-  file: define("file", ["mdy-renderer", "mdy-renderer--file"], ["root", "label", "requiredMarker", "dropzone", "control", "content", "fileList", "fileItem", "clear", "rejected", "supportingText", "errors", "errorItem"] as const, false,
+  file: define("file", ["mdy-renderer", "mdy-renderer--file"], ["root", "label", "requiredMarker", "dropzone", "control", "content", "clear", "fileList", "fileItem", "rejected", "supportingText", "errors", "errorItem"] as const, false,
     { parents: { fileList: "content", clear: "content", rejected: "content" },
       classes: { dropzone: ["mdy-file-container"], control: ["mdy-file-input"], content: ["mdy-file-content"], fileList: ["mdy-file-list"], fileItem: ["mdy-file-item"], clear: ["mdy-file-clear"], rejected: ["mdy-file-rejected"] },
       states: { dropzone: ["dragover"], clear: ["disabled"] } ,
@@ -265,6 +265,12 @@ export const MDY_WIDGET_CONTRACTS = Object.freeze({
       // all. Presentation until the contract declares the per-file act, which is its own decision.
       presentation: ["mdy-file-icon", "mdy-file-info", "mdy-file-placeholder", "mdy-file-name", "mdy-file-meta", "mdy-file-remove"] ,
       // `clear` too: always drawn, unavailable only sometimes. ADR 0171.
+      //
+      // Before the list rather than after it: the list is as long as the value, so a control below it
+      // sits wherever the last row ends and moves every time a file is added or taken away — under
+      // the hand of somebody removing several, one at a time. It stands with the control that picks
+      // files instead, which is the part of this field that does not change with what is in it.
+      // ADR 0173.
       required: ["content", "clear"] }),
   colors: define("colors", ["mdy-renderer", "mdy-renderer--colors"], ["root", "label", "requiredMarker", "inputWrapper", "nativePicker", "preview", "control", "hexInput", "toggle", "popup", "presets", "swatch", "customEntry", "customTint", "inlineError", "supportingText", "errors", "errorItem"] as const, true,
     {

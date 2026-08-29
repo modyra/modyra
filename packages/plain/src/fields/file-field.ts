@@ -78,8 +78,10 @@ export function renderFileField(
   clear.type = "button";
   setText(clear, messages.fileClearSelection);
   const info = el("div", "mdy-file-info") as HTMLDivElement;
-  info.append(fileList, placeholder, clear, rejected);
-  content.append(browse, info);
+  info.append(fileList, placeholder, rejected);
+  // The clear stands with the control that picks, not under the list: below it, its place is the
+  // number of files chosen and it moves every time one arrives or leaves. ADR 0173.
+  content.append(browse, clear, info);
   dropzone.append(control, content);
   shell.root.insertBefore(dropzone, shell.description);
 

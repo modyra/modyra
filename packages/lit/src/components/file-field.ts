@@ -117,6 +117,23 @@ export class MdyFileFieldElement extends MdyFieldElement<readonly File[] | null>
             ${mdyIcon("PLUS", "mdy-file-icon")}
             ${this.multiple ? "Select files" : "Select file"}
           </button>
+          <!-- Beside the control that picks: below the list its place would be the number of files
+               chosen, and it would move every time one arrived or left. ADR 0171, ADR 0173. -->
+          <button
+              type="button"
+              class="mdy-file-clear ${this.partStateClass("clear", "disabled", files.length === 0 || handle.disabled() || handle.readonly())}"
+              aria-disabled=${String(files.length === 0 || handle.disabled() || handle.readonly())}
+              aria-label=${this.messages.fileClearSelection}
+              title=${this.messages.fileClearSelection}
+              @click=${(e: Event) => {
+                e.preventDefault();
+                if ((e.currentTarget as HTMLElement).getAttribute("aria-disabled") === "true") return;
+                this.fileController(handle).dispatch({ type: "clear" });
+              }}
+            ><!-- The mark is a drawing made of a character, so it is out of the tree: left in, a
+                 reader says "multiplication sign" before the name. The title is the word itself —
+                 somebody driving by voice says what they can see, and a glyph is not something a
+                 person says. --><span aria-hidden="true">&times;</span></button>
           <div class="mdy-file-info">
             ${files.length === 0
               ? html`<span class="mdy-file-placeholder">${this.placeholder || this.messages.fileSelect}</span>`
@@ -142,21 +159,7 @@ export class MdyFileFieldElement extends MdyFieldElement<readonly File[] | null>
                     </li>`,
                   )}
                 </ul>`}
-            <button
-              type="button"
-              class="mdy-file-clear ${this.partStateClass("clear", "disabled", files.length === 0 || handle.disabled() || handle.readonly())}"
-              aria-disabled=${String(files.length === 0 || handle.disabled() || handle.readonly())}
-              aria-label=${this.messages.fileClearSelection}
-              title=${this.messages.fileClearSelection}
-              @click=${(e: Event) => {
-                e.preventDefault();
-                if ((e.currentTarget as HTMLElement).getAttribute("aria-disabled") === "true") return;
-                this.fileController(handle).dispatch({ type: "clear" });
-              }}
-            ><!-- The mark is a drawing made of a character, so it is out of the tree: left in, a
-                 reader says "multiplication sign" before the name. The title is the word itself —
-                 somebody driving by voice says what they can see, and a glyph is not something a
-                 person says. --><span aria-hidden="true">&times;</span></button>
+
           </div>
           ${this._rejected.length === 0
             ? nothing
