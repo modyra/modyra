@@ -19,7 +19,7 @@ import {
 import {
   MDY_WIDGET_CONTRACTS,
   dateRangeValueTransition,
-  overlayControlledId, projectOverlayOpenerA11y, createDaterangeFieldController } from "@modyra/widgets";
+  overlayControlledId, projectOverlayOpenerA11y, createDaterangeFieldController , MDY_PART_NAMES } from "@modyra/widgets";
 import { defaultWidgetIdFactory } from "@modyra/widgets";
 import { MdyErrorListComponent } from "../../control/error-list.component";
 import { MdyControlLabelComponent } from "../../control/mdy-control-label.component";
@@ -112,7 +112,7 @@ import { inputText, isoDateText } from "../renderer-projection";
             [attr.aria-required]="ariaRequired() || isRequired()"
             [attr.aria-disabled]="effectiveAriaDisabled()"
             [attr.aria-readonly]="isReadonly() ? 'true' : null"
-            [attr.aria-label]="(label() ? label() + ' — ' : '') + i18n.daterangeEndLabel"
+            [attr.aria-label]="endControlName()"
             [mdyPart]="popupPromisePart()"
             autocomplete="off"
           />
@@ -247,6 +247,22 @@ export class MdyDateRangePickerComponent extends MdyOverlayControl<MdyDateRange 
   private readonly locale = inject(MDY_DATE_LOCALE);
   private readonly injector = inject(Injector);
   protected readonly i18n = inject(MDY_I18N_MESSAGES);
+
+  /**
+   * What the second of the two boxes is called, read from the contract rather than composed here.
+   *
+   * The caption points `for` at the first — a range's caption belongs to where the range starts — so
+   * nothing claims the second, and what it is called was this renderer's own decision. It built the
+   * caption, an em dash and an English-shaped phrase around a translated word, which is a sentence no
+   * table holds and no translation reaches as a whole.
+   */
+  protected readonly endControlName = computed(
+    () => {
+      const key = MDY_PART_NAMES["daterange.endControl"];
+      const said = key === undefined ? undefined : (this.i18n as unknown as Record<string, unknown>)[key];
+      return typeof said === "string" ? said : "";
+    },
+  );
 
 
   protected readonly displayStart = computed(() => isoDateText(this.value()?.start));

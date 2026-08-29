@@ -89,3 +89,42 @@ test("a message bound to a part is translated everywhere the package speaks", as
     }
   }
 });
+
+test("two parts of one kind are not named the same thing", () => {
+  /**
+   * The property a renderer check cannot hold.
+   *
+   * A check that asserts "the box says what the binding says" reads the expected value through the
+   * binding, so changing the binding moves both sides together and the check stays green — measured:
+   * pointing a range's second box at the *first* box's message broke nothing anywhere. It is a
+   * tautology about following the table, which is worth having and is not a statement about the
+   * table being right.
+   *
+   * What can be said from here is that two controls a person tells apart must be told apart: the two
+   * halves of a range, the two halves of a time. If they share a name, a reader hears the same words
+   * on both and has no way to know which one they are in.
+   */
+  const byKind = new Map();
+  for (const [part, key] of Object.entries(MDY_PART_NAMES)) {
+    const kind = part.split(".")[0];
+    if (!byKind.has(kind)) byKind.set(kind, []);
+    byKind.get(kind).push([part, key]);
+  }
+  const shared = [];
+  for (const [kind, bindings] of byKind) {
+    if (bindings.length < 2) continue;
+    const seen = new Map();
+    for (const [part, key] of bindings) {
+      if (seen.has(key)) shared.push(`${kind}: ${seen.get(key)} and ${part} both say ${key}`);
+      seen.set(key, part);
+    }
+  }
+  assert.deepEqual(shared, [],
+    "two parts of one kind are announced as the same words, so a reader in one cannot tell it from "
+    + "the other");
+
+  // And the perimeter, so a table with one binding per kind cannot pass this by having nothing to
+  // compare: at least one kind must declare two.
+  assert.ok([...byKind.values()].some((bindings) => bindings.length >= 2),
+    "no kind binds two parts, so the comparison above never runs");
+});

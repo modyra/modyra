@@ -614,7 +614,6 @@ export class MdyDaterangeFieldElement extends MdyFieldElement<MdyDateRange | nul
   protected override renderControl(handle: MdyFieldHandle<MdyDateRange | null>): unknown {
     this.classList.toggle("mdy-renderer--open", this._open);
     const range = handle.value() ?? { start: null, end: null };
-    const baseLabel = this.label ? `${this.label} — ` : "";
     return html`
       <div class="mdy-datepicker">
         <div class="${this.wrapperClass(handle)} mdy-daterange__group">
@@ -631,7 +630,6 @@ export class MdyDaterangeFieldElement extends MdyFieldElement<MdyDateRange | nul
               ?disabled=${handle.disabled()}
               ?readonly=${handle.readonly()}
               ${mdyPart(this.controlPart(handle))}
-              aria-label=${`${baseLabel}Start date`}
               autocomplete="off"
               @change=${(e: Event) => {
                 const input = e.target as HTMLInputElement;
@@ -654,12 +652,12 @@ export class MdyDaterangeFieldElement extends MdyFieldElement<MdyDateRange | nul
             <input
               type="text"
               class="${partClasses("daterange", "endControl").join(" ")}"
+              aria-label=${this.nameOfPart("daterange.endControl")}
               placeholder=${this.endPlaceholder}
               .value=${range.end ?? ""}
               ?disabled=${handle.disabled()}
               ?readonly=${handle.readonly()}
               ${mdyPart(this.controlPart(handle))}
-              aria-label=${`${baseLabel}End date`}
               autocomplete="off"
               @change=${(e: Event) => {
                 const input = e.target as HTMLInputElement;

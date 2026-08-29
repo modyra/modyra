@@ -1,6 +1,6 @@
 import {
   handleFormOf, MdyFieldHandle, type MdyFieldConstraints, type MdyValueKind } from "@modyra/core";
-import { MDY_ICONS, MDY_POPUP_OPENERS, idSafeKey, stateClass, type MdyStateName, adoptSilentWrites, applySubmissionNames, bindFormReset, groupSubmitName, submissionFor, syncSubmitValues, defaultOptionKey, messagesForLocale, widgetScopeOf, type MdyI18nMessages,
+import { MDY_ICONS, MDY_PART_NAMES, MDY_POPUP_OPENERS, idSafeKey, stateClass, type MdyStateName, adoptSilentWrites, applySubmissionNames, bindFormReset, groupSubmitName, submissionFor, syncSubmitValues, defaultOptionKey, messagesForLocale, widgetScopeOf, type MdyI18nMessages,
   shellStateClasses,
 } from "@modyra/widgets";
 import { html, LitElement, nothing, PropertyDeclarations } from "lit";
@@ -805,6 +805,21 @@ export abstract class MdyFieldElement<T> extends LitElement {
    *
    * So a template asks for the same answer the resolver gives, rather than writing a word beside it.
    */
+  /**
+   * What a part is called, where no relation points at it.
+   *
+   * A panel's search box, the second date of a range: a person types in both, and nothing in the
+   * contract's relations claims them, so what they are announced as was each renderer's own word —
+   * one built a phrase around the caption, another said nothing at all, and a translated page said
+   * the English half. `MDY_PART_NAMES` binds the part to the message; this reads the binding rather
+   * than the message, so the binding is what a renderer follows and not a comment beside it.
+   */
+  protected nameOfPart(part: string): string | typeof nothing {
+    const key = MDY_PART_NAMES[part];
+    const said = key === undefined ? undefined : (this.messages as unknown as Record<string, unknown>)[key];
+    return typeof said === "string" && said !== "" ? said : nothing;
+  }
+
   protected fallbackName(): string | typeof nothing {
     return fieldAccessibleName({
       ariaLabel: this._pendingName,

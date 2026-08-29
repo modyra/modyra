@@ -449,6 +449,7 @@ export class MdySelectFieldElement extends MdyDropdownFieldElement<unknown | nul
         ? html`<input
               type="text"
               class="mdy-select__search"
+              aria-label=${this.nameOfPart("select.search")}
               .value=${state.query}
               @input=${this.onSearchInput}
               @keydown=${(event: KeyboardEvent) => this.onKeydown(event, handle)}

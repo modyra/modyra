@@ -113,7 +113,7 @@
         "MDY_WIDGET_CONTRACTS.daterange",
         "widgetHasRootClass",
         "daterangeStartLabel",
-        "daterangeEndLabel",
+        "MDY_PART_NAMES[\"daterange.endControl\"]",
         "aria-haspopup]=\"'dialog'\"",
         "mdy-overlay-panel",
         "mdy-error-list"
