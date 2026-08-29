@@ -1,18 +1,16 @@
 {
   "note": "Browser specs that are red because the defect they describe is open. A red listed here does not fail a build; a red that is not listed is a regression. Rewrite with `npm run battle:browser:ci -- --accept`.",
   "order": "Repair in severity order, as the node tier does. A spec's severity is the worst of the claims its header names; `unknown` is a spec that names none, which is most of them.",
-  "recordedAt": "2026-08-29T15:46:38Z",
-  "openReds": 17,
+  "recordedAt": "2026-08-29T19:29:40Z",
+  "openReds": 15,
   "bySeverity": {
-    "S1": 9,
+    "S1": 7,
     "S2": 8
   },
   "knownRed": [
     "a-panel-a-pointer-opens-undeclared.spec.ts › a panel a pointer opens undeclared, angular",
     "a-panel-a-pointer-opens-undeclared.spec.ts › a panel a pointer opens undeclared, lit",
     "a-panel-a-pointer-opens-undeclared.spec.ts › a panel a pointer opens undeclared, plain",
-    "a-part-that-comes-and-goes-with-its-condition.spec.ts › a part is there when its condition holds and gone when it does not, angular",
-    "a-part-that-comes-and-goes-with-its-condition.spec.ts › a part is there when its condition holds and gone when it does not, lit",
     "a-row-system-three-renderers-disagree-about.spec.ts › a kind is inside the row system in every renderer, or outside it in every renderer",
     "a-row-system-three-renderers-disagree-about.spec.ts › a kind is the same height in every renderer",
     "an-aria-promise-that-depends-on-the-adapter.spec.ts › an aria promise that depends on the adapter",
