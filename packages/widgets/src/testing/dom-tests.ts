@@ -329,6 +329,11 @@ function implicitRole(element: Element): string | null {
   if (type === "checkbox") return "checkbox";
   if (type === "radio") return "radio";
   if (type === "range") return "slider";
+  // A number box is a spinbutton to the platform, and a renderer using one carries the role without
+  // writing it. Demanding the attribute would ask three renderers to spell what two of them get from
+  // the element they chose — and reporting "with none" over an element that has the role is the
+  // inspector describing its own table rather than the page.
+  if (type === "number") return "spinbutton";
   return null;
 }
 

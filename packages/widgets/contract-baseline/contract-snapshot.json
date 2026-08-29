@@ -2813,7 +2813,7 @@
           "optional": false,
           "presentWhen": null,
           "repeated": false,
-          "role": null,
+          "role": "dialog",
           "classes": [
             "mdy-datepicker__calendar"
           ],
@@ -3217,7 +3217,7 @@
           "optional": false,
           "presentWhen": null,
           "repeated": false,
-          "role": null,
+          "role": "dialog",
           "classes": [
             "mdy-datepicker__calendar"
           ],
@@ -3645,7 +3645,7 @@
           "optional": true,
           "presentWhen": "overlayIsOpen",
           "repeated": false,
-          "role": null,
+          "role": "spinbutton",
           "classes": [
             "mdy-timepicker-segment-input"
           ],
@@ -3677,7 +3677,7 @@
           "optional": true,
           "presentWhen": "overlayIsOpen",
           "repeated": false,
-          "role": null,
+          "role": "spinbutton",
           "classes": [
             "mdy-timepicker-segment-input"
           ],

@@ -85,7 +85,10 @@ function dateRange({ id = `d${(fixtureSeq += 1)}` } = {}) {
   const toggle = el("button", "mdy-datepicker__toggle", { "aria-controls": `${id}-popup`, "aria-expanded": "true" });
   wrapper.append(startControl, separator, endControl, toggle);
   const popup = el("div", "mdy-datepicker__popup mdy-popup mdy-popup--surface mdy-datepicker__popup--range", { id: `${id}-popup`, role: "dialog" });
-  const calendar = el("div", "mdy-datepicker__calendar", { role: "group" });
+  // The calendar is what the opener promises and what a person enters, works in and leaves, so the
+  // role the catalogue declares for it is `dialog`. `group` said "these things belong together",
+  // which is true of the grid inside it and not of the panel.
+  const calendar = el("div", "mdy-datepicker__calendar", { role: "dialog" });
   const grid = el("div", "mdy-datepicker__grid", { role: "grid", "aria-label": "Choose a date" });
   const row = el("div", "mdy-datepicker__row", { role: "row" });
   const gridcell = el("div", "mdy-datepicker__cell", { role: "gridcell" });

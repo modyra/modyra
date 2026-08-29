@@ -10,7 +10,7 @@ import { applyOpenerPromise } from "../opener-promise.js";
 import { observerFor, type MdyFieldHandle, type MdyReactivity } from "@modyra/core";
 import type { MdyDynamicDaterangeField } from "@modyra/core";
 import { buildDateLocale, formatIsoDate, parseLocalizedDate } from "@modyra/core/datetime";
-import { applySubmissionNames,
+import { fieldAccessibleName, applySubmissionNames,
   MDY_WIDGET_CONTRACTS,
   createDaterangeFieldController,
   defaultWidgetIdFactory,
@@ -122,6 +122,14 @@ export function renderDaterangeField(
   const grid = buildCalendarGrid("daterange");
   // Same frame as the single-date picker: the popup positions, the calendar lays out.
   const calendar = el("div", MDY_WIDGET_CONTRACTS.daterange.parts.calendar.classes.join(" "));
+  // What the opener promises, carried by the thing it opens. The other two renderers wrote the role
+  // here and this one wrote it nowhere, so a person was told a dialog had appeared and met an
+  // unnamed `<div>`. Read from the catalogue rather than spelled again.
+  applyPart(calendar, MDY_WIDGET_CONTRACTS.daterange.parts.calendar);
+  // A dialog owes a name: announced as "dialog" and nothing else, a person is told a panel has
+  // appeared and not what it is for. The field's own words where there are any, the kind's sentence
+  // otherwise — the same order the other two renderers use.
+  calendar.setAttribute("aria-label", fieldAccessibleName({ label: f.label, name: f.name }) || messages.daterangeChooseRange);
   calendar.append(header, grid);
   popup.append(calendar);
 

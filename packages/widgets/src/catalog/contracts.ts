@@ -210,13 +210,25 @@ export const MDY_WIDGET_CONTRACTS = Object.freeze({
       required: ["trigger", "announcement", "option", "optionLabel", "options", "clearAll", "wayBackAction"] }),
   datepicker: define("datepicker", ["mdy-renderer", "mdy-renderer--datepicker"], ["root", "label", "requiredMarker", "inputWrapper", "control", "toggle", "popup", "dialogHeader", "calendar", "grid", "weekdays", "weekday", "row", "gridcell", "monthPicker", "monthCell", "yearPicker", "yearCell", "inlineError", "supportingText", "errors", "errorItem"] as const, true,
     { classes: { control: ["mdy-datepicker__input"], toggle: ["mdy-datepicker__toggle"], popup: ["mdy-datepicker__popup", MDY_POPUP_CLASS, MDY_POPUP_SURFACE_CLASS], calendar: ["mdy-datepicker__calendar"], dialogHeader: ["mdy-datepicker__header"], grid: ["mdy-datepicker__grid"], weekdays: ["mdy-datepicker__weekdays"], weekday: ["mdy-datepicker__weekday"], row: ["mdy-datepicker__row"], gridcell: ["mdy-datepicker__cell"], monthPicker: ["mdy-datepicker__month-picker"], monthCell: ["mdy-datepicker__month-cell"], yearPicker: ["mdy-datepicker__year-picker"], yearCell: ["mdy-datepicker__year-cell"] },
-      roles: { grid: "grid", row: "row", weekdays: "row", weekday: "columnheader", gridcell: "gridcell", monthPicker: "grid", monthCell: "gridcell", yearPicker: "grid", yearCell: "gridcell" } ,
+      // The calendar is the `dialog` — not the popup around it. Two renderers write the role on the
+      // calendar and one wrote it nowhere, while the catalogue said nothing at all, so a role two
+      // adapters agree on was one nothing could check and the third had to guess at. It is the
+      // calendar because that is the thing a person enters, works in and leaves; the popup is the
+      // box that positions it, and the clock declares it on its own panel because there the panel
+      // and the thing inside it are one.
+      roles: { calendar: "dialog", grid: "grid", row: "row", weekdays: "row", weekday: "columnheader", gridcell: "gridcell", monthPicker: "grid", monthCell: "gridcell", yearPicker: "grid", yearCell: "gridcell" } ,
       states: { gridcell: CALENDAR_CELL_STATES, monthCell: CALENDAR_PERIOD_CELL_STATES, yearCell: CALENDAR_PERIOD_CELL_STATES, popup: POPUP_PLACEMENT_STATES } ,
       presentation: ["mdy-datepicker", "mdy-datepicker__header-label", "mdy-datepicker__header-nav", "mdy-datepicker__icon", "mdy-datepicker__nav-btn", "mdy-datepicker__title", "mdy-datepicker__view-icon", "mdy-datepicker__view-toggle", "mdy-datepicker__year-grid", "mdy-datepicker__modal-header", "mdy-datepicker__modal-label", "mdy-datepicker__modal-value"] ,
       required: ["toggle", "calendar"] }),
   daterange: define("daterange", ["mdy-renderer", "mdy-renderer--datepicker", "mdy-renderer--daterange"], ["root", "label", "requiredMarker", "inputWrapper", "startControl", "separator", "endControl", "toggle", "popup", "dialogHeader", "calendar", "grid", "weekdays", "weekday", "row", "gridcell", "monthPicker", "monthCell", "yearPicker", "yearCell", "inlineError", "supportingText", "errors", "errorItem"] as const, true,
     { classes: { startControl: ["mdy-datepicker__input", "mdy-daterange__input", "mdy-daterange__input--start"], endControl: ["mdy-datepicker__input", "mdy-daterange__input", "mdy-daterange__input--end"], separator: ["mdy-daterange__sep"], toggle: ["mdy-datepicker__toggle"], popup: ["mdy-datepicker__popup", MDY_POPUP_CLASS, MDY_POPUP_SURFACE_CLASS, "mdy-datepicker__popup--range"], calendar: ["mdy-datepicker__calendar"], dialogHeader: ["mdy-datepicker__header"], grid: ["mdy-datepicker__grid"], weekdays: ["mdy-datepicker__weekdays"], weekday: ["mdy-datepicker__weekday"], row: ["mdy-datepicker__row"], gridcell: ["mdy-datepicker__cell"], monthPicker: ["mdy-datepicker__month-picker"], monthCell: ["mdy-datepicker__month-cell"], yearPicker: ["mdy-datepicker__year-picker"], yearCell: ["mdy-datepicker__year-cell"] },
-      roles: { grid: "grid", row: "row", weekdays: "row", weekday: "columnheader", gridcell: "gridcell", monthPicker: "grid", monthCell: "gridcell", yearPicker: "grid", yearCell: "gridcell" } ,
+      // The calendar is the `dialog` — not the popup around it. Two renderers write the role on the
+      // calendar and one wrote it nowhere, while the catalogue said nothing at all, so a role two
+      // adapters agree on was one nothing could check and the third had to guess at. It is the
+      // calendar because that is the thing a person enters, works in and leaves; the popup is the
+      // box that positions it, and the clock declares it on its own panel because there the panel
+      // and the thing inside it are one.
+      roles: { calendar: "dialog", grid: "grid", row: "row", weekdays: "row", weekday: "columnheader", gridcell: "gridcell", monthPicker: "grid", monthCell: "gridcell", yearPicker: "grid", yearCell: "gridcell" } ,
       states: { gridcell: CALENDAR_CELL_STATES, monthCell: CALENDAR_PERIOD_CELL_STATES, yearCell: CALENDAR_PERIOD_CELL_STATES, popup: POPUP_PLACEMENT_STATES } ,
       presentation: ["mdy-datepicker", "mdy-datepicker__header-label", "mdy-datepicker__header-nav", "mdy-datepicker__icon", "mdy-datepicker__nav-btn", "mdy-datepicker__title", "mdy-datepicker__view-icon", "mdy-datepicker__view-toggle", "mdy-daterange__group", "mdy-daterange__hint", "mdy-daterange__input-sizer", "mdy-datepicker__modal-header", "mdy-datepicker__modal-label", "mdy-datepicker__modal-value"] ,
       required: ["separator", "toggle", "calendar"] }),
@@ -234,7 +246,10 @@ export const MDY_WIDGET_CONTRACTS = Object.freeze({
       // to say so decides it from its own placement — a panel drawn without a backdrop then had no
       // role at all, and a person was told a clock had appeared but never that the page behind it
       // was unavailable. Declared here, the answer is the same wherever the panel is drawn.
-      roles: { popup: "dialog" },
+      // The two segments are spinbuttons: a number a person steps with the arrows, bounded, and
+      // announcing what it holds. The projection has emitted the role since the segments existed and
+      // this table did not carry it, so a checker reading the anatomy found a role nobody declared.
+      roles: { popup: "dialog", hourControl: "spinbutton", minuteControl: "spinbutton" },
       // The state lives on the segment and the semantics on the control inside it. `--active` is
       // which of the two the dial is editing, and it is painted on the container; the input carries
       // the accessible name and takes the typing. Moving either onto the other breaks the half that

@@ -93,10 +93,13 @@ test("J3 — a timepicker segment holding a <div> instead of an input is rejecte
   // a screen reader nothing.
   const { root, issues } = timepickerWithSegments((label) => el("div", "mdy-timepicker-segment-input", { "aria-label": label }));
 
+  // Two counts, not one: a `<div>` is the wrong element *and* carries none of the semantics the
+  // number box it replaced had for free. The role is the half a class cannot fake.
   assert.deepEqual(
-    issues.map((issue) => `${issue.code}:${issue.part}`),
-    ["PART_ELEMENT:hourControl", "PART_ELEMENT:minuteControl"],
-    "a <div> in place of the segment's control must fail the element check",
+    issues.map((issue) => `${issue.code}:${issue.part}`).sort(),
+    ["PART_ELEMENT:hourControl", "PART_ELEMENT:minuteControl",
+      "PART_ROLE:hourControl", "PART_ROLE:minuteControl"].sort(),
+    "a <div> in place of the segment's control must fail the element and the role check",
   );
 
   const timepickerParts = Object.keys(MDY_WIDGET_CONTRACTS.timepicker.parts);
