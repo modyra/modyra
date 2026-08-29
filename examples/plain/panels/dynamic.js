@@ -74,13 +74,9 @@ export const dynamicPanel = {
     "mountMdyForm",
     "applyDynamicRules",
     "evaluateRuleCondition",
-    "MdyDynamicField",
-    "MdyDynamicDiagnostic",
-    "MdyDynamicFormParseResult",
     "MDY_FORM_SHELL_CLASSES",
     "MDY_FORM_SHELL_STRUCTURE",
-    "MdyFormShellPart",
-    "formErrorsOf",
+    "formErrorsOf"
   ],
 
   invariant:

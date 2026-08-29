@@ -28,11 +28,10 @@ export const collectionsPanel = {
     "createForm",
     "array",
     "record",
-    "MdyRecordHandle",
     "group",
     "field",
     "required",
-    "renderField",
+    "renderField"
   ],
 
   invariant:

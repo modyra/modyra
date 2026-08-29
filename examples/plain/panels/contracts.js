@@ -66,7 +66,14 @@ export const contractsPanel = {
     "Price bands that must tile the quantity axis without overlap or gap, a price that may not rise " +
     "with volume, and a discount the server refuses above its threshold. The rules live on the " +
     "collections they describe, so a collapsed band still gates the contract.",
-  exercises: ["createForm", "record", "MdyRecordHandle", "group", "field", "required", "renderField"],
+  exercises: [
+    "createForm",
+    "record",
+    "group",
+    "field",
+    "required",
+    "renderField"
+  ],
   invariant:
     "A rule about a whole collection is checked where the collection lives: overlapping bands are " +
     "refused with both names, and sorting them for reading never renames them.",

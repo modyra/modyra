@@ -57,12 +57,11 @@ export const ordersPanel = {
   exercises: [
     "createForm",
     "record",
-    "MdyRecordHandle",
     "group",
     "field",
     "required",
     "serverValidator",
-    "renderField",
+    "renderField"
   ],
   invariant:
     "The interface shows portions of the structure; the model owns identity, data, validity and " +

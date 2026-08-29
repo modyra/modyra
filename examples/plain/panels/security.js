@@ -39,12 +39,7 @@ export const securityPanel = {
     "createForm",
     "field",
     "renderField",
-    "MdySecurityPolicy",
-    "MdySecurityViolation",
-    "MdySanitizeProfile",
     "applyValueSecurity",
-    "MdyWebStorageLike",
-    "MdyDraftStorage",
     "MDY_I18N_PRESETS",
     "MDY_I18N_DEFAULT_TAGS",
     "MDY_I18N_MESSAGES_DEFAULT",
@@ -52,7 +47,7 @@ export const securityPanel = {
     "MDY_I18N_MESSAGES_DE",
     "MDY_I18N_MESSAGES_FR",
     "MDY_I18N_MESSAGES_ES",
-    "messagesForLocale",
+    "messagesForLocale"
   ],
 
   invariant:

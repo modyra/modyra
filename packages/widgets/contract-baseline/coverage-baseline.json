@@ -1,4893 +1,4133 @@
 {
   "note": "Public names not yet asserted or not yet shown. The list may only get shorter.",
   "score": {
-    "published": 901,
-    "asserted": 584,
-    "shown": 98
+    "published": 902,
+    "asserted": 585,
+    "showable": 397,
+    "shown": 83
   },
   "uncovered": [
-    {
-      "name": "CalendarCell",
-      "asserted": true,
-      "shown": false,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "CalendarDate",
-      "asserted": true,
-      "shown": false,
-      "reason": "published and never shown"
-    },
     {
       "name": "MDY_ADAPTER_CONTRACT_VIOLATION",
       "asserted": false,
       "shown": false,
+      "showable": true,
       "reason": "published, neither asserted nor shown"
     },
     {
       "name": "MDY_ASYNC_FEATURE_DISABLED",
       "asserted": true,
       "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "MDY_BACKDROP_ATTRIBUTE",
       "asserted": true,
       "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "MDY_CHIP_CLASSES",
       "asserted": true,
       "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "MDY_CHIP_DRAG_THRESHOLD",
       "asserted": true,
       "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "MDY_COLOR_PRESETS",
       "asserted": true,
       "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "MDY_CROSS_RUNTIME_OBSERVATION",
       "asserted": true,
       "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "MDY_CSS_PROPERTIES",
       "asserted": true,
       "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "MDY_DISABLED_BLOCKS_TRANSITIONS",
       "asserted": false,
       "shown": false,
+      "showable": true,
       "reason": "published, neither asserted nor shown"
     },
     {
       "name": "MDY_DRAFT_KEY_IN_USE",
       "asserted": true,
       "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "MDY_DRAFT_NOT_RESTORED",
       "asserted": true,
       "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "MDY_DYNAMIC_FIELD_KINDS",
       "asserted": true,
       "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "MDY_DYNAMIC_MEMBERS",
       "asserted": true,
       "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "MDY_EFFECTS_UNAVAILABLE",
       "asserted": true,
       "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "MDY_EVERY_TIME",
       "asserted": true,
       "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "MDY_FIELD_SHELL_CLASSES",
       "asserted": true,
       "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "MDY_FIELD_STATE_CLASSES",
       "asserted": true,
       "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "MDY_ID_DELIMITER",
       "asserted": true,
       "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "MDY_LAYOUT_BREAKPOINTS",
       "asserted": true,
       "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "MDY_LAYOUT_COLUMN_COUNT_PROPERTIES",
       "asserted": true,
       "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "MDY_LAYOUT_COLUMN_COUNT_PROPERTY",
       "asserted": true,
       "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "MDY_LAYOUT_COLUMN_DISPLAY_PROPERTIES",
       "asserted": true,
       "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "MDY_LAYOUT_COLUMN_START_PROPERTIES",
       "asserted": true,
       "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "MDY_MARKS_REQUIRED",
       "asserted": true,
       "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "MDY_MAX_EXPRESSION_DEPTH",
       "asserted": false,
       "shown": false,
+      "showable": true,
       "reason": "published, neither asserted nor shown"
     },
     {
       "name": "MDY_OVERLAY_GAP",
       "asserted": true,
       "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "MDY_OVERLAY_PORTAL_CLASS",
       "asserted": true,
       "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "MDY_OVERLAY_VIEWPORT_MARGIN",
       "asserted": true,
       "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "MDY_PART_NAMES",
       "asserted": true,
       "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "MDY_PART_PRESENCE",
       "asserted": true,
       "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "MDY_PART_PRESENCES",
       "asserted": true,
       "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "MDY_PART_REQUIRES",
       "asserted": true,
       "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "MDY_POPUP_CLASS",
       "asserted": true,
       "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "MDY_POPUP_OPENERS",
       "asserted": true,
       "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "MDY_PRESENCE_RESOLUTION",
       "asserted": true,
       "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "MDY_SCOPE_DESTROYED",
       "asserted": false,
       "shown": false,
+      "showable": true,
       "reason": "published, neither asserted nor shown"
     },
     {
       "name": "MDY_SEMANTICS_REQUIRING_NAME",
       "asserted": true,
       "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "MDY_SHARED_REGION_ATTRIBUTE",
       "asserted": true,
       "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "MDY_SHARED_REGION_ID",
       "asserted": true,
       "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "MDY_SSR_SNAPSHOT_MISMATCH",
       "asserted": false,
       "shown": false,
+      "showable": true,
       "reason": "published, neither asserted nor shown"
     },
     {
       "name": "MDY_STATE_EXPRESSION",
       "asserted": true,
       "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "MDY_TIMEPICKER_ADVANCE_MS",
       "asserted": true,
       "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "MDY_TIMEPICKER_INITIAL_VIEW",
       "asserted": true,
       "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "MDY_TIMEPICKER_INNER_RING",
       "asserted": true,
       "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "MDY_TIMEPICKER_NUMBER_SIZE",
       "asserted": true,
       "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "MDY_TIMEPICKER_RING_BAND",
       "asserted": true,
       "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "MDY_TYPEAHEAD_IDLE_MS",
       "asserted": true,
       "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "MDY_UNSUPPORTED_ADAPTER_OPTION",
       "asserted": false,
       "shown": false,
+      "showable": true,
       "reason": "published, neither asserted nor shown"
     },
     {
       "name": "MDY_VALIDATION_MESSAGES",
       "asserted": true,
       "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "MDY_VALIDATION_MESSAGES_DEFAULT",
       "asserted": true,
       "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "MDY_VALIDATOR_FACTS",
       "asserted": false,
       "shown": true,
+      "showable": true,
       "reason": "published and never asserted"
     },
     {
       "name": "MDY_VALUE_CONTRACTS",
       "asserted": true,
       "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "MDY_WIDGET_CONTRACTS",
       "asserted": true,
       "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "MDY_WIDGET_CONTRACT_VERSION",
       "asserted": true,
       "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "MDY_WIDGET_KEYBOARD",
       "asserted": true,
       "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "MDY_WIDGET_KINDS",
       "asserted": true,
       "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "MDY_WIDGET_RELATIONS",
       "asserted": true,
       "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "MDY_WIDGET_TRANSITIONS",
       "asserted": true,
       "shown": false,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "MdyA11yAnnouncer",
-      "asserted": true,
-      "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "MdyAccessibleNameSource",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "MdyActivationError",
       "asserted": false,
       "shown": false,
+      "showable": true,
       "reason": "published, neither asserted nor shown"
     },
     {
       "name": "MdyAdapterContractError",
       "asserted": false,
       "shown": false,
+      "showable": true,
       "reason": "published, neither asserted nor shown"
     },
     {
       "name": "MdyAffordance",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "MdyAffordanceRole",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "MdyAnchorRect",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "MdyAnchoredOverlayTracking",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
-    },
-    {
-      "name": "MdyAngularCommandHandlers",
-      "asserted": true,
-      "shown": false,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "MdyAngularSelectAdapter",
-      "asserted": true,
-      "shown": false,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "MdyAngularSelectAdapterOptions",
-      "asserted": true,
-      "shown": false,
-      "reason": "published and never shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "MdyAnnouncer",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
-    },
-    {
-      "name": "MdyAnyArrayDescriptor",
-      "asserted": true,
-      "shown": false,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "MdyAnyFieldDescriptor",
-      "asserted": true,
-      "shown": false,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "MdyAnyGroupDescriptor",
-      "asserted": true,
-      "shown": false,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "MdyAnyRecordDescriptor",
-      "asserted": true,
-      "shown": false,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "MdyAnyRowDescriptor",
-      "asserted": true,
-      "shown": false,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "MdyArrayDescriptor",
-      "asserted": true,
-      "shown": false,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "MdyArrayHandle",
-      "asserted": true,
-      "shown": false,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "MdyArrayItemValue",
-      "asserted": true,
-      "shown": false,
-      "reason": "published and never shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "MdyAsyncDraftStorage",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "MdyAsyncDraftStorageOptions",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "MdyAsyncKeyValueStore",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "MdyAsyncValidationContext",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
-    },
-    {
-      "name": "MdyAsyncValidatorFn",
-      "asserted": true,
-      "shown": false,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "MdyAsyncValidatorOptions",
-      "asserted": true,
-      "shown": false,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "MdyBaseControl",
-      "asserted": true,
-      "shown": false,
-      "reason": "published and never shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "MdyBatchingCapability",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "MdyBooleanFieldA11yOptions",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "MdyBooleanFieldController",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "MdyBooleanFieldControllerOptions",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "MdyBooleanFieldIntent",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "MdyBooleanFieldState",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "MdyBooleanFieldVariant",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
-    },
-    {
-      "name": "MdyBuiltInLocale",
-      "asserted": true,
-      "shown": false,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "MdyCalendarCellComponent",
-      "asserted": true,
-      "shown": false,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "MdyCalendarComponent",
-      "asserted": true,
-      "shown": false,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "MdyCalendarGridComponent",
-      "asserted": true,
-      "shown": false,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "MdyCalendarHeaderComponent",
-      "asserted": true,
-      "shown": false,
-      "reason": "published and never shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "MdyCalendarIssue",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "MdyCalendarIssueCode",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "MdyCalendarPeriodCell",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "MdyCalendarViewA11yOptions",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
-    },
-    {
-      "name": "MdyCalendarViewMode",
-      "asserted": true,
-      "shown": false,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "MdyCanonicalExpectation",
-      "asserted": true,
-      "shown": false,
-      "reason": "published and never shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "MdyCanonicalOptions",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "MdyCanonicalOverlay",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "MdyCanonicalPart",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "MdyCanonicalRelationship",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "MdyCanonicalSnapshot",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "MdyCatalogWidgetIntent",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "MdyCatalogWidgetState",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
-    },
-    {
-      "name": "MdyCheckboxComponent",
-      "asserted": true,
-      "shown": false,
-      "reason": "published and never shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "MdyChipAppearance",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "MdyChipMode",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "MdyChipPart",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "MdyChipRole",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
-    },
-    {
-      "name": "MdyChipsDirective",
-      "asserted": true,
-      "shown": false,
-      "reason": "published and never shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "MdyColorValueIntent",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "MdyColorValueTransition",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
-    },
-    {
-      "name": "MdyColorsComponent",
-      "asserted": true,
-      "shown": false,
-      "reason": "published and never shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "MdyColorsFieldController",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "MdyColorsFieldControllerOptions",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "MdyColorsFieldIntent",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "MdyColorsFieldPreset",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "MdyColorsFieldState",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "MdyCommandDefer",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "MdyCommandRuntime",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "MdyCommandRuntimeOptions",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "MdyCommandTarget",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
-    },
-    {
-      "name": "MdyComputedOptions",
-      "asserted": true,
-      "shown": false,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "MdyConditionalOptionsDirective",
-      "asserted": true,
-      "shown": false,
-      "reason": "published and never shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "MdyContextRef",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
-    },
-    {
-      "name": "MdyControlComponent",
-      "asserted": true,
-      "shown": false,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "MdyControlLabelComponent",
-      "asserted": true,
-      "shown": false,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "MdyControlOption",
-      "asserted": true,
-      "shown": false,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "MdyControlRendererConfig",
-      "asserted": true,
-      "shown": false,
-      "reason": "published and never shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "MdyControllerNotify",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "MdyCoreFormOptions",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "MdyCrossRuntimeObservationError",
       "asserted": false,
       "shown": false,
+      "showable": true,
       "reason": "published, neither asserted nor shown"
     },
     {
       "name": "MdyCvaDirective",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "MdyDateDraftIntent",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "MdyDateDraftState",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "MdyDateDraftTransition",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
-    },
-    {
-      "name": "MdyDateLocale",
-      "asserted": true,
-      "shown": false,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "MdyDatePickerComponent",
-      "asserted": true,
-      "shown": false,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "MdyDateRange",
-      "asserted": true,
-      "shown": false,
-      "reason": "published and never shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "MdyDateRangeDraftIntent",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "MdyDateRangeDraftState",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "MdyDateRangeDraftTransition",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
-    },
-    {
-      "name": "MdyDateRangePickerComponent",
-      "asserted": true,
-      "shown": false,
-      "reason": "published and never shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "MdyDateRangeValue",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "MdyDateValueIntent",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "MdyDatepickerFieldA11yOptions",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "MdyDatepickerFieldCell",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
-    },
-    {
-      "name": "MdyDatepickerFieldController",
-      "asserted": true,
-      "shown": false,
-      "reason": "published and never shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "MdyDatepickerFieldControllerOptions",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "MdyDatepickerFieldIntent",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "MdyDatepickerFieldState",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "MdyDaterangeFieldA11yOptions",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "MdyDaterangeFieldCell",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
-    },
-    {
-      "name": "MdyDaterangeFieldController",
-      "asserted": true,
-      "shown": false,
-      "reason": "published and never shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "MdyDaterangeFieldControllerOptions",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "MdyDaterangeFieldIntent",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "MdyDaterangeFieldState",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
-    },
-    {
-      "name": "MdyDeclarativeAdapter",
-      "asserted": true,
-      "shown": false,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "MdyDeclarativeRegistry",
-      "asserted": true,
-      "shown": false,
-      "reason": "published and never shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "MdyDestroyedScopeError",
       "asserted": false,
       "shown": false,
+      "showable": true,
       "reason": "published, neither asserted nor shown"
-    },
-    {
-      "name": "MdyDevtoolsDirective",
-      "asserted": true,
-      "shown": false,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "MdyDiagnostic",
-      "asserted": true,
-      "shown": false,
-      "reason": "published and never shown"
     },
     {
       "name": "MdyDiagnosticSeverity",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
-    },
-    {
-      "name": "MdyDiagnostics",
-      "asserted": true,
-      "shown": false,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "MdyDisabledDirective",
-      "asserted": true,
-      "shown": false,
-      "reason": "published and never shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "MdyDismissalBindingOptions",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "MdyDismissalPhase",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "MdyDomContractIssue",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "MdyDomContractIssueCode",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "MdyDomContractOptions",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "MdyDomPartMap",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "MdyDraftStorage",
       "asserted": false,
       "shown": true,
+      "showable": false,
       "reason": "published and never asserted"
     },
     {
       "name": "MdyDragPoint",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "MdyDynamicArrayNode",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "MdyDynamicBooleanField",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "MdyDynamicBreakpoint",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "MdyDynamicCalendarOptions",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "MdyDynamicCollection",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "MdyDynamicColorsField",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "MdyDynamicColumns",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "MdyDynamicDateField",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "MdyDynamicDaterangeField",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "MdyDynamicFieldNode",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "MdyDynamicFileField",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "MdyDynamicFlatForm",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
-    },
-    {
-      "name": "MdyDynamicFormComponent",
-      "asserted": true,
-      "shown": false,
-      "reason": "published and never shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "MdyDynamicFormConfig",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "MdyDynamicFormConfigV2",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "MdyDynamicFormConfigV3",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "MdyDynamicFormDocument",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "MdyDynamicFormParseResult",
       "asserted": false,
       "shown": true,
+      "showable": false,
       "reason": "published and never asserted"
     },
     {
       "name": "MdyDynamicGroupNode",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
-    },
-    {
-      "name": "MdyDynamicLayoutChild",
-      "asserted": true,
-      "shown": false,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "MdyDynamicLayoutNode",
-      "asserted": true,
-      "shown": false,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "MdyDynamicLayoutSlot",
-      "asserted": true,
-      "shown": false,
-      "reason": "published and never shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "MdyDynamicNode",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "MdyDynamicNumberField",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "MdyDynamicOptionsField",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
-    },
-    {
-      "name": "MdyDynamicParseMode",
-      "asserted": true,
-      "shown": false,
-      "reason": "published and never shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "MdyDynamicRecordNode",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "MdyDynamicRule",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "MdyDynamicRuleOperator",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "MdyDynamicSection",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "MdyDynamicSlotPlacement",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "MdyDynamicTextField",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "MdyDynamicValidation",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "MdyDynamicValidators",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
-    },
-    {
-      "name": "MdyEffectOptions",
-      "asserted": true,
-      "shown": false,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "MdyEffectRef",
-      "asserted": true,
-      "shown": false,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "MdyElementLookup",
-      "asserted": true,
-      "shown": false,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "MdyElementRefMap",
-      "asserted": true,
-      "shown": false,
-      "reason": "published and never shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "MdyElementTarget",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
-    },
-    {
-      "name": "MdyEmailDirective",
-      "asserted": true,
-      "shown": false,
-      "reason": "published and never shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "MdyEqualityFn",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
-    },
-    {
-      "name": "MdyErrorListComponent",
-      "asserted": true,
-      "shown": false,
-      "reason": "published and never shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "MdyExpression",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "MdyExpressionOp",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "MdyExpressionScope",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
-    },
-    {
-      "name": "MdyFieldConfig",
-      "asserted": true,
-      "shown": false,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "MdyFieldConstraints",
-      "asserted": true,
-      "shown": false,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "MdyFieldDescriptor",
-      "asserted": true,
-      "shown": false,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "MdyFieldError",
-      "asserted": true,
-      "shown": false,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "MdyFieldHandle",
-      "asserted": true,
-      "shown": false,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "MdyFieldHandleTree",
-      "asserted": true,
-      "shown": false,
-      "reason": "published and never shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "MdyFieldKind",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
-    },
-    {
-      "name": "MdyFieldOptions",
-      "asserted": true,
-      "shown": false,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "MdyFieldRef",
-      "asserted": true,
-      "shown": false,
-      "reason": "published and never shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "MdyFieldShellA11yOptions",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "MdyFieldShellFlags",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "MdyFieldShellPart",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
-    },
-    {
-      "name": "MdyFieldState",
-      "asserted": true,
-      "shown": false,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "MdyFieldTree",
-      "asserted": true,
-      "shown": false,
-      "reason": "published and never shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "MdyFieldVerdictSource",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "MdyFileCandidate",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
-    },
-    {
-      "name": "MdyFileComponent",
-      "asserted": true,
-      "shown": false,
-      "reason": "published and never shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "MdyFileFieldController",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "MdyFileFieldControllerOptions",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "MdyFileFieldIntent",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "MdyFileFieldState",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "MdyFileSelectionOptions",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "MdyFileSelectionTransition",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
-    },
-    {
-      "name": "MdyFloatingLabelsDirective",
-      "asserted": true,
-      "shown": false,
-      "reason": "published and never shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "MdyFlushCapability",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "MdyFocusCustodian",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
-    },
-    {
-      "name": "MdyFormAdapter",
-      "asserted": true,
-      "shown": false,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "MdyFormArrayComponent",
-      "asserted": true,
-      "shown": false,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "MdyFormComponent",
-      "asserted": true,
-      "shown": false,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "MdyFormContext",
-      "asserted": true,
-      "shown": false,
-      "reason": "published and never shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "MdyFormEngine",
       "asserted": true,
       "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "MdyFormEngineOptions",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
-    },
-    {
-      "name": "MdyFormError",
-      "asserted": true,
-      "shown": false,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "MdyFormOptions",
-      "asserted": true,
-      "shown": false,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "MdyFormPatch",
-      "asserted": true,
-      "shown": false,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "MdyFormRegistry",
-      "asserted": true,
-      "shown": false,
-      "reason": "published and never shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "MdyFormResetBinding",
       "asserted": false,
       "shown": true,
+      "showable": false,
       "reason": "published and never asserted"
-    },
-    {
-      "name": "MdyFormSchema",
-      "asserted": true,
-      "shown": false,
-      "reason": "published and never shown"
     },
     {
       "name": "MdyFormShellPart",
       "asserted": false,
       "shown": true,
+      "showable": false,
       "reason": "published and never asserted"
-    },
-    {
-      "name": "MdyFormState",
-      "asserted": true,
-      "shown": false,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "MdyFormSubmitEvent",
-      "asserted": true,
-      "shown": false,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "MdyFormValidatorFn",
-      "asserted": true,
-      "shown": false,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "MdyFormValue",
-      "asserted": true,
-      "shown": false,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "MdyFormWizardComponent",
-      "asserted": true,
-      "shown": false,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "MdyFormsDevtoolsComponent",
-      "asserted": true,
-      "shown": false,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "MdyFormsDevtoolsOverlayComponent",
-      "asserted": true,
-      "shown": false,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "MdyFormsDevtoolsService",
-      "asserted": true,
-      "shown": false,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "MdyGlassDirective",
-      "asserted": true,
-      "shown": false,
-      "reason": "published and never shown"
     },
     {
       "name": "MdyGranularityProblem",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
-    },
-    {
-      "name": "MdyGroupDescriptor",
-      "asserted": true,
-      "shown": false,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "MdyGroupOptions",
-      "asserted": true,
-      "shown": false,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "MdyI18nMessages",
-      "asserted": true,
-      "shown": false,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "MdyIconComponent",
-      "asserted": true,
-      "shown": false,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "MdyIconName",
-      "asserted": true,
-      "shown": false,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "MdyInlineErrorIconComponent",
-      "asserted": true,
-      "shown": false,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "MdyInlineErrorsDirective",
-      "asserted": true,
-      "shown": false,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "MdyInteractivity",
-      "asserted": true,
-      "shown": false,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "MdyItemHandleTree",
-      "asserted": true,
-      "shown": false,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "MdyItemRefLookup",
-      "asserted": true,
-      "shown": false,
-      "reason": "published and never shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "MdyKeyBinding",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "MdyKeyOrPress",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "MdyLayoutBreakpoint",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "MdyLayoutColumnCounts",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "MdyLayoutPart",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "MdyLayoutSlotPlacement",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "MdyLifecycleIssue",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "MdyLifecycleIssueCode",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "MdyLifecycleTransition",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "MdyLightDismiss",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "MdyLightDismissOptions",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
-    },
-    {
-      "name": "MdyLoadOptionsDirective",
-      "asserted": true,
-      "shown": false,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "MdyLocaleOptions",
-      "asserted": true,
-      "shown": false,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "MdyMaxDirective",
-      "asserted": true,
-      "shown": false,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "MdyMaxLengthDirective",
-      "asserted": true,
-      "shown": false,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "MdyMinDirective",
-      "asserted": true,
-      "shown": false,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "MdyMinLengthDirective",
-      "asserted": true,
-      "shown": false,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "MdyMultiselectComponent",
-      "asserted": true,
-      "shown": false,
-      "reason": "published and never shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "MdyMultiselectFieldA11yOptions",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "MdyMultiselectFieldController",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "MdyMultiselectFieldControllerOptions",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "MdyMultiselectFieldIntent",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "MdyMultiselectFieldState",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
-    },
-    {
-      "name": "MdyMultiselectMode",
-      "asserted": true,
-      "shown": false,
-      "reason": "published and never shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "MdyMultiselectOverlayAction",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "MdyMultiselectValueIntent",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "MdyMultiselectWayBack",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "MdyNativeAttributes",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
-    },
-    {
-      "name": "MdyNumberComponent",
-      "asserted": true,
-      "shown": false,
-      "reason": "published and never shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "MdyObserveCapability",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "MdyObserveOptions",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
-    },
-    {
-      "name": "MdyOnCleanup",
-      "asserted": true,
-      "shown": false,
-      "reason": "published and never shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "MdyOperand",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
-    },
-    {
-      "name": "MdyOptionDirective",
-      "asserted": true,
-      "shown": false,
-      "reason": "published and never shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "MdyOptionFieldA11yOptions",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "MdyOptionFieldController",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "MdyOptionFieldControllerOptions",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "MdyOptionFieldIntent",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "MdyOptionFieldState",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "MdyOptionFieldVariant",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "MdyOptionNavigationTarget",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
-    },
-    {
-      "name": "MdyOptionsAutoLoadingDirective",
-      "asserted": true,
-      "shown": false,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "MdyOptionsControl",
-      "asserted": true,
-      "shown": false,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "MdyOptionsLoader",
-      "asserted": true,
-      "shown": false,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "MdyOptionsOverlayControl",
-      "asserted": true,
-      "shown": false,
-      "reason": "published and never shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "MdyOutsideDismiss",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
-    },
-    {
-      "name": "MdyOverlayAlignment",
-      "asserted": true,
-      "shown": false,
-      "reason": "published and never shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "MdyOverlayAnchorOptions",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "MdyOverlayAnchoring",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
-    },
-    {
-      "name": "MdyOverlayBranch",
-      "asserted": true,
-      "shown": false,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "MdyOverlayControl",
-      "asserted": true,
-      "shown": false,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "MdyOverlayCoords",
-      "asserted": true,
-      "shown": false,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "MdyOverlayDecision",
-      "asserted": true,
-      "shown": false,
-      "reason": "published and never shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "MdyOverlayGeometry",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
-    },
-    {
-      "name": "MdyOverlayLifecycleIntent",
-      "asserted": true,
-      "shown": false,
-      "reason": "published and never shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "MdyOverlayLifecycleState",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "MdyOverlayLifecycleTransition",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "MdyOverlayOpenerA11yOptions",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "MdyOverlayPhase",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
-    },
-    {
-      "name": "MdyOverlayPlacement",
-      "asserted": true,
-      "shown": false,
-      "reason": "published and never shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "MdyOverlayPlacementResult",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "MdyOverlayProperty",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "MdyOverlayRoot",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "MdyPaintBeat",
       "asserted": false,
       "shown": true,
+      "showable": false,
       "reason": "a testing utility: exercised by the suites it exists for, and not demonstrable in a demo"
-    },
-    {
-      "name": "MdyPartContract",
-      "asserted": true,
-      "shown": false,
-      "reason": "published and never shown"
     },
     {
       "name": "MdyPartMap",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "MdyPartPresence",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "MdyPartState",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "MdyPathGate",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "MdyPathRef",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
-    },
-    {
-      "name": "MdyPatternDirective",
-      "asserted": true,
-      "shown": false,
-      "reason": "published and never shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "MdyPointerDrag",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "MdyPointerDragOptions",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "MdyPointerOrigin",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
-    },
-    {
-      "name": "MdyPopupWidgetKind",
-      "asserted": true,
-      "shown": false,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "MdyPrefixDirective",
-      "asserted": true,
-      "shown": false,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "MdyRadioGroupComponent",
-      "asserted": true,
-      "shown": false,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "MdyRangeCalendarComponent",
-      "asserted": true,
-      "shown": false,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "MdyRangeCalendarGridComponent",
-      "asserted": true,
-      "shown": false,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "MdyReactiveScope",
-      "asserted": true,
-      "shown": false,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "MdyReactivity",
-      "asserted": true,
-      "shown": false,
-      "reason": "published and never shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "MdyReactivityCapabilities",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "MdyReactivityTestHarness",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
-    },
-    {
-      "name": "MdyRecordDescriptor",
-      "asserted": true,
-      "shown": false,
-      "reason": "published and never shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "MdyRelationAttribute",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
-    },
-    {
-      "name": "MdyRequiredDirective",
-      "asserted": true,
-      "shown": false,
-      "reason": "published and never shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "MdyRootRef",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "MdySanitizeProfile",
       "asserted": false,
       "shown": true,
+      "showable": false,
       "reason": "published and never asserted"
-    },
-    {
-      "name": "MdySanitizer",
-      "asserted": true,
-      "shown": false,
-      "reason": "published and never shown"
     },
     {
       "name": "MdyScopeOptions",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "MdySecurityViolation",
       "asserted": false,
       "shown": true,
+      "showable": false,
       "reason": "published and never asserted"
     },
     {
       "name": "MdySecurityViolationKind",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
-    },
-    {
-      "name": "MdySegmentedButtonComponent",
-      "asserted": true,
-      "shown": false,
-      "reason": "published and never shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "MdySelectA11yOptions",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "MdySelectA11yProjection",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
-    },
-    {
-      "name": "MdySelectComponent",
-      "asserted": true,
-      "shown": false,
-      "reason": "published and never shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "MdySelectController",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "MdySelectControllerOptions",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
-    },
-    {
-      "name": "MdySelectFieldController",
-      "asserted": true,
-      "shown": false,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "MdySelectFieldControllerOptions",
-      "asserted": true,
-      "shown": false,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "MdySelectIntent",
-      "asserted": true,
-      "shown": false,
-      "reason": "published and never shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "MdySelectKeyboardAction",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "MdySelectMoveTarget",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
-    },
-    {
-      "name": "MdySelectOption",
-      "asserted": true,
-      "shown": false,
-      "reason": "published and never shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "MdySelectReconciliationState",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
-    },
-    {
-      "name": "MdySelectState",
-      "asserted": true,
-      "shown": false,
-      "reason": "published and never shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "MdySelectTransitionFixture",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "MdySelfRef",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "MdyServerValidatorOptions",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
-    },
-    {
-      "name": "MdySignal",
-      "asserted": true,
-      "shown": false,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "MdySignalOptions",
-      "asserted": true,
-      "shown": false,
-      "reason": "published and never shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "MdySilentWriteBinding",
       "asserted": false,
       "shown": true,
+      "showable": false,
       "reason": "published and never asserted"
-    },
-    {
-      "name": "MdySliderComponent",
-      "asserted": true,
-      "shown": false,
-      "reason": "published and never shown"
     },
     {
       "name": "MdySnapshotOptions",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
-    },
-    {
-      "name": "MdyStateFixture",
-      "asserted": true,
-      "shown": false,
-      "reason": "published and never shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "MdyStateInspectOptions",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "MdyStateIssue",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "MdyStateIssueCode",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "MdyStateMatrixOptions",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "MdyStateMatrixResult",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "MdyStateMatrixRow",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "MdyStateName",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "MdyStructureContractIssue",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "MdySubmissionShape",
       "asserted": false,
       "shown": true,
+      "showable": false,
       "reason": "published and never asserted"
-    },
-    {
-      "name": "MdySubmitMode",
-      "asserted": true,
-      "shown": false,
-      "reason": "published and never shown"
     },
     {
       "name": "MdySubmittedItemValue",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
-    },
-    {
-      "name": "MdySubmittedValue",
-      "asserted": true,
-      "shown": false,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "MdySuffixDirective",
-      "asserted": true,
-      "shown": false,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "MdySupportingTextDirective",
-      "asserted": true,
-      "shown": false,
-      "reason": "published and never shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "MdyTestingVocabulary",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
-    },
-    {
-      "name": "MdyTextComponent",
-      "asserted": true,
-      "shown": false,
-      "reason": "published and never shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "MdyTextFieldA11yOptions",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
-    },
-    {
-      "name": "MdyTextFieldController",
-      "asserted": true,
-      "shown": false,
-      "reason": "published and never shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "MdyTextFieldControllerOptions",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "MdyTextFieldIntent",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
-    },
-    {
-      "name": "MdyTextareaComponent",
-      "asserted": true,
-      "shown": false,
-      "reason": "published and never shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "MdyTimeClockIntent",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "MdyTimeDraftIntent",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "MdyTimeDraftState",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "MdyTimeDraftTransition",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "MdyTimeEntry",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "MdyTimeField",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "MdyTimeFieldBounds",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
-    },
-    {
-      "name": "MdyTimeFormat",
-      "asserted": true,
-      "shown": false,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "MdyTimeGranularity",
-      "asserted": true,
-      "shown": false,
-      "reason": "published and never shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "MdyTimeRejection",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
-    },
-    {
-      "name": "MdyTimeSteps",
-      "asserted": true,
-      "shown": false,
-      "reason": "published and never shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "MdyTimeWindow",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
-    },
-    {
-      "name": "MdyTimepickerComponent",
-      "asserted": true,
-      "shown": false,
-      "reason": "published and never shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "MdyTimepickerDialArc",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "MdyTimepickerDialGhost",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "MdyTimepickerDialKeyResult",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "MdyTimepickerDialNumber",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "MdyTimepickerDialPick",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "MdyTimepickerEntry",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "MdyTimepickerFieldA11yOptions",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "MdyTimepickerFieldController",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "MdyTimepickerFieldControllerOptions",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
-    },
-    {
-      "name": "MdyTimepickerFieldIntent",
-      "asserted": true,
-      "shown": false,
-      "reason": "published and never shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "MdyTimepickerFieldState",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
-    },
-    {
-      "name": "MdyTimepickerViewMode",
-      "asserted": true,
-      "shown": false,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "MdyToggleComponent",
-      "asserted": true,
-      "shown": false,
-      "reason": "published and never shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "MdyTransitionTrigger",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "MdyTypeahead",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "MdyTypeaheadOptions",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "MdyTypedForm",
       "asserted": true,
       "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "MdyTypedFormBase",
       "asserted": true,
       "shown": false,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "MdyTypedFormBaseOptions",
-      "asserted": true,
-      "shown": false,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "MdyTypedFormLike",
-      "asserted": true,
-      "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "MdyTypedWidgetViewContract",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
-    },
-    {
-      "name": "MdyUiCommand",
-      "asserted": true,
-      "shown": false,
-      "reason": "published and never shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "MdyUnmountObservation",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "MdyUnsupportedCapabilityError",
       "asserted": true,
       "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "MdyValidationMessages",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
-    },
-    {
-      "name": "MdyValidatorBaseDirective",
-      "asserted": true,
-      "shown": false,
-      "reason": "published and never shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "MdyValidatorFacts",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "MdyValueCommit",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "MdyValueContract",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
-    },
-    {
-      "name": "MdyValueKind",
-      "asserted": true,
-      "shown": false,
-      "reason": "published and never shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "MdyValueSecurityResult",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "MdyValueShape",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
-    },
-    {
-      "name": "MdyValueWidgetController",
-      "asserted": true,
-      "shown": false,
-      "reason": "published and never shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "MdyValueWidgetControllerOptions",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
-    },
-    {
-      "name": "MdyValueWidgetIntent",
-      "asserted": true,
-      "shown": false,
-      "reason": "published and never shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "MdyValueWidgetState",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "MdyViewportSize",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "MdyVocabulary",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "MdyVocabularyShape",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "MdyWebStorageLike",
       "asserted": false,
       "shown": true,
+      "showable": false,
       "reason": "published and never asserted"
-    },
-    {
-      "name": "MdyWiden",
-      "asserted": true,
-      "shown": false,
-      "reason": "published and never shown"
     },
     {
       "name": "MdyWidgetCommandContext",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "MdyWidgetCommandExecutor",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
-    },
-    {
-      "name": "MdyWidgetCommandHandlers",
-      "asserted": true,
-      "shown": false,
-      "reason": "published and never shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "MdyWidgetController",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "MdyWidgetDefinition",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "MdyWidgetIdFactory",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "MdyWidgetKeyIntent",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
-    },
-    {
-      "name": "MdyWidgetKind",
-      "asserted": true,
-      "shown": false,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "MdyWidgetPart",
-      "asserted": true,
-      "shown": false,
-      "reason": "published and never shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "MdyWidgetRelation",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
-    },
-    {
-      "name": "MdyWidgetRuntime",
-      "asserted": true,
-      "shown": false,
-      "reason": "published and never shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "MdyWidgetRuntimeCapabilities",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "MdyWidgetSemanticElement",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "MdyWidgetState",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "MdyWidgetStateContract",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "MdyWidgetStructure",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "MdyWidgetStructureNode",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "MdyWidgetTransition",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "MdyWidgetVariant",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "MdyWidgetViewContract",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
-    },
-    {
-      "name": "MdyWizardStepComponent",
-      "asserted": true,
-      "shown": false,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "MdyWritableSignal",
-      "asserted": true,
-      "shown": false,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "MdyZodFormOptions",
-      "asserted": true,
-      "shown": false,
-      "reason": "published and never shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "NO_CONSTRAINTS",
       "asserted": true,
       "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "ParsedTime",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
-    },
-    {
-      "name": "ValidatorFn",
-      "asserted": true,
-      "shown": false,
-      "reason": "published and never shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "acceptTimeField",
       "asserted": true,
       "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "addDays",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
-    },
-    {
-      "name": "addMonths",
-      "asserted": true,
-      "shown": false,
-      "reason": "published and never shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "addYears",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "affordanceClasses",
       "asserted": true,
       "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "anchorOverlay",
       "asserted": true,
       "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "angleToHour",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "angleToMinute",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
-    },
-    {
-      "name": "angularReactivity",
-      "asserted": true,
-      "shown": false,
-      "reason": "published and never shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "applyFieldValidators",
       "asserted": false,
       "shown": false,
+      "showable": true,
       "reason": "published, neither asserted nor shown"
     },
     {
       "name": "applyOverlayProperties",
       "asserted": false,
       "shown": false,
+      "showable": true,
       "reason": "published, neither asserted nor shown"
     },
     {
       "name": "applyPart",
       "asserted": true,
       "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "assertNeverField",
       "asserted": false,
       "shown": false,
+      "showable": true,
       "reason": "published, neither asserted nor shown"
     },
     {
       "name": "assertSafeDynamicFieldNames",
       "asserted": true,
       "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "assertUsableWidgetId",
       "asserted": false,
       "shown": false,
+      "showable": true,
       "reason": "published, neither asserted nor shown"
-    },
-    {
-      "name": "assertWidgetDomContract",
-      "asserted": true,
-      "shown": false,
-      "reason": "published and never shown"
     },
     {
       "name": "assertWidgetStructureContract",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "beginChipReorder",
       "asserted": true,
       "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "bindLightDismiss",
       "asserted": true,
       "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "bindingForIntent",
       "asserted": true,
       "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "blocksFocus",
       "asserted": true,
       "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "blocksValueChange",
       "asserted": true,
       "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "booleanFieldPartIds",
       "asserted": true,
       "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "booleanFieldRootClasses",
       "asserted": false,
       "shown": false,
+      "showable": true,
       "reason": "published, neither asserted nor shown"
     },
     {
       "name": "browserRuntimeCapabilities",
       "asserted": true,
       "shown": false,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "buildDateLocale",
-      "asserted": true,
-      "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "buildDynamicFieldValidators",
       "asserted": true,
       "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "buildDynamicFormSchema",
       "asserted": true,
       "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "buildDynamicValidations",
       "asserted": true,
       "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "buildDynamicValidators",
       "asserted": true,
       "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "buildForm",
       "asserted": true,
       "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "buildFormSchema",
       "asserted": true,
       "shown": false,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "buildMonthGrid",
-      "asserted": true,
-      "shown": false,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "buildTimeString",
-      "asserted": true,
-      "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "calendarDayId",
       "asserted": true,
       "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "calendarKeyboardTarget",
       "asserted": true,
       "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "calendarViewOnToggle",
       "asserted": true,
       "shown": false,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "calendarYearRange",
-      "asserted": true,
-      "shown": false,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "canonicalWidgetSnapshot",
-      "asserted": true,
-      "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "capabilityOf",
       "asserted": true,
       "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "chipActionName",
       "asserted": true,
       "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "chipDropIndex",
       "asserted": false,
       "shown": false,
+      "showable": true,
       "reason": "published, neither asserted nor shown"
     },
     {
       "name": "chipFocusAfterRemoval",
       "asserted": true,
       "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "chipMovedAnnouncement",
       "asserted": true,
       "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "chipStripWheelDelta",
       "asserted": true,
       "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "chipTooltipOffset",
       "asserted": true,
       "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "chosenKeyOrder",
       "asserted": true,
       "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "clearFileSelection",
       "asserted": true,
       "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "closeOverlay",
       "asserted": true,
       "shown": false,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "collectStateMatrix",
-      "asserted": true,
-      "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "colorPresetsOf",
       "asserted": true,
       "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "colorValueEquals",
       "asserted": true,
       "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "colorValueTransition",
       "asserted": true,
       "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "comparableControllerOptions",
       "asserted": true,
       "shown": false,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "compareDates",
-      "asserted": true,
-      "shown": false,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "compareToCanonical",
-      "asserted": true,
-      "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "completeRange",
       "asserted": true,
       "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "composeFirst",
       "asserted": true,
       "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "createCatalogWidgetController",
       "asserted": true,
       "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "createColorsFieldController",
       "asserted": true,
       "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "createConsoleDiagnostics",
       "asserted": false,
       "shown": false,
+      "showable": true,
       "reason": "published, neither asserted nor shown"
     },
     {
       "name": "createFileFieldController",
       "asserted": true,
       "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "createFocusCustodian",
       "asserted": true,
       "shown": false,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "createHydratedDraftStorage",
-      "asserted": true,
-      "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "createLightDismiss",
       "asserted": true,
       "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "createMdyAnnouncer",
       "asserted": true,
       "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "createPointerDrag",
       "asserted": true,
       "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "createSelectFieldController",
       "asserted": true,
       "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "createSilentDiagnostics",
       "asserted": false,
       "shown": false,
+      "showable": true,
       "reason": "published, neither asserted nor shown"
     },
     {
       "name": "createTypeahead",
       "asserted": true,
       "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "createValueWidgetController",
       "asserted": true,
       "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "dateDraftTransition",
       "asserted": true,
       "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "dateRangeDraftTransition",
       "asserted": true,
       "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "dateRangeValueTransition",
       "asserted": true,
       "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "dateValueTransition",
       "asserted": true,
       "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "dateWithinBounds",
       "asserted": true,
       "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "datepickerFieldPartIds",
       "asserted": false,
       "shown": false,
+      "showable": true,
       "reason": "published, neither asserted nor shown"
     },
     {
       "name": "datepickerFieldRootClasses",
       "asserted": false,
       "shown": false,
+      "showable": true,
       "reason": "published, neither asserted nor shown"
-    },
-    {
-      "name": "daysInMonth",
-      "asserted": true,
-      "shown": false,
-      "reason": "published and never shown"
     },
     {
       "name": "decideOverlayAlignment",
       "asserted": true,
       "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "decideOverlayPlacement",
       "asserted": true,
       "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "defaultOptionKey",
       "asserted": true,
       "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "defaultWidgetIdFactory",
       "asserted": true,
       "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "dialHandLength",
       "asserted": true,
       "shown": false,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "dialHour",
-      "asserted": true,
-      "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "dialNumberAngle",
       "asserted": true,
       "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "dialRingOf",
       "asserted": true,
       "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "draftShapeMatches",
       "asserted": true,
       "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "dragPointOf",
       "asserted": true,
       "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "dynamicParts",
       "asserted": true,
       "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "eachOneOf",
       "asserted": true,
       "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "elementByDataKey",
       "asserted": true,
       "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "evaluateExpression",
       "asserted": true,
       "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "expectedWeekdayOrder",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "explainGranularityProblem",
       "asserted": true,
       "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "explainValueMismatch",
       "asserted": true,
       "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "expressionContextKeys",
       "asserted": true,
       "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "expressionPaths",
       "asserted": true,
       "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "factsOfAll",
       "asserted": true,
       "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "fieldCanBeInvalid",
       "asserted": true,
       "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "fieldDescribedBy",
       "asserted": true,
       "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "fieldIsRequired",
       "asserted": true,
       "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "fieldShellPartIds",
       "asserted": false,
       "shown": false,
+      "showable": true,
       "reason": "published, neither asserted nor shown"
     },
     {
       "name": "fieldShellRootClasses",
       "asserted": true,
       "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "fileSelectionTransition",
       "asserted": true,
       "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "filterOptionsByQuery",
       "asserted": true,
       "shown": false,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "findPartElement",
-      "asserted": true,
-      "shown": false,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "findPartElements",
-      "asserted": true,
-      "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "firstWeekday",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "flattenDynamicForm",
       "asserted": true,
       "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "flattenDynamicSchema",
       "asserted": false,
       "shown": false,
+      "showable": true,
       "reason": "published, neither asserted nor shown"
     },
     {
       "name": "focusTrigger",
       "asserted": false,
       "shown": false,
+      "showable": true,
       "reason": "published, neither asserted nor shown"
     },
     {
       "name": "focusWhenShown",
       "asserted": true,
       "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "formScopeOf",
       "asserted": true,
       "shown": false,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "formatIsoDate",
-      "asserted": true,
-      "shown": false,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "formatTime",
-      "asserted": true,
-      "shown": false,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "formatTimeAs",
-      "asserted": true,
-      "shown": false,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "getCurrentTime",
-      "asserted": true,
-      "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "getFieldHandleOwner",
       "asserted": true,
       "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "getPointerCoords",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "handleFormOf",
       "asserted": true,
       "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "hiddenChipCount",
       "asserted": true,
       "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "holdsUneditedValue",
       "asserted": true,
       "shown": false,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "hourToAngle",
-      "asserted": true,
-      "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "idSafeKey",
       "asserted": true,
       "shown": false,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "idsUnder",
-      "asserted": true,
-      "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "inlineDirectionOf",
       "asserted": true,
       "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "inputWasRefused",
       "asserted": true,
       "shown": false,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "inspectCalendarWeekStart",
-      "asserted": true,
-      "shown": false,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "inspectCoexistence",
-      "asserted": true,
-      "shown": false,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "inspectUnmount",
-      "asserted": true,
-      "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "inspectUnsupportedStateAria",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
-    },
-    {
-      "name": "inspectWidgetDom",
-      "asserted": true,
-      "shown": false,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "inspectWidgetState",
-      "asserted": true,
-      "shown": false,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "inspectWidgetStructure",
-      "asserted": true,
-      "shown": false,
-      "reason": "published and never shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "integer",
       "asserted": true,
       "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "isContextRef",
       "asserted": true,
       "shown": false,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "isDateBetween",
-      "asserted": true,
-      "shown": false,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "isDateInRange",
-      "asserted": true,
-      "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "isExpression",
       "asserted": false,
       "shown": false,
+      "showable": true,
       "reason": "published, neither asserted nor shown"
     },
     {
       "name": "isFullyServerRenderable",
       "asserted": true,
       "shown": false,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "isMonthOutOfRange",
-      "asserted": true,
-      "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "isOnStep",
       "asserted": true,
       "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "isPathRef",
       "asserted": false,
       "shown": false,
+      "showable": true,
       "reason": "published, neither asserted nor shown"
     },
     {
       "name": "isPrimaryInteraction",
       "asserted": true,
       "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "isRootRef",
       "asserted": true,
       "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "isSafeFieldPath",
       "asserted": false,
       "shown": false,
+      "showable": true,
       "reason": "published, neither asserted nor shown"
-    },
-    {
-      "name": "isSameDay",
-      "asserted": true,
-      "shown": false,
-      "reason": "published and never shown"
     },
     {
       "name": "isSelfRef",
       "asserted": true,
       "shown": false,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "isSensitivePath",
-      "asserted": true,
-      "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "isTypeaheadCharacter",
       "asserted": true,
       "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "isValidWidgetId",
       "asserted": true,
       "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "isWidgetKind",
       "asserted": true,
       "shown": false,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "isYearOutOfRange",
-      "asserted": true,
-      "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "keepFocusedChipInView",
       "asserted": true,
       "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "keepKeyboardInPlay",
       "asserted": true,
       "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "keyBindingFor",
       "asserted": true,
       "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "keyMeans",
       "asserted": true,
       "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "kindsWithAffordances",
       "asserted": true,
       "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "layoutNodeAttributes",
       "asserted": true,
       "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "layoutSlotStyle",
       "asserted": true,
       "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "listboxNextIndex",
       "asserted": true,
       "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "localeDateOrder",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "matchesKeyGesture",
       "asserted": true,
       "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "matchesValueShape",
       "asserted": true,
       "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "max",
       "asserted": true,
       "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "mdyEmptyValueFor",
       "asserted": true,
       "shown": false,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "mdyForm",
-      "asserted": true,
-      "shown": false,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "mdyFormFromSchema",
-      "asserted": true,
-      "shown": false,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "mdyFormSerialize",
-      "asserted": true,
-      "shown": false,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "mdyFormSnapshot",
-      "asserted": true,
-      "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "measureOverlayContent",
       "asserted": true,
       "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "min",
       "asserted": true,
       "shown": false,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "minuteToAngle",
-      "asserted": true,
-      "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "minutesOfDay",
       "asserted": true,
       "shown": false,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "mountMdyDevtools",
-      "asserted": true,
-      "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "multiselectAnnouncement",
       "asserted": true,
       "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "multiselectChipClasses",
       "asserted": true,
       "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "multiselectFieldPartIds",
       "asserted": false,
       "shown": false,
+      "showable": true,
       "reason": "published, neither asserted nor shown"
     },
     {
       "name": "multiselectFieldRootClasses",
       "asserted": false,
       "shown": false,
+      "showable": true,
       "reason": "published, neither asserted nor shown"
     },
     {
       "name": "multiselectOverlayAction",
       "asserted": true,
       "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "multiselectValueTransition",
       "asserted": true,
       "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "narrowConstraints",
       "asserted": true,
       "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "nativeConstraintAttributes",
       "asserted": true,
       "shown": false,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "normalizeStateLedger",
-      "asserted": true,
-      "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "oneOf",
       "asserted": true,
       "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "openOverlay",
       "asserted": true,
       "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "openPlatformChooser",
       "asserted": true,
       "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "optionFieldPartIds",
       "asserted": true,
       "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "optionFieldRootClasses",
       "asserted": false,
       "shown": false,
+      "showable": true,
       "reason": "published, neither asserted nor shown"
     },
     {
       "name": "optionNavigationIndex",
       "asserted": true,
       "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "optionsWithUnrecognizedValue",
       "asserted": true,
       "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "optionsWithUnrecognizedValues",
       "asserted": true,
       "shown": false,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "orderDates",
-      "asserted": true,
-      "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "overlayAnchoringFor",
       "asserted": true,
       "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "overlayBranchContains",
       "asserted": true,
       "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "overlayCloseCommands",
       "asserted": true,
       "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "overlayControlledId",
       "asserted": true,
       "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "overlayLifecycleTransition",
       "asserted": true,
       "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "overlayOnlyParts",
       "asserted": true,
       "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "overlayStyleProperties",
       "asserted": true,
       "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "parse24Time",
       "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
-    },
-    {
-      "name": "parseAnyTime",
-      "asserted": true,
-      "shown": false,
-      "reason": "published and never shown"
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
     },
     {
       "name": "parseDynamicFields",
       "asserted": true,
       "shown": false,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "parseIsoDate",
-      "asserted": true,
-      "shown": false,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "parseLocalizedDate",
-      "asserted": true,
-      "shown": false,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "parseTime",
-      "asserted": true,
-      "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "partClasses",
       "asserted": true,
       "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "partSelector",
       "asserted": true,
       "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "partStates",
       "asserted": true,
       "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "partsRequiringName",
       "asserted": true,
       "shown": false,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "pointerAngle",
-      "asserted": true,
-      "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "popupAlignmentClass",
       "asserted": true,
       "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "popupPlacementClass",
       "asserted": true,
       "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "portalRootFor",
       "asserted": true,
       "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "processWidgetCommands",
       "asserted": true,
       "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "projectBooleanFieldA11y",
       "asserted": true,
       "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "projectDatepickerFieldA11y",
       "asserted": true,
       "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "projectDaterangeFieldA11y",
       "asserted": true,
       "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "projectMultiselectFieldA11y",
       "asserted": true,
       "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "projectOptionFieldA11y",
       "asserted": true,
       "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "projectOverlayOpenerA11y",
       "asserted": true,
       "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "projectSelectA11y",
       "asserted": true,
       "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "projectTextFieldA11y",
       "asserted": true,
       "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "projectTimepickerFieldA11y",
       "asserted": true,
       "shown": false,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "provideModyraLocale",
-      "asserted": true,
-      "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "quantityAnnouncement",
       "asserted": true,
       "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "reactivityRunsEffects",
       "asserted": false,
       "shown": false,
+      "showable": true,
       "reason": "published, neither asserted nor shown"
     },
     {
       "name": "reconcileSelectValue",
       "asserted": true,
       "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "registerHandleForm",
       "asserted": false,
       "shown": false,
+      "showable": true,
       "reason": "published, neither asserted nor shown"
     },
     {
       "name": "registerHandleOwner",
       "asserted": true,
       "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "renderBooleanField",
       "asserted": false,
       "shown": false,
+      "showable": true,
       "reason": "published, neither asserted nor shown"
     },
     {
       "name": "renderDatepickerField",
       "asserted": false,
       "shown": false,
+      "showable": true,
       "reason": "published, neither asserted nor shown"
     },
     {
       "name": "renderMultiselectField",
       "asserted": false,
       "shown": false,
+      "showable": true,
       "reason": "published, neither asserted nor shown"
     },
     {
       "name": "renderOptionField",
       "asserted": false,
       "shown": false,
+      "showable": true,
       "reason": "published, neither asserted nor shown"
     },
     {
       "name": "renderSelectField",
       "asserted": false,
       "shown": false,
+      "showable": true,
       "reason": "published, neither asserted nor shown"
     },
     {
       "name": "renderTextField",
       "asserted": false,
       "shown": false,
+      "showable": true,
       "reason": "published, neither asserted nor shown"
     },
     {
       "name": "renderTimepickerField",
       "asserted": false,
       "shown": false,
+      "showable": true,
       "reason": "published, neither asserted nor shown"
     },
     {
       "name": "reportIdCollision",
       "asserted": true,
       "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "restoreFocusTrigger",
       "asserted": false,
       "shown": false,
+      "showable": true,
       "reason": "published, neither asserted nor shown"
     },
     {
       "name": "rowRovingIndex",
       "asserted": true,
       "shown": false,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "runCommandExecutionTests",
-      "asserted": true,
-      "shown": false,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "runReactivityContractTests",
-      "asserted": true,
-      "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "sameControllerOptions",
       "asserted": true,
       "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "scrollChipStripByWheel",
       "asserted": true,
       "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "scrollOptionIntoView",
       "asserted": false,
       "shown": false,
+      "showable": true,
       "reason": "published, neither asserted nor shown"
     },
     {
       "name": "selectKeyboardAction",
       "asserted": true,
       "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "setOverlayOpen",
       "asserted": true,
       "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "settledVoice",
       "asserted": true,
       "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "shellStateClasses",
       "asserted": true,
       "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "shouldCloseMultiselectOverlay",
       "asserted": true,
       "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "sliderFillRatio",
       "asserted": true,
       "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "ssrRuntimeCapabilities",
       "asserted": true,
       "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "stabilizeOverlayPlacement",
       "asserted": true,
       "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "stableControllerOptions",
       "asserted": true,
       "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "stateCarriers",
       "asserted": true,
       "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "stateClass",
       "asserted": true,
       "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "staticParts",
       "asserted": true,
       "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "stepOutOfOverlay",
       "asserted": true,
       "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "stepTimeField",
       "asserted": true,
       "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "syncOverlayBackdrop",
       "asserted": true,
       "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "textFieldPartIds",
       "asserted": true,
       "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "textFieldRootClasses",
       "asserted": false,
       "shown": false,
+      "showable": true,
       "reason": "published, neither asserted nor shown"
     },
     {
       "name": "timeClockTransition",
       "asserted": true,
       "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "timeDraftTransition",
       "asserted": true,
       "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "timeFieldBounds",
       "asserted": true,
       "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "timeInputTransition",
       "asserted": true,
       "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "timeStepsAt",
       "asserted": true,
       "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "timepickerDialGhost",
       "asserted": true,
       "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "timepickerDialKeyIntent",
       "asserted": true,
       "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "timepickerDialNumbers",
       "asserted": true,
       "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "timepickerDialPick",
       "asserted": true,
       "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "timepickerDialRing",
       "asserted": true,
       "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "timepickerDialTolerance",
       "asserted": true,
       "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "timepickerDialUnavailableArcs",
       "asserted": true,
       "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "timepickerEntry",
       "asserted": true,
       "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "timepickerEntryText",
       "asserted": true,
       "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "timepickerFieldPartIds",
       "asserted": true,
       "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "timepickerFieldRootClasses",
       "asserted": false,
       "shown": false,
+      "showable": true,
       "reason": "published, neither asserted nor shown"
     },
     {
       "name": "timepickerFocusPart",
       "asserted": true,
       "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "timepickerPartSelector",
       "asserted": true,
       "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "timepickerSegmentAria",
       "asserted": true,
       "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "timepickerSelectedDialValue",
       "asserted": true,
       "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "timepickerSelectedRing",
       "asserted": true,
       "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "timepickerTabOrder",
       "asserted": true,
       "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "timepickerTabTarget",
       "asserted": true,
       "shown": false,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "to24Hour",
-      "asserted": true,
-      "shown": false,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "today",
-      "asserted": true,
-      "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "trackAnchoredOverlay",
       "asserted": true,
       "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "trailingAffordances",
       "asserted": true,
       "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "transitionsFrom",
       "asserted": true,
       "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "typeaheadMatch",
       "asserted": true,
       "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "undoIsOnOffer",
       "asserted": true,
       "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "validateExpression",
       "asserted": true,
       "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "validateTimeGranularity",
       "asserted": true,
       "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "validationMessagesForLocale",
       "asserted": true,
       "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "valueIsAbsent",
       "asserted": true,
       "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "valueIsPresent",
       "asserted": true,
       "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "valueShape",
       "asserted": true,
       "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "vanillaReactivity",
       "asserted": true,
       "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "viewIsActive",
       "asserted": true,
       "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "viewportSize",
       "asserted": true,
       "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "visibleErrorsOf",
       "asserted": true,
       "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "wayBackActionName",
       "asserted": true,
       "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "wayBackSentence",
       "asserted": true,
       "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "widgetKeyGuide",
       "asserted": true,
       "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "widgetKeyIntent",
       "asserted": true,
       "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "widgetScopeOf",
       "asserted": true,
       "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "widgetStateClasses",
       "asserted": true,
       "shown": false,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "widgetStateMatrixSize",
-      "asserted": true,
-      "shown": false,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "widgetSupportsState",
-      "asserted": true,
-      "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "withFacts",
       "asserted": true,
       "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     },
     {
       "name": "workIsInFlight",
       "asserted": true,
       "shown": false,
+      "showable": true,
       "reason": "published and never shown"
     }
   ]

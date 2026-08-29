@@ -161,27 +161,57 @@ const surface = JSON.parse(readFileSync(join(root, "packages/widgets/contract-ba
 const names = new Set(Object.keys(surface));
 // `plain` is here because it is the renderer the panels drive: its two entry points are the surface
 // a person actually touches, and leaving them out measured the contract while ignoring the way in.
+const runtimeNames = new Set();
 for (const pkg of ["core", "widgets", "plain"]) {
   const mod = await import(new URL(`../packages/${pkg}/dist/index.js`, import.meta.url).href);
-  for (const name of Object.keys(mod)) names.add(name);
+  for (const name of Object.keys(mod)) { names.add(name); runtimeNames.add(name); }
 }
 
 const mentions = (text, name) => new RegExp(`\\b${name}\\b`).test(text);
 
+/**
+ * A name that exists when the code runs, as opposed to one that exists only while it compiles.
+ *
+ * **The two are asked different questions.** *Asserted* is owed by every published name: a type is
+ * exercised by a check that compiles against it as surely as a function is by one that calls it.
+ * *Shown* is not. A panel is a page a person drives, and a type cannot be driven — asking a demo to
+ * exhibit `MdyAnchorRect` has no meaning, so counting it as unshown made five hundred and five names
+ * permanently uncovered and the total permanently unreachable. It read as a debt nobody could pay,
+ * which is the same as no measurement at all.
+ *
+ * So the shown question is asked of the names that can answer it, and the rest are recorded as
+ * outside it rather than as failing it.
+ */
+const atRuntime = new Set(runtimeNames);
+
 const uncovered = [];
 for (const name of [...names].sort()) {
   const asserted = mentions(tests, name);
-  const shown = shownNames.has(name) || TESTING_ONLY.has(name);
-  if (!asserted || !shown) uncovered.push({ name, asserted, shown });
+  const showable = atRuntime.has(name);
+  const shown = !showable || shownNames.has(name) || TESTING_ONLY.has(name);
+  if (!asserted || !shown) uncovered.push({ name, asserted, shown, showable });
 }
 
 /** A declared name that is not published is a typo inflating the number. */
 const phantom = [...shownNames].filter((name) => !names.has(name)).sort();
 
+/**
+ * A declared name that exists only while the code compiles.
+ *
+ * A panel is a page somebody drives, so what it claims to exercise has to be there when it runs. A
+ * type is not: the declaration cannot be true, and counting it made the shown number larger without
+ * anything on the page changing. Refused for the same reason a name nobody publishes is refused —
+ * both are a list growing where the demonstration did not.
+ */
+const notAtRuntime = [...shownNames].filter((name) => names.has(name) && !atRuntime.has(name)).sort();
+
 const score = {
   published: names.size,
   asserted: names.size - uncovered.filter((u) => !u.asserted).length,
-  shown: names.size - uncovered.filter((u) => !u.shown).length,
+  // Out of the names a page could show, not out of every published name: the denominator is what
+  // makes the number mean something a person can act on.
+  showable: atRuntime.size,
+  shown: atRuntime.size - uncovered.filter((u) => u.showable === true && !u.shown).length,
 };
 
 if (process.argv.includes("--write")) {
@@ -209,6 +239,14 @@ if (phantom.length > 0) {
   for (const name of phantom) console.error(`- ${name}`);
   process.exit(1);
 }
+if (notAtRuntime.length > 0) {
+  console.error(
+    "\nDECLARED AND NOT THERE WHEN IT RUNS — a panel claims to exercise a name that exists only "
+    + "while the code compiles, so the claim cannot be true on a page:",
+  );
+  for (const name of notAtRuntime) console.error(`- ${name}`);
+  process.exit(1);
+}
 const uncoveredPanels = panelReport.filter((p) => !p.covered);
 if (uncoveredPanels.length > 0) {
   console.error("\nPANEL WITHOUT A SUITE — its declarations do not count");
@@ -219,7 +257,7 @@ if (uncoveredPanels.length > 0) {
 console.log(`Panels: ${panelReport.length}, all covered by ${PANEL_SUITE.split("/").slice(-3).join("/")}`);
 console.log(`Public names: ${score.published}`);
 console.log(`  asserted somewhere: ${score.asserted} (was ${baseline.score.asserted})`);
-console.log(`  shown in a demo:    ${score.shown} (was ${baseline.score.shown})`);
+console.log(`  shown in a demo:    ${score.shown} of ${score.showable} that a page could show (was ${baseline.score.shown})`);
 
 const recorded = new Set(baseline.uncovered.map((u) => u.name));
 const appeared = uncovered.filter((u) => !recorded.has(u.name));

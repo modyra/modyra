@@ -35,7 +35,14 @@ export const invoicesPanel = {
   blurb:
     "Cost splits that must total 100%, a duplicate cost centre refused per line, an approved line " +
     "readonly but consulted, and a server error attributed to a split nobody has open.",
-  exercises: ["createForm", "record", "MdyRecordHandle", "group", "field", "required", "renderField"],
+  exercises: [
+    "createForm",
+    "record",
+    "group",
+    "field",
+    "required",
+    "renderField"
+  ],
   invariant:
     "Validity lives in the model, not in the viewport: a collapsed line keeps gating the invoice, " +
     "and its error waits on the split that owns it.",

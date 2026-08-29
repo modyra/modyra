@@ -33,20 +33,15 @@ export const lifecyclePanel = {
     "field",
     "required",
     "renderField",
-    "MdyDraftOptions",
-    "MdyDraftStorage",
     "bindFormReset",
-    "MdyFormResetBinding",
     "adoptSilentWrites",
-    "MdySilentWriteBinding",
     "submissionFor",
     "submissionNames",
     "submissionDefects",
     "submitFalsePart",
     "groupSubmitName",
     "syncSubmitValues",
-    "applySubmissionNames",
-    "MdySubmissionShape",
+    "applySubmissionNames"
   ],
 
   invariant:
