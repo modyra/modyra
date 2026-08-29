@@ -29,6 +29,7 @@ import {
   today,
   type CalendarDate,
 } from "@modyra/core/datetime";
+import { projectCalendarDayCellA11y } from "./calendar-view-a11y.js";
 import { calendarKeyboardTarget } from "../keyboard.js";
 
 import type { MdyUiCommand } from "../commands.js";
@@ -190,21 +191,22 @@ export function createDatepickerFieldController(
   });
 
   function a11yCell(cell: MdyDatepickerFieldCell) {
+    // The classes and the semantics from the one door, so a renderer applying this part and one
+    // building its own cell answer alike. Written out here, it said nothing about today — `today` is
+    // a state this part declares and nothing was emitting it, so the day a calendar is always asked
+    // about was marked in no renderer that reads this and painted in none either.
     return {
+      ...projectCalendarDayCellA11y(
+        {
+          selected: cell.selected,
+          disabled: cell.disabled,
+          today: cell.iso === formatIsoDate(today()),
+          focused: cell.focused,
+          outside: !cell.inMonth,
+        },
+        { kind: "datepicker", widgetId },
+      ),
       id: calendarDayId(widgetId, cell.iso),
-      classes: [
-        "mdy-datepicker__cell",
-        ...(cell.inMonth ? [] : ["mdy-datepicker__cell--outside"]),
-        ...(cell.selected ? ["mdy-datepicker__cell--selected"] : []),
-        ...(cell.focused ? ["mdy-datepicker__cell--focused"] : []),
-        ...(cell.disabled ? ["mdy-datepicker__cell--disabled"] : []),
-      ],
-      attributes: {
-        role: "gridcell",
-        "aria-selected": String(cell.selected),
-        "aria-disabled": String(cell.disabled),
-        tabindex: cell.focused ? 0 : -1,
-      },
     };
   }
 

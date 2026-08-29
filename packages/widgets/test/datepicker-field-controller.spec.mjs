@@ -182,9 +182,15 @@ test("view exposes grid ARIA contract with roving tabindex on the focused cell o
   const focusedCell = view.parts["2026-03-15"];
   assert.strictEqual(focusedCell.attributes.role, "gridcell");
   assert.strictEqual(focusedCell.attributes["aria-selected"], "true");
-  assert.strictEqual(focusedCell.attributes.tabindex, 0);
+  // As a string, like every other attribute a projection carries: an attribute's value is text, and
+  // the day cell reads the same door the month and year cells do.
+  assert.strictEqual(focusedCell.attributes.tabindex, "0");
   const otherCell = view.parts["2026-03-16"];
-  assert.strictEqual(otherCell.attributes.tabindex, -1);
+  assert.strictEqual(otherCell.attributes.tabindex, "-1");
+  // And the day a calendar is always asked about says so, rather than only being painted.
+  const todayIso = new Date().toISOString().slice(0, 10);
+  const todayCell = view.parts[todayIso];
+  if (todayCell) assert.strictEqual(todayCell.attributes["aria-current"], "date");
 });
 
 test("setValue updates state and view programmatically", () => {

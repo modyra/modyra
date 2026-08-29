@@ -9,6 +9,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import {
+  projectCalendarDayCellA11y,
   MDY_CHIP_CLASSES,
   MDY_WIDGET_CONTRACTS,
   MDY_WIDGET_KINDS,
@@ -261,4 +262,30 @@ test("the default option key is reachable from the package a consumer imports", 
   // A primitive keys exactly as it always did, which is what makes the change safe for existing ids.
   assert.equal(defaultOptionKey("en"), "en");
   assert.equal(defaultOptionKey(3), "3");
+});
+
+/**
+ * The day a calendar is always asked about, said rather than only painted.
+ *
+ * `today` has been a declared state on the cell for as long as the part has existed, and the day
+ * cell had no projection: three renderers wrote its semantics by hand and one of the three marked
+ * today. A person hearing the grid gets thirty-one numbers and no anchor without it.
+ */
+test("a day cell says which day is today, and says it as a date", () => {
+  const at = (over) => projectCalendarDayCellA11y(
+    { selected: false, disabled: false, today: false, focused: false, outside: false, ...over },
+    { kind: "datepicker", widgetId: "w" },
+  );
+  assert.equal(at({ today: true }).attributes["aria-current"], "date");
+  // `date` and not `true`: the token names what kind of current this is, which is what a reader
+  // announces. And absent on every other day — `aria-current="false"` on thirty of them is noise.
+  assert.equal(at({}).attributes["aria-current"], undefined);
+  assert.ok(at({ today: true }).classes.includes("mdy-datepicker__cell--today"),
+    "the state the contract declares is painted as well as announced");
+
+  // The rest of the cell's answers come from the same door, which is the point of having one.
+  assert.equal(at({ selected: true }).attributes["aria-selected"], "true");
+  assert.equal(at({ disabled: true }).attributes["aria-disabled"], "true");
+  assert.equal(at({ focused: true }).attributes.tabindex, "0");
+  assert.equal(at({}).attributes.tabindex, "-1");
 });

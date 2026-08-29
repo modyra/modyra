@@ -213,6 +213,9 @@ export const statesPanel = {
     "processWidgetCommands",
     "projectBooleanFieldA11y",
     "projectCalendarViewA11y",
+    // The day cell's own door, driven by every datepicker this panel mounts: it is what says today
+    // to a reader rather than only to the eye.
+    "projectCalendarDayCellA11y",
     "projectDatepickerFieldA11y",
     "projectFieldShellA11y",
     "projectMultiselectFieldA11y",

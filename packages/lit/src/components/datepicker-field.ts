@@ -1,5 +1,5 @@
 import { mdyPart } from "../mdy-part.js";
-import { capabilityOf, keyMeans,
+import { projectCalendarDayCellA11y, capabilityOf, keyMeans,
   createDatepickerFieldController,
   overlayControlledId,
   type MdyDatepickerFieldController,
@@ -396,21 +396,20 @@ export class MdyDatepickerFieldElement extends MdyFieldElement<string | null> {
         (row) => html`<div class="mdy-datepicker__row" role="row">
           ${row.map((cell) => {
             const disabled = !inRange(cell.iso);
-            const classes = [
-              "mdy-datepicker__cell",
-              cell.inMonth ? "" : "mdy-datepicker__cell--outside",
-              cell.iso === todayIso ? "mdy-datepicker__cell--today" : "",
-              cell.iso === selectedIso ? "mdy-datepicker__cell--selected" : "",
-              cell.iso === this.view.focusedDate ? "mdy-datepicker__cell--focused" : "",
-              disabled ? "mdy-datepicker__cell--disabled" : "",
-            ].join(" ");
+            // What a day announces and wears, from the contract rather than from six ternaries here.
+            // Written by hand it said nothing about today — a class marked it for the eye and a
+            // person hearing the grid got thirty-one numbers and no anchor.
+            const day = projectCalendarDayCellA11y({
+              selected: cell.iso === selectedIso,
+              disabled,
+              today: cell.iso === todayIso,
+              focused: cell.iso === this.view.focusedDate,
+              outside: !cell.inMonth,
+            }, { kind: "datepicker", widgetId: this.fieldId });
             return html`<button
               type="button"
               id=${this.fieldController?.view().parts[cell.iso]?.id ?? nothing}
-              class=${classes}
-              role="gridcell"
-              tabindex=${cell.iso === this.view.focusedDate ? "0" : "-1"}
-              aria-selected=${cell.iso === selectedIso ? "true" : "false"}
+              ${mdyPart(day)}
               ?disabled=${disabled}
               @click=${() => this.pick(handle, cell.iso)}
             >

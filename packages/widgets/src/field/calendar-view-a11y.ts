@@ -81,3 +81,52 @@ export function projectCalendarPeriodCellA11y(
     },
   };
 }
+
+/**
+ * One day of the month view.
+ *
+ * The sibling above covers a month and a year cell; the day had no projection at all, so three
+ * renderers wrote its semantics by hand and answered differently. One of them said which day is
+ * today and two said nothing — while `today` has been a declared state on this part the whole time,
+ * so the contract named it and no renderer could be checked against it.
+ *
+ * **`aria-current="date"` is what says "today" to a reader.** A class marks it for the eye; a person
+ * hearing the grid gets thirty-one numbers and no anchor without this, and today is the one date a
+ * calendar is always asked about.
+ *
+ * `selected` and `disabled` come with it because they are the same cell's answers and were three
+ * hand-written pairs before — the shape that produced a cell announced as selected in one renderer
+ * and merely painted in another.
+ */
+export function projectCalendarDayCellA11y(
+  cell: {
+    readonly selected: boolean;
+    readonly disabled: boolean;
+    readonly today: boolean;
+    readonly focused: boolean;
+    /** Whether the day belongs to the month on screen; the neighbours either side are drawn too. */
+    readonly outside: boolean;
+  },
+  options: MdyCalendarViewA11yOptions,
+): MdyPartContract {
+  return {
+    classes: [
+      ...partClasses(options.kind, "gridcell" as never, {
+        selected: cell.selected,
+        today: cell.today,
+        outside: cell.outside,
+        focused: cell.focused,
+      }),
+    ],
+    attributes: {
+      role: "gridcell",
+      "aria-selected": String(cell.selected),
+      "aria-disabled": String(cell.disabled),
+      disabled: cell.disabled,
+      // The one date a calendar is always asked about, said rather than only painted. `date` and not
+      // `true`: the token names what kind of current this is, which is what a reader announces.
+      ...(cell.today ? { "aria-current": "date" } : {}),
+      tabindex: cell.focused ? "0" : "-1",
+    },
+  };
+}
