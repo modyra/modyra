@@ -5,7 +5,7 @@
     "published": 904,
     "asserted": 904,
     "showable": 399,
-    "shown": 325
+    "shown": 337
   },
   "uncovered": [
     {
@@ -45,13 +45,6 @@
     },
     {
       "name": "assertNeverField",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "bindingForIntent",
       "asserted": true,
       "shown": false,
       "showable": true,
@@ -101,13 +94,6 @@
     },
     {
       "name": "closeOverlay",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "comparableControllerOptions",
       "asserted": true,
       "shown": false,
       "showable": true,
@@ -261,21 +247,7 @@
       "reason": "published and never shown"
     },
     {
-      "name": "inputWasRefused",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
       "name": "integer",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "layoutSlotStyle",
       "asserted": true,
       "shown": false,
       "showable": true,
@@ -317,20 +289,6 @@
       "reason": "published and never shown"
     },
     {
-      "name": "partSelector",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "partStates",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
       "name": "projectDaterangeFieldA11y",
       "asserted": true,
       "shown": false,
@@ -359,13 +317,6 @@
       "reason": "published and never shown"
     },
     {
-      "name": "sameControllerOptions",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
       "name": "scrollChipStripByWheel",
       "asserted": true,
       "shown": false,
@@ -381,13 +332,6 @@
     },
     {
       "name": "shouldCloseMultiselectOverlay",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "stableControllerOptions",
       "asserted": true,
       "shown": false,
       "showable": true,
@@ -478,21 +422,7 @@
       "reason": "published and never shown"
     },
     {
-      "name": "undoIsOnOffer",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
       "name": "valueShape",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "viewIsActive",
       "asserted": true,
       "shown": false,
       "showable": true,
@@ -506,21 +436,7 @@
       "reason": "published and never shown"
     },
     {
-      "name": "widgetKeyIntent",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
       "name": "widgetScopeOf",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "workIsInFlight",
       "asserted": true,
       "shown": false,
       "showable": true,
