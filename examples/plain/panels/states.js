@@ -9,7 +9,17 @@
 import { createForm, field as mdyField, group as mdyGroup, required as mdyRequired } from "@modyra/core";
 import { renderField } from "@modyra/plain";
 import { KINDS } from "./kinds.js";
-import { fieldAccessibleName, focusIsInsideField, nameIsAFallback, sliderTrack } from "@modyra/widgets";
+import {
+  MDY_WIDGET_CONTRACTS,
+  fieldAccessibleName,
+  fieldIsRequired,
+  focusIsInsideField,
+  nameIsAFallback,
+  partIsOwed,
+  sliderTrack,
+  valueIsAbsent,
+  valueIsPresent,
+} from "@modyra/widgets";
 import { grid, paintedAsFailing, readoutPrinter, toggle, toolbar } from "./shell.js";
 
 export const statesPanel = {
@@ -47,6 +57,13 @@ export const statesPanel = {
     // Which field the keyboard is in, printed live: a panel drawn outside its field still belongs to
     // it, and the readout says so while the pointer or the keyboard is inside one.
     "focusIsInsideField",
+    // Both halves of the owing question — the capability the page asked for, and the state the widget
+    // is in. The readout prints what each kind owes as the form is driven. (Said without quoting a
+    // phrase, because this tool reads every quoted string in the block as a declared name.)
+    "partIsOwed",
+    "valueIsPresent",
+    "valueIsAbsent",
+    "fieldIsRequired",
     "errorsVisible",
     "shownErrorsOf",
     // The calendar's three views: a date picker that only pages a month at a time puts a birth date
@@ -115,6 +132,25 @@ export const statesPanel = {
       // panel drawn outside its field — to escape a scrolling ancestor — is still part of that
       // field, and the link that says so is the opener's `aria-controls`. Open a picker, put the
       // keyboard inside it, and the field named here is still the one that opened it.
+      // Which optional parts the contract owes each kind right now — both halves of the question,
+      // asked through the one door: a capability the page asked for before the widget existed, and a
+      // state the widget is in. This panel asks for no capabilities, so a reorder grip is owed to
+      // nothing here however many values a multiselect holds.
+      partsOwed: KINDS
+        .map(([kind]) => [kind, MDY_WIDGET_CONTRACTS[kind].structure.nodes.filter((node) => partIsOwed(node, {
+          holds: (condition) => {
+            const held = form.f.all[kind].value();
+            if (condition === "valueIsPresent") return valueIsPresent(kind, held);
+            if (condition === "valueIsAbsent") return valueIsAbsent(kind, held);
+            if (condition === "fieldIsRequired") return fieldIsRequired(form.f.all[kind].required());
+            // Every other condition is a state this panel does not drive, and answering it "yes"
+            // would print an owing nobody can check.
+            return false;
+          },
+          offers: () => false,
+        }) && node.optional === true).map((node) => node.part)])
+        .filter(([, parts]) => parts.length > 0)
+        .map(([kind, parts]) => `${kind}: ${parts.join(", ")}`),
       focusIsInside: KINDS
         .map(([kind]) => kind)
         .filter((kind) => {

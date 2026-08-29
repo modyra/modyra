@@ -21,6 +21,7 @@ export {
   MDY_PART_NAMES,
   MDY_PART_REQUIRES,
   MDY_PRESENCE_RESOLUTION,
+  partIsOwed,
   shellStateClasses,
   MDY_WIDGET_CONTRACT_VERSION,
 } from "./structure.js";

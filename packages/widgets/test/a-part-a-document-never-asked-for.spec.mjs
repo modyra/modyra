@@ -19,10 +19,15 @@ import { MDY_PART_REQUIRES, MDY_WIDGET_CONTRACTS, MDY_WIDGET_KEYBOARD, MDY_WIDGE
 test("a part with a precondition carries it into every kind that declares the part", () => {
   const entries = Object.entries(MDY_PART_REQUIRES);
   assert.ok(entries.length > 0, "no part declares a precondition, so this asserts nothing");
-  for (const [part, capability] of entries) {
+  for (const [key, capability] of entries) {
+    // Keyed by `kind.part` where the gate belongs to one kind, by the bare name where it belongs to
+    // the part wherever it appears. A slider's `value` is not a select's, and a table that cannot
+    // say so tells the truth about one kind and a lie about another.
+    const [named, part] = key.includes(".") ? key.split(".") : [null, key];
     const carriers = MDY_WIDGET_KINDS.filter((kind) =>
-      MDY_WIDGET_CONTRACTS[kind].structure.nodes.some((node) => node.part === part));
-    assert.ok(carriers.length > 0, `${part} declares a precondition and no kind declares the part`);
+      (named === null || kind === named)
+      && MDY_WIDGET_CONTRACTS[kind].structure.nodes.some((node) => node.part === part));
+    assert.ok(carriers.length > 0, `${key} declares a precondition and no kind declares the part`);
     for (const kind of carriers) {
       const node = MDY_WIDGET_CONTRACTS[kind].structure.nodes.find((one) => one.part === part);
       assert.equal(node.requires, capability,
@@ -36,13 +41,15 @@ test("a precondition names a capability the kind's own keyboard already gates on
   // The word is shared with the key bindings deliberately: `requires` there gates a gesture on the
   // same fact. A precondition naming something no binding knows would be a second vocabulary for one
   // idea, which is how two declarations come to be read as different rules.
-  for (const [part, capability] of Object.entries(MDY_PART_REQUIRES)) {
+  for (const [key, capability] of Object.entries(MDY_PART_REQUIRES)) {
+    const [named, part] = key.includes(".") ? key.split(".") : [null, key];
     const kinds = MDY_WIDGET_KINDS.filter((kind) =>
-      MDY_WIDGET_CONTRACTS[kind].structure.nodes.some((node) => node.part === part));
+      (named === null || kind === named)
+      && MDY_WIDGET_CONTRACTS[kind].structure.nodes.some((node) => node.part === part));
     const gated = kinds.some((kind) =>
       (MDY_WIDGET_KEYBOARD[kind] ?? []).some((binding) => binding.requires === capability));
     assert.ok(gated,
-      `${part} is gated on "${capability}" and no key binding of any kind that draws it knows that `
+      `${key} is gated on "${capability}" and no key binding of any kind that draws it knows that `
       + "word. Either the capability is spelled two ways or one of the two is wrong");
   }
 });

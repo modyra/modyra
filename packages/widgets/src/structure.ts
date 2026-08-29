@@ -263,8 +263,26 @@ export const MDY_ARIA_DISABLED_PARTS: readonly string[] = Object.freeze([
   "file.clear",
 ]);
 
+/**
+ * Capabilities that decide whether a part's presence question applies at all.
+ *
+ * Keyed by `kind.part` where the gate belongs to one kind, and by the bare part name where it
+ * belongs to the part wherever it appears — a slider's `value` is not a select's. Read through
+ * {@link partIsOwed} so that neither half of the question can be taken without the other.
+ *
+ * `chipMove` — a reorder grip is owed only where a document asked for reordering. Read without this,
+ * the contract owes one to every multiselect holding a value, which all three renderers correctly
+ * disobey.
+ *
+ * A select's `value` is the same shape of question and is deliberately **not** here: the element
+ * showing what was chosen exists in the custom chooser and not in the platform's own `<select>`,
+ * which two renderers draw when a select does not filter. That is a difference between two
+ * presentations of one kind, which this contract expresses as a variant rather than as a capability —
+ * and a capability word invented for it would be a second vocabulary for an idea the catalogue
+ * already has. It is owed a decision and a batch of its own.
+ */
 export const MDY_PART_REQUIRES: Readonly<Record<string, string>> = Object.freeze({
-  chipMove: "reorderable",
+  "multiselect.chipMove": "reorderable",
 });
 
 export const MDY_PART_PRESENCE: Readonly<Record<string, MdyPartPresence>> = Object.freeze({
@@ -383,6 +401,38 @@ export interface MdyWidgetStructureNode<TPart extends string = string> {
    */
   readonly requires?: string;
   readonly repeated?: boolean;
+}
+
+/**
+ * Whether a part is owed on the page right now.
+ *
+ * Two facts decide it and they are easy to read as one: **whether the question applies at all** —
+ * a capability the document asked for before the widget existed — and **whether the condition
+ * holds** — a state the widget is in. A reader who takes only the second owes a reorder grip to
+ * every multiselect holding a value, which is a rule all three renderers correctly disobey.
+ *
+ * One door so that neither can be read without the other. A checker asking "is this part missing
+ * when it should be there" asks here; asking the node's `presentWhen` directly is asking half of a
+ * two-part question and getting a confident wrong answer.
+ *
+ * `holds` is asked only when the gate is open, so a caller that cannot resolve a condition for a
+ * capability the field does not have is never asked to.
+ */
+export function partIsOwed(
+  node: MdyWidgetStructureNode,
+  facts: {
+    /** Whether the widget is in the state the condition names. */
+    readonly holds: (condition: MdyPartPresence) => boolean;
+    /** Whether the field was given the capability the part is gated on. */
+    readonly offers: (capability: string) => boolean;
+  },
+): boolean {
+  // Not optional is not conditional: the contract requires it of every rendering.
+  if (node.optional !== true) return true;
+  if (node.requires !== undefined && !facts.offers(node.requires)) return false;
+  // Optional with no condition is a part a renderer may draw or not, and nothing is owed.
+  if (node.presentWhen === undefined) return false;
+  return facts.holds(node.presentWhen);
 }
 
 /** Ordered structural anatomy for a widget. This is metadata, not a virtual DOM. */

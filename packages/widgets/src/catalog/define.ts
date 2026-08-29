@@ -498,7 +498,11 @@ export function define<const TPart extends string>(kind: MdyWidgetKind, rootClas
     // What the kind has to have been *given* before the presence question applies. Read without it,
     // this contract owed a reorder grip to every multiselect holding a value; every renderer drew it
     // only where a document asked for reordering, which is a rule none of them could point at.
-    const requires = MDY_PART_REQUIRES[node.part];
+    // Keyed by `kind.part` where a gate belongs to one kind, by the bare name where it belongs to the
+    // part wherever it appears. A slider's `value` is not a select's: the bare key gave a slider's
+    // required readout a capability sliders do not have, which is a table telling the truth about one
+    // kind and a lie about another.
+    const requires = MDY_PART_REQUIRES[`${kind}.${node.part}`] ?? MDY_PART_REQUIRES[node.part];
     if (presentWhen === undefined && requires === undefined) return node;
     return Object.freeze({
       ...node,
