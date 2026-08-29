@@ -61,6 +61,8 @@ for (const only of HOSTS) {
 test(`a key in an open panel nobody declared, ${only.name}`, async ({ page }) => {
   test.setTimeout(1_200_000);
   const undeclared: string[] = [];
+  /** A key stopped where nothing moved: the platform lost it and the widget did not take it. */
+  const refused: string[] = [];
   /** Presses made with a panel from an earlier key still standing, which this could not send home. */
   let stillOpen = 0;
   /** Kinds whose open phase could not be reached: printed, so a green is not read as coverage. */
@@ -225,16 +227,43 @@ test(`a key in an open panel nobody declared, ${only.name}`, async ({ page }) =>
             : `?${node.tagName.toLowerCase()}.${node.className.split(/\s+/)[0] ?? ""}`;
         }, { map: partClassMap(kind) });
 
+        // What the field is, before the key. A claim is a key that *did* something, and the only way
+        // to tell that from a key merely taken away from the platform is to look at what changed.
+        const shapeOf = () => page.evaluate(({ id }) => {
+          const root = document.querySelector(`[data-form="${id}"]`);
+          if (root === null) return "";
+          const values = [...root.querySelectorAll<HTMLInputElement>("input, select, textarea")]
+            .map((box) => `${box.value}/${box.checked}`).join("|");
+          const marker = root.querySelector("[aria-activedescendant]")?.getAttribute("aria-activedescendant") ?? "";
+          const open = root.querySelector("[aria-expanded]")?.getAttribute("aria-expanded") ?? "";
+          const here = document.activeElement?.className ?? "";
+          return `${values}~${marker}~${open}~${here}~${(root.textContent ?? "").length}`;
+        }, { id: mountId });
+        const before = await shapeOf();
+
         pressed += 1;
         await page.keyboard.press(key === " " ? "Space" : key);
         await page.waitForTimeout(60);
         const taken = await page.evaluate(() => [...new Set((window as never as Record<string, string[]>).__claimed)]);
+        const after = await shapeOf();
+        const didSomething = before !== after;
 
 
         for (const one of taken) {
           if (resolve(kind, one, true) !== null) continue;
           if (standingOn !== null && !standingOn.startsWith("?")
             && resolve(kind, one, true, standingOn) !== null) continue;
+          // **Prevented is not claimed.** A control that stops a character the platform would have
+          // inserted — `e` and `+` in a box that holds an hour — has taken a key away from the
+          // platform and given it to nobody, which is a legitimate act and not a gesture. Answering
+          // one is: the value moves, the phase changes, the marker or the reading position moves.
+          // Measured against the keyboard vocabulary they are the same event and they are not the
+          // same act, and reporting a refusal as an undeclared binding sends somebody to declare a
+          // key that does nothing.
+          if (!didSomething) {
+            refused.push(`${kind} in ${host.name}: refuses ${shown(one)} on ${standingOn ?? "nothing"}, and nothing moved`);
+            continue;
+          }
           // Where the person stood is part of the report: a key answered by nobody is one finding at
           // the control and another on a part, and the two are closed in different places.
           undeclared.push(`${kind} in ${host.name}: claims ${shown(one)} with the panel open, standing on ${standingOn ?? "nothing"}`);
@@ -247,6 +276,9 @@ test(`a key in an open panel nobody declared, ${only.name}`, async ({ page }) =>
   // sweep's answer, which is already asserted elsewhere.
   expect(pressed, "no key was pressed into an open panel, so this measured the other half again").toBeGreaterThan(30);
   if (stillOpen > 0) console.log(`[a panel would not close before ${stillOpen} press(es)]`);
+  if (refused.length > 0) {
+    console.log(`[stopped, and nothing moved] ${refused.length}: ${[...new Set(refused)].slice(0, 8).join(" | ")}`);
+  }
   if (unopened.length > 0) console.log(`[open phase unreached] ${unopened.length}: ${[...new Set(unopened)].slice(0, 6).join(" | ")}`);
 
   expect(
