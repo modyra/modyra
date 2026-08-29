@@ -23,8 +23,9 @@
  *
  *   node scripts/audit-coverage-and-demo.mjs [--write]
  */
+import { execFileSync } from "node:child_process";
 import { readdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
-import { join } from "node:path";
+import { join, resolve } from "node:path";
 
 const root = new URL("..", import.meta.url).pathname;
 const BASELINE = join(root, "packages/widgets/contract-baseline/coverage-baseline.json");
@@ -74,6 +75,30 @@ const PANEL_SUITE = join(root, "e2e/plain/lab.spec.ts");
 const SKIP = new Set(["node_modules", "dist", "coverage", ".angular", "test-results", ".astro"]);
 const TEXT = /\.(ts|mts|tsx|js|mjs|jsx|html|svelte|vue|astro|md|mdx)$/;
 
+/**
+ * The files this repository actually keeps.
+ *
+ * A build writes bundles into the tree that carry every published name at once, and a search for a
+ * name inside one of them answers "asserted" for the whole surface. The gate then holds on a machine
+ * that has built and fails on a clean checkout, which is a gate measuring its own output rather than
+ * the tests. What git tracks is the exact line between a test somebody wrote and an artifact
+ * something produced, and it needs no list of scratch directories to be kept up to date.
+ *
+ * `null` where git cannot answer — a tarball, an export — and the walk then falls back to skipping
+ * the scratch directories it knows, which is weaker and says so.
+ */
+const tracked = (() => {
+  try {
+    const listing = execFileSync("git", ["ls-files", "-z"], { encoding: "utf8", maxBuffer: 64 * 1024 * 1024 });
+    const files = listing.split("\0").filter((one) => one.length > 0);
+    return files.length > 0 ? new Set(files.map((one) => resolve(one))) : null;
+  } catch {
+    return null;
+  }
+})();
+
+const keeps = (path) => (tracked === null ? !/(^|\/)\.[^/]+\//.test(path) : tracked.has(resolve(path)));
+
 function collect(dir, out = []) {
   let entries;
   try { entries = readdirSync(dir); } catch { return out; }
@@ -87,7 +112,7 @@ function collect(dir, out = []) {
     let entryStat;
     try { entryStat = statSync(path); } catch { continue; }
     if (entryStat.isDirectory()) collect(path, out);
-    else if (TEXT.test(entry)) out.push(path);
+    else if (TEXT.test(entry) && keeps(path)) out.push(path);
   }
   return out;
 }
