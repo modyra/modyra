@@ -137,6 +137,21 @@ test(`a key in an open panel nobody declared, ${only.name}`, async ({ page }) =>
             const worked = await opened(mountId);
             if (worked) { opensWith = opener; break; }
           }
+          // Learning which key opens it leaves it open, and the same key pressed again is a toggle:
+          // the run that followed closed the panel it had just opened and reported a kind that opens
+          // for nothing. What is learned here is the key, not a phase — so the phase is put back.
+          if (opensWith !== null) {
+            await page.keyboard.press("Escape");
+            await page.waitForTimeout(120);
+            // Escape hands the reading position back to wherever the panel borrowed it from, and in
+            // two renderers that is not the opener — so the key that follows lands somewhere with no
+            // opinion about it. The opener is taken again before the phase is asked for.
+            await page.evaluate(({ id, opener }) => {
+              const root = document.querySelector(`[data-form="${id}"]`) as HTMLElement | null;
+              root?.querySelector<HTMLElement>((opener as string[]).map((one) => `.${one}`).join(""))?.focus();
+            }, { id: mountId, opener: classes });
+            await page.waitForTimeout(60);
+          }
         }
         let open = false;
         if (opensWith !== null) {
