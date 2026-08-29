@@ -254,7 +254,10 @@ export class MdyColorsComponent extends MdyOverlayControl<string> {
   protected readonly openerPart = computed(
     () => projectOverlayOpenerA11y("colors", { widgetId: this.fieldId, open: this.open() })!,
   );
-  protected readonly hexInputId = defaultWidgetIdFactory.part(this.fieldId, "hex");
+  // The part's own name, which is what a factory can spell. `"hex"` was a fourth spelling of
+  // `hexInput` — the id resolved on the page and no published factory could write it, so anything
+  // deriving the same id from the contract pointed at nothing.
+  protected readonly hexInputId = defaultWidgetIdFactory.part(this.fieldId, "hexInput");
 
   /**
    * Which side the palette ended up on, named by the catalog rather than spelled here.

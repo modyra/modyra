@@ -1,4 +1,5 @@
 import {
+  defaultWidgetIdFactory,
   partSelector,
   beginChipReorder, chosenKeyOrder, elementByDataKey, wayBackActionName, matchesKeyGesture, MDY_WIDGET_KEYBOARD, chipTooltipOffset, hiddenChipCount, keepFocusedChipInView, chipFocusAfterRemoval, scrollChipStripByWheel, isTypeaheadCharacter, chipMovedAnnouncement, stateClass, keyBindingFor, multiselectAnnouncement, optionsWithUnrecognizedValues, overlayControlledId, projectOverlayOpenerA11y } from "@modyra/widgets";
 import { MdyPartDirective } from "../../control/mdy-part.directive";
@@ -274,7 +275,7 @@ const CHIPS = partSelector("multiselect", "chips") ?? "";
            control, not one per chip: a child of the chip is part of the chip's own text. -->
       <span
         class="mdy-chip__tooltip"
-        [id]="fieldId + '__chiptip'"
+        [id]="chipTooltipId"
         role="tooltip"
         [style.inset-inline-start.px]="chipTipAt()"
         [hidden]="namedChip() === null"
@@ -438,6 +439,9 @@ export class MdyMultiselectComponent<TValue = string>
   );
 
   /** The id the opener names, which the projected panel has to carry. */
+  // Spelled by the factory rather than by hand: `__chiptip` is a name nothing else in the library
+  // can derive, so a reference to it built from the contract pointed at no element.
+  protected readonly chipTooltipId = defaultWidgetIdFactory.part(this.fieldId, "chipTooltip");
   protected readonly popupId = computed(
     () => overlayControlledId("multiselect", this.fieldId) ?? "",
   );

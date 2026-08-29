@@ -193,8 +193,10 @@ export class MdyDateRangePickerComponent extends MdyOverlayControl<MdyDateRange 
    * same way. Spelled with a hyphen, the id is still unique and still works — and is unreachable by
    * anybody who builds the name instead of reading it off the element.
    */
-  protected readonly startId = defaultWidgetIdFactory.part(this.fieldId, "start");
-  protected readonly endId = defaultWidgetIdFactory.part(this.fieldId, "end");
+  // The parts' own names. `"start"` and `"end"` were shorter spellings of `startControl` and
+  // `endControl`, so the ids on the page were ones no published factory could write.
+  protected readonly startId = defaultWidgetIdFactory.part(this.fieldId, "startControl");
+  protected readonly endId = defaultWidgetIdFactory.part(this.fieldId, "endControl");
 
   protected readonly popupClass = MDY_WIDGET_CONTRACTS.daterange.parts.popup.classes.join(" ");
   /** The widget this draws: its popup's room, width and edge come from the catalog. */
