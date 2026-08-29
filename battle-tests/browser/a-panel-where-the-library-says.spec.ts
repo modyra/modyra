@@ -42,7 +42,7 @@ import {
   overlayAnchoringFor,
 } from "@modyra/widgets";
 
-import { HOSTS } from "./bench";
+import { HOSTS, stops } from "./bench";
 
 type Api = Record<string, Record<string, (...args: never[]) => unknown>>;
 type Contract = { parts: Record<string, { classes: string[] }>; capabilities?: { overlay?: boolean } };
@@ -91,7 +91,17 @@ for (const host of HOSTS) {
         await page.waitForTimeout(180);
 
         await page.locator(`[data-form="${id}"] .${openerClass}`).first().click({ timeout: 5_000 }).catch(() => undefined);
-        await page.waitForTimeout(350);
+        // Still, not merely opened. A panel is placed over one or two frames and a fixed wait measures
+        // how fast this machine is: the same field read twice minutes apart gave two verdicts, which
+        // is a flake reporting a renderer. Read when the box stops moving.
+        await stops(() => page.evaluate(({ selector, popupClass }) => {
+          const panel = (Array.from(document.querySelectorAll(`.${popupClass}`)) as HTMLElement[])
+            .find((one) => one.getBoundingClientRect().width >= 1);
+          if (panel === undefined) return "";
+          const box = panel.getBoundingClientRect();
+          return `${Math.round(box.top)}:${Math.round(box.left)}:${Math.round(box.height)}`;
+        }, { selector: `[data-form="${id}"]`, popupClass: classOf(kind, "popup") ?? "mdy-popup" }),
+        { window: 200, timeout: 3_000 });
 
         const measured = await page.evaluate(({ selector, popupClass, anchorClass }) => {
           const anchor = document.querySelector(`${selector} .${anchorClass}`) as HTMLElement | null;
@@ -121,6 +131,13 @@ for (const host of HOSTS) {
             viewportWidth: window.innerWidth, viewportHeight: window.innerHeight,
             anchorTop: a.top, anchorBottom: a.bottom, anchorLeft: a.left, anchorRight: a.right,
             anchorWidth: a.width, panelHeight: p.height,
+            // The height fed to the policy is the height the panel *has*, and a panel clipped by the
+            // window has a smaller one than the renderer had when it decided. Asking the policy with
+            // the consequence of the placement is asking it a different question from the one the
+            // renderer answered, and the disagreement would be the measurement's rather than the
+            // renderer's. Reported so a row can be read knowing which.
+            clipped: panel.scrollHeight > Math.ceil(p.height) + 1,
+            contentHeight: panel.scrollHeight,
             // Where it actually went, judged against the anchor and not against the mount wrapper —
             // the wrapper spans the page and every panel is "inside" it.
             where: p.bottom <= a.top + 6 ? "above" : p.top >= a.bottom - 6 ? "below" : "overlapping",
@@ -158,9 +175,14 @@ for (const host of HOSTS) {
           // fraction of the window it happens to sit at — and a threshold in percent would be a
           // number this file invented, with a finding resting on where I happened to put it.
           if (measured.where !== "overlapping") {
-            disagreeing.push(`${kind} ${Math.round(measured.anchorTop)}px down: the policy answers `
+            // Said on the row rather than left to be asked: a clipped panel was measured smaller than
+          // the renderer had it, so the policy was asked a question the renderer never answered.
+          const clipping = measured.clipped
+            ? ` (the panel is clipped here: ${measured.contentHeight}px of content in ${Math.round(measured.panelHeight)}px, so the height the policy was given is not the height the renderer placed)`
+            : "";
+          disagreeing.push(`${kind} ${Math.round(measured.anchorTop)}px down: the policy answers `
               + `overlay — neither side had room, so it centres — and the panel is flush ${measured.where} `
-              + `the field, ${Math.round(measured.offCentre * 100)}% of the window off centre`);
+              + `the field, ${Math.round(measured.offCentre * 100)}% of the window off centre${clipping}`);
           }
           continue;
         }
