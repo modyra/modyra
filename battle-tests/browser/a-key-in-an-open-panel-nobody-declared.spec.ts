@@ -43,6 +43,10 @@ const PRESSED = ["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "Home", "End
 
 const shown = (key: string): string => (key === " " ? "Space" : key);
 
+/** Every part of the kind with the classes that identify it, innermost-first is the caller's job. */
+const partClassMap = (kind: string): Array<[string, string[]]> =>
+  Object.entries(CONTRACTS[kind].parts).map(([name, part]) => [name, [...(part.classes ?? [])]]);
+
 /** The keys the kind declares open it, from the table rather than named here. */
 const openingKeys = (kind: string): string[] =>
   (KEYBOARD[kind] ?? []).filter((one) => one.when === "closed" && one.intent === "open").map((one) => one.key);
@@ -185,10 +189,34 @@ test(`a key in an open panel nobody declared, ${only.name}`, async ({ page }) =>
         await page.keyboard.press(key === " " ? "Space" : key);
         await page.waitForTimeout(60);
         const taken = await page.evaluate(() => [...new Set((window as never as Record<string, string[]>).__claimed)]);
+        // A binding declared on a part is invisible from the control, so a key answered while the
+        // person stands on that part has to be asked about from there. Which part that is comes from
+        // the contract's own classes rather than from a role, because `on` names a part.
+        const standingOn = await page.evaluate(({ map }) => {
+          // A grid that moves a marker rather than the focus leaves the focus on the container and
+          // names the current cell in an attribute. The person is on the cell either way, so the walk
+          // starts where the control says they are rather than where the platform put the focus.
+          const focused = document.activeElement;
+          const named = focused?.getAttribute("aria-activedescendant") ?? null;
+          let node: Element | null = named === null ? focused : (document.getElementById(named) ?? focused);
+          while (node !== null && node !== document.body) {
+            for (const [name, classes] of map) {
+              if (classes.length > 0 && classes.every((one) => node?.classList.contains(one) === true)) return name;
+            }
+            node = node.parentElement;
+          }
+          return node === null || node === document.body
+            ? `?${focused?.tagName?.toLowerCase() ?? "none"}`
+            : `?${node.tagName.toLowerCase()}.${node.className.split(/\s+/)[0] ?? ""}`;
+        }, { map: partClassMap(kind) });
 
         for (const one of taken) {
           if (resolve(kind, one, true) !== null) continue;
-          undeclared.push(`${kind} in ${host.name}: claims ${shown(one)} with the panel open`);
+          if (standingOn !== null && !standingOn.startsWith("?")
+            && resolve(kind, one, true, standingOn) !== null) continue;
+          // Where the person stood is part of the report: a key answered by nobody is one finding at
+          // the control and another on a part, and the two are closed in different places.
+          undeclared.push(`${kind} in ${host.name}: claims ${shown(one)} with the panel open, standing on ${standingOn ?? "nothing"}`);
         }
       }
     }
