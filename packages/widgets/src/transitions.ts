@@ -314,6 +314,15 @@ function keyboardFor(kind: MdyWidgetKind): readonly MdyKeyBinding[] {
   if (turnsAPage) {
     bindings.push({ key: "PageDown", when: "open", intent: "move", by: 1, page: true });
     bindings.push({ key: "PageUp", when: "open", intent: "move", by: -1, page: true });
+    // Sideways, which is half of walking a month. A week runs left to right and the table declared
+    // only the vertical pair, so a person moving through a calendar with the keyboard could go up
+    // and down a column and never along a row — and all three renderers answered the horizontal
+    // arrows anyway, because a grid that cannot be walked sideways is not a grid.
+    //
+    // A day at a time, where the vertical pair moves a week: that is what the two axes of a month
+    // are, and it is the same `by` the grid pattern gives every other two-dimensional widget.
+    bindings.push({ key: "ArrowRight", when: "open", intent: "move", by: 1 });
+    bindings.push({ key: "ArrowLeft", when: "open", intent: "move", by: -1 });
   }
   if (NAVIGATES_OPTIONS.includes(kind)) {
     for (const key of ["ArrowDown", "ArrowUp"]) {

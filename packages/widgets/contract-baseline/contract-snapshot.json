@@ -3040,6 +3040,8 @@
       "variants": {},
       "keyboard": [
         "ArrowDown@open:move",
+        "ArrowLeft@open:move by=-1",
+        "ArrowRight@open:move by=1",
         "ArrowUp@open:move",
         "End@open:move",
         "Enter@closed:open on=control",
@@ -3444,6 +3446,8 @@
       "variants": {},
       "keyboard": [
         "ArrowDown@open:move",
+        "ArrowLeft@open:move by=-1",
+        "ArrowRight@open:move by=1",
         "ArrowUp@open:move",
         "End@open:move",
         "Enter@closed:open on=toggle",
