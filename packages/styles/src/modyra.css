@@ -2889,6 +2889,19 @@
         color: var(--mdy-select-placeholder-color);
     }
 
+    /*
+     * The same treatment where the platform draws the control.
+     *
+     * A native chooser shows the chosen option's text in the closed control, and a colour on the
+     * `<option>` does not reach it. The element is asked about its own state instead: the entry for
+     * "nothing chosen" is the one standing, so the control is showing a placeholder and wears the
+     * placeholder's colour. Stated here rather than in a renderer, or each of them dims the control
+     * its own way and a theme cannot override any of it.
+     */
+    select.mdy-select__trigger:has(> option:checked[value=""]) {
+        color: var(--mdy-select-placeholder-color);
+    }
+
     .mdy-select__arrow {
         margin-inline-start: 0.5rem;
         width: var(--mdy-affordance-box);

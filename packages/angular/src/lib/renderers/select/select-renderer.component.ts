@@ -230,7 +230,6 @@ import { MdyDropdownBase } from "../dropdown-base";
             [attr.aria-required]="ariaRequired() || isRequired()"
             [attr.aria-disabled]="effectiveAriaDisabled()"
             [attr.aria-readonly]="isReadonly() ? 'true' : null"
-                [style.opacity]="(value() === null || value() === undefined) ? '0.6' : '1'"
           >
             @if (placeholder() || value() === null || value() === undefined) {
               <!-- The entry for "nothing chosen", which is not an option the document declared. It
