@@ -20,13 +20,32 @@ export type MdyWidgetKind = (typeof MDY_WIDGET_KINDS)[number];
  * disagree. Closed, so a name nothing describes cannot be asked for — a widget checked against an
  * anatomy that does not exist is the gap variants were added to close.
  *
- * **The mechanism is general; this union is not, and that is deliberate.** Any kind may declare
- * variants, but today the only axis that varies anatomy is a multiselect's mode, so that is the only
- * vocabulary admitted. A second kind varying on something else widens this union — and that is the
- * moment to ask whether the two axes belong in one type or whether a kind should key its variants by
- * its own, not a question to answer while one case is all there is.
+ * **Two axes now, and the question this comment reserved is answered here.** A multiselect varies by
+ * *mode* — what one choice does — and a select varies by *presentation*: it renders the platform's
+ * own chooser unless it filters, and the two shapes have different anatomies. They are different
+ * questions, and the union carries both.
+ *
+ * One type rather than one per kind, because a variant name is only meaningful for the kind that
+ * declares it: `MDY_WIDGET_CONTRACTS[kind].variants` is what says which names a kind answers to, and
+ * a name it does not declare matches nothing — asking a select about `multi` selects no anatomy
+ * rather than the wrong one. That is what makes the shared vocabulary safe, and it is the property
+ * to keep if a third axis arrives: the union may grow, and a lookup must stay a lookup.
  */
-export type MdyWidgetVariant = MdyMultiselectMode;
+export type MdyWidgetVariant = MdyMultiselectMode | MdySelectPresentation;
+
+/**
+ * The two shapes a select is drawn in.
+ *
+ * A select that does not filter renders the **native** chooser — deliberately, for the platform's
+ * typeahead and its mobile picker — and a native `<select>` has no element for the chosen option, no
+ * separate arrow and no placeholder that is not an `<option>`. A select that filters draws the
+ * combobox, which has all three and an overlay to point at.
+ *
+ * Declared because the difference is anatomy, not decoration: read as one shape, the contract owed
+ * every select the combobox's parts and its opener relation, and two renderers were non-conforming
+ * for drawing what the contract's own prose told them to draw.
+ */
+export type MdySelectPresentation = "native" | "custom";
 
 /**
  * How a kind's value is read, which is what decides whether it is drawn in a box.

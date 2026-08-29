@@ -102,7 +102,35 @@ export const MDY_WIDGET_CONTRACTS = Object.freeze({
       //
       // `options` stays required *of an open control*, which is the combobox path by construction:
       // a native chooser opens nothing this contract can see.
-      required: ["options"] }),
+      required: ["options"],
+      // The two shapes, declared rather than left to each renderer to infer from `searchable`.
+      //
+      // The prose above has said for a long time which parts a native `<select>` cannot have; said
+      // only in prose, the anatomy still owed them to every select, so two renderers were reported
+      // non-conforming for drawing exactly what this comment tells them to draw. A variant is how
+      // this catalogue already says "one kind, two anatomies" — a multiselect's two modes use the
+      // same mechanism — and the difference here is the same kind of difference.
+      //
+      // `custom` is the combobox: a trigger that holds the value, a mark that says it opens, a
+      // placeholder in place of the value and an overlay for the opener relation to point at.
+      // `native` is the platform's own chooser, where the chosen option is an `<option>`, the arrow
+      // is the platform's, and nothing may carry `aria-expanded`, `aria-controls` or
+      // `aria-haspopup` — a `<select>` that claims to be a combobox is lying about what it is.
+      // `arrow` alone in the list, and that is not an oversight: a variant's `required` says *must be
+      // there*, which overrides a presence condition rather than joining it. `value` and
+      // `placeholder` already answer to what the field holds — one when there is a value, the other
+      // when there is not — so demanding either of them here would ask a custom select showing its
+      // placeholder for a value element it correctly does not draw. What the custom shape owes
+      // unconditionally is the mark that says it opens; what the native shape owes is nothing, and
+      // the three parts simply do not exist there.
+      variants: {
+        custom: { required: ["arrow"] },
+        // What the platform's chooser makes of the two parts it does have: the trigger is the
+        // `<select>` itself, and the placeholder is an `<option>` inside it rather than an element
+        // beside the value. Declared, because a shape the contract does not describe is one every
+        // check reports as broken.
+        native: { required: [], elements: { trigger: "listbox", placeholder: "option" } },
+      } }),
   // Part order is the reading order, so it is decided here rather than inherited from the sequence
   // these names happen to be written in. What the control shows for the current selection comes
   // before the affordance that changes it: the chips, or the placeholder standing in for them while

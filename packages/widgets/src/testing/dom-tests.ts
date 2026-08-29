@@ -324,6 +324,11 @@ function implicitRole(element: Element): string | null {
   if (tag === "th") return "columnheader";
   if (tag === "td") return "gridcell";
   if (tag === "option") return "option";
+  // The platform's own chooser. A `<select>` with no `multiple` and no `size` is a combobox to the
+  // accessibility tree — which is what a select's trigger promises — so a renderer drawing the native
+  // shape carries the role without writing it, and demanding the attribute would ask it to spell
+  // what the element already says.
+  if (tag === "select") return element.hasAttribute("multiple") ? "listbox" : "combobox";
   if (tag !== "input") return null;
   const type = (element.getAttribute("type") ?? "text").toLowerCase();
   if (type === "checkbox") return "checkbox";

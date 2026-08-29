@@ -2106,7 +2106,21 @@
           "alignment": "right"
         }
       },
-      "variants": {},
+      "variants": {
+        "custom": {
+          "elements": {},
+          "required": [
+            "arrow"
+          ]
+        },
+        "native": {
+          "elements": {
+            "trigger": "listbox",
+            "placeholder": "option"
+          },
+          "required": []
+        }
+      },
       "keyboard": [
         "*printable*:typeahead",
         "ArrowDown@closed:open on=trigger",
