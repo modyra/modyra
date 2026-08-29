@@ -192,6 +192,7 @@ absent section reads as an oversight, and "no security impact" is a finding.
 - [ADR 0175: The caption names the group, each control names itself](0175-the-caption-names-the-group-each-control-names-itself.md) — one caption over two boxes named both boxes the same thing; the caption names the pair and each box says its own role
 - [ADR 0176: A select is two shapes, and the contract says which](0176-a-select-is-two-shapes-and-the-contract-says-which.md) — the native chooser and the combobox are variants; read as one anatomy the contract owed every select the combobox's parts
 - [ADR 0177: The second door, and what the contract declines to say](0177-what-the-contract-declines-to-say.md) — a pointer's second way into a panel is declared; an optional part with no condition is the renderer's choice, and a control named by a reference or by the words is one answer
+- [ADR 0178: A date a person can read aloud](0178-a-date-a-person-can-read-aloud.md) — the display names its month in the reader's language, the value stays ISO, input accepts widely and echoes back what it understood
 - [ADR 0092: A condition travels with the form](0092-a-condition-travels-with-the-form.md) — `when` and `asyncWhen` were closures, so a schema carrying one was not data and the document half could not say what the typed half said
 
 ## Security-relevant records
