@@ -42,7 +42,13 @@ import {
   validateExpression,
   createSilentDiagnostics,
   MDY_FIELD_KINDS,
+  assertNeverField,
+  buildDynamicFormSchema,
+  explainGranularityProblem,
+  flattenDynamicForm,
+  flattenDynamicSchema,
 } from "@modyra/core";
+import { buildFormSchema } from "@modyra/plain";
 import {
   affordanceClasses,
   browserRuntimeCapabilities,
@@ -76,6 +82,10 @@ import {
   timepickerDialGhost,
   timepickerDialKeyIntent,
   chipDropIndex,
+  createDaterangeFieldController,
+  createValueWidgetController,
+  projectDaterangeFieldA11y,
+  scrollChipStripByWheel,
   fieldCommandHandlers,
   MDY_I18N_MESSAGES_DEFAULT,
   timepickerPartSelector,
@@ -224,8 +234,17 @@ export const rendererPanel = {
     "NO_CONSTRAINTS",
     "acceptTimeField",
     "affordanceClasses",
+    "assertNeverField",
+    "assertSafeDynamicFieldNames",
+    "assertUsableWidgetId",
     "bindingForIntent",
+    "blocksFocus",
     "browserRuntimeCapabilities",
+    "buildDynamicFieldValidators",
+    "buildDynamicFormSchema",
+    "buildDynamicValidators",
+    "buildFlatFormSchema",
+    "buildFormSchema",
     "calendarViewAfterPick",
     "chipDropIndex",
     "chipStripWheelDelta",
@@ -237,11 +256,13 @@ export const rendererPanel = {
     "createCatalogWidgetController",
     "createCommandRuntime",
     "createConsoleDiagnostics",
+    "createDaterangeFieldController",
     "createFocusCustodian",
     "createForm",
     "createMdyAnnouncer",
     "createPointerDrag",
     "createSilentDiagnostics",
+    "createValueWidgetController",
     "dateDraftTransition",
     "dateRangeDraftTransition",
     "defaultWidgetIdFactory",
@@ -252,17 +273,25 @@ export const rendererPanel = {
     "dynamicParts",
     "eachOneOf",
     "elementByDataKey",
+    "errorsVisible",
     "evaluateExpression",
+    "explainGranularityProblem",
     "expressionContextKeys",
     "expressionPaths",
     "factsOf",
     "field",
     "fieldCommandHandlers",
+    "fieldDescribedBy",
+    "fieldShellRootClasses",
     "fileSelectionTransition",
+    "flattenDynamicForm",
+    "flattenDynamicSchema",
     "focusTrigger",
     "focusWhenShown",
     "formScopeOf",
+    "getFieldHandleOwner",
     "handleFormOf",
+    "holdsUneditedValue",
     "inputWasRefused",
     "integer",
     "isContextRef",
@@ -273,14 +302,17 @@ export const rendererPanel = {
     "isRootRef",
     "isSafeFieldPath",
     "isSelfRef",
+    "isValidWidgetId",
     "isWidgetKind",
     "keyBindingFor",
     "kindsWithAffordances",
     "layoutSlotStyle",
     "max",
+    "mdyEmptyValueFor",
     "mergeFacts",
     "min",
     "minutesOfDay",
+    "observerFor",
     "oneOf",
     "openOverlay",
     "openPlatformChooser",
@@ -288,19 +320,26 @@ export const rendererPanel = {
     "overlayCloseCommands",
     "overlayOnlyParts",
     "overlayStyleProperties",
+    "parseDynamicFields",
     "partClasses",
     "partSelector",
     "partStates",
     "partsRequiringName",
     "popupAlignmentClass",
+    "projectDaterangeFieldA11y",
+    "projectOverlayOpenerA11y",
     "quantityAnnouncement",
+    "reactivityRunsEffects",
     "reconcileSelectValue",
     "registerHandleForm",
     "registerHandleOwner",
     "restoreFocusTrigger",
     "sameControllerOptions",
+    "scrollChipStripByWheel",
     "scrollOptionIntoView",
     "shouldCloseMultiselectOverlay",
+    "shownErrors",
+    "showsAsInvalid",
     "ssrRuntimeCapabilities",
     "stableControllerOptions",
     "stateCarriers",
@@ -331,6 +370,7 @@ export const rendererPanel = {
     "undoIsOnOffer",
     "validateExpression",
     "validateTimeGranularity",
+    "validationMessagesForLocale",
     "valueShape",
     "vanillaReactivity",
     "viewIsActive",
@@ -354,6 +394,69 @@ export const rendererPanel = {
 
     // Three doors that act on the page rather than answer about it, so each is behind a command: a
     // demonstration that fires on load is a page doing things to somebody who only opened it.
+    // A schema written as a tree, and the three shapes a renderer can ask it for: the flat field
+    // list, the same list with the collections it declares, and the form schema built from it. A
+    // document says one thing; what a renderer needs from it depends on what the renderer draws.
+    const tree = {
+      node: "group",
+      label: "Iscrizione",
+      children: { nome: { node: "field", field: { kind: "text", name: "nome", label: "Nome" } } },
+    };
+    const flatFields = flattenDynamicSchema(tree);
+    const treeShapes = {
+      flat: flatFields.map((entry) => entry.name),
+      withCollections: Object.keys(flattenDynamicForm(tree)),
+      fromTree: Object.keys(buildDynamicFormSchema(tree)),
+      fromFlat: Object.keys(buildFormSchema(flatFields)),
+    };
+
+    // A refusal in a sentence. The problem is not written here: the library is asked to find it, so
+    // the sentence describes a defect the library recognises rather than one this page invented.
+    const badGranularity = validateTimeGranularity({ minuteStep: 7 });
+    const granularitySaid = badGranularity.map((problem) => explainGranularityProblem(problem));
+
+    // The exhaustiveness guard, which is only reachable with a kind the union does not have. What it
+    // does when it is reached is refuse, and the refusal names what it could not place.
+    let neverSaid = "accepted a kind the union does not have";
+    try {
+      assertNeverField({ kind: "quantum", name: "q" });
+    } catch (refusal) {
+      neverSaid = refusal.message;
+    }
+
+    // A value widget driven with no renderer under it: the value moves, and the view moves with it.
+    const valueWidget = createValueWidgetController({ kind: "text", value: "prima" });
+    const valueSeen = [valueWidget.state().value];
+    valueWidget.setValue("dopo");
+    valueSeen.push(valueWidget.state().value);
+    valueWidget.destroy();
+
+    // What a reader is told about a pair of dates — one caption for the pair, one name per end.
+    const rangeHandle = createForm({ soggiorno: mdyField({ start: null, end: null }) }).f.soggiorno;
+    const rangeController = createDaterangeFieldController({ widgetId: "soggiorno", handle: rangeHandle });
+    const rangeSays = projectDaterangeFieldA11y(rangeController.state(), [], {
+      widgetId: "soggiorno",
+      label: "Soggiorno",
+    });
+
+    // The wheel door is a listener, not an answer: it reads the strip off the event it is handed, so
+    // it is registered on a real overflowing row and driven by a real wheel. Called directly, with an
+    // event that was never dispatched, there is no strip to scroll.
+    const strip = document.createElement("div");
+    strip.style.cssText = "width:120px;overflow-x:auto;white-space:nowrap;display:flex;gap:4px";
+    for (let i = 0; i < 12; i += 1) {
+      const chip = document.createElement("span");
+      chip.textContent = `chip ${i}`;
+      chip.style.cssText = "flex:0 0 auto;padding:2px 6px;border:1px solid currentColor";
+      strip.append(chip);
+    }
+    strip.addEventListener("wheel", scrollChipStripByWheel, { passive: false });
+    work.append(strip);
+    action(bar, "wheel the strip", () => {
+      strip.dispatchEvent(new WheelEvent("wheel", { deltaY: 120, bubbles: true, cancelable: true }));
+      print();
+    });
+
     action(bar, "step out", () => stepOutOfOverlay(work, () => undefined));
     action(bar, "focus when shown", () => focusWhenShown(() => work.querySelector("button")));
     action(bar, "platform chooser", () => openPlatformChooser(work.querySelector("input")));
@@ -526,6 +629,17 @@ export const rendererPanel = {
       stripSays: quantityAnnouncement("Palette", 3, { settled: "chosen", atMinimum: "at least one" }),
       // A controller with no field behind it — the shape an adapter wraps.
       catalogController: typeof createCatalogWidgetController(kind),
+      // One document, and the shapes a renderer can ask it for.
+      aSchemaAsATree: treeShapes,
+      // What the library says when it refuses: a granularity that does not divide, and a kind that
+      // does not exist. Both sentences are the library's own words.
+      refusals: { granularity: granularitySaid, unknownKind: neverSaid },
+      // A value driven with nothing drawn under it.
+      valueWithoutARenderer: valueSeen,
+      // One caption for the pair, one name for each end.
+      aPairOfDates: rangeSays,
+      // Where the row sits after a wheel: an act, not an answer, so it is read off the strip.
+      stripScrolledTo: strip.scrollLeft,
       references: {
         path: isPathRef({ path: "total" }),
         root: isRootRef({ root: "total" }),
