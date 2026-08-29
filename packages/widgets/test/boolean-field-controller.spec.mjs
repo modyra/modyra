@@ -117,7 +117,7 @@ test("checkbox view exposes ARIA contract", () => {
   assert.strictEqual(view.parts.input.attributes.checked, true);
   // In the way HTML says it, and not twice: a native box maps its own `checked` into the
   // accessibility tree, so `aria-checked` beside it would be a second source for one fact.
-  assert.strictEqual(view.parts.input.attributes["aria-checked"], undefined);
+  assert.strictEqual(view.parts.input.attributes["aria-checked"], null);
   // Not a `--checked` class: the themes style `:checked` on the input, which the attributes above
   // already assert. The root carries the renderer base and the states a *field* has.
   assert.strictEqual(view.root.classes.includes("mdy-renderer"), true);

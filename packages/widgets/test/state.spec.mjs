@@ -205,7 +205,9 @@ test("aria-checked is the switch's, and holds one of the values the standard all
   // disagree the ARIA one wins and is the one that went stale. Three renderers disagreed about
   // writing it, which is what a redundant attribute invites.
   const box = projectBooleanFieldA11y({ ...base, checked: true }, [], { widgetId: "w", variant: "checkbox" });
-  assert.equal(box.input.attributes["aria-checked"], undefined);
+  // `null` and not an absent key: this contract says "no attribute" with `null` everywhere, and a key
+  // simply left out reads as `undefined` to anything asking the object what the field says.
+  assert.equal(box.input.attributes["aria-checked"], null);
   assert.equal(box.input.attributes.checked, true, "the box still says it is ticked, in the way HTML says it");
 });
 

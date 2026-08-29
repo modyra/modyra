@@ -181,9 +181,14 @@ export function projectBooleanFieldA11y(
         // on. `mixed` is not produced: `MdyBooleanFieldState.checked` is a boolean and no field in
         // the engine has an indeterminate value, so emitting a third token would describe a state
         // nothing can be in.
-        ...(options.variant === "switch"
-          ? { "aria-checked": state.checked === true ? "true" : "false" }
-          : {}),
+        //
+        // `null` for the box rather than the key left out: this contract says "no attribute" with
+        // `null` everywhere else — `aria-readonly` beside it does — and a key that is simply absent
+        // reads as `undefined` to anything asking the object what it says, which is a value no
+        // reader maps and outside the three the standard allows.
+        "aria-checked": options.variant === "switch"
+          ? (state.checked === true ? "true" : "false")
+          : null,
         "aria-invalid": String(tellingThem),
         "aria-required": String(state.required),
         // `aria-disabled` reflects `disabled` alone. A read-only control is not disabled: it takes
