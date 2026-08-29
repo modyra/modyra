@@ -61,6 +61,8 @@ for (const only of HOSTS) {
 test(`a key in an open panel nobody declared, ${only.name}`, async ({ page }) => {
   test.setTimeout(1_200_000);
   const undeclared: string[] = [];
+  /** Presses made with a panel from an earlier key still standing, which this could not send home. */
+  let stillOpen = 0;
   /** Kinds whose open phase could not be reached: printed, so a green is not read as coverage. */
   const unopened: string[] = [];
   let pressed = 0;
@@ -91,6 +93,18 @@ test(`a key in an open panel nobody declared, ${only.name}`, async ({ page }) =>
           { door: host.api, id: mountId, k: kind },
         );
         await page.locator(`[data-form="${mountId}"]`).waitFor({ timeout: 5_000 }).catch(() => undefined);
+
+        // The panel the previous key opened is still standing, and where a renderer draws it outside
+        // the field it is over this one too: the reading position is inside it, and a key pressed now
+        // is answered by the field before rather than the field under test. Sent home first, and the
+        // page is asked whether anything is still open rather than assumed shut.
+        for (let tries = 0; tries < 3; tries += 1) {
+          const anyOpen = await page.evaluate(() => document.querySelector('[aria-expanded="true"]') !== null);
+          if (!anyOpen) break;
+          await page.keyboard.press("Escape");
+          await page.waitForTimeout(90);
+        }
+        stillOpen += await page.evaluate(() => document.querySelector('[aria-expanded="true"]') === null ? 0 : 1);
 
         const focused = await page.evaluate(({ id, opener }) => {
           const root = document.querySelector(`[data-form="${id}"]`) as HTMLElement | null;
@@ -185,13 +199,14 @@ test(`a key in an open panel nobody declared, ${only.name}`, async ({ page }) =>
         }, { id: mountId });
         if (!claimed.ready) continue;
 
-        pressed += 1;
-        await page.keyboard.press(key === " " ? "Space" : key);
-        await page.waitForTimeout(60);
-        const taken = await page.evaluate(() => [...new Set((window as never as Record<string, string[]>).__claimed)]);
         // A binding declared on a part is invisible from the control, so a key answered while the
         // person stands on that part has to be asked about from there. Which part that is comes from
         // the contract's own classes rather than from a role, because `on` names a part.
+        //
+        // Read before the press, never after: a key doing exactly what it is declared to do moves
+        // the person off the part that answered it. Space on a calendar cell commits the date, the
+        // panel closes and the reading position goes back to the control — so asked afterwards, every
+        // key that worked looks like a key answered somewhere it was never declared.
         const standingOn = await page.evaluate(({ map }) => {
           // A grid that moves a marker rather than the focus leaves the focus on the container and
           // names the current cell in an attribute. The person is on the cell either way, so the walk
@@ -210,6 +225,12 @@ test(`a key in an open panel nobody declared, ${only.name}`, async ({ page }) =>
             : `?${node.tagName.toLowerCase()}.${node.className.split(/\s+/)[0] ?? ""}`;
         }, { map: partClassMap(kind) });
 
+        pressed += 1;
+        await page.keyboard.press(key === " " ? "Space" : key);
+        await page.waitForTimeout(60);
+        const taken = await page.evaluate(() => [...new Set((window as never as Record<string, string[]>).__claimed)]);
+
+
         for (const one of taken) {
           if (resolve(kind, one, true) !== null) continue;
           if (standingOn !== null && !standingOn.startsWith("?")
@@ -225,6 +246,7 @@ test(`a key in an open panel nobody declared, ${only.name}`, async ({ page }) =>
   // The premise: a sweep that never opened a panel presses into closed fields and finds the closed
   // sweep's answer, which is already asserted elsewhere.
   expect(pressed, "no key was pressed into an open panel, so this measured the other half again").toBeGreaterThan(30);
+  if (stillOpen > 0) console.log(`[a panel would not close before ${stillOpen} press(es)]`);
   if (unopened.length > 0) console.log(`[open phase unreached] ${unopened.length}: ${[...new Set(unopened)].slice(0, 6).join(" | ")}`);
 
   expect(
