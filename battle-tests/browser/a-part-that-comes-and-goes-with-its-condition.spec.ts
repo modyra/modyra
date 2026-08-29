@@ -28,7 +28,7 @@
  * Claims under attack: UI-009, A11Y-004.
  */
 
-import { expect, test } from "@playwright/test";
+import { expect, test, type Page } from "@playwright/test";
 import { MDY_PRESENCE_RESOLUTION, MDY_WIDGET_CONTRACTS, MDY_WIDGET_KINDS, partIsOwed } from "@modyra/widgets";
 
 import { HOSTS } from "./bench";
@@ -55,6 +55,26 @@ const VALUE: Record<string, unknown> = {
 };
 
 for (const host of HOSTS) {
+/**
+ * What the shape this renderer actually drew requires, or `null` for a kind that declares no shapes.
+ *
+ * Which document asks for which shape is not published, so the shape is read back from the page. A
+ * platform control is recognised by the platform's own element, because the parts a variant requires
+ * do not separate the two: a native control is styled with the same arrow as a custom trigger.
+ */
+const drawnVariantRequires = async (page: Page, id: string, kind: string): Promise<string[] | null> => {
+  const variants = (CONTRACTS[kind] as { variants?: Record<string, { required?: string[] }> }).variants ?? {};
+  const names = Object.keys(variants);
+  if (names.length === 0) return null;
+  if (names.includes("native")) {
+    const native = await page.evaluate(({ id }) =>
+      document.querySelector(`[data-form="${id}"] select`) !== null, { id });
+    return [...(variants[native ? "native" : "custom"]?.required ?? [])];
+  }
+  const drawn = names.filter((name) => (variants[name]?.required ?? []).length > 0);
+  return drawn.length === 1 ? [...(variants[drawn[0]]?.required ?? [])] : null;
+};
+
   test(`a part is there when its condition holds and gone when it does not, ${host.name}`, async ({ page }) => {
     test.setTimeout(300_000);
     await page.setViewportSize({ width: 1_200, height: 800 });
@@ -120,10 +140,18 @@ for (const host of HOSTS) {
 
         // The field is mounted with no capability beyond its kind, so a part that wants one is not
         // owed here whatever its condition says.
-        const owedWhenHolding = partIsOwed(node as never, {
-          holds: (condition: string) => condition === node.presentWhen,
-          offers: () => false,
-        } as never);
+        // A kind that declares shapes answers this from the shape it drew, not from the condition: a
+        // variant's required list replaces the presence conditions rather than joining them, so a
+        // part conditioned on a value is owed by the shape that lists it and by no other. A platform
+        // control has no element to carry a part the custom anatomy draws, and demanding one of it
+        // reports the shape as a missing piece.
+        const shapeRequires = await drawnVariantRequires(page, onId, kind);
+        const owedWhenHolding = shapeRequires === null
+          ? partIsOwed(node as never, {
+            holds: (condition: string) => condition === node.presentWhen,
+            offers: () => false,
+          } as never)
+          : shapeRequires.includes(node.part);
         if (owedWhenHolding && !(await drawn(onId, classes))) {
           missingWhenOwed.push(`${kind}.${node.part} (${node.presentWhen})`);
         }
