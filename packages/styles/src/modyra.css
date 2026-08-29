@@ -1810,7 +1810,11 @@
         padding: 0.25rem 0;
     }
 
-    .mdy-file-clear {
+    /* The field's clear, and the cross on one listed file: the same mark for the same act at two
+       scales, so they carry the same paint. They differ in what they take away, not in how they
+       look. */
+    .mdy-file-clear,
+    .mdy-file-remove {
         background: transparent;
         border: none;
         color: var(--mdy-error-color);
@@ -2311,7 +2315,6 @@
 
     .mdy-multiselect__overflow:hover { color: var(--mdy-color-text, inherit); }
     .mdy-multiselect__overflow[hidden] { display: none; }
-    .mdy-multiselect__clear-all[hidden] { display: none; }
 
     /* The one way back, first of the two commands at the field's trailing edge.
 
@@ -2345,14 +2348,21 @@
 
     .mdy-multiselect__way-back-action:hover { color: var(--mdy-color-text, inherit); }
 
-    /* The slot is reserved: at rest the control keeps its box and gives up only its paint, so the
-       clear-all beside it stands where it stood. `display: none` would hand a person a control that
-       moves as the offer arrives — pressed meaning the other one, which discards the field.
-       `visibility` also takes it out of the tab order and out of the accessibility tree, so a
-       reserved slot is not a stop on the way to anything. */
-    .mdy-multiselect__way-back-action[hidden] {
-        display: inline-flex;
-        visibility: hidden;
+    /* What a control that cannot act right now looks like, for the two commands at the trailing edge
+       and for the field's clear.
+
+       They are drawn whether or not they can act, because a control that comes and goes moves the
+       one beside it under the hands of somebody aiming at it — and here the two neighbours are undo
+       and discard-everything. So the state is paint, not presence: dimmed to the same 0.38 the
+       disabled property paints elsewhere, with the cursor that says a press will not land.
+
+       Still in the tab order and still in the accessibility tree, which is the difference between
+       this and `disabled`: reachable, announced as unavailable, refused when pressed. ADR 0171. */
+    .mdy-multiselect__way-back-action--disabled,
+    .mdy-multiselect__clear-all--disabled,
+    .mdy-file-clear--disabled {
+        opacity: 0.38;
+        cursor: not-allowed;
     }
 
     .mdy-multiselect__placeholder {

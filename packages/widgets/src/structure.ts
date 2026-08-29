@@ -38,6 +38,15 @@ export type MdyWidgetSemanticElement =
  * anything further. Free text would be unreadable to a check, and a check is the whole point: an
  * unwritten condition is what let the same optional part appear under three different rules.
  */
+/**
+ * The conditions an optional part is on the page under.
+ *
+ * `undoIsOnOffer` was here and is not: the control it governed stopped coming and going when a
+ * control that is part of a field's design became always present and merely unavailable. The word
+ * still means something — it is what decides whether that button can act — but a condition on a
+ * *state* is not a condition on presence, and a vocabulary that holds both is one a reader has to
+ * ask which kind each word is. ADR 0171.
+ */
 export const MDY_PART_PRESENCES = Object.freeze([
   /** The document supplied the content — a label, help text, an affix. */
   "documentDeclaresIt",
@@ -81,7 +90,6 @@ export const MDY_PART_PRESENCES = Object.freeze([
    */
   "valuesOverflow",
   /** A destructive action can still be taken back. */
-  "undoIsOnOffer",
   /**
    * Something offered to the field was rejected before it could become a value.
    *
@@ -161,7 +169,6 @@ export const MDY_PRESENCE_RESOLUTION: Readonly<Record<MdyPartPresence, {
   // the resolver finds none and writes a second one beside the function that already answers.
   valuesOverflow: { resolver: "hiddenChipCount", because: "answered" },
 
-  undoIsOnOffer: { resolver: "undoIsOnOffer", because: "answered" },
   valueIsPresent: { resolver: "valueIsPresent", because: "answered" },
   valueIsAbsent: { resolver: "valueIsAbsent", because: "answered" },
   fieldIsRequired: { resolver: "fieldIsRequired", because: "answered" },
@@ -211,6 +218,51 @@ export const MDY_PRESENCE_RESOLUTION: Readonly<Record<MdyPartPresence, {
  * reordering was asked for. Three adapters agreeing against a declaration is the evidence that the
  * declaration is what is wrong.
  */
+  /**
+   * Three that were here and are not any more, and the reason is one rule.
+   *
+   * A control that is part of a field's design is always present, and disabled where it cannot act.
+   * Absence is for what is not part of *this* field — a box a configuration left out. Removing a
+   * control when it has nothing to do collapses two facts that change at different rates: whether it
+   * exists, which is fixed, and whether it can act, which changes as somebody works. The tab stops
+   * then move under their hands, and the one who has never used the field learns what it can do only
+   * after filling it in.
+   *
+   * `clearAll`, `wayBackAction` and `file.clear` were declared present-when-there-is-something, and
+   * all three renderers drew them always — right about the presence, and none of them said *dimmed*,
+   * so an empty field carried two buttons that looked live and did nothing. A button that lies is
+   * worse than one that says it is unavailable.
+   *
+   * `chipMove` and `chipRemove` stay conditional and are not exceptions: they belong to a chip, and
+   * exist exactly when the chip does. The chip is the state. `overflowCount` stays too — it reports a
+   * state rather than offering an act, and "+0" is noise where absence is legible.
+   */
+/**
+ * Parts whose unavailability is announced rather than set, and why that is not the usual defect.
+ *
+ * `aria-disabled` on a control the platform could disable natively is normally a lie: the reader is
+ * told one thing and the pointer and keyboard do another, and the inspector says so. These are the
+ * exception, and the reason is the tab order.
+ *
+ * The native property takes a control out of the tab order. For a control that is part of a field's
+ * design — always there, unavailable only sometimes — that means the number of stops changes as
+ * somebody works, and it changes *under their focus* at the one moment they have just pressed the
+ * button: they clear a field, the button becomes unavailable, and their focus is on the document.
+ * Announced instead, the button keeps focus and they hear the state change, which is the confirmation
+ * that it worked.
+ *
+ * What neither this declaration nor the inspector can see is whether the handler actually refuses.
+ * That is a question about an act rather than about markup, and the check that would settle it presses
+ * the control and reads the value. ADR 0171 records that, and records that this list is the narrow
+ * form on purpose: twenty-one parts declare `disabled` among their states and most of them are
+ * natively disabled, so keying the exemption on that would give the whole contract away.
+ */
+export const MDY_ARIA_DISABLED_PARTS: readonly string[] = Object.freeze([
+  "multiselect.clearAll",
+  "multiselect.wayBackAction",
+  "file.clear",
+]);
+
 export const MDY_PART_REQUIRES: Readonly<Record<string, string>> = Object.freeze({
   chipMove: "reorderable",
 });
@@ -236,8 +288,6 @@ export const MDY_PART_PRESENCE: Readonly<Record<string, MdyPartPresence>> = Obje
   // What a chosen value is shown as, where the control is not a text box.
   value: "valueIsPresent",
   // Taking the value away is offered once there is one to take.
-  clearAll: "valueIsPresent",
-  clear: "valueIsPresent",
   // Drawn because the kind has them, not because of anything the field is doing: a chooser's arrow,
   // a multiselect's own layout box, a number's steppers, the list a file field puts its entries in.
   // The condition is not vacuous — it says a renderer that draws this kind another way is still
@@ -270,7 +320,6 @@ export const MDY_PART_PRESENCE: Readonly<Record<string, MdyPartPresence>> = Obje
   yearPicker: "viewIsActive",
   yearCell: "viewIsActive",
   overflowCount: "valuesOverflow",
-  wayBackAction: "undoIsOnOffer",
   rejected: "inputWasRefused",
   chipTooltip: "pointerIsOnAValue",
   loading: "workIsInFlight",

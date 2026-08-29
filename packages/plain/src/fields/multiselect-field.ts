@@ -821,8 +821,19 @@ export function renderMultiselectField(
   }
 
   trigger.addEventListener("click", () => dispatch({ type: "toggleOpen" }));
-  clearAll.addEventListener("click", () => dispatch({ type: "clear" }));
-  wayBackAction.addEventListener("click", () => undoAndLand());
+  clearAll.addEventListener("click", () => {
+    // A second lock, and not the one that holds: the controller refuses a clear on a field out of
+    // play, and clearing an already-empty one changes nothing — so removing this line is not
+    // observable from the value, the flags, or the page. Measured, rather than assumed by having
+    // written it. It is here because the attribute makes a promise and a promise kept two layers
+    // down stops being kept the day that layer changes its mind.
+    if (clearAll.getAttribute("aria-disabled") === "true") return;
+    dispatch({ type: "clear" });
+  });
+  wayBackAction.addEventListener("click", () => {
+    if (wayBackAction.getAttribute("aria-disabled") === "true") return;
+    undoAndLand();
+  });
   search.addEventListener("input", () => dispatch({ type: "search", query: search.value }));
   /**
    * The keyboard policy is `multiselectOverlayAction`, not a handler here.
@@ -1008,10 +1019,24 @@ export function renderMultiselectField(
     // Out of play is out of play for these two as well: hidden is a drawing decision, and a field
     // whose ARIA says disabled while a button beside it still answers is disabled in appearance only.
     const blocked = blocksValueChange(state.interactivity);
-    clearAll.hidden = nowChosen.length === 0 || blocked;
+    /**
+     * Always there, and dimmed where it cannot act.
+     *
+     * Hidden when there was nothing to clear, it came and went with the value — so the number of tab
+     * stops in the field changed as somebody worked, and whoever had never used the control learned
+     * it could be emptied only after filling it in. Whether a control exists is a fact about the
+     * field; whether it can act is a fact about the moment, and the two change at different rates.
+     *
+     * `aria-disabled` rather than the property: the native one takes the button out of the tab order,
+     * which is the moving-stops problem again — and takes focus with it when the state changes under
+     * somebody who has just pressed it. Announced as unavailable, still reachable, refused in the
+     * handler. ADR 0171.
+     */
+    const nothingToClear = nowChosen.length === 0 || blocked;
+    clearAll.setAttribute("aria-disabled", String(nothingToClear));
+    clearAll.classList.toggle(stateClass(parts.clearAll.classes[0]!, "disabled"), nothingToClear);
     // After the chips are in place: the measurement is of what was drawn, not of what is about to be.
     queueMicrotask(syncOverflow);
-    clearAll.disabled = blocked;
     // Out of play for this one as well: a field whose ARIA says disabled while a button beside it
     // still answers is disabled in appearance only.
     overflow.disabled = blocked;
@@ -1019,23 +1044,27 @@ export function renderMultiselectField(
     // The slot is always in the row and keeps its width at rest, so the clear-all beside it stands
     // where it stood whether or not a way back is on offer. A control that moves as the offer
     // arrives is one a person presses meaning the other.
-    wayBackAction.hidden = back === null;
-    wayBackAction.disabled = blocked;
-    if (back !== null) {
-      wayBackAction.setAttribute("aria-label", wayBackActionName(
-        back,
-        {
-          label: messages.wayBackLabel,
-          removed: messages.wayBackRemoved,
-          moved: messages.wayBackMoved,
-          cleared: messages.wayBackCleared,
-        },
-        (key) => state.options.find((option) => keyFor(option) === key)?.label ?? key,
-      ));
-      // Sighted pointer users read the same words the name carries; the mark alone says only that a
-      // way back exists, not what it puts back.
-      wayBackAction.title = wayBackAction.getAttribute("aria-label") ?? "";
-    }
+    // The same rule as the clear-all beside it: always there, and dimmed where there is nothing to
+    // put back. Hidden, it appeared the moment somebody removed a value and went the moment they used
+    // it — a control arriving under the hands of whoever had just pressed the one next to it.
+    wayBackAction.setAttribute("aria-disabled", String(back === null || blocked));
+    wayBackAction.classList.toggle(stateClass(parts.wayBackAction.classes[0]!, "disabled"), back === null || blocked);
+    // Named at rest as well: the control is on the page whether or not an act can be reversed, and a
+    // button with no name is announced as "button". With nothing to put back the name is the bare
+    // label — the act is what is missing, not the control.
+    wayBackAction.setAttribute("aria-label", wayBackActionName(
+      back,
+      {
+        label: messages.wayBackLabel,
+        removed: messages.wayBackRemoved,
+        moved: messages.wayBackMoved,
+        cleared: messages.wayBackCleared,
+      },
+      (key) => state.options.find((option) => keyFor(option) === key)?.label ?? key,
+    ));
+    // Sighted pointer users read the same words the name carries; the mark alone says only that a
+    // way back exists, not what it puts back.
+    wayBackAction.title = wayBackAction.getAttribute("aria-label") ?? "";
     applyPart(popup, view.parts.popup);
     applyPart(search, view.parts.search);
     // Where the keyboard is in the list, said to a reader. The cursor is not focus — focus stays in

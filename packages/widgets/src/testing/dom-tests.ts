@@ -9,6 +9,7 @@ import { MDY_POPUP_OPENERS, MDY_WIDGET_CONTRACTS, type MdyWidgetKind, type MdyWi
 import { MDY_LABELABLE_TAGS, MDY_WIDGET_RELATIONS, partsRequiringName } from "../relations.js";
 import type { MdyPartContract } from "../contract.js";
 import { MDY_STATE_MODIFIERS } from "../state.js";
+import { MDY_ARIA_DISABLED_PARTS } from "../structure.js";
 import { MDY_FIELD_SHELL_CLASSES, MDY_FIELD_STATE_CLASSES, MDY_SHARED_UI_CLASSES } from "../structure.js";
 import { overlayOnlyParts } from "../widget-states.js";
 import { inspectWidgetStructure } from "./structure-tests.js";
@@ -37,6 +38,7 @@ export type MdyDomContractIssueCode =
   | "RELATION_NOT_LABELABLE"
   | "NAME_MISSING"
   | "PART_ROLE"
+  | "PART_HIDDEN"
   | "INVENTED_CLASS"
   | "STRUCTURE";
 
@@ -47,6 +49,23 @@ export interface MdyDomContractIssue {
 }
 
 /** Elements the adapter rendered for each contract part, in document order. */
+/**
+ * Whether an element is a part the contract says announces its unavailability rather than setting it.
+ *
+ * Matched by the part's own classes, because that is what an element carries — asking a renderer to
+ * mark it instead would be asking the thing under inspection to describe itself. Exported so the
+ * state matrix asks this question rather than reading the same list a second time: two readings of
+ * one declaration is how two checks come to disagree about it.
+ */
+export function announcesUnavailability(kind: MdyWidgetKind, element: Element): boolean {
+  return MDY_ARIA_DISABLED_PARTS.some((entry) => {
+    const [entryKind, part] = entry.split(".");
+    if (entryKind !== kind) return false;
+    const classes = (MDY_WIDGET_CONTRACTS[kind].parts as Record<string, MdyPartContract | undefined>)[part]?.classes ?? [];
+    return classes.length > 0 && classes.every((name) => element.classList.contains(name));
+  });
+}
+
 export type MdyDomPartMap = Readonly<Record<string, Element | readonly Element[] | null | undefined>>;
 
 export interface MdyDomContractOptions {
@@ -483,6 +502,29 @@ export function inspectWidgetDom(
     }
     const contract = definition.parts[node.part as keyof typeof definition.parts] as MdyPartContract | undefined;
 
+    // A part that answers unavailability by announcing it must not also take itself off the page.
+    // `hidden` is the one that undoes the rule while leaving the element in the tree for every other
+    // check here to find: the part is present, carries its classes, and a person still cannot see or
+    // reach it. Which is the state the rule exists to prevent — a control that comes and goes moves
+    // the one beside it under the hands of somebody aiming at it.
+    for (const element of elements) {
+      if (!announcesUnavailability(kind, element)) continue;
+      if (element.hasAttribute("hidden")) {
+        issues.push({
+          code: "PART_HIDDEN",
+          part: node.part,
+          message: `${node.part} says when it cannot act with aria-disabled, so it must not be hidden`,
+        });
+      }
+      if (!element.hasAttribute("aria-disabled")) {
+        issues.push({
+          code: "PART_HIDDEN",
+          part: node.part,
+          message: `${node.part} is drawn at all times, so it must say whether it can act with aria-disabled`,
+        });
+      }
+    }
+
     // A part the contract gives a role must carry it. `element` says what a part may be — the
     // semantic lists the roles it admits — and this says which one it has to have, so the contract
     // can require a listbox rather than merely permit one.
@@ -826,6 +868,11 @@ export function inspectWidgetDom(
   for (const element of scope) {
     if (element.getAttribute("aria-disabled") !== "true") continue;
     if (!NATIVE_DISABLEABLE.has(element.tagName.toLowerCase())) continue;
+    // Except where the contract says this part announces its unavailability rather than setting it,
+    // which it says for the controls that must keep their place in the tab order. The declaration is
+    // narrow and explicit for that reason — see `MDY_ARIA_DISABLED_PARTS`, and ADR 0171 for what
+    // neither it nor this inspector can see: whether the handler refuses.
+    if (announcesUnavailability(kind, element)) continue;
     if (!element.hasAttribute("disabled")) {
       issues.push({
         code: "ARIA_STATE_NOT_APPLIED",

@@ -165,7 +165,11 @@ export const MDY_WIDGET_CONTRACTS = Object.freeze({
       // The caret carries `open` for the same reason the single-choice sibling's does: which way it
       // points is the only thing on a closed control that says the list is showing, and it is not a
       // child of the control that holds the state, so nothing above it can turn it.
-      states: { arrow: ["open"], trigger: ["open", "disabled", "readonly", "invalid", "loading"], option: ["selected", "active", "disabled"], chip: ["selected", "removable", "dragging"], popup: POPUP_PLACEMENT_STATES },
+      // `clearAll` and `wayBackAction` are always drawn and say `disabled` where they cannot act: a
+      // control that is part of a field's design does not come and go with what is in it, or the tab
+      // stops move under the hands of whoever is using it. ADR 0171.
+      states: { arrow: ["open"], trigger: ["open", "disabled", "readonly", "invalid", "loading"], option: ["selected", "active", "disabled"], chip: ["selected", "removable", "dragging"], clearAll: ["disabled"], wayBackAction: ["disabled"], popup: POPUP_PLACEMENT_STATES },
+
       classes: { box: ["mdy-multiselect"], trigger: ["mdy-multiselect__trigger"], arrow: ["mdy-multiselect__arrow"], options: ["mdy-multiselect__options", "mdy-multiselect-overlay__grid"], optionWrapper: [MDY_CHIP_CLASSES.wrapper], option: [MDY_CHIP_CLASSES.block], optionCheck: [MDY_CHIP_CLASSES.check], optionLabel: [MDY_CHIP_CLASSES.label], optionCount: [MDY_CHIP_CLASSES.count], optionStep: [MDY_CHIP_CLASSES.step], chips: ["mdy-multiselect__chips"], chipRow: ["mdy-multiselect__chip-row"], chip: [MDY_CHIP_CLASSES.block, MDY_CHIP_CLASSES.value], chipRemove: [MDY_CHIP_CLASSES.remove], chipMove: [MDY_CHIP_CLASSES.move], chipTooltip: ["mdy-chip__tooltip"], announcement: ["mdy-multiselect__announcement"], clearAll: ["mdy-multiselect__clear-all"], overflowCount: ["mdy-multiselect__overflow"], wayBackAction: ["mdy-multiselect__way-back-action"], placeholder: ["mdy-multiselect__placeholder"], popup: ["mdy-multiselect__dropdown", MDY_POPUP_CLASS, MDY_POPUP_SURFACE_CLASS, "mdy-multiselect-overlay__panel"], search: ["mdy-multiselect-overlay__input"], loading: ["mdy-select__loader"], empty: ["mdy-multiselect-overlay__empty"] } ,
       // The two mode markers a chip carries. `--centered` reserves the width its tick will need in
       // toggle mode; `--counter` is the bag mode, whose chip has step buttons instead of a tick.
@@ -193,7 +197,10 @@ export const MDY_WIDGET_CONTRACTS = Object.freeze({
       // nobody has chosen anything in would announce contents it does not have. It appears with the
       // first value and goes with the last, and what says the field is empty is the field's own
       // placeholder. ADR 0148.
-      required: ["trigger", "announcement", "option", "optionLabel", "options"] }),
+      // `clearAll` and `wayBackAction` among them: always drawn, unavailable only sometimes. A part a
+      // renderer may leave out and one that is merely dimmed are different promises, and `optional`
+      // is the word for the first. ADR 0171.
+      required: ["trigger", "announcement", "option", "optionLabel", "options", "clearAll", "wayBackAction"] }),
   datepicker: define("datepicker", ["mdy-renderer", "mdy-renderer--datepicker"], ["root", "label", "requiredMarker", "inputWrapper", "control", "toggle", "popup", "dialogHeader", "calendar", "grid", "weekdays", "weekday", "row", "gridcell", "monthPicker", "monthCell", "yearPicker", "yearCell", "inlineError", "supportingText", "errors", "errorItem"] as const, true,
     { classes: { control: ["mdy-datepicker__input"], toggle: ["mdy-datepicker__toggle"], popup: ["mdy-datepicker__popup", MDY_POPUP_CLASS, MDY_POPUP_SURFACE_CLASS], calendar: ["mdy-datepicker__calendar"], dialogHeader: ["mdy-datepicker__header"], grid: ["mdy-datepicker__grid"], weekdays: ["mdy-datepicker__weekdays"], weekday: ["mdy-datepicker__weekday"], row: ["mdy-datepicker__row"], gridcell: ["mdy-datepicker__cell"], monthPicker: ["mdy-datepicker__month-picker"], monthCell: ["mdy-datepicker__month-cell"], yearPicker: ["mdy-datepicker__year-picker"], yearCell: ["mdy-datepicker__year-cell"] },
       roles: { grid: "grid", row: "row", weekdays: "row", weekday: "columnheader", gridcell: "gridcell", monthPicker: "grid", monthCell: "gridcell", yearPicker: "grid", yearCell: "gridcell" } ,
@@ -238,14 +245,20 @@ export const MDY_WIDGET_CONTRACTS = Object.freeze({
   file: define("file", ["mdy-renderer", "mdy-renderer--file"], ["root", "label", "requiredMarker", "dropzone", "control", "content", "fileList", "fileItem", "clear", "rejected", "supportingText", "errors", "errorItem"] as const, false,
     { parents: { fileList: "content", clear: "content", rejected: "content" },
       classes: { dropzone: ["mdy-file-container"], control: ["mdy-file-input"], content: ["mdy-file-content"], fileList: ["mdy-file-list"], fileItem: ["mdy-file-item"], clear: ["mdy-file-clear"], rejected: ["mdy-file-rejected"] },
-      states: { dropzone: ["dragover"] } ,
+      states: { dropzone: ["dragover"], clear: ["disabled"] } ,
+
       // What the field refused announces itself: it answers something the person just did, and a
       // `<div>` that appears in silence is evidence only for whoever is looking at it.
       roles: { rejected: "status" } ,
       // The name is what every renderer puts in the item; the meta line beside it — size, type — is
       // optional decoration that some do and some do not.
-      presentation: ["mdy-file-icon", "mdy-file-info", "mdy-file-placeholder", "mdy-file-name", "mdy-file-meta"] ,
-      required: ["content"] }),
+      // `mdy-file-remove` is the cross on one listed file, which is not the field's `clear` — that one
+      // empties the field and there is one of it. A renderer that dressed the per-file crosses in
+      // `clear`'s class had the contract's word for one control on a row of another, and no clear at
+      // all. Presentation until the contract declares the per-file act, which is its own decision.
+      presentation: ["mdy-file-icon", "mdy-file-info", "mdy-file-placeholder", "mdy-file-name", "mdy-file-meta", "mdy-file-remove"] ,
+      // `clear` too: always drawn, unavailable only sometimes. ADR 0171.
+      required: ["content", "clear"] }),
   colors: define("colors", ["mdy-renderer", "mdy-renderer--colors"], ["root", "label", "requiredMarker", "inputWrapper", "nativePicker", "preview", "control", "hexInput", "toggle", "popup", "presets", "swatch", "customEntry", "customTint", "inlineError", "supportingText", "errors", "errorItem"] as const, true,
     {
       // The picker is the affordance a pointer uses to reach the colour, and the contract does not

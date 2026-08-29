@@ -1,7 +1,7 @@
 import { mdyPart } from "../mdy-part.js";
 import { html, nothing, type PropertyDeclarations } from "lit";
 import { type MdyFieldHandle } from "@modyra/core";
-import { createFileFieldController, MDY_WIDGET_CONTRACTS, clearFileSelection, type MdyFileFieldController } from "@modyra/widgets";
+import { createFileFieldController, MDY_WIDGET_CONTRACTS, clearFileSelection, type MdyFileFieldController , chipActionName } from "@modyra/widgets";
 import { MdyFieldElement, mdyIcon } from "../base.js";
 
 export class MdyFileFieldElement extends MdyFieldElement<readonly File[] | null> {
@@ -113,8 +113,8 @@ export class MdyFileFieldElement extends MdyFieldElement<readonly File[] | null>
                       <span class="mdy-file-name">${f.name}</span>
                       <button
                         type="button"
-                        class="mdy-file-clear"
-                        aria-label=${`Remove ${f.name}`}
+                        class="mdy-file-remove"
+                        aria-label=${chipActionName(this.messages.chipRemoveLabel, f.name)}
                         @click=${(e: Event) => {
                           e.preventDefault();
                           const rest = files.filter((_, j) => j !== i);
@@ -128,6 +128,17 @@ export class MdyFileFieldElement extends MdyFieldElement<readonly File[] | null>
                     </li>`,
                   )}
                 </ul>`}
+            <button
+              type="button"
+              class="mdy-file-clear ${this.partStateClass("clear", "disabled", files.length === 0 || handle.disabled() || handle.readonly())}"
+              aria-disabled=${String(files.length === 0 || handle.disabled() || handle.readonly())}
+              aria-label=${this.messages.fileClearSelection}
+              @click=${(e: Event) => {
+                e.preventDefault();
+                if ((e.currentTarget as HTMLElement).getAttribute("aria-disabled") === "true") return;
+                this.fileController(handle).dispatch({ type: "clear" });
+              }}
+            >&times;</button>
           </div>
           ${this._rejected.length === 0
             ? nothing

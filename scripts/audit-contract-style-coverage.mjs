@@ -94,6 +94,10 @@ function contractClasses() {
     ...MDY_SHARED_UI_CLASSES,
   ]);
   for (const kind of MDY_WIDGET_KINDS) for (const c of widgetStateClasses(kind)) out.add(c);
+  // Decoration a kind declares but no part carries — an icon, a name, a meta line. It is in the
+  // catalogue and the state classes do not reach it, so reading only those reported classes the
+  // contract does declare as being outside it.
+  for (const kind of MDY_WIDGET_KINDS) for (const c of MDY_WIDGET_CONTRACTS[kind].presentationClasses) out.add(c);
   // The chip is a primitive rather than a part of one widget: its variants come from the function
   // every renderer asks, so the audit asks the same function rather than restating the answer.
   for (const mode of ["single", "multi"]) {

@@ -72,18 +72,22 @@ import { MDY_I18N_MESSAGES } from "../../core/i18n";
                 </li>
               }
             </ul>
-            <button
-              type="button"
-              class="mdy-file-clear"
-              (click)="clear()"
-              [disabled]="cannotPick()"
-              [attr.aria-label]="i18n.fileClearSelection"
-            >
-              &times;
-            </button>
           } @else {
             <span class="mdy-file-placeholder">{{ i18n.fileNoneSelected }}</span>
           }
+          <!-- Outside the branch: a control that is part of the field is always there and says when it
+               cannot act. Inside it, the number of tab stops changed as somebody filled the field in,
+               and their focus was on the button at the moment it went. ADR 0171. -->
+          <button
+            type="button"
+            class="mdy-file-clear"
+            [class.mdy-file-clear--disabled]="cannotPick() || chosen().length === 0"
+            (click)="clear()"
+            [attr.aria-disabled]="cannotPick() || chosen().length === 0"
+            [attr.aria-label]="i18n.fileClearSelection"
+          >
+            &times;
+          </button>
         </div>
       </div>
       @if (rejectedNames().length > 0) {
@@ -173,6 +177,10 @@ export class MdyFileComponent extends MdyBaseControl<readonly File[] | null> {
   }
 
   protected clear(): void {
+    // The refusal the attribute promises. A second lock — the controller refuses a clear on a field
+    // out of play — kept because the attribute makes a promise, and one kept two layers down stops
+    // being kept the day that layer changes its mind. ADR 0171.
+    if (this.cannotPick() || this.chosen().length === 0) return;
     if (this.isDisabled()) return;
     this.files()?.dispatch({ type: "clear" });
     this.rejectedNames.set([]);

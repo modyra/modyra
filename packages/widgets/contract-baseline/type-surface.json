@@ -861,6 +861,7 @@
     "\"PART_CARDINALITY\"",
     "\"PART_CLASS_MISSING\"",
     "\"PART_ELEMENT\"",
+    "\"PART_HIDDEN\"",
     "\"PART_MISSING\"",
     "\"PART_NOT_CONTAINED\"",
     "\"PART_NOT_OWNED\"",
@@ -2260,7 +2261,6 @@
     "\"kindOffersIt\"",
     "\"overlayIsOpen\"",
     "\"pointerIsOnAValue\"",
-    "\"undoIsOnOffer\"",
     "\"valueIsAbsent\"",
     "\"valueIsPresent\"",
     "\"valuesOverflow\"",
@@ -5022,7 +5022,7 @@
     "-> returns: ReadonlyArray<MdyFieldError>"
   ],
   "wayBackActionName": [
-    "(0) way: { readonly act: \"remove\" | \"move\" | \"clear\"; readonly optionKey: string | null; readonly count: number; }",
+    "(0) way: { readonly act: \"remove\" | \"move\" | \"clear\"; readonly optionKey: string | null; readonly count: number; } | null",
     "(1) templates: { readonly label: string; readonly removed: string; readonly moved: string; readonly cleared: string; }",
     "(2) labelOf: (key: string) => string",
     "-> returns: string"

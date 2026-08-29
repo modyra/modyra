@@ -232,8 +232,8 @@ const CHIPS = partSelector("multiselect", "chips") ?? "";
       <button
         type="button"
         class="mdy-multiselect__way-back-action"
-        [hidden]="wayBack() === null"
-        [disabled]="isDisabled() || isReadonly()"
+        [class.mdy-multiselect__way-back-action--disabled]="wayBack() === null || isDisabled() || isReadonly()"
+        [attr.aria-disabled]="wayBack() === null || isDisabled() || isReadonly()"
         [attr.aria-label]="wayBackName()"
         [attr.title]="wayBackName()"
         (click)="onWayBack()"
@@ -243,9 +243,9 @@ const CHIPS = partSelector("multiselect", "chips") ?? "";
       <button
         type="button"
         class="mdy-multiselect__clear-all"
-        [hidden]="chosen().length === 0 || isDisabled() || isReadonly()"
+        [class.mdy-multiselect__clear-all--disabled]="chosen().length === 0 || isDisabled() || isReadonly()"
+        [attr.aria-disabled]="chosen().length === 0 || isDisabled() || isReadonly()"
         [attr.aria-label]="i18n.clearSelection"
-        [disabled]="isDisabled() || isReadonly()"
         (click)="onClearAll($event)"
       ><mdy-icon name="CLOSE" /></button>
       <!-- The mark that says the field opens, painted by the box at its own trailing edge. It is
@@ -651,6 +651,9 @@ export class MdyMultiselectComponent<TValue = string>
   /** Every choice off at once. The press must not reach the trigger behind it and reopen the popup. */
   protected onClearAll(event: Event): void {
     event.stopPropagation();
+    // A control announced as unavailable still receives the press: `aria-disabled` says what it is,
+    // it does not refuse. The second lock; the controller is what actually holds the rule.
+    if (this.chosen().length === 0 || this.isDisabled() || this.isReadonly()) return;
     this.controller()?.dispatch({ type: "clear" });
   }
 
@@ -664,6 +667,9 @@ export class MdyMultiselectComponent<TValue = string>
    * to land on falls back to the opener, which is the field itself.
    */
   protected onWayBack(): void {
+    // Announced as unavailable, still reachable, refused here. The second lock; the controller holds
+    // the rule. ADR 0171.
+    if (this.wayBack() === null || this.isDisabled() || this.isReadonly()) return;
     const restored = this.wayBack()?.optionKey ?? null;
     this.controller()?.dispatch({ type: "undo" });
     queueMicrotask(() => {
@@ -1023,10 +1029,8 @@ export class MdyMultiselectComponent<TValue = string>
 
   /** What the way back is called: the act named, because one reversal covers three. */
   protected readonly wayBackName = computed(() => {
-    const offer = this.wayBack();
-    if (offer === null) return "";
     return wayBackActionName(
-      offer,
+      this.wayBack(),
       {
         label: this.i18n.wayBackLabel,
         removed: this.i18n.wayBackRemoved,

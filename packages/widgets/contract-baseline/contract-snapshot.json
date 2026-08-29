@@ -2323,27 +2323,31 @@
           "order": 13,
           "element": "button",
           "parent": "box",
-          "optional": true,
-          "presentWhen": "undoIsOnOffer",
+          "optional": false,
+          "presentWhen": null,
           "repeated": false,
           "role": null,
           "classes": [
             "mdy-multiselect__way-back-action"
           ],
-          "states": []
+          "states": [
+            "disabled"
+          ]
         },
         "clearAll": {
           "order": 14,
           "element": "button",
           "parent": "box",
-          "optional": true,
-          "presentWhen": "valueIsPresent",
+          "optional": false,
+          "presentWhen": null,
           "repeated": false,
           "role": null,
           "classes": [
             "mdy-multiselect__clear-all"
           ],
-          "states": []
+          "states": [
+            "disabled"
+          ]
         },
         "arrow": {
           "order": 15,
@@ -4061,14 +4065,16 @@
           "order": 8,
           "element": "button",
           "parent": "content",
-          "optional": true,
-          "presentWhen": "valueIsPresent",
+          "optional": false,
+          "presentWhen": null,
           "repeated": false,
           "role": null,
           "classes": [
             "mdy-file-clear"
           ],
-          "states": []
+          "states": [
+            "disabled"
+          ]
         },
         "rejected": {
           "order": 9,

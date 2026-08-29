@@ -17,7 +17,7 @@ import {
   widgetSupportsState,
   type MdyWidgetState,
 } from "../widget-states.js";
-import type { MdyDomPartMap } from "./dom-tests.js";
+import { announcesUnavailability, type MdyDomPartMap } from "./dom-tests.js";
 
 export type MdyStateIssueCode =
   | "STATE_NOT_SUPPORTED"
@@ -153,6 +153,13 @@ export function inspectWidgetState(
         ? honoursNativeReadonly(element)
         : NATIVE_CONTROLS.has(tag);
       if (!applicable) continue;
+      // Except where the contract says this part announces its unavailability rather than setting it.
+      // The native attribute takes a control out of the tab order, and for one that is part of the
+      // field's design — always drawn, unavailable only sometimes — that moves the stops under the
+      // hands of whoever is using it, at the moment they have just pressed it. What this check cannot
+      // see either way is whether the handler refuses; ADR 0171 says so and names the check that
+      // would, which presses the control and reads the value.
+      if (announcesUnavailability(kind, element)) continue;
       if (!element.hasAttribute(contract.nativeAttribute)) {
         issues.push({
           code: "STATE_NOT_APPLIED",

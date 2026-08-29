@@ -1,20 +1,22 @@
 {
   "_note": "Classes outside the widget contract. This list may only ever shrink: each batch contractualises some of it. Reseed with --write only when deliberately recording a new baseline.",
   "_generated": "103 findings",
-  "_unpaintedNote": "Contract classes no theme paints, each with the reason it is acceptable. Same rule: may only ever shrink. \"unreviewed\" means nobody has decided yet \u2014 it is a to-do, not a verdict.",
+  "_unpaintedNote": "Contract classes no theme paints, each with the reason it is acceptable. Same rule: may only ever shrink. \"unreviewed\" means nobody has decided yet — it is a to-do, not a verdict.",
   "_unpainted": {
     "mdy-chip-wrapper": "the themes paint .mdy-chip; the wrapper is a layout box with no treatment of its own",
-    "mdy-colors__dropdown--above": "derived by popupPlacementClass/popupAlignmentClass and emitted by the renderers; no theme reacts to it yet. A placement class only earns a rule where the popup has a top/bottom or left/right asymmetry to answer \u2014 the select and multiselect flip their search box, a calendar has nothing to flip.",
-    "mdy-colors__dropdown--overlay": "derived by popupPlacementClass/popupAlignmentClass and emitted by the renderers; no theme reacts to it yet. A placement class only earns a rule where the popup has a top/bottom or left/right asymmetry to answer \u2014 the select and multiselect flip their search box, a calendar has nothing to flip.",
-    "mdy-colors__dropdown--right": "derived by popupPlacementClass/popupAlignmentClass and emitted by the renderers; no theme reacts to it yet. A placement class only earns a rule where the popup has a top/bottom or left/right asymmetry to answer \u2014 the select and multiselect flip their search box, a calendar has nothing to flip.",
-    "mdy-datepicker__popup--above": "derived by popupPlacementClass/popupAlignmentClass and emitted by the renderers; no theme reacts to it yet. A placement class only earns a rule where the popup has a top/bottom or left/right asymmetry to answer \u2014 the select and multiselect flip their search box, a calendar has nothing to flip.",
+    "mdy-colors__dropdown--above": "derived by popupPlacementClass/popupAlignmentClass and emitted by the renderers; no theme reacts to it yet. A placement class only earns a rule where the popup has a top/bottom or left/right asymmetry to answer — the select and multiselect flip their search box, a calendar has nothing to flip.",
+    "mdy-colors__dropdown--overlay": "derived by popupPlacementClass/popupAlignmentClass and emitted by the renderers; no theme reacts to it yet. A placement class only earns a rule where the popup has a top/bottom or left/right asymmetry to answer — the select and multiselect flip their search box, a calendar has nothing to flip.",
+    "mdy-colors__dropdown--right": "derived by popupPlacementClass/popupAlignmentClass and emitted by the renderers; no theme reacts to it yet. A placement class only earns a rule where the popup has a top/bottom or left/right asymmetry to answer — the select and multiselect flip their search box, a calendar has nothing to flip.",
+    "mdy-datepicker__popup--above": "derived by popupPlacementClass/popupAlignmentClass and emitted by the renderers; no theme reacts to it yet. A placement class only earns a rule where the popup has a top/bottom or left/right asymmetry to answer — the select and multiselect flip their search box, a calendar has nothing to flip.",
     "mdy-datepicker__popup--range": "unreviewed",
-    "mdy-datepicker__popup--right": "derived by popupPlacementClass/popupAlignmentClass and emitted by the renderers; no theme reacts to it yet. A placement class only earns a rule where the popup has a top/bottom or left/right asymmetry to answer \u2014 the select and multiselect flip their search box, a calendar has nothing to flip.",
+    "mdy-datepicker__popup--right": "derived by popupPlacementClass/popupAlignmentClass and emitted by the renderers; no theme reacts to it yet. A placement class only earns a rule where the popup has a top/bottom or left/right asymmetry to answer — the select and multiselect flip their search box, a calendar has nothing to flip.",
+    "mdy-datepicker__year-grid": "unreviewed",
+    "mdy-file-meta": "the size and type line beside a file's name: declared as decoration a renderer may or may not draw, and it inherits the item's text treatment",
     "mdy-glass-effect": "an Angular directive a product opts into; no theme ships the material yet, so the class is declared and the treatment is the host's",
     "mdy-glass-effect--medium": "the intensity variants of the same directive; they select a material no theme defines",
     "mdy-multiselect__dropdown": "the popup also carries mdy-multiselect-overlay__panel, which is the class the themes paint",
-    "mdy-multiselect__dropdown--overlay": "derived by popupPlacementClass/popupAlignmentClass and emitted by the renderers; no theme reacts to it yet. A placement class only earns a rule where the popup has a top/bottom or left/right asymmetry to answer \u2014 the select and multiselect flip their search box, a calendar has nothing to flip.",
-    "mdy-multiselect__dropdown--right": "derived by popupPlacementClass/popupAlignmentClass and emitted by the renderers; no theme reacts to it yet. A placement class only earns a rule where the popup has a top/bottom or left/right asymmetry to answer \u2014 the select and multiselect flip their search box, a calendar has nothing to flip.",
+    "mdy-multiselect__dropdown--overlay": "derived by popupPlacementClass/popupAlignmentClass and emitted by the renderers; no theme reacts to it yet. A placement class only earns a rule where the popup has a top/bottom or left/right asymmetry to answer — the select and multiselect flip their search box, a calendar has nothing to flip.",
+    "mdy-multiselect__dropdown--right": "derived by popupPlacementClass/popupAlignmentClass and emitted by the renderers; no theme reacts to it yet. A placement class only earns a rule where the popup has a top/bottom or left/right asymmetry to answer — the select and multiselect flip their search box, a calendar has nothing to flip.",
     "mdy-multiselect__trigger--disabled": "the trigger is the control inside .mdy-input-wrapper, and the wrapper is what a theme paints for this state; a rule here would be the same treatment applied twice, on two boxes that share an edge",
     "mdy-multiselect__trigger--invalid": "the trigger is the control inside .mdy-input-wrapper, and the wrapper is what a theme paints for this state; a rule here would be the same treatment applied twice, on two boxes that share an edge",
     "mdy-multiselect__trigger--loading": "the trigger is the control inside .mdy-input-wrapper, and the wrapper is what a theme paints for this state; a rule here would be the same treatment applied twice, on two boxes that share an edge",
@@ -28,20 +30,25 @@
     "mdy-renderer--text": "root variant hook: emitted via rootClasses for consumers to style; the foundation paints the shared mdy-renderer",
     "mdy-renderer--timepicker": "root variant hook: emitted via rootClasses for consumers to style; the foundation paints the shared mdy-renderer",
     "mdy-renderer--toggle": "root variant hook: emitted via rootClasses for consumers to style; the foundation paints the shared mdy-renderer",
-    "mdy-select__dropdown--right": "derived by popupPlacementClass/popupAlignmentClass and emitted by the renderers; no theme reacts to it yet. A placement class only earns a rule where the popup has a top/bottom or left/right asymmetry to answer \u2014 the select and multiselect flip their search box, a calendar has nothing to flip.",
+    "mdy-segmented__button--first": "unreviewed",
+    "mdy-segmented__button--last": "unreviewed",
+    "mdy-select__dropdown--right": "derived by popupPlacementClass/popupAlignmentClass and emitted by the renderers; no theme reacts to it yet. A placement class only earns a rule where the popup has a top/bottom or left/right asymmetry to answer — the select and multiselect flip their search box, a calendar has nothing to flip.",
     "mdy-select__empty": "unreviewed",
     "mdy-select__list--open": "unreviewed",
+    "mdy-select__option-label": "unreviewed",
     "mdy-select__trigger--disabled": "declared state on select.trigger; no theme paints any of the five, so the trigger state vocabulary is unadopted",
     "mdy-select__trigger--invalid": "declared state on select.trigger; no theme paints any of the five, so the trigger state vocabulary is unadopted",
     "mdy-select__trigger--loading": "declared state on select.trigger; no theme paints any of the five, so the trigger state vocabulary is unadopted",
     "mdy-select__trigger--open": "declared state on select.trigger; no theme paints any of the five, so the trigger state vocabulary is unadopted",
     "mdy-select__trigger--readonly": "declared state on select.trigger; no theme paints any of the five, so the trigger state vocabulary is unadopted",
-    "mdy-timepicker-segment--focused": "unreviewed \u2014 the themes paint --active on this base and never --focused",
-    "mdy-timepicker-segment--hour": "the shared mdy-timepicker-segment base is what the themes paint \u2014 one rule for both segments, by design",
-    "mdy-timepicker-segment--minute": "the shared mdy-timepicker-segment base is what the themes paint \u2014 one rule for both segments, by design",
+    "mdy-timepicker--dial": "unreviewed",
+    "mdy-timepicker-dial-variant": "unreviewed",
+    "mdy-timepicker-segment--focused": "unreviewed — the themes paint --active on this base and never --focused",
+    "mdy-timepicker-segment--hour": "the shared mdy-timepicker-segment base is what the themes paint — one rule for both segments, by design",
+    "mdy-timepicker-segment--minute": "the shared mdy-timepicker-segment base is what the themes paint — one rule for both segments, by design",
     "mdy-timepicker__dialog": "unreviewed",
-    "mdy-timepicker__popup--above": "derived by popupPlacementClass/popupAlignmentClass and emitted by the renderers; no theme reacts to it yet. A placement class only earns a rule where the popup has a top/bottom or left/right asymmetry to answer \u2014 the select and multiselect flip their search box, a calendar has nothing to flip.",
-    "mdy-timepicker__popup--right": "derived by popupPlacementClass/popupAlignmentClass and emitted by the renderers; no theme reacts to it yet. A placement class only earns a rule where the popup has a top/bottom or left/right asymmetry to answer \u2014 the select and multiselect flip their search box, a calendar has nothing to flip."
+    "mdy-timepicker__popup--above": "derived by popupPlacementClass/popupAlignmentClass and emitted by the renderers; no theme reacts to it yet. A placement class only earns a rule where the popup has a top/bottom or left/right asymmetry to answer — the select and multiselect flip their search box, a calendar has nothing to flip.",
+    "mdy-timepicker__popup--right": "derived by popupPlacementClass/popupAlignmentClass and emitted by the renderers; no theme reacts to it yet. A placement class only earns a rule where the popup has a top/bottom or left/right asymmetry to answer — the select and multiselect flip their search box, a calendar has nothing to flip."
   },
   "mdy-color-swatch--selected": {
     "kind": "unstyled",
@@ -49,28 +56,6 @@
       "plain"
     ],
     "themes": []
-  },
-  "mdy-colors": {
-    "kind": "drift",
-    "adapters": [
-      "angular",
-      "lit",
-      "plain"
-    ],
-    "themes": [
-      "modyra.css"
-    ]
-  },
-  "mdy-colors__dropdown-header": {
-    "kind": "drift",
-    "adapters": [
-      "angular",
-      "lit"
-    ],
-    "themes": [
-      "modyra-material.css",
-      "modyra.css"
-    ]
   },
   "mdy-colors--open": {
     "kind": "drift",
@@ -81,165 +66,6 @@
     ],
     "themes": [
       "modyra-material.css",
-      "modyra.css"
-    ]
-  },
-  "mdy-datepicker": {
-    "kind": "drift",
-    "adapters": [
-      "angular",
-      "lit",
-      "plain"
-    ],
-    "themes": [
-      "modyra-material.css",
-      "modyra.css"
-    ]
-  },
-  "mdy-datepicker__header-label": {
-    "kind": "drift",
-    "adapters": [
-      "angular",
-      "lit",
-      "plain"
-    ],
-    "themes": [
-      "modyra.css"
-    ]
-  },
-  "mdy-datepicker__header-nav": {
-    "kind": "drift",
-    "adapters": [
-      "angular",
-      "lit"
-    ],
-    "themes": [
-      "modyra.css"
-    ]
-  },
-  "mdy-datepicker__icon": {
-    "kind": "drift",
-    "adapters": [
-      "angular",
-      "lit"
-    ],
-    "themes": [
-      "modyra.css"
-    ]
-  },
-  "mdy-datepicker__modal-header": {
-    "kind": "drift",
-    "adapters": [
-      "angular",
-      "lit"
-    ],
-    "themes": [
-      "modyra-material.css"
-    ]
-  },
-  "mdy-datepicker__modal-label": {
-    "kind": "drift",
-    "adapters": [
-      "angular",
-      "lit"
-    ],
-    "themes": [
-      "modyra-material.css"
-    ]
-  },
-  "mdy-datepicker__modal-value": {
-    "kind": "drift",
-    "adapters": [
-      "angular",
-      "lit"
-    ],
-    "themes": [
-      "modyra-material.css"
-    ]
-  },
-  "mdy-datepicker__nav-btn": {
-    "kind": "drift",
-    "adapters": [
-      "angular",
-      "lit",
-      "plain"
-    ],
-    "themes": [
-      "modyra-ios.css",
-      "modyra-material.css",
-      "modyra.css"
-    ]
-  },
-  "mdy-datepicker__title": {
-    "kind": "drift",
-    "adapters": [
-      "angular",
-      "lit"
-    ],
-    "themes": [
-      "modyra-ios.css",
-      "modyra-material.css",
-      "modyra.css"
-    ]
-  },
-  "mdy-datepicker__view-icon": {
-    "kind": "drift",
-    "adapters": [
-      "angular",
-      "lit"
-    ],
-    "themes": [
-      "modyra.css"
-    ]
-  },
-  "mdy-datepicker__view-toggle": {
-    "kind": "drift",
-    "adapters": [
-      "angular",
-      "lit"
-    ],
-    "themes": [
-      "modyra-material.css",
-      "modyra.css"
-    ]
-  },
-  "mdy-datepicker__year-grid": {
-    "kind": "unstyled",
-    "adapters": [
-      "angular",
-      "lit"
-    ],
-    "themes": []
-  },
-  "mdy-daterange__group": {
-    "kind": "drift",
-    "adapters": [
-      "angular",
-      "lit"
-    ],
-    "themes": [
-      "modyra-ios.css",
-      "modyra-material.css",
-      "modyra.css"
-    ]
-  },
-  "mdy-daterange__hint": {
-    "kind": "drift",
-    "adapters": [
-      "angular",
-      "lit"
-    ],
-    "themes": [
-      "modyra.css"
-    ]
-  },
-  "mdy-daterange__input-sizer": {
-    "kind": "drift",
-    "adapters": [
-      "angular",
-      "lit"
-    ],
-    "themes": [
       "modyra.css"
     ]
   },
@@ -343,57 +169,6 @@
       "modyra-modern.css"
     ]
   },
-  "mdy-file-icon": {
-    "kind": "drift",
-    "adapters": [
-      "angular",
-      "lit"
-    ],
-    "themes": [
-      "modyra.css"
-    ]
-  },
-  "mdy-file-info": {
-    "kind": "drift",
-    "adapters": [
-      "angular",
-      "lit",
-      "plain"
-    ],
-    "themes": [
-      "modyra.css"
-    ]
-  },
-  "mdy-file-meta": {
-    "kind": "unstyled",
-    "adapters": [
-      "plain"
-    ],
-    "themes": []
-  },
-  "mdy-file-name": {
-    "kind": "drift",
-    "adapters": [
-      "angular",
-      "lit",
-      "plain"
-    ],
-    "themes": [
-      "modyra-material.css"
-    ]
-  },
-  "mdy-file-placeholder": {
-    "kind": "drift",
-    "adapters": [
-      "angular",
-      "lit",
-      "plain"
-    ],
-    "themes": [
-      "modyra-material.css",
-      "modyra.css"
-    ]
-  },
   "mdy-floating-label": {
     "kind": "drift",
     "adapters": [
@@ -466,34 +241,6 @@
     ],
     "themes": []
   },
-  "mdy-segmented__button--first": {
-    "kind": "unstyled",
-    "adapters": [
-      "angular",
-      "lit"
-    ],
-    "themes": []
-  },
-  "mdy-segmented__button--last": {
-    "kind": "unstyled",
-    "adapters": [
-      "angular",
-      "lit"
-    ],
-    "themes": []
-  },
-  "mdy-select": {
-    "kind": "drift",
-    "adapters": [
-      "angular",
-      "lit",
-      "plain"
-    ],
-    "themes": [
-      "modyra-modern.css",
-      "modyra.css"
-    ]
-  },
   "mdy-select__loading-content": {
     "kind": "drift",
     "adapters": [
@@ -523,92 +270,6 @@
       "lit"
     ],
     "themes": []
-  },
-  "mdy-select__option-label": {
-    "kind": "unstyled",
-    "adapters": [
-      "angular",
-      "lit"
-    ],
-    "themes": []
-  },
-  "mdy-timepicker": {
-    "kind": "drift",
-    "adapters": [
-      "angular",
-      "lit",
-      "plain"
-    ],
-    "themes": [
-      "modyra.css"
-    ]
-  },
-  "mdy-timepicker__icon": {
-    "kind": "drift",
-    "adapters": [
-      "angular",
-      "lit"
-    ],
-    "themes": [
-      "modyra.css"
-    ]
-  },
-  "mdy-timepicker--dial": {
-    "kind": "unstyled",
-    "adapters": [
-      "lit",
-      "plain"
-    ],
-    "themes": []
-  },
-  "mdy-timepicker-dial-variant": {
-    "kind": "unstyled",
-    "adapters": [
-      "lit"
-    ],
-    "themes": []
-  },
-  "mdy-timepicker-fields": {
-    "kind": "drift",
-    "adapters": [
-      "angular",
-      "lit",
-      "plain"
-    ],
-    "themes": [
-      "modyra.css"
-    ]
-  },
-  "mdy-timepicker-segment-label": {
-    "kind": "drift",
-    "adapters": [
-      "angular",
-      "lit"
-    ],
-    "themes": [
-      "modyra.css"
-    ]
-  },
-  "mdy-timepicker-separator": {
-    "kind": "drift",
-    "adapters": [
-      "angular",
-      "lit",
-      "plain"
-    ],
-    "themes": [
-      "modyra.css"
-    ]
-  },
-  "mdy-timepicker-spacer": {
-    "kind": "drift",
-    "adapters": [
-      "lit",
-      "plain"
-    ],
-    "themes": [
-      "modyra.css"
-    ]
   },
   "mdy-wizard": {
     "kind": "unstyled",
@@ -700,6 +361,5 @@
       "angular"
     ],
     "themes": []
-  },
-  "mdy-number-spinner": "the box plain and lit put around a number's input and its two steppers. The contract declares `increment` and `decrement` and nothing that holds them, so the layout has nowhere to live on the contract; a candidate for a part rather than a class that should go away."
+  }
 }

@@ -115,7 +115,11 @@ test("the other six answer the state a widget publishes", () => {
 });
 
 test("the table now names a resolver for each of them", () => {
-  for (const condition of ["valueIsPresent", "valueIsAbsent", "fieldIsRequired", "undoIsOnOffer",
+  // `undoIsOnOffer` was among these and is not a presence condition any more: the control it governed
+  // became always present and merely unavailable, so the word decides a *state* now. Its resolver is
+  // still published and still used — by whatever computes that state — and a vocabulary of presence
+  // conditions is not where it belongs. ADR 0171.
+  for (const condition of ["valueIsPresent", "valueIsAbsent", "fieldIsRequired",
     "viewIsActive", "inputWasRefused", "workIsInFlight"]) {
     assert.notEqual(MDY_PRESENCE_RESOLUTION[condition].resolver, null,
       `${condition} is answered by a published function and the table still calls it owed`);

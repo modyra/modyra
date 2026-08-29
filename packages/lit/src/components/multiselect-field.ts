@@ -662,13 +662,18 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
           ${this.renderWayBack(handle)}
           <!-- Every choice off at once, beside the trigger rather than inside it: the trigger is a
                button, and a button inside a button is neither valid nor reachable. -->
+          <!-- Drawn whether or not there is anything to discard, and dimmed when there is not: a
+               control that comes and goes with what the field holds moves the one beside it under
+               the hands of whoever is aiming at it. ADR 0171. -->
           ${html`<button
                 type="button"
-                class="${this.partClass("clearAll")}"
-                ?hidden=${this.held(handle).length === 0 || handle.disabled() || handle.readonly()}
-                ?disabled=${handle.disabled() || handle.readonly()}
+                class="${this.partClass("clearAll")} ${this.partStateClass("clearAll", "disabled", this.held(handle).length === 0 || handle.disabled() || handle.readonly())}"
+                aria-disabled=${String(this.held(handle).length === 0 || handle.disabled() || handle.readonly())}
                 aria-label=${this.messages.clearSelection}
-                @click=${() => this.fieldController?.dispatch({ type: "clear" })}
+                @click=${() => {
+                  if (this.held(handle).length === 0 || handle.disabled() || handle.readonly()) return;
+                  this.fieldController?.dispatch({ type: "clear" });
+                }}
               >${mdyIcon("CLOSE", "")}</button>`}
           <!-- The mark that says the field opens, painted by the box at its own trailing edge. It is
                decoration and not a control: the whole field is what opens the list, so a caret with
@@ -894,7 +899,7 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
    */
   private renderWayBack(handle: MdyFieldHandle<readonly unknown[]>) {
     const offer = this.fieldController?.state().wayBack ?? null;
-    const named = offer === null ? "" : wayBackActionName(
+    const named = wayBackActionName(
       offer,
       {
         label: this.messages.wayBackLabel,
@@ -904,17 +909,21 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
       },
       (key) => this.labelFor(key),
     );
-    // The slot keeps its width at rest, so the clear-all beside it stands where it stood whether or
-    // not a way back is on offer. A control that moves as the offer arrives is one a person presses
-    // meaning the other.
+    // Always in the row, dimmed where there is nothing to put back, so the clear-all beside it stands
+    // where it stood whether or not a way back is on offer. A control that moves as the offer arrives
+    // is one a person presses meaning the other.
+    //
+    // `aria-disabled` rather than the property: the native one takes the button out of the tab order
+    // and takes focus with it when the state changes under somebody who has just pressed it.
+    // Announced as unavailable, still reachable, refused in the handler. ADR 0171.
+    const noWayBack = offer === null || handle.disabled() || handle.readonly();
     return html`<button
       type="button"
-      class="${this.partClass("wayBackAction")}"
-      ?hidden=${offer === null}
-      ?disabled=${handle.disabled() || handle.readonly()}
+      class="${this.partClass("wayBackAction")} ${this.partStateClass("wayBackAction", "disabled", noWayBack)}"
+      aria-disabled=${String(noWayBack)}
       aria-label=${named}
       title=${named}
-      @click=${() => this.undoAndLand()}
+      @click=${() => { if (!noWayBack) this.undoAndLand(); }}
     >${mdyIcon("UNDO", "")}</button>`;
   }
 

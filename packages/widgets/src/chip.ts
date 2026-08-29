@@ -189,12 +189,17 @@ export function wayBackSentence(
  * A second set of wordings for one fact drifts the moment either is translated again, and the act is
  * the half that varies — one reversal covers a removal, a move and a clear, and "restore" is wrong
  * for the middle one.
+ *
+ * With nothing to put back the name is the bare label. The control is on the page at rest, so it is
+ * in the accessibility tree at rest, and a button with no name there is announced as "button" —
+ * which is what a name is for. The act is the part that is missing, not the control.
  */
 export function wayBackActionName(
-  way: { readonly act: "remove" | "move" | "clear"; readonly optionKey: string | null; readonly count: number },
+  way: { readonly act: "remove" | "move" | "clear"; readonly optionKey: string | null; readonly count: number } | null,
   templates: { readonly label: string; readonly removed: string; readonly moved: string; readonly cleared: string },
   labelOf: (key: string) => string,
 ): string {
+  if (way === null) return templates.label;
   return `${templates.label}: ${wayBackSentence(way, templates, labelOf)}`;
 }
 

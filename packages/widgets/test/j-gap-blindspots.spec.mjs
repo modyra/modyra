@@ -226,12 +226,16 @@ function multiselectWithChip(chip, variant) {
   });
   const chips = el("div", "mdy-multiselect__chips", { role: "grid" });
   const arrow = el("span", "mdy-multiselect__arrow", { "aria-hidden": "true" });
-  trigger.append(arrow);
   const announcement = el("div", "mdy-multiselect__announcement", { role: "status", "aria-live": "polite" });
   // The strip beside the opener and before it, which is where the contract puts it (ADR 0142): a
   // chip carries a button that takes a value off, and the opener is a button. This fixture built the
   // arrangement the decision replaced, so it was asserting the old anatomy conformed.
-  box.append(chips, trigger, announcement);
+  // The trailing controls and the arrow after them, as the contract's order says. Both buttons are
+  // drawn whether or not they can act — a control that is part of the field's design does not come
+  // and go with what is in it. ADR 0171.
+  const wayBackAction = el("button", "mdy-multiselect__way-back-action", { "aria-disabled": "true" });
+  const clearAll = el("button", "mdy-multiselect__clear-all", { "aria-disabled": "true" });
+  box.append(chips, trigger, wayBackAction, clearAll, arrow, announcement);
   wrapper.append(box);
 
   // Open, because the subject is the option chip and options live in the popup. The grid is both
@@ -249,7 +253,7 @@ function multiselectWithChip(chip, variant) {
 
   root.append(label, wrapper, popup, ...tail);
   const named = {
-    ...parts, inputWrapper: wrapper, box, trigger, chips, arrow, announcement, popup, options, optionWrapper,
+    ...parts, inputWrapper: wrapper, box, trigger, chips, arrow, announcement, wayBackAction, clearAll, popup, options, optionWrapper,
     option: built.option, optionLabel: built.optionLabel,
     ...(built.optionCheck ? { optionCheck: built.optionCheck } : {}),
     ...(built.optionStep ? { optionStep: built.optionStep } : {}),

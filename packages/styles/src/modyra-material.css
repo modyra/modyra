@@ -591,14 +591,25 @@
         font-weight: var(--mdy-font-weight-medium);
     }
 
-    .mdy-file-clear {
+    .mdy-file-clear,
+    .mdy-file-remove {
         color: var(--mdy-error);
         opacity: 0.7;
         transition: opacity var(--mdy-sys-motion-duration-slow, 0.2s);
     }
 
-    .mdy-file-clear:hover {
+    .mdy-file-clear:hover,
+    .mdy-file-remove:hover {
         opacity: 1;
+    }
+
+    /* Unavailable is paint here too — the control keeps its place in the row and in the tab order,
+       and says with its own appearance that a press will not land. ADR 0171. */
+    .mdy-file-clear--disabled,
+    .mdy-multiselect__clear-all--disabled,
+    .mdy-multiselect__way-back-action--disabled {
+        opacity: 0.38;
+        cursor: not-allowed;
     }
 
     /* ─── Chips ───────────────────────────────────────────────────────────────── */

@@ -289,19 +289,25 @@ function buildCompactMultiselect({ chipClasses = "mdy-chip mdy-chip--value" } = 
   chip.append(chipRemove);
   chips.append(chip);
   const arrow = el("span", "mdy-multiselect__arrow", { "aria-hidden": "true" });
-  trigger.append(arrow);
   // Said rather than shown: the strip is the sighted confirmation that a choice landed, and this is
   // the same confirmation for somebody who cannot see it.
   const announcement = el("div", "mdy-multiselect__announcement", { role: "status", "aria-live": "polite" });
   // The strip beside the opener and before it (ADR 0142). Built the other way, this fixture asserted
   // that the arrangement the decision replaced conformed.
-  box.append(chips, trigger, announcement);
+  // The two trailing controls, drawn whether or not they can act: a control that is part of the
+  // field's design does not come and go with what is in it. This fixture built neither, and the day
+  // they stopped being optional it said so. ADR 0171.
+  const wayBackAction = el("button", "mdy-multiselect__way-back-action", { "aria-disabled": "true" });
+  const clearAll = el("button", "mdy-multiselect__clear-all", { "aria-disabled": "true" });
+  // The arrow after the two, as the contract's order says: it is the box's child, and the fixture
+  // had it nested in the trigger — invisible while the two beside it were optional.
+  box.append(chips, trigger, wayBackAction, clearAll, arrow, announcement);
   wrapper.append(box);
   root.append(wrapper);
   document.body.append(root);
   return {
     root,
-    parts: { inputWrapper: wrapper, box, trigger, chips, chip, chipRemove, arrow, announcement },
+    parts: { inputWrapper: wrapper, box, trigger, chips, chip, chipRemove, arrow, announcement, wayBackAction, clearAll },
   };
 }
 

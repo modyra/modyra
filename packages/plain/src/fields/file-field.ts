@@ -11,6 +11,7 @@ import type { MdyDynamicFileField } from "@modyra/core";
 import {
   createFileFieldController,
   MDY_WIDGET_CONTRACTS,
+  stateClass,
   projectFieldShellA11y,
   shownErrorsOf,
   fieldCanBeInvalid,
@@ -72,7 +73,8 @@ export function renderFileField(
   setText(placeholder, messages.fileNoneSelected);
   const rejected = el("div") as HTMLDivElement;
   applyPart(rejected, definition.parts.rejected);
-  const clear = el("button", "mdy-file-clear") as HTMLButtonElement;
+  const clear = el("button") as HTMLButtonElement;
+  applyPart(clear, definition.parts.clear);
   clear.type = "button";
   setText(clear, messages.fileClearSelection);
   const info = el("div", "mdy-file-info") as HTMLDivElement;
@@ -102,6 +104,10 @@ export function renderFileField(
     controller.dispatch({ type: "select", files: Array.from(control.files ?? []) }));
   control.addEventListener("blur", () => controller.dispatch({ type: "blur" }));
   clear.addEventListener("click", () => {
+    // A second lock: the controller refuses a clear on a field out of play, so this is not what
+    // holds — it is here because the attribute makes a promise, and a promise kept two layers down
+    // stops being kept the day that layer changes its mind. ADR 0171.
+    if (clear.getAttribute("aria-disabled") === "true") return;
     controller.dispatch({ type: "clear" });
     // The element's own text, which no model owns: a file input keeps the last pick's name until it
     // is told otherwise, and a cleared field showing one is a field claiming a value it does not have.
@@ -160,8 +166,17 @@ export function renderFileField(
     const cannotPick = handle.disabled() || handle.readonly();
     control.disabled = cannotPick;
     browse.disabled = cannotPick;
-    clear.disabled = cannotPick || files.length === 0;
-    clear.hidden = files.length === 0;
+    /**
+     * Always there, and dimmed where it cannot act.
+     *
+     * Hidden while there was nothing to clear, it came and went with the value — so the number of tab
+     * stops changed as somebody filled the field in, and whoever had never used it learned it could
+     * be emptied only afterwards. `aria-disabled` rather than the property: the native one takes the
+     * button out of the tab order and takes focus with it at the moment the state changes, which is
+     * the moment somebody has just pressed it. ADR 0171.
+     */
+    clear.setAttribute("aria-disabled", String(cannotPick || files.length === 0));
+    clear.classList.toggle(stateClass(definition.parts.clear.classes[0]!, "disabled"), cannotPick || files.length === 0);
     placeholder.hidden = files.length > 0;
     setText(rejected, refused.length === 0 ? "" : messages.fileRejected(refused.map((file) => file.name)));
     rejected.hidden = refused.length === 0;
