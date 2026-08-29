@@ -166,7 +166,15 @@ test("a key a renderer claims and nobody declared", async ({ page }) => {
             .map((box) => `${box.value}/${box.checked}`).join("|");
           const marker = root.querySelector("[aria-activedescendant]")?.getAttribute("aria-activedescendant") ?? "";
           const open = root.querySelector("[aria-expanded]")?.getAttribute("aria-expanded") ?? "";
-          return `${values}~${marker}~${open}~${document.activeElement?.className ?? ""}`;
+          // The reading position by identity, not by class: two options in one group wear the same
+          // class, so a focus that moved between them would read as a focus that did not move —
+          // and a key that moves the reading position is answering, not refusing.
+          const here = document.activeElement;
+          const at = here === null ? -1 : [...document.querySelectorAll("*")].indexOf(here);
+          const marks = [...root.querySelectorAll("[tabindex], [aria-selected], [aria-checked], [aria-current]")]
+            .map((one) => `${one.getAttribute("tabindex") ?? ""}${one.getAttribute("aria-selected") ?? ""}`
+              + `${one.getAttribute("aria-checked") ?? ""}${one.getAttribute("aria-current") ?? ""}`).join(",");
+          return `${values}~${marker}~${open}~${here?.id ?? ""}~${at}~${marks}`;
         }, { id: mountId });
         const shapeBefore = await shapeOf();
 

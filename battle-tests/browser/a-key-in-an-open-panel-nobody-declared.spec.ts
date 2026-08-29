@@ -230,8 +230,12 @@ test(`a key in an open panel nobody declared, ${only.name}`, async ({ page }) =>
             .map((box) => `${box.value}/${box.checked}`).join("|");
           const marker = root.querySelector("[aria-activedescendant]")?.getAttribute("aria-activedescendant") ?? "";
           const open = root.querySelector("[aria-expanded]")?.getAttribute("aria-expanded") ?? "";
-          const here = document.activeElement?.className ?? "";
-          return `${values}~${marker}~${open}~${here}~${(root.textContent ?? "").length}`;
+          // The reading position by identity, not by class: two options in one group wear the same
+          // class, so a focus that moved between them would read as a focus that did not move — and
+          // a key that moves the reading position is answering, not refusing.
+          const here = document.activeElement;
+          const at = here === null ? -1 : [...document.querySelectorAll("*")].indexOf(here);
+          return `${values}~${marker}~${open}~${here?.id ?? ""}~${at}~${(root.textContent ?? "").length}`;
         }, { id: mountId });
         const before = await shapeOf();
 
