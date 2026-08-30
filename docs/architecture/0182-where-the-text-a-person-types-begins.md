@@ -54,6 +54,36 @@ following the rules.
 The asymmetry the inliner exists for is unchanged: the leading inset is the text's, the trailing one
 stays `--mdy-affordance-inset`, and both stay logical so the pair survives `dir=rtl`.
 
+## Amendment: a precondition, and two ways a correct rule loses
+
+The decision above assumes every kind's inliner carries the field's inset. **The colour field's does
+not**, and that is a precondition rather than a detail: zeroing its control's padding puts the
+writing on the container's edge — measured at 0 in all three renderers — because there is nothing
+behind the control holding the space. Excluding the colour field's control by name does not restore
+it either, so the padding is being removed further down as well.
+
+**So the rule is: the inset is declared in one place, and every kind whose control sits inside an
+inliner has an inliner that carries it.** A kind where that is not true is not ready for this
+decision, and applying it there produces a field with no inside. The colour field is that kind today.
+
+Two mechanisms make a correct rule look applied while losing, and both were met applying this one:
+
+- **Layer.** A zeroing rule written beside the inliner sits in the base layer; the control's padding
+  is a component rule, and a later layer wins whatever the specificity says. The rule is correct,
+  loses, and reads as applied.
+- **Specificity inside the winning layer.** The control's padding is reached through a selector
+  carrying two classes. A one-class selector loses to it — which is why a first attempt moved
+  `textarea` and `select`, whose rules name them at one class or not at all, and left every text box
+  where it was. Naming the wrapper twice ties it, and source order decides.
+
+Both are why "the rule did not take" is a report about the cascade rather than about the rule, and
+why the check this record asks for prints its table on every run: a number that did not move is the
+only way to tell a rule that lost from a rule that was wrong.
+
+A second divergence the same table shows is not addressed here: a date range begins its writing at 8
+in two renderers against 16 in the third, which is its own question about a compound field's inner
+box rather than about a declaration applied twice.
+
 ## Consequences
 
 - Every renderer moves somewhere. Nine kinds in one of them come back 12px; a colour field that
