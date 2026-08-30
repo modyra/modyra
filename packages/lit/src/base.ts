@@ -14,6 +14,7 @@ import {
   popupPlacementClass,
   projectFieldShellA11y,
   fieldAccessibleName,
+  MDY_WIDGET_RELATIONS,
   fieldNameAttributes,
   errorsVisible,
   focusIsInsideField,
@@ -779,6 +780,19 @@ export abstract class MdyFieldElement<T> extends LitElement {
       this._pendingName = named;
       this.removeAttribute("aria-label");
     }
+    /**
+     * A kind whose name belongs to its container has no single control to name.
+     *
+     * Asked of the contract rather than listed: where a kind declares that its *group* is named by
+     * the caption, the words are the group's and each choice is announced by its own text. Named
+     * here as well, the search below finds the first input in the set and puts the field's caption on
+     * it — so a group of three was announced "Plan", "Pro", "Enterprise", and the person who most
+     * needed to hear the first option's name heard the question instead. ADR 0175.
+     */
+    const namesItsGroup = (MDY_WIDGET_RELATIONS[this.widgetKind] ?? [])
+      .some((relation) => relation.from === "group" && relation.attribute === "aria-labelledby");
+    if (namesItsGroup) return;
+
     // The element a person operates, asked of the contract before being guessed at by role. A kind
     // whose control is a plain button — a swatch that opens a palette — matched none of the roles
     // below, so this never named it and the component wrote its own English fallback beside the
