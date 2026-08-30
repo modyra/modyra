@@ -34,13 +34,18 @@
  * control scale's default step.** Membership stops being a judgement about a kind and becomes a
  * consequence of where its height is stated, which is checkable and which nobody has to remember.
  *
- * That is why this file is pinned rather than repaired. The three renderers disagree today because
- * each states its own heights; they stop disagreeing when the heights come from one place, and this
- * becomes green as a consequence of the scale migration rather than of anyone editing a list.
- * `an-alphabet-larger-than-its-vocabulary` reporting three distinct control heights is the signal
- * that the question has resolved itself — before that, deciding here would be deciding twice.
+ * **Pinned, and not on the scale migration.** That finished — its gate, `a-value-that-is-not-a-step`,
+ * is closed — and these rows did not move. A scale reconciles numbers; it cannot reconcile two
+ * element trees, and that is what these are: measured on the current head, plain interposes an
+ * inliner inside the input wrapper where lit and Angular put the control straight into it, so the
+ * control's own rows drive the height where nothing stands between.
  *
- * What it refuses in the meantime is unchanged: three renderers choosing differently.
+ *     textarea   plain  84   lit 108   angular 108
+ *     checkbox   plain  44   lit  20   angular  20
+ *
+ * What closes them is a decision about whose anatomy is right, and nobody has asked it. So they are
+ * **open and unscheduled**, not waiting on anything — which is a different thing to inherit. A pin
+ * naming a cause that has already happened reads as scheduled work and is not.
  *
  * Claims under attack: ADP-001, UI-011.
  */
