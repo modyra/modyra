@@ -360,11 +360,28 @@ test("a slider's track fills up to its handle, in every theme", async ({ page })
       input.dispatchEvent(new Event("input", { bubbles: true }));
       // The renderer writes the ratio in an effect; read once it has flushed and been styled, or
       // the measurement pairs this value with the previous ratio and passes for the wrong reason.
-      await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+      //
+      // **Waited for as a condition with a deadline, never as a frame.** A pair of animation frames
+      // is the obvious way to say "after the next paint", and it never resolves in a browser that
+      // has stopped painting — a headless run whose compositor stalls leaves the promise pending
+      // for as long as the harness will wait, and what arrives is a timeout inside an evaluate plus
+      // a screenshot that cannot be captured. The condition is what was actually wanted: the ratio
+      // the renderer is about to write. A timer fires whether or not a frame does.
+      const wanted = (Number(input.value) - min) / (max - min);
+      const readRatio = () => Number(getComputedStyle(el).getPropertyValue("--mdy-slider-fill").trim());
+      const deadline = 2_000;
+      let waited = 0;
+      while (Math.abs(readRatio() - wanted) > 0.001 && waited < deadline) {
+        await new Promise((r) => setTimeout(r, 16));
+        waited += 16;
+      }
 
       const style = getComputedStyle(el);
       const width = el.clientWidth;
-      const ratio = Number(style.getPropertyValue("--mdy-slider-fill").trim());
+      const ratio = readRatio();
+      // Reported rather than swallowed: a ratio that never arrived would otherwise be measured
+      // against the previous value and pass for the wrong reason.
+      const settled = Math.abs(ratio - wanted) <= 0.001;
 
       // The stop is a percentage of the control's own box, so it has to be resolved inside a box of
       // exactly that width — the host is given the width outright rather than assumed to share it.
@@ -386,7 +403,7 @@ test("a slider's track fills up to its handle, in every theme", async ({ page })
       const thumb = resolve(style.getPropertyValue("--mdy-slider-thumb-size"));
       host.remove();
 
-      return { ratio, thumb, width, stopPx, centrePx: thumb / 2 + ratio * (width - thumb) };
+      return { ratio, thumb, width, stopPx, settled, wanted, centrePx: thumb / 2 + ratio * (width - thumb) };
     }, value);
 
   for (const theme of ["modyra", "modyra-modern", "modyra-material", "modyra-ios"]) {
@@ -428,6 +445,13 @@ test("a slider's track fills up to its handle, in every theme", async ({ page })
     const seen: number[] = [];
     for (const position of ["min", "mid", "max"] as const) {
       const g = await geometry(slider, position);
+      // The premise before the measurement: a ratio that never arrived would be compared against
+      // the previous position's, and every number below would look plausible.
+      expect(
+        g.settled,
+        `${theme}/${position}: the renderer never wrote ${g.wanted} — it still reads ${g.ratio}, so `
+        + "what follows would measure the position before this one",
+      ).toBe(true);
       expect(g.thumb, `${theme}: the handle size must come from its token`).toBeGreaterThan(0);
       // The whole bug: correct at the midpoint and half a handle out at each end. Asserting the
       // middle alone would have passed throughout.
