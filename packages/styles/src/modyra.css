@@ -4672,10 +4672,17 @@
     /* The label itself. Position and motion here; face and colour are the theme's. */
     .mdy-renderer.mdy-floating-label .mdy-label {
         position: absolute;
-        left: var(--mdy-label-left-offset, var(--mdy-fl-label-left));
+        /* The inline start, not the left: a floating label sits where the text it stands in for
+           begins, and under `dir="rtl"` that is the right-hand edge. Written physically it stayed on
+           the left while the field it labels ran the other way — measured 10px from the left in both
+           directions, on a control whose own text starts 10px from the right. */
+        inset-inline-start: var(--mdy-label-left-offset, var(--mdy-fl-label-left));
         top: 0;
         z-index: 10;
         pointer-events: auto;
+        /* It shrinks toward the corner it is anchored to, so the origin follows the same edge.
+           `transform-origin` has no logical keyword with usable support, so the one case that needs
+           it is stated below rather than derived. */
         transform-origin: left top;
         margin-bottom: 0;
         /* At rest the label stands in for the placeholder, so it has to be the size of the text it
@@ -4685,6 +4692,10 @@
         transition: transform var(--mdy-sys-motion-duration-base, 0.15s) var(--mdy-sys-motion-easing-standard, cubic-bezier(0.4, 0, 0.2, 1)),
             font-size var(--mdy-sys-motion-duration-base, 0.15s) var(--mdy-sys-motion-easing-standard, cubic-bezier(0.4, 0, 0.2, 1)),
             color var(--mdy-sys-motion-duration-base, 0.15s) var(--mdy-sys-motion-easing-standard, cubic-bezier(0.4, 0, 0.2, 1));
+    }
+
+    [dir="rtl"] .mdy-renderer.mdy-floating-label .mdy-label {
+        transform-origin: right top;
     }
 
     /* While the label rests over the control, the control's placeholder would be a second line of
