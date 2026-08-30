@@ -88,9 +88,33 @@ All three are why "the rule did not take" is a report about the cascade or about
 than about the rule, and why the check this record asks for prints its table on every run: **a number
 that has not moved is the only way to tell a rule that lost from a rule that is wrong.**
 
-A second divergence the same table shows is not addressed here: a date range begins its writing at 8
-in two renderers against 16 in the third, which is its own question about a compound field's inner
-box rather than about a declaration applied twice.
+### The compound field is the same question, not a separate one
+
+A date range begins its writing at 8 in two renderers against 16 in the third, and that was first
+written here as a question of its own. With the containing chain measured it is not: it is this
+decision's own question, answered in a third place.
+
+```
+plain      wrapper > inliner (16) > datepicker > input (0)          16
+lit, ang   ... no inliner ... > input-sizer > input (8)               8
+```
+
+A compound field draws a group of its own and puts the control inside it, and the two adapters that
+do this give the control eight pixels of its own rather than letting a declaration above it carry
+the inset. **That is the same shape as a control padded inside an inliner: the inset stated in the
+element nearest the text, where nothing else can see it.**
+
+So the rule reaches it unchanged: **the first control of a compound field begins where a simple
+field's does.** A person reads a form down its left edge, and a range whose start date sits eight
+pixels outside that edge breaks the column for a reason no reader can infer — the field is compound,
+which is a fact about its construction and not about its text.
+
+What this costs is that a compound field's group must carry the inset the inliner carries elsewhere,
+so there are two places a renderer can put it right and one shared number to keep them agreeing.
+
+A compound field also puts more than one control on the row. Only the first is measured: the second
+begins after a separator whose width is a spacing question, and asking them both would compare a
+distance to an edge with a distance to a dash.
 
 ## Consequences
 
