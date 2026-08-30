@@ -27,11 +27,14 @@ import { MdyErrorListComponent } from "../../control/error-list.component";
         [attr.aria-label]="controlAriaLabel()"
         [mdyPart]="controlPart()"
       />
+      <!-- attr.title, not title: the property is a DOMString, so an absent value assigned to it
+           becomes the word "null" and every checkbox without an error shows a tooltip saying so.
+           The attribute binding removes the attribute instead. -->
       <label
         class="mdy-label"
         [class.mdy-label--has-error]="paintsAsInvalid()"
         [for]="fieldId"
-        [title]="inlineErrorShown() ? inlineErrorText() : null"
+        [attr.title]="inlineErrorShown() ? inlineErrorText() : null"
       >
         <span [class]="widgetContract.parts.indicator.classes.join(' ')" aria-hidden="true"></span>
         {{ label() }}
