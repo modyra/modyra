@@ -152,4 +152,57 @@ test("one document is one date on the screen, whoever drew it", async ({ page })
     + "A numeric triple is two dates and which one it is depends on who is reading; the value's own "
     + "notation is unambiguous and not a thing anybody says out loud. Only a named month is both.",
   ).toEqual([]);
+
+  // The record decides three things and the spelling above is one of them. A row that closed on the
+  // spelling alone would report the decision as applied while two thirds of it had not been built —
+  // and the two below are the halves that catch a mistake rather than describe one.
+  const typed: string[] = [];
+  for (const host of HOSTS) {
+    await page.goto(host.page);
+    await page.waitForFunction((flag) => (window as never as Record<string, boolean>)[flag] === true, host.ready);
+    await page.evaluate(({ api }) => {
+      (window as never as Api)[api].mountFields("typing", [
+        { name: "d", kind: "datepicker", label: "Data" }] as never);
+    }, { api: host.api });
+    await page.locator('[data-form="typing"]').waitFor({ timeout: 5_000 });
+
+    // Spellings of one day that mean the same thing wherever the reader is, so what is under test is
+    // whether the field accepts widely and not whether it guessed a locale's order. A numeric order
+    // would ask a different question — which day did it think this was — and that one belongs where
+    // the locale is known.
+    for (const spelling of ["2026-03-04", "2026.03.04", "2026/03/04"]) {
+      const box = page.locator('[data-form="typing"] input[type="text"]').first();
+      await box.fill("");
+      await box.fill(spelling);
+      await box.press("Enter");
+      await page.waitForTimeout(220);
+
+      const after = await page.evaluate(() => {
+        const root = document.querySelector('[data-form="typing"]');
+        const visible = root?.querySelector('input[type="text"]') as HTMLInputElement | null;
+        const held = root?.querySelector('input[type="hidden"]') as HTMLInputElement | null;
+        return { visible: visible?.value ?? "", held: held?.value ?? "" };
+      });
+
+      if (after.held.slice(0, 10) !== "2026-03-04") {
+        typed.push(`${host.name} was given "${spelling}" and holds "${after.held}"`);
+        continue;
+      }
+      // The echo: what was understood is put back in front of the person who typed. A field that
+      // leaves their keystrokes where they are has told them nothing, and the mistake this catches —
+      // a transposed day and month — is invisible until the field says which one it took.
+      if (after.visible === spelling || isAmbiguous(after.visible) || isTheValue(after.visible)) {
+        typed.push(`${host.name} understood "${spelling}" and shows "${after.visible}" back`);
+      }
+    }
+  }
+
+  expect(
+    typed,
+    `${typed.length} case(s) where a field did not accept a spelling the record admits, or accepted `
+    + `it and did not say so:\n${typed.join("\n")}\n\n`
+    + "A person should not have to guess the format, and the format hint under a field is read once "
+    + "and forgotten. What catches a transposed day is the field showing back which day it took, at "
+    + "the moment it was typed.",
+  ).toEqual([]);
 });
