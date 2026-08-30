@@ -195,6 +195,7 @@ absent section reads as an oversight, and "no security impact" is a finding.
 - [ADR 0178: A date a person can read aloud](0178-a-date-a-person-can-read-aloud.md) — the display names its month in the reader's language, the value stays ISO, input accepts widely and echoes back what it understood
 - [ADR 0179: Where the keyboard stands when a list opens](0179-where-the-keyboard-stands-when-a-list-opens.md) — focus goes where the next input will arrive, and how the panel was opened says what kind that is; the cursor is primed on the first value already chosen
 - [ADR 0180: A container held open under a field that can fail](0180-a-container-held-open-under-a-field-that-can-fail.md) — the message's container is present from the first paint, so the page does not move under a person and one reference stands; a named empty container is not a dangling one
+- [ADR 0181: A field that holds a paragraph is three lines tall, and says so in lines](0181-a-field-that-holds-a-paragraph-is-three-lines-tall.md) — two lines read as a one-line field that came out wrong; and a length stops meaning "three lines" the moment a person enlarges their text, so the size is stated in lines
 - [ADR 0092: A condition travels with the form](0092-a-condition-travels-with-the-form.md) — `when` and `asyncWhen` were closures, so a schema carrying one was not data and the document half could not say what the typed half said
 
 ## Security-relevant records
