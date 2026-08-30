@@ -5,15 +5,7 @@
     "published": 907,
     "asserted": 907,
     "showable": 401,
-    "shown": 400
+    "shown": 401
   },
-  "uncovered": [
-    {
-      "name": "fieldNameAttributes",
-      "asserted": true,
-      "shown": false,
-      "showable": true,
-      "reason": "published and never shown"
-    }
-  ]
+  "uncovered": []
 }

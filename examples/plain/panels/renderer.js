@@ -82,6 +82,8 @@ import {
   timepickerDialGhost,
   timepickerDialKeyIntent,
   chipDropIndex,
+  fieldNameAttributes,
+  nameIsAFallback,
   createDaterangeFieldController,
   createValueWidgetController,
   projectDaterangeFieldA11y,
@@ -282,6 +284,7 @@ export const rendererPanel = {
     "field",
     "fieldCommandHandlers",
     "fieldDescribedBy",
+    "fieldNameAttributes",
     "fieldShellRootClasses",
     "fileSelectionTransition",
     "flattenDynamicForm",
@@ -312,6 +315,7 @@ export const rendererPanel = {
     "mergeFacts",
     "min",
     "minutesOfDay",
+    "nameIsAFallback",
     "observerFor",
     "oneOf",
     "openOverlay",
@@ -638,6 +642,16 @@ export const rendererPanel = {
       valueWithoutARenderer: valueSeen,
       // One caption for the pair, one name for each end.
       aPairOfDates: rangeSays,
+      // Which attribute carries a field's name, answered rather than chosen. Two names on one
+      // element is not two names — the computation takes the reference and stops — so the door
+      // returns the attributes to apply and a renderer cannot write the pair by accident.
+      whatNamesTheField: {
+        aCaptionIsWritten: fieldNameAttributes({ label: "Piano", labelId: "campo__label" }),
+        noCaption: fieldNameAttributes({ labelId: "campo__label", name: "piano" }),
+        wordsByHand: fieldNameAttributes({ ariaLabel: "Piano annuale", labelId: "campo__label" }),
+        // And whether the words a person hears are the field's own name rather than words for them.
+        theNameIsAFallback: [nameIsAFallback({ label: null }), nameIsAFallback({ label: "Piano" })],
+      },
       // Where the row sits after a wheel: an act, not an answer, so it is read off the strip.
       stripScrolledTo: strip.scrollLeft,
       references: {
