@@ -1,5 +1,5 @@
 ---
-"@modyra/angular": major
+"@modyra/angular": minor
 ---
 
 The Angular select reads its field, and a gate that had been measuring a three-week-old build says so

@@ -1,5 +1,5 @@
 ---
-"@modyra/plain": major
+"@modyra/plain": minor
 ---
 
 Removed five classes this renderer wrote that the widget contract does not declare

@@ -1,5 +1,5 @@
 ---
-"@modyra/widgets": major
+"@modyra/widgets": minor
 ---
 
 The class-rule exemption reports itself, and a field can say whether it can fail

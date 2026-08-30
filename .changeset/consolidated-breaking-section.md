@@ -1,16 +1,25 @@
 ---
-"@modyra/widgets": major
-"@modyra/core": major
-"@modyra/plain": major
-"@modyra/angular": major
-"@modyra/lit": major
+"@modyra/widgets": minor
+"@modyra/core": minor
+"@modyra/plain": minor
+"@modyra/angular": minor
+"@modyra/lit": minor
 ---
 
 The breaking section, consolidated
 
 `contract:diff --since v2.4.0` classifies this release **major**: 35 major entries against
-275 minor. The individual changesets carry the bumps; this one carries the migration, so the
-release page has one place to read instead of 303.
+275 minor. **It ships as a minor anyway, deliberately**, and this section is where that debt is
+paid: the number does not warn you, so the text has to.
+
+For `@modyra/plain`, `@modyra/lit` and `@modyra/angular` there is no debt — they are below 1.0,
+where semver already permits breaking changes in a minor. It is `@modyra/core` and
+`@modyra/widgets`, moving 2.4.0 → 2.5.0, that carry breaking changes under a number which by
+convention promises none. Read this section before upgrading those two; a version range that
+admits 2.5.0 will take it without asking.
+
+The individual changesets carry the bumps; this one carries the migration, so the release page has
+one place to read instead of 303.
 
 ## Removed from the public surface
 

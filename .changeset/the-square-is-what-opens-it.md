@@ -1,8 +1,8 @@
 ---
-"@modyra/widgets": major
-"@modyra/plain": major
-"@modyra/lit": major
-"@modyra/angular": major
+"@modyra/widgets": minor
+"@modyra/plain": minor
+"@modyra/lit": minor
+"@modyra/angular": minor
 ---
 
 The filled square is what opens a colours panel, and the caret beside it is a drawing

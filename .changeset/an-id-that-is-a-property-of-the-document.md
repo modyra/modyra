@@ -1,6 +1,6 @@
 ---
-"@modyra/lit": major
-"@modyra/angular": major
+"@modyra/lit": minor
+"@modyra/angular": minor
 ---
 
 An id that is a property of the document, not of what mounted first

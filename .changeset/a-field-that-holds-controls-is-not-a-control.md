@@ -1,5 +1,5 @@
 ---
-"@modyra/widgets": major
+"@modyra/widgets": minor
 "@modyra/styles": patch
 "@modyra/plain": patch
 "@modyra/lit": patch

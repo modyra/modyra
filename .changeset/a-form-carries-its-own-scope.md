@@ -1,8 +1,8 @@
 ---
-"@modyra/widgets": major
-"@modyra/plain": major
-"@modyra/lit": major
-"@modyra/angular": major
+"@modyra/widgets": minor
+"@modyra/plain": minor
+"@modyra/lit": minor
+"@modyra/angular": minor
 ---
 
 Every form carries an id scope, so two forms on one page stop sharing their ids.

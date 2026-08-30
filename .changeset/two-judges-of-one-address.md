@@ -1,5 +1,5 @@
 ---
-"@modyra/core": major
+"@modyra/core": minor
 ---
 
 Two judges of one address

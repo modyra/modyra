@@ -1,5 +1,5 @@
 ---
-"@modyra/widgets": major
+"@modyra/widgets": minor
 ---
 
 Every optional part says when it is on the page — all 195, with nothing exempted

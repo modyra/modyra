@@ -1,5 +1,5 @@
 ---
-"@modyra/widgets": major
+"@modyra/widgets": minor
 ---
 
 Parts that follow the value say so, and the placeholder's condition was wrong

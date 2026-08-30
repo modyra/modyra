@@ -1,5 +1,5 @@
 ---
-"@modyra/core": major
+"@modyra/core": minor
 ---
 
 Version 1 of a dynamic form document is no longer accepted

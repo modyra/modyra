@@ -1,5 +1,5 @@
 ---
-"@modyra/core": major
+"@modyra/core": minor
 ---
 
 `MdyDynamicFormConfig` is the family, not version one
