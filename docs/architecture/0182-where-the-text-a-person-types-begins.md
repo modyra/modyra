@@ -54,19 +54,27 @@ following the rules.
 The asymmetry the inliner exists for is unchanged: the leading inset is the text's, the trailing one
 stays `--mdy-affordance-inset`, and both stay logical so the pair survives `dir=rtl`.
 
-## Amendment: a precondition, and two ways a correct rule loses
+## Amendment: a control the page hides is not where the writing begins
 
-The decision above assumes every kind's inliner carries the field's inset. **The colour field's does
-not**, and that is a precondition rather than a detail: zeroing its control's padding puts the
-writing on the container's edge — measured at 0 in all three renderers — because there is nothing
-behind the control holding the space. Excluding the colour field's control by name does not restore
-it either, so the padding is being removed further down as well.
+An earlier reading of this record named the colour field as unready for the decision, on a
+measurement showing its writing at the container's edge. **That measurement was of the wrong
+element, and the precondition it produced does not hold.**
 
-**So the rule is: the inset is declared in one place, and every kind whose control sits inside an
-inliner has an inliner that carries it.** A kind where that is not true is not ready for this
-decision, and applying it there produces a field with no inside. The colour field is that kind today.
+A colour field carries two inputs. The platform's own picker — `type="color"`, opacity zero, taken
+out of the flow — sits ahead of the hex box a person types into, so every selector that takes *the
+first input that is not `type="hidden"`* measures a box no writing ever appears in. The type
+exclusion does not reach it: it is hidden by style, not by type.
 
-Two mechanisms make a correct rule look applied while losing, and both were met applying this one:
+Measured on the box that is painted, the colour field's writing begins at the same place in all
+three renderers. It is not an obstacle to this decision and never was.
+
+What replaces the precondition is the general form, which is worth more: **a rule written about "the
+control inside the wrapper" reaches whichever element the selector finds first, and a kind may put an
+invisible one there.** A rule that zeroes padding on that element changes nothing a person sees while
+appearing to have applied, and a probe that measures it reports a field with no inside.
+
+Two further mechanisms make a correct cascade rule lose while looking applied, and both were met
+applying this one:
 
 - **Layer.** A zeroing rule written beside the inliner sits in the base layer; the control's padding
   is a component rule, and a later layer wins whatever the specificity says. The rule is correct,
@@ -76,9 +84,9 @@ Two mechanisms make a correct rule look applied while losing, and both were met 
   `textarea` and `select`, whose rules name them at one class or not at all, and left every text box
   where it was. Naming the wrapper twice ties it, and source order decides.
 
-Both are why "the rule did not take" is a report about the cascade rather than about the rule, and
-why the check this record asks for prints its table on every run: a number that did not move is the
-only way to tell a rule that lost from a rule that was wrong.
+All three are why "the rule did not take" is a report about the cascade or about the selector rather
+than about the rule, and why the check this record asks for prints its table on every run: **a number
+that has not moved is the only way to tell a rule that lost from a rule that is wrong.**
 
 A second divergence the same table shows is not addressed here: a date range begins its writing at 8
 in two renderers against 16 in the third, which is its own question about a compound field's inner
