@@ -12,6 +12,16 @@
  * preference, a desired height, and whether the content scrolls. A check built on the guess would
  * report a renderer for obeying a rule the checker had invented.
  *
+ * **What one renderer's remaining row is about, so nobody picks it up as that renderer's.** A
+ * timepicker whose panel is 471px tall, anchored 252px down a 700px window, has roughly four hundred
+ * usable pixels below it and two hundred and fifty above: neither side holds the panel, and the only
+ * answer that does is the centred one. The policy computes exactly that — it reports the side it
+ * chose *and* that the panel does not fit on it — and then prefers a side anyway and clamps the
+ * height. Measured opening the same field twice, once from a pointer and once from the keyboard: the
+ * two are identical to the pixel, so nothing about the gesture reaches the decision. The row measures
+ * the renderer that draws a panel tall enough to reach the case; what it is about is the preference
+ * order when nothing fits, which lives in the package and is the same for all three.
+ *
  * **The confound that made the guess unfalsifiable.** A panel four hundred pixels tall cannot open
  * below when three hundred remain, whatever any threshold says. So *«it flipped»* has two causes —
  * the policy chose the other side, or the panel simply did not fit — and no arrangement of the field
