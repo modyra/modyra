@@ -81,6 +81,16 @@ export function renderTextField(
 
   const shell = buildFieldShell(f.label, f.kind, { prefix: f.prefix, suffix: f.suffix }, f.ariaLabel, f.name, f.supportingText);
   const input = (isTextarea ? el("textarea") : el("input")) as HTMLInputElement | HTMLTextAreaElement;
+  /**
+   * Three lines at rest, said in lines rather than in a length. ADR 0181.
+   *
+   * Two lines are not yet a different shape — the eye reads them as a one-line box that came out
+   * wrong — and two is what the platform draws when nobody decides. The number is stated as `rows`
+   * rather than as a height because a length says "three lines" at a 16px body and "one and a half"
+   * at 32px: it stops meaning what it was written to mean exactly when a person has enlarged their
+   * text.
+   */
+  if (isTextarea) (input as HTMLTextAreaElement).rows = 3;
   if (f.placeholder) input.placeholder = f.placeholder;
   // A slider is not a bare input: the contract gives it a container and a displayed value, and
   // the themes lay both out. Every class here comes from the catalog, none from this file.
