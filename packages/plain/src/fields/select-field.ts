@@ -489,7 +489,12 @@ function renderNativeSelectField(
       onDirty: () => handle.markAsDirty(),
     });
   });
-  chooser.addEventListener("blur", () => handle.markAsTouched());
+  // No `markAsTouched` on blur.
+  //
+  // Reading a form is not declining it: focus arriving and leaving with the value untouched is what
+  // a person does while reading, and marking the field answerable there paints a refusal onto a
+  // field somebody was about to fill in. What makes it answerable is a change to its value, which
+  // the commit above records. ADR 0167.
 
   // The select projection has no label, description or error parts — the shell's own ids are given
   // to both ends of each relation explicitly, or the trigger's `aria-describedby` points at nothing.

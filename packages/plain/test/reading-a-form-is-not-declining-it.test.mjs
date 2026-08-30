@@ -36,6 +36,46 @@ const saysWrongInWords = (root) =>
     .map((element) => (element.textContent ?? "").trim())
     .filter((text) => text !== "").length > 0;
 
+/**
+ * A kind drawn two ways is read twice.
+ *
+ * The loop below mounts each kind once, and `select` without a named shape is the combobox — so the
+ * chooser the platform draws, which is what a document gets by default, was never asked this
+ * question. It answered it wrongly: its blur marked the field touched, and a person who tabbed
+ * through a form found every required select calling itself wrong behind them.
+ */
+const SHAPES = { select: ["custom", "native"] };
+
+for (const kind of fixture.KINDS.filter((one) => !NEVER_EMPTY.has(one))) {
+  for (const variant of SHAPES[kind] ?? []) {
+    test(`${kind} drawn ${variant}: focus in, focus out, nothing typed — it says nothing`, async () => {
+      const mounted = fixture.mount(kind, { variant });
+      await mounted.settle();
+      const control = mounted.control() ?? fixture.openerOf(mounted.root, kind);
+      assert.ok(control, `${kind} offers nothing to focus, so this asserts nothing about leaving it`);
+      control.focus?.();
+      control.dispatchEvent(new window.FocusEvent("focus", { bubbles: false }));
+      await mounted.settle();
+      assert.ok(mounted.root.contains(document.activeElement),
+        `${kind} never took focus, so nothing here is a traversal`);
+      control.dispatchEvent(new window.FocusEvent("blur", { bubbles: false }));
+      control.dispatchEvent(new window.FocusEvent("focusout", { bubbles: true }));
+      await mounted.settle();
+
+      assert.equal(saidWrong(mounted.root), false,
+        `${kind} drawn ${variant} calls itself wrong after a bare traversal — ADR 0167`);
+      assert.equal(saysWrongInWords(mounted.root), false,
+        `${kind} drawn ${variant} prints a refusal after a bare traversal — ADR 0167`);
+
+      mounted.drive("invalid");
+      await mounted.settle();
+      assert.equal(saidWrong(mounted.root), true,
+        `${kind} drawn ${variant} never says a field is wrong, so the check above asserts nothing`);
+      mounted.dispose();
+    });
+  }
+}
+
 for (const kind of fixture.KINDS.filter((one) => !NEVER_EMPTY.has(one))) {
   test(`${kind}: focus in, focus out, nothing typed — it says nothing`, async () => {
     const mounted = fixture.mount(kind);
