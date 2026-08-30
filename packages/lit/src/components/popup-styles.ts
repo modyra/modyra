@@ -75,6 +75,18 @@ interface OverlayStateConfig {
   readonly minWidth?: number;
   /** Which side to try first. */
   readonly preferredPosition?: "above" | "below";
+  /**
+   * Whether the panel's content scrolls, as the catalogue declares it.
+   *
+   * The one option that decides what happens when neither side holds the panel. Content that scrolls
+   * takes the roomier side and scrolls there — that is what a long list is for. Content that does not
+   * has one size, so a side that cannot hold it is not a placement at all and the panel centres.
+   *
+   * Dropped, every panel is treated as scrollable: a clock 471px tall was docked under a field with
+   * four hundred pixels beneath it and clamped, which is the stub of itself that not scrolling means
+   * it cannot be.
+   */
+  readonly scrolls?: boolean;
   /** Where the pointer opened it, so a popup follows the click rather than the element's centre. */
   readonly clickX?: number;
   /**
@@ -129,6 +141,7 @@ export function computeOverlayPanelState(
       minSpace: config?.minSpace,
       minWidth: config?.minWidth,
       preferred: config?.preferredPosition,
+      scrolls: config?.scrolls,
       matchAnchorWidth: (config?.widthMode ?? "match-anchor") === "match-anchor",
       ...(config?.forceModal ? { forceModal: true } : {}),
       // The widget declares which *inline* edge its popup hangs from; only the live direction says
@@ -210,7 +223,7 @@ export class MdyLitOverlayController {
     // label and supporting text too, and open the popup a row too low and a little too wide.
     private readonly getAnchor: () => HTMLElement | undefined = () =>
       host.querySelector<HTMLElement>(".mdy-input-wrapper") ?? host,
-    private readonly config?: Pick<OverlayStateConfig, "minSpace" | "minWidth" | "preferredPosition" | "widthMode" | "alignment">,
+    private readonly config?: Pick<OverlayStateConfig, "minSpace" | "minWidth" | "preferredPosition" | "widthMode" | "alignment" | "scrolls">,
     // The panel to measure. It is found by the class the widget catalog puts on every popup, so a
     // renderer needs no wiring for its popup to be placed where its content fits.
     private readonly getPopup: () => HTMLElement | null = () =>
@@ -248,6 +261,7 @@ export class MdyLitOverlayController {
       ...(anchoring.minSpace !== undefined ? { minSpace: anchoring.minSpace } : {}),
       ...(anchoring.minWidth !== undefined ? { minWidth: anchoring.minWidth } : {}),
       ...(anchoring.alignment !== undefined ? { alignment: anchoring.alignment } : {}),
+      ...(anchoring.scrolls !== undefined ? { scrolls: anchoring.scrolls } : {}),
       widthMode: anchoring.matchAnchorWidth ? "match-anchor" : "auto-content",
     };
   }
