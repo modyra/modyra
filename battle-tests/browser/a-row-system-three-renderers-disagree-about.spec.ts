@@ -152,27 +152,54 @@ test("a kind is inside the row system in every renderer, or outside it in every 
  * The check above asks about the shell — an anatomy question, answered by class names. This one asks
  * what a form **looks like**: measured across every kind, in one form, at one width.
  *
- *     kind        plain    lit / angular
- *     textarea      104      128
- *     checkbox       68       40
- *     toggle         80       52
- *     file          173      165
- *     everything else 96      96
+ * **What is measured is the row a kind draws, not the column it stands in**, and the difference is
+ * the whole of this file's history. A field's column is its row plus whatever bands the renderer
+ * puts under it, and [ADR 0180](../../docs/architecture/0180-a-container-held-open-under-a-field-that-can-fail.md)
+ * makes two treatments of those bands conforming: one renderer holds the container open from the
+ * first paint with a reference landing on it, another builds it when it has something to say, and a
+ * third draws none. Measured on the same checkbox, the three columns are 48, 20 and 20 — four pixels
+ * of empty band and twenty-four of the margins that stand it away from the control — while the three
+ * *rows* are 20, 20 and 20.
  *
- * Two facts sit in that table and they pull in opposite directions. **The equal-height rule is
- * already broken by four kinds in every renderer** — a textarea is taller than one line and a file
- * picker taller still, and neither is a defect. And **those four disagree across renderers**, by as
- * much as twenty-eight pixels, which cannot be anything but a defect: one document, one width, three
- * different forms.
+ * So a column comparison asserts agreement on something a record permits to differ, and its verdict
+ * is decided by whichever conforming choice each adapter made. Subtracting the bands does not rescue
+ * it: taking the box alone leaves the margins in, and taking box and margins together makes twelve
+ * kinds disagree that had been agreeing because two band treatments happened to cancel. The
+ * agreement a column comparison reports is coincidence in both directions.
  *
- * So this asserts the second and not the first. **A height this file could pick would be legislating**
- * — whether a toggle is 52 or 80 tall is a design decision and belongs in `DESIGN.md`, not in a
- * battle. What a battle can say is that the answer is the same everywhere.
+ * **The row is asked of the contract rather than listed here.** `inputWrapper` is the part a kind
+ * with a shell carries, and a kind without one draws a group, a track or a dropzone — the same
+ * object under the name its own anatomy uses. A list in this file would be a second catalogue, and it
+ * would drift the first time a kind gained a part.
+ *
+ * **A height this file could pick would be legislating** — whether a toggle is 32 tall is a design
+ * decision and belongs in `DESIGN.md`, not in a battle. What a battle can say is that the answer is
+ * the same everywhere, and it is: every kind whose row the contract names agrees across the three,
+ * `textarea` at three lines and `file` at 173 included.
+ *
+ * Kinds whose row the contract does not name are reported rather than skipped, because a check that
+ * quietly drops what it cannot reach reads as coverage of everything.
  *
  * Labels are measured beside it because they are the other thing an eye follows down a form, and
  * they agree today: every kind's label starts at the same left edge in all three. That agreement is
  * worth holding.
+ *
+ * What this cannot say is that the shared height is right. Three renderers moving a toggle to eight
+ * pixels together would pass, which is the standing blind spot of every comparison on this board.
  */
+/**
+ * The element a kind draws as its own row, asked of the contract rather than named here.
+ *
+ * `inputWrapper` is the part every kind with a shell carries, and where a kind has none the group,
+ * track or dropzone it draws instead is the same object under another name. A list written in this
+ * file would be a second catalogue that drifts the moment a kind gains a part.
+ */
+const rowSelectorFor = (kind: string): string => {
+  const parts = (MDY_WIDGET_CONTRACTS as unknown as Record<string, { parts: Record<string, { classes: string[] }> }>)[kind]?.parts ?? {};
+  const row = parts["inputWrapper"] ?? parts["group"] ?? parts["track"] ?? parts["dropzone"];
+  return (row?.classes ?? []).map((one) => `.${one}`).join("");
+};
+
 for (const _ of [0]) {
   test("a kind is the same height in every renderer", async ({ page }) => {
     test.setTimeout(300_000);
@@ -198,27 +225,20 @@ for (const _ of [0]) {
       const rows = await page.evaluate(({ kinds }) => {
         const root = document.querySelector('[data-form="rhythm"]');
         if (root === null) return [];
-        return kinds.map((kind) => {
+        return kinds.map(({ kind, rowSelector }) => {
           const element = root.querySelector(`.mdy-renderer--${kind}`) as HTMLElement | null;
           if (element === null) return { kind, height: null, labelLeft: null };
           // A toggle wears its own label class rather than the shared one; asking for both keeps
           // this about where a label sits rather than about which anatomy drew it.
           const label = element.querySelector("label, .mdy-label, .mdy-toggle__label") as HTMLElement | null;
-          // **The control's row, not the field's whole column.** Under a field that can fail, a
-          // renderer may hold the message container open from the first paint or build it when it
-          // has something to say, and both conform — so their heights differ by a band the record
-          // permits either way. Counting that band makes a conforming choice look like a rhythm
-          // broken, which is a different thing from a control that is taller than its peers.
-          const bands = [...element.querySelectorAll(".mdy-control__errors, .mdy-supporting-text")]
-            .filter((one) => one.parentElement === element)
-            .reduce((total, one) => total + (one as HTMLElement).getBoundingClientRect().height, 0);
+          const row = rowSelector === "" ? null : element.querySelector(rowSelector) as HTMLElement | null;
           return {
             kind,
-            height: Math.round(element.getBoundingClientRect().height - bands),
+            height: row === null ? null : Math.round(row.getBoundingClientRect().height),
             labelLeft: label === null ? null : Math.round(label.getBoundingClientRect().left),
           };
         });
-      }, { kinds: [...MDY_WIDGET_KINDS] });
+      }, { kinds: MDY_WIDGET_KINDS.map((kind) => ({ kind, rowSelector: rowSelectorFor(kind) })) });
 
       for (const { kind, height, labelLeft } of rows) {
         if (!seen.has(kind)) { seen.set(kind, {}); labelLefts.set(kind, {}); }
@@ -232,6 +252,10 @@ for (const _ of [0]) {
     const drawn = [...seen.values()].filter((byHost) => Object.values(byHost).some((h) => h !== null));
     expect(drawn.length, "no renderer drew any kind, so this battle is comparing nothing").toBeGreaterThan(10);
 
+    const unreached = [...seen.entries()]
+      .filter(([, byHost]) => Object.values(byHost).every((h) => h === null))
+      .map(([kind]) => kind);
+
     const differs = [...seen.entries()]
       .filter(([, byHost]) => Object.values(byHost).every((h) => h !== null))
       .filter(([, byHost]) => new Set(Object.values(byHost)).size > 1)
@@ -243,7 +267,8 @@ for (const _ of [0]) {
         `${JSON.stringify(differs, null, 1)}\n\n` +
         "One document, one width, three forms. Which height is right is a design decision and this " +
         "file does not take it — that a textarea is taller than one line is not a defect. That it is " +
-        "taller by different amounts depending on the adapter is.",
+        "taller by different amounts depending on the adapter is.\n\nKinds whose row the contract " +
+        `does not name, so not compared here: ${JSON.stringify(unreached)}.`,
     ).toEqual([]);
 
     const labelsDiffer = [...labelLefts.entries()]
