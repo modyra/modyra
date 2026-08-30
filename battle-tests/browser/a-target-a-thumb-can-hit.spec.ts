@@ -86,6 +86,7 @@ for (const host of HOSTS) {
       for (const { element, box } of targets) {
         if (box.width >= floor && box.height >= floor) continue;
 
+        const style = getComputedStyle(element);
         const part = [...element.classList].find((one) => one.startsWith("mdy-"))
           ?? element.tagName.toLowerCase();
 
@@ -107,7 +108,26 @@ for (const host of HOSTS) {
           span.selectNode(node);
           line = Math.max(line, span.getBoundingClientRect().height);
         }
-        if (line > 0 && box.height <= line + 2) { excusedInline += 1; continue; }
+        // **The line the text sits on, not the ink it makes.** A caption twenty pixels tall carries
+        // eighteen pixels of glyph inside a twenty-pixel line box, so comparing the element to its
+        // ink says it is two pixels taller than its own text and excuses nothing. `line-height` is
+        // the number the element was actually laid out to.
+        //
+        // **An identity, not a tolerance.** An element sized by its own writing is exactly one line
+        // box plus its own padding and border; anything above that is a height somebody chose. A
+        // slack of a pixel or two instead is a margin whose width decides the verdict — and text
+        // metrics differ between platforms, so a check written with slack passes where it was
+        // authored and fails where it runs. Half a pixel absorbs sub-pixel rounding and nothing else.
+        //
+        // Text is still required: `line-height` exists on an element that carries none, and a button
+        // drawn around an icon must not excuse itself with a line it never draws. Where the value is
+        // `normal` the browser's own line box has no number, and the ink is used instead — which
+        // under-excuses rather than over-excuses, the only direction a floor may err in.
+        const own = ["paddingTop", "paddingBottom", "borderTopWidth", "borderBottomWidth"]
+          .reduce((total, side) => total + Number.parseFloat(style[side as never] || "0"), 0);
+        const declared = Number.parseFloat(style.lineHeight || "");
+        const lineBox = Math.max(line, Number.isNaN(declared) ? 0 : declared);
+        if (line > 0 && box.height <= lineBox + own + 0.5) { excusedInline += 1; continue; }
 
         const x = box.x + box.width / 2;
         const y = box.y + box.height / 2;
