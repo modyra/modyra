@@ -69,6 +69,8 @@ type Api = Record<string, Record<string, (...args: never[]) => unknown>>;
 
 /** A date whose parts differ, so a swapped order is visible rather than a coincidence. */
 const HELD = "2026-01-02";
+/** The other end of a range, a different month so a swapped pair is visible rather than a coincidence. */
+const HELD_END = "2026-03-04";
 
 test("one document is one date on the screen, whoever drew it", async ({ page }) => {
   test.setTimeout(300_000);
@@ -79,20 +81,29 @@ test("one document is one date on the screen, whoever drew it", async ({ page })
     await page.setViewportSize({ width: 1_200, height: 700 });
     await page.goto(host.page);
     await page.waitForFunction((flag) => (window as never as Record<string, boolean>)[flag] === true, host.ready);
-    await page.evaluate(({ api, held }) => {
+    await page.evaluate(({ api, held, heldEnd }) => {
       (window as never as Api)[api].mountFields("spelling", [{
         name: "d", kind: "datepicker", label: "Data", initialValue: held,
+      }, {
+        // The same decision reaches both kinds that put a date on the screen, and a range puts two.
+        // Asking only the single date lets the other drift, and a range is where a transposed
+        // spelling does the most damage: a person reading a start and an end in the wrong order
+        // sees a range that runs backwards and blames the data.
+        name: "r", kind: "daterange", label: "Periodo",
+        initialValue: { start: held, end: heldEnd },
       }] as never);
-    }, { api: host.api, held: HELD });
+    }, { api: host.api, held: HELD, heldEnd: HELD_END });
     await page.locator('[data-form="spelling"]').waitFor({ timeout: 5_000 });
     await page.evaluate(({ api }) => (window as never as Api)[api].settle?.(), { api: host.api }).catch(() => undefined);
     await page.waitForTimeout(400);
 
+    // Every box a date is read from, joined: one renderer spelling the range correctly and the
+    // single date wrongly must not average out to agreement.
     const read = () => page.evaluate(() => {
-      const box = document.querySelector(
+      const boxes = [...document.querySelectorAll(
         '[data-form="spelling"] input[type="text"], [data-form="spelling"] input:not([type="hidden"])',
-      ) as HTMLInputElement | null;
-      return box === null ? null : box.value;
+      )] as HTMLInputElement[];
+      return boxes.length === 0 ? null : boxes.map((one) => one.value).join(" · ");
     });
 
     const first = await read();
@@ -130,8 +141,9 @@ test("one document is one date on the screen, whoever drew it", async ({ page })
   if (DECIDED === null) return;
 
   const wrong = Object.entries(shown)
-    .filter(([, value]) => isAmbiguous(value) || isTheValue(value))
-    .map(([name, value]) => `${name} reads "${value}"`);
+    .flatMap(([name, joined]) => joined.split(" · ")
+      .filter((value) => isAmbiguous(value) || isTheValue(value))
+      .map((value) => `${name} reads "${value}"`));
 
   expect(
     wrong,
