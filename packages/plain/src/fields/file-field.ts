@@ -182,6 +182,12 @@ export function renderFileField(
     placeholder.hidden = files.length > 0;
     setText(rejected, refused.length === 0 ? "" : messages.fileRejected(refused.map((file) => file.name)));
     rejected.hidden = refused.length === 0;
+    // Out of the flow while it holds nothing, not merely empty. In a column with a gap an empty
+    // child is still a child: zero pixels tall and charged a full gap anyway — 8px under a field
+    // whose list nobody has filled. The container beside it has been `hidden` all along for the
+    // same reason. This list is kept for no reference and appears inside the act that fills it, so
+    // both of ADR 0180's tests fail and it is not held.
+    fileList.hidden = files.length === 0;
     fileList.replaceChildren();
     for (const file of files) {
       const item = el("li") as HTMLLIElement;
