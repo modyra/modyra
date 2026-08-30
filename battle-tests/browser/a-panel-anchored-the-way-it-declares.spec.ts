@@ -60,7 +60,17 @@ const classOf = (kind: string, part: string) => (CONTRACTS[kind].parts[part]?.cl
 const anchoringOf = (kind: string): Anchoring => CONTRACTS[kind].capabilities?.anchoring ?? {};
 
 /** Narrower than every floor the catalogue declares, so the floor is the only thing that can lift it. */
-const NARROW = 80;
+/**
+ * Narrow enough that a panel following the field's width is visibly different from one that is not,
+ * and wide enough that the field is still a field.
+ *
+ * Below about a hundred pixels a field is not merely small: its trailing affordance reaches across
+ * the box and covers the control that opens the panel, so a press aimed at the declared opener lands
+ * on the affordance and nothing opens. The measurement that comes back is then about the arrangement
+ * rather than about the anchoring, and it arrives as a kind that "never opened" — which reads like a
+ * renderer with a broken panel and is a field squeezed past the width its own parts fit in.
+ */
+const NARROW = 100;
 /** A pixel of slack on a floor, which is a number the panel must clear rather than match. */
 const SLACK = 2;
 /** Every renderer insets its panel inside the field by a few pixels; the edge is judged past that. */
