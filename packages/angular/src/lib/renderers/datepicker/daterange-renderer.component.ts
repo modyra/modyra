@@ -50,6 +50,17 @@ import { inputText, isoDateText } from "../renderer-projection";
     "[class.mdy-renderer]": "widgetHasRootClass",
     "[class.mdy-inline-errors]": "inlineErrors",
   },
+  /**
+   * No ArrowDown opens the panel from an endpoint box.
+   *
+   * The keyboard table gives this kind Enter and Space on its toggle and nothing at all on the
+   * endpoint boxes while the panel is shut, and no kind in the catalogue declares a closed-state
+   * arrow. Claimed here, this renderer answered a gesture the contract does not declare and the
+   * other two do not offer, so somebody who learned it here lost it by changing renderer.
+   *
+   * It also took a key from the person using the control: an endpoint is a box a date is typed
+   * into, and swallowing ArrowDown there is the caret key going to a panel instead of to the text.
+   */
   template: `
     @if (label()) {
       <mdy-control-label
@@ -83,7 +94,6 @@ import { inputText, isoDateText } from "../renderer-projection";
             (input)="onEndpointInput($event, 'start')"
             (blur)="onEndpointBlur($event, 'start')"
             (focus)="lastFocused.set('start')"
-            (keydown.arrowdown)="openOverlay($event); $event.preventDefault()"
             [attr.aria-invalid]="paintsAsInvalid()"
             [attr.aria-describedby]="describedById(fieldId)"
             [attr.aria-label]="controlAriaLabel()"
@@ -109,7 +119,6 @@ import { inputText, isoDateText } from "../renderer-projection";
             (input)="onEndpointInput($event, 'end')"
             (blur)="onEndpointBlur($event, 'end')"
             (focus)="lastFocused.set('end')"
-            (keydown.arrowdown)="openOverlay($event); $event.preventDefault()"
             [attr.aria-invalid]="paintsAsInvalid()"
             [attr.aria-describedby]="describedById(fieldId)"
             [attr.aria-label]="controlAriaLabel()"
