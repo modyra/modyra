@@ -58,7 +58,10 @@
  *
  *     textarea   rows=2 in one renderer, rows=3 in two — same line height, same padding, same
  *                min-height, so 2×24+16 = 64 against 3×24+16 = 88. A default for an attribute the
- *                document did not declare.
+ *                document cannot declare and the catalogue cannot state: `capabilities` is about
+ *                overlays, `variants` is empty, and the dynamic field schema has no `rows`. So
+ *                aligning the renderers would be agreement by coincidence, holding until a fourth
+ *                picks a fifth number. What is owed is somewhere to say it.
  *     file       the container itself: 181 against 173. No inliner on any side; eight pixels stated
  *                somewhere in the container's own box.
  *
