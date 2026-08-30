@@ -1,14 +1,21 @@
 name: Release
 
 on:
-  push:
-    tags: ["v*"]
-  # Manual re-run for cases like "a package was missed by the publish
-  # script and needs to catch up to a version already tagged/released" —
-  # publish-workspace.mjs already skips anything whose package.json
-  # version matches the registry, so a manual run is safe to fire even
-  # when most packages have nothing new to publish.
-  workflow_dispatch: {}
+  # Deliberately dispatch-only. A tag is created by accident — a mistyped `git tag`, a rebase that
+  # replays one, a script — and a tag that reaches the registry path turns a slip into a release.
+  # A dispatch cannot be fired by anything but somebody choosing to fire it, and the confirmation
+  # below has no default, so the choice has to be typed out.
+  #
+  # The version is not asked for and could not be answered: this release is twenty-five package
+  # versions on six lines, computed by `changeset version` from the committed changesets. A number
+  # typed here would either be ignored or override what was computed, and in the second case four
+  # packages ship under a number that is not theirs. What the run prints in its summary is the plan.
+  workflow_dispatch:
+    inputs:
+      confirm:
+        description: 'Type "stage the release" to proceed'
+        required: true
+        default: ""
 
 concurrency: ${{ github.workflow }}-${{ github.ref }}
 
@@ -19,6 +26,15 @@ jobs:
       contents: read
       id-token: write
     steps:
+      # Before anything is built, so a mistyped dispatch costs seconds rather than a full build.
+      - name: The confirmation was typed
+        run: |
+          if [ "${{ inputs.confirm }}" != "stage the release" ]; then
+            echo "::error::The release was dispatched without its confirmation phrase."
+            echo "Type: stage the release"
+            exit 1
+          fi
+
       - uses: actions/checkout@v6
         with:
           fetch-depth: 0
@@ -67,6 +83,42 @@ jobs:
       # Tree-shaking only; the size assertion was removed for the same reason.
       - name: Tree-shaking check
         run: pnpm run test:bundle
+
+      # The board, which the gate above does not include. The file's own promise — a release must
+      # never ship a build CI itself would have failed — was true of the unit suites and not of the
+      # ratchets: `battle:ci` and `battle:browser:ci` fail on a red that is not in their baseline,
+      # which is the only check that has ever caught a renderer disagreeing with the contract.
+      - name: Node battles
+        run: pnpm run battle:ci
+
+      - name: Install Chromium for the browser battles
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: Browser battles
+        run: pnpm run battle:browser:ci
+
+      # Every architectural decision has its record, and every record is listed. A release is the
+      # moment a decision reaches somebody who cannot ask why.
+      - name: Decision records
+        run: pnpm run test:docs
+
+      # What the workspace resolves through source beside a manifest, a consumer resolves through a
+      # tarball or not at all. This packs every publishable package — including packages/angular/dist,
+      # whose root manifest is private and which every sweep over `packages/*` therefore misses —
+      # installs them together, and asks for every subpath each one declares.
+      - name: Every declared subpath resolves from its tarball
+        run: node scripts/verify-tarballs.mjs | tee -a "$GITHUB_STEP_SUMMARY"
+
+      # Printed rather than gated. There is no budget here on purpose: a budget raised whenever a
+      # feature crosses it is a record, not a limit, and this file already carries that lesson above.
+      # What a number in the summary buys is that the first person to look after a release has one.
+      - name: The contract, against the last release
+        run: |
+          PREVIOUS=$(git tag --list 'v*' --sort=-v:refname | head -1)
+          echo "### Contract against $PREVIOUS" >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+          node scripts/contract-diff.mjs --since "$PREVIOUS" | tail -40 >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
 
       # Reports the figures behind docs/guides/comparison-form-libraries.md. It used to gate on a
       # 16 KB budget and the entry measures 17.0 KB, so it was failing releases for changes that were
