@@ -397,8 +397,15 @@ test("renderer: the contract answers about every kind it declares", async ({ pag
   const first = await readout(page);
   expect(first.always.length, "a kind must have parts it always draws").toBeGreaterThan(0);
   await page.locator('[data-panel="renderer"] button', { hasText: "timepicker" }).first().click();
-  await page.waitForTimeout(120);
+  // Waited on the answer, not on a clock. This panel prints what the contract says about a kind, and
+  // it has grown: a fixed pause measures how fast the machine is, and under a full matrix it reads
+  // the previous kind's answer — which is the readout-one-state-behind defect this very test is for,
+  // arriving as a flake instead of as a finding.
+  await expect
+    .poll(async () => (await readout(page)).kind, {
+      message: "picking a kind changes what the page answers about",
+    })
+    .toBe("timepicker");
   const second = await readout(page);
-  expect(second.kind, "picking a kind changes what the page answers about").toBe("timepicker");
   expect(second.always, "two kinds do not draw the same parts").not.toEqual(first.always);
 });

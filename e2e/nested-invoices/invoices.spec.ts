@@ -30,9 +30,16 @@ test("the demonstrative moment: a closed line at 95% keeps the invoice invalid, 
 test("a fixed split makes the invoice valid, and the server's verdict lands on the split it names", async ({ page }, testInfo) => {
   const scope = scopeOf(page, testInfo.project.name);
   await scope.getByRole("button", { name: "Fix the split" }).click();
-  await expect.poll(async () => (await state(page, testInfo.project.name)).valid).toBe(true);
+  // A verdict that crosses a server needs longer than a verdict a page computes. The default five
+  // seconds is comfortable on one renderer alone and marginal under a full matrix, where the wait is
+  // for a machine running three engines rather than for the form deciding anything — a flake that
+  // reads as "the invoice never became valid" and is not about the invoice at all.
+  const SERVER_ROUND_TRIP = { timeout: 15_000 };
+  await expect.poll(async () => (await state(page, testInfo.project.name)).valid, SERVER_ROUND_TRIP).toBe(true);
   await scope.getByRole("button", { name: "Submit to the server" }).click();
-  await expect.poll(async () => (await state(page, testInfo.project.name)).splitServerError).toEqual(["CC-10 is frozen this quarter"]);
+  await expect
+    .poll(async () => (await state(page, testInfo.project.name)).splitServerError, SERVER_ROUND_TRIP)
+    .toEqual(["CC-10 is frozen this quarter"]);
 });
 
 test("an approved line is readonly but consulted: not editable, still in the value", async ({ page }, testInfo) => {
