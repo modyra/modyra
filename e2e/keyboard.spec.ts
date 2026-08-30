@@ -303,7 +303,12 @@ test.describe("segmented", () => {
 
     const checkedInFocusedHost = () => page.evaluate(() => {
       const host = document.activeElement?.closest(".mdy-renderer--segmented");
-      const marked = host?.querySelector('[aria-checked="true"], [aria-pressed="true"]');
+      // **The state is the property, not the attribute.** A segment is a real `<input type="radio">`
+      // in every renderer, and a native radio's chosen-ness is computed into the accessibility tree
+      // from `checked` — the markup carries no `aria-checked` and should not, since a second answer
+      // beside the platform's is the thing we take off controls elsewhere. Reading the attribute
+      // found nothing in any renderer and reported the one renderer that runs this file.
+      const marked = host?.querySelector('input:checked, [aria-checked="true"], [aria-pressed="true"]');
       // The element carrying the state is not always the one carrying the text: a choice is a label
       // around its own radio, and the radio has no text of its own. Read the segment it sits in.
       const segment = marked?.closest(".mdy-segmented__button") ?? marked;
