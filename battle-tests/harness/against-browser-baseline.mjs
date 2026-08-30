@@ -28,10 +28,20 @@ const BATTLE_ROOT = resolve(HARNESS, "..");
 const REPO_ROOT = resolve(BATTLE_ROOT, "..");
 export const BASELINE_FILE = join(BATTLE_ROOT, "reports", "known-red-browser.json");
 
-/** Every spec in the report, split by how it ended. A skipped spec is neither. */
+/**
+ * Every spec in the report, split by how it ended, and what a failing one said.
+ *
+ * The reason is kept because a name alone is unreadable from anywhere but the machine that produced
+ * it. A spec that fails only on the platform the job runs on cannot be reproduced by the person
+ * reading the log, so a report naming the spec and withholding its own words leaves them to diagnose
+ * by guessing at shapes — which they will, and some of the guesses will be wrong.
+ *
+ * A skipped spec is neither passed nor failed.
+ */
 export function readPlaywrightJson(report) {
   const passed = new Set();
   const failed = new Set();
+  const why = new Map();
   const walk = (suites) => {
     for (const suite of suites ?? []) {
       for (const spec of suite.specs ?? []) {
@@ -40,14 +50,18 @@ export function readPlaywrightJson(report) {
         if (results.length === 0) continue;
         if (results.every((result) => result.status === "skipped")) continue;
         if (results.every((result) => result.status === "passed" || result.status === "skipped")) passed.add(name);
-        else failed.add(name);
+        else {
+          failed.add(name);
+          const said = results.find((result) => result.error?.message)?.error?.message;
+          if (said !== undefined && !why.has(name)) why.set(name, said);
+        }
       }
       walk(suite.suites);
     }
   };
   walk(report.suites);
   for (const name of failed) passed.delete(name);
-  return { passed, failed };
+  return { passed, failed, why };
 }
 
 /**
@@ -374,7 +388,18 @@ function main() {
   );
   for (const name of closed) console.log(`  CLOSED, update the baseline: ${name}`);
   for (const name of vanished) console.log(`  no longer in the suite under this name: ${name}`);
-  for (const name of regressions) console.log(`  REGRESSION: ${name}`);
+  for (const name of regressions) {
+    console.log(`  REGRESSION: ${name}`);
+    // The spec's own words, indented under it. Capped because a battle that dumps a page of DOM
+    // buries the next regression under it, and the cap is stated rather than silent.
+    const said = (run.why.get(name) ?? "").replace(/\u001b\[[0-9;]*m/g, "").trim();
+    if (said !== "") {
+      const lines = said.split("\n").slice(0, 12);
+      for (const line of lines) console.log(`      ${line}`);
+      const dropped = said.split("\n").length - lines.length;
+      if (dropped > 0) console.log(`      … ${dropped} more line(s), in the run's own report`);
+    }
+  }
 
   if (regressions.length > 0) {
     console.error(`\n${regressions.length} spec(s) that were not known to fail are failing. This is what a red build is for.`);
