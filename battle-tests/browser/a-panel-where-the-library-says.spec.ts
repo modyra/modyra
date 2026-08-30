@@ -12,15 +12,16 @@
  * preference, a desired height, and whether the content scrolls. A check built on the guess would
  * report a renderer for obeying a rule the checker had invented.
  *
- * **What one renderer's remaining row is about, so nobody picks it up as that renderer's.** A
- * timepicker whose panel is 471px tall, anchored 252px down a 700px window, has roughly four hundred
- * usable pixels below it and two hundred and fifty above: neither side holds the panel, and the only
- * answer that does is the centred one. The policy computes exactly that — it reports the side it
- * chose *and* that the panel does not fit on it — and then prefers a side anyway and clamps the
- * height. Measured opening the same field twice, once from a pointer and once from the keyboard: the
- * two are identical to the pixel, so nothing about the gesture reaches the decision. The row measures
- * the renderer that draws a panel tall enough to reach the case; what it is about is the preference
- * order when nothing fits, which lives in the package and is the same for all three.
+ * **What a panel that does not scroll is owed, and how it was lost.** The policy decides this
+ * correctly and always did: content that scrolls takes the roomier side and scrolls there, content
+ * that does not has one size, so a side that cannot hold it is not a placement at all and the panel
+ * centres instead. Which of the two a kind is, the catalogue declares.
+ *
+ * A renderer that builds the policy's options field by field can leave that one out, and then every
+ * panel is treated as scrollable: the tallest one takes the roomier side and is clamped to the stub
+ * of itself that not scrolling means it cannot be. A renderer that spreads the whole anchoring object
+ * never had it to lose. One field, never carried across, and it looked like a preference order for
+ * hours — including in this comment, which said so and was wrong.
  *
  * **The confound that made the guess unfalsifiable.** A panel four hundred pixels tall cannot open
  * below when three hundred remain, whatever any threshold says. So *«it flipped»* has two causes —
