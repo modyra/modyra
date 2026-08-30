@@ -218,6 +218,10 @@ import { MdyDropdownBase } from "../dropdown-base";
           }
           <!-- The native chooser *is* the trigger in this presentation: it is what a person
                presses and what holds the value. Carrying the class says so. -->
+          <!-- No aria-disabled here: a select carries disabled as a property the platform exposes,
+               and a second answer beside it is how the two come to disagree. The combobox branch
+               above keeps it, being a button standing in for a chooser with nothing else to say
+               it. -->
           <select
             class="mdy-select__trigger"
             [id]="fieldId"
@@ -228,7 +232,6 @@ import { MdyDropdownBase } from "../dropdown-base";
             [attr.aria-describedby]="describedById(fieldId)"
             [attr.aria-label]="controlAriaLabel()"
             [attr.aria-required]="ariaRequired() || isRequired()"
-            [attr.aria-disabled]="effectiveAriaDisabled()"
             [attr.aria-readonly]="isReadonly() ? 'true' : null"
           >
             @if (placeholder() || value() === null || value() === undefined) {
