@@ -189,7 +189,12 @@ test("the colour palette is placed by the contract, in every theme", async ({ pa
   // race that explained its neighbours was fixed and this one survived it, so the cause is not
   // isolated and saying so is worth more than a guess. Quarantined rather than left to redden a
   // blocking gate at random, which is how a gate teaches people to ignore it.
-  test.fixme(browserName === "firefox" || browserName === "webkit", "passes alone, fails under full-suite load — cause not isolated");
+  // The standing suspicion, written here rather than left in someone's head: `useTheme` waits one
+  // animation frame before anything is measured, and a frame is what a browser stops producing first
+  // when nine projects are competing for it. "Passes alone, fails under load" is the shape that wait
+  // makes. Unproven — reproducing the load costs a full nine-project run — and the fix is the one
+  // already applied to the slider below: wait for the condition with a deadline, not for a frame.
+  test.fixme(browserName === "firefox" || browserName === "webkit", "passes alone, fails under full-suite load — cause not isolated; suspect the one-frame wait in useTheme");
   // The palette was the one popup in the catalog not wearing `mdy-popup`, so the foundation could
   // not place it — and the foundation, Material and iOS each carried their own copy of the popup
   // primitive to compensate: position, insets, `display` for open/closed, and their own `--above`
@@ -485,7 +490,12 @@ test("chip, segment and slider show what they are doing, in every theme", async 
   // race that explained its neighbours was fixed and this one survived it, so the cause is not
   // isolated and saying so is worth more than a guess. Quarantined rather than left to redden a
   // blocking gate at random, which is how a gate teaches people to ignore it.
-  test.fixme(browserName === "firefox" || browserName === "webkit", "passes alone, fails under full-suite load — cause not isolated");
+  // The standing suspicion, written here rather than left in someone's head: `useTheme` waits one
+  // animation frame before anything is measured, and a frame is what a browser stops producing first
+  // when nine projects are competing for it. "Passes alone, fails under load" is the shape that wait
+  // makes. Unproven — reproducing the load costs a full nine-project run — and the fix is the one
+  // already applied to the slider below: wait for the condition with a deadline, not for a frame.
+  test.fixme(browserName === "firefox" || browserName === "webkit", "passes alone, fails under full-suite load — cause not isolated; suspect the one-frame wait in useTheme");
   // Chromium reports `color-mix()` results as `color(srgb r g b / a)` with channels in 0–1, and
   // everything else as `rgb()` in 0–255. Reading one as the other is how a visible hover measures
   // as invisible.
