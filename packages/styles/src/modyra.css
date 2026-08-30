@@ -578,10 +578,13 @@
         width: 100%;
         height: 100%;
         /* Logical: the field's inner padding is asymmetric — more room where the text starts than
-           where the affixes sit — and written physically that 8px difference stayed on the left
-           under `dir=rtl`, pushing everything at the inline end 8px inside where it belongs. */
+           where the affixes sit — and written physically that 12px difference stayed on the left
+           under `dir=rtl`, pushing everything at the inline end 12px inside where it belongs.
+
+           The leading inset is the field's whole inner inset, and it matches what a control carries
+           where no inliner is drawn, so the writing begins in the same place either way. ADR 0182. */
         padding-block: 0;
-        padding-inline: 0.75rem var(--mdy-affordance-inset);
+        padding-inline: 1rem var(--mdy-affordance-inset);
         box-sizing: border-box;
     }
 
@@ -4826,6 +4829,21 @@
             background-color: CanvasText;
             border: 1px solid Canvas;
         }
+    }
+
+    /*
+     * The inset is declared once, and where the inliner is drawn the inliner is the declaration.
+     *
+     * A control carries its own inline padding where nothing stands between it and the field's edge.
+     * Inside the inliner both applied and the writing began at their sum — 28px in the renderer that
+     * draws it against 16 in the two that do not, from one document. ADR 0182.
+     *
+     * Stated in this layer rather than beside the inliner, and naming the wrapper twice: the
+     * control's own padding is a component rule reached by a two-class selector, so a rule written
+     * in `mdy.base`, or with one class here, is correct, loses, and looks applied.
+     */
+    .mdy-input-wrapper .mdy-input-wrapper__inliner :is(input, textarea, select) {
+        padding-inline: 0;
     }
 }
 
