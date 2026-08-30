@@ -17,11 +17,14 @@ Where a renderer draws the inliner, both apply and the text starts at the sum. M
 three renderers on the same document:
 
 ```
-                 text  select  datepicker  colors  daterange
-plain              28      28          28      16          28
-lit                16      16          16       0           8
-angular            16      16          16      16           8
+                 text  select  datepicker  timepicker  colors  daterange
+plain              28      28          28          28      16          28
+lit                16      16          16          16       0           8
+angular            16      16          16          16      16           8
 ```
+
+Ten kinds disagree. Seven of them are the same 28-against-16; the other three are their own numbers,
+which is what a second declaration looks like once it is drawn in more than one place.
 
 The divergence is wide — every text-bearing kind — and it is the most visible property a field has,
 because it is where the writing appears. Nothing on the board sees it: the sweeps compare heights,
@@ -53,9 +56,12 @@ stays `--mdy-affordance-inset`, and both stay logical so the pair survives `dir=
 
 ## Consequences
 
-- Nine kinds in one renderer move 12px inward-to-correct, and one renderer's colour field gains an
-  inset it never had. Two renderers do not move at all, which is the point: the change corrects
-  outliers rather than relocating the design.
+- Every renderer moves somewhere. Nine kinds in one of them come back 12px; a colour field that
+  began at the container's edge gains an inset it never had; and a date range that two renderers draw
+  at 8px joins the rest at 16. The claim worth making is narrower than "two renderers stay still":
+  the number is the one already drawn by the largest number of kinds, so the change corrects outliers
+  rather than relocating the design, and no kind moves that was not already disagreeing with itself
+  across adapters.
 - Committed screenshot baselines record the difference, so this arrives as a reviewable diff rather
   than as a claim. It is a visible change and it changes baselines in every theme.
 - The asymmetric gap widens from 8px to 12px between the leading inset and the affordance inset. That
