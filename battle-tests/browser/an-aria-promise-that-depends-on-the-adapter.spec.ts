@@ -118,6 +118,8 @@ test("an aria promise that depends on the adapter", async ({ page }) => {
 
   const written = new Map<string, Record<string, string[]>>();
   const shapes = new Map<string, Record<string, string>>();
+  /** Attribute -> every part any renderer hung it on, so a row says where to look. */
+  const placedOn: Record<string, string[]> = {};
   let seen = 0;
 
   for (const host of HOSTS) {
@@ -141,6 +143,8 @@ test("an aria promise that depends on the adapter", async ({ page }) => {
         const root = document.querySelector(`[data-form="${id}"]`) as HTMLElement | null;
         if (root === null) return [];
         const names = new Set<string>();
+        /** Attribute -> the parts it was found on, for the row rather than for the comparison. */
+        const seenOn: Record<string, string[]> = {};
         const take = (where: Element) => {
           for (const element of where.querySelectorAll("*")) {
             for (const name of element.getAttributeNames()) {
@@ -150,10 +154,16 @@ test("an aria promise that depends on the adapter", async ({ page }) => {
             // attribute on the group is the caption doing its job and on each option is the caption
             // taking the option's own name away, and a row that says only the attribute sends a
             // reader to look at the wrong element.
+            // The attribute is what is compared; where it landed is what the row says. Keying the
+            // comparison on the element would make an anatomy difference into an ARIA divergence —
+            // a renderer drawing a spinner where another draws a bare input owes the same promise
+            // and is not obliged to hang it on the same node. Keying on the attribute alone leaves
+            // a reader hunting for it, which is the other half of the same mistake.
             if (name.startsWith("aria-")) {
+              names.add(name);
               const part = [...element.classList].find((one) => one.startsWith("mdy-"))
                 ?? `${element.tagName.toLowerCase()}${element.getAttribute("role") === null ? "" : `[${element.getAttribute("role")}]`}`;
-              names.add(`${name} on ${part}`);
+              seenOn[name] = [...new Set([...(seenOn[name] ?? []), part])];
             }
           }
           }
@@ -164,7 +174,7 @@ test("an aria promise that depends on the adapter", async ({ page }) => {
           const panel = document.getElementById(opener.getAttribute("aria-controls") ?? "");
           if (panel !== null) take(panel);
         }
-        return [...names];
+        return { names: [...names], seenOn };
       }, { id: mountId });
 
       const atRest = await sweep();
@@ -185,7 +195,13 @@ test("an aria promise that depends on the adapter", async ({ page }) => {
       await page.waitForTimeout(120);
       await madeToSpeak(page, `[data-form="${mountId}"]`, host.api);
       const speaking = await sweep();
-      const found = [...new Set([...atRest, ...opened, ...speaking])];
+      const found = [...new Set([...atRest.names, ...opened.names, ...speaking.names])];
+      for (const reading of [atRest, opened, speaking]) {
+        for (const [name, parts] of Object.entries(reading.seenOn)) {
+          const key = `${subjectName}|${name}`;
+          placedOn[key] = [...new Set([...(placedOn[key] ?? []), ...parts])];
+        }
+      }
 
       // Which of the shapes this kind declares was actually drawn, read from the parts a variant
       // says it requires. Two renderers handed the same document can draw different shapes, and
@@ -235,7 +251,8 @@ test("an aria promise that depends on the adapter", async ({ page }) => {
     return [...everywhere]
       .filter((name) => HOSTS.some((host) => !(byHost[host.name] ?? []).includes(name)))
       .sort()
-      .map((name) => `${kind}: ${name} written by ${HOSTS.filter((host) => (byHost[host.name] ?? []).includes(name)).map((host) => host.name).join(" and ")}`);
+      .map((name) => `${kind}: ${name} written by ${HOSTS.filter((host) => (byHost[host.name] ?? []).includes(name)).map((host) => host.name).join(" and ")}`
+        + `${placedOn[`${kind}|${name}`] === undefined ? "" : ` — on ${placedOn[`${kind}|${name}`].join(", ")}`}`);
   })];
 
   const { rows: dismissed, lapsed } = excused();
