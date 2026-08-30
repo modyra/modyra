@@ -141,6 +141,24 @@ jobs:
       # declares on npm, which permits `npm stage publish`: the tarball and its
       # provenance are uploaded here, and a maintainer makes them public with
       # proof of presence. `release:rehearse` is the local dry run.
+      # **Staging reads the versions in the manifests, and nothing here writes them.** `changeset
+      # version` consumes the changesets, bumps every manifest and writes the changelogs, and it is
+      # run before the dispatch — so a dispatch with changesets still pending stages the *previous*
+      # numbers carrying this content. It is the same shape as a built artefact inheriting a stale
+      # version: what ships is the state of the tree at a moment nobody checked.
+      #
+      # Read from the tree rather than from a file of intent, so there is nothing extra to remember:
+      # a consumed changeset is a deleted file, so their presence is the question.
+      - name: The versions have been applied
+        run: |
+          PENDING=$(ls .changeset/*.md 2>/dev/null | grep -viE '/README\.md$' | wc -l | tr -d ' ')
+          if [ "$PENDING" != "0" ]; then
+            echo "::error::$PENDING changeset(s) are still pending, so the manifests carry the previous versions."
+            echo "Run \`pnpm run release:integrate\` and commit the bump before dispatching." >> "$GITHUB_STEP_SUMMARY"
+            pnpm changeset status >> "$GITHUB_STEP_SUMMARY" 2>&1 || true
+            exit 1
+          fi
+
       - name: Stage the release from committed versions
         run: pnpm run release
         env:
