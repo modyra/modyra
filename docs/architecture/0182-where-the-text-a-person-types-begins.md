@@ -1,0 +1,96 @@
+# ADR 0182: Where the text a person types begins is declared once
+
+Status: Accepted
+
+## Context
+
+A field's inner inset — the distance from the field's edge to the first character a person types — is
+declared in two places that both apply.
+
+`.mdy-input-wrapper__inliner` carries it as a logical, asymmetric pair: more room where the text
+starts than where a trailing affordance sits, written with logical properties because a physical
+spelling left the extra room on the left under `dir=rtl` and pushed everything at the inline end
+inside where it belonged. The control inside it carries its own symmetric padding, which nothing
+records and which predates the inliner.
+
+Where a renderer draws the inliner, both apply and the text starts at the sum. Measured across the
+three renderers on the same document:
+
+```
+                 text  select  datepicker  colors  daterange
+plain              28      28          28      16          28
+lit                16      16          16       0           8
+angular            16      16          16      16           8
+```
+
+The divergence is wide — every text-bearing kind — and it is the most visible property a field has,
+because it is where the writing appears. Nothing on the board sees it: the sweeps compare heights,
+classes and attributes, and the snapshots pin each renderer against its own past, so a horizontal
+offset that has always been there is invisible to both.
+
+**The rule is already written, and one renderer already follows it — once.** The colour field zeroes
+its control's padding, `.mdy-colors__hex-input { padding: 0 }`, precisely because the inliner is
+present there; that is why plain's colour field is 16 while its other nine are 28. Same renderer, two
+treatments, one of them charged twice — the defect is legible inside one implementation without
+comparing it to another.
+
+`lit`'s colour field at 0 is a separate matter of the same family and not a matter of taste: the text
+begins at the container's edge, touching the border.
+
+## Decision
+
+**A field's inner inset is declared in one place and applied once.** Where the inliner is drawn it is
+the declaration, and the control inside it carries no inline padding of its own; where it is not, the
+control's padding is the inset.
+
+**The number is the same either way: `1rem`.** The inliner's leading inset moves from `0.75rem` to
+`1rem` so that a renderer that draws it and a renderer that does not put the text in the same place —
+the two spellings must agree, or the inliner becomes a way for one renderer to look different while
+following the rules.
+
+The asymmetry the inliner exists for is unchanged: the leading inset is the text's, the trailing one
+stays `--mdy-affordance-inset`, and both stay logical so the pair survives `dir=rtl`.
+
+## Consequences
+
+- Nine kinds in one renderer move 12px inward-to-correct, and one renderer's colour field gains an
+  inset it never had. Two renderers do not move at all, which is the point: the change corrects
+  outliers rather than relocating the design.
+- Committed screenshot baselines record the difference, so this arrives as a reviewable diff rather
+  than as a claim. It is a visible change and it changes baselines in every theme.
+- The asymmetric gap widens from 8px to 12px between the leading inset and the affordance inset. That
+  is a consequence, not an intent: it follows from making the two declarations agree on the larger of
+  the two numbers, chosen because it is the one two renderers already draw and the one no baseline has
+  to move for.
+- The control's own inline padding stops being load-bearing wherever the inliner exists, which means
+  a future kind that draws the inliner and forgets to zero its control reproduces exactly this defect.
+  That is what the check below is for.
+
+## Alternatives rejected
+
+**Zero the control and keep `0.75rem`**, making the inliner the single declaration at its current
+number. Rejected: it moves all three renderers to 12px, changes every baseline in every theme for a
+4px difference of principle, and buys nothing a person can see.
+
+**Delete the inliner and let the control's padding be the inset everywhere.** It would work, and it
+discards the RTL reasoning the inliner was written for — the asymmetric pair cannot be expressed on a
+control whose padding is symmetric, and the record of why it is logical rather than physical would go
+with it.
+
+**Take the majority.** Two of three renderers draw 16, which is what a majority looks like, not what a
+reason looks like. The reason here is that one renderer applies a declaration twice, and it is
+demonstrable inside that renderer.
+
+## Verification
+
+`battle-tests/browser/` gains a check that measures the distance from a field's edge to the first
+character, for every kind, in all three renderers, and fails when they disagree. It does not exist as
+this record is written — the divergence was measured with a throwaway probe, which is evidence and
+not a ratchet — and the record is worth less until it does.
+
+What the check cannot decide is whether the shared number is right; it can only say the three agree.
+A run in which every renderer moved to 4px would pass.
+
+## Security and privacy
+
+None. The horizontal position of text inside a field carries no data and crosses no boundary.
