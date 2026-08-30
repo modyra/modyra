@@ -121,7 +121,12 @@ export function projectSelectA11y(
       // select's errors reach no assistive technology at all.
       "aria-describedby": describedBy,
       // Disabled alone: a read-only control still takes focus and can be copied from.
-      "aria-disabled": String(disabled),
+      //
+      // And only where the element does not answer for itself. A `<select>` carries `disabled` as a
+      // property the platform already exposes, so an `aria-disabled` beside it is a second answer to
+      // a question the element has answered — and two answers is how they come to disagree. The
+      // custom trigger is a button standing in for a chooser and has nothing but this to say it.
+      ...(native ? {} : { "aria-disabled": String(disabled) }),
       // And read-only said in its own word. The controller refuses the change either way; without
       // this a trigger that will not open its list looks identical to one that will.
       "aria-readonly": readonly ? "true" : null,

@@ -300,7 +300,22 @@ test("the combobox is named by its caption and by what it holds", () => {
 
 test("the platform's chooser is left to the platform", () => {
   const controller = createSelectController({ widgetId: "city", options, searchable: false });
-  assert.equal(controller.view().parts.trigger.attributes["aria-labelledby"], undefined,
+  const trigger = controller.view().parts.trigger;
+  assert.equal(trigger.attributes["aria-labelledby"], undefined,
     "a `<select>` has a value the reader announces on its own, so a reference here takes apart what "
     + "the platform already does right");
+  // `disabled` is a property a `<select>` carries, and a second answer beside it is how the two come
+  // to disagree. The native attribute stays: it is what actually refuses the press.
+  assert.equal(trigger.attributes["aria-disabled"], undefined,
+    "the projection answers a question the element answers itself");
+  assert.equal(trigger.attributes.disabled, false,
+    "the native attribute went with it, so nothing says the control is out of play");
+});
+
+test("the combobox has nothing but ARIA to say it is out of play", () => {
+  const trigger = createSelectController({ widgetId: "city", options, searchable: true, disabled: true })
+    .view().parts.trigger;
+  assert.equal(trigger.attributes["aria-disabled"], "true",
+    "a button standing in for a chooser carries no disabled state of its own, so dropping this "
+    + "leaves it announced as operable");
 });
