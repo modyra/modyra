@@ -43,9 +43,19 @@
  *     textarea   plain  84   lit 108   angular 108
  *     checkbox   plain  44   lit  20   angular  20
  *
- * What closes them is a decision about whose anatomy is right, and nobody has asked it. So they are
- * **open and unscheduled**, not waiting on anything — which is a different thing to inherit. A pin
- * naming a cause that has already happened reads as scheduled work and is not.
+ * **And the rule that settles them is already written down**, which is why these are a repair rather
+ * than a question. `DESIGN.md`, under *the field's own height is on the scale*: **a kind is in the row
+ * system when its height comes from the control scale.** Measured against the steps that scale
+ * declares — 28, 36, 44, 56 — the three renderers do not disagree about anatomy so much as about
+ * whether they are on it at all:
+ *
+ *     checkbox   plain 44 = control-3      lit and angular 20 = no control step
+ *     toggle     plain 56 = control-4      lit and angular 32 = no control step
+ *
+ * 20px is `--mdy-size-5`, which is on the **size** scale: a text measurement standing in for a row
+ * height. So this is not two defensible anatomies needing a decision — it is one renderer on the
+ * control scale and two off it, against a rule this repository has already taken. What is owed is the
+ * application, not the argument.
  *
  * Claims under attack: ADP-001, UI-011.
  */
