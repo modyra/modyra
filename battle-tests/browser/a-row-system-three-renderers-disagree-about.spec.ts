@@ -53,11 +53,19 @@
  * do not, which is unfair in the other direction rather than fairer. Measured and rejected; the file
  * subtracts the bands' boxes and not their margins.
  *
- * So what is left after that is `textarea` and `file`, where the difference is not spacing: plain
- * interposes an inliner inside the input wrapper where the other two put the control straight in.
- * **It is not a control-scale question** — no step is involved on any side — and it is not settled by
- * `DESIGN.md`'s row-system rule, which is about where a height *comes from* rather than about which
- * element tree states it.
+ * What is left after that is `textarea` and `file`, and **they have two different causes, neither of
+ * them an anatomy**:
+ *
+ *     textarea   rows=2 in one renderer, rows=3 in two — same line height, same padding, same
+ *                min-height, so 2×24+16 = 64 against 3×24+16 = 88. A default for an attribute the
+ *                document did not declare.
+ *     file       the container itself: 181 against 173. No inliner on any side; eight pixels stated
+ *                somewhere in the container's own box.
+ *
+ * **Neither is a control-scale question** — no step is involved on any side — and neither is settled
+ * by `DESIGN.md`'s row-system rule, which is about where a height *comes from* rather than about
+ * which element tree states it. The `textarea` one is the shape ADR 0179 names: silence is a default
+ * and not a neutral position, and three renderers filled the same silence two ways.
  *
  * Claims under attack: ADP-001, UI-011.
  */
