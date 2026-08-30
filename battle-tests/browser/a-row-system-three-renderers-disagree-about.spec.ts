@@ -176,9 +176,17 @@ for (const _ of [0]) {
           // A toggle wears its own label class rather than the shared one; asking for both keeps
           // this about where a label sits rather than about which anatomy drew it.
           const label = element.querySelector("label, .mdy-label, .mdy-toggle__label") as HTMLElement | null;
+          // **The control's row, not the field's whole column.** Under a field that can fail, a
+          // renderer may hold the message container open from the first paint or build it when it
+          // has something to say, and both conform — so their heights differ by a band the record
+          // permits either way. Counting that band makes a conforming choice look like a rhythm
+          // broken, which is a different thing from a control that is taller than its peers.
+          const bands = [...element.querySelectorAll(".mdy-control__errors, .mdy-supporting-text")]
+            .filter((one) => one.parentElement === element)
+            .reduce((total, one) => total + (one as HTMLElement).getBoundingClientRect().height, 0);
           return {
             kind,
-            height: Math.round(element.getBoundingClientRect().height),
+            height: Math.round(element.getBoundingClientRect().height - bands),
             labelLeft: label === null ? null : Math.round(label.getBoundingClientRect().left),
           };
         });
