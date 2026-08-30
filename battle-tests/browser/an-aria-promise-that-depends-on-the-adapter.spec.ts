@@ -145,7 +145,16 @@ test("an aria promise that depends on the adapter", async ({ page }) => {
           for (const element of where.querySelectorAll("*")) {
             for (const name of element.getAttributeNames()) {
             if (name === "aria-hidden") continue;
-            if (name.startsWith("aria-")) names.add(name);
+            // The attribute *and* where it landed. A promise one renderer makes and another does not
+            // is one finding on the control and a different one on an option inside it: the same
+            // attribute on the group is the caption doing its job and on each option is the caption
+            // taking the option's own name away, and a row that says only the attribute sends a
+            // reader to look at the wrong element.
+            if (name.startsWith("aria-")) {
+              const part = [...element.classList].find((one) => one.startsWith("mdy-"))
+                ?? `${element.tagName.toLowerCase()}${element.getAttribute("role") === null ? "" : `[${element.getAttribute("role")}]`}`;
+              names.add(`${name} on ${part}`);
+            }
           }
           }
         };
