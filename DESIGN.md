@@ -393,6 +393,13 @@ allowances per theme and asserts them in both directions, so one that stops appl
 **Muted text is reading text.** Labels, placeholders, supporting text and weekday headers hold 4.5:1
 like anything else — "secondary" is their weight in the hierarchy, not the standard they answer to.
 
+**A control's glyph is reading text too**, and where the control is the way back from a mistake it is
+the last thing that may be hard to see. The mark that takes a file off was painted in the error
+colour and measured 2.88:1, 3.22:1 and 1.61:1 across three themes: a saturated red is small text that
+clears 4.5:1 on neither a light surface nor a dark one, so a hue chosen to mean *destructive* cannot
+also carry the glyph at rest. It carries it on hover and on focus, where a colour has a state to
+carry rather than a permanent cost.
+
 **Opacity is a colour that has not been decided yet.** Muting text by fading it composites against
 whatever is behind, so one number is several contrasts: the adjacent-month days in a calendar were
 `opacity: 0.5` and measured 3.06:1 on the resting surface and 3.01:1 on a hovered cell. Where a
