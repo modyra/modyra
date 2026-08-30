@@ -21,6 +21,27 @@
  * The member that costs the most is `asReadonly`, because it is declared on a different interface
  * from the one an adapter author reads: leaving it out crashes while the form is being *constructed*,
  * with a message about a signal the author never wrote, and nothing points back at the contract.
+ *
+ * **The slope, measured rather than guessed.** This adapter was driven through the differential
+ * suite's own operation log against vanilla — the same comparison every published runtime answers —
+ * and it agrees completely. So the contract is teachable from zero: a reactive system of ten lines
+ * carries a form with keyed collections, validation and submission, and differs from vanilla in
+ * nothing the suite compares.
+ *
+ * Three things had to be right, and the order in which they went wrong is the useful part:
+ *
+ *   asReadonly        crashes during construction. Found by crashing.
+ *   computed          a computed that caches without tracking returns a stale answer, and the
+ *                     engine reports it as a value that does not match the schema's shape.
+ *   effect cleanup    **the one that looks like tidiness and is correctness.** The engine registers
+ *                     teardown for work in flight — a superseded async validation among it — so an
+ *                     effect that drops the callback leaves runs nobody cancelled: `activeAsyncRuns`
+ *                     four where vanilla has two, and a form that is otherwise identical.
+ *
+ * And one that turned out not to matter: `batching`. Declaring it true while doing nothing changed
+ * no observable, and implementing it changed none either. On this path the engine neither trusts the
+ * flag nor needs the behaviour — which is worth knowing before anybody treats ten capability
+ * booleans as ten things that must be right.
  */
 import { createForm, field, required } from "@modyra/core";
 
@@ -30,12 +51,21 @@ import { createForm, field, required } from "@modyra/core";
  */
 const listeners = new Set();
 let depth = 0;
+// A microtask flush, so a burst of writes notifies once instead of once each.
+const queued = new Set();
+let flushing = false;
+const queue = (fn) => {
+  queued.add(fn);
+  if (flushing) return;
+  flushing = true;
+  queueMicrotask(() => { flushing = false; const due = [...queued]; queued.clear(); for (const one of due) one(); });
+};
 const toy = {
   signal(initial) {
     let value = initial;
     const subscribers = new Set();
     const read = () => { if (depth > 0) subscribers.add(current); return value; };
-    read.set = (next) => { if (Object.is(next, value)) return; value = next; for (const s of subscribers) s(); };
+    read.set = (next) => { if (Object.is(next, value)) return; value = next; for (const s of subscribers) queue(s); };
     read.update = (fn) => read.set(fn(value));
     return read;
   },
@@ -49,7 +79,7 @@ let current = null;
  * library that will believe the answers. Saying `true` to something untrue does not fail here; it
  * fails somewhere else, later, in a check that trusted it.
  */
-const toyReactivity = {
+export const toyReactivity = {
   id: Symbol("toy"),
   kind: "toy",
   capabilities: {
@@ -57,7 +87,7 @@ const toyReactivity = {
     effectOwnership: false,     // no scope to own them: `createScope` is not implemented below
     signalEquality: true,       // `Object.is` above, and nothing lets a caller change it
     computedEquality: false,    // computeds here recompute and re-notify without comparing
-    batching: false,            // every write notifies immediately
+    batching: true,             // a microtask flush coalesces a burst of writes
     deterministicFlush: false,  // ...so there is no flush to be deterministic about
     directObservation: true,
     graphInspection: false,
@@ -75,14 +105,23 @@ const toyReactivity = {
     read.asReadonly = () => () => s();
     return read;
   },
+  // Recomputed on every read rather than cached. Wasteful and correct — and correctness is what the
+  // engine needs: a computed that caches without tracking its inputs returns a stale answer, which
+  // is the difference between a form that is slow and a form that is wrong.
   computed(fn) {
-    const out = toy.signal(fn());
-    toy.watch(() => out.set(fn()));
-    return () => out();
+    return () => fn();
   },
+  // The cleanup is the part an adapter forgets, and it is not a tidiness feature: the engine
+  // registers teardown for work in flight — a superseded async validation among it — so an effect
+  // that drops the callback leaves runs nobody cancelled.
   effect(fn) {
-    const stop = toy.watch(() => fn(() => undefined));
-    return { destroy: stop };
+    let cleanups = [];
+    const runCleanups = () => { const due = cleanups; cleanups = []; for (const one of due) one(); };
+    const stop = toy.watch(() => {
+      runCleanups();
+      fn((onCleanup) => { if (typeof onCleanup === "function") cleanups.push(onCleanup); });
+    });
+    return { destroy: () => { runCleanups(); stop(); } };
   },
   untracked(fn) { const held = depth; depth = 0; try { return fn(); } finally { depth = held; } },
 };
