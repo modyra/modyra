@@ -543,8 +543,24 @@ test("chip, segment and slider show what they are doing, in every theme", async 
     if (await segment.count()) {
       const bar = page.locator(".mdy-segmented:visible").first();
       const backdrop = await bar.evaluate((el) => getComputedStyle(el).backgroundColor);
-      await segment.hover();
+      // Scrolled to, then pointed at its middle. A hover on an element the page has not brought into
+      // view lands where the element used to be, and headless engines are where that shows.
+      await segment.scrollIntoViewIfNeeded().catch(() => undefined);
+      await segment.hover().catch(() => undefined);
       await page.waitForTimeout(150);
+      if (!(await segment.evaluate((el) => el.matches(":hover")))) {
+        const box = await segment.boundingBox();
+        if (box !== null) await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+        await page.waitForTimeout(150);
+      }
+      // **The pointer is on it, before anything is said about what that looks like.** A hover that
+      // did not take reads exactly like a theme with no hover paint: the background is the resting
+      // one and the assertion below calls the stylesheet transparent. `:hover` is the browser's own
+      // answer to whether the pointer arrived, so it is asked rather than assumed — and a pointer
+      // that will not land is a finding about the page, not about the colour.
+      const pointerIsOn = await segment.evaluate((el) => el.matches(":hover"));
+      expect(pointerIsOn, `${theme}: the pointer never reached the segment, so its paint was not measured`).toBe(true);
+
       const hovered = await segment.evaluate((el) => getComputedStyle(el).backgroundColor);
       expect((await rgba(hovered))[3], `${theme}: segmented hover must not be fully transparent`).toBeGreaterThan(0);
       expect(
