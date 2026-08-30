@@ -591,16 +591,23 @@
         font-weight: var(--mdy-font-weight-medium);
     }
 
+    /* A control's glyph is reading text too, and where the control is the way back from a mistake it
+       is the last thing that may be hard to see. A saturated red is small text that clears 4.5:1 on
+       neither a light surface nor a dark one, so the hue that means *destructive* carries the mark
+       on hover and on focus — where a colour has a state to carry — and not at rest. The dimming
+       went with it: an opacity is a colour that has not been decided yet, and this one took the
+       glyph to 1.61:1 against the container behind it. */
     .mdy-file-clear,
     .mdy-file-remove {
-        color: var(--mdy-error);
-        opacity: 0.7;
-        transition: opacity var(--mdy-sys-motion-duration-slow, 0.2s);
+        color: var(--mdy-on-surface);
+        transition: color var(--mdy-sys-motion-duration-slow, 0.2s);
     }
 
     .mdy-file-clear:hover,
-    .mdy-file-remove:hover {
-        opacity: 1;
+    .mdy-file-remove:hover,
+    .mdy-file-clear:focus-visible,
+    .mdy-file-remove:focus-visible {
+        color: var(--mdy-error);
     }
 
     /* Unavailable is paint here too — the control keeps its place in the row and in the tab order,
