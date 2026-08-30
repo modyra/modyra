@@ -74,7 +74,13 @@ test("a closed section is not announced as failing either", async ({ page }) => 
   // in which the announcement is owed, so a page that stayed silent here would fail rather than
   // pass, and the silence above stops being free.
   await chooseAccount(page, "Company");
-  await nameInput(page).click();
+
+  // The control case, made the way the record allows. Reading a field is not declining it: focus
+  // arriving and leaving with the value untouched leaves it silent, deliberately, so a control that
+  // only clicks and blurs asserts the opposite of what the library promises. A value typed and taken
+  // away is the same person changing their mind, and that is what makes the field speak.
+  await nameInput(page).fill("x");
+  await nameInput(page).fill("");
   await nameInput(page).blur();
 
   await expect.poll(async () => nameInput(page).getAttribute("aria-invalid")).toBe("true");

@@ -17,6 +17,17 @@ import {
 } from "@modyra/widgets";
 import { action, readoutPrinter, toolbar } from "./shell.js";
 
+
+/**
+ * The attributes HTML reads by presence rather than by value.
+ *
+ * `aria-disabled="false"` says the control is available; `disabled="false"` says it is not, because
+ * a boolean attribute is true whenever it is there at all. One projection carries both kinds.
+ */
+const BOOLEAN_ATTRIBUTES = new Set([
+  "disabled", "readonly", "required", "checked", "selected", "multiple", "hidden", "open", "inert",
+]);
+
 export const headlessPanel = {
   id: "headless",
   title: "Headless",
@@ -183,7 +194,17 @@ export const headlessPanel = {
         const part = view.parts[cell.iso];
         button.className = part.classes.join(" ");
         for (const [name, value] of Object.entries(part.attributes)) {
-          if (value !== null && value !== undefined) button.setAttribute(name, String(value));
+          if (value === null || value === undefined) continue;
+          // A boolean attribute is set by being there, not by what it says. `disabled="false"` is a
+          // disabled button — HTML reads the presence and never the value — so a host that stringifies
+          // every attribute the projection hands it draws a grid nobody can press, while every ARIA
+          // attribute beside it wants exactly that stringified `"false"`.
+          if (BOOLEAN_ATTRIBUTES.has(name)) {
+            if (value === false) button.removeAttribute(name);
+            else button.setAttribute(name, "");
+            continue;
+          }
+          button.setAttribute(name, String(value));
         }
         button.textContent = String(cell.day);
         button.addEventListener("click", () => execute(controller.dispatch({ type: "select-date", iso: cell.iso })));

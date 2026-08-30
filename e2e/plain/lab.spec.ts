@@ -349,8 +349,16 @@ test("nested: a closed branch keeps its answers, leaves the payload, and stops b
   // Open, and incomplete: the branch is in play and holds a required answer nobody gave.
   await expect.poll(async () => (await readout(page)).formIsValid).toBe(false);
 
-  await page.getByRole("combobox", { name: "Who is answering?" }).click();
-  await page.getByRole("option", { name: "A person" }).click();
+  // Chosen in whichever shape the page drew. A select that asks for nothing in particular is the
+  // platform's own chooser, whose options live in a list the browser draws and no pointer of ours
+  // can reach; one built of markup answers a click on the option. The gesture follows the element.
+  const chooser = page.getByRole("combobox", { name: "Who is answering?" });
+  if (await chooser.evaluate((node) => node.tagName === "SELECT")) {
+    await chooser.selectOption({ label: "A person" });
+  } else {
+    await chooser.click();
+    await page.getByRole("option", { name: "A person" }).click();
+  }
 
   await expect.poll(async () => (await readout(page)).formIsValid).toBe(true);
   const held = await readout(page);
