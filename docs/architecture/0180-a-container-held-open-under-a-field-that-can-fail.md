@@ -46,6 +46,33 @@ option defaults to "reserved follows visible", so an adapter that has not taken 
 draws. What it does not get is the stable reference, and it owns the timing question that comes with
 that.
 
+## Amendment: the complement, and what an empty container costs when it is kept
+
+This record says when a container is **held open**. Read alone it invites the converse — that any
+empty container should be — and the converse is not decided here. It is decided now, because the
+same shape appeared under a field that lists what a person attached.
+
+The two reasons above are the test, and both must fail before a container may go:
+
+- **Does it appear outside the act the person is performing?** The message this record is about
+  arrives while somebody is already moving toward the next field: they did not ask for it, they are
+  not looking at it, and it moves the target under an aim already taken. A list of attached files
+  changes because the person just attached a file — they are looking at the thing that changed, and
+  the movement is the answer to their own action. Inside the act, a container may appear; outside it,
+  the space is reserved.
+- **Must a reference land on it?** `aria-describedby` names the message container, so it must exist
+  for the reference to resolve. Nothing names the file list.
+
+**A container that fails both is not kept, and not keeping it means taking it out of the flow rather
+than leaving it empty.** In a layout with a gap, an empty child is still a child: it is zero pixels
+tall and is charged a full gap anyway. Under a file field that is 21 + 8 = 29 against 21, from an
+element holding nothing — and the proof is inside one renderer rather than between two, because the
+container beside it is equally empty and costs nothing, being `hidden`. Same box, two treatments, one
+of them billed.
+
+So the rule an empty container answers to is not "is it in the document" but **"is it in the flow"**,
+and `hidden` is how a container that is kept for a reference stops paying for space it does not use.
+
 ## Consequences
 
 Every field with a rule carries an element that is empty most of the time, in the document and in the
