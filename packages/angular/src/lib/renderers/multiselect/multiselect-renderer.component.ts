@@ -389,7 +389,12 @@ const CHIPS = partSelector("multiselect", "chips") ?? "";
 
     @if (errorsReserved()) {
       <mdy-error-list [fieldId]="fieldId" [errors]="errorsOnScreen()" />
-    } @else if (projectedSupportingText(); as st) {
+    }
+    <!-- Not an else: an error does not take the place of the instruction that would have prevented
+         it, which is what the described-by projection says by naming both. Rendered as an
+         alternative, a field that can fail lost its supporting text the moment the error container
+         was reserved — and the reference to it went on naming an element no longer on the page. -->
+    @if (projectedSupportingText(); as st) {
       <!-- The two routes a field's own words arrive by, and both are tested here because the id the
            control describes itself with is claimed for either. A branch that asks only about the
            value leaves a projected description unrendered while the control still points at it —

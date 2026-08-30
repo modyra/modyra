@@ -270,7 +270,12 @@ import { MdyDropdownBase } from "../dropdown-base";
 
     @if (errorsReserved()) {
       <mdy-error-list [fieldId]="fieldId" [errors]="errorsOnScreen()" />
-    } @else if (projectedSupportingText(); as st) {
+    }
+    <!-- Not an else: an error does not take the place of the instruction that would have prevented
+         it, which is what the described-by projection says by naming both. Rendered as an
+         alternative, a field that can fail lost its supporting text the moment the error container
+         was reserved — and the reference to it went on naming an element no longer on the page. -->
+    @if (projectedSupportingText(); as st) {
       <div class="mdy-supporting-text" [id]="descriptionId(fieldId)">
         <ng-container [ngTemplateOutlet]="st.template" />
       </div>
