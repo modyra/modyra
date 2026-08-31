@@ -80,12 +80,35 @@ Six items, in the order their dependencies allow:
    It also answers only "did somebody forget to update the baseline", never "what changed since the
    release": there is no `--since`, so its green means less than the question everybody asks it.
 
-2. **Layer one — the common thing is declared, not imported.** Five of the eight symbols in a
-   starter are validators named one at a time; a field that takes them as options delegates to the
-   same functions and leaves them exported for composition. And a door that parses, applies and
-   mounts in one act closes both of scenario (b)'s traps by construction: a rule written on the field
-   instead of beside it is accepted today with `ok: true`, and rules the parser reads are not applied
-   unless a second call applies them.
+2. **Layer one — the hand-written path reaches the declarative vocabulary that already exists.**
+   Counted on imports rather than on names — `min` and `max` are also schema keys — 25 of the 37
+   files outside the packages that import from `@modyra/core` name a validator, and **24 of those 25
+   import `required`**. The most-used rule in the repository is the one that costs an import
+   everywhere, so this item pays on the dominant case rather than on a tail.
+
+   The vocabulary is not to be invented: `MdyDynamicValidators` already states rules as data, and a
+   document written in it already becomes functions. Only the hand-written path still names them one
+   at a time. So `rules:` on a field is *that same language*, not a third one — learned once, spoken
+   in two places.
+
+   **Reconciled, not merged.** The two vocabularies are two species and must keep diverging where
+   they do: `MdyDynamicValidators` states an author's *intention* (`required`, `email`), and
+   `MdyValidatorFacts` states the *consequence* on the native control (`inputMode`, `step`). `email`
+   belonging only to the first and `inputMode` only to the second is correct, and a single merged
+   list would end that distinction the first time somebody wrote `inputMode` as a rule. What is owed
+   is the declared map between them.
+
+   Three gaps are real rather than legitimate: `step` is a consequence with no intention that can
+   ask for it, and `integer` and `oneOf` exist as functions with no word in the declarative
+   vocabulary. `oneOf` stays out of `rules:` regardless — it collides with `options` — and at 2
+   files of use that exclusion costs almost nothing, which is what closes the argument for
+   completeness for its own sake.
+
+   And a door that parses, applies and mounts in one act closes both of scenario (b)'s traps by
+   construction: rules the parser reads are not applied unless a second call applies them, and a rule
+   written on the field instead of beside it is still *kept* — both modes now refuse the document,
+   and what they disagree about is what survives it (strict keeps none of the field, lenient keeps
+   it), so a reader consulting only the verdict cannot tell that a constraint was dropped.
 
 3. **The contract teaches itself.** A renderer written from the published contract alone reports
    `NOT CONFORMANT — 8 findings · 6 of 10 sections` ([issue #2](https://github.com/modyra/modyra/issues/2)),
