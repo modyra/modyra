@@ -81,7 +81,7 @@ export const MDY_DYNAMIC_MEMBERS = Object.freeze({
   ] as readonly string[]),
   field: Object.freeze([...FIELD_BASE, ...FIELD_BY_KIND] as readonly string[]),
   validators: Object.freeze([
-    "required", "email", "min", "max", "minLength", "maxLength", "pattern", "messages",
+    "required", "email", "integer", "min", "max", "minLength", "maxLength", "pattern", "messages",
   ] as readonly string[]),
   option: Object.freeze(["value", "label", "disabled"] as readonly string[]),
   rule: Object.freeze(["effect", "target", "when"] as readonly string[]),

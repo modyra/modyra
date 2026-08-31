@@ -33,6 +33,7 @@ import type { MdyTimeFormat } from "../time-utils.js";
 export interface MdyDynamicValidatorMessages {
   readonly required?: string;
   readonly email?: string;
+  readonly integer?: string;
   readonly min?: string;
   readonly max?: string;
   readonly minLength?: string;
@@ -43,6 +44,13 @@ export interface MdyDynamicValidatorMessages {
 export interface MdyDynamicValidators {
   readonly required?: boolean;
   readonly email?: boolean;
+  /**
+   * The value must be a whole number.
+   *
+   * Declared as a rule rather than as the `step` it implies: `step` is what the rule *does* to the
+   * native control, and a document says what it wants, not what that costs the control.
+   */
+  readonly integer?: boolean;
   readonly min?: number;
   readonly max?: number;
   readonly minLength?: number;

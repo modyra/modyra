@@ -18,7 +18,7 @@ import { validationMessagesForLocale } from "../validation-messages.js";
 import { MDY_VALUE_CONTRACTS, type MdyValueShape } from "../value-contracts.js";
 import {
   eachOneOf,
-  email,
+  email, integer,
   completeRange,
   max,
   maxLength,
@@ -71,6 +71,7 @@ export function buildDynamicValidators(
   const out: Array<ValidatorFn<never>> = [];
   if (config.required) out.push(required(wrote.required ?? say.required));
   if (config.email) out.push(email(wrote.email ?? say.email) as ValidatorFn<never>);
+  if (config.integer) out.push(integer(wrote.integer ?? say.integer) as ValidatorFn<never>);
   if (config.min !== undefined) {
     out.push(min(config.min, wrote.min ?? say.min(config.min)) as ValidatorFn<never>);
   }
