@@ -1,12 +1,8 @@
 {
   "note": "Browser specs that are red because the defect they describe is open. A red listed here does not fail a build; a red that is not listed is a regression. Rewrite with `npm run battle:browser:ci -- --accept`.",
   "order": "Repair in severity order, as the node tier does. A spec's severity is the worst of the claims its header names; `unknown` is a spec that names none, which is most of them.",
-  "recordedAt": "2026-08-30T06:14:29Z",
-  "openReds": 1,
-  "bySeverity": {
-    "S2": 1
-  },
-  "knownRed": [
-    "one-document-two-spellings-of-a-date.spec.ts › one document is one date on the screen, whoever drew it"
-  ]
+  "recordedAt": "2026-08-31T10:46:16Z",
+  "openReds": 0,
+  "bySeverity": {},
+  "knownRed": []
 }
