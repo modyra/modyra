@@ -15,6 +15,12 @@ concurrency:
 jobs:
   build-and-test:
     runs-on: ubuntu-latest
+    # A job that hangs on `main` does not fail: it holds its concurrency group until the platform
+    # default of six hours expires, and every push behind it queues rather than running. That is an
+    # outage of verification, and it is silent — the queued runs report `pending`, not `blocked`.
+    # The limit is roughly twice the longest green run, so a slow runner still finishes and a hung
+    # one is released in minutes.
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@v6
 

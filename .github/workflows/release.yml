@@ -22,6 +22,11 @@ concurrency: ${{ github.workflow }}-${{ github.ref }}
 jobs:
   release:
     runs-on: ubuntu-latest
+    # Ninety, and deliberately not read off this job's own history. Past runs took four minutes,
+    # but they predate the gates above: this job now runs the node battles, installs Chromium and
+    # runs the browser battles, so its cost is the sum of its steps rather than what it used to be.
+    # A limit calibrated on the past would kill every release from here on.
+    timeout-minutes: 90
     permissions:
       contents: read
       id-token: write
