@@ -312,7 +312,11 @@ export const nestedPanel = {
       // dropped, so the fields mount in a flat column and nothing on the page says a branch is gone.
       // Silently losing the arrangement is worse than a refusal, and it is invisible without this.
       const said = parsed.diagnostics.map((each) => `${each.code} at ${each.path}: ${each.message}`);
-      if (!parsed.ok) {
+      // Read from what survives, not from `ok`. `ok` answers *was anything lost*, and this document
+      // loses its arrangement while keeping every field — which is the case this panel exists to
+      // show. Branching on `ok` would report a refusal over a form whose questions all arrived, and
+      // mount nothing where the point is that the fields are there and the branches are not.
+      if (parsed.fields.length === 0) {
         state = { showing: `a chain ${depth} deep`, mounted: false, refused: said };
         print();
         return;
