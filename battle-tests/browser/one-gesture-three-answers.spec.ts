@@ -226,6 +226,19 @@ for (const kind of ["datepicker", "timepicker"]) {
 
     const answers: Record<string, unknown> = {};
     for (const host of HOSTS) {
+      // **The three renderers are driven one after another, so a moving clock is a fourth variable.**
+      // A field of these kinds opens on the present when it holds nothing, and the value this
+      // gesture reaches carries the current minute: measured at 15:14:52 the three answered 14:14,
+      // minute for minute. Visiting three pages takes longer than a minute is wide, so a run that
+      // straddles the boundary has the first host answering 12:09 and the other two 12:10 — and the
+      // message says *the keyboard model diverges*, which is a claim about the renderers made from a
+      // difference none of them caused.
+      //
+      // Pinned rather than seeded with a value: what an empty field opens on is part of what these
+      // three are being compared for, and handing them a starting value would remove the comparison
+      // along with the flake. The instant is mid-month and mid-day so no boundary — midnight, a
+      // month's end, a daylight-saving step — sits inside the run.
+      await page.clock.setFixedTime(new Date("2026-03-04T10:30:00"));
       await page.goto(host.page);
       await page.waitForFunction((flag) => (window as never as Record<string, boolean>)[flag] === true, host.ready);
       answers[host.name] = await chooseWithOneStep(page, host, `gesture-${kind}`, kind);
