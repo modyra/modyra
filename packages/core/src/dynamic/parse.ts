@@ -275,7 +275,7 @@ function hasValidOptions(options: unknown): options is ReadonlyArray<MdySelectOp
 
 /** The rules a field declares, and so the only keys its messages may name. */
 const MDY_VALIDATOR_MESSAGE_KEYS: ReadonlySet<string> = new Set([
-  "required", "email", "integer", "min", "max", "minLength", "maxLength", "pattern",
+  "required", "email", "min", "max", "minLength", "maxLength", "pattern",
 ]);
 
 function hasValidValidatorConfig(
@@ -290,7 +290,7 @@ function hasValidValidatorConfig(
     return false;
   }
   const config = validators as Partial<MdyDynamicValidators>;
-  const boolKeys = ["required", "email", "integer"] as const;
+  const boolKeys = ["required", "email"] as const;
   for (const key of boolKeys) {
     const value = config[key];
     if (value !== undefined && typeof value !== "boolean") {
