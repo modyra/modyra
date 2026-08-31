@@ -327,19 +327,44 @@ if (config.declaresRules === true) {
 // every renderer for doing what the contract says.
 if (typeof config.mountScoped === "function") {
   const findings = [];
+  // Which kinds put no id on the page. An instance that mints none carries none of the
+  // relationships an id ties together, so there is nothing between two of them that could
+  // collide: the intersection is empty because the subject is absent, not because it is sound.
+  // Tracked per kind, because a renderer may legitimately id some kinds and not others.
+  const kindsWithoutIds = [];
   for (const kind of kinds) {
     const first = await config.mountScoped(kind, "one");
     const second = await config.mountScoped(kind, "two");
     await first.settle?.();
     await second.settle?.();
 
-    for (const issue of inspectCoexistence(idsUnder(first.root), idsUnder(second.root))) {
+    const firstIds = idsUnder(first.root);
+    const secondIds = idsUnder(second.root);
+    if (firstIds.size === 0 && secondIds.size === 0) kindsWithoutIds.push(kind);
+
+    for (const issue of inspectCoexistence(firstIds, secondIds)) {
       findings.push(`${kind}: ${issue.code} — ${issue.detail}`);
     }
     first.dispose();
     second.dispose();
   }
-  record("Multi-instance isolation", findings);
+  if (kindsWithoutIds.length === kinds.length) {
+    record(
+      "Multi-instance isolation",
+      null,
+      "not run — no kind emitted an id, so no two instances have anything that could collide;"
+        + " passing here would report an isolation this renderer never demonstrated",
+    );
+  } else {
+    record(
+      "Multi-instance isolation",
+      findings,
+      kindsWithoutIds.length > 0
+        ? `not established for ${kindsWithoutIds.join(", ")}: no id was emitted, so nothing there`
+          + " could collide"
+        : undefined,
+    );
+  }
 } else {
   record(
     "Multi-instance isolation",
