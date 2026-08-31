@@ -76,7 +76,21 @@ both the form and the warning.
 precisely. It did not prevent the hazard, because the consumer who mounts on `ok` never read the
 test.
 
+The strongest evidence against this option is not an argument. It is a line of shipped code:
+
+    // packages/angular/src/lib/dynamic/mdy-dynamic-form.component.ts
+    return parsed.ok || this.parseMode() === "lenient" ? parsed.fields : [];
+
+A consumer inside this repository had already worked around the flag, writing the correct answer
+beside it rather than reading it — because in lenient mode `ok` did not answer the question that
+code needed asked. It reached the same conclusion as this record, from the outside, without
+anybody deciding it. A contract whose users route around it is not one that better prose fixes.
+
 ## Verification
+
+Every reader of `ok` in the shipped packages was swept rather than assumed: three sites, all safe.
+`@modyra/studio` parses strict in both of its; Angular's dynamic form defaults to strict and, in
+lenient, never consulted the flag at all.
 
 `packages/core/test/dynamic-diagnostics.test.mjs` asserts the property directly on a refused field.
 The property was also exercised across three documents — a refused field, an unknown member carrying
