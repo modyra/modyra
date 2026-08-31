@@ -25,7 +25,44 @@ import { MDY_STATE_MODIFIERS, stateClass, type MdyStateName } from "./state.js";
  */
 export const MDY_WIDGET_CONTRACT_VERSION = 5 as const;
 
-/** Semantic element categories that presenters can map to their native rendering API. */
+/**
+ * Semantic element categories that presenters can map to their native rendering API.
+ *
+ * A category says what a part *is*, never which tag draws it: a presenter that is not a DOM
+ * chooses its own equivalent. What each one admits in a DOM is enforced, not suggested —
+ * `MDY_SEMANTIC_ELEMENTS` in `@modyra/widgets/testing` is the table a conformance run judges
+ * against, and it is the authority here. Read it before inventing a mapping; four categories are
+ * deliberately unconstrained and the rest are not.
+ *
+ * - `root` — the field's outermost element. Unconstrained: every renderer wraps differently.
+ * - `group` — gathers other parts and claims nothing itself. Unconstrained.
+ * - `presentation` — a decorative element with no semantics of its own. Unconstrained, which is
+ *   the point of it: it admits everything, so it cannot express "holds controls" — that is
+ *   `container`.
+ * - `popup` — a positioning box. Unconstrained on purpose: its accessible semantics live on what
+ *   it contains, and forcing a role on the box would say nothing.
+ * - `container` — holds controls and is not one. The distinction from `presentation` matters
+ *   wherever the children are buttons, because a button inside a button is invalid.
+ * - `label` — the caption naming a control. A `<label>`, and nothing else.
+ * - `input` — the element a person enters or operates a value through.
+ * - `button` — a control that acts when pressed.
+ * - `affordance` — what a pointer uses to reach a value the widget owns: a label wrapping a hidden
+ *   native control, or a button beside one. Not a bare box.
+ * - `submission` — an input that exists so a native submit has something to read. It carries no
+ *   role, because a role would duplicate, in the accessibility tree, a value already operable
+ *   elsewhere.
+ * - `listbox` / `option` — a list chosen from, and one choice in it.
+ * - `radio` — one choice where taking it releases the others.
+ * - `dialog` — a region that takes focus and holds it.
+ * - `grid` / `gridcell` / `columnheader` — a two-dimensional arrangement, one cell of it, and the
+ *   heading of one of its columns. A weekday above a calendar is a header, not prose, and saying
+ *   so is what keeps the grid navigable.
+ * - `text` — prose a person reads. Which element carries it is presentation; what it may not be is
+ *   a control pretending to be a caption.
+ * - `status` — words announced when they change: a run of errors, a loading note.
+ * - `image` — a graphic with an accessible name. The tag is whatever draws it, so the role is what
+ *   counts. An inline error is one of these: an icon carrying its message in a tooltip.
+ */
 export type MdyWidgetSemanticElement =
   | "root" | "label" | "input" | "button" | "group" | "status" | "submission"
   | "listbox" | "option" | "radio" | "dialog" | "grid" | "gridcell" | "container"

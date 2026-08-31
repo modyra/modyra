@@ -6,7 +6,10 @@ export { expectedWeekdayOrder, inspectCalendarWeekStart, MDY_CALENDAR_ISSUE } fr
 export type { MdyCalendarIssue, MdyCalendarIssueCode } from "./calendar.js";
 export { runCommandExecutionTests } from "./command-tests.js";
 export { findPartElement, findPartElements } from "./part-lookup.js";
-export { assertWidgetDomContract, inspectWidgetDom } from "./dom-tests.js";
+// `MDY_SEMANTIC_ELEMENTS` is what a conformance run judges an element category against, so it is
+// also the answer to "what may I draw for this part" — a renderer author who cannot read it
+// invents a mapping instead, and the invention is what the run then refuses.
+export { assertWidgetDomContract, inspectWidgetDom, MDY_SEMANTIC_ELEMENTS } from "./dom-tests.js";
 export type { MdyDomContractIssue, MdyDomContractIssueCode, MdyDomContractOptions, MdyDomPartMap } from "./dom-tests.js";
 export { assertWidgetStructureContract, inspectWidgetStructure } from "./structure-tests.js";
 export { inspectUnsupportedStateAria, inspectWidgetState } from "./state-tests.js";

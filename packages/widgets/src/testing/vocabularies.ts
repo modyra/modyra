@@ -16,6 +16,7 @@
  * as much as the contract's own catalogues, which is why they are indexed rather than merely present.
  */
 import { MDY_CALENDAR_ISSUE } from "./calendar.js";
+import { MDY_SEMANTIC_ELEMENTS } from "./dom-tests.js";
 import {
   MDY_CANONICAL_AFTER_ESCAPE, MDY_CANONICAL_AT_REST, MDY_CANONICAL_DISABLED, MDY_CANONICAL_EMPTY,
   MDY_CANONICAL_FILLED, MDY_CANONICAL_FILLED_OBSERVATION, MDY_CANONICAL_INVALID, MDY_CANONICAL_OPEN,
@@ -44,4 +45,5 @@ export const MDY_TESTING_VOCABULARIES: readonly MdyTestingVocabulary[] = [
   { name: "MDY_LIFECYCLE_ISSUE", shape: "names", value: MDY_LIFECYCLE_ISSUE, door: "./testing" },
   { name: "MDY_LIFECYCLE_TRANSITIONS", shape: "list", value: MDY_LIFECYCLE_TRANSITIONS, door: "./testing" },
   { name: "MDY_PAINT_BEATS", shape: "list", value: MDY_PAINT_BEATS, door: "./testing" },
+  { name: "MDY_SEMANTIC_ELEMENTS", shape: "table", value: MDY_SEMANTIC_ELEMENTS, door: "./testing" },
 ];
