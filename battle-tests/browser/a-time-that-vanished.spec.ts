@@ -118,7 +118,19 @@ test("the shape each picker does read is one it keeps", async ({ page }) => {
   // The control. Without it, everything below would also be true of a control that reads nothing at
   // all, which is a different and larger finding than the one being made.
   const date = await typeAndLeave(page, "datepicker", "03/04/2026", "ok-date");
-  expect({ shows: date.shows, value: date.value }).toEqual({ shows: "2026-03-04", value: "2026-03-04" });
+
+  // The value is the one thing pinned exactly: it is ISO always, which is what
+  // [ADR 0178](../../docs/architecture/0178-a-date-a-person-can-read-aloud.md) settles first.
+  expect(date.value, "the picker did not take the date that was typed").toBe("2026-03-04");
+
+  // What it *shows* is the reading, not the value — a named month in the reader's language. Asserted
+  // as a shape rather than as a string: the exact words depend on the language the page is read in,
+  // and a check that pins them fails the day somebody runs the suite elsewhere while the behaviour
+  // is right. What matters here is that the control answered at all and answered with something
+  // other than the notation it stores.
+  expect(date.shows, "the picker read the date and showed nothing back").not.toBe("");
+  expect(date.shows, "the picker echoed the value's own notation rather than a reading of it")
+    .not.toBe(date.value);
 
   // Two columns, and they are not the same thing: `MDY_VALUE_CONTRACTS.timepicker` holds a time as
   // `HH:mm` — `explainValueMismatch("timepicker", "02:30 PM")` refuses it in those words — while
