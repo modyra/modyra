@@ -44,6 +44,27 @@ jobs:
         with:
           fetch-depth: 0
 
+      # **What is staged must be what a tag names.** The checkout takes the branch this dispatch was
+      # fired from, not the tag: `release:integrate` writes the versions and the tag together, and
+      # anything landing on the branch afterwards is built, packed and staged under a number that
+      # names a different commit. The changelogs would describe one tree and the tarballs carry
+      # another, and every gate below would pass — measuring the tree it was handed rather than the
+      # one the label promises.
+      #
+      # Read from the repository rather than asked as an input: a tag typed into a dispatch is one
+      # more thing to get right, and the question here is not which tag but whether this commit is
+      # one. Tags are fetched explicitly so this does not rest on what the checkout action brings.
+      - name: This commit is the one a tag names
+        run: |
+          git fetch --tags --force --quiet
+          TAGS=$(git tag --points-at HEAD)
+          if [ -z "$TAGS" ]; then
+            echo "::error::HEAD ($(git rev-parse --short HEAD)) carries no tag, so there is nothing this release is named after."
+            echo "The versions and their tag are written together by \`release:integrate\`. Dispatch from the tagged commit." >> "$GITHUB_STEP_SUMMARY"
+            exit 1
+          fi
+          echo "staging $(git rev-parse --short HEAD), named by: $TAGS" >> "$GITHUB_STEP_SUMMARY"
+
       - uses: pnpm/action-setup@v4
         with:
           version: 10
