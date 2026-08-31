@@ -70,3 +70,15 @@ export function mount(kind) {
     dispose: () => host.remove(),
   };
 }
+
+/**
+ * Two instances that must not share ids — the section a config unlocks by exporting this.
+ *
+ * The scope is taken and ignored, because this renderer writes no ids at all: the contract's parts
+ * carry classes, roles and attributes, and nothing here derives an id from a field name. Answering
+ * the question badly is more informative than declining it, since what the suite reports is exactly
+ * what a renderer that forgot ids looks like from outside.
+ */
+export function mountScoped(kind, _scope) {
+  return mount(kind);
+}

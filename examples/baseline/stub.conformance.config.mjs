@@ -11,3 +11,4 @@ const stub = await import("./stub-renderer.mjs");
 export const name = "@modyra/stub (issue #2)";
 export const kinds = stub.KINDS;
 export const mount = stub.mount;
+export const mountScoped = stub.mountScoped;
