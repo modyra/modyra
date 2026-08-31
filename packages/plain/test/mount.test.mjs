@@ -7,6 +7,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { installDomGlobals } from "./support/dom-env.mjs";
+import { formatLocalizedDate } from "@modyra/core/datetime";
 
 installDomGlobals();
 const { mountMdyForm } = await import("../dist/index.js");
@@ -656,8 +657,12 @@ test("a committed value is shown by the control that opened the overlay", async 
   const day = [...host.querySelectorAll(".mdy-datepicker__cell")].find((c) => !c.classList.contains("mdy-datepicker__cell--outside"));
   day.dispatchEvent(new Event("click"));
   await reactivity.flush();
-  assert.equal(dateInput.value, form.f.birthdate.value());
+  // The control shows the reader's text for the value, not the value: a named month cannot be
+  // transposed, so what is displayed is unambiguous while what is stored stays ISO.
+  const committed = form.f.birthdate.value();
+  assert.equal(dateInput.value, formatLocalizedDate(committed, "en-US"));
   assert.notEqual(dateInput.value, "");
+  assert.notEqual(dateInput.value, committed, "the display names the month, it does not echo the value");
 
   const trigger = host.querySelector(".mdy-select__trigger");
   trigger.dispatchEvent(new Event("click"));

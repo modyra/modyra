@@ -346,3 +346,33 @@ export function parseLocalizedDate(
   }
   return { year, month, day };
 }
+
+/**
+ * The text a person reads for a date: the month named, in the reader's language and order.
+ * `2026-04-03` reads "3 April 2026", "3 aprile 2026", "3. April 2026".
+ *
+ * A named month cannot be transposed — `April` is not a number — so the display carries no
+ * ambiguity about which of two numbers is the month. This is the inverse of
+ * `parseLocalizedDate`, which accepts the numeric orders a person may type; what is typed is
+ * wide, what is shown is unambiguous, and the value behind both stays ISO.
+ *
+ * Returns the ISO text unchanged when the value cannot be read as a date, so a field showing
+ * something a person typed does not blank itself while they are still typing.
+ */
+export function formatLocalizedDate(
+  value: string | CalendarDate | null | undefined,
+  locale: string,
+): string {
+  if (value === null || value === undefined) return "";
+  const date = typeof value === "string" ? parseIsoDate(value.trim().substring(0, 10)) : value;
+  if (!date) return typeof value === "string" ? value : "";
+  try {
+    return new Intl.DateTimeFormat(locale, {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    }).format(new Date(date.year, date.month - 1, date.day));
+  } catch {
+    return formatIsoDate(date);
+  }
+}

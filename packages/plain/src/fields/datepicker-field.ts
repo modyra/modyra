@@ -5,7 +5,7 @@
  * controller already wires up).
  */
 import { observerFor, type MdyFieldHandle, type MdyReactivity } from "@modyra/core";
-import { buildDateLocale, formatIsoDate, parseLocalizedDate, calendarYearRange, isMonthOutOfRange, isYearOutOfRange, parseIsoDate } from "@modyra/core/datetime";
+import { buildDateLocale, formatIsoDate, formatLocalizedDate, parseLocalizedDate, calendarYearRange, isMonthOutOfRange, isYearOutOfRange, parseIsoDate } from "@modyra/core/datetime";
 import type { MdyDynamicDateField } from "@modyra/core";
 import { fieldAccessibleName, keyMeans, applySubmissionNames,
   syncSubmitValues,
@@ -288,7 +288,7 @@ export function renderDatepickerField(
 
     // The input mirrors the committed value, except while the person is typing — and except while it
     // holds an entry the field could not read, which stays where they can correct it.
-    const display = state.entryText ?? (state.selectedDate || "");
+    const display = state.entryText ?? formatLocalizedDate(state.selectedDate, dateLocale.locale);
     if (!typing && control.value !== display) control.value = display;
     reflectOverlayOpen(popup, state.open, messages);
     if (!state.open) releaseOverlayPlacement(popup);

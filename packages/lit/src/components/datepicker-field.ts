@@ -11,7 +11,7 @@ import { projectCalendarDayCellA11y, capabilityOf, keyMeans,
 } from "@modyra/widgets";
 import { html, nothing, type PropertyDeclarations } from "lit";
 import { observerFor, type MdyFieldHandle } from "@modyra/core";
-import { buildDateLocale, calendarYearRange, type MdyDateLocale, isMonthOutOfRange, isYearOutOfRange, type CalendarCell, type CalendarDate, formatIsoDate, parseIsoDate, parseLocalizedDate, today } from "@modyra/core/datetime";
+import { buildDateLocale, calendarYearRange, type MdyDateLocale, isMonthOutOfRange, isYearOutOfRange, type CalendarCell, type CalendarDate, formatIsoDate, formatLocalizedDate, parseIsoDate, parseLocalizedDate, today } from "@modyra/core/datetime";
 import { applyWidgetCommands, bindOutsidePointer, closeOverlayOutOfPlay } from "../widget-runtime/overlay-host.js";
 import { MdyFieldElement, mdyIcon } from "../base.js";
 import { calendarGridKey, calendarRows, renderMonthPicker, renderYearPicker } from "./calendar-pickers.js";
@@ -517,7 +517,8 @@ export class MdyDatepickerFieldElement extends MdyFieldElement<string | null> {
           type="text"
           class="mdy-datepicker__input"
           placeholder=${this.placeholder}
-          .value=${this.view.entryText ?? handle.value() ?? ""}
+          .value=${this.view.entryText
+            ?? formatLocalizedDate(handle.value() ?? "", this.resolvedLocale)}
           ?disabled=${handle.disabled()}
           ?readonly=${handle.readonly()}
           ${mdyPart(this.controlPart(handle))}

@@ -16,6 +16,7 @@ import {
   CalendarDate,
   formatIsoDate,
   parseIsoDate,
+  formatLocalizedDate,
   parseLocalizedDate,
   today,
 } from "@modyra/core/datetime";
@@ -290,17 +291,7 @@ export class MdyDatePickerComponent extends MdyOverlayControl<string | null> {
     if (!v) return "";
     const iso = v.substring(0, 10);
     if (this.displayFormat() === "iso") return iso;
-    const parsed = parseIsoDate(iso);
-    if (!parsed) return iso;
-    try {
-      return new Intl.DateTimeFormat(this.locale.locale, {
-        year: "numeric",
-        month: "2-digit",
-        day: "2-digit",
-      }).format(new Date(parsed.year, parsed.month - 1, parsed.day));
-    } catch {
-      return iso;
-    }
+    return formatLocalizedDate(iso, this.locale.locale);
   });
 
   protected readonly modalDisplayValue = computed((): string => {
