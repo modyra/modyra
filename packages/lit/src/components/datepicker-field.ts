@@ -531,7 +531,15 @@ export class MdyDatepickerFieldElement extends MdyFieldElement<string | null> {
           @change=${(e: Event) => {
             // The text goes over as text. Parsing here and writing the value back was the erasure:
             // an entry the field could not read left nothing on screen to correct.
-            this.send({ type: "type", text: (e.target as HTMLInputElement).value });
+            const box = e.target as HTMLInputElement;
+            this.send({ type: "type", text: box.value });
+            // The echo, written here rather than left to the binding. A second spelling of a day
+            // the field already holds changes no bound value, so nothing re-renders and the
+            // keystrokes stay on screen. `entryText` survives only what could not be read, so a
+            // null one means the entry was understood and the box owes its reading back.
+            if (this.view.entryText === null) {
+              box.value = formatLocalizedDate(handle.value() ?? "", this.resolvedLocale);
+            }
           }}
           @click=${(e: Event) => { if (!this._open) this.openPopup(handle, e); }}
           @keydown=${(e: KeyboardEvent) => {
