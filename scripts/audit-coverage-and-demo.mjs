@@ -205,7 +205,11 @@ for (const file of readdirSync(PANELS).filter((f) => f.endsWith(".js"))) {
 
 /** Every name the two contract packages publish, values and types alike. */
 const surface = JSON.parse(readFileSync(join(root, "packages/widgets/contract-baseline/type-surface.json"), "utf8"));
-const names = new Set(Object.keys(surface));
+// The surface is keyed `package:Name`, because one name can be declared by more than one package and
+// a bare key records only whichever was scanned last. This audit asks whether a *name* is mentioned
+// by a test, which is a question about the name and not about who declares it — so the package is
+// dropped here rather than pushed into the question.
+const names = new Set(Object.keys(surface).map((key) => key.slice(key.indexOf(":") + 1)));
 // `plain` is here because it is the renderer the panels drive: its two entry points are the surface
 // a person actually touches, and leaving them out measured the contract while ignoring the way in.
 const runtimeNames = new Set();

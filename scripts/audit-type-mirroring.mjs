@@ -110,7 +110,16 @@ const adapterOnly = new Set([...declaredIn(ADAPTERS)].filter((name) => !declared
 
 /** Upstream shapes by their member-name set, so a rename cannot hide a copy. */
 const upstream = new Map();
-for (const [name, members] of Object.entries(surface)) {
+for (const [entry, members] of Object.entries(surface)) {
+  // The surface is keyed `package:Name`, so which package declares a shape is a fact the file now
+  // carries. It used to be gathered from three packages under bare names, and an adapter's own
+  // shapes arrived here indistinguishable from upstream ones — a shape matched itself, member for
+  // member, and five Angular types were reported as restatements of themselves. `adapterOnly` was
+  // the workaround; the key answers it outright.
+  const separator = entry.indexOf(":");
+  const pkg = entry.slice(0, separator);
+  const name = entry.slice(separator + 1);
+  if (pkg !== "core" && pkg !== "widgets") continue;
   if (!Array.isArray(members) || members.length < MIN_MEMBERS) continue;
   if (adapterOnly.has(name)) continue;
   const names = members.map((m) => String(m).split(":")[0].trim().replace(/\?$/, "").replace(/\(.*$/, ""));

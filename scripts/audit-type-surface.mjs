@@ -4,6 +4,7 @@
  *
  *   node scripts/audit-type-surface.mjs           # compare against the baseline
  *   node scripts/audit-type-surface.mjs --write   # accept the current surface
+ *   node scripts/audit-type-surface.mjs --since <ref>   # compare against the surface at a ref
  *
  * `contract-diff` snapshots the widget *catalogue* — parts, relations, states, capabilities. It has
  * never seen a TypeScript type, so every public interface in `@modyra/core` and `@modyra/widgets`
@@ -20,6 +21,7 @@
  * is optional. Not the member *types*: a widening from `string` to `string | number` is a real
  * change this cannot see, and pretending otherwise would be worse than saying so.
  */
+import { execFileSync } from "node:child_process";
 import { readFileSync, writeFileSync, existsSync, readdirSync, statSync } from "node:fs";
 import { join, resolve, relative } from "node:path";
 import ts from "typescript";
@@ -40,6 +42,39 @@ const BASELINE = resolve(ROOT, "packages/widgets/contract-baseline/type-surface.
  */
 const PACKAGES = ["core", "widgets", "angular"];
 const PACKAGE_DIRS = PACKAGES.map((name) => `packages/${name}/dist`);
+
+/**
+ * Every scannable package is built, checked before anything reads a file.
+ *
+ * A directory that is missing, or that exists and holds no declaration, is the same absence wearing
+ * two faces — and the second is the dangerous one: the scan finds nothing, records nothing, and the
+ * baseline then says the package publishes no surface rather than that nobody looked. It fails
+ * today either way, on whatever file the manifest reader reaches for next, with a stack that names
+ * none of this.
+ *
+ * Placed here rather than beside the scan because `publicNames()` reads a manifest first and dies
+ * before the scan is reached, so a check further down is a check that never runs.
+ */
+for (const [index, dir] of PACKAGE_DIRS.entries()) {
+  const pkg = PACKAGES[index];
+  const full = resolve(ROOT, dir);
+  const declarations = existsSync(full)
+    ? (function count(at) {
+        let found = 0;
+        for (const entry of readdirSync(at)) {
+          const child = join(at, entry);
+          found += statSync(child).isDirectory() ? count(child) : (entry.endsWith(".d.ts") ? 1 : 0);
+          if (found > 0) return found;
+        }
+        return found;
+      })(full)
+    : 0;
+  if (declarations === 0) {
+    console.error(`packages/${pkg}/dist holds no declaration file — build it before recording a `
+      + "surface, or the baseline says this package publishes nothing when nobody looked.");
+    process.exit(2);
+  }
+}
 
 /**
  * Every name a consumer can import, from every subpath the package declares.
@@ -230,13 +265,14 @@ function declarationFiles(dir) {
   return out;
 }
 
-const ENTRIES = PACKAGE_DIRS.flatMap((dir) => {
+const ENTRIES = PACKAGE_DIRS.flatMap((dir, index) => {
+  const pkg = PACKAGES[index];
   const full = resolve(ROOT, dir);
   if (!existsSync(full)) {
     console.error(`Missing ${dir} — build the packages first.`);
     process.exit(2);
   }
-  return declarationFiles(full).map((file) => relative(ROOT, file));
+  return declarationFiles(full).map((file) => ({ pkg, file: relative(ROOT, file) }));
 });
 
 /**
@@ -431,7 +467,7 @@ function signatureOf(node) {
 
 const surface = {};
 const classNames = new Set();
-for (const entry of ENTRIES) {
+for (const { pkg, file: entry } of ENTRIES) {
   const file = resolve(ROOT, entry);
   if (!existsSync(file)) {
     console.error(`Missing ${entry} — build the packages first.`);
@@ -461,9 +497,9 @@ for (const entry of ENTRIES) {
       // the package can use it across files; the `exports` map says a consumer can have it.
       && PUBLIC.has(node.name?.text ?? "");
     if (exported && ts.isInterfaceDeclaration(node)) {
-      surface[node.name.text] = membersOf(node);
+      surface[`${pkg}:${node.name.text}`] = membersOf(node);
     } else if (exported && ts.isTypeAliasDeclaration(node) && ts.isTypeLiteralNode(node.type)) {
-      surface[node.name.text] = membersOf(node.type);
+      surface[`${pkg}:${node.name.text}`] = membersOf(node.type);
     } else if (exported && ts.isTypeAliasDeclaration(node)) {
       // A union of literals is a public surface a consumer switches on, and withdrawing one of its
       // members — or the alias itself — is exactly as breaking as removing an interface member.
@@ -471,16 +507,16 @@ for (const entry of ENTRIES) {
       // which is finding K's shape one level down: the audit reported a number that looked like
       // coverage. Anything that is not a union of literals is recorded as present but opaque, so
       // its disappearance is still caught while its contents make no claim.
-      surface[node.name.text] = unionMembersOf(node.type, node.getSourceFile());
+      surface[`${pkg}:${node.name.text}`] = unionMembersOf(node.type, node.getSourceFile());
     } else if (exported && ts.isClassDeclaration(node) && node.name) {
-      surface[node.name.text] = classMembersOf(node);
-      classNames.add(node.name.text);
+      surface[`${pkg}:${node.name.text}`] = classMembersOf(node);
+      classNames.add(`${pkg}:${node.name.text}`);
     } else if (exported && ts.isFunctionDeclaration(node) && node.name) {
       // A function is public surface too, and the projections made that concrete: each returns an
       // inline type literal naming which parts it hands back, so "which parts does this projection
       // return" was a fact the declarations already carried and nothing read. Withdrawing one, or
       // changing what a renderer receives, classified as patch.
-      surface[node.name.text] = signatureOf(node);
+      surface[`${pkg}:${node.name.text}`] = signatureOf(node);
     }
     ts.forEachChild(node, visit);
   };
@@ -508,7 +544,41 @@ if (!existsSync(BASELINE)) {
   process.exit(1);
 }
 
-const baseline = JSON.parse(readFileSync(BASELINE, "utf8"));
+/**
+ * Which recorded surface this run is judged against.
+ *
+ * Without `--since` it is the committed baseline, and the question that answers is *did somebody
+ * forget to record a change* — useful, and not the question everybody asks. Comparing against the
+ * working baseline can only ever catch an edit that skipped the update: once the baseline is
+ * accepted the two agree again and the change is invisible.
+ *
+ * `--since <ref>` reads the baseline as it stood at a ref, which is the only way to answer *what
+ * changed since the release*. `contract-diff.mjs` learned this first and for the same reason; a tool
+ * that cannot be asked it will be asked it anyway, and will answer something else.
+ */
+const sinceFlag = process.argv.indexOf("--since");
+const since = sinceFlag === -1 ? null : process.argv[sinceFlag + 1];
+if (sinceFlag !== -1 && (since === undefined || since.startsWith("--"))) {
+  console.error("audit-type-surface: --since needs a git ref");
+  process.exit(2);
+}
+
+const baselinePath = relative(ROOT, BASELINE);
+let baseline;
+if (since === null) {
+  baseline = JSON.parse(readFileSync(BASELINE, "utf8"));
+} else {
+  try {
+    // git's own complaint is suppressed: it names the object and not the question, and two errors
+    // for one cause send the reader to the wrong one.
+    baseline = JSON.parse(execFileSync("git", ["show", `${since}:${baselinePath}`],
+      { cwd: ROOT, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] }));
+  } catch {
+    console.error(`audit-type-surface: no ${baselinePath} at ${since}`);
+    process.exit(2);
+  }
+  console.log(`Compared against the surface recorded at ${since}.`);
+}
 const changes = [];
 
 for (const name of Object.keys(baseline)) {

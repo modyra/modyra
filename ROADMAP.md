@@ -74,10 +74,11 @@ Six items, in the order their dependencies allow:
 
 1. **The surface tool, first, because the inventory depends on it.** `audit-type-surface.mjs` keys
    its baseline by bare name, so two packages exporting one name produce one entry and the last
-   scanned wins; and it skips a package with no `dist`, so what it records is the state of a build
-   rather than of the tree. Measured: zero angular-only types in the 2.4.0 baseline against 74 in
-   today's. Until the key carries the package and the baseline refuses to write itself with a
-   scannable package unbuilt, any census of the surface is a census of somebody's machine.
+   scanned wins — `MdyFieldState` is declared in eight packages and recorded once. Until the key
+   carries the package, a census of the surface cannot say whose a type is, and `@modyra/core`'s
+   recorded shape is whatever `@modyra/angular` last overwrote it with.
+   It also answers only "did somebody forget to update the baseline", never "what changed since the
+   release": there is no `--since`, so its green means less than the question everybody asks it.
 
 2. **Layer one — the common thing is declared, not imported.** Five of the eight symbols in a
    starter are validators named one at a time; a field that takes them as options delegates to the
