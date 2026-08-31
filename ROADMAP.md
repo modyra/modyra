@@ -53,6 +53,65 @@ Conformance already judges Angular, Lit and Plain against the same suite. What i
 they can make the same promise `core` and `widgets` make is a stable answer on the remaining
 anatomy questions and a coverage floor each renderer commits to.
 
+### 3.0.0 — the same capability behind a smaller thing to learn
+
+The criterion is the user's: *easy to use, the same functionality, the complexity hidden*. It is not
+"fewer exports", which is a different and poorer measure — a library can halve its export count and
+be harder to start. What it is measured against are three scenarios written down in
+`examples/baseline/`, each carrying its specification in prose so the after-version is re-implemented
+from the same words rather than edited from the same file:
+
+```
+(a) a starter                 1–3 doors · 8–10 named symbols
+(b) a form described by data  2 doors · 3 symbols · 8 concepts · 9 keys on the parse result
+(c) a reactivity binding      1 door · 3 symbols · 2 interfaces · 10 members
+```
+
+**3.0.0 at the criterion is: these numbers fall, at unchanged prose.** Concepts before symbols — a
+symbol is counted, a concept is paid for.
+
+Six items, in the order their dependencies allow:
+
+1. **The surface tool, first, because the inventory depends on it.** `audit-type-surface.mjs` keys
+   its baseline by bare name, so two packages exporting one name produce one entry and the last
+   scanned wins; and it skips a package with no `dist`, so what it records is the state of a build
+   rather than of the tree. Measured: zero angular-only types in the 2.4.0 baseline against 74 in
+   today's. Until the key carries the package and the baseline refuses to write itself with a
+   scannable package unbuilt, any census of the surface is a census of somebody's machine.
+
+2. **Layer one — the common thing is declared, not imported.** Five of the eight symbols in a
+   starter are validators named one at a time; a field that takes them as options delegates to the
+   same functions and leaves them exported for composition. And a door that parses, applies and
+   mounts in one act closes both of scenario (b)'s traps by construction: a rule written on the field
+   instead of beside it is accepted today with `ok: true`, and rules the parser reads are not applied
+   unless a second call applies them.
+
+3. **The contract teaches itself.** A renderer written from the published contract alone reports
+   `NOT CONFORMANT — 8 findings · 6 of 10 sections` ([issue #2](https://github.com/modyra/modyra/issues/2)),
+   and the three reasons are small pieces of work rather than a sentiment: the meaning of *required
+   under an optional parent* stated where an author looks — `overlayOnlyParts` explains seven of the
+   thirteen and six are not overlays; the five required controls that carry no class, role or
+   attribute made findable, or the guide saying plainly that they are reached only through `parts()`;
+   and a reference config that shows the members of `MdyStateFixture` instead of delegating them to a
+   fixture the reader does not open.
+
+4. **The two capabilities that nothing reads gain their consumers.** `graphInspection` and
+   `serverSnapshots` are declared by every runtime, answered `no` by all eight, and read by no code —
+   a column constant on every row carries no information. They stay because their consumers are in
+   scope here: the devtools panel reads the first, an SSR path uses the second.
+
+5. **The deprecation harvest.** The aliases 2.5.0 shipped, and the names kept pointing at an older
+   meaning, fall here. It is the cheapest item and the only one already fully specified, which is
+   exactly why it is the one that gets forgotten.
+
+6. **The conformance bench reports what it skipped.** Five capability flags select which checks apply
+   rather than what runs, so declaring `false` skips a check and nobody is told — the dangerous
+   direction is downward, not upward. For every `false`, the bench names the semantics it did not
+   test, with the count: *proven on 7 of 10*. A report, not a gate, because `false` is usually true.
+
+**Done when** the three scenario numbers are lower against the same prose, and a renderer written
+from the contract alone reaches conformance without the contract or the suite changing to admit it.
+
 ## Deferred, with reasons
 
 Sequenced rather than abandoned; each is waiting on something specific.
