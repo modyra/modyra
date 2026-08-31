@@ -8,7 +8,7 @@ Status: Accepted
 `mdy-plain-colors`, `mdy-plain-datepicker`, `mdy-plain-daterange`, `mdy-plain-timepicker` — placed
 beside the contract's own class on four of its eleven field renderers.
 
-They began as hooks for a plain-only stylesheet. Commit `623f3fcf` folded that stylesheet into the
+They began as hooks for a plain-only stylesheet. Commit `735aead9` folded that stylesheet into the
 contract's vocabulary and deleted every rule that selected them. The rules went; the hooks stayed,
 styled by nothing, on four kinds rather than all of them. A mark on some of the kinds is not a
 convention.
@@ -70,7 +70,7 @@ look necessary.
 ## Alternatives rejected
 
 **Declare the five classes in a plain-owned vocabulary.** Written and discarded. It reads as closing
-the gap — the classes get a name, a door and a check — but it re-legitimises exactly what `623f3fcf`
+the gap — the classes get a name, a door and a check — but it re-legitimises exactly what `735aead9`
 dismantled, and it would have made permanent a mark that exists on four kinds out of eleven. The
 question "why is it on these four?" has no answer, which is the sign that the answer is "it should be
 on none".

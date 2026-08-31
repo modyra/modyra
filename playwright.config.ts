@@ -82,6 +82,23 @@ export default defineConfig({
    * moves — a font still loading, an unpinned clock — never to widen this.
    */
   expect: {
+    /**
+     * How long an assertion waits, which is not the same kind of number as the tolerance below.
+     *
+     * The default is five seconds, and that is a figure calibrated on a machine doing nothing else.
+     * Driving a lit page outside the suite and timing how long the state takes to answer a click:
+     * 15ms with one page on an idle machine, 1_029ms with eight pages on saturated cores, 2_442ms
+     * with sixteen — and at sixteen one run in thirty-two crossed five seconds outright. The full
+     * suite runs many pages at once on a shared runner, so the quantity this has to cover grows
+     * with the load while the budget stayed fixed.
+     *
+     * Raising it costs nothing on a run that passes: an assertion that is satisfied returns when
+     * its condition becomes true, not when its budget expires. It changes only how long an
+     * already-failing test takes to say so. That is what separates it from the pixel tolerance
+     * below, which would hide a regression if widened — a time budget cannot, because the
+     * assertion still has to come true.
+     */
+    timeout: 15_000,
     toHaveScreenshot: {
       animations: "disabled",
       caret: "hide",
