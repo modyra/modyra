@@ -110,6 +110,12 @@ Six items, in the order their dependencies allow:
    direction is downward, not upward. For every `false`, the bench names the semantics it did not
    test, with the count: *proven on 7 of 10*. A report, not a gate, because `false` is usually true.
 
+Each item opens the same way, because the first one earned it: **before an artefact more than one
+tool reads is changed, its readers are listed.** Regenerating the type surface under a new key broke
+two audits that read it, one of them a gate — a minute of `grep -rl` beforehand would have found
+both. The item where this will matter most is the deprecation harvest, where every alias removed has
+readers by definition.
+
 **Done when** the three scenario numbers are lower against the same prose, and a renderer written
 from the contract alone reaches conformance without the contract or the suite changing to admit it.
 
