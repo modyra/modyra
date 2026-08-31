@@ -67,7 +67,13 @@ console.log(JSON.stringify(emitted));
 function runInConsumer(script) {
   const work = mkdtempSync(join(tmpdir(), "mdy-studio-"));
   try {
-    for (const pkg of ["studio-model", "studio-codegen", "studio-target-core", "studio-contract", "studio-editor"]) {
+    // `core` is packed with them because `studio-contract` depends on it. `pnpm pack` rewrites a
+    // workspace dependency to the version standing in the tree, and an install that lets the registry
+    // supply that version fails for exactly the length of a release: between the commit that bumps the
+    // versions and the publish that puts them on the registry, the number the tarball asks for does not
+    // exist anywhere. Packing it here makes the consumer stand on this tree rather than on the last
+    // release, which is what the battle is about.
+    for (const pkg of ["core", "studio-model", "studio-codegen", "studio-target-core", "studio-contract", "studio-editor"]) {
       execFileSync("pnpm", ["pack", "--pack-destination", work], {
         cwd: join(REPO, "packages", pkg),
         stdio: ["ignore", "ignore", "pipe"],
@@ -80,7 +86,11 @@ function runInConsumer(script) {
     const consumer = join(work, "consumer");
     mkdirSync(consumer, { recursive: true });
     writeFileSync(join(consumer, "package.json"), `${JSON.stringify({ name: "c", private: true, type: "module" })}\n`);
-    execFileSync("npm", ["install", ...tarballs, "--silent", "--no-audit", "--no-fund"], {
+    // Not `--silent`: npm silences its own failures too, so an install that cannot resolve a version
+    // exits non-zero with nothing on stderr — and the battle reports "could not be packed and
+    // installed" with an empty detail, which names the step and withholds the reason. The noise of a
+    // successful install is captured and discarded; the words of a failing one are the whole point.
+    execFileSync("npm", ["install", ...tarballs, "--no-audit", "--no-fund"], {
       cwd: consumer,
       stdio: ["ignore", "ignore", "pipe"],
     });

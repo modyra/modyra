@@ -179,7 +179,7 @@ function compareInConsumer() {
     const consumer = join(work, "consumer");
     mkdirSync(consumer, { recursive: true });
     writeFileSync(join(consumer, "package.json"), `${JSON.stringify({ name: "c", private: true, type: "module" })}\n`);
-    execFileSync("npm", ["install", ...tarballs, "eslint", "--silent", "--no-audit", "--no-fund"], {
+    execFileSync("npm", ["install", ...tarballs, "eslint", "--no-audit", "--no-fund"], {
       cwd: consumer,
       stdio: ["ignore", "ignore", "pipe"],
     });
