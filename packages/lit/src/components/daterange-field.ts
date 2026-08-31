@@ -10,7 +10,7 @@ import { capabilityOf, keyMeans, defaultWidgetIdFactory,
 } from "@modyra/widgets";
 import { html, nothing, type PropertyDeclarations } from "lit";
 import { type MdyDateRange, type MdyFieldHandle, observerFor } from "@modyra/core";
-import { buildDateLocale, calendarYearRange, type MdyDateLocale, isMonthOutOfRange, isYearOutOfRange, type CalendarCell, type CalendarDate, compareDates, formatIsoDate, isDateBetween, isDateInRange, orderDates, parseIsoDate, parseLocalizedDate, today } from "@modyra/core/datetime";
+import { buildDateLocale, calendarYearRange, type MdyDateLocale, isMonthOutOfRange, isYearOutOfRange, type CalendarCell, type CalendarDate, compareDates, formatIsoDate, formatLocalizedDate, isDateBetween, isDateInRange, orderDates, parseIsoDate, parseLocalizedDate, today } from "@modyra/core/datetime";
 import { applyWidgetCommands, bindOutsidePointer, closeOverlayOutOfPlay } from "../widget-runtime/overlay-host.js";
 import { MdyFieldElement, mdyIcon } from "../base.js";
 import { calendarGridKey, calendarRows, renderMonthPicker, renderYearPicker } from "./calendar-pickers.js";
@@ -632,7 +632,7 @@ export class MdyDaterangeFieldElement extends MdyFieldElement<MdyDateRange | nul
               type="text"
               class="${partClasses("daterange", "startControl").join(" ")}"
               placeholder=${this.startPlaceholder}
-              .value=${range.start ?? ""}
+              .value=${formatLocalizedDate(range.start, this.resolvedLocale)}
               ?disabled=${handle.disabled()}
               ?readonly=${handle.readonly()}
               ${mdyPart(this.endPart(handle, "startControl"))}
@@ -645,7 +645,12 @@ export class MdyDaterangeFieldElement extends MdyFieldElement<MdyDateRange | nul
                 this.commitRange(handle, iso, current.end);
                 // Text nothing could read stays where it was typed: erasing it leaves an empty box
                 // and no way to learn that anything was wrong with what was in it.
-                if (iso !== null || raw.length === 0) input.value = iso ?? "";
+                // The echo: what was understood, in the reader's spelling. Somebody who typed
+                // 04/03 sees which of the two numbers was taken as the month, at the moment they
+                // typed it, rather than discovering it on a confirmation page.
+                if (iso !== null || raw.length === 0) {
+                  input.value = formatLocalizedDate(iso, this.resolvedLocale);
+                }
               }}
             />
           </span>
@@ -659,7 +664,7 @@ export class MdyDaterangeFieldElement extends MdyFieldElement<MdyDateRange | nul
               class="${partClasses("daterange", "endControl").join(" ")}"
               aria-label=${this.nameOfPart("daterange.endControl")}
               placeholder=${this.endPlaceholder}
-              .value=${range.end ?? ""}
+              .value=${formatLocalizedDate(range.end, this.resolvedLocale)}
               ?disabled=${handle.disabled()}
               ?readonly=${handle.readonly()}
               ${mdyPart(this.endPart(handle, "endControl"))}
@@ -670,7 +675,12 @@ export class MdyDaterangeFieldElement extends MdyFieldElement<MdyDateRange | nul
                 const current = handle.value() ?? { start: null, end: null };
                 const iso = this.readTyped(raw);
                 this.commitRange(handle, current.start, iso);
-                if (iso !== null || raw.length === 0) input.value = iso ?? "";
+                // The echo: what was understood, in the reader's spelling. Somebody who typed
+                // 04/03 sees which of the two numbers was taken as the month, at the moment they
+                // typed it, rather than discovering it on a confirmation page.
+                if (iso !== null || raw.length === 0) {
+                  input.value = formatLocalizedDate(iso, this.resolvedLocale);
+                }
               }}
             />
           </span>

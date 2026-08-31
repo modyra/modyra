@@ -14,6 +14,7 @@ import {
 import {
   CalendarDate,
   formatIsoDate,
+  formatLocalizedDate,
   parseIsoDate,
 } from "@modyra/core/datetime";
 import {
@@ -283,8 +284,12 @@ export class MdyDateRangePickerComponent extends MdyOverlayControl<MdyDateRange 
   );
 
 
-  protected readonly displayStart = computed(() => isoDateText(this.value()?.start));
-  protected readonly displayEnd = computed(() => isoDateText(this.value()?.end));
+  protected readonly displayStart = computed(
+    () => formatLocalizedDate(isoDateText(this.value()?.start), this.locale.locale),
+  );
+  protected readonly displayEnd = computed(
+    () => formatLocalizedDate(isoDateText(this.value()?.end), this.locale.locale),
+  );
 
   protected readonly modalDisplayValue = computed((): string => {
     const s = this.parsedStart();

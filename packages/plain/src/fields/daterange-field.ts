@@ -9,7 +9,7 @@
 import { applyOpenerPromise } from "../opener-promise.js";
 import { observerFor, type MdyFieldHandle, type MdyReactivity } from "@modyra/core";
 import type { MdyDynamicDaterangeField } from "@modyra/core";
-import { buildDateLocale, formatIsoDate, parseLocalizedDate, today } from "@modyra/core/datetime";
+import { buildDateLocale, formatIsoDate, formatLocalizedDate, parseLocalizedDate, today } from "@modyra/core/datetime";
 import { fieldAccessibleName, applySubmissionNames,
   MDY_WIDGET_CONTRACTS,
   createDaterangeFieldController,
@@ -165,16 +165,31 @@ export function renderDaterangeField(
   toggle.addEventListener("click", () =>
     dispatch(controller.state().open ? { type: "cancel" } : { type: "open" }),
   );
+  /**
+   * The text this field last put in each box.
+   *
+   * Leaving a box re-reads it so a half-written entry survives the way out of the field. What the
+   * field wrote there itself is a *reading* of the value, not another spelling of it — parsing it
+   * back asks the entry parser to accept the display format, and a named month is not something it
+   * reads. Unchanged text is therefore not an entry.
+   */
+  const fieldWrote = new WeakMap<HTMLInputElement, string>();
+
   for (const [input, which] of [[startInput, "start"], [endInput, "end"]] as const) {
     input.addEventListener("input", () => { typing = true; });
     // One end at a time, as text. A range is written one box at a time, and committing only a whole
     // readable range threw away a half-written one on the way out of the field.
-    input.addEventListener("change", () => { typing = false; dispatch({ type: "type", end: which, text: input.value }); });
+    input.addEventListener("change", () => {
+      typing = false;
+      if (input.value === fieldWrote.get(input)) return;
+      dispatch({ type: "type", end: which, text: input.value });
+    });
     // Leaving commits what is in the box — a half-written range must survive the way out of the
     // field — and commits nothing else: a traversal is not an answer, so it does not make the field
     // speak. ADR 0167.
     input.addEventListener("blur", () => {
       typing = false;
+      if (input.value === fieldWrote.get(input)) return;
       dispatch({ type: "type", end: which, text: input.value });
     });
   }
@@ -289,7 +304,11 @@ export function renderDaterangeField(
     ] as const) {
       // What the field could not read stays where the person left it, so it can be corrected rather
       // than silently emptied.
-      if (!typing) input.value = outstanding ?? (iso ?? "");
+      if (!typing) {
+        const shown = outstanding ?? formatLocalizedDate(iso, dateLocale.locale);
+        input.value = shown;
+        fieldWrote.set(input, shown);
+      }
       // Both endpoints carry the state: a range half of which announces itself invalid is worse
       // than one that says nothing at all.
       applyPart(input, { ...part, attributes: { ...part.attributes, ...a11y.control.attributes } });
