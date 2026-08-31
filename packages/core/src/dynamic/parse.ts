@@ -1944,9 +1944,16 @@ export function parseDynamicForm(
   // in it, only more declarations than the reader counts.
   const refusals = diagnostics.filter((diagnostic) => diagnostic.severity === "error").length;
   return {
-    // A mode nobody knows is not a document that parsed: `ok` is what a publishing gate reads, and
-    // answering `true` for a run that was never the run the caller asked for is the whole finding.
-    ok: modeUnderstood && version !== null && (!strict || refusals === 0),
+    // `ok` answers one question: did anything the parser graded as an error happen. It is false
+    // whenever a diagnostic carries `severity: "error"`, in either mode, because a result that
+    // grades a diagnostic an error and reports success in the same breath contradicts itself — and
+    // the caller who reads `ok` and not the diagnostics is the one who then mounts a field whose
+    // declared condition was dropped.
+    //
+    // It is not a statement about usability. A lenient parse still returns everything it could
+    // read, and `acceptedCount`/`rejectedCount` still say how much that was; what `ok: false`
+    // withdraws is only the claim that nothing was lost.
+    ok: modeUnderstood && version !== null && refusals === 0,
     version,
     fields: strict && refusals > 0 ? [] : fields,
     layout: strict && refusals > 0 ? [] : layout,

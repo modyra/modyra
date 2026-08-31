@@ -107,17 +107,17 @@ test("the phrase each code is recognised by still appears in its message", () =>
 });
 
 /**
- * `ok` is about the envelope, and the counts are about the fields.
+ * `ok` is false as soon as anything was graded an error, and the counts say how much survived.
  *
- * A document whose every field was dropped still parses: the shape was understood, and each field
- * was refused individually with a reason. So `ok` alone is not enough to decide whether there is a
- * form to mount — `rejectedCount` and `fields.length` are what say that, and a consumer reading only
- * the first mounts nothing and believes it succeeded.
+ * A document whose every field was dropped still parses in the sense that its shape was understood
+ * and each field was refused with a reason — but nothing about that is a success, and a result that
+ * grades a diagnostic an error while reporting `ok: true` contradicts itself. The counts remain the
+ * finer answer: `ok` says whether anything was lost, `rejectedCount` and `fields.length` say what.
  */
 test("a refusal with no name of its own falls back, and says why it was refused", () => {
   const result = parseDynamicForm([{ name: "a", kind: "text", label: 42 }]);
 
-  assert.equal(result.ok, true, "the envelope was understood, which is what `ok` reports");
+  assert.equal(result.ok, false, "a refusal is an error, and `ok` does not survive one");
   assert.equal(result.rejectedCount, 1, "the field was refused, which is what the counts report");
   assert.deepEqual(result.fields, [], "a refused field must not reach a renderer");
 
