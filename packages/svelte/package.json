@@ -1,6 +1,6 @@
 {
   "name": "@modyra/svelte",
-  "version": "0.6.1",
+  "version": "0.7.0",
   "description": "Svelte binding for the Modyra form engine — typed forms as Svelte stores.",
   "keywords": [
     "svelte",
@@ -39,8 +39,8 @@
   },
   "sideEffects": false,
   "dependencies": {
-    "@modyra/core": "^2.2.0",
-    "@modyra/widgets": "^2.2.0"
+    "@modyra/core": "^2.5.0",
+    "@modyra/widgets": "^2.5.0"
   },
   "peerDependencies": {
     "svelte": ">=4.0.0"

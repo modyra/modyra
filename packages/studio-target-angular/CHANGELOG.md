@@ -1,5 +1,11 @@
 # @modyra/studio-target-angular
 
+## 0.5.5
+
+### Patch Changes
+
+- @modyra/studio-contract@0.6.3
+
 ## 0.5.4
 
 ### Patch Changes

@@ -1,5 +1,3197 @@
 # @modyra/widgets
 
+## 2.5.0
+
+### Minor Changes
+
+- 6efa698: The breaking section, consolidated
+
+  `contract:diff --since v2.4.0` classifies this release **major**: 35 major entries against
+  275 minor. **It ships as a minor anyway, deliberately**, and this section is where that debt is
+  paid: the number does not warn you, so the text has to.
+
+  For `@modyra/plain`, `@modyra/lit` and `@modyra/angular` there is no debt — they are below 1.0,
+  where semver already permits breaking changes in a minor. It is `@modyra/core` and
+  `@modyra/widgets`, moving 2.4.0 → 2.5.0, that carry breaking changes under a number which by
+  convention promises none. Read this section before upgrading those two; a version range that
+  admits 2.5.0 will take it without asking.
+
+  The individual changesets carry the bumps; this one carries the migration, so the release page has
+  one place to read instead of 303.
+
+  ## Removed from the public surface
+
+  **`timepickerDialAria`** — exported from `@modyra/widgets` at 2.4.0, gone now. It returned the
+  dial's ARIA shape at runtime; that shape is now **declared** in the contract:
+
+      timepickerDialAria("hour", …).role === "slider"    // 2.4.0, computed for the dial face
+      MDY_WIDGET_CONTRACTS.timepicker.hourControl.role    // "spinbutton", declared
+
+  These are not the same element renamed. Per ADR 0145 the dial face **lost its interactive role
+  altogether** — a `slider` that Tab could not reach, announcing a value the hour box was already
+  speaking. The hour and minute boxes kept the `spinbutton` role they always had; what is new is
+  that the contract now declares it instead of a helper computing it.
+
+  So there is no replacement call. Read the role from the contract, and expect nothing on the face.
+
+  **`MdySelectA11yProjection.listbox`** — the type survives, the member does not. It is now
+  `options`. A consumer that reads `.listbox` off the projection fails to compile; nothing about
+  this is visible in a changeset that speaks only of contract parts, which is why it is stated here
+  as a member.
+
+  ## Parts renamed, and the two aliases that exist
+
+  `listbox` became `options` on both `select` and `multiselect`. Both keep a resolving alias under
+  the old name.
+
+  **The alias covers the name and not the position.** `multiselect.options` also changed parent —
+  `root` → `popup` — and `select.option` moved from `listbox` to `options`. Code that resolved the
+  part by name keeps working; code that walked to it by position does not, and the alias will not
+  tell it so.
+
+  ## Parts removed with no alias possible
+
+  `multiselect.header` and `multiselect.searchButton` have no element behind them any more. An alias
+  would resolve to nothing, which is worse than a name that fails loudly — so there is none. This is
+  not an alias withheld; it is an alias that cannot be written.
+
+  The search button's relations went with it: `aria-describedby` → errors and supporting text,
+  `aria-controls` → popup. `label[for]` now targets `trigger`.
+
+  ## Parts that became required
+
+  `multiselect.trigger`, `multiselect.wayBackAction`, `multiselect.clearAll`,
+  `multiselect.announcement`, `select.options`, and `file.clear` (previously optional).
+
+  Left optional, a renderer could omit them, and for `clearAll` and `wayBackAction` that omission
+  _is_ the defect the decision removes: a control that appears and vanishes under a hand already
+  moving toward it. Presence follows what the widget can do, never what it is currently showing.
+
+  ## Roles and elements changed
+
+      datepicker.calendar    none → dialog
+      daterange.calendar     none → dialog
+      timepicker.popup       none → dialog
+      timepicker.hourControl none → spinbutton
+      timepicker.minuteControl none → spinbutton
+      multiselect.chips      none → grid          parent inputWrapper → box
+      multiselect.chip       none → gridcell      element button → container, parent chips → chipRow
+      colors.toggle          element button → presentation
+
+  `multiselect.inputWrapper` no longer carries the `mdy-multiselect` class. It is not kept as an
+  alias: two elements under one name is the ambiguity the change removes, and keeping the class
+  would reinstate it.
+
+  ## Parents moved
+
+      slider.value           root → track
+      multiselect.placeholder inputWrapper → trigger
+      file.clear             dropzone → content
+      file.fileList          dropzone → content
+      file.rejected          dropzone → content
+
+  A stylesheet or query that descends from the old parent no longer reaches these. The part names
+  are unchanged, so resolving by name is the migration.
+
+- 7d85603: A slider stops stating a broken bound before anybody has been near it.
+
+  `holdsUneditedValue` takes the kind so that a value which _is_ that kind's empty is not read as one
+  that arrived from a draft — a thumb is always somewhere, so a slider at 0 is the control at rest. The
+  shell projection passed the kind; the renderer painting the error list did not, so the two disagreed:
+  the page showed a required-range message on an untouched slider while the control's
+  `aria-describedby` named nothing, because the projection had decided there was nothing to name.
+
+  `visibleErrorsOf` takes an optional kind and plain's text renderer passes it. The error waits for the
+  person to have had a turn, and the control names it when it arrives.
+
+  This was the last finding in `@modyra/plain`'s DOM conformance run, which is now clean.
+
+- 3852b04: A `<form>` reset returns the model to its initial values
+
+  A Cancel button is `type="reset"`, and until now no renderer answered it correctly. The browser's
+  reset returns a control to its `value` _attribute_, which these renderers never write — they write
+  the property to keep the box in step with the model. So plain and lit emptied the box and left the
+  model holding what the person had typed: **what they saw stopped being what the form would send.**
+  Angular restored the box on the next pass, which made Cancel do nothing at all.
+
+  All three now return to the initial values, which is what a reset means and what HTML promises.
+
+  New in `@modyra/widgets`: `bindFormReset(binding)` and `MdyFormResetBinding`. Renderers bind it
+  themselves; a consumer needs it only for a form they render and mount by hand. Its `schedule` option
+  supplies the scheduler for the deferred write — the browser resets its own controls after the event
+  is dispatched, so a model written during the event is overwritten a moment later.
+
+  The form is resolved at each reset rather than at bind time, so a control mounted before its page is
+  assembled and placed into a form afterwards is answered from then on.
+
+  No migration. A control outside a `<form>` is unaffected. See ADR 0149.
+
+- 454a168: One caret, one meaning, both kinds
+
+  The multiselect's caret pointed the same way whether its list was open or shut, while the
+  single-choice list's turned. The catalogue declared `open` on one kind's `arrow` part and not on the
+  other's, so nothing was inconsistent enough to fail: each contract agreed with itself.
+
+  `multiselect.arrow` now declares `open`, and the three renderers write the modifier the same way the
+  select's do — derived from the part's own class rather than spelled out, so a rename in the catalogue
+  moves the rule and the renderer together.
+
+  **The two carets were also different shapes.** The select drew `CHEVRON_DOWN` from the icon table
+  while the multiselect left its box empty for the stylesheet's fallback square. Both now draw the same
+  icon; the fallback stays for a host that ships no icons, which is what it is for.
+
+- 8409975: `beginChipReorder` — one gesture instead of three, down to the six pixels
+
+  The drag that reorders a chip strip was written out identically wherever a strip is drawn: the same
+  threshold, the same dragging class, the same document-level listeners, the same swallowed click, the
+  same midpoint measurement. The renderer still binds the press its own way — that part belongs to a
+  framework — and everything between the press and the drop is now one function.
+
+  Three details decide whether it works, and each was one every renderer had to get right unaided:
+
+  - **the threshold.** A drag may start anywhere on a chip, its own buttons included: they cover most
+    of it, and a chip draggable only by its bare edges is a chip nobody can drag. Travel is what
+    separates a press that belongs to the button from one that belongs to the strip.
+  - **the swallowed click.** A press that began on a button and ended as a gesture still produces a
+    click nobody asked for. Taken once, in the capture phase, and only after an actual drag — the next
+    real press on that button has to still work.
+  - **no pointer capture.** Capturing follows the gesture just as far and retargets every later pointer
+    event, the one that becomes a `click` included, so the chip's own buttons stop receiving clicks
+    entirely: found, pressed, nothing happens.
+
+  `MDY_CHIP_DRAG_THRESHOLD` is published because it is the number that decides whether those buttons
+  still work. Too small and a steady finger reorders the strip instead of pressing what it is on; too
+  large and a drag has to be exaggerated before anything moves.
+
+  The check reads the dragging class **during** the gesture, not after. Afterwards the teardown has
+  taken it off either way, so a check that only looks at the end cannot tell a press that was never a
+  drag from one that was — which is exactly the mutation that survived the first version.
+
+- d5bc45b: A chip that holds a quantity is a spinbutton
+
+  In counter mode a multiselect chip holds a number that arrows change, which is what
+  `role="spinbutton"` describes. It now carries the role, `aria-valuenow`, `aria-valuemin` and an
+  `aria-valuetext` that reads the label with the count — so the value is announced when it changes
+  rather than only when the chip is entered, and `ArrowUp`/`ArrowDown` do on the chip what the role
+  promises. Outside counter mode the chip holds controls and no value, so it stays `role="group"`.
+
+  **A key can now be scoped to a part.** `MdyKeyBinding` gains `on?: string`, and `keyBindingFor` takes
+  the part asking:
+
+  ```ts
+  keyBindingFor("multiselect", "ArrowDown", open); // the control: opens the popup
+  keyBindingFor("multiselect", "ArrowDown", open, "chip"); // a chip: steps the quantity
+  ```
+
+  The table could previously only answer per kind and state, so one key meaning two things by position
+  was decided by whichever binding was declared first. Every chip binding — the arrows, `Home`, `End`,
+  `Backspace`, `Delete` and `Alt`+arrows — now says `on: "chip"`, and a renderer that asks as the chip
+  and gets nothing back lets the key reach the control, which is how `ArrowDown` still opens the popup
+  from the trigger.
+
+  **A contract variant can declare roles.** `MdyWidgetVariant` gains `roles`, alongside `elements` and
+  `required`, so `multiselect`'s `multi` variant states the chip's spinbutton role where the base
+  contract states `group`. `satisfiesSemanticElement` takes the declared role into account, so a
+  renderer emitting the variant's role is conformant rather than caught by a mirrored list in a test.
+
+  - **`multiselect.chip` and `multiselect.options` declare roles** (`group` for both) where they
+    declared none. A third-party renderer that emits neither now fails the DOM contract.
+  - **`scrollChipStripByWheel` is exported** — the strip's wheel behaviour under ADR 0127, which all
+    three renderers had written out identically.
+  - Angular's dynamic form forwards `mode`, which it was dropping: a document declaring a counter
+    multiselect got a toggle one.
+
+- 6a82839: Reordering is a grab, not a modifier
+
+  `Alt`+arrow was Back and Forward in every major browser on Windows and Linux. It worked here only
+  because `preventDefault` suppressed the platform's own gesture, and it taught a keystroke that on any
+  other focused element throws away the form being filled in.
+
+  `Enter` on a chip picks it up, the bare arrows carry it, `Enter` puts it down and `Escape` puts it
+  back where it was. No modifier, so nothing to collide with on any platform. A grab is also a _state_,
+  which the modifier could never be: it is announced — "A grabbed, 1 of 3. Use the arrows to move it,
+  Enter to drop it, Escape to put it back" — and it can be abandoned, which matters most to the person
+  who picked up the wrong chip.
+
+  The arrows are declared once, as what moves the reading position. Held, they carry the chip: the same
+  movement with the grab's subject rather than the cursor's.
+
+  The `open` bindings now name the part they open from. They declared none, so a binding meaning "press
+  the control to open it" also claimed the chips inside it, and `Enter` on a chip meant both "open the
+  list" and "pick this up" — decided by whichever handler ran first rather than by the table. A
+  control-level question still finds them: the part a person opens a kind with is the control, for that
+  purpose.
+
+  Migration: a consumer teaching `Alt`+arrow, or handling `intent: "reorder"` from a key, reads
+  `intent: "grab"` and moves what is held with the arrows it already handles.
+
+- 8048151: A choice is said out loud, and a multiselect is as tall as the controls beside it
+
+  **A choice landed and nobody was told.** The chips strip is the confirmation that something was
+  chosen, and it is the one a person using a screen reader does not get. The multiselect gains an
+  `announcement` part — a live region carrying the whole selection, not the last change, because two
+  announcements have to differ for the second to be read at all: a region written once announces the
+  first choice and swallows every one after it. The words come from the contract, so all three
+  renderers say the same thing.
+
+  **A multiselect was taller than the controls beside it**, and only in one theme. Every other control
+  takes the field height as a floor and holds a line of text, so the floor is also its ceiling; a
+  multiselect holds chips and had a floor alone, so a row that read 38px for a text field read 54 for a
+  multiselect and 62 once it held twelve. `max-height` gives it the ceiling its siblings get for free.
+
+  The eight pixels between two chips and twelve were the horizontal scrollbar: it is laid out _inside_
+  the strip and adds its thickness to the height, so the control grew by the width of a scrollbar the
+  moment its chips overflowed. The bar is not drawn now — chips visibly running past the edge is the
+  affordance, and it was never the only one.
+
+  Verified against all five stylesheets rather than the default alone: `modyra`, `modern`, `material`,
+  `ios` and `ionic` each give every kind one row height, and a multiselect holding twelve chips is the
+  same height as one holding none.
+
+- fa4b98a: A choice is said out loud even while the list is open
+
+  `multiselectAnnouncement` took an `open` argument and returned nothing while the popup was showing, on
+  the reasoning that the options there announce themselves and a live region firing too would speak
+  twice. That holds only for somebody choosing with the **keyboard**, where focus is on the option a
+  screen reader is reading. A choice made with a pointer moves no focus and announces nothing at all —
+  so the suppression was silence for exactly the person with no other confirmation, since the chips
+  strip is the sighted feedback and the only one.
+
+  The parameter is removed rather than defaulted, because a caller passing `true` was asking for the
+  defect. The count is not part of the native announcement either way, and the region says the change
+  and the new total.
+
+- 37f5eab: A closed multiselect shows what was chosen, not everything on offer
+
+  The field drew its whole option list inline, so three options ate 148–209px of a control and thirty
+  would have eaten ten times that. The closed control now shows the **chips for what was chosen**, in one
+  line that scrolls, inside the control a person presses; the options are seen in the popup, where there
+  is room for them.
+
+  **The anatomy, and what moved.**
+
+  ```
+  inputWrapper                the field's box, carrying its state classes
+  └── trigger                 what a person presses; role="combobox"; the label names it
+      ├── chips               what was chosen, in the value's own order
+      │   └── chip            a container: label, count, remove — and the two steppers in counter mode
+      ├── placeholder         when nothing is chosen
+      └── arrow               the trailing affordance, decorative
+  popup
+  └── options                 the options, in one place
+  ```
+
+  - **`searchButton` is removed.** The magnifier is gone and the control opens the popup, so
+    `MDY_POPUP_OPENERS.multiselect.opener` is `"trigger"` and `role="combobox"` moves with it — a
+    button that holds no value should never have carried the role that says it does. A consumer
+    selecting `.mdy-multiselect__search-btn` selects `.mdy-multiselect__trigger` now.
+  - **`listbox` is removed.** It existed to name the popup's copy of a grid the field also drew. With
+    one grid there is one part, and two names for it could only disagree.
+  - **`options` moved into the popup**, so a renderer that keeps an inline copy fails the DOM contract
+    rather than being caught by a test. Angular was drawing both, every option twice.
+  - **`chip` is a container**, not a button, because it holds controls. `chipRemove` is new. A repeated
+    value is a **quantity** — `increment` takes `["a"]` to `["a","a","a"]` — so one chip per distinct
+    value carries the count and the steppers, and undoing one decision is one gesture rather than three.
+    `.mdy-chip--counter` remains styled and emitted by nobody under the scroll decision.
+  - **`readonly` joins the shell's control states.** It was supported by every field, declared by none,
+    and painted nowhere: a form locked for review looked exactly like one waiting to be filled in.
+    `.mdy-input-wrapper--readonly` keeps full contrast and pointer events, because a read-only field is
+    in play and a disabled one is not.
+  - Three i18n strings name the chip's controls: `chipRemoveLabel`, `chipDecrementLabel`,
+    `chipIncrementLabel`.
+
+  **Lit's datepicker and timepicker now open from their control**, which the contract has named as their
+  opener all along. Reading the opener from the catalogue rather than from a list written out in a test
+  is what exposed it — and the same list, joined into one selector, had been returning a daterange's
+  start input for the datepicker's opener, so three unrelated widgets read as broken.
+
+- a14b7c6: A combobox says whether an answer is being asked for
+
+  A select's trigger is not a native control and carries none of the field's rules on its own. Two
+  renderers wrote `aria-required` from what they could reach and one wrote nothing, because the
+  contract declared nothing — each of the three deciding for itself what had not been said.
+
+  The select projection declares it, the standalone controller carries it with a `setRequired` beside
+  `setInvalid`, and the field controller binds it from the handle. A consumer driving the standalone
+  controller gains a method it must supply.
+
+  Angular's multiselect trigger, which had the same gap for the same reason, now says it too.
+
+- 4a1928c: A field showing its errors inline still says it is failing.
+
+  `projectFieldShellA11y` wrote `aria-invalid` from `errorsVisible` — the flag that says _which element
+  holds the words_, so that `aria-describedby` never names an element that is not in the document. With
+  errors drawn **inline** there is no error list, so that flag is false, and the control announced
+  itself valid while the field beside it was painted as refused and an icon stated the reason.
+
+  The two questions are separated: `aria-describedby` still follows what was rendered, and `aria-invalid`
+  follows the verdict. The new `invalid` option defaults to `errorsVisible`, so a renderer that draws its
+  errors one way only is unaffected.
+
+  `@modyra/angular` passes its own answer, which is the same one the wrapper's error class takes — so
+  what a theme paints and what a screen reader is told cannot disagree.
+
+  Found by the themed end-to-end suite, on a page configured the way a product configures one.
+
+- 57fcb30: The reading position in an option list is visible
+
+  A multiselect's cursor was announced through `aria-activedescendant` and drawn by nobody. Lit and
+  Angular each set `mdy-chip--active` on the option the keyboard stands on — a class the catalogue never
+  declared and no stylesheet drew — and plain set nothing at all, because it applied the projected part
+  and then wrote a locally built class list over it.
+
+  `multiselect.option` now declares the `active` state, the projection emits it for the option
+  `activeKey` names, plain stops overwriting what it was given, and the theme draws it. Renderers
+  already using the class keep working unchanged; one that draws its own cursor should drop it in favour
+  of the part's.
+
+- 78bd88c: A multiselect's popup can be used with a keyboard
+
+  Opening the list with a keyboard reached the filter box and stopped there: `ArrowDown` moved nothing
+  and `Enter` took nothing, so a person who could not use a pointer could open the options and not
+  choose from them.
+
+  The popup's own keyboard policy has returned `move` and `select` all along — **the controller had no
+  cursor to send them to**, so every renderer dropped them, and plain's source said so in a comment. The
+  controller has one now: `activeKey`, a cursor and not a selection, walking the _filtered_ options
+  because a cursor that walked the declared list would stop on rows the search has hidden. It clears
+  when the query changes and when the popup opens or closes, since a position carried between showings
+  is one the person never chose.
+
+  The search box names it with `aria-activedescendant`: the cursor is not focus — focus stays in the box
+  being typed into — so naming it is the only way to say where it is.
+
+  **Angular kept its own index and moved it before asking what to take**, so one `ArrowDown` landed on
+  the second option. That is the third piece of state that component held a second copy of, after the
+  timepicker's view and its focused field.
+
+  Two more from an accessibility review:
+
+  - **Every chip states its position** — `aria-posinset` and `aria-setsize`. Independent of the live
+    region and of anything drawn, so it survives a stripped stylesheet and a dropped announcement.
+  - **Every move is announced** — "Roma, moved to position 3 of 12". Reordering with a modifier and the
+    arrows has no _grabbed_ state to announce, so the movement itself is the only thing there is to
+    say; unannounced, a reorder is invisible to somebody who cannot see the strip. The sentence is
+    composed before the intent is dispatched, because the dispatch runs the render that reads it.
+
+  And the counter chip's steppers follow the **mode**, not the count. A repeated value can arrive from a
+  document on a field that declared no mode, and it is tempting to offer the steppers there since the
+  chip does say three — but a toggle-set holds membership, so a repeat is a malformed value rather than
+  a quantity, and steppers would invite making it four.
+
+- 4b30db9: The day a calendar is always asked about
+
+  `today` has been a declared state on the day cell for as long as the part has existed, and the cell
+  had no projection: three renderers wrote its semantics by hand and one of the three marked today. A
+  person hearing the grid got thirty-one numbers and no anchor.
+
+  `projectCalendarDayCellA11y` is the door — classes, role, `aria-selected`, `aria-disabled`, the
+  roving tabindex and `aria-current="date"` on today. The datepicker controller and lit's calendar bind
+  it; Angular already said it and now has a declaration to say it from.
+
+  `date` rather than `true`, and absent on every other day: the token names what kind of current this
+  is, and thirty cells saying "not today" is noise.
+
+- 9346f32: What a chooser shows before anything is chosen comes from the message catalogue.
+
+  Two renderers wrote their own default in English — `"Select…"` in plain's select, `` `Select ${label}…` ``
+  in lit's multiselect — so a form whose every other word had been translated had an English word inside
+  it, and the two renderers disagreed about what the word was.
+
+  `MdyI18nMessages` gains `selectPlaceholder`, supplied for all five built-in locales. A caller that
+  wants silence passes an empty string.
+
+  **Migration.** The member is required, like every other in the catalogue: a consumer that builds a full
+  `MdyI18nMessages` literal must add `selectPlaceholder`. Making it optional would have put the fallback
+  back in the renderers, which is where the English defaults came from. `MDY_I18N_PRESETS` and the five
+  exported locales already carry it, so a consumer using those needs no change.
+
+- 01261b8: The timepicker's clock face is hidden from assistive technology, and the boxes announce the value.
+
+  The face carried `role="slider"`, `tabindex="0"` and the three values a slider needs. Every value it
+  can set, the hour and minute boxes can set, and they are on screen beside it — so the dial was a
+  second announcement of the same number, and a role a Tab walk skips is still found in browse mode,
+  where it promises keys it does not answer. It is now `aria-hidden="true"` with no role and no tab
+  stop. Click and drag are unchanged.
+
+  Nothing that was announced stops being announced. The hour and minute keep their `spinbutton` role
+  and bounds and gain `aria-valuetext`, so a reader hears `3 PM` rather than `3`, and `05 minutes`
+  rather than `5`.
+
+  **Migration.** `timepickerDialAria` is replaced by `timepickerSegmentAria(field, format, current,
+period?)`. Same three values, `role: "spinbutton"` instead of `"slider"`, and an optional period that
+  gives a twelve-hour hour its half of the day. A caller announcing its own dial should stop: the
+  control that holds the value is what a reader needs to reach.
+
+  ADR 0145 records the decision, including the one case that would reverse it — a picker whose dial is
+  its only input must be exposed, and as options with position rather than as a slider.
+
+- ff19aea: A colour panel offers a way to every colour, not only to twelve
+
+  The field took any colour typed into its hex box and offered twelve to anyone pointing. Two routes
+  into one field that did not arrive at the same place, and neither could see the disagreement: a person
+  who points had no way to learn that typing goes further, and a person who types had no way to see
+  where their colour sat among the ones offered.
+
+  The panel now holds a **thirteenth swatch** carrying the colour picked by hand — of exactly the same
+  kind as the twelve, so it can be selected and re-selected — and, **after the grid and outside it**, a
+  `Custom…` button that is always and only a door to the platform's chooser.
+
+  Two elements rather than one: a square that were a door when empty and a colour when full would do
+  different things depending on how it was set. Pressed full, either the chooser opens and the tint
+  cannot be re-picked, or it selects and the door is gone. ADR 0158.
+
+  The door is declared a child of the `popup`, which is where it is drawn. Left to the default it read
+  as a child of the root, and a record describing an anatomy no renderer builds is one that will be
+  believed by somebody who cannot see the page.
+
+  **Migration.** `MdyI18nMessages` gains `colorCustomEntry` and `colorCustomValue`; a consumer with its
+  own message table supplies them. `colors` gains an optional `customEntry` part.
+
+- a116692: A colour dragged past is not the field's value
+
+  The platform's chooser reports a drag with `input` and the choice with `change`. All three renderers
+  took the value on `input`, so a field recorded colours nobody chose — and abandoning the chooser left
+  whichever one the pointer had been passing over. The field then held a valid colour that had genuinely
+  been on the screen a moment earlier: only the person who cancelled could tell, and only if they
+  remembered what they had.
+
+  They take it on `change` now. The requirement that cancelling restore the previous value is met by
+  there being nothing to restore, and the colour being dragged past is shown by the chooser itself,
+  which is where the person is looking.
+
+  **What this gives up**: the page no longer previews the drag, so a consumer listening for a value
+  while a person moves through the chooser hears nothing until they settle.
+
+  `openPlatformChooser` opens that chooser through `showPicker` where the platform has it. A renderer
+  may guard the hidden input's click to stop a press on the swatch reaching it twice, and a guarded
+  click is one the `Custom…` button could not open — a door that says it opens something and does
+  nothing.
+
+- 0050769: A multiselect's chip strip is a sibling of the control that opens the list, not its child.
+
+  `MDY_WIDGET_CONTRACTS.multiselect.parts.chips` now hangs from `inputWrapper` rather than from
+  `trigger`, and is declared before it so the reading order is the drawing order. Every renderer draws
+  it beside the opener.
+
+  **Why it had to be structural.** Each chip carries a button that takes a value off, and the opener is
+  a `<button>` — invalid HTML, and worse than invalid: a press aimed at the opener could land on a
+  delete, and which one depended on how long a chosen label happened to be. Aligning the field's
+  affordances moved that hazard without removing it — sampled across the opener's midline it went from
+  the midpoint to 17% of the whole line — which is what a rule expressed in geometry does. The
+  invariant is structural instead, and checkable as one: _the opener has no operable descendants._
+
+  Pressing the field's empty area still opens the list. It is now a behaviour of the box, which
+  forwards a press on **its own** area; a press that lands on a chip never reaches the opener, because
+  a chip is not inside it.
+
+  `@modyra/styles`: the strip takes the width its chips need and the opener takes the rest. Inside the
+  opener the strip had nothing to share the row with; as siblings, a strip that still grew covered the
+  opener and the opener covered it back.
+
+  **Migration for a renderer implementing this contract**: draw the strip as a sibling of the opener
+  inside the field's box, before it; forward a press on the box's own area to the opener; and do not
+  give either the full width of the row.
+
+  See ADR 0142.
+
+- 9840c5e: Every form carries an id scope, so two forms on one page stop sharing their ids.
+
+  Measured on two forms built from the same document, in all three renderers: every id shared, and the
+  second form's `aria-describedby` resolving to the **first** form's help text — read out, verbatim, to
+  a person who cannot see the field it belongs to. `getElementById` returns the first match, so nothing
+  throws and nothing looks wrong.
+
+  A form now has a scope whether or not the consumer asked for one, and every widget bound to it derives
+  its ids inside that scope. ADR 0146 records the decision and what it costs.
+
+  **Every id changes.** `when` becomes `f<scope>-when`, `when__label` becomes `f<scope>-when__label`.
+
+  **Migration.** Pass the scope you want and the ids are the ones you already know, with your scope in
+  front: `mountMdyForm(host, fields, { idPrefix: "signup" })`, `<mdy-text-field id-scope="signup">`,
+  `[idScope]="'signup'"`. A consumer naming an id in a stylesheet, a test or their own
+  `aria-describedby` should do this.
+
+  **Without one**, the scope is a function of the document — a signature of the field paths — so a
+  remount and a client hydrating a server render arrive at the ids they had. What that cannot separate
+  is two forms built from the _same_ document: plain tells them apart because it can see the page it is
+  mounting into, and lit and Angular cannot, because they compute an id before the element exists. For
+  those two the twin case stays what ADR 0135 concluded it was — the consumer's to answer with a scope.
+
+  `formScopeOf` and `widgetScopeOf` are exported for a renderer built outside this repository.
+
+- 117e1c3: A form built with these controls now submits
+
+  Put these controls in a `<form>`, press a submit button, and the browser sent **nothing** — measured,
+  all three renderers, `new URLSearchParams(new FormData(form)).toString()` returning `""`. A control
+  without a `name` is not serialised, and no control wrote one.
+
+  Every kind now declares how its value is submitted, and the key is the **field's path** — `colour`,
+  not the scoped widget id. Thirteen of the fourteen kinds measured now send their value identically in
+  plain, Lit and Angular.
+
+  **`radio` and `segmented` change what they send.** They were the two kinds that already carried a
+  name, and it was the scoped id: `f3a9-colour=b` becomes `colour=b`. A consumer parsing the old key
+  has to change. The scope keeps the job it was added for — outside a form, where nothing is submitted
+  and the name only groups the set, it is still used.
+
+  **A checkbox says what it means.** An unchecked box is absent from a payload in HTML, so `false` and
+  "never sent" arrived identical; and a checked box with no `value` sends `on`. A boolean now sends its
+  model value, with a hidden companion carrying `false` — so the key is always present. The companion
+  goes quiet while the box is ticked, so the payload carries **one** key either way: `ok=true` or
+  `ok=false`, never both, and nothing at the receiving end has to know which repeat wins.
+
+  **If you select controls by position, check your selectors.** `select`, `multiselect`, `checkbox` and
+  `toggle` now render a hidden input, so a field can hold more inputs than it used to. The hidden one is
+  always placed **after** the visible control, so `querySelector("input")` and `.first()` still find the
+  control a person can see — but `querySelectorAll("input")[2]` may now be a different element than it
+  was. `input:not([type="hidden"])` is the selector that survives either way.
+
+  **`select` and `multiselect` gained hidden inputs**, because they draw no form control at all. One
+  per value, in order, so a multiselect keeps both.
+
+  New in `@modyra/widgets`: `submissionFor`, `submissionNames`, `submissionDefects`, `submitFalsePart`,
+  `groupSubmitName`, `syncSubmitValues`, `MdySubmissionShape`. `checkbox` and `toggle` gain an optional
+  `submitFalse` part.
+
+  Thirteen of the fourteen kinds measured now agree across plain, Lit and Angular. The one that does
+  not is `datepicker`: Angular sends `01/02/2026` where the other two send `2026-01-02` — the text the
+  box shows rather than the value the model holds. The name is right in all three; what the control's
+  `value` carries is a divergence that predates this and is now visible. See ADR 0152.
+
+- 965a61c: A key declared bare stops answering a press with the accelerator held — and Escape starts answering whatever is held
+
+  **Breaking: `MdyKeyBinding.modifier` is now `"primary" | "any"`, and four signatures accept a press
+  where they took a key name.**
+
+  Measured across all three renderers, on every kind that opens something: `Cmd`+Space, `Cmd`+ArrowDown
+  and `Cmd`+Enter each opened a panel. Those are the input-source switcher, the end of a document and
+  submit — a person holding the modifier is reaching for one of them, and the panel arrived under the
+  gesture meant to do something else.
+
+  `matchesKeyGesture` had always said otherwise, and had no road. Every question a renderer actually
+  asks took a **key name**, so what was held with the press never reached the one function that reads
+  it: a defect planted in that function moved no check in either tier, because nothing on the deciding
+  path called it. It was published as the answer to a question nobody asked it.
+
+  **The rule, once the closing case was asked about outside.** A gesture that _adds_ is refused under a
+  held accelerator; a gesture that _removes_ is honoured whatever is held. Answering a dismissal
+  wrongly costs a reopen; refusing one leaves somebody inside a panel with the way out not working,
+  under a modifier nobody thinks to test. `Escape` in particular is the key a control does not get to
+  reinterpret.
+
+  Declared, not coded: the dismissal bindings carry `modifier: "any"` and every deciding path reads the
+  binding. A condition naming `Escape` would be a second copy of the rule, and the copy is what keeps
+  answering after the declaration changes — proved by mutation, which found exactly that in the first
+  version of this fix.
+
+  `keyBindingFor`, `keyMeans` and the two overlay policies accept `MdyKeyOrPress`: a string keeps
+  meaning what it meant, so a caller asking what the catalogue declares about `Tab` is unaffected, and
+  a caller deciding a press now says so. The calendar's `keydown` intent carries the accelerator, which
+  it needed to answer at all.
+
+  **Two things this leaves.** `colors` behaves correctly and reaches that behaviour by comparing the key
+  by hand in one renderer, so it does not read the declaration. And the contract snapshot does not cover
+  the keyboard catalogue at all — this changed a published binding and `contract:diff` reported `patch`.
+
+  See ADR 0168, which also records where the type-surface classification and my own reading disagree.
+
+- 89e42ec: The handover moves the face and the caret together
+
+  A tap on an hour hands the dial over to the minute after a moment. The dial redrew and the contract
+  marked the minute segment, **and the browser's focus stayed in the hour box** — so an arrow or a digit
+  edited the field the person was no longer looking at, and nothing on screen said which one would move.
+
+  The cause is in the controller rather than in a renderer. `focus-field` returns a `focus` command, and
+  the handover dispatches it to itself on a timer, where there is no call for the commands to be
+  returned from — so they were produced and dropped. `MdyTimepickerFieldControllerOptions` gains
+  `emit?`, the sink for commands this controller raises without being asked; a renderer passes the same
+  executor it already uses for a dispatched command. A host that omits it draws exactly what it drew
+  before.
+
+  The decision to hand over at all is unchanged and still differs between renderers: Plain and Lit
+  advance, Angular does not. That disagreement is a separate question and is not settled here.
+
+  **Lit: an arrow on a segment emptied it.** The box bound `nothing` while it was being edited, meaning
+  to leave the text alone — but `nothing` on a property binding still writes, setting `value` to
+  `undefined` and clearing the box under the caret. The partial is held and bound instead, so the box
+  and the draft stay two views of one thing rather than two owners of one field.
+
+- 12c9e50: A chip key is compared, not interpolated into a selector — and every object value stops collapsing into one
+
+  Two defects with one root, both invisible to a suite that only ever chose values that were strings.
+
+  **A structural key is not a legal selector.** The key that tells one chosen value from another is
+  derived from the value, and for an object it is the value's own contents as a string —
+  `{"id":1,"name":"Red"}`. Eight places built `[data-key="${key}"]` from one. The first quote closes the
+  selector and the browser raises `SyntaxError`: landing focus after a removal, focusing a chip after a
+  move and measuring midpoints during a drag did not misbehave, they threw, and took their handler with
+  them. Two of five representative held values do this — an object, and any string carrying a quote.
+
+  `elementByDataKey` reads the attribute back and compares it. Escaping would also work and needs a
+  second set of rules — attribute values and class names do not escape alike — where zero will do.
+
+  **Three derivations of one order, and one of them was wrong.** The strip lays chips out in the order
+  the value holds them, and all three renderers worked that out for themselves. Two used the contract's
+  key function; one used `String(value)`, which agrees on every primitive and turns every object into
+  `[object Object]`. Its strip _painted_ correctly — painting reads the controller — while every gesture
+  that indexes into the strip indexed into a list of one. Five chips reordered as though there were one.
+
+  `chosenKeyOrder` is now the contract's answer, asked for by name. Three renderers read it; none
+  derives it.
+
+  The agreement between the three was never verified, only assumed: no test used an input where they
+  part ways. See ADR 0166.
+
+- 86d196e: A key means what the part under it means
+
+  The space bar is declared where it lands rather than per kind: a character in a text box, "this one"
+  on a highlighted day or option, a press on a button. Two renderers claimed it in an open panel and
+  the catalogue declared it for neither, so the same key meant one thing in a calendar and another in a
+  list with nothing saying why.
+
+  `Space` on a `gridcell` commits; on an `option` it toggles where the field can hold several and
+  commits where it holds one, read from the value contract's own shape. Nothing claims it over a text
+  box, which is how the table says the platform keeps it — a person typing a filter or a date types a
+  space.
+
+  ADR 0174 records the rule, including what it does not settle: what "commit" means at the first end of
+  a range.
+
+- ba9a0c1: A key that depends on a capability says so
+
+  `MdyKeyBinding` gains `requires?: string`, the field-level capability a binding depends on where the
+  kind alone does not decide it. `on` says which part answers a key; this says whether the key exists
+  at all for this field.
+
+  Reordering forced it. Every multiselect has chips, and only one declared `reorderable` has an order a
+  person may change — so `Alt`+`ArrowLeft` and `Alt`+`ArrowRight` now carry `requires: "reorderable"`.
+  Until now the table said the kind answers four keys that a default field answers none of, and anything
+  reading it across kinds — a sweep, a help panel, a consumer's own key handler — had to carry its own
+  list of which ones were conditional. A capability named in the table is one a reader can ask the field
+  about.
+
+- b6b31c4: A binding can name the state it waits for
+
+  `Ctrl`/`Cmd`+Z puts back a multiselect's last removal, and on a field where nothing has been removed
+  it correctly does nothing — which from outside is indistinguishable from a key nobody implemented. A
+  sweep over every declared key found it and reported it unanswered.
+
+  `MdyKeyBinding` gains `awaits`, naming a transient state the field must already be in. It sits beside
+  `requires` and answers a different question: a capability is true for as long as a document says so,
+  a state has happened and can stop being true again. The test is whether the answer can change while
+  nobody touches the document.
+
+  A check may now arrange the state before pressing or count the key as unreached; a legend says _when_
+  a key applies rather than promising it always. ADR 0157.
+
+- 4c8cf60: A label can say it was never written
+
+  Everything inside a field is named by pointing at its label, so a field a document gave no name to
+  had to be given words anyway — `fieldAccessibleName` chooses them. Plain marked such a label with a
+  class of its own invention so a theme could keep it out of sight, since a name is owed to a screen
+  reader and a heading is not.
+
+  `unwritten` is now a state of the shell's label, and `projectFieldShellA11y` emits it when a caller
+  passes `nameSources` and neither a label nor an `aria-label` was written. Callers that pass nothing
+  are unaffected: the label carries no such claim and nothing changes.
+
+  The theme also gains the two chip states it declared and never painted — a chip in flight during a
+  drag, and the tooltip that gives the full name of a chip the strip had to cut short, which until now
+  was unstyled text that widened the row it was explaining.
+
+- 6022157: A list you can type your way into
+
+  Finding the twentieth option in a multiselect's popup meant twenty presses. The APG asks for
+  type-ahead of any listbox a person can open, and every piece of it was already published —
+  `createTypeahead`, `isTypeaheadCharacter`, `typeaheadMatch` — and used by nobody here.
+
+  A `typeahead` intent moves the cursor to the first option whose label matches what has been typed.
+  The buffer and the idle window that decides when two keystrokes are one word belong to the
+  **controller**: a renderer holding them decides that for itself, which is how three adapters come to
+  answer differently.
+
+  Only where there is no filter box. A searchable popup already answers typing by narrowing the list,
+  and the two would compete for the same keystrokes.
+
+  **The cursor is now visible or named wherever focus happens to be.** Plain focuses the option itself,
+  because its popup puts focus inside; Lit and Angular keep focus on the control and name the option
+  through `aria-activedescendant`, which is how a control points at something it does not contain focus
+  for. Without either, the cursor moved and nothing said so.
+
+  Fixes a defect found while measuring it: **plain placed focus on every effect pass rather than on the
+  opening**, so the arrows appeared to do nothing at all — the cursor moved and focus was dragged back
+  to the first option behind it.
+
+- 93fcb70: A month you can walk sideways
+
+  The calendar keyboard declared `ArrowUp` and `ArrowDown` and not the horizontal pair, so a person
+  walking a month with the keyboard could move up and down a column and never along a row. All three
+  renderers answered `ArrowLeft` and `ArrowRight` anyway — a grid that cannot be walked sideways is not
+  a grid — which is three implementations agreeing against a declaration, and that is evidence about
+  the declaration.
+
+  `ArrowLeft` and `ArrowRight` move by a day where the vertical pair moves by a week, which is what the
+  two axes of a month are.
+
+- f0b4f7d: A name for a field nobody named
+
+  A document may declare no label — the published corpus does — and everything inside a field's shell is
+  named by _pointing at_ that label. With no words in it, a `radiogroup`, a `grid` and a `dialog` are
+  announced as their role and nothing else: "group", "grid", "dialog", with no way to tell which field a
+  person has landed in.
+
+  Two repairs, at the two levels where the question is answerable:
+
+  - **The option projection names the group itself** where no label was written — `aria-label` from
+    `fieldAccessibleName` rather than `aria-labelledby` pointing at an empty element. A reference to
+    nothing is not a name, and the contract already held the order to choose by.
+  - **plain's shell writes the fallback into the label** and keeps it out of sight. Every reference
+    inside the field then resolves to words, whichever part made it. `clip-path` rather than
+    `display: none`, which would take the label out of the accessibility tree along with everything
+    pointing at it — a name is owed to a screen reader, a heading nobody asked for is not.
+
+- a268ec7: A name the strip had to cut can be read without a pointer
+
+  A chip whose label does not fit is cut off, and the only way to read it was the `title` attribute —
+  which never appears for a keyboard or a touch user, who are exactly the people who cannot widen the
+  chip. WCAG 1.4.13 asks that content revealed on hover be reachable on focus as well.
+
+  Focusing or hovering a chip now reveals its full name in a `role="tooltip"` element the chip is
+  described by. The new optional part is `chipTooltip`, and it belongs to the **control**, not to the
+  chip: a child of the chip is part of the chip's own text, and the name a chip composes from its
+  contents said the label twice. One element per control, moved to whichever chip is being named.
+
+  `chipTooltipOffset` is exported — where the tooltip sits in the control's coordinates, taken against
+  the strip the chip scrolls in, so a chip scrolled halfway out is named where it is drawn.
+
+- 2fde8a7: A native radio carries its own state
+
+  Every renderer draws an option as a native `<input type="radio">` — a segmented button is one wearing
+  a styled label — and a native radio maps its own `checked` into the accessibility tree. `aria-checked`
+  beside it was a second source for one fact, applied by two renderers and dropped by the third, and
+  when two sources disagree the ARIA one wins and is the one that went stale.
+
+  The option projection says `null` for it; lit and Angular stop writing it. What is chosen is read
+  from the state, which is where the checks now read it too.
+
+  This is the same rule as `aria-checked` on a native checkbox, and the reason the two looked like
+  opposite cases was that nobody had checked which element a segmented button actually is.
+
+- 08cca72: A colour palette a keyboard can reach
+
+  Three clauses of the contract could not all hold. `MDY_WIDGET_KEYBOARD` declares the arrows, `Home`
+  and `End` on an open colour field; the canonical observation said focus stays outside the widget when
+  the palette opens; and `Tab` is declared `cancel`, so it dismisses rather than enters. Together they
+  left the swatch row unreachable from the keyboard in every conforming renderer, and the four declared
+  keys undeliverable — the presets were a pointer's row.
+
+  The canonical now says what it already says for the calendars: the palette takes focus into the row
+  it just showed, because a list the keyboard cannot reach is a list only a mouse can use. All three
+  renderers do it, and all three walk the row with the keys the catalogue declares, in the direction
+  the binding gives rather than the one the key name suggests.
+
+- cd7e937: A panel belongs to its field, and closing one is an answer
+
+  Two rules ADR 0167 decided and left unbuilt.
+
+  **A field's focus scope is the control and the panel it opened**, wherever that panel is drawn.
+  `focusIsInsideField` reads the opener's `aria-controls` and answers for the panel it names; three
+  renderers answered by containment before, so a panel portalled out of its field to escape a
+  scrolling ancestor read as "focus has left" while an in-place one read as "still here" — one
+  contract, two behaviours, decided by where a `<div>` was appended.
+
+  **Opening a panel and closing it without choosing marks the field answered** — the panel's version
+  of typing and deleting: the person saw what was on offer and took none of it. Touched and not dirty,
+  because nothing about the value changed. This is what makes the previous release's rule complete: a
+  bare traversal says nothing, and a gesture that engaged the value space does.
+
+  Two renderers were told about every close except the one a person actually makes: Angular's Escape
+  went straight to the overlay lifecycle, past the door a component overrides, and lit's colour palette
+  flipped its own flag without telling its controller. Both now close through the contract.
+
+  The canonical after-Escape expectation changes with it: the state is the resting one plus `touched`.
+
+- e0ab01c: A part can say what the page had to ask for before it is owed at all
+
+  `presentWhen` says when a part is on the page. It cannot say whether the question applies: a
+  multiselect's reorder grip is present when there is a value **and** only where a document asked for
+  reordering, which is not a state the widget is in — it is something the page decided before the
+  widget existed.
+
+  Read without that, the contract owed a drag handle to every multiselect holding a value. All three
+  renderers drew it only where reordering was asked for, which is right and was a rule none of them
+  could point at.
+
+  Three adapters agreeing against a declaration is the evidence that the declaration is what is wrong.
+  One adapter disagreeing would be a renderer defect; three is the contract saying something nobody
+  follows, and a rule nobody follows is a rule that has already stopped being one.
+
+  `MDY_PART_REQUIRES` carries the precondition per part, beside the presence table and derived the same
+  way. It uses `requires` — the word a key binding already uses to gate a gesture on the same fact —
+  because one vocabulary for one idea is what keeps a reader from checking whether two spellings differ.
+
+  Checked in three directions: the precondition reaches every kind that draws the part, it names a
+  capability that kind's own keyboard already gates on, and — the perimeter — the contract does not
+  become mostly conditional on what a page asked for, which would say very little about what a renderer
+  owes.
+
+- 5bde1b0: Fifty more optional parts say when they are on the page, derived rather than declared
+
+  The presence conditions went from 112 of 193 to 162 of 185, and not one of the fifty was written by
+  hand. A part inside a popup is present when the popup is, and the anatomy already answers which parts
+  those are — `dynamicPartsOf` walks the containment chain from any node whose element is a popup, and
+  the server split has read that answer since it existed.
+
+  Declaring them in the table would have been a second answer to a settled question, going stale the
+  first time a kind grew a part inside its overlay. The table still wins where it names one, so a part
+  with a sharper condition than "the overlay is open" keeps it.
+
+  `dynamicPartsOf` moved to `structure.ts`, beside the type it reads, and `ssr.ts` re-exports it from
+  the door it was published from. It could not stay where it was: `ssr.ts` reads the catalogue, and the
+  catalogue now needs the derivation while it is being built.
+
+  The anatomy is assembled in two passes, because containment is only readable once every node has its
+  parent. The shape is laid out first; the conditions are attached to it after.
+
+  Twenty-two parts are still silent — chips, file entries, spinner buttons, a select's displayed value.
+  Each was measured against a rendered page rather than reasoned about, and the page contradicted the
+  obvious guess: `clearAll` and `fileList` are on screen with no value at all, so "present when the
+  field holds a value" is wrong for them. They stay in the baseline. A missing condition is a gap; a
+  wrong one tells a renderer to build something at a moment nobody wanted.
+
+- e972a01: A part named for what it is for: `select.listbox` is `select.options`
+
+  ADR 0132: a part's name says what the element is **for**; its role says what it **is**. `listbox` stays
+  everywhere it is a role and stops being a part name. A part named after a role cannot survive the
+  semantics changing — multiselect already proved that, when its chips stopped being a listbox and left
+  a part called `listbox` describing something it was not.
+
+  Select's option list is `options` now, as multiselect's already is, and one name serves both kinds. Its
+  role is unchanged: the element is still a `listbox`, declared through `roles` and `elements` rather
+  than through the name.
+
+  **The migration is one line, and narrower than it looks.**
+
+  ```
+  class          mdy-select__list        unchanged
+  id             <widget>__listbox   →   <widget>__options
+  aria-controls                          follows the id
+  role                                   unchanged
+  ```
+
+  No CSS class moved, so a consumer's stylesheet is untouched. The id moved, and only plain published it
+  — lit and Angular never emitted one, which is its own finding. If you named `<widget>__listbox` in
+  your own `aria-*` or in a selector on that id, it is `<widget>__options`.
+
+  `MdySelectA11yProjection.listbox` is `MdySelectA11yProjection.options`.
+
+  **Rejected**, so it need not be re-derived: renaming multiselect's `options` to `listbox` for symmetry
+  is the same mistake in the other direction; and an accessor — `optionListPartOf(kind)` — loses on
+  smallest public surface, because it adds a function to learn and leaves both names for anyone who does
+  not know it exists.
+
+- be44d0a: Parts that follow the value say so, and the placeholder's condition was wrong
+
+  **`MdyPartPresence` gains `valueIsAbsent`.** A consumer switching exhaustively over the vocabulary
+  must handle it.
+
+  **`placeholder` was declared `documentDeclaresIt` and that was wrong.** The document supplying the
+  words is necessary and not sufficient: a placeholder is shown because the words exist _and_ there is
+  nothing yet to show instead. A renderer following the old declaration would draw a placeholder beside
+  the value it stands in for. Correcting a wrong declaration is still a breaking change for anyone who
+  implemented it.
+
+  Seven more parts now say when they are there, and each was read out of a renderer's source and then
+  confirmed against a rendered page: `chip`, `chipRemove`, `chipMove` and `fileItem` exist per chosen
+  value; `value` is what a chosen value is shown as; `clearAll` and `clear` offer to take a value away
+  once there is one. 169 of 185 optional nodes carry a condition.
+
+  `chips`, `chipRow` and `fileList` are **not** among them, though the obvious reading says they should
+  be: they are containers built once and kept, and only their contents follow the value. Thirteen parts
+  stay silent — a spinner's buttons, a loading mark, an overflow count, an undo offer — because each
+  one's condition needs a reading their sources have not been given.
+
+  A new check holds the page to the declaration: for every part declared to follow the value, mount
+  with nothing and with something, and the part must appear on one side and not the other. It reads
+  presence as _shown_ rather than as present in the DOM — this renderer builds a part once and hides
+  it, so counting nodes reports every one of these as always there, which is what two earlier probes
+  concluded before this existed.
+
+- 07b3ec8: A picker can be told which view to open in
+
+  `MdyDynamicDateField` gains `viewMode?: "dial" | "input"` — timepicker only, absent opening on the
+  dial. The controller has honoured `viewMode` since 2.4.0 and restores it when the picker closes, so
+  this names the view the field _has_ rather than the one it started on; what was missing was the route
+  from a document or an attribute down to it. Angular, Lit and Plain each gain the matching input, and
+  Angular's dynamic form forwards the document's value.
+
+  A view that is not one of the two is reported as `MDY_DYNAMIC_UNOPENABLE_VIEW` and dropped, leaving
+  the field opening on the dial.
+
+  `MDY_TIMEPICKER_DEFAULT_FORMAT` is published beside `MDY_TIMEPICKER_INITIAL_VIEW`, and the four
+  renderer sites that each spelled `"24h"` out now read it. Two copies of the _view_ default had
+  already drifted past ADR 0116 — Lit's resting state and Angular's clock component still opened on the
+  twelve-hour clock — which is what a default written four times does and what tests cannot see, since
+  a default is only read when nothing else answers.
+
+  `timepickerPlaceholder(format)` is published for the same reason one field over: the hint was written
+  out in two renderers and absent in the third, so one document told a person what to type in two
+  adapters and nothing in the other. Plain now shows it.
+
+  Migration: none. A document that says nothing behaves exactly as before.
+
+- 9cdd4ef: Reordering has a pointer path that is not a drag
+
+  WCAG 2.5.7 asks for a single-pointer alternative to any dragging movement, **independently** of a
+  keyboard path — a keyboard alternative does not discharge it. Somebody using a pointer who cannot hold
+  and drag, because of a tremor or a head pointer or a switch, has no way to reorder otherwise.
+
+  A reorderable chip gains two move controls: one press, one place, no drag. They are the same
+  `move-selected` intent the keys use, so the two doors cannot come to disagree about what an order is,
+  and they announce the same sentence.
+
+  Not focusable, like every other control on a chip. ADR 0128 settled that a chip is one operable thing
+  and its controls are reached through it — adopting `role="grid"` would have put them back in the tab
+  order and then supplied `Enter`/`F2` as the way to reach them again, which is scaffolding for a problem
+  the roving index already removed.
+
+  Drawn only where the field asked to be reorderable, so a set of filters gains no furniture. Their
+  marks are drawn in CSS rather than written as text, for the reason the remove control's is: a
+  character in a button is picked up by an accessible name composed from contents.
+
+  Fixes a live-region defect found while measuring it: a render describing no change wrote `""` over the
+  sentence just spoken, taking it back before a reader could reach it. A second pass over the same state
+  is an ordinary thing for a renderer to do, so the region is now left alone when there is nothing new
+  to say.
+
+- f962df5: A colour preset can carry the name it is known by
+
+  A hexadecimal is not a name. Read out, `#4361ee` is six characters somebody has to hold in their head
+  to compare with the next one — so a panel of ten was, to anyone who could not see it, ten strings that
+  differ in the middle.
+
+  `presets` now takes `{ value, label }` as well as a string, and the renderers announce the label.
+
+  **This library ships no names for its own defaults, deliberately.** A generic palette naming `#4361ee`
+  would be guessing, and an approximated colour name is worse than the hexadecimal because it claims a
+  meaning it does not have while the hexadecimal claims none. The knowledge lives where the palette
+  does: a team's colours have names, and this is where they say them. An entry with no label is still
+  announced by its value — poor, and honest.
+
+  **Migration.** `MdyDynamicColorsField["presets"]` widens to `ReadonlyArray<string | MdyColorPreset>`.
+  A document that writes strings is unaffected; code that _reads_ a parsed document and assumed
+  `string[]` now has two shapes to answer, and `colorPresetsOf` normalises either into value and name.
+
+- 087b2ca: A quantity says where it is, and says so once per gesture.
+
+  Stepping a counter chip down was silent until the step that deleted the value: the sentence a
+  selection change produces compares the _distinct values_ a field holds, and taking three of something
+  down to two changes none of them. So the only step that spoke was the destructive one, and a person
+  stepping down heard nothing until what they were counting was gone.
+
+  Two things had to be true of the repair, and they pull against each other:
+
+  - **A live region cannot be read on every step.** A held arrow key queues one polite sentence per
+    press, played out after the person has let go — a backlog of values several steps in the past. A
+    `spinbutton` does not have this problem because the platform reads a _value_ and coalesces rapid
+    changes itself; a control that gives up that role (ADR 0138) takes the coalescing on.
+    `settledVoice` is that coalescing: it says the value a gesture ended on, and its schedule is
+    injectable so a test can settle it without waiting.
+  - **The floor is announced on arrival, not on crossing.** `quantityAnnouncement` says
+    `"Alfa, 1, minimum"` when a quantity _reaches_ one, so the next step down is a known act. Warning at
+    the moment of deletion is too late: the value is already gone and the person is being told rather
+    than asked.
+
+  All three renderers announce identically, by keyboard and by pointer.
+
+- 0e6540c: A reference worth following
+
+  A bare field with nothing to say still pointed `aria-describedby` at its supporting-text element — an
+  empty one. A reader is told there is more to hear, goes, and hears silence, which costs them the move
+  and teaches them not to follow the next reference.
+
+  The reference is made only where there is something at the other end. The renderer is the one who
+  knows — the text may be a host's supporting line, a slot, or a sentence the kind adds for itself — so
+  the text controller takes `describes`, and lit's elements answer it with `hasDescription()`. Angular
+  already asked the question this way.
+
+  **And the DOM checker was demanding the opposite.** It required the relation whenever the target part
+  was rendered, and a supporting-text element stays in the document while empty so its id keeps its
+  place. It now asks whether the target is _on screen_ — `hidden` and `aria-hidden="true"` are how a
+  renderer says it is not — which is the criterion the check states in its own comment: a relation is
+  required exactly when both ends are on screen.
+
+- 58654b1: The button that takes a chip off says which chip it takes.
+
+  Every remove button in a multiselect's strip was named with the verb alone — `Remove`, `Rimuovi` — so
+  a field holding eight values offered eight controls with one name between them. Someone reading the
+  page one control at a time hears "Remove" and has to leave it, find the chip beside it, and come back
+  to know what they would be removing; someone listing the controls hears the same word eight times.
+
+  `chipRemoveName(verb, label)` is published from `@modyra/widgets`: the words stay with the renderer,
+  where the language lives, and the rule that the object belongs in the name lives in one place. All
+  three renderers now announce `Remove Alfa`.
+
+  **Migration**: a test or tool matching the old name exactly — `[aria-label="Remove"]` — matches
+  nothing now. Match the prefix, or the part class.
+
+- cde2ab8: A role the catalogue names
+
+  Four roles were written by renderers and declared nowhere, so nothing could check them and the next
+  renderer had to guess.
+
+  `calendar` is a `dialog` on the datepicker and the daterange — the calendar and not the popup around
+  it, because the calendar is what a person enters, works in and leaves while the popup is the box that
+  positions it. Two renderers already wrote it there; Plain wrote it nowhere and now reads it from the
+  catalogue, along with the accessible name a dialog owes.
+
+  The timepicker's `hourControl` and `minuteControl` are `spinbutton`s. The projection has emitted the
+  role since the segments existed and the parts table did not carry it.
+
+  The conformance kit learns that `<input type="number">` is a spinbutton to the platform, so a
+  renderer using one carries the role without spelling it — reporting "with none" over an element that
+  has the role was the inspector describing its own table rather than the page.
+
+- 0a54a17: A select is two shapes, and the contract says which
+
+  A select renders the platform's own `<select>` unless it filters, and the combobox when it does. The
+  catalogue said so in a comment and said nothing an instrument could read, so read as one anatomy it
+  owed every select the combobox's parts and its opener relation — and six cross-renderer findings sat
+  unfixable, because repairing any of them meant giving a native `<select>` attributes it must not
+  have.
+
+  `select` declares two variants. `custom` requires the mark that says it opens; `native` describes what
+  the platform makes of the parts it has — the trigger is the `<select>`, the placeholder an `<option>`.
+  `value` and `placeholder` keep their own presence conditions and simply do not exist in the native
+  shape.
+
+  `MdyWidgetVariant` gains `"native" | "custom"` beside the multiselect's modes. Two axes share one
+  vocabulary because a variant name is only meaningful for the kind that declares it: asking a select
+  about `multi` selects no anatomy rather than the wrong one.
+
+  The conformance kit learns that a `<select>` is a combobox and a `<select multiple>` a listbox, so the
+  native shape carries the role its trigger promises without spelling it.
+
+  ADR 0176, including what it does not settle: the opener relation belongs to the custom shape and the
+  relation table is not variant-aware, so nothing enforces that yet.
+
+- ab7fcb2: A select that does not filter is drawn by the platform
+
+  `@modyra/plain` rendered a custom combobox for every select. ADR 0176 declares the kind as two
+  shapes and says which is which: a select that filters is the combobox this library builds, and
+  anything else is the platform's own chooser — which already has the typeahead a list of fifty needs,
+  the platform keyboard model, and the picker a phone puts up. The other two renderers already drew
+  it that way.
+
+  **Breaking for a document that declares a select without `searchable`.** It now renders a `<select>`
+  with `<option>` children instead of a button and a portalled listbox. A stylesheet or a script
+  reaching for `.mdy-select__trigger` will find a `<select>` rather than a `<button>`, and there is no
+  `.mdy-select__dropdown` in the document for that field — the popup is the platform's. Add
+  `searchable: true` to keep the combobox; it is unchanged.
+
+  The projection follows the shape. `projectSelectA11y` hardcoded `role="combobox"` and the opener
+  relation — `aria-expanded`, `aria-controls`, `aria-activedescendant` — on every trigger. Those
+  describe a list the projection does not draw when the platform owns the popup, and on an element
+  whose role does not admit them they are dropped without a word. Both shapes still carry the field's
+  own verdict: wrong, required, described by, out of play.
+
+  `MdySelectControllerOptions.searchable`, `MdySelectFieldControllerOptions.searchable` and
+  `MdySelectA11yOptions.variant` are new and optional. A caller that says nothing keeps the shape it
+  was already drawing, so nothing loses the combobox relation while it is still drawing a combobox.
+
+- 3bc4a23: `partSelector` moves from the testing door to the package's own
+
+  **Breaking: `partSelector` is no longer exported from `@modyra/widgets/testing`.** Import it from
+  `@modyra/widgets`. It also takes an optional third argument for part states, and infers its kind, so
+  every existing call still compiles.
+
+  Finding a part by the classes the contract declares is not a testing question — every renderer asks
+  it, and the ones that could not import it wrote the class name out as a literal instead. Eight of
+  those literals were in one renderer. A selector written by hand is a copy of the vocabulary that no
+  rename reaches: the class moves, the selector matches nothing, and the only symptom is a part that
+  quietly stops being found.
+
+  The move kept the two things the original got right and a first draft of this change lost:
+
+  - **it escapes the name**, by hand rather than with `CSS.escape` — that is a browser global this
+    package must not require, since it loads and computes in a process with no DOM;
+  - **it answers `null`**, both for a part with no classes of its own (five controls have none) and for
+    a part the kind does not have. Delegating to `partClasses`, which raises for an unknown part, broke
+    a caller that sweeps every part name there is — for that question, "this kind has no such part" is
+    an answer rather than a mistake.
+
+  **Angular's four shadowed `minSpace` numbers are gone.** Three renderers carried `450` and one `250`,
+  beside a spread of `overlayAnchoringFor` that lands after them and wins — so the literals decided
+  nothing while reading as though they did, and they disagreed with the catalogue that was actually
+  being used. The base's fallback stays, for a control the catalogue does not know.
+
+- f7bd4cb: A control can say how it is operated, in words derived from its keys
+
+  Nothing on a page tells anyone the key map exists. It is discoverable by guessing, and a person who
+  does not guess has a control they can see and cannot operate.
+
+  `widgetKeyGuide(kind, messages, options)` reads `MDY_WIDGET_KEYBOARD` and returns one sentence: what
+  opens the control, what moves in it, what changes its value, what confirms, what closes it. Derived
+  rather than written beside the table, because a phrase naming keys _is_ a copy of the key map — it
+  goes stale the moment a binding moves, which is a shape this contract has now found five times. The
+  frames are `MdyI18nMessages`, so a locale that translates them translates the legend.
+
+  It stays quiet about what a person cannot do: a key needing a capability the field never asked for is
+  left out — a legend listing `reorderable`'s keys on a field without it is worse than none — and so is
+  a key answered on a part the control did not draw. It describes one state at a time, because a closed
+  control's keys and an open one's are different sets.
+
+- 0ae26cf: The option grid says what it is, and a multiselect opens on an arrow again
+
+  **The chip grid declared no role at all.** It once claimed `listbox` semantics its chips did not have,
+  and the redesign removed the role rather than correcting it — so the container became an unlabelled
+  `div` and a screen reader was told nothing about the set. `null` is neither of the two published
+  answers; it is the one that says nothing.
+
+  `group`, declared by the contract rather than written into three renderers — which is what plain and
+  lit were already doing separately and Angular was not doing at all. Not `listbox`: a listbox's
+  children are options a person walks with the arrows, and these are chips that toggle, so the stronger
+  role would promise a keyboard model the grid does not have.
+
+  **And `ArrowDown` opens a closed multiselect again.** It is the APG's own behaviour for a combobox and
+  `select` still had it. The binding was conditional on a kind declaring a `listbox` part — and the
+  multiselect lost its arrows the day that part was retired, because its popup still held the same
+  options under a different part name. The condition asks about `option` now, which is the question it
+  was always trying to ask: a calendar, a clock face and a colour palette declare none, so they are
+  untouched.
+
+  One conflict closed with it: a focused chip was swallowing every key the contract declared, including
+  the ones it does not answer, so `ArrowDown` on a chip did nothing at all. A chip now stops only the
+  keys it handles.
+
+- 49339e9: The chip strip is a `grid` and every chip a `gridcell`.
+
+  A screen reader switches between its two modes on the role of the focused element, and `listitem` —
+  which the chip was — is not one it switches on. Somebody who arrived at the field **by browsing** — by
+  heading, by landmark, by jumping to the next form field, which is the ordinary way to arrive — pressed
+  an arrow, the virtual cursor moved, focus stayed on the chip, and the strip's entire keyboard model
+  never reached them. Silently, and only on one of the two ways in.
+
+  `gridcell` is a role the mode switches on, and it may contain buttons, which is what a chip is: a thing
+  with up to five buttons in it. `option` switches too and is refused for its own reason — this widget's
+  listbox is the popup a person chooses from, and a strip of what was already chosen is not a second one.
+
+  **Always, not only where a chip holds a quantity.** ADR 0148 supersedes ADR 0138, whose objection was
+  against a grid that arrived _with_ the quantity: a strip that changed role with its contents would
+  change its keyboard model underneath the person who filled it.
+
+  **Migration.** A consumer styling or querying `[role="list"]` / `[role="listitem"]` on the chip strip
+  should read `grid` / `gridcell`. The classes are unchanged.
+
+  **The position moves with it.** A `gridcell` does not take `aria-posinset`/`aria-setsize`; a grid says
+  the same thing with `aria-colcount` on the strip and `aria-colindex` on each chip, which exist for a
+  set that is not all rendered — the same shape as a row that scrolls. A reader announces "Roma, column 3
+  of 12". One cell per chip, never one per button: the index counts cells, so five buttons each a cell
+  would say "column 14 of 72".
+
+  **The strip appears with the first value and goes with the last.** An empty grid announces contents it
+  does not have, so a field nobody has chosen anything in draws no grid at all — what says it is empty is
+  the placeholder. `chips` is therefore optional in the contract rather than required.
+
+  **Removing the last value says so**: `selectionRemovedLast`, new in the message catalogue in five
+  locales, because once the strip is gone nothing else in the page tells a person what happened.
+
+- d2092bb: A chip strip that can say where a chip is
+
+  `aria-posinset` and `aria-setsize` are legal on `option`, `listitem`, `row`, `tab`, `treeitem`,
+  `radio`, `menuitem*`, `article` and `comment`. The strip was a `group` and a chip was a `group` — or a
+  `spinbutton` when it held a quantity — so the position and the count every chip states were written to
+  the DOM and permitted on neither role. ADR 0127 departed from 1.4.10 and paid for it with exactly
+  those two attributes; the payment could not be made in the roles the strip had.
+
+  The strip is now a `list` and a chip a `listitem`, in the catalogue, so all three renderers say it
+  once. `option` would also take them but only inside a `listbox`, and the listbox here is the popup a
+  person chooses from — a strip of what was already chosen is not a second one. A counter chip stops
+  claiming `spinbutton`: a control cannot be both the item at position 3 of 12 and the number 3 of a
+  range, and the role that carries the position is the one the strip owes. Its quantity is in the chip's
+  own name and in the announcement its change makes, so `aria-valuenow`, `aria-valuemin` and
+  `aria-valuetext` are gone from it.
+
+  The row also wraps at 320 CSS pixels — 400% zoom on a desktop viewport — where a single scrolling row
+  stops being a layout and starts being content a person has to operate blind.
+
+  Migration: a consumer styling `[role="group"]` inside the strip, or reading a chip as a spinbutton,
+  reads a `listitem` in a `list` instead. The classes are unchanged.
+
+- 88c8cc7: A strip that says how many are hidden, and the same control opens them
+
+  ADR 0127 lets a multiselect's chip row scroll only where something reaches what leaves it. The
+  gradient added earlier says _there is more_ and names no number; the trigger reveals everything and
+  mentions none of it. A person was told a fact by one thing and offered an action by another.
+
+  One affordance does both now: a trailing button reading `+10`, named _"10 more not shown"_, which
+  opens the list where every chosen value is. A pointer with no horizontal axis — most desktop mice —
+  has a way through that is not a scroll.
+
+  - **`overflowCount`** is a new optional part, and it joins the kind's trailing affordances, so it
+    carries the same hit target as every other control in that column.
+  - **`hiddenChipCount`** is exported: how many chips the strip is not showing, measured from what the
+    browser laid out. How many fit depends on the labels, the theme's spacing and the width the host
+    gave the field, so it is a measurement and not a count.
+  - **`MdyI18nMessages` gains `chipsHiddenShort` and `chipsHidden`** — required, in all five locales.
+
+  **A keyboard trap came with it, and `keepFocusedChipInView` is the fix.** The browser scrolls a
+  focused element into view once, at the moment focus lands. An affordance that appears on the same
+  beat takes its width out of the scrollport _afterwards_, and the chip the browser had just brought in
+  was outside again by about the width of the control that appeared — measured at 97px of overhang,
+  with `scrollLeft` unchanged. Nothing scrolls a second time on its own. Every renderer now brings the
+  focused chip back after the paint that may have moved the box.
+
+  **The chip's controls are drawn with a mask** rather than with borders and a background colour
+  (ADR 0133): a mask takes the system's own colour under `forced-colors`, where a painted shape is
+  dropped entirely — and the readers most likely to be zoomed into a control this small are the ones
+  that mode is for.
+
+  **lit and Angular listed only the options nobody had chosen.** The contract gives every option a
+  `selected` state and, in toggle mode, `aria-pressed` — both unreachable in a list that removes what
+  was taken, and it made the new affordance's promise false, because the values it says are out of
+  sight are exactly the ones such a list omitted. Both list every option now, as plain always did.
+
+  **Angular's popup held its options while it was closed** — twelve option chips in the document of a
+  control that looks shut, countable by anything walking the field. The panel's contents exist only
+  while it is open.
+
+- b7fbfd4: A tap on the hour no longer takes the dial away
+
+  Tapping an hour handed the face over to the minutes a moment later, so a person who touched roughly
+  the right number and then went to drag to the one they meant found the dial already showing minutes.
+  The handover stole the gesture it was meant to follow.
+
+  `set-from-angle` gains `phase?: "move" | "end"`. **The hour hands over when a gesture ends after
+  moving, and never on a tap** — a tap is where a person starts, a release after travelling is where
+  they stop. A caller that reports no phase is a caller reporting a result rather than a gesture, and
+  gets the tap's answer: no handover.
+
+  This is a behaviour change in Plain and Lit, which advanced on a tap, and it makes all three renderers
+  agree. Angular did not advance at all, for a reason that was itself a defect: its clock component held
+  `focusedField` as a signal of its own, so the controller's handover reached the contract and never the
+  face. The field is now given to the clock and asked back, as `viewMode` already was — the third state
+  that component kept a second copy of.
+
+  **Why the reasoning is here rather than in a decision record.** `docs/` is being worked on elsewhere
+  and is not ours to touch this session, so this changeset carries the decision until a record can be
+  written for it. What is decided: a tap explores, a drag chooses, and only a choice moves the field on.
+
+  Two supporting fixes travel with it. `MdyTimepickerFieldControllerOptions` gains `emit?`, the sink for
+  commands the controller raises without being asked — the handover produces a `focus` command on a
+  timer, where there is no call for it to be returned from, so the dial drew the minutes while the caret
+  stayed in the hour box and an arrow moved the field nobody was looking at. And Lit's segment bound
+  `nothing` while it was being edited, meaning to leave the text alone; a property binding still writes,
+  so `value` became `undefined` and the box emptied under the caret.
+
+- e6531f2: A value the field was given, against a value the person entered
+
+  The origins closed half of this: a shape refusal, a server's answer and an unreadable entry are news
+  the moment they arrive. A **bound broken by a value that arrived** is the other half and no origin can
+  express it — `initialValue: 150` against `max: 50` is an ordinary rule, `origin: "validation"`, and it
+  is still about a value already in the field. Untouched, it was held, shown, and explained by nothing:
+  `aria-invalid="false"` and no text, over a number nobody at that page typed.
+
+  `errorsVisible` takes `holdsUnedited` — the field holds something and no edit has been made since — and
+  `holdsUneditedValue` computes it. Not dirty and not empty, because emptiness is `required`'s question:
+  a field with nothing in it has nothing to explain.
+
+  **The kind's own empty is not something that arrived.** A slider always holds a number — a thumb is
+  always somewhere — so its default is the control at rest rather than a value a draft put there, and a
+  bound it breaks stays quiet until somebody has been at the field. A kind this contract does not know
+  gets the touched rule and no opinion about what empty means for it.
+
+- 59e7af2: A verdict is said to somebody who has been at the field
+
+  Two renderers disagreed about when a refusal reaches a person, and each was half right. plain showed
+  every error the moment the form was mounted: a required field nobody had reached was painted red and
+  told them so, which is being told off for arriving. lit showed none until the field was touched: a
+  value arriving from a draft or a server that the field cannot hold left the control marked wrong with
+  the reason withheld — over something the person never typed and cannot correct without being told.
+
+  **Neither could do better, because nothing distinguished the two kinds of refusal.** A rule the person
+  has not answered yet and a value already in the field are both "invalid" and are not the same news.
+
+  - **`MdyFieldError.origin` gains `"shape"`**, and `valueShape` marks its refusals with it. A validator
+    can now declare the origin of what it refuses; where it declares none, the origin is `"validation"`
+    as before. **If you switch exhaustively on `origin` with no default, add the case.**
+  - **`errorsVisible` answers the question it was always asked**: shown once the field is touched, or
+    immediately for a refusal about what is already there — `shape`, `server`, `entry`. A person can
+    neither cause those by inaction nor see the reason unless it is said.
+  - **`visibleErrorsOf` is exported**, because nine plain call sites were each deciding it separately.
+  - **`aria-invalid` follows what is shown, not what is wrong.** A control marked wrong beside a message
+    nobody rendered is a verdict with no explanation. Every field projection reads the same rule.
+
+  Also in lit, found by the specs this unblocked: a multiselect never marked itself touched on blur, a
+  checkbox's label carried no error class, and a native select pointed `aria-describedby` at nothing —
+  so its refusal was announced with no way to read it.
+
+- ef24648: The way back joins the field's trailing edge, and the caret is drawn last
+
+  A multiselect's undo moves from a row beneath the field into the row of commands at the field's
+  trailing edge, where the clear-all it reverses already sits. The row goes, and the band it reserved
+  returns to the validation message.
+
+  **Migration.** The `wayBack` part no longer exists and `wayBackAction` is now a child of `box` rather
+  than of that row; `arrow` is a child of `box` rather than of `trigger`. Anything selecting
+  `.mdy-multiselect__way-back` or reaching a part through those parents follows the new structure. The
+  `mdy-multiselect__way-back-action` class stays and is now a mark rather than a word — it names what
+  it puts back through its accessible name, composed by the new `wayBackActionName`.
+
+  The count of what is chosen no longer appears under the field. The chips are the selection, and the
+  ones the strip scrolled past are counted at the strip's own edge, where the count is also the way to
+  reach them.
+
+  **A defect closed with it**: that edge count answered `1` for every arrangement — it measured the row
+  holding the chips instead of the chips, so a strip hiding twenty-five said "1 more not shown". It now
+  counts chips at any depth. Renderers no longer write a count of zero into a control they are not
+  showing.
+
+- f24ca8b: The keyboard shortcut a record promised now exists
+
+  ADR 0147 states that `Ctrl`/`Cmd`+Z reaches a multiselect's undo. It reached nothing, from any
+  position focus could hold, in any renderer — and a shortcut that does nothing cannot be told apart
+  from one nobody pressed, so a record read by people who tell their own users was worse than a record
+  that had never promised it.
+
+  The gesture is now **declared in the keyboard contract** rather than written into three renderers:
+  `MdyKeyBinding` gains `modifier: "primary"` for the platform's own accelerator, and
+  `matchesKeyGesture` resolves a binding against an event so the platform test is made once.
+
+  **Migration.** `MdyKeyBinding["intent"]` gains `"undo"` and `MdyWidgetKeyIntent` gains `{ type:
+"undo" }`. A consumer that switches exhaustively over either has one more case to answer; anything
+  reading them non-exhaustively is unaffected.
+
+  Using the way back also left focus on nothing, because the offer is withdrawn by using it and took
+  the person's place with it — so undoing a removal cost finding the field again, which is the cost the
+  undo exists to save. The reading position now lands on the value that came back, or on the field when
+  there is none.
+
+- 423b8b1: A widget's own box is a part, and the parts it lays out are declared as its children.
+
+  `MDY_WIDGET_CONTRACTS` named `inputWrapper` — the shell every kind sits in — as the parent of parts
+  that every renderer draws one level deeper, inside the widget's own layout box. Nine parents move to
+  where all three renderers already build them:
+
+  - multiselect: `chips`, `trigger`, `overflowCount`, `clearAll`, `announcement` → `box`
+  - file: `fileList`, `clear`, `rejected` → `content`
+  - slider: `value` → `track`
+
+  The rule underneath, and why the two boxes must not be merged: **one part name means one element.** A
+  name shared by two elements makes every measurement taken through it ambiguous — which is how a height
+  comparison came to be off by the border a theme draws on one of them.
+
+  `trailingAffordances` now looks for a kind's affordances in the widget's own box as well as in the
+  shell, or the multiselect's clear-all and overflow stop being affordances the moment they are declared
+  where they are drawn.
+
+  `@modyra/angular`: the select's arrow moves inside its opener, matching the other two renderers, and
+  the multiselect's chip tooltip is drawn after the announcement rather than before it — the position
+  the other two use and the one the contract now states.
+
+  See ADR 0143.
+
+- 32e7440: Absent for configuration, disabled for state
+
+  A control that a field's design includes is now drawn whether or not it can act at this moment.
+  `multiselect.clearAll`, `multiselect.wayBackAction` and `file.clear` were declared present only while
+  they had something to do, so they arrived and left under the hands of whoever was aiming at the
+  control beside them — and the two multiselect neighbours are undo and discard-everything. They are
+  required parts now, carrying a `disabled` state, `aria-disabled` and a `--disabled` class: in the
+  page, in the tab order and in the accessibility tree at all times, announced as unavailable, refused
+  when pressed.
+
+  Breaking: `undoIsOnOffer` is gone from `MdyPartPresence`. It expressed "draw this only while an undo
+  exists", which is the rule this release reverses. A consumer reading it for its own presence
+  decision should read the part's `disabled` state instead, or `MDY_ARIA_DISABLED_PARTS`, which names
+  the parts that answer unavailability this way.
+
+  The conformance kit gains the issue code `PART_HIDDEN`: one of those parts found with a `hidden`
+  attribute, or without `aria-disabled`, is now a violation. A consumer matching exhaustively on
+  `MdyDomContractIssueCode` gains a case.
+
+- 661568e: An act that moves three values is announced as three
+
+  Clearing a multiselect said "Alfa removed, nothing selected" while three values went, and undoing that
+  clear said "Alfa added, 3 selected" while three came back. The count beside it was right the whole
+  time, which is what made the sentence sound like an account rather than a fragment: it invites a
+  listener to reconcile the halves themselves, and the reading that comes back is the one where they had
+  only ever chosen Alfa.
+
+  **Migration.** `MdyI18nMessages` gains three required members — `selectionAddedMany`,
+  `selectionRemovedMany`, `selectionRemovedManyLast` — carrying `{moved}` for how many changed and
+  `{count}` for how many are held. A consumer with its own message table supplies them. They are
+  required rather than optional on purpose: a table that cannot say the plural act is a table that will
+  say a smaller one, which is the defect this closes.
+
+  Counted rather than listed. The singular templates put the value before a verb that agrees with it, so
+  a list of names dropped into one is ungrammatical in every language that inflects — and twelve names
+  read out for a single act a person took knowingly is a list rather than a fact.
+
+- 2228872: A control is described by its error **and** its help, error first
+
+  The rule was `errorsVisible ? errorId : descriptionId` — one or the other. So the moment a field
+  failed, the instruction that would have prevented the failure stopped being announced, at the one
+  moment it was most useful. A description is a list; both fit in it. The error is named first because
+  it is the new thing, and somebody who stops after the first sentence has heard the one that mattered.
+
+  `MdyFieldShellA11yOptions` gains `errorsReserved`: whether the error container is **on the page**,
+  which is not the same question as whether it holds a message. A renderer that keeps the container
+  under every field that can fail a rule passes this and keeps one reference that never changes — and a
+  reference that never changes has no moment at which it can point at an element not yet drawn, or one
+  already gone. That is a class of dangling reference removed rather than corrected.
+
+  An element with no text contributes nothing to a description. It is not read as a pause or as
+  "empty"; it is as though the reference were absent, until text appears inside it. Which is what makes
+  a permanently-present reference cheaper than a carefully-maintained one.
+
+  `errorsReserved` defaults to `errorsVisible`, so a renderer that draws the container only when it has
+  something to say is unaffected. `fieldDescribedBy` is exported as the one place the composition
+  lives.
+
+  **No renderer reserves the container yet.** Reserving it in lit turned two things red that this
+  change does not settle: the contract orders `errors` after `supportingText`, and two kinds render
+  them the other way round; and a reference claimed before the renderer draws the container dangles.
+  Both are renderer work, and both are the reason the projection lands first.
+
+- 8081294: A nested field's id can be reached by a selector
+
+  A document that holds a collection names a nested field `rows.0.name`, and every renderer built that
+  field's id from its path. The separator is a class selector to a browser, so
+  `querySelector("#form-rows.0.name")` does not miss — it **throws**, because a class may not begin with
+  a digit. A consumer selecting a nested field by the id this contract published got a stack trace, and
+  the only input required was putting a form inside a form.
+
+  ADR 0141 already decided this for caller data. The library was the other producer of an unreachable
+  id, and the same rule now covers the path: `rows.0.name` becomes `rows_2E0_2Ename`, by the same total
+  escape, through the same function — exported as `idSafeKey` so the three renderers spell it one way
+  rather than three.
+
+  **Migration.** Every nested field's id changes, so a stylesheet, test or `aria-describedby` naming
+  `form-rows.0.name` names nothing after this. Those are exactly the ids that could not be selected
+  before. A flat document is untouched — `name` escapes to `name` — so the common id stays readable.
+
+- e47e039: An id the projection emits is an id the renderer applies
+
+  ADR 0134: where a projection emits an id, the renderer applies it; where it does not, no renderer
+  invents one. Not _every part gets an id_ — that would be DOM weight for no reader. The rule takes away
+  the freedom each renderer had to drop one the contract was already computing.
+
+  - **Calendar day cells** carry the id the field controllers compute for them. plain applied it; lit and
+    Angular did not, so `<widget>__day__<iso>` existed in one renderer of three.
+  - **A timepicker's hour and minute controls** carry `<widget>__hour` and `<widget>__minute`, which the
+    timepicker projection has always named.
+  - **`calendarDayId` is exported.** lit had been rebuilding `` `${fieldId}__day__${iso}` `` by hand — two
+    places computing one id, which drifts the day the format changes. The controllers and any renderer
+    that cannot reach the part table now ask the same function.
+
+  Angular's calendar and timepicker components gain optional `widgetId` inputs, and its cell and segment
+  components gain optional id inputs: a component two levels below the field cannot reach the field's
+  projection, so the id is passed down rather than reinvented at the leaf.
+
+- 0cba121: The catalogues that make up the contract, in one place, each saying what shape it is
+
+  There was no such list. Fourteen vocabularies, fourteen separate exports, and nothing saying _these
+  are the ones_ — so a tool built against "the contract" read whichever it reached first and looked
+  complete. Not hypothetical: an enumerator that knew one of them reported "41 properties declared,
+  none silent", then "eight undeclared conventions", and both were wrong, because the conventions were
+  declared in catalogues it was not reading.
+
+  `MDY_CONTRACT_VOCABULARIES` names each one, **the shape it has**, and the subpath it is published
+  from. The shape is declared rather than inferred because inference fails on a real case: a flat
+  dictionary is the degenerate form of a table with one column, so a rule asking "are all the values
+  objects?" gets `{ formErrors: "mdy-form__errors" }` wrong and stops covering it silently.
+
+  The door is recorded because it has already cost two mistakes: a vocabulary reachable only from
+  `./vocabulary` reads as unpublished to anybody grepping the barrel. Three of the fourteen entries
+  were found that way — by the check that says the index must be complete, after two people had counted
+  by hand and agreed on the wrong number.
+
+  Adding a vocabulary is a line in that file, and the check fails until it is there.
+
+- 233c2bd: An option a document closed says so before it is pressed.
+
+  The press was already refused — the form kept `null` — but three of six renderer-and-kind pairs drew
+  the unavailable option exactly like an available one: no `aria-disabled`, no distinguishing class,
+  nothing a person could see or hear before pressing it. Someone who cannot see the list read that as a
+  broken control; someone who could read it as their own misclick.
+
+  - `select.option` and `multiselect.option` declare the `disabled` state (`contract:diff`: **minor**).
+  - The select projection emits `aria-disabled` and the state class per option, which `@modyra/plain`
+    applies with the rest of the part.
+  - `@modyra/lit` and `@modyra/angular` apply the multiselect's projected option part whole, instead of
+    reading its id and rebuilding the classes beside it — which is what left the disabled half off.
+  - `@modyra/styles` paints both: `.mdy-select__option--disabled`, and `.mdy-chip--disabled` beside the
+    existing `:disabled` rule, because an option chip in counter mode is a `div` and cannot carry the
+    native attribute.
+
+  **Migration for a renderer implementing this contract**: apply the projected option part rather than
+  composing option classes locally, or the state will be declared and never drawn.
+
+- e65f631: The order of what was chosen can be changed, and by a keyboard first
+
+  A multiselect's value has kept arrival order all along, and nothing could change it: reordering meant
+  removing and re-adding, which can put a value last and nowhere else — and only from the option list,
+  rather than from the chip in front of the person.
+
+  `move-selected` is the one intent that moves a chosen value, so the keyboard and a drag are two doors
+  onto the same thing rather than two mechanisms that can disagree about what an order is. It moves the
+  _distinct_ values in the order the strip draws them, and a value taken three times moves as one thing,
+  because the chip a person is dragging is the quantity. `to` is clamped rather than refused: a control
+  asking for one past either end means "as far as it goes", which is what holding an arrow down does.
+
+  `MDY_WIDGET_KEYBOARD` gains `Alt+ArrowLeft` and `Alt+ArrowRight` at `intent: "reorder"`, declared for
+  any kind whose anatomy holds a `chips` part. `Alt` because the bare arrows already belong to wherever
+  focus is — a strip is scrolled with them, a list is walked with them — and a key that means two things
+  depending on where you are is a key nobody trusts.
+
+  A binding carries `by: -1 | 1` rather than leaving a renderer to read the key, because _earlier_ is not
+  _left_: the strip runs in the writing direction, so in a right-to-left document `ArrowLeft` moves a
+  chip later. A renderer reading the key would have to know that; reading the direction, it does not.
+
+  `MdyDynamicOptionsField.reorderable` decides whether any of it is offered, and it is **off by
+  default** — most lists have an order nobody chose, and a set of filters has nothing to rearrange.
+
+  Angular's dynamic form now forwards `searchable` and `reorderable`: it forwarded neither, so both were
+  capabilities a document could declare and that renderer alone could not reach.
+
+- f65d19d: `aria-checked` is the switch's, not the box's
+
+  `role="switch"` has no host-language state to read, so the attribute is the only thing that says
+  whether it is on. A native `<input type="checkbox">` maps its own `checked` into the accessibility
+  tree, and writing `aria-checked` beside it is a second source for one fact — when the two disagree
+  the ARIA one wins and is the one that went stale.
+
+  The boolean projection emitted it for both, and the three renderers disagreed about applying it,
+  which is what a redundant attribute invites. It is emitted for the switch alone now; the box still
+  says it is ticked, in the way HTML says it.
+
+- a7cd1a8: Every button inside a chip names the value it would act on, not only the one that removes it.
+
+  Read from the accessibility tree — the first time anything here has been — a two-chip strip offered:
+
+  ```
+  listitem "Alfa, 2"   button "One fewer"   button "One more"   button "Remove Alfa"
+  listitem "Beta"      button "One fewer"   button "One more"   button "Remove Beta"
+  ```
+
+  Four controls that sound like two, in the same chip that already knew how to say it. And **the unnamed
+  pair is the one that destroys**: stepping down from one takes the value off, so the control that can
+  delete was the control that did not say what it would delete. The movers had it too.
+
+  **Migration.** `chipRemoveName` is `chipActionName`, same signature and same rule — the verb and the
+  object — because it was never only about removal. A caller composing a chip button's name should use it
+  for all of them.
+
+  Now, in all three renderers: `Move earlier Alfa`, `One fewer Alfa`, `One more Alfa`, `Move later Alfa`,
+  `Remove Alfa`.
+
+  Angular's `removeName` goes with it: one method names every button in the chip, which is the same
+  consolidation one function up.
+
+- fb289a9: Every optional part says when it is on the page — all 195, with nothing exempted
+
+  **`MdyPartPresence` gains five members.** A consumer switching exhaustively over the vocabulary must
+  handle `valuesOverflow`, `undoIsOnOffer`, `inputWasRefused`, `pointerIsOnAValue` and `workIsInFlight`.
+
+  `optional` said a renderer _may_ leave a part out and stopped there, so three renderers each decided
+  when to build it and conformance had nothing to ask. Every optional node in the contract now answers:
+  195 of 195, from each kind and from both shells.
+
+  The last eight were the ones with no word for their rule, which is why they were left. Each is
+  present under a fact of its own, and each of those facts is real enough to name:
+
+  - `overflowCount` under **`valuesOverflow`** — a count reading "and four more" says nothing while they
+    all fit, and that is not about how many are chosen but about how many are on screen;
+  - `wayBackAction` under **`undoIsOnOffer`**;
+  - `rejected` under **`inputWasRefused`** — not an error about the value, because there is no value: a
+    file of the wrong type never became one, and saying so is a different message in a different place
+    from a rule the value broke;
+  - `chipTooltip` under **`pointerIsOnAValue`**;
+  - `loading` under **`workIsInFlight`**;
+  - `submitFalse` and `formErrors` under **`kindOffersIt`**, and `formErrorItem` under
+    `errorsAreVisible`. A form can always be refused — a failed call, a service that is down — so its
+    error container belongs to the shape, and only its contents follow the refusals.
+
+  Every one was read out of the renderer that draws it and then confirmed against a rendered page.
+  `loading` is the clearest: absent at rest, on screen once the field says it is loading. `submitFalse`
+  carries no class of its own, which is why a sweep by class had reported it absent while it was there
+  all along.
+
+  `MDY_FORM_SHELL_STRUCTURE` reads the same table as every other anatomy. It is small enough to have
+  been written out by hand twice over, which is exactly how two declarations of one rule begin.
+
+  **The check is a floor now, not a baseline that may only shrink.** A shrinking list is the right shape
+  for a gap being closed in batches and the wrong one for a closed gap: it leaves somewhere to put the
+  next exception. `packages/widgets/contract-baseline/parts-without-a-when.json` is gone.
+
+- 024de71: The five per-kind projections compose their description the same way as the shell
+
+  Each of `boolean`, `datepicker`, `daterange`, `multiselect` and `timepicker` carried its own copy of
+  `hasErrors ? errorId : descriptionId` — the rule that makes an error message replace the help, written
+  out five more times beside the one in the shell. All six now call `fieldDescribedBy`: both, error
+  first.
+
+  Each gains `errorsReserved`, defaulting to whether there are errors to show, so a renderer that draws
+  the error container only when it has something to say is unaffected — and one that keeps the
+  container under every field that can fail a rule gets a reference that never changes.
+
+  Six copies of one rule is six places for one of them to be corrected and the others not.
+
+- 450aa2c: Focus is placed when a chip is taken off, rather than left where it falls
+
+  Removing a chip left focus on the document in two renderers and on the next remove button in the
+  third — which looked deliberate until the _last_ chip was removed, and then that one dropped it too.
+  That is the tell: focus was landing on whatever now occupied that position rather than being placed,
+  so it worked while a next chip existed and failed at the end of the strip. Somebody clearing a strip
+  from the right lost their place on the first press.
+
+  `chipFocusAfterRemoval` states the rule once: the next chip, or the previous one when the last was
+  removed, or the control itself when nothing is left. All three renderers ask it and answer the same.
+
+  Lit needed a second `updateComplete`. The first can settle for a render that was already scheduled
+  when the value changed, so the strip is still the old one and focus lands on whatever sat at that
+  index before — the chip after the one you removed rather than the one that took its place.
+
+- 9eb86d9: Focus that waits for the panel it is aimed at
+
+  A popup rendered into the top layer exists in the document a frame before it is shown, and `focus()`
+  on an element that is not being rendered is a no-op that reports nothing. A renderer focusing on the
+  render it triggered therefore left the keyboard where it was — which is how Angular's colour palette
+  took focus in its unit tests and not on a page.
+
+  `focusWhenShown` verifies the attempt and retries on the next frame while the caller says the reason
+  still holds, bounded rather than looping: a panel that never draws is a different defect and an
+  endless retry would hide it.
+
+- cfff558: A group of exclusive choices declares all four arrows
+
+  `radio` and `segmented` declared `ArrowUp` and `ArrowDown` and nothing else, while the paragraph
+  beside the table already said the ARIA authoring practices give a radio group _the four arrows_. One
+  renderer honoured all four and the others did not, so a gesture somebody learned in one was gone in
+  another.
+
+  **The layout is a visual choice, and somebody who cannot see it does not know it.** A screen reader
+  announces "group, 1 of 4" and says nothing about a row or a column, so a person presses whichever
+  arrow comes to hand and it has to work. A group answering only its own axis makes them guess an axis
+  that was never announced.
+
+  `ArrowLeft` and `ArrowRight` are declared for radio groups only — the kinds whose parts carry
+  `role="radiogroup"`, asked of the catalogue rather than of a second list.
+
+  `Home` and `End` stay undeclared, and the reasoning already in the file is right: they serve a set
+  longer than can be seen or held in mind, and three or four always-visible choices are crossed in three
+  presses. A renderer offering them is not in breach — nobody expects them, so nobody loses them moving
+  between renderers — but declaring them would widen the contract without closing any gap.
+
+- 49e17ce: The index of catalogues covers everything the package publishes, and every catalogue is frozen through
+
+  Two holes, one shape: a list that says "these are the contract" is worth exactly what it leaves out.
+
+  **The index was a quarter complete.** Its own check recognised a vocabulary by six name endings —
+  `CLASSES`, `CONTRACTS`, `KEYBOARD`, `OPENERS`, `STRUCTURE`, `RELATIONS` — so it could only ever find
+  what already looked like what somebody had thought of. Twenty-six collections sat outside it,
+  published and unindexed, and the check was green the whole time: a recogniser narrower than the thing
+  it guards reports the absence of what it cannot see. It now derives the list from the package's own
+  exports — every `MDY_` name holding members — and there are 41, the index among them. An index that
+  omitted itself published one collection it did not cover.
+
+  A fifth shape, `data`, separates the collections that are contract from the collections that are
+  payload: translations, colour presets, icon paths. Both are published and readable; only one is a
+  vocabulary a fourth adapter must implement against, and no rule reading the data can tell them apart.
+
+  **Every catalogue is now frozen all the way down.** `Object.freeze` reaches one level, and two
+  catalogues were shallow: `CATALOGUE.text.parts.label.classes.push(…)` succeeded, and from then on
+  every renderer reading the contract read what the page had written. Invisible while each catalogue
+  was reachable only through its own export — publishing an index made all of them reachable from one
+  value, which is what turned a latent hole into a found one. The freeze is applied at the source, so a
+  catalogue imported directly is as safe as the same catalogue reached through the index; protection
+  that depended on how you asked would not be protection.
+
+- 3fd899b: A date range's two ends carry a class each, so a sheet stops counting `<input>` elements.
+
+  `startControl` and `endControl` are two declared parts and they carried the same two classes, so the
+  only way to round the left end of the pair was `:first-of-type` — a rule that counts elements of a tag
+  while reasoning about a class. Put a hidden native input or a sizer of the same tag in the group and
+  the rounding moves to the wrong end.
+
+  Each part gains a class of its own — `mdy-daterange__input--start`, `mdy-daterange__input--end` — and
+  the three renderers take their classes from the contract rather than repeating a string. The two
+  positional rules, in the base sheet and in the iOS theme, name the end they mean.
+
+  Additive: both parts keep the classes they had.
+
+- d5656be: One door for whether a part is owed
+
+  Two facts decide whether a part belongs on the page and they read as one: a **capability** the
+  document asked for before the widget existed, and a **condition** the widget is in. A checker taking
+  only the second owes a reorder grip to every multiselect holding a value — a rule all three renderers
+  correctly disobey, which is the shape where the adapters agree against the declaration and the
+  declaration is the thing being read wrongly.
+
+  `partIsOwed(node, { holds, offers })` answers both, so neither half can be taken without the other.
+
+  `MDY_PART_REQUIRES` is keyed by `kind.part` where a gate belongs to one kind and by the bare part
+  name where it belongs to the part wherever it appears. A slider's `value` is not a select's, and the
+  bare key gave a slider's readout a capability sliders do not have — a table telling the truth about
+  one kind and a lie about another.
+
+- cb8a6fd: One door out of the ready colours, and it is always a door
+
+  The panel held two things for a colour picked by hand: a swatch among the ready ones, selectable like
+  them, and a separate line of text that opened the platform's chooser. Lit held a third — an untranslated
+  button duplicating the second.
+
+  There is one now. It previews the last colour picked by hand and **pressing it always opens the full
+  chooser**, in every state, without exception. The tint it carries is not a value: it is a preview of
+  where the chooser will open. It never takes the selected mark, because a thing marked as chosen that
+  opens a panel when pressed contradicts itself inside a single element.
+
+  That costs something real and the cost is taken knowingly: somebody who picks a free colour, tries a
+  ready one and changes their mind reopens the chooser rather than pressing back — a cost on a rare path,
+  in preference to an element that does one thing when empty and another when full, which is a cost on
+  every path and which nobody can predict by looking.
+
+  Which colour the field currently holds is shown by the filled square on the field, whose only job that
+  is. The two are necessarily separate: with preset three held and a free colour typed before it, the
+  square must show preset three and the door the free colour, and one element cannot show two colours.
+
+  **The door is legible as a door.** A shape of its own, an outline where the ready colours are fill
+  alone, a mark that is drawn whatever it is showing, and a rule between it and the row. The mark sits
+  beside the tint rather than over it — over the fill it would have to be legible on yellow and on navy
+  at once, which no fixed colour is — so it takes the panel's foreground and obeys an imposed system
+  palette while the tint keeps its colour, because in this control the colour is the content.
+
+  **Migration.** `colors` gains one optional part, `customTint`, carrying `mdy-colors__custom-tint`;
+  `contract:diff` classifies it minor. `colorCustomEntry` now reads "All colours…" rather than "Custom…",
+  in all five languages: it names the dimension the two commands differ in, which is how many colours you
+  can reach. `colorCustomValue` is no longer used by any renderer here and is kept for consumers that
+  name their own swatch.
+
+  Behaviour on the door itself changes: a renderer or test that pressed it expecting a selection now gets
+  the chooser. ADR 0158 carries the reasoning.
+
+- e505164: One gesture, one answer
+
+  The same three keystrokes on the same document reached different values depending on which adapter
+  drew the page — the failure a cross-framework UI contract exists to prevent. Three controls, three
+  causes, all of them a renderer or a controller disagreeing with a rule the contract had already
+  written down.
+
+  **A select's list opened with the first option already under the reading position** in the two
+  renderers built on the select controller, so the first `ArrowDown` stepped past it while Angular's
+  arrived at it. The keyboard policy beside that controller says the opposite in words — _the list opens
+  with nothing active, and the next arrow lands where the direction says_ — and with the first option
+  pre-activated, `listboxNextIndex`'s answers from nothing-active could never run. Opening now puts the
+  position on the chosen option, and nowhere when nothing is chosen.
+
+  **Angular's datepicker opened on no key at all** and its timepicker on `ArrowDown` alone, while both
+  open on `Enter` everywhere else — two sibling controls in one adapter disagreeing with each other. The
+  overlay base now reads which keys open a kind from `MDY_WIDGET_KEYBOARD`, so a binding gained upstream
+  reaches every control that inherits it.
+
+  **Angular's clock did not commit on `Enter`**, which the table declares for an open timepicker, so a
+  time set from the keyboard could only be confirmed with a pointer.
+
+- 6ee16f5: One live region for the page, and announcing became a queue
+
+  Eight adapters each named a live region of their own — `mdy-plain-announcer`, `mdy-lit-announcer`,
+  six more. Eight literals, declared by nothing, so a page carrying two renderers carried two
+  `aria-live="polite"` regions.
+
+  **Two regions speaking in the same instant are read in an order nothing specifies.** Every screen
+  reader has its own policy and no specification fixes one, so one announcement cuts the other off
+  partway. One region loses a message the same way — but a queue can only stand in front of one region,
+  and with two there is nowhere to put it.
+
+  `MDY_SHARED_REGION_ID` and `MDY_SHARED_REGION_ATTRIBUTE` are now exported. The attribute was already
+  declared in the contract and was not published, so the one part of this that had been decided could
+  not be read.
+
+  Announcing is now queued rather than written, which fixes three things a plain write does not:
+
+  - **the region exists before the first message.** A reader announces a _change_ to a region it
+    already knows; one created and filled in the same instant is met already full, and the first
+    announcement of a page is the one most likely to be lost;
+  - **the same words twice running are said twice.** The region is cleared and written a turn later, so
+    a repeat is a change. Written over itself it is silent;
+  - **two messages in one instant are both heard** instead of one overwriting the other.
+
+  No adapter names a region any more. `createMdyAnnouncer()` and `MdyCommandRuntimeOptions.announcerId`
+  default to the contract's id; `announcerId` is still accepted, and passing one means keeping a second
+  region on the page with everything above.
+
+  The cost: announcements from two renderers now serialise, so a burst finishes slower than a burst
+  that overwrote itself. And messages that should _replace_ rather than queue — "2 results", "3
+  results", "4 results" as someone types — still queue, because `announce` carries no category to
+  decide on. That is a real defect for anything announcing per keystroke.
+
+  See ADR 0163.
+
+- 244dd08: `inputWrapper` means the shell's box for every kind, including the multiselect
+
+  The multiselect gave the name `inputWrapper` to its own layout box, `.mdy-multiselect`, while every
+  other kind means the shell's `.mdy-input-wrapper` by it. Both boxes exist and one is nested in the
+  other, so a check that resolved the part per kind compared the shell for three kinds against the inner
+  box for the fourth — and reported the 1px border a theme draws on the shell as a two-pixel height
+  defect. One name for two different elements is not a naming inconvenience; it is a measurement that
+  cannot be right.
+
+  `multiselect.parts.inputWrapper` is now `["mdy-input-wrapper"]`, as everywhere else, and the widget's
+  own box is its own part: `box`, classed `mdy-multiselect`, carrying no shell state — which is what the
+  old arrangement was working around, since handing `mdy-multiselect` the shell's states would have
+  minted `mdy-multiselect--disabled`, styled by no theme and emitted by no renderer.
+
+  Migration: a consumer resolving `MDY_WIDGET_CONTRACTS.multiselect.parts.inputWrapper` to select the
+  chips area wants `parts.box`. Nothing in the rendered DOM moves — both elements were already there.
+
+- 8f72ad1: One name on a control, decided once
+
+  Which attribute carries a control's name was a rule each renderer answered for itself, spelled out
+  at every element that needed it. Two names on one element is not two names: the computation takes
+  `aria-labelledby` and stops, so an `aria-label` beside it is text nobody will ever hear — and where
+  the two disagree, the one a developer reads in the source is the one that does not speak.
+
+  `fieldNameAttributes` answers it once and returns the attributes to apply, so the pair cannot be
+  written by accident: the caption where the field has one, the words it can offer otherwise, and
+  never both. The option projection, lit's group elements and Angular's radio and segmented renderers
+  all read it now instead of restating it. See ADR 0175.
+
+- 96edbb0: One default colour palette, in the contract
+
+  Each renderer carried its own list of suggested colours — eight in plain, fourteen in lit, ten in
+  Angular — so the same document drew a different palette depending on which adapter rendered it, and
+  none of the three was the one the library suggests. `MDY_COLOR_PRESETS` is now published from
+  `@modyra/widgets`: eight hues around the wheel and two neutrals, which all three consume.
+
+  Migration: a field that passes its own `presets` is unaffected. A field that relies on the default
+  gets the declared palette, which differs from what plain and lit drew before.
+
+- e63ccbd: One row, one arithmetic
+
+  The colour presets' roving index was written three times, once per renderer — three chances for one of
+  them to clamp where the others wrap. `rowRovingIndex` is published from `@modyra/widgets` and all
+  three call it: either axis walks the row, `Home` and `End` reach its ends, it clamps rather than
+  wraps, and the direction comes from the binding so a right-to-left document reads correctly.
+
+  Angular also lands on a swatch now. Its panel is a popover, and the frame the focus was attempted in
+  was the one before the popover was shown — a `focus()` there is a no-op that reports nothing, so the
+  keyboard stayed on the toggle and the arrows had nothing to move. The attempt is checked and retried
+  rather than assumed.
+
+- 3a148c0: One scope for two forms is not silent
+
+  Ids come from the field's path (ADR 0135), so two forms built from the same document claim the same
+  ones unless the host scopes them. The record rejects renaming the second form's ids — a
+  mount-order-dependent id is the counter's defect returned in a corner — which leaves the collision as
+  the design, and silent it was the worst of both: `aria-describedby` resolves into the other form and
+  the page looks exactly like one whose references are right.
+
+  `reportIdCollision` warns, in development, when a widget publishes an id another element on the page
+  already carries. It never renames. It is stateless — it asks the document rather than keeping a
+  registry of live ids — so nothing has to be released on teardown and a remount cannot report a
+  collision with its own former self.
+
+  The fact belongs to `@modyra/widgets` and the spelling belongs to whoever is being read: each renderer
+  passes the advice naming its own door — `idPrefix` when mounting Plain, `id-scope` on lit's controls,
+  `[idScope]` on Angular's.
+
+- 5edf370: The chips strip is one tab stop, and the keys that work inside it are declared
+
+  Every chip was a tab stop and so was every control on it: **six presses to pass the field with two
+  values chosen, twenty-six with twelve.** What a control holds must not decide how long it takes to
+  leave it.
+
+  The strip is one stop with a roving index now, and the keys that move within it are in
+  `MDY_WIDGET_KEYBOARD` rather than at three call sites — which is where a reader will look for them,
+  and where the next renderer will find them without being told:
+
+  ```
+  ArrowLeft / ArrowRight    move focus between chips        when closed
+  Home / End                to the first or the last        when closed
+  Alt+ArrowLeft / -Right    move the chip itself
+  Backspace / Delete        take off the chip you are on    when closed
+  ```
+
+  `when: "closed"` on all but the reorder pair, because while the popup is showing the arrows belong to
+  the list a person is choosing from — the same key in two places is what the phase exists to separate.
+
+  `MdyKeyBinding` gains `remove` as an intent and `toEnd` beside `by`. Both directions come from the
+  binding rather than from the key, because a horizontal strip runs in the writing direction: in a
+  right-to-left document `ArrowLeft` moves _later_, and a renderer reading the key would have to know
+  that.
+
+  A chip's own controls — the remove, and the two steppers in counter mode — leave the tab order with
+  it. They are reached with the keys above.
+
+  **Each renderer had to stop the chip's keys bubbling.** The control's own handler answers several of
+  the same keys, so `End` moved focus and then had the popup's answer applied over it, and `Backspace`
+  removed nothing because the second handler won. The chip's keys are the chip's.
+
+  Verified in all three: 3 presses to reach the next field whether two values are chosen or twelve, and
+  `ArrowRight · End · Home · Backspace` answering identically.
+
+- 7df6f00: One way back, and the clear-all it exists for
+
+  A multiselect had three destructive acts and no way back from any of them: a chip removed, an order
+  rearranged, twelve choices gone. It now has **one** reversal covering the last of them whatever it
+  was — [ADR 0129](docs/architecture/0129-one-way-back-not-three.md) — and the clear-all control that
+  made the question urgent.
+
+  Three undos was the alternative refused, and refusing it is the decision: an undo that covers the
+  loudest act and not the quiet ones teaches a person the control has a way back and then does not have
+  one the next time.
+
+  **How it behaves.** Depth is one. A destructive act replaces the offer rather than stacking on it, and
+  a constructive one — choosing again, incrementing — withdraws it, so the reversal never puts back
+  something the person did not just lose. It is untimed and drawn in the page, never a toast: a message
+  that takes itself away after five seconds is a time limit under WCAG 2.2.1 Level A, and an undo has no
+  exception under it. It names the act, because one control covering three needs to say which:
+  _"Alpha removed — Undo"_, _"Alpha moved — Undo"_, _"12 items cleared — Undo"_.
+
+  **The contract.**
+
+  - `MdyMultiselectFieldState.wayBack` is new and **required**: `{ act, optionKey, count } | null`. The
+    value it would restore stays private — an offer a host can read is one a host can apply to a
+    different moment.
+  - `MdyMultiselectFieldIntent` gains `{ type: "undo" }`.
+  - Three new optional parts: `clearAll` at the trailing edge, and `wayBack` with `wayBackAction` under
+    the control. `clearAll` joins the kind's trailing affordances, so it carries the same hit target as
+    every other control in that column.
+  - `wayBackSentence` is exported: what the offer says, so three renderers cannot word it three ways.
+  - **Five new required `MdyI18nMessages` members** — `clearSelection`, `wayBackLabel`,
+    `wayBackRemoved`, `wayBackMoved`, `wayBackCleared` — supplied in all five built-in locales. A
+    consumer passing a hand-written message table must add them.
+
+  **Layout.** The closed control is a flex row now: the trigger takes what is left and the clear-all
+  sits beside it. As a block it had nowhere to go but under the control, where it overflowed the field's
+  box and the text below painted over it — drawn, and not pressable. For the same reason the way-back
+  row is positioned: the input wrapper above it is `position: relative`, so it paints over the in-flow
+  content that follows and takes the pointer with it.
+
+- 709fb7f: Reading a form is not declining it
+
+  A required field that somebody tabs through and leaves empty no longer announces itself invalid.
+  Focus arriving and leaving is an act on attention, not on the value: Tab is how a person reads a
+  form, the way eyes scroll it, and somebody tabbing past twenty required fields to learn what is being
+  asked was collecting twenty verdicts about fields they were about to fill in. A sighted person
+  scrolling the same form gets no red borders. ADR 0167 decided this; this release implements it.
+
+  **What changed is what sets `touched`.** A bare blur no longer marks a field touched — in any
+  controller, in any renderer. Every path that changes the value marks it, together with `dirty`,
+  because they are one act: `touched` now means _this field has had an answer_, not _focus has been
+  here_. A refused submit still marks every field, so the form still says everything at once when it is
+  asked and refuses.
+
+  Consequences for a consumer reading `handle.touched()`: it stays false through a traversal that
+  changed nothing, and it is true after any edit — including an edit that put the value back. Anything
+  keyed off it (a `--touched` class, a custom verdict rule) follows that meaning.
+
+  Also fixed: a date range committed its text on the way out of the field, and an empty box committed
+  "empty" over an end that was already empty — so a traversal registered as an act. Empty to empty is
+  nothing happening.
+
+- 8e5fe67: The error container is reserved under any field that can fail a rule, in all three renderers
+
+  Three renderers, three different answers to one question, and none of them was the contract's:
+
+  ```
+  plain     reserved under every field, including ones with no rule at all
+  lit       rendered only when there was a message to put in it
+  angular   the same, and its templates could not tell the two apart
+  ```
+
+  `presentWhen: fieldCanBeInvalid` said what the answer should be. Nothing applied it.
+
+  **The reservation is not for the field that is failing — it is for the field below it.** Somebody
+  leaving a field is moving toward the next one, and that is what drops when a message appears under
+  the field they just left. It does not stop every movement and must not be believed to: a two-line
+  message moves things anyway, and a validation arriving while focus is elsewhere defeats it. It closes
+  the frequent case, which is validate-on-blur. And it stays after a correction, because taking the
+  space back is the same jump, upward, under the same thumb.
+
+  Read from the field, never from its kind — an optional note with a length limit can fail a rule, a
+  note with none cannot and does not buy a line of scrolling on every screen. A field out of play
+  reserves nothing: the form is not asking about it, so it has no message to make room for.
+
+  **`aria-describedby` now names the error container and the supporting text, error first.** It named
+  one _or_ the other, so the moment a field failed, the instruction that would have prevented the
+  failure stopped being announced. Ten places spelled that rule: the shell, five per-kind projections,
+  the option projection, two literals in Lit templates, and Angular's `describedById`. They call
+  `fieldDescribedBy`.
+
+  Naming a container that is always there also removes a class of defect rather than correcting it: a
+  reference that never changes has no moment at which it can point at an element not yet drawn, or one
+  already gone. An element with no text contributes nothing to a description — not a pause, not
+  "empty" — so a reader hears exactly what it heard before.
+
+  Two Angular specs asserted the reference was absent before a field was touched. That was how "names
+  something real" was satisfied when the container appeared with the first message; they now assert the
+  property itself, which is stronger and does not depend on the answer having been no.
+
+- 1f646ae: Seven more parts say when they are there, and one earlier reading was wrong
+
+  177 of 185 optional nodes now carry a condition, up from 169.
+
+  **`chips` and `chipRow` follow the value.** The changeset before this one said the opposite — that
+  they are containers built once and kept, and only their contents follow — and the page contradicts
+  it: with nothing chosen there is no strip at all, not an empty one. That reading came from seeing
+  them constructed in the renderer's setup; what it missed is that the strip is built and then not
+  attached until there is something to put in it.
+
+  **`arrow`, `box`, `increment`, `decrement` and `fileList` are `kindOffersIt`**: drawn because the
+  kind has them, not because of anything the field is doing. The condition is not vacuous — it says a
+  renderer that draws this kind another way is still conformant, which is what `optional` alone left
+  each of them to decide privately.
+
+  Eight stay silent, and each now records **what it is actually present under**, in the words of the
+  renderer that draws it: the pointer is over a chip, more chips are chosen than the strip can show, an
+  undo is on offer, a file was refused, the field says it is loading. The rule is known; the word for
+  it in `MDY_PART_PRESENCES` is not, and eight words each used once would be a list rather than a
+  vocabulary. Written down so whoever adds the word does not rediscover the rule first.
+
+  The check gained the direction that cannot be escaped by weakening a declaration. Reading the
+  contract and holding the page to it is half a guard: a part re-declared as something else leaves the
+  set the check looks at and passes. So it now also reads the page first — a part that appears only
+  once the field holds a value — and asks the contract what it says about that part. Moving `chips` out
+  of `valueIsPresent` used to pass; it fails now.
+
+  That direction needed two corrections of its own before it could assert anything. It could not tell
+  `option` from `chip`, which share `mdy-chip`, so it now measures the overlap on the page rather than
+  comparing declared class lists. And it flagged `optionLabel`, which is a _required_ part inside an
+  optional popup — always there while its option is, so asking what state brings it about has no
+  answer. Required parts are out of its scope.
+
+- 5c49e32: Somewhere to stand when a field leaves play
+
+  Disabling a focused element blurs it — that is the platform. What followed was this library's: the
+  person who was typing landed on `body`, their next Tab starting at the top of the document, with
+  nothing said about where they went. It is reachable without anybody clicking: a document's rule takes
+  a field out of play when another field changes, so a value arriving from a fetch can empty the
+  keyboard's position mid-word.
+
+  Read-only is the proof that it need not cost them their place — a read-only field keeps the keyboard —
+  so `keepKeyboardInPlay` puts a disabled one somewhere too: the next thing that can take focus after
+  it, the previous one otherwise, and the widget's own root as the last resort, so the next Tab starts
+  from where they were rather than from the top of the page.
+
+  The two renderers ask at the moment each can: plain before it takes the control out of play, lit when
+  the focus leaves with `relatedTarget` null — which is the platform taking it rather than a person
+  moving it, and the one case worth acting on.
+
+- 58af44d: Tab leaves an open list and lands on the next field
+
+  The policy has always answered Tab with _close, and do not restore focus_ — let it go where it was
+  headed. Measured on a page, no renderer did that. Plain put focus back on the trigger, so leaving took
+  two presses and the first one went **backwards** onto the control being left. Lit and Angular put it
+  on the document body, from which the next press starts again at the top of the document: the person
+  has lost their place in the form and nothing said why.
+
+  The body case is nobody's decision. The panel closes while the focused element is inside it, the
+  browser is left with an active element that no longer exists, and it falls back to the body.
+
+  **So the rule is an order, not a destination.** `stepOutOfOverlay` moves the focus to the opener and
+  closes after. The opener is crossed, not stopped at: the key's default is left alone, so the browser's
+  own Tab carries on from a control that still exists — and from a control it knows what the next one
+  is, where from inside a panel drawn outside the field it does not.
+
+  Tab does not choose. A highlighted option stays unchosen: a shortcut that commits on the way out
+  removes the ability to leave without choosing.
+
+  Plain and Lit are measured landing on the next field, in one press. **Angular is not fixed here.** Its
+  panel resisted three containment tests and `stepOutOfOverlayByTab` never fired — a measurement, not a
+  guess — so the attempt was withdrawn rather than shipped on a fourth guess about where its panel
+  lives.
+
+  The check is on the sequence rather than the destination. One that read only where focus ended would
+  pass an implementation that closes first and focuses after, which works in a fixture and not on a
+  page, because on a page the browser has already decided by then.
+
+- 1897b23: A selection announces the change, not the whole list
+
+  The live region said `"2 selected: Roma, Milano"` — the entire selection, every time. That is wrong at
+  any size, not only at twelve: a polite region **queues rather than replaces**, so rapid clicking builds
+  a backlog of stale lists and the person hears a selection several actions out of date. The list is an
+  on-demand fact and belongs in the field's description, where a reader can ask for it; an event should
+  carry the event.
+
+  `multiselectAnnouncement` composes the delta and the new total — `"Roma removed, 1 selected"` — from
+  what changed rather than from what is. Three i18n strings carry the words.
+
+  **Silent while the popup is open.** The options there carry `aria-selected` and announce themselves,
+  so a region firing at the same moment makes every toggle speak twice. The chip row's own removals are
+  the case nothing else speaks for.
+
+  **And silent on arrival.** The baseline is seeded from what the field already holds: a value that came
+  with the form is not something the person just did, and announcing it on the first paint describes a
+  choice they never made.
+
+  **`Backspace` lands on the previous chip and `Delete` on the next.** Both used to land forward, which
+  is not what any text field on any platform does — and a strip of chips is close enough to a line of
+  text that people bring the expectation with them.
+
+  Fixes a defect in the same code: **plain gated every chip key on `reorderable`**, so moving between
+  chips and removing one did nothing in the default configuration — which is every field that never
+  asked to be rearranged. Only reordering is opt-in.
+
+- 012db3b: The chip strip pays the conditions its scrolling was allowed under
+
+  ADR 0127 let the row scroll rather than wrap — a control must be the same height as every other
+  control in the form, and a wrapping row grows with what is put in it — but the departure was
+  **conditional**, and two of its conditions were unpaid.
+
+  **The count is in the field's own description.** "12 selected", stated rather than announced: somebody
+  arriving at a field whose chips have scrolled out of sight had no way to learn there were more. This
+  is the state, asked for; the live region carries events.
+
+  **A wheel reaches what has scrolled out.** A cue is not a mechanism, and many desktop mice have no
+  horizontal axis at all — a strip that answers only `deltaX` is a strip a large number of people cannot
+  move. `chipStripWheelDelta` takes the larger of the two deltas, so a vertical wheel drives the strip
+  and a trackpad's horizontal gesture still behaves as its owner expects. It answers zero when nothing
+  is hidden, so a wheel over a strip with nowhere to go still scrolls the page.
+
+  The other two conditions were already paid: `aria-setsize`/`aria-posinset` on every chip, and every
+  chip reachable by keyboard with the focused one scrolled into view.
+
+- 14755ac: The contract declares how each kind's value is read, so no renderer decides it
+
+  Two checks disagreed across three renderers because the question was filed as a property of a
+  _control_ — which sounds like something each renderer settles. It is not. An accessibility and
+  interaction specialist, consulted knowing nothing of this repository, put it in one line:
+
+  > Equal height is not a rule. It is a **consequence**. The rules are alignment for everyone, and a box
+  > for containers.
+
+  Every field has one place where its value shows — its slot. Look _inside_ a surface to read it and the
+  field is a container: it carries the box and sits in the column. Is the slot _itself_ the value — a
+  position, an on or an off — and there is nothing to look inside and no box. Everything else is frame,
+  and frame has no category.
+
+  **Decided by how a value is read, never by how it is entered.** Every hesitation about the table
+  turned out to be somebody looking at entry: a colour swatch is _pressed_, files arrive from another
+  window, chips are _removed_ one at a time, a segmented row has _words_ in it. None of it counts. A
+  quantity stepped with plus and minus is a container, by the rule rather than as an exception to it.
+
+  `MDY_WIDGET_CONTRACTS[kind].valueSlot` is `"container"` or `"shape"`, recorded in the contract
+  snapshot: changing one is **major**, because every renderer draws that kind differently afterwards and
+  a theme keyed on the box is drawing it for a control that no longer has one.
+
+  Nothing renders differently today — the table records what the renderers already do. What changes is
+  that it is now declared once and checked, rather than agreed on by three implementations that nothing
+  was asking.
+
+- 11b6823: Type-ahead is declared, with a key that admits it has no key
+
+  All three renderers let you type a letter at an open list to jump to the option beginning with it,
+  and none of them was asked to: the contract had no binding for a printable character. A check
+  counting what a renderer claims against what the contract declares read this as a renderer doing more
+  than it was told. It was the contract doing less.
+
+  Declaring it needed a key, and there is none — the gesture is _any_ character. Picking a letter to
+  stand for the alphabet would be a table saying one thing and intending another, which a tool reads
+  literally and a person reads charitably. `MDY_ANY_PRINTABLE_KEY` is the key field admitting it has no
+  key, and `keyBindingFor` resolves any single character to it.
+
+  Narrower than "navigates options": only kinds that hold a list of named choices. A calendar walks its
+  cells with the arrows and has nothing to type at — a date is not a word, and a character typed there
+  reaches the platform rather than being swallowed. Keyed on the part that _is_ the list rather than on
+  a role, because the two kinds that have one give it different roles — a listbox where choices are
+  exclusive, a group where they are not — so a role test covers one and misses the other while looking
+  like it covers both.
+
+  Space is never a character to search with, a closed list has nothing to jump within, and a named key
+  still wins where both could answer.
+
+- 49e17ce: `isWidgetKind`, `keyMeans`, `bindingForIntent` and `capabilityOf` — the questions the adapters were already asking
+
+  Every renderer reached the catalogues the same way and wrote the same expressions to do it:
+  `keyBindingFor(kind, key, open)?.intent === "open"`, `CONTRACTS[kind].capabilities.x === true`, a cast
+  asserting a string is a kind. Twenty-five sites across three adapters, and each one a chance to spell
+  the question differently — which is how a single declaration came to mean three things. Some sites
+  compared the intent, some checked only that a binding existed, and the two answers differ on a key
+  declared with another meaning.
+
+  The kind is always an argument. A helper closing over a kind reads well in the renderer that wrote it
+  and cannot be reused by the next, and the shape of these questions is what a fourth adapter needs on
+  its first day.
+
+  `capabilityOf` raises rather than answering when a capability is not a yes or a no.
+  `dismissOnOutsidePointer` is a named strategy and `anchoring` is a record of measurements; asked as
+  booleans they would come back `false`, which reads as "this kind does not do that" for six kinds that
+  do. A boolean question about a non-boolean value has no true answer, so it does not invent one.
+
+  No behaviour changes: this is the body that was already there, put where it can be asked instead of
+  copied.
+
+- 48c0597: The scale's step names are recorded as public surface.
+
+  A consumer builds a theme by setting `--mdy-control-1` or `--mdy-space-4`. Renaming one breaks them
+  exactly as renaming a widget part does, and until now nothing could see it: the tokens were in no
+  snapshot at all.
+
+  `contract:diff` reads the step names from the sheet — not from a list somebody has to remember to
+  update — and reports a step that stops answering as **major**, a new one as **minor**.
+
+  **Names, not values.** Changing what a step _is_ is what a theme is for, so recording values would
+  report every theme as a contract change.
+
+- 7aaa84a: The second door, and what the contract declines to say
+
+  `MdyPopupOpener.alsoOpensFrom` names the part a pointer opens an overlay from beside the opener that
+  carries the relation: the calendar button next to a typeable date, the clock next to a typed time,
+  the box a multiselect's chips sit in, the swatch next to a colour. All three renderers answered a
+  press on these and none was asked to — the door worked everywhere, nothing declared it, and any of
+  them could have lost it with every suite green.
+
+  It carries no relation: `aria-expanded` and `aria-controls` stay on the part that holds the value,
+  because a second element claiming them announces two comboboxes for one list.
+
+  ADR 0177 also records two things the contract deliberately does not decide — whether a renderer draws
+  an optional part that declares no condition, and whether a control is named by a reference to its
+  caption or by the caption's words — so a check can read the reasoning instead of reporting the silence
+  as a defect.
+
+- 1a235c4: The select reads its field instead of being told about it — and empty stops meaning wrong
+
+  **Breaking: `createSelectFieldController` no longer reports `invalid` for a required field nobody has
+  touched**, and its interface gains `setDescribedBy`, `setOpen` and `setPopupRendered`.
+
+  `createSelectFieldController` was written to close a split — the select was the one kind driven by
+  imperative setters where every other kind takes a field handle and reads it — and then nobody adopted
+  it. Two reasons, and neither was effort:
+
+  **It forwarded none of the three facts only a renderer has.** Which of the two texts under the field
+  is on screen; whether the panel is up; whether the panel's contents are in the document at all, since
+  a renderer that builds them on open has nothing for `aria-controls` to name while closed. A renderer
+  that adopted it lost all three.
+
+  **It carried the older verdict rule.** It reported `invalid` from `showsAsInvalid` — true the moment a
+  required field is drawn empty — and a renderer that had adopted that rule by hand _overwrote it_, with
+  a comment saying why. The override winning was the only thing keeping that renderer's answer right.
+
+  Asked outside the repository: `aria-invalid` is a verdict on an act, not a state. A field that is
+  empty and never touched contains nothing; `required` is the word for what is missing, and a screen
+  reader already says it. On a long form, twenty required fields announcing themselves invalid to
+  somebody tabbing through to learn what the form asks spends the word before the first real error. But
+  a value that arrived already wrong — from a draft, from a server — speaks at once, touched or not,
+  because a draft nobody is told about is a draft that gets resent.
+
+  Both are `visibleErrorsOf`, so it is one call rather than two rules. `showsAsInvalid` remains what it
+  is — whether the form would refuse this field — and is still exported. See ADR 0165.
+
+  Two checks asserted the old answer and were changed with their reasons recorded. One is a mutation
+  spec whose `correct` value **is** the declared right answer, so changing it is the decision taking
+  effect rather than a test being made to pass.
+
+  Adoption goes from 46 of 51 renderer/kind pairs to 48. The three that remain are Angular's, whose
+  value pipeline is its own question.
+
+- 3eb1f84: The seven presence conditions that were owed an answer have one
+
+  `valueIsPresent`, `valueIsAbsent`, `fieldIsRequired`, `undoIsOnOffer`, `viewIsActive`,
+  `inputWasRefused` and `workIsInFlight`. Each takes the narrowest input that decides it rather than a
+  widget state, because a resolver that takes everything is one a caller cannot use without holding
+  everything.
+
+  **`valueIsPresent` is derived, not tabulated.** The emptiness of a value is the kind's, and the kind
+  declares it: `nullable` separates a number field whose empty is `null` from a slider whose empty is
+  where it starts, and the shape separates a list from the single value it holds. `Boolean(value)` gets
+  both wrong, and three renderers asking it separately got them wrong in three ways — which is how this
+  condition came to mean one thing where chips are drawn and another where they are not.
+
+  It refuses one case rather than guessing: a non-nullable numeric value has no absent state and this
+  function is not handed the floor. A check asserts no kind of that shape declares a part under the
+  condition, so the branch is unreachable rather than wrong — and if one ever does, that check fails
+  instead of the rule quietly answering for a slider at its minimum.
+
+  **`fieldIsRequired` is not `handle.required()`.** A marker on a field nobody can fill in asks for
+  something that cannot be given, and the asterisk that means "you must" on a live field still reads as
+  a demand on a disabled one.
+
+  **`workIsInFlight` is two facts and one question** — a validator that has not answered and a list of
+  options still arriving. A renderer asking them separately shows the waiting part for one of the two
+  reasons it exists.
+
+  The rule is checked against `MDY_CANONICAL_EMPTY`, the table every adapter's conformance fixture
+  mounts from: what the fixtures call empty, the rule calls absent, and what they call filled it calls
+  present. Two statements of one rule is the shape this work has been removing; where one cannot yet be
+  deleted, the next best thing is that they cannot drift apart in silence.
+
+  `MDY_PRESENCE_RESOLUTION` now names an answer for eleven of the fourteen conditions and an argument
+  for the three that will never owe one. `owed` stays in the shape with nothing in it, because a
+  condition added to the contract arrives owed and the table has to be able to say so.
+
+- e7be4b6: The filled square is what opens a colours panel, and the caret beside it is a drawing
+
+  The small square filled with the current colour is the most recognisable element on a colours field:
+  every platform ships one and everybody has pressed one. What it did differed by renderer — two
+  opened the field's panel of ready colours, one opened the platform's own chooser — so an application
+  that changed renderer changed what that square does, from a document that says nothing on the matter.
+
+  **The square is now the opener everywhere**, and the panel it opens carries a route on to any colour
+  at all. The caret at the end of the field opened that same panel, which made one act into two
+  commands: two accessible names, two stops in the keyboard walk, two things to describe. It is now a
+  drawing — out of the tab order _and_ out of the tree assistive technology reads, never one without
+  the other — while still answering a press, because the area sits inside the field and a dead patch
+  inside a live control reads as a fault.
+
+  **Migration.** The published relationship `toggle[aria-controls] → popup` is replaced by
+  `nativePicker[aria-controls] → popup`, and `MDY_POPUP_OPENERS.colors.opener` is `nativePicker`. Code
+  that located the opener by the caret's part name should ask the catalogue instead — the opener has
+  been declared there all along. A renderer that draws its own colours field should move the panel's
+  handler and its `aria-controls` onto the square, and stop giving the caret a name, a role and a
+  keyboard stop.
+
+  The decision and the alternatives that lost are ADR 0159; ADR 0158 carries an amendment recording why
+  the preview square and the door to every colour are necessarily two elements.
+
+- e488eec: A chosen value can be dragged to a new place
+
+  The third door onto `move-selected`, and the one the brief named. A keystroke, a tap on the move
+  controls and a drag now land on the same order because they land on the same intent — none of them can
+  be repaired into disagreeing with the others.
+
+  `chipDropIndex` is the arithmetic, in `@modyra/widgets` rather than in three renderers, for the reason
+  the dial's angles are: three implementations of "which one is the pointer over" is three answers, and
+  the one a person meets is whichever adapter their team chose. It reads the chips' midpoints rather
+  than their edges, so a chip is passed when the pointer is more than halfway across it — what the eye
+  does — and it takes them in drawing order, so a right-to-left strip needs no special case.
+
+  **A press that never travels stays a press.** Six pixels of movement before a gesture becomes a drag,
+  because treating every press as the start of one takes the chip's own controls away from anybody whose
+  finger moves slightly. `pointercancel` puts the chip back untouched: the browser taking a gesture is
+  not a decision the person made.
+
+  **The pointer's subject is decided rather than inherited.** A keyboard has continuity for free — focus
+  travels with the chip, so a second press acts on the chip the first one moved. A pointer has none: after
+  one move the chip a person was aiming at has slid out from under their finger, and a second press in
+  the same place moves a different value back where the first one came from. Every pointer move now
+  names the moved chip as the strip's active one, so everything downstream of the subject points at the
+  right thing. **The finger still has to re-aim**, which is a property of pointing at a list that
+  rearranges itself and not something a renderer can fix.
+
+- 3246dce: A mark is not a label, and a command does not travel with the value
+
+  A button whose whole visible content is a mark (`×`, `↶`) now hides that mark from the accessibility
+  tree and carries a `title` with the same words as its accessible name. A reader announced
+  "multiplication sign" before the name; somebody driving by voice had nothing to say, because a glyph
+  is not a word. The name itself is unchanged: the criterion about visible text in the accessible name
+  is written for text a person reads as a word, so it does not bite on a mark.
+
+  A multiselect's way back and clear-all keep their place at the field's trailing edge, with the mark
+  that opens the field outermost and a full target of empty space between the two commands. Standing
+  them beside the chips they act on was tried and measured: the chip strip's width is the length of the
+  value, so both slid about 90px whenever a value arrived or left — putting the control that discards
+  the field where the control that restores a value had just been, under the hand reaching for it. A
+  control's position may depend on the field; never on the value.
+
+  The `file` field's clear moves for the same reason: below the list of chosen files its position was
+  the number of files, so it slid every time one was added or removed — under the hand of somebody
+  taking several off one at a time. It stands with the control that picks files now, and the contract's
+  reading order for `file` follows: `content`, `clear`, `fileList`, `fileItem`, `rejected`.
+
+  Fixed: a lit `file` field holding a value that is not a `File` — a restored draft, a server's answer
+  — threw on its first paint instead of drawing a row without a caption.
+
+- cef9693: A press on a panel's dimming veil dismisses it
+
+  The veil is drawn as the panel's **sibling inside the same portal**, and the rule that decides
+  whether a press happened inside the overlay counts everything in that portal as inside. So a press on
+  the darkened area — the one gesture a person reaches for to close a modal — was read as a press
+  inside the panel, and the panel stayed open. With no pointer way out, only `Escape` remained, which
+  not everybody knows.
+
+  `MDY_BACKDROP_ATTRIBUTE` is exported, and `overlayBranchContains` answers _outside_ for the veil and
+  for anything drawn on it. It is the canonical outside; treating it as inside is the one answer it
+  can never have.
+
+  Found by a browser sweep that reported it against `daterange` on Angular, and confirmed as belonging
+  to none of them: the veil is drawn by the shared overlay layer, so every renderer that dims the page
+  had it. It only showed on one kind because that was the kind whose panel happened to be open when a
+  press landed on a veil another kind had drawn.
+
+  The check that came with it was green for the wrong reason first. Rooted at the panel, the veil is a
+  plain sibling and reads as outside with no rule at all — the fixture has to be rooted at the _field_,
+  with a trigger naming a panel that lives in a portal, because that is the shape the rule is written
+  about. Removing the guard did not fail the first version.
+
+- 23accd5: Three field controllers are importable, and a check says so when the next one is not
+
+  `createSelectFieldController`, `createColorsFieldController` and `createFileFieldController` were
+  written, tested, and behind no door. Their **types** were published and the functions that build them
+  were not — so a consumer could name a `MdySelectFieldController` and had no way to make one. No
+  renderer adopted them because no renderer could.
+
+  The one for `select` says in its own first line why it exists: the select was the single kind built
+  the other way round, driven by eight imperative setters where every other kind takes a field handle
+  and reads it, and this is _"the adapter that closes it"_. It has been closing nothing.
+
+  **Nothing said so, and four gates each had a reason not to.** Their suites import by deep path into
+  `dist`, which passes — and that is the house habit for controller specs, so it is not a signal.
+  `coverage-and-demo` counted them asserted, because a test does mention them. `audit-public-doors`
+  guards the opposite mistake: a name reachable from _two_ subpaths, not from none. And
+  `audit-contract-adoption` reported `"none offered"` — correctly, and therefore silently.
+
+  A new check reads the barrel: every `src/field/*-field-controller.ts` must export a builder the
+  package publishes. It finds the module list itself rather than being given one, and it asserts the
+  counts agree, so a check looking in the wrong place fails instead of passing quietly.
+
+  **The adoption audit now measures the field controller for `select`, not the standalone one**, and
+  knows a controller is offered for `colors` and `file`. The score moves from `45/45` to `42/51` — not
+  because adoption fell, but because the question sharpened. Nine renderer/kind pairs are offered a
+  controller and do not call it, and that list is now printed.
+
+- d3cd87c: Three gates that were reporting on things they could not see
+
+  **Moving a part inside a kind's list changed nothing the contract differ could tell you.** The order a
+  part sits in is the reading order — `contracts.ts` says so — and the snapshot recorded eight fields
+  per part, none of them where it was. Swapping two names in a shipped kind moves what a screen reader
+  says next and the differ answered "contract unchanged". It records `order` now, and a move is major
+  in both directions: a person hears the parts in the order they are in.
+
+  **A field controller published by no door was nobody's finding.** Three of them were written, tested,
+  and unreachable: the types were exported, so a consumer could name the interface and had no way to
+  build one, while the adoption bench reported the kinds as offering nothing — correctly, because from
+  the public door nothing was. The duplicate-door check guards the opposite problem, the type surface
+  only compares what is exported, and their own specs reach them by deep path into `dist/`, which is
+  the house habit and therefore not a signal. `test:public-doors` now asks the third question, and its
+  three findings print three different sentences: one had been telling readers to look for a second
+  door when the finding was that there was none.
+
+  **One index claimed to cover a package it covered two thirds of.** The `./testing` door publishes
+  twelve collections — what a kind holds when it is empty, what it looks like at rest, which beats a
+  paint takes — and every one was in no index. They are what the adapters' fixtures compare against, so
+  a fourth adapter's author needs them as much as the contract's own catalogues.
+
+  They are not folded into the contract's index, because reaching them from the main barrel would put
+  fixtures in the bundle of somebody who only wanted to draw a field. `MDY_TESTING_VOCABULARIES` is
+  that door's own index. Two indexes and no third list: the alternative — one index plus a ledger of
+  what it deliberately omits — is the shape that goes stale in silence, and two such ledgers once hid
+  five undeclared classes between them. The check now asks of every door together that nothing
+  published anywhere is named by neither.
+
+- 7878e24: The timepicker's popup declares `role="dialog"` in the widget catalogue.
+
+  `MDY_WIDGET_CONTRACTS.timepicker.parts.popup` now carries `role: "dialog"`, which every renderer of
+  the kind must announce. `@modyra/plain` and `@modyra/lit` already emitted it and are unchanged.
+
+  **Migration for a renderer implementing this contract**: emit the declared role on the popup element
+  wherever the panel is drawn, rather than deriving it from placement. Modality is separate — the
+  timepicker's popup is modal (`aria-modal="true"`, focus trapped) while the multiselect's declared
+  dialog is not — so do not derive `aria-modal` from the role alone.
+
+  `@modyra/angular`'s timepicker previously announced no role at all unless the panel was drawn over
+  the page with a backdrop; it now matches the other two renderers, named by the field's label through
+  `aria-labelledby`. See ADR 0140.
+
+- b4bee4f: A calendar declares the keys that turn its month
+
+  `PageDown` moves to the next month and `PageUp` to the one before, in all three renderers, and none
+  of them was asked to. An adapter written from the contract alone shipped a calendar that could not
+  leave the month it opened on: the arrows walk within a month and cross its edge one day at a time,
+  which is a long way to reach next March.
+
+  Declared for the kinds that have a `grid`, which is what a month is — a calendar has one and a list
+  does not, so a page key means something here and nothing there. `MdyKeyBinding` gains `page`,
+  separate from `by` rather than a third value in it, because the two compose: a page key carries a
+  direction like any other movement, and a reader asking "which way" gets the same answer from both.
+
+  Nothing renders differently. The table records a gesture the three already agreed on, and stops an
+  adapter from having to discover it.
+
+- 9f191da: Two boxes and no way out of them
+
+  plain's date range trapped the keyboard. Tab anywhere in the field dismissed the popup, a dismissal
+  restores focus to the start input, and the popup did not have to be open for any of that — so every
+  Tab pulled the keyboard back where it began. Forty presses never reached the field below.
+
+  Two things were wrong and both are fixed where they belong:
+
+  - **A closed popup is not dismissed.** The handler now asks whether anything is open before acting,
+    so Tab in a closed range is Tab.
+  - **`cancel` gains `restoreFocus`**, which is what tells Escape from Tab. Escape means _put me back
+    where I was_, so focus returns to the opener. Tab is already carrying the keyboard onward, and
+    taking it back is the trap the dismissal exists to avoid — which is what the keyboard table has
+    said all along with `restoresFocus: false` on `Tab@open`.
+
+- 17c3bff: Type-ahead answers at a closed single-choice control, and the differ learns what widening is
+
+  Declaring type-ahead yesterday restricted it to the open phase, on the reasoning that a character
+  typed at a closed control opens nothing and is the platform's business. That was wrong about the
+  platform: every native chooser moves to the option beginning with that letter _without opening_, and
+  the framework-free renderer does the same. The binding said a gesture was not owed at a control that
+  has always offered it.
+
+  It now answers in both phases where **one** choice is held. Where several are, there is no "the"
+  choice for a letter to move and the strip has its own use for keys, so it stays open-only until
+  something measures otherwise.
+
+  **And `contract:diff` gained the distinction the change exposed.** Dropping a phase from a binding
+  _widens_ it — a key that answered only while open now answers always, and nobody relying on the open
+  behaviour loses anything. Compared as strings that read as one binding removed and another added: a
+  major for a change that takes nothing away. The tool was right that the old spelling is gone and
+  wrong about what a consumer can survive, and that disagreement is worth more than either verdict.
+  Narrowing a binding to one phase is still major.
+
+- a36aca3: The class-rule exemption reports itself, and a field can say whether it can fail
+
+  **`MdyDomContractIssueCode` gains `EXEMPTION_ACTIVE`.** A consumer switching exhaustively over issue
+  codes must handle it.
+
+  Passing `adapterPrefix` to the DOM conformance kit suspends the rule that fails on classes the
+  contract does not declare. It did so silently, and a result that does not say a rule was suspended
+  reads exactly like one where the rule held — while the person who passes the option and the person
+  who later reads the green are not the same person. Five undeclared classes lived for months behind
+  this, in a repository whose conformance check fails on undeclared classes.
+
+  The option stays, because a renderer outside this repository may rely on it. What it no longer does
+  is stay quiet: either the class is reported as invented, or the exemption is reported as active.
+  There is no combination that reports nothing. An exemption that skips nothing still reports nothing —
+  otherwise every caller carries a permanent finding for a rule that never fired.
+
+  **`fieldCanBeInvalid` is exported**: whether a field can fail a rule, and so whether its error
+  container is reserved at rest. One predicate rather than three renderers each deciding.
+
+  The reservation is not for the field that is failing — it is for the field _below_ it. Someone
+  leaving a field is moving toward the next one, and that is what drops when a message appears under
+  the field they just left. It does not stop every movement and must not be believed to: a two-line
+  message moves things anyway, and a validation arriving while focus is elsewhere defeats it. It closes
+  the frequent case, which is validate-on-blur.
+
+  Read from the field, never from its kind — an optional note with a length limit can fail a rule. And
+  it depends on the field's rules, never on its errors: the container stays reserved once a message
+  clears, because taking the space back is the same jump, upward, under the same thumb.
+
+  **No renderer reserves the container yet.** Doing so collides with a rule the renderers hold — the
+  control's description names the error list only when the list is rendered — and that collision needs
+  its own decision. The predicate lands first so the decision has one place to be applied.
+
+- b69252a: `shellStateClasses` answers which shell classes a field's state puts on — and takes off
+
+  `MDY_FIELD_STATE_CLASSES` has always declared which base each shell part carries and which states it
+  admits. It never said the answer: _given these flags, which classes are on_. So every renderer wrote
+  that out, with the class names as string literals beside lines that read the vocabulary properly.
+
+  Two things a renderer had to get right unaided, and both now come from one place:
+
+  - **one state, two spellings.** A failing field takes `--error` on its wrapper and `--has-error` on
+    its label. Both were declared; nothing composed them, so each renderer paired them by hand.
+  - **off is an answer.** Every class is named with its on-or-off, not just the ones that are on. A
+    list of what to add says nothing about what to remove, and a field that stops failing keeps the
+    class that says it is — a control left looking wrong after it was corrected.
+
+  The states it answers for are derived from the vocabulary rather than listed, so a state added there
+  and not here fails the check rather than going quietly missing from every renderer at once.
+
+  Angular is unchanged: its sixteen host blocks bind the same state declaratively and read the same
+  signal, which is repetition without a divergence to close. Doing it there needs the host binding to
+  move to the shared base, and that is a change to how every renderer declares its classes rather than
+  to what they mean.
+
+- 2742dd9: The three readings an anchoring decision is made from, taken once
+
+  `anchorOverlay` has always declared what it needs — a viewport, a direction, a content size — and
+  never how to obtain them, so each renderer gathered them itself. The three gatherings were
+  **character-for-character identical**: one answer written in the three places somebody had to write
+  it.
+
+  `viewportSize`, `inlineDirectionOf` and `measureOverlayContent` are exported. They stay outside
+  `anchorOverlay` because that function is pure and is exercised against rectangles no document ever
+  held — what is shared is the _reading_, not the decision.
+
+  Each carries a trap, which is why none of them was a one-liner:
+
+  - **the border box.** `scrollHeight` stops at the padding edge, so a popup with a border asks for a
+    size its own outline does not fit in, and every decision made from it clamps a few pixels short;
+  - **nothing laid out.** Zero is not a measurement, and a decision made from zero is indistinguishable
+    from one made on a real one, so it answers `null`;
+  - **the live direction.** A widget declares which _inline_ edge its popup hangs from; only the
+    document says which physical edge that is today.
+
+  The shared measurement is the **union** of what the three guarded, not the smallest of them: one
+  checked `hidden`, one checked null, one checked neither. Narrowing to any single renderer's guard
+  would have taken something away from the other two.
+
+- b22529e: The contract says which message names a part no relation points at
+
+  Most parts are named by being pointed at — a caption's `for`, an opener's `aria-controls` — and the
+  relations declare it. Five are not, and they are not machinery: a person types in a panel's search
+  box, in the second date of a range, in each half of a time. Nothing said what those are called, so
+  each renderer chose.
+
+  They chose differently. One built `"<caption> — end"` out of an English word and the caption; another
+  read `daterangeEndLabel` from the message table. **The words already existed in the table in five
+  languages.** What was missing was the line saying which word belongs to which part — so a page in
+  Italian announced a box as "end".
+
+  `MDY_PART_NAMES` is that line. It is a binding rather than a vocabulary: the translation of a
+  control's name stops being a decision a renderer takes alone.
+
+  Held to both tables at once — a binding to a message that does not exist and a binding to a part the
+  contract does not declare fail differently here and identically on a page — and to the relations: a
+  part named by a relation **and** by a message is refused. That refusal found one immediately: a
+  range's caption already points `for` at the first of its two boxes, so only the second was unclaimed,
+  and binding both would have been two answers to one question.
+
+  The framework-free renderer reads the binding now. Its first box keeps the caption; the phrase built
+  around it is gone.
+
+  Also asserted: every bound message exists in every locale the package ships, because a name that falls
+  back to English on a translated page is the defect this exists to stop being possible one renderer at
+  a time.
+
+- f678c06: What a form submits is what was on screen
+
+  Press Back into a form somebody had started filling in and the browser hands them their typing back.
+  It writes it straight into the boxes and announces nothing — so the field showed what they had
+  written while the form still held the value it was built with, and a submit sent the second. There
+  was no moment at which they could have noticed: every part of the page was individually correct.
+
+  The form now adopts what was restored. Where the browser restored nothing — which is the other two
+  engines, whose restore lands before script-built controls exist — nothing happens, and there is
+  nothing to disagree about either.
+
+  The same guard runs at the submit, ahead of every handler that reads a value: whatever wrote into a
+  control since the last thing the library heard — autofill, a password manager, an extension — is
+  adopted before the value leaves the page.
+
+  New in `@modyra/widgets`: `adoptSilentWrites(binding)` and `MdySilentWriteBinding`. Renderers bind it
+  themselves; a consumer needs it only for a form they build and mount by hand.
+
+  **Two visible effects.** Each control written to silently fires one `input` and one `change` when it
+  is adopted, and the fields adopted are marked touched — so their validation runs and their errors show.
+  Both follow from adopting through the same door a person's own typing comes through.
+
+  If you want the typing to survive in every browser, configure a `draft`: that already does it. See
+  ADR 0150.
+
+- cd584fc: Every optional part can now say when it is on the page
+
+  193 structure nodes were `optional: true` and not one said **when**. `optional` says a renderer _may_
+  leave a part out and stops there, so each renderer decided for itself when to build it, three
+  renderers decided three times, and conformance could ask nothing — there is no checking a rule nobody
+  wrote.
+
+  `MdyWidgetStructureNode` gains `presentWhen`, drawn from `MDY_PART_PRESENCES`: a closed vocabulary of
+  eight conditions a renderer can already answer — the document supplied the content, the field is
+  required, the field can fail a constraint, errors are visible, the overlay is open, a value is
+  present, the kind offers it, the view is showing.
+
+  Named `presentWhen` rather than `when` because `when` already means the overlay phase on a key
+  binding, and one word with two meanings is how a declaration comes to be read two ways.
+
+  The conditions live in one table, `MDY_PART_PRESENCE`, keyed by part name. This anatomy is declared
+  twice — written out for the shell every field shares, derived again for each kind — and a condition
+  copied into both drifts the first time one is edited. Both read the table.
+
+  **The error container is present under `fieldCanBeInvalid`** — the field has constraints, so it can
+  fail one — and its contents under `errorsAreVisible`. Reserved at rest, and still reserved after a
+  correction: taking the space back when a message clears is the same jump as giving it, upward. Read
+  from the field, not from its kind: an optional note with a length limit has a constraint.
+
+  112 of the 193 nodes carry a condition. The other 81 are recorded in a baseline that may only shrink:
+  a _wrong_ condition is worse than a missing one, because it tells a renderer to build something at a
+  moment when it is not wanted and nothing notices until it is on the page.
+
+  Two audits were repaired to see this, both reading a field rather than a relation. `contract:diff`
+  snapshotted `optional` and `repeated` and not `presentWhen`, so it called the contract unchanged while
+  every optional node in it gained a condition. `audit-type-surface` read a union's members from syntax,
+  so a union derived as `(typeof ARRAY)[number]` looked empty — which also left `MdyWidgetKind`,
+  `MdyWidgetState` and four more recorded as opaque.
+
+  The contract now says when a part is there. **Nothing yet checks that a renderer builds it then** —
+  that is the next batch, and until then these are declarations rather than enforced behaviour.
+
+  See ADR 0164.
+
+- aa44a14: Where the keyboard stands when a list opens
+
+  A multiselect panel opened with nothing singled out, so the first arrow press was spent picking a
+  starting point — showing nothing, and indistinguishable by ear from an arrow that did not work — and
+  the key meaning "choose this one" had no target, which two renderers answered from the trigger
+  instead.
+
+  The cursor is now primed when the panel is raised from the keyboard: on the first value already
+  chosen, and on the first option on screen when nothing is chosen. Raised by a pointer it stays empty,
+  because the next thing is a click and a cursor would draw a ring on an option nobody touched.
+
+  `open` and `toggleOpen` carry the modality as an optional `by`, and `MdyOpenModality` is exported.
+  A caller that says nothing keeps today's behaviour exactly — a panel that opens with nothing singled
+  out — so the change is additive, but silence is the pointer answer rather than a neutral one: a host
+  that opens from a key should say so. See ADR 0179.
+
+- 69d8cb8: Which shape a document asks for
+
+  ADR 0176 gave the select two anatomies and published no way to ask which one a given field selects,
+  so a renderer drawing one shape and ignoring the property was violating nothing stated, and a checker
+  had to hard-code the rule or guess.
+
+  `variantOf(kind, spec)` answers from the document's own words: a multiselect's `mode`, a select's
+  `searchable`. And `MDY_POPUP_OPENERS.select` now says the opener relation belongs to the custom
+  shape — a `<select>` carrying `aria-expanded` claims to be a combobox, which is a lie about what it
+  is.
+
+  Between them a real divergence becomes visible instead of arguable: one renderer draws the combobox
+  for every select where two hand a non-filtering one to the platform.
+
+- ce0b6d5: Every presence condition says who decides it
+
+  `MDY_PART_PRESENCE` says, for each part, the condition under which it is on the page. Fourteen
+  conditions carry 185 declarations across the kinds, and three of them carry 85 — the three the package
+  publishes a way to _decide_. That is the direction of the causation rather than a coincidence: a
+  condition a consumer can ask about is the one consumers read, and the eleven with nothing are
+  declarations each renderer interprets for itself. It is how `valueIsPresent` came to mean one thing
+  where chips are drawn and another where they are not.
+
+  `MDY_PRESENCE_RESOLUTION` names, for each condition, what answers it or why nothing does. Two things
+  it makes visible that a blank could not:
+
+  `valuesOverflow` **was** answered — `hiddenChipCount` decides it and was not named as deciding it,
+  which is worse than a gap, because a consumer looking for the resolver finds none and writes a second
+  one beside the function that already answers.
+
+  And three conditions will never have one, so they say why. `documentDeclaresIt` asks whether the page
+  passed a label; the renderer holds that input and a resolver would put a call between a consumer and
+  a fact in their hand. `kindOffersIt` is answered by the catalogue a renderer already reads.
+  `pointerIsOnAValue` is knowable only by the renderer. Left blank they read as three gaps, and the next
+  person counting resolvers reports three decisions as findings.
+
+  Seven remain owed and are named as debts rather than absences. See ADR 0169, which states the rule
+  that decides which is which: a condition owes a resolver when two renderers could reasonably disagree
+  about the answer from the same state.
+
+  The check derives from the conditions, so a condition added to the contract has to be accounted for
+  before it can be declared on a part — and it holds one property as a property rather than a sentence:
+  if the declarations ever come to hang mostly off conditions nothing decides, the contract has grown in
+  the direction that made two renderers disagree, and somebody should know before it is measured by
+  accident again.
+
+### Patch Changes
+
+- 4098145: The renderer budget records what moved instead of failing on it.
+
+  `overrun` was a ratchet — may shrink, may not grow — and the property was right in principle and wrong
+  in practice: **every legitimate edit moves the number**, so it fired on correct work and the only way
+  past it was to re-record. It fired twice in one afternoon over a single line and its removal.
+
+  That is the diagnosis `check-bundle.mjs` already wrote down about the bundle size, in this repository,
+  after reaching it the same way: _a threshold that is raised whenever it is crossed is a record of past
+  sizes rather than a limit._ This applies that reasoning where it was found a second time.
+
+  **What replaces the gate is a history.** Each re-record appends what moved, from what to what, at which
+  commit — so four lines and four hundred stop looking alike, which is what the ratchet was protecting
+  and the one thing it could not show:
+
+  ```
+  multiselect/multiselect-renderer.component.ts: 113 → 116 (+3)
+    moved 2 time(s) since 2026-08-25, 0 in total
+  ```
+
+  Only movement is appended: a re-record that changes nothing writes nothing, or the series fills with
+  entries saying "still 113" and stops being readable. A dirty tree is recorded as such rather than
+  naming a commit whose content is not what was measured.
+
+- 9ad3e51: A calendar's views say which one is showing, and no word in the vocabulary is idle
+
+  The day grid, the month picker and the year picker were all declared `overlayIsOpen` — true of all
+  six parts at once, and contradicted by the page: with the day view up, the month and year pickers are
+  hidden and their cells are never built. They are present under `viewIsActive`, which is the sharper
+  condition and implies the weaker one, since a view cannot be the one showing inside a panel that is
+  not there.
+
+  Found from the other end. `viewIsActive` was published and **no part used it**, which is a word
+  nobody had to get right. A check now says so: a condition the vocabulary offers and nothing is
+  present under is either a missing declaration or a word the contract does not need, and both are
+  worth failing over.
+
+- 0f16026: `contract:diff` sees the class names that belong to no kind
+
+  The snapshot reaches class names through a kind's anatomy, so a name outside every kind was invisible
+  to it: the shared button, the overlay machinery, a layout's own boxes, the form shell. Fifteen names
+  across three published vocabularies.
+
+  Seven of them are selected on by the themes shipped here, so the dependency was real while a rename
+  would have been classified as an internal change — and every stylesheet using one would have broken
+  on a release the gate called a patch. `contract:diff` was not silent about them; it was silent
+  _because_ of them, which is the harder kind to notice.
+
+  They are recorded beside the scale, for the same reason and in the same shape: names, not values,
+  because what a class _is_ belongs to a theme and what a consumer cannot survive is a name that stops
+  answering.
+
+  Named one vocabulary at a time rather than discovered by shape. A vocabulary is sometimes an array
+  and sometimes a dictionary, and a flat dictionary is the degenerate case of a table with one column —
+  a rule reading the shape cannot tell them apart and would quietly stop covering whichever it did not
+  anticipate.
+
+- 9a2ba53: A field is not announced wrong before anybody has reached it
+
+  A required field that is still empty is not a mistake — it is a field somebody has not got to yet.
+  Three kinds announced `aria-invalid="true"` on a form nobody had touched, and painted nothing: a person
+  looking saw a clean form while a person listening heard one already failing, and the refusal that does
+  matter arrived later sounding exactly the same.
+
+  The contract's own projections had it right. The renderer wrote the attribute again, from a different
+  question — _is this field invalid_ rather than _is this refusal one to show now_ — and its write landed
+  after, so the wrong answer won. `select`, `datepicker` and `timepicker` now ask what everything else
+  asks, naming their kind so that a value which _is_ that kind's empty is not read as one that arrived
+  from a draft or a server.
+
+- 7f407b9: The browsers this library works in are now declared, and enforced
+
+  There was no `browserslist`, no CSS lint and no sentence anywhere saying which browsers this library
+  supports. It arrived at its present shape one rule at a time — 85 uses of `:has()`, 144 of
+  `color-mix()` — and the first rule newer than somebody's browser would have broken their page with
+  nothing here to say so.
+
+  The floor is **Baseline widely available**. Everything used below it is declared in
+  `packages/widgets/contract-baseline/platform-floor.json` with what is lost without it, and with the
+  guard or the check that holds its fallback. Three features are below the line today — the Popover
+  API, `backdrop-filter` and relative colour syntax — all enhancements, all degrading rather than
+  breaking, and that file says exactly how.
+
+  `npm run test:platform-floor` fails on a breach and runs in the contract gates. Nothing about the
+  published API changes. See ADR 0151.
+
+- 918e404: A group is named, not the first control inside it
+
+  Plain's field shell put the field's caption on the first control it found inside whatever a kind
+  handed it. For a radio group that is an arbitrary option: the caption was announced as the name of
+  "Small" and every other option had none. The shell's own comment records the same trap for a
+  multiselect's chip strip — a container of several controls is the thing being named, and the group's
+  role says so.
+
+  With that fixed, a date range's first box lost the name it had been getting by accident, which is the
+  half ADR 0175 had left: `MDY_PART_NAMES` now binds `daterange.startControl` beside `endControl`, so
+  each end says its own role and the group says the caption. The caption still points at the first box —
+  that pointer moves focus when the words are clicked, which is a different job from naming.
+
+- 22bf399: A guard that asks about what the widget published
+
+  `reportIdCollision` asked whether two elements carried _the widget id_ — a name a renderer need not put
+  on anything. plain puts `when__label` and `when__trigger` on elements and nothing on `when`, so the
+  count was one or zero and the check returned early: two forms from one document collided in silence in
+  the renderer whose ids are hand-written into consumers' pages the most.
+
+  It takes the ids the widget actually put on the page, read from the page, and reports the ones another
+  element shares. Two more timing defects fell out of measuring it that way: plain asked before the
+  effect that writes its ids had run, and lit latched after its first frame — which can be before the
+  form it collides with exists at all. plain asks a microtask later; lit checks every update and says
+  each id once.
+
+  The shape is worth naming: **a guard that asks about something the thing it guards does not have**
+  passes, and passing is what makes it invisible.
+
+- 1fffe2d: Backspace stops being swallowed at a multiselect trigger
+
+  The overlay policy answered `Backspace` with "clear the search" when the search was **already empty** —
+  an action that changes nothing, handed to a caller that prevents the default because it was given an
+  action. All three renderers therefore swallowed the key at the trigger and did nothing with it,
+  including with the panel closed, where there is no search box to clear.
+
+  The key is declared on the chip, where it takes a chosen value off. Claimed at the control it was
+  taken from the person and given to nobody: **a key that is prevented and unanswered is worse than one
+  nothing claims**, because the platform's own meaning goes with it.
+
+  And `audit-type-surface` stops reading documentation as surface. A doc comment sits inside an inline
+  object type in the emitted declaration, so rewording one changed the compared string and was reported
+  major on a type whose members had not moved. A comment cannot break a consumer; a member can, and
+  members still are.
+
+- 16f1d3f: A marker only where it applies, and one answer about being wrong
+
+  plain built the required marker into every label and hid it with `display: none`. Hidden is enough for
+  a person and for an accessible name, and not for anything asking _whether this field is marked_ — a
+  test, a tool, a stylesheet — so an optional field carried the marker of a required one. It is added to
+  the label when the field is required and taken out when it is not.
+
+  **And the wrapper's paint disagreed with `aria-invalid`.** plain painted `mdy-input-wrapper--error`
+  from the verdict while the control said `aria-invalid="false"` from what was shown — the two faces of
+  one question, answering differently, which is the thing the comment above that line says must not
+  happen. Both read the shown verdict now.
+
+  **`keepKeyboardInPlay` also gains `afterBlur`**, and it is a correction to how it was first written:
+  a renderer that takes a control out of play calls _before_, with the keyboard still on it; one that
+  hears about it afterwards has only the fact that focus is nowhere. Treating "nowhere" as reason enough
+  in both cases moved the keyboard onto widgets nobody had been standing in. Two DOM checks were also
+  `instanceof Element`, which throws in a document whose implementation does not put `Element` on the
+  global — inside an effect, taking the rest of the render with it.
+
+- 5b1b52b: A quantity a keyboard can change, and a × at the end of the chip
+
+  `ArrowUp` and `ArrowDown` on a counter chip stopped stepping its quantity. The ± controls beside the
+  number are `tabindex="-1"` pointer affordances, so with those two keys gone the number was reachable
+  by pointer and by nothing else — WCAG 2.1.1, and not a cost ADR 0138 traded for taking the
+  `spinbutton` role off the chip: that record gave up the native announcement and kept the keys.
+
+  The binding is back in the table and the handler in all three renderers. It collides with nothing: the
+  strip's own arrows are left and right, and the `open` bindings now name the part they open from.
+
+  The catalogue also declared `chipRemove` before `chipMove`, so the part order it published put the ×
+  in the middle of the chip while all three renderers draw it at the trailing edge, where it belongs.
+  The declaration follows the renderers.
+
+- 234736d: A quantity that stays where it is
+
+  Stepping a counter chip reordered the value behind it. `increment` appended the new occurrence to the
+  end of the array, so `["a","b"]` stepped on `a` became `["a","b","a"]` — while the strip, which draws
+  each distinct value once at its first position, did not move. The two disagreed and neither looked
+  wrong on its own: the control showed one order and the form submitted another, silently, on a press
+  that was supposed to change a number.
+
+  One more of a value now goes in beside the ones already held, and one fewer takes the last of the
+  group so what remains keeps the positions it had. A value not yet held still starts its own group at
+  the end, which is where a first choice goes.
+
+- e455962: A question the element answers itself
+
+  The select projection wrote `aria-disabled` on its trigger in both shapes. On the platform's own
+  chooser that is a second answer to a question the element already answers: a `<select>` carries
+  `disabled` as a property, assistive technology reads it, and two sources for one fact is how they
+  come to disagree.
+
+  It is written only for the custom combobox now, which is a button standing in for a chooser and has
+  nothing else to say it is out of play. The native attribute stays in both — it is what actually
+  refuses the press, rather than what describes the refusal.
+
+- 04ff8d8: A range says which day is today
+
+  The single-date calendar reads the day cell's projection and says `aria-current="date"` on today; the
+  range calendar wrote its cells by hand and said it in one renderer of three. It reads the same door
+  now, and Plain and lit mark today in both channels — the class for the eye and the attribute for a
+  reader — where they marked it in neither.
+
+- 4255d5a: The contract record carries every field a key binding declares, not three of them
+
+  `contract:diff` recorded a binding as `key@phase:intent`. Everything else a binding says — which part
+  answers it, what may be held with it, which way a move goes, where focus lands afterwards, what gates
+  it — was outside the record, so changing any of it was a change the differ could not report.
+
+  Found by changing one: `Escape` gained `modifier: "any"`, which decides whether somebody can leave a
+  panel with a modifier held, and the differ answered `patch`.
+
+  A binding is identified by its gesture and the rest are compared as that gesture's attributes.
+  Compared as one string instead, enriching the record reads as every binding removed and a different
+  one declared — eighty findings with a real removal invisible among them, which is the failure the
+  entry exists to prevent. A baseline written before the attributes existed has none for any binding,
+  and an absence there means "not written down" rather than "declared nothing", so the attribute
+  comparison is skipped against one — a guard that removes itself with the next snapshot.
+
+  Two mutations that used to pass now classify major: removing a modifier declaration, and removing a
+  binding outright.
+
+- 50ffc70: A strip that says there is more
+
+  ADR 0127 lets a multiselect's chip row scroll only where something reaches what leaves the viewport.
+  The wheel and the roving focus are that mechanism; nothing told a person there was anything to reach.
+  Twelve chips in a control that shows four looked like a control holding four.
+
+  Two answers, one for each way of reading a control:
+
+  - The strip carries `aria-describedby` pointing at the field's own description, which already says how
+    many are chosen. A reader standing on the strip is exactly the person who cannot see that it runs
+    on, and the count is the fact that makes the hidden chips worth looking for.
+  - A scroll shadow at each end, in CSS and self-adjusting: two gradients scroll with the content and
+    paint the field's surface over the shadow at whichever end is exhausted, so the cue is drawn only
+    while chips really are hidden that way. No measurement, and no class a renderer has to keep in step
+    with the scroll position.
+
+- 2e2a1ef: The way back restores only what the field still offers
+
+  An option set is not fixed: a document changes it, a host reloads it, a dependent field narrows it.
+  An undo made before such a change held values from a world that no longer exists, and taking it put
+  one of them back into the form — a value nobody can choose, on a chip with no option to take a label
+  from, so a person read a raw `b` beside words.
+
+  Undo now restores the part of its offer the set still holds. Refusing it wholesale would satisfy the
+  same property; keeping what survives is the half the person asked for, and a way back that silently
+  does nothing is worse than one that does what it can.
+
+- f133092: An option the platform can stand on, and a caption a control is named by
+
+  **A select nobody could operate from the keyboard.** The entry for "nothing chosen" is disabled, and
+  with no option _declaring_ itself selected the browser rests on index 0 — that entry — so arrowing
+  off an option that cannot be chosen is not a move it makes and the control answered no key at all.
+  Both renderers set the property, which a document already reports for index 0 whether anybody said
+  so; the attribute is the declaration, and it is what the working renderer had.
+
+  **A caption a control is named by.** Angular's datepicker wrote `aria-label` where the field has a
+  visible caption, replacing the words a person is reading with words only a reader hears. It reads
+  `fieldNameAttributes` now, like every other control.
+
+  **A datepicker named by nothing in lit.** Its input applied the shell part and hand-wrote the role,
+  the popup relation and the caption — four literals answering what the projection already says, and
+  the caption was not among them. It applies the projected trigger part now. `aria-controls` stays the
+  renderer's: the projection names the day grid, and choosing a month or a year replaces it, so a
+  fixed reference would name an element that has been taken away.
+
+- a7eddca: The UI contract gates report every failure, not the first one.
+
+  `test:contracts` was twenty-six checks joined by `&&`. A chain reports the thing that broke and says
+  nothing about the rest, so a pipeline red in five places looked exactly like one red in one, and each
+  repair revealed the next wall instead of the remaining distance.
+
+  `scripts/run-contract-gates.mjs` runs the same commands in the same order, with the same exit code, and
+  does not stop. The first run of it found five failures where the chain had been reporting one.
+
+- 96ab84b: Angular's select publishes the ids the contract spells
+
+  A published id is `<widget>__<part>__<key>`, and this renderer minted `pick-opt-0` from the option's
+  _position_ while the other two spelled the contract's form — so a consumer reading the published
+  format and writing a selector reached two renderers and missed the third, and an id moved when the
+  list was filtered rather than naming the same option throughout. The trigger published the bare field
+  id where the others publish `__trigger`.
+
+  Both now come from the id factory, and from _this_ control's current widget id rather than the
+  adapter's: the adapter is constructed once and holds the id the control had at that moment, which is
+  the mount id — so its view spelled `mdy-control-0__option__…` while every id computed later in the
+  same component spelled `pick__…`. An id is a function of the document (ADR 0135).
+
+  The keyboard policy's comment is corrected too: it said a list opens with nothing active, which is
+  neither what the controller does nor what the authoring practices describe, and it nearly bought a
+  repair that made `Enter` straight after opening choose nothing.
+
+- b6cd7d6: A part recorded as machinery has to be reachable by nobody
+
+  The ratchet that records controls no relation names carries a classification per entry: machinery, or
+  a gap in the contract. Without a check on the classification itself, the list can shorten by
+  _reclassification_ rather than by repair — a gap moved into the machinery column stops being counted,
+  and the sentence that excuses it is one nothing reads.
+
+  So the claim is held to the page. Machinery is a part no relation names **and** a part no renderer
+  offers as a stop for the keyboard, measured by mounting it rather than by reading a renderer's source,
+  because "is this reachable" is a question about a document. Giving the one recorded entry a positive
+  tab index turns it red.
+
+  The distinction it guards is the one the colour field made expensive: a control in the tree that
+  nothing describes is a control a reader meets and cannot place, and the five remaining entries are
+  that — a person types in every one of them.
+
+- 82e7216: "No attribute" is said with `null`
+
+  Taking `aria-checked` off the native checkbox left the key out of the object rather than setting it to
+  `null`. This contract says "no attribute" with `null` everywhere — `aria-readonly` beside it does —
+  and a key simply absent reads as `undefined` to anything asking the projection what the field says,
+  which is a value no reader maps and outside the three the standard allows. Worse than the redundancy
+  it replaced: an ARIA attribute holding an uninterpretable value beside a box that maps its own state.
+
+  Also in Angular's colour field: `aria-label` was bound twice on the hex box, so one of the two names
+  was silently discarded, and `aria-disabled` was written only while true where the other two renderers
+  and the contract say it in both states.
+
+- 953381d: One name on a control, never two
+
+  A multiselect's trigger was named by the caption in two renderers and by its own words in the third,
+  so the same field said the same thing through two mechanisms — and any renderer carrying both would
+  have said only the first, because `aria-labelledby` wins the name computation and silences whatever
+  sits beside it.
+
+  All three point at the caption now, and say the words only where a document wrote no caption. The
+  contract's comment says which of the two applies and why, so a fourth renderer does not have to pick.
+
+  Angular's `labelId` is computed rather than captured at construction: a field initializer spells the
+  id the component had before the host gave it one, which resolves to no element.
+
+- 09c79c3: `partClasses` and the contract record now agree about every part
+
+  Both are published, and they disagreed about five of them: `partClasses(kind, "control")` returned
+  `["mdy-input-wrapper__inliner"]` for text, email, password, textarea and number, while the record
+  said the part carries no class at all.
+
+  The record was right. That class belongs to the **box that holds** the control, not to the control —
+  measured in the page, the `<input>` does not carry it and its container does. The accessor fell back
+  to the shell's vocabulary by name, and the shell uses the word `control` for the box.
+
+  **If you selected a control with that class, you were selecting its container.** The selector found
+  an element, which is why nothing failed. `partClasses(kind, "control")` now returns `[]` for those
+  five kinds, and every part reads the same whichever surface you ask. See ADR 0154.
+
+- 769b992: The two controls a number field is declared to have
+
+  The catalogue names `increment` and `decrement` at a number field's trailing edge, gives them classes a
+  theme styles, and neither plain nor lit built them. The promise was kept by the platform's own spinner
+  where a browser draws one and by nothing where it does not — the same field with a stepper on one
+  engine and no way to step on another. Both renderers draw them now, out of the tab order (the box
+  itself takes the arrows) and stepping through the same intent typing goes through, so a stepped value
+  meets the field's rules on the way in.
+
+  `mdy-number-spinner` is declared as presentation: the box and its steppers need one positioning
+  context between them, and it is not a part — nothing is announced by it and no contract member points
+  at it.
+
+  **And a multiselect's trailing controls are drawn whether or not they have something to do.** lit and
+  Angular omitted the clear-all and the overflow count until they applied; plain drew them hidden. A part
+  a kind declares is a part its renderers carry, so all three draw both and hide what does not apply —
+  which also keeps them disabled with the field rather than absent from it.
+
+- 2175826: A datepicker sends the date it holds, not the date it shows
+
+  What a form sent for a date field contradicted what the field itself answered: `01/02/2026` on the
+  wire against `2026-01-02` in the model, in the same instant, from the same control. A receiver handed
+  `01/02/2026` cannot tell the second of January from the first of February — and neither can the sending
+  side, because it is looking at a field that holds the right answer.
+
+  Not a defect of whichever renderer formats today. A control's text is a **presentation** of the value
+  and the value is not, so a name on that control sends the presentation the moment anybody formats
+  anything. The field now carries its value in an input of its own, as `select` and `multiselect`
+  already do, and the control carries no name at all.
+
+- 425f3a7: One field, one answer to what a typed colour is
+
+  The colour field had two rules. One renderer carried its own regular expression — `/^#[0-9a-fA-F]{3,8}$/` —
+  and it disagreed with the contract on five strings, **in both directions**:
+
+  ```
+  #ffff  #fffff  #ffffffff  #12345     kept as the value there, refused by the contract
+  fff    "  #fff  "                    refused there, accepted and normalised by the contract
+  ```
+
+  `#fffff` is a length no colour has. Stored, it becomes a value that paints as nothing: the field
+  visibly holds something and nothing shows it. And `fff` is what people type — refused in one renderer
+  while another accepts it is the same control answering two ways.
+
+  Both now call `createColorsFieldController`, which is where that rule already lived along with the
+  one nobody duplicated: **typing never closes the panel and choosing a preset does**, because `#0` is
+  on its way to being a colour and a field that committed or rejected on every keystroke would take a
+  half-typed value away from the person typing it.
+
+  Adoption goes from 44 of 51 renderer/kind pairs to 46. Angular's colour field still holds its own
+  open state through its overlay directive; its value already goes through the contract.
+
+- 7c85752: A combobox says what it asks, then what it holds
+
+  A `<label for>` names a button, and that was the defect rather than the fix: the accessible name
+  computation takes the caption and stops, so the button's own content — which for a select trigger
+  _is_ the chosen value — was never appended. A person reaching the field heard what it asks and not
+  what it holds.
+
+  The projection names the trigger by two references, the second being the trigger itself: a
+  self-reference contributes the element's own content, so the name reads "Country, France" without
+  the value needing an id of its own. The `<label for>` stays — it no longer supplies the name, and it
+  is still what makes clicking the caption reach the control.
+
+  The platform's own chooser is left alone. A `<select>` has a value the reader announces separately,
+  so `for` gives "Country, combo box, France" already, and overriding it would take apart what the
+  platform does right. See ADR 0175.
+
+- Updated dependencies [ff00fb6]
+- Updated dependencies [3a15797]
+- Updated dependencies [d0a6f15]
+- Updated dependencies [4e7ba99]
+- Updated dependencies [d8b3b54]
+- Updated dependencies [07b3ec8]
+- Updated dependencies [f962df5]
+- Updated dependencies [ca7a0fa]
+- Updated dependencies [59e7af2]
+- Updated dependencies [0883045]
+- Updated dependencies [e65f631]
+- Updated dependencies [6efa698]
+- Updated dependencies [fc493c5]
+- Updated dependencies [052db3e]
+- Updated dependencies [ad85b8b]
+  - @modyra/core@2.5.0
+
 ## 2.4.0
 
 ### Minor Changes

@@ -1,5 +1,208 @@
 # @modyra/preact
 
+## 0.8.0
+
+### Minor Changes
+
+- 6ee16f5: One live region for the page, and announcing became a queue
+
+  Eight adapters each named a live region of their own — `mdy-plain-announcer`, `mdy-lit-announcer`,
+  six more. Eight literals, declared by nothing, so a page carrying two renderers carried two
+  `aria-live="polite"` regions.
+
+  **Two regions speaking in the same instant are read in an order nothing specifies.** Every screen
+  reader has its own policy and no specification fixes one, so one announcement cuts the other off
+  partway. One region loses a message the same way — but a queue can only stand in front of one region,
+  and with two there is nowhere to put it.
+
+  `MDY_SHARED_REGION_ID` and `MDY_SHARED_REGION_ATTRIBUTE` are now exported. The attribute was already
+  declared in the contract and was not published, so the one part of this that had been decided could
+  not be read.
+
+  Announcing is now queued rather than written, which fixes three things a plain write does not:
+
+  - **the region exists before the first message.** A reader announces a _change_ to a region it
+    already knows; one created and filled in the same instant is met already full, and the first
+    announcement of a page is the one most likely to be lost;
+  - **the same words twice running are said twice.** The region is cleared and written a turn later, so
+    a repeat is a change. Written over itself it is silent;
+  - **two messages in one instant are both heard** instead of one overwriting the other.
+
+  No adapter names a region any more. `createMdyAnnouncer()` and `MdyCommandRuntimeOptions.announcerId`
+  default to the contract's id; `announcerId` is still accepted, and passing one means keeping a second
+  region on the page with everything above.
+
+  The cost: announcements from two renderers now serialise, so a burst finishes slower than a burst
+  that overwrote itself. And messages that should _replace_ rather than queue — "2 results", "3
+  results", "4 results" as someone types — still queue, because `announce` carries no category to
+  decide on. That is a real defect for anything announcing per keystroke.
+
+  See ADR 0163.
+
+### Patch Changes
+
+- Updated dependencies [7d85603]
+- Updated dependencies [4098145]
+- Updated dependencies [9ad3e51]
+- Updated dependencies [3852b04]
+- Updated dependencies [454a168]
+- Updated dependencies [8409975]
+- Updated dependencies [d5bc45b]
+- Updated dependencies [6a82839]
+- Updated dependencies [8048151]
+- Updated dependencies [fa4b98a]
+- Updated dependencies [0f16026]
+- Updated dependencies [37f5eab]
+- Updated dependencies [a14b7c6]
+- Updated dependencies [4a1928c]
+- Updated dependencies [ff00fb6]
+- Updated dependencies [57fcb30]
+- Updated dependencies [78bd88c]
+- Updated dependencies [4b30db9]
+- Updated dependencies [9346f32]
+- Updated dependencies [01261b8]
+- Updated dependencies [ff19aea]
+- Updated dependencies [a116692]
+- Updated dependencies [9a2ba53]
+- Updated dependencies [0050769]
+- Updated dependencies [7f407b9]
+- Updated dependencies [9840c5e]
+- Updated dependencies [117e1c3]
+- Updated dependencies [965a61c]
+- Updated dependencies [918e404]
+- Updated dependencies [22bf399]
+- Updated dependencies [3a15797]
+- Updated dependencies [89e42ec]
+- Updated dependencies [12c9e50]
+- Updated dependencies [86d196e]
+- Updated dependencies [1fffe2d]
+- Updated dependencies [ba9a0c1]
+- Updated dependencies [b6b31c4]
+- Updated dependencies [4c8cf60]
+- Updated dependencies [d0a6f15]
+- Updated dependencies [4e7ba99]
+- Updated dependencies [6022157]
+- Updated dependencies [16f1d3f]
+- Updated dependencies [93fcb70]
+- Updated dependencies [f0b4f7d]
+- Updated dependencies [a268ec7]
+- Updated dependencies [2fde8a7]
+- Updated dependencies [08cca72]
+- Updated dependencies [cd7e937]
+- Updated dependencies [e0ab01c]
+- Updated dependencies [5bde1b0]
+- Updated dependencies [e972a01]
+- Updated dependencies [be44d0a]
+- Updated dependencies [d8b3b54]
+- Updated dependencies [07b3ec8]
+- Updated dependencies [9cdd4ef]
+- Updated dependencies [f962df5]
+- Updated dependencies [5b1b52b]
+- Updated dependencies [087b2ca]
+- Updated dependencies [234736d]
+- Updated dependencies [e455962]
+- Updated dependencies [04ff8d8]
+- Updated dependencies [4255d5a]
+- Updated dependencies [0e6540c]
+- Updated dependencies [58654b1]
+- Updated dependencies [cde2ab8]
+- Updated dependencies [0a54a17]
+- Updated dependencies [ab7fcb2]
+- Updated dependencies [3bc4a23]
+- Updated dependencies [f7bd4cb]
+- Updated dependencies [0ae26cf]
+- Updated dependencies [49339e9]
+- Updated dependencies [d2092bb]
+- Updated dependencies [88c8cc7]
+- Updated dependencies [50ffc70]
+- Updated dependencies [b7fbfd4]
+- Updated dependencies [ca7a0fa]
+- Updated dependencies [e6531f2]
+- Updated dependencies [59e7af2]
+- Updated dependencies [ef24648]
+- Updated dependencies [f24ca8b]
+- Updated dependencies [2e2a1ef]
+- Updated dependencies [423b8b1]
+- Updated dependencies [32e7440]
+- Updated dependencies [661568e]
+- Updated dependencies [0883045]
+- Updated dependencies [2228872]
+- Updated dependencies [8081294]
+- Updated dependencies [e47e039]
+- Updated dependencies [0cba121]
+- Updated dependencies [233c2bd]
+- Updated dependencies [f133092]
+- Updated dependencies [e65f631]
+- Updated dependencies [f65d19d]
+- Updated dependencies [6efa698]
+- Updated dependencies [a7cd1a8]
+- Updated dependencies [a7eddca]
+- Updated dependencies [fb289a9]
+- Updated dependencies [024de71]
+- Updated dependencies [450aa2c]
+- Updated dependencies [9eb86d9]
+- Updated dependencies [cfff558]
+- Updated dependencies [96ab84b]
+- Updated dependencies [b6cd7d6]
+- Updated dependencies [82e7216]
+- Updated dependencies [49e17ce]
+- Updated dependencies [3fd899b]
+- Updated dependencies [d5656be]
+- Updated dependencies [cb8a6fd]
+- Updated dependencies [e505164]
+- Updated dependencies [6ee16f5]
+- Updated dependencies [244dd08]
+- Updated dependencies [953381d]
+- Updated dependencies [8f72ad1]
+- Updated dependencies [96edbb0]
+- Updated dependencies [09c79c3]
+- Updated dependencies [e63ccbd]
+- Updated dependencies [3a148c0]
+- Updated dependencies [5edf370]
+- Updated dependencies [7df6f00]
+- Updated dependencies [709fb7f]
+- Updated dependencies [8e5fe67]
+- Updated dependencies [1f646ae]
+- Updated dependencies [5c49e32]
+- Updated dependencies [58af44d]
+- Updated dependencies [fc493c5]
+- Updated dependencies [1897b23]
+- Updated dependencies [012db3b]
+- Updated dependencies [14755ac]
+- Updated dependencies [11b6823]
+- Updated dependencies [49e17ce]
+- Updated dependencies [48c0597]
+- Updated dependencies [7aaa84a]
+- Updated dependencies [1a235c4]
+- Updated dependencies [3eb1f84]
+- Updated dependencies [e7be4b6]
+- Updated dependencies [e488eec]
+- Updated dependencies [3246dce]
+- Updated dependencies [769b992]
+- Updated dependencies [cef9693]
+- Updated dependencies [23accd5]
+- Updated dependencies [d3cd87c]
+- Updated dependencies [7878e24]
+- Updated dependencies [b4bee4f]
+- Updated dependencies [9f191da]
+- Updated dependencies [052db3e]
+- Updated dependencies [17c3bff]
+- Updated dependencies [a36aca3]
+- Updated dependencies [ad85b8b]
+- Updated dependencies [2175826]
+- Updated dependencies [b69252a]
+- Updated dependencies [2742dd9]
+- Updated dependencies [425f3a7]
+- Updated dependencies [7c85752]
+- Updated dependencies [b22529e]
+- Updated dependencies [f678c06]
+- Updated dependencies [cd584fc]
+- Updated dependencies [aa44a14]
+- Updated dependencies [69d8cb8]
+- Updated dependencies [ce0b6d5]
+  - @modyra/widgets@2.5.0
+  - @modyra/core@2.5.0
+
 ## 0.7.0
 
 ### Minor Changes

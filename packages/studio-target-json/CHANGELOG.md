@@ -1,5 +1,11 @@
 # @modyra/studio-target-json
 
+## 0.5.9
+
+### Patch Changes
+
+- @modyra/studio-contract@0.6.3
+
 ## 0.5.8
 
 ### Patch Changes

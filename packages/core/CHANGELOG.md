@@ -1,5 +1,364 @@
 # @modyra/core
 
+## 2.5.0
+
+### Minor Changes
+
+- 6efa698: The breaking section, consolidated
+
+  `contract:diff --since v2.4.0` classifies this release **major**: 35 major entries against
+  275 minor. **It ships as a minor anyway, deliberately**, and this section is where that debt is
+  paid: the number does not warn you, so the text has to.
+
+  For `@modyra/plain`, `@modyra/lit` and `@modyra/angular` there is no debt — they are below 1.0,
+  where semver already permits breaking changes in a minor. It is `@modyra/core` and
+  `@modyra/widgets`, moving 2.4.0 → 2.5.0, that carry breaking changes under a number which by
+  convention promises none. Read this section before upgrading those two; a version range that
+  admits 2.5.0 will take it without asking.
+
+  The individual changesets carry the bumps; this one carries the migration, so the release page has
+  one place to read instead of 303.
+
+  ## Removed from the public surface
+
+  **`timepickerDialAria`** — exported from `@modyra/widgets` at 2.4.0, gone now. It returned the
+  dial's ARIA shape at runtime; that shape is now **declared** in the contract:
+
+      timepickerDialAria("hour", …).role === "slider"    // 2.4.0, computed for the dial face
+      MDY_WIDGET_CONTRACTS.timepicker.hourControl.role    // "spinbutton", declared
+
+  These are not the same element renamed. Per ADR 0145 the dial face **lost its interactive role
+  altogether** — a `slider` that Tab could not reach, announcing a value the hour box was already
+  speaking. The hour and minute boxes kept the `spinbutton` role they always had; what is new is
+  that the contract now declares it instead of a helper computing it.
+
+  So there is no replacement call. Read the role from the contract, and expect nothing on the face.
+
+  **`MdySelectA11yProjection.listbox`** — the type survives, the member does not. It is now
+  `options`. A consumer that reads `.listbox` off the projection fails to compile; nothing about
+  this is visible in a changeset that speaks only of contract parts, which is why it is stated here
+  as a member.
+
+  ## Parts renamed, and the two aliases that exist
+
+  `listbox` became `options` on both `select` and `multiselect`. Both keep a resolving alias under
+  the old name.
+
+  **The alias covers the name and not the position.** `multiselect.options` also changed parent —
+  `root` → `popup` — and `select.option` moved from `listbox` to `options`. Code that resolved the
+  part by name keeps working; code that walked to it by position does not, and the alias will not
+  tell it so.
+
+  ## Parts removed with no alias possible
+
+  `multiselect.header` and `multiselect.searchButton` have no element behind them any more. An alias
+  would resolve to nothing, which is worse than a name that fails loudly — so there is none. This is
+  not an alias withheld; it is an alias that cannot be written.
+
+  The search button's relations went with it: `aria-describedby` → errors and supporting text,
+  `aria-controls` → popup. `label[for]` now targets `trigger`.
+
+  ## Parts that became required
+
+  `multiselect.trigger`, `multiselect.wayBackAction`, `multiselect.clearAll`,
+  `multiselect.announcement`, `select.options`, and `file.clear` (previously optional).
+
+  Left optional, a renderer could omit them, and for `clearAll` and `wayBackAction` that omission
+  _is_ the defect the decision removes: a control that appears and vanishes under a hand already
+  moving toward it. Presence follows what the widget can do, never what it is currently showing.
+
+  ## Roles and elements changed
+
+      datepicker.calendar    none → dialog
+      daterange.calendar     none → dialog
+      timepicker.popup       none → dialog
+      timepicker.hourControl none → spinbutton
+      timepicker.minuteControl none → spinbutton
+      multiselect.chips      none → grid          parent inputWrapper → box
+      multiselect.chip       none → gridcell      element button → container, parent chips → chipRow
+      colors.toggle          element button → presentation
+
+  `multiselect.inputWrapper` no longer carries the `mdy-multiselect` class. It is not kept as an
+  alias: two elements under one name is the ambiguity the change removes, and keeping the class
+  would reinstate it.
+
+  ## Parents moved
+
+      slider.value           root → track
+      multiselect.placeholder inputWrapper → trigger
+      file.clear             dropzone → content
+      file.fileList          dropzone → content
+      file.rejected          dropzone → content
+
+  A stylesheet or query that descends from the old parent no longer reaches these. The part names
+  are unchanged, so resolving by name is the migration.
+
+- d0a6f15: The nesting limit holds at the door a document never passes through
+
+  A layout may hold sections inside sections, and `MDY_LAYOUT_MAX_DEPTH` has capped that at six since
+  nesting arrived. The cap was applied by the document reader and by nothing else, so a structure
+  assembled in code nested as deep as it liked and mounted in silence — and the same form was legal or
+  not depending on how it had been written down.
+
+  `assertLayoutWithinDepth` is now exported and applied wherever a layout arrives already built:
+  `mountMdyForm` in `@modyra/plain`, and the `layout` input of Angular's dynamic form. It throws,
+  naming the depth, the path at which the structure passed the limit, and the reason — there is no
+  document to annotate and no partial result worth returning.
+
+  **Migration.** A call passing a layout deeper than six rendered a form before and raises now. Nothing
+  else changes: a document is still read the way documents are read, keeping what it can carry and
+  reporting what it dropped.
+
+  The limit is about what a person can be asked to answer rather than what a browser can draw — nesting
+  costs the machine nothing measurable, which is exactly why the reason had to be written down. ADR 0160
+  records it, along with what raising it would take, since the obvious question about any limit is
+  whether it can be lifted.
+
+- 4e7ba99: The line under a control can be written, and an empty one takes no room
+
+  **Every field drew a supporting-text slot, named it with `aria-describedby`, and nothing could put
+  words in it.** The slot was the promise and the half that keeps it was missing: no field type carried
+  the text, and the shell's element was fed from a projection that has an id and classes and no
+  content. A screen reader following the reference arrived at an empty element, which is worse than no
+  reference at all.
+
+  `MdyDynamicFieldBase.supportingText` is the missing half — a format, a limit, why the field is there.
+  Not an error: an error is a verdict on the value and comes and goes with it, and this is a property of
+  the field that does not change when the value does.
+
+  **And an empty slot now takes no height, in the renderer that was reserving it.** Three renderers gave
+  three answers to what sits under a field, so one stylesheet laid out three different forms:
+
+  ```
+                       gap between two controls, before → after
+  plain                84 → 56      an empty errors list at 24px, plus 24px of slot margins
+  lit                  60 → 56      an empty supporting-text slot
+  angular              56 → 56      neither
+  ```
+
+  Plain rendered `.mdy-control__errors` at full height with nothing in it, and both it and Lit reserved
+  the supporting-text slot. Reserving height for a message before there is one is defensible — it stops
+  the form jumping when one appears — but reserving it in one renderer of three is not a choice, it is a
+  disagreement. All three answer the same way now, on every stylesheet.
+
+  The element is hidden rather than removed, because `aria-describedby` names its id unconditionally:
+  removing it leaves the reference pointing at nothing, which is the defect one step worse than the one
+  being fixed.
+
+- 07b3ec8: A picker can be told which view to open in
+
+  `MdyDynamicDateField` gains `viewMode?: "dial" | "input"` — timepicker only, absent opening on the
+  dial. The controller has honoured `viewMode` since 2.4.0 and restores it when the picker closes, so
+  this names the view the field _has_ rather than the one it started on; what was missing was the route
+  from a document or an attribute down to it. Angular, Lit and Plain each gain the matching input, and
+  Angular's dynamic form forwards the document's value.
+
+  A view that is not one of the two is reported as `MDY_DYNAMIC_UNOPENABLE_VIEW` and dropped, leaving
+  the field opening on the dial.
+
+  `MDY_TIMEPICKER_DEFAULT_FORMAT` is published beside `MDY_TIMEPICKER_INITIAL_VIEW`, and the four
+  renderer sites that each spelled `"24h"` out now read it. Two copies of the _view_ default had
+  already drifted past ADR 0116 — Lit's resting state and Angular's clock component still opened on the
+  twelve-hour clock — which is what a default written four times does and what tests cannot see, since
+  a default is only read when nothing else answers.
+
+  `timepickerPlaceholder(format)` is published for the same reason one field over: the hint was written
+  out in two renderers and absent in the third, so one document told a person what to type in two
+  adapters and nothing in the other. Plain now shows it.
+
+  Migration: none. A document that says nothing behaves exactly as before.
+
+- f962df5: A colour preset can carry the name it is known by
+
+  A hexadecimal is not a name. Read out, `#4361ee` is six characters somebody has to hold in their head
+  to compare with the next one — so a panel of ten was, to anyone who could not see it, ten strings that
+  differ in the middle.
+
+  `presets` now takes `{ value, label }` as well as a string, and the renderers announce the label.
+
+  **This library ships no names for its own defaults, deliberately.** A generic palette naming `#4361ee`
+  would be guessing, and an approximated colour name is worse than the hexadecimal because it claims a
+  meaning it does not have while the hexadecimal claims none. The knowledge lives where the palette
+  does: a team's colours have names, and this is where they say them. An entry with no label is still
+  announced by its value — poor, and honest.
+
+  **Migration.** `MdyDynamicColorsField["presets"]` widens to `ReadonlyArray<string | MdyColorPreset>`.
+  A document that writes strings is unaffected; code that _reads_ a parsed document and assumed
+  `string[]` now has two shapes to answer, and `colorPresetsOf` normalises either into value and name.
+
+- ca7a0fa: `MdyDynamicFormConfig` is the family, not version one
+
+  The type described version 1 alone — `{ version: 1; fields }` — so a consumer typing their document
+  against the name the package advertises was _required_ by the compiler to write the one version the
+  parser had just stopped accepting. The migration ADR 0136 carries — set `"version": 2` — was not one
+  the published type allowed.
+
+  It is now the versions this contract has. `MdyDynamicFormConfigV2`, `V3` and `V4` remain for a
+  consumer who wants to say which one they wrote, and `MdyDynamicFormDocument` is unchanged in meaning.
+
+  Verified in both directions against the built package: a document declaring `version: 2` compiles, and
+  one declaring `version: 1` is refused by the compiler as it is by the parser.
+
+- 59e7af2: A verdict is said to somebody who has been at the field
+
+  Two renderers disagreed about when a refusal reaches a person, and each was half right. plain showed
+  every error the moment the form was mounted: a required field nobody had reached was painted red and
+  told them so, which is being told off for arriving. lit showed none until the field was touched: a
+  value arriving from a draft or a server that the field cannot hold left the control marked wrong with
+  the reason withheld — over something the person never typed and cannot correct without being told.
+
+  **Neither could do better, because nothing distinguished the two kinds of refusal.** A rule the person
+  has not answered yet and a value already in the field are both "invalid" and are not the same news.
+
+  - **`MdyFieldError.origin` gains `"shape"`**, and `valueShape` marks its refusals with it. A validator
+    can now declare the origin of what it refuses; where it declares none, the origin is `"validation"`
+    as before. **If you switch exhaustively on `origin` with no default, add the case.**
+  - **`errorsVisible` answers the question it was always asked**: shown once the field is touched, or
+    immediately for a refusal about what is already there — `shape`, `server`, `entry`. A person can
+    neither cause those by inaction nor see the reason unless it is said.
+  - **`visibleErrorsOf` is exported**, because nine plain call sites were each deciding it separately.
+  - **`aria-invalid` follows what is shown, not what is wrong.** A control marked wrong beside a message
+    nobody rendered is a verdict with no explanation. Every field projection reads the same rule.
+
+  Also in lit, found by the specs this unblocked: a multiselect never marked itself touched on blur, a
+  checkbox's label carried no error class, and a native select pointed `aria-describedby` at nothing —
+  so its refusal was announced with no way to read it.
+
+- e65f631: The order of what was chosen can be changed, and by a keyboard first
+
+  A multiselect's value has kept arrival order all along, and nothing could change it: reordering meant
+  removing and re-adding, which can put a value last and nowhere else — and only from the option list,
+  rather than from the chip in front of the person.
+
+  `move-selected` is the one intent that moves a chosen value, so the keyboard and a drag are two doors
+  onto the same thing rather than two mechanisms that can disagree about what an order is. It moves the
+  _distinct_ values in the order the strip draws them, and a value taken three times moves as one thing,
+  because the chip a person is dragging is the quantity. `to` is clamped rather than refused: a control
+  asking for one past either end means "as far as it goes", which is what holding an arrow down does.
+
+  `MDY_WIDGET_KEYBOARD` gains `Alt+ArrowLeft` and `Alt+ArrowRight` at `intent: "reorder"`, declared for
+  any kind whose anatomy holds a `chips` part. `Alt` because the bare arrows already belong to wherever
+  focus is — a strip is scrolled with them, a list is walked with them — and a key that means two things
+  depending on where you are is a key nobody trusts.
+
+  A binding carries `by: -1 | 1` rather than leaving a renderer to read the key, because _earlier_ is not
+  _left_: the strip runs in the writing direction, so in a right-to-left document `ArrowLeft` moves a
+  chip later. A renderer reading the key would have to know that; reading the direction, it does not.
+
+  `MdyDynamicOptionsField.reorderable` decides whether any of it is offered, and it is **off by
+  default** — most lists have an order nobody chose, and a set of filters has nothing to rearrange.
+
+  Angular's dynamic form now forwards `searchable` and `reorderable`: it forwarded neither, so both were
+  capabilities a document could declare and that renderer alone could not reach.
+
+- fc493c5: The layout nesting limit rises to 32, because it was on the wrong axis
+
+  `MDY_LAYOUT_MAX_DEPTH` was six, on the argument that nobody answers a question whose applicability
+  depends on six earlier answers. ADR 0160 stated that plainly so it could be contradicted, and it has
+  been: the argument is about **conditionality** and the constant limits **arrangement**.
+
+  Six nested sections are "Address → Billing → Registered office". Measured, the field at the bottom of
+  them is active, visible and conditional on nothing — there is no memory cost because there is no
+  earlier answer to hold. Meanwhile a chain of eleven rules, each gating on the answer before it,
+  mounts with no refusal at all: the axis the argument defends was never limited.
+
+  The cap stays, at 32, as what it was really doing — a bound against a structure arriving from outside
+  that would otherwise drive unbounded recursion through a parse. It remains a constant for the reason
+  it always was one: a limit an attacker's input can raise is not a limit.
+
+  **Migration.** A structure between seven and thirty-two levels now mounts where it was refused.
+  Nothing that was accepted becomes refused. A consumer reading the constant rather than writing `6`
+  follows this without editing anything.
+
+  ADR 0161 supersedes 0160, which is kept: its reasoning is what makes the new record legible, and the
+  argument it makes would justify a limit on rule chains, where there is none today.
+
+- 052db3e: Two judges of one address
+
+  An `email` field is judged twice: by `<input type="email">`, which the kind renders, and by the form.
+  The two disagreed in both directions.
+
+  - `a@b` — the browser accepts it, the library refused it, so a person was told a valid address is
+    wrong.
+  - `ünicode@example.com` — the browser refuses it, the library had no objection, so inside a native
+    `<form>` the submission was blocked with nothing on the page to explain why.
+
+  **The `email` validator is the platform's rule now**, written out from the HTML standard: deliberately
+  permissive where the browser is permissive, deliberately ASCII because the browser refuses anything
+  else. A stricter rule is a rule the control does not enforce, and every difference between them is a
+  form that says one thing and submits another.
+
+  **And the kind carries it.** `kind: "email"` attaches the same rule through `kindValidators`, so a
+  document that declares the kind and no validators is no longer a field the browser judges alone. A
+  document that also writes `validators: { email: true }` adds the same rule and the same sentence,
+  which the engine already says once.
+
+  **If you relied on the old rule** — a required dot, non-ASCII accepted — that behaviour is gone; the
+  control never agreed with it.
+
+- ad85b8b: Version 1 of a dynamic form document is no longer accepted
+
+  Three runtimes read this contract and only TypeScript accepted `version: 1` — the Rust and Java
+  readers have 2, 3 and 4. A version two of the three refuse is not a version the contract has; it is
+  one parser being lenient, and a document that builds in one place and does not exist in the other two
+  is what a cross-runtime contract exists to prevent. ADR 0136 records the decision.
+
+  Migration, and it is one line: a document declaring `"version": 1` declares `"version": 2`. Nothing
+  else about it changes — version 1 differs from 2 in the envelope's number and not in the fields.
+
+  The refusal says which version it refused, which versions this contract has, and what to write
+  instead. A bare field array is unaffected: it declares no version, it is the shape most callers pass,
+  and it is still read.
+
+### Patch Changes
+
+- ff00fb6: A control whose form has ended is out of play
+
+  A framework destroys a model and removes its nodes at two different moments. In the window between
+  them the controls are live: they take text, the browser paints it, and the write is refused — the
+  form keeps the value it ended with and will never submit the other one. Nothing on the page said so.
+
+  `destroy()` now takes every field out of play, and a handle handed out before the end answers
+  `interactivity: "disabled"` instead of falling back to `"enabled"` when its record is gone. Renderers
+  already read that verdict, so the controls grey out wherever they are drawn.
+
+  Migration: a consumer reading `disabled()` or `interactivity()` from a handle after `destroy()` gets
+  `true` / `"disabled"` where it used to get `false` / `"enabled"`. Values, `getValue()` and
+  `submitValue()` are unchanged — they still answer with what the form held when it ended.
+
+- 3a15797: A guard claims only what the door takes
+
+  `isPathRef` answered on the `path` member alone, so it was the one operand guard that said nothing
+  about what else the object carried. `{ path: "a", self: true }` was handed to a consumer as a path
+  reference while `validateExpression` turned the same operand away — a guard published for telling the
+  shapes apart claiming one the contract will not accept.
+
+  It asks `namesOneThing` now, as `isSelfRef`, `isRootRef` and `isContextRef` already did. One operand
+  names one thing (ADR 0092), at every door that reads it.
+
+- d8b3b54: A rule already anchored at both ends is written into `pattern` unchanged.
+
+  `<input pattern>` is implicitly anchored, so a rule that is not anchored is padded — `a+` becomes
+  `.*(?:a+).*` — and the group is what keeps an alternation from binding across the padding. A rule
+  that already carries `^` and `$` needs neither: it was still wrapped, and `^[A-Z]+$` reached the DOM
+  as `(?:^[A-Z]+$)`.
+
+  Nothing a browser does changes. What changes is what a person reads — in the DOM, in a screenshot, in
+  a report of what the control asks for — and `constraints().pattern` now returns the rule as it was
+  declared. Padding and its group are unchanged wherever a rule is not anchored at both ends.
+
+- 0883045: An argument refused where it arrives
+
+  `field(initial, validators, options)` stored whatever was put in the second position. The third
+  argument is the one a reader reaches for — `sensitive`, `when`, `sanitize` all live there — so the
+  ordinary mistake is passing it second, and the constructor said nothing: the failure arrived from
+  inside `createForm` as `node.validators.some is not a function`, naming a member of a node the author
+  never wrote, about a call two doors back.
+
+  It is refused at the door now, in the words of the call that made the mistake: what was passed — an
+  object, one function, `null`, a string — and where it belongs. ADR 0057 decided this for the
+  list-taking setters; the rule had reached the setters and not the constructor.
+
 ## 2.4.0
 
 ### Minor Changes

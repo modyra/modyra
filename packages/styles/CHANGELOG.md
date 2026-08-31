@@ -1,5 +1,1154 @@
 # @modyra/styles
 
+## 0.9.0
+
+### Minor Changes
+
+- 37f5eab: A closed multiselect shows what was chosen, not everything on offer
+
+  The field drew its whole option list inline, so three options ate 148–209px of a control and thirty
+  would have eaten ten times that. The closed control now shows the **chips for what was chosen**, in one
+  line that scrolls, inside the control a person presses; the options are seen in the popup, where there
+  is room for them.
+
+  **The anatomy, and what moved.**
+
+  ```
+  inputWrapper                the field's box, carrying its state classes
+  └── trigger                 what a person presses; role="combobox"; the label names it
+      ├── chips               what was chosen, in the value's own order
+      │   └── chip            a container: label, count, remove — and the two steppers in counter mode
+      ├── placeholder         when nothing is chosen
+      └── arrow               the trailing affordance, decorative
+  popup
+  └── options                 the options, in one place
+  ```
+
+  - **`searchButton` is removed.** The magnifier is gone and the control opens the popup, so
+    `MDY_POPUP_OPENERS.multiselect.opener` is `"trigger"` and `role="combobox"` moves with it — a
+    button that holds no value should never have carried the role that says it does. A consumer
+    selecting `.mdy-multiselect__search-btn` selects `.mdy-multiselect__trigger` now.
+  - **`listbox` is removed.** It existed to name the popup's copy of a grid the field also drew. With
+    one grid there is one part, and two names for it could only disagree.
+  - **`options` moved into the popup**, so a renderer that keeps an inline copy fails the DOM contract
+    rather than being caught by a test. Angular was drawing both, every option twice.
+  - **`chip` is a container**, not a button, because it holds controls. `chipRemove` is new. A repeated
+    value is a **quantity** — `increment` takes `["a"]` to `["a","a","a"]` — so one chip per distinct
+    value carries the count and the steppers, and undoing one decision is one gesture rather than three.
+    `.mdy-chip--counter` remains styled and emitted by nobody under the scroll decision.
+  - **`readonly` joins the shell's control states.** It was supported by every field, declared by none,
+    and painted nowhere: a form locked for review looked exactly like one waiting to be filled in.
+    `.mdy-input-wrapper--readonly` keeps full contrast and pointer events, because a read-only field is
+    in play and a disabled one is not.
+  - Three i18n strings name the chip's controls: `chipRemoveLabel`, `chipDecrementLabel`,
+    `chipIncrementLabel`.
+
+  **Lit's datepicker and timepicker now open from their control**, which the contract has named as their
+  opener all along. Reading the opener from the catalogue rather than from a list written out in a test
+  is what exposed it — and the same list, joined into one selector, had been returning a daterange's
+  start input for the datepicker's opener, so three unrelated widgets read as broken.
+
+- 9cdd4ef: Reordering has a pointer path that is not a drag
+
+  WCAG 2.5.7 asks for a single-pointer alternative to any dragging movement, **independently** of a
+  keyboard path — a keyboard alternative does not discharge it. Somebody using a pointer who cannot hold
+  and drag, because of a tremor or a head pointer or a switch, has no way to reorder otherwise.
+
+  A reorderable chip gains two move controls: one press, one place, no drag. They are the same
+  `move-selected` intent the keys use, so the two doors cannot come to disagree about what an order is,
+  and they announce the same sentence.
+
+  Not focusable, like every other control on a chip. ADR 0128 settled that a chip is one operable thing
+  and its controls are reached through it — adopting `role="grid"` would have put them back in the tab
+  order and then supplied `Enter`/`F2` as the way to reach them again, which is scaffolding for a problem
+  the roving index already removed.
+
+  Drawn only where the field asked to be reorderable, so a set of filters gains no furniture. Their
+  marks are drawn in CSS rather than written as text, for the reason the remove control's is: a
+  character in a button is picked up by an accessible name composed from contents.
+
+  Fixes a live-region defect found while measuring it: a render describing no change wrote `""` over the
+  sentence just spoken, taking it back before a reader could reach it. A second pass over the same state
+  is an ordinary thing for a renderer to do, so the region is now left alone when there is nothing new
+  to say.
+
+- 76c0865: The chips strip scrolls, and `searchable` decides whether there is a search
+
+  **`searchable` was ignored by every multiselect renderer.** The document has declared it all along and
+  all three built the filter box regardless, so a field that asked for no search got one — and a field
+  that asked for nothing got one too, which is what made the flag look like it worked. The slot was
+  never the problem; three renderers each dropped it.
+
+  **The strip scrolls now, and the reason it did not is worth recording.** Nothing overflowed because
+  the truncation was absorbing it: chips shrank until they fit, so `overflow-x` had nothing to do and
+  "scroll to see the rest" never happened — they just got narrower until nothing was legible. The chip
+  gains a floor width, which makes the overflow real, and the ellipsis then means _this one is clipped_
+  rather than _everything is_.
+
+  One layer up, the field's box was growing to fit its chips: a flex item's automatic minimum size is
+  its content, so the control was as wide as the value was long — the same expansion the inline option
+  list used to cause, one axis over. `.mdy-multiselect` takes `min-width: 0`.
+
+  Deliberately **not** `scroll-behavior: smooth`. A chip scrolled out of the strip is still
+  Tab-reachable and focusing it brings it back, but smooth makes that arrival take about half a second,
+  during which the focused chip is still off screen and anything reading the scroll position sees the
+  old one. A focus ring nobody can see yet is the same defect as a focus ring nowhere.
+
+  **The chip's controls draw their marks in CSS rather than writing them as text.** An accessible name
+  composed from an element's contents picks up a `×`, so the chip announced itself as "Opzione A 2 ×"
+  unless somebody remembered to exclude it. A mark that is never text cannot be read out by accident.
+  The caret at the trailing edge is drawn the same way, from the same glyph token as the select's.
+
+  A chip narrowed to an ellipsis carries its full name in `title`. That is the pointer's half; the
+  tooltip a theme draws on focus and long press is the half that reaches a keyboard and a touch.
+
+- 32e7440: Absent for configuration, disabled for state
+
+  A control that a field's design includes is now drawn whether or not it can act at this moment.
+  `multiselect.clearAll`, `multiselect.wayBackAction` and `file.clear` were declared present only while
+  they had something to do, so they arrived and left under the hands of whoever was aiming at the
+  control beside them — and the two multiselect neighbours are undo and discard-everything. They are
+  required parts now, carrying a `disabled` state, `aria-disabled` and a `--disabled` class: in the
+  page, in the tab order and in the accessibility tree at all times, announced as unavailable, refused
+  when pressed.
+
+  Breaking: `undoIsOnOffer` is gone from `MdyPartPresence`. It expressed "draw this only while an undo
+  exists", which is the rule this release reverses. A consumer reading it for its own presence
+  decision should read the part's `disabled` state instead, or `MDY_ARIA_DISABLED_PARTS`, which names
+  the parts that answer unavailability this way.
+
+  The conformance kit gains the issue code `PART_HIDDEN`: one of those parts found with a `hidden`
+  attribute, or without `aria-disabled`, is now a violation. A consumer matching exhaustively on
+  `MdyDomContractIssueCode` gains a case.
+
+- 7df6f00: One way back, and the clear-all it exists for
+
+  A multiselect had three destructive acts and no way back from any of them: a chip removed, an order
+  rearranged, twelve choices gone. It now has **one** reversal covering the last of them whatever it
+  was — [ADR 0129](docs/architecture/0129-one-way-back-not-three.md) — and the clear-all control that
+  made the question urgent.
+
+  Three undos was the alternative refused, and refusing it is the decision: an undo that covers the
+  loudest act and not the quiet ones teaches a person the control has a way back and then does not have
+  one the next time.
+
+  **How it behaves.** Depth is one. A destructive act replaces the offer rather than stacking on it, and
+  a constructive one — choosing again, incrementing — withdraws it, so the reversal never puts back
+  something the person did not just lose. It is untimed and drawn in the page, never a toast: a message
+  that takes itself away after five seconds is a time limit under WCAG 2.2.1 Level A, and an undo has no
+  exception under it. It names the act, because one control covering three needs to say which:
+  _"Alpha removed — Undo"_, _"Alpha moved — Undo"_, _"12 items cleared — Undo"_.
+
+  **The contract.**
+
+  - `MdyMultiselectFieldState.wayBack` is new and **required**: `{ act, optionKey, count } | null`. The
+    value it would restore stays private — an offer a host can read is one a host can apply to a
+    different moment.
+  - `MdyMultiselectFieldIntent` gains `{ type: "undo" }`.
+  - Three new optional parts: `clearAll` at the trailing edge, and `wayBack` with `wayBackAction` under
+    the control. `clearAll` joins the kind's trailing affordances, so it carries the same hit target as
+    every other control in that column.
+  - `wayBackSentence` is exported: what the offer says, so three renderers cannot word it three ways.
+  - **Five new required `MdyI18nMessages` members** — `clearSelection`, `wayBackLabel`,
+    `wayBackRemoved`, `wayBackMoved`, `wayBackCleared` — supplied in all five built-in locales. A
+    consumer passing a hand-written message table must add them.
+
+  **Layout.** The closed control is a flex row now: the trigger takes what is left and the clear-all
+  sits beside it. As a block it had nowhere to go but under the control, where it overflowed the field's
+  box and the text below painted over it — drawn, and not pressable. For the same reason the way-back
+  row is positioned: the input wrapper above it is `position: relative`, so it paints over the in-flow
+  content that follows and takes the pointer with it.
+
+- 91f61a9: The field's height joins the control scale, and one document is one date
+
+  `--mdy-control-4: max(3.5rem, 56px)` is the height a single-row field takes. It was the literal
+  `3.5rem` inside two `calc`s whose other term was a token, so a theme moving the scale moved everything
+  around a fixed 56 — part system and part number. `DESIGN.md` recorded that as the open question about
+  what the row system is: a kind is in it when its height comes from the control scale, and no kind's
+  did, because the height they all share was not on it. It is now, and the record says so.
+
+  Separately: Angular read a typed date only in the canonical spelling when the field displayed dates
+  that way, so `01/02/2026` was refused where the other two renderers read it. How a control _writes_ a
+  date is its own choice; what a person may _type_ is not one — they are looking at one document. All
+  three now take the canonical form first and the locale's order after it.
+
+- 217a3b7: The steps every length is written in terms of.
+
+  `modyra-scale.css` is tier one: eight scales — space, size, leading, radius, stroke, control, focus,
+  duration — and the only place in the system where a length is a number. Nothing consumes it yet; it
+  exists so that what does can be checked against it.
+
+  Measured before it: 206 custom properties, every one per-component, no shared step of any kind, and
+  167 sizing declarations written as literals — eleven distinct `gap` values, ten `font-size`, sixteen
+  `padding`. The scale was already latent. `0.875rem` appeared seven times and is a type step; `16px`
+  and `1rem` are one step written in two units.
+
+  Each scale states its basis in the header, because a list of numbers gets edited by whoever needs a
+  different number. Three of those bases are conformance rather than taste:
+
+  - **0.75rem is a floor**, not a smallest-so-far: below 12px, text stops being readable for a large
+    population and zoom does not recover it for everyone.
+  - **1.5 line height is the body default**, not the top of the scale, because a reader may set it
+    there and the content must survive.
+  - **28px is the smallest control height that can hold a conformant 24px target**, so it is the floor
+    of the control scale and not a style choice — and 36px holds one with clear zone on each side, so
+    the minimum target size is satisfied by construction rather than by measurement.
+
+  A theme keeps everything it had: it still says what a component is, and may replace this file
+  wholesale to shift every step at once. What it gives up is inventing a value between steps.
+
+- 3246dce: A mark is not a label, and a command does not travel with the value
+
+  A button whose whole visible content is a mark (`×`, `↶`) now hides that mark from the accessibility
+  tree and carries a `title` with the same words as its accessible name. A reader announced
+  "multiplication sign" before the name; somebody driving by voice had nothing to say, because a glyph
+  is not a word. The name itself is unchanged: the criterion about visible text in the accessible name
+  is written for text a person reads as a word, so it does not bite on a mark.
+
+  A multiselect's way back and clear-all keep their place at the field's trailing edge, with the mark
+  that opens the field outermost and a full target of empty space between the two commands. Standing
+  them beside the chips they act on was tried and measured: the chip strip's width is the length of the
+  value, so both slid about 90px whenever a value arrived or left — putting the control that discards
+  the field where the control that restores a value had just been, under the hand reaching for it. A
+  control's position may depend on the field; never on the value.
+
+  The `file` field's clear moves for the same reason: below the list of chosen files its position was
+  the number of files, so it slid every time one was added or removed — under the hand of somebody
+  taking several off one at a time. It stands with the control that picks files now, and the contract's
+  reading order for `file` follows: `content`, `clear`, `fileList`, `fileItem`, `rejected`.
+
+  Fixed: a lit `file` field holding a value that is not a `File` — a restored draft, a server's answer
+  — threw on its first paint instead of drawing a row without a caption.
+
+### Patch Changes
+
+- 454a168: One caret, one meaning, both kinds
+
+  The multiselect's caret pointed the same way whether its list was open or shut, while the
+  single-choice list's turned. The catalogue declared `open` on one kind's `arrow` part and not on the
+  other's, so nothing was inconsistent enough to fail: each contract agreed with itself.
+
+  `multiselect.arrow` now declares `open`, and the three renderers write the modifier the same way the
+  select's do — derived from the part's own class rather than spelled out, so a rename in the catalogue
+  moves the rule and the renderer together.
+
+  **The two carets were also different shapes.** The select drew `CHEVRON_DOWN` from the icon table
+  while the multiselect left its box empty for the stylesheet's fallback square. Both now draw the same
+  icon; the fallback stays for a host that ships no icons, which is what it is for.
+
+- 9a98126: A chip's ceiling bounds it again.
+
+  The previous release replaced two constant caps with `max-width: 100%`, meaning "as wide as the strip
+  and no wider". **Inside a scroller `100%` resolves against the scrolled content**, and the scrolled
+  content is as wide as the chips make it — so the ceiling was the thing it was meant to bound, and a
+  long value grew past the field that holds it:
+
+  ```
+  before   field 684px  ·  chip 1299px  ·  label 1177 of 1177, nothing cut
+  after    field 684px  ·  chip  668px  ·  label  594 of 1177, cut with an ellipsis
+  ```
+
+  The machinery for shortening was still there — `overflow: hidden`, `text-overflow: ellipsis` — with
+  nothing left to bite on.
+
+  The ceiling is now `100cqw` against the widget's box, which takes its width from the field rather than
+  from the chips. The strip cannot be the query container: its own width _is_ the chips, and a container
+  that sizes to its contents cannot also size them — asked to, it collapses to zero.
+
+  The strip still scrolls. Scrolling is for reaching the chips past the edge, not for reading one chip in
+  instalments.
+
+- b287f3f: A chip's ceiling is the strip it sits in, not a constant.
+
+  A value chip was capped at 12rem, and a second cap of 11rem sat on the base chip. Both are constants,
+  so a label was cut while three quarters of the field around it was unused — and a label cut to a few
+  characters renders two different values identically, which is the strip no longer saying which one was
+  chosen. Bounded by its container instead, a chip is shortened only when one value really is wider than
+  the room there is, and the strip scrolls before that.
+
+  `--mdy-chip-max-width` is gone from the base and from the material and iOS themes: a theme that set it
+  was setting a constant this rule no longer has.
+
+- d5e02f1: A value chip stands on the control scale.
+
+  Its height was `calc(var(--mdy-chip-height) - 0.5rem)` — the filter chip's 32px less half a rem,
+  arriving at 24. That is below the floor at which a control can hold a conformant 24px target, and it
+  was reached by an arithmetic nobody could argue with because nothing said what it was for.
+
+  It is `--mdy-control-1` now: 28px, the smallest height that can hold that target with its border. The
+  strip is 4px taller for it, and the remove button no longer needs the 24px floor it was carrying — it
+  grew into the chip's border to reach a size the chip could not give it. The floor belongs to the
+  control scale, not to every control that has to reach it.
+
+- 8048151: A choice is said out loud, and a multiselect is as tall as the controls beside it
+
+  **A choice landed and nobody was told.** The chips strip is the confirmation that something was
+  chosen, and it is the one a person using a screen reader does not get. The multiselect gains an
+  `announcement` part — a live region carrying the whole selection, not the last change, because two
+  announcements have to differ for the second to be read at all: a region written once announces the
+  first choice and swallows every one after it. The words come from the contract, so all three
+  renderers say the same thing.
+
+  **A multiselect was taller than the controls beside it**, and only in one theme. Every other control
+  takes the field height as a floor and holds a line of text, so the floor is also its ceiling; a
+  multiselect holds chips and had a floor alone, so a row that read 38px for a text field read 54 for a
+  multiselect and 62 once it held twelve. `max-height` gives it the ceiling its siblings get for free.
+
+  The eight pixels between two chips and twelve were the horizontal scrollbar: it is laid out _inside_
+  the strip and adds its thickness to the height, so the control grew by the width of a scrollbar the
+  moment its chips overflowed. The bar is not drawn now — chips visibly running past the edge is the
+  affordance, and it was never the only one.
+
+  Verified against all five stylesheets rather than the default alone: `modyra`, `modern`, `material`,
+  `ios` and `ionic` each give every kind one row height, and a multiselect holding twelve chips is the
+  same height as one holding none.
+
+- 6fab2aa: A closed popup's contents are not drawn in the page
+
+  The browser hides a closed popover, and any author rule that states `display` on the panel beats it.
+  A panel class that lays its contents out — `.mdy-multiselect-overlay__panel { display: flex }` — is
+  exactly such a rule, so Angular's shut multiselect drew its whole option list in the page: every option
+  seen twice, announced twice, and clickable in two places.
+
+  `[popover]:not(:popover-open) { display: none }` is stated once in the foundation rather than by
+  scoping each panel class to `:popover-open`. The property being defended belongs to the popover and
+  not to any one widget, and a class added later would otherwise have to remember.
+
+- 57fcb30: The reading position in an option list is visible
+
+  A multiselect's cursor was announced through `aria-activedescendant` and drawn by nobody. Lit and
+  Angular each set `mdy-chip--active` on the option the keyboard stands on — a class the catalogue never
+  declared and no stylesheet drew — and plain set nothing at all, because it applied the projected part
+  and then wrote a locally built class list over it.
+
+  `multiselect.option` now declares the `active` state, the projection emits it for the option
+  `activeKey` names, plain stops overwriting what it was given, and the theme draws it. Renderers
+  already using the class keep working unchanged; one that draws its own cursor should drop it in favour
+  of the part's.
+
+- ff19aea: A colour panel offers a way to every colour, not only to twelve
+
+  The field took any colour typed into its hex box and offered twelve to anyone pointing. Two routes
+  into one field that did not arrive at the same place, and neither could see the disagreement: a person
+  who points had no way to learn that typing goes further, and a person who types had no way to see
+  where their colour sat among the ones offered.
+
+  The panel now holds a **thirteenth swatch** carrying the colour picked by hand — of exactly the same
+  kind as the twelve, so it can be selected and re-selected — and, **after the grid and outside it**, a
+  `Custom…` button that is always and only a door to the platform's chooser.
+
+  Two elements rather than one: a square that were a door when empty and a colour when full would do
+  different things depending on how it was set. Pressed full, either the chooser opens and the tint
+  cannot be re-picked, or it selects and the door is gone. ADR 0158.
+
+  The door is declared a child of the `popup`, which is where it is drawn. Left to the default it read
+  as a child of the root, and a record describing an anatomy no renderer builds is one that will be
+  believed by somebody who cannot see the page.
+
+  **Migration.** `MdyI18nMessages` gains `colorCustomEntry` and `colorCustomValue`; a consumer with its
+  own message table supplies them. `colors` gains an optional `customEntry` part.
+
+- 3bc4695: The two modern units carry a literal fallback.
+
+  `max-width: 100cqw` and `min-height: 1lh` are each preceded by a literal, which is the cascade's own
+  fallback: a browser that does not know the unit drops the second declaration and keeps the first.
+  Measured with an unknown unit standing in for an unsupported one — `320px` and `21px` instead of
+  nothing at all.
+
+  Without it, the failures are silent and each undoes a decision: a chip with no ceiling grows past the
+  field it sits in, and the way-back row reserves no line, so the page steps down 21px on every removal.
+
+  **Neither may be stated through a custom property.** A `var()` parses whatever it holds, so the failure
+  moves from parse time to substitution — where it takes the _inherited_ value rather than the
+  declaration above, and the fallback is gone with the linter still green. The tier-1 scale therefore
+  holds plain values, and a rule that wants a modern unit writes it with its literal beside it.
+
+- b7f8ee4: The chip strip wraps by how wide the field is, not how wide the window is.
+
+  WCAG 1.4.10 asks content to reflow to 320 pixels without a second scroll direction, and the strip
+  answers by wrapping at that width. It asked the **viewport**, and the thing it is about is the strip:
+
+  ```
+  viewport 1400, field 284   before: no wrap, 1067px of chips in 252px of view
+                             after:  wraps
+  viewport  320, field 288   wraps, before and after
+  ```
+
+  A multiselect in a narrow column inside a wide page was in exactly the state the rule exists to
+  prevent, and the query could not see it. **A component that asks the viewport is guessing about a page
+  it cannot see.**
+
+  The box already declares itself a container — the chip ceiling reads it — so this costs nothing but
+  the word. The threshold stays 320 and now means the field: at a 320px viewport the field measures
+  about 284 with the page's own padding, so it covers that case and the narrow-column one with it.
+
+  This was the sheet's only width media query. The other fifteen are preferences and capabilities —
+  `prefers-color-scheme`, `prefers-reduced-motion`, `forced-colors` — which are the window's to answer.
+
+- 0050769: A multiselect's chip strip is a sibling of the control that opens the list, not its child.
+
+  `MDY_WIDGET_CONTRACTS.multiselect.parts.chips` now hangs from `inputWrapper` rather than from
+  `trigger`, and is declared before it so the reading order is the drawing order. Every renderer draws
+  it beside the opener.
+
+  **Why it had to be structural.** Each chip carries a button that takes a value off, and the opener is
+  a `<button>` — invalid HTML, and worse than invalid: a press aimed at the opener could land on a
+  delete, and which one depended on how long a chosen label happened to be. Aligning the field's
+  affordances moved that hazard without removing it — sampled across the opener's midline it went from
+  the midpoint to 17% of the whole line — which is what a rule expressed in geometry does. The
+  invariant is structural instead, and checkable as one: _the opener has no operable descendants._
+
+  Pressing the field's empty area still opens the list. It is now a behaviour of the box, which
+  forwards a press on **its own** area; a press that lands on a chip never reaches the opener, because
+  a chip is not inside it.
+
+  `@modyra/styles`: the strip takes the width its chips need and the opener takes the rest. Inside the
+  opener the strip had nothing to share the row with; as siblings, a strip that still grew covered the
+  opener and the opener covered it back.
+
+  **Migration for a renderer implementing this contract**: draw the strip as a sibling of the opener
+  inside the field's box, before it; forward a press on the box's own area to the opener; and do not
+  give either the full width of the row.
+
+  See ADR 0142.
+
+- 5631dcc: A target keeps its floor when the page shrinks the root.
+
+  A `rem` grows with a reader who enlarges their text — and **shrinks with an application that writes
+  `html { font-size: 62.5% }`**, the ten-pixel trick, still common. Nothing here controls that
+  declaration and nothing can see it.
+
+  Measured at three roots, identically in all three renderers:
+
+  ```
+  62.5%   chip 202×18 · its buttons 32×16 · clear-all 18×35     under the 24×24 floor
+  100%    none
+  200%    none
+  ```
+
+  **200% is the direction everyone tests, and a target can only grow there.** 62.5% is the only one where
+  it falls through, and it was the one nobody ran.
+
+  The control steps and the affordance sizes are `max(<proportional step>, <floor>)` now: the step still
+  rises with the reader, and it cannot fall through a conformance floor on the way down. The scale's own
+  comment already said _"the floor is not a style choice"_ — the value did not carry it.
+
+  `px` for strokes and the focus ring stay `px`, for the reasons already recorded.
+
+- f2a4c03: A label that floats where the text begins
+
+  The floating label was positioned with `left` and shrunk from `transform-origin: left top`, so under
+  `dir="rtl"` it stayed on the left while the field it labels ran the other way — measured 10px from
+  the left in both directions, on a control whose own text begins 10px from the right. At rest the
+  label stands in for the placeholder, so it belongs at the edge that text starts from.
+
+  `inset-inline-start` now, with the origin flipped for `rtl` because `transform-origin` has no logical
+  keyword with usable support — so the one case that needs it is stated rather than derived.
+
+  No screenshot changed, and that is the finding underneath: **nothing on any demo page draws this
+  mode**, in any of the three renderers, though two of them publish it. A block of the foundation was
+  covered by no picture and no check. `e2e/lit/a-label-that-floats-where-the-text-begins.spec.ts` is
+  the first, applying the class lit's own `floatingLabel` property toggles.
+
+- 4c8cf60: A label can say it was never written
+
+  Everything inside a field is named by pointing at its label, so a field a document gave no name to
+  had to be given words anyway — `fieldAccessibleName` chooses them. Plain marked such a label with a
+  class of its own invention so a theme could keep it out of sight, since a name is owed to a screen
+  reader and a heading is not.
+
+  `unwritten` is now a state of the shell's label, and `projectFieldShellA11y` emits it when a caller
+  passes `nameSources` and neither a label nor an `aria-label` was written. Callers that pass nothing
+  are unaffected: the label carries no such claim and nothing changes.
+
+  The theme also gains the two chip states it declared and never painted — a chip in flight during a
+  drag, and the tooltip that gives the full name of a chip the strip had to cut short, which until now
+  was unstyled text that widened the row it was explaining.
+
+- a0e0484: A read-only field says so to the eye, not only to a screen reader
+
+  Every kind carried `aria-readonly="true"` when locked — measured, all twenty-four cases across the
+  three renderers — and **seventeen of them looked exactly as they had a moment before**. Somebody
+  listening was told; somebody looking tried to type, nothing happened, and nothing explained why.
+
+  The sheet already held the decision and the reason for it: a read-only field keeps its full contrast
+  and its pointer events, because it is _in play_ — focusable, submitted, validated — and says it is
+  locked with a surface of its own rather than by fading, which is what `disabled` does. What was
+  missing was the state reaching the kinds that draw their own frame and never sit in an input wrapper:
+  a checkbox, a switch, a chooser, a slider.
+
+  The rule is now keyed on `[aria-readonly]`, the attribute the projections already emit, rather than on
+  a class each renderer has to remember — it was present in all twenty-four cases while the class was
+  in one. The plain renderer also passes `readonly` to its shell for the three kinds that were not.
+
+  **Zero of thirty-three now change nothing when locked.**
+
+- b1ec5c8: Four marks survive a forced palette.
+
+  When a person turns on a high-contrast palette, the system replaces backgrounds, borders and text
+  with colours it guarantees. Two techniques in this sheet conveyed meaning by colour alone and both
+  came out blank:
+
+  - **A mark made by masking a coloured box.** The mask survives — the shape machinery is untouched —
+    but the box it clips is repainted the surface colour, so the mark is still being drawn, in the
+    colour of what is behind it. The chip's remove and move marks are drawn that way. A comment beside
+    them claimed a mask "takes the system's own colour"; measured, only the shape survives, and the
+    comment has been corrected.
+  - **A box that is only a fill.** The toggle's thumb, and the slider — whose line is a gradient, and a
+    forced palette drops background _images_ outright. Its track and its handle both vanished, leaving
+    a control that keeps its size, its name, its role and its keyboard with nothing on screen, for
+    exactly the people who turned the palette on because they could not see well enough without it.
+
+  Repainted in the system's own text colour, which a forced palette keeps. The slider's line is drawn
+  as a border and its handle where the platform actually puts it, because neither survives as a
+  background.
+
+  Not `forced-color-adjust: none`: that opts the element out of the palette and keeps our colours for
+  the one person who has said they cannot use them.
+
+- 8007ed6: Pressing the mark that says "this opens" no longer empties the field.
+
+  Reported by a person, reproduced in all three renderers. Scanning what answers a press across the
+  caret, at its own height:
+
+  ```
+  before   1144 clear-all   ← the caret starts here
+           1160 clear-all   ← clear-all starts here
+  after    1144 trigger     ← the caret's press opens the list
+           1160 clear-all
+  ```
+
+  **A 44px target on a 28px control has sixteen pixels to put somewhere, and at a multiselect's trailing
+  edge both directions are taken**: outwards is whatever the form draws next — a press three pixels past
+  the border once activated the colour toggle, which is why it was grown inwards — and inwards is the
+  caret, which is exactly sixteen pixels wide. Grown inwards it covered the caret whole: the value went,
+  the list did not open, and nothing said why.
+
+  No choice of direction resolves that. What does is that the overlay is not needed: the floor is 24×24
+  (WCAG 2.5.8, the exception `DESIGN.md` already records for stacked steppers) and both controls are a
+  control step wide and the row's full height. **The box is already the target.** The overlay was left
+  from when it was not.
+
+  `a-target-too-small-to-hit` is green, so nothing fell under the floor with it.
+
+- 816c6bd: Thirty-one declarations move onto the scale, most of them the timepicker's.
+
+  A length written in `px` stays where it is while everything around it grows for a reader who enlarges
+  their text, and a length written as a literal is a value nothing else in the library shares. These are
+  now steps where a step is exact — `gap: 16px` is `--mdy-space-4`, a 20px glyph is `--mdy-size-5` — and
+  `rem` where none is.
+
+  Three are judgement rather than arithmetic:
+
+  - **A date control's right-hand clearance** was `40px` and is now the affordance column's own
+    arithmetic, `calc(box + inset * 2)`. Four pixels tighter, and it follows the column instead of
+    sitting near it.
+  - **The timepicker's mode toggle** was 32×32. It is a control inside a dialog, so it takes the step
+    every other in-field affordance takes.
+  - **The hour and minute numerals** are 45px, which is no step and should not be forced into one: a
+    numeral read across a room is not a word read in a line. The size scale gains a display step at
+    Material's display-medium, exact at the same 45px.
+
+  `em` is converted along with `px`, for the reason `DESIGN.md` gives for leading: it multiplies a size
+  the theme chose by a number the host chose, and only some of those products land on the pixel grid.
+
+- f0b4f7d: A name for a field nobody named
+
+  A document may declare no label — the published corpus does — and everything inside a field's shell is
+  named by _pointing at_ that label. With no words in it, a `radiogroup`, a `grid` and a `dialog` are
+  announced as their role and nothing else: "group", "grid", "dialog", with no way to tell which field a
+  person has landed in.
+
+  Two repairs, at the two levels where the question is answerable:
+
+  - **The option projection names the group itself** where no label was written — `aria-label` from
+    `fieldAccessibleName` rather than `aria-labelledby` pointing at an empty element. A reference to
+    nothing is not a name, and the contract already held the order to choose by.
+  - **plain's shell writes the fallback into the label** and keeps it out of sight. Every reference
+    inside the field then resolves to words, whichever part made it. `clip-path` rather than
+    `display: none`, which would take the label out of the accessibility tree along with everything
+    pointing at it — a name is owed to a screen reader, a heading nobody asked for is not.
+
+- a268ec7: A name the strip had to cut can be read without a pointer
+
+  A chip whose label does not fit is cut off, and the only way to read it was the `title` attribute —
+  which never appears for a keyboard or a touch user, who are exactly the people who cannot widen the
+  chip. WCAG 1.4.13 asks that content revealed on hover be reachable on focus as well.
+
+  Focusing or hovering a chip now reveals its full name in a `role="tooltip"` element the chip is
+  described by. The new optional part is `chipTooltip`, and it belongs to the **control**, not to the
+  chip: a child of the chip is part of the chip's own text, and the name a chip composes from its
+  contents said the label twice. One element per control, moved to whichever chip is being named.
+
+  `chipTooltipOffset` is exported — where the tooltip sits in the control's coordinates, taken against
+  the strip the chip scrolls in, so a chip scrolled halfway out is named where it is drawn.
+
+- 840fec6: A colour panel keeps its colours under an imposed palette
+
+  Where a person imposes their own colours, the system repaints backgrounds — and six swatches became
+  two. The question "which colour do you want" was asked over a row of near-identical squares, and every
+  contrast check passed the whole time, because each forced tint contrasts well with the surface and
+  nothing measures whether they differ from _each other_.
+
+  This is the one control in the library whose colour is its content rather than its decoration, so it
+  is the one place a forced palette is refused. Only the fill: the border, the selected ring and every
+  word in the panel obey the imposed palette as before, and the swatches carry a name, so they stay
+  distinguishable without their colour at all.
+
+- 3c05c8e: A placeholder the theme can reach
+
+  Angular dimmed its native select with an inline `opacity: 0.6` while nothing was chosen. Two things
+  were wrong with it beyond the duplication: it dimmed the whole control, arrow included, where the
+  other shape dims only the placeholder's own text — and an inline style is the one thing a theme
+  cannot override, so a design system had no way to change it.
+
+  The foundation states it instead, and asks the element about its own state rather than requiring a
+  renderer to say: the entry for "nothing chosen" is the option standing in a native chooser, so the
+  control is showing a placeholder and takes the placeholder's colour. Both renderers of that shape get
+  it without either of them knowing.
+
+- f72210b: A toggle and a checkbox show their refusal to the eye, not only to a reader
+
+  A refusal is painted from `[aria-invalid="true"]`, and everywhere else that attribute sits on the
+  element that is drawn. On these two it belongs to the control — a native input the eye never meets,
+  because the track and the indicator are what is painted — so the rule landed on nothing.
+
+  The field announced itself refused to a screen reader and looked exactly like one that works. A
+  person who can see it tries it, gets nothing, and is told nothing.
+
+  Written through the control rather than on it, which is the shape the checked state already uses two
+  rules away: `.mdy-toggle:has(.mdy-toggle__control[aria-invalid="true"]) .mdy-toggle__track`. The edge
+  takes the error colour, which is what a refusal is drawn in everywhere else in this sheet.
+
+  Found by asking which element carries `aria-invalid` for each kind: four carry it on the surface a
+  person sees, and these two do not. No theme in this repository has a single `--invalid` class rule —
+  the refusal has always been drawn from the attribute — so the gap was exactly as wide as the two
+  kinds whose attribute is out of sight.
+
+- 09522e7: A refused field says so to the eye, not only to a reader
+
+  Every kind announced its refusal — `aria-invalid` was there throughout — and three drew nothing. A
+  checkbox, a switch and a range looked exactly as they had a moment before, so a person who could see
+  the control was told nothing while a person listening was told everything.
+
+  Three separate causes under one symptom:
+
+  - **the sheet painted the box and not the words.** The box treatment names `mdy-input-wrapper`, and a
+    checkbox and a switch carry their own wrapper class, so the rule addressed a block they do not have.
+    The refusal is now stated on the label, which is the one part every kind has;
+  - **a checkbox said it was wrong before anybody had been near it.** It asked _is this field invalid_
+    where every other kind asks _is this refusal one to show yet_ — two answers to one question, and the
+    first is true from the moment a required box is drawn unchecked;
+  - **a range said it too, for a different reason.** Its empty value is an object, and the predicate was
+    not told the kind, so a value that _is_ this field's nothing read as one that arrived from a draft
+    or a server — which is said at once rather than waiting for a turn. `file` had the same shape and is
+    fixed with it.
+
+  The first two made refused and untouched look **identical**, which is why nothing caught them: the
+  state that mattered was the one that never changed.
+
+- c5da035: A multiselect keeps one line, as its own decision record says it must.
+
+  With eight values the chips wrapped to a second line **outside the field's border**, painted over
+  whatever the form drew underneath, and pushed the count and the affordances below the box meant to
+  contain them. Three properties held at once: the row could wrap, the field could not grow, and nothing
+  clipped what did not fit. Any two of those are a design.
+
+  ADR 0127 already decided between them — _"the row keeps one line and scrolls horizontally… a wrapping
+  row grows with what is put in it, so wrapping and that rule cannot both hold"_ — and `modyra-modern`
+  set `flex-wrap: wrap` twice anyway: on the chip strip, and on the widget's own box, where it let the
+  opener and the clear-all drop to a second line of their own.
+
+  Both removed. The foundation still wraps the strip below 320px and only there, where reflow is worth
+  more than equal heights, with the reasoning written beside the rule.
+
+  The two affordances at the end of the field take the row's height and carry their 44px pointer target
+  as an overlay, which is what every other trailing affordance already did.
+
+- ab52de5: A multiselect fits a 320px screen, as ADR 0137 decided it would
+
+  The record chose one line at comfortable widths and several below a breakpoint, on the ground that a
+  page which scrolls down must not also make a person drag sideways to read a value. The rule was
+  written, and it applied to the wrong element: `flex-wrap` sat on the strip while the chips are held by
+  the row inside it, and a flex container with one child wraps nothing however it is told to.
+
+  The row was inserted between the two by a later decision, which left the rule addressing a tree that
+  no longer existed — visible in the sheet, satisfied by nobody. Wrapping is now stated on the element
+  that holds the chips, and the chips are allowed to give way so one long label cannot make the row wide
+  on its own.
+
+- d19a7ad: A slider that wears its own theme, and a control beside its button rather than inside it
+
+  **The slider's track read the raw system colour where every other accented control reads the theme's
+  own accent.** Material tones its primary — `oklch(from …)` — so the slider came out near-black under a
+  theme whose accent is indigo, and the two were never compared because both are "the primary" one
+  indirection apart. `--mdy-comp-slider-active-track-color` follows `--mdy-primary`, with the system
+  colour as the fallback for a theme that does not derive one.
+
+  **And lit's colour field put a native `<input type="color">` inside a `<button>`** — a control nested
+  in a control, which is invalid HTML and reachable only by accident: the outer one takes the press, and
+  what a pointer lands on depends on which browser is asked. The input sits beside the button now.
+
+- 763348b: The multiselect's way back reserves its line, so removing a value moves nothing else.
+
+  The row that offers the undo was rendered only while the offer stood, so every control below the
+  field stepped down 21px when a value was removed and stepped again on the next removal. The row is
+  now always in the page and always one line tall; its sentence and its button are what come and go.
+  At rest there is nothing to read, nothing to announce and nothing to press.
+
+  The offer is deliberately not moved into the control's box: it would trade the vertical shift for a
+  horizontal one, with the clear-all and the caret sliding as it arrived. ADR 0144 records both.
+
+  Angular's row also moves ahead of its overlay panel, which the contract's part order requires and
+  which nothing could observe while the row was conditional.
+
+- 49339e9: The chip strip is a `grid` and every chip a `gridcell`.
+
+  A screen reader switches between its two modes on the role of the focused element, and `listitem` —
+  which the chip was — is not one it switches on. Somebody who arrived at the field **by browsing** — by
+  heading, by landmark, by jumping to the next form field, which is the ordinary way to arrive — pressed
+  an arrow, the virtual cursor moved, focus stayed on the chip, and the strip's entire keyboard model
+  never reached them. Silently, and only on one of the two ways in.
+
+  `gridcell` is a role the mode switches on, and it may contain buttons, which is what a chip is: a thing
+  with up to five buttons in it. `option` switches too and is refused for its own reason — this widget's
+  listbox is the popup a person chooses from, and a strip of what was already chosen is not a second one.
+
+  **Always, not only where a chip holds a quantity.** ADR 0148 supersedes ADR 0138, whose objection was
+  against a grid that arrived _with_ the quantity: a strip that changed role with its contents would
+  change its keyboard model underneath the person who filled it.
+
+  **Migration.** A consumer styling or querying `[role="list"]` / `[role="listitem"]` on the chip strip
+  should read `grid` / `gridcell`. The classes are unchanged.
+
+  **The position moves with it.** A `gridcell` does not take `aria-posinset`/`aria-setsize`; a grid says
+  the same thing with `aria-colcount` on the strip and `aria-colindex` on each chip, which exist for a
+  set that is not all rendered — the same shape as a row that scrolls. A reader announces "Roma, column 3
+  of 12". One cell per chip, never one per button: the index counts cells, so five buttons each a cell
+  would say "column 14 of 72".
+
+  **The strip appears with the first value and goes with the last.** An empty grid announces contents it
+  does not have, so a field nobody has chosen anything in draws no grid at all — what says it is empty is
+  the placeholder. `chips` is therefore optional in the contract rather than required.
+
+  **Removing the last value says so**: `selectionRemovedLast`, new in the message catalogue in five
+  locales, because once the strip is gone nothing else in the page tells a person what happened.
+
+- d2092bb: A chip strip that can say where a chip is
+
+  `aria-posinset` and `aria-setsize` are legal on `option`, `listitem`, `row`, `tab`, `treeitem`,
+  `radio`, `menuitem*`, `article` and `comment`. The strip was a `group` and a chip was a `group` — or a
+  `spinbutton` when it held a quantity — so the position and the count every chip states were written to
+  the DOM and permitted on neither role. ADR 0127 departed from 1.4.10 and paid for it with exactly
+  those two attributes; the payment could not be made in the roles the strip had.
+
+  The strip is now a `list` and a chip a `listitem`, in the catalogue, so all three renderers say it
+  once. `option` would also take them but only inside a `listbox`, and the listbox here is the popup a
+  person chooses from — a strip of what was already chosen is not a second one. A counter chip stops
+  claiming `spinbutton`: a control cannot be both the item at position 3 of 12 and the number 3 of a
+  range, and the role that carries the position is the one the strip owes. Its quantity is in the chip's
+  own name and in the announcement its change makes, so `aria-valuenow`, `aria-valuemin` and
+  `aria-valuetext` are gone from it.
+
+  The row also wraps at 320 CSS pixels — 400% zoom on a desktop viewport — where a single scrolling row
+  stops being a layout and starts being content a person has to operate blind.
+
+  Migration: a consumer styling `[role="group"]` inside the strip, or reading a chip as a spinbutton,
+  reads a `listitem` in a `list` instead. The classes are unchanged.
+
+- 88c8cc7: A strip that says how many are hidden, and the same control opens them
+
+  ADR 0127 lets a multiselect's chip row scroll only where something reaches what leaves it. The
+  gradient added earlier says _there is more_ and names no number; the trigger reveals everything and
+  mentions none of it. A person was told a fact by one thing and offered an action by another.
+
+  One affordance does both now: a trailing button reading `+10`, named _"10 more not shown"_, which
+  opens the list where every chosen value is. A pointer with no horizontal axis — most desktop mice —
+  has a way through that is not a scroll.
+
+  - **`overflowCount`** is a new optional part, and it joins the kind's trailing affordances, so it
+    carries the same hit target as every other control in that column.
+  - **`hiddenChipCount`** is exported: how many chips the strip is not showing, measured from what the
+    browser laid out. How many fit depends on the labels, the theme's spacing and the width the host
+    gave the field, so it is a measurement and not a count.
+  - **`MdyI18nMessages` gains `chipsHiddenShort` and `chipsHidden`** — required, in all five locales.
+
+  **A keyboard trap came with it, and `keepFocusedChipInView` is the fix.** The browser scrolls a
+  focused element into view once, at the moment focus lands. An affordance that appears on the same
+  beat takes its width out of the scrollport _afterwards_, and the chip the browser had just brought in
+  was outside again by about the width of the control that appeared — measured at 97px of overhang,
+  with `scrollLeft` unchanged. Nothing scrolls a second time on its own. Every renderer now brings the
+  focused chip back after the paint that may have moved the box.
+
+  **The chip's controls are drawn with a mask** rather than with borders and a background colour
+  (ADR 0133): a mask takes the system's own colour under `forced-colors`, where a painted shape is
+  dropped entirely — and the readers most likely to be zoomed into a control this small are the ones
+  that mode is for.
+
+  **lit and Angular listed only the options nobody had chosen.** The contract gives every option a
+  `selected` state and, in toggle mode, `aria-pressed` — both unreachable in a list that removes what
+  was taken, and it made the new affordance's promise false, because the values it says are out of
+  sight are exactly the ones such a list omitted. Both list every option now, as plain always did.
+
+  **Angular's popup held its options while it was closed** — twelve option chips in the document of a
+  control that looks shut, countable by anything walking the field. The panel's contents exist only
+  while it is open.
+
+- 50ffc70: A strip that says there is more
+
+  ADR 0127 lets a multiselect's chip row scroll only where something reaches what leaves the viewport.
+  The wheel and the roving focus are that mechanism; nothing told a person there was anything to reach.
+  Twelve chips in a control that shows four looked like a control holding four.
+
+  Two answers, one for each way of reading a control:
+
+  - The strip carries `aria-describedby` pointing at the field's own description, which already says how
+    many are chosen. A reader standing on the strip is exactly the person who cannot see that it runs
+    on, and the count is the fact that makes the hidden chips worth looking for.
+  - A scroll shadow at each end, in CSS and self-adjusting: two gradients scroll with the content and
+    paint the field's surface over the shadow at whichever end is exhausted, so the cue is drawn only
+    while chips really are hidden that way. No measurement, and no class a renderer has to keep in step
+    with the scroll position.
+
+- 7c5f09a: A switch that is on no longer looks unavailable
+
+  The themes reached a switch's state through `.mdy-toggle:has(input:disabled)` — any input inside the
+  switch. That was correct while a switch held one input. It now holds two: the hidden companion that
+  makes a boolean submit as `false`, and that companion is disabled **exactly while the box is ticked**.
+
+  So a switch that was on was painted with the treatment for one that cannot be used: pale track, grey
+  thumb, `opacity: 0.5`, across four themes.
+
+  The rules now name the switch's own control — `.mdy-toggle__control` — as the checkbox rules beside
+  them already did. Nothing else moves: a genuinely disabled switch still gets the disabled treatment,
+  verified by forcing it.
+
+  **If you wrote a theme rule that reaches a control with a bare `input` selector, it now has two
+  elements to choose between.** `.mdy-toggle__control`, `.mdy-checkbox__control` and the other part
+  classes name the one a person sees.
+
+- d3dc6d0: A chip's remove button is a target a person can hit, and pressing a chip's body does one thing.
+
+  **The target.** The ✕ measured 32×22 — two pixels short of the 24 CSS px **2.5.8 Target Size
+  (Minimum)** asks for, because the chip is 24 tall counting its own border and the button inside it
+  took `height: 100%` of what was left. The spacing exemption was unavailable: the nearest other target
+  is 13px away. The button now states a 24px floor and grows into the chip's border, so the row does not
+  grow around it.
+
+  Two pixels is not a rounding error for the people that criterion exists for. Aiming for the middle is
+  the only strategy a head pointer or a switch has, and the control beside this one deletes a value.
+
+  **The body.** `@modyra/lit` opened the list when a chip's body was pressed, where the other two
+  renderers focused the chip and left the list closed. Its box asked whether the press had crossed a
+  `<button>` on the way up, and a chip is a `<span>` — so a chip fell through to the opener. The box now
+  forwards a press on **its own** area only, which is what ADR 0142 says it does: what a press does is
+  decided by what it landed on, not by what that thing is made of.
+
+  All three now focus the chip and open nothing, which is the published answer for a composite with a
+  roving tab stop — it puts the keyboard where the pointer went, and it is the only route by which
+  somebody who arrived with a mouse reaches the strip's key map.
+
+- 4b95b46: A tap target stays inside the field it acts on, and a chip's steppers draw their marks.
+
+  **The target.** The datepicker, timepicker and colours toggles carry a 44px hit area as an `::after`,
+  centred on a control that is smaller than it — so the target hung over both sides, and these controls
+  sit at the field's trailing edge. Half of it lay **outside the field**, in the space belonging to
+  whatever the form draws next: a press three pixels past the border opened the colour palette. Anchored
+  to the control's inner edge and grown inwards now, so the whole target is over the field it acts on.
+  The target keeps its size; only the direction it grows in changes.
+
+  **The marks.** A counter chip's two steppers were 32×24 of nothing in `@modyra/plain` and
+  `@modyra/lit` — they took their space, answered a press, and showed a person nothing, so the only way
+  to find one was to press the blank and watch the number change. Both renderers draw the minus and plus
+  from the icon set, which is what their own option chips already did and what `@modyra/angular` does.
+
+- f77657b: Twenty-three component tokens hold a step instead of a number.
+
+  A token below the scale holding a literal is a value a theme cannot move: change the scale and
+  everything follows except those. Padding, gaps, offsets and hairlines now read from the scale —
+  `--mdy-input-padding` is `space-2 space-4`, a `1px` border is `--mdy-stroke-1`, the focus underline is
+  `calc(-1 * var(--mdy-stroke-2))`.
+
+  Two moved to the nearer step rather than staying literal: the chip's internal gap (0.375rem → 0.5rem)
+  and the overlay's padding (1.25rem → 1.5rem). The number stepper's size stops being its own 1.5rem and
+  reads `--mdy-affordance-target-stacked`, the token `DESIGN.md` already names for a stacked control.
+
+  Eleven properties are deliberately left, in two groups: three have no scale to belong to — a popup's
+  maximum height is a viewport question, not a spacing one — and eight are the floating label's `calc`
+  derivations, where a step inside the arithmetic would not make the result a step.
+
+- 013ca17: A way back a person can see
+
+  The control that takes a file off was painted in the error colour, which is a saturated red used as
+  small text — and a saturated red clears 4.5:1 on neither a light surface nor a dark one. Measured at
+  2.88:1, 3.22:1 and 1.61:1 across the themes, on the one glyph a person needs in order to undo a file
+  they attached by mistake.
+
+  It takes the surface's own text colour now, which is readable on that surface by construction, and
+  the destructive meaning arrives on hover and on focus, where a colour has a state to carry rather
+  than a permanent cost. That is also what the platforms do: a removable attachment is dismissed with
+  a neutral mark, not a warning.
+
+  `DESIGN.md` said muted text is reading text and said nothing about a control's glyph. It says both
+  now: a control's glyph is reading text too, and the reason is that the affordance a person needs in
+  order to correct a mistake is the last one that may be hard to see.
+
+- ef24648: The way back joins the field's trailing edge, and the caret is drawn last
+
+  A multiselect's undo moves from a row beneath the field into the row of commands at the field's
+  trailing edge, where the clear-all it reverses already sits. The row goes, and the band it reserved
+  returns to the validation message.
+
+  **Migration.** The `wayBack` part no longer exists and `wayBackAction` is now a child of `box` rather
+  than of that row; `arrow` is a child of `box` rather than of `trigger`. Anything selecting
+  `.mdy-multiselect__way-back` or reaching a part through those parents follows the new structure. The
+  `mdy-multiselect__way-back-action` class stays and is now a mark rather than a word — it names what
+  it puts back through its accessible name, composed by the new `wayBackActionName`.
+
+  The count of what is chosen no longer appears under the field. The chips are the selection, and the
+  ones the strip scrolled past are counted at the strip's own edge, where the count is also the way to
+  reach them.
+
+  **A defect closed with it**: that edge count answered `1` for every arrangement — it measured the row
+  holding the chips instead of the chips, so a strip hiding twenty-five said "1 more not shown". It now
+  counts chips at any depth. Renderers no longer write a count of zero into a control they are not
+  showing.
+
+- 6587fdf: The affordance column reaches the field's edge again.
+
+  `DESIGN.md` states the rule and names this exact failure in advance: _a control sized by its own text
+  leaves the field's fill as empty space beside it, and the affordance lands next to the value instead
+  of on the edge — the alignment reads as broken even though every affordance token is correct._ Every
+  token was correct. Three separate boxes were sized by their content:
+
+  - **The multiselect's own box** declared itself a row — "the trigger takes what is left and the
+    clear-all sits at the trailing edge" — while being a flex item with no grow, so it took only the
+    width its chips asked for. The clear-all then sat wherever the longest chosen word ended and moved
+    whenever a value was added, removed or translated. Measured at **1073px** from a 1272px field's
+    edge; now 4, the declared inset.
+  - **`@modyra/lit`'s multiselect** drew its prefix and suffix slots whether or not anything was given
+    to them, and an empty slot is not an empty box — the suffix took 16px at the trailing edge, so
+    every affordance inside that field stopped 16px short. Drawn only when something is assigned.
+  - **`@modyra/angular`'s number field** wraps its input in a span to position the steppers against it,
+    and a span is inline: the box stopped after the number, putting the steppers beside the value.
+
+  Two of the most destructive controls in a multiselect — the clear-all and a chip's ✕ — were 22px
+  apart in the middle of the field as a consequence. At the trailing edge that adjacency does not exist.
+
+- 34dc12d: A field keeps its edge when the system supplies the palette
+
+  `.mdy-input-wrapper` draws its edge with an inset `box-shadow`, and a forced palette drops shadows
+  outright — along with the wrapper's background, which is repainted the surface colour. So the box a
+  person uses to see _where_ the input is had no edge at all, in the one mode chosen by people who need
+  edges most.
+
+  What survives is a border, which is the answer the slider's track already needed one rule below. Only
+  on the block end, because that is the edge this shape has: a filled field is a surface with a line
+  under it, not a box. Focus and refusal keep their heavier weight.
+
+  **It was reported against the wrong part, and the reason is worth keeping.** The sweep named
+  `email.errors` — 5.6% of its pixels painted, then nothing. But the fields in that sweep are mounted
+  with no rules and never touched, so no kind has an error message at all: what it photographed was not
+  the error text. `.mdy-control__errors` is transparent and absolutely placed at the bottom of the
+  renderer, directly over the wrapper's underline, so the crop caught the edge _behind_ it. And
+  `inputWrapper`'s own crop starts at its top and stops short of a 56px-tall field's bottom line, so the
+  only part that could see that edge was the one it does not belong to.
+
+  Not `email` either: it was the one kind whose error box happened to overlap an edge.
+
+- 233c2bd: An option a document closed says so before it is pressed.
+
+  The press was already refused — the form kept `null` — but three of six renderer-and-kind pairs drew
+  the unavailable option exactly like an available one: no `aria-disabled`, no distinguishing class,
+  nothing a person could see or hear before pressing it. Someone who cannot see the list read that as a
+  broken control; someone who could read it as their own misclick.
+
+  - `select.option` and `multiselect.option` declare the `disabled` state (`contract:diff`: **minor**).
+  - The select projection emits `aria-disabled` and the state class per option, which `@modyra/plain`
+    applies with the rest of the part.
+  - `@modyra/lit` and `@modyra/angular` apply the multiselect's projected option part whole, instead of
+    reading its id and rebuilding the classes beside it — which is what left the disabled half off.
+  - `@modyra/styles` paints both: `.mdy-select__option--disabled`, and `.mdy-chip--disabled` beside the
+    existing `:disabled` rule, because an option chip in counter mode is a `div` and cannot carry the
+    native attribute.
+
+  **Migration for a renderer implementing this contract**: apply the projected option part rather than
+  composing option classes locally, or the state will be declared and never drawn.
+
+- 97b964d: Three strays off the size alphabet: the slider's box, the standalone button, and three spellings of a
+  full corner.
+
+  - **A range input stood 20px tall.** Its height was the track's 4px and it took a text field's padding
+    on top, as `content-box`, so the control was whatever the sum happened to be — under the 24px a
+    pointer target needs. The element is a control step now, `border-box`, and the 4px track paints on
+    `::-webkit-slider-runnable-track` / `::-moz-range-track` where its thickness is its own.
+  - **`.mdy-button` was 40px**, four short of WCAG 2.5.5 and a fourth height in a library that names
+    three. It stands on its own with no overlay to carry a target for it, so it takes the 44px step.
+  - **A full corner was written three ways** — `50%`, `calc(height / 2)` and `9999px`. One spelling now,
+    on the radio, the two round toggles and the switch track; on a square they draw the same circle.
+  - **The checkbox's 2px corner** is Material's own and the only 2 in the library. The default takes a
+    radius step; the Material theme points back at the reference token, where fidelity is the point.
+
+  The radius alphabet is within its scale: three values where five are allowed, from six.
+
+- 72d5689: Everything in a field's row shares its centre line.
+
+  A multiselect's chips sat 8px below the middle of their field and hung 3px past its bottom edge. The
+  cause was not the field's height: it is `--mdy-input-height`, which is already `control-2`.
+
+  **Three affordances were sized to a tap target instead of to a control step.** The caret, the clear-all
+  and the overflow button each took `--mdy-affordance-target` — 44px — as their _height_, inside a field
+  whose row is 36. The flex line became 44, so a 28px chip centred against it landed 8px low and its
+  lower edge fell outside the box.
+
+  A target is not a size. The caret takes the glyph's box, because it is `aria-hidden` decoration and the
+  opener is what a person presses; the clear-all and the overflow stretch to the row, as the opener now
+  does. Measured in the demo, every part of the row is 28px tall at the same offset:
+
+  ```
+  before   chips 28h at 13   trigger 44h at 5   3px past the bottom
+  after    chips 28h at  5   trigger 28h at 5   inside, and on one centre line
+  ```
+
+  The four per-theme centre-line checks pass in all four shipped themes.
+
+- df866d8: A chip is one height, and the affordance column does not bend around one kind.
+
+  Two more values left off the control scale by the same half-migration:
+
+  - **A chip was 28 in the field and 32 in the popup.** The value chip moved onto `control-1`; the chip
+    a person picks from did not, so one control was two heights depending on where they were looking at
+    it. Both are `control-1` now, including the counter variant that carries its own height so its step
+    buttons have something to be 100% of.
+  - **The clear-all was 44 wide** where every other trailing affordance is 28, so its centre sat 8px
+    further in and the column bent around one kind. Its width is a control step; its 44px pointer target
+    is the overlay it already carries, which needs no width from the box.
+
+- 3fd899b: A date range's two ends carry a class each, so a sheet stops counting `<input>` elements.
+
+  `startControl` and `endControl` are two declared parts and they carried the same two classes, so the
+  only way to round the left end of the pair was `:first-of-type` — a rule that counts elements of a tag
+  while reasoning about a class. Put a hidden native input or a sizer of the same tag in the group and
+  the rounding moves to the wrong end.
+
+  Each part gains a class of its own — `mdy-daterange__input--start`, `mdy-daterange__input--end` — and
+  the three renderers take their classes from the contract rather than repeating a string. The two
+  positional rules, in the base sheet and in the iOS theme, name the end they mean.
+
+  Additive: both parts keep the classes they had.
+
+- 52a3b07: Three things a field draws, corrected.
+
+  **One name, one element.** `@modyra/lit`'s colours and daterange fields each rendered their own
+  `.mdy-input-wrapper` inside the one the base already draws — two elements answering to `inputWrapper`,
+  one inside the other. A selector returns the outer, a measurement may take either, and a reading
+  cannot say which it meant; it is the ambiguity ADR 0143 forbids, and the height comparison that
+  record was written from was made of it. Both kinds now decline the base's wrapper through the
+  mechanism that already exists for it, and draw their own affixes as they already did.
+
+  **An affordance a kind removed and did not give back.** The foundation takes the platform's arrow off
+  every native chooser so a form of them looks like one form. `@modyra/lit`'s native select drew neither
+  that one nor its own, so the field had nothing at its trailing edge saying it opens — while four other
+  kinds in the same renderer draw theirs.
+
+  **The caret sits where the column is.** A multiselect's arrow was packed at the start of the opener,
+  so it stood wherever the chips left off — a different distance from the field's edge on every value,
+  and a different one again from the clear-all beside it. At the opener's trailing edge now, which is
+  what `DESIGN.md` asks of a trailing affordance: one column, whatever the field holds.
+
+- 8642d4c: The reserved line is under the fields that can fail a rule, not under every field
+
+  The stylesheet has reserved a line of feedback since `9ff66356`, and its comment gives the reason
+  exactly: _"validating must never move the control the user is reaching for."_ It reserved it under
+  **every** field — `padding-block-end` on `.mdy-renderer`, unconditionally — including fields with no
+  rule that could ever fill it. On a long form on a phone that is a line of scrolling per field, bought
+  for a message that cannot arrive.
+
+  The contract now says which fields can fail, and the renderers answer it by drawing the error
+  container. The reservation follows that answer — `.mdy-renderer:has(> .mdy-control__errors:not([hidden]))`
+  — rather than holding a second opinion about it. Two mechanisms answering one question is how they
+  come to disagree, and these already did: the stylesheet reserved for all, the contract for some.
+
+  `:has` is the technique this stylesheet already uses in forty-six places, and `:not([hidden])` covers
+  both shapes a renderer uses — omitting the element, or keeping it and hiding it.
+
+- e488eec: A chosen value can be dragged to a new place
+
+  The third door onto `move-selected`, and the one the brief named. A keystroke, a tap on the move
+  controls and a drag now land on the same order because they land on the same intent — none of them can
+  be repaired into disagreeing with the others.
+
+  `chipDropIndex` is the arithmetic, in `@modyra/widgets` rather than in three renderers, for the reason
+  the dial's angles are: three implementations of "which one is the pointer over" is three answers, and
+  the one a person meets is whichever adapter their team chose. It reads the chips' midpoints rather
+  than their edges, so a chip is passed when the pointer is more than halfway across it — what the eye
+  does — and it takes them in drawing order, so a right-to-left strip needs no special case.
+
+  **A press that never travels stays a press.** Six pixels of movement before a gesture becomes a drag,
+  because treating every press as the start of one takes the chip's own controls away from anybody whose
+  finger moves slightly. `pointercancel` puts the chip back untouched: the browser taking a gesture is
+  not a decision the person made.
+
+  **The pointer's subject is decided rather than inherited.** A keyboard has continuity for free — focus
+  travels with the chip, so a second press acts on the chip the first one moved. A pointer has none: after
+  one move the chip a person was aiming at has slid out from under their finger, and a second press in
+  the same place moves a different value back where the first one came from. Every pointer move now
+  names the moved chip as the strip's active one, so everything downstream of the subject points at the
+  right thing. **The finger still has to re-aim**, which is a property of pointing at a list that
+  rearranges itself and not something a renderer can fix.
+
+- 769b992: The two controls a number field is declared to have
+
+  The catalogue names `increment` and `decrement` at a number field's trailing edge, gives them classes a
+  theme styles, and neither plain nor lit built them. The promise was kept by the platform's own spinner
+  where a browser draws one and by nothing where it does not — the same field with a stepper on one
+  engine and no way to step on another. Both renderers draw them now, out of the tab order (the box
+  itself takes the arrows) and stepping through the same intent typing goes through, so a stepped value
+  meets the field's rules on the way in.
+
+  `mdy-number-spinner` is declared as presentation: the box and its steppers need one positioning
+  context between them, and it is not a part — nothing is announced by it and no contract member points
+  at it.
+
+  **And a multiselect's trailing controls are drawn whether or not they have something to do.** lit and
+  Angular omitted the clear-all and the overflow count until they applied; plain drew them hidden. A part
+  a kind declares is a part its renderers carry, so all three draw both and hide what does not apply —
+  which also keeps them disabled with the field rather than absent from it.
+
+- aaf5344: Two arrows that pointed the same way, and a description nothing named.
+
+  **The arrows.** A chip's two move controls are drawn from one mask, and the rule giving the later one
+  its own direction was `.mdy-chip__move:last-of-type`. `:last-of-type` counts buttons, and the last
+  button in a chip is the one that removes it — so the rule never matched and both arrows pointed left.
+  The names were right, so a screen reader could tell the two apart and an eye could not. The general
+  sibling combinator asks what the rule meant: is there a move control before this one.
+
+  **The description.** `@modyra/angular`'s multiselect writes how many values are chosen into its
+  supporting text, and the base withholds that element's id unless a _consumer_ supplied words — so the
+  sentence was on the page and `aria-describedby` named nothing. A person who could not see the chips
+  was told the field's name and nothing about what it holds, with the text saying so one element away.
+  The kind names its own description now, as the other two renderers do.
+
+- c946eed: Where the writing begins
+
+  A field's inner inset was declared twice. The inliner carries it as an asymmetric logical pair, and
+  the control inside carries its own symmetric padding — so where the inliner is drawn both applied and
+  the writing began at their sum: 28px in the renderer that draws it against 16 in the two that do not,
+  from one document.
+
+  The inset is declared in one place now and applied once. Where the inliner is drawn it is the
+  declaration and the control carries no inline padding; where it is not, the control's padding is the
+  inset. The number is `1rem` either way, so the two spellings put the writing in the same place.
+
+  Every page screenshot moves, in every theme and every renderer, because the text moved in every
+  field. See ADR 0182.
+
+  Two things the rule had to be written around, both properties of the cascade rather than of this
+  change: a zeroing rule beside the inliner sits in `mdy.base` and loses to the control's component
+  rule whatever its specificity, and inside the winning layer a one-class selector loses to the
+  two-class one that states the control's padding. A rule that loses is correct, ineffective, and looks
+  applied.
+
 ## 0.8.1
 
 ### Patch Changes

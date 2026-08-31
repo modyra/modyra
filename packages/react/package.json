@@ -1,6 +1,6 @@
 {
   "name": "@modyra/react",
-  "version": "0.7.0",
+  "version": "0.8.0",
   "description": "React binding for the Modyra form engine — type-safe forms via useSyncExternalStore.",
   "keywords": [
     "react",
@@ -39,8 +39,8 @@
   },
   "sideEffects": false,
   "dependencies": {
-    "@modyra/core": "^2.2.0",
-    "@modyra/widgets": "^2.2.0"
+    "@modyra/core": "^2.5.0",
+    "@modyra/widgets": "^2.5.0"
   },
   "peerDependencies": {
     "react": ">=18.0.0"

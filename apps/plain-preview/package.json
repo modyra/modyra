@@ -1,6 +1,6 @@
 {
   "name": "@modyra/plain-preview-app",
-  "version": "0.5.8",
+  "version": "0.5.9",
   "private": true,
   "type": "module",
   "scripts": {
