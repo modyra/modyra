@@ -98,11 +98,13 @@ Six items, in the order their dependencies allow:
    list would end that distinction the first time somebody wrote `inputMode` as a rule. What is owed
    is the declared map between them.
 
-   Three gaps are real rather than legitimate: `step` is a consequence with no intention that can
-   ask for it, and `integer` and `oneOf` exist as functions with no word in the declarative
-   vocabulary. `oneOf` stays out of `rules:` regardless — it collides with `options` — and at 2
-   files of use that exclusion costs almost nothing, which is what closes the argument for
-   completeness for its own sake.
+   One gap is real rather than legitimate, and it is not the one the key names suggest. `step` is a
+   consequence like `inputMode` — `integer()` attaches `{ step: 1 }` exactly as `email()` attaches
+   `{ inputMode: "email" }` — so a document has no business declaring it. What a document cannot
+   declare is **`integer` itself**: the rule of which `step` is the consequence. That is the whole
+   gap. `oneOf` and `eachOneOf` are already covered, because a field states its list as `options`,
+   and they stay out of `rules:` for that reason — two places for one list diverge. At 2 files of
+   use, that exclusion costs almost nothing.
 
    And a door that parses, applies and mounts in one act closes both of scenario (b)'s traps by
    construction: rules the parser reads are not applied unless a second call applies them, and a rule
